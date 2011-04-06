@@ -1,0 +1,38 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <link rel="stylesheet" href="css/style.css" type="text/css" />
+    <link rel="stylesheet" href="css/ui-lightness/jquery-ui-1.8.9.custom.css" type="text/css" />
+    <script src="js/jquery-1.5.min.js"></script>
+    <script src="js/jquery-ui-min.js"></script>
+    <script src="js/dv-utils.js"></script>
+    <script src="js/diva.js"></script>
+  
+<script type="text/javascript" charset="utf-8">
+    $(document).ready(function() {
+        $('#documentpanel').diva({
+            zoomSlider: true,
+            gotoPage: true,
+            iipServerBaseUrl: "http://petrucci.musiclibs.net:9002/fcgi-bin/iipsrv.fcgi?FIF=/home/wliu/images/",
+            backendServer: "http://petrucci.musiclibs.net:9001/ajax/1/"
+        });
+        var dv = $("#documentpanel").data('diva');
+        dv.initiateViewer('#outerdrag', '#documentpanel');
+    });
+
+    </script>
+  <title>index</title>
+  
+</head>
+
+<body>
+    <div id="diva-wrapper">
+        <div id="itemtitle"></div>
+        <div id="outerdrag">
+            <div id="documentpanel" class="dragger"></div>
+        </div>
+    </div>
+</body>
+</html>

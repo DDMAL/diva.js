@@ -17,6 +17,7 @@
  * jQuery dragscrollable Plugin
  * version: 1.0 (25-Jun-2009)
  * Copyright (c) 2009 Miquel Herrera
+ * http://plugins.jquery.com/project/Dragscrollable
  *
  * Dual licensed under the MIT and GPL licenses:
  *   http://www.opensource.org/licenses/mit-license.php

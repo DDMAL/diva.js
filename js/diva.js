@@ -1,7 +1,7 @@
 // this pattern was taken from http://www.virgentech.com/blog/2009/10/building-object-oriented-jquery-plugin.html
 
 (function( $ ) {
-    var DocumentViewer = function(element, options) {
+    var Diva = function(element, options) {
         var defaults =  {
             itemOrientation: 0,         // Either "h" (horizontal) or "v" (vertical)
             pages: [],                  // an array of all the pages in the item. Can be quite large.
@@ -25,10 +25,9 @@
             zoomLevel: 2,               // current zoom level. (initial zoom level)
             containerEl: null,          // the container element id.
             itemEl: null,               // the item element id
-            panelWidth: parseInt($('#outerdrag').width(), 10) - 20,              // the panel width (temp hack)
+            panelWidth: parseInt($('#outerdrag').width(), 10) - 20,          // the panel width
             panelHeight: parseInt($('#outerdrag').height(), 10),             // panel height
             prevZoomLevel: 0,           // previous zoom level (change this later?)
-            //ipp: 40,                    // surrogate value for the inter-page padding. Ignored if set to "adaptive"
             verticalOffset: 0,          // used for storing the page offset before zooming
             horizontalOffset: 0,        // ^
             dimBeforeZoom: 0,           // used for storing the item dimensions before zooming.
@@ -37,13 +36,9 @@
             maxZoomLevel: 5,            // used in conjunction with IIP server. Default is 5 levels of zoom.
             isZoomCall: false,          // set to "true" if a zoom change request is detected
             isOrientationChange: false, // set to "true" if an orienation change request is detected.
-            //rlomItemUrl: '/rlom_plugin/layout/',
-            //fh: 0,                      // debugging only
-            //heightSoFar: 0,               // Height of images loaded so far - replace later
             scrollSoFar: 0,             // How much the user has scrolled so far - replace later
             totalHeight: 0,             // Height of all the images stacked together (total)
             heightAboveTop: 0,          // when changing zoom ... height above the first loaded
-            baseUrl: 'http://petrucci.musiclibs.net:9002/fcgi-bin/iipsrv.fcgi?FIF=/home/wliu/images/', // for now
             latestPage: 0,              // The most recent pageID loaded - for optimisation, sorta
             paddingPerPage: 40,         // For now because it is
             doubleClick: false,         // For use in AJAX requests - where do we zoom in, see handleDoubleClick()
@@ -133,7 +128,7 @@
                     var left = col * settings.tileWidth;
                     tileHeight = ( row == rows - 1 ) ? lastHeight : settings.tileHeight; // If it's the LAST tile, calculate separately
                     tileWidth = ( col == cols - 1 ) ? lastWidth : settings.tileWidth; // Otherwise, just set it to the default height/width
-                    imgSrc = ( filename == 'blank' ) ? 'blank.gif' : settings.baseUrl + filename + '&amp;JTL=' + settings.zoomLevel + ',' + tileNumber;
+                    imgSrc = ( filename == 'blank' ) ? 'blank.gif' : settings.iipServerBaseUrl + filename + '&amp;JTL=' + settings.zoomLevel + ',' + tileNumber;
                     content += '<div style="position: absolute; top: ' + top + 'px; left: ' + left + 'px; background-image: url(\'' + imgSrc + '\'); height: ' + tileHeight + 'px; width: ' + tileWidth + 'px;"></div>';
                     tileNumber++;
                 }
@@ -149,13 +144,12 @@
             if ( nearViewport(pageID) ) {
                 if ( pageExists(pageID) && !pageLoaded(pageID) ) {
                     // Currently a blank page, just change the background-image property and set it to loaded                   
-                    var imgSrc = settings.baseUrl + settings.pages[pageID].fn + '&JTL=' + settings.zoomLevel + ',';
+                    var imgSrc = settings.iipServerBaseUrl + settings.pages[pageID].fn + '&JTL=' + settings.zoomLevel + ',';
                     var tileNumber = 0;
                     // First change the class to loaded-page so we know that it's loaded
                     $('#page-' + pageID).removeClass('blank-page').addClass('loaded-page');
                     $('#page-' + pageID).children('div').each(function() {
                         $(this).css("background-image", "url(" + imgSrc + tileNumber + ")");
-//                      $(this).text("LOL");
                         tileNumber++;
                     });
                 } else if ( !pageExists(pageID) ) {
@@ -187,13 +181,11 @@
                 
             // First figure out if we need to zoom in on a specific part (if doubleclicked)
             if (settings.doubleClick) {
-                console.log("ZOOM IN ON A SPECIFIC PART");
                 centerX = settings.centerX * zChangeRatio;
                 centerY = settings.centerY * zChangeRatio;
                 desiredLeft = Math.max((centerX) - (settings.panelWidth / 2), 0);
                 desiredTop = Math.max((centerY) - (settings.panelHeight / 2), 0);
             } else {
-                console.log("REGULAR ZOOM ... WORK IN PROGRESS");
                 // This isn't working just zoom in on the middle for now
                 if ( settings.maxWidth + settings.paddingPerPage * 2 <= settings.panelWidth ) {
                     desiredLeft = 0;
@@ -204,7 +196,6 @@
                 desiredLeft = ( settings.horizontalOffset > 0 ) ? settings.horizontalOffset * zChangeRatio : settings.maxWidth / 2 - settings.panelWidth / 2 + settings.paddingPerPage;
                 desiredTop = settings.verticalOffset * zChangeRatio;
             }
-            console.log('top scroll:' + desiredTop + '; left scroll:' + desiredLeft);
             
             settings.prevVptTop = 0;
             $('#outerdrag').scrollTop(desiredTop);
@@ -214,7 +205,7 @@
         // AJAX request to start the whole process - called upon page load and upon zoom change
         var ajaxRequest = function(zoomLevel) {
             $.ajax({
-                url: "http://petrucci.musiclibs.net:9001/ajax/1/" + zoomLevel,
+                url: settings.backendServer + zoomLevel,
                 cache: false, // debugging
                 context: this, // for later
                 dataType: "json",
@@ -249,7 +240,6 @@
 
                         // Now try to load the page (it may or may not need to be loaded)
                         loadPage(i);
-                        //console.log('loaded page' + i);
                     }
                     
                     // Set the offset stuff, scroll to the proper places
@@ -257,10 +247,9 @@
                     // Change the title to the actual title
                     $('#itemtitle').text(data.item_title);
                     
-                    // Set the height and width of documentviewer (necessary for dragscrollable)
+                    // Set the height and width of documentpanel (necessary for dragscrollable)
                     $('#documentpanel').css('height', settings.totalHeight);
                     var widthToSet = (data.dims.mx_w + settings.paddingPerPage * 2 < settings.panelWidth ) ? settings.panelWidth : data.dims.mx_w + settings.paddingPerPage * 2; // width of page + 40 pixels on each side if necessary
-                    console.log(data.dims.mx_w);
                     $('#documentpanel').css('width', widthToSet);
 
                     // Scroll to the proper place
@@ -304,7 +293,6 @@
             var pageToConsider = settings.pageLoadedId + parseInt(direction, 10);
             var middleOfViewport = settings.scrollSoFar + (settings.panelHeight / 2);
             var changeCurrentPage = false;
-            // console.log('page considered:' + pageToConsider + ', current page:' + currentPage);
             
             // When scrolling up:
             if ( direction < 0 ) {
@@ -344,7 +332,6 @@
         var handleScroll = function() {
             settings.scrollSoFar = $('#outerdrag').scrollTop();
             if ( settings.scrollSoFar > settings.prevVptTop ) {
-                //console.log('Scrolling down');
                 var nextPage = settings.latestPage + 1;
                 
                 // The || condition is a bit of a hack to get goto page to work
@@ -353,7 +340,6 @@
                 }
                 setCurrentPage(1);
             } else if ( settings.scrollSoFar < settings.prevVptTop ) {
-                //console.log('Scrolling up');
                 var previousPage = settings.latestPage - 1;
                 while ( previousPage >= 0  && ( loadPage(previousPage) || belowViewport(previousPage) ) ) {
                     previousPage = previousPage - 1;
@@ -392,19 +378,19 @@
                 // If the zoom level is already at max, zoom out
                 var newZoomLevel;
                 if (settings.zoomLevel == settings.maxZoomLevel) {
-                    if (event.altKey == true) {
+                    if (event.altKey === true) {
                         newZoomLevel = settings.zoomLevel - 1;
                     } else {
                         return;
                     }
                 } else if (settings.zoomLevel == settings.minZoomLevel) {
-                    if (event.altKey == true) {
+                    if (event.altKey === true) {
                         return;
                     } else {
                         newZoomLevel = settings.zoomLevel + 1;
                     }
                 } else {
-                    if (event.altKey == true) {
+                    if (event.altKey === true) {
                         newZoomLevel = settings.zoomLevel - 1;
                     } else {
                         newZoomLevel = settings.zoomLevel + 1;
@@ -414,7 +400,6 @@
                 // Set centerX and centerY for scrolling in after zoom
                 // have to do this.offsetLeft and top ... otherwise relative to edge of document
                 settings.centerX = (event.pageX - settings.viewerXOffset) + $('#outerdrag').scrollLeft();
-                console.log('center X' + settings.centerX);
                 settings.centerY = (event.pageY - settings.viewerYOffset) + $('#outerdrag').scrollTop();
 
                 // Set doubleClick to true, so we know where to zoom in
@@ -495,14 +480,6 @@
             });
         };
         
-        this.loadItem = function(item_id, zoom_level, orientation) {
-           // //console.log("load item called");
-        };
-        
-        this.handleOrientationChange = function(new_orientation) {
-          //  //console.log("Orientation change called");
-        };
-        
         this.getId = function() {
             return settings.id;
         };
@@ -513,7 +490,6 @@
         
         // private methods
         var init = function() {
-            //console.log('Init function called.');
             settings.id = $.generateId('dv');
             
             // Figure out how to use this
@@ -523,21 +499,16 @@
             settings.tileEl = settings.id + '-tile-';
             
            if (settings.zoomSlider) {
-                //console.log("Implementing the zoom slider");
                 createZoomer();
             }
 
             if (settings.gotoPage) {
-                //console.log("Implementing gotoPage stuff");
                 createGotoPage();
             }
             
             if (!settings.interPagePaddingType) {
                 settings.interPagePaddingType = 'adaptive';
-             //   //console.log("Interpage padding was set to a default value");
             }
-            
-           // //console.log("Ending the init function.");
         };
 
         // call the init function when this object is created.
@@ -545,16 +516,16 @@
     };
     
     /// this should not need to be changed.
-    $.fn.documentviewer = function(options) {
+    $.fn.diva = function(options) {
         return this.each(function() {
             var element = $(this);
              // Return early if this element already has a plugin instance
-            if (element.data('documentviewer')) {
+            if (element.data('diva')) {
                 return;
     }
             
-            var documentviewer = new DocumentViewer(this, options);
-            element.data('documentviewer', documentviewer);
+            var diva = new Diva(this, options);
+            element.data('diva', diva);
         });
     };
     
