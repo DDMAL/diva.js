@@ -1,0 +1,43 @@
+Setup and installation
+======================
+
+Here you'll find instructions on how to set up the document viewer on your own server. It can then be easily integrated into an existing website.
+
+This guide will assume that you already have a website set up on a server, that you have shell access to a server (either the same one or a different one), and that the server your website is set up on is capable of either running the Python framework Django or PHP (version number?). If these assumptions are not true for you, see the last section for alternative installation methods.
+
+What you'll need
+----------------
+*	IIPImage server installation package
+*	A preferably command-line tool to convert images into pyramidal tiffs (VIPS or ImageMagick are good)
+*	Some (probably scanned) images that you want to display using your document viewer
+*	Django installation package (optional)
+*	Installation package for diva.js
+
+Steps
+-----
+
+1.	Download the IIPImage server installation package for the operating system the server you have shell access to runs, from the [IIPImage website](http://iipimage.sourceforge.net/download/#software).
+2.	SSH into the server. Find a way to install IIPImage. Instructions for Windows / .deb / compiling from source ? Instructions for different servers ? (Apache, nginx, etc) As a fastcgi module ?
+3.	Convert the images of the pages of the document viewer into tiled multi-resolution tiff format. This can be most easily done from the command line, using the `convert` command provided by the [ImageMagick software suite](http://www.imagemagick.org). For example, to convert a `JPEG` image named test.jpg into .tif format, you might use the following command:
+
+		convert test.jpg -define tiff:tile-geometry=256x256 -compress jpeg 'ptif:1.tif'
+	
+	Note that while the output file (`1.tif` in this case) must have a `.tif` or `.ptif` extension, the rest of the filename can be whatever you wish. For more, see the ImageMagick manual (link?) The VIPS image processing suite can also be used, either using the VIPS GUI or the command line. Using the same example as above, you might run the following command:
+	
+		vips im\_vips2tiff test.jpg 1.tif:jpeg:100,tile:256x256,pyramid
+		
+	where `jpeg:100`. For more, see the VIPS manual (link?). It might be worthwhile to write a bash script to automate this process for each page in a document (or maybe one will be provided..?).
+4.	To test your ImageMagick installation, transfer your newly-generated .tif files onto the server running IIPImage, into a directory that is accessible by whatever the server process is running under (`www-data` for instance). Then try to load each image by doing this:
+
+		http://www.your-domain.com/fcgi-bin/iipsrv.fcgi?FIF=/path/to/images/image.tif&CVT=JPG
+	
+	(or how/wherever your IIPImage server process is started) and see if the image is displayed properly. If it is, good, move on etc
+5.	Now either install Django and the Django app or set up the PHP script etc
+
+also include example code for instantiating the viewer
+
+Alternatives
+------------
+What if I don't have shell access to the server? see below or something
+What if I want to put the django app on a different server? proxying the ajax request look into that
+What if I don't have a website yet but just want to test it out? slash, is there a demo available?

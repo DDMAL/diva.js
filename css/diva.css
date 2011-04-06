@@ -1,0 +1,70 @@
+body {
+	padding: 0;
+	font-family: Helvetica;
+}
+
+#diva-wrapper {
+	width: 820px;
+	margin: 0 auto;
+}
+
+#documentpanel {
+	color: #000;
+	position: relative;
+	overflow: hidden; /* x-scroll adds to the height, figure out later */
+	/*cursor: pointer; /* or move */*/
+}
+
+#outerdrag {
+	position: relative;
+	height: 700px;
+	width: 820px; /* hack to get rid of the horizontal scrollbar ... */
+	overflow: auto;
+	margin: 0 auto;
+	background-color: #F1F1F1;
+	border: 1px solid #99BBE8;
+}
+
+/* For centering the image divs and giving padding */
+/* The two classes are just to distinguish between blank and loaded pages in the DOM */
+/*.blank-page, .loaded-page {
+	padding-top: 10px;
+	padding-left: 0px;
+	padding-bottom: 10px;
+	overflow: auto;
+	position: relative;
+}*/
+div[id^="page"] {
+	position: absolute; /*test */
+}
+
+.loaded-page {
+    -webkit-box-shadow: 0px 5px 10px rgba(0,0,0, .5);
+    -moz-box-shadow: 0px 5px 3px rgba(0, 0, 0, 0.5);
+    box-shadow: 0px 5px 3px rgba(0, 0, 0, 0.5);
+}
+
+#zoomer {
+	margin: 10px;
+	font-size: 62.5%;
+	width: 100px;
+}
+
+#gotopage {
+	float: right;
+	text-align: right;
+}
+	
+#itemtitle {
+	text-align: center;
+	font-weight: bold;
+	font-size: 1.5em;
+}
+
+.grab {
+    cursor: url('../img/openhand.cur'), default !important;
+}
+
+.grabbing {
+    cursor: url('../img/closedhand.cur'), default !important;
+}

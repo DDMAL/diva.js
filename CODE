@@ -1,0 +1,114 @@
+Code documentation
+==================
+
+A more thorough documentation of the individual functions and sections of the code.
+
+Functions and semi-global variables
+-----------------------------------
+
+### var defaults ###
+
+Semi-global variable containing the default settings. See in-code documentation for more on each of the individual settings and what they mean.
+
+
+nearViewport(pageID):
+	give it the page ID it should check for viewport nearness
+	it will obtain the height above that page, and the vertical scroll
+	if the heightAbovePage is within the viewport (+100 above and below), return 1
+	same for bottomOfPage
+	else, return 0
+	
+pageLoaded(pageID):
+	helper function to check if a page is loaded or not
+
+pageExists(pageID):
+	helper function for loadPage to check if a page has been created or not
+	
+pageToAppend(filename, rows, cols, width, height):
+	will append a page in the DOM (only done if it doesn't already exist)
+	
+loadPage(pageID):
+	give it the page ID that it should try to load
+	it will check if it's near the viewport first
+	if it is:
+		if it already exists, it will just change the background-image property (if not loaded)
+		if it does not already exist, it will append it, class loaded
+		return 1 in either case
+	if it is not:
+		if a blank page already exists, do nothing, return 0
+		if a blank page does NOT exist, append it, return 0
+
+scrollAfterRequest():
+	To take care of vertical and horizontal scrolling after an ajax request
+	if it's the first ajax request, scroll to the middle horizontally, top vertically
+	if it's not ... or treat them the same way?
+	work on this
+
+ajaxRequest(zoomLevel):
+	if you want it to get a different item, just send it a different item ID
+	called upon initial page load (zoomLevel = default then), OR zoom
+	sets all the setting stuff
+	go through each page in the array
+		call loadPage on each page (using the array index for pages[], starts at 0)
+		set the heightAbovePage (the associative array or hash or dictionary or whatever)
+			starts indexing at 0, so remember that
+			include pagePadding (use settings.pagePadding)
+	figure out the horizontal and vertical offset
+		use the offsets before the zoom (may be 0, if this is initial load)
+		
+aboveViewport(pageID):
+	helper function for handleScroll, check is something is above the bottom of the viewport
+	mainly for the goto function - if the page you are going to is below the bottom of the viewport
+	and while you don't want to load the pages in between
+	you want to keep going so that you load the desired page
+
+belowViewport(pageID):
+	same as above, for scrolling up
+	
+setCurrentPage(direction):
+	The first page whose top is below the viewport is the current page
+		UNLESS that page top is below the middle of the viewport
+		in that case, take the previous page
+		if there are no pages with tops below the viewport, just take the last page
+		when scrolling up:
+			if the current pageTop is below the middle of the viewport
+			OR the previous pageTop is below the top of the viewport
+				is the previous pageId >= 0 ? if so, set that to be the currentPage
+		when scrolling down:
+			if the current pageTop is above the top of the viewport
+				is the currentId NOT the last one? if so, set that to be hte current page
+	also, if direction==0, go straight to a page (called by gotoPage)
+
+handleScroll():
+	public function, called in the html page
+	if scrolling down:
+		page = next page
+		while page is in the viewport (i.e. load page returns 1)
+			page = nextpage
+			(basically, stops when it gets to a page not in the viewport)
+	if scrolling up:
+		page = previous page
+		while page is in the viewport (i.e. load page returns 1)
+			page = previouspage
+	try to use the same code for both instances - pageOffset = + 1 or -1 or something?
+
+handleZoom(zoomLevel):
+	first save the horizontal and vertical offsets before the zoom
+	then clear the documentviewer of all text (text.(''))
+	then do another ajaxRequest with the zoomLevel
+
+gotoPage(pageNumber):
+	if page exists:
+		find the height above the page
+		scroll that much
+		do the same sort of thing done in handleScroll (abstractify ?)
+		while loadPage == 1, advance to next page
+		same thing for previous page (stops when you get to a page not in viewport)
+	if page does not exist:
+		alert to that effect
+
+Order in which functions are called
+-----------------------------------
+
+May be useful if you need to add/modify something or if something is going wrong somewhere in the chain and you can't figure out where.
+
