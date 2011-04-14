@@ -41,11 +41,16 @@
         // Find out which ones are in the viewport
         // If the heightAbovePages is less than height of document panel
         var panelHeight = $('#documentpanel').height();
+        var panelWidth = $('#documentpanel').width()
         var stringBuilder = [];
         for (var i = 0; i < numPages; i++) {
             if (heightAbovePages[i] < panelHeight) {
+                // Left offset
+                var thisHeight = randomArray[i]['height'];
+                var thisWidth = randomArray[i]['width'];
+                var leftOffset = (panelWidth - thisWidth) / 2;
                 // Push them to a string
-                var theString = '<div id="page-' + i + '" style="width: ' + randomArray[i]['width'] + 'px; height: ' + randomArray[i]['height'] + 'px; top: ' + heightAbovePages[i] + 'px;">' + randomArray[i]['text'] + '</div>';
+                var theString = '<div id="page-' + i + '" style="width: ' + thisWidth + 'px; height: ' + thisHeight  + 'px; top: ' + heightAbovePages[i] + 'px; left: ' + leftOffset + 'px;">' + randomArray[i]['text'] + '</div>';
                 stringBuilder.push(theString);
             } else {
                 break;
@@ -55,14 +60,17 @@
         var stringToAppend = stringBuilder.join('\n');
         $('#pages').html(stringToAppend);
     });
-
-    // Upon scrolling ...
-    
-
     </script>
     <div id="documentpanel">
         <div id="pages">
         </div>
     </div>
+    <script>
+    // Upon scrolling ...
+    $('#documentpanel').scroll(function() {
+        var verticalScroll = $('#documentpanel').scrollTop();
+        console.log(verticalScroll);
+    });
+    </script>
 </body>
 </html>

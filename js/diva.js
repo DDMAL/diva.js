@@ -68,6 +68,9 @@ THE SOFTWARE.
             viewerXOffset: 0,           // distance between left edge of viewer and document left edge
             viewerYOffset: 0            // ^ for top edges
         };
+        // Testing, trying to improve performance
+        // By only appending to the DOM once, and using a string builder (i.e. array)
+        var pagesBuilder = [];
 
         // apply the defaults, or override them with passed in options.
         var settings = $.extend({}, defaults, options);
@@ -136,7 +139,8 @@ THE SOFTWARE.
             }
 
             pageType = ( filename == 'blank' ) ? 'blank' : 'loaded';
-            content = '<div class="' + pageType + '-page" id="page-' + pageID + '" style="top: ' + heightFromTop + 'px; width:' + width + 'px; height: ' + height + 'px; left:' + leftOffset + 'px;">';
+            content = [];
+            content.push('<div class="' + pageType + '-page" id="page-' + pageID + '" style="top: ' + heightFromTop + 'px; width:' + width + 'px; height: ' + height + 'px; left:' + leftOffset + 'px;">');
 
             // Calculate the width and height of the outer tiles (the ones that may have weird dimensions)
             lastHeight = height - (rows - 1) * settings.tileHeight;
@@ -150,14 +154,15 @@ THE SOFTWARE.
                     tileHeight = ( row == rows - 1 ) ? lastHeight : settings.tileHeight; // If it's the LAST tile, calculate separately
                     tileWidth = ( col == cols - 1 ) ? lastWidth : settings.tileWidth; // Otherwise, just set it to the default height/width
                     imgSrc = ( filename == 'blank' ) ? 'blank.gif' : settings.iipServerBaseUrl + filename + '&amp;JTL=' + settings.zoomLevel + ',' + tileNumber;
-                    content += '<div style="position: absolute; top: ' + top + 'px; left: ' + left + 'px; background-image: url(\'' + imgSrc + '\'); height: ' + tileHeight + 'px; width: ' + tileWidth + 'px;"></div>';
+                    content.push('<div style="position: absolute; top: ' + top + 'px; left: ' + left + 'px; background-image: url(\'' + imgSrc + '\'); height: ' + tileHeight + 'px; width: ' + tileWidth + 'px;"></div>');
                     tileNumber++;
                 }
             }
             
-            content += '</div>';
+            content.push('</div>');
             // Append the content
-            $('#documentpanel').append(content);
+            var contentString = content.join('');
+            pagesBuilder.push(contentString); 
         };
         
         // Pass it a page, it will determine if it needs to be loaded, and if so, load it
@@ -265,7 +270,9 @@ THE SOFTWARE.
                         // Now try to load the page (it may or may not need to be loaded)
                         loadPage(i);
                     }
-                    
+                    // Now done loading all the pages, push it to the dom
+                    $('#documentpanel').html(pagesBuilder.join(''));
+
                     // Set the offset stuff, scroll to the proper places
         
                     // Change the title to the actual title

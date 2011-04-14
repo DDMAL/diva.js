@@ -3,7 +3,7 @@
 // Image directory. Images in this directory will be served by folder name,
 // so if you have a folder named ...images/old_manuscript, a request for 
 // divaserve.php?d=old_manuscript will use the images in that directory.
-$IMAGE_DIR = "/home/wliu/images";
+$IMAGE_DIR = "/mnt/images/liber";
 $CACHE_DIR = "/home/wliu/image-cache";
 $IIP_SERVER = "http://petrucci.musiclibs.net:9002/fcgi-bin/iipsrv.fcgi?";
 
