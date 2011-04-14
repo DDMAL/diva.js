@@ -1,0 +1,68 @@
+<html>
+<head>
+    <title>Testing Virtual Rendering</title>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js"></script>
+    <style type="text/css">
+    #documentpanel {
+        height: 600px;
+        width: 500px;
+        position: relative;
+        top: 50px;
+        margin: 0 auto;
+        overflow: auto;
+        background-color: #D5D5D5;
+    }
+
+    #pages {
+        /* all the pages stacked together + padding */
+        height: 1230px;
+    }
+
+    /* For each individual page */
+    div[id^="page"] {
+        position: absolute;
+        font-size: 2.0em;
+        font-family: "Helvetica Neue";
+        background-color: #FFFFFF;
+        -webkit-box-shadow: 0px 5px 10px rgba(0,0,0,0.5);
+        -moz-box-shadow: 0px 5px 3px rgba(0,0,0,0.5);
+        box-shadow: 0px 5px 3px rgba(0,0,0,0.5);
+    }
+    </style>
+</head>
+
+<body>
+    <script>
+    $(document).ready(function() {
+        // includes padding
+        var heightAbovePages = [10, 320, 590, 950, 1110];
+        var numPages = 5;
+        var randomArray = [{'id': 0, 'height': 300, 'width': 400, 'text': 'FIRST PAGE'}, {'id': 1, 'height': 250, 'width': 300, 'text': 'SECOND PAGE'}, {'id': 2, 'height': 350, 'width': 250, 'text': 'THIRD PAGE'}, {'id': 3, 'height': 150, 'width': 50, 'text': 'FOURTH PAGE'}, {'id': 4, 'height': 100, 'width': 100, 'text': 'FIFTH PAGE'}];
+        // Find out which ones are in the viewport
+        // If the heightAbovePages is less than height of document panel
+        var panelHeight = $('#documentpanel').height();
+        var stringBuilder = [];
+        for (var i = 0; i < numPages; i++) {
+            if (heightAbovePages[i] < panelHeight) {
+                // Push them to a string
+                var theString = '<div id="page-' + i + '" style="width: ' + randomArray[i]['width'] + 'px; height: ' + randomArray[i]['height'] + 'px; top: ' + heightAbovePages[i] + 'px;">' + randomArray[i]['text'] + '</div>';
+                stringBuilder.push(theString);
+            } else {
+                break;
+            }
+        }
+        // Now actually do the appending
+        var stringToAppend = stringBuilder.join('\n');
+        $('#pages').html(stringToAppend);
+    });
+
+    // Upon scrolling ...
+    
+
+    </script>
+    <div id="documentpanel">
+        <div id="pages">
+        </div>
+    </div>
+</body>
+</html>

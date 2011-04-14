@@ -226,10 +226,13 @@ THE SOFTWARE.
         // AJAX request to start the whole process - called upon page load and upon zoom change
         var ajaxRequest = function(zoomLevel) {
             $.ajax({
-                url: settings.backendServer + zoomLevel,
+                //url: settings.backendServer + zoomLevel + '/',
+                // commented out for debugging
+                url: 'http://petrucci.musiclibs.net:9002/json.html',
                 cache: false, // debugging
                 context: this, // for later
                 dataType: "json",
+                //jsonp: 'onJSONPLoad',
                 success: function(data) {
                     $('#outerdrag').scrollTop(0);
                     // Clear 
