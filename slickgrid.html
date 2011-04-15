@@ -2,6 +2,7 @@
 <head>
     <title>Testing Virtual Rendering</title>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js"></script>
+    <script src="slickgrid.js"></script>
     <style type="text/css">
     #documentpanel {
         height: 600px;
@@ -32,44 +33,16 @@
 </head>
 
 <body>
-    <script>
-    $(document).ready(function() {
-        // includes padding
-        var heightAbovePages = [10, 320, 590, 950, 1110];
-        var numPages = 5;
-        var randomArray = [{'id': 0, 'height': 300, 'width': 400, 'text': 'FIRST PAGE'}, {'id': 1, 'height': 250, 'width': 300, 'text': 'SECOND PAGE'}, {'id': 2, 'height': 350, 'width': 250, 'text': 'THIRD PAGE'}, {'id': 3, 'height': 150, 'width': 50, 'text': 'FOURTH PAGE'}, {'id': 4, 'height': 100, 'width': 100, 'text': 'FIFTH PAGE'}];
-        // Find out which ones are in the viewport
-        // If the heightAbovePages is less than height of document panel
-        var panelHeight = $('#documentpanel').height();
-        var panelWidth = $('#documentpanel').width()
-        var stringBuilder = [];
-        for (var i = 0; i < numPages; i++) {
-            if (heightAbovePages[i] < panelHeight) {
-                // Left offset
-                var thisHeight = randomArray[i]['height'];
-                var thisWidth = randomArray[i]['width'];
-                var leftOffset = (panelWidth - thisWidth) / 2;
-                // Push them to a string
-                var theString = '<div id="page-' + i + '" style="width: ' + thisWidth + 'px; height: ' + thisHeight  + 'px; top: ' + heightAbovePages[i] + 'px; left: ' + leftOffset + 'px;">' + randomArray[i]['text'] + '</div>';
-                stringBuilder.push(theString);
-            } else {
-                break;
-            }
-        }
-        // Now actually do the appending
-        var stringToAppend = stringBuilder.join('\n');
-        $('#pages').html(stringToAppend);
-    });
-    </script>
     <div id="documentpanel">
         <div id="pages">
         </div>
     </div>
     <script>
-    // Upon scrolling ...
+    $(document).ready(function() {
+        initialLoad();
+    });
     $('#documentpanel').scroll(function() {
-        var verticalScroll = $('#documentpanel').scrollTop();
-        console.log(verticalScroll);
+        handleScroll();
     });
     </script>
 </body>

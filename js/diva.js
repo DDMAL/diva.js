@@ -174,6 +174,7 @@ THE SOFTWARE.
                     var tileNumber = 0;
                     // First change the class to loaded-page so we know that it's loaded
                     $('#page-' + pageID).removeClass('blank-page').addClass('loaded-page');
+                    // This might be a major factor in the slow scrolling ... look into alternatives later
                     $('#page-' + pageID).children('div').each(function() {
                         $(this).css("background-image", "url(" + imgSrc + tileNumber + ")");
                         tileNumber++;
