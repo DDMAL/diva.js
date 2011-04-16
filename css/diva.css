@@ -36,12 +36,10 @@ body {
 }*/
 div[id^="page"] {
 	position: absolute; /*test */
-}
-
-.loaded-page {
     -webkit-box-shadow: 0px 5px 10px rgba(0,0,0, .5);
     -moz-box-shadow: 0px 5px 3px rgba(0, 0, 0, 0.5);
     box-shadow: 0px 5px 3px rgba(0, 0, 0, 0.5);
+    
 }
 
 #zoomer {

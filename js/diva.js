@@ -27,7 +27,7 @@ THE SOFTWARE.
             itemOrientation: 0,         // Either "h" (horizontal) or "v" (vertical)
             pages: [],                  // an array of all the pages in the item. Can be quite large.
             heightAbovePages: [],       // The heights above the pages
-            numPages: null,             // Number of pages in the previous array.
+            numPages: 0,             // Number of pages in the array 
             pageLoadedId: 0,           // The current page in the viewport. Usually set to the center-most page.
             scrollLoadedId: -1,         // ??
             scrollTrigger: false,       // ??
@@ -66,7 +66,9 @@ THE SOFTWARE.
             centerX: 0,                 // only used if doubleClick is true - for zooming in
             centerY: 0,                 // ^
             viewerXOffset: 0,           // distance between left edge of viewer and document left edge
-            viewerYOffset: 0            // ^ for top edges
+            viewerYOffset: 0,            // ^ for top edges
+            firstPageLoaded: -1,        // change these later (figure out default values)
+            lastPageLoaded: -1
         };
         // Testing, trying to improve performance
         // By only appending to the DOM once, and using a string builder (i.e. array)
@@ -77,19 +79,22 @@ THE SOFTWARE.
 
         // Checks if a page is within 100px of the viewport (called by pageLoad)
         var nearViewport = function(pageID) {
-            var heightAbovePage = settings.heightAbovePages[pageID];
-            var bottomOfPage = heightAbovePage + settings.pages[pageID].h;
+            console.log("WHY IS PAGE " + pageID + " NEAR THE VIEWPORT?");
+            var topOfPage = settings.heightAbovePages[pageID];
+            var bottomOfPage = topOfPage + settings.pages[pageID].h;
             var panelHeight = settings.panelHeight;
-            var topOfViewport = $('#outerdrag').scrollTop();
+            var topOfViewport = settings.scrollSoFar;
             var bottomOfViewport = topOfViewport + panelHeight;
-            
-            if ( heightAbovePage > topOfViewport - 100 && heightAbovePage < bottomOfViewport + 100 ) {
+            console.log("this page: top is " + topOfPage + ", bottom: " + bottomOfPage);
+           
+            // Got rid of the +/- 100 thing maybe that will fix things
+            if ( topOfPage > topOfViewport && topOfPage < bottomOfViewport  ) {
                 // If top of page is in the viewport (+/- 100 px) ... broken up for easier reading
                 return true;
-            } else if ( bottomOfPage > topOfViewport - 100 && bottomOfPage < bottomOfViewport + 100 ) {
+            } else if ( bottomOfPage > topOfViewport && bottomOfPage < bottomOfViewport ) {
                 // Same as above for the bottom of the page
                 return true;
-            } else if ( heightAbovePage < topOfViewport && bottomOfPage > bottomOfViewport ) {
+            } else if ( topOfPage < topOfViewport && bottomOfPage > bottomOfViewport ) {
                 // Top of page is above, bottom of page is below
                 return true;
             } else {
@@ -99,103 +104,140 @@ THE SOFTWARE.
         };
         
         // Private helper function for determining if a page has been loaded yet or not (i.e. has images)
-        var pageLoaded = function(pageID) {
-            var thisClass = $('#page-' + pageID).attr('class');
-            if ( thisClass === 'loaded-page') {
-                return true;
-            } else {
-                return false;
-            }
-        };
-        
-        // Private helper function for determining if a page exists or not (i.e. the div is there)
-        var pageExists = function(pageID) {
+        var isPageLoaded = function(pageID) {
             var thisID = '#page-' + pageID;
+            console.log('checking if page ' + pageID + ' is loaded');
+            if ($(thisID).length === 0) {
+                return false;
+            } else {
+                return true;
+            }
+        };
+        
+        // Appends the page directly into the document body
+        var appendPage = function(pageID) {
+            console.log('appending page ' + pageID + ' to the dom');
+
+            if (!isPageLoaded(pageID)) {
+                var filename = settings.pages[pageID].fn;
+                var rows = settings.pages[pageID].r;
+                var cols = settings.pages[pageID].c;
+                var width = settings.pages[pageID].w;
+                var height = settings.pages[pageID].h;
+                var leftOffset;
+                var content = [];
+                var lastHeight, lastWidth, row, col, tileHeight, tileWidth, imgSrc;
+                var tileNumber = 0;
+                var heightFromTop = settings.heightAbovePages[pageID] + (settings.paddingPerPage / 2);
             
-            // If the length of this element is greater than 0, then it exists (jQuery shortcut)
-            if ( $(thisID).length ) {
+                // If it just needs the standard padding per page
+                if ( width >= settings.panelWidth && width === settings.maxWidth ) {
+                    leftOffset = settings.paddingPerPage;
+                } else if ( width < settings.panelWidth ) {
+                    // if it's strictly smaller than the panel
+                    leftOffset = parseInt((settings.panelWidth - width) / 2, 10);
+                } else {
+                    // It's larger than the panel, but a non-standard width
+                    leftOffset = ((settings.maxWidth + settings.paddingPerPage * 2) - width) / 2;
+                }
+
+                content.push('<div id="page-' + pageID + '" style="top: ' + heightFromTop + 'px; width:' + width + 'px; height: ' + height + 'px; left:' + leftOffset + 'px;">');
+
+                // Calculate the width and height of the outer tiles (the ones that may have weird dimensions)
+                lastHeight = height - (rows - 1) * settings.tileHeight;
+                lastWidth = width - (cols - 1) * settings.tileWidth;
+
+                // Now loop through the rows and columns
+                for ( row = 0; row < rows; row++ ) {
+                    for ( col = 0; col < cols; col++ ) {
+                        var top = row * settings.tileHeight;
+                        var left = col * settings.tileWidth;
+                        tileHeight = ( row == rows - 1 ) ? lastHeight : settings.tileHeight; // If it's the LAST tile, calculate separately
+                        tileWidth = ( col == cols - 1 ) ? lastWidth : settings.tileWidth; // Otherwise, just set it to the default height/width
+                        imgSrc = settings.iipServerBaseUrl + filename + '&amp;JTL=' + settings.zoomLevel + ',' + tileNumber;
+                        content.push('<div style="position: absolute; top: ' + top + 'px; left: ' + left + 'px; background-image: url(\'' + imgSrc + '\'); height: ' + tileHeight + 'px; width: ' + tileWidth + 'px;"></div>');
+                        tileNumber++;
+                    }
+                }
+            
+                content.push('</div>');
+                // Append the content
+                var contentString = content.join('');
+                // Just append it straight to the document
+                $('#documentpanel').append(contentString);
+            }
+        };
+
+        var deletePage = function(pageID) {
+            console.log("deleting page " + pageID + " frmo the dom");
+            if (isPageLoaded(pageID)) {
+                $('#page' + pageID).remove();
+            }
+        };
+
+        // Private helper function, check if a page ID is valid
+        var inRange = function(pageID) {
+            if (pageID >= 0 && pageID < settings.numPages) {
                 return true;
             } else {
                 return false;
             }
         };
-        
-        // Private helper function for loadPage - so blank pages and loaded pages are done the same way
-        // Appends the page directly into the document body
-        var appendPage = function(pageID, filename, rows, cols, width, height) {
-            
-            var leftOffset, pageType, content, lastHeight, lastWidth, row, col, tileHeight, tileWidth, imgSrc, tileNumber = 0;      
-            var heightFromTop = settings.heightAbovePages[pageID] + (settings.paddingPerPage / 2);
-            
-            // If it just needs the standard padding per page
-            if ( width >= settings.panelWidth && width === settings.maxWidth ) {
-                leftOffset = settings.paddingPerPage;
-            } else if ( width < settings.panelWidth ) {
-                // if it's strictly smaller than the panel
-                leftOffset = parseInt((settings.panelWidth - width) / 2, 10);
-            } else {
-                // It's larger than the panel, but a non-standard width
-                leftOffset = ((settings.maxWidth + settings.paddingPerPage * 2) - width) / 2;
-            }
 
-            pageType = ( filename == 'blank' ) ? 'blank' : 'loaded';
-            content = [];
-            content.push('<div class="' + pageType + '-page" id="page-' + pageID + '" style="top: ' + heightFromTop + 'px; width:' + width + 'px; height: ' + height + 'px; left:' + leftOffset + 'px;">');
 
-            // Calculate the width and height of the outer tiles (the ones that may have weird dimensions)
-            lastHeight = height - (rows - 1) * settings.tileHeight;
-            lastWidth = width - (cols - 1) * settings.tileWidth;
-
-            // Now loop through the rows and columns
-            for ( row = 0; row < rows; row++ ) {
-                for ( col = 0; col < cols; col++ ) {
-                    var top = row * settings.tileHeight;
-                    var left = col * settings.tileWidth;
-                    tileHeight = ( row == rows - 1 ) ? lastHeight : settings.tileHeight; // If it's the LAST tile, calculate separately
-                    tileWidth = ( col == cols - 1 ) ? lastWidth : settings.tileWidth; // Otherwise, just set it to the default height/width
-                    imgSrc = ( filename == 'blank' ) ? 'blank.gif' : settings.iipServerBaseUrl + filename + '&amp;JTL=' + settings.zoomLevel + ',' + tileNumber;
-                    content.push('<div style="position: absolute; top: ' + top + 'px; left: ' + left + 'px; background-image: url(\'' + imgSrc + '\'); height: ' + tileHeight + 'px; width: ' + tileWidth + 'px;"></div>');
-                    tileNumber++;
+        var attemptPageShow = function(pageID) {
+            console.log("attempting to show page " + pageID);
+            // Is it in range and near the viewport?
+            if (inRange(pageID) && nearViewport(pageID)) {
+                // append the page to the document
+                appendPage(pageID);
+                if (pageID < settings.firstPageLoaded) {
+                    // Reset the first page loaded, recursively call this function
+                    settings.firstPageLoaded = pageID;
+                    attemptPageShow(settings.firstPageLoaded-1);
+                } else {
+                    // otherwise, this is the last page loaded (Scrolling down)
+                    settings.lastPageLoaded = pageID;
+                    attemptPageShow(settings.lastPageLoaded+1);
                 }
+            } else {
+                // Nothing to show
+                return;
             }
-            
-            content.push('</div>');
-            // Append the content
-            var contentString = content.join('');
-            pagesBuilder.push(contentString); 
         };
-        
-        // Pass it a page, it will determine if it needs to be loaded, and if so, load it
-        var loadPage = function(pageID) {
-            if ( nearViewport(pageID) ) {
-                if ( pageExists(pageID) && !pageLoaded(pageID) ) {
-                    // Currently a blank page, just change the background-image property and set it to loaded                   
-                    var imgSrc = settings.iipServerBaseUrl + settings.pages[pageID].fn + '&JTL=' + settings.zoomLevel + ',';
-                    var tileNumber = 0;
-                    // First change the class to loaded-page so we know that it's loaded
-                    $('#page-' + pageID).removeClass('blank-page').addClass('loaded-page');
-                    // This might be a major factor in the slow scrolling ... look into alternatives later
-                    $('#page-' + pageID).children('div').each(function() {
-                        $(this).css("background-image", "url(" + imgSrc + tileNumber + ")");
-                        tileNumber++;
-                    });
-                } else if ( !pageExists(pageID) ) {
-                    // Append the page, give it a loaded class
-                    appendPage(pageID, settings.pages[pageID].fn, settings.pages[pageID].r, settings.pages[pageID].c, settings.pages[pageID].w, settings.pages[pageID].h);
+
+        var attemptPageHide = function(pageID) {
+            console.log("attempting to hide page " + pageID);
+            console.log("in range: " + inRange(pageID) + " and near viewport: " + nearViewport(pageID));
+            if (inRange(pageID) && !nearViewport(pageID)) {
+                // Needs to be hidden. Delete it from the DOM
+                deletePage(pageID);
+                // reset firstpage/lastpage loaded
+                if (pageID === settings.firstPageLoaded) {
+                    settings.firstPageLoaded = settings.firstPageLoaded + 1;
+                    attemptPageHide(settings.firstPageLoaded);
+                } else {
+                    settings.lastPageLoaded = settings.lastPageLoaded - 1;
+                    attemptPageHide(settings.lastPageLoaded);
                 }
-                settings.latestPage = pageID;
-                // Only other possibility - page is already loaded, do nothing
-                // In any case, it was near the viewport, return 1
-                return 1;
             } else {
-                if ( !pageExists(pageID) ) {
-                    // append the blank page
-                    appendPage(pageID, 'blank', settings.pages[pageID].r, settings.pages[pageID].c, settings.pages[pageID].w, settings.pages[pageID].h);
-                }
-                // If the blank page already existed, do nothing, return 0
-                // In any case it was not near the viewport so return 0
-                return 0;
-            }   
+                // Nothing to hide
+                return;
+            }
+        };
+
+        var adjustPages = function(direction) {
+            // Direction is negative, so we're scrolling up
+            if (direction < 0) {
+                console.log("Scrolling up");
+                attemptPageShow(settings.firstPageLoaded-1);
+                attemptPageHide(settings.lastPageLoaded);
+            } else if (direction > 0) {
+                // Direction is positive so we're scrolling down
+                console.log("Scrolling down");
+                attemptPageHide(settings.firstPageLoaded);
+                attemptPageShow(settings.lastPageLoaded+1);
+            }
         };
         
         // Helper function called by ajaxRequest to scroll to the desired place
@@ -250,6 +292,7 @@ THE SOFTWARE.
                     
                     // pgs array stored in data.pgs - save it to settings.pages
                     settings.pages = data.pgs;
+                    settings.numPages = data.pgs.length;
                     
                     // Change the set zoom and other things (clean this up later)
                     settings.zoomLevel = zoomLevel;
@@ -259,21 +302,24 @@ THE SOFTWARE.
 
                     // Needed to set settings.heightAbovePages - initially just the top padding
                     var heightSoFar = 0;
+                    settings.firstPageLoaded = 0; // for now (before zooming etc is implemented)
 
+                    var i;
                     // Loop through them this way instead of the $.each way because we need the actual index
-                    for ( var i = 0; i < settings.pages.length; i++ ) {                 
+                    for ( i = 0; i < settings.numPages; i++ ) {                 
                         // First set the height above top for that page ... add this page height to the previous total
                         // Think of a page as including the padding ... so you get sent to 10px above the top or whatever
                         settings.heightAbovePages[i] = heightSoFar;
                         // Has to be done this way otherwise you get the height of the page included too ...
                         heightSoFar = settings.heightAbovePages[i] + settings.pages[i].h + settings.paddingPerPage;
 
-                        // Now try to load the page (it may or may not need to be loaded)
-                        loadPage(i);
+                        // Now try to load the page ONLY if the page needs to be loaded
+                        // Take scrolling into account later, just try this for now
+                        if (nearViewport(i)) {
+                            appendPage(i);
+                            settings.lastPageLoaded = i;
+                        }
                     }
-                    // Now done loading all the pages, push it to the dom
-                    $('#documentpanel').html(pagesBuilder.join(''));
-
                     // Set the offset stuff, scroll to the proper places
         
                     // Change the title to the actual title
@@ -285,8 +331,9 @@ THE SOFTWARE.
                     $('#documentpanel').css('width', widthToSet);
 
                     // Scroll to the proper place
-                    scrollAfterRequest();
-                    
+                    // scrollAfterRequest();
+                    // Figure out way to scroll before doing shit
+
                     // For use in the next ajax request (zoom change)
                     settings.dimBeforeZoom = settings.dimAfterZoom;
 
@@ -363,21 +410,7 @@ THE SOFTWARE.
         // Public function for handling scroll, pass it the ID of the thing
         var handleScroll = function() {
             settings.scrollSoFar = $('#outerdrag').scrollTop();
-            if ( settings.scrollSoFar > settings.prevVptTop ) {
-                var nextPage = settings.latestPage + 1;
-                
-                // The || condition is a bit of a hack to get goto page to work
-                while ( nextPage < settings.pages.length && ( loadPage(nextPage) || aboveViewport(nextPage) ) ) {
-                        nextPage = nextPage + 1;
-                }
-                setCurrentPage(1);
-            } else if ( settings.scrollSoFar < settings.prevVptTop ) {
-                var previousPage = settings.latestPage - 1;
-                while ( previousPage >= 0  && ( loadPage(previousPage) || belowViewport(previousPage) ) ) {
-                    previousPage = previousPage - 1;
-                }
-                setCurrentPage(-1);
-            }
+            adjustPages(settings.scrollSoFar - settings.prevVptTop);
             settings.prevVptTop = settings.scrollSoFar;
         };
         
