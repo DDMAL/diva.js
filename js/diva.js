@@ -79,13 +79,11 @@ THE SOFTWARE.
 
         // Checks if a page is within 100px of the viewport (called by pageLoad)
         var nearViewport = function(pageID) {
-            console.log("WHY IS PAGE " + pageID + " NEAR THE VIEWPORT?");
             var topOfPage = settings.heightAbovePages[pageID];
             var bottomOfPage = topOfPage + settings.pages[pageID].h;
             var panelHeight = settings.panelHeight;
             var topOfViewport = settings.scrollSoFar;
             var bottomOfViewport = topOfViewport + panelHeight;
-            console.log("this page: top is " + topOfPage + ", bottom: " + bottomOfPage);
            
             // Got rid of the +/- 100 thing maybe that will fix things
             if ( topOfPage > topOfViewport && topOfPage < bottomOfViewport  ) {
@@ -171,7 +169,7 @@ THE SOFTWARE.
         var deletePage = function(pageID) {
             console.log("deleting page " + pageID + " frmo the dom");
             if (isPageLoaded(pageID)) {
-                $('#page' + pageID).remove();
+                $('#page-' + pageID).remove();
             }
         };
 
