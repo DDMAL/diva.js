@@ -68,8 +68,21 @@ THE SOFTWARE.
             viewerXOffset: 0,           // distance between left edge of viewer and document left edge
             viewerYOffset: 0,            // ^ for top edges
             firstPageLoaded: -1,        // change these later (figure out default values)
-            lastPageLoaded: -1
+            lastPageLoaded: -1,
+            canScroll: false,         // If we're scrolling directly to a specific page
+            scrollDelay: 20             // Number of milliseconds for delaying
         };
+        
+        // Timeout helper functions ... to skip scroll events if too frequent
+        // 20 milliseconds between scroll events?
+        // Start the timer
+        var startTheTimer = function() {
+            var timeoutID = setTimeout(function() {
+                settings.canScroll = true;
+            }, settings.scrollDelay);
+        }
+        // After the timer, set canScroll to true
+        // After scrolling, set canScroll to false again
 
         // apply the defaults, or override them with passed in options.
         var settings = $.extend({}, defaults, options);
@@ -83,13 +96,13 @@ THE SOFTWARE.
             var bottomOfViewport = topOfViewport + panelHeight;
            
             // Got rid of the +/- 100 thing maybe that will fix things
-            if ( topOfPage > topOfViewport && topOfPage < bottomOfViewport  ) {
+            if ( topOfPage >= topOfViewport && topOfPage <= bottomOfViewport  ) {
                 // If top of page is in the viewport
                 return true;
-            } else if ( bottomOfPage > topOfViewport && bottomOfPage < bottomOfViewport ) {
+            } else if ( bottomOfPage >= topOfViewport && bottomOfPage <= bottomOfViewport ) {
                 // Same as above for the bottom of the page
                 return true;
-            } else if ( topOfPage < topOfViewport && bottomOfPage > bottomOfViewport ) {
+            } else if ( topOfPage <= topOfViewport && bottomOfPage >= bottomOfViewport ) {
                 // Top of page is above, bottom of page is below
                 return true;
             } else {
@@ -211,12 +224,14 @@ THE SOFTWARE.
                 if (inRange(pageID)) {
                     // If it's near the viewport, yes, add it
                     if (nearViewport(pageID)) {
+                        console.log("scrolling down and it's near the viewport");
                         appendPage(pageID);
                         // Reset the last page loaded to this one
                         settings.lastPageLoaded = pageID;
                         // Recursively call this function until there's nothing to add
                         attemptPageShow(settings.lastPageLoaded+1, direction);
                     } else if (aboveViewport(pageID)) {
+                        console.log("scrolling down and it's above the viewport");
                         // Otherwise, is it below the viewport?
                         // Do not increment last page loaded, that would be lying
                         // Attempt to call this on the next page
@@ -224,6 +239,7 @@ THE SOFTWARE.
                     }
                 } else {
                     // Nothing to do ... return
+                    console.log("not in range");
                     return;
                 }
             } else {
@@ -254,7 +270,7 @@ THE SOFTWARE.
             if (direction > 0) {
                 // Direction is positive - we're scrolling down
                 // Should we delete this page from the DOM?
-                if (inRange(pageID) && !nearViewport(pageID)) {
+                if (inRange(pageID) && aboveViewport(pageID)) {
                     // Yes, delete it, reset the first page loaded
                     deletePage(pageID);
                     settings.firstPageLoaded++;
@@ -266,7 +282,7 @@ THE SOFTWARE.
                 }
             } else {
                 // Direction must be negative (not 0, see adjustPages), we're scrolling up
-                if (inRange(pageID) && !nearViewport(pageID)) {
+                if (inRange(pageID) && belowViewport(pageID)) {
                     // Yes, delete it, reset the last page loaded
                     deletePage(pageID);
                     settings.lastPageLoaded--;
@@ -437,7 +453,8 @@ THE SOFTWARE.
         };
 
 
-        // Public function for handling scroll, pass it the ID of the thing
+        // Called by something in index.html
+        // Optional argument "direct" - when called by gotoPage
         var handleScroll = function() {
             settings.scrollSoFar = $('#outerdrag').scrollTop();
             adjustPages(settings.scrollSoFar - settings.prevVptTop);
@@ -456,13 +473,17 @@ THE SOFTWARE.
         
         // Private function for going to a page
         var gotoPage = function(pageNumber) {
-            // Since it starts indexing from 0, subtract 1 to behave as the user expects
-            // First make sure that the page number exists
-            if ( pageNumber >= 1 && pageNumber <= settings.pages.length ) {
-                var heightToScroll = settings.heightAbovePages[pageNumber-1];
-                $('#outerdrag').scrollTop(heightToScroll);
+            // Since we start indexing from 0, subtract 1 to behave as the user expects
+            pageNumber--;
+            // First make sure that the page number exists (i.e. is in range)
+            if ( inRange(pageNumber) ) {
+                var heightToScroll = settings.heightAbovePages[pageNumber];
                 // Change the "currently on page" thing
-                setCurrentPage(0, pageNumber - 1);
+                setCurrentPage(0, pageNumber);
+                $('#outerdrag').scrollTop(heightToScroll);
+
+                // Isn't working properly figure it out
+                // Now we have to actually load the page, and possible pages on both sides
                 return 1; // To signify that we can scroll to this page
             }
             return 0;
@@ -534,7 +555,12 @@ THE SOFTWARE.
             ajaxRequest(settings.zoomLevel); // with the default zoom level
             // Handle the scroll
             $(outerdrag).scroll(function() {
-                handleScroll();
+                /*startTheTimer(); // trying out timer stuff
+                if (settings.canScroll) {*/
+                    handleScroll();
+                /*}
+                settings.canScroll = false;*/
+                // timer not working work on it later
             });
             
             // Set drag scroll on first descendant of class dragger on both selected elements
