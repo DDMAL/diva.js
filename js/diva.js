@@ -70,14 +70,11 @@ THE SOFTWARE.
             firstPageLoaded: -1,        // change these later (figure out default values)
             lastPageLoaded: -1
         };
-        // Testing, trying to improve performance
-        // By only appending to the DOM once, and using a string builder (i.e. array)
-        var pagesBuilder = [];
 
         // apply the defaults, or override them with passed in options.
         var settings = $.extend({}, defaults, options);
 
-        // Checks if a page is within 100px of the viewport (called by pageLoad)
+        // Checks if a page is within the viewport (called by pageLoad)
         var nearViewport = function(pageID) {
             var topOfPage = settings.heightAbovePages[pageID];
             var bottomOfPage = topOfPage + settings.pages[pageID].h;
@@ -87,7 +84,7 @@ THE SOFTWARE.
            
             // Got rid of the +/- 100 thing maybe that will fix things
             if ( topOfPage > topOfViewport && topOfPage < bottomOfViewport  ) {
-                // If top of page is in the viewport (+/- 100 px) ... broken up for easier reading
+                // If top of page is in the viewport
                 return true;
             } else if ( bottomOfPage > topOfViewport && bottomOfPage < bottomOfViewport ) {
                 // Same as above for the bottom of the page
@@ -167,7 +164,7 @@ THE SOFTWARE.
         };
 
         var deletePage = function(pageID) {
-            console.log("deleting page " + pageID + " frmo the dom");
+            console.log("deleting page " + pageID + " from the dom");
             if (isPageLoaded(pageID)) {
                 $('#page-' + pageID).remove();
             }
@@ -182,45 +179,102 @@ THE SOFTWARE.
             }
         };
 
+        // Temporary private helper functions - move them later
+        var aboveViewport = function(pageID) {
+            // If the bottom of the page is above the top of viewport
+            // For when you want to keep looping but don't want to load a specific page
+            var bottomOfPage = settings.heightAbovePages[pageID] + settings.pages[pageID].h;
+            var topOfViewport = settings.scrollSoFar; 
+            if ( bottomOfPage < topOfViewport ) {
+                return true;
+            }
+            return false;
+        };
+        
+        // For scrolling up
+        var belowViewport = function(pageID) {
+            // If the top of the page is below the bottom of the viewport
+            var topOfPage = settings.heightAbovePages[pageID];
+            var bottomOfViewport = settings.scrollSoFar + settings.panelHeight;
+            if ( topOfPage > bottomOfViewport ) {
+                return true;
+            }
+            return false;
+        };
 
-        var attemptPageShow = function(pageID) {
+        var attemptPageShow = function(pageID, direction) {
             console.log("attempting to show page " + pageID);
-            // Is it in range and near the viewport?
-            if (inRange(pageID) && nearViewport(pageID)) {
-                // append the page to the document
-                appendPage(pageID);
-                if (pageID < settings.firstPageLoaded) {
-                    // Reset the first page loaded, recursively call this function
-                    settings.firstPageLoaded = pageID;
-                    attemptPageShow(settings.firstPageLoaded-1);
+
+            if (direction > 0) {
+                // Direction is positive - we're scrolling down
+                // Should we add this page to the DOM? First check if it's a valid page
+                if (inRange(pageID)) {
+                    // If it's near the viewport, yes, add it
+                    if (nearViewport(pageID)) {
+                        appendPage(pageID);
+                        // Reset the last page loaded to this one
+                        settings.lastPageLoaded = pageID;
+                        // Recursively call this function until there's nothing to add
+                        attemptPageShow(settings.lastPageLoaded+1, direction);
+                    } else if (aboveViewport(pageID)) {
+                        // Otherwise, is it below the viewport?
+                        // Do not increment last page loaded, that would be lying
+                        // Attempt to call this on the next page
+                        attemptPageShow(pageID + 1, direction);
+                    }
                 } else {
-                    // otherwise, this is the last page loaded (Scrolling down)
-                    settings.lastPageLoaded = pageID;
-                    attemptPageShow(settings.lastPageLoaded+1);
+                    // Nothing to do ... return
+                    return;
                 }
             } else {
-                // Nothing to show
-                return;
+                // Direction is negative - we're scrolling up
+                if (inRange(pageID)) {
+                    // If it's near the viewport, yes, add it
+                    if (nearViewport(pageID)) {
+                        appendPage(pageID);
+                        // Reset the first page loaded to this one
+                        settings.firstPageLoaded = pageID;
+                        // Recursively call this function until there's nothing to add
+                        attemptPageShow(settings.firstPageLoaded-1, direction);
+                    } else if (belowViewport(pageID)) {
+                        // Attempt to call this on the next page, do not increment anything
+                        attemptPageShow(pageID-1, direction);
+                    }
+                } else {
+                    // Nothing to do ... return
+                    return;
+                }
             }
         };
 
-        var attemptPageHide = function(pageID) {
+        var attemptPageHide = function(pageID, direction) {
             console.log("attempting to hide page " + pageID);
-            console.log("in range: " + inRange(pageID) + " and near viewport: " + nearViewport(pageID));
-            if (inRange(pageID) && !nearViewport(pageID)) {
-                // Needs to be hidden. Delete it from the DOM
-                deletePage(pageID);
-                // reset firstpage/lastpage loaded
-                if (pageID === settings.firstPageLoaded) {
-                    settings.firstPageLoaded = settings.firstPageLoaded + 1;
-                    attemptPageHide(settings.firstPageLoaded);
+            //console.log("in range: " + inRange(pageID) + " and near viewport: " + nearViewport(pageID));
+            
+            if (direction > 0) {
+                // Direction is positive - we're scrolling down
+                // Should we delete this page from the DOM?
+                if (inRange(pageID) && !nearViewport(pageID)) {
+                    // Yes, delete it, reset the first page loaded
+                    deletePage(pageID);
+                    settings.firstPageLoaded++;
+                    // Try to call this function recursively until there's nothing to delete
+                    attemptPageHide(settings.firstPageLoaded, direction);
                 } else {
-                    settings.lastPageLoaded = settings.lastPageLoaded - 1;
-                    attemptPageHide(settings.lastPageLoaded);
+                    // Nothing to delete - return
+                    return;
                 }
             } else {
-                // Nothing to hide
-                return;
+                // Direction must be negative (not 0, see adjustPages), we're scrolling up
+                if (inRange(pageID) && !nearViewport(pageID)) {
+                    // Yes, delete it, reset the last page loaded
+                    deletePage(pageID);
+                    settings.lastPageLoaded--;
+                    // Try to call this function recursively until there's nothing to delete
+                    attemptPageHide(settings.lastPageLoaded, direction);
+                } else {
+                    return;
+                }
             }
         };
 
@@ -228,13 +282,13 @@ THE SOFTWARE.
             // Direction is negative, so we're scrolling up
             if (direction < 0) {
                 console.log("Scrolling up");
-                attemptPageShow(settings.firstPageLoaded-1);
-                attemptPageHide(settings.lastPageLoaded);
+                attemptPageShow(settings.firstPageLoaded-1, direction);
+                attemptPageHide(settings.lastPageLoaded, direction);
             } else if (direction > 0) {
                 // Direction is positive so we're scrolling down
                 console.log("Scrolling down");
-                attemptPageHide(settings.firstPageLoaded);
-                attemptPageShow(settings.lastPageLoaded+1);
+                attemptPageHide(settings.firstPageLoaded, direction);
+                attemptPageShow(settings.lastPageLoaded+1, direction);
             }
         };
         
@@ -340,28 +394,6 @@ THE SOFTWARE.
         };
         
         
-        // Temporary private helper functions - move them later
-        var aboveViewport = function(pageID) {
-            // If the bottom of the page is above the top of viewport
-            // For when you want to keep looping but don't want to load a specific page
-            var bottomOfPage = settings.heightAbovePages[pageID] + settings.pages[pageID].h;
-            var topOfViewport = $('#outerdrag').scrollTop();
-            if ( bottomOfPage < topOfViewport ) {
-                return true;
-            }
-            return false;
-        };
-        
-        // For scrolling up
-        var belowViewport = function(pageID) {
-            // If the top of the page is below the bottom of the viewport
-            var topOfPage = settings.heightAbovePages[pageID];
-            var bottomOfViewport = $('#outerdrag').scrollTop() + settings.panelHeight;
-            if ( topOfPage > bottomOfViewport ) {
-                return true;
-            }
-            return false;
-        };
 
         // Determines and sets the "current page" (settings.pageLoadedId); called within handleScroll
         var setCurrentPage = function(direction, page) {
