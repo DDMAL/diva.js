@@ -73,6 +73,7 @@ THE SOFTWARE.
             scrollDelay: 20             // Number of milliseconds for delaying
         };
         
+        /* not working right now 
         // Timeout helper functions ... to skip scroll events if too frequent
         // 20 milliseconds between scroll events?
         // Start the timer
@@ -83,6 +84,7 @@ THE SOFTWARE.
         }
         // After the timer, set canScroll to true
         // After scrolling, set canScroll to false again
+        */
 
         // apply the defaults, or override them with passed in options.
         var settings = $.extend({}, defaults, options);
@@ -139,7 +141,7 @@ THE SOFTWARE.
                 var heightFromTop = settings.heightAbovePages[pageID] + (settings.paddingPerPage / 2);
 
                 // If it's the max width:
-                if (width == settings.maxWidth) {
+                if (width === settings.maxWidth) {
                     // If it's larger than the panel (or almost), we use the standard padding per page
                     if (width >= settings.panelWidth - 2 * settings.paddingPerPage) {
                         leftOffset = settings.paddingPagePage;
@@ -174,8 +176,8 @@ THE SOFTWARE.
                     for ( col = 0; col < cols; col++ ) {
                         var top = row * settings.tileHeight;
                         var left = col * settings.tileWidth;
-                        tileHeight = ( row == rows - 1 ) ? lastHeight : settings.tileHeight; // If it's the LAST tile, calculate separately
-                        tileWidth = ( col == cols - 1 ) ? lastWidth : settings.tileWidth; // Otherwise, just set it to the default height/width
+                        tileHeight = ( row === rows - 1 ) ? lastHeight : settings.tileHeight; // If it's the LAST tile, calculate separately
+                        tileWidth = ( col === cols - 1 ) ? lastWidth : settings.tileWidth; // Otherwise, just set it to the default height/width
                         imgSrc = settings.iipServerBaseUrl + filename + '&amp;JTL=' + settings.zoomLevel + ',' + tileNumber;
                         content.push('<div style="position: absolute; top: ' + top + 'px; left: ' + left + 'px; background-image: url(\'' + imgSrc + '\'); height: ' + tileHeight + 'px; width: ' + tileWidth + 'px;"></div>');
                         tileNumber++;
@@ -240,6 +242,7 @@ THE SOFTWARE.
                     if (nearViewport(pageID)) {
                         //console.log("scrolling down and it's near the viewport");
                         appendPage(pageID);
+                        setCurrentPage(1, pageID);
                         // Reset the last page loaded to this one
                         settings.lastPageLoaded = pageID;
                         // Recursively call this function until there's nothing to add
@@ -262,6 +265,7 @@ THE SOFTWARE.
                     // If it's near the viewport, yes, add it
                     if (nearViewport(pageID)) {
                         appendPage(pageID);
+                        setCurrentPage(-1, pageID);
                         // Reset the first page loaded to this one
                         settings.firstPageLoaded = pageID;
                         // Recursively call this function until there's nothing to add
@@ -425,9 +429,10 @@ THE SOFTWARE.
         
         
 
-        // Determines and sets the "current page" (settings.pageLoadedId); called within handleScroll
+        // Determines and sets the "current page" (settings.pageLoadedId); called within adjustPages 
         var setCurrentPage = function(direction, page) {
             // direction can be 0, 1 or -1 ... 1 for down, -1 for up, 0 for bypassing, going to a specific page
+            //console.log('direction is ' + direction + ' and the page is ' + page);
             var currentPage = settings.pageLoadedId;
             var pageToConsider = settings.pageLoadedId + parseInt(direction, 10);
             var middleOfViewport = settings.scrollSoFar + (settings.panelHeight / 2);
@@ -461,7 +466,7 @@ THE SOFTWARE.
                 // Now try to change the next page, given that we're not going to a specific page
                 // Calls itself recursively - this way we accurately obtain the current page
                 if ( direction !== 0 ) {
-                    setCurrentPage(direction);
+                    setCurrentPage(direction, page);
                 }
             }
         };
@@ -507,13 +512,13 @@ THE SOFTWARE.
         var handleDoubleClick = function(event, viewer) {
                 // If the zoom level is already at max, zoom out
                 var newZoomLevel;
-                if (settings.zoomLevel == settings.maxZoomLevel) {
+                if (settings.zoomLevel === settings.maxZoomLevel) {
                     if (event.altKey === true) {
                         newZoomLevel = settings.zoomLevel - 1;
                     } else {
                         return;
                     }
-                } else if (settings.zoomLevel == settings.minZoomLevel) {
+                } else if (settings.zoomLevel === settings.minZoomLevel) {
                     if (event.altKey === true) {
                         return;
                     } else {
