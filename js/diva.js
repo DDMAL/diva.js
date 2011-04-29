@@ -114,7 +114,7 @@ THE SOFTWARE.
         // Private helper function for determining if a page has been loaded yet or not (i.e. has images)
         var isPageLoaded = function(pageID) {
             var thisID = '#page-' + pageID;
-            console.log('checking if page ' + pageID + ' is loaded');
+            //console.log('checking if page ' + pageID + ' is loaded');
             if ($(thisID).length === 0) {
                 return false;
             } else {
@@ -124,7 +124,7 @@ THE SOFTWARE.
         
         // Appends the page directly into the document body
         var appendPage = function(pageID) {
-            console.log('appending page ' + pageID + ' to the dom');
+            //console.log('appending page ' + pageID + ' to the dom');
 
             if (!isPageLoaded(pageID)) {
                 var filename = settings.pages[pageID].fn;
@@ -191,7 +191,7 @@ THE SOFTWARE.
         };
 
         var deletePage = function(pageID) {
-            console.log("deleting page " + pageID + " from the dom");
+            //console.log("deleting page " + pageID + " from the dom");
             if (isPageLoaded(pageID)) {
                 $('#page-' + pageID).remove();
             }
@@ -230,7 +230,7 @@ THE SOFTWARE.
         };
 
         var attemptPageShow = function(pageID, direction) {
-            console.log("attempting to show page " + pageID);
+            //console.log("attempting to show page " + pageID);
 
             if (direction > 0) {
                 // Direction is positive - we're scrolling down
@@ -238,14 +238,14 @@ THE SOFTWARE.
                 if (inRange(pageID)) {
                     // If it's near the viewport, yes, add it
                     if (nearViewport(pageID)) {
-                        console.log("scrolling down and it's near the viewport");
+                        //console.log("scrolling down and it's near the viewport");
                         appendPage(pageID);
                         // Reset the last page loaded to this one
                         settings.lastPageLoaded = pageID;
                         // Recursively call this function until there's nothing to add
                         attemptPageShow(settings.lastPageLoaded+1, direction);
                     } else if (aboveViewport(pageID)) {
-                        console.log("scrolling down and it's above the viewport");
+                        //console.log("scrolling down and it's above the viewport");
                         // Otherwise, is it below the viewport?
                         // Do not increment last page loaded, that would be lying
                         // Attempt to call this on the next page
@@ -253,7 +253,7 @@ THE SOFTWARE.
                     }
                 } else {
                     // Nothing to do ... return
-                    console.log("not in range");
+                    //console.log("not in range");
                     return;
                 }
             } else {
@@ -278,7 +278,7 @@ THE SOFTWARE.
         };
 
         var attemptPageHide = function(pageID, direction) {
-            console.log("attempting to hide page " + pageID);
+            //console.log("attempting to hide page " + pageID);
             //console.log("in range: " + inRange(pageID) + " and near viewport: " + nearViewport(pageID));
             
             if (direction > 0) {
@@ -311,12 +311,12 @@ THE SOFTWARE.
         var adjustPages = function(direction) {
             // Direction is negative, so we're scrolling up
             if (direction < 0) {
-                console.log("Scrolling up");
+                //console.log("Scrolling up");
                 attemptPageShow(settings.firstPageLoaded-1, direction);
                 attemptPageHide(settings.lastPageLoaded, direction);
             } else if (direction > 0) {
                 // Direction is positive so we're scrolling down
-                console.log("Scrolling down");
+                //console.log("Scrolling down");
                 attemptPageHide(settings.firstPageLoaded, direction);
                 attemptPageShow(settings.lastPageLoaded+1, direction);
             }
