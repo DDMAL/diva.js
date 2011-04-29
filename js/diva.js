@@ -342,9 +342,9 @@ THE SOFTWARE.
         // AJAX request to start the whole process - called upon page load and upon zoom change
         var ajaxRequest = function(zoomLevel) {
             $.ajax({
-                //url: settings.backendServer + zoomLevel + '/',
-                // commented out for debugging
-                url: 'http://petrucci.musiclibs.net:9002/json.html',
+                // Works now - using proxy_pass for nginx to forward to the other port
+                url: settings.backendServer + zoomLevel + '/',
+                //url: 'http://petrucci.musiclibs.net:9002/json.html',
                 cache: false, // debugging
                 context: this, // for later
                 dataType: "json",
