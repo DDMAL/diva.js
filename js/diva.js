@@ -24,24 +24,15 @@ THE SOFTWARE.
 (function( $ ) {
     var Diva = function(element, options) {
         var defaults =  {
-            itemOrientation: 0,         // Either "h" (horizontal) or "v" (vertical)
+            //itemOrientation: 0,         // Either "h" (horizontal) or "v" (vertical) - currently unused
             pages: [],                  // an array of all the pages in the item. Can be quite large.
             heightAbovePages: [],       // The heights above the pages
             numPages: 0,             // Number of pages in the array 
             pageLoadedId: 0,           // The current page in the viewport. Usually set to the center-most page.
-            scrollLoadedId: -1,         // ??
-            scrollTrigger: false,       // ??
-            itemXOffset: 0,          // the x-offset for the item in the viewport
-            itemYOffset: 0,          // the y-offset for the item in the viewport
-            itemLength: null,           // the full length of the item (large if vertical, small if horiz.)
-            itemWidth: null,            // opposite itemLength.
-            itemHeight: null,           // ??
-            centerline: null,           // ??
             tileHeight: 256,            // Same width and height for tiles for every page in this item
             tileWidth: 256,             // ^
             maxWidth: 0,                // The width of the largest page
             maxHeight: 0,               // the height of the largest page
-            viewport: [],               // Coordinates of the moving viewport
             prevVptTop: 0,           // used to determine vert. scroll direction
             zoomLevel: 2,               // current zoom level. (initial zoom level)
             containerEl: null,          // the container element id.
