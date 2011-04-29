@@ -1,6 +1,8 @@
 WHAT IS THIS?
 -------------
-Diva (Document Image Viewer with AJAX(?)) is a javascript frontend for viewing documents, originally created for the purpose of viewing large scanned musical documents using one's web browser. It uses the jQuery Javascript library, along with one jQuery plugin and the jQuery UI. This package also includes instructions on how to get the backend set up, which consists of an IIPImage server to serve the images, and a Django app to serve data regarding the images (a PHP alternative will be provided for those unable to run Django).
+Diva.js (Document Image Viewer with AJAX) is a Javascript frontend for viewing documents, designed to work with digital libraries to present multi-page documents as a single, continuous item. Only the pages that are being viewed at any given time are actually shown to the user, with the rest appended as necessary, ensuring efficient memory usage and high loading speeds. It uses the jQuery Javascript library, along with one jQuery plugin and the jQuery UI. This package also includes instructions on how to get the backend set up, which consists of an IIPImage server to serve the images, and either a Django app or a PHP script to serve the image data.
+
+For more information, including installation instructions, code documentation, and usage tips, see the [wiki](diva.js/wiki).
 
 USAGE INSTRUCTIONS
 ------------------
