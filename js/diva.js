@@ -132,22 +132,36 @@ THE SOFTWARE.
                 var cols = settings.pages[pageID].c;
                 var width = settings.pages[pageID].w;
                 var height = settings.pages[pageID].h;
-                var leftOffset;
+                var leftOffset, widthToUse;
                 var content = [];
                 var lastHeight, lastWidth, row, col, tileHeight, tileWidth, imgSrc;
                 var tileNumber = 0;
                 var heightFromTop = settings.heightAbovePages[pageID] + (settings.paddingPerPage / 2);
-            
-                // If it just needs the standard padding per page
-                if ( width >= settings.panelWidth && width === settings.maxWidth ) {
-                    leftOffset = settings.paddingPerPage;
-                } else if ( width < settings.panelWidth ) {
-                    // if it's strictly smaller than the panel
-                    leftOffset = parseInt((settings.panelWidth - width) / 2, 10);
+
+                // If it's the max width:
+                if (width == settings.maxWidth) {
+                    // If it's larger than the panel (or almost), we use the standard padding per page
+                    if (width >= settings.panelWidth - 2 * settings.paddingPerPage) {
+                        leftOffset = settings.paddingPagePage;
+                    } else {
+                        leftOffset = (settings.panelWidth - width) / 2;
+                    }
                 } else {
-                    // It's larger than the panel, but a non-standard width
-                    leftOffset = ((settings.maxWidth + settings.paddingPerPage * 2) - width) / 2;
+                    // Smaller than the max width
+                    widthToUse = (settings.maxWidth > settings.panelWidth) ? settings.maxWidth + 2 * settings.paddingPerPage : settings.panelWidth;
+                    leftOffset = (widthToUse - width) / 2;
                 }
+
+                /* 
+                If it's the max width:
+                    -if it's larger than the panel, then use standard padding per page
+                    -if it's smaller than the panel - 2*paddingPerPage, use:
+                        (panelWidth - width) / 2
+                If it's smaller than the max width:
+                    -then take the max of the maxWidth and the panelWidth
+                        -and use that to get the padding
+                 
+                */
 
                 content.push('<div id="page-' + pageID + '" style="top: ' + heightFromTop + 'px; width:' + width + 'px; height: ' + height + 'px; left:' + leftOffset + 'px;">');
 
@@ -399,7 +413,7 @@ THE SOFTWARE.
                     $('#documentpanel').css('width', widthToSet);
 
                     // Scroll to the proper place
-                    // scrollAfterRequest();
+                    scrollAfterRequest();
                     // Figure out way to scroll before doing shit
 
                     // For use in the next ajax request (zoom change)
