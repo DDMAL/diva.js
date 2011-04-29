@@ -11,7 +11,7 @@ For more information, including installation instructions, code documentation, a
 Roadmap/To-do list
 ------------------
 
-*Orientation (horizontal/vertical)
-*Better handling of interpage padding
-*Timer for skipping scroll events when too frequent
-*Go-to page function - should be faster
+*   Orientation (horizontal/vertical)
+*   Better handling of interpage padding
+*   Timer for skipping scroll events when too frequent
+*   Go-to page function - should be faster
