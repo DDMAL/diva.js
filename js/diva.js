@@ -45,7 +45,7 @@ THE SOFTWARE.
             dimBeforeZoom: 0,           // used for storing the item dimensions before zooming.
             dimAfterZoom: 0,            // used for storing the item dimensions after zooming
             minZoomLevel: 0,
-            maxZoomLevel: 5,            // used in conjunction with IIP server. Default is 5 levels of zoom.
+            maxZoomLevel: 4,            // used in conjunction with IIP server. Default is 5 levels of zoom.
             isZoomCall: false,          // set to "true" if a zoom change request is detected
             isOrientationChange: false, // set to "true" if an orienation change request is detected.
             scrollSoFar: 0,             // How much the user has scrolled so far - replace later
