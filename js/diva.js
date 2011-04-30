@@ -64,23 +64,10 @@ THE SOFTWARE.
             scrollDelay: 20             // Number of milliseconds for delaying
         };
         
-        /* not working right now 
-        // Timeout helper functions ... to skip scroll events if too frequent
-        // 20 milliseconds between scroll events?
-        // Start the timer
-        var startTheTimer = function() {
-            var timeoutID = setTimeout(function() {
-                settings.canScroll = true;
-            }, settings.scrollDelay);
-        }
-        // After the timer, set canScroll to true
-        // After scrolling, set canScroll to false again
-        */
-
         // apply the defaults, or override them with passed in options.
         var settings = $.extend({}, defaults, options);
 
-        // Checks if a page is within the viewport (called by pageLoad)
+        // Checks if a page is within the viewport
         var nearViewport = function(pageID) {
             var topOfPage = settings.heightAbovePages[pageID];
             var bottomOfPage = topOfPage + settings.pages[pageID].h;
@@ -88,7 +75,6 @@ THE SOFTWARE.
             var topOfViewport = settings.scrollSoFar;
             var bottomOfViewport = topOfViewport + panelHeight;
            
-            // Got rid of the +/- 100 thing maybe that will fix things
             if ( topOfPage >= topOfViewport && topOfPage <= bottomOfViewport  ) {
                 // If top of page is in the viewport
                 return true;
@@ -104,10 +90,12 @@ THE SOFTWARE.
             }
         };
         
-        // Private helper function for determining if a page has been loaded yet or not (i.e. has images)
+        // Check if a page has been loaded (i.e. is visible to the user) 
         var isPageLoaded = function(pageID) {
             var thisID = '#page-' + pageID;
-            //console.log('checking if page ' + pageID + ' is loaded');
+
+            // Done using the length attribute in jQuery
+            // If and only if the div does not exist, its length will be 0
             if ($(thisID).length === 0) {
                 return false;
             } else {
@@ -117,8 +105,8 @@ THE SOFTWARE.
         
         // Appends the page directly into the document body
         var appendPage = function(pageID) {
-            //console.log('appending page ' + pageID + ' to the dom');
 
+            // Only try to append the page if the page has not already been loaded
             if (!isPageLoaded(pageID)) {
                 var filename = settings.pages[pageID].fn;
                 var rows = settings.pages[pageID].r;
@@ -126,6 +114,7 @@ THE SOFTWARE.
                 var width = settings.pages[pageID].w;
                 var height = settings.pages[pageID].h;
                 var leftOffset, widthToUse;
+                // Use an array as a string builder - faster than str concatentation
                 var content = [];
                 var lastHeight, lastWidth, row, col, tileHeight, tileWidth, imgSrc;
                 var tileNumber = 0;
@@ -144,17 +133,6 @@ THE SOFTWARE.
                     widthToUse = (settings.maxWidth > settings.panelWidth) ? settings.maxWidth + 2 * settings.paddingPerPage : settings.panelWidth;
                     leftOffset = (widthToUse - width) / 2;
                 }
-
-                /* 
-                If it's the max width:
-                    -if it's larger than the panel, then use standard padding per page
-                    -if it's smaller than the panel - 2*paddingPerPage, use:
-                        (panelWidth - width) / 2
-                If it's smaller than the max width:
-                    -then take the max of the maxWidth and the panelWidth
-                        -and use that to get the padding
-                 
-                */
 
                 content.push('<div id="page-' + pageID + '" style="top: ' + heightFromTop + 'px; width:' + width + 'px; height: ' + height + 'px; left:' + leftOffset + 'px;">');
 
@@ -176,7 +154,7 @@ THE SOFTWARE.
                 }
             
                 content.push('</div>');
-                // Append the content
+                // Build the content string 
                 var contentString = content.join('');
                 // Just append it straight to the document
                 $('#documentpanel').append(contentString);
@@ -184,7 +162,6 @@ THE SOFTWARE.
         };
 
         var deletePage = function(pageID) {
-            //console.log("deleting page " + pageID + " from the dom");
             if (isPageLoaded(pageID)) {
                 $('#page-' + pageID).remove();
             }
@@ -222,16 +199,54 @@ THE SOFTWARE.
             return false;
         };
 
-        var attemptPageShow = function(pageID, direction) {
-            //console.log("attempting to show page " + pageID);
+        // Determines and sets the "current page" (settings.pageLoadedId); called within adjustPages 
+        var setCurrentPage = function(direction, page) {
+            // direction can be 0, 1 or -1 ... 1 for down, -1 for up, 0 for bypassing, going to a specific page
+            var currentPage = settings.pageLoadedId;
+            var pageToConsider = settings.pageLoadedId + parseInt(direction, 10);
+            var middleOfViewport = settings.scrollSoFar + (settings.panelHeight / 2);
+            var changeCurrentPage = false;
+            
+            // When scrolling up:
+            if ( direction < 0 ) {
+                // If the current pageTop is below the middle of the viewport
+                // Or the previous pageTop is below the top of the viewport
+                if ( pageToConsider >= 0 && (settings.heightAbovePages[currentPage] >= middleOfViewport || settings.heightAbovePages[pageToConsider] >= settings.scrollSoFar) ) {
+                    changeCurrentPage = true;
+                }
+            } else if ( direction > 0) {
+                // When scrolling down:
+                // If the current pageTop is above the top and the current page isn't the last page
+                if ( settings.heightAbovePages[currentPage] < settings.scrollSoFar && pageToConsider < settings.pages.length ) {
+                    changeCurrentPage = true;
+                }
+            } else {
+                // Just go straight to a certain page (for the goto function)
+                changeCurrentPage = true;
+                pageToConsider = page;
+            }
 
+            if ( changeCurrentPage ) {
+                // Set this to the current page
+                settings.pageLoadedId = pageToConsider;
+                // Change the text to reflect this - pageToConsider + 1 (becuase it's page number not ID)
+                $('#currentpage span').text(pageToConsider + 1);
+                
+                // Now try to change the next page, given that we're not going to a specific page
+                // Calls itself recursively - this way we accurately obtain the current page
+                if ( direction !== 0 ) {
+                    setCurrentPage(direction, page);
+                }
+            }
+        };
+
+        var attemptPageShow = function(pageID, direction) {
             if (direction > 0) {
                 // Direction is positive - we're scrolling down
                 // Should we add this page to the DOM? First check if it's a valid page
                 if (inRange(pageID)) {
                     // If it's near the viewport, yes, add it
                     if (nearViewport(pageID)) {
-                        //console.log("scrolling down and it's near the viewport");
                         appendPage(pageID);
                         setCurrentPage(1, pageID);
                         // Reset the last page loaded to this one
@@ -239,7 +254,6 @@ THE SOFTWARE.
                         // Recursively call this function until there's nothing to add
                         attemptPageShow(settings.lastPageLoaded+1, direction);
                     } else if (aboveViewport(pageID)) {
-                        //console.log("scrolling down and it's above the viewport");
                         // Otherwise, is it below the viewport?
                         // Do not increment last page loaded, that would be lying
                         // Attempt to call this on the next page
@@ -247,7 +261,6 @@ THE SOFTWARE.
                     }
                 } else {
                     // Nothing to do ... return
-                    //console.log("not in range");
                     return;
                 }
             } else {
@@ -273,9 +286,6 @@ THE SOFTWARE.
         };
 
         var attemptPageHide = function(pageID, direction) {
-            //console.log("attempting to hide page " + pageID);
-            //console.log("in range: " + inRange(pageID) + " and near viewport: " + nearViewport(pageID));
-            
             if (direction > 0) {
                 // Direction is positive - we're scrolling down
                 // Should we delete this page from the DOM?
@@ -306,12 +316,10 @@ THE SOFTWARE.
         var adjustPages = function(direction) {
             // Direction is negative, so we're scrolling up
             if (direction < 0) {
-                //console.log("Scrolling up");
                 attemptPageShow(settings.firstPageLoaded-1, direction);
                 attemptPageHide(settings.lastPageLoaded, direction);
             } else if (direction > 0) {
                 // Direction is positive so we're scrolling down
-                //console.log("Scrolling down");
                 attemptPageHide(settings.firstPageLoaded, direction);
                 attemptPageShow(settings.lastPageLoaded+1, direction);
             }
@@ -420,47 +428,6 @@ THE SOFTWARE.
         
         
 
-        // Determines and sets the "current page" (settings.pageLoadedId); called within adjustPages 
-        var setCurrentPage = function(direction, page) {
-            // direction can be 0, 1 or -1 ... 1 for down, -1 for up, 0 for bypassing, going to a specific page
-            //console.log('direction is ' + direction + ' and the page is ' + page);
-            var currentPage = settings.pageLoadedId;
-            var pageToConsider = settings.pageLoadedId + parseInt(direction, 10);
-            var middleOfViewport = settings.scrollSoFar + (settings.panelHeight / 2);
-            var changeCurrentPage = false;
-            
-            // When scrolling up:
-            if ( direction < 0 ) {
-                // If the current pageTop is below the middle of the viewport
-                // Or the previous pageTop is below the top of the viewport
-                if ( pageToConsider >= 0 && (settings.heightAbovePages[currentPage] >= middleOfViewport || settings.heightAbovePages[pageToConsider] >= settings.scrollSoFar) ) {
-                    changeCurrentPage = true;
-                }
-            } else if ( direction > 0) {
-                // When scrolling down:
-                // If the current pageTop is above the top and the current page isn't the last page
-                if ( settings.heightAbovePages[currentPage] < settings.scrollSoFar && pageToConsider < settings.pages.length ) {
-                    changeCurrentPage = true;
-                }
-            } else {
-                // Just go straight to a certain page (for the goto function)
-                changeCurrentPage = true;
-                pageToConsider = page;
-            }
-
-            if ( changeCurrentPage ) {
-                // Set this to the current page
-                settings.pageLoadedId = pageToConsider;
-                // Change the text to reflect this - pageToConsider + 1 (becuase it's page number not ID)
-                $('#currentpage span').text(pageToConsider + 1);
-                
-                // Now try to change the next page, given that we're not going to a specific page
-                // Calls itself recursively - this way we accurately obtain the current page
-                if ( direction !== 0 ) {
-                    setCurrentPage(direction, page);
-                }
-            }
-        };
 
 
         // Called by something in index.html
