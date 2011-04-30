@@ -124,7 +124,7 @@ THE SOFTWARE.
                 if (width === settings.maxWidth) {
                     // If it's larger than the panel (or almost), we use the standard padding per page
                     if (width >= settings.panelWidth - 2 * settings.paddingPerPage) {
-                        leftOffset = settings.paddingPagePage;
+                        leftOffset = settings.paddingPerPage;
                     } else {
                         leftOffset = (settings.panelWidth - width) / 2;
                     }
