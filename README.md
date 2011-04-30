@@ -13,5 +13,8 @@ Roadmap/To-do list
 
 *   Orientation (horizontal/vertical)
 *   Better handling of interpage padding
+    *   Currently too much being added to the bottom?
+    *   Or the total height is not being calculated correctly
 *   Timer for skipping scroll events when too frequent
 *   Go-to page function - should be faster
+*   setCurrentPage is behaving oddly around pages 1/2 sometimes ... figure out why

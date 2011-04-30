@@ -118,7 +118,7 @@ THE SOFTWARE.
                 var content = [];
                 var lastHeight, lastWidth, row, col, tileHeight, tileWidth, imgSrc;
                 var tileNumber = 0;
-                var heightFromTop = settings.heightAbovePages[pageID] + (settings.paddingPerPage / 2);
+                var heightFromTop = settings.heightAbovePages[pageID] + settings.paddingPerPage;
 
                 // If it's the max width:
                 if (width === settings.maxWidth) {
@@ -370,14 +370,13 @@ THE SOFTWARE.
                     $('#outerdrag').scrollTop(0);
                     // Clear 
                     $('#documentpanel').text('');                   
-                    
-                    // Reapply all the settings? Or just most of them? Figure out later
-                    settings.totalHeight = data.dims.t_hei + settings.paddingPerPage * data.pgs.length;
-                    // Could make settings.numPages = settings.pages.length but is there any points ...
-                    
+
                     // pgs array stored in data.pgs - save it to settings.pages
                     settings.pages = data.pgs;
                     settings.numPages = data.pgs.length;
+                    
+                    // Reapply all the settings? Or just most of them? Figure out later
+                    settings.totalHeight = data.dims.t_hei + settings.paddingPerPage * settings.numPages; 
                     
                     // Change the set zoom and other things (clean this up later)
                     settings.zoomLevel = zoomLevel;
