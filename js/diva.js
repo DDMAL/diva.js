@@ -200,7 +200,7 @@ THE SOFTWARE.
         };
 
         // Determines and sets the "current page" (settings.pageLoadedId); called within adjustPages 
-        var setCurrentPage = function(direction, page) {
+        var setCurrentPage = function(direction, pageID) {
             // direction can be 0, 1 or -1 ... 1 for down, -1 for up, 0 for bypassing, going to a specific page
             var currentPage = settings.pageLoadedId;
             var pageToConsider = settings.pageLoadedId + parseInt(direction, 10);
@@ -223,7 +223,7 @@ THE SOFTWARE.
             } else {
                 // Just go straight to a certain page (for the goto function)
                 changeCurrentPage = true;
-                pageToConsider = page;
+                pageToConsider = pageID;
             }
 
             if ( changeCurrentPage ) {
@@ -235,7 +235,7 @@ THE SOFTWARE.
                 // Now try to change the next page, given that we're not going to a specific page
                 // Calls itself recursively - this way we accurately obtain the current page
                 if ( direction !== 0 ) {
-                    setCurrentPage(direction, page);
+                    setCurrentPage(direction);
                 }
             }
         };
@@ -248,7 +248,7 @@ THE SOFTWARE.
                     // If it's near the viewport, yes, add it
                     if (nearViewport(pageID)) {
                         appendPage(pageID);
-                        setCurrentPage(1, pageID);
+                        setCurrentPage(1);
                         // Reset the last page loaded to this one
                         settings.lastPageLoaded = pageID;
                         // Recursively call this function until there's nothing to add
@@ -269,7 +269,7 @@ THE SOFTWARE.
                     // If it's near the viewport, yes, add it
                     if (nearViewport(pageID)) {
                         appendPage(pageID);
-                        setCurrentPage(-1, pageID);
+                        setCurrentPage(-1);
                         // Reset the first page loaded to this one
                         settings.firstPageLoaded = pageID;
                         // Recursively call this function until there's nothing to add
