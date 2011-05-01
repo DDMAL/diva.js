@@ -39,7 +39,10 @@ div[id^="page"] {
     -webkit-box-shadow: 0px 5px 10px rgba(0,0,0, .5);
     -moz-box-shadow: 0px 5px 3px rgba(0, 0, 0, 0.5);
     box-shadow: 0px 5px 3px rgba(0, 0, 0, 0.5);
-    
+    /* Loading image, in the center of the page */
+    background-image: url('../img/loading.gif');
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 #zoomer {
