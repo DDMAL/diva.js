@@ -53,7 +53,7 @@ THE SOFTWARE.
             doubleClick: false,         // If the zoom has been triggered by a double-click event
             firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
             heightAbovePages: [],       // The height above each page
-            horizontalOffset: 0,        // ^
+            horizontalOffset: 0,        // Used for storing the page offset before zooming
             lastPageLoaded: -1,         // The ID of the last page loaded (value set later)
             maxHeight: 0,               // The height of the tallest page
             maxWidth: 0,                // The width of the widest page
@@ -387,7 +387,7 @@ THE SOFTWARE.
                     settings.zoomLevel = zoomLevel;
                     settings.maxWidth = data.dims.mx_w;
                     settings.maxHeight = data.dims.mx_h;
-                    settings.dimAfterZoom = data.dims.t_hei + data.pgs.length * settings.paddingPerPage;
+                    settings.dimAfterZoom = settings.totalHeight; 
 
                     // Needed to set settings.heightAbovePages - initially just the top padding
                     var heightSoFar = 0;
