@@ -23,49 +23,54 @@ THE SOFTWARE.
 // this pattern was taken from http://www.virgentech.com/blog/2009/10/building-object-oriented-jquery-plugin.html
 (function( $ ) {
     var Diva = function(element, options) {
+        // These are elements that can be overridden upon instantiation
         var defaults =  {
             //itemOrientation: 0,         // Either "h" (horizontal) or "v" (vertical) - currently unused
-            pages: [],                  // an array of all the pages in the item. Can be quite large.
-            heightAbovePages: [],       // The heights above the pages
-            numPages: 0,             // Number of pages in the array 
-            pageLoadedId: 0,           // The current page in the viewport. Usually set to the center-most page.
             tileHeight: 256,            // Same width and height for tiles for every page in this item
             tileWidth: 256,             // ^
-            maxWidth: 0,                // The width of the largest page
-            maxHeight: 0,               // the height of the largest page
-            prevVptTop: 0,           // used to determine vert. scroll direction
             zoomLevel: 2,               // current zoom level. (initial zoom level)
             containerEl: null,          // the container element id.
             itemEl: null,               // the item element id
-            panelWidth: parseInt($('#outerdrag').width(), 10) - 20,          // the panel width
-            panelHeight: parseInt($('#outerdrag').height(), 10),             // panel height
-            prevZoomLevel: 0,           // previous zoom level (change this later?)
-            verticalOffset: 0,          // used for storing the page offset before zooming
-            horizontalOffset: 0,        // ^
             dimBeforeZoom: 0,           // used for storing the item dimensions before zooming.
             dimAfterZoom: 0,            // used for storing the item dimensions after zooming
-            minZoomLevel: 0,
-            maxZoomLevel: 4,            // used in conjunction with IIP server. Default is 5 levels of zoom.
-            isZoomCall: false,          // set to "true" if a zoom change request is detected
-            isOrientationChange: false, // set to "true" if an orienation change request is detected.
-            scrollSoFar: 0,             // How much the user has scrolled so far - replace later
-            totalHeight: 0,             // Height of all the images stacked together (total)
-            heightAboveTop: 0,          // when changing zoom ... height above the first loaded
-            latestPage: 0,              // The most recent pageID loaded - for optimisation, sorta
+            minZoomLevel: 0,            // Defaults to 0 (the minimum zoom)
+            maxZoomLevel: 5,            // used in conjunction with IIP server. Default is 5 levels of zoom.
             paddingPerPage: 40,         // For now because it is
-            doubleClick: false,         // For use in AJAX requests - where do we zoom in, see handleDoubleClick()
-            centerX: 0,                 // only used if doubleClick is true - for zooming in
-            centerY: 0,                 // ^
             viewerXOffset: 0,           // distance between left edge of viewer and document left edge
             viewerYOffset: 0,            // ^ for top edges
-            firstPageLoaded: -1,        // change these later (figure out default values)
-            lastPageLoaded: -1,
-            canScroll: false,         // If we're scrolling directly to a specific page
-            scrollDelay: 20             // Number of milliseconds for delaying
+            zoomSlider: true,           // Should there be a zoom slider or not, defaults to yes
+            gotoPage: true,             // Should there be a "go to page" option or not, defaults to yes
+            backendServer: '',          // Must be set
+            iipServerBaseUrl: '',       // Must be set
         };
         
         // apply the defaults, or override them with passed in options.
         var settings = $.extend({}, defaults, options);
+
+        // Things that cannot be changed because of the way they are used by the script
+        // Many of these are set with arbitrary values here; equivalent to declaring them
+        var globals = {
+            pages: [],                  // An array containing the data for all the pages
+            heightAbovePages: [],       // The height above each page
+            firstPageLoaded: -1,
+            lastPageLoaded: -1,
+            doubleClick: false,         // If the zoom has been triggered by a double-click event
+            centerX: 0,                 // Only used if doubleClick is true - for zooming in
+            centerY: 0,                 // Y-coordinate, see above
+            totalHeight: 0,             // Height of all the image stacked together, value set later
+            scrollSoFar: 0,             // Holds the number of pixels of vertical scroll
+            verticalOffset: 0,          // Used for storing the page offset before zooming
+            horizontalOffset: 0,        // ^
+            prevVptTop: 0,              // Used to determine vertical scroll direction
+            maxHeight: 0,               // The height of the tallest page
+            maxWidth: 0,                // The width of the widest page
+            numPages: 0,                // Number of pages in the array
+            pageLoadedId: 0,            // The current page in the viewport (center-most page)
+            panelWidth: 0,              // Width of the panel. Set in initiateViewer()
+            panelHeight: 0,             // Height of the panel. Set in initiateViewer()
+        };
+
+        $.extend(settings, globals);
 
         // Checks if a page is within the viewport
         var nearViewport = function(pageID) {
@@ -525,18 +530,17 @@ THE SOFTWARE.
             $(innerdrag).mouseup(function() {
                 $(this).removeClass('grabbing').addClass('grab');
             });
+
+            // Get the height and width of the outerdrag element
+            settings.panelWidth = parseInt($(outerdrag).width(), 10) - 20; // for the scrollbar change later
+            settings.panelHeight = parseInt($(outerdrag).height(), 10);
             
                         
             // Do the AJAX request - calls all the image display functions in turn
             ajaxRequest(settings.zoomLevel); // with the default zoom level
             // Handle the scroll
             $(outerdrag).scroll(function() {
-                /*startTheTimer(); // trying out timer stuff
-                if (settings.canScroll) {*/
-                    handleScroll();
-                /*}
-                settings.canScroll = false;*/
-                // timer not working work on it later
+                handleScroll();
             });
             
             // Set drag scroll on first descendant of class dragger on both selected elements
