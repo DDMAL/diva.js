@@ -25,23 +25,19 @@ THE SOFTWARE.
     var Diva = function(element, options) {
         // These are elements that can be overridden upon instantiation
         var defaults =  {
-            //itemOrientation: 0,         // Either "h" (horizontal) or "v" (vertical) - currently unused
+            backendServer: '',          // Must be set
+            gotoPage: true,             // Should there be a "go to page" option or not, defaults to yes
+            iipServerBaseUrl: '',       // Must be set
+            maxZoomLevel: 5,            // used in conjunction with IIP server. Default is 5 levels of zoom.
+            minZoomLevel: 0,            // Defaults to 0 (the minimum zoom)
+            paddingPerPage: 40,         // For now because it is
             tileHeight: 256,            // Same width and height for tiles for every page in this item
             tileWidth: 256,             // ^
             zoomLevel: 2,               // current zoom level. (initial zoom level)
-            containerEl: null,          // the container element id.
-            itemEl: null,               // the item element id
-            dimBeforeZoom: 0,           // used for storing the item dimensions before zooming.
-            dimAfterZoom: 0,            // used for storing the item dimensions after zooming
-            minZoomLevel: 0,            // Defaults to 0 (the minimum zoom)
-            maxZoomLevel: 5,            // used in conjunction with IIP server. Default is 5 levels of zoom.
-            paddingPerPage: 40,         // For now because it is
-            viewerXOffset: 0,           // distance between left edge of viewer and document left edge
-            viewerYOffset: 0,            // ^ for top edges
             zoomSlider: true,           // Should there be a zoom slider or not, defaults to yes
-            gotoPage: true,             // Should there be a "go to page" option or not, defaults to yes
-            backendServer: '',          // Must be set
-            iipServerBaseUrl: '',       // Must be set
+            //containerEl: null,          // the container element id.
+            //itemEl: null,               // the item element id
+            //itemOrientation: 0,         // Either "h" (horizontal) or "v" (vertical) - currently unused
         };
         
         // apply the defaults, or override them with passed in options.
@@ -50,24 +46,28 @@ THE SOFTWARE.
         // Things that cannot be changed because of the way they are used by the script
         // Many of these are set with arbitrary values here; equivalent to declaring them
         var globals = {
-            pages: [],                  // An array containing the data for all the pages
-            heightAbovePages: [],       // The height above each page
-            firstPageLoaded: -1,
-            lastPageLoaded: -1,
-            doubleClick: false,         // If the zoom has been triggered by a double-click event
             centerX: 0,                 // Only used if doubleClick is true - for zooming in
             centerY: 0,                 // Y-coordinate, see above
-            totalHeight: 0,             // Height of all the image stacked together, value set later
-            scrollSoFar: 0,             // Holds the number of pixels of vertical scroll
-            verticalOffset: 0,          // Used for storing the page offset before zooming
+            dimAfterZoom: 0,            // used for storing the item dimensions after zooming
+            dimBeforeZoom: 0,           // used for storing the item dimensions before zooming.
+            doubleClick: false,         // If the zoom has been triggered by a double-click event
+            firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
+            heightAbovePages: [],       // The height above each page
             horizontalOffset: 0,        // ^
-            prevVptTop: 0,              // Used to determine vertical scroll direction
+            lastPageLoaded: -1,         // The ID of the last page loaded (value set later)
             maxHeight: 0,               // The height of the tallest page
             maxWidth: 0,                // The width of the widest page
             numPages: 0,                // Number of pages in the array
             pageLoadedId: 0,            // The current page in the viewport (center-most page)
-            panelWidth: 0,              // Width of the panel. Set in initiateViewer()
+            pages: [],                  // An array containing the data for all the pages
             panelHeight: 0,             // Height of the panel. Set in initiateViewer()
+            panelWidth: 0,              // Width of the panel. Set in initiateViewer()
+            prevVptTop: 0,              // Used to determine vertical scroll direction
+            scrollSoFar: 0,             // Holds the number of pixels of vertical scroll
+            totalHeight: 0,             // Height of all the image stacked together, value set later
+            verticalOffset: 0,          // Used for storing the page offset before zooming
+            viewerXOffset: 0,           // distance between left edge of viewer and document left edge
+            viewerYOffset: 0,            // ^ for top edges
         };
 
         $.extend(settings, globals);
