@@ -555,7 +555,7 @@ THE SOFTWARE.
 
         // Creates a zoomer using the min and max zoom levels specified ... PRIVATE, only if zoomSlider = true
         var createZoomer = function() {
-            $('#diva-wrapper').prepend('<div id="zoomer"></div>');
+            $('#viewertools').prepend('<div id="zoomer"></div>');
             $('#zoomer').slider({
                     value: 2,
                     min: settings.minZoomLevel,
@@ -569,7 +569,7 @@ THE SOFTWARE.
         
         // Creates the gotoPage thing
         var createGotoPage = function() {
-            $('#diva-wrapper').prepend('<div id="gotopage">Go to page <input type="text" size="3" id="goto-page" /> <input type="submit" id="goto" value="Go" /><br /><div id="currentpage">Current page: <span>1</span></div></div>');
+            $('#viewertools').append('<div id="gotopage">Go to page <input type="text" size="3" id="goto-page" /> <input type="submit" id="goto" value="Go" /><br /><div id="currentpage">Current page: <span>1</span></div></div>');
             
             $('#goto').click(function() {
                 var desiredPage = parseInt($('#goto-page').val(), 10);
@@ -596,6 +596,11 @@ THE SOFTWARE.
             settings.itemEl = settings.id + '-item';
             settings.pageEl = settings.id + '-page-';
             settings.tileEl = settings.id + '-tile-';
+            
+            // If we need either a zoom slider or a gotoPage thing, create a "viewertools" div
+            if (settings.zoomSlider || settings.gotoPage) {
+                $('#itemtitle').after('<div id="viewertools"></div>');
+            }
             
            if (settings.zoomSlider) {
                 createZoomer();
