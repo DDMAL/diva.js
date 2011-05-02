@@ -75,7 +75,7 @@ THE SOFTWARE.
         // Checks if a page is within the viewport
         var nearViewport = function(pageID) {
             var topOfPage = settings.heightAbovePages[pageID];
-            var bottomOfPage = topOfPage + settings.pages[pageID].h;
+            var bottomOfPage = topOfPage + settings.pages[pageID].h + settings.paddingPerPage;
             var panelHeight = settings.panelHeight;
             var topOfViewport = settings.scrollSoFar;
             var bottomOfViewport = topOfViewport + panelHeight;
@@ -185,7 +185,7 @@ THE SOFTWARE.
         var aboveViewport = function(pageID) {
             // If the bottom of the page is above the top of viewport
             // For when you want to keep looping but don't want to load a specific page
-            var bottomOfPage = settings.heightAbovePages[pageID] + settings.pages[pageID].h;
+            var bottomOfPage = settings.heightAbovePages[pageID] + settings.pages[pageID].h + settings.paddingPerPage;
             var topOfViewport = settings.scrollSoFar; 
             if ( bottomOfPage < topOfViewport ) {
                 return true;
@@ -211,7 +211,7 @@ THE SOFTWARE.
             var pageToConsider = settings.pageLoadedId + parseInt(direction, 10);
             var middleOfViewport = settings.scrollSoFar + (settings.panelHeight / 2);
             var changeCurrentPage = false;
-            
+
             // When scrolling up:
             if ( direction < 0 ) {
                 // If the current pageTop is below the middle of the viewport
@@ -221,7 +221,7 @@ THE SOFTWARE.
                 }
             } else if ( direction > 0) {
                 // When scrolling down:
-                // If the current pageTop is above the top and the current page isn't the last page
+                // If the previous pageTop is above the top and the current page isn't the last page
                 if ( settings.heightAbovePages[currentPage] < settings.scrollSoFar && pageToConsider < settings.pages.length ) {
                     changeCurrentPage = true;
                 }
@@ -234,7 +234,7 @@ THE SOFTWARE.
             if ( changeCurrentPage ) {
                 // Set this to the current page
                 settings.pageLoadedId = pageToConsider;
-                // Change the text to reflect this - pageToConsider + 1 (becuase it's page number not ID)
+                // Change the text to reflect this - pageToConsider + 1 (because it's page number not ID)
                 $('#currentpage span').text(pageToConsider + 1);
                 
                 // Now try to change the next page, given that we're not going to a specific page
