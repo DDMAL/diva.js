@@ -49,10 +49,10 @@ div[id^="page"] {
 	margin: 10px;
 	font-size: 62.5%;
 	width: 100px;
+    float: left;
 }
 
 #gotopage {
-	float: right;
 	text-align: right;
 }
 	
