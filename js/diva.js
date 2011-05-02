@@ -381,7 +381,7 @@ THE SOFTWARE.
                     settings.numPages = data.pgs.length;
                     
                     // Reapply all the settings? Or just most of them? Figure out later
-                    settings.totalHeight = data.dims.t_hei + settings.paddingPerPage * settings.numPages; 
+                    settings.totalHeight = data.dims.t_hei + settings.paddingPerPage * (settings.numPages + 1); 
                     
                     // Change the set zoom and other things (clean this up later)
                     settings.zoomLevel = zoomLevel;
@@ -430,10 +430,6 @@ THE SOFTWARE.
             }); // ends the $.ajax function
         };
         
-        
-
-
-
         // Called by something in index.html
         // Optional argument "direct" - when called by gotoPage
         var handleScroll = function() {
