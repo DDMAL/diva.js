@@ -221,8 +221,8 @@ THE SOFTWARE.
                 }
             } else if ( direction > 0) {
                 // When scrolling down:
-                // If the previous pageTop is above the top and the current page isn't the last page
-                if ( settings.heightAbovePages[currentPage] < settings.scrollSoFar && pageToConsider < settings.pages.length ) {
+                // If the previous pageBottom is above the top and the current page isn't the last page
+                if ( settings.heightAbovePages[currentPage] + settings.pages[currentPage].h < settings.scrollSoFar && pageToConsider < settings.pages.length ) {
                     changeCurrentPage = true;
                 }
             } else {
@@ -253,7 +253,7 @@ THE SOFTWARE.
                     // If it's near the viewport, yes, add it
                     if (nearViewport(pageID)) {
                         appendPage(pageID);
-                        setCurrentPage(1);
+                        //setCurrentPage(1);
                         // Reset the last page loaded to this one
                         settings.lastPageLoaded = pageID;
                         // Recursively call this function until there's nothing to add
@@ -274,7 +274,7 @@ THE SOFTWARE.
                     // If it's near the viewport, yes, add it
                     if (nearViewport(pageID)) {
                         appendPage(pageID);
-                        setCurrentPage(-1);
+                        //setCurrentPage(-1);
                         // Reset the first page loaded to this one
                         settings.firstPageLoaded = pageID;
                         // Recursively call this function until there's nothing to add
@@ -322,11 +322,13 @@ THE SOFTWARE.
             // Direction is negative, so we're scrolling up
             if (direction < 0) {
                 attemptPageShow(settings.firstPageLoaded-1, direction);
+                setCurrentPage(-1);
                 attemptPageHide(settings.lastPageLoaded, direction);
             } else if (direction > 0) {
                 // Direction is positive so we're scrolling down
                 attemptPageHide(settings.firstPageLoaded, direction);
                 attemptPageShow(settings.lastPageLoaded+1, direction);
+                setCurrentPage(1);
             }
         };
         
