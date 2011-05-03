@@ -463,9 +463,9 @@ THE SOFTWARE.
 
                 // Isn't working properly figure it out
                 // Now we have to actually load the page, and possible pages on both sides
-                return 1; // To signify that we can scroll to this page
+                return true; // To signify that we can scroll to this page
             }
-            return 0;
+            return false;
         };
         
         // Handles the double click event, put in a new function for better codeflow
@@ -573,7 +573,7 @@ THE SOFTWARE.
             
             $('#goto').click(function() {
                 var desiredPage = parseInt($('#goto-page').val(), 10);
-                if ( gotoPage(desiredPage) === 0 ) {
+                if ( !gotoPage(desiredPage) ) {
                     alert('Invalid page number');
                 }
             });
