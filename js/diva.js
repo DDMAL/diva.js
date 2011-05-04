@@ -536,6 +536,7 @@ THE SOFTWARE.
                         
             // Do the AJAX request - calls all the image display functions in turn
             ajaxRequest(settings.zoomLevel); // with the default zoom level
+
             // Handle the scroll
             $(outerdrag).scroll(function() {
                 handleScroll();
@@ -550,6 +551,19 @@ THE SOFTWARE.
                 settings.viewerXOffset = this.offsetLeft;
                 settings.viewerYOffset = this.offsetTop;
                 handleDoubleClick(event);
+            });
+
+            // Handle pageup/pagedown key presses - only when in outerdrag
+            $(outerdrag).bind('keyup', function(event) {
+                var key = event.which;
+                // Page up:
+                if (key == 38) {
+                    // Go to the previous page
+                    gotoPage(settings.pageLoadedID - 1);
+                } else if (key == 40) {
+                    // Go to the next page (page down)
+                    gotoPage(settings.pageLoadedID + 1);
+                }
             });
         };
 
