@@ -487,8 +487,6 @@ THE SOFTWARE.
                 } else {
                     if (event.altKey === true) {
                         newZoomLevel = settings.zoomLevel - 1;
-                    } else {
-                        newZoomLevel = settings.zoomLevel + 1;
                     }
                 }
                 
@@ -560,7 +558,8 @@ THE SOFTWARE.
                 if (key == 38) {
                     // Go to the previous page
                     gotoPage(settings.pageLoadedID - 1);
-                } else if (key == 40) {
+                // 40 = page down, 32 = space
+                } else if (key == 40 || key == 32) {
                     // Go to the next page (page down)
                     gotoPage(settings.pageLoadedID + 1);
                 }
