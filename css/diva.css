@@ -63,9 +63,9 @@ div[id^="page"] {
 }
 
 .grab {
-    cursor: url('../img/openhand.cur'), default !important;
+    cursor: url('../img/openhand.cur'), move !important;
 }
 
 .grabbing {
-    cursor: url('../img/closedhand.cur'), default !important;
+    cursor: url('../img/closedhand.cur'), pointer !important;
 }

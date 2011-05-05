@@ -31,6 +31,8 @@ THE SOFTWARE.
             maxZoomLevel: 5,            // used in conjunction with IIP server. Default is 5 levels of zoom.
             minZoomLevel: 0,            // Defaults to 0 (the minimum zoom)
             paddingPerPage: 40,         // For now because it is
+            scrollBySpace: false,       // Can user scroll down with the space bar? Disabled by default
+            scrollByKeys: true,         // Can user scroll with the page up/page down keys?
             tileHeight: 256,            // Same width and height for tiles for every page in this item
             tileWidth: 256,             // ^
             zoomLevel: 2,               // current zoom level. (initial zoom level)
@@ -463,9 +465,9 @@ THE SOFTWARE.
 
                 // Isn't working properly figure it out
                 // Now we have to actually load the page, and possible pages on both sides
-                return 1; // To signify that we can scroll to this page
+                return true; // To signify that we can scroll to this page
             }
-            return 0;
+            return false;
         };
         
         // Handles the double click event, put in a new function for better codeflow
@@ -536,6 +538,7 @@ THE SOFTWARE.
                         
             // Do the AJAX request - calls all the image display functions in turn
             ajaxRequest(settings.zoomLevel); // with the default zoom level
+
             // Handle the scroll
             $(outerdrag).scroll(function() {
                 handleScroll();
@@ -551,6 +554,29 @@ THE SOFTWARE.
                 settings.viewerYOffset = this.offsetTop;
                 handleDoubleClick(event);
             });
+
+            // Only check if either scrollBySpace or scrollByKeys is enabled
+            if (settings.scrollBySpace || settings.scrollByKeys) {
+                var spaceKey = $.ui.keyCode.SPACE;
+                var pageUpKey = $.ui.keyCode.PAGE_UP;
+                var pageDownKey = $.ui.keyCode.PAGE_DOWN;
+
+                // Catch the key presses in document
+                $(document).keydown(function(event) {
+                    // Space or page down - go to the next page
+                    if ((settings.scrollBySpace && event.keyCode == spaceKey) || (settings.scrollByKeys && event.keyCode == pageDownKey)) {
+                        $(outerdrag).scrollTop(settings.scrollSoFar + settings.panelHeight);
+                        return false;
+                    }
+
+                    // page up - go to the previous page
+                    if (settings.scrollByKeys && event.keyCode == pageUpKey) {
+                        $(outerdrag).scrollTop(settings.scrollSoFar - settings.panelHeight);
+                        return false;
+                    }
+                });
+            }
+
         };
 
         // Creates a zoomer using the min and max zoom levels specified ... PRIVATE, only if zoomSlider = true
@@ -573,7 +599,7 @@ THE SOFTWARE.
             
             $('#goto').click(function() {
                 var desiredPage = parseInt($('#goto-page').val(), 10);
-                if ( gotoPage(desiredPage) === 0 ) {
+                if ( !gotoPage(desiredPage) ) {
                     alert('Invalid page number');
                 }
             });
