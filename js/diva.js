@@ -493,6 +493,8 @@ THE SOFTWARE.
                 } else {
                     if (event.altKey === true) {
                         newZoomLevel = settings.zoomLevel - 1;
+                    } else {
+                        newZoomLevel = settings.zoomLevel + 1;
                     }
                 }
                 
@@ -506,6 +508,7 @@ THE SOFTWARE.
                 
                 // Do an AJAX request with the new zoom level - will zoom in to the right place
                 ajaxRequest(newZoomLevel);
+                console.log(newZoomLevel);
                 
                 // Make the slider display the new value
                 $('#zoomer').slider({
