@@ -475,19 +475,19 @@ THE SOFTWARE.
                 // If the zoom level is already at max, zoom out
                 var newZoomLevel;
                 if (settings.zoomLevel === settings.maxZoomLevel) {
-                    if (event.altKey === true) {
+                    if (event.ctrlKey === true) {
                         newZoomLevel = settings.zoomLevel - 1;
                     } else {
                         return;
                     }
                 } else if (settings.zoomLevel === settings.minZoomLevel) {
-                    if (event.altKey === true) {
+                    if (event.ctrlKey === true) {
                         return;
                     } else {
                         newZoomLevel = settings.zoomLevel + 1;
                     }
                 } else {
-                    if (event.altKey === true) {
+                    if (event.ctrlKey === true) {
                         newZoomLevel = settings.zoomLevel - 1;
                     } else {
                         newZoomLevel = settings.zoomLevel + 1;
