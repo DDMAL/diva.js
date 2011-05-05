@@ -31,6 +31,8 @@ THE SOFTWARE.
             maxZoomLevel: 5,            // used in conjunction with IIP server. Default is 5 levels of zoom.
             minZoomLevel: 0,            // Defaults to 0 (the minimum zoom)
             paddingPerPage: 40,         // For now because it is
+            scrollBySpace: false,       // Can user scroll down with the space bar? Disabled by default
+            scrollByKeys: true,         // Can user scroll with the page up/page down keys?
             tileHeight: 256,            // Same width and height for tiles for every page in this item
             tileWidth: 256,             // ^
             zoomLevel: 2,               // current zoom level. (initial zoom level)
@@ -206,6 +208,7 @@ THE SOFTWARE.
 
         // Determines and sets the "current page" (settings.pageLoadedId); called within adjustPages 
         var setCurrentPage = function(direction, pageID) {
+            console.log("sets teh current page");
             // direction can be 0, 1 or -1 ... 1 for down, -1 for up, 0 for bypassing, going to a specific page
             var currentPage = settings.pageLoadedId;
             var pageToConsider = settings.pageLoadedId + parseInt(direction, 10);
@@ -229,11 +232,14 @@ THE SOFTWARE.
                 // Just go straight to a certain page (for the goto function)
                 changeCurrentPage = true;
                 pageToConsider = pageID;
+                console.log("straight to page");
             }
 
             if ( changeCurrentPage ) {
+                console.log('true so ');
                 // Set this to the current page
                 settings.pageLoadedId = pageToConsider;
+                console.log(settings.pageLoadedId)
                 // Change the text to reflect this - pageToConsider + 1 (because it's page number not ID)
                 $('#currentpage span').text(pageToConsider + 1);
                 
@@ -551,19 +557,34 @@ THE SOFTWARE.
                 handleDoubleClick(event);
             });
 
-            // Handle pageup/pagedown key presses - only when in outerdrag
-            $(outerdrag).bind('keyup', function(event) {
-                var key = event.which;
-                // Page up:
-                if (key == 38) {
-                    // Go to the previous page
-                    gotoPage(settings.pageLoadedID - 1);
-                // 40 = page down, 32 = space
-                } else if (key == 40 || key == 32) {
-                    // Go to the next page (page down)
-                    gotoPage(settings.pageLoadedID + 1);
-                }
-            });
+            // Only check if either scrollBySpace or scrollByKeys is enabled
+            if (settings.scrollBySpace || settings.scrollByKeys) {
+                $(document).keyup(function(event) {
+                    var spaceKey = $.ui.keyCode.SPACE;
+                    var pageUpKey = $.ui.keyCode.PAGE_UP;
+                    var pageDownKey = $.ui.keyCode.PAGE_DOWN;
+                    // Space or page down - go to the next page
+                    if ((settings.scrollBySpace && event.keyCode == spaceKey) || (settings.scrollByKeys && event.keyCode == pageDownKey)) {
+                        // + 1 because it's an index, +1 again to go to the next
+                        settings.pageLoadedId++
+                        gotoPage(settings.pageLoadedId + 1);
+
+                        event.preventDefault();
+                        event.stopPropagation();
+                        return false;
+                    }
+                    // page up - go to the previous page
+                    if (settings.scrollByKeys && event.keyCode == pageUpKey) {
+                        // just settings.pageLoadedId
+                        settings.pageLoadedId--;
+                        gotoPage(settings.pageLoadedId + 1);
+
+                        event.preventDefault();
+                        event.stopPropagation();
+                        return false;
+                    }
+                });
+            }
         };
 
         // Creates a zoomer using the min and max zoom levels specified ... PRIVATE, only if zoomSlider = true
