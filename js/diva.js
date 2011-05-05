@@ -208,7 +208,6 @@ THE SOFTWARE.
 
         // Determines and sets the "current page" (settings.pageLoadedId); called within adjustPages 
         var setCurrentPage = function(direction, pageID) {
-            console.log("sets teh current page");
             // direction can be 0, 1 or -1 ... 1 for down, -1 for up, 0 for bypassing, going to a specific page
             var currentPage = settings.pageLoadedId;
             var pageToConsider = settings.pageLoadedId + parseInt(direction, 10);
@@ -232,14 +231,11 @@ THE SOFTWARE.
                 // Just go straight to a certain page (for the goto function)
                 changeCurrentPage = true;
                 pageToConsider = pageID;
-                console.log("straight to page");
             }
 
             if ( changeCurrentPage ) {
-                console.log('true so ');
                 // Set this to the current page
                 settings.pageLoadedId = pageToConsider;
-                console.log(settings.pageLoadedId)
                 // Change the text to reflect this - pageToConsider + 1 (because it's page number not ID)
                 $('#currentpage span').text(pageToConsider + 1);
                 
@@ -508,7 +504,6 @@ THE SOFTWARE.
                 
                 // Do an AJAX request with the new zoom level - will zoom in to the right place
                 ajaxRequest(newZoomLevel);
-                console.log(newZoomLevel);
                 
                 // Make the slider display the new value
                 $('#zoomer').slider({
@@ -562,32 +557,26 @@ THE SOFTWARE.
 
             // Only check if either scrollBySpace or scrollByKeys is enabled
             if (settings.scrollBySpace || settings.scrollByKeys) {
-                $(document).keyup(function(event) {
-                    var spaceKey = $.ui.keyCode.SPACE;
-                    var pageUpKey = $.ui.keyCode.PAGE_UP;
-                    var pageDownKey = $.ui.keyCode.PAGE_DOWN;
+                var spaceKey = $.ui.keyCode.SPACE;
+                var pageUpKey = $.ui.keyCode.PAGE_UP;
+                var pageDownKey = $.ui.keyCode.PAGE_DOWN;
+
+                // Catch the key presses in document
+                $(document).keydown(function(event) {
                     // Space or page down - go to the next page
                     if ((settings.scrollBySpace && event.keyCode == spaceKey) || (settings.scrollByKeys && event.keyCode == pageDownKey)) {
-                        // + 1 because it's an index, +1 again to go to the next
-                        settings.pageLoadedId++
-                        gotoPage(settings.pageLoadedId + 1);
-
-                        event.preventDefault();
-                        event.stopPropagation();
+                        $(outerdrag).scrollTop(settings.scrollSoFar + settings.panelHeight);
                         return false;
                     }
+
                     // page up - go to the previous page
                     if (settings.scrollByKeys && event.keyCode == pageUpKey) {
-                        // just settings.pageLoadedId
-                        settings.pageLoadedId--;
-                        gotoPage(settings.pageLoadedId + 1);
-
-                        event.preventDefault();
-                        event.stopPropagation();
+                        $(outerdrag).scrollTop(settings.scrollSoFar - settings.panelHeight);
                         return false;
                     }
                 });
             }
+
         };
 
         // Creates a zoomer using the min and max zoom levels specified ... PRIVATE, only if zoomSlider = true
