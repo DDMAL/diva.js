@@ -4,7 +4,7 @@ body {
 }
 
 #diva-wrapper {
-	width: 820px;
+	width: 720px;
 	margin: 0 auto;
 }
 
@@ -18,7 +18,7 @@ body {
 #outerdrag {
 	position: relative;
 	height: 700px;
-	width: 820px; /* hack to get rid of the horizontal scrollbar ... */
+	width: 720px; /* hack to get rid of the horizontal scrollbar ... */
 	overflow: auto;
 	margin: 0 auto;
 	background-color: #F1F1F1;
