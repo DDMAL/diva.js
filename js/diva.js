@@ -576,7 +576,12 @@ THE SOFTWARE.
 
             // Check if the user is on a iPhone or iPod touch or iPad
             if ((navigator.userAgent.match(/iPhone/i)) || (navigator.userAgent.match(/iPad/i)) || (navigator.userAgent.match(/iPod/i))) {
+                // One-finger scroll within outerdrag
                 $(outerdrag).oneFingerScroll();
+                // Add some related meta tags
+                // Prevent resizing
+                $('head').append('<meta name="viewport" content="user-scalable=no, width=device-width" />');
+                // Prevent elastic scrolling
             }
 
             // Only check if either scrollBySpace or scrollByKeys is enabled
