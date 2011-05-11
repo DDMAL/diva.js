@@ -511,6 +511,18 @@ THE SOFTWARE.
                     value: newZoomLevel
                 });
         };
+
+        // Testing scale in the iPad
+        this.scale = function(event) {
+            var newZoomLevel = settings.zoomLevel;
+            // First figure out the new zoom level:
+            if (event.scale > 1) {
+                newZoomLevel++;
+            } else if (event.scale < 1) {
+                newZoomLevel--;
+            }
+            handleZoom(newZoomLevel);
+        };
                             
         // Initiates the process; accepts outerdrag and innerdrag ID's
         this.initiateViewer = function(outerdrag, innerdrag) {
