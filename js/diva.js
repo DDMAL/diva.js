@@ -475,24 +475,25 @@ THE SOFTWARE.
                 // If the zoom level is already at max, zoom out
                 var newZoomLevel;
                 if (settings.zoomLevel === settings.maxZoomLevel) {
-                    if (event.ctrlKey === true) {
+                    if (event.ctrlKey) {
                         newZoomLevel = settings.zoomLevel - 1;
                     } else {
                         return;
                     }
                 } else if (settings.zoomLevel === settings.minZoomLevel) {
-                    if (event.ctrlKey === true) {
+                    if (event.ctrlKey) {
                         return;
                     } else {
                         newZoomLevel = settings.zoomLevel + 1;
                     }
                 } else {
-                    if (event.ctrlKey === true) {
+                    if (event.ctrlKey) {
                         newZoomLevel = settings.zoomLevel - 1;
                     } else {
                         newZoomLevel = settings.zoomLevel + 1;
                     }
                 }
+
                 
                 // Set centerX and centerY for scrolling in after zoom
                 // have to do this.offsetLeft and top ... otherwise relative to edge of document
@@ -552,7 +553,13 @@ THE SOFTWARE.
                 // First set the x and y offsets of the viewer from the edge of document
                 settings.viewerXOffset = this.offsetLeft;
                 settings.viewerYOffset = this.offsetTop;
+
                 handleDoubleClick(event);
+            });
+
+            // Prevent the context menu within the outerdrag
+            $(outerdrag).bind("contextmenu", function(e) {
+                e.preventDefault();
             });
 
             // Only check if either scrollBySpace or scrollByKeys is enabled
