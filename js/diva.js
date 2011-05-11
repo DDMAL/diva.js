@@ -562,6 +562,11 @@ THE SOFTWARE.
                 e.preventDefault();
             });
 
+            // Check if the user is on a iPhone or iPod touch or iPad
+            if ((navigator.userAgent.match(/iPhone/i)) || (navigator.userAgent.match(/iPad/i)) || (navigator.userAgent.match(/iPod/i))) {
+                $(outerdrag).oneFingerScroll();
+            }
+
             // Only check if either scrollBySpace or scrollByKeys is enabled
             if (settings.scrollBySpace || settings.scrollByKeys) {
                 var spaceKey = $.ui.keyCode.SPACE;

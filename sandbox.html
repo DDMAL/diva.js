@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+        <title>touchScroll jQuery plugin simple example</title>
+        <style>
+            body {
+                overflow-y: hidden;
+            }
+
+            code {
+                font: 18px monospace;
+                color: #444;
+                margin: 0;
+            }
+
+            #outerdrag {
+                display: block;
+                position: fixed;
+                left: 30px;
+                top: 30px;
+                bottom: 30px;
+                right: 30px;
+                background-color: #ddd;
+                overflow-y: auto;
+            }
+
+            #documentpanel {
+                display: block;
+                height: 100%;
+                -webkit-perspective: 1000;
+                -webkit-backface-visibility: hidden;
+            }
+            
+            div[id^="page"] {
+                position: absolute;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="outerdrag"> 
+<div id="documentpanel" class="dragger" style="height: 64874px; width: 800px; "><div id="page-0" style="top: 20px; width:410px; height: 580.5px; left:195px;"><div style="position: absolute; top: 0px; left: 0px; background-image: url('http://petrucci.musiclibs.net:9002/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/freg/freg_1.tif&amp;JTL=2,0'); height: 256px; width: 256px;"></div><div style="position: absolute; top: 0px; left: 256px; background-image: url('http://petrucci.musiclibs.net:9002/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/freg/freg_1.tif&amp;JTL=2,1'); height: 256px; width: 154px;"></div><div style="position: absolute; top: 256px; left: 0px; background-image: url('http://petrucci.musiclibs.net:9002/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/freg/freg_1.tif&amp;JTL=2,2'); height: 256px; width: 256px;"></div><div style="position: absolute; top: 256px; left: 256px; background-image: url('http://petrucci.musiclibs.net:9002/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/freg/freg_1.tif&amp;JTL=2,3'); height: 256px; width: 154px;"></div><div style="position: absolute; top: 512px; left: 0px; background-image: url('http://petrucci.musiclibs.net:9002/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/freg/freg_1.tif&amp;JTL=2,4'); height: 68.5px; width: 256px;"></div><div style="position: absolute; top: 512px; left: 256px; background-image: url('http://petrucci.musiclibs.net:9002/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/freg/freg_1.tif&amp;JTL=2,5'); height: 68.5px; width: 154px;"></div></div><div id="page-1" style="top: 620.5px; width:410px; height: 580.5px; left:195px;"><div style="position: absolute; top: 0px; left: 0px; background-image: url('http://petrucci.musiclibs.net:9002/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/freg/freg_2.tif&amp;JTL=2,0'); height: 256px; width: 256px;"></div><div style="position: absolute; top: 0px; left: 256px; background-image: url('http://petrucci.musiclibs.net:9002/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/freg/freg_2.tif&amp;JTL=2,1'); height: 256px; width: 154px;"></div><div style="position: absolute; top: 256px; left: 0px; background-image: url('http://petrucci.musiclibs.net:9002/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/freg/freg_2.tif&amp;JTL=2,2'); height: 256px; width: 256px;"></div><div style="position: absolute; top: 256px; left: 256px; background-image: url('http://petrucci.musiclibs.net:9002/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/freg/freg_2.tif&amp;JTL=2,3'); height: 256px; width: 154px;"></div><div style="position: absolute; top: 512px; left: 0px; background-image: url('http://petrucci.musiclibs.net:9002/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/freg/freg_2.tif&amp;JTL=2,4'); height: 68.5px; width: 256px;"></div><div style="position: absolute; top: 512px; left: 256px; background-image: url('http://petrucci.musiclibs.net:9002/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/freg/freg_2.tif&amp;JTL=2,5'); height: 68.5px; width: 154px;"></div></div></div>
+        </div>
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>
+        <script src="js/diva-utils.js"></script>
+        <script>
+            $(document).ready(function() {
+                if (!!('ontouchstart' in window)) {
+                    $('#documentpanel').touchScroll();
+                }
+            });
+        </script>
+    </body>
+</html>
