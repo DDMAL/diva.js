@@ -516,14 +516,19 @@ THE SOFTWARE.
         this.scale = function(event) {
             var newZoomLevel = settings.zoomLevel;
             // First figure out the new zoom level:
-            if (event.scale > 1) {
+            if (event.scale > 1 && newZoomLevel < settings.maxZoomLevel) {
                 newZoomLevel++;
-            } else if (event.scale < 1) {
+            } else if (event.scale < 1 && newZoomLevel > settings.minZoomLevel) {
                 newZoomLevel--;
             }
             handleZoom(newZoomLevel);
+            // Make the slider display the new zoom level
+            // Unnecessarily reusing code ... fix later
+            $('#zoomer').slider({
+                value: newZoomLevel
+            });
         };
-                            
+
         // Initiates the process; accepts outerdrag and innerdrag ID's
         this.initiateViewer = function(outerdrag, innerdrag) {
             
@@ -578,7 +583,6 @@ THE SOFTWARE.
             if ((navigator.userAgent.match(/iPhone/i)) || (navigator.userAgent.match(/iPad/i)) || (navigator.userAgent.match(/iPod/i))) {
                 // One-finger scroll within outerdrag
                 $(outerdrag).oneFingerScroll();
-                // Add some related meta tags
                 // Prevent resizing
                 $('head').append('<meta name="viewport" content="user-scalable=no, width=device-width" />');
                 // Prevent elastic scrolling
