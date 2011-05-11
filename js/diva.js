@@ -574,9 +574,11 @@ THE SOFTWARE.
                 handleDoubleClick(event);
             });
 
-            // Prevent the context menu within the outerdrag
+            // Prevent the context menu within the outerdrag IF it was triggered with the ctrl key
             $(outerdrag).bind("contextmenu", function(e) {
-                e.preventDefault();
+                if (event.ctrlKey) {
+                    e.preventDefault();
+                }
             });
 
             // Check if the user is on a iPhone or iPod touch or iPad
