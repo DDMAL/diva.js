@@ -18,12 +18,15 @@ jQuery.fn.oneFingerScroll = function() {
     $(this).bind('touchstart', function(event) {
         // jQuery clones events, but only with a limited number of properties for perf reasons. Need the original event to get 'touches'
         var e = event.originalEvent;
-        scrollStartPos = $(this).scrollTop() + e.touches[0].pageY;
+        scrollStartY = $(this).scrollTop() + e.touches[0].pageY;
+        // Need horizontal scrolling too
+        scrollStartX = $(this).scrollLeft() + e.touches[0].pageX;
         e.preventDefault();
     });
     $(this).bind('touchmove', function(event) {
         var e = event.originalEvent;
-        $(this).scrollTop(scrollStartPos - e.touches[0].pageY);
+        $(this).scrollTop(scrollStartY- e.touches[0].pageY);
+        $(this).scrollLeft(scrollStartX - e.touches[0].pageX);
         e.preventDefault();
     });
     return this;
