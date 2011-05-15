@@ -71,7 +71,6 @@ def main(argv):
 
     # Now get the absolute lowest and highest max zoom
     lowest_max_zoom = min(max_zoom_list)
-    highest_max_zoom = max(max_zoom_list)
 
     # Now figure out which files have a zoom larger than that
     for i in range(len(filename_list)):
@@ -94,10 +93,7 @@ def main(argv):
 
     # Now print out the max_zoom this document has
     print "This document has a max zoom of: ",
-    if resize_images:
-        print lowest_max_zoom
-    else:
-        print highest_max_zoom
+    print lowest_max_zoom
 
 # Calculate the maximum zoom of an image given its filepath
 def get_max_zoom(filepath):
