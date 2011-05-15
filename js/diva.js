@@ -120,6 +120,7 @@ THE SOFTWARE.
                 var cols = settings.pages[pageID].c;
                 var width = settings.pages[pageID].w;
                 var height = settings.pages[pageID].h;
+                var maxZoom = settings.pages[pageID].m_z;
                 var leftOffset, widthToUse;
                 // Use an array as a string builder - faster than str concatentation
                 var content = [];
@@ -152,9 +153,11 @@ THE SOFTWARE.
                     for ( col = 0; col < cols; col++ ) {
                         var top = row * settings.tileHeight;
                         var left = col * settings.tileWidth;
+                        // The zoom level might have to be different
+                        var zoomLevel = (maxZoom === settings.maxZoomLevel) ? settings.zoomLevel : settings.zoomLevel + (maxZoom - settings.maxZoomLevel); 
                         tileHeight = ( row === rows - 1 ) ? lastHeight : settings.tileHeight; // If it's the LAST tile, calculate separately
                         tileWidth = ( col === cols - 1 ) ? lastWidth : settings.tileWidth; // Otherwise, just set it to the default height/width
-                        imgSrc = settings.iipServerBaseUrl + filename + '&amp;JTL=' + settings.zoomLevel + ',' + tileNumber;
+                        imgSrc = settings.iipServerBaseUrl + filename + '&amp;JTL=' + zoomLevel + ',' + tileNumber;
                         content.push('<div style="position: absolute; top: ' + top + 'px; left: ' + left + 'px; background-image: url(\'' + imgSrc + '\'); height: ' + tileHeight + 'px; width: ' + tileWidth + 'px;"></div>');
                         tileNumber++;
                     }
