@@ -383,6 +383,11 @@ THE SOFTWARE.
                     // pgs array stored in data.pgs - save it to settings.pages
                     settings.pages = data.pgs;
                     settings.numPages = data.pgs.length;
+
+                    // Have to set the number of pages here
+                    if ($('#currentpage label').text().length == 0) {
+                        $('#currentpage label').text(settings.numPages);
+                    }
                     
                     // Reapply all the settings? Or just most of them? Figure out later
                     settings.totalHeight = data.dims.t_hei + settings.paddingPerPage * (settings.numPages + 1); 
@@ -630,7 +635,7 @@ THE SOFTWARE.
         
         // Creates the gotoPage thing
         var createGotoPage = function() {
-            $('#viewertools').append('<div id="gotopage">Go to page <input type="text" size="3" id="goto-page" /> <input type="submit" id="goto" value="Go" /><br /><div id="currentpage">Current page: <span>1</span></div></div>');
+            $('#viewertools').append('<div id="gotopage">Go to page <input type="text" size="3" id="goto-page" /> <input type="submit" id="goto" value="Go" /><br /><div id="currentpage">Current page: <span>1</span> of <label></label></div></div>');
             
             $('#goto').click(function() {
                 var desiredPage = parseInt($('#goto-page').val(), 10);
