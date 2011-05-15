@@ -1,0 +1,39 @@
+<html>
+<head>
+    <title>Testing search</title>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.0/jquery.min.js"></script>
+    <style type="text/css">
+    .center {
+        text-align: center;
+    }
+
+    #highlight {
+        position: absolute;
+        opacity: 0.7;
+        background-color: #EDE275;
+        z-index: 7000;
+    }
+
+    #image {
+        position: relative; 
+        width: 476px;
+        margin: 0 auto;
+    }
+    </style>
+</head>
+
+<body>
+<div class="center">
+    <h1>Search sandbox</h1>
+    <input type="button" id="highlight-button" value="Highlight a random section" />
+    <br /><br />
+    <div id="image">
+        <!-- <img src="waldo-bw.jpg" /> -->
+        <img src="lera.jpg" />
+        <div id="highlight"></div>
+    </div>
+</div>
+    <script src="search.js"></script>
+</body>
+
+</html>
