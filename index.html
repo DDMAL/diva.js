@@ -25,13 +25,6 @@ body {
  <script src="js/diva.js"></script>
  <script>
 var dv;
-
-// To be called when there's a move event on the body itself:
-function BlockMove(event) {
- // Tell Safari not to move the window.
- event.preventDefault() ;
-}
-
 $(document).ready(function() {
     $('#documentpanel').diva({
         paddingPerPage: 50,
@@ -50,7 +43,7 @@ $(document).ready(function() {
 
 </head>
 
-<body ontouchmove="BlockMove(event);" ongestureend="dv.scale(event);">
+<body ontouchmove="dv.blockMove(event);" ongestureend="dv.scale(event);">
 <div id="diva-wrapper">
     <div id="itemtitle">test</div>
     <div id="outerdrag">

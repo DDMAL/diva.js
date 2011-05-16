@@ -520,6 +520,11 @@ THE SOFTWARE.
                 });
         };
 
+        // Testing blockMove on the iPad
+        this.blockMove = function(event) {
+            event.preventDefault();
+        };
+
         // Testing scale in the iPad
         this.scale = function(event) {
             var newZoomLevel = settings.zoomLevel;
