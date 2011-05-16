@@ -388,7 +388,6 @@ THE SOFTWARE.
                         settings.maxZoomLevel = (settings.maxZoomLevel > 0) ? settings.maxZoomLevel : data.max_zoom;
                         // Set the total number of pages
                         $('#currentpage label').text(settings.numPages);
-                        console.log('zoom level: ' + settings.zoomLevel);
 
                         // Create the zoomer here, if needed
                         if (settings.zoomSlider) {
@@ -608,9 +607,14 @@ THE SOFTWARE.
             if ((navigator.userAgent.match(/iPhone/i)) || (navigator.userAgent.match(/iPad/i)) || (navigator.userAgent.match(/iPod/i))) {
                 // One-finger scroll within outerdrag
                 $(outerdrag).oneFingerScroll();
-                // Prevent resizing
-                $('head').append('<meta name="viewport" content="user-scalable=no, width=device-width" />');
-                // Prevent elastic scrolling
+                // Prevent resizing (below from http://matt.might.net/articles/how-to-native-iphone-ipad-apps-in-javascript/)
+                var toAppend = [];
+                toAppend.push('<meta name="viewport" content="user-scalable=no, width=device-width" />');
+                // Eliminate URL and button bars if added to home screen
+                toAppend.push('<meta name="apple-mobile-web-app-capable" content="yes" />');
+                // Choose how to handle the phone status bar
+                toAppend.push('<meta name="apple-mobile-web-app-status-bar-style" content="black" />');
+                $('head').append(toAppend.join('\n'));
             }
 
             // Only check if either scrollBySpace or scrollByKeys is enabled
