@@ -388,6 +388,12 @@ THE SOFTWARE.
                         settings.maxZoomLevel = (settings.maxZoomLevel > 0) ? settings.maxZoomLevel : data.max_zoom;
                         // Set the total number of pages
                         $('#currentpage label').text(settings.numPages);
+                        console.log('zoom level: ' + settings.zoomLevel);
+
+                        // Create the zoomer here, if needed
+                        if (settings.zoomSlider) {
+                            createZoomer();
+                        }
                         settings.firstAjaxRequest = false;
                     }
 
@@ -573,9 +579,6 @@ THE SOFTWARE.
             // Do the AJAX request - calls all the image display functions in turn
             ajaxRequest(settings.zoomLevel); // with the default zoom level
 
-           if (settings.zoomSlider) {
-                createZoomer();
-            }
 
             // Handle the scroll
             $(outerdrag).scroll(function() {
@@ -638,7 +641,7 @@ THE SOFTWARE.
         var createZoomer = function() {
             $('#viewertools').prepend('<div id="zoomer"></div>');
             $('#zoomer').slider({
-                    value: 2,
+                    value: settings.zoomLevel,
                     min: settings.minZoomLevel,
                     max: settings.maxZoomLevel,
                     step: 1,
@@ -683,7 +686,6 @@ THE SOFTWARE.
                 $('#itemtitle').after('<div id="viewertools"></div>');
             }
             
-
             if (settings.gotoPage) {
                 createGotoPage();
             }
