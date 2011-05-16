@@ -28,7 +28,7 @@ THE SOFTWARE.
             backendServer: '',          // Must be set
             gotoPage: true,             // Should there be a "go to page" option or not, defaults to yes
             iipServerBaseUrl: '',       // Must be set
-            maxZoomLevel: 5,            // used in conjunction with IIP server. Default is 5 levels of zoom.
+            maxZoomLevel: 0,            // Optional; defaults to the max zoom returned in the JSON response
             minZoomLevel: 0,            // Defaults to 0 (the minimum zoom)
             paddingPerPage: 40,         // For now because it is
             scrollBySpace: false,       // Can user scroll down with the space bar? Disabled by default
@@ -54,6 +54,7 @@ THE SOFTWARE.
             dimBeforeZoom: 0,           // used for storing the item dimensions before zooming.
             doubleClick: false,         // If the zoom has been triggered by a double-click event
             firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
+            firstAjaxRequest: true,     // True initially, set to false after the first request
             heightAbovePages: [],       // The height above each page
             horizontalOffset: 0,        // Used for storing the page offset before zooming
             lastPageLoaded: -1,         // The ID of the last page loaded (value set later)
@@ -379,34 +380,32 @@ THE SOFTWARE.
                 dataType: "json",
                 //jsonp: 'onJSONPLoad',
                 success: function(data) {
+                    // If it's the first AJAX request, store some variables that won't change with each zoom
+                    if (settings.firstAjaxRequest) {
+                        settings.numPages = data.pgs.length;
+                        settings.maxZoomLevel = (settings.maxZoomLevel > 0) ? settings.maxZoomLevel : data.max_zoom;
+                        // Set the total number of pages
+                        $('#currentpage label').text(settings.numPages);
+                        settings.firstAjaxRequest = false;
+                    }
+
+                    // Reset the vertical scroll and clear out the documentpanel div
                     $('#outerdrag').scrollTop(0);
-                    // Clear 
                     $('#documentpanel').text('');                   
 
-                    // pgs array stored in data.pgs - save it to settings.pages
+                    // Now reset some things that need to be changed after each zoom
                     settings.pages = data.pgs;
-                    settings.numPages = data.pgs.length;
-
-                    // Have to set the number of pages here
-                    if ($('#currentpage label').text().length == 0) {
-                        $('#currentpage label').text(settings.numPages);
-                    }
-                    
-                    // Reapply all the settings? Or just most of them? Figure out later
                     settings.totalHeight = data.dims.t_hei + settings.paddingPerPage * (settings.numPages + 1); 
-                    
-                    // Change the set zoom and other things (clean this up later)
                     settings.zoomLevel = zoomLevel;
                     settings.maxWidth = data.dims.mx_w;
                     settings.maxHeight = data.dims.mx_h;
                     settings.dimAfterZoom = settings.totalHeight; 
+                    settings.firstPageLoaded = 0;
 
                     // Needed to set settings.heightAbovePages - initially just the top padding
                     var heightSoFar = 0;
-                    settings.firstPageLoaded = 0; // for now (before zooming etc is implemented)
 
                     var i;
-                    // Loop through them this way instead of the $.each way because we need the actual index
                     for ( i = 0; i < settings.numPages; i++ ) {                 
                         // First set the height above top for that page ... add this page height to the previous total
                         // Think of a page as including the padding ... so you get sent to 10px above the top or whatever
@@ -433,7 +432,6 @@ THE SOFTWARE.
 
                     // Scroll to the proper place
                     scrollAfterRequest();
-                    // Figure out way to scroll before doing shit
 
                     // For use in the next ajax request (zoom change)
                     settings.dimBeforeZoom = settings.dimAfterZoom;
@@ -565,6 +563,10 @@ THE SOFTWARE.
             // Do the AJAX request - calls all the image display functions in turn
             ajaxRequest(settings.zoomLevel); // with the default zoom level
 
+           if (settings.zoomSlider) {
+                createZoomer();
+            }
+
             // Handle the scroll
             $(outerdrag).scroll(function() {
                 handleScroll();
@@ -671,9 +673,6 @@ THE SOFTWARE.
                 $('#itemtitle').after('<div id="viewertools"></div>');
             }
             
-           if (settings.zoomSlider) {
-                createZoomer();
-            }
 
             if (settings.gotoPage) {
                 createGotoPage();
