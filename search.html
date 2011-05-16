@@ -2,6 +2,23 @@
 <head>
     <title>Testing search</title>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.0/jquery.min.js"></script>
+    <link rel="stylesheet" href="css/diva.css" type="text/css" />
+    <link rel="stylesheet" href="css/ui-lightness/jquery-ui-1.8.9.custom.css" type="text/css" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.11/jquery-ui.min.js"></script>
+    <script src="js/diva-utils.js"></script>
+    <script src="js/diva.js"></script>
+    <script>
+    $(document).ready(function() {
+        $('#documentpanel').diva({
+            maxZoomLevel: 4,
+            zoomLevel: 1,
+            iipServerBaseUrl: "http://petrucci.musiclibs.net:9002/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/wila/",
+            backendServer: "http://petrucci.musiclibs.net:9002/ajax/7/",
+        });
+        dv = $('#documentpanel').data('diva');
+        dv.initiateViewer('#outerdrag', '#documentpanel');
+    });
+        </script>
     <style type="text/css">
     .center {
         text-align: center;
@@ -24,13 +41,14 @@
 
 <body>
 <div class="center">
-    <h1>Search sandbox</h1>
+    <h1>Search highlighting sandbox</h1>
     <input type="button" id="highlight-button" value="Highlight a random section" />
-    <br /><br />
-    <div id="image">
-        <!-- <img src="waldo-bw.jpg" /> -->
-        <img src="lera.jpg" />
-        <div id="highlight"></div>
+</div>
+<br />
+<div id="diva-wrapper">
+    <div id="itemtitle"></div>
+    <div id="outerdrag">
+        <div id="documentpanel"></div>
     </div>
 </div>
     <script src="search.js"></script>
