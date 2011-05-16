@@ -57,10 +57,12 @@ THE SOFTWARE.
             firstAjaxRequest: true,     // True initially, set to false after the first request
             heightAbovePages: [],       // The height above each page
             horizontalOffset: 0,        // Used for storing the page offset before zooming
+            innerdrag: '',              // The ID (including the #) of the inner div
             lastPageLoaded: -1,         // The ID of the last page loaded (value set later)
             maxHeight: 0,               // The height of the tallest page
             maxWidth: 0,                // The width of the widest page
             numPages: 0,                // Number of pages in the array
+            outerdrag: '',              // The ID (including the #) of the outer div
             pageLoadedId: 0,            // The current page in the viewport (center-most page)
             pages: [],                  // An array containing the data for all the pages
             panelHeight: 0,             // Height of the panel. Set in initiateViewer()
@@ -168,7 +170,7 @@ THE SOFTWARE.
                 // Build the content string 
                 var contentString = content.join('');
                 // Just append it straight to the document
-                $('#documentpanel').append(contentString);
+                $(settings.innerdrag).append(contentString);
             }
         };
 
@@ -365,8 +367,8 @@ THE SOFTWARE.
             }
             
             settings.prevVptTop = 0;
-            $('#outerdrag').scrollTop(desiredTop);
-            $('#outerdrag').scrollLeft(desiredLeft);
+            $(settings.outerdrag).scrollTop(desiredTop);
+            $(settings.outerdrag).scrollLeft(desiredLeft);
         };
         
         // AJAX request to start the whole process - called upon page load and upon zoom change
@@ -389,9 +391,9 @@ THE SOFTWARE.
                         settings.firstAjaxRequest = false;
                     }
 
-                    // Reset the vertical scroll and clear out the documentpanel div
-                    $('#outerdrag').scrollTop(0);
-                    $('#documentpanel').text('');                   
+                    // Reset the vertical scroll and clear out the innerdrag div
+                    $(settings.outerdrag).scrollTop(0);
+                    $(settings.innerdrag).text('');                   
 
                     // Now reset some things that need to be changed after each zoom
                     settings.pages = data.pgs;
@@ -426,9 +428,9 @@ THE SOFTWARE.
                     $('#itemtitle').text(data.item_title);
                     
                     // Set the height and width of documentpane (necessary for dragscrollable)
-                    $('#documentpanel').css('height', settings.totalHeight);
+                    $(settings.innerdrag).css('height', settings.totalHeight);
                     var widthToSet = (data.dims.mx_w + settings.paddingPerPage * 2 < settings.panelWidth ) ? settings.panelWidth : data.dims.mx_w + settings.paddingPerPage * 2; // width of page + 40 pixels on each side if necessary
-                    $('#documentpanel').css('width', widthToSet);
+                    $(settings.innerdrag).css('width', widthToSet);
 
                     // Scroll to the proper place
                     scrollAfterRequest();
@@ -443,15 +445,15 @@ THE SOFTWARE.
         // Called by something in index.html
         // Optional argument "direct" - when called by gotoPage
         var handleScroll = function() {
-            settings.scrollSoFar = $('#outerdrag').scrollTop();
+            settings.scrollSoFar = $(settings.outerdrag).scrollTop();
             adjustPages(settings.scrollSoFar - settings.prevVptTop);
             settings.prevVptTop = settings.scrollSoFar;
         };
         
         var handleZoom = function(zoomLevel) {
             // First get the vertical offset (vertical scroll so far)
-            settings.verticalOffset = $('#outerdrag').scrollTop();
-            settings.horizontalOffset = $('#outerdrag').scrollLeft();
+            settings.verticalOffset = $(settings.outerdrag).scrollTop();
+            settings.horizontalOffset = $(settings.outerdrag).scrollLeft();
             
             // Do another request with the requested zoomLevel, set doubleClick to NOT true
             settings.doubleClick = false;
@@ -467,7 +469,7 @@ THE SOFTWARE.
                 var heightToScroll = settings.heightAbovePages[pageNumber];
                 // Change the "currently on page" thing
                 setCurrentPage(0, pageNumber);
-                $('#outerdrag').scrollTop(heightToScroll);
+                $(settings.outerdrag).scrollTop(heightToScroll);
 
                 // Isn't working properly figure it out
                 // Now we have to actually load the page, and possible pages on both sides
@@ -503,8 +505,8 @@ THE SOFTWARE.
                 
                 // Set centerX and centerY for scrolling in after zoom
                 // have to do this.offsetLeft and top ... otherwise relative to edge of document
-                settings.centerX = (event.pageX - settings.viewerXOffset) + $('#outerdrag').scrollLeft();
-                settings.centerY = (event.pageY - settings.viewerYOffset) + $('#outerdrag').scrollTop();
+                settings.centerX = (event.pageX - settings.viewerXOffset) + $(settings.outerdrag).scrollLeft();
+                settings.centerY = (event.pageY - settings.viewerYOffset) + $(settings.outerdrag).scrollTop();
 
                 // Set doubleClick to true, so we know where to zoom in
                 settings.doubleClick = true;
@@ -538,6 +540,9 @@ THE SOFTWARE.
         // Initiates the process; accepts outerdrag and innerdrag ID's
         this.initiateViewer = function(outerdrag, innerdrag) {
             
+            // First store the innerdrag and outerdrag element IDs
+            settings.innerdrag = innerdrag;
+            settings.outerdrag = outerdrag;
             // change the cursor for dragging.
             $(innerdrag).mouseover(function() {
                 $(this).removeClass('grabbing').addClass('grab');
