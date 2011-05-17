@@ -135,6 +135,10 @@ $('#next-highlight').click(function() {
         var nextPage = highlightArray[nextBoxID].p;
         dv.gotoPage(nextPage+1); // because it subtracts one
         adjustBoxes(1);
+        if ($('#previous-highlight').attr('disabled') === 'disabled') {
+            $('#previous-highlight').removeAttr('disabled');
+            $('#previous-highlight').val('Previous');
+        }
     } else {
         // We've reached the end of the highlighted results - change value of button
         $('#next-highlight').val('End of search results');
@@ -148,6 +152,11 @@ $('#previous-highlight').click(function() {
         var prevPage = highlightArray[prevBoxID].p;
         dv.gotoPage(prevPage+1);
         adjustBoxes(-1);
+        // If the next highlight button was disabled ... undisable it
+        if ($('#next-highlight').attr('disabled') == 'disabled') {
+            $('#next-highlight').removeAttr('disabled');
+            $('#next-highlight').val('Next');
+        }
     } else {
         $('#previous-highlight').val('Beginning of search results');
         $('#previous-highlight').attr('disabled', 'disabled');
@@ -175,6 +184,5 @@ $('#colourpicker li').click(function() {
         $('[id^=box-]').removeClass(previousColour).addClass(highlightColour);
         // And make the new one look selected
         $(this).addClass('selected');
-
     }
 });
