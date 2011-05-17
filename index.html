@@ -1,22 +1,18 @@
 <html>
 
 <head>
-<title>Graphing app</title>
+<title>Diva.js demo</title>
 
 <link rel="stylesheet" href="css/diva.css" type="text/css" />
 <link rel="stylesheet" href="css/ui-lightness/jquery-ui-1.8.9.custom.css" type="text/css" />
 
- <style>
-body {
- margin: 0px ;
-}
-</style>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.11/jquery-ui.min.js"></script>
 <script src="js/diva-utils.js"></script>
  <script src="js/diva.js"></script>
  <script>
 var dv;
+
 $(document).ready(function() {
     $('#documentpanel').diva({
         paddingPerPage: 50,
@@ -28,7 +24,6 @@ $(document).ready(function() {
     });
     dv = $('#documentpanel').data('diva');
     dv.initiateViewer('#outerdrag', '#documentpanel');
-
 });
 
  </script>
