@@ -25,8 +25,7 @@
 
     div[id^=box] {
         position: absolute;
-        opacity: 0.7;
-        background-color: #EDE275;
+        opacity: 0.5;
         z-index: 7000;
     }
 
@@ -34,6 +33,45 @@
         position: relative; 
         width: 476px;
         margin: 0 auto;
+    }
+
+    #colourpicker {
+        list-style-type: none;
+    }
+
+    #colourpicker li {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 1px solid #CCC;
+    }
+
+    #colourpicker .selected {
+        border: 2px solid #000;
+    }
+
+    .colour-red {
+        background-color: #FF0000;
+    }
+
+    .colour-orange {
+        background-color: #F88017;
+    }
+
+    .colour-yellow {
+        background-color: #EDE275;
+    }
+
+    .colour-green {
+        background-color: #B1FB17;
+    }
+
+    .colour-blue {
+        background-color: #5CB3FF;
+    }
+
+    .colour-purple {
+        background-color: #8D38C9;
     }
     </style>
 </head>
@@ -44,6 +82,15 @@
     <input type="button" id="previous-highlight" value="Jump to previous highlighted result" disabled="disabled" />
     <input type="button" id="highlight-button" value="Highlight a random section" />
     <input type="button" id="next-highlight" value="Jump to next highlighted result" disabled="disabled"/>
+    <br />
+    <ul id="colourpicker">
+        <li class="colour-red"></li>
+        <li class="colour-orange"></li>
+        <li class="colour-yellow selected"></li>
+        <li class="colour-green"></li>
+        <li class="colour-blue"></li>
+        <li class="colour-purple"></li>
+    </ul>
 </div>
 <br />
 <div id="diva-wrapper">

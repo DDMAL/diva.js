@@ -1,6 +1,7 @@
 var highlightArray = [];
 var lastBoxLoaded = -1;
 var firstBoxLoaded = -1;
+var highlightColour = 'colour-yellow';
 
 function inRange(boxID) {
     if (boxID >= 0 && boxID < highlightArray.length) {
@@ -36,7 +37,7 @@ function appendBox(boxID) {
 
     console.log('trying to append a box to page ' + pageNumber);
 
-    var toAppend = '<div id="box-' + boxID + '" style="width: ' + width + '; height: ' + height + '; left: ' + xStart + '; top: ' + yStart + ';"></div>';
+    var toAppend = '<div id="box-' + boxID + '" class="' + highlightColour + ' " style="width: ' + width + '; height: ' + height + '; left: ' + xStart + '; top: ' + yStart + ';"></div>';
     if (pageExists(pageNumber)) {
         console.log('yay found it!');
         $('#page-' + pageNumber).append(toAppend);
@@ -150,5 +151,30 @@ $('#previous-highlight').click(function() {
     } else {
         $('#previous-highlight').val('Beginning of search results');
         $('#previous-highlight').attr('disabled', 'disabled');
+    }
+});
+
+// Choose the colour to highlight with ... just for Ich
+$('#colourpicker li').click(function() {
+    // Is it already selected?
+    var isSelected = $(this).hasClass('selected');
+    console.log('already selected: ' + isSelected);
+    // Only do stuff if it's NOT already selected
+    if (!isSelected) {
+        // First change the colour of the highlight boxes to this
+        highlightColour = $(this).attr('class');
+        console.log('new highlight colour: ' + highlightColour);
+        // Now, figure out the colour that was previously selected
+        var previousSelected = $('#colourpicker .selected');
+        // First get rid of the selected attribute
+        previousSelected.removeClass('selected');
+        // Now get its colour
+        var previousColour = previousSelected.attr('class');
+        console.log(previousColour);
+        // Now, change the colour of any existing boxes
+        $('[id^=box-]').removeClass(previousColour).addClass(highlightColour);
+        // And make the new one look selected
+        $(this).addClass('selected');
+
     }
 });
