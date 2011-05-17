@@ -465,6 +465,11 @@ THE SOFTWARE.
             ajaxRequest(zoomLevel);
         };
         
+        // Public function that calls the private function because nothing else works
+        this.gotoPage = function(pageNumber) {
+            gotoPage(pageNumber);
+        };
+
         // Private function for going to a page
         var gotoPage = function(pageNumber) {
             // Since we start indexing from 0, subtract 1 to behave as the user expects
