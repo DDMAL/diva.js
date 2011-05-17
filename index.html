@@ -1,24 +1,11 @@
 <html>
 
 <head>
-<title>Graphing app</title>
+<title>Diva.js demo</title>
 
- <!-- Prevent scaling -->
- <meta name = "viewport" content = "user-scalable=no, width=device-width" />
-
- <!-- Eliminate url and button bars if added to home screen -->
- <meta name="apple-mobile-web-app-capable" content="yes" />
-
- <!-- Choose how to handle the phone status bar -->
- <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <link rel="stylesheet" href="css/diva.css" type="text/css" />
 <link rel="stylesheet" href="css/ui-lightness/jquery-ui-1.8.9.custom.css" type="text/css" />
 
- <style>
-body {
- margin: 0px ;
-}
-</style>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.11/jquery-ui.min.js"></script>
 <script src="js/diva-utils.js"></script>
@@ -26,15 +13,8 @@ body {
  <script>
 var dv;
 
-// To be called when there's a move event on the body itself:
-function BlockMove(event) {
- // Tell Safari not to move the window.
- event.preventDefault() ;
-}
-
 $(document).ready(function() {
     $('#documentpanel').diva({
-        maxZoomLevel: 4,
         paddingPerPage: 50,
         zoomSlider: true,
         gotoPage: true,
@@ -44,14 +24,13 @@ $(document).ready(function() {
     });
     dv = $('#documentpanel').data('diva');
     dv.initiateViewer('#outerdrag', '#documentpanel');
-
 });
 
  </script>
 
 </head>
 
-<body ontouchmove="BlockMove(event);" ongestureend="dv.scale(event);">
+<body ontouchmove="dv.blockMove(event);" ongestureend="dv.scale(event);">
 <div id="diva-wrapper">
     <div id="itemtitle">test</div>
     <div id="outerdrag">
