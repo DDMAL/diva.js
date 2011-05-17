@@ -10,6 +10,15 @@ function inRange(boxID) {
     }
 }
 
+// Check if a page is visible in the dom
+function pageExists(pageNumber) {
+    if ($('#page-' + pageNumber).length > 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 // Give it the index of the page that needs a box and it will append it
 // Index of the page in pagesArray ... not the actual page number or anything
 function appendBox(boxID) {
@@ -28,7 +37,7 @@ function appendBox(boxID) {
     console.log('trying to append a box to page ' + pageNumber);
 
     var toAppend = '<div id="box-' + boxID + '" style="width: ' + width + '; height: ' + height + '; left: ' + xStart + '; top: ' + yStart + ';"></div>';
-    if ($('#page-' + pageNumber).length > 0) {
+    if (pageExists(pageNumber)) {
         console.log('yay found it!');
         $('#page-' + pageNumber).append(toAppend);
         // Figure out if we need to update the first/last pages loaded
@@ -54,6 +63,9 @@ $('#highlight-button').click(function() {
     $.getJSON('search/many', function(data) {
         // First remove all the existing highlight boxes
         $('[id^=box-]').remove();
+        // Make the next and previous buttons not disabled
+        $('#next-highlight').removeAttr('disabled');
+        $('#previous-highlight').removeAttr('disabled');
 
         var numBoxes = data.length;
         for (var i = 0; i < numBoxes; i++) {
@@ -77,16 +89,25 @@ function attemptBoxHide(boxID, direction) {
 function adjustBoxes(direction) {
     console.log('direction is: ' + direction);
     var nextBox;
+    var firstPage = (inRange(firstBoxLoaded)) ? highlightArray[firstBoxLoaded].p : -1;
     if (direction > 0) {
         // Scrolling down
         // Try to append the next page down
         nextBox = lastBoxLoaded + 1;
+        // Check if the first box needs to be changed
+        if (!pageExists(firstPage)) {
+            firstBoxLoaded++;
+        }
     } else if (direction < 0) {
         // Scrolling up
         nextBox = firstBoxLoaded - 1;
+        if (!pageExists(firstPage)) {
+            firstBoxLoaded--;
+        }
     }
 
     console.log('adjustBoxes now trying to append ' + nextBox);
+    console.log('first box loaded:' + firstBoxLoaded);
     if (appendBox(nextBox)) {
         // keep trying to call it recursively
         adjustBoxes(direction);
@@ -117,5 +138,17 @@ $('#next-highlight').click(function() {
         // We've reached the end of the highlighted results - change value of button
         $('#next-highlight').val('End of search results');
         $('#next-highlight').attr('disabled', 'disabled');
+    }
+});
+
+$('#previous-highlight').click(function() {
+    var prevBoxID = firstBoxLoaded - 1;
+    if (inRange(prevBoxID)) {
+        var prevPage = highlightArray[prevBoxID].p;
+        dv.gotoPage(prevPage+1);
+        adjustBoxes(-1);
+    } else {
+        $('#previous-highlight').val('Beginning of search results');
+        $('#previous-highlight').attr('disabled', 'disabled');
     }
 });
