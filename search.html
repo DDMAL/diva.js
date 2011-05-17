@@ -10,7 +10,6 @@
     <script>
     $(document).ready(function() {
         $('#documentpanel').diva({
-            maxZoomLevel: 4,
             zoomLevel: 1,
             iipServerBaseUrl: "http://petrucci.musiclibs.net:9002/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/wila/",
             backendServer: "http://petrucci.musiclibs.net:9002/ajax/7/",
@@ -24,7 +23,7 @@
         text-align: center;
     }
 
-    #highlight {
+    div[id^=box] {
         position: absolute;
         opacity: 0.7;
         background-color: #EDE275;
@@ -42,7 +41,9 @@
 <body>
 <div class="center">
     <h1>Search highlighting sandbox</h1>
+    <input type="button" id="previous-highligt" value="Jump to previous highlighted result" disabled="disabled" />
     <input type="button" id="highlight-button" value="Highlight a random section" />
+    <input type="button" id="next-highlight" value="Jump to next highlighted result" disabled="disabled"/>
 </div>
 <br />
 <div id="diva-wrapper">
