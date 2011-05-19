@@ -37,6 +37,10 @@
 
     #colourpicker {
         list-style-type: none;
+        display: inline;
+        padding-left: 0px;
+        position: relative;
+        top: 3px;
     }
 
     #colourpicker li {
@@ -78,11 +82,11 @@
 
 <body>
 <div class="center">
-    <h1>Search highlighting sandbox</h1>
-    <input type="button" id="previous-highlight" value="Previous" disabled="disabled" />
-    <input type="button" id="highlight-button" value="Highlight a random section" />
-    <input type="button" id="next-highlight" value="Next" disabled="disabled"/>
+    <h1>Search highlighting (not really working)</h1>
+    <input type="text" value="Fake search box" />
+    <input type="button" id="highlight-button" value="Highlight some random sections" />
     <br />
+    <input type="button" id="previous-highlight" value="Previous" disabled="disabled" />
     <ul id="colourpicker">
         <li class="colour-red"></li>
         <li class="colour-orange"></li>
@@ -91,6 +95,7 @@
         <li class="colour-blue"></li>
         <li class="colour-purple"></li>
     </ul>
+    <input type="button" id="next-highlight" value="Next" disabled="disabled"/>
 </div>
 <br />
 <div id="diva-wrapper">
