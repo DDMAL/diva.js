@@ -525,13 +525,13 @@ THE SOFTWARE.
                 });
         };
 
-        // Testing blockMove on the iPad
-        this.blockMove = function(event) {
+        // Bound to an event handler if iStuff detected; prevents window dragging
+        var blockMove = function(event) {
             event.preventDefault();
         };
 
-        // Testing scale in the iPad
-        this.scale = function(event) {
+        // Allows pinch-zooming
+        var scale = function(event) {
             var newZoomLevel = settings.zoomLevel;
             // First figure out the new zoom level:
             if (event.scale > 1 && newZoomLevel < settings.maxZoomLevel) {
@@ -615,6 +615,17 @@ THE SOFTWARE.
                 // Choose how to handle the phone status bar
                 toAppend.push('<meta name="apple-mobile-web-app-status-bar-style" content="black" />');
                 $('head').append(toAppend.join('\n'));
+
+                // Block the user from moving the window
+                $('body').bind('touchmove', function(event) {
+                    var e = event.originalEvent;
+                    blockMove(e);
+                });
+
+                $('body').bind('gestureend', function(event) {
+                    var e = event.originalEvent;
+                    scale(e);
+                });
             }
 
             // Only check if either scrollBySpace or scrollByKeys is enabled
