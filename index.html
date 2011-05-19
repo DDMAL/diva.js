@@ -24,13 +24,23 @@ $(document).ready(function() {
     });
     dv = $('#documentpanel').data('diva');
     dv.initiateViewer('#outerdrag', '#documentpanel');
+    
+    $('body').bind('touchmove', function(event) {
+        var e = event.originalEvent;
+        dv.blockMove(e);
+    });
+
+    $('body').bind('gestureend', function(event) {
+        var e = event.originalEvent;
+        dv.scale(e);
+    });
 });
 
  </script>
 
 </head>
 
-<body ontouchmove="dv.blockMove(event);" ongestureend="dv.scale(event);">
+<body>
 <div id="diva-wrapper">
     <div id="itemtitle">test</div>
     <div id="outerdrag">
