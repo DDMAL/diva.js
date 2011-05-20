@@ -8,14 +8,14 @@ body {
 	margin: 0 auto;
 }
 
-#documentpanel {
+#diva-viewer {
 	color: #000;
 	position: relative;
 	overflow: hidden; /* x-scroll adds to the height, figure out later */
 	/*cursor: pointer; /* or move */*/
 }
 
-#outerdrag {
+#diva-outer {
 	position: relative;
 	height: 700px;
 	width: 720px; /* hack to get rid of the horizontal scrollbar ... */
@@ -25,16 +25,7 @@ body {
 	border: 1px solid #99BBE8;
 }
 
-/* For centering the image divs and giving padding */
-/* The two classes are just to distinguish between blank and loaded pages in the DOM */
-/*.blank-page, .loaded-page {
-	padding-top: 10px;
-	padding-left: 0px;
-	padding-bottom: 10px;
-	overflow: auto;
-	position: relative;
-}*/
-div[id^="page"] {
+div[id^="diva-page"] {
 	position: absolute; /*test */
     -webkit-box-shadow: 0px 5px 10px rgba(0,0,0, .5);
     -moz-box-shadow: 0px 5px 3px rgba(0, 0, 0, 0.5);
@@ -45,18 +36,18 @@ div[id^="page"] {
     background-position: center;
 }
 
-#zoomer {
+#diva-zoomer {
 	margin: 10px;
 	font-size: 62.5%;
 	width: 100px;
     float: left;
 }
 
-#gotopage {
+#diva-goto {
 	text-align: right;
 }
 	
-#itemtitle {
+#diva-title {
 	text-align: center;
 	font-weight: bold;
 	font-size: 1.5em;

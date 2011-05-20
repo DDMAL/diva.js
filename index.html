@@ -11,10 +11,8 @@
 <script src="js/diva-utils.js"></script>
  <script src="js/diva.js"></script>
  <script>
-var dv;
-
 $(document).ready(function() {
-    $('#documentpanel').diva({
+    $('#diva-viewer').diva({
         paddingPerPage: 50,
         zoomSlider: true,
         gotoPage: true,
@@ -22,8 +20,8 @@ $(document).ready(function() {
         backendServer: "http://petrucci.musiclibs.net:9002/ajax/3/",
         scrollBySpace: false,
     });
-    dv = $('#documentpanel').data('diva');
-    dv.initiateViewer('#outerdrag', '#documentpanel');
+    var dv = $('#diva-viewer').data('diva');
+    dv.initiateViewer('#diva-outer', '#diva-viewer');
 });
 
  </script>
@@ -32,9 +30,9 @@ $(document).ready(function() {
 
 <body>
 <div id="diva-wrapper">
-    <div id="itemtitle">test</div>
-    <div id="outerdrag">
-        <div id="documentpanel"></div>
+    <div id="diva-title">test</div>
+    <div id="diva-outer">
+        <div id="diva-viewer"></div>
     </div>
 </div>
 

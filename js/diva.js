@@ -102,7 +102,7 @@ THE SOFTWARE.
         
         // Check if a page has been loaded (i.e. is visible to the user) 
         var isPageLoaded = function(pageID) {
-            var thisID = '#page-' + pageID;
+            var thisID = '#diva-page-' + pageID;
 
             // Done using the length attribute in jQuery
             // If and only if the div does not exist, its length will be 0
@@ -145,7 +145,7 @@ THE SOFTWARE.
                     leftOffset = (widthToUse - width) / 2;
                 }
 
-                content.push('<div id="page-' + pageID + '" style="top: ' + heightFromTop + 'px; width:' + width + 'px; height: ' + height + 'px; left:' + leftOffset + 'px;">');
+                content.push('<div id="diva-page-' + pageID + '" style="top: ' + heightFromTop + 'px; width:' + width + 'px; height: ' + height + 'px; left:' + leftOffset + 'px;">');
 
                 // Calculate the width and height of the outer tiles (the ones that may have weird dimensions)
                 lastHeight = height - (rows - 1) * settings.tileHeight;
@@ -176,7 +176,7 @@ THE SOFTWARE.
 
         var deletePage = function(pageID) {
             if (isPageLoaded(pageID)) {
-                $('#page-' + pageID).remove();
+                $('#diva-page-' + pageID).remove();
             }
         };
 
@@ -243,7 +243,7 @@ THE SOFTWARE.
                 // Set this to the current page
                 settings.pageLoadedId = pageToConsider;
                 // Change the text to reflect this - pageToConsider + 1 (because it's page number not ID)
-                $('#currentpage span').text(pageToConsider + 1);
+                $('#diva-current span').text(pageToConsider + 1);
                 
                 // Now try to change the next page, given that we're not going to a specific page
                 // Calls itself recursively - this way we accurately obtain the current page
@@ -387,7 +387,7 @@ THE SOFTWARE.
                         settings.numPages = data.pgs.length;
                         settings.maxZoomLevel = (settings.maxZoomLevel > 0) ? settings.maxZoomLevel : data.max_zoom;
                         // Set the total number of pages
-                        $('#currentpage label').text(settings.numPages);
+                        $('#diva-current label').text(settings.numPages);
 
                         // Create the zoomer here, if needed
                         if (settings.zoomSlider) {
@@ -430,7 +430,7 @@ THE SOFTWARE.
                     // Set the offset stuff, scroll to the proper places
         
                     // Change the title to the actual title
-                    $('#itemtitle').text(data.item_title);
+                    $('#diva-title').text(data.item_title);
                     
                     // Set the height and width of documentpane (necessary for dragscrollable)
                     $(settings.innerdrag).css('height', settings.totalHeight);
@@ -520,7 +520,7 @@ THE SOFTWARE.
                 ajaxRequest(newZoomLevel);
                 
                 // Make the slider display the new value
-                $('#zoomer').slider({
+                $('#diva-zoomer').slider({
                     value: newZoomLevel
                 });
         };
@@ -540,9 +540,9 @@ THE SOFTWARE.
                 newZoomLevel--;
             }
             handleZoom(newZoomLevel);
+
             // Make the slider display the new zoom level
-            // Unnecessarily reusing code ... fix later
-            $('#zoomer').slider({
+            $('#diva-zoomer').slider({
                 value: newZoomLevel
             });
         };
@@ -654,8 +654,8 @@ THE SOFTWARE.
 
         // Creates a zoomer using the min and max zoom levels specified ... PRIVATE, only if zoomSlider = true
         var createZoomer = function() {
-            $('#viewertools').prepend('<div id="zoomer"></div>');
-            $('#zoomer').slider({
+            $('#diva-tools').prepend('<div id="diva-zoomer"></div>');
+            $('#diva-zoomer').slider({
                     value: settings.zoomLevel,
                     min: settings.minZoomLevel,
                     max: settings.maxZoomLevel,
@@ -668,10 +668,10 @@ THE SOFTWARE.
         
         // Creates the gotoPage thing
         var createGotoPage = function() {
-            $('#viewertools').append('<div id="gotopage">Go to page <input type="text" size="3" id="goto-page" /> <input type="submit" id="goto" value="Go" /><br /><div id="currentpage">Current page: <span>1</span> of <label></label></div></div>');
+            $('#diva-tools').append('<div id="diva-goto">Go to page <input type="text" size="3" id="diva-goto-input" /> <input type="submit" id="diva-goto-submit" value="Go" /><br /><div id="diva-current">Current page: <span>1</span> of <label></label></div></div>');
             
-            $('#goto').click(function() {
-                var desiredPage = parseInt($('#goto-page').val(), 10);
+            $('#diva-goto-submit').click(function() {
+                var desiredPage = parseInt($('#diva-goto-input').val(), 10);
                 if ( !gotoPage(desiredPage) ) {
                     alert('Invalid page number');
                 }
@@ -698,7 +698,7 @@ THE SOFTWARE.
             
             // If we need either a zoom slider or a gotoPage thing, create a "viewertools" div
             if (settings.zoomSlider || settings.gotoPage) {
-                $('#itemtitle').after('<div id="viewertools"></div>');
+                $('#diva-title').after('<div id="diva-tools"></div>');
             }
             
             if (settings.gotoPage) {
