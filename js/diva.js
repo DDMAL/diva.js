@@ -29,10 +29,8 @@ THE SOFTWARE.
             backendServer: '',          // The URL to the script returning the JSON data; mandatory
             gotoPage: true,             // Should there be a "go to page" option or not, defaults to yes
             iipServerBaseUrl: '',       // The URL to the IIPImage installation, including the ?FIF=
-            innerdrag: 'diva-inner',    // The ID for the inner viewer element (default)
             maxZoomLevel: 0,            // Optional; defaults to the max zoom returned in the JSON response
             minZoomLevel: 0,            // Defaults to 0 (the minimum zoom)
-            outerdrag: 'diva-outer',    // The selector for the outer drag element (default)
             paddingPerPage: 40,         // The pixels of padding surrounding and between pages
             scrollBySpace: false,       // Can user scroll down with the space bar? Disabled by default
             scrollByKeys: true,         // Can user scroll with the page up/page down keys?
@@ -179,7 +177,7 @@ THE SOFTWARE.
 
                 // Build the content string and append it to the document
                 var contentString = content.join('');
-                $(settings.innerdrag).append(contentString);
+                $('#diva-inner').append(contentString);
             }
         };
 
@@ -396,8 +394,8 @@ THE SOFTWARE.
             }
             
             settings.prevVptTop = 0;
-            $(settings.outerdrag).scrollTop(desiredTop);
-            $(settings.outerdrag).scrollLeft(desiredLeft);
+            $('#diva-outer').scrollTop(desiredTop);
+            $('#diva-outer').scrollLeft(desiredLeft);
         };
         
         // AJAX request to start the whole process - called upon page load and upon zoom change
@@ -432,8 +430,8 @@ THE SOFTWARE.
                     }
 
                     // Reset the vertical scroll and clear out the innerdrag div
-                    $(settings.outerdrag).scrollTop(0);
-                    $(settings.innerdrag).text('');                   
+                    $('#diva-outer').scrollTop(0);
+                    $('#diva-inner').text('');                   
 
                     // Now reset some things that need to be changed after each zoom
                     settings.pages = data.pgs;
@@ -465,9 +463,9 @@ THE SOFTWARE.
                     }
                     
                     // Set the height and width of documentpane (necessary for dragscrollable)
-                    $(settings.innerdrag).css('height', settings.totalHeight);
+                    $('#diva-inner').css('height', settings.totalHeight);
                     var widthToSet = (data.dims.mx_w + settings.paddingPerPage * 2 < settings.panelWidth ) ? settings.panelWidth : data.dims.mx_w + settings.paddingPerPage * 2; // width of page + 40 pixels on each side if necessary
-                    $(settings.innerdrag).css('width', widthToSet);
+                    $('#diva-inner').css('width', widthToSet);
 
                     // Scroll to the proper place
                     scrollAfterRequest();
@@ -481,7 +479,7 @@ THE SOFTWARE.
         
         // Called whenever there is a scroll event in the document panel (the #diva-outer element)
         var handleScroll = function() {
-            settings.scrollSoFar = $(settings.outerdrag).scrollTop();
+            settings.scrollSoFar = $('#diva-outer').scrollTop();
             adjustPages(settings.scrollSoFar - settings.prevVptTop);
             settings.prevVptTop = settings.scrollSoFar;
         };
@@ -533,8 +531,8 @@ THE SOFTWARE.
         // Called whenever the zoom slider is moved
         var handleZoomSlide = function(zoomLevel) {
             // First get the vertical offset (vertical scroll so far)
-            settings.verticalOffset = $(settings.outerdrag).scrollTop();
-            settings.horizontalOffset = $(settings.outerdrag).scrollLeft();
+            settings.verticalOffset = $('#diva-outer').scrollTop();
+            settings.horizontalOffset = $('#diva-outer').scrollLeft();
             
             // Let handleZoom handle zooming
             settings.doubleClick = false;
@@ -552,7 +550,7 @@ THE SOFTWARE.
 
                 // Change the "currently on page" thing
                 setCurrentPage(0, pageNumber);
-                $(settings.outerdrag).scrollTop(heightToScroll);
+                $('#diva-outer').scrollTop(heightToScroll);
 
                 // Now execute the callback function if it is defined
                 if (typeof settings.jump == 'function') {
@@ -592,8 +590,8 @@ THE SOFTWARE.
                 
                 // Set centerX and centerY for scrolling in after zoom
                 // Need to use this.offsetLeft and this.offsetTop to get it relative to the edge of the document
-                settings.centerX = (event.pageX - settings.viewerXOffset) + $(settings.outerdrag).scrollLeft();
-                settings.centerY = (event.pageY - settings.viewerYOffset) + $(settings.outerdrag).scrollTop();
+                settings.centerX = (event.pageX - settings.viewerXOffset) + $('#diva-outer').scrollLeft();
+                settings.centerY = (event.pageY - settings.viewerYOffset) + $('#diva-outer').scrollTop();
 
                 // Set doubleClick to true, so we know where to zoom
                 settings.doubleClick = true;
@@ -624,49 +622,30 @@ THE SOFTWARE.
 
         // Initiates the process
         var initiateViewer = function() {
-            // First check if the outerdrag and innerdrag elements exist or not
-            if ($('#' + settings.outerdrag).length === 0) {
-                // Doesn't exist, so create it right after diva-wrapper
-                // Assume that if it does exist, it has been placed correctly
-                $(settings.elementSelector).append('<div id="' + settings.outerdrag + '"></div>');
-            }
-            
-            // Now add the # in front of it to make selecting it easier
-            settings.outerdrag = '#' + settings.outerdrag;
-
-            if ($('#' + settings.innerdrag).length === 0) {
-                // Make this the first child of the outerdrag element
-                $(settings.outerdrag).append('<div id="' + settings.innerdrag + '"></div>');
-            }
-
-            settings.innerdrag = '#' + settings.innerdrag;
-
-            // If the div doesn't have a dragger class (and it probably doesn't), add it
-            // (Necessary for dragscrollable to work)
-            if (!$(settings.innerdrag).hasClass('dragger')) {
-                $(settings.innerdrag).addClass('dragger')
-            }
+            // Create the inner and outer panels
+            $(settings.elementSelector).append('<div id="diva-outer" class="dragger"></div>');
+            $('#diva-outer').append('<div id="diva-inner"></div>');
 
             // Change the cursor for dragging.
-            $(settings.innerdrag).mouseover(function() {
+            $('#diva-inner').mouseover(function() {
                 $(this).removeClass('grabbing').addClass('grab');
             });
             
-            $(settings.innerdrag).mouseout(function() {
+            $('#diva-inner').mouseout(function() {
                 $(this).removeClass('grab');
             });
             
-            $(settings.innerdrag).mousedown(function() {
+            $('#diva-inner').mousedown(function() {
                 $(this).removeClass('grab').addClass('grabbing');
             });
             
-            $(settings.innerdrag).mouseup(function() {
+            $('#diva-inner').mouseup(function() {
                 $(this).removeClass('grabbing').addClass('grab');
             });
 
             // Get the height and width of the outerdrag element
-            settings.panelWidth = parseInt($(settings.outerdrag).width(), 10) - 20; // for the scrollbar change later
-            settings.panelHeight = parseInt($(settings.outerdrag).height(), 10);
+            settings.panelWidth = parseInt($('#diva-outer').width(), 10) - 20; // for the scrollbar change later
+            settings.panelHeight = parseInt($('#diva-outer').height(), 10);
             
                         
             // Do the AJAX request - calls all the image display functions in turn
@@ -674,15 +653,15 @@ THE SOFTWARE.
 
 
             // Handle the scroll
-            $(settings.outerdrag).scroll(function() {
+            $('#diva-outer').scroll(function() {
                 handleScroll();
             });
             
             // Set drag scroll on first descendant of class dragger on both selected elements
-            $(settings.outerdrag + ', ' + settings.innerdrag).dragscrollable({dragSelector: '.dragger', acceptPropagatedEvent: true});
+            $('#diva-outer, #diva-inner').dragscrollable({dragSelector: '.dragger', acceptPropagatedEvent: true});
             
             // Double-click to zoom
-            $(settings.outerdrag).dblclick(function(event) {
+            $('#diva-outer').dblclick(function(event) {
                 // First set the x and y offsets of the viewer from the edge of document
                 settings.viewerXOffset = this.offsetLeft;
                 settings.viewerYOffset = this.offsetTop;
@@ -691,7 +670,7 @@ THE SOFTWARE.
             });
 
             // Prevent the context menu within the outerdrag IF it was triggered with the ctrl key
-            $(settings.outerdrag).bind("contextmenu", function(e) {
+            $('#diva-outer').bind("contextmenu", function(e) {
                 if (event.ctrlKey) {
                     e.preventDefault();
                 }
@@ -700,7 +679,7 @@ THE SOFTWARE.
             // Check if the user is on a iPhone or iPod touch or iPad
             if ((navigator.userAgent.match(/iPhone/i)) || (navigator.userAgent.match(/iPad/i)) || (navigator.userAgent.match(/iPod/i))) {
                 // One-finger scroll within outerdrag
-                $(settings.outerdrag).oneFingerScroll();
+                $('#diva-outer').oneFingerScroll();
 
                 // Prevent resizing (below from http://matt.might.net/articles/how-to-native-iphone-ipad-apps-in-javascript/)
                 var toAppend = [];
@@ -736,13 +715,13 @@ THE SOFTWARE.
                 $(document).keydown(function(event) {
                     // Space or page down - go to the next page
                     if ((settings.scrollBySpace && event.keyCode == spaceKey) || (settings.scrollByKeys && event.keyCode == pageDownKey)) {
-                        $(settings.outerdrag).scrollTop(settings.scrollSoFar + settings.panelHeight);
+                        $('#diva-outer').scrollTop(settings.scrollSoFar + settings.panelHeight);
                         return false;
                     }
 
                     // Page up - go to the previous page
                     if (settings.scrollByKeys && event.keyCode == pageUpKey) {
-                        $(settings.outerdrag).scrollTop(settings.scrollSoFar - settings.panelHeight);
+                        $('#diva-outer').scrollTop(settings.scrollSoFar - settings.panelHeight);
                         return false;
                     }
                 });
