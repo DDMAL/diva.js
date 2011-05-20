@@ -755,18 +755,6 @@ THE SOFTWARE.
             });
         };
 
-        // Public function, returns the title of the document
-        this.getItemTitle = function() {
-            return settings.itemTitle;
-        };
-        
-        /*this.getId = function() {
-            return settings.id;
-        };
-        
-        this.getContainerId = function() {
-            return settings.containerEl;
-        };*/
         
         var init = function() {
             settings.elementSelector = '#' + $(element).attr('id');
@@ -797,6 +785,16 @@ THE SOFTWARE.
 
         // call the init function when this object is created.
         init();
+
+        // Public function, returns the title of the document
+        this.getItemTitle = function() {
+            return settings.itemTitle;
+        };
+
+        // Public function for going to a specific page, returns false if that page is invalid
+        this.gotoPage = function(pageNumber) {
+            return gotoPage(pageNumber);
+        };
     };
     
     /// this should not need to be changed.
