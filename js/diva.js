@@ -346,6 +346,17 @@ THE SOFTWARE.
                 attemptPageShow(settings.lastPageLoaded+1, direction);
                 setCurrentPage(1);
             }
+
+            // Handle the scrolling callback functions here
+            if (typeof settings.scroll == 'function' && direction != 0) {
+                settings.scroll.call();
+            }
+            if (typeof settings.scrollUp == 'function' && direction < 0) {
+                settings.scrollUp.call();
+            }
+            if (typeof settings.scrollDown == 'function' && direction > 0) {
+                settings.scrollDown.call();
+            }
         };
         
         // Helper function called by ajaxRequest to scroll to the desired place
