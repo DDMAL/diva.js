@@ -29,22 +29,22 @@ THE SOFTWARE.
             backendServer: '',          // The URL to the script returning the JSON data; mandatory
             gotoPage: true,             // Should there be a "go to page" option or not, defaults to yes
             iipServerBaseUrl: '',       // The URL to the IIPImage installation, including the ?FIF=
+            jump: null,                 // Callback function for jumping to a specific page (using the gotoPage feature)
             maxZoomLevel: 0,            // Optional; defaults to the max zoom returned in the JSON response
             minZoomLevel: 0,            // Defaults to 0 (the minimum zoom)
             paddingPerPage: 40,         // The pixels of padding surrounding and between pages
+            scroll: null,               // Callback function for scrolling
             scrollBySpace: false,       // Can user scroll down with the space bar? Disabled by default
             scrollByKeys: true,         // Can user scroll with the page up/page down keys?
+            scrollDown: null,           // Callback function for scrolling down, only
+            scrollUp: null,             // Callback function for scrolling up only
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
-            zoomLevel: 2,               // The initial zoom level (used to store the current zoom level)
-            zoomSlider: true,           // Should there be a zoom slider or not, defaults to yes
-            scroll: null,               // Callback function for scrolling
-            scrollUp: null,             // Callback function for scrolling up only
-            scrollDown: null,           // Callback function for scrolling down, only
             zoom: null,                 // Callback function for zooming in general
-            zoomOut: null,              // Callback function for zooming out only
             zoomIn: null,               // Callback function for zooming in only
-            jump: null,                 // Callback function for jumping to a specific page (using the gotoPage feature)
+            zoomLevel: 2,               // The initial zoom level (used to store the current zoom level)
+            zoomOut: null,              // Callback function for zooming out only
+            zoomSlider: true,           // Should there be a zoom slider or not, defaults to yes
             //itemOrientation: 0,       // Either "h" (horizontal) or "v" (vertical) - currently not implemented
         };
         
