@@ -349,13 +349,13 @@ THE SOFTWARE.
 
             // Handle the scrolling callback functions here
             if (typeof settings.scroll == 'function' && direction != 0) {
-                settings.scroll.call();
+                settings.scroll.call(this);
             }
             if (typeof settings.scrollUp == 'function' && direction < 0) {
-                settings.scrollUp.call();
+                settings.scrollUp.call(this);
             }
             if (typeof settings.scrollDown == 'function' && direction > 0) {
-                settings.scrollDown.call();
+                settings.scrollDown.call(this);
             }
         };
         
@@ -506,18 +506,18 @@ THE SOFTWARE.
             // If the callback function is set, execute it
             if (typeof settings.zoom == 'function') {
                 // zoom: function(newZoomLevel) { doSomething(); }
-                settings.zoom.call(zoomLevel);
+                settings.zoom.call(this, zoomLevel);
             }
             // Execute the zoom in/out callback function if necessary
             if (zoomDirection > 0) {
                 // Zooming out
                 if (typeof settings.zoomOut == 'function') {
-                    settings.zoomOut.call(zoomLevel);
+                    settings.zoomOut.call(this, zoomLevel);
                 }
             } else {
                 // Zooming in
                 if (typeof settings.zoomIn == 'function') {
-                    settings.zoomIn.call(zoomLevel);
+                    settings.zoomIn.call(this, zoomLevel);
                 }
             }
         };
@@ -544,8 +544,12 @@ THE SOFTWARE.
                 setCurrentPage(0, pageNumber);
                 $(settings.outerdrag).scrollTop(heightToScroll);
 
-                // Isn't working properly figure it out
-                // Now we have to actually load the page, and possible pages on both sides
+                // Now execute the callback function if it is defined
+                if (typeof settings.jump == 'function') {
+                    // Pass it the page number, +1 as the user expects
+                    settings.jump.call(this, pageNumber+1);
+                }
+
                 return true; // To signify that we can scroll to this page
             }
             return false;
