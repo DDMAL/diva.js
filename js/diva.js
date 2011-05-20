@@ -467,15 +467,27 @@ THE SOFTWARE.
             adjustPages(settings.scrollSoFar - settings.prevVptTop);
             settings.prevVptTop = settings.scrollSoFar;
         };
-        
+
+        // Handles zooming - changing the slider etc
         var handleZoom = function(zoomLevel) {
+            // First, do an ajax request with the new zoom level
+            ajaxRequest(zoomLevel);
+
+            // Make the slider display the new value (it may already)
+            $('#diva-zoomer').slider({
+                value: zoomLevel
+            });
+        };
+
+        
+        var handleZoomSlide = function(zoomLevel) {
             // First get the vertical offset (vertical scroll so far)
             settings.verticalOffset = $(settings.outerdrag).scrollTop();
             settings.horizontalOffset = $(settings.outerdrag).scrollLeft();
             
-            // Do another request with the requested zoomLevel, set doubleClick to NOT true
+            // Let handleZoom handle zooming
             settings.doubleClick = false;
-            ajaxRequest(zoomLevel);
+            handleZoom(zoomLevel);
         };
         
         // Private function for going to a page
@@ -529,13 +541,8 @@ THE SOFTWARE.
                 // Set doubleClick to true, so we know where to zoom in
                 settings.doubleClick = true;
                 
-                // Do an AJAX request with the new zoom level - will zoom in to the right place
-                ajaxRequest(newZoomLevel);
-                
-                // Make the slider display the new value
-                $('#diva-zoomer').slider({
-                    value: newZoomLevel
-                });
+                // Zoom in
+                handleZoom(newZoomLevel);
         };
 
         // Bound to an event handler if iStuff detected; prevents window dragging
@@ -552,12 +559,9 @@ THE SOFTWARE.
             } else if (event.scale < 1 && newZoomLevel > settings.minZoomLevel) {
                 newZoomLevel--;
             }
-            handleZoom(newZoomLevel);
 
-            // Make the slider display the new zoom level
-            $('#diva-zoomer').slider({
-                value: newZoomLevel
-            });
+            // Has to call handleZoomSlide so that the coordinates are kept
+            handleZoomSlide(newZoomLevel);
         };
 
         // Initiates the process
