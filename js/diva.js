@@ -356,13 +356,13 @@ THE SOFTWARE.
 
             // Handle the scrolling callback functions here
             if (typeof settings.scroll == 'function' && direction != 0) {
-                settings.scroll.call(this);
+                settings.scroll.call(this, settings.pageLoadedId);
             }
             if (typeof settings.scrollUp == 'function' && direction < 0) {
-                settings.scrollUp.call(this);
+                settings.scrollUp.call(this, settings.pageLoadedId);
             }
             if (typeof settings.scrollDown == 'function' && direction > 0) {
-                settings.scrollDown.call(this);
+                settings.scrollDown.call(this, settings.pageLoadedId);
             }
         };
         
