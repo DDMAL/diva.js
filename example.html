@@ -1,43 +1,39 @@
 <html>
-
 <head>
-<title>Diva.js demo</title>
+    <title>Diva.js demo</title>
 
-<link rel="stylesheet" href="css/diva.css" type="text/css" />
-<link rel="stylesheet" href="css/ui-lightness/jquery-ui-1.8.9.custom.css" type="text/css" />
+    <link rel="stylesheet" href="css/diva.css" type="text/css" />
+    <link rel="stylesheet" href="css/ui-lightness/jquery-ui-1.8.9.custom.css" type="text/css" />
 
-<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.11/jquery-ui.min.js"></script>
-<script src="js/diva-utils.js"></script>
- <script src="js/diva.js"></script>
- <script>
-$(document).ready(function() {
-    $('#diva-wrapper').diva({
-        paddingPerPage: 50,
-        zoomSlider: true,
-        gotoPage: true,
-        iipServerBaseUrl: "http://petrucci.musiclibs.net:9002/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/liber/",
-        backendServer: "http://petrucci.musiclibs.net:9002/ajax/3/",
-        scrollBySpace: false,
-        zoom: function(newZoomLevel) {
-            alert("You just zoomed to level " + newZoomLevel);
-        },
-        scroll: function() {
-            $('#diva-wrapper').prepend("LOL");
-        },
-        jump: function(desiredPage) {
-            alert("You want to go to page " + desiredPage);
-        },
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.11/jquery-ui.min.js"></script>
+    <script src="js/diva-utils.js"></script>
+     <script src="js/diva.js"></script>
+
+    <script>
+    $(document).ready(function() {
+        $('#diva-wrapper').diva({
+            paddingPerPage: 50,
+            zoomSlider: true,
+            gotoPage: true,
+            iipServerBaseUrl: "http://petrucci.musiclibs.net:9002/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/liber/",
+            backendServer: "http://petrucci.musiclibs.net:9002/ajax/3/",
+            scrollBySpace: false,
+            zoom: function(newZoomLevel) {
+                alert("You just zoomed to level " + newZoomLevel);
+            },
+            scroll: function() {
+                $('#diva-wrapper').prepend("LOL");
+            },
+            jump: function(desiredPage) {
+                alert("You want to go to page " + desiredPage);
+            },
+        });
+        //var dv = $('#diva-wrapper').data('diva');
     });
-    //var dv = $('#diva-wrapper').data('diva');
-});
-
- </script>
-
+    </script>
 </head>
-
 <body>
-<div id="diva-wrapper"></div>
+    <div id="diva-wrapper"></div>
 </body>
-
 </html>

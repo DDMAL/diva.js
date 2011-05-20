@@ -26,19 +26,19 @@ THE SOFTWARE.
         // These are elements that can be overridden upon instantiation
         var defaults =  {
             automaticTitle: true,       // Shows the title within a div of id diva-title
-            backendServer: '',          // Must be set
+            backendServer: '',          // The URL to the script returning the JSON data; mandatory
             gotoPage: true,             // Should there be a "go to page" option or not, defaults to yes
-            iipServerBaseUrl: '',       // Must be set
-            innerdrag: 'diva-inner',   // The ID for the inner viewer element (default)
+            iipServerBaseUrl: '',       // The URL to the IIPImage installation, including the ?FIF=
+            innerdrag: 'diva-inner',    // The ID for the inner viewer element (default)
             maxZoomLevel: 0,            // Optional; defaults to the max zoom returned in the JSON response
             minZoomLevel: 0,            // Defaults to 0 (the minimum zoom)
-            outerdrag: 'diva-outer',   // The selector for the outer drag element (default)
-            paddingPerPage: 40,         // For now because it is
+            outerdrag: 'diva-outer',    // The selector for the outer drag element (default)
+            paddingPerPage: 40,         // The pixels of padding surrounding and between pages
             scrollBySpace: false,       // Can user scroll down with the space bar? Disabled by default
             scrollByKeys: true,         // Can user scroll with the page up/page down keys?
-            tileHeight: 256,            // Same width and height for tiles for every page in this item
-            tileWidth: 256,             // ^
-            zoomLevel: 2,               // current zoom level. (initial zoom level)
+            tileHeight: 256,            // The height of each tile, in pixels; usually 256
+            tileWidth: 256,             // The width of each tile, in pixels; usually 256
+            zoomLevel: 2,               // The initial zoom level (used to store the current zoom level)
             zoomSlider: true,           // Should there be a zoom slider or not, defaults to yes
             scroll: null,               // Callback function for scrolling
             scrollUp: null,             // Callback function for scrolling up only
@@ -47,19 +47,19 @@ THE SOFTWARE.
             zoomOut: null,              // Callback function for zooming out only
             zoomIn: null,               // Callback function for zooming in only
             jump: null,                 // Callback function for jumping to a specific page (using the gotoPage feature)
-            //itemOrientation: 0,         // Either "h" (horizontal) or "v" (vertical) - currently unused
+            //itemOrientation: 0,       // Either "h" (horizontal) or "v" (vertical) - currently not implemented
         };
         
-        // apply the defaults, or override them with passed in options.
+        // Apply the defaults, or override them with passed-in options.
         var settings = $.extend({}, defaults, options);
 
         // Things that cannot be changed because of the way they are used by the script
-        // Many of these are set with arbitrary values here; equivalent to declaring them
+        // Many of these are declared with arbitrary values that are changed later on
         var globals = {
             centerX: 0,                 // Only used if doubleClick is true - for zooming in
             centerY: 0,                 // Y-coordinate, see above
-            dimAfterZoom: 0,            // used for storing the item dimensions after zooming
-            dimBeforeZoom: 0,           // used for storing the item dimensions before zooming.
+            dimAfterZoom: 0,            // Used for storing the item dimensions after zooming
+            dimBeforeZoom: 0,           // Used for storing the item dimensions before zooming
             doubleClick: false,         // If the zoom has been triggered by a double-click event
             elementSelector: '',        // The ID of the element plus the # for easy selection, set in init()
             firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
@@ -79,8 +79,8 @@ THE SOFTWARE.
             scrollSoFar: 0,             // Holds the number of pixels of vertical scroll
             totalHeight: 0,             // Height of all the image stacked together, value set later
             verticalOffset: 0,          // Used for storing the page offset before zooming
-            viewerXOffset: 0,           // distance between left edge of viewer and document left edge
-            viewerYOffset: 0,            // ^ for top edges
+            viewerXOffset: 0,           // Distance between left edge of viewer and document left edge
+            viewerYOffset: 0,           // ^ for top edges
         };
 
         $.extend(settings, globals);
@@ -123,7 +123,6 @@ THE SOFTWARE.
         
         // Appends the page directly into the document body
         var appendPage = function(pageID) {
-
             // Only try to append the page if the page has not already been loaded
             if (!isPageLoaded(pageID)) {
                 var filename = settings.pages[pageID].fn;
@@ -133,6 +132,7 @@ THE SOFTWARE.
                 var height = settings.pages[pageID].h;
                 var maxZoom = settings.pages[pageID].m_z;
                 var leftOffset, widthToUse;
+
                 // Use an array as a string builder - faster than str concatentation
                 var content = [];
                 var lastHeight, lastWidth, row, col, tileHeight, tileWidth, imgSrc;
@@ -164,7 +164,8 @@ THE SOFTWARE.
                     for ( col = 0; col < cols; col++ ) {
                         var top = row * settings.tileHeight;
                         var left = col * settings.tileWidth;
-                        // The zoom level might have to be different
+
+                        // The zoom level might be different, if a page has a different max zoom level than the others
                         var zoomLevel = (maxZoom === settings.maxZoomLevel) ? settings.zoomLevel : settings.zoomLevel + (maxZoom - settings.maxZoomLevel); 
                         tileHeight = ( row === rows - 1 ) ? lastHeight : settings.tileHeight; // If it's the LAST tile, calculate separately
                         tileWidth = ( col === cols - 1 ) ? lastWidth : settings.tileWidth; // Otherwise, just set it to the default height/width
@@ -175,13 +176,14 @@ THE SOFTWARE.
                 }
             
                 content.push('</div>');
-                // Build the content string 
+
+                // Build the content string and append it to the document
                 var contentString = content.join('');
-                // Just append it straight to the document
                 $(settings.innerdrag).append(contentString);
             }
         };
 
+        // Delete a page from the DOM; will occur when a page is scrolled out of the viewport
         var deletePage = function(pageID) {
             if (isPageLoaded(pageID)) {
                 $('#diva-page-' + pageID).remove();
@@ -197,10 +199,9 @@ THE SOFTWARE.
             }
         };
 
-        // Temporary private helper functions - move them later
+        // Private helper function, check if the bottom of a page is above the top of a viewport
+        // For when you want to keep looping but don't want to load a specific page
         var aboveViewport = function(pageID) {
-            // If the bottom of the page is above the top of viewport
-            // For when you want to keep looping but don't want to load a specific page
             var bottomOfPage = settings.heightAbovePages[pageID] + settings.pages[pageID].h + settings.paddingPerPage;
             var topOfViewport = settings.scrollSoFar; 
             if ( bottomOfPage < topOfViewport ) {
@@ -209,9 +210,9 @@ THE SOFTWARE.
             return false;
         };
         
-        // For scrolling up
+        // Private helper function, check if the top of a page is below the bottom of a viewport
+        // Used for scrolling up
         var belowViewport = function(pageID) {
-            // If the top of the page is below the bottom of the viewport
             var topOfPage = settings.heightAbovePages[pageID];
             var bottomOfViewport = settings.scrollSoFar + settings.panelHeight;
             if ( topOfPage > bottomOfViewport ) {
@@ -221,8 +222,8 @@ THE SOFTWARE.
         };
 
         // Determines and sets the "current page" (settings.pageLoadedId); called within adjustPages 
+        // The "direction" can be 0, 1 or -1; 1 for down, -1 for up, and 0 to go straight to a specific page
         var setCurrentPage = function(direction, pageID) {
-            // direction can be 0, 1 or -1 ... 1 for down, -1 for up, 0 for bypassing, going to a specific page
             var currentPage = settings.pageLoadedId;
             var pageToConsider = settings.pageLoadedId + parseInt(direction, 10);
             var middleOfViewport = settings.scrollSoFar + (settings.panelHeight / 2);
@@ -250,6 +251,7 @@ THE SOFTWARE.
             if ( changeCurrentPage ) {
                 // Set this to the current page
                 settings.pageLoadedId = pageToConsider;
+
                 // Change the text to reflect this - pageToConsider + 1 (because it's page number not ID)
                 $('#diva-current span').text(pageToConsider + 1);
                 
@@ -261,6 +263,7 @@ THE SOFTWARE.
             }
         };
 
+        // Called by adjust pages - see what pages should be visisble, and show them
         var attemptPageShow = function(pageID, direction) {
             if (direction > 0) {
                 // Direction is positive - we're scrolling down
@@ -269,9 +272,10 @@ THE SOFTWARE.
                     // If it's near the viewport, yes, add it
                     if (nearViewport(pageID)) {
                         appendPage(pageID);
-                        //setCurrentPage(1);
+
                         // Reset the last page loaded to this one
                         settings.lastPageLoaded = pageID;
+
                         // Recursively call this function until there's nothing to add
                         attemptPageShow(settings.lastPageLoaded+1, direction);
                     } else if (aboveViewport(pageID)) {
@@ -290,9 +294,10 @@ THE SOFTWARE.
                     // If it's near the viewport, yes, add it
                     if (nearViewport(pageID)) {
                         appendPage(pageID);
-                        //setCurrentPage(-1);
+
                         // Reset the first page loaded to this one
                         settings.firstPageLoaded = pageID;
+
                         // Recursively call this function until there's nothing to add
                         attemptPageShow(settings.firstPageLoaded-1, direction);
                     } else if (belowViewport(pageID)) {
@@ -306,6 +311,7 @@ THE SOFTWARE.
             }
         };
 
+        // Called by adjustPages - see what pages need to be hidden, and hide them
         var attemptPageHide = function(pageID, direction) {
             if (direction > 0) {
                 // Direction is positive - we're scrolling down
@@ -314,6 +320,7 @@ THE SOFTWARE.
                     // Yes, delete it, reset the first page loaded
                     deletePage(pageID);
                     settings.firstPageLoaded++;
+
                     // Try to call this function recursively until there's nothing to delete
                     attemptPageHide(settings.firstPageLoaded, direction);
                 } else {
@@ -326,6 +333,7 @@ THE SOFTWARE.
                     // Yes, delete it, reset the last page loaded
                     deletePage(pageID);
                     settings.lastPageLoaded--;
+                    
                     // Try to call this function recursively until there's nothing to delete
                     attemptPageHide(settings.lastPageLoaded, direction);
                 } else {
@@ -334,6 +342,7 @@ THE SOFTWARE.
             }
         };
 
+        // Handles showing and hiding pages when the user scrolls
         var adjustPages = function(direction) {
             // Direction is negative, so we're scrolling up
             if (direction < 0) {
@@ -364,7 +373,7 @@ THE SOFTWARE.
             // The x and y coordinates of the center ... let's zoom in on them
             var centerX, centerY, desiredLeft, desiredTop;
             
-            // zoom change ratio - if first ajax request, set to 1
+            // Determine the zoom change ratio - if first ajax request, set to 1
             var zChangeRatio = (settings.dimBeforeZoom > 0) ? settings.dimAfterZoom / settings.dimBeforeZoom : 1;
                 
             // First figure out if we need to zoom in on a specific part (if doubleclicked)
@@ -380,6 +389,7 @@ THE SOFTWARE.
                 } else {
                     desiredLeft = settings.maxWidth / 2 - settings.panelWidth / 2 + settings.paddingPerPage;
                 }
+
                 // Either do the expected zoom or zoom in on the middle
                 desiredLeft = ( settings.horizontalOffset > 0 ) ? settings.horizontalOffset * zChangeRatio : settings.maxWidth / 2 - settings.panelWidth / 2 + settings.paddingPerPage;
                 desiredTop = settings.verticalOffset * zChangeRatio;
@@ -395,17 +405,16 @@ THE SOFTWARE.
             $.ajax({
                 // Works now - using proxy_pass for nginx to forward to the other port
                 url: settings.backendServer + zoomLevel + '/',
-                //url: 'http://petrucci.musiclibs.net:9002/json.html',
                 cache: false, // debugging
                 context: this, // for later
                 dataType: "json",
-                //jsonp: 'onJSONPLoad',
                 success: function(data) {
                     // If it's the first AJAX request, store some variables that won't change with each zoom
                     if (settings.firstAjaxRequest) {
                         settings.itemTitle = data.item_title;
                         settings.numPages = data.pgs.length;
                         settings.maxZoomLevel = (settings.maxZoomLevel > 0) ? settings.maxZoomLevel : data.max_zoom;
+
                         // Set the total number of pages
                         $('#diva-current label').text(settings.numPages);
 
@@ -440,10 +449,11 @@ THE SOFTWARE.
 
                     var i;
                     for ( i = 0; i < settings.numPages; i++ ) {                 
-                        // First set the height above top for that page ... add this page height to the previous total
-                        // Think of a page as including the padding ... so you get sent to 10px above the top or whatever
+                        // First set the height above that page by adding this height to the previous total
+                        // A page includes the padding above it
                         settings.heightAbovePages[i] = heightSoFar;
-                        // Has to be done this way otherwise you get the height of the page included too ...
+
+                        // Has to be done this way otherwise you get the height of the page included too
                         heightSoFar = settings.heightAbovePages[i] + settings.pages[i].h + settings.paddingPerPage;
 
                         // Now try to load the page ONLY if the page needs to be loaded
@@ -453,8 +463,6 @@ THE SOFTWARE.
                             settings.lastPageLoaded = i;
                         }
                     }
-                    // Set the offset stuff, scroll to the proper places
-        
                     
                     // Set the height and width of documentpane (necessary for dragscrollable)
                     $(settings.innerdrag).css('height', settings.totalHeight);
@@ -471,21 +479,20 @@ THE SOFTWARE.
             }); // ends the $.ajax function
         };
         
-        // Called by something in index.html
-        // Optional argument "direct" - when called by gotoPage
+        // Called whenever there is a scroll event in the document panel (the #diva-outer element)
         var handleScroll = function() {
             settings.scrollSoFar = $(settings.outerdrag).scrollTop();
             adjustPages(settings.scrollSoFar - settings.prevVptTop);
             settings.prevVptTop = settings.scrollSoFar;
         };
 
-        // Handles zooming - changing the slider etc
+        // Handles zooming - called after pinch-zoom, changing the slider, or double-clicking
         var handleZoom = function(zoomLevel) {
             var zoomDirection;
+
             // First check if we're zooming in or out
             if (settings.zoomLevel === zoomLevel) {
                 // They are the same (why?); return
-                console.log("this should never appear");
                 return;
             } else if (settings.zoomLevel > zoomLevel) {
                 // Zooming out; zoom direction is positive
@@ -508,6 +515,7 @@ THE SOFTWARE.
                 // zoom: function(newZoomLevel) { doSomething(); }
                 settings.zoom.call(this, zoomLevel);
             }
+
             // Execute the zoom in/out callback function if necessary
             if (zoomDirection > 0) {
                 // Zooming out
@@ -522,7 +530,7 @@ THE SOFTWARE.
             }
         };
 
-        
+        // Called whenever the zoom slider is moved
         var handleZoomSlide = function(zoomLevel) {
             // First get the vertical offset (vertical scroll so far)
             settings.verticalOffset = $(settings.outerdrag).scrollTop();
@@ -537,9 +545,11 @@ THE SOFTWARE.
         var gotoPage = function(pageNumber) {
             // Since we start indexing from 0, subtract 1 to behave as the user expects
             pageNumber--;
+
             // First make sure that the page number exists (i.e. is in range)
             if ( inRange(pageNumber) ) {
                 var heightToScroll = settings.heightAbovePages[pageNumber];
+
                 // Change the "currently on page" thing
                 setCurrentPage(0, pageNumber);
                 $(settings.outerdrag).scrollTop(heightToScroll);
@@ -581,14 +591,14 @@ THE SOFTWARE.
 
                 
                 // Set centerX and centerY for scrolling in after zoom
-                // have to do this.offsetLeft and top ... otherwise relative to edge of document
+                // Need to use this.offsetLeft and this.offsetTop to get it relative to the edge of the document
                 settings.centerX = (event.pageX - settings.viewerXOffset) + $(settings.outerdrag).scrollLeft();
                 settings.centerY = (event.pageY - settings.viewerYOffset) + $(settings.outerdrag).scrollTop();
 
-                // Set doubleClick to true, so we know where to zoom in
+                // Set doubleClick to true, so we know where to zoom
                 settings.doubleClick = true;
                 
-                // Zoom in
+                // Zoom
                 handleZoom(newZoomLevel);
         };
 
@@ -597,9 +607,10 @@ THE SOFTWARE.
             event.preventDefault();
         };
 
-        // Allows pinch-zooming
+        // Allows pinch-zooming for iStuff
         var scale = function(event) {
             var newZoomLevel = settings.zoomLevel;
+
             // First figure out the new zoom level:
             if (event.scale > 1 && newZoomLevel < settings.maxZoomLevel) {
                 newZoomLevel++;
@@ -613,7 +624,6 @@ THE SOFTWARE.
 
         // Initiates the process
         var initiateViewer = function() {
-            
             // First check if the outerdrag and innerdrag elements exist or not
             if ($('#' + settings.outerdrag).length === 0) {
                 // Doesn't exist, so create it right after diva-wrapper
@@ -637,7 +647,7 @@ THE SOFTWARE.
                 $(settings.innerdrag).addClass('dragger')
             }
 
-            // change the cursor for dragging.
+            // Change the cursor for dragging.
             $(settings.innerdrag).mouseover(function() {
                 $(this).removeClass('grabbing').addClass('grab');
             });
@@ -691,11 +701,14 @@ THE SOFTWARE.
             if ((navigator.userAgent.match(/iPhone/i)) || (navigator.userAgent.match(/iPad/i)) || (navigator.userAgent.match(/iPod/i))) {
                 // One-finger scroll within outerdrag
                 $(settings.outerdrag).oneFingerScroll();
+
                 // Prevent resizing (below from http://matt.might.net/articles/how-to-native-iphone-ipad-apps-in-javascript/)
                 var toAppend = [];
                 toAppend.push('<meta name="viewport" content="user-scalable=no, width=device-width" />');
+
                 // Eliminate URL and button bars if added to home screen
                 toAppend.push('<meta name="apple-mobile-web-app-capable" content="yes" />');
+
                 // Choose how to handle the phone status bar
                 toAppend.push('<meta name="apple-mobile-web-app-status-bar-style" content="black" />');
                 $('head').append(toAppend.join('\n'));
@@ -706,6 +719,7 @@ THE SOFTWARE.
                     blockMove(e);
                 });
 
+                // Allow pinch-zooming
                 $('body').bind('gestureend', function(event) {
                     var e = event.originalEvent;
                     scale(e);
@@ -726,7 +740,7 @@ THE SOFTWARE.
                         return false;
                     }
 
-                    // page up - go to the previous page
+                    // Page up - go to the previous page
                     if (settings.scrollByKeys && event.keyCode == pageUpKey) {
                         $(settings.outerdrag).scrollTop(settings.scrollSoFar - settings.panelHeight);
                         return false;
