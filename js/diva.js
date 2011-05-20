@@ -800,6 +800,11 @@ THE SOFTWARE.
         this.gotoPage = function(pageNumber) {
             return gotoPage(pageNumber);
         };
+
+        // Public function, returns the current page that the user is on
+        this.getCurrentPage = function() {
+            return settings.pageLoadedId;
+        };
     };
     
     /// this should not need to be changed.
