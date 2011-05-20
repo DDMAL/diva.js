@@ -40,8 +40,13 @@ THE SOFTWARE.
             tileWidth: 256,             // ^
             zoomLevel: 2,               // current zoom level. (initial zoom level)
             zoomSlider: true,           // Should there be a zoom slider or not, defaults to yes
-            //containerEl: null,          // the container element id.
-            //itemEl: null,               // the item element id
+            scroll: null,               // Callback function for scrolling
+            scrollUp: null,             // Callback function for scrolling up only
+            scrollDown: null,           // Callback function for scrolling down, only
+            zoom: null,                 // Callback function for zooming in general
+            zoomOut: null,              // Callback function for zooming out only
+            zoomIn: null,               // Callback function for zooming in only
+            jump: null,                 // Callback function for jumping to a specific page (using the gotoPage feature)
             //itemOrientation: 0,         // Either "h" (horizontal) or "v" (vertical) - currently unused
         };
         
@@ -56,6 +61,7 @@ THE SOFTWARE.
             dimAfterZoom: 0,            // used for storing the item dimensions after zooming
             dimBeforeZoom: 0,           // used for storing the item dimensions before zooming.
             doubleClick: false,         // If the zoom has been triggered by a double-click event
+            elementSelector: '',        // The ID of the element plus the # for easy selection, set in init()
             firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
             firstAjaxRequest: true,     // True initially, set to false after the first request
             heightAbovePages: [],       // The height above each page
@@ -399,7 +405,7 @@ THE SOFTWARE.
 
                         // Change the title to the actual title if automatic title is true
                         if (settings.automaticTitle) {
-                            $('#diva-wrapper').prepend('<div id="diva-title">' + settings.itemTitle + '</div>');
+                            $(settings.elementSelector).prepend('<div id="diva-title">' + settings.itemTitle + '</div>');
                         }
 
                         settings.firstAjaxRequest = false;
@@ -561,7 +567,7 @@ THE SOFTWARE.
             if ($('#' + settings.outerdrag).length === 0) {
                 // Doesn't exist, so create it right after diva-wrapper
                 // Assume that if it does exist, it has been placed correctly
-                $('#diva-wrapper').append('<div id="' + settings.outerdrag + '"></div>');
+                $(settings.elementSelector).append('<div id="' + settings.outerdrag + '"></div>');
             }
             
             // Now add the # in front of it to make selecting it easier
@@ -710,26 +716,28 @@ THE SOFTWARE.
             return settings.itemTitle;
         };
         
-        this.getId = function() {
+        /*this.getId = function() {
             return settings.id;
         };
         
         this.getContainerId = function() {
             return settings.containerEl;
-        };
+        };*/
         
         var init = function() {
-            settings.id = $.generateId('dv');
+            settings.elementSelector = '#' + $(element).attr('id');
+
+            /*settings.id = $.generateId('dv');
             
             // Figure out how to use this
             settings.containerEl = settings.id + '-container';
             settings.itemEl = settings.id + '-item';
             settings.pageEl = settings.id + '-page-';
-            settings.tileEl = settings.id + '-tile-';
+            settings.tileEl = settings.id + '-tile-';*/
             
             // If we need either a zoom slider or a gotoPage thing, create a "viewertools" div
             if (settings.zoomSlider || settings.gotoPage) {
-                $('#diva-wrapper').prepend('<div id="diva-tools"></div>');
+                $(settings.elementSelector).prepend('<div id="diva-tools"></div>');
             }
             
             if (settings.gotoPage) {
