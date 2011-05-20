@@ -470,13 +470,45 @@ THE SOFTWARE.
 
         // Handles zooming - changing the slider etc
         var handleZoom = function(zoomLevel) {
-            // First, do an ajax request with the new zoom level
+            var zoomDirection;
+            // First check if we're zooming in or out
+            if (settings.zoomLevel === zoomLevel) {
+                // They are the same (why?); return
+                console.log("this should never appear");
+                return;
+            } else if (settings.zoomLevel > zoomLevel) {
+                // Zooming out; zoom direction is positive
+                zoomDirection = 1;
+            } else {
+                // Zooming in; zoom direction is negative
+                zoomDirection = -1;
+            }
+
+            // Now do an ajax request with the new zoom level
             ajaxRequest(zoomLevel);
 
             // Make the slider display the new value (it may already)
             $('#diva-zoomer').slider({
                 value: zoomLevel
             });
+
+            // If the callback function is set, execute it
+            if (typeof settings.zoom == 'function') {
+                // zoom: function(newZoomLevel) { doSomething(); }
+                settings.zoom.call(zoomLevel);
+            }
+            // Execute the zoom in/out callback function if necessary
+            if (zoomDirection > 0) {
+                // Zooming out
+                if (typeof settings.zoomOut == 'function') {
+                    settings.zoomOut.call(zoomLevel);
+                }
+            } else {
+                // Zooming in
+                if (typeof settings.zoomIn == 'function') {
+                    settings.zoomIn.call(zoomLevel);
+                }
+            }
         };
 
         
@@ -698,7 +730,7 @@ THE SOFTWARE.
                     max: settings.maxZoomLevel,
                     step: 1,
                     slide: function(event, ui) {
-                        handleZoom(ui.value);
+                        handleZoomSlide(ui.value);
                     }
                 });
         };
