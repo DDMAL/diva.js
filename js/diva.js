@@ -25,6 +25,7 @@ THE SOFTWARE.
     var Diva = function(element, options) {
         // These are elements that can be overridden upon instantiation
         var defaults =  {
+            automaticTitle: true,       // Shows the title within a div of id diva-title
             backendServer: '',          // Must be set
             gotoPage: true,             // Should there be a "go to page" option or not, defaults to yes
             iipServerBaseUrl: '',       // Must be set
@@ -58,6 +59,7 @@ THE SOFTWARE.
             heightAbovePages: [],       // The height above each page
             horizontalOffset: 0,        // Used for storing the page offset before zooming
             innerdrag: '',              // The ID (including the #) of the inner div
+            itemTitle: '',              // The title of the document
             lastPageLoaded: -1,         // The ID of the last page loaded (value set later)
             maxHeight: 0,               // The height of the tallest page
             maxWidth: 0,                // The width of the widest page
@@ -384,6 +386,7 @@ THE SOFTWARE.
                 success: function(data) {
                     // If it's the first AJAX request, store some variables that won't change with each zoom
                     if (settings.firstAjaxRequest) {
+                        settings.itemTitle = data.item_title;
                         settings.numPages = data.pgs.length;
                         settings.maxZoomLevel = (settings.maxZoomLevel > 0) ? settings.maxZoomLevel : data.max_zoom;
                         // Set the total number of pages
@@ -393,6 +396,12 @@ THE SOFTWARE.
                         if (settings.zoomSlider) {
                             createZoomer();
                         }
+
+                        // Change the title to the actual title if automatic title is true
+                        if (settings.automaticTitle) {
+                            $('#diva-wrapper').prepend('<div id="diva-title">' + settings.itemTitle + '</div>');
+                        }
+
                         settings.firstAjaxRequest = false;
                     }
 
@@ -429,8 +438,6 @@ THE SOFTWARE.
                     }
                     // Set the offset stuff, scroll to the proper places
         
-                    // Change the title to the actual title
-                    $('#diva-title').text(data.item_title);
                     
                     // Set the height and width of documentpane (necessary for dragscrollable)
                     $(settings.innerdrag).css('height', settings.totalHeight);
@@ -677,6 +684,11 @@ THE SOFTWARE.
                 }
             });
         };
+
+        // Public function, returns the title of the document
+        this.getItemTitle = function() {
+            return settings.itemTitle;
+        };
         
         this.getId = function() {
             return settings.id;
@@ -698,7 +710,7 @@ THE SOFTWARE.
             
             // If we need either a zoom slider or a gotoPage thing, create a "viewertools" div
             if (settings.zoomSlider || settings.gotoPage) {
-                $('#diva-title').after('<div id="diva-tools"></div>');
+                $('#diva-wrapper').prepend('<div id="diva-tools"></div>');
             }
             
             if (settings.gotoPage) {
