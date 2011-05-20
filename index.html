@@ -21,7 +21,7 @@ $(document).ready(function() {
         scrollBySpace: false,
     });
     var dv = $('#diva-wrapper').data('diva');
-    dv.initiateViewer('#diva-outer', '#diva-viewer');
+    dv.initiateViewer();
 });
 
  </script>
@@ -29,12 +29,7 @@ $(document).ready(function() {
 </head>
 
 <body>
-<div id="diva-wrapper">
-    <div id="diva-outer">
-        <div id="diva-viewer"></div>
-    </div>
-</div>
-
+<div id="diva-wrapper"></div>
 </body>
 
 </html>

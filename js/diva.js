@@ -29,8 +29,10 @@ THE SOFTWARE.
             backendServer: '',          // Must be set
             gotoPage: true,             // Should there be a "go to page" option or not, defaults to yes
             iipServerBaseUrl: '',       // Must be set
+            innerdrag: 'diva-inner',   // The ID for the inner viewer element (default)
             maxZoomLevel: 0,            // Optional; defaults to the max zoom returned in the JSON response
             minZoomLevel: 0,            // Defaults to 0 (the minimum zoom)
+            outerdrag: 'diva-outer',   // The selector for the outer drag element (default)
             paddingPerPage: 40,         // For now because it is
             scrollBySpace: false,       // Can user scroll down with the space bar? Disabled by default
             scrollByKeys: true,         // Can user scroll with the page up/page down keys?
@@ -58,13 +60,11 @@ THE SOFTWARE.
             firstAjaxRequest: true,     // True initially, set to false after the first request
             heightAbovePages: [],       // The height above each page
             horizontalOffset: 0,        // Used for storing the page offset before zooming
-            innerdrag: '',              // The ID (including the #) of the inner div
             itemTitle: '',              // The title of the document
             lastPageLoaded: -1,         // The ID of the last page loaded (value set later)
             maxHeight: 0,               // The height of the tallest page
             maxWidth: 0,                // The width of the widest page
             numPages: 0,                // Number of pages in the array
-            outerdrag: '',              // The ID (including the #) of the outer div
             pageLoadedId: 0,            // The current page in the viewport (center-most page)
             pages: [],                  // An array containing the data for all the pages
             panelHeight: 0,             // Height of the panel. Set in initiateViewer()
@@ -555,31 +555,43 @@ THE SOFTWARE.
         };
 
         // Initiates the process; accepts outerdrag and innerdrag ID's
-        this.initiateViewer = function(outerdrag, innerdrag) {
+        this.initiateViewer = function() {
             
-            // First store the innerdrag and outerdrag element IDs
-            settings.innerdrag = innerdrag;
-            settings.outerdrag = outerdrag;
+            // First check if the outerdrag and innerdrag elements exist or not
+            if ($('#' + settings.outerdrag).length === 0) {
+                // Doesn't exist, so create it right after diva-wrapper
+                // Assume that if it does exist, it has been placed correctly
+                $('#diva-wrapper').append('<div id="' + settings.outerdrag + '"></div>');
+                // Now add the # in front of it to make selecting it easier
+                settings.outerdrag = '#' + settings.outerdrag;
+            }
+
+            if ($('#' + settings.innerdrag).length === 0) {
+                // Make this the first child of the outerdrag element
+                $(settings.outerdrag).append('<div id="' + settings.innerdrag + '"></div>');
+                settings.innerdrag = '#' + settings.innerdrag;
+            }
+
             // change the cursor for dragging.
-            $(innerdrag).mouseover(function() {
+            $(settings.innerdrag).mouseover(function() {
                 $(this).removeClass('grabbing').addClass('grab');
             });
             
-            $(innerdrag).mouseout(function() {
+            $(settings.innerdrag).mouseout(function() {
                 $(this).removeClass('grab');
             });
             
-            $(innerdrag).mousedown(function() {
+            $(settings.innerdrag).mousedown(function() {
                 $(this).removeClass('grab').addClass('grabbing');
             });
             
-            $(innerdrag).mouseup(function() {
+            $(settings.innerdrag).mouseup(function() {
                 $(this).removeClass('grabbing').addClass('grab');
             });
 
             // Get the height and width of the outerdrag element
-            settings.panelWidth = parseInt($(outerdrag).width(), 10) - 20; // for the scrollbar change later
-            settings.panelHeight = parseInt($(outerdrag).height(), 10);
+            settings.panelWidth = parseInt($(settings.outerdrag).width(), 10) - 20; // for the scrollbar change later
+            settings.panelHeight = parseInt($(settings.outerdrag).height(), 10);
             
                         
             // Do the AJAX request - calls all the image display functions in turn
@@ -587,15 +599,15 @@ THE SOFTWARE.
 
 
             // Handle the scroll
-            $(outerdrag).scroll(function() {
+            $(settings.outerdrag).scroll(function() {
                 handleScroll();
             });
             
             // Set drag scroll on first descendant of class dragger on both selected elements
-            $(outerdrag + ', ' + innerdrag).dragscrollable({dragSelector: '.dragger', acceptPropagatedEvent: true});
+            $(settings.outerdrag + ', ' + settings.innerdrag).dragscrollable({dragSelector: '.dragger', acceptPropagatedEvent: true});
             
             // Double-click to zoom
-            $(outerdrag).dblclick(function(event) {
+            $(settings.outerdrag).dblclick(function(event) {
                 // First set the x and y offsets of the viewer from the edge of document
                 settings.viewerXOffset = this.offsetLeft;
                 settings.viewerYOffset = this.offsetTop;
@@ -604,7 +616,7 @@ THE SOFTWARE.
             });
 
             // Prevent the context menu within the outerdrag IF it was triggered with the ctrl key
-            $(outerdrag).bind("contextmenu", function(e) {
+            $(settings.outerdrag).bind("contextmenu", function(e) {
                 if (event.ctrlKey) {
                     e.preventDefault();
                 }
@@ -613,7 +625,7 @@ THE SOFTWARE.
             // Check if the user is on a iPhone or iPod touch or iPad
             if ((navigator.userAgent.match(/iPhone/i)) || (navigator.userAgent.match(/iPad/i)) || (navigator.userAgent.match(/iPod/i))) {
                 // One-finger scroll within outerdrag
-                $(outerdrag).oneFingerScroll();
+                $(settings.outerdrag).oneFingerScroll();
                 // Prevent resizing (below from http://matt.might.net/articles/how-to-native-iphone-ipad-apps-in-javascript/)
                 var toAppend = [];
                 toAppend.push('<meta name="viewport" content="user-scalable=no, width=device-width" />');
@@ -645,13 +657,13 @@ THE SOFTWARE.
                 $(document).keydown(function(event) {
                     // Space or page down - go to the next page
                     if ((settings.scrollBySpace && event.keyCode == spaceKey) || (settings.scrollByKeys && event.keyCode == pageDownKey)) {
-                        $(outerdrag).scrollTop(settings.scrollSoFar + settings.panelHeight);
+                        $(settings.outerdrag).scrollTop(settings.scrollSoFar + settings.panelHeight);
                         return false;
                     }
 
                     // page up - go to the previous page
                     if (settings.scrollByKeys && event.keyCode == pageUpKey) {
-                        $(outerdrag).scrollTop(settings.scrollSoFar - settings.panelHeight);
+                        $(settings.outerdrag).scrollTop(settings.scrollSoFar - settings.panelHeight);
                         return false;
                     }
                 });
