@@ -554,8 +554,8 @@ THE SOFTWARE.
             });
         };
 
-        // Initiates the process; accepts outerdrag and innerdrag ID's
-        this.initiateViewer = function() {
+        // Initiates the process
+        var initiateViewer = function() {
             
             // First check if the outerdrag and innerdrag elements exist or not
             if ($('#' + settings.outerdrag).length === 0) {
@@ -732,6 +732,8 @@ THE SOFTWARE.
             if (!settings.interPagePaddingType) {
                 settings.interPagePaddingType = 'adaptive';
             }
+
+            initiateViewer();
         };
 
         // call the init function when this object is created.
