@@ -12,7 +12,7 @@
  <script src="js/diva.js"></script>
  <script>
 $(document).ready(function() {
-    $('#diva-viewer').diva({
+    $('#diva-wrapper').diva({
         paddingPerPage: 50,
         zoomSlider: true,
         gotoPage: true,
@@ -20,7 +20,7 @@ $(document).ready(function() {
         backendServer: "http://petrucci.musiclibs.net:9002/ajax/3/",
         scrollBySpace: false,
     });
-    var dv = $('#diva-viewer').data('diva');
+    var dv = $('#diva-wrapper').data('diva');
     dv.initiateViewer('#diva-outer', '#diva-viewer');
 });
 
