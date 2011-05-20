@@ -623,8 +623,8 @@ THE SOFTWARE.
         // Initiates the process
         var initiateViewer = function() {
             // Create the inner and outer panels
-            $(settings.elementSelector).append('<div id="diva-outer" class="dragger"></div>');
-            $('#diva-outer').append('<div id="diva-inner"></div>');
+            $(settings.elementSelector).append('<div id="diva-outer"></div>');
+            $('#diva-outer').append('<div id="diva-inner" class="dragger"></div>');
 
             // Change the cursor for dragging.
             $('#diva-inner').mouseover(function() {
