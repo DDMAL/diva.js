@@ -1,0 +1,110 @@
+<html>
+<head>
+    <title>Testing search</title>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.0/jquery.min.js"></script>
+    <link rel="stylesheet" href="css/diva.css" type="text/css" />
+    <link rel="stylesheet" href="css/ui-lightness/jquery-ui-1.8.9.custom.css" type="text/css" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.11/jquery-ui.min.js"></script>
+    <script src="js/diva-utils.js"></script>
+    <script src="js/diva.js"></script>
+    <script>
+    $(document).ready(function() {
+        $('#documentpanel').diva({
+            zoomLevel: 1,
+            iipServerBaseUrl: "http://petrucci.musiclibs.net:9002/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/wila/",
+            backendServer: "http://petrucci.musiclibs.net:9002/ajax/7/",
+        });
+        dv = $('#documentpanel').data('diva');
+        dv.initiateViewer('#outerdrag', '#documentpanel');
+    });
+        </script>
+    <style type="text/css">
+    .center {
+        text-align: center;
+    }
+
+    div[id^=box] {
+        position: absolute;
+        opacity: 0.5;
+        z-index: 7000;
+    }
+
+    #image {
+        position: relative; 
+        width: 476px;
+        margin: 0 auto;
+    }
+
+    #colourpicker {
+        list-style-type: none;
+        display: inline;
+        padding-left: 0px;
+        position: relative;
+        top: 3px;
+    }
+
+    #colourpicker li {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 1px solid #CCC;
+    }
+
+    #colourpicker .selected {
+        border: 2px solid #000;
+    }
+
+    .colour-red {
+        background-color: #FF0000;
+    }
+
+    .colour-orange {
+        background-color: #F88017;
+    }
+
+    .colour-yellow {
+        background-color: #EDE275;
+    }
+
+    .colour-green {
+        background-color: #B1FB17;
+    }
+
+    .colour-blue {
+        background-color: #5CB3FF;
+    }
+
+    .colour-purple {
+        background-color: #8D38C9;
+    }
+    </style>
+</head>
+
+<body>
+<div class="center">
+    <h1>Search highlighting (not really working)</h1>
+    <input type="text" value="Fake search box" />
+    <input type="button" id="highlight-button" value="Highlight some random sections" />
+    <br />
+    <input type="button" id="previous-highlight" value="Previous" disabled="disabled" />
+    <ul id="colourpicker">
+        <li class="colour-red"></li>
+        <li class="colour-orange"></li>
+        <li class="colour-yellow selected"></li>
+        <li class="colour-green"></li>
+        <li class="colour-blue"></li>
+        <li class="colour-purple"></li>
+    </ul>
+    <input type="button" id="next-highlight" value="Next" disabled="disabled"/>
+</div>
+<br />
+<div id="diva-wrapper">
+    <div id="itemtitle"></div>
+    <div id="outerdrag">
+        <div id="documentpanel"></div>
+    </div>
+</div>
+    <script src="search.js"></script>
+</body>
+
+</html>
