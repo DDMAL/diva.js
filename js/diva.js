@@ -538,11 +538,6 @@ THE SOFTWARE.
             settings.doubleClick = false;
             handleZoom(zoomLevel);
         };
-        
-        // Public function that calls the private function because nothing else works
-        this.gotoPage = function(pageNumber) {
-            gotoPage(pageNumber);
-        };
 
         // Private function for going to a page
         var gotoPage = function(pageNumber) {
