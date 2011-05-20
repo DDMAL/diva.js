@@ -8,7 +8,7 @@ body {
 	margin: 0 auto;
 }
 
-#diva-viewer {
+#diva-inner {
 	color: #000;
 	position: relative;
 	overflow: hidden; /* x-scroll adds to the height, figure out later */
@@ -54,7 +54,7 @@ div[id^="diva-page"] {
 }
 
 .grab {
-    cursor: url('../img/openhand.cur'), pointer!important;
+    cursor: url('../img/openhand.cur'), pointer !important;
 }
 
 .grabbing {

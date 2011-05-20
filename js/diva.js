@@ -562,14 +562,22 @@ THE SOFTWARE.
                 // Doesn't exist, so create it right after diva-wrapper
                 // Assume that if it does exist, it has been placed correctly
                 $('#diva-wrapper').append('<div id="' + settings.outerdrag + '"></div>');
-                // Now add the # in front of it to make selecting it easier
-                settings.outerdrag = '#' + settings.outerdrag;
             }
+            
+            // Now add the # in front of it to make selecting it easier
+            settings.outerdrag = '#' + settings.outerdrag;
 
             if ($('#' + settings.innerdrag).length === 0) {
                 // Make this the first child of the outerdrag element
                 $(settings.outerdrag).append('<div id="' + settings.innerdrag + '"></div>');
-                settings.innerdrag = '#' + settings.innerdrag;
+            }
+
+            settings.innerdrag = '#' + settings.innerdrag;
+
+            // If the div doesn't have a dragger class (and it probably doesn't), add it
+            // (Necessary for dragscrollable to work)
+            if (!$(settings.innerdrag).hasClass('dragger')) {
+                $(settings.innerdrag).addClass('dragger')
             }
 
             // change the cursor for dragging.
@@ -710,7 +718,6 @@ THE SOFTWARE.
             return settings.containerEl;
         };
         
-        // private methods
         var init = function() {
             settings.id = $.generateId('dv');
             
@@ -744,10 +751,11 @@ THE SOFTWARE.
     $.fn.diva = function(options) {
         return this.each(function() {
             var element = $(this);
-             // Return early if this element already has a plugin instance
+            // Return early if this element already has a plugin instance
+            
             if (element.data('diva')) {
                 return;
-    }
+            }
             
             var diva = new Diva(this, options);
             element.data('diva', diva);
