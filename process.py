@@ -138,6 +138,9 @@ if __name__ == "__main__":
     parser.add_option("-r", "--resize", action="store_true", default=False, help = "Resizes all images so that they have the same number of zoom levels", dest="resize")
     options, args = parser.parse_args()
     
+    if len(args) < 1:
+        parser.error("You must specify a directory to process.")
+    
     opts = {
         'outd': args[0],
         'resz': options.resize,
