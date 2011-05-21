@@ -1,7 +1,29 @@
 #!/usr/bin/env python
+
+# Copyright (C) 2011 by Wendy Liu
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
 import sys, os
-from PIL import Image
 import math
+from vipsCC import *
+from optparse import OptionParser
 
 """
 This is a python script that will process all the images in a directory and 
@@ -27,95 +49,74 @@ Options:
     processing without the switch. 
 """
 
-def main(argv):
-    # Handle the command line arguments
-    if len(argv) < 2:
-        print 'Usage: ./process.py directory [-r|--resize]'
-        return 1 
-
-    # Catch the argument
-    directory = argv[1]
-    resize_images = False
-    # See if there's a resize switch
-    if len(argv) > 2:
-        possible_switch = argv[2]
-        if possible_switch == '--resize' or possible_switch == '-r':
-            resize_images = True
-
+def main(opts):
+    directory = opts['outd']
+    resize_images = opts['resz']
+    
     # Create a directory called "processed" within that directory
     # If that directory already exists, fail
-    if os.path.isdir(directory + '/processed'):
+    if os.path.isdir(os.path.join(directory, 'processed')):
         print 'There already is a processed directory! Delete it and try again.'
         return 1
     else:
-        os.system('mkdir ' + directory + '/processed')
-
-    # Now get the contents of the directory
-    files = os.listdir(directory)
-    # Try to sort it
-    files.sort()
-
+        os.mkdir(os.path.join(directory, 'processed'))
+        
     # Store the zooms of the files in a list
     # Use another list to store filenames (same indices etc)
     max_zoom_list = []
     filename_list = []
-
-    for filename in files:
-        try:
-            this_max_zoom = get_max_zoom(directory + '/' + filename)
-            print 'file: ' + filename + ' has max zoom of: ' + str(this_max_zoom - 1) + ' (' + str(this_max_zoom) + ' zoom levels)'
-            max_zoom_list.append(this_max_zoom)
+    dimensions_list = []
+    for dirpath, dirnames, filenames in os.walk(directory): 
+        for filename in filenames:
+            if filename.startswith("."):
+                continue
+            max_zoom, dimensions = get_image_info(os.path.join(directory, filename))
+            print 'file: ' + filename + ' has max zoom of: ' + str(max_zoom - 1) + ' (' + str(max_zoom) + ' zoom levels)'
+            max_zoom_list.append(max_zoom)
             filename_list.append(filename)
-        except IOError:
-            pass
+            dimensions_list.append(dimensions)
 
     # Now get the absolute lowest and highest max zoom
     lowest_max_zoom = min(max_zoom_list)
 
     # Now figure out which files have a zoom larger than that
-    for i in range(len(filename_list)):
-        input_file = directory + '/' + filename_list[i]
-        output_file = directory + '/processed/' + directory + '_' + str(i+1) + '.tif'
+    for i,filename in enumerate(filename_list):
+        input_file = os.path.join(directory, filename)
+        output_file = os.path.join(directory, 'processed', filename + '_' + str(i+1) + '.tif')
+        
+        vimage = VImage.VImage(input_file)
         
         # If the image needs to be resized
         if max_zoom_list[i] > lowest_max_zoom and resize_images:
-            print filename_list[i] + ' needs to be resized, resizing and converting now'
+            print filename + ' needs to be resized, resizing and converting now'
             # Resize this image to the proper size ... prepend resized_
-            resized_file = directory + '/resized_' + filename_list[i]
-            resize_image(lowest_max_zoom, input_file, resized_file)
-
-            # Now convert it
-            os.system('vips im_vips2tiff ' + resized_file + ' ' + output_file + ':jpeg:75,tile:256x256,pyramid')
+            width, height = dimensions_list[i]
+            new_width, new_height = resize_image(lowest_max_zoom, width, height)
+            vimage.resize_linear(new_width, new_height).vips2tiff(output_file + ':jpeg:75,tile:256x256,pyramid')
         else:
-            # Just convert this image directly (the right size, or no resize flag)
-            print filename_list[i] + ' does not need to be resized, converting'
-            os.system('vips im_vips2tiff ' + input_file + ' ' + output_file + ':jpeg:75,tile:256x256,pyramid')
-
+            vimage.vips2tiff(output_file + ':jpeg:75,tile:256x256,pyramid')
+        
     # Now print out the max_zoom this document has
     print "This document has a max zoom of: ",
     print lowest_max_zoom
 
 # Calculate the maximum zoom of an image given its filepath
-def get_max_zoom(filepath):
+def get_image_info(filepath):
     # First, find the largest dimension of the image
-    image = Image.open(filepath)
-    width = image.size[0]
-    height = image.size[1]
+    image = VImage.VImage(filepath)
+    width = image.Xsize()
+    height = image.Ysize()
     largest_dim = width if width > height else height
 
     # Now figure out the number of zooms
     zoom_levels = math.ceil(math.log((largest_dim + 1) / (257.0), 2)) + 1
-    return int(zoom_levels)
+    return (int(zoom_levels), (width, height))
 
 # Resize an image to the desired zoom
-def resize_image(desired_zoom, input_file, output_file):
+def resize_image(desired_zoom, width, height):
     # Figure out the maximum dimensions we can give it with this zoom
     max_dim = (2**(desired_zoom-1) * 257) - 1
-
-    # Now get the image dimensions (again ...)
-    image = Image.open(input_file)
-    width = image.size[0]
-    height = image.size[1]
+    
     if width > height:
         largest_dim = width
         width_largest = True
@@ -126,12 +127,21 @@ def resize_image(desired_zoom, input_file, output_file):
     # Now figure out the new dimensions
     if width_largest:
         # imagemagick will figure out the aspect ratio stuff
-        new_dimensions = str(max_dim) + 'x' + str(height)
+        new_dimensions = max_dim, height
     else:
-        new_dimensions = str(width) + 'x' + str(max_dim)
+        new_dimensions = width, max_dim
     
-    # Now do the resizing
-    os.system( 'convert -resize ' + new_dimensions + ' ' + input_file + ' ' + output_file)
-
+    return new_dimensions
+    
 if __name__ == "__main__":
-    sys.exit(main(sys.argv))
+    usage = "%prog [options] directory"
+    parser = OptionParser(usage)
+    parser.add_option("-r", "--resize", action="store_true", default=False, help = "Resizes all images so that they have the same number of zoom levels", dest="resize")
+    options, args = parser.parse_args()
+    
+    opts = {
+        'outd': args[0],
+        'resz': options.resize,
+    }
+    
+    sys.exit(main(opts))
