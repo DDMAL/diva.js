@@ -12,7 +12,6 @@
 })( jQuery );
 
 /* iPad one finger scroll from http://forrst.com/posts/jQuery_iPad_one_finger_scroll-B30 */
-
 jQuery.fn.oneFingerScroll = function() {
     var scrollStartPos = 0;
     $(this).bind('touchstart', function(event) {
@@ -31,8 +30,6 @@ jQuery.fn.oneFingerScroll = function() {
     });
     return this;
 };
-
-
 
 /*
  * jQuery dragscrollable Plugin
