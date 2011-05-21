@@ -130,7 +130,6 @@ def resize_image(desired_zoom, width, height):
         new_dimensions = max_dim, height
     else:
         new_dimensions = width, max_dim
-    
     return new_dimensions
     
 if __name__ == "__main__":
@@ -143,5 +142,4 @@ if __name__ == "__main__":
         'outd': args[0],
         'resz': options.resize,
     }
-    
     sys.exit(main(opts))
