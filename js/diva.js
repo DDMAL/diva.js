@@ -838,6 +838,11 @@ THE SOFTWARE.
         this.getCurrentPage = function() {
             return settings.pageLoadedId;
         };
+
+        // Public function, returns the current zoom level
+        this.getZoomLevel = function() {
+            return settings.zoomLevel;
+        };
     };
     
     /// this should not need to be changed.
