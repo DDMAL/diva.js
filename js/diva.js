@@ -27,6 +27,7 @@ THE SOFTWARE.
         var defaults =  {
             automaticTitle: true,       // Shows the title within a div of id diva-title
             backendServer: '',          // The URL to the script returning the JSON data; mandatory
+            enableFullscreen: true,     // Enable or disable fullscreen mode
             gotoPage: true,             // Should there be a "go to page" option or not, defaults to yes
             iipServerBaseUrl: '',       // The URL to the IIPImage installation, including the ?FIF=
             jump: null,                 // Callback function for jumping to a specific page (using the gotoPage feature)
@@ -625,10 +626,44 @@ THE SOFTWARE.
         var initiateViewer = function() {
             // Create the inner and outer panels
             $(settings.elementSelector).append('<div id="diva-outer"></div>');
-            // Add the fullscreen toggle button
-            // $('#diva-outer').addClass('fullscreen');
             $('#diva-outer').append('<div id="diva-inner" class="dragger"></div>');
-            $('#diva-outer').append('<div id="diva-fullscreen"></div>');
+
+            // Create the fullscreen toggle icon if fullscreen is enabled
+            if (settings.enableFullscreen) {
+                $('#diva-outer').append('<div id="diva-fullscreen"></div>');
+
+                // Event handler for fullscreen toggling
+                $('#diva-fullscreen').click(function() {
+
+                    if (settings.inFullScreen) {
+                        $('#diva-outer').removeClass('fullscreen');
+                        settings.inFullScreen = false;
+
+                        // Return the body overflow to auto, as usual
+                        $('body').css('overflow', 'auto');
+                    } else {
+                        $('#diva-outer').addClass('fullscreen');
+                        settings.inFullScreen = true;
+
+                        // Make the body overflow hidden
+                        $('body').css('overflow', 'hidden');
+
+                    }
+                    // Store the offsets so the user stays in the same place
+                    settings.verticalOffset = $('#diva-outer').scrollTop();
+                    settings.horizontalOffset = $('#diva-outer').scrollLeft();
+
+                    // Recalculate height and width
+                    settings.panelWidth = parseInt($('#diva-outer').width(), 10) - 20;
+                    settings.panelHeight = parseInt($('#diva-outer').height(), 10);
+
+                    // Change the width of the inner div correspondingly
+                    $('#diva-inner').width(settings.panelWidth);
+                    // Do another AJAX request to fix the padding and so on
+                    ajaxRequest(settings.zoomLevel);
+                });
+
+            }
 
             // Change the cursor for dragging.
             $('#diva-inner').mouseover(function() {
@@ -650,11 +685,9 @@ THE SOFTWARE.
             // Get the height and width of the outerdrag element
             settings.panelWidth = parseInt($('#diva-outer').width(), 10) - 20; // for the scrollbar change later
             settings.panelHeight = parseInt($('#diva-outer').height(), 10);
-            
                         
             // Do the AJAX request - calls all the image display functions in turn
             ajaxRequest(settings.zoomLevel); // with the default zoom level
-
 
             // Handle the scroll
             $('#diva-outer').scroll(function() {
@@ -671,40 +704,6 @@ THE SOFTWARE.
                 settings.viewerYOffset = this.offsetTop;
 
                 handleDoubleClick(event);
-            });
-
-            // Fullscreen toggling
-            $('#diva-fullscreen').click(function() {
-                if (settings.inFullScreen) {
-                    $('#diva-outer').removeClass('fullscreen');
-                    settings.inFullScreen = false;
-                    // Recalculate height and width
-                    settings.panelWidth = parseInt($('#diva-outer').width(), 10) - 20;
-                    settings.panelHeight = parseInt($('#diva-outer').height(), 10);
-                    console.log('regular height and width:' + settings.panelWidth + 'and ehgiht of ' +  settings.panelHeight);
-                    $('#diva-inner').width(settings.panelWidth + 20);
-                    // First get the vertical offset (vertical scroll so far)
-                    settings.verticalOffset = $('#diva-outer').scrollTop();
-                    settings.horizontalOffset = $('#diva-outer').scrollLeft();
-                    ajaxRequest(settings.zoomLevel);
-                } else {
-                    $('#diva-outer').addClass('fullscreen');
-                    settings.inFullScreen = true;
-                    // Recalculate height and width
-                    settings.panelWidth = parseInt($('#diva-outer').width(), 10);
-                    settings.panelHeight = parseInt($('#diva-outer').height(), 10);
-                    console.log('regular height and width:' + settings.panelWidth + 'and ehgiht of ' +  settings.panelHeight);
-                    // Increase the width of innerdrag
-                    $('#diva-inner').width(settings.panelWidth);
-
-                    // Make the body overflow hidden
-                    $('body').css('overflow', 'hidden');
-                    // First get the vertical offset (vertical scroll so far)
-                    settings.verticalOffset = $('#diva-outer').scrollTop();
-                    settings.horizontalOffset = $('#diva-outer').scrollLeft();
-
-                    ajaxRequest(settings.zoomLevel);
-                }
             });
 
             // Prevent the context menu within the outerdrag IF it was triggered with the ctrl key
