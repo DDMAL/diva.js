@@ -427,8 +427,6 @@ THE SOFTWARE.
                         if (settings.automaticTitle) {
                             $(settings.elementSelector).prepend('<div id="diva-title">' + settings.itemTitle + '</div>');
                         }
-
-                        settings.firstAjaxRequest = false;
                     }
 
                     // Reset the vertical scroll and clear out the innerdrag div
@@ -475,6 +473,29 @@ THE SOFTWARE.
                     // For use in the next ajax request (zoom change)
                     settings.dimBeforeZoom = settings.dimAfterZoom;
 
+                    // Now execute the zoom callback functions (if it's not the first)
+                    if (!settings.firstAjaxRequest) {
+                        // If the callback function is set, execute it
+                        if (typeof settings.zoom == 'function') {
+                            // zoom: function(newZoomLevel) { doSomething(); }
+                            settings.zoom.call(this, zoomLevel);
+                        }
+
+                        // Execute the zoom in/out callback function if necessary
+                        if (zoomDirection > 0) {
+                            // Zooming out
+                            if (typeof settings.zoomOut == 'function') {
+                                settings.zoomOut.call(this, zoomLevel);
+                            }
+                        } else {
+                            // Zooming in
+                            if (typeof settings.zoomIn == 'function') {
+                                settings.zoomIn.call(this, zoomLevel);
+                            }
+                        }
+                    }
+                    settings.firstAjaxRequest = false;
+
                 } // ends the success function
             }); // ends the $.ajax function
         };
@@ -510,24 +531,6 @@ THE SOFTWARE.
                 value: zoomLevel
             });
 
-            // If the callback function is set, execute it
-            if (typeof settings.zoom == 'function') {
-                // zoom: function(newZoomLevel) { doSomething(); }
-                settings.zoom.call(this, zoomLevel);
-            }
-
-            // Execute the zoom in/out callback function if necessary
-            if (zoomDirection > 0) {
-                // Zooming out
-                if (typeof settings.zoomOut == 'function') {
-                    settings.zoomOut.call(this, zoomLevel);
-                }
-            } else {
-                // Zooming in
-                if (typeof settings.zoomIn == 'function') {
-                    settings.zoomIn.call(this, zoomLevel);
-                }
-            }
         };
 
         // Called whenever the zoom slider is moved
