@@ -652,6 +652,9 @@ THE SOFTWARE.
                     // Store the offsets so the user stays in the same place
                     settings.verticalOffset = $('#diva-outer').scrollTop();
                     settings.horizontalOffset = $('#diva-outer').scrollLeft();
+                    console.log('vert offset: ' + settings.verticalOffset);
+                    console.log('horiz offset:' + settings.horizontalOffset);
+                    settings.doubleClick = false;
 
                     // Recalculate height and width
                     settings.panelWidth = parseInt($('#diva-outer').width(), 10) - 20;
