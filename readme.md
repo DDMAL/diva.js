@@ -23,3 +23,8 @@ Getting help
 ------------
 
 Help for diva.js is available through this repository's [wiki](https://github.com/DDMAL/diva.js/wiki), in the form of code documentation, installation instructions and usage tips.
+
+Let Us Know
+-----------
+
+We're developing Diva.js as part of our research in [Distributed Digital Music Libraries](http://ddmal.music.mcgill.ca). If you use it in your project, it would be great if you could [let us know](andrew.hankinson@mail.mcgill.ca).
