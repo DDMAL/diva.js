@@ -470,9 +470,6 @@ THE SOFTWARE.
                     // Scroll to the proper place
                     scrollAfterRequest();
 
-                    // For use in the next ajax request (zoom change)
-                    settings.dimBeforeZoom = settings.dimAfterZoom;
-
                     // Now execute the zoom callback functions (if it's not the first)
                     if (!settings.firstAjaxRequest) {
                         // If the callback function is set, execute it
@@ -482,18 +479,22 @@ THE SOFTWARE.
                         }
 
                         // Execute the zoom in/out callback function if necessary
-                        if (zoomDirection > 0) {
+                        if (settings.dimBeforeZoom > settings.dimAfterZoom) {
                             // Zooming out
                             if (typeof settings.zoomOut == 'function') {
                                 settings.zoomOut.call(this, zoomLevel);
                             }
-                        } else {
+                        } else if (settings.dimBeforeZoom < settings.dimAfterZoom) {
                             // Zooming in
                             if (typeof settings.zoomIn == 'function') {
                                 settings.zoomIn.call(this, zoomLevel);
                             }
                         }
                     }
+
+                    // For use in the next ajax request (zoom change)
+                    settings.dimBeforeZoom = settings.dimAfterZoom;
+
                     settings.firstAjaxRequest = false;
 
                 } // ends the success function
