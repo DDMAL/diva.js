@@ -28,6 +28,7 @@ THE SOFTWARE.
             automaticTitle: true,       // Shows the title within a div of id diva-title
             backendServer: '',          // The URL to the script returning the JSON data; mandatory
             enableFullscreen: true,     // Enable or disable fullscreen mode
+            enableSidebar: true,        // Enable or disable the sidebar
             gotoPage: true,             // Should there be a "go to page" option or not, defaults to yes
             iipServerBaseUrl: '',       // The URL to the IIPImage installation, including the ?FIF=
             jump: null,                 // Callback function for jumping to a specific page (using the gotoPage feature)
@@ -694,6 +695,7 @@ THE SOFTWARE.
             // Do the AJAX request - calls all the image display functions in turn
             ajaxRequest(settings.zoomLevel); // with the default zoom level
 
+
             // Handle the scroll
             $('#diva-outer').scroll(function() {
                 handleScroll();
@@ -712,8 +714,9 @@ THE SOFTWARE.
             });
 
             // Prevent the context menu within the outerdrag IF it was triggered with the ctrl key
-            $('#diva-outer').bind("contextmenu", function(e) {
-                if (event.ctrlKey) {
+            $('#diva-outer').bind("contextmenu", function(event) {
+                var e = event.originalEvent;
+                if (e.ctrlKey) {
                     e.preventDefault();
                 }
             });
