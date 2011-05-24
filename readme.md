@@ -27,4 +27,4 @@ Help for diva.js is available through this repository's [wiki](https://github.co
 Let Us Know
 -----------
 
-We're developing Diva.js as part of our research in [Distributed Digital Music Libraries](http://ddmal.music.mcgill.ca). If you use it in your project, it would be great if you could [let us know](andrew.hankinson@mail.mcgill.ca).
+We're developing Diva.js as part of our research in [Distributed Digital Music Libraries](http://ddmal.music.mcgill.ca). If you use it in your project, it would be great if you could [let us know](mailto:andrew.hankinson@mail.mcgill.ca).
