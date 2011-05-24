@@ -28,7 +28,6 @@ THE SOFTWARE.
             automaticTitle: true,       // Shows the title within a div of id diva-title
             backendServer: '',          // The URL to the script returning the JSON data; mandatory
             enableFullscreen: true,     // Enable or disable fullscreen mode
-            enableSidebar: true,        // Enable or disable the sidebar
             gotoPage: true,             // Should there be a "go to page" option or not, defaults to yes
             iipServerBaseUrl: '',       // The URL to the IIPImage installation, including the ?FIF=
             jump: null,                 // Callback function for jumping to a specific page (using the gotoPage feature)
@@ -718,6 +717,7 @@ THE SOFTWARE.
                 var e = event.originalEvent;
                 if (e.ctrlKey) {
                     e.preventDefault();
+                    e.stopPropagation();
                 }
             });
 
