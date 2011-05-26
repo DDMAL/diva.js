@@ -45,7 +45,7 @@ THE SOFTWARE.
             zoomIn: null,               // Callback function for zooming in only
             zoomLevel: 2,               // The initial zoom level (used to store the current zoom level)
             zoomOut: null,              // Callback function for zooming out only
-            zoomSlider: true,           // Should there be a zoom slider or not, defaults to yes
+            zoomSlider: true           // Should there be a zoom slider or not, defaults to yes
             //itemOrientation: 0,       // Either "h" (horizontal) or "v" (vertical) - currently not implemented
         };
         
@@ -80,7 +80,7 @@ THE SOFTWARE.
             totalHeight: 0,             // Height of all the image stacked together, value set later
             verticalOffset: 0,          // Used for storing the page offset before zooming
             viewerXOffset: 0,           // Distance between left edge of viewer and document left edge
-            viewerYOffset: 0,           // ^ for top edges
+            viewerYOffset: 0           // ^ for top edges
         };
 
         $.extend(settings, globals);
