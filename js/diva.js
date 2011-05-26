@@ -45,7 +45,7 @@ THE SOFTWARE.
             zoomIn: null,               // Callback function for zooming in only
             zoomLevel: 2,               // The initial zoom level (used to store the current zoom level)
             zoomOut: null,              // Callback function for zooming out only
-            zoomSlider: true,           // Should there be a zoom slider or not, defaults to yes
+            zoomSlider: true           // Should there be a zoom slider or not, defaults to yes
             //itemOrientation: 0,       // Either "h" (horizontal) or "v" (vertical) - currently not implemented
         };
         
@@ -80,7 +80,7 @@ THE SOFTWARE.
             totalHeight: 0,             // Height of all the image stacked together, value set later
             verticalOffset: 0,          // Used for storing the page offset before zooming
             viewerXOffset: 0,           // Distance between left edge of viewer and document left edge
-            viewerYOffset: 0,           // ^ for top edges
+            viewerYOffset: 0           // ^ for top edges
         };
 
         $.extend(settings, globals);
@@ -357,7 +357,7 @@ THE SOFTWARE.
             }
 
             // Handle the scrolling callback functions here
-            if (typeof settings.scroll == 'function' && direction != 0) {
+            if (typeof settings.scroll == 'function' && direction !== 0) {
                 settings.scroll.call(this, settings.pageLoadedId);
             }
             if (typeof settings.scrollUp == 'function' && direction < 0) {
@@ -420,7 +420,7 @@ THE SOFTWARE.
 
                         // Create the zoomer here, if needed
                         if (settings.zoomSlider) {
-                            createZoomer();
+                            this.createZoomer();
                         }
 
                         // Change the title to the actual title if automatic title is true
@@ -722,7 +722,7 @@ THE SOFTWARE.
             });
 
             // Check if the user is on a iPhone or iPod touch or iPad
-            if ((navigator.userAgent.match(/iPhone/i)) || (navigator.userAgent.match(/iPad/i)) || (navigator.userAgent.match(/iPod/i))) {
+            if (navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i)) {
                 // One-finger scroll within outerdrag
                 $('#diva-outer').oneFingerScroll();
 
