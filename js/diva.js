@@ -87,12 +87,11 @@ THE SOFTWARE.
 
         $.extend(settings, globals);
 
-        // Checks if a page is within the viewport
-        var nearViewport = function(top, bottom) {
+        // Checks if a page is within the viewport vertically
+        var verticallyInViewport = function(top, bottom) {
             var panelHeight = settings.panelHeight;
             var topOfViewport = settings.scrollSoFar;
             var bottomOfViewport = topOfViewport + panelHeight;
-            console.log("because the top of the viewport is " + topOfViewport + " and bottom is " + bottomOfViewport);
            
             if (top >= topOfViewport && top <= bottomOfViewport) {
                 // If top of page is in the viewport
@@ -120,25 +119,22 @@ THE SOFTWARE.
             }
         };
         
+        // Check if a page is near the viewport and thus should be loaded
         var isPageVisible = function(pageIndex) {
-            // Call near viewport
             var topOfPage = settings.heightAbovePages[pageIndex];
             var bottomOfPage = topOfPage + settings.pages[pageIndex].h + settings.verticalPadding;
-            return nearViewport(topOfPage, bottomOfPage);
+            return verticallyInViewport(topOfPage, bottomOfPage);
         };
 
-        // Check if a specific tile is near the viewport and thus should be loaded
-        // Currently only works for rows lol
+        // Check if a specific tile is near the viewport and thus should be loaded (row-based only)
         var isTileVisible = function(pageIndex, tileRow, tileCol) {
-            console.log("checking if tile " + tileRow + ", " + tileCol + " on page " + pageIndex + " is near the viewport");
             // Call near viewport
             var tileTop = settings.heightAbovePages[pageIndex] + (tileRow * settings.tileHeight) + settings.verticalPadding;
             var tileBottom = tileTop + settings.tileHeight;
-            console.log("top:" + tileTop + " bottom: " + tileBottom);
-            console.log("is it?" + nearViewport(tileTop, tileBottom));
-            return nearViewport(tileTop, tileBottom);
+            return verticallyInViewport(tileTop, tileBottom);
         };
         
+        // Check if a tile has already been appended
         var isTileLoaded = function(pageIndex, tileNumber) {
             if ($(settings.selector + 'tile-' + pageIndex + '-' + tileNumber).length > 0) {
                 return true;
@@ -204,17 +200,15 @@ THE SOFTWARE.
                     tileNumber++;
                 }
             }
-            
             if (!isPageLoaded(pageID)) {
                 content.push('</div>');
-    
                 // Build the content string and append it to the document
                 var contentString = content.join('');
                 $(settings.innerSelector).append(contentString);
             } else {
                 // Append it to the page
-                $(settings.selector + 'page-' + pageID).append(content.join(''));
-            }
+		        $(settings.selector + 'page-' + pageID).append(content.join(''));
+	        }
         };
 
         // Delete a page from the DOM; will occur when a page is scrolled out of the viewport
@@ -432,6 +426,7 @@ THE SOFTWARE.
             settings.prevVptTop = 0;
             $(settings.outerSelector).scrollTop(desiredTop);
             $(settings.outerSelector).scrollLeft(desiredLeft);
+            console.log("THIS IS WITHIN SCROLLLAFTERREQUEST, AT THE END");
         };
         
         // AJAX request to start the whole process - called upon page load and upon zoom change
@@ -513,6 +508,7 @@ THE SOFTWARE.
 
                     // Scroll to the proper place
                     scrollAfterRequest();
+                    console.log("THIS SHOULD BE AFTER SCROLLAFTERREQUEST()");
 
                     // Now execute the zoom callback functions (if it's not the first)
                     // Note that this also gets executed after entering or leaving fullscreen mode
@@ -550,6 +546,7 @@ THE SOFTWARE.
             settings.scrollSoFar = $(settings.outerSelector).scrollTop();
             adjustPages(settings.scrollSoFar - settings.prevVptTop);
             settings.prevVptTop = settings.scrollSoFar;
+            console.log("i get called to handle scroll");
         };
 
         // Handles zooming - called after pinch-zoom, changing the slider, or double-clicking
@@ -769,6 +766,7 @@ THE SOFTWARE.
                     var e = event.originalEvent;
                     scale(e);
                 });
+
             }
 
             // Only check if either scrollBySpace or scrollByKeys is enabled
@@ -858,8 +856,7 @@ THE SOFTWARE.
             
             // Load the images at the initial zoom level            
             ajaxRequest(settings.zoomLevel);
-
-
+	    
             handleEvents();
         };
 
