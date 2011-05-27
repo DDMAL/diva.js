@@ -1,10 +1,10 @@
 // from http://forrst.com/posts/jQuery_element_ID_generator-RoM
 (function( $ ) {
-    var counter = 0;
-    $.generateId = function(prefix) {
+    var counter = 1;
+    $.generateId = function(suffix) {
         var generatedId;
         do {
-          generatedId = (prefix ? prefix + '-' : '') + (counter++);
+          generatedId = (counter++) + (suffix ? '-' + suffix : '');
         } while(document.getElementById(generatedId));
         
         return generatedId;
