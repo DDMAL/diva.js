@@ -625,16 +625,10 @@ THE SOFTWARE.
             handleZoomSlide(newZoomLevel);
         };
 
-        // Initiates the process
-        var initiateViewer = function() {
-            // Create the inner and outer panels
-            $(settings.elementSelector).append('<div id="' + settings.ID + 'outer"></div>');
-            $(settings.outerSelector).append('<div id="' + settings.ID + 'inner" class="dragger"></div>');
-
+        // Handles all the events
+        var handleEvents = function() {
             // Create the fullscreen toggle icon if fullscreen is enabled
             if (settings.enableFullscreen) {
-                $(settings.elementSelector).prepend('<div id="' + settings.ID + 'fullscreen"></div>');
-
                 // Event handler for fullscreen toggling
                 $(settings.selector + 'fullscreen').click(function() {
                     if (settings.inFullScreen) {
@@ -688,14 +682,6 @@ THE SOFTWARE.
             $(settings.innerSelector).mouseup(function() {
                 $(this).removeClass('grabbing').addClass('grab');
             });
-
-            // Get the height and width of the outerdrag element
-            settings.panelWidth = parseInt($(settings.outerSelector).width(), 10) - 20; // for the scrollbar change later
-            settings.panelHeight = parseInt($(settings.outerSelector).height(), 10);
-                        
-            // Do the AJAX request - calls all the image display functions in turn
-            ajaxRequest(settings.zoomLevel); // with the default zoom level
-
 
             // Handle the scroll
             $(settings.outerSelector).scroll(function() {
@@ -807,14 +793,13 @@ THE SOFTWARE.
             // For easier selecting of the container element
             settings.elementSelector = '#' + $(element).attr('id');
    
-            // Generate one ID, use that for everything (the other way won't work)
+            // Generate an ID that can be used as a prefix for all the other IDs
             settings.ID = $.generateId('diva-');
-            settings.selector = '#' + settings.ID; // to select things easily
-            console.log(settings.ID);
+            settings.selector = '#' + settings.ID;
+            
             // Since we need to reference these two a lot
             settings.outerSelector = settings.selector + 'outer';
             settings.innerSelector = settings.selector + 'inner';
-            console.log("outer selector: " + settings.outerSelector);
             
             // If we need either a zoom slider or a gotoPage thing, create a "viewertools" div
             if (settings.zoomSlider || settings.enableGotoPage) {
@@ -823,10 +808,26 @@ THE SOFTWARE.
             
             if (settings.enableGotoPage) {
                 createGotoPage();
-                console.log("GOTOPAGE");
             }
+            
+            // Create the inner and outer panels
+            $(settings.elementSelector).append('<div id="' + settings.ID + 'outer"></div>');
+            $(settings.outerSelector).append('<div id="' + settings.ID + 'inner" class="dragger"></div>');
+            
+            // Get the height and width of the diva-outer element
+            settings.panelWidth = parseInt($(settings.outerSelector).width(), 10) - 18; // for the scrollbar change later
+            settings.panelHeight = parseInt($(settings.outerSelector).height(), 10);
+            
+            // Create the fullscreen icon
+            if (settings.enableFullscreen) {
+                $(settings.elementSelector).prepend('<div id="' + settings.ID + 'fullscreen"></div>');
+            }
+            
+            // Load the images at the initial zoom level            
+            ajaxRequest(settings.zoomLevel);
 
-            initiateViewer();
+
+            handleEvents();
         };
 
         // call the init function when this object is created.
