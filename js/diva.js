@@ -88,20 +88,19 @@ THE SOFTWARE.
         $.extend(settings, globals);
 
         // Checks if a page is within the viewport
-        var nearViewport = function(pageID) {
-            var topOfPage = settings.heightAbovePages[pageID];
-            var bottomOfPage = topOfPage + settings.pages[pageID].h + settings.verticalPadding;
+        var nearViewport = function(top, bottom) {
             var panelHeight = settings.panelHeight;
             var topOfViewport = settings.scrollSoFar;
             var bottomOfViewport = topOfViewport + panelHeight;
+            console.log("because the top of the viewport is " + topOfViewport + " and bottom is " + bottomOfViewport);
            
-            if ( topOfPage >= topOfViewport && topOfPage <= bottomOfViewport  ) {
+            if (top >= topOfViewport && top <= bottomOfViewport) {
                 // If top of page is in the viewport
                 return true;
-            } else if ( bottomOfPage >= topOfViewport && bottomOfPage <= bottomOfViewport ) {
+            } else if (bottom >= topOfViewport && bottom <= bottomOfViewport) {
                 // Same as above for the bottom of the page
                 return true;
-            } else if ( topOfPage <= topOfViewport && bottomOfPage >= bottomOfViewport ) {
+            } else if (top <= topOfViewport && bottom >= bottomOfViewport) {
                 // Top of page is above, bottom of page is below
                 return true;
             } else {
@@ -112,7 +111,6 @@ THE SOFTWARE.
         
         // Check if a page has been loaded (i.e. is visible to the user) 
         var isPageLoaded = function(pageID) {
-
             // Done using the length attribute in jQuery
             // If and only if the div does not exist, its length will be 0
             if ($(settings.selector + 'page-' + pageID).length === 0) {
@@ -122,24 +120,51 @@ THE SOFTWARE.
             }
         };
         
-        // Appends the page directly into the document body
-        var appendPage = function(pageID) {
-            // Only try to append the page if the page has not already been loaded
+        var isPageVisible = function(pageIndex) {
+            // Call near viewport
+            var topOfPage = settings.heightAbovePages[pageIndex];
+            var bottomOfPage = topOfPage + settings.pages[pageIndex].h + settings.verticalPadding;
+            return nearViewport(topOfPage, bottomOfPage);
+        };
+
+        // Check if a specific tile is near the viewport and thus should be loaded
+        // Currently only works for rows lol
+        var isTileVisible = function(pageIndex, tileRow, tileCol) {
+            console.log("checking if tile " + tileRow + ", " + tileCol + " on page " + pageIndex + " is near the viewport");
+            // Call near viewport
+            var tileTop = settings.heightAbovePages[pageIndex] + (tileRow * settings.tileHeight) + settings.verticalPadding;
+            var tileBottom = tileTop + settings.tileHeight;
+            console.log("top:" + tileTop + " bottom: " + tileBottom);
+            console.log("is it?" + nearViewport(tileTop, tileBottom));
+            return nearViewport(tileTop, tileBottom);
+        };
+        
+        var isTileLoaded = function(pageIndex, tileNumber) {
+            if ($(settings.selector + 'tile-' + pageIndex + '-' + tileNumber).length > 0) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+       
+        // Appends the page directly into the document body, or loads the relevant tiles
+        var loadPage = function(pageID) {
+            var content = [];
+            var filename = settings.pages[pageID].fn;
+            var rows = settings.pages[pageID].r;
+            var cols = settings.pages[pageID].c;
+            var width = settings.pages[pageID].w;
+            var height = settings.pages[pageID].h;
+            var maxZoom = settings.pages[pageID].m_z;
+            var leftOffset, widthToUse;
+            
+            // Use an array as a string builder - faster than str concatentation
+            var lastHeight, lastWidth, row, col, tileHeight, tileWidth, imgSrc;
+            var tileNumber = 0;
+            var heightFromTop = settings.heightAbovePages[pageID] + settings.verticalPadding;
+
+            // Only try to append the div part if the page has not already been loaded
             if (!isPageLoaded(pageID)) {
-                var filename = settings.pages[pageID].fn;
-                var rows = settings.pages[pageID].r;
-                var cols = settings.pages[pageID].c;
-                var width = settings.pages[pageID].w;
-                var height = settings.pages[pageID].h;
-                var maxZoom = settings.pages[pageID].m_z;
-                var leftOffset, widthToUse;
-
-                // Use an array as a string builder - faster than str concatentation
-                var content = [];
-                var lastHeight, lastWidth, row, col, tileHeight, tileWidth, imgSrc;
-                var tileNumber = 0;
-                var heightFromTop = settings.heightAbovePages[pageID] + settings.verticalPadding;
-
                 // If it's the max width:
                 if (width === settings.maxWidth) {
                     // If it's larger than the panel (or almost), we use the standard horizontal padding
@@ -153,34 +178,42 @@ THE SOFTWARE.
                     widthToUse = (settings.maxWidth > settings.panelWidth) ? settings.maxWidth + 2 * settings.horizontalPadding : settings.panelWidth;
                     leftOffset = (widthToUse - width) / 2;
                 }
-
                 content.push('<div id="' + settings.ID + 'page-' + pageID + '" style="top: ' + heightFromTop + 'px; width:' + width + 'px; height: ' + height + 'px; left:' + leftOffset + 'px;" class="diva-page">');
+            }
 
-                // Calculate the width and height of the outer tiles (the ones that may have weird dimensions)
-                lastHeight = height - (rows - 1) * settings.tileHeight;
-                lastWidth = width - (cols - 1) * settings.tileWidth;
+            // Calculate the width and height of the outer tiles (the ones that may have weird dimensions)
+            lastHeight = height - (rows - 1) * settings.tileHeight;
+            lastWidth = width - (cols - 1) * settings.tileWidth;
 
-                // Now loop through the rows and columns
-                for ( row = 0; row < rows; row++ ) {
-                    for ( col = 0; col < cols; col++ ) {
-                        var top = row * settings.tileHeight;
-                        var left = col * settings.tileWidth;
+            // Now loop through the rows and columns
+            for (row = 0; row < rows; row++) {
+                for (col = 0; col < cols; col++) {
+                    var top = row * settings.tileHeight;
+                    var left = col * settings.tileWidth;
 
-                        // The zoom level might be different, if a page has a different max zoom level than the others
-                        var zoomLevel = (maxZoom === settings.maxZoomLevel) ? settings.zoomLevel : settings.zoomLevel + (maxZoom - settings.maxZoomLevel); 
-                        tileHeight = ( row === rows - 1 ) ? lastHeight : settings.tileHeight; // If it's the LAST tile, calculate separately
-                        tileWidth = ( col === cols - 1 ) ? lastWidth : settings.tileWidth; // Otherwise, just set it to the default height/width
-                        imgSrc = settings.iipServerBaseUrl + filename + '&amp;JTL=' + zoomLevel + ',' + tileNumber;
-                        content.push('<div style="position: absolute; top: ' + top + 'px; left: ' + left + 'px; background-image: url(\'' + imgSrc + '\'); height: ' + tileHeight + 'px; width: ' + tileWidth + 'px;"></div>');
-                        tileNumber++;
+                    // The zoom level might be different, if a page has a different max zoom level than the others
+                    var zoomLevel = (maxZoom === settings.maxZoomLevel) ? settings.zoomLevel : settings.zoomLevel + (maxZoom - settings.maxZoomLevel); 
+                    isTileVisible(pageID, row, col);
+                    tileHeight = (row === rows - 1) ? lastHeight : settings.tileHeight; // If it's the LAST tile, calculate separately
+                    tileWidth = (col === cols - 1) ? lastWidth : settings.tileWidth; // Otherwise, just set it to the default height/width
+                    imgSrc = settings.iipServerBaseUrl + filename + '&amp;JTL=' + zoomLevel + ',' + tileNumber;
+                    
+                    if (!isTileLoaded(pageID, tileNumber) && isTileVisible(pageID, row, col)) {
+                        content.push('<div id="' + settings.ID + 'tile-' + pageID + '-' + tileNumber + '"style="position: absolute; top: ' + top + 'px; left: ' + left + 'px; background-image: url(\'' + imgSrc + '\'); height: ' + tileHeight + 'px; width: ' + tileWidth + 'px;"></div>');
                     }
+                    tileNumber++;
                 }
+            }
             
+            if (!isPageLoaded(pageID)) {
                 content.push('</div>');
-
+    
                 // Build the content string and append it to the document
                 var contentString = content.join('');
                 $(settings.innerSelector).append(contentString);
+            } else {
+                // Append it to the page
+                $(settings.selector + 'page-' + pageID).append(content.join(''));
             }
         };
 
@@ -271,8 +304,8 @@ THE SOFTWARE.
                 // Should we add this page to the DOM? First check if it's a valid page
                 if (inRange(pageID)) {
                     // If it's near the viewport, yes, add it
-                    if (nearViewport(pageID)) {
-                        appendPage(pageID);
+                    if (isPageVisible(pageID)) {
+                        loadPage(pageID);
 
                         // Reset the last page loaded to this one
                         settings.lastPageLoaded = pageID;
@@ -293,8 +326,8 @@ THE SOFTWARE.
                 // Direction is negative - we're scrolling up
                 if (inRange(pageID)) {
                     // If it's near the viewport, yes, add it
-                    if (nearViewport(pageID)) {
-                        appendPage(pageID);
+                    if (isPageVisible(pageID)) {
+                        loadPage(pageID);
 
                         // Reset the first page loaded to this one
                         settings.firstPageLoaded = pageID;
@@ -347,13 +380,13 @@ THE SOFTWARE.
         var adjustPages = function(direction) {
             // Direction is negative, so we're scrolling up
             if (direction < 0) {
-                attemptPageShow(settings.firstPageLoaded-1, direction);
+                attemptPageShow(settings.firstPageLoaded, direction);
                 setCurrentPage(-1);
                 attemptPageHide(settings.lastPageLoaded, direction);
             } else if (direction > 0) {
                 // Direction is positive so we're scrolling down
                 attemptPageHide(settings.firstPageLoaded, direction);
-                attemptPageShow(settings.lastPageLoaded+1, direction);
+                attemptPageShow(settings.lastPageLoaded, direction);
                 setCurrentPage(1);
             }
 
@@ -467,8 +500,8 @@ THE SOFTWARE.
 
                         // Now try to load the page ONLY if the page needs to be loaded
                         // Take scrolling into account later, just try this for now
-                        if (nearViewport(i)) {
-                            appendPage(i);
+                        if (isPageVisible(i)) {
+                            loadPage(i);
                             settings.lastPageLoaded = i;
                         }
                     }
