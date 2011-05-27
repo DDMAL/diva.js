@@ -13,12 +13,10 @@
     <script>
     $(document).ready(function() {
         $('#diva-wrapper').diva({
-            paddingPerPage: 50,
-            zoomSlider: true,
-            gotoPage: true,
-            iipServerBaseUrl: "http://petrucci.musiclibs.net:9002/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/liber/",
-            backendServer: "http://petrucci.musiclibs.net:9002/ajax/3/",
-            scrollBySpace: false
+            //adaptivePadding: 0,
+            //fixedPadding: 100,
+            iipServerBaseUrl: "http://petrucci.musiclibs.net:9002/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/freg/",
+            backendServer: "http://petrucci.musiclibs.net:9002/ajax/23/"
         });
         //var dv = $('#diva-wrapper').data('diva');
     });

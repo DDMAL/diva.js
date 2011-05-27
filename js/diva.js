@@ -25,6 +25,7 @@ THE SOFTWARE.
     var Diva = function(element, options) {
         // These are elements that can be overridden upon instantiation
         var defaults =  {
+            adaptivePadding: 0.05,      // The ratio of padding to the page dimension
             backendServer: '',          // The URL to the script returning the JSON data; mandatory
             enableAutoTitle: true,      // Shows the title within a div of id diva-title
             enableFullscreen: true,     // Enable or disable fullscreen mode
@@ -32,6 +33,7 @@ THE SOFTWARE.
             enableKeyScroll: true,      // Scrolling using the page up/down keys
             enableSpaceScroll: false,   // Scrolling down by pressing the space key
             enableZoomSlider: true,     // Enable or disable the zoom slider (for zooming in and out)
+            fixedPadding: 0,            // Fallback if adaptive padding is set to 0
             iipServerBaseUrl: '',       // The URL to the IIPImage installation, including the ?FIF=
             maxZoomLevel: 0,            // Optional; defaults to the max zoom returned in the JSON response
             minZoomLevel: 0,            // Defaults to 0 (the minimum zoom)
@@ -42,7 +44,6 @@ THE SOFTWARE.
             onZoom: null,               // Callback function for zooming in general
             onZoomIn: null,             // Callback function for zooming in only
             onZoomOut: null,            // Callback function for zooming out only
-            paddingPerPage: 40,         // The pixels of padding surrounding and between pages
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
             zoomLevel: 2,               // The initial zoom level (used to store the current zoom level)
@@ -64,6 +65,7 @@ THE SOFTWARE.
             firstAjaxRequest: true,     // True initially, set to false after the first request
             heightAbovePages: [],       // The height above each page
             horizontalOffset: 0,        // Used for storing the page offset before zooming
+            horizontalPadding: 0,
             inFullScreen: false,        // Set to true when the user enters fullscreen mode
             itemTitle: '',              // The title of the document
             lastPageLoaded: -1,         // The ID of the last page loaded (value set later)
@@ -78,6 +80,7 @@ THE SOFTWARE.
             scrollSoFar: 0,             // Holds the number of pixels of vertical scroll
             totalHeight: 0,             // Height of all the image stacked together, value set later
             verticalOffset: 0,          // Used for storing the page offset before zooming
+            verticalPadding: 0,         
             viewerXOffset: 0,           // Distance between left edge of viewer and document left edge
             viewerYOffset: 0           // ^ for top edges
         };
@@ -87,7 +90,7 @@ THE SOFTWARE.
         // Checks if a page is within the viewport
         var nearViewport = function(pageID) {
             var topOfPage = settings.heightAbovePages[pageID];
-            var bottomOfPage = topOfPage + settings.pages[pageID].h + settings.paddingPerPage;
+            var bottomOfPage = topOfPage + settings.pages[pageID].h + settings.verticalPadding;
             var panelHeight = settings.panelHeight;
             var topOfViewport = settings.scrollSoFar;
             var bottomOfViewport = topOfViewport + panelHeight;
@@ -135,19 +138,19 @@ THE SOFTWARE.
                 var content = [];
                 var lastHeight, lastWidth, row, col, tileHeight, tileWidth, imgSrc;
                 var tileNumber = 0;
-                var heightFromTop = settings.heightAbovePages[pageID] + settings.paddingPerPage;
+                var heightFromTop = settings.heightAbovePages[pageID] + settings.verticalPadding;
 
                 // If it's the max width:
                 if (width === settings.maxWidth) {
-                    // If it's larger than the panel (or almost), we use the standard padding per page
-                    if (width >= settings.panelWidth - 2 * settings.paddingPerPage) {
-                        leftOffset = settings.paddingPerPage;
+                    // If it's larger than the panel (or almost), we use the standard horizontal padding
+                    if (width >= settings.panelWidth - 2 * settings.horizontalPadding) {
+                        leftOffset = settings.horizontalPadding;
                     } else {
                         leftOffset = (settings.panelWidth - width) / 2;
                     }
                 } else {
                     // Smaller than the max width
-                    widthToUse = (settings.maxWidth > settings.panelWidth) ? settings.maxWidth + 2 * settings.paddingPerPage : settings.panelWidth;
+                    widthToUse = (settings.maxWidth > settings.panelWidth) ? settings.maxWidth + 2 * settings.horizontalPadding : settings.panelWidth;
                     leftOffset = (widthToUse - width) / 2;
                 }
 
@@ -200,7 +203,7 @@ THE SOFTWARE.
         // Private helper function, check if the bottom of a page is above the top of a viewport
         // For when you want to keep looping but don't want to load a specific page
         var aboveViewport = function(pageID) {
-            var bottomOfPage = settings.heightAbovePages[pageID] + settings.pages[pageID].h + settings.paddingPerPage;
+            var bottomOfPage = settings.heightAbovePages[pageID] + settings.pages[pageID].h + settings.verticalPadding;
             var topOfViewport = settings.scrollSoFar; 
             if ( bottomOfPage < topOfViewport ) {
                 return true;
@@ -382,14 +385,14 @@ THE SOFTWARE.
                 desiredTop = Math.max((centerY) - (settings.panelHeight / 2), 0);
             } else {
                 // This isn't working just zoom in on the middle for now
-                if ( settings.maxWidth + settings.paddingPerPage * 2 <= settings.panelWidth ) {
+                if ( settings.maxWidth + settings.horizontalPadding * 2 <= settings.panelWidth ) {
                     desiredLeft = 0;
                 } else {
-                    desiredLeft = settings.maxWidth / 2 - settings.panelWidth / 2 + settings.paddingPerPage;
+                    desiredLeft = settings.maxWidth / 2 - settings.panelWidth / 2 + settings.horizontalPadding;
                 }
 
                 // Either do the expected zoom or zoom in on the middle
-                desiredLeft = ( settings.horizontalOffset > 0 ) ? settings.horizontalOffset * zChangeRatio : settings.maxWidth / 2 - settings.panelWidth / 2 + settings.paddingPerPage;
+                desiredLeft = ( settings.horizontalOffset > 0 ) ? settings.horizontalOffset * zChangeRatio : settings.maxWidth / 2 - settings.panelWidth / 2 + settings.horizontalPadding;
                 desiredTop = settings.verticalOffset * zChangeRatio;
             }
             
@@ -425,6 +428,16 @@ THE SOFTWARE.
                         if (settings.enableAutoTitle) {
                             $(settings.elementSelector).prepend('<div id="' + settings.ID + 'title">' + settings.itemTitle + '</div>');
                         }
+                        
+                        // Calculate the horizontal and vertical inter-page padding
+                        if (settings.adaptivePadding > 0) {
+                            settings.horizontalPadding = data.dims.a_wid * settings.adaptivePadding;
+                            settings.verticalPadding = data.dims.a_hei * settings.adaptivePadding;
+                        } else {
+                            // It's less than or equal to 0; use fixedPadding instead
+                            settings.horizontalPadding = settings.fixedPadding;
+                            settings.verticalPadding = settings.fixedPadding;
+                        }
                     }
 
                     // Reset the vertical scroll and clear out the innerdrag div
@@ -433,7 +446,7 @@ THE SOFTWARE.
 
                     // Now reset some things that need to be changed after each zoom
                     settings.pages = data.pgs;
-                    settings.totalHeight = data.dims.t_hei + settings.paddingPerPage * (settings.numPages + 1); 
+                    settings.totalHeight = data.dims.t_hei + settings.verticalPadding * (settings.numPages + 1); 
                     settings.zoomLevel = zoomLevel;
                     settings.maxWidth = data.dims.mx_w;
                     settings.maxHeight = data.dims.mx_h;
@@ -450,7 +463,7 @@ THE SOFTWARE.
                         settings.heightAbovePages[i] = heightSoFar;
 
                         // Has to be done this way otherwise you get the height of the page included too
-                        heightSoFar = settings.heightAbovePages[i] + settings.pages[i].h + settings.paddingPerPage;
+                        heightSoFar = settings.heightAbovePages[i] + settings.pages[i].h + settings.verticalPadding;
 
                         // Now try to load the page ONLY if the page needs to be loaded
                         // Take scrolling into account later, just try this for now
@@ -462,7 +475,7 @@ THE SOFTWARE.
                     
                     // Set the height and width of documentpane (necessary for dragscrollable)
                     $(settings.innerSelector).css('height', settings.totalHeight);
-                    var widthToSet = (data.dims.mx_w + settings.paddingPerPage * 2 < settings.panelWidth ) ? settings.panelWidth : data.dims.mx_w + settings.paddingPerPage * 2; // width of page + 40 pixels on each side if necessary
+                    var widthToSet = (data.dims.mx_w + settings.horizontalPadding * 2 < settings.panelWidth ) ? settings.panelWidth : data.dims.mx_w + settings.horizontalPadding * 2; // width of page + 40 pixels on each side if necessary
                     $(settings.innerSelector).css('width', widthToSet);
 
                     // Scroll to the proper place
