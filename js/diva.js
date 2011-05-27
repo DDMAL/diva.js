@@ -25,28 +25,27 @@ THE SOFTWARE.
     var Diva = function(element, options) {
         // These are elements that can be overridden upon instantiation
         var defaults =  {
-            automaticTitle: true,       // Shows the title within a div of id diva-title
             backendServer: '',          // The URL to the script returning the JSON data; mandatory
+            enableAutoTitle: true,      // Shows the title within a div of id diva-title
             enableFullscreen: true,     // Enable or disable fullscreen mode
-            gotoPage: true,             // Should there be a "go to page" option or not, defaults to yes
+            enableGotoPage: true,       // A "go to page" jump box
+            enableKeyScroll: true,      // Scrolling using the page up/down keys
+            enableSpaceScroll: false,   // Scrolling down by pressing the space key
+            enableZoomSlider: true,     // Enable or disable the zoom slider (for zooming in and out)
             iipServerBaseUrl: '',       // The URL to the IIPImage installation, including the ?FIF=
-            jump: null,                 // Callback function for jumping to a specific page (using the gotoPage feature)
             maxZoomLevel: 0,            // Optional; defaults to the max zoom returned in the JSON response
             minZoomLevel: 0,            // Defaults to 0 (the minimum zoom)
+            onJump: null,               // Callback function for jumping to a specific page (using the gotoPage feature)
+            onScroll: null,             // Callback function for scrolling
+            onScrollDown: null,         // Callback function for scrolling down, only
+            onScrollUp: null,           // Callback function for scrolling up only
+            onZoom: null,               // Callback function for zooming in general
+            onZoomIn: null,             // Callback function for zooming in only
+            onZoomOut: null,            // Callback function for zooming out only
             paddingPerPage: 40,         // The pixels of padding surrounding and between pages
-            scroll: null,               // Callback function for scrolling
-            scrollBySpace: false,       // Can user scroll down with the space bar? Disabled by default
-            scrollByKeys: true,         // Can user scroll with the page up/page down keys?
-            scrollDown: null,           // Callback function for scrolling down, only
-            scrollUp: null,             // Callback function for scrolling up only
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
-            zoom: null,                 // Callback function for zooming in general
-            zoomIn: null,               // Callback function for zooming in only
             zoomLevel: 2,               // The initial zoom level (used to store the current zoom level)
-            zoomOut: null,              // Callback function for zooming out only
-            zoomSlider: true           // Should there be a zoom slider or not, defaults to yes
-            //itemOrientation: 0,       // Either "h" (horizontal) or "v" (vertical) - currently not implemented
         };
         
         // Apply the defaults, or override them with passed-in options.
@@ -357,14 +356,14 @@ THE SOFTWARE.
             }
 
             // Handle the scrolling callback functions here
-            if (typeof settings.scroll == 'function' && direction != 0) {
-                settings.scroll.call(this, settings.pageLoadedId);
+            if (typeof settings.onScroll == 'function' && direction != 0) {
+                settings.onScroll.call(this, settings.pageLoadedId);
             }
-            if (typeof settings.scrollUp == 'function' && direction < 0) {
-                settings.scrollUp.call(this, settings.pageLoadedId);
+            if (typeof settings.onScrollUp == 'function' && direction < 0) {
+                settings.onScrollUp.call(this, settings.pageLoadedId);
             }
-            if (typeof settings.scrollDown == 'function' && direction > 0) {
-                settings.scrollDown.call(this, settings.pageLoadedId);
+            if (typeof settings.onScrollDown == 'function' && direction > 0) {
+                settings.onScrollDown.call(this, settings.pageLoadedId);
             }
         };
         
@@ -419,12 +418,12 @@ THE SOFTWARE.
                         $('#diva-current label').text(settings.numPages);
 
                         // Create the zoomer here, if needed
-                        if (settings.zoomSlider) {
+                        if (settings.enableZoomSlider) {
                             createZoomer();
                         }
 
-                        // Change the title to the actual title if automatic title is true
-                        if (settings.automaticTitle) {
+                        // Change the title to the actual title if the setting is enabled
+                        if (settings.enableAutoTitle) {
                             $(settings.elementSelector).prepend('<div id="diva-title">' + settings.itemTitle + '</div>');
                         }
                     }
@@ -446,7 +445,7 @@ THE SOFTWARE.
                     var heightSoFar = 0;
 
                     var i;
-                    for ( i = 0; i < settings.numPages; i++ ) {                 
+                    for (i = 0; i < settings.numPages; i++) {                 
                         // First set the height above that page by adding this height to the previous total
                         // A page includes the padding above it
                         settings.heightAbovePages[i] = heightSoFar;
@@ -471,23 +470,23 @@ THE SOFTWARE.
                     scrollAfterRequest();
 
                     // Now execute the zoom callback functions (if it's not the first)
+                    // Note that this also gets executed after entering or leaving fullscreen mode
                     if (!settings.firstAjaxRequest) {
                         // If the callback function is set, execute it
-                        if (typeof settings.zoom == 'function') {
-                            // zoom: function(newZoomLevel) { doSomething(); }
-                            settings.zoom.call(this, zoomLevel);
+                        if (typeof settings.onZoom == 'function') {
+                            settings.onZoom.call(this, zoomLevel);
                         }
 
                         // Execute the zoom in/out callback function if necessary
                         if (settings.dimBeforeZoom > settings.dimAfterZoom) {
                             // Zooming out
-                            if (typeof settings.zoomOut == 'function') {
-                                settings.zoomOut.call(this, zoomLevel);
+                            if (typeof settings.onZoomOut == 'function') {
+                                settings.onZoomOut.call(this, zoomLevel);
                             }
                         } else if (settings.dimBeforeZoom < settings.dimAfterZoom) {
                             // Zooming in
-                            if (typeof settings.zoomIn == 'function') {
-                                settings.zoomIn.call(this, zoomLevel);
+                            if (typeof settings.onZoomIn == 'function') {
+                                settings.onZoomIn.call(this, zoomLevel);
                             }
                         }
                     }
@@ -510,28 +509,16 @@ THE SOFTWARE.
 
         // Handles zooming - called after pinch-zoom, changing the slider, or double-clicking
         var handleZoom = function(zoomLevel) {
-            var zoomDirection;
+            // First make sure that this is an actual zoom request
+            if (settings.zoomLevel != zoomLevel) {
+                // Now do an ajax request with the new zoom level
+                ajaxRequest(zoomLevel);
 
-            // First check if we're zooming in or out
-            if (settings.zoomLevel === zoomLevel) {
-                // They are the same (why?); return
-                return;
-            } else if (settings.zoomLevel > zoomLevel) {
-                // Zooming out; zoom direction is positive
-                zoomDirection = 1;
-            } else {
-                // Zooming in; zoom direction is negative
-                zoomDirection = -1;
+                // Make the slider display the new value (it may already)
+                $('#diva-zoomer').slider({
+                    value: zoomLevel
+                });
             }
-
-            // Now do an ajax request with the new zoom level
-            ajaxRequest(zoomLevel);
-
-            // Make the slider display the new value (it may already)
-            $('#diva-zoomer').slider({
-                value: zoomLevel
-            });
-
         };
 
         // Called whenever the zoom slider is moved
@@ -559,9 +546,9 @@ THE SOFTWARE.
                 $('#diva-outer').scrollTop(heightToScroll);
 
                 // Now execute the callback function if it is defined
-                if (typeof settings.jump == 'function') {
+                if (typeof settings.onJump == 'function') {
                     // Pass it the page number, +1 as the user expects
-                    settings.jump.call(this, pageNumber+1);
+                    settings.onJump.call(this, pageNumber+1);
                 }
 
                 return true; // To signify that we can scroll to this page
@@ -751,7 +738,7 @@ THE SOFTWARE.
             }
 
             // Only check if either scrollBySpace or scrollByKeys is enabled
-            if (settings.scrollBySpace || settings.scrollByKeys) {
+            if (settings.enableSpaceScroll || settings.enableKeyScroll) {
                 var spaceKey = $.ui.keyCode.SPACE;
                 var pageUpKey = $.ui.keyCode.PAGE_UP;
                 var pageDownKey = $.ui.keyCode.PAGE_DOWN;
@@ -759,7 +746,7 @@ THE SOFTWARE.
                 // Catch the key presses in document
                 $(document).keydown(function(event) {
                     // Space or page down - go to the next page
-                    if ((settings.scrollBySpace && event.keyCode == spaceKey) || (settings.scrollByKeys && event.keyCode == pageDownKey)) {
+                    if ((settings.enableSpaceScroll && event.keyCode == spaceKey) || (settings.enableKeyScroll && event.keyCode == pageDownKey)) {
                         $('#diva-outer').scrollTop(settings.scrollSoFar + settings.panelHeight);
                         return false;
                     }
@@ -813,11 +800,11 @@ THE SOFTWARE.
             settings.tileEl = settings.id + '-tile-';*/
             
             // If we need either a zoom slider or a gotoPage thing, create a "viewertools" div
-            if (settings.zoomSlider || settings.gotoPage) {
+            if (settings.zoomSlider || settings.enableGotoPage) {
                 $(settings.elementSelector).prepend('<div id="diva-tools"></div>');
             }
             
-            if (settings.gotoPage) {
+            if (settings.enableGotoPage) {
                 createGotoPage();
             }
             
