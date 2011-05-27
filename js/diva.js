@@ -620,18 +620,21 @@ THE SOFTWARE.
 
             // Create the fullscreen toggle icon if fullscreen is enabled
             if (settings.enableFullscreen) {
-                $(settings.outerSelector).append('<div id="' + settings.ID + 'fullscreen"></div>');
+                $(settings.elementSelector).prepend('<div id="' + settings.ID + 'fullscreen"></div>');
 
                 // Event handler for fullscreen toggling
                 $(settings.selector + 'fullscreen').click(function() {
-
                     if (settings.inFullScreen) {
                         $(settings.outerSelector).removeClass('fullscreen');
                         settings.inFullScreen = false;
 
-                        // Return the body overflow to auto, as usual
+                        // Return the body overflow to auto and the fullscreen icon to its original place
                         $('body').css('overflow', 'auto');
+                        $(settings.selector + 'fullscreen').css('position', 'absolute').css('z-index', '8999');
                     } else {
+                        // Change the styling of the fullscreen icon - two viewers on a page won't work otherwise
+                        $(settings.selector + 'fullscreen').css('position', 'fixed').css('z-index', '9001');
+                        
                         $(settings.outerSelector).addClass('fullscreen');
                         settings.inFullScreen = true;
 

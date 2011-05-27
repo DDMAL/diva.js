@@ -6,11 +6,13 @@ body {
 #diva-one {
 	width: 600px;
     float: left;
+    position: relative;
 }
 
 #diva-two {
     width: 600px;
     float: right;
+    position: relative;
 }
 
 div[id$="diva-inner"] {
@@ -70,19 +72,19 @@ div[id$="diva-title"] {
     width: 100% !important;
     height: 100% !important;
     z-index: 9000;
-    position: absolute !important;
+    position: fixed !important;
     top: 0;
     left: 0;
 }
 
 div[id$="diva-fullscreen"] {
-    position: fixed;
+    position: absolute;
+    z-index: 8999; /* So that other viewers on the same page don't interfere */
     top: 0;
     left: 0;
     width: 40px;
     height: 40px;
     background-image: url('../img/fullscreen.png');
     background-repeat: no-repeat;
-    z-index: 9001;
     cursor: pointer;
 }
