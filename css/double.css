@@ -3,29 +3,34 @@ body {
 	font-family: Helvetica;
 }
 
-#diva-wrapper {
-	width: 720px;
-	margin: 0 auto;
+#diva-one {
+	width: 600px;
+    float: left;
 }
 
-#diva-inner {
+#diva-two {
+    width: 600px;
+    float: right;
+}
+
+div[id$="diva-inner"] {
 	color: #000;
 	position: relative;
 	overflow: hidden; /* x-scroll adds to the height, figure out later */
-	/*cursor: pointer;*/ /* or move */
+	/*cursor: pointer;*/
 }
 
-#diva-outer {
+div[id$="diva-outer"] {
 	position: relative;
 	height: 700px;
-	width: 720px; /* hack to get rid of the horizontal scrollbar ... */
+	width: 600px; /* hack to get rid of the horizontal scrollbar ... */
 	overflow: auto;
 	margin: 0 auto;
 	background-color: #F1F1F1;
 	border: 1px solid #99BBE8;
 }
 
-div[id^="diva-page"] {
+.diva-page {
 	position: absolute; /*test */
     -webkit-box-shadow: 0px 5px 10px rgba(0,0,0, .5);
     -moz-box-shadow: 0px 5px 3px rgba(0, 0, 0, 0.5);
@@ -36,18 +41,18 @@ div[id^="diva-page"] {
     background-position: center;
 }
 
-#diva-zoomer {
+div[id$="diva-zoom-slider"] {
 	margin: 10px;
 	font-size: 62.5%;
 	width: 100px;
     float: left;
 }
 
-#diva-goto {
+div[id$="diva-goto-page"] {
 	text-align: right;
 }
 	
-#diva-title {
+div[id$="diva-title"] {
 	text-align: center;
 	font-weight: bold;
 	font-size: 1.5em;
@@ -70,7 +75,7 @@ div[id^="diva-page"] {
     left: 0;
 }
 
-#diva-fullscreen {
+div[id$="diva-fullscreen"] {
     position: fixed;
     top: 0;
     left: 0;

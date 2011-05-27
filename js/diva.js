@@ -109,11 +109,10 @@ THE SOFTWARE.
         
         // Check if a page has been loaded (i.e. is visible to the user) 
         var isPageLoaded = function(pageID) {
-            var thisID = '#diva-page-' + pageID;
 
             // Done using the length attribute in jQuery
             // If and only if the div does not exist, its length will be 0
-            if ($(thisID).length === 0) {
+            if ($(settings.selector + 'page-' + pageID).length === 0) {
                 return false;
             } else {
                 return true;
@@ -152,7 +151,7 @@ THE SOFTWARE.
                     leftOffset = (widthToUse - width) / 2;
                 }
 
-                content.push('<div id="diva-page-' + pageID + '" style="top: ' + heightFromTop + 'px; width:' + width + 'px; height: ' + height + 'px; left:' + leftOffset + 'px;">');
+                content.push('<div id="' + settings.ID + 'page-' + pageID + '" style="top: ' + heightFromTop + 'px; width:' + width + 'px; height: ' + height + 'px; left:' + leftOffset + 'px;" class="diva-page">');
 
                 // Calculate the width and height of the outer tiles (the ones that may have weird dimensions)
                 lastHeight = height - (rows - 1) * settings.tileHeight;
@@ -178,14 +177,14 @@ THE SOFTWARE.
 
                 // Build the content string and append it to the document
                 var contentString = content.join('');
-                $('#diva-inner').append(contentString);
+                $(settings.innerSelector).append(contentString);
             }
         };
 
         // Delete a page from the DOM; will occur when a page is scrolled out of the viewport
         var deletePage = function(pageID) {
             if (isPageLoaded(pageID)) {
-                $('#diva-page-' + pageID).remove();
+                $(settings.selector + 'page-' + pageID).remove();
             }
         };
 
@@ -252,7 +251,7 @@ THE SOFTWARE.
                 settings.pageLoadedId = pageToConsider;
 
                 // Change the text to reflect this - pageToConsider + 1 (because it's page number not ID)
-                $('#diva-current span').text(pageToConsider + 1);
+                $(settings.selector + 'current span').text(pageToConsider + 1);
                 
                 // Now try to change the next page, given that we're not going to a specific page
                 // Calls itself recursively - this way we accurately obtain the current page
@@ -395,8 +394,8 @@ THE SOFTWARE.
             }
             
             settings.prevVptTop = 0;
-            $('#diva-outer').scrollTop(desiredTop);
-            $('#diva-outer').scrollLeft(desiredLeft);
+            $(settings.outerSelector).scrollTop(desiredTop);
+            $(settings.outerSelector).scrollLeft(desiredLeft);
         };
         
         // AJAX request to start the whole process - called upon page load and upon zoom change
@@ -415,22 +414,22 @@ THE SOFTWARE.
                         settings.maxZoomLevel = (settings.maxZoomLevel > 0) ? settings.maxZoomLevel : data.max_zoom;
 
                         // Set the total number of pages
-                        $('#diva-current label').text(settings.numPages);
+                        $(settings.selector + 'current label').text(settings.numPages);
 
                         // Create the zoomer here, if needed
                         if (settings.enableZoomSlider) {
-                            createZoomer();
+                            createZoomSlider();
                         }
 
                         // Change the title to the actual title if the setting is enabled
                         if (settings.enableAutoTitle) {
-                            $(settings.elementSelector).prepend('<div id="diva-title">' + settings.itemTitle + '</div>');
+                            $(settings.elementSelector).prepend('<div id="' + settings.ID + 'title">' + settings.itemTitle + '</div>');
                         }
                     }
 
                     // Reset the vertical scroll and clear out the innerdrag div
-                    $('#diva-outer').scrollTop(0);
-                    $('#diva-inner').text('');                   
+                    $(settings.outerSelector).scrollTop(0);
+                    $(settings.innerSelector).text('');                   
 
                     // Now reset some things that need to be changed after each zoom
                     settings.pages = data.pgs;
@@ -462,9 +461,9 @@ THE SOFTWARE.
                     }
                     
                     // Set the height and width of documentpane (necessary for dragscrollable)
-                    $('#diva-inner').css('height', settings.totalHeight);
+                    $(settings.innerSelector).css('height', settings.totalHeight);
                     var widthToSet = (data.dims.mx_w + settings.paddingPerPage * 2 < settings.panelWidth ) ? settings.panelWidth : data.dims.mx_w + settings.paddingPerPage * 2; // width of page + 40 pixels on each side if necessary
-                    $('#diva-inner').css('width', widthToSet);
+                    $(settings.innerSelector).css('width', widthToSet);
 
                     // Scroll to the proper place
                     scrollAfterRequest();
@@ -502,7 +501,7 @@ THE SOFTWARE.
         
         // Called whenever there is a scroll event in the document panel (the #diva-outer element)
         var handleScroll = function() {
-            settings.scrollSoFar = $('#diva-outer').scrollTop();
+            settings.scrollSoFar = $(settings.outerSelector).scrollTop();
             adjustPages(settings.scrollSoFar - settings.prevVptTop);
             settings.prevVptTop = settings.scrollSoFar;
         };
@@ -515,7 +514,7 @@ THE SOFTWARE.
                 ajaxRequest(zoomLevel);
 
                 // Make the slider display the new value (it may already)
-                $('#diva-zoomer').slider({
+                $(settings.selector + 'zoom-slider').slider({
                     value: zoomLevel
                 });
             }
@@ -524,8 +523,8 @@ THE SOFTWARE.
         // Called whenever the zoom slider is moved
         var handleZoomSlide = function(zoomLevel) {
             // First get the vertical offset (vertical scroll so far)
-            settings.verticalOffset = $('#diva-outer').scrollTop();
-            settings.horizontalOffset = $('#diva-outer').scrollLeft();
+            settings.verticalOffset = $(settings.outerSelector).scrollTop();
+            settings.horizontalOffset = $(settings.outerSelector).scrollLeft();
             
             // Let handleZoom handle zooming
             settings.doubleClick = false;
@@ -543,7 +542,7 @@ THE SOFTWARE.
 
                 // Change the "currently on page" thing
                 setCurrentPage(0, pageNumber);
-                $('#diva-outer').scrollTop(heightToScroll);
+                $(settings.outerSelector).scrollTop(heightToScroll);
 
                 // Now execute the callback function if it is defined
                 if (typeof settings.onJump == 'function') {
@@ -583,8 +582,8 @@ THE SOFTWARE.
                 
                 // Set centerX and centerY for scrolling in after zoom
                 // Need to use this.offsetLeft and this.offsetTop to get it relative to the edge of the document
-                settings.centerX = (event.pageX - settings.viewerXOffset) + $('#diva-outer').scrollLeft();
-                settings.centerY = (event.pageY - settings.viewerYOffset) + $('#diva-outer').scrollTop();
+                settings.centerX = (event.pageX - settings.viewerXOffset) + $(settings.outerSelector).scrollLeft();
+                settings.centerY = (event.pageY - settings.viewerYOffset) + $(settings.outerSelector).scrollTop();
 
                 // Set doubleClick to true, so we know where to zoom
                 settings.doubleClick = true;
@@ -616,24 +615,24 @@ THE SOFTWARE.
         // Initiates the process
         var initiateViewer = function() {
             // Create the inner and outer panels
-            $(settings.elementSelector).append('<div id="diva-outer"></div>');
-            $('#diva-outer').append('<div id="diva-inner" class="dragger"></div>');
+            $(settings.elementSelector).append('<div id="' + settings.ID + 'outer"></div>');
+            $(settings.outerSelector).append('<div id="' + settings.ID + 'inner" class="dragger"></div>');
 
             // Create the fullscreen toggle icon if fullscreen is enabled
             if (settings.enableFullscreen) {
-                $('#diva-outer').append('<div id="diva-fullscreen"></div>');
+                $(settings.outerSelector).append('<div id="' + settings.ID + 'fullscreen"></div>');
 
                 // Event handler for fullscreen toggling
-                $('#diva-fullscreen').click(function() {
+                $(settings.selector + 'fullscreen').click(function() {
 
                     if (settings.inFullScreen) {
-                        $('#diva-outer').removeClass('fullscreen');
+                        $(settings.outerSelector).removeClass('fullscreen');
                         settings.inFullScreen = false;
 
                         // Return the body overflow to auto, as usual
                         $('body').css('overflow', 'auto');
                     } else {
-                        $('#diva-outer').addClass('fullscreen');
+                        $(settings.outerSelector).addClass('fullscreen');
                         settings.inFullScreen = true;
 
                         // Make the body overflow hidden
@@ -641,16 +640,16 @@ THE SOFTWARE.
 
                     }
                     // Store the offsets so the user stays in the same place
-                    settings.verticalOffset = $('#diva-outer').scrollTop();
-                    settings.horizontalOffset = $('#diva-outer').scrollLeft();
+                    settings.verticalOffset = $(settings.outerSelector).scrollTop();
+                    settings.horizontalOffset = $(settings.outerSelector).scrollLeft();
                     settings.doubleClick = false;
 
                     // Recalculate height and width
-                    settings.panelWidth = parseInt($('#diva-outer').width(), 10) - 20;
-                    settings.panelHeight = parseInt($('#diva-outer').height(), 10);
+                    settings.panelWidth = parseInt($(settings.outerSelector).width(), 10) - 20;
+                    settings.panelHeight = parseInt($(settings.outerSelector).height(), 10);
 
                     // Change the width of the inner div correspondingly
-                    $('#diva-inner').width(settings.panelWidth);
+                    $(settings.innerSelector).width(settings.panelWidth);
                     // Do another AJAX request to fix the padding and so on
                     ajaxRequest(settings.zoomLevel);
                 });
@@ -658,40 +657,40 @@ THE SOFTWARE.
             }
 
             // Change the cursor for dragging.
-            $('#diva-inner').mouseover(function() {
+            $(settings.innerSelector).mouseover(function() {
                 $(this).removeClass('grabbing').addClass('grab');
             });
             
-            $('#diva-inner').mouseout(function() {
+            $(settings.innerSelector).mouseout(function() {
                 $(this).removeClass('grab');
             });
             
-            $('#diva-inner').mousedown(function() {
+            $(settings.innerSelector).mousedown(function() {
                 $(this).removeClass('grab').addClass('grabbing');
             });
             
-            $('#diva-inner').mouseup(function() {
+            $(settings.innerSelector).mouseup(function() {
                 $(this).removeClass('grabbing').addClass('grab');
             });
 
             // Get the height and width of the outerdrag element
-            settings.panelWidth = parseInt($('#diva-outer').width(), 10) - 20; // for the scrollbar change later
-            settings.panelHeight = parseInt($('#diva-outer').height(), 10);
+            settings.panelWidth = parseInt($(settings.outerSelector).width(), 10) - 20; // for the scrollbar change later
+            settings.panelHeight = parseInt($(settings.outerSelector).height(), 10);
                         
             // Do the AJAX request - calls all the image display functions in turn
             ajaxRequest(settings.zoomLevel); // with the default zoom level
 
 
             // Handle the scroll
-            $('#diva-outer').scroll(function() {
+            $(settings.outerSelector).scroll(function() {
                 handleScroll();
             });
             
             // Set drag scroll on first descendant of class dragger on both selected elements
-            $('#diva-outer, #diva-inner').dragscrollable({dragSelector: '.dragger', acceptPropagatedEvent: true});
+            $(settings.outerSelector + ', ' + settings.innerSelector).dragscrollable({dragSelector: '.dragger', acceptPropagatedEvent: true});
             
             // Double-click to zoom
-            $('#diva-outer').dblclick(function(event) {
+            $(settings.outerSelector).dblclick(function(event) {
                 // First set the x and y offsets of the viewer from the edge of document
                 settings.viewerXOffset = this.offsetLeft;
                 settings.viewerYOffset = this.offsetTop;
@@ -700,7 +699,7 @@ THE SOFTWARE.
             });
 
             // Prevent the context menu within the outerdrag IF it was triggered with the ctrl key
-            $('#diva-outer').bind("contextmenu", function(event) {
+            $(settings.outerSelector).bind("contextmenu", function(event) {
                 var e = event.originalEvent;
                 if (e.ctrlKey) {
                     e.preventDefault();
@@ -711,7 +710,7 @@ THE SOFTWARE.
             // Check if the user is on a iPhone or iPod touch or iPad
             if ((navigator.userAgent.match(/iPhone/i)) || (navigator.userAgent.match(/iPad/i)) || (navigator.userAgent.match(/iPod/i))) {
                 // One-finger scroll within outerdrag
-                $('#diva-outer').oneFingerScroll();
+                $(settings.outerSelector).oneFingerScroll();
 
                 // Prevent resizing (below from http://matt.might.net/articles/how-to-native-iphone-ipad-apps-in-javascript/)
                 var toAppend = [];
@@ -747,13 +746,13 @@ THE SOFTWARE.
                 $(document).keydown(function(event) {
                     // Space or page down - go to the next page
                     if ((settings.enableSpaceScroll && event.keyCode == spaceKey) || (settings.enableKeyScroll && event.keyCode == pageDownKey)) {
-                        $('#diva-outer').scrollTop(settings.scrollSoFar + settings.panelHeight);
+                        $(settings.outerSelector).scrollTop(settings.scrollSoFar + settings.panelHeight);
                         return false;
                     }
 
                     // Page up - go to the previous page
                     if (settings.scrollByKeys && event.keyCode == pageUpKey) {
-                        $('#diva-outer').scrollTop(settings.scrollSoFar - settings.panelHeight);
+                        $(settings.outerSelector).scrollTop(settings.scrollSoFar - settings.panelHeight);
                         return false;
                     }
                 });
@@ -762,9 +761,9 @@ THE SOFTWARE.
         };
 
         // Creates a zoomer using the min and max zoom levels specified ... PRIVATE, only if zoomSlider = true
-        var createZoomer = function() {
-            $('#diva-tools').prepend('<div id="diva-zoomer"></div>');
-            $('#diva-zoomer').slider({
+        var createZoomSlider = function() {
+            $(settings.selector + 'tools').prepend('<div id="' + settings.ID + 'zoom-slider"></div>');
+            $(settings.selector + 'zoom-slider').slider({
                     value: settings.zoomLevel,
                     min: settings.minZoomLevel,
                     max: settings.maxZoomLevel,
@@ -777,10 +776,10 @@ THE SOFTWARE.
         
         // Creates the gotoPage thing
         var createGotoPage = function() {
-            $('#diva-tools').append('<div id="diva-goto">Go to page <input type="text" size="3" id="diva-goto-input" /> <input type="submit" id="diva-goto-submit" value="Go" /><br /><div id="diva-current">Current page: <span>1</span> of <label></label></div></div>');
+            $(settings.selector + 'tools').append('<div id="' + settings.ID + 'goto-page">Go to page <input type="text" size="3" id="' + settings.ID + 'goto-input" /> <input type="submit" id="' + settings.ID + 'goto-submit" value="Go" /><br /><div id="' + settings.ID + 'current">Current page: <span>1</span> of <label></label></div></div>');
             
-            $('#diva-goto-submit').click(function() {
-                var desiredPage = parseInt($('#diva-goto-input').val(), 10);
+            $(settings.selector + 'goto-submit').click(function() {
+                var desiredPage = parseInt($(settings.selector + 'goto-input').val(), 10);
                 if ( !gotoPage(desiredPage) ) {
                     alert('Invalid page number');
                 }
@@ -789,28 +788,31 @@ THE SOFTWARE.
 
         
         var init = function() {
+            // For easier selecting of the container element
             settings.elementSelector = '#' + $(element).attr('id');
-
-            /*settings.id = $.generateId('dv');
-            
-            // Figure out how to use this
-            settings.containerEl = settings.id + '-container';
-            settings.itemEl = settings.id + '-item';
-            settings.pageEl = settings.id + '-page-';
-            settings.tileEl = settings.id + '-tile-';*/
+   
+            // Generate one ID, use that for everything (the other way won't work)
+            settings.ID = $.generateId('diva-');
+            settings.selector = '#' + settings.ID; // to select things easily
+            console.log(settings.ID);
+            // Since we need to reference these two a lot
+            settings.outerSelector = settings.selector + 'outer';
+            settings.innerSelector = settings.selector + 'inner';
+            console.log("outer selector: " + settings.outerSelector);
             
             // If we need either a zoom slider or a gotoPage thing, create a "viewertools" div
             if (settings.zoomSlider || settings.enableGotoPage) {
-                $(settings.elementSelector).prepend('<div id="diva-tools"></div>');
+                $(settings.elementSelector).prepend('<div id="' + settings.ID + 'tools"></div>');
             }
             
             if (settings.enableGotoPage) {
                 createGotoPage();
+                console.log("GOTOPAGE");
             }
             
-            if (!settings.interPagePaddingType) {
-                settings.interPagePaddingType = 'adaptive';
-            }
+            /*if (settings.enableZoomSlider) {
+                createZoomSlider();
+            }*/
 
             initiateViewer();
         };
