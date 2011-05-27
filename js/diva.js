@@ -46,7 +46,7 @@ THE SOFTWARE.
             onZoomOut: null,            // Callback function for zooming out only
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
-            zoomLevel: 2,               // The initial zoom level (used to store the current zoom level)
+            zoomLevel: 2               // The initial zoom level (used to store the current zoom level)
         };
         
         // Apply the defaults, or override them with passed-in options.
@@ -358,7 +358,7 @@ THE SOFTWARE.
             }
 
             // Handle the scrolling callback functions here
-            if (typeof settings.onScroll == 'function' && direction != 0) {
+            if (typeof settings.onScroll == 'function' && direction !== 0) {
                 settings.onScroll.call(this, settings.pageLoadedId);
             }
             if (typeof settings.onScrollUp == 'function' && direction < 0) {
@@ -724,7 +724,7 @@ THE SOFTWARE.
             });
 
             // Check if the user is on a iPhone or iPod touch or iPad
-            if ((navigator.userAgent.match(/iPhone/i)) || (navigator.userAgent.match(/iPad/i)) || (navigator.userAgent.match(/iPod/i))) {
+            if (navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i)) {
                 // One-finger scroll within outerdrag
                 $(settings.outerSelector).oneFingerScroll();
 
@@ -825,10 +825,6 @@ THE SOFTWARE.
                 createGotoPage();
                 console.log("GOTOPAGE");
             }
-            
-            /*if (settings.enableZoomSlider) {
-                createZoomSlider();
-            }*/
 
             initiateViewer();
         };
