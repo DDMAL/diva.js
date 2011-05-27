@@ -753,7 +753,7 @@ THE SOFTWARE.
                     }
 
                     // Page up - go to the previous page
-                    if (settings.scrollByKeys && event.keyCode == pageUpKey) {
+                    if (settings.enableKeyScroll && event.keyCode == pageUpKey) {
                         $(settings.outerSelector).scrollTop(settings.scrollSoFar - settings.panelHeight);
                         return false;
                     }
