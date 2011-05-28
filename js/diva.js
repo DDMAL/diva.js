@@ -109,10 +109,10 @@ THE SOFTWARE.
         };
         
         // Check if a page has been loaded (i.e. is visible to the user) 
-        var isPageLoaded = function(pageID) {
+        var isPageLoaded = function(pageIndex) {
             // Done using the length attribute in jQuery
             // If and only if the div does not exist, its length will be 0
-            if ($(settings.selector + 'page-' + pageID).length === 0) {
+            if ($(settings.selector + 'page-' + pageIndex).length === 0) {
                 return false;
             } else {
                 return true;
@@ -144,23 +144,23 @@ THE SOFTWARE.
         }
        
         // Appends the page directly into the document body, or loads the relevant tiles
-        var loadPage = function(pageID) {
+        var loadPage = function(pageIndex) {
             var content = [];
-            var filename = settings.pages[pageID].fn;
-            var rows = settings.pages[pageID].r;
-            var cols = settings.pages[pageID].c;
-            var width = settings.pages[pageID].w;
-            var height = settings.pages[pageID].h;
-            var maxZoom = settings.pages[pageID].m_z;
+            var filename = settings.pages[pageIndex].fn;
+            var rows = settings.pages[pageIndex].r;
+            var cols = settings.pages[pageIndex].c;
+            var width = settings.pages[pageIndex].w;
+            var height = settings.pages[pageIndex].h;
+            var maxZoom = settings.pages[pageIndex].m_z;
             var leftOffset, widthToUse;
             
             // Use an array as a string builder - faster than str concatentation
             var lastHeight, lastWidth, row, col, tileHeight, tileWidth, imgSrc;
             var tileNumber = 0;
-            var heightFromTop = settings.heightAbovePages[pageID] + settings.verticalPadding;
+            var heightFromTop = settings.heightAbovePages[pageIndex] + settings.verticalPadding;
 
             // Only try to append the div part if the page has not already been loaded
-            if (!isPageLoaded(pageID)) {
+            if (!isPageLoaded(pageIndex)) {
                 // If it's the max width:
                 if (width === settings.maxWidth) {
                     // If it's larger than the panel (or almost), we use the standard horizontal padding
@@ -174,7 +174,7 @@ THE SOFTWARE.
                     widthToUse = (settings.maxWidth > settings.panelWidth) ? settings.maxWidth + 2 * settings.horizontalPadding : settings.panelWidth;
                     leftOffset = (widthToUse - width) / 2;
                 }
-                content.push('<div id="' + settings.ID + 'page-' + pageID + '" style="top: ' + heightFromTop + 'px; width:' + width + 'px; height: ' + height + 'px; left:' + leftOffset + 'px;" class="diva-page">');
+                content.push('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width:' + width + 'px; height: ' + height + 'px; left:' + leftOffset + 'px;" class="diva-page">');
             }
 
             // Calculate the width and height of the outer tiles (the ones that may have weird dimensions)
@@ -189,38 +189,38 @@ THE SOFTWARE.
 
                     // The zoom level might be different, if a page has a different max zoom level than the others
                     var zoomLevel = (maxZoom === settings.maxZoomLevel) ? settings.zoomLevel : settings.zoomLevel + (maxZoom - settings.maxZoomLevel); 
-                    isTileVisible(pageID, row, col);
+                    isTileVisible(pageIndex, row, col);
                     tileHeight = (row === rows - 1) ? lastHeight : settings.tileHeight; // If it's the LAST tile, calculate separately
                     tileWidth = (col === cols - 1) ? lastWidth : settings.tileWidth; // Otherwise, just set it to the default height/width
                     imgSrc = settings.iipServerBaseUrl + filename + '&amp;JTL=' + zoomLevel + ',' + tileNumber;
                     
-                    if (!isTileLoaded(pageID, tileNumber) && isTileVisible(pageID, row, col)) {
-                        content.push('<div id="' + settings.ID + 'tile-' + pageID + '-' + tileNumber + '"style="position: absolute; top: ' + top + 'px; left: ' + left + 'px; background-image: url(\'' + imgSrc + '\'); height: ' + tileHeight + 'px; width: ' + tileWidth + 'px;"></div>');
+                    if (!isTileLoaded(pageIndex, tileNumber) && isTileVisible(pageIndex, row, col)) {
+                        content.push('<div id="' + settings.ID + 'tile-' + pageIndex + '-' + tileNumber + '"style="position: absolute; top: ' + top + 'px; left: ' + left + 'px; background-image: url(\'' + imgSrc + '\'); height: ' + tileHeight + 'px; width: ' + tileWidth + 'px;"></div>');
                     }
                     tileNumber++;
                 }
             }
-            if (!isPageLoaded(pageID)) {
+            if (!isPageLoaded(pageIndex)) {
                 content.push('</div>');
                 // Build the content string and append it to the document
                 var contentString = content.join('');
                 $(settings.innerSelector).append(contentString);
             } else {
                 // Append it to the page
-		        $(settings.selector + 'page-' + pageID).append(content.join(''));
+		        $(settings.selector + 'page-' + pageIndex).append(content.join(''));
 	        }
         };
 
         // Delete a page from the DOM; will occur when a page is scrolled out of the viewport
-        var deletePage = function(pageID) {
-            if (isPageLoaded(pageID)) {
-                $(settings.selector + 'page-' + pageID).remove();
+        var deletePage = function(pageIndex) {
+            if (isPageLoaded(pageIndex)) {
+                $(settings.selector + 'page-' + pageIndex).remove();
             }
         };
 
         // Private helper function, check if a page ID is valid
-        var inRange = function(pageID) {
-            if (pageID >= 0 && pageID < settings.numPages) {
+        var inRange = function(pageIndex) {
+            if (pageIndex >= 0 && pageIndex < settings.numPages) {
                 return true;
             } else {
                 return false;
@@ -229,8 +229,8 @@ THE SOFTWARE.
 
         // Private helper function, check if the bottom of a page is above the top of a viewport
         // For when you want to keep looping but don't want to load a specific page
-        var aboveViewport = function(pageID) {
-            var bottomOfPage = settings.heightAbovePages[pageID] + settings.pages[pageID].h + settings.verticalPadding;
+        var aboveViewport = function(pageIndex) {
+            var bottomOfPage = settings.heightAbovePages[pageIndex] + settings.pages[pageIndex].h + settings.verticalPadding;
             var topOfViewport = settings.scrollSoFar; 
             if ( bottomOfPage < topOfViewport ) {
                 return true;
@@ -240,8 +240,8 @@ THE SOFTWARE.
         
         // Private helper function, check if the top of a page is below the bottom of a viewport
         // Used for scrolling up
-        var belowViewport = function(pageID) {
-            var topOfPage = settings.heightAbovePages[pageID];
+        var belowViewport = function(pageIndex) {
+            var topOfPage = settings.heightAbovePages[pageIndex];
             var bottomOfViewport = settings.scrollSoFar + settings.panelHeight;
             if ( topOfPage > bottomOfViewport ) {
                 return true;
@@ -251,7 +251,7 @@ THE SOFTWARE.
 
         // Determines and sets the "current page" (settings.pageLoadedId); called within adjustPages 
         // The "direction" can be 0, 1 or -1; 1 for down, -1 for up, and 0 to go straight to a specific page
-        var setCurrentPage = function(direction, pageID) {
+        var setCurrentPage = function(direction, pageIndex) {
             var currentPage = settings.pageLoadedId;
             var pageToConsider = settings.pageLoadedId + parseInt(direction, 10);
             var middleOfViewport = settings.scrollSoFar + (settings.panelHeight / 2);
@@ -273,7 +273,7 @@ THE SOFTWARE.
             } else {
                 // Just go straight to a certain page (for the goto function)
                 changeCurrentPage = true;
-                pageToConsider = pageID;
+                pageToConsider = pageIndex;
             }
 
             if ( changeCurrentPage ) {
@@ -292,25 +292,25 @@ THE SOFTWARE.
         };
 
         // Called by adjust pages - see what pages should be visisble, and show them
-        var attemptPageShow = function(pageID, direction) {
+        var attemptPageShow = function(pageIndex, direction) {
             if (direction > 0) {
                 // Direction is positive - we're scrolling down
                 // Should we add this page to the DOM? First check if it's a valid page
-                if (inRange(pageID)) {
+                if (inRange(pageIndex)) {
                     // If it's near the viewport, yes, add it
-                    if (isPageVisible(pageID)) {
-                        loadPage(pageID);
+                    if (isPageVisible(pageIndex)) {
+                        loadPage(pageIndex);
 
                         // Reset the last page loaded to this one
-                        settings.lastPageLoaded = pageID;
+                        settings.lastPageLoaded = pageIndex;
 
                         // Recursively call this function until there's nothing to add
                         attemptPageShow(settings.lastPageLoaded+1, direction);
-                    } else if (aboveViewport(pageID)) {
+                    } else if (aboveViewport(pageIndex)) {
                         // Otherwise, is it below the viewport?
                         // Do not increment last page loaded, that would be lying
                         // Attempt to call this on the next page
-                        attemptPageShow(pageID + 1, direction);
+                        attemptPageShow(pageIndex + 1, direction);
                     }
                 } else {
                     // Nothing to do ... return
@@ -318,19 +318,19 @@ THE SOFTWARE.
                 }
             } else {
                 // Direction is negative - we're scrolling up
-                if (inRange(pageID)) {
+                if (inRange(pageIndex)) {
                     // If it's near the viewport, yes, add it
-                    if (isPageVisible(pageID)) {
-                        loadPage(pageID);
+                    if (isPageVisible(pageIndex)) {
+                        loadPage(pageIndex);
 
                         // Reset the first page loaded to this one
-                        settings.firstPageLoaded = pageID;
+                        settings.firstPageLoaded = pageIndex;
 
                         // Recursively call this function until there's nothing to add
                         attemptPageShow(settings.firstPageLoaded-1, direction);
-                    } else if (belowViewport(pageID)) {
+                    } else if (belowViewport(pageIndex)) {
                         // Attempt to call this on the next page, do not increment anything
-                        attemptPageShow(pageID-1, direction);
+                        attemptPageShow(pageIndex-1, direction);
                     }
                 } else {
                     // Nothing to do ... return
@@ -340,13 +340,13 @@ THE SOFTWARE.
         };
 
         // Called by adjustPages - see what pages need to be hidden, and hide them
-        var attemptPageHide = function(pageID, direction) {
+        var attemptPageHide = function(pageIndex, direction) {
             if (direction > 0) {
                 // Direction is positive - we're scrolling down
                 // Should we delete this page from the DOM?
-                if (inRange(pageID) && aboveViewport(pageID)) {
+                if (inRange(pageIndex) && aboveViewport(pageIndex)) {
                     // Yes, delete it, reset the first page loaded
-                    deletePage(pageID);
+                    deletePage(pageIndex);
                     settings.firstPageLoaded++;
 
                     // Try to call this function recursively until there's nothing to delete
@@ -357,9 +357,9 @@ THE SOFTWARE.
                 }
             } else {
                 // Direction must be negative (not 0, see adjustPages), we're scrolling up
-                if (inRange(pageID) && belowViewport(pageID)) {
+                if (inRange(pageIndex) && belowViewport(pageIndex)) {
                     // Yes, delete it, reset the last page loaded
-                    deletePage(pageID);
+                    deletePage(pageIndex);
                     settings.lastPageLoaded--;
                     
                     // Try to call this function recursively until there's nothing to delete
