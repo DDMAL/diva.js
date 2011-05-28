@@ -1,5 +1,18 @@
 <?php
 
+// Image directory. Images in this directory will be served by folder name,
+// so if you have a folder named ...images/old_manuscript, a request for 
+// divaserve.php?d=old_manuscript will use the images in that directory.
+$IMAGE_DIR = "/mnt/images";
+$CACHE_DIR = "/tmp/diva.js";
+
+// only useful if you have memcache installed. 
+$MEMCACHE_SERVER = "127.0.0.1";
+$MEMCACHE_PORT = 11211;
+
+// Nothing below this line should need to be changed
+// -------------------------------------------------
+
 function get_max_zoom_level($img_wid, $img_hei, $t_wid, $t_hei) {
     $largest_dim = ($img_wid > $img_hei) ? $img_wid : $img_hei;
     $t_dim = ($img_wid > $img_hei) ? $t_wid : $t_hei;
@@ -12,18 +25,6 @@ function incorporate_zoom($img_dim, $zoom_difference) {
     return $img_dim / pow(2, $zoom_difference);
 }
 
-// Image directory. Images in this directory will be served by folder name,
-// so if you have a folder named ...images/old_manuscript, a request for 
-// divaserve.php?d=old_manuscript will use the images in that directory.
-$IMAGE_DIR = "/mnt/images";
-$CACHE_DIR = "/tmp/diva.js";
-$IIP_SERVER = "http://localhost/cgi-bin/iipsrv.fcgi?";
-
-// only useful if you have memcache installed. 
-$MEMCACHE_SERVER = "127.0.0.1";
-$MEMCACHE_PORT = 11211;
-
-### Nothing should change past here.
 function check_memcache() {
     if (extension_loaded('memcached')) {
     $m = new Memcached();
