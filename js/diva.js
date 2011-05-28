@@ -180,6 +180,7 @@ THE SOFTWARE.
             // Calculate the width and height of the outer tiles (the ones that may have weird dimensions)
             lastHeight = height - (rows - 1) * settings.tileHeight;
             lastWidth = width - (cols - 1) * settings.tileWidth;
+            var tilesToLoad = [];
 
             // Now loop through the rows and columns
             for (row = 0; row < rows; row++) {
@@ -195,8 +196,9 @@ THE SOFTWARE.
                     imgSrc = settings.iipServerBaseUrl + filename + '&amp;JTL=' + zoomLevel + ',' + tileNumber;
                     
                     if (!isTileLoaded(pageIndex, tileNumber) && isTileVisible(pageIndex, row, col)) {
-                        content.push('<div id="' + settings.ID + 'tile-' + pageIndex + '-' + tileNumber + '"style="position: absolute; top: ' + top + 'px; left: ' + left + 'px; background-image: url(\'' + imgSrc + '\'); height: ' + tileHeight + 'px; width: ' + tileWidth + 'px;"></div>');
+                        content.push('<div id="' + settings.ID + 'tile-' + pageIndex + '-' + tileNumber + '"style="display: none; position: absolute; top: ' + top + 'px; left: ' + left + 'px; background-image: url(\'' + imgSrc + '\'); height: ' + tileHeight + 'px; width: ' + tileWidth + 'px;"></div>');
                     }
+                    tilesToLoad.push(tileNumber);
                     tileNumber++;
                 }
             }
@@ -208,6 +210,11 @@ THE SOFTWARE.
             } else {
                 // Append it to the page
 		        $(settings.selector + 'page-' + pageIndex).append(content.join(''));
+            }
+
+            // Make the tiles we just appended fade in
+            for (var i = 0; i < tilesToLoad.length; i++) {
+                $(settings.selector + 'tile-' + pageIndex + '-' + tilesToLoad[i]).fadeIn('fast');   
 	        }
         };
 
