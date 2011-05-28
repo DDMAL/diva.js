@@ -26,15 +26,15 @@ $MEMCACHE_PORT = 11211;
 ### Nothing should change past here.
 function check_memcache() {
     if (extension_loaded('memcache')) {
-	$m = new Memcache;
-	$avail = $m->connect($MEMCACHE_SERVER, $MEMCACHE_PORT);
+    $m = new Memcache;
+    $avail = $m->connect($MEMCACHE_SERVER, $MEMCACHE_PORT);
         if ($avail) {
-             return TRUE;
-	} else {
-	     return FALSE;
-	}
+            return TRUE;
+        } else {
+            return FALSE;
+        }
     } else {
-	return FALSE;
+        return FALSE;
     }
 }
 
@@ -159,20 +159,20 @@ if (!file_exists($cache_file)) {
     file_put_contents($cache_file, $json);
     
     if ($MEMCACHE_AVAILABLE) {
-    	$m = new Memcache;
-	$m->connect($MEMCACHE_SERVER, $MEMCACHE_PORT) or die("Could not connect to Memcache");
-	$m->set($cachekey, $json);
-	$m->close();
+        $m = new Memcache;
+        $m->connect($MEMCACHE_SERVER, $MEMCACHE_PORT) or die("Could not connect to Memcache");
+        $m->set($cachekey, $json);
+        $m->close();
     }
-
+    
     echo $json;
 } else {
     // It might be useful to store a general docdata.txt sort of file as well
     if ($MEMCACHE_AVAILABLE) {
-	$m = new Memcache;
-	$m->connect($MEMCACHE_SERVER, $MEMCACHE_PORT) or die ("Could not connect to Memcache");
-	$json = $m->get($cachekey);
-	$m->close();
+        $m = new Memcache;
+        $m->connect($MEMCACHE_SERVER, $MEMCACHE_PORT) or die ("Could not connect to Memcache");
+        $json = $m->get($cachekey);
+        $m->close();
     } else {
         $json = file_get_contents($cache_file);
     }
