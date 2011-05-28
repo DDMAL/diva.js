@@ -26,6 +26,7 @@ function incorporate_zoom($img_dim, $zoom_difference) {
 }
 
 function check_memcache() {
+    global $MEMCACHE_SERVER, $MEMCACHE_PORT;
     if (extension_loaded('memcached')) {
     $m = new Memcached();
     $avail = $m->addServer($MEMCACHE_SERVER, $MEMCACHE_PORT);
