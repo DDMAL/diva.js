@@ -433,7 +433,7 @@ THE SOFTWARE.
         var ajaxRequest = function(zoomLevel) {
             $.ajax({
                 // Works now - using proxy_pass for nginx to forward to the other port
-                url: settings.backendServer + zoomLevel + '/',
+                url: settings.backendServer + '&z=' + zoomLevel,
                 cache: false, // debugging
                 context: this, // for later
                 dataType: "json",
