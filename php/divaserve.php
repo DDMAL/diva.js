@@ -84,12 +84,20 @@ if (!file_exists($img_cache)) {
                 'm_z'   => $m_z,
                 'fn'    => $fn, 
             );
+            $mx_h = ($h > $mx_h) ? $h : $mx_h;
+            $mx_w = ($w > $mx_w) ? $w : $mx_w;
+            $t_wid += $w;
+            $t_hei += $h;
+            $num_pages++;
         }
     }
+    
+    $a_wid = $t_wid / $num_pages;
+    $a_hei = $t_hei / $num_pages;
 } else {
     // Assume that the cache directory already contains everything we need
 }
-/*
+
 // Calculate the dimensions
 $dims = array(
     'a_wid'         => $a_wid,
@@ -98,12 +106,12 @@ $dims = array(
     'mx_w'          => $mx_w,
     't_hei'         => $t_hei,
     't_wid'         => $t_wid
-);*/
+);
 
 // The full data to be returned
 $data = array(
     'item_title'    => $dir,
-    'dims'          => '',//$dims,
+    'dims'          => $dims,
     'max_zoom'      => $lowest_max_zoom,
     'pgs'           => $pgs
 );
