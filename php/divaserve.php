@@ -1,5 +1,19 @@
 <?php
 
+function check_memcache() {
+    if (extension_loaded('memcached')) {
+    $m = new Memcached();
+    $avail = $m->addServer('127.0.0.1', 11211);
+        if ($avail) {
+             return TRUE;
+    } else {
+         return FALSE;
+    }
+    } else {
+    return FALSE;
+    }
+}
+
 function get_max_zoom_level($img_wid, $img_hei, $t_wid, $t_hei) {
     $largest_dim = ($img_wid > $img_hei) ? $img_wid : $img_hei;
     $t_dim = ($img_wid > $img_hei) ? $t_wid : $t_hei;
@@ -24,22 +38,11 @@ $MEMCACHE_SERVER = "127.0.0.1";
 $MEMCACHE_PORT = 11211;
 
 ### Nothing should change past here.
-function check_memcache() {
-    if (extension_loaded('memcache')) {
-    $m = new Memcache;
-    $avail = $m->connect($MEMCACHE_SERVER, $MEMCACHE_PORT);
-        if ($avail) {
-            return TRUE;
-        } else {
-            return FALSE;
-        }
-    } else {
-        return FALSE;
-    }
-}
-
 $MEMCACHE_AVAILABLE = check_memcache();
-
+if($MEMCACHE_AVAILABLE) {
+    $MEMCONN = new Memcached();
+    $MEMCONN->addServer($MEMCACHE_SERVER, $MEMCACHE_PORT);
+}
 if (!isset($_GET['d']) || !isset($_GET['z'])) {
     die("Missing params");
 }
@@ -159,20 +162,19 @@ if (!file_exists($cache_file)) {
     file_put_contents($cache_file, $json);
     
     if ($MEMCACHE_AVAILABLE) {
-        $m = new Memcache;
-        $m->connect($MEMCACHE_SERVER, $MEMCACHE_PORT) or die("Could not connect to Memcache");
-        $m->set($cachekey, $json);
-        $m->close();
+    $MEMCONN->set($cachekey, $json);
     }
-    
+
     echo $json;
 } else {
     // It might be useful to store a general docdata.txt sort of file as well
     if ($MEMCACHE_AVAILABLE) {
-        $m = new Memcache;
-        $m->connect($MEMCACHE_SERVER, $MEMCACHE_PORT) or die ("Could not connect to Memcache");
-        $json = $m->get($cachekey);
-        $m->close();
+    if(!($json = $MEMCONN->get($cachekey))){
+        if ($MEMCONN->getResultCode() == Memcached::RES_NOTFOUND) {
+            $json = file_get_contents($cache_file);
+            $MEMCONN->set($cachekey, $json);
+        } 
+    }
     } else {
         $json = file_get_contents($cache_file);
     }
