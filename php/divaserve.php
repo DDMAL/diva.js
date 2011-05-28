@@ -1,19 +1,5 @@
 <?php
 
-function check_memcache() {
-    if (extension_loaded('memcached')) {
-    $m = new Memcached();
-    $avail = $m->addServer('127.0.0.1', 11211);
-        if ($avail) {
-             return TRUE;
-    } else {
-         return FALSE;
-    }
-    } else {
-    return FALSE;
-    }
-}
-
 function get_max_zoom_level($img_wid, $img_hei, $t_wid, $t_hei) {
     $largest_dim = ($img_wid > $img_hei) ? $img_wid : $img_hei;
     $t_dim = ($img_wid > $img_hei) ? $t_wid : $t_hei;
@@ -38,11 +24,26 @@ $MEMCACHE_SERVER = "127.0.0.1";
 $MEMCACHE_PORT = 11211;
 
 ### Nothing should change past here.
+function check_memcache() {
+    if (extension_loaded('memcached')) {
+    $m = new Memcached();
+    $avail = $m->addServer($MEMCACHE_SERVER, $MEMCACHE_PORT);
+        if ($avail) {
+             return TRUE;
+    } else {
+         return FALSE;
+    }
+    } else {
+    return FALSE;
+    }
+}
+
 $MEMCACHE_AVAILABLE = check_memcache();
 if($MEMCACHE_AVAILABLE) {
     $MEMCONN = new Memcached();
     $MEMCONN->addServer($MEMCACHE_SERVER, $MEMCACHE_PORT);
 }
+
 if (!isset($_GET['d']) || !isset($_GET['z'])) {
     die("Missing params");
 }
