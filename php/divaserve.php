@@ -36,6 +36,7 @@ $til_hei = (intval($til_hei_get) > 0) ? intval($til_hei_get) : 256;
 $img_cache = $CACHE_DIR . "/" . $dir;
 $img_dir = $IMAGE_DIR . "/" . $dir;
 
+$gen_cache_file = $img_cache . '/docdata.txt';
 $cache_file = $img_cache . '/docdata_' . $zoom . '.txt';
 $pgs = array();
 
@@ -47,31 +48,43 @@ if (!file_exists($img_cache)) {
 if (!file_exists($cache_file)) {
     $images = array();
     $lowest_max_zoom = 0;
-    foreach (glob($img_dir . '/*.tif') as $img_file) {
-        $img_size = getimagesize($img_file);
-        $img_wid = $img_size[0];
-        $img_hei = $img_size[1];
-        
-        $max_zoom = get_max_zoom_level($img_wid, $img_hei, $til_wid, $til_hei);
-        $lowest_max_zoom = ($lowest_max_zoom > $max_zoom || $lowest_max_zoom == 0) ? $max_zoom : $lowest_max_zoom;
-        
-        // Get the number from the filename (between the last _ and .)
-        $img_num = intval(substr($img_file, strrpos($img_file, '_') + 1, strrpos($img_file, '.') - strrpos($img_file, '_') - 1));
-        
-        // Figure out the image filename
-        $img_fn = substr($img_file, strrpos($img_file, '/') + 1);
+    
+    // Check if the general docdata.txt file exists (not zoom-level-specific)
+    if (!file_exists($gen_cache_file)) {
+        // Does not exist, so make it
+        foreach (glob($img_dir . '/*.tif') as $img_file) {
+            $img_size = getimagesize($img_file);
+            $img_wid = $img_size[0];
+            $img_hei = $img_size[1];
+            
+            $max_zoom = get_max_zoom_level($img_wid, $img_hei, $til_wid, $til_hei);
+            $lowest_max_zoom = ($lowest_max_zoom > $max_zoom || $lowest_max_zoom == 0) ? $max_zoom : $lowest_max_zoom;
+            
+            // Get the number from the filename (between the last _ and .)
+            $img_num = intval(substr($img_file, strrpos($img_file, '_') + 1, strrpos($img_file, '.') - strrpos($img_file, '_') - 1));
+            
+            // Figure out the image filename
+            $img_fn = substr($img_file, strrpos($img_file, '/') + 1);
 
-        $images[$img_num] = array(
-            'mx_h'      => $img_hei,
-            'mx_w'      => $img_wid,
-            'mx_z'      => $max_zoom,
-            'fn'        => $img_fn,
-        );
+            $images[$img_num] = array(
+                'mx_h'      => $img_hei,
+                'mx_w'      => $img_wid,
+                'mx_z'      => $max_zoom,
+                'fn'        => $img_fn,
+            );
+            // Store the max zoom in $images[0] for now
+            $images[0] = $lowest_max_zoom;
+            file_put_contents($gen_cache_file, serialize($images));
+        }
+    } else {
+        // Already exists - so store the contents in $pgs
+        $images = unserialize(file_get_contents($gen_cache_file));
+        $lowest_max_zoom = $images[0];
     }
     
     // Now go through them again, store in $pgs
     $mx_h = $mx_w = $t_wid = $t_hei = $num_pages = 0;
-    for ($i = 0; $i < count($images); $i++) {
+    for ($i = 1; $i < count($images); $i++) {
         if (array_key_exists($i, $images)) {
             $h = incorporate_zoom($images[$i]['mx_h'], $lowest_max_zoom - $zoom);
             $w = incorporate_zoom($images[$i]['mx_w'], $lowest_max_zoom - $zoom);
