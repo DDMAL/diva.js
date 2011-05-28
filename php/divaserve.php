@@ -27,10 +27,10 @@ if (!isset($_GET['d']) || !isset($_GET['z'])) {
 $dir = preg_replace('/[^-a-zA-Z0-9_]/', '', $_GET['d']);
 $zoom = preg_replace('/[^0-9]/', '', $_GET['z']);
 
-$t_wid_get = (isset($_GET['t_w'])) ? $_GET['t_w'] : 0;
-$t_hei_get = (isset($_GET['t_h'])) ? $_GET['t_h'] : 0;
-$t_wid = (intval($t_wid_get) > 0) ? intval($t_wid_get) : 256;
-$t_hei = (intval($t_hei_get) > 0) ? intval($t_hei_get) : 256;
+$til_wid_get = (isset($_GET['w'])) ? $_GET['w'] : 0;
+$til_hei_get = (isset($_GET['h'])) ? $_GET['h'] : 0;
+$til_wid = (intval($til_wid_get) > 0) ? intval($til_wid_get) : 256;
+$til_hei = (intval($til_hei_get) > 0) ? intval($til_hei_get) : 256;
 
 // where we will store the text files.
 $img_cache = $CACHE_DIR . "/" . $dir;
@@ -49,7 +49,7 @@ if (!file_exists($img_cache)) {
         $img_wid = $img_size[0];
         $img_hei = $img_size[1];
         
-        $max_zoom = get_max_zoom_level($img_wid, $img_hei, $t_wid, $t_hei);
+        $max_zoom = get_max_zoom_level($img_wid, $img_hei, $til_wid, $til_hei);
         $lowest_max_zoom = ($lowest_max_zoom > $max_zoom || $lowest_max_zoom == 0) ? $max_zoom : $lowest_max_zoom;
         
         // Get the number from the filename (between the last _ and .)
@@ -67,12 +67,13 @@ if (!file_exists($img_cache)) {
     }
     
     // Now go through them again, store in $pgs
+    $mx_h = $mx_w = $t_wid = $t_hei = $num_pages = 0;
     for ($i = 0; $i < count($images); $i++) {
         if (array_key_exists($i, $images)) {
             $h = incorporate_zoom($images[$i]['mx_h'], $lowest_max_zoom - $zoom);
             $w = incorporate_zoom($images[$i]['mx_w'], $lowest_max_zoom - $zoom);
-            $c = ceil($w / $t_wid);
-            $r = ceil($h / $t_hei);
+            $c = ceil($w / $til_wid);
+            $r = ceil($h / $til_hei);
             $m_z = $images[$i]['mx_z'];
             $fn = $images[$i]['fn'];
             $pgs[] = array(
