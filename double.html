@@ -14,11 +14,11 @@
     $(document).ready(function() {
         $('#diva-one').diva({
             iipServerBaseUrl: "http://petrucci.musiclibs.net:9002/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/liber/",
-            backendServer: "http://petrucci.musiclibs.net:9002/ajax/3/"
+            backendServer: "http://petrucci.musiclibs.net:9002/divaserve.php?d=liber"
         });
         $('#diva-two').diva({
-            iipServerBaseUrl: "http://coltrane.music.mcgill.ca:9000/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/liber/",
-            backendServer: "http://petrucci.musiclibs.net:9002/ajax/3/"
+            iipServerBaseUrl: "http://coltrane.music.mcgill.ca:9000/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/bm/",
+            backendServer: "http://petrucci.musiclibs.net:9002/divaserve.php?d=bm"
         }); 
     });
     </script>
