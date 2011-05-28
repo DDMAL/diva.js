@@ -19,7 +19,27 @@ $IMAGE_DIR = "/mnt/images";
 $CACHE_DIR = "/tmp/diva.js";
 $IIP_SERVER = "http://localhost/cgi-bin/iipsrv.fcgi?";
 
+// only useful if you have memcache installed. 
+$MEMCACHE_SERVER = "127.0.0.1";
+$MEMCACHE_PORT = 11211;
+
 ### Nothing should change past here.
+function check_memcache() {
+    if (extension_loaded('memcache')) {
+	$m = new Memcache;
+	$avail = $m->connect($MEMCACHE_SERVER, $MEMCACHE_PORT);
+        if ($avail) {
+             return TRUE;
+	} else {
+	     return FALSE;
+	}
+    } else {
+	return FALSE;
+    }
+}
+
+$MEMCACHE_AVAILABLE = check_memcache();
+
 if (!isset($_GET['d']) || !isset($_GET['z'])) {
     die("Missing params");
 }
@@ -35,6 +55,10 @@ $til_hei = (intval($til_hei_get) > 0) ? intval($til_hei_get) : 256;
 // where we will store the text files.
 $img_cache = $CACHE_DIR . "/" . $dir;
 $img_dir = $IMAGE_DIR . "/" . $dir;
+
+if ($MEMCACHE_AVAILABLE) {
+     $cachekey = $dir . "-" . $zoom;
+}
 
 $gen_cache_file = $img_cache . '/docdata.txt';
 $cache_file = $img_cache . '/docdata_' . $zoom . '.txt';
@@ -133,10 +157,25 @@ if (!file_exists($cache_file)) {
     $json = json_encode($data);
     // Save it to a text file in the cache directory
     file_put_contents($cache_file, $json);
+    
+    if ($MEMCACHE_AVAILABLE) {
+    	$m = new Memcache;
+	$m->connect($MEMCACHE_SERVER, $MEMCACHE_PORT) or die("Could not connect to Memcache");
+	$m->set($cachekey, $json);
+	$m->close();
+    }
+
     echo $json;
 } else {
     // It might be useful to store a general docdata.txt sort of file as well
-    $json = file_get_contents($cache_file);
+    if ($MEMCACHE_AVAILABLE) {
+	$m = new Memcache;
+	$m->connect($MEMCACHE_SERVER, $MEMCACHE_PORT) or die ("Could not connect to Memcache");
+	$json = $m->get($cachekey);
+	$m->close();
+    } else {
+        $json = file_get_contents($cache_file);
+    }
     echo $json;
 }
 
