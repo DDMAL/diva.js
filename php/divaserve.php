@@ -36,12 +36,15 @@ $til_hei = (intval($til_hei_get) > 0) ? intval($til_hei_get) : 256;
 $img_cache = $CACHE_DIR . "/" . $dir;
 $img_dir = $IMAGE_DIR . "/" . $dir;
 
-$cache_file = $img_cache . "/" . "docdata.txt";
+$cache_file = $img_cache . '/docdata_' . $zoom . '.txt';
 $pgs = array();
 
 if (!file_exists($img_cache)) {
     // Now go through the image directory and calculate stuff
     mkdir($img_cache);
+}
+
+if (!file_exists($cache_file)) {
     $images = array();
     $lowest_max_zoom = 0;
     foreach (glob($img_dir . '/*.tif') as $img_file) {
@@ -94,29 +97,34 @@ if (!file_exists($img_cache)) {
     
     $a_wid = $t_wid / $num_pages;
     $a_hei = $t_hei / $num_pages;
+    
+    // Calculate the dimensions
+    $dims = array(
+        'a_wid'         => $a_wid,
+        'a_hei'         => $a_hei,
+        'mx_h'          => $mx_h,
+        'mx_w'          => $mx_w,
+        't_hei'         => $t_hei,
+        't_wid'         => $t_wid
+    );
+
+    // The full data to be returned
+    $data = array(
+        'item_title'    => $dir,
+        'dims'          => $dims,
+        'max_zoom'      => $lowest_max_zoom,
+        'pgs'           => $pgs
+    );
+
+    $json = json_encode($data);
+    // Save it to a text file in the cache directory
+    file_put_contents($cache_file, $json);
+    echo $json;
 } else {
     // Assume that the cache directory already contains everything we need
+    $json = file_get_contents($cache_file);
+    echo $json;
 }
-
-// Calculate the dimensions
-$dims = array(
-    'a_wid'         => $a_wid,
-    'a_hei'         => $a_hei,
-    'mx_h'          => $mx_h,
-    'mx_w'          => $mx_w,
-    't_hei'         => $t_hei,
-    't_wid'         => $t_wid
-);
-
-// The full data to be returned
-$data = array(
-    'item_title'    => $dir,
-    'dims'          => $dims,
-    'max_zoom'      => $lowest_max_zoom,
-    'pgs'           => $pgs
-);
-
-echo json_encode($data);
 
 /*
 if($handle = opendir($img_dir)) {
