@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2011 by Andrew Hankinson, Laurent Pugin, Wendy Liu
+Copyright (C) 2011 by Andrew Hankinson, Wendy Liu, Laurent Pugin
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -210,15 +210,15 @@ THE SOFTWARE.
                 $(settings.innerSelector).append(contentString);
             } else {
                 // Append it to the page
-		        $(settings.selector + 'page-' + pageIndex).append(content.join(''));
+                $(settings.selector + 'page-' + pageIndex).append(content.join(''));
             }
 
             // Make the tiles we just appended fade in
             if(settings.tileFadeSpeed) {
                 for (var i = 0; i < tilesToLoad.length; i++) {
                     $(settings.selector + 'tile-' + pageIndex + '-' + tilesToLoad[i]).fadeIn(settings.tileFadeSpeed);   
-    	        }
-    	    }
+                }
+            }
         };
 
         // Delete a page from the DOM; will occur when a page is scrolled out of the viewport
@@ -866,7 +866,7 @@ THE SOFTWARE.
             
             // Load the images at the initial zoom level            
             ajaxRequest(settings.zoomLevel);
-	    
+        
             handleEvents();
         };
 
