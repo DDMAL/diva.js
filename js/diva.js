@@ -46,7 +46,8 @@ THE SOFTWARE.
             onZoomOut: null,            // Callback function for zooming out only
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
-            zoomLevel: 2               // The initial zoom level (used to store the current zoom level)
+            zoomLevel: 2,               // The initial zoom level (used to store the current zoom level)
+            tileFadeSpeed: 500          // The tile fade-in speed in ms. Set to 0 to disable tile fading. May also be "fast" or "slow".
         };
         
         // Apply the defaults, or override them with passed-in options.
@@ -141,7 +142,7 @@ THE SOFTWARE.
             } else {
                 return false;
             }
-        }
+        };
        
         // Appends the page directly into the document body, or loads the relevant tiles
         var loadPage = function(pageIndex) {
@@ -213,9 +214,11 @@ THE SOFTWARE.
             }
 
             // Make the tiles we just appended fade in
-            for (var i = 0; i < tilesToLoad.length; i++) {
-                $(settings.selector + 'tile-' + pageIndex + '-' + tilesToLoad[i]).fadeIn('fast');   
-	        }
+            if(settings.tileFadeSpeed) {
+                for (var i = 0; i < tilesToLoad.length; i++) {
+                    $(settings.selector + 'tile-' + pageIndex + '-' + tilesToLoad[i]).fadeIn(settings.tileFadeSpeed);   
+    	        }
+    	    }
         };
 
         // Delete a page from the DOM; will occur when a page is scrolled out of the viewport
