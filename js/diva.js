@@ -44,10 +44,10 @@ THE SOFTWARE.
             onZoom: null,               // Callback function for zooming in general
             onZoomIn: null,             // Callback function for zooming in only
             onZoomOut: null,            // Callback function for zooming out only
+            tileFadeSpeed: 500          // The tile fade-in speed in ms. Set to 0 to disable tile fading. May also be "fast" or "slow".
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
             zoomLevel: 2,               // The initial zoom level (used to store the current zoom level)
-            tileFadeSpeed: 500          // The tile fade-in speed in ms. Set to 0 to disable tile fading. May also be "fast" or "slow".
         };
         
         // Apply the defaults, or override them with passed-in options.
@@ -188,6 +188,8 @@ THE SOFTWARE.
                 for (col = 0; col < cols; col++) {
                     var top = row * settings.tileHeight;
                     var left = col * settings.tileWidth;
+                    // Set to none if there is a tileFadeSpeed set
+                    var displayStyle = (settings.tileFadeSpeed) ? 'none' : 'inline';
 
                     // The zoom level might be different, if a page has a different max zoom level than the others
                     var zoomLevel = (maxZoom === settings.maxZoomLevel) ? settings.zoomLevel : settings.zoomLevel + (maxZoom - settings.maxZoomLevel); 
@@ -197,7 +199,7 @@ THE SOFTWARE.
                     imgSrc = settings.iipServerBaseUrl + filename + '&amp;JTL=' + zoomLevel + ',' + tileNumber;
                     
                     if (!isTileLoaded(pageIndex, tileNumber) && isTileVisible(pageIndex, row, col)) {
-                        content.push('<div id="' + settings.ID + 'tile-' + pageIndex + '-' + tileNumber + '"style="display: none; position: absolute; top: ' + top + 'px; left: ' + left + 'px; background-image: url(\'' + imgSrc + '\'); height: ' + tileHeight + 'px; width: ' + tileWidth + 'px;"></div>');
+                        content.push('<div id="' + settings.ID + 'tile-' + pageIndex + '-' + tileNumber + '"style="display: ' + displayStyle + '; position: absolute; top: ' + top + 'px; left: ' + left + 'px; background-image: url(\'' + imgSrc + '\'); height: ' + tileHeight + 'px; width: ' + tileWidth + 'px;"></div>');
                     }
                     tilesToLoad.push(tileNumber);
                     tileNumber++;
