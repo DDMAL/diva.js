@@ -44,10 +44,10 @@ THE SOFTWARE.
             onZoom: null,               // Callback function for zooming in general
             onZoomIn: null,             // Callback function for zooming in only
             onZoomOut: null,            // Callback function for zooming out only
-            tileFadeSpeed: 500          // The tile fade-in speed in ms. Set to 0 to disable tile fading. May also be "fast" or "slow".
+            tileFadeSpeed: 500,         // The tile fade-in speed in ms. Set to 0 to disable tile fading. May also be "fast" or "slow".
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
-            zoomLevel: 2,               // The initial zoom level (used to store the current zoom level)
+            zoomLevel: 2                // The initial zoom level (used to store the current zoom level)
         };
         
         // Apply the defaults, or override them with passed-in options.
