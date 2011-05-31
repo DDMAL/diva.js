@@ -78,6 +78,7 @@ THE SOFTWARE.
             panelHeight: 0,             // Height of the panel. Set in initiateViewer()
             panelWidth: 0,              // Width of the panel. Set in initiateViewer()
             prevVptTop: 0,              // Used to determine vertical scroll direction
+            scaleWait: false,           // For preventing double-scale on the iPad
             scrollSoFar: 0,             // Holds the number of pixels of vertical scroll
             totalHeight: 0,             // Height of all the image stacked together, value set later
             verticalOffset: 0,          // Used for storing the page offset before zooming
@@ -438,7 +439,6 @@ THE SOFTWARE.
             settings.prevVptTop = 0;
             $(settings.outerSelector).scrollTop(desiredTop);
             $(settings.outerSelector).scrollLeft(desiredLeft);
-            console.log("THIS IS WITHIN SCROLLLAFTERREQUEST, AT THE END");
         };
         
         // AJAX request to start the whole process - called upon page load and upon zoom change
@@ -520,7 +520,6 @@ THE SOFTWARE.
 
                     // Scroll to the proper place
                     scrollAfterRequest();
-                    console.log("THIS SHOULD BE AFTER SCROLLAFTERREQUEST()");
 
                     // Now execute the zoom callback functions (if it's not the first)
                     // Note that this also gets executed after entering or leaving fullscreen mode
@@ -549,6 +548,10 @@ THE SOFTWARE.
 
                     settings.firstAjaxRequest = false;
 
+                    // For the iPad - wait until this request finishes before accepting others
+                    if (settings.scaleWait) {
+                        settings.scaleWait = false;
+                    }
                 } // ends the success function
             }); // ends the $.ajax function
         };
@@ -558,7 +561,6 @@ THE SOFTWARE.
             settings.scrollSoFar = $(settings.outerSelector).scrollTop();
             adjustPages(settings.scrollSoFar - settings.prevVptTop);
             settings.prevVptTop = settings.scrollSoFar;
-            console.log("i get called to handle scroll");
         };
 
         // Handles zooming - called after pinch-zoom, changing the slider, or double-clicking
@@ -661,7 +663,12 @@ THE SOFTWARE.
                 newZoomLevel++;
             } else if (event.scale < 1 && newZoomLevel > settings.minZoomLevel) {
                 newZoomLevel--;
+            } else {
+                return;
             }
+
+            // Set it to true so we have to wait for this one to finish
+            settings.scaleWait = true;
 
             // Has to call handleZoomSlide so that the coordinates are kept
             handleZoomSlide(newZoomLevel);
@@ -776,7 +783,10 @@ THE SOFTWARE.
                 // Allow pinch-zooming
                 $('body').bind('gestureend', function(event) {
                     var e = event.originalEvent;
-                    scale(e);
+                    if (!settings.scaleWait) {
+                        scale(e);
+                    }
+                    return false;
                 });
 
             }
