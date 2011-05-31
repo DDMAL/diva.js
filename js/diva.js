@@ -482,6 +482,7 @@ THE SOFTWARE.
 
                     // Reset the vertical scroll and clear out the innerdrag div
                     $(settings.outerSelector).scrollTop(0);
+                    settings.scrollSoFar = 0; // important - for issue 26
                     $(settings.innerSelector).text('');                   
 
                     // Now reset some things that need to be changed after each zoom
