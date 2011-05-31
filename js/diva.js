@@ -44,7 +44,7 @@ THE SOFTWARE.
             onZoom: null,               // Callback function for zooming in general
             onZoomIn: null,             // Callback function for zooming in only
             onZoomOut: null,            // Callback function for zooming out only
-            tileFadeSpeed: 500,         // The tile fade-in speed in ms. Set to 0 to disable tile fading. May also be "fast" or "slow".
+            tileFadeSpeed: 300,         // The tile fade-in speed in ms. Set to 0 to disable tile fading. May also be "fast" or "slow".
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
             zoomLevel: 2                // The initial zoom level (used to store the current zoom level)
@@ -62,8 +62,8 @@ THE SOFTWARE.
             dimBeforeZoom: 0,           // Used for storing the item dimensions before zooming
             doubleClick: false,         // If the zoom has been triggered by a double-click event
             elementSelector: '',        // The ID of the element plus the # for easy selection, set in init()
-            firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
             firstAjaxRequest: true,     // True initially, set to false after the first request
+            firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
             heightAbovePages: [],       // The height above each page
             horizontalOffset: 0,        // Used for storing the page offset before zooming
             horizontalPadding: 0,
