@@ -58,6 +58,7 @@ THE SOFTWARE.
         var globals = {
             centerX: 0,                 // Only used if doubleClick is true - for zooming in
             centerY: 0,                 // Y-coordinate, see above
+            currentPageIndex: 0,            // The current page in the viewport (center-most page)
             dimAfterZoom: 0,            // Used for storing the item dimensions after zooming
             dimBeforeZoom: 0,           // Used for storing the item dimensions before zooming
             doubleClick: false,         // If the zoom has been triggered by a double-click event
@@ -73,7 +74,6 @@ THE SOFTWARE.
             maxHeight: 0,               // The height of the tallest page
             maxWidth: 0,                // The width of the widest page
             numPages: 0,                // Number of pages in the array
-            pageLoadedId: 0,            // The current page in the viewport (center-most page)
             pages: [],                  // An array containing the data for all the pages
             panelHeight: 0,             // Height of the panel. Set in initiateViewer()
             panelWidth: 0,              // Width of the panel. Set in initiateViewer()
@@ -262,11 +262,11 @@ THE SOFTWARE.
             return false;
         };
 
-        // Determines and sets the "current page" (settings.pageLoadedId); called within adjustPages 
+        // Determines and sets the "current page" (settings.currentPageIndex); called within adjustPages 
         // The "direction" can be 0, 1 or -1; 1 for down, -1 for up, and 0 to go straight to a specific page
         var setCurrentPage = function(direction, pageIndex) {
-            var currentPage = settings.pageLoadedId;
-            var pageToConsider = settings.pageLoadedId + parseInt(direction, 10);
+            var currentPage = settings.currentPageIndex;
+            var pageToConsider = settings.currentPageIndex + parseInt(direction, 10);
             var middleOfViewport = settings.scrollSoFar + (settings.panelHeight / 2);
             var changeCurrentPage = false;
 
@@ -291,7 +291,7 @@ THE SOFTWARE.
 
             if ( changeCurrentPage ) {
                 // Set this to the current page
-                settings.pageLoadedId = pageToConsider;
+                settings.currentPageIndex = pageToConsider;
 
                 // Change the text to reflect this - pageToConsider + 1 (because it's page number not ID)
                 $(settings.selector + 'current span').text(pageToConsider + 1);
@@ -399,13 +399,13 @@ THE SOFTWARE.
 
             // Handle the scrolling callback functions here
             if (typeof settings.onScroll == 'function' && direction !== 0) {
-                settings.onScroll.call(this, settings.pageLoadedId);
+                settings.onScroll.call(this, settings.currentPageIndex);
             }
             if (typeof settings.onScrollUp == 'function' && direction < 0) {
-                settings.onScrollUp.call(this, settings.pageLoadedId);
+                settings.onScrollUp.call(this, settings.currentPageIndex);
             }
             if (typeof settings.onScrollDown == 'function' && direction > 0) {
-                settings.onScrollDown.call(this, settings.pageLoadedId);
+                settings.onScrollDown.call(this, settings.currentPageIndex);
             }
         };
         
@@ -898,7 +898,7 @@ THE SOFTWARE.
 
         // Public function, returns the current page that the user is on
         this.getCurrentPage = function() {
-            return settings.pageLoadedId;
+            return settings.currentPageIndex;
         };
 
         // Public function, returns the current zoom level
