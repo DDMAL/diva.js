@@ -680,6 +680,8 @@ THE SOFTWARE.
             if (settings.enableFullscreen) {
                 // Event handler for fullscreen toggling
                 $(settings.selector + 'fullscreen').click(function() {
+                    // First empty the viewer so we don't get weird jostling
+                    $(settings.innerSelector).text('');
                     if (settings.inFullScreen) {
                         $(settings.outerSelector).removeClass('fullscreen');
                         settings.inFullScreen = false;
