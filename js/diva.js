@@ -296,12 +296,13 @@ THE SOFTWARE.
                 // Change the text to reflect this - pageToConsider + 1 (because it's page number not ID)
                 $(settings.selector + 'current span').text(pageToConsider + 1);
                 // If we're in fullscreen mode, change the statusbar
-                if (settings.fullscreenStatusbar != null) {
-                    settings.fullscreenStatusbar.pnotify({
-                        pnotify_text: 'Page: ' + (pageToConsider + 1)
-                    });
+                if (settings.fullscreenStatusbar == null) {
+                    createFullscreenStatusbar();
                 }
-                
+                settings.fullscreenStatusbar.pnotify({
+                    pnotify_text: 'Page: ' + (pageToConsider + 1)
+                });
+
                 // Now try to change the next page, given that we're not going to a specific page
                 // Calls itself recursively - this way we accurately obtain the current page
                 if ( direction !== 0 ) {
@@ -703,15 +704,10 @@ THE SOFTWARE.
                         $('body').css('overflow', 'auto');
                         $(settings.selector + 'fullscreen').css('position', 'absolute').css('z-index', '8999');
                     } else {
-                        // Create the statusbar thing
-                        var statusbarOptions = {
-                            pnotify_text: 'Page: ' + (settings.currentPageIndex + 1),
-                            pnotify_history: false,
-                            pnotify_width: '100px',
-                            pnotify_hide: false,
-                            pnotify_notice_icon: '',
-                        };
-                        settings.fullscreenStatusbar = $.pnotify(statusbarOptions);
+                        // Create the statusbar thing (if it's not already there)
+                        if (settings.fullscreenStatusbar == null) {
+                            createFullscreenStatusbar();
+                        }
                         // Change the styling of the fullscreen icon - two viewers on a page won't work otherwise
                         $(settings.selector + 'fullscreen').css('position', 'fixed').css('z-index', '9001');
                         
@@ -837,6 +833,22 @@ THE SOFTWARE.
                 });
             }
 
+        };
+
+        // Create a fullscreen statusbar thing - if it doesn't exist
+        var createFullscreenStatusbar = function() {
+            var options = { 
+                pnotify_text: 'Page: ' + (settings.currentPageIndex + 1),
+                pnotify_history: false,
+                pnotify_width: '110px',
+                pnotify_hide: false,
+                pnotify_notice_icon: '',
+                pnotify_before_close: function() {
+                    settings.fullscreenStatusbar = null;
+                }
+            };
+
+            settings.fullscreenStatusbar = $.pnotify(options);
         };
 
         // Creates a zoomer using the min and max zoom levels specified ... PRIVATE, only if zoomSlider = true

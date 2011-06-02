@@ -32,7 +32,7 @@ html > body .ui-pnotify {
 }
 .ui-pnotify-container {
     background-position: 0 0;
-    padding: .8em;
+    padding: 10px;
     height: 100%;
 }
 .ui-pnotify-closer {
