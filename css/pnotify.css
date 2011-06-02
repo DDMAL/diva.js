@@ -10,7 +10,7 @@
 /* Notice
 ----------------------------------*/
 .ui-pnotify {
-    top: 18px;
+    top: 5px;
     right: 18px;
     position: absolute;
     height: auto;
@@ -39,40 +39,7 @@ html > body .ui-pnotify {
     float: right;
     margin-left: .2em;
 }
-.ui-pnotify-title {
-    display: block;
-    font-size: 1.2em;
-    font-weight: bold;
-    margin-bottom: .4em;
-}
 .ui-pnotify-text {
     display: block;
-}
-.ui-pnotify-icon, .ui-pnotify-icon span {
-    display: block;
-    float: left;
-    margin-right: .2em;
-}
-/* History Pulldown
-----------------------------------*/
-.ui-pnotify-history-container {
-    position: absolute;
-    top: 0;
-    right: 18px;
-    width: 70px;
-    border-top: none;
-    /* Ensure that the history container is on top of the notices. */
-    z-index: 10000;
-}
-.ui-pnotify-history-container .ui-pnotify-history-header {
-    padding: 2px;
-}
-.ui-pnotify-history-container button {
-    cursor: pointer;
-    display: block;
-    width: 100%;
-}
-.ui-pnotify-history-container .ui-pnotify-history-pulldown {
-    display: block;
-    margin: 0 auto;
+    font-size: 14px;
 }
