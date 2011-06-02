@@ -27,22 +27,15 @@ body {
     font-family: Helvetica;
 }
 
-#diva-wrapper {
-    width: 960px;
-    margin: 0 auto;
-}
-
 div[id$="diva-inner"] {
-    color: #000;
-    position: relative;
-    overflow: hidden; /* x-scroll adds to the height, figure out later */
-    /*cursor: pointer;*/ /* or move */
+	color: #000;
+	position: relative;
+	overflow: hidden;
 }
 
 div[id$="diva-outer"] {
     position: relative;
     height: 700px;
-    width: 960px;
     overflow: auto;
     margin: 0 auto;
     background-color: #F1F1F1;
@@ -89,7 +82,6 @@ div[id$="diva-title"] {
     width: 100% !important;
     height: 100% !important;
     z-index: 9000;
-    position: absolute !important;
     top: 0;
     left: 0;
 }

@@ -22,22 +22,15 @@ THE SOFTWARE.
 
 @import url("diva.css");
 
-#diva-one {
-    width: 600px;
-    float: left;
-    position: relative;
-}
-
-#diva-two {
-    width: 600px;
-    float: right;
-    position: relative;
+#diva-wrapper {
+	width: 960px;
+	margin: 0 auto;
 }
 
 div[id$="diva-outer"] {
-    width: 600px;
+    width: 960px;
 }
 
 .fullscreen {
-    position: fixed !important;
+    position: absolute !important;
 }
