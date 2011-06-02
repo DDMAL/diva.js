@@ -710,8 +710,6 @@ THE SOFTWARE.
                             pnotify_width: '100px',
                             pnotify_hide: false,
                             pnotify_notice_icon: '',
-                            pnotify_nonblock: true,
-                            pnotify_nonblock_opacity: 0,
                         };
                         settings.fullscreenStatusbar = $.pnotify(statusbarOptions);
                         // Change the styling of the fullscreen icon - two viewers on a page won't work otherwise
