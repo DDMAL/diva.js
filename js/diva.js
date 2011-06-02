@@ -65,6 +65,7 @@ THE SOFTWARE.
             elementSelector: '',        // The ID of the element plus the # for easy selection, set in init()
             firstAjaxRequest: true,     // True initially, set to false after the first request
             firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
+            fullscreenStatusbar: null,  // The popup box that tells you what page you're on
             heightAbovePages: [],       // The height above each page
             horizontalOffset: 0,        // Used for storing the page offset before zooming
             horizontalPadding: 0,
@@ -294,6 +295,12 @@ THE SOFTWARE.
 
                 // Change the text to reflect this - pageToConsider + 1 (because it's page number not ID)
                 $(settings.selector + 'current span').text(pageToConsider + 1);
+                // If we're in fullscreen mode, change the statusbar
+                if (settings.fullscreenStatusbar != null) {
+                    settings.fullscreenStatusbar.pnotify({
+                        pnotify_text: 'Page: ' + (pageToConsider + 1)
+                    });
+                }
                 
                 // Now try to change the next page, given that we're not going to a specific page
                 // Calls itself recursively - this way we accurately obtain the current page
@@ -683,6 +690,12 @@ THE SOFTWARE.
                     // First empty the viewer so we don't get weird jostling
                     $(settings.innerSelector).text('');
                     if (settings.inFullScreen) {
+                        // Remove the fullscreen status bar
+                        if (settings.fullscreenStatusbar != null) {
+                            settings.fullscreenStatusbar.pnotify_remove();
+                            settings.fullscreenStatusbar = null;
+                        }
+
                         $(settings.outerSelector).removeClass('fullscreen');
                         settings.inFullScreen = false;
 
@@ -690,6 +703,17 @@ THE SOFTWARE.
                         $('body').css('overflow', 'auto');
                         $(settings.selector + 'fullscreen').css('position', 'absolute').css('z-index', '8999');
                     } else {
+                        // Create the statusbar thing
+                        var statusbarOptions = {
+                            pnotify_text: 'Page: ' + (settings.currentPageIndex + 1),
+                            pnotify_history: false,
+                            pnotify_width: '100px',
+                            pnotify_hide: false,
+                            pnotify_notice_icon: '',
+                            pnotify_nonblock: true,
+                            pnotify_nonblock_opacity: 0,
+                        };
+                        settings.fullscreenStatusbar = $.pnotify(statusbarOptions);
                         // Change the styling of the fullscreen icon - two viewers on a page won't work otherwise
                         $(settings.selector + 'fullscreen').css('position', 'fixed').css('z-index', '9001');
                         
