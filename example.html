@@ -1,23 +1,22 @@
 <html>
 <head>
     <title>Diva.js demo</title>
-
+    
     <link rel="stylesheet" href="css/diva.css" type="text/css" />
     <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.10/themes/ui-lightness/jquery-ui.css" type="text/css" />
-
+    
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.11/jquery-ui.min.js"></script>
-    <script src="js/diva-utils.js"></script>
-     <script src="js/diva.js"></script>
-
+    <script src="js/diva-min.js"></script>
+     
     <script>
     $(document).ready(function() {
         $('#diva-wrapper').diva({
             //adaptivePadding: 0,
             //fixedPadding: 100,
             tileFadeSpeed: 0,
-            iipServerBaseUrl: "http://coltrane.music.mcgill.ca:9000/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/bm/",
-            backendServer: "http://petrucci.musiclibs.net:9002/divaserve.php?d=bm"
+            iipServerBaseUrl: "http://example.com/fcgi-bin/iipsrv.fcgi?FIF=/path/to/images/",
+            backendServer: "http://example.com/divaserve.php?d=imagedirectory"
         });
         //var dv = $('#diva-wrapper').data('diva');
     });

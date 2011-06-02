@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2011 by Andrew Hankinson, Wendy Liu, Laurent Pugin
+Copyright (C) 2011 by Wendy Liu, Andrew Hankinson, Laurent Pugin
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

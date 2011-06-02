@@ -217,7 +217,7 @@ $.fn.dragscrollable = function( options ){
                             csspos1 = "left";
                             break;
                     }
-                    curpos1 = parseInt(this.css(csspos1));
+                    curpos1 = parseInt(this.css(csspos1), 10);
                     if (isNaN(curpos1))
                         curpos1 = 0;
                     // Remember the first pos1, so the first visible notice goes there.
@@ -241,7 +241,7 @@ $.fn.dragscrollable = function( options ){
                             csspos2 = "left";
                             break;
                     }
-                    curpos2 = parseInt(this.css(csspos2));
+                    curpos2 = parseInt(this.css(csspos2), 10);
                     if (isNaN(curpos2))
                         curpos2 = 0;
                     // Remember the first pos2, so the first visible notice goes there.
@@ -458,8 +458,7 @@ $.fn.dragscrollable = function( options ){
             if (opts.pnotify_shadow && !$.browser.msie)
                 pnotify.shadow_container = $("<div />", {"class": "ui-widget-shadow ui-corner-all ui-pnotify-shadow"}).prependTo(pnotify);
             // Create a container for the notice contents.
-            pnotify.container = $("<div />", {"class": "ui-widget ui-widget-content ui-corner-all ui-pnotify-container "+(opts.pnotify_type == "error" ? "ui-state-error" : "ui-state-highlight")})
-            .appendTo(pnotify);
+            pnotify.container = $("<div />", {"class": "ui-widget ui-widget-content ui-corner-all ui-pnotify-container "+(opts.pnotify_type == "error" ? "ui-state-error" : "ui-state-highlight")}).appendTo(pnotify);
 
             pnotify.pnotify_version = "1.0.1";
 
@@ -508,9 +507,7 @@ $.fn.dragscrollable = function( options ){
                     pnotify.container.find("div.ui-pnotify-icon").remove();
                     if ((opts.pnotify_error_icon && opts.pnotify_type == "error") || (opts.pnotify_notice_icon)) {
                         // Build the new icon.
-                        $("<div />", {"class": "ui-pnotify-icon"})
-                        .append($("<span />", {"class": opts.pnotify_type == "error" ? opts.pnotify_error_icon : opts.pnotify_notice_icon}))
-                        .prependTo(pnotify.container);
+                        $("<div />", {"class": "ui-pnotify-icon"}).append($("<span />", {"class": opts.pnotify_type == "error" ? opts.pnotify_error_icon : opts.pnotify_notice_icon})).prependTo(pnotify.container);
                     }
                 }
                 // Update the width.
@@ -664,23 +661,18 @@ $.fn.dragscrollable = function( options ){
                     pnotify.pnotify_remove();
                     pnotify.closer.hide();
                 }
-            })
-            .append($("<span />", {"class": "ui-icon ui-icon-circle-close"}))
-            .appendTo(pnotify.container);
+            }).append($("<span />", {"class": "ui-icon ui-icon-circle-close"})).appendTo(pnotify.container);
 
             // Add the appropriate icon.
             if ((opts.pnotify_error_icon && opts.pnotify_type == "error") || (opts.pnotify_notice_icon)) {
-                $("<div />", {"class": "ui-pnotify-icon"})
-                .append($("<span />", {"class": opts.pnotify_type == "error" ? opts.pnotify_error_icon : opts.pnotify_notice_icon}))
-                .appendTo(pnotify.container);
+                $("<div />", {"class": "ui-pnotify-icon"}).append($("<span />", {"class": opts.pnotify_type == "error" ? opts.pnotify_error_icon : opts.pnotify_notice_icon})).appendTo(pnotify.container);
             }
 
             // Add a title.
             pnotify.title_container = $("<div />", {
                 "class": "ui-pnotify-title",
                 "html": opts.pnotify_title
-            })
-            .appendTo(pnotify.container);
+            }).appendTo(pnotify.container);
             if (opts.pnotify_title === false)
                 pnotify.title_container.hide();
 
@@ -691,8 +683,7 @@ $.fn.dragscrollable = function( options ){
             pnotify.text_container = $("<div />", {
                 "class": "ui-pnotify-text",
                 "html": opts.pnotify_text
-            })
-            .appendTo(pnotify.container);
+            }).appendTo(pnotify.container);
             if (opts.pnotify_text === false)
                 pnotify.text_container.hide();
 
@@ -729,9 +720,7 @@ $.fn.dragscrollable = function( options ){
                         "mouseleave": function(){
                             body_history.animate({top: "-"+history_handle_top+"px"}, {duration: 100, queue: false});
                         }
-                    })
-                    .append($("<div />", {"class": "ui-pnotify-history-header", "text": "Redisplay"}))
-                    .append($("<button />", {
+                    }).append($("<div />", {"class": "ui-pnotify-history-header", "text": "Redisplay"})).append($("<button />", {
                             "class": "ui-pnotify-history-all ui-state-default ui-corner-all",
                             "text": "All",
                             "mouseenter": function(){
@@ -748,8 +737,7 @@ $.fn.dragscrollable = function( options ){
                                 });
                                 return false;
                             }
-                    }))
-                    .append($("<button />", {
+                    })).append($("<button />", {
                             "class": "ui-pnotify-history-last ui-state-default ui-corner-all",
                             "text": "Last",
                             "mouseenter": function(){
@@ -771,8 +759,7 @@ $.fn.dragscrollable = function( options ){
                                     n.pnotify_display();
                                 return false;
                             }
-                    }))
-                    .appendTo(body);
+                    })).appendTo(body);
 
                     // Make a handle so the user can pull down the history pull down.
                     var handle = $("<span />", {
@@ -780,8 +767,7 @@ $.fn.dragscrollable = function( options ){
                         "mouseenter": function(){
                             body_history.animate({top: "0"}, {duration: 100, queue: false});
                         }
-                    })
-                    .appendTo(body_history);
+                    }).appendTo(body_history);
 
                     // Get the top of the handle.
                     history_handle_top = handle.offset().top + 2;
@@ -851,7 +837,7 @@ $.fn.dragscrollable = function( options ){
         // Create a non-blocking notice. It lets the user click elements underneath it.
         pnotify_nonblock: false,
         // The opacity of the notice (if it's non-blocking) when the mouse is over it.
-        pnotify_nonblock_opacity: .2,
+        pnotify_nonblock_opacity: 0.2,
         // Display a pull down menu to redisplay previous notices, and place the notice in the history.
         pnotify_history: true,
         // Width of the notice.
