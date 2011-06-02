@@ -28,9 +28,9 @@ body {
 }
 
 div[id$="diva-inner"] {
-	color: #000;
-	position: relative;
-	overflow: hidden;
+    color: #000;
+    position: relative;
+    overflow: hidden;
 }
 
 div[id$="diva-outer"] {
