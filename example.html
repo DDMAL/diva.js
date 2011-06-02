@@ -12,12 +12,38 @@
 
     <script>
     $(document).ready(function() {
+        var hide_notice = false;
+        var opts = {
+            pnotify_text: 'now on page 1',
+            pnotify_history: false,
+            pnotify_width: '100px',
+            pnotify_hide: false,
+            pnotify_notice_icon: '',
+            pnotify_animate_speed: 'fast',
+            pnotify_nonblock: true,
+            pnotify_nonblock_opacity: 0,
+        };
+        var notice = $.pnotify(opts);
+
+        if (hide_notice) {
+            notice.pnotify_remove();
+        }
+
         $('#diva-wrapper').diva({
             //adaptivePadding: 0,
             //fixedPadding: 100,
             tileFadeSpeed: 0,
             iipServerBaseUrl: "http://coltrane.music.mcgill.ca:9000/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/bm/",
-            backendServer: "http://petrucci.musiclibs.net:9002/divaserve.php?d=bm"
+            backendServer: "http://petrucci.musiclibs.net:9002/divaserve.php?d=bm",
+            onScroll: function(newPage) {
+                notice.pnotify({
+                    pnotify_text: 'now on page ' + newPage
+                });
+                hide_notice = false;
+                setTimeout(function() {
+                    hide_notice = true;
+                }, 1000);
+            }
         });
         //var dv = $('#diva-wrapper').data('diva');
     });
