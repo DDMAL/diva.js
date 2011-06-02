@@ -6,7 +6,7 @@ body {
 }
 
 #diva-wrapper {
-	width: 720px;
+	width: 960px;
 	margin: 0 auto;
 }
 
@@ -20,7 +20,7 @@ div[id$="diva-inner"] {
 div[id$="diva-outer"] {
 	position: relative;
 	height: 700px;
-	width: 720px; /* hack to get rid of the horizontal scrollbar ... */
+	width: 960px;
 	overflow: auto;
 	margin: 0 auto;
 	background-color: #F1F1F1;
