@@ -69,7 +69,7 @@ THE SOFTWARE.
             heightAbovePages: [],       // The height above each page
             horizontalOffset: 0,        // Used for storing the page offset before zooming
             horizontalPadding: 0,
-            inFullScreen: false,        // Set to true when the user enters fullscreen mode
+            inFullscreen: false,        // Set to true when the user enters fullscreen mode
             itemTitle: '',              // The title of the document
             lastPageLoaded: -1,         // The ID of the last page loaded (value set later)
             maxHeight: 0,               // The height of the tallest page
@@ -296,7 +296,7 @@ THE SOFTWARE.
                 // Change the text to reflect this - pageToConsider + 1 (because it's page number not ID)
                 $(settings.selector + 'current span').text(pageToConsider + 1);
                 // If we're in fullscreen mode, change the statusbar
-                if (settings.inFullScreen) {
+                if (settings.inFullscreen) {
                     if (settings.fullscreenStatusbar == null) {
                         createFullscreenStatusbar('fade');
                     }
@@ -693,7 +693,7 @@ THE SOFTWARE.
                 $(settings.selector + 'fullscreen').click(function() {
                     // First empty the viewer so we don't get weird jostling
                     $(settings.innerSelector).text('');
-                    if (settings.inFullScreen) {
+                    if (settings.inFullscreen) {
                         // Remove the fullscreen status bar
                         console.log("remove this shit");
                         if (settings.fullscreenStatusbar != null) {
@@ -706,7 +706,7 @@ THE SOFTWARE.
                         }
 
                         $(settings.outerSelector).removeClass('fullscreen');
-                        settings.inFullScreen = false;
+                        settings.inFullscreen = false;
 
                         // Return the body overflow to auto and the fullscreen icon to its original place
                         $('body').css('overflow', 'auto');
@@ -720,7 +720,7 @@ THE SOFTWARE.
                         $(settings.selector + 'fullscreen').css('position', 'fixed').css('z-index', '9001');
                         
                         $(settings.outerSelector).addClass('fullscreen');
-                        settings.inFullScreen = true;
+                        settings.inFullscreen = true;
 
                         // Make the body overflow hidden
                         $('body').css('overflow', 'hidden');
