@@ -691,6 +691,12 @@ THE SOFTWARE.
             if (settings.enableFullscreen) {
                 // Event handler for fullscreen toggling
                 $(settings.selector + 'fullscreen').click(function() {
+                    // FIRST store the offsets
+                    // Store the offsets so the user stays in the same place
+                    settings.verticalOffset = $(settings.outerSelector).scrollTop();
+                    settings.horizontalOffset = $(settings.outerSelector).scrollLeft();
+                    settings.doubleClick = false;
+
                     // First empty the viewer so we don't get weird jostling
                     $(settings.innerSelector).text('');
                     if (settings.inFullscreen) {
@@ -725,10 +731,6 @@ THE SOFTWARE.
                         $('body').css('overflow', 'hidden');
 
                     }
-                    // Store the offsets so the user stays in the same place
-                    settings.verticalOffset = $(settings.outerSelector).scrollTop();
-                    settings.horizontalOffset = $(settings.outerSelector).scrollLeft();
-                    settings.doubleClick = false;
 
                     // Recalculate height and width
                     settings.panelWidth = parseInt($(settings.outerSelector).width(), 10) - 20;
