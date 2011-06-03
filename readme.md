@@ -17,7 +17,7 @@ Download the contents of this repository, using `git clone git://github.com/DDMA
 
 ### Setting up the backend ###
 
-Setting up the backend requires access to a server capable of running IIPImage as well as PHP. For more, see [Setup and installation - Setting up the backend](https://github.com/DDMAL/diva.js/wiki/Installion#setting-up-the-backend).
+Setting up the backend requires access to a server capable of running IIPImage as well as PHP. For more, see [Setup and installation - Setting up the backend](https://github.com/DDMAL/diva.js/wiki/Installation#setting-up-the-backend).
 
 Getting help
 ------------
