@@ -145,8 +145,8 @@ if (!file_exists($cache_file)) {
             $pgs[] = array(
                 'c'     => $c,
                 'r'     => $r,
-                'h'     => round($h),
-                'w'     => round($w),
+                'h'     => $h,
+                'w'     => $w,
                 'm_z'   => $m_z,
                 'fn'    => $fn, 
             );
