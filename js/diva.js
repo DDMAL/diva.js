@@ -695,7 +695,6 @@ THE SOFTWARE.
                     $(settings.innerSelector).text('');
                     if (settings.inFullscreen) {
                         // Remove the fullscreen status bar
-                        console.log("remove this shit");
                         if (settings.fullscreenStatusbar != null) {
                             // In case animation has been set to fade
                             settings.fullscreenStatusbar.pnotify({
