@@ -479,15 +479,15 @@ THE SOFTWARE.
                             $(settings.elementSelector).prepend('<div id="' + settings.ID + 'title">' + settings.itemTitle + '</div>');
                         }
                         
-                        // Calculate the horizontal and vertical inter-page padding
-                        if (settings.adaptivePadding > 0) {
-                            settings.horizontalPadding = data.dims.a_wid * settings.adaptivePadding;
-                            settings.verticalPadding = data.dims.a_hei * settings.adaptivePadding;
-                        } else {
-                            // It's less than or equal to 0; use fixedPadding instead
-                            settings.horizontalPadding = settings.fixedPadding;
-                            settings.verticalPadding = settings.fixedPadding;
-                        }
+                    }
+                    // Calculate the horizontal and vertical inter-page padding
+                    if (settings.adaptivePadding > 0) {
+                        settings.horizontalPadding = data.dims.a_wid * settings.adaptivePadding;
+                        settings.verticalPadding = data.dims.a_hei * settings.adaptivePadding;
+                    } else {
+                        // It's less than or equal to 0; use fixedPadding instead
+                        settings.horizontalPadding = settings.fixedPadding;
+                        settings.verticalPadding = settings.fixedPadding;
                     }
 
                     // Reset the vertical scroll and clear out the innerdrag div
