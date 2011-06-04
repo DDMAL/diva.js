@@ -789,13 +789,6 @@ THE SOFTWARE.
 
             // Check if the user is on a iPhone or iPod touch or iPad
             if (navigator.platform == 'iPad' || navigator.platform == 'iPhone' || navigator.platform == 'iPod' ) {
-                // Make sure the document viewer is not too wide (use a margin)
-                // The iPad screen width = 768 but to be safe we use 750
-                if (settings.panelWidth > screen.width - 18) {
-                    settings.panelWidth = screen.width - 18;
-                    $(settings.outerSelector).css('width', settings.panelWidth + 'px');
-                    $(settings.elementSelector).css('width', settings.panelWidth + 'px');
-                }
 
                 // One-finger scroll within outerdrag
                 $(settings.outerSelector).oneFingerScroll();
@@ -923,9 +916,20 @@ THE SOFTWARE.
             $(settings.outerSelector).append('<div id="' + settings.ID + 'inner" class="dragger"></div>');
             
             // Get the height and width of the diva-outer element
-            settings.panelWidth = parseInt($(settings.elementSelector).width(), 10) - 18; // for the scrollbar change later
-            $(settings.outerSelector).css('width', settings.panelWidth + 'px');
-            settings.panelHeight = parseInt($(settings.outerSelector).height(), 10);
+            if (navigator.platform == 'iPad' || navigator.platform == 'iPhone' || navigator.platform == 'iPod') {
+                // The 20 is just so we get some nice 9px padding on the sides
+                settings.panelWidth = screen.width - 20;
+                $(settings.elementSelector).css('width', settings.panelWidth);
+                $(settings.outerSelector).css('width', settings.panelWidth + 'px');
+                // Magic number that seems to work on the iPad
+                settings.panelHeight = screen.height - 170;
+                $(settings.outerSelector).css('height', settings.panelHeight + 'px');
+            } else {
+                settings.panelWidth = parseInt($(settings.elementSelector).width(), 10) - 18; // for the scrollbar change later
+                $(settings.outerSelector).css('width', (settings.panelWidth + 18) + 'px');
+                settings.panelHeight = parseInt($(settings.outerSelector).height(), 10);
+            }
+            
             
             // Create the fullscreen icon
             if (settings.enableFullscreen) {
