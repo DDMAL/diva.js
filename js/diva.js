@@ -789,6 +789,14 @@ THE SOFTWARE.
 
             // Check if the user is on a iPhone or iPod touch or iPad
             if (navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i)) {
+                // Make sure the document viewer is not too wide
+                // The iPad screen width = 768 but to be safe we use 750
+                if (navigator.userAgent.match(/iPad/i) && settings.panelWidth > 750) {
+                    settings.panelWidth = 750;
+                    $(settings.outerSelector).css('width', settings.panelWidth + 'px');
+                    $(settings.elementSelector).css('width', settings.panelWidth + 'px');
+                }
+
                 // One-finger scroll within outerdrag
                 $(settings.outerSelector).oneFingerScroll();
 
