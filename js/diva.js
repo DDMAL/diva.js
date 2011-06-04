@@ -625,7 +625,7 @@ THE SOFTWARE.
         };
         
         // Handles the double click event, put in a new function for better codeflow
-        var handleDoubleClick = function(event, viewer) {
+        var handleDoubleClick = function(event) {
                 // If the zoom level is already at max, zoom out
                 var newZoomLevel;
                 if (settings.zoomLevel === settings.maxZoomLevel) {
