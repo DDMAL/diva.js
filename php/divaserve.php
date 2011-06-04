@@ -172,9 +172,13 @@ if (!file_exists($cache_file)) {
         't_wid'         => $t_wid
     );
 
+    // Get the title by replacing hyphens with spaces and uppercasing it
+    $title = str_replace('-', ' ', $dir);
+    $title = ucwords($title);
+
     // The full data to be returned
     $data = array(
-        'item_title'    => $dir,
+        'item_title'    => $title,
         'dims'          => $dims,
         'max_zoom'      => $lowest_max_zoom,
         'pgs'           => $pgs
