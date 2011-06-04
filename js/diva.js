@@ -80,6 +80,7 @@ THE SOFTWARE.
             panelWidth: 0,              // Width of the panel. Set in initiateViewer()
             prevVptTop: 0,              // Used to determine vertical scroll direction
             scaleWait: false,           // For preventing double-scale on the iPad
+            selector: '',               // Uses the generated ID prefix to easily select elements
             scrollSoFar: 0,             // Holds the number of pixels of vertical scroll
             totalHeight: 0,             // Height of all the image stacked together, value set later
             verticalOffset: 0,          // Used for storing the page offset before zooming
