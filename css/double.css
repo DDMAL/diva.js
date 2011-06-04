@@ -33,7 +33,3 @@ THE SOFTWARE.
     float: right;
     position: relative;
 }
-
-div[id$="diva-outer"] {
-    width: 600px;
-}

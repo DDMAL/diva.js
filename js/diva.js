@@ -915,7 +915,8 @@ THE SOFTWARE.
             $(settings.outerSelector).append('<div id="' + settings.ID + 'inner" class="dragger"></div>');
             
             // Get the height and width of the diva-outer element
-            settings.panelWidth = parseInt($(settings.outerSelector).width(), 10) - 18; // for the scrollbar change later
+            settings.panelWidth = parseInt($(settings.elementSelector).width(), 10) - 18; // for the scrollbar change later
+            $(settings.outerSelector).css('width', settings.panelWidth + 'px');
             settings.panelHeight = parseInt($(settings.outerSelector).height(), 10);
             
             // Create the fullscreen icon

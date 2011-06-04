@@ -26,7 +26,3 @@ THE SOFTWARE.
 	width: 960px;
 	margin: 0 auto;
 }
-
-div[id$="diva-outer"] {
-    width: 960px;
-}
