@@ -37,7 +37,3 @@ THE SOFTWARE.
 div[id$="diva-outer"] {
     width: 600px;
 }
-
-.fullscreen {
-    position: fixed !important;
-}

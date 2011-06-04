@@ -84,6 +84,7 @@ div[id$="diva-title"] {
     z-index: 9000;
     top: 0;
     left: 0;
+    position: fixed !important;
 }
 
 div[id$="diva-fullscreen"] {

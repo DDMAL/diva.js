@@ -30,7 +30,3 @@ THE SOFTWARE.
 div[id$="diva-outer"] {
     width: 960px;
 }
-
-.fullscreen {
-    position: absolute !important;
-}
