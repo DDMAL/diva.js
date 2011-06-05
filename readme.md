@@ -4,8 +4,7 @@ diva.js - Document Image Viewer with AJAX
 Description
 -----------
 
-Diva.js (Document Image Viewer with AJAX) is a Javascript frontend for viewing documents, designed to work with digital libraries to present multi-page documents as a single, continuous item. Only the pages or part of the pages that are
-being viewed are loaded, ensuring efficient memory usage and fast loading speeds. Written as a jQuery plugin, diva.js requires the jQuery Javascript library, along with several jQuery plugins and the jQuery UI, all of which are included. On the backend, the images will be served by [IIPImage server](http://iipimage.sourceforge.net) after processing, and the image information will be sent, in JSON format, through an AJAX request by a PHP script (also included).
+Diva.js (Document Image Viewer with AJAX) is a Javascript frontend for viewing documents, designed to work with digital libraries to present multi-page documents as a single, continuous item. Using "lazy loading" methods for loading parts of a document on demand, it presents a quick and efficient way of displaying hundreds (or even thousands) of high-resolution page images from digitized books and other documents on a single web page. Written as a jQuery plugin, diva.js requires the jQuery Javascript library, along with several jQuery plugins and the jQuery UI, all of which are included. On the backend, the images will be served by [IIPImage server](http://iipimage.sourceforge.net) after processing, and the image information will be sent, in JSON format, through an AJAX request by a PHP script (also included).
 
 Installation and setup
 ----------------------
