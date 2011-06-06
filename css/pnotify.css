@@ -39,7 +39,7 @@ html > body .ui-pnotify {
     float: right;
     margin-left: .2em;
 }
-.ui-pnotify-text {
+.ui-pnotify-text, .ui-pnotify-title {
     display: block;
     font-size: 14px;
 }

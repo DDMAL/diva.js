@@ -303,7 +303,7 @@ THE SOFTWARE.
                     }
 
                     settings.fullscreenStatusbar.pnotify({
-                        pnotify_text: 'Page: ' + (pageToConsider + 1)
+                        pnotify_title: 'Page: ' + (pageToConsider + 1)
                     });
                 }
 
@@ -849,7 +849,8 @@ THE SOFTWARE.
         // Create a fullscreen statusbar thing - if it doesn't exist
         var createFullscreenStatusbar = function(animation) {
             var options = { 
-                pnotify_text: 'Page: ' + (settings.currentPageIndex + 1),
+                pnotify_text: '<input placeholder="' + settings.numPages + '" type="text" size="4" id="' + settings.ID + 'goto-input-2" /><input type="submit" id="' + settings.ID + 'goto-submit-2" value="Go"><br />',
+                pnotify_title: 'Page: ' + (settings.currentPageIndex + 1),
                 pnotify_history: false,
                 pnotify_width: '110px',
                 pnotify_hide: false,
@@ -862,6 +863,13 @@ THE SOFTWARE.
             };
 
             settings.fullscreenStatusbar = $.pnotify(options);
+            // Handle clicking, a bit redundant but using live() sucks
+            $(settings.selector + 'goto-submit-2').click(function() {
+                var desiredPage = parseInt($(settings.selector + 'goto-input-2').val(), 10);
+                if (!gotoPage(desiredPage)) {
+                    alert("Invalid page number");
+                }
+            });
         };
 
         // Creates a zoomer using the min and max zoom levels specified ... PRIVATE, only if zoomSlider = true
