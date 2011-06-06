@@ -30,6 +30,7 @@ THE SOFTWARE.
             enableAutoTitle: true,      // Shows the title within a div of id diva-title
             enableFullscreen: true,     // Enable or disable fullscreen mode
             enableGotoPage: true,       // A "go to page" jump box
+            enableGrid: true,           // A grid view of all the pages
             enableKeyScroll: true,      // Scrolling using the page up/down keys
             enableSpaceScroll: false,   // Scrolling down by pressing the space key
             enableZoomSlider: true,     // Enable or disable the zoom slider (for zooming in and out)
@@ -44,6 +45,7 @@ THE SOFTWARE.
             onZoom: null,               // Callback function for zooming in general
             onZoomIn: null,             // Callback function for zooming in only
             onZoomOut: null,            // Callback function for zooming out only
+            pagesPerGridRow: 5,         // The number of pages per row in grid view
             tileFadeSpeed: 300,         // The tile fade-in speed in ms. Set to 0 to disable tile fading. May also be "fast" or "slow".
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
@@ -70,6 +72,7 @@ THE SOFTWARE.
             horizontalOffset: 0,        // Used for storing the page offset before zooming
             horizontalPadding: 0,
             inFullscreen: false,        // Set to true when the user enters fullscreen mode
+            inGrid: false,              // Set to true when the user enters the grid view
             itemTitle: '',              // The title of the document
             lastPageLoaded: -1,         // The ID of the last page loaded (value set later)
             maxHeight: 0,               // The height of the tallest page
@@ -688,6 +691,21 @@ THE SOFTWARE.
 
         // Handles all the events
         var handleEvents = function() {
+            // Handle the grid toggle events
+            if (settings.enableGrid) {
+                $(settings.selector + 'grid-icon').click(function() {
+                    if (settings.inGrid) {
+                        // Leave grid view
+                        alert("Going back to regular view");
+                        settings.inGrid = false;
+                    } else {
+                        // Enter grid view
+                        alert("Entering grid view");
+                        settings.inGrid = true;
+                    }
+                });
+            }
+
             // Create the fullscreen toggle icon if fullscreen is enabled
             if (settings.enableFullscreen) {
                 // Event handler for fullscreen toggling
@@ -885,6 +903,10 @@ THE SOFTWARE.
                     }
                 });
         };
+
+        var createGridIcon = function() {
+            $(settings.selector + 'tools').prepend('<div id="' + settings.ID + 'grid-icon"></div>');
+        };
         
         // Creates the gotoPage thing
         var createGotoPage = function() {
@@ -912,12 +934,16 @@ THE SOFTWARE.
             settings.innerSelector = settings.selector + 'inner';
             
             // If we need either a zoom slider or a gotoPage thing, create a "viewertools" div
-            if (settings.zoomSlider || settings.enableGotoPage) {
+            if (settings.zoomSlider || settings.enableGotoPage || settings.enableGrid) {
                 $(settings.elementSelector).prepend('<div id="' + settings.ID + 'tools"></div>');
             }
             
             if (settings.enableGotoPage) {
                 createGotoPage();
+            }
+
+            if (settings.enableGrid) {
+                createGridIcon();
             }
             
             // Create the inner and outer panels

@@ -60,6 +60,15 @@ div[id$="diva-zoom-slider"] {
     float: left;
 }
 
+div[id$="diva-grid-icon"] {
+    background-image: url('../img/grid.png');
+    background-repeat: no-repeat;
+    cursor: pointer;
+    width: 50px;
+    height: 50px;
+    float: right;
+}
+
 div[id$="diva-goto-page"] {
     text-align: right;
 }
