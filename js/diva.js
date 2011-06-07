@@ -68,6 +68,7 @@ THE SOFTWARE.
             firstAjaxRequest: true,     // True initially, set to false after the first request
             firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
             fullscreenStatusbar: null,  // The popup box that tells you what page you're on
+            goDirectlyTo: 0,            // Set to the page *number*
             heightAbovePages: [],       // The height above each page
             horizontalOffset: 0,        // Used for storing the page offset before zooming
             horizontalPadding: 0,
@@ -425,6 +426,14 @@ THE SOFTWARE.
         
         // Helper function called by ajaxRequest to scroll to the desired place
         var scrollAfterRequest = function() {
+            // If we need to go directly to a page
+            console.log("scrolling now");
+            console.log("trying for " + settings.goDirectlyTo);
+            if (settings.goDirectlyTo) {
+                gotoPage(settings.goDirectlyTo);
+                settings.goDirectlyTo = false;
+                return;
+            }
             // The x and y coordinates of the center ... let's zoom in on them
             var centerX, centerY, desiredLeft, desiredTop;
             
@@ -481,6 +490,13 @@ THE SOFTWARE.
                         // Change the title to the actual title if the setting is enabled
                         if (settings.enableAutoTitle) {
                             $(settings.elementSelector).prepend('<div id="' + settings.ID + 'title">' + settings.itemTitle + '</div>');
+                        }
+
+                        var getParams = getHashParams();
+                        var desiredPage = getParams['p'];
+                        // Have to do it before the scrollAfterRequest()
+                        if (desiredPage != undefined && inRange(parseInt(desiredPage, 10))) {
+                            settings.goDirectlyTo = parseInt(desiredPage, 10);
                         }
                         
                     }
@@ -560,6 +576,21 @@ THE SOFTWARE.
 
                     // For use in the next ajax request (zoom change)
                     settings.dimBeforeZoom = settings.dimAfterZoom;
+
+                    // Now check if there are page/zoom params in the URL
+                    // Has to be done at the end of success() to validate the zoom level
+                    if (settings.firstAjaxRequest) {
+
+                        // First, get the zoom level & page from the URL if they exist
+
+                        var desiredZoomLevel = getParams['z'];
+                        console.log("desired zoom level:" + desiredZoomLevel);
+                        console.log("desired page:" + desiredPage);
+                        if (desiredZoomLevel != undefined && parseInt(desiredZoomLevel, 10) >= settings.minZoomLevel && parseInt(desiredZoomLevel, 10) <= settings.maxZoomLevel) {
+                            // Have to do another AJAX request with this zoom level
+                            ajaxRequest(parseInt(desiredZoomLevel, 10));
+                        }
+                    }
 
                     settings.firstAjaxRequest = false;
 

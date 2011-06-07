@@ -875,18 +875,26 @@ $.fn.dragscrollable = function( options ){
     };
 })(jQuery);
 
+
 /* For getting the #!key values from the URL. For specifying a page and zoom level */
 function getHashParams() {
+        var hashParams = {};
+        var hash = window.location.hash;
+        // Check if there is a p=
+        var startIndex = hash.indexOf('p=') + 2;
+        if (startIndex > 0) {
+            // If there is no & following it, go to the end of the string
+            var endIndex = hash.indexOf('&', startIndex);
+            var desiredPage = (endIndex > 0) ? hash.substring(startIndex, endIndex) : hash.substring(startIndex);
+            hashParams['p'] = desiredPage;
+        }
+        // Check if there is a z=
+        startIndex = hash.indexOf('z=') + 2;
+        if (startIndex > 0) {
+            endIndex = hash.indexOf('&', startIndex);
+            var desiredZoom = (endIndex > 0) ? hash.substring(startIndex, endIndex) : hash.substring(startIndex);
+            hashParams['z'] = desiredZoom;
+        }
 
-    var hashParams = {};
-    var e,
-        a = /\+/g,  // Regex for replacing addition symbol with a space
-        r = /([^&;=]+)=?([^&;]*)/g,
-        d = function (s) { return decodeURIComponent(s.replace(a, " ")); },
-        q = window.location.hash.substring(1);
-
-    while (e = r.exec(q))
-       hashParams[d(e[1])] = d(e[2]);
-
-    return hashParams;
+        return hashParams;
 }
