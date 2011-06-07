@@ -460,7 +460,7 @@ THE SOFTWARE.
             $.ajax({
                 // Works now - using proxy_pass for nginx to forward to the other port
                 url: settings.backendServer + '&z=' + zoomLevel,
-                cache: false, // debugging
+                cache: true,
                 context: this, // for later
                 dataType: "json",
                 success: function(data) {
