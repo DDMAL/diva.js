@@ -587,6 +587,10 @@ THE SOFTWARE.
                         console.log("desired zoom level:" + desiredZoomLevel);
                         console.log("desired page:" + desiredPage);
                         if (desiredZoomLevel != undefined && parseInt(desiredZoomLevel, 10) >= settings.minZoomLevel && parseInt(desiredZoomLevel, 10) <= settings.maxZoomLevel) {
+                            // Stupid code repetition fix this later
+                            if (desiredPage != undefined && inRange(parseInt(desiredPage, 10))) {
+                                settings.goDirectlyTo = parseInt(desiredPage, 10);
+                            }
                             // Have to do another AJAX request with this zoom level
                             ajaxRequest(parseInt(desiredZoomLevel, 10));
                         }
