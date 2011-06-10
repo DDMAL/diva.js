@@ -69,7 +69,7 @@ div[id$="diva-grid-icon"] {
     float: right;
 }
 
-div[id$="diva-goto-page"] {
+form[id$="diva-goto-page"] {
     text-align: right;
 }
     

@@ -867,7 +867,7 @@ THE SOFTWARE.
         // Create a fullscreen statusbar thing - if it doesn't exist
         var createFullscreenStatusbar = function(animation) {
             var options = { 
-                pnotify_text: '<input placeholder="' + settings.numPages + '" type="text" size="4" id="' + settings.ID + 'goto-input-2" /><input type="submit" id="' + settings.ID + 'goto-submit-2" value="Go"><br />',
+                pnotify_text: '<form id="' + settings.ID + 'goto-page-fullscreen"><input placeholder="' + settings.numPages + '" type="text" size="4" id="' + settings.ID + 'goto-input-fullscreen" /><input type="submit" value="Go"></form>',
                 pnotify_title: 'Page: ' + (settings.currentPageIndex + 1),
                 pnotify_history: false,
                 pnotify_width: '110px',
@@ -882,11 +882,12 @@ THE SOFTWARE.
 
             settings.fullscreenStatusbar = $.pnotify(options);
             // Handle clicking, a bit redundant but using live() sucks
-            $(settings.selector + 'goto-submit-2').click(function() {
-                var desiredPage = parseInt($(settings.selector + 'goto-input-2').val(), 10);
+            $(settings.selector + 'goto-page-fullscreen').submit(function() {
+                var desiredPage = parseInt($(settings.selector + 'goto-input-fullscreen').val(), 10);
                 if (!gotoPage(desiredPage)) {
                     alert("Invalid page number");
                 }
+                return false;
             });
         };
 
@@ -910,13 +911,14 @@ THE SOFTWARE.
         
         // Creates the gotoPage thing
         var createGotoPage = function() {
-            $(settings.selector + 'tools').append('<div id="' + settings.ID + 'goto-page">Go to page <input type="text" size="3" id="' + settings.ID + 'goto-input" /> <input type="submit" id="' + settings.ID + 'goto-submit" value="Go" /><br /><div id="' + settings.ID + 'current">Current page: <span>1</span> of <label></label></div></div>');
+            $(settings.selector + 'tools').append('<form id="' + settings.ID + 'goto-page">Go to page <input type="text" size="3" id="' + settings.ID + 'goto-input" /> <input type="submit" value="Go" /><br /><div id="' + settings.ID + 'current">Current page: <span>1</span> of <label></label></div></form>');
             
-            $(settings.selector + 'goto-submit').click(function() {
+            $(settings.selector + 'goto-page').submit(function() {
                 var desiredPage = parseInt($(settings.selector + 'goto-input').val(), 10);
-                if ( !gotoPage(desiredPage) ) {
-                    alert('Invalid page number');
+                if (!gotoPage(desiredPage)) {
+                    alert("Invalid page number");
                 }
+                return false;
             });
         };
 
