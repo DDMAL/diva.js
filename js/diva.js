@@ -39,6 +39,7 @@ THE SOFTWARE.
             maxZoomLevel: 0,            // Optional; defaults to the max zoom returned in the JSON response
             minZoomLevel: 0,            // Defaults to 0 (the minimum zoom)
             onJump: null,               // Callback function for jumping to a specific page (using the gotoPage feature)
+            onReady: null,              // Callback function for initial load
             onScroll: null,             // Callback function for scrolling
             onScrollDown: null,         // Callback function for scrolling down, only
             onScrollUp: null,           // Callback function for scrolling up only
@@ -466,6 +467,7 @@ THE SOFTWARE.
                 success: function(data) {
                     // If it's the first AJAX request, store some variables that won't change with each zoom
                     if (settings.firstAjaxRequest) {
+
                         settings.itemTitle = data.item_title;
                         settings.numPages = data.pgs.length;
                         settings.maxZoomLevel = (settings.maxZoomLevel > 0) ? settings.maxZoomLevel : data.max_zoom;
@@ -555,6 +557,11 @@ THE SOFTWARE.
                             if (typeof settings.onZoomIn == 'function') {
                                 settings.onZoomIn.call(this, zoomLevel);
                             }
+                        }
+                    } else {
+                        // The document viewer has loaded, execute onReady
+                        if (typeof settings.onReady == 'function') {
+                            settings.onReady.call(this);
                         }
                     }
 
