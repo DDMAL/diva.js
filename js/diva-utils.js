@@ -874,27 +874,3 @@ $.fn.dragscrollable = function( options ){
         pnotify_stack: {"dir1": "down", "dir2": "left", "push": "bottom"}
     };
 })(jQuery);
-
-
-/* For getting the #!key values from the URL. For specifying a page and zoom level */
-function getHashParams() {
-        var hashParams = {};
-        var hash = window.location.hash;
-        // Check if there is a p=
-        var startIndex = hash.indexOf('p=') + 2;
-        if (startIndex > 0) {
-            // If there is no & following it, go to the end of the string
-            var endIndex = hash.indexOf('&', startIndex);
-            var desiredPage = (endIndex > 0) ? hash.substring(startIndex, endIndex) : hash.substring(startIndex);
-            hashParams['p'] = desiredPage;
-        }
-        // Check if there is a z=
-        startIndex = hash.indexOf('z=') + 2;
-        if (startIndex > 0) {
-            endIndex = hash.indexOf('&', startIndex);
-            var desiredZoom = (endIndex > 0) ? hash.substring(startIndex, endIndex) : hash.substring(startIndex);
-            hashParams['z'] = desiredZoom;
-        }
-
-        return hashParams;
-}
