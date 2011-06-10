@@ -588,7 +588,7 @@ THE SOFTWARE.
         // Handles zooming - called after pinch-zoom, changing the slider, or double-clicking
         var handleZoom = function(zoomLevel) {
             // First make sure that this is an actual zoom request
-            if (settings.zoomLevel != zoomLevel) {
+            if (settings.zoomLevel != zoomLevel && zoomLevel >= settings.minZoomLevel && zoomLevel <= settings.maxZoomLevel) {
                 // Now do an ajax request with the new zoom level
                 ajaxRequest(zoomLevel);
 
@@ -596,6 +596,9 @@ THE SOFTWARE.
                 $(settings.selector + 'zoom-slider').slider({
                     value: zoomLevel
                 });
+                return true;
+            } else {
+                return false;
             }
         };
 
