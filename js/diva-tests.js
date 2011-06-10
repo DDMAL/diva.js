@@ -29,11 +29,11 @@
                 });
 
                 test("gotoPage()", function() {
-                    equals(dv.gotoPage(1000), false, "We shouldn't be able to go to page 1000");
-                    equals(dv.gotoPage(0), false, "We shouldn't be able to go to page 0 (as 0 is not a valid page number)");
-                    equals(dv.gotoPage(100), true, "We SHOULD be able to go to page 100");
+                    ok(!dv.gotoPage(1000), "We shouldn't be able to go to page 1000");
+                    ok(!dv.gotoPage(0), "We shouldn't be able to go to page 0 (as 0 is not a valid page number)");
+                    ok(dv.gotoPage(100), "We SHOULD be able to go to page 100");
+                    equals(dv.getCurrentPage(), 99, "getCurrentPage() should now return 99");
                 });
-
             }
         });
     });
