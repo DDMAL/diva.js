@@ -39,6 +39,7 @@ THE SOFTWARE.
             maxZoomLevel: 0,            // Optional; defaults to the max zoom returned in the JSON response
             minZoomLevel: 0,            // Defaults to 0 (the minimum zoom)
             onJump: null,               // Callback function for jumping to a specific page (using the gotoPage feature)
+            onReady: null,              // Callback function for initial load
             onScroll: null,             // Callback function for scrolling
             onScrollDown: null,         // Callback function for scrolling down, only
             onScrollUp: null,           // Callback function for scrolling up only
@@ -466,6 +467,7 @@ THE SOFTWARE.
                 success: function(data) {
                     // If it's the first AJAX request, store some variables that won't change with each zoom
                     if (settings.firstAjaxRequest) {
+
                         settings.itemTitle = data.item_title;
                         settings.numPages = data.pgs.length;
                         settings.maxZoomLevel = (settings.maxZoomLevel > 0) ? settings.maxZoomLevel : data.max_zoom;
@@ -556,6 +558,11 @@ THE SOFTWARE.
                                 settings.onZoomIn.call(this, zoomLevel);
                             }
                         }
+                    } else {
+                        // The document viewer has loaded, execute onReady
+                        if (typeof settings.onReady == 'function') {
+                            settings.onReady.call(this);
+                        }
                     }
 
                     // For use in the next ajax request (zoom change)
@@ -581,7 +588,7 @@ THE SOFTWARE.
         // Handles zooming - called after pinch-zoom, changing the slider, or double-clicking
         var handleZoom = function(zoomLevel) {
             // First make sure that this is an actual zoom request
-            if (settings.zoomLevel != zoomLevel) {
+            if (settings.zoomLevel != zoomLevel && zoomLevel >= settings.minZoomLevel && zoomLevel <= settings.maxZoomLevel) {
                 // Now do an ajax request with the new zoom level
                 ajaxRequest(zoomLevel);
 
@@ -589,6 +596,9 @@ THE SOFTWARE.
                 $(settings.selector + 'zoom-slider').slider({
                     value: zoomLevel
                 });
+                return true;
+            } else {
+                return false;
             }
         };
 
@@ -982,24 +992,36 @@ THE SOFTWARE.
         // call the init function when this object is created.
         init();
 
-        // Public function, returns the title of the document
+        /* PUBLIC FUNCTIONS
+        ===============================================
+        */
+
+
         this.getItemTitle = function() {
             return settings.itemTitle;
         };
 
-        // Public function for going to a specific page, returns false if that page is invalid
         this.gotoPage = function(pageNumber) {
             return gotoPage(pageNumber);
         };
 
-        // Public function, returns the current page that the user is on
+        // Returns the page index (with indexing starting at 0)
         this.getCurrentPage = function() {
             return settings.currentPageIndex;
         };
 
-        // Public function, returns the current zoom level
         this.getZoomLevel = function() {
             return settings.zoomLevel;
+        };
+
+        // Zoom in. Will return false if it's at the maximum zoom
+        this.zoomIn = function() {
+            return handleZoom(settings.zoomLevel+1);
+        };
+
+        // Zoom out. Will return false if it's at the minimum zoom
+        this.zoomOut = function() {
+            return handleZoom(settings.zoomLevel-1);
         };
     };
     
