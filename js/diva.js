@@ -992,24 +992,36 @@ THE SOFTWARE.
         // call the init function when this object is created.
         init();
 
-        // Public function, returns the title of the document
+        /* PUBLIC FUNCTIONS
+        ===============================================
+        */
+
+
         this.getItemTitle = function() {
             return settings.itemTitle;
         };
 
-        // Public function for going to a specific page, returns false if that page is invalid
         this.gotoPage = function(pageNumber) {
             return gotoPage(pageNumber);
         };
 
-        // Public function, returns the current page that the user is on
+        // Returns the page index (with indexing starting at 0)
         this.getCurrentPage = function() {
             return settings.currentPageIndex;
         };
 
-        // Public function, returns the current zoom level
         this.getZoomLevel = function() {
             return settings.zoomLevel;
+        };
+
+        // Zoom in. Will return false if it's at the maximum zoom
+        this.zoomIn = function() {
+            return handleZoom(settings.zoomLevel+1);
+        };
+
+        // Zoom out. Will return false if it's at the minimum zoom
+        this.zoomOut = function() {
+            return handleZoom(settings.zoomLevel-1);
         };
     };
     
