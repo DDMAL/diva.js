@@ -50,6 +50,7 @@
                 });
 
                 // Unit tests shouldn't change state but it's hard to avoid in this case
+                // Looks like each async test has to be done separately
                 asyncTest("zoomIn() again", function() {
                     expect(2);
                     var canZoomIn = dv.zoomIn(function(zoomLevel) {
@@ -68,6 +69,53 @@
                     });
 
                     ok(!canZoomIn, "Should not be able to zoom in");
+                });
+
+                // Now make sure zooming out works
+                asyncTest("zoomOut() once", function() {
+                    expect(2);
+                    var canZoomOut = dv.zoomOut(function(zoomLevel) {
+                        equals(zoomLevel, 3, "Should be 3 now");
+                        start();
+                    });
+
+                    ok(canZoomOut, "Should be able to zoom out");
+                });
+
+                asyncTest("zoomOut() again", function() {
+                    var canZoomOut = dv.zoomOut(function(zoomLevel) {
+                        equals(zoomLevel, 2, "Should be 2 now");
+                        start();
+                    });
+
+                    ok(canZoomOut, "Should work");
+                });
+
+                asyncTest("zoomOut() once again", function() {
+                    var canZoomOut = dv.zoomOut(function(zoomLevel) {
+                        equals(zoomLevel, 1, "Should be one now");
+                        start();
+                    });
+
+                    ok(canZoomOut, "Zooming out should work");
+                });
+
+                asyncTest("last working zoomOut()", function() {
+                    var canZoomOut = dv.zoomOut(function(zoomLevel) {
+                        equals(zoomLevel, 0, "Should be 0");
+                        start();
+                    });
+
+                    ok(canZoomOut, "Should still work");
+                });
+
+                asyncTest("zoomOut() when we can't zoom out", function() {
+                    var canZoomOut = dv.zoomOut(function(zoomLevel) {
+                        equals(zoomLevel, 0, "Should still be 0");
+                        start();
+                    });
+
+                    ok(!canZoomOut, "Can't zoom out anymore");
                 });
             }
         });
