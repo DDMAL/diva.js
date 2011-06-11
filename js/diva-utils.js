@@ -17,6 +17,9 @@
         // If it's not a function, it just won't execute it
         if (typeof callback == 'function') {
             callback.call(this, parameter);
+            return true;
+        } else {
+            return false;
         }
     };
 })( jQuery );

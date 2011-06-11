@@ -132,10 +132,14 @@
 
                 module("Other tests");
                 test("executeCallback()", function() {
-                    expect(1);
+                    expect(3);
                     $.executeCallback(function(parameter) {
                         equals(parameter, 4, "Should pass it a 4");
                     }, 4);
+                    $.executeCallback(function() {
+                        ok(true, "Execute callback with no parameters (no errors hopefully");
+                    });
+                    ok(!$.executeCallback(null), "If it can't be executed, return false");
                 });
             }
         });
