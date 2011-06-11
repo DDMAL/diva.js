@@ -90,7 +90,9 @@ THE SOFTWARE.
             verticalOffset: 0,          // Used for storing the page offset before zooming
             verticalPadding: 0,         
             viewerXOffset: 0,           // Distance between left edge of viewer and document left edge
-            viewerYOffset: 0           // ^ for top edges
+            viewerYOffset: 0,           // ^ for top edges
+            zoomInCallback: null,       // Only executed after zoomIn() if present
+            zoomOutCallback: null       // Only executed after zoomOut() if present
         };
 
         $.extend(settings, globals);
@@ -552,10 +554,21 @@ THE SOFTWARE.
                             if (typeof settings.onZoomOut == 'function') {
                                 settings.onZoomOut.call(this, zoomLevel);
                             }
+
+                            // Execute the one-time callback function, too, if present
+                            if (typeof settings.zoomOutCallback == 'function') {
+                                console.log("CALLED THE CALLBACK");
+                                settings.zoomOutCallback.call(this, zoomLevel);
+                            }
                         } else if (settings.dimBeforeZoom < settings.dimAfterZoom) {
                             // Zooming in
                             if (typeof settings.onZoomIn == 'function') {
                                 settings.onZoomIn.call(this, zoomLevel);
+                            }
+
+                            if (typeof settings.zoomInCallback == 'function') {
+                                settings.zoomInCallback.call(this, zoomLevel);
+                                settings.zoomInCallback = null;
                             }
                         }
                     } else {
@@ -598,6 +611,16 @@ THE SOFTWARE.
                 });
                 return true;
             } else {
+                // The zoomIn() and zoomOut() callback functions MUST be executed anyway
+                // Temp fix, move somewhere else later
+                if (typeof settings.zoomInCallback == 'function') {
+                    settings.zoomInCallback.call(this, settings.zoomLevel);
+                    settings.zoomInCallback = null;
+                }
+                if (typeof settings.zoomOutCallback == 'function') {
+                    settings.zoomOutCallback.call(this, settings.zoomLevel);
+                    settings.zoomOutCallback = null;
+                }
                 return false;
             }
         };
@@ -1015,12 +1038,14 @@ THE SOFTWARE.
         };
 
         // Zoom in. Will return false if it's at the maximum zoom
-        this.zoomIn = function() {
+        this.zoomIn = function(callback) {
+            settings.zoomInCallback = callback;
             return handleZoom(settings.zoomLevel+1);
         };
 
         // Zoom out. Will return false if it's at the minimum zoom
-        this.zoomOut = function() {
+        this.zoomOut = function(callback) {
+            settings.zoomOutCallback = callback;
             return handleZoom(settings.zoomLevel-1);
         };
     };
