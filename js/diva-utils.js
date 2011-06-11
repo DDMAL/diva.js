@@ -24,6 +24,24 @@
     };
 })( jQuery );
 
+// For getting the #key values from the URL. For specifying a page and zoom level
+// Look into caching, because we only need to get this during the initial load
+// Although for the tests I guess we would need to override caching somehow
+(function( $ ) {
+    $.getHashParam = function(key) {
+        
+        if (window.location.hash) {
+            // Check if there is something that looks like either &key= or #key=
+            var startIndex = hash.
+            // If it can't find the key or if the key doesn't have a value, false
+            return false;
+        } else {
+            // If there are no hash params just return false
+            return false;
+        }
+    };
+})( jQuery );
+
 /* iPad one finger scroll from http://forrst.com/posts/jQuery_iPad_one_finger_scroll-B30 */
 jQuery.fn.oneFingerScroll = function() {
     var scrollStartPos = 0;

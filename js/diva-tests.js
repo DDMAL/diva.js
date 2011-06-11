@@ -130,7 +130,7 @@
                     });
                 }
 
-                module("Other tests");
+                module("diva-utils.js functions");
                 test("executeCallback()", function() {
                     expect(3);
                     $.executeCallback(function(parameter) {
@@ -140,6 +140,35 @@
                         ok(true, "Execute callback with no parameters (no errors hopefully");
                     });
                     ok(!$.executeCallback(null), "If it can't be executed, return false");
+                });
+
+                test("getHashParam()", function() {
+                    // First try it with no hash params - should return false
+                    ok(!$.getHashParam('anything'), "No hash params, should return false");
+
+                    // Now set the current URL to something
+                    var baseUrl = window.location.href;
+                    window.location.href = baseUrl + '#p=149&z=2'
+                    var nonexistentParam = $.getHashParam('lol');
+                    var firstParam = $.getHashParam('p');
+                    var secondParam = $.getHashParam('z');
+                    ok(!nonexistentParam, "The nonexistent param should return false");
+                    equals(firstParam, '149', "The 'p' param should be 149 (string)");
+                    equals(secondParam, '2', "The 'z' param should be 2 (string)");
+
+                    // Now let there be only one element in the URL
+                    window.location.href = baseUrl + '#p=149';
+                    var soleParam = $.getHashParam('p');
+                    equals(soleParam, '149', "The 'p' param should be 149 when it is the sole param");
+
+                    // Now let there be other elements in the URL
+                    window.location.href = baseUrl + '#z=2&p=100&lol=lol';
+                    firstParam = $.getHashParam('z');
+                    secondParam = $.getHashParam('p');
+                    var thirdParam = $.getHashParam('lol');
+                    equals(firstParam, '149', "The 'z' param should be '2' when it is the first param");
+                    equals(secondParam, '100', "The 'p' param should be '100' when it is the middle param");
+                    equals(thirdParam, 'lol', "The last param should be 'lol'");
                 });
             }
         });
