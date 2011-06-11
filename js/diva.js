@@ -415,14 +415,16 @@ THE SOFTWARE.
             }
 
             // Handle the scrolling callback functions here
-            if (typeof settings.onScroll == 'function' && direction !== 0) {
-                settings.onScroll.call(this, settings.currentPageIndex);
-            }
-            if (typeof settings.onScrollUp == 'function' && direction < 0) {
-                settings.onScrollUp.call(this, settings.currentPageIndex);
-            }
-            if (typeof settings.onScrollDown == 'function' && direction > 0) {
-                settings.onScrollDown.call(this, settings.currentPageIndex);
+            if (direction !== 0) {
+                $.executeCallback(settings.onScroll, settings.currentPageIndex);
+
+                // If we're scrolling down
+                if (direction > 0) {
+                    $.executeCallback(settings.onScrollDown, settings.currentPageIndex);
+                } else {
+                    // We're scrolling up
+                    $.executeCallback(settings.onScrollUp, settings.currentPageIndex);
+                }
             }
         };
         
@@ -540,42 +542,29 @@ THE SOFTWARE.
                     // Scroll to the proper place
                     scrollAfterRequest();
 
-                    // Now execute the zoom callback functions (if it's not the first)
-                    // Note that this also gets executed after entering or leaving fullscreen mode
+                    // Now execute the zoom callback functions (if it's not the initial load)
+                    // No longer gets executed when leaving or entering fullscreen mode
                     if (!settings.firstAjaxRequest) {
-                        // If the callback function is set, execute it
-                        if (typeof settings.onZoom == 'function') {
-                            settings.onZoom.call(this, zoomLevel);
-                        }
+                        if (settings.dimBeforeZoom !== settings.dimAfterZoom) {
+                            $.executeCallback(settings.onZoom, zoomLevel);
 
-                        // Execute the zoom in/out callback function if necessary
-                        if (settings.dimBeforeZoom > settings.dimAfterZoom) {
-                            // Zooming out
-                            if (typeof settings.onZoomOut == 'function') {
-                                settings.onZoomOut.call(this, zoomLevel);
-                            }
-
-                            // Execute the one-time callback function, too, if present
-                            if (typeof settings.zoomOutCallback == 'function') {
-                                console.log("CALLED THE CALLBACK");
-                                settings.zoomOutCallback.call(this, zoomLevel);
-                            }
-                        } else if (settings.dimBeforeZoom < settings.dimAfterZoom) {
-                            // Zooming in
-                            if (typeof settings.onZoomIn == 'function') {
-                                settings.onZoomIn.call(this, zoomLevel);
-                            }
-
-                            if (typeof settings.zoomInCallback == 'function') {
-                                settings.zoomInCallback.call(this, zoomLevel);
+                            // Execute the zoom in/out callback functions if set
+                            if (settings.dimBeforeZoom > settings.dimAfterZoom) {
+                                // Zooming out
+                                $.executeCallback(settings.onZoomOut, zoomLevel);
+                                // Execute the one-time callback, too, if present
+                                $.executeCallback(settings.zoomOutCallback, zoomLevel);
+                                settings.zoomOutCallback = null;
+                            } else {
+                                // Zooming in
+                                $.executeCallback(settings.onZoomIn, zoomLevel);
+                                $.executeCallback(settings.zoomInCallback, zoomLevel);
                                 settings.zoomInCallback = null;
                             }
                         }
                     } else {
                         // The document viewer has loaded, execute onReady
-                        if (typeof settings.onReady == 'function') {
-                            settings.onReady.call(this);
-                        }
+                        $.executeCallback(settings.onReady);
                     }
 
                     // For use in the next ajax request (zoom change)
@@ -611,16 +600,13 @@ THE SOFTWARE.
                 });
                 return true;
             } else {
-                // The zoomIn() and zoomOut() callback functions MUST be executed anyway
-                // Temp fix, move somewhere else later
-                if (typeof settings.zoomInCallback == 'function') {
-                    settings.zoomInCallback.call(this, settings.zoomLevel);
-                    settings.zoomInCallback = null;
-                }
-                if (typeof settings.zoomOutCallback == 'function') {
-                    settings.zoomOutCallback.call(this, settings.zoomLevel);
-                    settings.zoomOutCallback = null;
-                }
+                // Execute the callback functions anyway (required for the unit testing)
+                $.executeCallback(settings.zoomInCallback, settings.zoomLevel);
+                $.executeCallback(settings.zoomOutCallback, settings.zoomLevel);
+
+                // Set them to null so we don't try to call it again
+                settings.zoomOutCallback = null;
+                settings.zoomInCallback = null;
                 return false;
             }
         };
@@ -649,11 +635,8 @@ THE SOFTWARE.
                 setCurrentPage(0, pageNumber);
                 $(settings.outerSelector).scrollTop(heightToScroll);
 
-                // Now execute the callback function if it is defined
-                if (typeof settings.onJump == 'function') {
-                    // Pass it the page number, +1 as the user expects
-                    settings.onJump.call(this, pageNumber+1);
-                }
+                // Now execute the callback function, pass it the page NUMBER not the page index
+                $.executeCallback(settings.onJump, pageNumber+1);
 
                 return true; // To signify that we can scroll to this page
             }
