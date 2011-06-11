@@ -1012,13 +1012,12 @@ THE SOFTWARE.
             handleEvents();
         };
 
-        // call the init function when this object is created.
+        // Call the init function when this object is created.
         init();
 
         /* PUBLIC FUNCTIONS
         ===============================================
         */
-
 
         this.getItemTitle = function() {
             return settings.itemTitle;

@@ -117,6 +117,26 @@
 
                     ok(!canZoomOut, "Can't zoom out anymore");
                 });
+
+                // iPad-specific tests
+                if (navigator.platform == 'iPad') {
+                    module("Testing on the iPad");
+                    test("Dimensions on the iPad", function() {
+                        // First get a jQuery object for the outer element
+                        var selector = $('#1-diva-outer');
+                        // Figure out what the heights and widths should be later
+                        equals(selector.height(), 854, "An arbitrary height");
+                        equals(selector.width(), 748, "An arbitrary width");
+                    });
+                }
+
+                module("Other tests");
+                test("executeCallback()", function() {
+                    expect(1);
+                    $.executeCallback(function(parameter) {
+                        equals(parameter, 4, "Should pass it a 4");
+                    }, 4);
+                });
             }
         });
     });

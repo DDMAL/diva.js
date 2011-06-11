@@ -11,6 +11,16 @@
     };
 })( jQuery );
 
+// For executing callback functions with one parameter (maybe allow more later)
+(function( $ ) {
+    $.executeCallback = function(callback, parameter) {
+        // If it's not a function, it just won't execute it
+        if (typeof callback == 'function') {
+            callback.call(this, parameter);
+        }
+    };
+})( jQuery );
+
 /* iPad one finger scroll from http://forrst.com/posts/jQuery_iPad_one_finger_scroll-B30 */
 jQuery.fn.oneFingerScroll = function() {
     var scrollStartPos = 0;
