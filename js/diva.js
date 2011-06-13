@@ -846,7 +846,6 @@ THE SOFTWARE.
                 $(settings.selector + 'fullscreen').click(function() {
                     toggleFullscreen();
                 });
-
             }
 
             // Change the cursor for dragging.
@@ -1089,8 +1088,10 @@ THE SOFTWARE.
                 toggleGrid();
             }
             
-            // Load the images at the initial zoom level            
-            loadDocument(settings.zoomLevel);
+            // Load the images at the initial zoom level, if we haven't already 
+            if (!settings.inFullscreen && !settings.inGrid) {
+                loadDocument(settings.zoomLevel);
+            }
         
             handleEvents();
         };
