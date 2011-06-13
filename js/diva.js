@@ -443,7 +443,7 @@ THE SOFTWARE.
             }
         };
         
-        // Helper function called by ajaxRequest to scroll to the desired place
+        // Helper function called by loadDocument to scroll to the desired place
         var scrollAfterRequest = function() {
             if (settings.goDirectlyTo) {
                 gotoPage(settings.goDirectlyTo);
@@ -483,7 +483,7 @@ THE SOFTWARE.
         };
         
         // AJAX request to start the whole process - called upon page load and upon zoom change
-        var ajaxRequest = function(zoomLevel) {
+        var loadDocument = function(zoomLevel) {
             $.ajax({
                 // Works now - using proxy_pass for nginx to forward to the other port
                 url: settings.backendServer + '&z=' + zoomLevel,
@@ -621,7 +621,7 @@ THE SOFTWARE.
             // First make sure that this is an actual zoom request
             if (settings.zoomLevel != zoomLevel && zoomLevel >= settings.minZoomLevel && zoomLevel <= settings.maxZoomLevel) {
                 // Now do an ajax request with the new zoom level
-                ajaxRequest(zoomLevel);
+                loadDocument(zoomLevel);
 
                 // Make the slider display the new value (it may already)
                 $(settings.selector + 'zoom-slider').slider({
@@ -762,7 +762,7 @@ THE SOFTWARE.
             // Change the width of the inner div correspondingly
             $(settings.innerSelector).width(settings.panelWidth);
             // Do another AJAX request to fix the padding and so on
-            ajaxRequest(settings.zoomLevel);
+            loadDocument(settings.zoomLevel);
         }
 
         // Handles entering fullscreen mode
@@ -1081,7 +1081,7 @@ THE SOFTWARE.
             }
             
             // Load the images at the initial zoom level            
-            ajaxRequest(settings.zoomLevel);
+            loadDocument(settings.zoomLevel);
         
             handleEvents();
         };
