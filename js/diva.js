@@ -301,6 +301,9 @@ THE SOFTWARE.
                 // Set this to the current page
                 settings.currentPageIndex = pageToConsider;
 
+                // Update the URL (has to be a string, and the page number)
+                $.updateHashParam('p', '' + (pageToConsider+1));
+
                 // Change the text to reflect this - pageToConsider + 1 (because it's page number not ID)
                 $(settings.selector + 'current span').text(pageToConsider + 1);
                 // If we're in fullscreen mode, change the statusbar
