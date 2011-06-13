@@ -35,6 +35,7 @@ THE SOFTWARE.
             enableSpaceScroll: false,   // Scrolling down by pressing the space key
             enableZoomSlider: true,     // Enable or disable the zoom slider (for zooming in and out)
             fixedPadding: 0,            // Fallback if adaptive padding is set to 0
+            goDirectlyTo: 0,            // For the page hash param (#p=100 or &p=5)
             iipServerBaseUrl: '',       // The URL to the IIPImage installation, including the ?FIF=
             maxZoomLevel: 0,            // Optional; defaults to the max zoom returned in the JSON response
             minZoomLevel: 0,            // Defaults to 0 (the minimum zoom)
@@ -430,6 +431,12 @@ THE SOFTWARE.
         
         // Helper function called by ajaxRequest to scroll to the desired place
         var scrollAfterRequest = function() {
+            if (settings.goDirectlyTo) {
+                gotoPage(settings.goDirectlyTo);
+                settings.goDirectlyTo = 0;
+                return;
+            }
+
             // The x and y coordinates of the center ... let's zoom in on them
             var centerX, centerY, desiredLeft, desiredTop;
             
@@ -1004,6 +1011,13 @@ THE SOFTWARE.
             var zoomParam = $.getHashParam('z');
             if (zoomParam) {
                 settings.zoomLevel = Math.abs(parseInt(zoomParam, 10));
+            }
+
+            // If there's a 'p' hash param, make that the initial page
+            // Do so by pretending it's a regular zoom event
+            var pageParam = $.getHashParam('p');
+            if (pageParam) {
+                settings.goDirectlyTo = parseInt(pageParam, 10);
             }
             
             // Load the images at the initial zoom level            

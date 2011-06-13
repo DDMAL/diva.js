@@ -33,7 +33,6 @@
         if (hash != '') {
             // Check if there is something that looks like either &key= or #key=
             var startIndex = (hash.indexOf('&' + key + '=') > 0) ? hash.indexOf('&' + key + '=') : hash.indexOf('#' + key + '=');
-            console.log('for ' + key + ': ' + startIndex);
 
             // If startIndex is still zero, it means it can't find either
             if (startIndex >= 0) {
