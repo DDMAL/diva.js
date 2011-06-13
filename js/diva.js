@@ -481,132 +481,141 @@ THE SOFTWARE.
             $(settings.outerSelector).scrollTop(desiredTop);
             $(settings.outerSelector).scrollLeft(desiredLeft);
         };
+
+        // Perform the AJAX request; afterwards, execute the callback
+        var ajaxRequest = function(zoomLevel, successCallback) {
+            $.ajax({
+                url: settings.backendServer += '&z=' + zoomLevel,
+                cache: true,
+                context: this, // Not sure if necessary
+                dataType: 'json',
+                success: function(data) {
+                    $.executeCallback(successCallback, data);
+                }
+            });
+        };
+
+        // Helper function for setting settings in the first AJAX request
+        var setupInitialLoad = function(data, zoomLevel) {
+            settings.itemTitle = data.item_title;
+            settings.numPages = data.pgs.length;
+
+            // Make sure the set max zoom level is valid
+            settings.maxZoomLevel = (settings.maxZoomLevel > 0 && settings.maxZoomLevel <= data.max_zoom) ? settings.maxZoomLevel : data.max_zoom;
+
+            // Make sure the initial zoom level is valid (could be a hashparam)
+            if (zoomLevel > settings.maxZoomLevel) {
+                // If it's invalid, just use 0 (that's what divaserve.php does)
+                zoomLevel = 0;
+            }
+
+            // Set the total number of pages
+            $(settings.selector + 'current label').text(settings.numPages);
+
+            // Create the zoomer here, if needed
+            if (settings.enableZoomSlider) {
+                createZoomSlider();
+            }
+
+            if (settings.enableAutoTitle) {
+                $(settings.elementSelector).prepend('<div id="' + settings.ID + 'title">' + settings.itemTitle + '</div>');
+            }
+        };
         
         // AJAX request to start the whole process - called upon page load and upon zoom change
         var loadDocument = function(zoomLevel) {
-            $.ajax({
-                // Works now - using proxy_pass for nginx to forward to the other port
-                url: settings.backendServer + '&z=' + zoomLevel,
-                cache: true,
-                context: this, // for later
-                dataType: "json",
-                success: function(data) {
-                    // If it's the first AJAX request, store some variables that won't change with each zoom
-                    if (settings.firstAjaxRequest) {
+            ajaxRequest(zoomLevel, function(data) {
+                // If it's the first AJAX request, store some variables that won't change with each zoom
+                if (settings.firstAjaxRequest) {
+                    setupInitialLoad(data, zoomLevel);
+                }
+                
+                // Calculate the horizontal and vertical inter-page padding
+                if (settings.adaptivePadding > 0) {
+                    settings.horizontalPadding = data.dims.a_wid * settings.adaptivePadding;
+                    settings.verticalPadding = data.dims.a_hei * settings.adaptivePadding;
+                } else {
+                    // It's less than or equal to 0; use fixedPadding instead
+                    settings.horizontalPadding = settings.fixedPadding;
+                    settings.verticalPadding = settings.fixedPadding;
+                }
 
-                        settings.itemTitle = data.item_title;
-                        settings.numPages = data.pgs.length;
-                        settings.maxZoomLevel = (settings.maxZoomLevel > 0) ? settings.maxZoomLevel : data.max_zoom;
+                // Reset the vertical scroll and clear out the innerdrag div
+                $(settings.outerSelector).scrollTop(0);
+                settings.scrollSoFar = 0; // important - for issue 26
+                $(settings.innerSelector).text('');                   
 
-                        // Make sure the zoom level is valid
-                        // Could be invalid if the zoom hash param is used
-                        // This does NOT respect minzoomlevel worry about that later
-                        if (zoomLevel > settings.maxZoomLevel) {
-                            zoomLevel = 0;
-                        }
+                // Now reset some things that need to be changed after each zoom
+                settings.pages = data.pgs;
+                settings.totalHeight = data.dims.t_hei + settings.verticalPadding * (settings.numPages + 1); 
+                settings.zoomLevel = zoomLevel;
+                settings.maxWidth = data.dims.mx_w;
+                settings.maxHeight = data.dims.mx_h;
+                settings.dimAfterZoom = settings.totalHeight; 
+                settings.firstPageLoaded = 0;
 
-                        // Set the total number of pages
-                        $(settings.selector + 'current label').text(settings.numPages);
+                // Needed to set settings.heightAbovePages - initially just the top padding
+                var heightSoFar = 0;
+                var i;
+                for (i = 0; i < settings.numPages; i++) {                 
+                    // First set the height above that page by adding this height to the previous total
+                    // A page includes the padding above it
+                    settings.heightAbovePages[i] = heightSoFar;
 
-                        // Create the zoomer here, if needed
-                        if (settings.enableZoomSlider) {
-                            createZoomSlider();
-                        }
+                    // Has to be done this way otherwise you get the height of the page included too
+                    heightSoFar = settings.heightAbovePages[i] + settings.pages[i].h + settings.verticalPadding;
 
-                        // Change the title to the actual title if the setting is enabled
-                        if (settings.enableAutoTitle) {
-                            $(settings.elementSelector).prepend('<div id="' + settings.ID + 'title">' + settings.itemTitle + '</div>');
-                        }
-                        
+                    // Now try to load the page ONLY if the page needs to be loaded
+                    // Take scrolling into account later, just try this for now
+                    if (isPageVisible(i)) {
+                        loadPage(i);
+                        settings.lastPageLoaded = i;
                     }
-                    // Calculate the horizontal and vertical inter-page padding
-                    if (settings.adaptivePadding > 0) {
-                        settings.horizontalPadding = data.dims.a_wid * settings.adaptivePadding;
-                        settings.verticalPadding = data.dims.a_hei * settings.adaptivePadding;
-                    } else {
-                        // It's less than or equal to 0; use fixedPadding instead
-                        settings.horizontalPadding = settings.fixedPadding;
-                        settings.verticalPadding = settings.fixedPadding;
-                    }
-
-                    // Reset the vertical scroll and clear out the innerdrag div
-                    $(settings.outerSelector).scrollTop(0);
-                    settings.scrollSoFar = 0; // important - for issue 26
-                    $(settings.innerSelector).text('');                   
-
-                    // Now reset some things that need to be changed after each zoom
-                    settings.pages = data.pgs;
-                    settings.totalHeight = data.dims.t_hei + settings.verticalPadding * (settings.numPages + 1); 
-                    settings.zoomLevel = zoomLevel;
-                    settings.maxWidth = data.dims.mx_w;
-                    settings.maxHeight = data.dims.mx_h;
-                    settings.dimAfterZoom = settings.totalHeight; 
-                    settings.firstPageLoaded = 0;
-
-                    // Needed to set settings.heightAbovePages - initially just the top padding
-                    var heightSoFar = 0;
-
-                    var i;
-                    for (i = 0; i < settings.numPages; i++) {                 
-                        // First set the height above that page by adding this height to the previous total
-                        // A page includes the padding above it
-                        settings.heightAbovePages[i] = heightSoFar;
-
-                        // Has to be done this way otherwise you get the height of the page included too
-                        heightSoFar = settings.heightAbovePages[i] + settings.pages[i].h + settings.verticalPadding;
-
-                        // Now try to load the page ONLY if the page needs to be loaded
-                        // Take scrolling into account later, just try this for now
-                        if (isPageVisible(i)) {
-                            loadPage(i);
-                            settings.lastPageLoaded = i;
-                        }
-                    }
+                }
                     
-                    // Set the height and width of documentpane (necessary for dragscrollable)
-                    $(settings.innerSelector).css('height', settings.totalHeight);
-                    var widthToSet = (data.dims.mx_w + settings.horizontalPadding * 2 < settings.panelWidth ) ? settings.panelWidth : data.dims.mx_w + settings.horizontalPadding * 2; // width of page + 40 pixels on each side if necessary
-                    $(settings.innerSelector).css('width', widthToSet);
+                // Set the height and width of documentpane (necessary for dragscrollable)
+                $(settings.innerSelector).css('height', settings.totalHeight);
+                var widthToSet = (data.dims.mx_w + settings.horizontalPadding * 2 < settings.panelWidth ) ? settings.panelWidth : data.dims.mx_w + settings.horizontalPadding * 2; // width of page + 40 pixels on each side if necessary
+                $(settings.innerSelector).css('width', widthToSet);
 
-                    // Scroll to the proper place
-                    scrollAfterRequest();
+                // Scroll to the proper place
+                scrollAfterRequest();
 
-                    // Now execute the zoom callback functions (if it's not the initial load)
-                    // No longer gets executed when leaving or entering fullscreen mode
-                    if (!settings.firstAjaxRequest) {
-                        if (settings.dimBeforeZoom !== settings.dimAfterZoom) {
-                            $.executeCallback(settings.onZoom, zoomLevel);
+                // Now execute the zoom callback functions (if it's not the initial load)
+                // No longer gets executed when leaving or entering fullscreen mode
+                if (!settings.firstAjaxRequest) {
+                    if (settings.dimBeforeZoom !== settings.dimAfterZoom) {
+                        $.executeCallback(settings.onZoom, zoomLevel);
 
-                            // Execute the zoom in/out callback functions if set
-                            if (settings.dimBeforeZoom > settings.dimAfterZoom) {
-                                // Zooming out
-                                $.executeCallback(settings.onZoomOut, zoomLevel);
-                                // Execute the one-time callback, too, if present
-                                $.executeCallback(settings.zoomOutCallback, zoomLevel);
-                                settings.zoomOutCallback = null;
-                            } else {
-                                // Zooming in
-                                $.executeCallback(settings.onZoomIn, zoomLevel);
-                                $.executeCallback(settings.zoomInCallback, zoomLevel);
-                                settings.zoomInCallback = null;
-                            }
+                        // Execute the zoom in/out callback functions if set
+                        if (settings.dimBeforeZoom > settings.dimAfterZoom) {
+                            // Zooming out
+                            $.executeCallback(settings.onZoomOut, zoomLevel);
+                            // Execute the one-time callback, too, if present
+                            $.executeCallback(settings.zoomOutCallback, zoomLevel);
+                            settings.zoomOutCallback = null;
+                        } else {
+                            // Zooming in
+                            $.executeCallback(settings.onZoomIn, zoomLevel);
+                            $.executeCallback(settings.zoomInCallback, zoomLevel);
+                            settings.zoomInCallback = null;
                         }
-                    } else {
-                        // The document viewer has loaded, execute onReady
-                        $.executeCallback(settings.onReady);
                     }
+                } else {
+                    // The document viewer has loaded, execute onReady
+                    $.executeCallback(settings.onReady);
+                }
 
-                    // For use in the next ajax request (zoom change)
-                    settings.dimBeforeZoom = settings.dimAfterZoom;
+                // For use in the next ajax request (zoom change)
+                settings.dimBeforeZoom = settings.dimAfterZoom;
 
-                    settings.firstAjaxRequest = false;
+                settings.firstAjaxRequest = false;
 
-                    // For the iPad - wait until this request finishes before accepting others
-                    if (settings.scaleWait) {
-                        settings.scaleWait = false;
-                    }
-                } // ends the success function
-            }); // ends the $.ajax function
+                // For the iPad - wait until this request finishes before accepting others
+                if (settings.scaleWait) {
+                    settings.scaleWait = false;
+                }
+            });
         };
         
         // Called whenever there is a scroll event in the document panel (the #diva-outer element)
