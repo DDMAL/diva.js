@@ -627,6 +627,9 @@ THE SOFTWARE.
                 $(settings.selector + 'zoom-slider').slider({
                     value: zoomLevel
                 });
+
+                // Update the URL (again, must be a string)
+                $.updateHashParam('z', '' + zoomLevel);
                 return true;
             } else {
                 // Execute the callback functions anyway (required for the unit testing)
