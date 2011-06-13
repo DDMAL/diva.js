@@ -465,15 +465,10 @@ THE SOFTWARE.
                 desiredLeft = Math.max((centerX) - (settings.panelWidth / 2), 0);
                 desiredTop = Math.max((centerY) - (settings.panelHeight / 2), 0);
             } else {
-                // This isn't working just zoom in on the middle for now
-                if ( settings.maxWidth + settings.horizontalPadding * 2 <= settings.panelWidth ) {
-                    desiredLeft = 0;
-                } else {
-                    desiredLeft = settings.maxWidth / 2 - settings.panelWidth / 2 + settings.horizontalPadding;
-                }
-
-                // Either do the expected zoom or zoom in on the middle
-                desiredLeft = ( settings.horizontalOffset > 0 ) ? settings.horizontalOffset * zChangeRatio : settings.maxWidth / 2 - settings.panelWidth / 2 + settings.horizontalPadding;
+                // Just zoom in on the middle
+                // If the user wants more precise scrolling the user will have to double-click
+                // Until I figure out how to calculate the actual left offset anyway
+                desiredLeft = settings.maxWidth / 2 - settings.panelWidth / 2 + settings.horizontalPadding;
                 desiredTop = settings.verticalOffset * zChangeRatio;
             }
             
