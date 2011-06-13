@@ -737,6 +737,70 @@ THE SOFTWARE.
             handleZoomSlide(newZoomLevel);
         };
 
+        var toggleFullscreen = function() {
+            // First store the offsets so the user stays in the same place
+            settings.verticalOffset = $(settings.outerSelector).scrollTop();
+            settings.horizontalOffset = $(settings.outerSelector).scrollLeft();
+            settings.doubleClick = false;
+
+            // Empty the viewer so we don't get weird jostling
+            $(settings.innerSelector).text('');
+
+            // If we're already in fullscreen mode, leave it
+            if (settings.inFullscreen) {
+                leaveFullscreen();
+            } else {
+                enterFullscreen();
+            }
+
+            // Recalculate height and width
+            // 20 = magic number to account for the scrollbar width for now
+            // Not sure how else to account for it
+            settings.panelWidth = parseInt($(settings.outerSelector).width(), 10) - 20;
+            settings.panelHeight = parseInt($(settings.outerSelector).height(), 10);
+
+            // Change the width of the inner div correspondingly
+            $(settings.innerSelector).width(settings.panelWidth);
+            // Do another AJAX request to fix the padding and so on
+            ajaxRequest(settings.zoomLevel);
+        }
+
+        // Handles entering fullscreen mode
+        var enterFullscreen = function() {
+            if (settings.fullscreenStatusbar == null) {
+                createFullscreenStatusbar('none');
+            }
+            // Change the styling of the fullscreen icon - two viewers on a page won't work otherwise
+            $(settings.selector + 'fullscreen').css('position', 'fixed').css('z-index', '9001');
+
+            $(settings.outerSelector).addClass('fullscreen');
+            settings.inFullscreen = true;
+
+            // Hide the body scrollbar
+            $('body').css('overflow', 'hidden');
+        };
+
+        // Handles leaving fullscreen mode
+        var leaveFullscreen = function() {
+            // Remove the status bar
+            if (settings.fullscreenStatusbar != null) {
+                // In case animation has been set to fade
+                settings.fullscreenStatusbar.pnotify({
+                    pnotify_animation: 'none'
+                });
+
+                settings.fullscreenStatusbar.pnotify_remove();
+                settings.fullscreenStatusbar = null;
+            }
+
+            $(settings.outerSelector).removeClass('fullscreen');
+            settings.inFullscreen = false;
+
+            // Return the body scrollbar and the fullscreen icon to their original places
+            $(settings.selector + 'fullscreen').css('position', 'absolute').css('z-index', '8999');
+
+        };
+
         // Handles all the events
         var handleEvents = function() {
             // Handle the grid toggle events
@@ -758,55 +822,7 @@ THE SOFTWARE.
             if (settings.enableFullscreen) {
                 // Event handler for fullscreen toggling
                 $(settings.selector + 'fullscreen').click(function() {
-                    // FIRST store the offsets
-                    // Store the offsets so the user stays in the same place
-                    settings.verticalOffset = $(settings.outerSelector).scrollTop();
-                    settings.horizontalOffset = $(settings.outerSelector).scrollLeft();
-                    settings.doubleClick = false;
-
-                    // First empty the viewer so we don't get weird jostling
-                    $(settings.innerSelector).text('');
-                    if (settings.inFullscreen) {
-                        // Remove the fullscreen status bar
-                        if (settings.fullscreenStatusbar != null) {
-                            // In case animation has been set to fade
-                            settings.fullscreenStatusbar.pnotify({
-                                pnotify_animation: 'none'
-                            });
-                            settings.fullscreenStatusbar.pnotify_remove();
-                            settings.fullscreenStatusbar = null;
-                        }
-
-                        $(settings.outerSelector).removeClass('fullscreen');
-                        settings.inFullscreen = false;
-
-                        // Return the body overflow to auto and the fullscreen icon to its original place
-                        $('body').css('overflow', 'auto');
-                        $(settings.selector + 'fullscreen').css('position', 'absolute').css('z-index', '8999');
-                    } else {
-                        // Create the statusbar thing (if it's not already there)
-                        if (settings.fullscreenStatusbar == null) {
-                            createFullscreenStatusbar('none');
-                        }
-                        // Change the styling of the fullscreen icon - two viewers on a page won't work otherwise
-                        $(settings.selector + 'fullscreen').css('position', 'fixed').css('z-index', '9001');
-                        
-                        $(settings.outerSelector).addClass('fullscreen');
-                        settings.inFullscreen = true;
-
-                        // Make the body overflow hidden
-                        $('body').css('overflow', 'hidden');
-
-                    }
-
-                    // Recalculate height and width
-                    settings.panelWidth = parseInt($(settings.outerSelector).width(), 10) - 20;
-                    settings.panelHeight = parseInt($(settings.outerSelector).height(), 10);
-
-                    // Change the width of the inner div correspondingly
-                    $(settings.innerSelector).width(settings.panelWidth);
-                    // Do another AJAX request to fix the padding and so on
-                    ajaxRequest(settings.zoomLevel);
+                    toggleFullscreen();
                 });
 
             }
@@ -1036,6 +1052,13 @@ THE SOFTWARE.
             var pageParam = $.getHashParam('p');
             if (pageParam) {
                 settings.goDirectlyTo = parseInt(pageParam, 10);
+            }
+
+            // If the "fullscreen" hash param is true, go to fullscreen initially
+            var fullscreenParam = $.getHashParam('fullscreen');
+            if (fullscreenParam === 'true' && settings.enableFullscreen) {
+                // Trigger the fullscreen thing
+                toggleFullscreen();
             }
             
             // Load the images at the initial zoom level            
