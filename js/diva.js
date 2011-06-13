@@ -476,6 +476,13 @@ THE SOFTWARE.
                         settings.numPages = data.pgs.length;
                         settings.maxZoomLevel = (settings.maxZoomLevel > 0) ? settings.maxZoomLevel : data.max_zoom;
 
+                        // Make sure the zoom level is valid
+                        // Could be invalid if the zoom hash param is used
+                        // This does NOT respect minzoomlevel worry about that later
+                        if (zoomLevel > settings.maxZoomLevel) {
+                            zoomLevel = 0;
+                        }
+
                         // Set the total number of pages
                         $(settings.selector + 'current label').text(settings.numPages);
 
@@ -987,6 +994,16 @@ THE SOFTWARE.
             // Create the fullscreen icon
             if (settings.enableFullscreen) {
                 $(settings.elementSelector).prepend('<div id="' + settings.ID + 'fullscreen"></div>');
+            }
+
+            // If there is a 'z' hash param, make that the initial zoom level
+            // It's okay if it's an invalid zoom level - we coerce it to an int first
+            // And we can check AFTER the request if it's valid or not
+            // If it's not valid, use the data for the returned - should be zoom 0
+            // Note that something like -1 will become 1 and not 0 - account for this
+            var zoomParam = $.getHashParam('z');
+            if (zoomParam) {
+                settings.zoomLevel = Math.abs(parseInt(zoomParam, 10));
             }
             
             // Load the images at the initial zoom level            
