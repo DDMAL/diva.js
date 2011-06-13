@@ -29,12 +29,30 @@
 // Although for the tests I guess we would need to override caching somehow
 (function( $ ) {
     $.getHashParam = function(key) {
-        
-        if (window.location.hash) {
+        var hash = window.location.hash;
+        if (hash != '') {
             // Check if there is something that looks like either &key= or #key=
-            var startIndex = hash.
-            // If it can't find the key or if the key doesn't have a value, false
-            return false;
+            var startIndex = (hash.indexOf('&' + key + '=') > 0) ? hash.indexOf('&' + key + '=') : hash.indexOf('#' + key + '=');
+            console.log('for ' + key + ': ' + startIndex);
+
+            // If startIndex is still zero, it means it can't find either
+            if (startIndex >= 0) {
+                // Add the length of the key plus the & and =
+                startIndex += key.length + 2;
+
+                // Either to the next ampersand or to the end of the string
+                var endIndex = hash.indexOf('&', startIndex);
+                if (endIndex > startIndex) {
+                    return hash.substring(startIndex, endIndex);
+                } else if (endIndex < 0) {
+                    // This means this hash param is the last one
+                    return hash.substring(startIndex);
+                } 
+                return false;
+            } else {
+                // If it can't find the key or if the key doesn't have a value, false
+                return false;
+            }
         } else {
             // If there are no hash params just return false
             return false;

@@ -148,7 +148,8 @@
 
                     // Now set the current URL to something
                     var baseUrl = window.location.href;
-                    window.location.href = baseUrl + '#p=149&z=2'
+                    window.location.hash = '#p=149&z=2'
+                    console.log("url:" + window.location.href);
                     var nonexistentParam = $.getHashParam('lol');
                     var firstParam = $.getHashParam('p');
                     var secondParam = $.getHashParam('z');
@@ -157,17 +158,18 @@
                     equals(secondParam, '2', "The 'z' param should be 2 (string)");
 
                     // Now let there be only one element in the URL
-                    window.location.href = baseUrl + '#p=149';
+                    window.location.hash = '#p=149';
+                    console.log('now:' + window.location.hash);
                     var soleParam = $.getHashParam('p');
                     equals(soleParam, '149', "The 'p' param should be 149 when it is the sole param");
 
                     // Now let there be other elements in the URL
-                    window.location.href = baseUrl + '#z=2&p=100&lol=lol';
-                    firstParam = $.getHashParam('z');
-                    secondParam = $.getHashParam('p');
+                    window.location.hash = '#z=2&p=100&lol=lol';
+                    var anotherFirstParam = $.getHashParam('z');
+                    var anotherSecondParam = $.getHashParam('p');
                     var thirdParam = $.getHashParam('lol');
-                    equals(firstParam, '149', "The 'z' param should be '2' when it is the first param");
-                    equals(secondParam, '100', "The 'p' param should be '100' when it is the middle param");
+                    equals(anotherFirstParam, '2', "The 'z' param should be '2' when it is the first param");
+                    equals(anotherSecondParam, '100', "The 'p' param should be '100' when it is the middle param");
                     equals(thirdParam, 'lol', "The last param should be 'lol'");
                 });
             }
