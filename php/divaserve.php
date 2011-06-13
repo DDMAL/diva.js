@@ -131,6 +131,11 @@ if (!file_exists($cache_file)) {
         $images = unserialize(file_get_contents($gen_cache_file));
         $lowest_max_zoom = $images[0];
     }
+
+    // If we get an invalid zoom level, just set it to 0
+    if ($zoom > $lowest_max_zoom || $zoom < 0) {
+        $zoom = 0;
+    }
     
     // Now go through them again, store in $pgs
     $mx_h = $mx_w = $t_wid = $t_hei = $num_pages = 0;
