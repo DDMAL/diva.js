@@ -270,6 +270,27 @@ THE SOFTWARE.
             return false;
         };
 
+        // Helper function for setCurrentPage; should only be called at the end
+        var updateCurrentPage = function(pageIndex) {
+            var pageNumber = pageIndex + 1;
+
+            // Update the URL - as to be a string
+            $.updateHashParam('p', '' + pageNumber);
+            
+            $(settings.selector + 'current span').text(pageNumber);
+
+            // If we're in fullscreen mode, change the statusbar
+            if (settings.inFullscreen) {
+                if (settings.fullscreenStatusbar === null) {
+                    createFullscreenStatusbar('fade');
+                }
+
+                settings.fullscreenStatusbar.pnotify({
+                    pnotify_title: 'Page: ' + pageNumber
+                });
+            }
+        };
+
         // Determines and sets the "current page" (settings.currentPageIndex); called within adjustPages 
         // The "direction" can be 0, 1 or -1; 1 for down, -1 for up, and 0 to go straight to a specific page
         var setCurrentPage = function(direction, pageIndex) {
@@ -301,27 +322,17 @@ THE SOFTWARE.
                 // Set this to the current page
                 settings.currentPageIndex = pageToConsider;
 
-                // Update the URL (has to be a string, and the page number)
-                $.updateHashParam('p', '' + (pageToConsider+1));
-
-                // Change the text to reflect this - pageToConsider + 1 (because it's page number not ID)
-                $(settings.selector + 'current span').text(pageToConsider + 1);
-                // If we're in fullscreen mode, change the statusbar
-                if (settings.inFullscreen) {
-                    if (settings.fullscreenStatusbar == null) {
-                        createFullscreenStatusbar('fade');
-                    }
-
-                    settings.fullscreenStatusbar.pnotify({
-                        pnotify_title: 'Page: ' + (pageToConsider + 1)
-                    });
-                }
-
                 // Now try to change the next page, given that we're not going to a specific page
                 // Calls itself recursively - this way we accurately obtain the current page
-                if ( direction !== 0 ) {
-                    setCurrentPage(direction);
+                if (direction !== 0) {
+                    // Only change it when we're done scrolling etc
+                    if (!setCurrentPage(direction)) {
+                        updateCurrentPage(pageToConsider);
+                    }
                 }
+                return true;
+            } else {
+                return false;
             }
         };
 
@@ -436,6 +447,7 @@ THE SOFTWARE.
         var scrollAfterRequest = function() {
             if (settings.goDirectlyTo) {
                 gotoPage(settings.goDirectlyTo);
+                updateCurrentPage(settings.goDirectlyTo - 1);
                 settings.goDirectlyTo = 0;
                 return;
             }
