@@ -34,7 +34,7 @@
             // Check if there is something that looks like either &key= or #key=
             var startIndex = (hash.indexOf('&' + key + '=') > 0) ? hash.indexOf('&' + key + '=') : hash.indexOf('#' + key + '=');
 
-            // If startIndex is still zero, it means it can't find either
+            // If startIndex is still -1, it means it can't find either
             if (startIndex >= 0) {
                 // Add the length of the key plus the & and =
                 startIndex += key.length + 2;
@@ -47,14 +47,42 @@
                     // This means this hash param is the last one
                     return hash.substring(startIndex);
                 } 
-                return false;
+                // If the key doesn't have a value I think
+                return '';
             } else {
-                // If it can't find the key or if the key doesn't have a value, false
+                // If it can't find the key
                 return false;
             }
         } else {
             // If there are no hash params just return false
             return false;
+        }
+    };
+})( jQuery );
+
+(function( $ ) {
+    $.updateHashParam = function(key, value) {
+        // First make sure that we have to do any work at all
+        var originalValue = $.getHashParam(key);
+        var hash = window.location.hash;
+        if (originalValue !== value) {
+            // Is the key already in the URL?
+            if (typeof originalValue == 'string') {
+                // Already in the URL. Just get rid of the original value
+                var startIndex = (hash.indexOf('&' + key + '=') > 0) ? hash.indexOf('&' + key + '=') : hash.indexOf('#' + key + '=');
+                var endIndex = startIndex + key.length + 2 + originalValue.length;
+                // # if it's the first, & otherwise
+                var startThing = (startIndex == 0) ? '#' : '&';
+                window.location.hash = hash.substring(0, startIndex) + startThing + key + '=' + value + hash.substring(endIndex);
+            } else {
+                // It's not present - add it
+                if (hash.length === 0) {
+                    window.location.hash = '#' + key + '=' + value;
+                } else {
+                    // Append it
+                    window.location.hash += '&' + key + '=' + value;
+                }
+            }
         }
     };
 })( jQuery );

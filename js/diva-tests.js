@@ -149,7 +149,6 @@
                     // Now set the current URL to something
                     var baseUrl = window.location.href;
                     window.location.hash = '#p=149&z=2'
-                    console.log("url:" + window.location.href);
                     var nonexistentParam = $.getHashParam('lol');
                     var firstParam = $.getHashParam('p');
                     var secondParam = $.getHashParam('z');
@@ -159,7 +158,6 @@
 
                     // Now let there be only one element in the URL
                     window.location.hash = '#p=149';
-                    console.log('now:' + window.location.hash);
                     var soleParam = $.getHashParam('p');
                     equals(soleParam, '149', "The 'p' param should be 149 when it is the sole param");
 
@@ -171,6 +169,47 @@
                     equals(anotherFirstParam, '2', "The 'z' param should be '2' when it is the first param");
                     equals(anotherSecondParam, '100', "The 'p' param should be '100' when it is the middle param");
                     equals(thirdParam, 'lol', "The last param should be 'lol'");
+                    window.location.hash = '';
+                });
+
+                test("updateHashParam()", function() {
+                    // First try it with no hash params in the URL
+                    $.updateHashParam('p', '1');
+                    equals(window.location.hash, '#p=1');
+
+                    // The key is present but there is no value
+                    window.location.hash = '#p=';
+                    $.updateHashParam('p', '2');
+                    equals(window.location.hash, '#p=2');
+
+                    // Then, with a bunch of irrelevant ones
+                    window.location.hash = '#key=2&another=3';
+                    $.updateHashParam('p', '3');
+                    equals(window.location.hash, '#key=2&another=3&p=3');
+                
+                    // One irrelevant one
+                    window.location.hash = '#a=b';
+                    $.updateHashParam('p', '4');
+                    equals(window.location.hash, '#a=b&p=4');
+
+                    // Only one hash param, and it's the one we want to update
+                    window.location.hash = '#p=1';
+                    $.updateHashParam('p', '9001');
+                    equals(window.location.hash, '#p=9001');
+
+                    // Two hash params, one of which is the one we want to update
+                    window.location.hash = '#p=4&h=1';
+                    $.updateHashParam('p', '1');
+                    equals(window.location.hash, '#p=1&h=1');
+                    $.updateHashParam('h', '100');
+                    equals(window.location.hash, '#p=1&h=100');
+
+                    // Two hash params, both are which are right (choose one)
+                    // Should never happen unless the user is being malicious
+                    window.location.hash = '#p=4&p=2';
+                    $.updateHashParam('p', '5');
+                    equals(window.location.hash, '#p=4&p=5');
+                    // Not actually sure why it chooses the first one to update
                 });
             }
         });
