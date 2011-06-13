@@ -801,20 +801,33 @@ THE SOFTWARE.
 
         };
 
+        // Toggle, enter and leave grid mode functions akin to those for fullscreen
+        var toggleGrid = function() {
+            // Already in grid, leave it
+            if (settings.inGrid) {
+                leaveGrid();
+            } else {
+                // Enter grid view
+                enterGrid();
+            }
+        };
+
+        var enterGrid = function() {
+            alert("Entering grid");
+            settings.inGrid = true;
+        }
+
+        var leaveGrid = function() {
+            alert("Leaving grid");
+            settings.inGrid = false;
+        };
+
         // Handles all the events
         var handleEvents = function() {
             // Handle the grid toggle events
             if (settings.enableGrid) {
                 $(settings.selector + 'grid-icon').click(function() {
-                    if (settings.inGrid) {
-                        // Leave grid view
-                        alert("Going back to regular view");
-                        settings.inGrid = false;
-                    } else {
-                        // Enter grid view
-                        alert("Entering grid view");
-                        settings.inGrid = true;
-                    }
+                    toggleGrid();
                 });
             }
 
@@ -1059,6 +1072,12 @@ THE SOFTWARE.
             if (fullscreenParam === 'true' && settings.enableFullscreen) {
                 // Trigger the fullscreen thing
                 toggleFullscreen();
+            }
+
+            // If the grid hash param is true, go to grid view initially
+            var gridParam = $.getHashParam('grid');
+            if (gridParam === 'true' && settings.enableGrid) {
+                toggleGrid();
             }
             
             // Load the images at the initial zoom level            
