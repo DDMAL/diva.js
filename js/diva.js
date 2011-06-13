@@ -676,6 +676,10 @@ THE SOFTWARE.
                 setCurrentPage(0, pageNumber);
                 $(settings.outerSelector).scrollTop(heightToScroll);
 
+                // Now figure out the horizontal scroll - scroll to the MIDDLE
+                var horizontalScroll = ($(settings.innerSelector).width() - settings.panelWidth) / 2;
+                $(settings.outerSelector).scrollLeft(horizontalScroll);
+
                 // Now execute the callback function, pass it the page NUMBER not the page index
                 $.executeCallback(settings.onJump, pageNumber+1);
 
