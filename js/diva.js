@@ -657,14 +657,14 @@ THE SOFTWARE.
         // Private function for going to a page
         var gotoPage = function(pageNumber) {
             // Since we start indexing from 0, subtract 1 to behave as the user expects
-            pageNumber--;
+            pageIndex = pageNumber - 1;
 
             // First make sure that the page number exists (i.e. is in range)
-            if ( inRange(pageNumber) ) {
-                var heightToScroll = settings.heightAbovePages[pageNumber];
+            if (inRange(pageIndex)) {
+                var heightToScroll = settings.heightAbovePages[pageIndex];
 
                 // Change the "currently on page" thing
-                setCurrentPage(0, pageNumber);
+                updateCurrentPage(pageIndex);
                 $(settings.outerSelector).scrollTop(heightToScroll);
 
                 // Now figure out the horizontal scroll - scroll to the MIDDLE
@@ -672,7 +672,7 @@ THE SOFTWARE.
                 $(settings.outerSelector).scrollLeft(horizontalScroll);
 
                 // Now execute the callback function, pass it the page NUMBER not the page index
-                $.executeCallback(settings.onJump, pageNumber+1);
+                $.executeCallback(settings.onJump, pageNumber);
 
                 return true; // To signify that we can scroll to this page
             }
