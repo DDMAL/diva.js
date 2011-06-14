@@ -34,7 +34,7 @@ THE SOFTWARE.
             enableKeyScroll: true,      // Scrolling using the page up/down keys
             enableSpaceScroll: false,   // Scrolling down by pressing the space key
             enableZoomSlider: true,     // Enable or disable the zoom slider (for zooming in and out)
-            fixedPadding: 0,            // Fallback if adaptive padding is set to 0
+            fixedPadding: 10,            // Fallback if adaptive padding is set to 0
             goDirectlyTo: 0,            // For the page hash param (#p=100 or &p=5)
             iipServerBaseUrl: '',       // The URL to the IIPImage installation, including the ?FIF=
             maxZoomLevel: 0,            // Optional; defaults to the max zoom returned in the JSON response
@@ -488,8 +488,10 @@ THE SOFTWARE.
                     // Clear the document, then execute the callback
                     clearDocument();
 
-                    // Save the data
+                    // Save some data
                     settings.pages = data.pgs;
+                    settings.maxWidth = data.dims.mx_w;
+                    settings.maxHeight = data.dims.mx_h;
                     $.executeCallback(successCallback, data);
                     settings.firstAjaxRequest = false;
                 }
@@ -526,10 +528,22 @@ THE SOFTWARE.
         var loadGrid = function() {
             // Ignore the zoom level if it's in a grid
             // As for page number, try to get the row containing that grid near the middle
-            // Uses zoom level = 0 as the grid?
+            // Uses zoom level = 0 as the grid? smallest numbers etc
             ajaxRequest(0, function(data) {
                 alert("IN GRID");
-                //
+                // Now go through the pages
+                // Figure out how wide the pages need to be
+                // Use the fixed padding
+                // If we have pages with different dimensions it'll look skewed but, what do
+                var totalPadding = settings.fixedPadding * (settings.pagesPerGridRow + 1);
+                var pageWidth = (settings.panelWidth - totalPadding) / settings.pagesPerGridRow;
+                console.log('number of pages per row:' + settings.pagesPerGridRow);
+                console.log("page width: " + pageWidth);
+
+                // Now calculate the maximum height, use that as the row height
+                var rowHeight = (settings.maxHeight / settings.maxWidth) * pageWidth;
+                console.log("max row heght: " + settings.maxHeight);
+
             });
         }
 
@@ -557,8 +571,6 @@ THE SOFTWARE.
                 // Now reset some things that need to be changed after each zoom
                 settings.totalHeight = data.dims.t_hei + settings.verticalPadding * (settings.numPages + 1); 
                 settings.zoomLevel = zoomLevel;
-                settings.maxWidth = data.dims.mx_w;
-                settings.maxHeight = data.dims.mx_h;
                 settings.dimAfterZoom = settings.totalHeight; 
 
                 // Needed to set settings.heightAbovePages - initially just the top padding
