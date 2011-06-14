@@ -813,9 +813,11 @@ THE SOFTWARE.
             // Already in grid, leave it
             if (settings.inGrid) {
                 leaveGrid();
+                $.updateHashParam('grid', 'false');
             } else {
                 // Enter grid view
                 enterGrid();
+                $.updateHashParam('grid', 'true');
             }
         };
 
