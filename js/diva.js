@@ -481,7 +481,17 @@ THE SOFTWARE.
                 context: this, // Not sure if necessary
                 dataType: 'json',
                 success: function(data) {
+                    // If it's the first request, set some initial settings
+                    if (settings.firstAjaxRequest) {
+                        setupInitialLoad(data, zoomLevel);
+                    }
+                    // Clear the document, then execute the callback
+                    clearDocument();
+
+                    // Save the data
+                    settings.pages = data.pgs;
                     $.executeCallback(successCallback, data);
+                    settings.firstAjaxRequest = false;
                 }
             });
         };
@@ -512,15 +522,28 @@ THE SOFTWARE.
                 $(settings.elementSelector).prepend('<div id="' + settings.ID + 'title">' + settings.itemTitle + '</div>');
             }
         };
+
+        var loadGrid = function() {
+            // Ignore the zoom level if it's in a grid
+            // As for page number, try to get the row containing that grid near the middle
+            // Uses zoom level = 0 as the grid?
+            ajaxRequest(0, function(data) {
+                alert("IN GRID");
+                //
+            });
+        }
+
+        // When changing between grid/document view, or fullscreen toggling, or zooming
+        var clearDocument = function() {
+            $(settings.outerSelector).scrollTop(0);
+            settings.scrollSoFar = 0; // important - for issue 26
+            $(settings.innerSelector).text('');
+            settings.firstPageLoaded = 0;
+        }
         
         // AJAX request to start the whole process - called upon page load and upon zoom change
         var loadDocument = function(zoomLevel) {
             ajaxRequest(zoomLevel, function(data) {
-                // If it's the first AJAX request, store some variables that won't change with each zoom
-                if (settings.firstAjaxRequest) {
-                    setupInitialLoad(data, zoomLevel);
-                }
-                
                 // Calculate the horizontal and vertical inter-page padding
                 if (settings.adaptivePadding > 0) {
                     settings.horizontalPadding = data.dims.a_wid * settings.adaptivePadding;
@@ -531,19 +554,12 @@ THE SOFTWARE.
                     settings.verticalPadding = settings.fixedPadding;
                 }
 
-                // Reset the vertical scroll and clear out the innerdrag div
-                $(settings.outerSelector).scrollTop(0);
-                settings.scrollSoFar = 0; // important - for issue 26
-                $(settings.innerSelector).text('');                   
-
                 // Now reset some things that need to be changed after each zoom
-                settings.pages = data.pgs;
                 settings.totalHeight = data.dims.t_hei + settings.verticalPadding * (settings.numPages + 1); 
                 settings.zoomLevel = zoomLevel;
                 settings.maxWidth = data.dims.mx_w;
                 settings.maxHeight = data.dims.mx_h;
                 settings.dimAfterZoom = settings.totalHeight; 
-                settings.firstPageLoaded = 0;
 
                 // Needed to set settings.heightAbovePages - initially just the top padding
                 var heightSoFar = 0;
@@ -599,8 +615,6 @@ THE SOFTWARE.
 
                 // For use in the next ajax request (zoom change)
                 settings.dimBeforeZoom = settings.dimAfterZoom;
-
-                settings.firstAjaxRequest = false;
 
                 // For the iPad - wait until this request finishes before accepting others
                 if (settings.scaleWait) {
@@ -813,22 +827,22 @@ THE SOFTWARE.
             // Already in grid, leave it
             if (settings.inGrid) {
                 leaveGrid();
-                $.updateHashParam('grid', 'false');
             } else {
                 // Enter grid view
                 enterGrid();
-                $.updateHashParam('grid', 'true');
             }
         };
 
         var enterGrid = function() {
-            alert("Entering grid");
             settings.inGrid = true;
+            loadGrid();
+            $.updateHashParam('grid', 'true');
         }
 
         var leaveGrid = function() {
-            alert("Leaving grid");
             settings.inGrid = false;
+            loadDocument(settings.zoomLevel);
+            $.updateHashParam('grid', 'false');
         };
 
         // Handles all the events
@@ -865,21 +879,31 @@ THE SOFTWARE.
                 $(this).removeClass('grabbing').addClass('grab');
             });
 
-            // Handle the scroll
-            $(settings.outerSelector).scroll(function() {
-                handleScroll();
-            });
             
             // Set drag scroll on first descendant of class dragger on both selected elements
             $(settings.outerSelector + ', ' + settings.innerSelector).dragscrollable({dragSelector: '.dragger', acceptPropagatedEvent: true});
-            
+
+            // Handle the scroll
+            $(settings.outerSelector).scroll(function() {
+                // Has to be within this otherwise settings.inGrid is checked ONCE
+                if (settings.inGrid) {
+                    alert("scrolling");
+                } else {
+                    handleScroll();
+                }
+            });
+                
             // Double-click to zoom
             $(settings.outerSelector).dblclick(function(event) {
-                // First set the x and y offsets of the viewer from the edge of document
-                settings.viewerXOffset = this.offsetLeft;
-                settings.viewerYOffset = this.offsetTop;
+                if (settings.inGrid) {
+                    leaveGrid();
+                } else {
+                    // First set the x and y offsets of the viewer from the edge of document
+                    settings.viewerXOffset = this.offsetLeft;
+                    settings.viewerYOffset = this.offsetTop;
 
-                handleDoubleClick(event);
+                    handleDoubleClick(event);
+                }
             });
 
             // Prevent the context menu within the outerdrag IF it was triggered with the ctrl key
@@ -915,10 +939,15 @@ THE SOFTWARE.
                 });
 
                 // Allow pinch-zooming
+                // If originally in grid view, go to document view with the lowest zoom
                 $('body').bind('gestureend', function(event) {
                     var e = event.originalEvent;
                     if (!settings.scaleWait) {
-                        scale(e);
+                        if (settings.inGrid) {
+                            leaveGrid();
+                        } else {
+                            scale(e);
+                        }
                     }
                     return false;
                 });
