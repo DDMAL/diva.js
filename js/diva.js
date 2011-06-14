@@ -293,7 +293,7 @@ THE SOFTWARE.
 
         // Determines and sets the "current page" (settings.currentPageIndex); called within adjustPages 
         // The "direction" can be 0, 1 or -1; 1 for down, -1 for up, and 0 to go straight to a specific page
-        var setCurrentPage = function(direction, pageIndex) {
+        var setCurrentPage = function(direction) {
             var currentPage = settings.currentPageIndex;
             var pageToConsider = settings.currentPageIndex + parseInt(direction, 10);
             var middleOfViewport = settings.scrollSoFar + (settings.panelHeight / 2);
@@ -312,13 +312,9 @@ THE SOFTWARE.
                 if ( settings.heightAbovePages[currentPage] + settings.pages[currentPage].h < settings.scrollSoFar && pageToConsider < settings.pages.length ) {
                     changeCurrentPage = true;
                 }
-            } else {
-                // Just go straight to a certain page (for the goto function)
-                changeCurrentPage = true;
-                pageToConsider = pageIndex;
             }
 
-            if ( changeCurrentPage ) {
+            if (changeCurrentPage) {
                 // Set this to the current page
                 settings.currentPageIndex = pageToConsider;
 
