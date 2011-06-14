@@ -757,8 +757,11 @@ THE SOFTWARE.
             // If we're already in fullscreen mode, leave it
             if (settings.inFullscreen) {
                 leaveFullscreen();
+                // Update the hash param
+                $.updateHashParam('fullscreen', 'false');
             } else {
                 enterFullscreen();
+                $.updateHashParam('fullscreen', 'true');
             }
 
             // Recalculate height and width
