@@ -69,6 +69,7 @@ THE SOFTWARE.
             elementSelector: '',        // The ID of the element plus the # for easy selection, set in init()
             firstAjaxRequest: true,     // True initially, set to false after the first request
             firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
+            firstRowLoaded: -1,         // The index of the first row loaded
             fullscreenStatusbar: null,  // The popup box that tells you what page you're on
             heightAbovePages: [],       // The height above each page
             horizontalOffset: 0,        // Used for storing the page offset before zooming
@@ -77,6 +78,7 @@ THE SOFTWARE.
             inGrid: false,              // Set to true when the user enters the grid view
             itemTitle: '',              // The title of the document
             lastPageLoaded: -1,         // The ID of the last page loaded (value set later)
+            lastRowLoaded: -1,          // The index of the last row loaded
             maxHeight: 0,               // The height of the tallest page
             maxWidth: 0,                // The width of the widest page
             numPages: 0,                // Number of pages in the array
@@ -411,6 +413,25 @@ THE SOFTWARE.
             }
         };
 
+        var attemptRowShow = function(rowIndex, direction) {
+            var rowToShow = rowIndex + direction;
+            console.log("attempting to show row " + rowToShow);
+        }
+
+        var attemptRowHide = function(rowIndex, direction) {
+            console.log("attempt to HIDE row " + rowIndex);
+        }
+
+        var adjustRows = function(direction) {
+            if (direction < 0) {
+                attemptRowShow(settings.firstRowLoaded, direction);
+                attemptRowHide(settings.lastRowLoaded, direction);
+            } else if (direction > 0) {
+                attemptRowHide(settings.firstRowLoaded, direction);
+                attemptRowShow(settings.lastRowLoaded, direction);
+            }
+        }
+
         // Handles showing and hiding pages when the user scrolls
         var adjustPages = function(direction) {
             // Direction is negative, so we're scrolling up
@@ -568,7 +589,6 @@ THE SOFTWARE.
             // As for page number, try to get the row containing that grid near the middle
             // Uses zoom level = 0 as the grid? smallest numbers etc
             ajaxRequest(0, function(data) {
-                alert("IN GRID");
                 // Now go through the pages
                 // Figure out how wide the pages need to be
                 // Use the fixed padding
@@ -692,6 +712,12 @@ THE SOFTWARE.
         var handleScroll = function() {
             settings.scrollSoFar = $(settings.outerSelector).scrollTop();
             adjustPages(settings.scrollSoFar - settings.prevVptTop);
+            settings.prevVptTop = settings.scrollSoFar;
+        };
+
+        var handleGridScroll = function() {
+            settings.scrollSoFar = $(settings.outerSelector).scrollTop();
+            adjustRows(settings.scrollSoFar - settings.prevVptTop);
             settings.prevVptTop = settings.scrollSoFar;
         };
 
@@ -952,7 +978,7 @@ THE SOFTWARE.
             $(settings.outerSelector).scroll(function() {
                 // Has to be within this otherwise settings.inGrid is checked ONCE
                 if (settings.inGrid) {
-                    console.log("scrolling");
+                    handleGridScroll();
                 } else {
                     handleScroll();
                 }
