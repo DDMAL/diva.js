@@ -490,8 +490,8 @@ THE SOFTWARE.
 
                     // Save some data
                     settings.pages = data.pgs;
-                    settings.maxWidth = data.dims.mx_w;
-                    settings.maxHeight = data.dims.mx_h;
+                    settings.maxWidth = data.dims.wide_w;
+                    settings.maxHeight = data.dims.tall_h;
                     $.executeCallback(successCallback, data);
                     settings.firstAjaxRequest = false;
                 }
@@ -525,6 +525,44 @@ THE SOFTWARE.
             }
         };
 
+        // Check if a row (in grid view) has been appended already
+        var isRowLoaded = function(rowIndex) {
+            if ($(settings.selector + 'row-' + rowIndex).length > 0) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        // Check if a row should be visible in the viewport
+        var rowInViewport = function(rowIndex) {
+            // Calculate the top and bottom, then call verticallyInViewport
+            var topOfRow = settings.rowHeight * rowIndex;
+            var bottomOfRow = topOfRow + settings.rowHeight + settings.fixedPadding;
+            return verticallyInViewport(topOfRow, bottomOfRow);
+        }
+
+        var loadRow = function(rowIndex) {
+            if (!isRowLoaded(rowIndex)) {
+                console.log("need to load row" + rowIndex);
+            }
+            var i;
+            var heightFromTop = (settings.fixedPadding + settings.rowHeight) * rowIndex + settings.fixedPadding;
+            var stringBuilder = [];
+            stringBuilder.push('<div id="' + settings.ID + 'row-' + rowIndex + '" style="width: 100%; height: ' + settings.rowHeight + '; position: absolute; top: ' + heightFromTop + 'px;">');
+            for (i = 0; i < settings.pagesPerGridRow; i++) {
+                // Figure out the actual page number
+                var pageIndex = rowIndex * settings.pagesPerGridRow + i;
+                var pageNumber = pageIndex + 1;
+                var filename = settings.pages[pageIndex].fn;
+                var imgSrc = settings.iipServerBaseUrl + filename + '&amp;WID=' + settings.gridPageWidth + '&amp;CVT=JPG';
+                console.log(imgSrc);
+                var leftOffset = i * (settings.fixedPadding + settings.gridPageWidth) + settings.fixedPadding;
+                stringBuilder.push('<div id="' + settings.ID + 'page-' + pageIndex + '" style="position: absolute; left: ' + leftOffset + 'px; display: inline; background-image: url(\'' + imgSrc  + '\'); background-repeat: no-repeat; width: ' + settings.gridPageWidth + 'px; height: ' + settings.rowHeight + 'px;"></div>');
+            }
+            $(settings.innerSelector).append(stringBuilder.join(''))
+        }
+
         var loadGrid = function() {
             // Ignore the zoom level if it's in a grid
             // As for page number, try to get the row containing that grid near the middle
@@ -535,14 +573,29 @@ THE SOFTWARE.
                 // Figure out how wide the pages need to be
                 // Use the fixed padding
                 // If we have pages with different dimensions it'll look skewed but, what do
-                var totalPadding = settings.fixedPadding * (settings.pagesPerGridRow + 1);
-                var pageWidth = (settings.panelWidth - totalPadding) / settings.pagesPerGridRow;
+                var horizontalPadding = settings.fixedPadding * (settings.pagesPerGridRow + 1);
+                var pageWidth = (settings.panelWidth - horizontalPadding) / settings.pagesPerGridRow;
+                settings.gridPageWidth = pageWidth;
                 console.log('number of pages per row:' + settings.pagesPerGridRow);
                 console.log("page width: " + pageWidth);
 
                 // Now calculate the maximum height, use that as the row height
-                var rowHeight = (settings.maxHeight / settings.maxWidth) * pageWidth;
-                console.log("max row heght: " + settings.maxHeight);
+                settings.rowHeight = settings.fixedPadding + (settings.maxHeight / data.dims.tall_w) * pageWidth;
+                console.log("max row heght: " + settings.rowHeight);
+                console.log("page width is" + settings.gridPageWidth);
+                settings.totalHeight = (settings.numPages / settings.pagesPerGridRow) * settings.rowHeight + settings.fixedPadding;
+                console.log("total height:" + settings.totalHeight);
+                $(settings.innerSelector).css('height', settings.totalHeight);
+                $(settings.innerSelector).css('width', settings.panelWidth);
+
+                // Figure out the row each page is in
+                var i;
+                for (i = 0; i < settings.numPages; i += settings.pagesPerGridRow) {
+                    var rowIndex = Math.floor(i / settings.pagesPerGridRow);
+                    if (rowInViewport(rowIndex)) {
+                        loadRow(rowIndex);
+                    }
+                }
 
             });
         }
@@ -594,7 +647,7 @@ THE SOFTWARE.
                     
                 // Set the height and width of documentpane (necessary for dragscrollable)
                 $(settings.innerSelector).css('height', settings.totalHeight);
-                var widthToSet = (data.dims.mx_w + settings.horizontalPadding * 2 < settings.panelWidth ) ? settings.panelWidth : data.dims.mx_w + settings.horizontalPadding * 2; // width of page + 40 pixels on each side if necessary
+                var widthToSet = (data.dims.wide_w + settings.horizontalPadding * 2 < settings.panelWidth ) ? settings.panelWidth : data.dims.wide_w + settings.horizontalPadding * 2; // width of page + 40 pixels on each side if necessary
                 $(settings.innerSelector).css('width', widthToSet);
 
                 // Scroll to the proper place
@@ -899,7 +952,7 @@ THE SOFTWARE.
             $(settings.outerSelector).scroll(function() {
                 // Has to be within this otherwise settings.inGrid is checked ONCE
                 if (settings.inGrid) {
-                    alert("scrolling");
+                    console.log("scrolling");
                 } else {
                     handleScroll();
                 }
