@@ -138,7 +138,7 @@ if (!file_exists($cache_file)) {
     }
     
     // Now go through them again, store in $pgs
-    $mx_h = $mx_w = $t_wid = $t_hei = $num_pages = 0;
+    $mx_h = $mx_w = $tallest_page_height = $tallest_page_width = $widest_page_height = $widest_page_width = $t_wid = $t_hei = $num_pages = 0;
     for ($i = 1; $i < count($images); $i++) {
         if (array_key_exists($i, $images)) {
             $h = incorporate_zoom($images[$i]['mx_h'], $lowest_max_zoom - $zoom);
@@ -155,8 +155,15 @@ if (!file_exists($cache_file)) {
                 'm_z'   => $m_z,
                 'fn'    => $fn, 
             );
-            $mx_h = ($h > $mx_h) ? $h : $mx_h;
-            $mx_w = ($w > $mx_w) ? $w : $mx_w;
+            // Figuring out the dimensions of the tallest and widest pages
+            if ($h > $mx_h) {
+                $tallest_page_height = $h;
+                $tallest_page_width = $w;
+            }
+            if ($w > $mx_w) {
+                $widest_page_height = $h;
+                $widest_page_width = $w;
+            }
             $t_wid += $w;
             $t_hei += $h;
             $num_pages++;
@@ -170,8 +177,11 @@ if (!file_exists($cache_file)) {
     $dims = array(
         'a_wid'         => $a_wid,
         'a_hei'         => $a_hei,
-        'mx_h'          => $mx_h,
-        'mx_w'          => $mx_w,
+        // Used for the grid
+        'tall_h'        => $tallest_page_height,
+        'tall_w'        => $tallest_page_width,
+        'wide_h'        => $widest_page_height,
+        'wide_w'        => $widest_page_width,
         // t_hei and t_wid are slightly different from those returned by the django app ... why? 
         't_hei'         => $t_hei,
         't_wid'         => $t_wid
