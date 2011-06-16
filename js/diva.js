@@ -82,6 +82,7 @@ THE SOFTWARE.
             maxHeight: 0,               // The height of the tallest page
             maxWidth: 0,                // The width of the widest page
             numPages: 0,                // Number of pages in the array
+            numRows: 0,                 // Number of rows
             pages: [],                  // An array containing the data for all the pages
             panelHeight: 0,             // Height of the panel. Set in initiateViewer()
             panelWidth: 0,              // Width of the panel. Set in initiateViewer()
@@ -243,8 +244,7 @@ THE SOFTWARE.
 
         // Check if a row ID is valid
         var rowInRange = function(rowIndex) {
-            numRows = Math.ceil(settings.numPages / settings.pagesPerGridRow);
-            if (rowIndex >= 0 && rowIndex < numRows) {
+            if (rowIndex >= 0 && rowIndex < settings.numRows) {
                 return true;
             } else {
                 return false;
@@ -270,7 +270,7 @@ THE SOFTWARE.
             }
             return false;
         };
-        
+       
         // Private helper function, check if the top of a page is below the bottom of a viewport
         // Used for scrolling up
         var pageBelowViewport = function(pageIndex) {
@@ -657,7 +657,8 @@ THE SOFTWARE.
                 settings.rowHeight = settings.fixedPadding + (settings.maxHeight / data.dims.tall_w) * pageWidth;
                 console.log("max row heght: " + settings.rowHeight);
                 console.log("page width is" + settings.gridPageWidth);
-                settings.totalHeight = (settings.numPages / settings.pagesPerGridRow) * settings.rowHeight + settings.fixedPadding;
+                settings.numRows = Math.ceil(settings.numPages / settings.pagesPerGridRow);
+                settings.totalHeight = (settings.numRows) * (settings.rowHeight + settings.fixedPadding);
                 console.log("total height:" + settings.totalHeight);
                 $(settings.innerSelector).css('height', settings.totalHeight);
                 $(settings.innerSelector).css('width', settings.panelWidth);
