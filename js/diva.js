@@ -624,6 +624,10 @@ THE SOFTWARE.
             for (i = 0; i < settings.pagesPerGridRow; i++) {
                 // Figure out the actual page number
                 var pageIndex = rowIndex * settings.pagesPerGridRow + i;
+                if (!pageInRange(pageIndex)) {
+                    break; // when we're at the last page etc
+                }
+                console.log("page index: " + pageIndex);
                 var pageNumber = pageIndex + 1;
                 var filename = settings.pages[pageIndex].fn;
                 var imgSrc = settings.iipServerBaseUrl + filename + '&amp;WID=' + settings.gridPageWidth + '&amp;CVT=JPG';
