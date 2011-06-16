@@ -445,14 +445,15 @@ THE SOFTWARE.
 
         var attemptRowShow = function(rowIndex, direction) {
             var rowToShow = rowIndex + direction;
+            console.log("attempt to SHOW row" + rowToShow);
             if (direction > 0) {
                 if (rowInRange(rowToShow)) {
                     if (isRowVisible(rowToShow)) {
                         loadRow(rowToShow);
                         settings.lastRowLoaded = rowToShow;
-                        attemptRowShow(rowToShow + 1, direction);
+                        attemptRowShow(rowToShow, direction);
                     } else if (rowAboveViewport(rowToShow)) {
-                        attemptRowShow(rowToShow + 1, direction);
+                        attemptRowShow(rowToShow, direction);
                     }
                 }
             } else {
@@ -460,9 +461,9 @@ THE SOFTWARE.
                     if (isRowVisible(rowToShow)) {
                         loadRow(rowToShow);
                         settings.firstRowLoaded = rowToShow;
-                        attemptRowShow(rowToShow - 1, direction);
+                        attemptRowShow(rowToShow, direction);
                     } else if (rowBelowViewport(rowToShow)) {
-                        attemptRowShow(rowToShow - 1, direction);
+                        attemptRowShow(rowToShow, direction);
                     }
                 }
             }
