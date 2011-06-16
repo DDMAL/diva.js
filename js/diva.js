@@ -874,7 +874,11 @@ THE SOFTWARE.
             // Change the width of the inner div correspondingly
             $(settings.innerSelector).width(settings.panelWidth);
             // Do another AJAX request to fix the padding and so on
-            loadDocument(settings.zoomLevel);
+            if (settings.inGrid) {
+                loadGrid();
+            } else {
+                loadDocument(settings.zoomLevel);
+            }
         }
 
         // Handles entering fullscreen mode
