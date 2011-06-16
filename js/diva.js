@@ -469,8 +469,31 @@ THE SOFTWARE.
             }
         }
 
+        var deleteRow = function(rowIndex) {
+            if (isRowLoaded(rowIndex)) {
+                $(settings.selector + 'row-' + rowIndex).remove();
+            }
+        }
+
         var attemptRowHide = function(rowIndex, direction) {
             console.log("attempt to HIDE row " + rowIndex);
+            if (direction > 0) {
+                if (rowInRange(rowIndex) && rowAboveViewport(rowIndex)) {
+                    console.log("deleting row" + rowIndex);
+                    deleteRow(rowIndex);
+                    settings.firstRowLoaded++;
+
+                    attemptRowHide(settings.firstRowLoaded, direction);
+                }
+            } else {
+                if (rowInRange(rowIndex) && rowBelowViewport(rowIndex)) {
+                    console.log("deleting row" + rowIndex);
+                    deletePage(rowIndex);
+                    settings.lastRowLoaded--;
+
+                    attemptRowHide(settings.lastPageLoaded, direction);
+                }
+            }
         }
 
         var adjustRows = function(direction) {
