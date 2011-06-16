@@ -241,8 +241,18 @@ THE SOFTWARE.
             }
         };
 
+        // Check if a row ID is valid
+        var rowInRange = function(rowIndex) {
+            numRows = Math.ceil(settings.numPages / settings.pagesPerGridRow);
+            if (rowIndex >= 0 && rowIndex < numRows) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
         // Private helper function, check if a page ID is valid
-        var inRange = function(pageIndex) {
+        var pageInRange = function(pageIndex) {
             if (pageIndex >= 0 && pageIndex < settings.numPages) {
                 return true;
             } else {
@@ -252,7 +262,7 @@ THE SOFTWARE.
 
         // Private helper function, check if the bottom of a page is above the top of a viewport
         // For when you want to keep looping but don't want to load a specific page
-        var aboveViewport = function(pageIndex) {
+        var pageAboveViewport = function(pageIndex) {
             var bottomOfPage = settings.heightAbovePages[pageIndex] + settings.pages[pageIndex].h + settings.verticalPadding;
             var topOfViewport = settings.scrollSoFar; 
             if ( bottomOfPage < topOfViewport ) {
@@ -263,7 +273,7 @@ THE SOFTWARE.
         
         // Private helper function, check if the top of a page is below the bottom of a viewport
         // Used for scrolling up
-        var belowViewport = function(pageIndex) {
+        var pageBelowViewport = function(pageIndex) {
             var topOfPage = settings.heightAbovePages[pageIndex];
             var bottomOfViewport = settings.scrollSoFar + settings.panelHeight;
             if ( topOfPage > bottomOfViewport ) {
@@ -271,6 +281,26 @@ THE SOFTWARE.
             }
             return false;
         };
+
+        var rowBelowViewport = function(rowIndex) {
+            var topOfRow = settings.rowHeight * rowIndex;
+            var bottomOfViewport = settings.scrollSoFar + settings.panelHeight;
+            if (topOfRow > bottomOfViewport) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        var rowAboveViewport = function(rowIndex) {
+            var bottomOfRow = settings.rowHeight * (rowIndex + 1) + settings.fixedPadding;
+            var topOfViewport = settings.scrollSoFar;
+            if (bottomOfRow < topOfViewport) {
+                return true;
+            } else {
+                return false;
+            }
+        }
 
         // Helper function for setCurrentPage; should only be called at the end
         var updateCurrentPage = function(pageIndex) {
@@ -339,7 +369,7 @@ THE SOFTWARE.
             if (direction > 0) {
                 // Direction is positive - we're scrolling down
                 // Should we add this page to the DOM? First check if it's a valid page
-                if (inRange(pageIndex)) {
+                if (pageInRange(pageIndex)) {
                     // If it's near the viewport, yes, add it
                     if (isPageVisible(pageIndex)) {
                         loadPage(pageIndex);
@@ -349,7 +379,7 @@ THE SOFTWARE.
 
                         // Recursively call this function until there's nothing to add
                         attemptPageShow(settings.lastPageLoaded+1, direction);
-                    } else if (aboveViewport(pageIndex)) {
+                    } else if (pageAboveViewport(pageIndex)) {
                         // Otherwise, is it below the viewport?
                         // Do not increment last page loaded, that would be lying
                         // Attempt to call this on the next page
@@ -361,7 +391,7 @@ THE SOFTWARE.
                 }
             } else {
                 // Direction is negative - we're scrolling up
-                if (inRange(pageIndex)) {
+                if (pageInRange(pageIndex)) {
                     // If it's near the viewport, yes, add it
                     if (isPageVisible(pageIndex)) {
                         loadPage(pageIndex);
@@ -371,7 +401,7 @@ THE SOFTWARE.
 
                         // Recursively call this function until there's nothing to add
                         attemptPageShow(settings.firstPageLoaded-1, direction);
-                    } else if (belowViewport(pageIndex)) {
+                    } else if (pageBelowViewport(pageIndex)) {
                         // Attempt to call this on the next page, do not increment anything
                         attemptPageShow(pageIndex-1, direction);
                     }
@@ -387,7 +417,7 @@ THE SOFTWARE.
             if (direction > 0) {
                 // Direction is positive - we're scrolling down
                 // Should we delete this page from the DOM?
-                if (inRange(pageIndex) && aboveViewport(pageIndex)) {
+                if (pageInRange(pageIndex) && pageAboveViewport(pageIndex)) {
                     // Yes, delete it, reset the first page loaded
                     deletePage(pageIndex);
                     settings.firstPageLoaded++;
@@ -400,7 +430,7 @@ THE SOFTWARE.
                 }
             } else {
                 // Direction must be negative (not 0, see adjustPages), we're scrolling up
-                if (inRange(pageIndex) && belowViewport(pageIndex)) {
+                if (pageInRange(pageIndex) && pageBelowViewport(pageIndex)) {
                     // Yes, delete it, reset the last page loaded
                     deletePage(pageIndex);
                     settings.lastPageLoaded--;
@@ -556,7 +586,7 @@ THE SOFTWARE.
         }
 
         // Check if a row should be visible in the viewport
-        var rowInViewport = function(rowIndex) {
+        var isRowVisible = function(rowIndex) {
             // Calculate the top and bottom, then call verticallyInViewport
             var topOfRow = settings.rowHeight * rowIndex;
             var bottomOfRow = topOfRow + settings.rowHeight + settings.fixedPadding;
@@ -612,8 +642,10 @@ THE SOFTWARE.
                 var i;
                 for (i = 0; i < settings.numPages; i += settings.pagesPerGridRow) {
                     var rowIndex = Math.floor(i / settings.pagesPerGridRow);
-                    if (rowInViewport(rowIndex)) {
+                    if (isRowVisible(rowIndex)) {
+                        settings.firstRowLoaded = (settings.firstRowLoaded < 0) ? rowIndex : settings.firstRowLoaded;
                         loadRow(rowIndex);
+                        settings.lastRowLoaded = rowIndex;
                     }
                 }
 
@@ -765,7 +797,7 @@ THE SOFTWARE.
             pageIndex = pageNumber - 1;
 
             // First make sure that the page number exists (i.e. is in range)
-            if (inRange(pageIndex)) {
+            if (pageInRange(pageIndex)) {
                 var heightToScroll = settings.heightAbovePages[pageIndex];
 
                 // Change the "currently on page" thing
