@@ -445,7 +445,27 @@ THE SOFTWARE.
 
         var attemptRowShow = function(rowIndex, direction) {
             var rowToShow = rowIndex + direction;
-            console.log("attempting to show row " + rowToShow);
+            if (direction > 0) {
+                if (rowInRange(rowToShow)) {
+                    if (isRowVisible(rowToShow)) {
+                        loadRow(rowToShow);
+                        settings.lastRowLoaded = rowToShow;
+                        attemptRowShow(rowToShow + 1, direction);
+                    } else if (rowAboveViewport(rowToShow)) {
+                        attemptRowShow(rowToShow + 1, direction);
+                    }
+                }
+            } else {
+                if (rowInRange(rowToShow)) {
+                    if (isRowVisible(rowToShow)) {
+                        loadRow(rowToShow);
+                        settings.firstRowLoaded = rowToShow;
+                        attemptRowShow(rowToShow - 1, direction);
+                    } else if (rowBelowViewport(rowToShow)) {
+                        attemptRowShow(rowToShow - 1, direction);
+                    }
+                }
+            }
         }
 
         var attemptRowHide = function(rowIndex, direction) {
@@ -454,11 +474,11 @@ THE SOFTWARE.
 
         var adjustRows = function(direction) {
             if (direction < 0) {
-                attemptRowShow(settings.firstRowLoaded, direction);
-                attemptRowHide(settings.lastRowLoaded, direction);
+                attemptRowShow(settings.firstRowLoaded, -1);
+                attemptRowHide(settings.lastRowLoaded, -1);
             } else if (direction > 0) {
-                attemptRowHide(settings.firstRowLoaded, direction);
-                attemptRowShow(settings.lastRowLoaded, direction);
+                attemptRowHide(settings.firstRowLoaded, 1);
+                attemptRowShow(settings.lastRowLoaded, 1);
             }
         }
 
