@@ -293,8 +293,9 @@ THE SOFTWARE.
         }
 
         var rowAboveViewport = function(rowIndex) {
-            var bottomOfRow = settings.rowHeight * (rowIndex + 1) + settings.fixedPadding;
+            var bottomOfRow = settings.rowHeight * (rowIndex + 1);
             var topOfViewport = settings.scrollSoFar;
+            console.log("row index " + rowIndex + "has a bottom at " + bottomOfRow);
             if (bottomOfRow < topOfViewport) {
                 return true;
             } else {
@@ -450,7 +451,7 @@ THE SOFTWARE.
                 if (rowInRange(rowToShow)) {
                     if (isRowVisible(rowToShow)) {
                         loadRow(rowToShow);
-                        settings.lastRowLoaded = rowToShow;
+                        settings.lastRowLoaded++;
                         attemptRowShow(rowToShow, direction);
                     } else if (rowAboveViewport(rowToShow)) {
                         attemptRowShow(rowToShow, direction);
@@ -460,7 +461,7 @@ THE SOFTWARE.
                 if (rowInRange(rowToShow)) {
                     if (isRowVisible(rowToShow)) {
                         loadRow(rowToShow);
-                        settings.firstRowLoaded = rowToShow;
+                        settings.firstRowLoaded--;
                         attemptRowShow(rowToShow, direction);
                     } else if (rowBelowViewport(rowToShow)) {
                         attemptRowShow(rowToShow, direction);
@@ -642,7 +643,7 @@ THE SOFTWARE.
                 console.log("need to load row" + rowIndex);
             }
             var i;
-            var heightFromTop = (settings.fixedPadding + settings.rowHeight) * rowIndex + settings.fixedPadding;
+            var heightFromTop = (settings.rowHeight) * rowIndex + settings.fixedPadding;
             var stringBuilder = [];
             stringBuilder.push('<div id="' + settings.ID + 'row-' + rowIndex + '" style="width: 100%; height: ' + settings.rowHeight + '; position: absolute; top: ' + heightFromTop + 'px;">');
             for (i = 0; i < settings.pagesPerGridRow; i++) {
@@ -651,11 +652,9 @@ THE SOFTWARE.
                 if (!pageInRange(pageIndex)) {
                     break; // when we're at the last page etc
                 }
-                console.log("page index: " + pageIndex);
                 var pageNumber = pageIndex + 1;
                 var filename = settings.pages[pageIndex].fn;
                 var imgSrc = settings.iipServerBaseUrl + filename + '&amp;WID=' + settings.gridPageWidth + '&amp;CVT=JPG';
-                console.log(imgSrc);
                 var leftOffset = i * (settings.fixedPadding + settings.gridPageWidth) + settings.fixedPadding;
                 stringBuilder.push('<div id="' + settings.ID + 'page-' + pageIndex + '" style="position: absolute; left: ' + leftOffset + 'px; display: inline; background-image: url(\'' + imgSrc  + '\'); background-repeat: no-repeat; width: ' + settings.gridPageWidth + 'px; height: ' + settings.rowHeight + 'px;"></div>');
             }
@@ -678,11 +677,11 @@ THE SOFTWARE.
                 console.log("page width: " + pageWidth);
 
                 // Now calculate the maximum height, use that as the row height
-                settings.rowHeight = settings.fixedPadding + (settings.maxHeight / data.dims.tall_w) * pageWidth;
+                settings.rowHeight = settings.fixedPadding * 2 + (settings.maxHeight / data.dims.tall_w) * pageWidth;
                 console.log("max row heght: " + settings.rowHeight);
                 console.log("page width is" + settings.gridPageWidth);
                 settings.numRows = Math.ceil(settings.numPages / settings.pagesPerGridRow);
-                settings.totalHeight = (settings.numRows) * (settings.rowHeight + settings.fixedPadding);
+                settings.totalHeight = settings.numRows * settings.rowHeight;
                 console.log("total height:" + settings.totalHeight);
                 $(settings.innerSelector).css('height', settings.totalHeight);
                 $(settings.innerSelector).css('width', settings.panelWidth);
