@@ -841,25 +841,36 @@ THE SOFTWARE.
 
         // Private function for going to a page
         var gotoPage = function(pageNumber) {
-            // Since we start indexing from 0, subtract 1 to behave as the user expects
-            pageIndex = pageNumber - 1;
+            // If we're in grid view, find out the row number that is
+            if (settings.inGrid) {
+                var rowIndex = Math.ceil(pageNumber / settings.pagesPerGridRow) - 1;
+                console.log("page " + pageNumber + " should be in row " + rowIndex);
+                if (rowInRange(rowIndex)) {
+                    var heightToScroll = rowIndex * settings.rowHeight;
+                    $(settings.outerSelector).scrollTop(heightToScroll);
+                    return true;
+                }
+            } else {
+                // Since we start indexing from 0, subtract 1 to behave as the user expects
+                pageIndex = pageNumber - 1;
+    
+                // First make sure that the page number exists (i.e. is in range)
+                if (pageInRange(pageIndex)) {
+                    var heightToScroll = settings.heightAbovePages[pageIndex];
+    
+                    // Change the "currently on page" thing
+                    updateCurrentPage(pageIndex);
+                    $(settings.outerSelector).scrollTop(heightToScroll);
 
-            // First make sure that the page number exists (i.e. is in range)
-            if (pageInRange(pageIndex)) {
-                var heightToScroll = settings.heightAbovePages[pageIndex];
+                    // Now figure out the horizontal scroll - scroll to the MIDDLE
+                    var horizontalScroll = ($(settings.innerSelector).width() - settings.panelWidth) / 2;
+                    $(settings.outerSelector).scrollLeft(horizontalScroll);
+    
+                    // Now execute the callback function, pass it the page NUMBER not the page index
+                    $.executeCallback(settings.onJump, pageNumber);
 
-                // Change the "currently on page" thing
-                updateCurrentPage(pageIndex);
-                $(settings.outerSelector).scrollTop(heightToScroll);
-
-                // Now figure out the horizontal scroll - scroll to the MIDDLE
-                var horizontalScroll = ($(settings.innerSelector).width() - settings.panelWidth) / 2;
-                $(settings.outerSelector).scrollLeft(horizontalScroll);
-
-                // Now execute the callback function, pass it the page NUMBER not the page index
-                $.executeCallback(settings.onJump, pageNumber);
-
-                return true; // To signify that we can scroll to this page
+                    return true; // To signify that we can scroll to this page
+                }
             }
             return false;
         };
