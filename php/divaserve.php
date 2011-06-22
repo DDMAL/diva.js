@@ -159,10 +159,12 @@ if (!file_exists($cache_file)) {
             if ($h > $mx_h) {
                 $tallest_page_height = $h;
                 $tallest_page_width = $w;
+                $mx_h = $h;
             }
             if ($w > $mx_w) {
                 $widest_page_height = $h;
                 $widest_page_width = $w;
+                $mx_w = $w;
             }
             $t_wid += $w;
             $t_hei += $h;
