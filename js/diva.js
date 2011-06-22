@@ -1046,6 +1046,17 @@ THE SOFTWARE.
                 $(settings.selector + 'fullscreen').click(function() {
                     toggleFullscreen();
                 });
+
+                // Listen to window resize events during fullscreen mode, change dimensions accordingly
+                var resizeTimer;
+                $(window).resize(function() {
+                    clearTimeout(resizeTimer);
+                    resizeTimer = setTimeout(function() {
+                        settings.panelHeight = parseInt($(settings.outerSelector).height(), 10);
+                        // It should simulate scrolling down since it only matters if the page gets bigger
+                        adjustPages(1);
+                    }, 100);
+                });
             }
 
             // Change the cursor for dragging.
@@ -1161,7 +1172,6 @@ THE SOFTWARE.
                     }
                 });
             }
-
         };
 
         // Create a fullscreen statusbar thing - if it doesn't exist
