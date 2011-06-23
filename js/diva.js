@@ -1092,13 +1092,20 @@ THE SOFTWARE.
                 
             // Double-click to zoom
             $(settings.outerSelector).dblclick(function(event) {
+                // First set the x and y offsets of the viewer from the edge of document
+                settings.viewerXOffset = this.offsetLeft;
+                settings.viewerYOffset = this.offsetTop;
+
                 if (settings.inGrid) {
+                    // Figure out the page that was clicked, scroll to that page
+                    var centerX = (event.pageX - settings.viewerXOffset) + $(settings.outerSelector).scrollLeft();
+                    var centerY = (event.pageY - settings.viewerYOffset) + $(settings.outerSelector).scrollTop();
+                    var rowIndex = Math.floor(centerY / settings.rowHeight);
+                    var colIndex = Math.floor(centerX / (settings.panelWidth / settings.pagesPerGridRow));
+                    var pageNumber = rowIndex * settings.pagesPerGridRow + colIndex + 1;
+                    settings.goDirectlyTo = pageNumber;
                     leaveGrid();
                 } else {
-                    // First set the x and y offsets of the viewer from the edge of document
-                    settings.viewerXOffset = this.offsetLeft;
-                    settings.viewerYOffset = this.offsetTop;
-
                     handleDoubleClick(event);
                 }
             });
