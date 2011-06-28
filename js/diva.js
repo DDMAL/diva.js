@@ -175,20 +175,8 @@ THE SOFTWARE.
 
             // Only try to append the div part if the page has not already been loaded
             if (!isPageLoaded(pageIndex)) {
-                // If it's the max width:
-                if (width === settings.maxWidth) {
-                    // If it's larger than the panel (or almost), we use the standard horizontal padding
-                    if (width >= settings.panelWidth - 2 * settings.horizontalPadding) {
-                        leftOffset = settings.horizontalPadding;
-                    } else {
-                        leftOffset = (settings.panelWidth - width) / 2;
-                    }
-                } else {
-                    // Smaller than the max width
-                    widthToUse = (settings.maxWidth > settings.panelWidth) ? settings.maxWidth + 2 * settings.horizontalPadding : settings.panelWidth;
-                    leftOffset = (widthToUse - width) / 2;
-                }
-                content.push('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width:' + width + 'px; height: ' + height + 'px; left:' + leftOffset + 'px;" class="diva-page">');
+                // Magically centered using left: 50% and margin-left: -(width/2)
+                content.push('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width:' + width + 'px; height: ' + height + 'px; left: 50%; margin-left: -' + (width / 2) + 'px" class="diva-page">');
             }
 
             // Calculate the width and height of the outer tiles (the ones that may have weird dimensions)
