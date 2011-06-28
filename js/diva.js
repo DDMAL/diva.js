@@ -62,7 +62,7 @@ THE SOFTWARE.
         var globals = {
             centerX: 0,                 // Only used if doubleClick is true - for zooming in
             centerY: 0,                 // Y-coordinate, see above
-            currentPageIndex: 0,            // The current page in the viewport (center-most page)
+            currentPageIndex: 0,        // The current page in the viewport (center-most page)
             dimAfterZoom: 0,            // Used for storing the item dimensions after zooming
             dimBeforeZoom: 0,           // Used for storing the item dimensions before zooming
             doubleClick: false,         // If the zoom has been triggered by a double-click event
@@ -73,7 +73,8 @@ THE SOFTWARE.
             fullscreenStatusbar: null,  // The popup box that tells you what page you're on
             heightAbovePages: [],       // The height above each page
             horizontalOffset: 0,        // Used for storing the page offset before zooming
-            horizontalPadding: 0,
+            horizontalPadding: 0,       // Either the fixed padding or adaptive padding
+            ID: null,                   // The prefix of the IDs of the elements (usually 1-diva-)
             inFullscreen: false,        // Set to true when the user enters fullscreen mode
             inGrid: false,              // Set to true when the user enters the grid view
             itemTitle: '',              // The title of the document
@@ -92,7 +93,7 @@ THE SOFTWARE.
             scrollSoFar: 0,             // Holds the number of pixels of vertical scroll
             totalHeight: 0,             // Height of all the image stacked together, value set later
             verticalOffset: 0,          // Used for storing the page offset before zooming
-            verticalPadding: 0,         
+            verticalPadding: 0,         // Either the fixed padding or adaptive padding
             viewerXOffset: 0,           // Distance between left edge of viewer and document left edge
             viewerYOffset: 0,           // ^ for top edges
             zoomInCallback: null,       // Only executed after zoomIn() if present
@@ -283,7 +284,6 @@ THE SOFTWARE.
         var rowAboveViewport = function(rowIndex) {
             var bottomOfRow = settings.rowHeight * (rowIndex + 1);
             var topOfViewport = settings.scrollSoFar;
-            console.log("row index " + rowIndex + "has a bottom at " + bottomOfRow);
             if (bottomOfRow < topOfViewport) {
                 return true;
             } else {
@@ -434,7 +434,6 @@ THE SOFTWARE.
 
         var attemptRowShow = function(rowIndex, direction) {
             var rowToShow = rowIndex + direction;
-            console.log("attempt to SHOW row" + rowToShow);
             if (direction > 0) {
                 if (rowInRange(rowToShow)) {
                     if (isRowVisible(rowToShow)) {
@@ -465,10 +464,8 @@ THE SOFTWARE.
         }
 
         var attemptRowHide = function(rowIndex, direction) {
-            console.log("attempt to HIDE row " + rowIndex);
             if (direction > 0) {
                 if (rowInRange(rowIndex) && rowAboveViewport(rowIndex)) {
-                    console.log("deleting row" + rowIndex);
                     deleteRow(rowIndex);
                     settings.firstRowLoaded++;
 
@@ -476,7 +473,6 @@ THE SOFTWARE.
                 }
             } else {
                 if (rowInRange(rowIndex) && rowBelowViewport(rowIndex)) {
-                    console.log("deleting row" + rowIndex);
                     deletePage(rowIndex);
                     settings.lastRowLoaded--;
 
@@ -627,8 +623,8 @@ THE SOFTWARE.
         }
 
         var loadRow = function(rowIndex) {
-            if (!isRowLoaded(rowIndex)) {
-                console.log("need to load row" + rowIndex);
+            if (isRowLoaded(rowIndex)) {
+                return;
             }
             var i;
             var heightFromTop = (settings.rowHeight) * rowIndex + settings.fixedPadding;
@@ -661,16 +657,11 @@ THE SOFTWARE.
                 var horizontalPadding = settings.fixedPadding * (settings.pagesPerGridRow + 1);
                 var pageWidth = (settings.panelWidth - horizontalPadding) / settings.pagesPerGridRow;
                 settings.gridPageWidth = pageWidth;
-                console.log('number of pages per row:' + settings.pagesPerGridRow);
-                console.log("page width: " + pageWidth);
 
                 // Now calculate the maximum height, use that as the row height
                 settings.rowHeight = settings.fixedPadding * 2 + (settings.maxHeight / data.dims.tall_w) * pageWidth;
-                console.log("max row heght: " + settings.rowHeight);
-                console.log("page width is" + settings.gridPageWidth);
                 settings.numRows = Math.ceil(settings.numPages / settings.pagesPerGridRow);
                 settings.totalHeight = settings.numRows * settings.rowHeight;
-                console.log("total height:" + settings.totalHeight);
                 $(settings.innerSelector).css('height', settings.totalHeight);
                 $(settings.innerSelector).css('width', settings.panelWidth);
 
@@ -832,7 +823,6 @@ THE SOFTWARE.
             // If we're in grid view, find out the row number that is
             if (settings.inGrid) {
                 var rowIndex = Math.ceil(pageNumber / settings.pagesPerGridRow) - 1;
-                console.log("page " + pageNumber + " should be in row " + rowIndex);
                 if (rowInRange(rowIndex)) {
                     var heightToScroll = rowIndex * settings.rowHeight;
                     $(settings.outerSelector).scrollTop(heightToScroll);
