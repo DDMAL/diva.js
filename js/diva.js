@@ -1043,7 +1043,10 @@ THE SOFTWARE.
                         settings.panelHeight = parseInt($(settings.outerSelector).height(), 10);
                         // It should simulate scrolling down since it only matters if the page gets bigger
                         adjustPages(1);
-                    }, 100);
+
+                        var newWidth = $('body').css('width');
+                        $(settings.innerSelector).css('width', newWidth);
+                    }, 10);
                 });
             }
 
