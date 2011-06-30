@@ -1355,6 +1355,15 @@ THE SOFTWARE.
             settings.zoomOutCallback = callback;
             return handleZoom(settings.zoomLevel-1);
         };
+
+        // Uses the verticallyInViewport() function, but relative to a page
+        // Check if something (e.g. a search box) is visible
+        this.inViewport = function(pageNumber, topOffset, height) {
+            var pageIndex = pageNumber - 1;
+            var top = settings.heightAbovePages[pageIndex] + topOffset;
+            var bottom = top + height;
+            return verticallyInViewport(top, bottom);
+        }
     };
     
     /// this should not need to be changed.
