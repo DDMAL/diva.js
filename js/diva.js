@@ -476,7 +476,7 @@ THE SOFTWARE.
                 }
             } else {
                 if (rowInRange(rowIndex) && rowBelowViewport(rowIndex)) {
-                    deletePage(rowIndex);
+                    deleteRow(rowIndex);
                     settings.lastRowLoaded--;
 
                     attemptRowHide(settings.lastPageLoaded, direction);
