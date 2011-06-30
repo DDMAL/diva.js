@@ -39,6 +39,9 @@ THE SOFTWARE.
             iipServerBaseUrl: '',       // The URL to the IIPImage installation, including the ?FIF=
             maxZoomLevel: 0,            // Optional; defaults to the max zoom returned in the JSON response
             minZoomLevel: 0,            // Defaults to 0 (the minimum zoom)
+            onFullscreen: null,         // Callback for toggling fullscreen
+            onFullscreenEnter: null,    // Callback for entering fullscreen mode
+            onFullscreenExit: null,     // Callback for exiting fullscreen mode
             onJump: null,               // Callback function for jumping to a specific page (using the gotoPage feature)
             onReady: null,              // Callback function for initial load
             onScroll: null,             // Callback function for scrolling
@@ -751,6 +754,9 @@ THE SOFTWARE.
                             $.executeCallback(settings.zoomInCallback, zoomLevel);
                             settings.zoomInCallback = null;
                         }
+                    } else {
+                        // Switching between fullscreen mode
+                        $.executeCallback(settings.onFullscreen, zoomLevel);
                     }
                 } else {
                     // The document viewer has loaded, execute onReady
@@ -963,6 +969,9 @@ THE SOFTWARE.
 
             // Hide the body scrollbar
             $('body').css('overflow', 'hidden');
+
+            // Execute the callback
+            $.executeCallback(settings.onFullscreenEnter);
         };
 
         // Handles leaving fullscreen mode
@@ -984,6 +993,8 @@ THE SOFTWARE.
             // Return the body scrollbar and the fullscreen icon to their original places
             $(settings.selector + 'fullscreen').css('position', 'absolute').css('z-index', '8999');
 
+            // Execute the callback
+            $.executeCallback(settings.onFullscreenExit);
         };
 
         // Toggle, enter and leave grid mode functions akin to those for fullscreen
