@@ -436,25 +436,25 @@ THE SOFTWARE.
         };
 
         var attemptRowShow = function(rowIndex, direction) {
-            var rowToShow = rowIndex + direction;
             if (direction > 0) {
-                if (rowInRange(rowToShow)) {
-                    if (isRowVisible(rowToShow)) {
-                        loadRow(rowToShow);
-                        settings.lastRowLoaded++;
-                        attemptRowShow(rowToShow, direction);
-                    } else if (rowAboveViewport(rowToShow)) {
-                        attemptRowShow(rowToShow, direction);
+                if (rowInRange(rowIndex)) {
+                    if (isRowVisible(rowIndex)) {
+                        loadRow(rowIndex);
+                        settings.lastRowLoaded = rowIndex;
+
+                        attemptRowShow(settings.lastRowLoaded+1, direction);
+                    } else if (rowAboveViewport(rowIndex)) {
+                        attemptRowShow(rowIndex+1, direction);
                     }
                 }
             } else {
-                if (rowInRange(rowToShow)) {
-                    if (isRowVisible(rowToShow)) {
-                        loadRow(rowToShow);
-                        settings.firstRowLoaded--;
-                        attemptRowShow(rowToShow, direction);
-                    } else if (rowBelowViewport(rowToShow)) {
-                        attemptRowShow(rowToShow, direction);
+                if (rowInRange(rowIndex)) {
+                    if (isRowVisible(rowIndex)) {
+                        loadRow(rowIndex);
+                        settings.firstRowLoaded = rowIndex;
+                        attemptRowShow(settings.firstRowLoaded-1, direction);
+                    } else if (rowBelowViewport(rowIndex)) {
+                        attemptRowShow(rowIndex-1, direction);
                     }
                 }
             }
