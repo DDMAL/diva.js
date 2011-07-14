@@ -180,7 +180,7 @@ THE SOFTWARE.
             // Only try to append the div part if the page has not already been loaded
             if (!isPageLoaded(pageIndex)) {
                 // Magically centered using left: 50% and margin-left: -(width/2)
-                content.push('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width:' + width + 'px; height: ' + height + 'px; left: 50%; margin-left: -' + (width / 2) + 'px" class="diva-page">');
+                content.push('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + Math.round(heightFromTop) + 'px; width: ' + Math.round(width) + 'px; height: ' + Math.round(height) + 'px; left: 50%; margin-left: -' + Math.round(width / 2) + 'px" class="diva-page">');
             }
 
             // Calculate the width and height of the outer tiles (the ones that may have weird dimensions)
@@ -665,8 +665,8 @@ THE SOFTWARE.
                 settings.rowHeight = settings.fixedPadding * 2 + (settings.maxHeight / data.dims.tall_w) * pageWidth;
                 settings.numRows = Math.ceil(settings.numPages / settings.pagesPerGridRow);
                 settings.totalHeight = settings.numRows * settings.rowHeight;
-                $(settings.innerSelector).css('height', settings.totalHeight);
-                $(settings.innerSelector).css('width', settings.panelWidth);
+                $(settings.innerSelector).css('height', Math.round(settings.totalHeight));
+                $(settings.innerSelector).css('width', Math.round(settings.panelWidth));
 
                 // Figure out the row each page is in
                 var i;
@@ -728,9 +728,9 @@ THE SOFTWARE.
                 }
                     
                 // Set the height and width of documentpane (necessary for dragscrollable)
-                $(settings.innerSelector).css('height', settings.totalHeight);
+                $(settings.innerSelector).css('height', Math.round(settings.totalHeight));
                 var widthToSet = (data.dims.wide_w + settings.horizontalPadding * 2 < settings.panelWidth ) ? settings.panelWidth : data.dims.wide_w + settings.horizontalPadding * 2; // width of page + 40 pixels on each side if necessary
-                $(settings.innerSelector).css('width', widthToSet);
+                $(settings.innerSelector).css('width', Math.round(widthToSet));
 
                 // Scroll to the proper place
                 scrollAfterRequest();
