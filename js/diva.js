@@ -668,6 +668,10 @@ THE SOFTWARE.
                 $(settings.innerSelector).css('height', Math.round(settings.totalHeight));
                 $(settings.innerSelector).css('width', Math.round(settings.panelWidth));
 
+                // First scroll directly to the row containing the current page
+                gotoPage(settings.currentPageIndex + 1);
+                settings.scrollSoFar = $(settings.outerSelector).scrollTop();
+
                 // Figure out the row each page is in
                 var i;
                 for (i = 0; i < settings.numPages; i += settings.pagesPerGridRow) {
@@ -678,7 +682,6 @@ THE SOFTWARE.
                         settings.lastRowLoaded = rowIndex;
                     }
                 }
-
             });
         }
 
@@ -1016,6 +1019,8 @@ THE SOFTWARE.
 
         var leaveGrid = function() {
             settings.inGrid = false;
+            // Jump to the "current page"
+            settings.goDirectlyTo = settings.currentPageIndex + 1;
             loadDocument(settings.zoomLevel);
             $.updateHashParam('grid', 'false');
         };
