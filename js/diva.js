@@ -1019,8 +1019,11 @@ THE SOFTWARE.
 
         var leaveGrid = function() {
             settings.inGrid = false;
-            // Jump to the "current page"
-            settings.goDirectlyTo = settings.currentPageIndex + 1;
+            // Jump to the "current page" if double-click wasn't used
+            if (!settings.goDirectlyTo) {
+                settings.goDirectlyTo = settings.currentPageIndex + 1;
+            }
+
             loadDocument(settings.zoomLevel);
             $.updateHashParam('grid', 'false');
         };
