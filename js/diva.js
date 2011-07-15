@@ -479,7 +479,7 @@ THE SOFTWARE.
                     deleteRow(rowIndex);
                     settings.lastRowLoaded--;
 
-                    attemptRowHide(settings.lastPageLoaded, direction);
+                    attemptRowHide(settings.lastRowLoaded, direction);
                 }
             }
         }
