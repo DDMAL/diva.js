@@ -54,6 +54,7 @@ THE SOFTWARE.
             tileFadeSpeed: 300,         // The tile fade-in speed in ms. Set to 0 to disable tile fading. May also be "fast" or "slow".
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
+            viewportMargin: 200,        // Pretend tiles +/- 200px away from viewport are in
             zoomLevel: 2                // The initial zoom level (used to store the current zoom level)
         };
         
@@ -108,8 +109,8 @@ THE SOFTWARE.
         // Checks if a page is within the viewport vertically
         var verticallyInViewport = function(top, bottom) {
             var panelHeight = settings.panelHeight;
-            var topOfViewport = settings.scrollSoFar;
-            var bottomOfViewport = topOfViewport + panelHeight;
+            var topOfViewport = settings.scrollSoFar - settings.viewportMargin;
+            var bottomOfViewport = topOfViewport + panelHeight + settings.viewportMargin * 2;
            
             if (top >= topOfViewport && top <= bottomOfViewport) {
                 // If top of page is in the viewport
