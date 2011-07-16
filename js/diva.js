@@ -821,6 +821,12 @@ THE SOFTWARE.
             // First get the vertical offset (vertical scroll so far)
             settings.verticalOffset = $(settings.outerSelector).scrollTop();
             settings.horizontalOffset = $(settings.outerSelector).scrollLeft();
+
+            // If we're in grid mode, leave it
+            if (settings.inGrid) {
+                // Don't call loadDocument() in leaveGrid() otherwise it loads twice
+                leaveGrid(true);
+            }
             
             // Let handleZoom handle zooming
             settings.doubleClick = false;
@@ -1017,14 +1023,17 @@ THE SOFTWARE.
             $.updateHashParam('grid', 'true');
         }
 
-        var leaveGrid = function() {
+        var leaveGrid = function(preventLoad) {
             settings.inGrid = false;
             // Jump to the "current page" if double-click wasn't used
             if (!settings.goDirectlyTo) {
                 settings.goDirectlyTo = settings.currentPageIndex + 1;
             }
 
-            loadDocument(settings.zoomLevel);
+            // preventLoad is only true when the zoom slider is used
+            if (!preventLoad) {
+                loadDocument(settings.zoomLevel);
+            }
             $.updateHashParam('grid', 'false');
         };
 
