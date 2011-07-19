@@ -35,7 +35,6 @@ THE SOFTWARE.
             enableSpaceScroll: false,   // Scrolling down by pressing the space key
             enableZoomSlider: true,     // Enable or disable the zoom slider (for zooming in and out)
             fixedPadding: 10,            // Fallback if adaptive padding is set to 0
-            goDirectlyTo: 0,            // For the page hash param (#p=100 or &p=5)
             iipServerBaseUrl: '',       // The URL to the IIPImage installation, including the ?FIF=
             maxZoomLevel: 0,            // Optional; defaults to the max zoom returned in the JSON response
             minZoomLevel: 0,            // Defaults to 0 (the minimum zoom)
@@ -75,6 +74,7 @@ THE SOFTWARE.
             firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
             firstRowLoaded: -1,         // The index of the first row loaded
             fullscreenStatusbar: null,  // The popup box that tells you what page you're on
+            goDirectlyTo: 0,            // For the page hash param (#p=100 or &p=5)
             heightAbovePages: [],       // The height above each page
             horizontalOffset: 0,        // Used for storing the page offset before zooming
             horizontalPadding: 0,       // Either the fixed padding or adaptive padding
