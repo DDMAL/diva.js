@@ -275,20 +275,20 @@ THE SOFTWARE.
             return false;
         };
 
-        var rowBelowViewport = function(rowIndex) {
-            var topOfRow = settings.rowHeight * rowIndex;
-            var bottomOfViewport = settings.scrollSoFar + settings.panelHeight;
-            if (topOfRow > bottomOfViewport) {
+        var rowAboveViewport = function(rowIndex) {
+            var bottomOfRow = settings.rowHeight * (rowIndex + 1);
+            var topOfViewport = settings.scrollSoFar;
+            if (bottomOfRow < topOfViewport) {
                 return true;
             } else {
                 return false;
             }
         }
 
-        var rowAboveViewport = function(rowIndex) {
-            var bottomOfRow = settings.rowHeight * (rowIndex + 1);
-            var topOfViewport = settings.scrollSoFar;
-            if (bottomOfRow < topOfViewport) {
+        var rowBelowViewport = function(rowIndex) {
+            var topOfRow = settings.rowHeight * rowIndex;
+            var bottomOfViewport = settings.scrollSoFar + settings.panelHeight;
+            if (topOfRow > bottomOfViewport) {
                 return true;
             } else {
                 return false;
