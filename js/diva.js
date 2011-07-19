@@ -181,7 +181,7 @@ THE SOFTWARE.
             // Only try to append the div part if the page has not already been loaded
             if (!isPageLoaded(pageIndex)) {
                 // Magically centered using left: 50% and margin-left: -(width/2)
-                content.push('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + Math.round(heightFromTop) + 'px; width: ' + Math.round(width) + 'px; height: ' + Math.round(height) + 'px; left: 50%; margin-left: -' + Math.round(width / 2) + 'px" class="diva-page">');
+                content.push('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width: ' + width + 'px; height: ' + height + 'px; left: 50%; margin-left: -' + (width / 2) + 'px" class="diva-page">');
             }
 
             // Calculate the width and height of the outer tiles (the ones that may have weird dimensions)
