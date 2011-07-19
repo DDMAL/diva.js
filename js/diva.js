@@ -842,6 +842,9 @@ THE SOFTWARE.
                 if (rowInRange(rowIndex)) {
                     var heightToScroll = rowIndex * settings.rowHeight;
                     $(settings.outerSelector).scrollTop(heightToScroll);
+                    // Update the "currently on page" thing here as well
+                    updateCurrentPage(pageNumber - 1);
+                    settings.currentPageIndex = pageNumber - 1;
                     return true;
                 }
             } else {
