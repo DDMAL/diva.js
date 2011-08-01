@@ -173,6 +173,7 @@
                 });
 
                 test("updateHashParam()", function() {
+                    window.location.hash = '';
                     // First try it with no hash params in the URL
                     $.updateHashParam('p', '1');
                     equals(window.location.hash, '#p=1');
