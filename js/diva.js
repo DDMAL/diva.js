@@ -34,7 +34,7 @@ THE SOFTWARE.
             enableKeyScroll: true,      // Scrolling using the page up/down keys
             enableSpaceScroll: false,   // Scrolling down by pressing the space key
             enableZoomSlider: true,     // Enable or disable the zoom slider (for zooming in and out)
-            fixedPadding: 10,            // Fallback if adaptive padding is set to 0
+            fixedPadding: 10,           // Fallback if adaptive padding is set to 0
             iipServerBaseUrl: '',       // The URL to the IIPImage installation, including the ?FIF=
             maxZoomLevel: 0,            // Optional; defaults to the max zoom returned in the JSON response
             minZoomLevel: 0,            // Defaults to 0 (the minimum zoom)
@@ -1073,7 +1073,7 @@ THE SOFTWARE.
                 });
             }
 
-            // Change the cursor for dragging.
+            // Change the cursor for dragging
             $(settings.innerSelector).mouseover(function() {
                 $(this).removeClass('grabbing').addClass('grab');
             });
@@ -1211,7 +1211,8 @@ THE SOFTWARE.
             };
 
             settings.fullscreenStatusbar = $.pnotify(options);
-            // Handle clicking, a bit redundant but using live() sucks
+
+            // Handle clicking, a bit redundant but better than using live(), maybe
             $(settings.selector + 'goto-page-fullscreen').submit(function() {
                 var desiredPage = parseInt($(settings.selector + 'goto-input-fullscreen').val(), 10);
                 if (!gotoPage(desiredPage)) {
@@ -1239,7 +1240,7 @@ THE SOFTWARE.
             $(settings.selector + 'tools').prepend('<div id="' + settings.ID + 'grid-icon"></div>');
         };
         
-        // Creates the gotoPage thing
+        // Creates the "go to page" box
         var createGotoPage = function() {
             $(settings.selector + 'tools').append('<form id="' + settings.ID + 'goto-page">Go to page <input type="text" size="3" id="' + settings.ID + 'goto-input" /> <input type="submit" value="Go" /><br /><div id="' + settings.ID + 'current">Current page: <span>1</span> of <label></label></div></form>');
             
@@ -1252,7 +1253,6 @@ THE SOFTWARE.
             });
         };
 
-        
         var init = function() {
             // Check if the platform is the iPad/iPhone/iPod
             settings.mobileSafari = navigator.platform == 'iPad' || navigator.platform == 'iPhone' || navigator.platform == 'iPod';
@@ -1268,15 +1268,17 @@ THE SOFTWARE.
             settings.outerSelector = settings.selector + 'outer';
             settings.innerSelector = settings.selector + 'inner';
             
-            // If we need either a zoom slider or a gotoPage thing, create a "viewertools" div
+            // Create a diva-tools div only if we need to
             if (settings.zoomSlider || settings.enableGotoPage || settings.enableGrid) {
                 $(settings.elementSelector).prepend('<div id="' + settings.ID + 'tools"></div>');
             }
             
+            // Create the go to page box, if enabled
             if (settings.enableGotoPage) {
                 createGotoPage();
             }
 
+            // Create the icon for toggling grid view, if enabled
             if (settings.enableGrid) {
                 createGridIcon();
             }
@@ -1316,10 +1318,7 @@ THE SOFTWARE.
             }
 
             // If there is a 'z' hash param, make that the initial zoom level
-            // It's okay if it's an invalid zoom level - we coerce it to an int first
-            // And we can check AFTER the request if it's valid or not
-            // If it's not valid, use the data for the returned - should be zoom 0
-            // Note that something like -1 will become 1 and not 0 - account for this
+            // Invalid zoom levels will become 0 or the absolute value (e.g. -1 => 1)
             var zoomParam = $.getHashParam('z');
             if (zoomParam) {
                 settings.zoomLevel = Math.abs(parseInt(zoomParam, 10));
@@ -1335,7 +1334,6 @@ THE SOFTWARE.
             // If the "fullscreen" hash param is true, go to fullscreen initially
             var fullscreenParam = $.getHashParam('fullscreen');
             if (fullscreenParam === 'true' && settings.enableFullscreen) {
-                // Trigger the fullscreen thing
                 toggleFullscreen();
             }
 
@@ -1360,10 +1358,12 @@ THE SOFTWARE.
         ===============================================
         */
 
+        // Returns the title of the document, based on the directory name
         this.getItemTitle = function() {
             return settings.itemTitle;
         };
 
+        // Go to a particular page (with indexing starting at 1)
         this.gotoPage = function(pageNumber) {
             return gotoPage(pageNumber);
         };
@@ -1373,24 +1373,25 @@ THE SOFTWARE.
             return settings.currentPageIndex;
         };
 
+        // Returns the current zoom level
         this.getZoomLevel = function() {
             return settings.zoomLevel;
         };
 
-        // Zoom in. Will return false if it's at the maximum zoom
+        // Zoom in, with callback. Will return false if it's at the maximum zoom
         this.zoomIn = function(callback) {
             settings.zoomInCallback = callback;
             return handleZoom(settings.zoomLevel+1);
         };
 
-        // Zoom out. Will return false if it's at the minimum zoom
+        // Zoom out, with callback. Will return false if it's at the minimum zoom
         this.zoomOut = function(callback) {
             settings.zoomOutCallback = callback;
             return handleZoom(settings.zoomLevel-1);
         };
 
         // Uses the verticallyInViewport() function, but relative to a page
-        // Check if something (e.g. a search box) is visible
+        // Check if something (e.g. a highlight box on a particular page) is visible
         this.inViewport = function(pageNumber, topOffset, height) {
             var pageIndex = pageNumber - 1;
             var top = settings.heightAbovePages[pageIndex] + topOffset;
@@ -1399,16 +1400,16 @@ THE SOFTWARE.
         }
     };
     
-    /// this should not need to be changed.
     $.fn.diva = function(options) {
         return this.each(function() {
             var element = $(this);
+
             // Return early if this element already has a plugin instance
-            
             if (element.data('diva')) {
                 return;
             }
             
+            // Otherwise, instantiate the document viewer
             var diva = new Diva(this, options);
             element.data('diva', diva);
         });
