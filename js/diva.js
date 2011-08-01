@@ -86,6 +86,7 @@ THE SOFTWARE.
             lastRowLoaded: -1,          // The index of the last row loaded
             maxHeight: 0,               // The height of the tallest page
             maxWidth: 0,                // The width of the widest page
+            mobileSafari: false,        // Checks if the user is on an iPad, iPhone or iPod
             numPages: 0,                // Number of pages in the array
             numRows: 0,                 // Number of rows
             pages: [],                  // An array containing the data for all the pages
@@ -1133,8 +1134,7 @@ THE SOFTWARE.
             });
 
             // Check if the user is on a iPhone or iPod touch or iPad
-            if (navigator.platform == 'iPad' || navigator.platform == 'iPhone' || navigator.platform == 'iPod' ) {
-
+            if (settings.mobileSafari) {
                 // One-finger scroll within outerdrag
                 $(settings.outerSelector).oneFingerScroll();
 
@@ -1254,6 +1254,9 @@ THE SOFTWARE.
 
         
         var init = function() {
+            // Check if the platform is the iPad/iPhone/iPod
+            settings.mobileSafari = navigator.platform == 'iPad' || navigator.platform == 'iPhone' || navigator.platform == 'iPod';
+
             // For easier selecting of the container element
             settings.elementSelector = '#' + $(element).attr('id');
    
@@ -1282,19 +1285,28 @@ THE SOFTWARE.
             $(settings.elementSelector).append('<div id="' + settings.ID + 'outer"></div>');
             $(settings.outerSelector).append('<div id="' + settings.ID + 'inner" class="dragger"></div>');
             
-            // Get the height and width of the diva-outer element
-            if (navigator.platform == 'iPad' || navigator.platform == 'iPhone' || navigator.platform == 'iPod') {
-                // The 20 is just so we get some nice 9px padding on the sides
+            // Adjust the document panel dimensions for Apple touch devices
+            if (settings.mobileSafari) {
+                // Account for the scrollbar
                 settings.panelWidth = screen.width - 20;
+
+                // The iPhone's toolbar etc takes up slightly more screen space
+                // So the height of the panel needs to be adjusted accordingly
+                if (navigator.platform == 'iPad') {
+                    settings.panelHeight = screen.height - 170;
+                } else {
+                    settings.panelHeight = screen.height - 250;
+                }
+
                 $(settings.elementSelector).css('width', settings.panelWidth);
                 $(settings.outerSelector).css('width', settings.panelWidth + 'px');
-                // Magic number that seems to work on the iPad
-                settings.panelHeight = screen.height - 170;
                 $(settings.outerSelector).css('height', settings.panelHeight + 'px');
             } else {
-                settings.panelWidth = parseInt($(settings.elementSelector).width(), 10) - 18; // for the scrollbar change later
+                // For other devices, adjust to take the scrollbar into account
+                settings.panelWidth = parseInt($(settings.elementSelector).width(), 10) - 18;
                 $(settings.outerSelector).css('width', (settings.panelWidth + 18) + 'px');
                 settings.panelHeight = parseInt($(settings.outerSelector).height(), 10);
+                // This seems wrong, look into it
             }
             
             
