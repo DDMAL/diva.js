@@ -575,8 +575,8 @@ THE SOFTWARE.
 
                     // Save some data
                     settings.pages = data.pgs;
-                    settings.maxWidth = data.dims.wide_w;
-                    settings.maxHeight = data.dims.tall_h;
+                    settings.maxWidth = data.dims.max_w;
+                    settings.maxHeight = data.dims.max_h;
                     $.executeCallback(successCallback, data);
                     settings.firstAjaxRequest = false;
                 }
@@ -734,7 +734,7 @@ THE SOFTWARE.
                     
                 // Set the height and width of documentpane (necessary for dragscrollable)
                 $(settings.innerSelector).css('height', Math.round(settings.totalHeight));
-                var widthToSet = (data.dims.wide_w + settings.horizontalPadding * 2 < settings.panelWidth ) ? settings.panelWidth : data.dims.wide_w + settings.horizontalPadding * 2; // width of page + 40 pixels on each side if necessary
+                var widthToSet = (data.dims.max_w + settings.horizontalPadding * 2 < settings.panelWidth ) ? settings.panelWidth : data.dims.max_w + settings.horizontalPadding * 2; // width of page + 40 pixels on each side if necessary
                 $(settings.innerSelector).css('width', Math.round(widthToSet));
 
                 // Scroll to the proper place
