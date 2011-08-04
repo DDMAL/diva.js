@@ -664,9 +664,9 @@ THE SOFTWARE.
                 settings.gridPageWidth = pageWidth;
 
                 // Now calculate the maximum height, use that as the row height
-                settings.rowHeight = settings.fixedPadding * 2 + (settings.maxHeight / data.dims.tall_w) * pageWidth;
+                settings.rowHeight = settings.fixedPadding + data.dims.max_ratio * pageWidth;
                 settings.numRows = Math.ceil(settings.numPages / settings.pagesPerGridRow);
-                settings.totalHeight = settings.numRows * settings.rowHeight;
+                settings.totalHeight = settings.numRows * settings.rowHeight + settings.fixedPadding;
                 $(settings.innerSelector).css('height', Math.round(settings.totalHeight));
                 $(settings.innerSelector).css('width', Math.round(settings.panelWidth));
 
