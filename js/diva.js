@@ -458,7 +458,6 @@ THE SOFTWARE.
                     if (isRowVisible(rowIndex)) {
                         loadRow(rowIndex);
                         settings.lastRowLoaded = rowIndex;
-
                         attemptRowShow(settings.lastRowLoaded+1, direction);
                     } else if (rowAboveViewport(rowIndex)) {
                         attemptRowShow(rowIndex+1, direction);
@@ -468,6 +467,8 @@ THE SOFTWARE.
                 if (rowInRange(rowIndex)) {
                     if (isRowVisible(rowIndex)) {
                         loadRow(rowIndex);
+                        settings.currentPageIndex = settings.firstRowLoaded * settings.pagesPerRow;
+                        updateCurrentPage(settings.currentPageIndex);
                         settings.firstRowLoaded = rowIndex;
                         attemptRowShow(settings.firstRowLoaded-1, direction);
                     } else if (rowBelowViewport(rowIndex)) {
@@ -488,7 +489,8 @@ THE SOFTWARE.
                 if (rowInRange(rowIndex) && rowAboveViewport(rowIndex)) {
                     deleteRow(rowIndex);
                     settings.firstRowLoaded++;
-
+                    settings.currentPageIndex = settings.firstRowLoaded * settings.pagesPerRow;
+                    updateCurrentPage(settings.currentPageIndex);
                     attemptRowHide(settings.firstRowLoaded, direction);
                 }
             } else {
@@ -1289,7 +1291,6 @@ THE SOFTWARE.
         };
 
         var handleGridSlide = function(newPagesPerRow) {
-            console.log(newPagesPerRow);
             settings.pagesPerRow = newPagesPerRow;
             enterGrid();
         }
