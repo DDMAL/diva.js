@@ -1255,7 +1255,9 @@ THE SOFTWARE.
 
         // Creates a zoomer using the min and max zoom levels specified ... PRIVATE, only if zoomSlider = true
         var createZoomSlider = function() {
+            // This whole thing can definitely be optimised
             $(settings.selector + 'slider').remove();
+            $(settings.selector + 'slider-label').remove();
             $(settings.selector + 'tools').prepend('<div id="' + settings.ID + 'slider"></div>');
             $(settings.selector + 'slider').slider({
                     value: settings.zoomLevel,
@@ -1266,11 +1268,13 @@ THE SOFTWARE.
                         handleZoomSlide(ui.value);
                     }
                 });
+            $(settings.selector + 'slider').after('<div id="' + settings.ID + 'slider-label">Zoom level: <span>' + settings.zoomLevel + '</span></div>');
         };
 
         // Creates a slider for controlling the number of pages per grid row
         var createGridSlider = function() {
             $(settings.selector + 'slider').remove();
+            $(settings.selector + 'slider-label').remove();
             $(settings.selector + 'tools').prepend('<div id="' + settings.ID + 'slider"></div>');
             $(settings.selector + 'slider').slider({
                 value: settings.pagesPerRow,
@@ -1281,6 +1285,7 @@ THE SOFTWARE.
                     handleGridSlide(ui.value);
                 }
             });
+            $(settings.selector + 'slider').after('<div id="' + settings.ID + 'slider-label">Pages per row: <span>' + settings.pagesPerRow + '</span></div>');
         };
 
         var handleGridSlide = function(newPagesPerRow) {

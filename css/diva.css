@@ -61,6 +61,11 @@ div[id$="diva-slider"] {
     clear: left;
 }
 
+div[id$="diva-slider-label"] {
+    float: left;
+    padding-top: 7px;
+}
+
 div[id$="diva-grid-icon"] {
     background-image: url('../img/grid.png');
     background-repeat: no-repeat;
