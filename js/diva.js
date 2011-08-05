@@ -615,16 +615,6 @@ THE SOFTWARE.
             // Set the total number of pages
             $(settings.selector + 'current label').text(settings.numPages);
 
-            // Create the grid slider if enabled
-            if (settings.enableGridSlider) {
-                createGridSlider();
-            }
-
-            // Create the zoomer here, if needed
-            if (settings.enableZoomSlider) {
-                createZoomSlider();
-            }
-
             if (settings.enableAutoTitle) {
                 $(settings.elementSelector).prepend('<div id="' + settings.ID + 'title">' + settings.itemTitle + '</div>');
             }
@@ -682,6 +672,11 @@ THE SOFTWARE.
             // As for page number, try to get the row containing that grid near the middle
             // Uses zoom level = 0 as the grid? smallest numbers etc
             ajaxRequest(0, function(data) {
+                // Create the grid slider here
+                if (settings.enableGridSlider) {
+                    createGridSlider();
+                }
+
                 // Now go through the pages
                 var horizontalPadding = settings.fixedPadding * (settings.pagesPerRow + 1);
                 var pageWidth = (settings.panelWidth - horizontalPadding) / settings.pagesPerRow;
@@ -736,6 +731,11 @@ THE SOFTWARE.
                 settings.totalHeight = data.dims.t_hei + settings.verticalPadding * (settings.numPages + 1); 
                 settings.zoomLevel = zoomLevel;
                 settings.dimAfterZoom = settings.totalHeight; 
+
+                // Create the zoom slider at this point, if desired
+                if (settings.enableZoomSlider) {
+                    createZoomSlider();
+                }
 
                 // Needed to set settings.heightAbovePages - initially just the top padding
                 var heightSoFar = 0;
@@ -1255,8 +1255,9 @@ THE SOFTWARE.
 
         // Creates a zoomer using the min and max zoom levels specified ... PRIVATE, only if zoomSlider = true
         var createZoomSlider = function() {
-            $(settings.selector + 'tools').prepend('<div id="' + settings.ID + 'zoom-slider"></div>');
-            $(settings.selector + 'zoom-slider').slider({
+            $(settings.selector + 'slider').remove();
+            $(settings.selector + 'tools').prepend('<div id="' + settings.ID + 'slider"></div>');
+            $(settings.selector + 'slider').slider({
                     value: settings.zoomLevel,
                     min: settings.minZoomLevel,
                     max: settings.maxZoomLevel,
@@ -1269,8 +1270,9 @@ THE SOFTWARE.
 
         // Creates a slider for controlling the number of pages per grid row
         var createGridSlider = function() {
-            $(settings.selector + 'tools').prepend('<div id="' + settings.ID + 'grid-slider"></div>');
-            $(settings.selector + 'grid-slider').slider({
+            $(settings.selector + 'slider').remove();
+            $(settings.selector + 'tools').prepend('<div id="' + settings.ID + 'slider"></div>');
+            $(settings.selector + 'slider').slider({
                 value: settings.pagesPerRow,
                 min: settings.minPagesPerRow,
                 max: settings.maxPagesPerRow,

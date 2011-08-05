@@ -53,7 +53,7 @@ div[id$="diva-outer"] {
     background-position: center;
 }
 
-div[id$="diva-zoom-slider"], div[id$="diva-grid-slider"] {
+div[id$="diva-slider"] {
     margin: 10px;
     font-size: 62.5%;
     width: 100px;
