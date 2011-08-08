@@ -32,7 +32,6 @@ library. The converted images will then be moved into a subdirectory named
 "processed" within the specified directory.
 
 Dependencies:
-    PIL (python imaging library)
     Python (version < 3.0)
     vips (http://www.vips.ecs.soton.ac.uk/index.php?title=VIPS)
 
