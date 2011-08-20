@@ -73,14 +73,14 @@
                 var endIndex = startIndex + key.length + 2 + originalValue.length;
                 // # if it's the first, & otherwise
                 var startThing = (startIndex == 0) ? '#' : '&';
-                window.location.hash = hash.substring(0, startIndex) + startThing + key + '=' + value + hash.substring(endIndex);
+                window.location.replace(hash.substring(0, startIndex) + startThing + key + '=' + value + hash.substring(endIndex));
             } else {
                 // It's not present - add it
                 if (hash.length === 0) {
-                    window.location.hash = '#' + key + '=' + value;
+                    window.location.replace('#' + key + '=' + value);
                 } else {
                     // Append it
-                    window.location.hash += '&' + key + '=' + value;
+                    window.location.replace(hash + '&' + key + '=' + value);
                 }
             }
         }
