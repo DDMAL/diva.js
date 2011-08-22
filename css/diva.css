@@ -53,11 +53,18 @@ div[id$="diva-outer"] {
     background-position: center;
 }
 
-div[id$="diva-zoom-slider"] {
+div[id$="diva-slider"] {
     margin: 10px;
     font-size: 62.5%;
     width: 100px;
     float: left;
+    clear: left;
+}
+
+div[id$="diva-slider-label"] {
+    float: left;
+    padding-top: 7px;
+    padding-left: 5px;
 }
 
 div[id$="diva-grid-icon"] {

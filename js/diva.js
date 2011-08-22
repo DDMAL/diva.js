@@ -31,12 +31,15 @@ THE SOFTWARE.
             enableFullscreen: true,     // Enable or disable fullscreen mode
             enableGotoPage: true,       // A "go to page" jump box
             enableGrid: true,           // A grid view of all the pages
+            enableGridSlider: true,     // Slider to control the pages per grid row
             enableKeyScroll: true,      // Scrolling using the page up/down keys
             enableSpaceScroll: false,   // Scrolling down by pressing the space key
             enableZoomSlider: true,     // Enable or disable the zoom slider (for zooming in and out)
             fixedPadding: 10,           // Fallback if adaptive padding is set to 0
             iipServerBaseUrl: '',       // The URL to the IIPImage installation, including the ?FIF=
+            maxPagesPerRow: 8,          // Maximum number of pages per row, grid view
             maxZoomLevel: 0,            // Optional; defaults to the max zoom returned in the JSON response
+            minPagesPerRow: 2,          // 2 for the spread view. Recommended to leave it
             minZoomLevel: 0,            // Defaults to 0 (the minimum zoom)
             onFullscreen: null,         // Callback for toggling fullscreen
             onFullscreenEnter: null,    // Callback for entering fullscreen mode
@@ -49,7 +52,7 @@ THE SOFTWARE.
             onZoom: null,               // Callback function for zooming in general
             onZoomIn: null,             // Callback function for zooming in only
             onZoomOut: null,            // Callback function for zooming out only
-            pagesPerGridRow: 5,         // The number of pages per row in grid view
+            pagesPerRow: 5,         // The default number of pages per row in grid view
             tileFadeSpeed: 300,         // The tile fade-in speed in ms. Set to 0 to disable tile fading. May also be "fast" or "slow".
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
@@ -455,7 +458,6 @@ THE SOFTWARE.
                     if (isRowVisible(rowIndex)) {
                         loadRow(rowIndex);
                         settings.lastRowLoaded = rowIndex;
-
                         attemptRowShow(settings.lastRowLoaded+1, direction);
                     } else if (rowAboveViewport(rowIndex)) {
                         attemptRowShow(rowIndex+1, direction);
@@ -465,6 +467,8 @@ THE SOFTWARE.
                 if (rowInRange(rowIndex)) {
                     if (isRowVisible(rowIndex)) {
                         loadRow(rowIndex);
+                        settings.currentPageIndex = settings.firstRowLoaded * settings.pagesPerRow;
+                        updateCurrentPage(settings.currentPageIndex);
                         settings.firstRowLoaded = rowIndex;
                         attemptRowShow(settings.firstRowLoaded-1, direction);
                     } else if (rowBelowViewport(rowIndex)) {
@@ -485,7 +489,8 @@ THE SOFTWARE.
                 if (rowInRange(rowIndex) && rowAboveViewport(rowIndex)) {
                     deleteRow(rowIndex);
                     settings.firstRowLoaded++;
-
+                    settings.currentPageIndex = settings.firstRowLoaded * settings.pagesPerRow;
+                    updateCurrentPage(settings.currentPageIndex);
                     attemptRowHide(settings.firstRowLoaded, direction);
                 }
             } else {
@@ -612,11 +617,6 @@ THE SOFTWARE.
             // Set the total number of pages
             $(settings.selector + 'current label').text(settings.numPages);
 
-            // Create the zoomer here, if needed
-            if (settings.enableZoomSlider) {
-                createZoomSlider();
-            }
-
             if (settings.enableAutoTitle) {
                 $(settings.elementSelector).prepend('<div id="' + settings.ID + 'title">' + settings.itemTitle + '</div>');
             }
@@ -650,9 +650,9 @@ THE SOFTWARE.
             stringBuilder.push('<div id="' + settings.ID + 'row-' + rowIndex + '" style="width: 100%; height: ' + settings.rowHeight + '; position: absolute; top: ' + heightFromTop + 'px;">');
 
             // Load each page within that row
-            for (i = 0; i < settings.pagesPerGridRow; i++) {
+            for (i = 0; i < settings.pagesPerRow; i++) {
                 // Figure out the actual page number
-                var pageIndex = rowIndex * settings.pagesPerGridRow + i;
+                var pageIndex = rowIndex * settings.pagesPerRow + i;
 
                 if (!pageInRange(pageIndex)) {
                     break; // when we're at the last page etc
@@ -674,14 +674,19 @@ THE SOFTWARE.
             // As for page number, try to get the row containing that grid near the middle
             // Uses zoom level = 0 as the grid? smallest numbers etc
             ajaxRequest(0, function(data) {
+                // Create the grid slider here
+                if (settings.enableGridSlider) {
+                    createGridSlider();
+                }
+
                 // Now go through the pages
-                var horizontalPadding = settings.fixedPadding * (settings.pagesPerGridRow + 1);
-                var pageWidth = (settings.panelWidth - horizontalPadding) / settings.pagesPerGridRow;
+                var horizontalPadding = settings.fixedPadding * (settings.pagesPerRow + 1);
+                var pageWidth = (settings.panelWidth - horizontalPadding) / settings.pagesPerRow;
                 settings.gridPageWidth = pageWidth;
 
                 // Now calculate the maximum height, use that as the row height
                 settings.rowHeight = settings.fixedPadding + data.dims.max_ratio * pageWidth;
-                settings.numRows = Math.ceil(settings.numPages / settings.pagesPerGridRow);
+                settings.numRows = Math.ceil(settings.numPages / settings.pagesPerRow);
                 settings.totalHeight = settings.numRows * settings.rowHeight + settings.fixedPadding;
                 $(settings.innerSelector).css('height', Math.round(settings.totalHeight));
                 $(settings.innerSelector).css('width', Math.round(settings.panelWidth));
@@ -691,8 +696,8 @@ THE SOFTWARE.
                 settings.scrollSoFar = $(settings.outerSelector).scrollTop();
 
                 // Figure out the row each page is in
-                for (var i = 0; i < settings.numPages; i += settings.pagesPerGridRow) {
-                    var rowIndex = Math.floor(i / settings.pagesPerGridRow);
+                for (var i = 0; i < settings.numPages; i += settings.pagesPerRow) {
+                    var rowIndex = Math.floor(i / settings.pagesPerRow);
 
                     if (isRowVisible(rowIndex)) {
                         settings.firstRowLoaded = (settings.firstRowLoaded < 0) ? rowIndex : settings.firstRowLoaded;
@@ -728,6 +733,11 @@ THE SOFTWARE.
                 settings.totalHeight = data.dims.t_hei + settings.verticalPadding * (settings.numPages + 1); 
                 settings.zoomLevel = zoomLevel;
                 settings.dimAfterZoom = settings.totalHeight; 
+
+                // Create the zoom slider at this point, if desired
+                if (settings.enableZoomSlider) {
+                    createZoomSlider();
+                }
 
                 // Needed to set settings.heightAbovePages - initially just the top padding
                 var heightSoFar = 0;
@@ -855,7 +865,7 @@ THE SOFTWARE.
         var gotoPage = function(pageNumber) {
             // If we're in grid view, find out the row number that is
             if (settings.inGrid) {
-                var rowIndex = Math.ceil(pageNumber / settings.pagesPerGridRow) - 1;
+                var rowIndex = Math.ceil(pageNumber / settings.pagesPerRow) - 1;
 
                 if (rowInRange(rowIndex)) {
                     var heightToScroll = rowIndex * settings.rowHeight;
@@ -1137,8 +1147,8 @@ THE SOFTWARE.
                     var centerX = (event.pageX - settings.viewerXOffset) + $(settings.outerSelector).scrollLeft();
                     var centerY = (event.pageY - settings.viewerYOffset) + $(settings.outerSelector).scrollTop();
                     var rowIndex = Math.floor(centerY / settings.rowHeight);
-                    var colIndex = Math.floor(centerX / (settings.panelWidth / settings.pagesPerGridRow));
-                    var pageNumber = rowIndex * settings.pagesPerGridRow + colIndex + 1;
+                    var colIndex = Math.floor(centerX / (settings.panelWidth / settings.pagesPerRow));
+                    var pageNumber = rowIndex * settings.pagesPerRow + colIndex + 1;
                     settings.goDirectlyTo = pageNumber;
                     leaveGrid();
                 } else {
@@ -1247,8 +1257,11 @@ THE SOFTWARE.
 
         // Creates a zoomer using the min and max zoom levels specified ... PRIVATE, only if zoomSlider = true
         var createZoomSlider = function() {
-            $(settings.selector + 'tools').prepend('<div id="' + settings.ID + 'zoom-slider"></div>');
-            $(settings.selector + 'zoom-slider').slider({
+            // This whole thing can definitely be optimised
+            $(settings.selector + 'slider').remove();
+            $(settings.selector + 'slider-label').remove();
+            $(settings.selector + 'tools').prepend('<div id="' + settings.ID + 'slider"></div>');
+            $(settings.selector + 'slider').slider({
                     value: settings.zoomLevel,
                     min: settings.minZoomLevel,
                     max: settings.maxZoomLevel,
@@ -1257,7 +1270,30 @@ THE SOFTWARE.
                         handleZoomSlide(ui.value);
                     }
                 });
+            $(settings.selector + 'slider').after('<div id="' + settings.ID + 'slider-label">Zoom level: <span>' + settings.zoomLevel + '</span></div>');
         };
+
+        // Creates a slider for controlling the number of pages per grid row
+        var createGridSlider = function() {
+            $(settings.selector + 'slider').remove();
+            $(settings.selector + 'slider-label').remove();
+            $(settings.selector + 'tools').prepend('<div id="' + settings.ID + 'slider"></div>');
+            $(settings.selector + 'slider').slider({
+                value: settings.pagesPerRow,
+                min: settings.minPagesPerRow,
+                max: settings.maxPagesPerRow,
+                step: 1,
+                slide: function(event, ui) {
+                    handleGridSlide(ui.value);
+                }
+            });
+            $(settings.selector + 'slider').after('<div id="' + settings.ID + 'slider-label">Pages per row: <span>' + settings.pagesPerRow + '</span></div>');
+        };
+
+        var handleGridSlide = function(newPagesPerRow) {
+            settings.pagesPerRow = newPagesPerRow;
+            enterGrid();
+        }
 
         var createGridIcon = function() {
             $(settings.selector + 'tools').prepend('<div id="' + settings.ID + 'grid-icon"></div>');
