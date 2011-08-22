@@ -70,7 +70,7 @@ def main(opts):
             if filename.startswith("."):
                 continue
             max_zoom, dimensions = get_image_info(os.path.join(directory, filename))
-            print 'file: ' + filename + ' has max zoom of: ' + str(max_zoom - 1) + ' (' + str(max_zoom) + ' zoom levels)'
+            print "file: {0} has a maximum zoom of {1} ({2} zoom levels).".format(filename, (max_zoom - 1), max_zoom)
             max_zoom_list.append(max_zoom)
             filename_list.append(filename)
             dimensions_list.append(dimensions)
@@ -81,23 +81,22 @@ def main(opts):
     # Now figure out which files have a zoom larger than that
     for i,filename in enumerate(filename_list):
         input_file = os.path.join(directory, filename)
-        output_file = os.path.join(directory, 'processed', filename + '_' + str(i+1) + '.tif')
+        output_file = os.path.join(directory, 'processed', '{0}_{1}.tif'.format(filename, (i+1)))
         
         vimage = VImage.VImage(input_file)
         
         # If the image needs to be resized
         if max_zoom_list[i] > lowest_max_zoom and resize_images:
-            print filename + ' needs to be resized, resizing and converting now'
+            print '{0} needs to be resized, resizing and converting now'.format(filename)
             # Resize this image to the proper size ... prepend resized_
             width, height = dimensions_list[i]
             new_width, new_height = resize_image(lowest_max_zoom, width, height)
-            vimage.resize_linear(new_width, new_height).vips2tiff(output_file + ':jpeg:75,tile:256x256,pyramid')
+            vimage.resize_linear(new_width, new_height).vips2tiff('{0}:jpeg:75,tile:256x256,pyramid'.format(output_file))
         else:
-            vimage.vips2tiff(output_file + ':jpeg:75,tile:256x256,pyramid')
+            vimage.vips2tiff('{0}:jpeg:75,tile:256x256,pyramid'.format(output_file))
         
     # Now print out the max_zoom this document has
-    print "This document has a max zoom of: ",
-    print lowest_max_zoom
+    print "This document has a max zoom of: {0}".format(lowest_max_zoom)
 
 # Calculate the maximum zoom of an image given its filepath
 def get_image_info(filepath):
