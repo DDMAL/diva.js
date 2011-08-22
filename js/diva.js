@@ -540,13 +540,21 @@ THE SOFTWARE.
                 }
             }
         };
-        
-        // Helper function called by loadDocument to scroll to the desired place
-        var scrollAfterRequest = function() {
+
+        // Goes directly to the page index stored in settings.goDirectlyTo
+        var goDirectlyTo = function() {
             if (settings.goDirectlyTo) {
                 gotoPage(settings.goDirectlyTo);
                 updateCurrentPage(settings.goDirectlyTo - 1);
                 settings.goDirectlyTo = 0;
+                return true;
+            }
+            return false;
+        }
+
+        // Helper function called by loadDocument to scroll to the desired place
+        var scrollAfterRequest = function() {
+            if (goDirectlyTo()) {
                 return;
             }
 
@@ -692,7 +700,10 @@ THE SOFTWARE.
                 $(settings.innerSelector).css('width', Math.round(settings.panelWidth));
 
                 // First scroll directly to the row containing the current page
-                gotoPage(settings.currentPageIndex + 1);
+                if (!goDirectlyTo()) {
+                    gotoPage(settings.currentPageIndex + 1);
+                }
+
                 settings.scrollSoFar = $(settings.outerSelector).scrollTop();
 
                 // Figure out the row each page is in
