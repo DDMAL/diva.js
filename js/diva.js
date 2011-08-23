@@ -668,9 +668,12 @@ THE SOFTWARE.
                 
                 var pageNumber = pageIndex + 1;
                 var filename = settings.pages[pageIndex].fn;
-                var imgSrc = settings.iipServerBaseUrl + filename + '&amp;WID=' + settings.gridPageWidth + '&amp;CVT=JPG';
                 var leftOffset = i * (settings.fixedPadding + settings.gridPageWidth) + settings.fixedPadding;
-                stringBuilder.push('<div id="' + settings.ID + 'page-' + pageIndex + '" style="position: absolute; left: ' + leftOffset + 'px; display: inline; background-image: url(\'' + imgSrc  + '\'); background-repeat: no-repeat; width: ' + settings.gridPageWidth + 'px; height: ' + settings.rowHeight + 'px;"></div>');
+                var pageWidth = parseInt(settings.gridPageWidth, 10);
+                var pageHeight = parseInt(pageWidth / settings.pages[pageIndex].w * settings.pages[pageIndex].h);
+                /* For some reason, IIP returns an image that is always 1px less wide than specified, so this (i.e. specifying an image one pixel wider than the one you want) is the workaround. It means some images are cut off a bit vertically; still, it looks better than a white border along the bottom and right edges (although that border remains at higher zooms ... blame IIP */
+                var imgSrc = settings.iipServerBaseUrl + filename + '&amp;WID=' + (pageWidth + 1) + '&amp;CVT=JPG';
+                stringBuilder.push('<div id="' + settings.ID + 'page-' + pageIndex + '" class="diva-page" style="width: ' + pageWidth + 'px; height: ' + pageHeight + 'px; left: ' + leftOffset + 'px; display: inline;"><div style="position: absolute; background-image: url(\'' + imgSrc  + '\'); background-repeat: no-repeat; width: ' + pageWidth + 'px; height: ' + pageHeight + 'px;"></div></div>');
             }
 
             // Append, using an array as a string builder instead of string concatenation
