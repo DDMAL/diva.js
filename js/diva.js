@@ -1305,6 +1305,7 @@ THE SOFTWARE.
         };
 
         var handleGridSlide = function(newPagesPerRow) {
+            $.updateHashParam('n', newPagesPerRow);
             settings.pagesPerRow = newPagesPerRow;
             enterGrid();
         }
@@ -1409,6 +1410,13 @@ THE SOFTWARE.
             var fullscreenParam = $.getHashParam('fullscreen');
             if (fullscreenParam === 'true' && settings.enableFullscreen) {
                 toggleFullscreen();
+            }
+
+            // If there is a 'n' hash param, make that the initial number of pages per row
+            // Must be within range
+            var numberParam = parseInt($.getHashParam('n'), 10);
+            if (numberParam >= settings.minPagesPerRow && numberParam <= settings.maxPagesPerRow) {
+                settings.pagesPerRow = numberParam;
             }
 
             // If the grid hash param is true, go to grid view initially
