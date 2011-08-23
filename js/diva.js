@@ -372,6 +372,39 @@ THE SOFTWARE.
             }
         };
 
+        // Called in grid mode ... done this way to avoid going through every page
+        var setCurrentRow = function(direction) {
+            var currentRow = Math.floor(settings.currentPageIndex / settings.pagesPerRow);
+            var rowToConsider = currentRow + parseInt(direction, 10);
+            var middleOfViewport = settings.scrollSoFar + (settings.panelHeight / 2);
+            var changeCurrentRow = false;
+
+            if (direction < 0) {
+                // This logic how does it work
+                if (rowToConsider >= 0 && (settings.rowHeight * currentRow >= middleOfViewport || settings.rowHeight * rowToConsider >= settings.scrollSoFar)) {
+                    changeCurrentRow = true;
+                }
+            } else if (direction > 0) {
+                if ((settings.rowHeight * (currentRow + 1)) < settings.scrollSoFar && rowInRange(rowToConsider)) {
+                    changeCurrentRow = true;
+                }
+            }
+
+            if (changeCurrentRow) {
+                settings.currentPageIndex = rowToConsider * settings.pagesPerRow;
+
+                if (direction !== 0) {
+                    if (!setCurrentRow(direction)) {
+                        updateCurrentPage(settings.currentPageIndex);
+                    }
+                }
+
+                return true;
+            } else {
+                return false;
+            }
+        }
+
         // Called by adjust pages - see what pages should be visisble, and show them
         var attemptPageShow = function(pageIndex, direction) {
             if (direction > 0) {
@@ -467,8 +500,6 @@ THE SOFTWARE.
                 if (rowInRange(rowIndex)) {
                     if (isRowVisible(rowIndex)) {
                         loadRow(rowIndex);
-                        settings.currentPageIndex = settings.firstRowLoaded * settings.pagesPerRow;
-                        updateCurrentPage(settings.currentPageIndex);
                         settings.firstRowLoaded = rowIndex;
                         attemptRowShow(settings.firstRowLoaded-1, direction);
                     } else if (rowBelowViewport(rowIndex)) {
@@ -489,8 +520,6 @@ THE SOFTWARE.
                 if (rowInRange(rowIndex) && rowAboveViewport(rowIndex)) {
                     deleteRow(rowIndex);
                     settings.firstRowLoaded++;
-                    settings.currentPageIndex = settings.firstRowLoaded * settings.pagesPerRow;
-                    updateCurrentPage(settings.currentPageIndex);
                     attemptRowHide(settings.firstRowLoaded, direction);
                 }
             } else {
@@ -506,9 +535,11 @@ THE SOFTWARE.
         var adjustRows = function(direction) {
             if (direction < 0) {
                 attemptRowShow(settings.firstRowLoaded, -1);
+                setCurrentRow(-1);
                 attemptRowHide(settings.lastRowLoaded, -1);
             } else if (direction > 0) {
                 attemptRowHide(settings.firstRowLoaded, 1);
+                setCurrentRow(1);
                 attemptRowShow(settings.lastRowLoaded, 1);
             }
         }
