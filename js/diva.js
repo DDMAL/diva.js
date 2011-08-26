@@ -759,6 +759,7 @@ THE SOFTWARE.
             settings.scrollSoFar = 0; // important - for issue 26
             $(settings.innerSelector).text('');
             settings.firstPageLoaded = 0;
+            settings.firstRowLoaded = -1;
         }
         
         // AJAX request to start the whole process - called upon page load and upon zoom change
