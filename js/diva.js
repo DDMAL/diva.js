@@ -656,6 +656,9 @@ THE SOFTWARE.
             // Set the total number of pages
             $(settings.selector + 'current label').text(settings.numPages);
 
+            // If we're in fullscreen mode, set the thing in the statusbar too
+            $(settings.selector + 'goto-page-fullscreen input').attr('placeholder', settings.numPages);
+
             if (settings.enableAutoTitle) {
                 $(settings.elementSelector).prepend('<div id="' + settings.ID + 'title">' + settings.itemTitle + '</div>');
             }
