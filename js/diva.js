@@ -1279,7 +1279,7 @@ THE SOFTWARE.
             // If grid view is enabled, put the icon in there
             var gridIcon = (settings.enableGrid) ? '<div id="' + settings.ID + 'grid-icon-fullscreen"></div>' : '';
             var options = { 
-                pnotify_text: '<form id="' + settings.ID + 'goto-page-fullscreen"><input placeholder="' + settings.numPages + '" type="text" size="4" id="' + settings.ID + 'goto-input-fullscreen" /><input type="submit" value="Go"></form>',
+                pnotify_text: '<form id="' + settings.ID + 'goto-page-fullscreen"><input placeholder="' + settings.numPages + '" type="text" size="4" id="' + settings.ID + 'goto-input-fullscreen" /><input type="submit" value="Go"></form><div id="' + settings.ID + 'tools-fullscreen" style="height: 60px;"></div>',
                 pnotify_title: gridIcon + 'Page: <span id="' + settings.ID + 'page-number-fullscreen">' + (settings.currentPageIndex + 1) + '</span>',
                 pnotify_history: false,
                 pnotify_width: '160px',
@@ -1293,10 +1293,16 @@ THE SOFTWARE.
 
             settings.fullscreenStatusbar = $.pnotify(options);
 
-            // Handle clicking of grid icon
             $(settings.selector + 'grid-icon-fullscreen').click(function() {
                 toggleGrid();
             });
+
+            // Create the relevant slider
+            if (settings.inGrid && settings.enableGridSlider) {
+                createGridSlider();
+            } else if (settings.enableZoomSlider) {
+                createZoomSlider();
+            }
 
             // Handle clicking, a bit redundant but better than using live(), maybe
             $(settings.selector + 'goto-page-fullscreen').submit(function() {
@@ -1315,7 +1321,9 @@ THE SOFTWARE.
             // This whole thing can definitely be optimised
             $(settings.selector + 'slider').remove();
             $(settings.selector + 'slider-label').remove();
-            $(settings.selector + 'tools').prepend('<div id="' + settings.ID + 'slider"></div>');
+
+            var parentDiv = (settings.inFullscreen) ? 'tools-fullscreen' : 'tools';
+            $(settings.selector + parentDiv).prepend('<div id="' + settings.ID + 'slider"></div>');
             $(settings.selector + 'slider').slider({
                     value: settings.zoomLevel,
                     min: settings.minZoomLevel,
@@ -1332,7 +1340,10 @@ THE SOFTWARE.
         var createGridSlider = function() {
             $(settings.selector + 'slider').remove();
             $(settings.selector + 'slider-label').remove();
-            $(settings.selector + 'tools').prepend('<div id="' + settings.ID + 'slider"></div>');
+
+            // If we're in fullscreen mode, add it to the statusbar; otherwise, the regular toolbar
+            var parentDiv = (settings.inFullscreen) ? 'tools-fullscreen' : 'tools';
+            $(settings.selector + parentDiv).prepend('<div id="' + settings.ID + 'slider"></div>');
             $(settings.selector + 'slider').slider({
                 value: settings.pagesPerRow,
                 min: settings.minPagesPerRow,
