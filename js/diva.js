@@ -325,9 +325,8 @@ THE SOFTWARE.
                     createFullscreenStatusbar('fade');
                 }
 
-                settings.fullscreenStatusbar.pnotify({
-                    pnotify_title: 'Page: ' + pageNumber
-                });
+                // Do it by ID
+                $(settings.selector + 'page-number-fullscreen').text(pageNumber);
             }
         };
 
@@ -1277,11 +1276,13 @@ THE SOFTWARE.
 
         // Create a fullscreen statusbar thing - if it doesn't exist
         var createFullscreenStatusbar = function(animation) {
+            // If grid view is enabled, put the icon in there
+            var gridIcon = (settings.enableGrid) ? '<div id="' + settings.ID + 'grid-icon-fullscreen"></div>' : '';
             var options = { 
                 pnotify_text: '<form id="' + settings.ID + 'goto-page-fullscreen"><input placeholder="' + settings.numPages + '" type="text" size="4" id="' + settings.ID + 'goto-input-fullscreen" /><input type="submit" value="Go"></form>',
-                pnotify_title: 'Page: ' + (settings.currentPageIndex + 1),
+                pnotify_title: gridIcon + 'Page: <span id="' + settings.ID + 'page-number-fullscreen">' + (settings.currentPageIndex + 1) + '</span>',
                 pnotify_history: false,
-                pnotify_width: '110px',
+                pnotify_width: '160px',
                 pnotify_hide: false,
                 pnotify_notice_icon: '',
                 pnotify_animation: animation, // Can be 'none' or 'fade' depending on what calls it
@@ -1291,6 +1292,11 @@ THE SOFTWARE.
             };
 
             settings.fullscreenStatusbar = $.pnotify(options);
+
+            // Handle clicking of grid icon
+            $(settings.selector + 'grid-icon-fullscreen').click(function() {
+                toggleGrid();
+            });
 
             // Handle clicking, a bit redundant but better than using live(), maybe
             $(settings.selector + 'goto-page-fullscreen').submit(function() {
