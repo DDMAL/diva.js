@@ -102,6 +102,7 @@ if (!file_exists($cache_file)) {
     // Check if the general docdata.txt file exists (not zoom-level-specific)
     if (!file_exists($gen_cache_file)) {
         // Does not exist, so make it
+        $i = 0;
         foreach (glob($img_dir . '/*.tif') as $img_file) {
             $img_size = getimagesize($img_file);
             $img_wid = $img_size[0];
@@ -111,25 +112,27 @@ if (!file_exists($cache_file)) {
             $lowest_max_zoom = ($lowest_max_zoom > $max_zoom || $lowest_max_zoom == 0) ? $max_zoom : $lowest_max_zoom;
             
             // Get the number from the filename (between the last _ and .)
-            $img_num = intval(substr($img_file, strrpos($img_file, '_') + 1, strrpos($img_file, '.') - strrpos($img_file, '_') - 1));
+            //$img_num = intval(substr($img_file, strrpos($img_file, '_') + 1, strrpos($img_file, '.') - strrpos($img_file, '_') - 1));
             
             // Figure out the image filename
             $img_fn = substr($img_file, strrpos($img_file, '/') + 1);
 
-            $images[$img_num] = array(
+            $images[$i] = array(
                 'mx_h'      => $img_hei,
                 'mx_w'      => $img_wid,
                 'mx_z'      => $max_zoom,
                 'fn'        => $img_fn,
             );
-            // Store the max zoom in $images[0] for now
-            $images[0] = $lowest_max_zoom;
+            
+            // store the lowest max zoom in the lmx key.
+            $images['lmx'] = $lowest_max_zoom;
             file_put_contents($gen_cache_file, serialize($images));
+            $i++;
         }
     } else {
         // Already exists - so store the contents in $pgs
         $images = unserialize(file_get_contents($gen_cache_file));
-        $lowest_max_zoom = $images[0];
+        $lowest_max_zoom = $images['lmx'];
     }
 
     // If we get an invalid zoom level, just set it to 0
@@ -139,7 +142,8 @@ if (!file_exists($cache_file)) {
     
     // Now go through them again, store in $pgs
     $mx_h = $mx_w = $t_wid = $t_hei = $num_pages = $max_ratio = 0;
-    for ($i = 1; $i < count($images); $i++) {
+    
+    for ($i = 0; $i < count($images) - 1; $i++) {
         if (array_key_exists($i, $images)) {
             $h = incorporate_zoom($images[$i]['mx_h'], $lowest_max_zoom - $zoom);
             $w = incorporate_zoom($images[$i]['mx_w'], $lowest_max_zoom - $zoom);
