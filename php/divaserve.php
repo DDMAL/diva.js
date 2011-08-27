@@ -111,9 +111,6 @@ if (!file_exists($cache_file)) {
             $max_zoom = get_max_zoom_level($img_wid, $img_hei, $til_wid, $til_hei);
             $lowest_max_zoom = ($lowest_max_zoom > $max_zoom || $lowest_max_zoom == 0) ? $max_zoom : $lowest_max_zoom;
             
-            // Get the number from the filename (between the last _ and .)
-            //$img_num = intval(substr($img_file, strrpos($img_file, '_') + 1, strrpos($img_file, '.') - strrpos($img_file, '_') - 1));
-            
             // Figure out the image filename
             $img_fn = substr($img_file, strrpos($img_file, '/') + 1);
 
