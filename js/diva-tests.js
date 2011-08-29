@@ -118,6 +118,13 @@
                     ok(!canZoomOut, "Can't zoom out anymore");
                 });
 
+                test("gotoPageByName()", function() {
+                    expect(2);
+
+                    ok(dv.gotoPageByName('bm_500.tif'));
+                    ok(!dv.gotoPageByName('bm_000.tif'));
+                });
+
                 // iPad-specific tests
                 if (navigator.platform == 'iPad') {
                     module("Testing on the iPad");

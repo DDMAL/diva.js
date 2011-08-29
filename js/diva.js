@@ -1531,7 +1531,21 @@ THE SOFTWARE.
             var top = settings.heightAbovePages[pageIndex] + topOffset;
             var bottom = top + height;
             return verticallyInViewport(top, bottom);
-        }
+        };
+
+        // Jump to an image based on its filename
+        this.gotoPageByName = function(filename) {
+            // Go through all the pages looking for one whose filename matches
+            for (var i = 0; i < settings.numPages; i++) {
+                if (settings.pages[i].fn == filename) {
+                    gotoPage(i);
+                    return true;
+                }
+            }
+
+            // If not found, return false
+            return false;
+        };
     };
     
     $.fn.diva = function(options) {
