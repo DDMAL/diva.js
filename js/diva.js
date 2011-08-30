@@ -70,6 +70,8 @@ THE SOFTWARE.
             centerX: 0,                 // Only used if doubleClick is true - for zooming in
             centerY: 0,                 // Y-coordinate, see above
             currentPageIndex: 0,        // The current page in the viewport (center-most page)
+            desiredXOffset: 0,          // Used for holding the 'x' hash parameter (x offset from left side of page)
+            desiredYOfffset: 0,         // Used for holding the 'y' hash parameter (y offset from top of page)
             dimAfterZoom: 0,            // Used for storing the item dimensions after zooming
             dimBeforeZoom: 0,           // Used for storing the item dimensions before zooming
             doubleClick: false,         // If the zoom has been triggered by a double-click event
@@ -78,7 +80,7 @@ THE SOFTWARE.
             firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
             firstRowLoaded: -1,         // The index of the first row loaded
             fullscreenStatusbar: null,  // The popup box that tells you what page you're on
-            goDirectlyTo: 0,            // For the page hash param (#p=100 or &p=5)
+            goDirectlyTo: -1,            // For the page hash param (#p=100 or &p=5)
             heightAbovePages: [],       // The height above each page
             horizontalOffset: 0,        // Used for storing the page offset before zooming
             horizontalPadding: 0,       // Either the fixed padding or adaptive padding
@@ -333,20 +335,18 @@ THE SOFTWARE.
         var setCurrentPage = function(direction) {
             var currentPage = settings.currentPageIndex;
             var pageToConsider = settings.currentPageIndex + parseInt(direction, 10);
-            var middleOfViewport = settings.scrollSoFar + (settings.panelHeight / 2);
             var changeCurrentPage = false;
 
             // When scrolling up:
             if (direction < 0) {
-                // If the current pageTop is below the middle of the viewport
-                // Or the previous pageTop is below the top of the viewport
-                if (pageToConsider >= 0 && (settings.heightAbovePages[currentPage] >= middleOfViewport || settings.heightAbovePages[pageToConsider] >= settings.scrollSoFar)) {
+                // If the previous page > top of viewport
+                if (pageToConsider >= 0 && (settings.heightAbovePages[pageToConsider] + settings.pages[pageToConsider].h + (settings.verticalPadding) >= settings.scrollSoFar)) {
                     changeCurrentPage = true;
                 }
-            } else if ( direction > 0) {
+            } else if (direction > 0) {
                 // When scrolling down:
-                // If the previous pageBottom is above the top and the current page isn't the last page
-                if (settings.heightAbovePages[currentPage] + settings.pages[currentPage].h < settings.scrollSoFar && pageToConsider < settings.pages.length) {
+                // If this page < top of viewport
+                if (settings.heightAbovePages[currentPage] + settings.pages[currentPage].h + settings.verticalPadding < settings.scrollSoFar) {
                     changeCurrentPage = true;
                 }
             }
@@ -573,11 +573,11 @@ THE SOFTWARE.
         var goDirectlyTo = function() {
             // Use settings.firstAjaxRequest instead of settings.goDirectlyTo
             // Because the latter can be 0, which may or may not be valid
-            if (settings.firstAjaxRequest) {
+            if (settings.goDirectlyTo >= 0) {
                 gotoPage(settings.goDirectlyTo + 1, settings.desiredYOffset, settings.desiredXOffset);
                 // Off by one error before
                 updateCurrentPage(settings.goDirectlyTo);
-                settings.goDirectlyTo = 0;
+                settings.goDirectlyTo = -1;
                 return true;
             }
             return false;
@@ -673,8 +673,6 @@ THE SOFTWARE.
             // Otherwise, if filename is enabled, look at the i parameter
             var iParam = $.getHashParam('i');
             var iParamPage = getPageIndex(iParam);
-            console.log(iParam);
-            console.log(iParamPage);
             if (settings.enableFilename && iParamPage >= 0) {
                 settings.goDirectlyTo = iParamPage;
             }
@@ -925,7 +923,15 @@ THE SOFTWARE.
         };
 
         // Private function for going to a page
-        var gotoPage = function(pageNumber) {
+        var gotoPage = function(pageNumber, verticalOffset, horizontalOffset) {
+            if (!verticalOffset) {
+                var verticalOffset = 1; // i don't know why but this makes things work
+            }
+
+            if (!horizontalOffset) {
+                var horizontalOffset = 0;
+            }
+
             // If we're in grid view, find out the row number that is
             if (settings.inGrid) {
                 var rowIndex = Math.ceil(pageNumber / settings.pagesPerRow) - 1;
@@ -945,14 +951,15 @@ THE SOFTWARE.
     
                 // First make sure that the page number exists (i.e. is in range)
                 if (pageInRange(pageIndex)) {
-                    var heightToScroll = settings.heightAbovePages[pageIndex];
+                    var heightToScroll = settings.heightAbovePages[pageIndex] + verticalOffset;
     
                     // Change the "currently on page" thing
                     updateCurrentPage(pageIndex);
                     $(settings.outerSelector).scrollTop(heightToScroll);
 
                     // Now figure out the horizontal scroll - scroll to the MIDDLE
-                    var horizontalScroll = ($(settings.innerSelector).width() - settings.panelWidth) / 2;
+                    // Or, scroll to the horizontal offset if set
+                    var horizontalScroll = (horizontalOffset > 0) ? horizontalOffset : ($(settings.innerSelector).width() - settings.panelWidth) / 2;
                     $(settings.outerSelector).scrollLeft(horizontalScroll);
     
                     // Now execute the callback function, pass it the page NUMBER not the page index
@@ -1112,6 +1119,9 @@ THE SOFTWARE.
         };
 
         var enterGrid = function() {
+            // Store the x and y offsets
+            settings.desiredXOffset = getXOffset();
+            settings.desiredYOffset = getYOffset();
             settings.inGrid = true;
             loadGrid();
         }
@@ -1120,8 +1130,10 @@ THE SOFTWARE.
             settings.inGrid = false;
 
             // Jump to the "current page" if double-click wasn't used
-            if (!settings.goDirectlyTo) {
-                settings.goDirectlyTo = settings.currentPageIndex + 1;
+            if (settings.goDirectlyTo < 0 ) {
+                settings.goDirectlyTo = settings.currentPageIndex;
+                //settings.desiredYOffset = getYOffset();
+                //settings.desiredXOffset = getXOffset();
             }
 
             // preventLoad is only true when the zoom slider is used
@@ -1205,8 +1217,11 @@ THE SOFTWARE.
                     var centerY = (event.pageY - settings.viewerYOffset) + $(settings.outerSelector).scrollTop();
                     var rowIndex = Math.floor(centerY / settings.rowHeight);
                     var colIndex = Math.floor(centerX / (settings.panelWidth / settings.pagesPerRow));
-                    var pageNumber = rowIndex * settings.pagesPerRow + colIndex + 1;
-                    settings.goDirectlyTo = pageNumber;
+                    var pageIndex = rowIndex * settings.pagesPerRow + colIndex;
+                    // Double clicking --> going to a different page, so clear the x/y offsets
+                    settings.desiredXOffset = 0;
+                    settings.desiredYOffset = 0;
+                    settings.goDirectlyTo = pageIndex;
                     leaveGrid();
                 } else {
                     handleDoubleClick(event);
@@ -1304,7 +1319,7 @@ THE SOFTWARE.
 
             // Handle clicking of the link thing
             $(settings.selector + 'link-fullscreen a').click(function() {
-                console.log(getCurrentURL());
+                alert(getCurrentURL());
                 return false;
             });
 
@@ -1385,7 +1400,7 @@ THE SOFTWARE.
             $(settings.selector + 'tools').append('<form id="' + settings.ID + 'goto-page">Go to page <input type="text" size="3" id="' + settings.ID + 'goto-input" /> <input type="submit" value="Go" /><br /><div id="' + settings.ID + 'current">Current page: <span>1</span> of <label></label> <a href="" id="' + settings.ID + 'link">(link)</a></div></form>');
 
             $(settings.selector + 'link').click(function() {
-                console.log(getCurrentURL());
+                alert(getCurrentURL());
                 return false;
             });
             
@@ -1411,9 +1426,23 @@ THE SOFTWARE.
             return -1;
         };
 
+        var getYOffset = function() {
+            var yScroll = $(settings.outerSelector).scrollTop();
+            var topOfPage = settings.heightAbovePages[settings.currentPageIndex];
+
+            return yScroll - topOfPage;
+        };
+
+        var getXOffset = function() {
+            return $(settings.outerSelector).scrollLeft();
+        };
+
         // Returns the URL to the current page (including vertical and horizontal displacement)
         var getCurrentURL = function() {
             // All become strings using string concat etc
+            var yOffset = parseInt(getYOffset(), 10);
+            var xOffset = parseInt(getXOffset(), 10);
+
             var hashParams = {
                 'f': (settings.inFullscreen) ? '1' : '',
                 'g': (settings.inGrid) ? '1' : '',
@@ -1423,6 +1452,10 @@ THE SOFTWARE.
                 'i': (settings.enableFilename) ? settings.pages[settings.currentPageIndex].fn : '',
                 // + 1 because it's the page number in the URL not the name (user expectations etc)
                 'p': (!settings.enableFilename) ? settings.currentPageIndex + 1 : '',
+                // Vertical offset always needed, unless it's 0
+                'y': (yOffset >= 0) ? yOffset : '',
+                // Horizontal offset only needed if bigger than the viewport something
+                'x': (xOffset > 0) ? xOffset : '',
             };
 
             var hashStringBuilder = [];
@@ -1512,8 +1545,19 @@ THE SOFTWARE.
                 // Can't check if it exceeds the max zoom level or not because that data is not available yet ...
                 if (zParam >= settings.minZoomLevel) {
                     settings.zoomLevel = zParam;
-                    console.log(settings.zoomLevel);
                 }
+            }
+
+            // y - vertical offset from the top of the relevant page
+            var yParam = parseInt($.getHashParam('y'), 10);
+            if (yParam > 0) {
+                settings.desiredYOffset = yParam;
+            }
+
+            // x - horizontal offset from the left edge of the relevant page
+            var xParam = parseInt($.getHashParam('x'), 10);
+            if (xParam > 0) {
+                settings.desiredXOffset = xParam;
             }
 
             // If the "fullscreen" hash param is true, go to fullscreen initially
