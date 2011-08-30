@@ -32,7 +32,7 @@
                     ok(dv.gotoPage(100), "We SHOULD be able to go to page 100");
                     equals(dv.getCurrentPage(), 99, "getCurrentPage() should now return 99");
                     // Reset it to the initial page
-                    dv.gotoPage(0);
+                    dv.gotoPage(1);
                 });
 
                 test("getZoomLevel()", function() {
@@ -123,6 +123,14 @@
 
                     ok(dv.gotoPageByName('bm_500.tif'));
                     ok(!dv.gotoPageByName('bm_000.tif'));
+                    dv.gotoPage(1);
+                });
+
+                test("getCurrentURL()", function() {
+                    equals(dv.getCurrentURL(), 'petrucci.musiclibs.net:9002/tests.html#z=0&p=1');
+                    // Now go to a specific page
+                    dv.gotoPage(100);
+                    equals(dv.getCurrentURL(), 'petrucci.musiclibs.net:9002/tests.html#z=0&p=100');
                 });
 
                 // iPad-specific tests
@@ -218,6 +226,8 @@
                     $.updateHashParam('p', '5');
                     equals(window.location.hash, '#p=4&p=5');
                     // Not actually sure why it chooses the first one to update
+
+                    window.location.hash = '';
                 });
             }
         });
