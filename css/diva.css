@@ -122,3 +122,9 @@ div[id$="diva-fullscreen"] {
     background-repeat: no-repeat;
     cursor: pointer;
 }
+
+div[id$="diva-link-fullscreen"] {
+    clear: left;
+    padding: 5px;
+    font-weight: bold;
+}

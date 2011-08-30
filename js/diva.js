@@ -28,6 +28,7 @@ THE SOFTWARE.
             adaptivePadding: 0.05,      // The ratio of padding to the page dimension
             backendServer: '',          // The URL to the script returning the JSON data; mandatory
             enableAutoTitle: true,      // Shows the title within a div of id diva-title
+            enableFilename: true,       // Uses filenames instead of page numbers for links (i=bm_001.tif instead of p=1)
             enableFullscreen: true,     // Enable or disable fullscreen mode
             enableGotoPage: true,       // A "go to page" jump box
             enableGrid: true,           // A grid view of all the pages
@@ -314,9 +315,6 @@ THE SOFTWARE.
         var updateCurrentPage = function(pageIndex) {
             var pageNumber = pageIndex + 1;
 
-            // Update the URL - has to be a string
-            $.updateHashParam('p', '' + pageNumber);
-            
             $(settings.selector + 'current span').text(pageNumber);
 
             // If we're in fullscreen mode, change the statusbar
@@ -620,6 +618,11 @@ THE SOFTWARE.
                 context: this, // Not sure if necessary
                 dataType: 'json',
                 success: function(data) {
+                    // Save some data
+                    settings.pages = data.pgs;
+                    settings.maxWidth = data.dims.max_w;
+                    settings.maxHeight = data.dims.max_h;
+
                     // If it's the first request, set some initial settings
                     if (settings.firstAjaxRequest) {
                         setupInitialLoad(data, zoomLevel);
@@ -628,10 +631,6 @@ THE SOFTWARE.
                     // Clear the document, then execute the callback
                     clearDocument();
 
-                    // Save some data
-                    settings.pages = data.pgs;
-                    settings.maxWidth = data.dims.max_w;
-                    settings.maxHeight = data.dims.max_h;
                     $.executeCallback(successCallback, data);
                     settings.firstAjaxRequest = false;
                 }
@@ -660,6 +659,21 @@ THE SOFTWARE.
 
             if (settings.enableAutoTitle) {
                 $(settings.elementSelector).prepend('<div id="' + settings.ID + 'title">' + settings.itemTitle + '</div>');
+            }
+
+            // Now check that p is in range - only if using the filename is disabled
+            var pParam = parseInt($.getHashParam('p'), 10);
+            if (!settings.enableFilename && pageInRange(pParam)) {
+                settings.goDirectlyTo = pParam;
+            }
+
+            // Otherwise, if filename is enabled, look at the i parameter
+            var iParam = $.getHashParam('i');
+            var iParamPage = getPageIndex(iParam);
+            console.log(iParam);
+            console.log(iParamPage);
+            if (settings.enableFilename && iParamPage >= 0) {
+                settings.goDirectlyTo = iParamPage;
             }
         };
 
@@ -877,8 +891,6 @@ THE SOFTWARE.
                     value: zoomLevel
                 });
 
-                // Update the URL (again, must be a string)
-                $.updateHashParam('z', '' + zoomLevel);
                 return true;
             } else {
                 // Execute the callback functions anyway (required for the unit testing)
@@ -1023,12 +1035,8 @@ THE SOFTWARE.
             // If we're already in fullscreen mode, leave it
             if (settings.inFullscreen) {
                 leaveFullscreen();
-
-                // Update the hash param
-                $.updateHashParam('fullscreen', 'false');
             } else {
                 enterFullscreen();
-                $.updateHashParam('fullscreen', 'true');
             }
 
             // Recalculate height and width
@@ -1103,7 +1111,6 @@ THE SOFTWARE.
         var enterGrid = function() {
             settings.inGrid = true;
             loadGrid();
-            $.updateHashParam('grid', 'true');
         }
 
         var leaveGrid = function(preventLoad) {
@@ -1118,7 +1125,6 @@ THE SOFTWARE.
             if (!preventLoad) {
                 loadDocument(settings.zoomLevel);
             }
-            $.updateHashParam('grid', 'false');
         };
 
         // Handles all the events
@@ -1279,7 +1285,7 @@ THE SOFTWARE.
             // If grid view is enabled, put the icon in there
             var gridIcon = (settings.enableGrid) ? '<div id="' + settings.ID + 'grid-icon-fullscreen"></div>' : '';
             var options = { 
-                pnotify_text: '<form id="' + settings.ID + 'goto-page-fullscreen"><input placeholder="' + settings.numPages + '" type="text" size="4" id="' + settings.ID + 'goto-input-fullscreen" /><input type="submit" value="Go"></form><div id="' + settings.ID + 'tools-fullscreen" style="height: 60px;"></div>',
+                pnotify_text: '<form id="' + settings.ID + 'goto-page-fullscreen"><input placeholder="' + settings.numPages + '" type="text" size="4" id="' + settings.ID + 'goto-input-fullscreen" /><input type="submit" value="Go"></form><div id="' + settings.ID + 'tools-fullscreen" style="height: 60px;"></div><div id="' + settings.ID + 'link-fullscreen"><a href="">Link</a></div>',
                 pnotify_title: gridIcon + 'Page: <span id="' + settings.ID + 'page-number-fullscreen">' + (settings.currentPageIndex + 1) + '</span>',
                 pnotify_history: false,
                 pnotify_width: '160px',
@@ -1292,6 +1298,12 @@ THE SOFTWARE.
             };
 
             settings.fullscreenStatusbar = $.pnotify(options);
+
+            // Handle clicking of the link thing
+            $(settings.selector + 'link-fullscreen a').click(function() {
+                console.log(getCurrentURL());
+                return false;
+            });
 
             $(settings.selector + 'grid-icon-fullscreen').click(function() {
                 toggleGrid();
@@ -1357,7 +1369,6 @@ THE SOFTWARE.
         };
 
         var handleGridSlide = function(newPagesPerRow) {
-            $.updateHashParam('n', newPagesPerRow);
             settings.pagesPerRow = newPagesPerRow;
             enterGrid();
         }
@@ -1368,7 +1379,12 @@ THE SOFTWARE.
         
         // Creates the "go to page" box
         var createGotoPage = function() {
-            $(settings.selector + 'tools').append('<form id="' + settings.ID + 'goto-page">Go to page <input type="text" size="3" id="' + settings.ID + 'goto-input" /> <input type="submit" value="Go" /><br /><div id="' + settings.ID + 'current">Current page: <span>1</span> of <label></label></div></form>');
+            $(settings.selector + 'tools').append('<form id="' + settings.ID + 'goto-page">Go to page <input type="text" size="3" id="' + settings.ID + 'goto-input" /> <input type="submit" value="Go" /><br /><div id="' + settings.ID + 'current">Current page: <span>1</span> of <label></label> <a href="" id="' + settings.ID + 'link">(link)</a></div></form>');
+
+            $(settings.selector + 'link').click(function() {
+                console.log(getCurrentURL());
+                return false;
+            });
             
             $(settings.selector + 'goto-page').submit(function() {
                 var desiredPage = parseInt($(settings.selector + 'goto-input').val(), 10);
@@ -1379,6 +1395,41 @@ THE SOFTWARE.
 
                 return false;
             });
+        };
+
+        // Returns the page index associated with the given filename; must called after settings settings.pages
+        var getPageIndex = function(filename) {
+            for (var i = 0; i < settings.numPages; i++) {
+                if (settings.pages[i].fn == filename) {
+                    return i;
+                }
+            }
+
+            return -1;
+        };
+
+        // Returns the URL to the current page (including vertical and horizontal displacement)
+        var getCurrentURL = function() {
+            // All become strings using string concat etc
+            var hashParams = {
+                'f': (settings.inFullscreen) ? '1' : '',
+                'g': (settings.inGrid) ? '1' : '',
+                'z': (!settings.inGrid) ? settings.zoomLevel : '',
+                'n': (settings.inGrid) ? settings.pagesPerRow : '',
+                // settings.currentPageIndex can be assumed to always be valid
+                'i': (settings.enableFilename) ? settings.pages[settings.currentPageIndex].fn : '',
+                // + 1 because it's the page number in the URL not the name (user expectations etc)
+                'p': (!settings.enableFilename) ? settings.currentPageIndex + 1 : '',
+            };
+
+            var hashStringBuilder = [];
+            for (param in hashParams) {
+                if (hashParams[param] !== '') {
+                    hashStringBuilder.push(param + '=' + hashParams[param]);
+                }
+            }
+
+            return location.host + location.pathname + '#' + hashStringBuilder.join('&');
         };
 
         var init = function() {
@@ -1444,36 +1495,33 @@ THE SOFTWARE.
                 $(settings.elementSelector).prepend('<div id="' + settings.ID + 'fullscreen"></div>');
             }
 
-            // If there is a 'z' hash param, make that the initial zoom level
-            // Invalid zoom levels will become 0 or the absolute value (e.g. -1 => 1)
-            var zoomParam = $.getHashParam('z');
-            if (zoomParam) {
-                settings.zoomLevel = Math.abs(parseInt(zoomParam, 10));
+            // First, n - check if it's in range
+            var nParam = parseInt($.getHashParam('n'), 10);
+            if (nParam >= settings.minPagesPerRow && nParam <= settings.maxPagesPerRow) {
+                settings.pagesPerRow = nParam;
             }
 
-            // If there's a 'p' hash param, make that the initial page
-            // Do so by pretending it's a regular zoom event
-            var pageParam = $.getHashParam('p');
-            if (pageParam) {
-                settings.goDirectlyTo = parseInt(pageParam, 10);
+            // Now z - check that it's in range
+            var zParam = $.getHashParam('z');
+            if (zParam !== '') {
+                // If it's empty, we don't want to change the default zoom level
+                zParam = parseInt(zParam, 10);
+                // Can't check if it exceeds the max zoom level or not because that data is not available yet ...
+                if (zParam >= settings.minZoomLevel) {
+                    settings.zoomLevel = zParam;
+                    console.log(settings.zoomLevel);
+                }
             }
 
             // If the "fullscreen" hash param is true, go to fullscreen initially
-            var fullscreenParam = $.getHashParam('fullscreen');
-            if (fullscreenParam === 'true' && settings.enableFullscreen) {
+            var fullscreenParam = $.getHashParam('f');
+            if (fullscreenParam === '1' && settings.enableFullscreen) {
                 toggleFullscreen();
             }
 
-            // If there is a 'n' hash param, make that the initial number of pages per row
-            // Must be within range
-            var numberParam = parseInt($.getHashParam('n'), 10);
-            if (numberParam >= settings.minPagesPerRow && numberParam <= settings.maxPagesPerRow) {
-                settings.pagesPerRow = numberParam;
-            }
-
             // If the grid hash param is true, go to grid view initially
-            var gridParam = $.getHashParam('grid');
-            if (gridParam === 'true' && settings.enableGrid) {
+            var gridParam = $.getHashParam('g');
+            if (gridParam === '1' && settings.enableGrid) {
                 toggleGrid();
             }
             
@@ -1545,6 +1593,11 @@ THE SOFTWARE.
 
             // If not found, return false
             return false;
+        };
+
+        // Get the current URL (exposes the private method)
+        this.getCurrentURL = function() {
+            return getCurrentURL();
         };
     };
     
