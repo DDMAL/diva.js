@@ -80,7 +80,8 @@ THE SOFTWARE.
             firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
             firstRowLoaded: -1,         // The index of the first row loaded
             fullscreenStatusbar: null,  // The popup box that tells you what page you're on
-            goDirectlyTo: -1,            // For the page hash param (#p=100 or &p=5)
+            goDirectlyTo: -1,           // For the page hash param (#p=100 or &p=5)
+            hashParamSuffix: '',        // Used when there are multiple document viewers on a page
             heightAbovePages: [],       // The height above each page
             horizontalOffset: 0,        // Used for storing the page offset before zooming
             horizontalPadding: 0,       // Either the fixed padding or adaptive padding
@@ -665,13 +666,13 @@ THE SOFTWARE.
             }
 
             // Now check that p is in range - only if using the filename is disabled
-            var pParam = parseInt($.getHashParam('p'), 10);
+            var pParam = parseInt($.getHashParam('p' + settings.hashParamSuffix), 10);
             if (!settings.enableFilename && pageInRange(pParam)) {
                 settings.goDirectlyTo = pParam;
             }
 
             // Otherwise, if filename is enabled, look at the i parameter
-            var iParam = $.getHashParam('i');
+            var iParam = $.getHashParam('i' + settings.hashParamSuffix);
             var iParamPage = getPageIndex(iParam);
             if (settings.enableFilename && iParamPage >= 0) {
                 settings.goDirectlyTo = iParamPage;
@@ -1461,7 +1462,7 @@ THE SOFTWARE.
             var hashStringBuilder = [];
             for (param in hashParams) {
                 if (hashParams[param] !== '') {
-                    hashStringBuilder.push(param + '=' + hashParams[param]);
+                    hashStringBuilder.push(param + settings.hashParamSuffix + '=' + hashParams[param]);
                 }
             }
 
@@ -1478,7 +1479,14 @@ THE SOFTWARE.
             // Generate an ID that can be used as a prefix for all the other IDs
             settings.ID = $.generateId('diva-');
             settings.selector = '#' + settings.ID;
-            
+
+            // Figure out the hashParamSuffix from the ID
+            var divaNumber = parseInt(settings.ID, 10);
+            if (divaNumber > 1) {
+                // If this is document viewer #1, don't use a suffix; otherwise, use the document viewer number
+                settings.hashParamSuffix = divaNumber;
+            }
+
             // Since we need to reference these two a lot
             settings.outerSelector = settings.selector + 'outer';
             settings.innerSelector = settings.selector + 'inner';
@@ -1532,13 +1540,13 @@ THE SOFTWARE.
             }
 
             // First, n - check if it's in range
-            var nParam = parseInt($.getHashParam('n'), 10);
+            var nParam = parseInt($.getHashParam('n' + settings.hashParamSuffix), 10);
             if (nParam >= settings.minPagesPerRow && nParam <= settings.maxPagesPerRow) {
                 settings.pagesPerRow = nParam;
             }
 
             // Now z - check that it's in range
-            var zParam = $.getHashParam('z');
+            var zParam = $.getHashParam('z' + settings.hashParamSuffix);
             if (zParam !== '') {
                 // If it's empty, we don't want to change the default zoom level
                 zParam = parseInt(zParam, 10);
@@ -1549,25 +1557,25 @@ THE SOFTWARE.
             }
 
             // y - vertical offset from the top of the relevant page
-            var yParam = parseInt($.getHashParam('y'), 10);
+            var yParam = parseInt($.getHashParam('y' + settings.hashParamSuffix), 10);
             if (yParam > 0) {
                 settings.desiredYOffset = yParam;
             }
 
             // x - horizontal offset from the left edge of the relevant page
-            var xParam = parseInt($.getHashParam('x'), 10);
+            var xParam = parseInt($.getHashParam('x' + settings.hashParamSuffix), 10);
             if (xParam > 0) {
                 settings.desiredXOffset = xParam;
             }
 
             // If the "fullscreen" hash param is true, go to fullscreen initially
-            var fullscreenParam = $.getHashParam('f');
+            var fullscreenParam = $.getHashParam('f' + settings.hashParamSuffix);
             if (fullscreenParam === '1' && settings.enableFullscreen) {
                 toggleFullscreen();
             }
 
             // If the grid hash param is true, go to grid view initially
-            var gridParam = $.getHashParam('g');
+            var gridParam = $.getHashParam('g' + settings.hashParamSuffix);
             if (gridParam === '1' && settings.enableGrid) {
                 toggleGrid();
             }
