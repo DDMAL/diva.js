@@ -571,9 +571,12 @@ THE SOFTWARE.
 
         // Goes directly to the page index stored in settings.goDirectlyTo
         var goDirectlyTo = function() {
-            if (settings.goDirectlyTo) {
-                gotoPage(settings.goDirectlyTo);
-                updateCurrentPage(settings.goDirectlyTo - 1);
+            // Use settings.firstAjaxRequest instead of settings.goDirectlyTo
+            // Because the latter can be 0, which may or may not be valid
+            if (settings.firstAjaxRequest) {
+                gotoPage(settings.goDirectlyTo + 1, settings.desiredYOffset, settings.desiredXOffset);
+                // Off by one error before
+                updateCurrentPage(settings.goDirectlyTo);
                 settings.goDirectlyTo = 0;
                 return true;
             }
