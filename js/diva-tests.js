@@ -1,3 +1,4 @@
+var diva;
 (function() {
     /*
         Unit tests writen using QUnit, jQuery's unit-testing framework
@@ -13,6 +14,7 @@
             onReady: function() {
                 // Only run tests after the document viewer has loaded
                 dv = $('#diva-wrapper').data('diva');
+                diva = dv;
 
                 /* =============================== */
                 module("Public functions");
@@ -30,7 +32,6 @@
                     ok(!dv.gotoPage(1000), "We shouldn't be able to go to page 1000");
                     ok(!dv.gotoPage(0), "We shouldn't be able to go to page 0 (as 0 is not a valid page number)");
                     ok(dv.gotoPage(100), "We SHOULD be able to go to page 100");
-                    equals(dv.getCurrentPage(), 99, "getCurrentPage() should now return 99");
                     // Reset it to the initial page
                     dv.gotoPage(1);
                 });
@@ -127,10 +128,8 @@
                 });
 
                 test("getCurrentURL()", function() {
-                    equals(dv.getCurrentURL(), 'petrucci.musiclibs.net:9002/tests.html#z=0&p=1');
-                    // Now go to a specific page
-                    dv.gotoPage(100);
-                    equals(dv.getCurrentURL(), 'petrucci.musiclibs.net:9002/tests.html#z=0&p=100');
+                    dv.gotoPage(1);
+                    equals(dv.getCurrentURL(), 'petrucci.musiclibs.net:9002/tests.html#z=2&i=bm_001.tif&y=1&x=158');
                 });
 
                 // iPad-specific tests
