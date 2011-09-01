@@ -78,10 +78,14 @@ def main(opts):
     # Now get the absolute lowest and highest max zoom
     lowest_max_zoom = min(max_zoom_list)
 
+    # Store the number of images to figure out how many 0s we need
+    num_images = len(filename_list)
+    num_zeroes = len(str(num_images))
+
     # Now figure out which files have a zoom larger than that
     for i,filename in enumerate(filename_list):
         input_file = os.path.join(directory, filename)
-        output_file = os.path.join(directory, 'processed', '{0}_{1}.tif'.format(filename, (i+1)))
+        output_file = os.path.join(directory, 'processed', '{0}_{1}.tif'.format(filename, str(i+1).zfill(num_zeroes)))
         
         vimage = VImage.VImage(input_file)
         
