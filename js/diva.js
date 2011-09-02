@@ -1320,7 +1320,22 @@ THE SOFTWARE.
 
             // Handle clicking of the link thing
             $(settings.selector + 'link-fullscreen a').click(function() {
-                alert(getCurrentURL());
+                $('body').prepend('<div id="' + settings.ID + 'link-popup-fullscreen"><input id="' + settings.ID + 'link-popup-input-fullscreen" class="diva-input" value="' + getCurrentURL() + '" /></div>');
+                var offset = $('div.ui-pnotify').offset(); // offset of the statusbar (pnotify div)
+                $(settings.selector + 'link-popup-fullscreen').css('left', offset.left + 'px').css('top', (offset.top + $('div.ui-pnotify').height() + 5) + 'px');
+
+                // Catch onmouseup events outside of this div
+                $('body').mouseup(function(event) {
+                    var targetID = event.target.id;
+                    if (targetID !== settings.ID + 'link-popup-fullscreen' && targetID !== settings.ID + 'link-popup-input-fullscreen') {
+                        $(settings.selector + 'link-popup-fullscreen').remove();
+                    }
+                });
+
+                // Also delete it upon scroll and page up/down key events
+                $(settings.outerSelector).scroll(function() {
+                    $(settings.selector + 'link-popup-fullscreen').remove();
+                });
                 return false;
             });
 

@@ -140,9 +140,19 @@ div[id$="diva-link-popup"] {
     text-align: center;
 }
 
+div[id$="diva-link-popup-fullscreen"] {
+    position: absolute;
+    border: 1px solid #DDD;
+    z-index: 10000;
+    text-align: center;
+    background-color: #FFF;
+    padding: 5px;
+    width: 150px;
+}
+
 .diva-input {
+    width: 90%;
     border: 1px solid #CCC;
-    width: 270px;
     line-height: 18px;
     height: 18px;
     font-size: 12px;
