@@ -1401,7 +1401,22 @@ THE SOFTWARE.
             $(settings.selector + 'tools').append('<form id="' + settings.ID + 'goto-page">Go to page <input type="text" size="3" id="' + settings.ID + 'goto-input" /> <input type="submit" value="Go" /><br /><div id="' + settings.ID + 'current">Current page: <span>1</span> of <label></label> <a href="" id="' + settings.ID + 'link">(link)</a></div></form>');
 
             $(settings.selector + 'link').click(function() {
-                alert(getCurrentURL());
+                var leftOffset = $(settings.outerSelector).offset().left + settings.panelWidth;
+                $('body').prepend('<div id="' + settings.ID + 'link-popup"><input id="' + settings.ID + 'link-popup-input" class="diva-input" type="text" value="'+ getCurrentURL() + '"/></div>');
+                $(settings.selector + 'link-popup').css('top', $(settings.outerSelector).offset().top + 'px').css('left', (leftOffset - 298) + 'px');
+
+                // Catch onmouseup events outside of this div
+                $('body').mouseup(function(event) {
+                    var targetID = event.target.id;
+                    if (targetID == settings.ID + 'link-popup' || targetID == settings.ID + 'link-popup-input') {
+                    } else {
+                        $(settings.selector + 'link-popup').remove();
+                    }
+                });
+                // Also delete it upon scroll and page up/down key events
+                $(settings.outerSelector).scroll(function() {
+                    $(settings.selector + 'link-popup').remove();
+                });
                 return false;
             });
             
