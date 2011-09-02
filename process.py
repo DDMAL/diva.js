@@ -51,12 +51,16 @@ Options:
 def main(opts):
     directory = opts['outd']
     resize_images = opts['resz']
+    quality = opts['qual']
+    tilesize = opts['tsze']
+    
+    twid = float(tilesize)
     
     # Create a directory called "processed" within that directory
     # If that directory already exists, fail
     if os.path.isdir(os.path.join(directory, 'processed')):
         print 'There already is a processed directory! Delete it and try again.'
-        return 1
+        sys.exit(1)
     else:
         os.mkdir(os.path.join(directory, 'processed'))
         
@@ -69,7 +73,7 @@ def main(opts):
         for filename in filenames:
             if filename.startswith("."):
                 continue
-            max_zoom, dimensions = get_image_info(os.path.join(directory, filename))
+            max_zoom, dimensions = get_image_info(os.path.join(directory, filename), twid)
             print "file: {0} has a maximum zoom of {1} ({2} zoom levels).".format(filename, (max_zoom - 1), max_zoom)
             max_zoom_list.append(max_zoom)
             filename_list.append(filename)
@@ -84,9 +88,11 @@ def main(opts):
 
     # Now figure out which files have a zoom larger than that
     for i,filename in enumerate(filename_list):
+        fn,ext = os.path.splitext(filename)
         input_file = os.path.join(directory, filename)
-        output_file = os.path.join(directory, 'processed', '{0}_{1}.tif'.format(filename, str(i+1).zfill(num_zeroes)))
+        output_file = os.path.join(directory, 'processed', '{0}_{1}.tif'.format(fn, str(i + 1).zfill(num_zeroes)))
         
+        print "Processing {0}".format(input_file)
         vimage = VImage.VImage(input_file)
         
         # If the image needs to be resized
@@ -94,16 +100,16 @@ def main(opts):
             print '{0} needs to be resized, resizing and converting now'.format(filename)
             # Resize this image to the proper size ... prepend resized_
             width, height = dimensions_list[i]
-            new_width, new_height = resize_image(lowest_max_zoom, width, height)
-            vimage.resize_linear(new_width, new_height).vips2tiff('{0}:jpeg:75,tile:256x256,pyramid'.format(output_file))
+            new_width, new_height = resize_image(lowest_max_zoom, width, height, twid)
+            vimage.resize_linear(new_width, new_height).vips2tiff('{0}:jpeg:{1},tile:{2}x{2},pyramid'.format(output_file, quality, tilesize))
         else:
-            vimage.vips2tiff('{0}:jpeg:75,tile:256x256,pyramid'.format(output_file))
+            vimage.vips2tiff('{0}:jpeg:{1},tile:{2}x{2},pyramid'.format(output_file, quality, tilesize))
         
     # Now print out the max_zoom this document has
     print "This document has a max zoom of: {0}".format(lowest_max_zoom)
 
 # Calculate the maximum zoom of an image given its filepath
-def get_image_info(filepath):
+def get_image_info(filepath, tilewidth):
     # First, find the largest dimension of the image
     image = VImage.VImage(filepath)
     width = image.Xsize()
@@ -111,13 +117,13 @@ def get_image_info(filepath):
     largest_dim = width if width > height else height
 
     # Now figure out the number of zooms
-    zoom_levels = math.ceil(math.log((largest_dim + 1) / (257.0), 2)) + 1
+    zoom_levels = math.ceil(math.log((largest_dim + 1) / (tilewidth), 2)) + 1
     return (int(zoom_levels), (width, height))
 
 # Resize an image to the desired zoom
-def resize_image(desired_zoom, width, height):
+def resize_image(desired_zoom, width, height, tilewidth):
     # Figure out the maximum dimensions we can give it with this zoom
-    max_dim = (2**(desired_zoom-1) * 257) - 1
+    max_dim = (2 ** (desired_zoom - 1) * tilewidth) - 1
     
     if width > height:
         largest_dim = width
@@ -138,6 +144,8 @@ if __name__ == "__main__":
     usage = "%prog [options] directory"
     parser = OptionParser(usage)
     parser.add_option("-r", "--resize", action="store_true", default=False, help = "Resizes all images so that they have the same number of zoom levels", dest="resize")
+    parser.add_option("-q", "--quality", action="store", default=75, type="int", help="JPEG Image Quality level for vips (0-100, Default: 75)", dest="quality")
+    parser.add_option("-s", "--tilesize", action="store", default="256", type="string", help="Pyramid TIFF tile size (square, default 256)", dest="tilesize")
     options, args = parser.parse_args()
     
     if len(args) < 1:
@@ -146,5 +154,7 @@ if __name__ == "__main__":
     opts = {
         'outd': args[0],
         'resz': options.resize,
+        'qual': options.quality,
+        'tsze': options.tilesize
     }
     sys.exit(main(opts))
