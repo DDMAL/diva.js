@@ -1484,9 +1484,9 @@ THE SOFTWARE.
                 // + 1 because it's the page number in the URL not the name (user expectations etc)
                 'p': (!settings.enableFilename) ? settings.currentPageIndex + 1 : '',
                 // Vertical offset always needed, unless it's 0
-                'y': (yOffset >= 0) ? yOffset : '',
+                'y': (yOffset >= 0 && !settings.inGrid) ? yOffset : '',
                 // Horizontal offset only needed if bigger than the viewport something
-                'x': (xOffset > 0) ? xOffset : '',
+                'x': (xOffset > 0 && !settings.inGrid) ? xOffset : '',
             };
 
             var hashStringBuilder = [];
