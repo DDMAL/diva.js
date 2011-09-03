@@ -254,7 +254,7 @@ THE SOFTWARE.
             } else {
                 return false;
             }
-        }
+        };
 
         // Check if a page index is valid
         var pageInRange = function(pageIndex) {
@@ -300,7 +300,7 @@ THE SOFTWARE.
             } else {
                 return false;
             }
-        }
+        };
 
         // Check if the top of a row is below the bottom of the viewport (scrolling up)
         var rowBelowViewport = function(rowIndex) {
@@ -312,7 +312,7 @@ THE SOFTWARE.
             } else {
                 return false;
             }
-        }
+        };
 
         // Helper function for setCurrentPage; should only be called at the end
         var updateCurrentPage = function(pageIndex) {
@@ -401,7 +401,7 @@ THE SOFTWARE.
             } else {
                 return false;
             }
-        }
+        };
 
         // Called by adjust pages - see what pages should be visisble, and show them
         var attemptPageShow = function(pageIndex, direction) {
@@ -505,13 +505,13 @@ THE SOFTWARE.
                     }
                 }
             }
-        }
+        };
 
         var deleteRow = function(rowIndex) {
             if (isRowLoaded(rowIndex)) {
                 $(settings.selector + 'row-' + rowIndex).remove();
             }
-        }
+        };
 
         var attemptRowHide = function(rowIndex, direction) {
             if (direction > 0) {
@@ -528,7 +528,7 @@ THE SOFTWARE.
                     attemptRowHide(settings.lastRowLoaded, direction);
                 }
             }
-        }
+        };
 
         var adjustRows = function(direction) {
             if (direction < 0) {
@@ -540,7 +540,7 @@ THE SOFTWARE.
                 setCurrentRow(1);
                 attemptRowShow(settings.lastRowLoaded, 1);
             }
-        }
+        };
 
         // Handles showing and hiding pages when the user scrolls
         var adjustPages = function(direction) {
@@ -582,7 +582,7 @@ THE SOFTWARE.
                 return true;
             }
             return false;
-        }
+        };
 
         // Helper function called by loadDocument to scroll to the desired place
         var scrollAfterRequest = function() {
@@ -686,7 +686,7 @@ THE SOFTWARE.
             } else {
                 return false;
             }
-        }
+        };
 
         // Check if a row should be visible in the viewport
         var isRowVisible = function(rowIndex) {
@@ -694,7 +694,7 @@ THE SOFTWARE.
             var topOfRow = settings.rowHeight * rowIndex;
             var bottomOfRow = topOfRow + settings.rowHeight + settings.fixedPadding;
             return verticallyInViewport(topOfRow, bottomOfRow);
-        }
+        };
 
         var loadRow = function(rowIndex) {
             if (isRowLoaded(rowIndex)) {
@@ -719,15 +719,15 @@ THE SOFTWARE.
                 var filename = settings.pages[pageIndex].fn;
                 var leftOffset = i * (settings.fixedPadding + settings.gridPageWidth) + settings.fixedPadding;
                 var pageWidth = parseInt(settings.gridPageWidth, 10);
-                var pageHeight = parseInt(pageWidth / settings.pages[pageIndex].w * settings.pages[pageIndex].h);
+                var pageHeight = parseInt(pageWidth / settings.pages[pageIndex].w * settings.pages[pageIndex].h, 10);
                 /* For some reason, IIP returns an image that is always 1px less wide than specified, so this (i.e. specifying an image one pixel wider than the one you want) is the workaround. It means some images are cut off a bit vertically; still, it looks better than a white border along the bottom and right edges (although that border remains at higher zooms ... blame IIP */
                 var imgSrc = settings.iipServerBaseUrl + filename + '&amp;WID=' + (pageWidth + 1) + '&amp;CVT=JPG';
                 stringBuilder.push('<div id="' + settings.ID + 'page-' + pageIndex + '" class="diva-page" style="width: ' + pageWidth + 'px; height: ' + pageHeight + 'px; left: ' + leftOffset + 'px; display: inline;"><div style="position: absolute; background-image: url(\'' + imgSrc  + '\'); background-repeat: no-repeat; width: ' + pageWidth + 'px; height: ' + pageHeight + 'px;"></div></div>');
             }
 
             // Append, using an array as a string builder instead of string concatenation
-            $(settings.innerSelector).append(stringBuilder.join(''))
-        }
+            $(settings.innerSelector).append(stringBuilder.join(''));
+        };
 
         var loadGrid = function() {
             // Ignore the zoom level if it's in a grid
@@ -769,7 +769,7 @@ THE SOFTWARE.
                     }
                 }
             });
-        }
+        };
 
         // When changing between grid/document view, or fullscreen toggling, or zooming
         var clearDocument = function() {
@@ -778,7 +778,7 @@ THE SOFTWARE.
             $(settings.innerSelector).text('');
             settings.firstPageLoaded = 0;
             settings.firstRowLoaded = -1;
-        }
+        };
         
         // AJAX request to start the whole process - called upon page load and upon zoom change
         var loadDocument = function(zoomLevel) {
@@ -1069,7 +1069,7 @@ THE SOFTWARE.
             } else {
                 loadDocument(settings.zoomLevel);
             }
-        }
+        };
 
         // Handles entering fullscreen mode
         var enterFullscreen = function() {
@@ -1130,7 +1130,7 @@ THE SOFTWARE.
             settings.desiredYOffset = getYOffset();
             settings.inGrid = true;
             loadGrid();
-        }
+        };
 
         var leaveGrid = function(preventLoad) {
             settings.inGrid = false;
@@ -1410,7 +1410,7 @@ THE SOFTWARE.
         var handleGridSlide = function(newPagesPerRow) {
             settings.pagesPerRow = newPagesPerRow;
             enterGrid();
-        }
+        };
 
         var createGridIcon = function() {
             $(settings.selector + 'tools').prepend('<div id="' + settings.ID + 'grid-icon"></div>');
@@ -1491,7 +1491,7 @@ THE SOFTWARE.
                 // Vertical offset always needed, unless it's 0
                 'y': (yOffset > 0 && !settings.inGrid) ? yOffset : '',
                 // Horizontal offset only needed if bigger than the viewport something
-                'x': (xOffset > 0 && !settings.inGrid) ? xOffset : '',
+                'x': (xOffset > 0 && !settings.inGrid) ? xOffset : ''
             };
 
             var hashStringBuilder = [];
