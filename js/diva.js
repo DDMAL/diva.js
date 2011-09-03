@@ -783,6 +783,11 @@ THE SOFTWARE.
         // AJAX request to start the whole process - called upon page load and upon zoom change
         var loadDocument = function(zoomLevel) {
             ajaxRequest(zoomLevel, function(data) {
+                // If the desired initial zoom > max zoom, set to 0 (in accordance with divaserve.php)
+                if (zoomLevel > data.max_zoom) {
+                    zoomLevel = 0;
+                }
+
                 // Calculate the horizontal and vertical inter-page padding
                 if (settings.adaptivePadding > 0) {
                     settings.horizontalPadding = data.dims.a_wid * settings.adaptivePadding;
