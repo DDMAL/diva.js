@@ -1474,7 +1474,7 @@ THE SOFTWARE.
         };
 
         // Returns the URL to the current page (including vertical and horizontal displacement)
-        var getCurrentURL = function() {
+        var getCurrentURL = function(returnOnlyHash) {
             // All become strings using string concat etc
             var yOffset = parseInt(getYOffset(), 10);
             var xOffset = parseInt(getXOffset(), 10);
@@ -1501,7 +1501,14 @@ THE SOFTWARE.
                 }
             }
 
-            return location.host + location.pathname + '#' + hashStringBuilder.join('&');
+            // If we want to return just the hash part (without the host and pathname)
+            // Without the leading #, for easy state representation of multiple document viewers
+            // returnOnlyHash = optional parameter, only used in the public method
+            if (returnOnlyHash) {
+                return hashStringBuilder.join('&');
+            } else {
+                return location.host + location.pathname + '#' + hashStringBuilder.join('&');
+            }
         };
 
         var init = function() {
@@ -1688,6 +1695,11 @@ THE SOFTWARE.
         // Get the current URL (exposes the private method)
         this.getCurrentURL = function() {
             return getCurrentURL();
+        };
+
+        // Get the hash part only of the current URL (without the leading #)
+        this.getURLHash = function() {
+            return getCurrentURL(true);
         };
     };
     

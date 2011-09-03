@@ -132,6 +132,13 @@ var diva;
                     equals(dv.getCurrentURL(), 'petrucci.musiclibs.net:9002/tests.html#z=2&i=bm_001.tif&y=1&x=158');
                 });
 
+                // Sometimes does not work due to asynchronous testing issues
+                // i.e. we don't know which zoom out/etc events will finish first ...
+                test("getURLHash()", function() {
+                    dv.gotoPage(1);
+                    equals(dv.getURLHash(), 'z=2&i=bm_001.tif&y=1&x=158');
+                });
+
                 // iPad-specific tests
                 if (navigator.platform == 'iPad') {
                     module("Testing on the iPad");
