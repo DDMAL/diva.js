@@ -90,7 +90,8 @@ def main(opts):
     for i,filename in enumerate(filename_list):
         fn,ext = os.path.splitext(filename)
         input_file = os.path.join(directory, filename)
-        output_file = os.path.join(directory, 'processed', '{0}_{1}.tif'.format(fn, str(i + 1).zfill(num_zeroes)))
+        new_fn = fn.replace(' ', '_')  # Replaces all spaces with _ because spaces can cause problems in the long run
+        output_file = os.path.join(directory, 'processed', '%s.tif' % new_fn)
         
         print "Processing {0}".format(input_file)
         vimage = VImage.VImage(input_file)
