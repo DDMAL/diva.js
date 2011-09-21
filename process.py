@@ -91,7 +91,7 @@ def main(opts):
         fn,ext = os.path.splitext(filename)
         input_file = os.path.join(directory, filename)
         new_fn = fn.replace(' ', '_')  # Replaces all spaces with _ because spaces can cause problems in the long run
-        output_file = os.path.join(directory, 'processed', '%s.tif' % new_fn)
+        output_file = os.path.join(directory, 'processed', "{0}.tif".format(new_fn))
         
         print "Processing {0}".format(input_file)
         vimage = VImage.VImage(input_file)
