@@ -22,7 +22,7 @@
 
 import sys, os
 import math
-from vipsCC import *
+from vipsCC import VImage
 from optparse import OptionParser
 
 """
@@ -53,8 +53,15 @@ def main(opts):
     resize_images = opts['resz']
     quality = opts['qual']
     tilesize = opts['tsze']
+    compression = opts['comp']
     
     twid = float(tilesize)
+
+    # set the compression options. We only need to munge it 
+    # for jpeg -- all the other options we don't need a quality
+    # declaration. If one is specified, we ignore it.
+    if compression == "jpeg":
+        compression = "{0}:{1}".format(compression, quality)
     
     # Create a directory called "processed" within that directory
     # If that directory already exists, fail
@@ -102,9 +109,9 @@ def main(opts):
             # Resize this image to the proper size ... prepend resized_
             width, height = dimensions_list[i]
             new_width, new_height = resize_image(lowest_max_zoom, width, height, twid)
-            vimage.resize_linear(new_width, new_height).vips2tiff('{0}:jpeg:{1},tile:{2}x{2},pyramid'.format(output_file, quality, tilesize))
+            vimage.resize_linear(new_width, new_height).vips2tiff('{0}:{1},tile:{2}x{2},pyramid'.format(output_file, compression, tilesize))
         else:
-            vimage.vips2tiff('{0}:jpeg:{1},tile:{2}x{2},pyramid'.format(output_file, quality, tilesize))
+            vimage.vips2tiff('{0}:{1},tile:{2}x{2},pyramid'.format(output_file, compression, tilesize))
         
     # Now print out the max_zoom this document has
     print "This document has a max zoom of: {0}".format(lowest_max_zoom)
@@ -145,17 +152,20 @@ if __name__ == "__main__":
     usage = "%prog [options] directory"
     parser = OptionParser(usage)
     parser.add_option("-r", "--resize", action="store_true", default=False, help = "Resizes all images so that they have the same number of zoom levels", dest="resize")
-    parser.add_option("-q", "--quality", action="store", default=75, type="int", help="JPEG Image Quality level for vips (0-100, Default: 75)", dest="quality")
+    parser.add_option("-q", "--quality", action="store", default="75", type="string", help="JPEG Image Quality level for vips (0-100, Default: 75)", dest="quality")
     parser.add_option("-s", "--tilesize", action="store", default="256", type="string", help="Pyramid TIFF tile size (square, default 256)", dest="tilesize")
+    parser.add_option("-m", "--compression", action="store", default="jpeg", choices=["jpeg", "none", "deflate"], help="The type of compression to use. Choose jpeg (default), none, or deflate", dest="compression")
     options, args = parser.parse_args()
     
     if len(args) < 1:
+        parser.print_help()
         parser.error("You must specify a directory to process.")
     
     opts = {
         'outd': args[0],
         'resz': options.resize,
         'qual': options.quality,
-        'tsze': options.tilesize
+        'tsze': options.tilesize,
+        'comp': options.compression
     }
     sys.exit(main(opts))
