@@ -1073,7 +1073,7 @@ THE SOFTWARE.
 
         // Handles entering fullscreen mode
         var enterFullscreen = function() {
-            if (settings.fullscreenStatusbar == null) {
+            if (settings.fullscreenStatusbar === null) {
                 createFullscreenStatusbar('none');
             }
 
@@ -1093,7 +1093,7 @@ THE SOFTWARE.
         // Handles leaving fullscreen mode
         var leaveFullscreen = function() {
             // Remove the status bar
-            if (settings.fullscreenStatusbar != null) {
+            if (settings.fullscreenStatusbar !== null) {
                 // In case animation has been set to fade
                 settings.fullscreenStatusbar.pnotify({
                     pnotify_animation: 'none'
@@ -1495,7 +1495,7 @@ THE SOFTWARE.
             };
 
             var hashStringBuilder = [];
-            for (param in hashParams) {
+            for (var param in hashParams) {
                 if (hashParams[param] !== '') {
                     hashStringBuilder.push(param + settings.hashParamSuffix + '=' + hashParams[param]);
                 }
