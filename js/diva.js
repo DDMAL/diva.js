@@ -979,39 +979,39 @@ THE SOFTWARE.
         
         // Handles the double click event, put in a new function for better codeflow
         var handleDoubleClick = function(event) {
-                // If the zoom level is already at max, zoom out
-                var newZoomLevel;
-                if (settings.zoomLevel === settings.maxZoomLevel) {
-                    if (event.ctrlKey) {
-                        newZoomLevel = settings.zoomLevel - 1;
-                    } else {
-                        return;
-                    }
-                } else if (settings.zoomLevel === settings.minZoomLevel) {
-                    if (event.ctrlKey) {
-                        return;
-                    } else {
-                        newZoomLevel = settings.zoomLevel + 1;
-                    }
+            // If the zoom level is already at max, zoom out
+            var newZoomLevel;
+            if (settings.zoomLevel === settings.maxZoomLevel) {
+                if (event.ctrlKey) {
+                    newZoomLevel = settings.zoomLevel - 1;
                 } else {
-                    if (event.ctrlKey) {
-                        newZoomLevel = settings.zoomLevel - 1;
-                    } else {
-                        newZoomLevel = settings.zoomLevel + 1;
-                    }
+                    return;
                 }
+            } else if (settings.zoomLevel === settings.minZoomLevel) {
+                if (event.ctrlKey) {
+                    return;
+                } else {
+                    newZoomLevel = settings.zoomLevel + 1;
+                }
+            } else {
+                if (event.ctrlKey) {
+                    newZoomLevel = settings.zoomLevel - 1;
+                } else {
+                    newZoomLevel = settings.zoomLevel + 1;
+                }
+            }
 
-                
-                // Set centerX and centerY for scrolling in after zoom
-                // Need to use this.offsetLeft and this.offsetTop to get it relative to the edge of the document
-                settings.centerX = (event.pageX - settings.viewerXOffset) + $(settings.outerSelector).scrollLeft();
-                settings.centerY = (event.pageY - settings.viewerYOffset) + $(settings.outerSelector).scrollTop();
+            
+            // Set centerX and centerY for scrolling in after zoom
+            // Need to use this.offsetLeft and this.offsetTop to get it relative to the edge of the document
+            settings.centerX = (event.pageX - settings.viewerXOffset) + $(settings.outerSelector).scrollLeft();
+            settings.centerY = (event.pageY - settings.viewerYOffset) + $(settings.outerSelector).scrollTop();
 
-                // Set doubleClick to true, so we know where to zoom
-                settings.doubleClick = true;
-                
-                // Zoom
-                handleZoom(newZoomLevel);
+            // Set doubleClick to true, so we know where to zoom
+            settings.doubleClick = true;
+            
+            // Zoom
+            handleZoom(newZoomLevel);
         };
 
         // Bound to an event handler if iStuff detected; prevents window dragging
