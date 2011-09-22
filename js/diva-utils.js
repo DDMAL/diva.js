@@ -440,7 +440,7 @@ $.fn.dragscrollable = function( options ){
             pnotify.pnotify_queue_position = function() {
                 if (timer)
                     clearTimeout(timer);
-                timer = setTimeout($.pnotify_position_all, 10);
+                timer = setTimeout(function() {$.pnotify_position_all}, 10);
             };
 
             // Display the notice.
