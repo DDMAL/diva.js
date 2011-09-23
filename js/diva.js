@@ -70,6 +70,7 @@ THE SOFTWARE.
         var globals = {
             centerX: 0,                 // Only used if doubleClick is true - for zooming in
             centerY: 0,                 // Y-coordinate, see above
+            ctrlKey: false,             // Hack for ctrl+double-clicking in Firefox on Mac
             currentPageIndex: 0,        // The current page in the viewport (center-most page)
             desiredXOffset: 0,          // Used for holding the 'x' hash parameter (x offset from left side of page)
             desiredYOfffset: 0,         // Used for holding the 'y' hash parameter (y offset from top of page)
@@ -95,6 +96,7 @@ THE SOFTWARE.
             maxHeight: 0,               // The height of the tallest page
             maxWidth: 0,                // The width of the widest page
             mobileSafari: false,        // Checks if the user is on an iPad, iPhone or iPod
+            numClicks: 0,               // Hack for ctrl+double-clicking in Firefox on Mac
             numPages: 0,                // Number of pages in the array
             numRows: 0,                 // Number of rows
             pages: [],                  // An array containing the data for all the pages
@@ -983,26 +985,27 @@ THE SOFTWARE.
             // If the zoom level is already at max, zoom out
             var newZoomLevel;
             if (settings.zoomLevel === settings.maxZoomLevel) {
-                if (event.ctrlKey) {
+                if (event.ctrlKey || settings.ctrlKey) {
                     newZoomLevel = settings.zoomLevel - 1;
                 } else {
                     return;
                 }
             } else if (settings.zoomLevel === settings.minZoomLevel) {
-                if (event.ctrlKey) {
+                if (event.ctrlKey || settings.ctrlKey) {
                     return;
                 } else {
                     newZoomLevel = settings.zoomLevel + 1;
                 }
             } else {
-                if (event.ctrlKey) {
+                if (event.ctrlKey || settings.ctrlKey) {
                     newZoomLevel = settings.zoomLevel - 1;
                 } else {
                     newZoomLevel = settings.zoomLevel + 1;
                 }
             }
 
-            
+            // Needed for zooming out in Firefox on Mac
+            settings.numClicks = 0;
             // Set centerX and centerY for scrolling in after zoom
             // Need to use this.offsetLeft and this.offsetTop to get it relative to the edge of the document
             settings.centerX = (event.pageX - settings.viewerXOffset) + $(settings.outerSelector).scrollLeft();
@@ -1211,6 +1214,22 @@ THE SOFTWARE.
                     handleScroll();
                 }
             });
+
+            // Prevent the context menu within the outerdrag IF it was triggered with the ctrl key
+            $(settings.outerSelector).bind("contextmenu", function(event) {
+                var e = event.originalEvent;
+                if (e.ctrlKey) {
+                    settings.ctrlKey = true;
+                    settings.numClicks++;
+                    if (settings.numClicks > 1) {
+                        handleDoubleClick(event);
+                        settings.numClicks = 0;
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                    settings.ctrlKey = false;
+                }
+            });
                 
             // Double-click to zoom
             $(settings.outerSelector).dblclick(function(event) {
@@ -1232,15 +1251,6 @@ THE SOFTWARE.
                     leaveGrid();
                 } else {
                     handleDoubleClick(event);
-                }
-            });
-
-            // Prevent the context menu within the outerdrag IF it was triggered with the ctrl key
-            $(settings.outerSelector).bind("contextmenu", function(event) {
-                var e = event.originalEvent;
-                if (e.ctrlKey) {
-                    e.preventDefault();
-                    e.stopPropagation();
                 }
             });
 
