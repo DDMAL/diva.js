@@ -1297,6 +1297,8 @@ THE SOFTWARE.
                 var spaceKey = $.ui.keyCode.SPACE;
                 var pageUpKey = $.ui.keyCode.PAGE_UP;
                 var pageDownKey = $.ui.keyCode.PAGE_DOWN;
+                var homeKey = $.ui.keyCode.HOME;
+                var endKey = $.ui.keyCode.END;
 
                 // Catch the key presses in document
                 $(document).keydown(function(event) {
@@ -1309,6 +1311,18 @@ THE SOFTWARE.
                     // Page up - go to the previous page
                     if (settings.enableKeyScroll && event.keyCode == pageUpKey) {
                         $(settings.outerSelector).scrollTop(settings.scrollSoFar - settings.panelHeight);
+                        return false;
+                    }
+
+                    // Home key - go to the beginning of the document
+                    if (settings.enableKeyScroll && event.keyCode == homeKey) {
+                        $(settings.outerSelector).scrollTop(0);
+                        return false;
+                    }
+
+                    // End key - go to the end of the document
+                    if (settings.enableKeyScroll && event.keyCode == endKey) {
+                        $(settings.outerSelector).scrollTop(settings.totalHeight);
                         return false;
                     }
                 });
