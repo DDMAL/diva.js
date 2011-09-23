@@ -1234,8 +1234,8 @@ THE SOFTWARE.
             // Double-click to zoom
             $(settings.outerSelector).dblclick(function(event) {
                 // First set the x and y offsets of the viewer from the edge of document
-                settings.viewerXOffset = this.offsetLeft;
-                settings.viewerYOffset = this.offsetTop;
+                settings.viewerXOffset = $(this).offset().left;
+                settings.viewerYOffset = $(this).offset().top;
 
                 if (settings.inGrid) {
                     // Figure out the page that was clicked, scroll to that page
