@@ -618,7 +618,7 @@ THE SOFTWARE.
         // Perform the AJAX request; afterwards, execute the callback
         var ajaxRequest = function(zoomLevel, successCallback) {
             $.ajax({
-                url: settings.backendServer += '&z=' + zoomLevel,
+                url: settings.backendServer + '&z=' + zoomLevel,
                 cache: true,
                 context: this, // Not sure if necessary
                 dataType: 'json',
