@@ -561,14 +561,14 @@ THE SOFTWARE.
 
             // Handle the scrolling callback functions here
             if (direction !== 0) {
-                $.executeCallback(settings.onScroll, settings.currentPageIndex);
+                $.executeCallback(settings.onScroll, settings.scrollSoFar);
 
                 // If we're scrolling down
                 if (direction > 0) {
-                    $.executeCallback(settings.onScrollDown, settings.currentPageIndex);
+                    $.executeCallback(settings.onScrollDown, settings.scrollSoFar);
                 } else {
                     // We're scrolling up
-                    $.executeCallback(settings.onScrollUp, settings.currentPageIndex);
+                    $.executeCallback(settings.onScrollUp, settings.scrollSoFar);
                 }
             }
         };
