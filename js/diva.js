@@ -105,7 +105,9 @@ THE SOFTWARE.
             prevVptTop: 0,              // Used to determine vertical scroll direction
             scaleWait: false,           // For preventing double-scale on the iPad
             selector: '',               // Uses the generated ID prefix to easily select elements
+            scrollLeft: -1,             // Total scroll from the left
             scrollSoFar: 0,             // Holds the number of pixels of vertical scroll
+            scrollTop: -1,              // Total scroll from the top
             totalHeight: 0,             // Height of all the image stacked together, value set later
             verticalOffset: 0,          // Used for storing the page offset before zooming
             verticalPadding: 0,         // Either the fixed padding or adaptive padding
@@ -593,6 +595,14 @@ THE SOFTWARE.
                 return;
             }
 
+            if (settings.scrollLeft >= 0 && settings.scrollTop >= 0) {
+                $(settings.outerSelector).scrollTop(settings.scrollTop);
+                $(settings.outerSelector).scrollLeft(settings.scrollLeft);
+                settings.scrollLeft = -1;
+                settings.scrollTop = -1;
+                return;
+            }
+
             // The x and y coordinates of the center ... let's zoom in on them
             var centerX, centerY, desiredLeft, desiredTop;
             
@@ -755,7 +765,12 @@ THE SOFTWARE.
                 $(settings.innerSelector).css('width', Math.round(settings.panelWidth));
 
                 // First scroll directly to the row containing the current page
-                if (!goDirectlyTo()) {
+                if (settings.scrollLeft >= 0 && settings.scrollTop >= 0) {
+                    $(settings.outerSelector).scrollTop(settings.scrollTop);
+                    $(settings.outerSelector).scrollLeft(settings.scrollLeft);
+                    settings.scrollLeft = -1;
+                    settings.scrollTop = -1;
+                } else if (!goDirectlyTo()) {
                     gotoPage(settings.currentPageIndex + 1);
                 }
 
@@ -1725,6 +1740,56 @@ THE SOFTWARE.
         // Get the hash part only of the current URL (without the leading #)
         this.getURLHash = function() {
             return getCurrentURL(true);
+        };
+
+        this.getState = function() {
+            var state = {
+                'grid': settings.inGrid,
+                'level': settings.zoomLevel,
+                'n': settings.pagesPerRow,
+                'x': $(settings.outerSelector).scrollLeft(),
+                'y': $(settings.outerSelector).scrollTop()
+            };
+            return state;
+        };
+
+        this.setState = function(state) {
+            settings.scrollLeft = state.x;
+            settings.scrollTop = state.y;
+            // Pass it the state retrieved from calling getState() on another diva
+            if (state.grid) {
+                if (settings.pagesPerRow !== state.n) {
+                    handleGridSlide(state.n);
+                } else {
+                    // Don't need to change pages per row
+                    // Do we need to enter grid?
+                    if (!settings.inGrid) {
+                        enterGrid();
+                    } else {
+                        // We probably need to re-scroll ...
+                        $(settings.outerSelector).scrollTop(settings.scrollTop);
+                        $(settings.outerSelector).scrollLeft(settings.scrollLeft);
+                        settings.scrollTop = -1;
+                        settings.scrollLeft = -1;
+                    }
+                }
+            } else {
+                if (settings.zoomLevel !== state.level) {
+                    handleZoom(state.level);
+                } else {
+                    // Correct zoom level
+                    // Do we need to leave grid?
+                    if (settings.inGrid) {
+                        leaveGrid();
+                    } else {
+                        // We probably need to re-scroll ...
+                        $(settings.outerSelector).scrollTop(settings.scrollTop);
+                        $(settings.outerSelector).scrollLeft(settings.scrollLeft);
+                        settings.scrollTop = -1;
+                        settings.scrollLeft = -1;
+                    }
+                }
+            }
         };
     };
     
