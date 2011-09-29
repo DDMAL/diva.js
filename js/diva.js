@@ -590,7 +590,7 @@ THE SOFTWARE.
         };
 
         // Helper function called by loadDocument to scroll to the desired place
-        var scrollAfterRequest = function() {
+        var documentScroll = function() {
             if (goDirectlyTo()) {
                 return;
             }
@@ -850,7 +850,7 @@ THE SOFTWARE.
                 $(settings.innerSelector).css('width', Math.round(widthToSet));
 
                 // Scroll to the proper place
-                scrollAfterRequest();
+                documentScroll();
 
                 // Now execute the zoom callback functions (if it's not the initial load)
                 // No longer gets executed when leaving or entering fullscreen mode
