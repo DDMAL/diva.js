@@ -1530,7 +1530,7 @@ THE SOFTWARE.
                 'i': settings.currentPageIndex, // page index, only used when not in grid
                 'y': (settings.inGrid) ? settings.documentLeftScroll : getYOffset(),
                 'x': (settings.inGrid) ? settings.documentLeftScroll : getXOffset(),
-                'gy': (settings.inGrid) ? $(settings.outerSelector).scrollTop() : settings.gridTopScroll,
+                'gy': (settings.inGrid) ? $(settings.outerSelector).scrollTop() : settings.gridScrollTop,
             }
 
             return state;
@@ -1659,9 +1659,9 @@ THE SOFTWARE.
                 toggleFullscreen();
             }
 
-            var gridTopScroll = parseInt($.getHashParam('gy' + settings.hashParamSuffix), 10);
-            if (gridTopScroll > 0) {
-                settings.gridTopScroll = gridTopScroll;
+            var gridScrollTop = parseInt($.getHashParam('gy' + settings.hashParamSuffix), 10);
+            if (gridScrollTop > 0) {
+                settings.gridScrollTop = gridScrollTop;
             }
 
             // If the grid hash param is true, go to grid view initially
