@@ -589,6 +589,19 @@ THE SOFTWARE.
             return false;
         };
 
+        // Don't call this when not in grid mode please
+        // Scrolls to the relevant place when in grid view
+        var gridScroll = function() {
+            if (settings.gridScrollTop) {
+                $(settings.outerSelector).scrollTop(settings.gridScrollTop);
+                settings.gridScrollTop = 0;
+            } else {
+                // Figure out where it is supposed to scroll
+                // Scroll to the row containing the current page
+                gotoPage(settings.currentPageIndex + 1);
+            }
+        };
+
         // Helper function called by loadDocument to scroll to the desired place
         var documentScroll = function() {
             if (goDirectlyTo()) {
@@ -765,14 +778,7 @@ THE SOFTWARE.
                 $(settings.innerSelector).css('width', Math.round(settings.panelWidth));
 
                 // First scroll directly to the row containing the current page
-                if (settings.scrollLeft >= 0 && settings.scrollTop >= 0) {
-                    $(settings.outerSelector).scrollTop(settings.scrollTop);
-                    $(settings.outerSelector).scrollLeft(settings.scrollLeft);
-                    settings.scrollLeft = -1;
-                    settings.scrollTop = -1;
-                } else if (!goDirectlyTo()) {
-                    gotoPage(settings.currentPageIndex + 1);
-                }
+                gridScroll();
 
                 settings.scrollSoFar = $(settings.outerSelector).scrollTop();
 
@@ -1167,6 +1173,8 @@ THE SOFTWARE.
         };
 
         var leaveGrid = function(preventLoad) {
+            // Save the grid top offset
+            settings.gridScrollTop = $(settings.outerSelector).scrollTop();
             settings.inGrid = false;
 
             // Jump to the "current page" if double-click wasn't used
