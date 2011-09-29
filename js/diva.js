@@ -1546,12 +1546,12 @@ THE SOFTWARE.
                     hashStringBuilder.push(param + settings.hashParamSuffix + '=' + hashParams[param]);
                 }
             }
-            return '#' + hashStringBuilder.join('&');
+            return hashStringBuilder.join('&');
         };
 
         // Returns the URL to the current state of the document viewer (so it should be an exact replica)
         var getCurrentURL = function() {
-            return settings.protocol + location.host + location.pathname + getURLHash();
+            return settings.protocol + location.host + location.pathname + '#' + getURLHash();
         };
 
         var init = function() {
