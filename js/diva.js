@@ -1514,49 +1514,44 @@ THE SOFTWARE.
             var yScroll = $(settings.outerSelector).scrollTop();
             var topOfPage = settings.heightAbovePages[settings.currentPageIndex];
 
-            return yScroll - topOfPage;
+            return parseInt(yScroll - topOfPage, 10);
         };
 
         var getXOffset = function() {
-            return $(settings.outerSelector).scrollLeft();
+            return $(settings.outerSelector).scrollLeft(); // already is an integer
         };
 
-        // Returns the URL to the current page (including vertical and horizontal displacement)
-        var getCurrentURL = function(returnOnlyHash) {
-            // All become strings using string concat etc
-            var yOffset = parseInt(getYOffset(), 10);
-            var xOffset = parseInt(getXOffset(), 10);
+        var getState = function() {
+            var state = {
+                'f': settings.inFullscreen,
+                'g': settings.inGrid,
+                'z': settings.zoomLevel,
+                'n': settings.pagesPerRow,
+                'i': settings.currentPageIndex, // page index, only used when not in grid
+                'y': (settings.inGrid) ? settings.documentLeftScroll : getYOffset(),
+                'x': (settings.inGrid) ? settings.documentLeftScroll : getXOffset(),
+                'gy': (settings.inGrid) ? $(settings.outerSelector).scrollTop() : settings.gridTopScroll,
+            }
 
-            var hashParams = {
-                'f': (settings.inFullscreen) ? '1' : '',
-                'g': (settings.inGrid) ? '1' : '',
-                'z': (!settings.inGrid) ? settings.zoomLevel : '',
-                'n': (settings.inGrid) ? settings.pagesPerRow : '',
-                // settings.currentPageIndex can be assumed to always be valid
-                'i': (settings.enableFilename) ? settings.pages[settings.currentPageIndex].fn : '',
-                // + 1 because it's the page number in the URL not the name (user expectations etc)
-                'p': (!settings.enableFilename) ? settings.currentPageIndex + 1 : '',
-                // Vertical offset always needed, unless it's 0
-                'y': (yOffset > 0 && !settings.inGrid) ? yOffset : '',
-                // Horizontal offset only needed if bigger than the viewport something
-                'x': (xOffset > 0 && !settings.inGrid) ? xOffset : ''
-            };
+            return state;
+        };
 
+        var getURLHash = function() {
+            var hashParams = getState();
+            var i = hashParams.i; // current page index
+            hashParams.i = (settings.enableFilename) ? settings.pages[i].fn : i + 1; // make it the filename if desired, else the page number
             var hashStringBuilder = [];
             for (var param in hashParams) {
-                if (hashParams[param] !== '') {
+                if (hashParams[param]) { // truthy
                     hashStringBuilder.push(param + settings.hashParamSuffix + '=' + hashParams[param]);
                 }
             }
+            return '#' + hashStringBuilder.join('&');
+        };
 
-            // If we want to return just the hash part (without the host and pathname)
-            // Without the leading #, for easy state representation of multiple document viewers
-            // returnOnlyHash = optional parameter, only used in the public method
-            if (returnOnlyHash) {
-                return hashStringBuilder.join('&');
-            } else {
-                return settings.protocol + location.host + location.pathname + '#' + hashStringBuilder.join('&');
-            }
+        // Returns the URL to the current state of the document viewer (so it should be an exact replica)
+        var getCurrentURL = function() {
+            return settings.protocol + location.host + location.pathname + getURLHash();
         };
 
         var init = function() {
@@ -1660,13 +1655,18 @@ THE SOFTWARE.
 
             // If the "fullscreen" hash param is true, go to fullscreen initially
             var fullscreenParam = $.getHashParam('f' + settings.hashParamSuffix);
-            if (fullscreenParam === '1' && settings.enableFullscreen) {
+            if (fullscreenParam === 'true' && settings.enableFullscreen) {
                 toggleFullscreen();
+            }
+
+            var gridTopScroll = parseInt($.getHashParam('gy' + settings.hashParamSuffix), 10);
+            if (gridTopScroll > 0) {
+                settings.gridTopScroll = gridTopScroll;
             }
 
             // If the grid hash param is true, go to grid view initially
             var gridParam = $.getHashParam('g' + settings.hashParamSuffix);
-            if (gridParam === '1' && settings.enableGrid) {
+            if (gridParam === 'true' && settings.enableGrid) {
                 toggleGrid();
             }
             
@@ -1747,18 +1747,11 @@ THE SOFTWARE.
 
         // Get the hash part only of the current URL (without the leading #)
         this.getURLHash = function() {
-            return getCurrentURL(true);
+            return getURLHash();
         };
 
         this.getState = function() {
-            var state = {
-                'grid': settings.inGrid,
-                'level': settings.zoomLevel,
-                'n': settings.pagesPerRow,
-                'x': $(settings.outerSelector).scrollLeft(),
-                'y': $(settings.outerSelector).scrollTop()
-            };
-            return state;
+            return getState();
         };
 
         this.setState = function(state) {
