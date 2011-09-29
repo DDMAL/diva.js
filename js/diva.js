@@ -1755,39 +1755,50 @@ THE SOFTWARE.
         };
 
         this.setState = function(state) {
-            settings.scrollLeft = state.x;
-            settings.scrollTop = state.y;
+            // Ignore fullscreen, this is meant for syncing two viewers ... they can't both be fullscreen
             // Pass it the state retrieved from calling getState() on another diva
-            if (state.grid) {
-                if (settings.pagesPerRow !== state.n) {
-                    handleGridSlide(state.n);
-                } else {
-                    // Don't need to change pages per row
-                    // Do we need to enter grid?
-                    if (!settings.inGrid) {
-                        enterGrid();
+            settings.gridScrollTop = state.gy;
+            settings.goDirectlyTo = (isNaN(state.i)) ? getPageIndex(state.i) : state.i// if not a number, it's a filename
+            settings.desiredXOffset = state.x;
+            settings.desiredYOffset = state.y;
+
+            // The actions to take depend on both the desired state and the current state
+            if (state.g) {
+                // Save the zoom level (won't be used right away, but it must be done here)
+                settings.zoomLevel = state.z
+                // Are we already in grid mode?
+                if (settings.inGrid) {
+                    // Do we need to change the number of pages per row?
+                    if (settings.pagesPerRow === state.n) {
+                        // We don't ... now do gridScroll() just in case we need to scroll
+                        gridScroll();
                     } else {
-                        // We probably need to re-scroll ...
-                        $(settings.outerSelector).scrollTop(settings.scrollTop);
-                        $(settings.outerSelector).scrollLeft(settings.scrollLeft);
-                        settings.scrollTop = -1;
-                        settings.scrollLeft = -1;
+                        // We do ... change that, scrolling will be taken care of automatically
+                        handleGridSlide(state.n);
                     }
+                } else {
+                    // Enter the grid ... scrolling and pages per row should be done automatically
+                    settings.pagesPerRow = state.n;
+                    // Can't call enter grid because it overwrites the desired x and y offsets
+                    settings.inGrid = true;
+                    loadGrid();
                 }
             } else {
-                if (settings.zoomLevel !== state.level) {
-                    handleZoom(state.level);
+                // Save the number of pages per row here in case we go into grid mode later
+                settings.pagesPerRow = state.n;
+                // Are we in grid mode right now?
+                if (settings.inGrid) {
+                    // We are ... let's get out of it
+                    settings.zoomLevel = state.z;
+                    leaveGrid();
                 } else {
-                    // Correct zoom level
-                    // Do we need to leave grid?
-                    if (settings.inGrid) {
-                        leaveGrid();
+                    // Do we need to change the zoom level?
+                    if (settings.zoomLevel === state.z) {
+                        // Nope. Just scroll.
+                        documentScroll();
                     } else {
-                        // We probably need to re-scroll ...
-                        $(settings.outerSelector).scrollTop(settings.scrollTop);
-                        $(settings.outerSelector).scrollLeft(settings.scrollLeft);
-                        settings.scrollTop = -1;
-                        settings.scrollLeft = -1;
+                        // We do, do it
+                        handleZoom(state.z);
                     }
                 }
             }
