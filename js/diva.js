@@ -1107,6 +1107,21 @@ THE SOFTWARE.
 
             // Execute the callback
             $.executeCallback(settings.onFullscreenEnter);
+
+            // Listen to window resize events
+            var resizeTimer;
+            $(window).resize(function() {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(function() {
+                    settings.panelHeight = parseInt($(settings.outerSelector).height(), 10);
+
+                    // It should simulate scrolling down since it only matters if the page gets bigger
+                    adjustPages(1);
+
+                    var newWidth = $('body').css('width');
+                    $(settings.innerSelector).css('width', newWidth);
+                }, 10);
+            });
         };
 
         // Handles leaving fullscreen mode
@@ -1181,21 +1196,6 @@ THE SOFTWARE.
                 // Event handler for fullscreen toggling
                 $(settings.selector + 'fullscreen').click(function() {
                     toggleFullscreen();
-                });
-
-                // Listen to window resize events during fullscreen mode, change dimensions accordingly
-                var resizeTimer;
-                $(window).resize(function() {
-                    clearTimeout(resizeTimer);
-                    resizeTimer = setTimeout(function() {
-                        settings.panelHeight = parseInt($(settings.outerSelector).height(), 10);
-
-                        // It should simulate scrolling down since it only matters if the page gets bigger
-                        adjustPages(1);
-
-                        var newWidth = $('body').css('width');
-                        $(settings.innerSelector).css('width', newWidth);
-                    }, 10);
                 });
             }
 
