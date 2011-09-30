@@ -22,14 +22,15 @@ THE SOFTWARE.
 
 @import url("diva.css");
 
-#diva-one {
+#diva-one, #diva-two {
     width: 600px;
-    float: left;
     position: relative;
 }
 
+#diva-one {
+    float: left;
+}
+
 #diva-two {
-    width: 600px;
     float: right;
-    position: relative;
 }
