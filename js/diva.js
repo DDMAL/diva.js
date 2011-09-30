@@ -1120,12 +1120,10 @@ THE SOFTWARE.
                 clearTimeout(resizeTimer);
                 resizeTimer = setTimeout(function() {
                     settings.panelHeight = parseInt($(settings.outerSelector).height(), 10);
+                    settings.panelWidth = parseInt($(settings.outerSelector).width(), 10);
 
                     // It should simulate scrolling down since it only matters if the page gets bigger
                     adjustPages(1);
-
-                    var newWidth = $('body').css('width');
-                    $(settings.innerSelector).css('width', newWidth);
                 }, 10);
             });
         };
