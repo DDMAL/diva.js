@@ -37,6 +37,7 @@ THE SOFTWARE.
             enableSpaceScroll: false,   // Scrolling down by pressing the space key
             enableZoomSlider: true,     // Enable or disable the zoom slider (for zooming in and out)
             fixedPadding: 10,           // Fallback if adaptive padding is set to 0
+            viewerFloat: 'none',        // Change to left or right for dual-viewer layouts
             iipServerBaseUrl: '',       // The URL to the IIPImage installation, including the ?FIF=
             maxPagesPerRow: 8,          // Maximum number of pages per row, grid view
             maxZoomLevel: 0,            // Optional; defaults to the max zoom returned in the JSON response
@@ -1529,6 +1530,8 @@ THE SOFTWARE.
                 'y': (settings.inGrid) ? settings.documentLeftScroll : getYOffset(),
                 'x': (settings.inGrid) ? settings.documentLeftScroll : getXOffset(),
                 'gy': (settings.inGrid) ? $(settings.outerSelector).scrollTop() : settings.gridScrollTop,
+                'h': settings.panelHeight,
+                'w': settings.panelWidth + settings.scrollbarWidth // add it on so it looks like a nice round number
             }
 
             return state;
@@ -1550,6 +1553,29 @@ THE SOFTWARE.
         // Returns the URL to the current state of the document viewer (so it should be an exact replica)
         var getCurrentURL = function() {
             return settings.protocol + location.host + location.pathname + '#' + getURLHash();
+        };
+
+        var resizeViewer = function(newWidth, newHeight) {
+            if (newWidth >= settings.minWidth && newHeight >= settings.minHeight) {
+                $(settings.outerSelector).width(newWidth);
+                $(settings.outerSelector).height(newHeight);
+
+                // Save the new height and width
+                settings.panelHeight = newHeight;
+                settings.panelWidth = newWidth - settings.scrollbarWidth;
+
+                // The positioning may now be wrong. Reset that
+                // Only really necessary for dual-viewer layouts
+                $(settings.outerSelector).css('float', settings.viewerFloat);
+
+                // Should also change the width of the container
+                $(settings.parentSelector).width(newWidth); // including the scrollbar etc
+
+                // If it's in grid mode, we have to reload it, unless this is disabled
+                if (settings.inGrid) {
+                    loadGrid();
+                }
+            }
         };
 
         var init = function() {
@@ -1662,6 +1688,18 @@ THE SOFTWARE.
             var gridScrollTop = parseInt($.getHashParam('gy' + settings.hashParamSuffix), 10);
             if (gridScrollTop > 0) {
                 settings.gridScrollTop = gridScrollTop;
+            }
+
+            // Store the height and width of the viewer (the outer div), if present
+            var desiredHeight = parseInt($.getHashParam('h' + settings.hashParamSuffix), 10);
+            var desiredWidth = parseInt($.getHashParam('w' + settings.hashParamSuffix), 10);
+            // Store the minimum and maximum height too
+            settings.minHeight = parseInt($(settings.outerSelector).css('min-height'));
+            settings.minWidth = parseInt($(settings.outerSelector).css('min-width'));
+
+            // Just call resize, it'll take care of bounds-checking etc
+            if (desiredHeight > 0 || desiredWidth > 0) {
+                resizeViewer(desiredWidth, desiredHeight);
             }
 
             // If the grid hash param is true, go to grid view initially
@@ -1802,22 +1840,20 @@ THE SOFTWARE.
                     }
                 }
             }
+
+            // If we need to resize, do it now
+            if (settings.panelHeight !== state.h || (settings.panelWidth + settings.scrollbarWidth) !== state.w) {
+                resizeViewer(state.h, state.w);
+            }
         };
 
         // Resizes the outer div to the specified width and height
         this.resize = function(newWidth, newHeight) {
-            $(settings.outerSelector).width(newWidth);
-            $(settings.outerSelector).height(newHeight);
-            // Recalculate the panel height and the inner panel width lol
-            settings.panelHeight = newHeight;
-            settings.panelWidth = newWidth - settings.scrollbarWidth;
-
-            // If it's in grid mode, we have to reload it ...
-            if (settings.inGrid) {
-                loadGrid();
-            }
+            resizeViewer(newWidth, newHeight);
         };
     };
+
+
     
     $.fn.diva = function(options) {
         return this.each(function() {
@@ -1826,7 +1862,8 @@ THE SOFTWARE.
             // Return early if this element already has a plugin instance
             if (element.data('diva')) {
                 return;
-            }
+           }
+            options.parentSelector = element;
             
             // Otherwise, instantiate the document viewer
             var diva = new Diva(this, options);
