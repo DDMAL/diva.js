@@ -105,6 +105,7 @@ THE SOFTWARE.
             prevVptTop: 0,              // Used to determine vertical scroll direction
             scaleWait: false,           // For preventing double-scale on the iPad
             selector: '',               // Uses the generated ID prefix to easily select elements
+            scrollbarWidth: 0,          // Set to the actual scrollbar width in init()
             scrollLeft: -1,             // Total scroll from the left
             scrollSoFar: 0,             // Holds the number of pixels of vertical scroll
             scrollTop: -1,              // Total scroll from the top
@@ -1081,8 +1082,7 @@ THE SOFTWARE.
             }
 
             // Recalculate height and width
-            // 20 = magic number to account for the scrollbar width for now
-            settings.panelWidth = parseInt($(settings.outerSelector).width(), 10) - 20;
+            settings.panelWidth = parseInt($(settings.outerSelector).width(), 10) - settings.scrollbarWidth;
             settings.panelHeight = parseInt($(settings.outerSelector).height(), 10);
 
             // Change the width of the inner div correspondingly
@@ -1553,6 +1553,8 @@ THE SOFTWARE.
         };
 
         var init = function() {
+            // First figure out the width of the scrollbar in this browser
+            settings.scrollbarWidth = $.getScrollbarWidth();
             // Check if the platform is the iPad/iPhone/iPod
             settings.mobileSafari = navigator.platform == 'iPad' || navigator.platform == 'iPhone' || navigator.platform == 'iPod';
 
@@ -1596,7 +1598,7 @@ THE SOFTWARE.
             // Adjust the document panel dimensions for Apple touch devices
             if (settings.mobileSafari) {
                 // Account for the scrollbar
-                settings.panelWidth = screen.width - 20;
+                settings.panelWidth = screen.width - settings.scrollbarWidth;
 
                 // The iPhone's toolbar etc takes up slightly more screen space
                 // So the height of the panel needs to be adjusted accordingly
@@ -1808,7 +1810,7 @@ THE SOFTWARE.
             $(settings.outerSelector).height(newHeight);
             // Recalculate the panel height and the inner panel width lol
             settings.panelHeight = newHeight;
-            settings.panelWidth = newWidth;
+            settings.panelWidth = newWidth - settings.scrollbarWidth;
         };
     };
     
