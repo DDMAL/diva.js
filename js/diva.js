@@ -1801,6 +1801,15 @@ THE SOFTWARE.
                 }
             }
         };
+
+        // Resizes the outer div to the specified width and height
+        this.resize = function(newWidth, newHeight) {
+            $(settings.outerSelector).width(newWidth);
+            $(settings.outerSelector).height(newHeight);
+            // Recalculate the panel height and the inner panel width lol
+            settings.panelHeight = newHeight;
+            settings.panelWidth = newWidth;
+        };
     };
     
     $.fn.diva = function(options) {
