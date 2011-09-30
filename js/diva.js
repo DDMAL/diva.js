@@ -1811,6 +1811,11 @@ THE SOFTWARE.
             // Recalculate the panel height and the inner panel width lol
             settings.panelHeight = newHeight;
             settings.panelWidth = newWidth - settings.scrollbarWidth;
+
+            // If it's in grid mode, we have to reload it ...
+            if (settings.inGrid) {
+                loadGrid();
+            }
         };
     };
     
