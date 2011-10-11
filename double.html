@@ -27,11 +27,19 @@
         var lockViewers = false;
         var firstScroll = 0;
         var secondScroll = 0;
+        // Callback function executed after toggling grid view, to unlock viewers (if locked)
+        // Otherwise, there is unexpected scrolling behaviour
+        var onGrid = function() {
+            if (lockViewers) {
+                toggleLocking();
+            }
+        };
         $('#diva-one').diva({
             tileFadeSpeed: settings.tileFadeSpeed,
             viewerFloat: 'left',
             iipServerBaseUrl: settings.iipLeftURL,
             backendServer: settings.divaserveLeftURL,
+            onGrid: onGrid,
             onScroll: function(scrollSoFar) {
                 if (lockViewers) {
                     $('#2-diva-outer').scrollTop(scrollSoFar - firstScroll + secondScroll);
@@ -45,6 +53,7 @@
             viewerFloat: 'right',
             iipServerBaseUrl: settings.iipRightURL,
             backendServer: settings.divaserveRightURL,
+            onGrid: onGrid,
             onScroll: function(scrollSoFar) {
                 if (lockViewers) {
                     $('#1-diva-outer').scrollTop(scrollSoFar - secondScroll + firstScroll);
@@ -62,7 +71,7 @@
                 firstScroll = $('#1-diva-outer').scrollTop();
                 secondScroll = $('#2-diva-outer').scrollTop();
             } else {
-                $(button).text('Lock viewers horizontally');
+                $(button).text('Lock viewers vertically');
             }
         };
 
@@ -118,6 +127,6 @@
 <body>
     <div id="diva-one"></div>
     <div id="diva-two"></div>
-    <p style="clear: both; padding-top: 20px; text-align: center;">Extra controls: <button id="lock-viewers-button">Lock viewers horizontally</button> <button id="sync-with-first">Sync with first viewer</button> <button id="sync-with-second">Sync with second viewer</button> <button id="link-to-both">Link to both viewers</button><button id="increase-width-button">Increase width</button><button id="decrease-width-button">Decrease width</button><button id="increase-height-button">Increase height</button><button id="decrease-height-button">Decrease height</button></p>
+    <p style="clear: both; padding-top: 20px; text-align: center;">Extra controls: <button id="lock-viewers-button">Lock viewers vertically</button> <button id="sync-with-first">Sync with first viewer</button> <button id="sync-with-second">Sync with second viewer</button> <button id="link-to-both">Link to both viewers</button><button id="increase-width-button">Increase width</button><button id="decrease-width-button">Decrease width</button><button id="increase-height-button">Increase height</button><button id="decrease-height-button">Decrease height</button></p>
 </body>
 </html>
