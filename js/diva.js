@@ -47,6 +47,7 @@ THE SOFTWARE.
             onFullscreen: null,         // Callback for toggling fullscreen
             onFullscreenEnter: null,    // Callback for entering fullscreen mode
             onFullscreenExit: null,     // Callback for exiting fullscreen mode
+            onGrid: null,               // Callback for toggling grid mode
             onJump: null,               // Callback function for jumping to a specific page (using the gotoPage feature)
             onReady: null,              // Callback function for initial load
             onScroll: null,             // Callback function for scrolling
@@ -1183,6 +1184,9 @@ THE SOFTWARE.
                 // Enter grid view
                 enterGrid();
             }
+
+            // May need to be moved later ... callback is executed first, before grid view has finished loading
+            $.executeCallback(settings.onGrid);
         };
 
         var enterGrid = function() {

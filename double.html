@@ -27,11 +27,19 @@
         var lockViewers = false;
         var firstScroll = 0;
         var secondScroll = 0;
+        // Callback function executed after toggling grid view, to unlock viewers (if locked)
+        // Otherwise, there is unexpected scrolling behaviour
+        var onGrid = function() {
+            if (lockViewers) {
+                toggleLocking();
+            }
+        };
         $('#diva-one').diva({
             tileFadeSpeed: settings.tileFadeSpeed,
             viewerFloat: 'left',
             iipServerBaseUrl: settings.iipLeftURL,
             backendServer: settings.divaserveLeftURL,
+            onGrid: onGrid,
             onScroll: function(scrollSoFar) {
                 if (lockViewers) {
                     $('#2-diva-outer').scrollTop(scrollSoFar - firstScroll + secondScroll);
@@ -45,6 +53,7 @@
             viewerFloat: 'right',
             iipServerBaseUrl: settings.iipRightURL,
             backendServer: settings.divaserveRightURL,
+            onGrid: onGrid,
             onScroll: function(scrollSoFar) {
                 if (lockViewers) {
                     $('#1-diva-outer').scrollTop(scrollSoFar - secondScroll + firstScroll);
