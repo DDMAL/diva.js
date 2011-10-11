@@ -37,6 +37,7 @@ THE SOFTWARE.
             enableSpaceScroll: false,   // Scrolling down by pressing the space key
             enableZoomSlider: true,     // Enable or disable the zoom slider (for zooming in and out)
             fixedPadding: 10,           // Fallback if adaptive padding is set to 0
+            fixedHeightGrid: true,      // So each page in grid view has the same height (only widths differ)
             viewerFloat: 'none',        // Change to left or right for dual-viewer layouts
             iipServerBaseUrl: '',       // The URL to the IIPImage installation, including the ?FIF=
             maxPagesPerRow: 8,          // Maximum number of pages per row, grid view
@@ -745,11 +746,12 @@ THE SOFTWARE.
                 
                 var pageNumber = pageIndex + 1;
                 var filename = settings.pages[pageIndex].fn;
-                var leftOffset = i * (settings.fixedPadding + settings.gridPageWidth) + settings.fixedPadding;
-                var pageWidth = parseInt(settings.gridPageWidth, 10);
-                var pageHeight = parseInt(pageWidth / settings.pages[pageIndex].w * settings.pages[pageIndex].h, 10);
+                var pageWidth = (settings.fixedHeightGrid) ? parseInt((settings.rowHeight - settings.fixedPadding) * settings.pages[pageIndex].w / settings.pages[pageIndex].h, 10) : parseInt(settings.gridPageWidth, 10);
+                var leftOffset = (settings.fixedHeightGrid) ? i * (settings.fixedPadding + settings.gridPageWidth) + settings.fixedPadding + (settings.gridPageWidth - pageWidth)/2 : i * (settings.fixedPadding + settings.gridPageWidth) + settings.fixedPadding;
+                var pageHeight = (settings.fixedHeightGrid) ? settings.rowHeight - settings.fixedPadding : parseInt(pageWidth / settings.pages[pageIndex].w * settings.pages[pageIndex].h, 10);
                 /* For some reason, IIP returns an image that is always 1px less wide than specified, so this (i.e. specifying an image one pixel wider than the one you want) is the workaround. It means some images are cut off a bit vertically; still, it looks better than a white border along the bottom and right edges (although that border remains at higher zooms ... blame IIP */
-                var imgSrc = settings.iipServerBaseUrl + filename + '&amp;WID=' + (pageWidth + 1) + '&amp;CVT=JPG';
+                // + 2 pixels seems to work better at the default n for some reason
+                var imgSrc = settings.iipServerBaseUrl + filename + '&amp;HEI=' + (pageHeight + 2) + '&amp;CVT=JPG';
                 stringBuilder.push('<div id="' + settings.ID + 'page-' + pageIndex + '" class="diva-page" style="width: ' + pageWidth + 'px; height: ' + pageHeight + 'px; left: ' + leftOffset + 'px; display: inline;"><div style="position: absolute; background-image: url(\'' + imgSrc  + '\'); background-repeat: no-repeat; width: ' + pageWidth + 'px; height: ' + pageHeight + 'px;"></div></div>');
             }
 
@@ -772,8 +774,8 @@ THE SOFTWARE.
                 var pageWidth = (settings.panelWidth - horizontalPadding) / settings.pagesPerRow;
                 settings.gridPageWidth = pageWidth;
 
-                // Now calculate the maximum height, use that as the row height
-                settings.rowHeight = settings.fixedPadding + data.dims.max_ratio * pageWidth;
+                // Calculate the row height depending on whether we want to fix the width or the height
+                settings.rowHeight = (settings.fixedHeightGrid) ? settings.fixedPadding + data.dims.min_ratio * pageWidth : settings.fixedPadding + data.dims.max_ratio * pageWidth;
                 settings.numRows = Math.ceil(settings.numPages / settings.pagesPerRow);
                 settings.totalHeight = settings.numRows * settings.rowHeight + settings.fixedPadding;
                 $(settings.innerSelector).css('height', Math.round(settings.totalHeight));

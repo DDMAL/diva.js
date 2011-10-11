@@ -138,7 +138,7 @@ if (!file_exists($cache_file)) {
     }
     
     // Now go through them again, store in $pgs
-    $mx_h = $mx_w = $t_wid = $t_hei = $num_pages = $max_ratio = 0;
+    $mx_h = $mx_w = $t_wid = $t_hei = $num_pages = $max_ratio = $min_ratio = 0;
     
     for ($i = 0; $i < count($images) - 1; $i++) {
         if (array_key_exists($i, $images)) {
@@ -165,6 +165,7 @@ if (!file_exists($cache_file)) {
             }
             $ratio = $h / $w;
             $max_ratio = ($ratio > $max_ratio) ? $ratio : $max_ratio;
+            $min_ratio = ($ratio < $min_ratio || $min_ratio == 0) ? $ratio : $min_ratio;
             $t_wid += $w;
             $t_hei += $h;
             $num_pages++;
@@ -183,6 +184,7 @@ if (!file_exists($cache_file)) {
         // t_hei and t_wid are slightly different from those returned by the django app ... why? 
         // Really used for the grid. The max height/width ratio
         'max_ratio'     => $max_ratio,
+        'min_ratio'     => $min_ratio,
         't_hei'         => $t_hei,
         't_wid'         => $t_wid
     );
