@@ -744,11 +744,18 @@ THE SOFTWARE.
                     break; // when we're at the last page etc
                 }
                 
-                var pageNumber = pageIndex + 1;
                 var filename = settings.pages[pageIndex].fn;
-                var pageWidth = (settings.fixedHeightGrid) ? parseInt((settings.rowHeight - settings.fixedPadding) * settings.pages[pageIndex].w / settings.pages[pageIndex].h, 10) : parseInt(settings.gridPageWidth, 10);
-                var leftOffset = (settings.fixedHeightGrid) ? i * (settings.fixedPadding + settings.gridPageWidth) + settings.fixedPadding + (settings.gridPageWidth - pageWidth)/2 : i * (settings.fixedPadding + settings.gridPageWidth) + settings.fixedPadding;
-                var pageHeight = (settings.fixedHeightGrid) ? settings.rowHeight - settings.fixedPadding : parseInt(pageWidth / settings.pages[pageIndex].w * settings.pages[pageIndex].h, 10);
+                var pageWidth = (settings.fixedHeightGrid) ? (settings.rowHeight - settings.fixedPadding) * settings.pages[pageIndex].w / settings.pages[pageIndex].h : settings.gridPageWidth;
+                var pageHeight = (settings.fixedHeightGrid) ? settings.rowHeight - settings.fixedPadding : pageWidth / settings.pages[pageIndex].w * settings.pages[pageIndex].h;
+                var leftOffset = parseInt(i * (settings.fixedPadding + settings.gridPageWidth) + settings.fixedPadding, 10);
+
+                // Make sure they're all integers for nice, round numbers
+                pageWidth = parseInt(pageWidth, 10);
+                pageHeight = parseInt(pageHeight, 10);
+
+                // Center the page if the height is fixed
+                leftOffset += (settings.fixedHeightGrid) ? (settings.gridPageWidth - pageWidth) / 2 : 0;
+
                 /* For some reason, IIP returns an image that is always 1px less wide than specified, so this (i.e. specifying an image one pixel wider than the one you want) is the workaround. It means some images are cut off a bit vertically; still, it looks better than a white border along the bottom and right edges (although that border remains at higher zooms ... blame IIP */
                 // + 2 pixels seems to work better at the default n for some reason
                 var imgSrc = settings.iipServerBaseUrl + filename + '&amp;HEI=' + (pageHeight + 2) + '&amp;CVT=JPG';
