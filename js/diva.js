@@ -548,6 +548,19 @@ THE SOFTWARE.
                 setCurrentRow(1);
                 attemptRowShow(settings.lastRowLoaded, 1);
             }
+
+            // Handle the scrolling callback functions here
+            if (direction !== 0) {
+                $.executeCallback(settings.onScroll, settings.scrollSoFar);
+
+                // If we're scrolling down
+                if (direction > 0) {
+                    $.executeCallback(settings.onScrollDown, settings.scrollSoFar);
+                } else {
+                    // We're scrolling up
+                    $.executeCallback(settings.onScrollUp, settings.scrollSoFar);
+                }
+            }
         };
 
         // Handles showing and hiding pages when the user scrolls
