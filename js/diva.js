@@ -1583,6 +1583,7 @@ THE SOFTWARE.
 
         var resizeViewer = function(newWidth, newHeight) {
             if (newWidth >= settings.minWidth && newHeight >= settings.minHeight) {
+                var oldWidth = settings.panelWidth;
                 $(settings.outerSelector).width(newWidth);
                 $(settings.outerSelector).height(newHeight);
 
@@ -1600,6 +1601,11 @@ THE SOFTWARE.
                 // If it's in grid mode, we have to reload it, unless this is disabled
                 if (settings.inGrid) {
                     loadGrid();
+                } else {
+                    // If the width changed, we have to reload it in order to re-center it
+                    if (oldWidth !== settings.panelWidth) {
+                        loadDocument(settings.zoomLevel);
+                    }
                 }
             }
         };
