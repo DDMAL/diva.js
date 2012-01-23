@@ -181,72 +181,80 @@ THE SOFTWARE.
        
         // Appends the page directly into the document body, or loads the relevant tiles
         var loadPage = function(pageIndex) {
-            var content = [];
-            var filename = settings.pages[pageIndex].fn;
-            var rows = settings.pages[pageIndex].r;
-            var cols = settings.pages[pageIndex].c;
-            var width = settings.pages[pageIndex].w;
-            var height = settings.pages[pageIndex].h;
-            var maxZoom = settings.pages[pageIndex].m_z;
-            var leftOffset, widthToUse;
-            
-            // Use an array as a string builder - faster than str concatentation
-            var lastHeight, lastWidth, row, col, tileHeight, tileWidth, imgSrc;
-            var tileNumber = 0;
-            var heightFromTop = settings.heightAbovePages[pageIndex] + settings.verticalPadding;
+            setTimeout(function() {
+                // If the page is no longer in the viewport after 80 ms, don't load it
+                if (!isPageVisible(pageIndex)) {
+                    return;
+                }
 
-            // Only try to append the div part if the page has not already been loaded
-            if (!isPageLoaded(pageIndex)) {
-                // Magically centered using left: 50% and margin-left: -(width/2)
-                content.push('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width: ' + width + 'px; height: ' + height + 'px; left: 50%; margin-left: -' + (width / 2) + 'px" class="diva-page">');
-            }
+                // Otherwise, load after some time (save the timer)
+                var content = [];
+                var filename = settings.pages[pageIndex].fn;
+                var rows = settings.pages[pageIndex].r;
+                var cols = settings.pages[pageIndex].c;
+                var width = settings.pages[pageIndex].w;
+                var height = settings.pages[pageIndex].h;
+                var maxZoom = settings.pages[pageIndex].m_z;
+                var leftOffset, widthToUse;
 
-            // Calculate the width and height of the outer tiles (the ones that may have weird dimensions)
-            lastHeight = height - (rows - 1) * settings.tileHeight;
-            lastWidth = width - (cols - 1) * settings.tileWidth;
-            var tilesToLoad = [];
+                // Use an array as a string builder - faster than str concatentation
+                var lastHeight, lastWidth, row, col, tileHeight, tileWidth, imgSrc;
+                var tileNumber = 0;
+                var heightFromTop = settings.heightAbovePages[pageIndex] + settings.verticalPadding;
 
-            // Now loop through the rows and columns
-            for (row = 0; row < rows; row++) {
-                for (col = 0; col < cols; col++) {
-                    var top = row * settings.tileHeight;
-                    var left = col * settings.tileWidth;
+                // Only try to append the div part if the page has not already been loaded
+                if (!isPageLoaded(pageIndex)) {
+                    // Magically centered using left: 50% and margin-left: -(width/2)
+                    content.push('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width: ' + width + 'px; height: ' + height + 'px; left: 50%; margin-left: -' + (width / 2) + 'px" class="diva-page">');
+                }
 
-                    // Set to none if there is a tileFadeSpeed set
-                    var displayStyle = (settings.tileFadeSpeed) ? 'none' : 'inline';
+                // Calculate the width and height of the outer tiles (the ones that may have weird dimensions)
+                lastHeight = height - (rows - 1) * settings.tileHeight;
+                lastWidth = width - (cols - 1) * settings.tileWidth;
+                var tilesToLoad = [];
 
-                    // The zoom level might be different, if a page has a different max zoom level than the others
-                    var zoomLevel = (maxZoom === settings.maxZoomLevel) ? settings.zoomLevel : settings.zoomLevel + (maxZoom - settings.maxZoomLevel); 
-                    tileHeight = (row === rows - 1) ? lastHeight : settings.tileHeight; // If it's the LAST tile, calculate separately
-                    tileWidth = (col === cols - 1) ? lastWidth : settings.tileWidth; // Otherwise, just set it to the default height/width
-                    imgSrc = settings.iipServerBaseUrl + filename + '&amp;JTL=' + zoomLevel + ',' + tileNumber;
-                    
-                    if (!isTileLoaded(pageIndex, tileNumber) && isTileVisible(pageIndex, row, col)) {
-                        content.push('<div id="' + settings.ID + 'tile-' + pageIndex + '-' + tileNumber + '"style="display: ' + displayStyle + '; position: absolute; top: ' + top + 'px; left: ' + left + 'px; background-image: url(\'' + imgSrc + '\'); height: ' + tileHeight + 'px; width: ' + tileWidth + 'px;"></div>');
+                // Now loop through the rows and columns
+                for (row = 0; row < rows; row++) {
+                    for (col = 0; col < cols; col++) {
+                        var top = row * settings.tileHeight;
+                        var left = col * settings.tileWidth;
+
+                        // Set to none if there is a tileFadeSpeed set
+                        var displayStyle = (settings.tileFadeSpeed) ? 'none' : 'inline';
+
+                        // The zoom level might be different, if a page has a different max zoom level than the others
+                        var zoomLevel = (maxZoom === settings.maxZoomLevel) ? settings.zoomLevel : settings.zoomLevel + (maxZoom - settings.maxZoomLevel);
+                        tileHeight = (row === rows - 1) ? lastHeight : settings.tileHeight; // If it's the LAST tile, calculate separately
+                        tileWidth = (col === cols - 1) ? lastWidth : settings.tileWidth; // Otherwise, just set it to the default height/width
+                        imgSrc = settings.iipServerBaseUrl + filename + '&amp;JTL=' + zoomLevel + ',' + tileNumber;
+
+                        if (!isTileLoaded(pageIndex, tileNumber) && isTileVisible(pageIndex, row, col)) {
+                            content.push('<div id="' + settings.ID + 'tile-' + pageIndex + '-' + tileNumber + '"style="display: ' + displayStyle + '; position: absolute; top: ' + top + 'px; left: ' + left + 'px; background-image: url(\'' + imgSrc + '\'); height: ' + tileHeight + 'px; width: ' + tileWidth + 'px;"></div>');
+                        }
+
+                        tilesToLoad.push(tileNumber);
+                        tileNumber++;
                     }
-
-                    tilesToLoad.push(tileNumber);
-                    tileNumber++;
                 }
-            }
 
-            if (!isPageLoaded(pageIndex)) {
-                content.push('</div>');
+                if (!isPageLoaded(pageIndex)) {
+                    content.push('</div>');
 
-                // Build the content string and append it to the document
-                var contentString = content.join('');
-                $(settings.innerSelector).append(contentString);
-            } else {
-                // Append it to the page
-                $(settings.selector + 'page-' + pageIndex).append(content.join(''));
-            }
-
-            // Make the tiles we just appended fade in
-            if (settings.tileFadeSpeed) {
-                for (var i = 0; i < tilesToLoad.length; i++) {
-                    $(settings.selector + 'tile-' + pageIndex + '-' + tilesToLoad[i]).fadeIn(settings.tileFadeSpeed);
+                    // Build the content string and append it to the document
+                    var contentString = content.join('');
+                    $(settings.innerSelector).append(contentString);
+                } else {
+                    // Append it to the page
+                    $(settings.selector + 'page-' + pageIndex).append(content.join(''));
                 }
-            }
+
+                // Make the tiles we just appended fade in
+                if (settings.tileFadeSpeed) {
+                    for (var i = 0; i < tilesToLoad.length; i++) {
+                        $(settings.selector + 'tile-' + pageIndex + '-' + tilesToLoad[i]).fadeIn(settings.tileFadeSpeed);
+                    }
+                }
+            }, 80); // Number of milliseconds determined through trial and error
         };
 
         // Delete a page from the DOM; will occur when a page is scrolled out of the viewport
