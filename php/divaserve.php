@@ -91,8 +91,8 @@ $cache_file = $img_cache . '/docdata_' . $zoom . '.txt';
 $pgs = array();
 
 if (!file_exists($img_cache)) {
-    // Now go through the image directory and calculate stuff
-    mkdir($img_cache);
+    // Create the directory (recursively, in case diva.js does not exist)
+    mkdir($img_cache, 0, true);
 }
 
 if (!file_exists($cache_file)) {
