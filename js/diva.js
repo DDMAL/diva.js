@@ -138,13 +138,8 @@ THE SOFTWARE.
         
         // Check if a page has been loaded (i.e. is visible to the user) 
         var isPageLoaded = function(pageIndex) {
-            // Done using the length attribute in jQuery
             // If and only if the div does not exist, its length will be 0
-            if ($(settings.selector + 'page-' + pageIndex).length === 0) {
-                return false;
-            } else {
-                return true;
-            }
+            return ($(settings.selector + 'page-' + pageIndex).length > 0);
         };
         
         // Check if a page is near the viewport and thus should be loaded
@@ -164,11 +159,7 @@ THE SOFTWARE.
         
         // Check if a tile has already been appended
         var isTileLoaded = function(pageIndex, tileNumber) {
-            if ($(settings.selector + 'tile-' + pageIndex + '-' + tileNumber).length > 0) {
-                return true;
-            } else {
-                return false;
-            }
+            return ($(settings.selector + 'tile-' + pageIndex + '-' + tileNumber).length > 0);
         };
        
         // Appends the page directly into the document body, or loads the relevant tiles
@@ -258,20 +249,12 @@ THE SOFTWARE.
 
         // Check if a row index is valid
         var rowInRange = function(rowIndex) {
-            if (rowIndex >= 0 && rowIndex < settings.numRows) {
-                return true;
-            } else {
-                return false;
-            }
+            return (rowIndex >= 0 && rowIndex < settings.numRows);
         };
 
         // Check if a page index is valid
         var pageInRange = function(pageIndex) {
-            if (pageIndex >= 0 && pageIndex < settings.numPages) {
-                return true;
-            } else {
-                return false;
-            }
+            return (pageIndex >= 0 && pageIndex < settings.numPages);
         };
 
         // Check if the bottom of a page is above the top of a viewport (scrolling down)
@@ -280,11 +263,7 @@ THE SOFTWARE.
             var bottomOfPage = settings.heightAbovePages[pageIndex] + settings.pages[pageIndex].h + settings.verticalPadding;
             var topOfViewport = settings.scrollSoFar; 
 
-            if (bottomOfPage < topOfViewport) {
-                return true;
-            } else {
-                return false;
-            }
+            return (bottomOfPage < topOfViewport);
         };
        
         // Check if the top of a page is below the bottom of a viewport (scrolling up)
@@ -292,11 +271,7 @@ THE SOFTWARE.
             var topOfPage = settings.heightAbovePages[pageIndex];
             var bottomOfViewport = settings.scrollSoFar + settings.panelHeight;
 
-            if (topOfPage > bottomOfViewport) {
-                return true;
-            } else {
-                return false;
-            }
+            return (topOfPage > bottomOfViewport);
         };
 
         // Check if the bottom of a row is above the top of the viewport (scrolling down)
@@ -304,11 +279,7 @@ THE SOFTWARE.
             var bottomOfRow = settings.rowHeight * (rowIndex + 1);
             var topOfViewport = settings.scrollSoFar;
 
-            if (bottomOfRow < topOfViewport) {
-                return true;
-            } else {
-                return false;
-            }
+            return (bottomOfRow < topOfViewport);
         };
 
         // Check if the top of a row is below the bottom of the viewport (scrolling up)
@@ -316,11 +287,7 @@ THE SOFTWARE.
             var topOfRow = settings.rowHeight * rowIndex;
             var bottomOfViewport = settings.scrollSoFar + settings.panelHeight;
 
-            if (topOfRow > bottomOfViewport) {
-                return true;
-            } else {
-                return false;
-            }
+            return (topOfRow > bottomOfViewport);
         };
 
         // Helper function for setCurrentPage; should only be called at the end
@@ -724,11 +691,7 @@ THE SOFTWARE.
 
         // Check if a row (in grid view) has been appended already
         var isRowLoaded = function(rowIndex) {
-            if ($(settings.selector + 'row-' + rowIndex).length > 0) {
-                return true;
-            } else {
-                return false;
-            }
+            return ($(settings.selector + 'row-' + rowIndex).length > 0);
         };
 
         // Check if a row should be visible in the viewport
