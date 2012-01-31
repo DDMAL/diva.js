@@ -127,20 +127,13 @@ THE SOFTWARE.
             var panelHeight = settings.panelHeight;
             var topOfViewport = settings.scrollSoFar - settings.viewportMargin;
             var bottomOfViewport = topOfViewport + panelHeight + settings.viewportMargin * 2;
-           
-            if (top >= topOfViewport && top <= bottomOfViewport) {
-                // If top of page is in the viewport
-                return true;
-            } else if (bottom >= topOfViewport && bottom <= bottomOfViewport) {
-                // Same as above for the bottom of the page
-                return true;
-            } else if (top <= topOfViewport && bottom >= bottomOfViewport) {
-                // Top of page is above, bottom of page is below
-                return true;
-            } else {
-                // The page is nowhere near the viewport, return 0
-                return false;
-            }
+
+            // The possibilities for the page being vertically in the viewport
+            var topVisible = top >= topOfViewport && top <= bottomOfViewport;
+            var bottomVisible = bottom >= topOfViewport && bottom <= bottomOfViewport;
+            var middleVisible = top <= topOfViewport && bottom >= bottomOfViewport;
+
+            return (topVisible || bottomVisible || middleVisible);
         };
         
         // Check if a page has been loaded (i.e. is visible to the user) 
