@@ -754,7 +754,7 @@ THE SOFTWARE.
             var i;
             var heightFromTop = (settings.rowHeight) * rowIndex + settings.fixedPadding;
             var stringBuilder = [];
-            stringBuilder.push('<div id="' + settings.ID + 'row-' + rowIndex + '" style="width: 100%; height: ' + settings.rowHeight + '; position: absolute; top: ' + heightFromTop + 'px;">');
+            stringBuilder.push('<div class="diva-row" id="' + settings.ID + 'row-' + rowIndex + '" style="height: ' + settings.rowHeight + '; top: ' + heightFromTop + 'px;">');
 
             // Load each page within that row
             for (i = 0; i < settings.pagesPerRow; i++) {
@@ -780,7 +780,7 @@ THE SOFTWARE.
                 /* For some reason, IIP returns an image that is always 1px less wide than specified, so this (i.e. specifying an image one pixel wider than the one you want) is the workaround. It means some images are cut off a bit vertically; still, it looks better than a white border along the bottom and right edges (although that border remains at higher zooms ... blame IIP */
                 // + 2 pixels seems to work better at the default n for some reason
                 var imgSrc = settings.iipServerBaseUrl + filename + '&amp;HEI=' + (pageHeight + 2) + '&amp;CVT=JPG';
-                stringBuilder.push('<div id="' + settings.ID + 'page-' + pageIndex + '" class="diva-page" style="width: ' + pageWidth + 'px; height: ' + pageHeight + 'px; left: ' + leftOffset + 'px; display: inline;"><div style="position: absolute; background-image: url(\'' + imgSrc  + '\'); background-repeat: no-repeat; width: ' + pageWidth + 'px; height: ' + pageHeight + 'px;"></div></div>');
+                stringBuilder.push('<div id="' + settings.ID + 'page-' + pageIndex + '" class="diva-page" style="width: ' + pageWidth + 'px; height: ' + pageHeight + 'px; left: ' + leftOffset + 'px;"><div style="background-image: url(\'' + imgSrc  + '\'); width: ' + pageWidth + 'px; height: ' + pageHeight + 'px;"></div></div>');
             }
 
             // Append, using an array as a string builder instead of string concatenation
