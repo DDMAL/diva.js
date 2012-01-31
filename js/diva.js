@@ -57,7 +57,6 @@ THE SOFTWARE.
             onZoomIn: null,             // Callback function for zooming in only
             onZoomOut: null,            // Callback function for zooming out only
             pagesPerRow: 5,         // The default number of pages per row in grid view
-            protocol: 'http://',        // Either http:// or https://; for getCurrentURL()
             tileFadeSpeed: 300,         // The tile fade-in speed in ms. Set to 0 to disable tile fading. May also be "fast" or "slow".
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
@@ -1586,7 +1585,7 @@ THE SOFTWARE.
 
         // Returns the URL to the current state of the document viewer (so it should be an exact replica)
         var getCurrentURL = function() {
-            return settings.protocol + location.host + location.pathname + '#' + getURLHash();
+            return location.protocol + location.host + location.pathname + '#' + getURLHash();
         };
 
         var resizeViewer = function(newWidth, newHeight) {
