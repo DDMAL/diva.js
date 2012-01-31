@@ -242,7 +242,7 @@ THE SOFTWARE.
         // Delete a page from the DOM; will occur when a page is scrolled out of the viewport
         var deletePage = function(pageIndex) {
             if (isPageLoaded(pageIndex)) {
-                $(settings.selector + 'page-' + pageIndex).remove();
+                $(settings.selector + 'page-' + pageIndex).empty().remove();
             }
         };
 
@@ -477,7 +477,7 @@ THE SOFTWARE.
 
         var deleteRow = function(rowIndex) {
             if (isRowLoaded(rowIndex)) {
-                $(settings.selector + 'row-' + rowIndex).remove();
+                $(settings.selector + 'row-' + rowIndex).empty().remove();
             }
         };
 
