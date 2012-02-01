@@ -56,9 +56,8 @@ THE SOFTWARE.
             onZoom: null,               // Callback function for zooming in general
             onZoomIn: null,             // Callback function for zooming in only
             onZoomOut: null,            // Callback function for zooming out only
-            pagesPerRow: 5,         // The default number of pages per row in grid view
-            protocol: 'http://',        // Either http:// or https://; for getCurrentURL()
-            tileFadeSpeed: 300,         // The tile fade-in speed in ms. Set to 0 to disable tile fading. May also be "fast" or "slow".
+            pagesPerRow: 5,             // The default number of pages per row in grid view
+            tileFadeSpeed: 300,         // The tile fade-in speed in ms (or "fast" or "slow"; 0 to disable)
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
             viewportMargin: 200,        // Pretend tiles +/- 200px away from viewport are in
@@ -128,31 +127,19 @@ THE SOFTWARE.
             var panelHeight = settings.panelHeight;
             var topOfViewport = settings.scrollSoFar - settings.viewportMargin;
             var bottomOfViewport = topOfViewport + panelHeight + settings.viewportMargin * 2;
-           
-            if (top >= topOfViewport && top <= bottomOfViewport) {
-                // If top of page is in the viewport
-                return true;
-            } else if (bottom >= topOfViewport && bottom <= bottomOfViewport) {
-                // Same as above for the bottom of the page
-                return true;
-            } else if (top <= topOfViewport && bottom >= bottomOfViewport) {
-                // Top of page is above, bottom of page is below
-                return true;
-            } else {
-                // The page is nowhere near the viewport, return 0
-                return false;
-            }
+
+            // The possibilities for the page being vertically in the viewport
+            var topVisible = top >= topOfViewport && top <= bottomOfViewport;
+            var bottomVisible = bottom >= topOfViewport && bottom <= bottomOfViewport;
+            var middleVisible = top <= topOfViewport && bottom >= bottomOfViewport;
+
+            return (topVisible || bottomVisible || middleVisible);
         };
         
         // Check if a page has been loaded (i.e. is visible to the user) 
         var isPageLoaded = function(pageIndex) {
-            // Done using the length attribute in jQuery
             // If and only if the div does not exist, its length will be 0
-            if ($(settings.selector + 'page-' + pageIndex).length === 0) {
-                return false;
-            } else {
-                return true;
-            }
+            return ($(settings.selector + 'page-' + pageIndex).length > 0);
         };
         
         // Check if a page is near the viewport and thus should be loaded
@@ -164,7 +151,6 @@ THE SOFTWARE.
 
         // Check if a specific tile is near the viewport and thus should be loaded (row-based only)
         var isTileVisible = function(pageIndex, tileRow, tileCol) {
-            // Call near viewport
             var tileTop = settings.heightAbovePages[pageIndex] + (tileRow * settings.tileHeight) + settings.verticalPadding;
             var tileBottom = tileTop + settings.tileHeight;
             return verticallyInViewport(tileTop, tileBottom);
@@ -172,11 +158,7 @@ THE SOFTWARE.
         
         // Check if a tile has already been appended
         var isTileLoaded = function(pageIndex, tileNumber) {
-            if ($(settings.selector + 'tile-' + pageIndex + '-' + tileNumber).length > 0) {
-                return true;
-            } else {
-                return false;
-            }
+            return ($(settings.selector + 'tile-' + pageIndex + '-' + tileNumber).length > 0);
         };
        
         // Appends the page directly into the document body, or loads the relevant tiles
@@ -260,26 +242,18 @@ THE SOFTWARE.
         // Delete a page from the DOM; will occur when a page is scrolled out of the viewport
         var deletePage = function(pageIndex) {
             if (isPageLoaded(pageIndex)) {
-                $(settings.selector + 'page-' + pageIndex).remove();
+                $(settings.selector + 'page-' + pageIndex).empty().remove();
             }
         };
 
         // Check if a row index is valid
         var rowInRange = function(rowIndex) {
-            if (rowIndex >= 0 && rowIndex < settings.numRows) {
-                return true;
-            } else {
-                return false;
-            }
+            return (rowIndex >= 0 && rowIndex < settings.numRows);
         };
 
         // Check if a page index is valid
         var pageInRange = function(pageIndex) {
-            if (pageIndex >= 0 && pageIndex < settings.numPages) {
-                return true;
-            } else {
-                return false;
-            }
+            return (pageIndex >= 0 && pageIndex < settings.numPages);
         };
 
         // Check if the bottom of a page is above the top of a viewport (scrolling down)
@@ -288,11 +262,7 @@ THE SOFTWARE.
             var bottomOfPage = settings.heightAbovePages[pageIndex] + settings.pages[pageIndex].h + settings.verticalPadding;
             var topOfViewport = settings.scrollSoFar; 
 
-            if (bottomOfPage < topOfViewport) {
-                return true;
-            } else {
-                return false;
-            }
+            return (bottomOfPage < topOfViewport);
         };
        
         // Check if the top of a page is below the bottom of a viewport (scrolling up)
@@ -300,11 +270,7 @@ THE SOFTWARE.
             var topOfPage = settings.heightAbovePages[pageIndex];
             var bottomOfViewport = settings.scrollSoFar + settings.panelHeight;
 
-            if (topOfPage > bottomOfViewport) {
-                return true;
-            } else {
-                return false;
-            }
+            return (topOfPage > bottomOfViewport);
         };
 
         // Check if the bottom of a row is above the top of the viewport (scrolling down)
@@ -312,11 +278,7 @@ THE SOFTWARE.
             var bottomOfRow = settings.rowHeight * (rowIndex + 1);
             var topOfViewport = settings.scrollSoFar;
 
-            if (bottomOfRow < topOfViewport) {
-                return true;
-            } else {
-                return false;
-            }
+            return (bottomOfRow < topOfViewport);
         };
 
         // Check if the top of a row is below the bottom of the viewport (scrolling up)
@@ -324,11 +286,7 @@ THE SOFTWARE.
             var topOfRow = settings.rowHeight * rowIndex;
             var bottomOfViewport = settings.scrollSoFar + settings.panelHeight;
 
-            if (topOfRow > bottomOfViewport) {
-                return true;
-            } else {
-                return false;
-            }
+            return (topOfRow > bottomOfViewport);
         };
 
         // Helper function for setCurrentPage; should only be called at the end
@@ -343,7 +301,6 @@ THE SOFTWARE.
                     createFullscreenStatusbar('fade');
                 }
 
-                // Do it by ID
                 $(settings.selector + 'page-number-fullscreen').text(pageNumber);
             }
         };
@@ -376,7 +333,6 @@ THE SOFTWARE.
                 // Now try to change the next page, given that we're not going to a specific page
                 // Calls itself recursively - this way we accurately obtain the current page
                 if (direction !== 0) {
-                    // Only change it when we're done scrolling etc
                     if (!setCurrentPage(direction)) {
                         updateCurrentPage(pageToConsider);
                     }
@@ -395,7 +351,6 @@ THE SOFTWARE.
             var changeCurrentRow = false;
 
             if (direction < 0) {
-                // This logic how does it work
                 if (rowToConsider >= 0 && (settings.rowHeight * currentRow >= middleOfViewport || settings.rowHeight * rowToConsider >= settings.scrollSoFar)) {
                     changeCurrentRow = true;
                 }
@@ -420,7 +375,7 @@ THE SOFTWARE.
             }
         };
 
-        // Called by adjust pages - see what pages should be visisble, and show them
+        // Called by adjust pages - determine what pages should be visible, and show them
         var attemptPageShow = function(pageIndex, direction) {
             if (direction > 0) {
                 // Direction is positive - we're scrolling down
@@ -442,7 +397,6 @@ THE SOFTWARE.
                         attemptPageShow(pageIndex + 1, direction);
                     }
                 } else {
-                    // Nothing to do ... return
                     return;
                 }
             } else {
@@ -462,7 +416,6 @@ THE SOFTWARE.
                         attemptPageShow(pageIndex-1, direction);
                     }
                 } else {
-                    // Nothing to do ... return
                     return;
                 }
             }
@@ -471,8 +424,7 @@ THE SOFTWARE.
         // Called by adjustPages - see what pages need to be hidden, and hide them
         var attemptPageHide = function(pageIndex, direction) {
             if (direction > 0) {
-                // Direction is positive - we're scrolling down
-                // Should we delete this page from the DOM?
+                // Scrolling down - see if this page needs to be deleted from the DOM
                 if (pageInRange(pageIndex) && pageAboveViewport(pageIndex)) {
                     // Yes, delete it, reset the first page loaded
                     deletePage(pageIndex);
@@ -481,7 +433,6 @@ THE SOFTWARE.
                     // Try to call this function recursively until there's nothing to delete
                     attemptPageHide(settings.firstPageLoaded, direction);
                 } else {
-                    // Nothing to delete - return
                     return;
                 }
             } else {
@@ -526,7 +477,7 @@ THE SOFTWARE.
 
         var deleteRow = function(rowIndex) {
             if (isRowLoaded(rowIndex)) {
-                $(settings.selector + 'row-' + rowIndex).remove();
+                $(settings.selector + 'row-' + rowIndex).empty().remove();
             }
         };
 
@@ -602,11 +553,8 @@ THE SOFTWARE.
 
         // Goes directly to the page index stored in settings.goDirectlyTo
         var goDirectlyTo = function() {
-            // Use settings.firstAjaxRequest instead of settings.goDirectlyTo
-            // Because the latter can be 0, which may or may not be valid
             if (settings.goDirectlyTo >= 0) {
                 gotoPage(settings.goDirectlyTo + 1, settings.desiredYOffset, settings.desiredXOffset);
-                // Off by one error before
                 updateCurrentPage(settings.goDirectlyTo);
                 settings.goDirectlyTo = -1;
                 return true;
@@ -621,7 +569,6 @@ THE SOFTWARE.
                 $(settings.outerSelector).scrollTop(settings.gridScrollTop);
                 settings.gridScrollTop = 0;
             } else {
-                // Figure out where it is supposed to scroll
                 // Scroll to the row containing the current page
                 gotoPage(settings.currentPageIndex + 1);
             }
@@ -670,10 +617,8 @@ THE SOFTWARE.
             $.ajax({
                 url: settings.backendServer + '&z=' + zoomLevel,
                 cache: true,
-                context: this, // Not sure if necessary
                 dataType: 'json',
                 success: function(data) {
-                    // Save some data
                     settings.pages = data.pgs;
                     settings.maxWidth = data.dims.max_w;
                     settings.maxHeight = data.dims.max_h;
@@ -685,7 +630,6 @@ THE SOFTWARE.
 
                     // Clear the document, then execute the callback
                     clearDocument();
-
                     $.executeCallback(successCallback, data);
                     settings.firstAjaxRequest = false;
                 }
@@ -732,11 +676,7 @@ THE SOFTWARE.
 
         // Check if a row (in grid view) has been appended already
         var isRowLoaded = function(rowIndex) {
-            if ($(settings.selector + 'row-' + rowIndex).length > 0) {
-                return true;
-            } else {
-                return false;
-            }
+            return ($(settings.selector + 'row-' + rowIndex).length > 0);
         };
 
         // Check if a row should be visible in the viewport
@@ -755,7 +695,7 @@ THE SOFTWARE.
             var i;
             var heightFromTop = (settings.rowHeight) * rowIndex + settings.fixedPadding;
             var stringBuilder = [];
-            stringBuilder.push('<div id="' + settings.ID + 'row-' + rowIndex + '" style="width: 100%; height: ' + settings.rowHeight + '; position: absolute; top: ' + heightFromTop + 'px;">');
+            stringBuilder.push('<div class="diva-row" id="' + settings.ID + 'row-' + rowIndex + '" style="height: ' + settings.rowHeight + '; top: ' + heightFromTop + 'px;">');
 
             // Load each page within that row
             for (i = 0; i < settings.pagesPerRow; i++) {
@@ -778,10 +718,9 @@ THE SOFTWARE.
                 // Center the page if the height is fixed
                 leftOffset += (settings.fixedHeightGrid) ? (settings.gridPageWidth - pageWidth) / 2 : 0;
 
-                /* For some reason, IIP returns an image that is always 1px less wide than specified, so this (i.e. specifying an image one pixel wider than the one you want) is the workaround. It means some images are cut off a bit vertically; still, it looks better than a white border along the bottom and right edges (although that border remains at higher zooms ... blame IIP */
-                // + 2 pixels seems to work better at the default n for some reason
+                // The specified image size is 2 px greater than desired - see development notes, "loadRow image sizing"
                 var imgSrc = settings.iipServerBaseUrl + filename + '&amp;HEI=' + (pageHeight + 2) + '&amp;CVT=JPG';
-                stringBuilder.push('<div id="' + settings.ID + 'page-' + pageIndex + '" class="diva-page" style="width: ' + pageWidth + 'px; height: ' + pageHeight + 'px; left: ' + leftOffset + 'px; display: inline;"><div style="position: absolute; background-image: url(\'' + imgSrc  + '\'); background-repeat: no-repeat; width: ' + pageWidth + 'px; height: ' + pageHeight + 'px;"></div></div>');
+                stringBuilder.push('<div id="' + settings.ID + 'page-' + pageIndex + '" class="diva-page" style="width: ' + pageWidth + 'px; height: ' + pageHeight + 'px; left: ' + leftOffset + 'px;"><div style="background-image: url(\'' + imgSrc  + '\'); width: ' + pageWidth + 'px; height: ' + pageHeight + 'px;"></div></div>');
             }
 
             // Append, using an array as a string builder instead of string concatenation
@@ -789,16 +728,13 @@ THE SOFTWARE.
         };
 
         var loadGrid = function() {
-            // Ignore the zoom level if it's in a grid
-            // As for page number, try to get the row containing that grid near the middle
-            // Uses zoom level = 0 as the grid? smallest numbers etc
+            // As for page number, try to load the row that page is in near the middle of the viewport
+            // Uses 0 as the zoom level because any will work
             ajaxRequest(0, function(data) {
-                // Create the grid slider here
                 if (settings.enableGridSlider) {
                     createGridSlider();
                 }
 
-                // Now go through the pages
                 var horizontalPadding = settings.fixedPadding * (settings.pagesPerRow + 1);
                 var pageWidth = (settings.panelWidth - horizontalPadding) / settings.pagesPerRow;
                 settings.gridPageWidth = pageWidth;
@@ -812,7 +748,6 @@ THE SOFTWARE.
 
                 // First scroll directly to the row containing the current page
                 gridScroll();
-
                 settings.scrollSoFar = $(settings.outerSelector).scrollTop();
 
                 // Figure out the row each page is in
@@ -831,7 +766,7 @@ THE SOFTWARE.
         // When changing between grid/document view, or fullscreen toggling, or zooming
         var clearDocument = function() {
             $(settings.outerSelector).scrollTop(0);
-            settings.scrollSoFar = 0; // important - for issue 26
+            settings.scrollSoFar = 0;
             $(settings.innerSelector).text('');
             settings.firstPageLoaded = 0;
             settings.firstRowLoaded = -1;
@@ -988,7 +923,7 @@ THE SOFTWARE.
         // Private function for going to a page
         var gotoPage = function(pageNumber, verticalOffset, horizontalOffset) {
             if (!verticalOffset) {
-                var verticalOffset = 1; // i don't know why but this makes things work
+                var verticalOffset = 0;
             }
 
             if (!horizontalOffset) {
@@ -1020,17 +955,16 @@ THE SOFTWARE.
                     updateCurrentPage(pageIndex);
                     $(settings.outerSelector).scrollTop(heightToScroll);
 
-                    // Now figure out the horizontal scroll - scroll to the MIDDLE
-                    // Or, scroll to the horizontal offset if set
+                    // Scroll to the horizontal offset or the middle if that is not set
                     var horizontalScroll = (horizontalOffset > 0) ? horizontalOffset : ($(settings.innerSelector).width() - settings.panelWidth) / 2;
                     $(settings.outerSelector).scrollLeft(horizontalScroll);
-    
-                    // Now execute the callback function, pass it the page NUMBER not the page index
-                    $.executeCallback(settings.onJump, pageNumber);
 
-                    return true; // To signify that we can scroll to this page
+                    // Now execute the callback function
+                    $.executeCallback(settings.onJump, pageNumber);
+                    return true;
                 }
             }
+            // To signify that we can't scroll to this page (invalid page)
             return false;
         };
         
@@ -1072,12 +1006,12 @@ THE SOFTWARE.
             handleZoom(newZoomLevel);
         };
 
-        // Bound to an event handler if iStuff detected; prevents window dragging
+        // Bound to an event handler if mobile Safari is detected; prevents window dragging
         var blockMove = function(event) {
             event.preventDefault();
         };
 
-        // Allows pinch-zooming for iStuff
+        // Allows pinch-zooming for mobile Safari
         var scale = function(event) {
             var newZoomLevel = settings.zoomLevel;
 
@@ -1179,17 +1113,14 @@ THE SOFTWARE.
             // Return the body scrollbar and the fullscreen icon to their original places
             $(settings.selector + 'fullscreen').css('position', 'absolute').css('z-index', '8999');
 
-            // Execute the callback
             $.executeCallback(settings.onFullscreenExit);
         };
 
         // Toggle, enter and leave grid mode functions akin to those for fullscreen
         var toggleGrid = function() {
-            // Already in grid, leave it
             if (settings.inGrid) {
                 leaveGrid();
             } else {
-                // Enter grid view
                 enterGrid();
             }
 
@@ -1213,8 +1144,6 @@ THE SOFTWARE.
             // Jump to the "current page" if double-click wasn't used
             if (settings.goDirectlyTo < 0 ) {
                 settings.goDirectlyTo = settings.currentPageIndex;
-                //settings.desiredYOffset = getYOffset();
-                //settings.desiredXOffset = getXOffset();
             }
 
             // preventLoad is only true when the zoom slider is used
@@ -1244,20 +1173,19 @@ THE SOFTWARE.
             $(settings.innerSelector).mouseover(function() {
                 $(this).removeClass('grabbing').addClass('grab');
             });
-            
+
             $(settings.innerSelector).mouseout(function() {
                 $(this).removeClass('grab');
             });
-            
+
             $(settings.innerSelector).mousedown(function() {
                 $(this).removeClass('grab').addClass('grabbing');
             });
-            
+
             $(settings.innerSelector).mouseup(function() {
                 $(this).removeClass('grabbing').addClass('grab');
             });
 
-            
             // Set drag scroll on first descendant of class dragger on both selected elements
             $(settings.outerSelector + ', ' + settings.innerSelector).dragscrollable({dragSelector: '.dragger', acceptPropagatedEvent: true});
 
@@ -1286,7 +1214,7 @@ THE SOFTWARE.
                     settings.ctrlKey = false;
                 }
             });
-                
+
             // Double-click to zoom
             $(settings.outerSelector).dblclick(function(event) {
                 // First set the x and y offsets of the viewer from the edge of document
@@ -1300,6 +1228,7 @@ THE SOFTWARE.
                     var rowIndex = Math.floor(centerY / settings.rowHeight);
                     var colIndex = Math.floor(centerX / (settings.panelWidth / settings.pagesPerRow));
                     var pageIndex = rowIndex * settings.pagesPerRow + colIndex;
+
                     // Double clicking --> going to a different page, so clear the x/y offsets
                     settings.desiredXOffset = 0;
                     settings.desiredYOffset = 0;
@@ -1450,7 +1379,6 @@ THE SOFTWARE.
 
         // Creates a zoomer using the min and max zoom levels specified ... PRIVATE, only if zoomSlider = true
         var createZoomSlider = function() {
-            // This whole thing can definitely be optimised
             $(settings.selector + 'slider').remove();
             $(settings.selector + 'slider-label').remove();
 
@@ -1586,7 +1514,7 @@ THE SOFTWARE.
 
         // Returns the URL to the current state of the document viewer (so it should be an exact replica)
         var getCurrentURL = function() {
-            return settings.protocol + location.host + location.pathname + '#' + getURLHash();
+            return location.protocol + location.host + location.pathname + '#' + getURLHash();
         };
 
         var resizeViewer = function(newWidth, newHeight) {
@@ -1733,6 +1661,7 @@ THE SOFTWARE.
             // Store the height and width of the viewer (the outer div), if present
             var desiredHeight = parseInt($.getHashParam('h' + settings.hashParamSuffix), 10);
             var desiredWidth = parseInt($.getHashParam('w' + settings.hashParamSuffix), 10);
+
             // Store the minimum and maximum height too
             settings.minHeight = parseInt($(settings.outerSelector).css('min-height'));
             settings.minWidth = parseInt($(settings.outerSelector).css('min-width'));

@@ -160,3 +160,17 @@ div[id$="diva-link-popup-fullscreen"] {
     font-size: 12px;
     padding: 4px;
 }
+
+.diva-row {
+    position: absolute;
+    width: 100%;
+}
+
+.diva-row .diva-page {
+    display: inline;
+}
+
+.diva-row .diva-page div {
+    position: absolute;
+    background-repeat: no-repeat;
+}
