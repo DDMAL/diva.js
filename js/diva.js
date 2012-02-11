@@ -1089,7 +1089,11 @@ THE SOFTWARE.
                     settings.panelWidth = parseInt($(settings.outerSelector).width(), 10);
 
                     // It should simulate scrolling down since it only matters if the page gets bigger
-                    adjustPages(1);
+                    if (settings.inGrid) {
+                        adjustRows(1);
+                    } else {
+                        adjustPages(1);
+                    }
                 }, 10);
             });
         };
