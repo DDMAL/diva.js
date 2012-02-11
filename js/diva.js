@@ -97,6 +97,8 @@ THE SOFTWARE.
             lastRowLoaded: -1,          // The index of the last row loaded
             maxHeight: 0,               // The height of the tallest page
             maxWidth: 0,                // The width of the widest page
+            minRatio: 0,                // The minimum height/width ratio for a page
+            maxRatio: 0,                // The max height/width ratio (for grid view)
             mobileSafari: false,        // Checks if the user is on an iPad, iPhone or iPod
             numClicks: 0,               // Hack for ctrl+double-clicking in Firefox on Mac
             numPages: 0,                // Number of pages in the array
@@ -727,6 +729,34 @@ THE SOFTWARE.
             $(settings.innerSelector).append(stringBuilder.join(''));
         };
 
+        var loadGridImages = function() {
+            var horizontalPadding = settings.fixedPadding * (settings.pagesPerRow + 1);
+            var pageWidth = (settings.panelWidth - horizontalPadding) / settings.pagesPerRow;
+            settings.gridPageWidth = pageWidth;
+
+            // Calculate the row height depending on whether we want to fix the width or the height
+            settings.rowHeight = (settings.fixedHeightGrid) ? settings.fixedPadding + settings.minRatio * pageWidth : settings.fixedPadding + settings.maxRatio * pageWidth;
+            settings.numRows = Math.ceil(settings.numPages / settings.pagesPerRow);
+            settings.totalHeight = settings.numRows * settings.rowHeight + settings.fixedPadding;
+            $(settings.innerSelector).css('height', Math.round(settings.totalHeight));
+            $(settings.innerSelector).css('width', Math.round(settings.panelWidth));
+
+            // First scroll directly to the row containing the current page
+            gridScroll();
+            settings.scrollSoFar = $(settings.outerSelector).scrollTop();
+
+            // Figure out the row each page is in
+            for (var i = 0; i < settings.numPages; i += settings.pagesPerRow) {
+                var rowIndex = Math.floor(i / settings.pagesPerRow);
+
+                if (isRowVisible(rowIndex)) {
+                    settings.firstRowLoaded = (settings.firstRowLoaded < 0) ? rowIndex : settings.firstRowLoaded;
+                    loadRow(rowIndex);
+                    settings.lastRowLoaded = rowIndex;
+                }
+            }
+        };
+
         var loadGrid = function() {
             // As for page number, try to load the row that page is in near the middle of the viewport
             // Uses 0 as the zoom level because any will work
@@ -734,32 +764,9 @@ THE SOFTWARE.
                 if (settings.enableGridSlider) {
                     createGridSlider();
                 }
-
-                var horizontalPadding = settings.fixedPadding * (settings.pagesPerRow + 1);
-                var pageWidth = (settings.panelWidth - horizontalPadding) / settings.pagesPerRow;
-                settings.gridPageWidth = pageWidth;
-
-                // Calculate the row height depending on whether we want to fix the width or the height
-                settings.rowHeight = (settings.fixedHeightGrid) ? settings.fixedPadding + data.dims.min_ratio * pageWidth : settings.fixedPadding + data.dims.max_ratio * pageWidth;
-                settings.numRows = Math.ceil(settings.numPages / settings.pagesPerRow);
-                settings.totalHeight = settings.numRows * settings.rowHeight + settings.fixedPadding;
-                $(settings.innerSelector).css('height', Math.round(settings.totalHeight));
-                $(settings.innerSelector).css('width', Math.round(settings.panelWidth));
-
-                // First scroll directly to the row containing the current page
-                gridScroll();
-                settings.scrollSoFar = $(settings.outerSelector).scrollTop();
-
-                // Figure out the row each page is in
-                for (var i = 0; i < settings.numPages; i += settings.pagesPerRow) {
-                    var rowIndex = Math.floor(i / settings.pagesPerRow);
-
-                    if (isRowVisible(rowIndex)) {
-                        settings.firstRowLoaded = (settings.firstRowLoaded < 0) ? rowIndex : settings.firstRowLoaded;
-                        loadRow(rowIndex);
-                        settings.lastRowLoaded = rowIndex;
-                    }
-                }
+                settings.minRatio = data.dims.min_ratio;
+                settings.maxRatio = data.dims.max_ratio;
+                loadGridImages();
             });
         };
 
@@ -1048,8 +1055,7 @@ THE SOFTWARE.
             }
 
             // Recalculate height and width
-            settings.panelWidth = parseInt($(settings.outerSelector).width(), 10) - settings.scrollbarWidth;
-            settings.panelHeight = parseInt($(settings.outerSelector).height(), 10);
+            resetPanelDims();
 
             // Change the width of the inner div correspondingly
             $(settings.innerSelector).width(settings.panelWidth);
@@ -1085,12 +1091,15 @@ THE SOFTWARE.
             $(window).resize(function() {
                 clearTimeout(resizeTimer);
                 resizeTimer = setTimeout(function() {
-                    settings.panelHeight = parseInt($(settings.outerSelector).height(), 10);
-                    settings.panelWidth = parseInt($(settings.outerSelector).width(), 10);
+                    resetPanelDims();
 
                     // It should simulate scrolling down since it only matters if the page gets bigger
                     if (settings.inGrid) {
                         adjustRows(1);
+
+                        // Reload all the page images to fill the viewport
+                        clearDocument();
+                        loadGridImages();
                     } else {
                         adjustPages(1);
                         // Reset the width of the inner element - should recenter pages
@@ -1099,6 +1108,12 @@ THE SOFTWARE.
                 }, 10);
             });
         };
+
+        // Saves the new window dimensions as the width and height.
+        var resetPanelDims = function() {
+            settings.panelHeight = $(settings.outerSelector).height();
+            settings.panelWidth = $(settings.outerSelector).width() - settings.scrollbarWidth;
+        }
 
         // Handles leaving fullscreen mode
         var leaveFullscreen = function() {
