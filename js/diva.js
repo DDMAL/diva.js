@@ -1060,10 +1060,11 @@ THE SOFTWARE.
             // Change the width of the inner div correspondingly
             $(settings.innerSelector).width(settings.panelWidth);
 
-            // Do another AJAX request to fix the padding and so on
+            // If we're already in grid, or we're going straight into grid
             if (settings.inGrid) {
                 loadGrid();
             } else {
+                // Do another AJAX request to fix the padding and so on
                 loadDocument(settings.zoomLevel);
             }
         };
@@ -1669,9 +1670,19 @@ THE SOFTWARE.
             }
 
             // If the "fullscreen" hash param is true, go to fullscreen initially
+            // If the grid hash param is true, go to grid view initially
+            var gridParam = $.getHashParam('g' + settings.hashParamSuffix);
+            var goIntoGrid = gridParam === 'true' && settings.enableGrid;
+
             var fullscreenParam = $.getHashParam('f' + settings.hashParamSuffix);
             if (fullscreenParam === 'true' && settings.enableFullscreen) {
+                // Should be set here or else resizing won't work
+                settings.inGrid = goIntoGrid;
                 toggleFullscreen();
+            } else {
+                if (goIntoGrid) {
+                    toggleGrid();
+                }
             }
 
             var gridScrollTop = parseInt($.getHashParam('gy' + settings.hashParamSuffix), 10);
@@ -1690,12 +1701,6 @@ THE SOFTWARE.
             // Just call resize, it'll take care of bounds-checking etc
             if (desiredHeight > 0 || desiredWidth > 0) {
                 resizeViewer(desiredWidth, desiredHeight);
-            }
-
-            // If the grid hash param is true, go to grid view initially
-            var gridParam = $.getHashParam('g' + settings.hashParamSuffix);
-            if (gridParam === 'true' && settings.enableGrid) {
-                toggleGrid();
             }
             
             // Load the images at the initial zoom level, if we haven't already 
