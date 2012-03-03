@@ -1115,7 +1115,9 @@ THE SOFTWARE.
         // Toggle, enter and leave grid mode functions akin to those for fullscreen
         var toggleGrid = function() {
             // Switch the slider etc
-            settings.toolbar.switchSlider();
+            if (settings.toolbar) {
+                settings.toolbar.switchSlider();
+            }
             if (settings.inGrid) {
                 leaveGrid();
             } else {
@@ -1407,9 +1409,21 @@ THE SOFTWARE.
                     $(settings.selector + 'tools-left').css('float', 'right').css('padding-top', '10px').css('text-align', 'right').css('clear', 'both');
                 }
             }
+            var switchSlider = function() {
+                // Switch from grid to document view etc
+                $(settings.selector + currentSlider + '-slider').hide();
+                $(settings.selector + currentSlider + '-slider-label').hide();
+                currentSlider = (!settings.inGrid) ? 'grid' : 'zoom';
+                $(settings.selector + currentSlider + '-slider').show();
+                $(settings.selector + currentSlider + '-slider-label').show();
+            };
 
             if (settings.jumpIntoFullscreen) {
                 switchView();
+            }
+
+            if (settings.inGrid) {
+                switchSlider();
             }
 
             var toolbar = {
@@ -1425,14 +1439,7 @@ THE SOFTWARE.
                 setPagesPerRow: function(pagesPerRow) {
                     $(settings.selector + 'pages-per-row').text(pagesPerRow);
                 },
-                switchSlider: function() {
-                    // Switch from grid to document view etc
-                    $(settings.selector + currentSlider + '-slider').hide();
-                    $(settings.selector + currentSlider + '-slider-label').hide();
-                    currentSlider = (!settings.inGrid) ? 'grid' : 'zoom';
-                    $(settings.selector + currentSlider + '-slider').show();
-                    $(settings.selector + currentSlider + '-slider-label').show();
-                },
+                switchSlider: switchSlider,
                 switchView: switchView
             }
             return toolbar;
