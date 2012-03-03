@@ -1476,8 +1476,8 @@ THE SOFTWARE.
                 'y': (settings.inGrid) ? settings.documentLeftScroll : getYOffset(),
                 'x': (settings.inGrid) ? settings.documentLeftScroll : getXOffset(),
                 'gy': (settings.inGrid) ? $(settings.outerSelector).scrollTop() : settings.gridScrollTop,
-                'h': settings.panelHeight,
-                'w': settings.panelWidth + settings.scrollbarWidth // add it on so it looks like a nice round number
+                'h': (settings.inFullscreen) ? 0 : settings.panelHeight,
+                'w': (settings.inFullscreen) ? 0 : settings.panelWidth + settings.scrollbarWidth // add it on so it looks like a nice round number
             }
 
             return state;
