@@ -60,7 +60,7 @@ THE SOFTWARE.
             tileFadeSpeed: 300,         // The tile fade-in speed in ms (or "fast" or "slow"; 0 to disable)
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
-            viewportMargin: 200,        // Pretend tiles +/- 200px away from viewport are in
+            viewportMargin: 400,        // Pretend tiles +/- 400px away from viewport are in
             zoomLevel: 2                // The initial zoom level (used to store the current zoom level)
         };
         
