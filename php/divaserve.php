@@ -103,7 +103,7 @@ if (!file_exists($cache_file)) {
     if (!file_exists($gen_cache_file)) {
         // Does not exist, so make it
         $i = 0;
-        foreach (glob($img_dir . '/*.tif') as $img_file) {
+        foreach (glob($img_dir . '/*') as $img_file) {
             $img_size = getimagesize($img_file);
             $img_wid = $img_size[0];
             $img_hei = $img_size[1];
