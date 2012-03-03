@@ -83,7 +83,6 @@ THE SOFTWARE.
             firstAjaxRequest: true,     // True initially, set to false after the first request
             firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
             firstRowLoaded: -1,         // The index of the first row loaded
-            fullscreenStatusbar: null,  // The popup box that tells you what page you're on
             goDirectlyTo: -1,           // For the page hash param (#p=100 or &p=5)
             hashParamSuffix: '',        // Used when there are multiple document viewers on a page
             heightAbovePages: [],       // The height above each page
@@ -293,18 +292,7 @@ THE SOFTWARE.
 
         // Helper function for setCurrentPage; should only be called at the end
         var updateCurrentPage = function(pageIndex) {
-            var pageNumber = pageIndex + 1;
-
-            $(settings.selector + 'current span').text(pageNumber);
-
-            // If we're in fullscreen mode, change the statusbar
-            if (settings.inFullscreen) {
-                if (settings.fullscreenStatusbar === null) {
-                    createFullscreenStatusbar('fade');
-                }
-
-                $(settings.selector + 'page-number-fullscreen').text(pageNumber);
-            }
+            settings.toolbar.setCurrentPage(pageIndex + 1);
         };
 
         // Determines and sets the "current page" (settings.currentPageIndex); called within adjustPages 
@@ -557,7 +545,6 @@ THE SOFTWARE.
         var goDirectlyTo = function() {
             if (settings.goDirectlyTo >= 0) {
                 gotoPage(settings.goDirectlyTo + 1, settings.desiredYOffset, settings.desiredXOffset);
-                updateCurrentPage(settings.goDirectlyTo);
                 settings.goDirectlyTo = -1;
                 return true;
             }
@@ -646,6 +633,9 @@ THE SOFTWARE.
             // Make sure the set max zoom level is valid
             settings.maxZoomLevel = (settings.maxZoomLevel > 0 && settings.maxZoomLevel <= data.max_zoom) ? settings.maxZoomLevel : data.max_zoom;
 
+            // Create the toolbar HERE
+            settings.toolbar = createToolbar();
+
             // Make sure the initial zoom level is valid (could be a hashparam)
             if (zoomLevel > settings.maxZoomLevel) {
                 // If it's invalid, just use 0 (that's what divaserve.php does)
@@ -654,9 +644,6 @@ THE SOFTWARE.
 
             // Set the total number of pages
             $(settings.selector + 'current label').text(settings.numPages);
-
-            // If we're in fullscreen mode, set the thing in the statusbar too
-            $(settings.selector + 'goto-page-fullscreen input').attr('placeholder', settings.numPages);
 
             if (settings.enableAutoTitle) {
                 $(settings.elementSelector).prepend('<div id="' + settings.ID + 'title">' + settings.itemTitle + '</div>');
@@ -761,9 +748,6 @@ THE SOFTWARE.
             // As for page number, try to load the row that page is in near the middle of the viewport
             // Uses 0 as the zoom level because any will work
             ajaxRequest(0, function(data) {
-                if (settings.enableGridSlider) {
-                    createGridSlider();
-                }
                 settings.minRatio = data.dims.min_ratio;
                 settings.maxRatio = data.dims.max_ratio;
                 loadGridImages();
@@ -801,11 +785,6 @@ THE SOFTWARE.
                 settings.totalHeight = data.dims.t_hei + settings.verticalPadding * (settings.numPages + 1); 
                 settings.zoomLevel = zoomLevel;
                 settings.dimAfterZoom = settings.totalHeight; 
-
-                // Create the zoom slider at this point, if desired
-                if (settings.enableZoomSlider) {
-                    createZoomSlider();
-                }
 
                 // Needed to set settings.heightAbovePages - initially just the top padding
                 var heightSoFar = 0;
@@ -916,6 +895,9 @@ THE SOFTWARE.
             settings.verticalOffset = $(settings.outerSelector).scrollTop();
             settings.horizontalOffset = $(settings.outerSelector).scrollLeft();
 
+            // Update the label
+            settings.toolbar.setZoomLevel(zoomLevel);
+
             // If we're in grid mode, leave it
             if (settings.inGrid) {
                 // Don't call loadDocument() in leaveGrid() otherwise it loads twice
@@ -958,7 +940,7 @@ THE SOFTWARE.
                 // First make sure that the page number exists (i.e. is in range)
                 if (pageInRange(pageIndex)) {
                     var heightToScroll = settings.heightAbovePages[pageIndex] + verticalOffset;
-    
+
                     // Change the "currently on page" thing
                     updateCurrentPage(pageIndex);
                     $(settings.outerSelector).scrollTop(heightToScroll);
@@ -975,7 +957,7 @@ THE SOFTWARE.
             // To signify that we can't scroll to this page (invalid page)
             return false;
         };
-        
+
         // Handles the double click event, put in a new function for better codeflow
         var handleDoubleClick = function(event) {
             // If the zoom level is already at max, zoom out
@@ -1009,7 +991,7 @@ THE SOFTWARE.
 
             // Set doubleClick to true, so we know where to zoom
             settings.doubleClick = true;
-            
+
             // Zoom
             handleZoom(newZoomLevel);
         };
@@ -1055,6 +1037,11 @@ THE SOFTWARE.
                 enterFullscreen();
             }
 
+            // Switch between the fullscreen and the regular toolbar
+            if (settings.toolbar) {
+                settings.toolbar.switchView();
+            }
+
             // Recalculate height and width
             resetPanelDims();
 
@@ -1072,10 +1059,6 @@ THE SOFTWARE.
 
         // Handles entering fullscreen mode
         var enterFullscreen = function() {
-            if (settings.fullscreenStatusbar === null) {
-                createFullscreenStatusbar('none');
-            }
-
             // Change the styling of the fullscreen icon - two viewers on a page won't work otherwise
             $(settings.selector + 'fullscreen').css('position', 'fixed').css('z-index', '9001');
 
@@ -1089,6 +1072,7 @@ THE SOFTWARE.
             $.executeCallback(settings.onFullscreenEnter);
 
             // Listen to window resize events
+            // Is this added every time we enter fullscreen? That would be a problem
             var resizeTimer;
             $(window).resize(function() {
                 clearTimeout(resizeTimer);
@@ -1119,17 +1103,6 @@ THE SOFTWARE.
 
         // Handles leaving fullscreen mode
         var leaveFullscreen = function() {
-            // Remove the status bar
-            if (settings.fullscreenStatusbar !== null) {
-                // In case animation has been set to fade
-                settings.fullscreenStatusbar.pnotify({
-                    pnotify_animation: 'none'
-                });
-
-                settings.fullscreenStatusbar.pnotify_remove();
-                settings.fullscreenStatusbar = null;
-            }
-
             $(settings.outerSelector).removeClass('fullscreen');
             settings.inFullscreen = false;
 
@@ -1141,6 +1114,8 @@ THE SOFTWARE.
 
         // Toggle, enter and leave grid mode functions akin to those for fullscreen
         var toggleGrid = function() {
+            // Switch the slider etc
+            settings.toolbar.switchSlider();
             if (settings.inGrid) {
                 leaveGrid();
             } else {
@@ -1337,97 +1312,34 @@ THE SOFTWARE.
             }
         };
 
-        // Create a fullscreen statusbar thing - if it doesn't exist
-        var createFullscreenStatusbar = function(animation) {
-            // If grid view is enabled, put the icon in there
-            var gridIcon = (settings.enableGrid) ? '<div id="' + settings.ID + 'grid-icon-fullscreen"></div>' : '';
-            var options = { 
-                pnotify_text: '<form id="' + settings.ID + 'goto-page-fullscreen"><input placeholder="' + settings.numPages + '" type="text" size="4" id="' + settings.ID + 'goto-input-fullscreen" /><input type="submit" value="Go"></form><div id="' + settings.ID + 'tools-fullscreen" style="height: 60px;"></div><div id="' + settings.ID + 'link-fullscreen"><a href="">Link</a></div>',
-                pnotify_title: gridIcon + 'Page: <span id="' + settings.ID + 'page-number-fullscreen">' + (settings.currentPageIndex + 1) + '</span>',
-                pnotify_history: false,
-                pnotify_width: '160px',
-                pnotify_hide: false,
-                pnotify_notice_icon: '',
-                pnotify_animation: animation, // Can be 'none' or 'fade' depending on what calls it
-                pnotify_before_close: function() {
-                    settings.fullscreenStatusbar = null;
+        // Handles all status updating etc (both fullscreen and not)
+        var createToolbar = function() {
+            var gridIconHTML = (settings.enableGrid) ? '<div class="diva-button" id="' + settings.ID + 'grid-icon"><img src="img/grid.png" title="Toggle grid" /></div>' : '';
+            var linkIconHTML = '<div class="diva-button" id="' + settings.ID + 'link-icon" style="border-left: 0px;"><img src="img/link.png" title="Link" /></div>';
+            var zoomSliderHTML = (settings.enableZoomSlider) ? '<div id="' + settings.ID + 'zoom-slider" class="hidden"></div>' : '';
+            var gridSliderHTML = (settings.enableGridSlider) ? '<div id="' + settings.ID + 'grid-slider" class="hidden"></div>' : '';
+            var gotoPageHTML = (settings.enableGotoPage) ? '<form id="' + settings.ID + 'goto-page"><input type="text" id="' + settings.ID + 'goto-page-input" /> <input type="submit" value="Go to page" style="margin-top: 0px;" /></form>' : '';
+            var zoomSliderLabelHTML = (settings.enableZoomSlider) ? '<div id="' + settings.ID + 'zoom-slider-label" class="hidden">Zoom level: <span id="' + settings.ID + 'zoom-level">' + settings.zoomLevel + '</span></div>' : '';
+            var gridSliderLabelHTML = (settings.enableGridSlider) ? '<div id="' + settings.ID + 'grid-slider-label" class="hidden">Pages per row: <span id="' + settings.ID + 'pages-per-row">' + settings.pagesPerRow + '</span></div>' : '';
+            var pageNumberHTML = '<div class="diva-page-label">Page <span id="' + settings.ID + 'current-page">1</span> of <span id="' + settings.ID + 'num-pages">' + settings.numPages + '</span></div>';
+
+            // CREATE IT NOW
+            var toolbarHTML = '<div id="' + settings.ID + 'tools-left" class="diva-left">' + zoomSliderHTML + gridSliderHTML + zoomSliderLabelHTML + gridSliderLabelHTML + '</div><div id="' + settings.ID + 'tools-right" class="diva-right">' + linkIconHTML + gridIconHTML + '<div class="diva-pages">' + gotoPageHTML + pageNumberHTML + '</div></div>';
+
+            $(settings.elementSelector).prepend('<div id="' + settings.ID + 'tools">' + toolbarHTML + '</div>');
+
+            // Attach handlers to everything
+            $(settings.selector + 'zoom-slider').slider({
+                value: settings.zoomLevel,
+                min: settings.minZoomLevel,
+                max: settings.maxZoomLevel,
+                step: 1,
+                slide: function(event, ui) {
+                    handleZoomSlide(ui.value);
                 }
-            };
-
-            settings.fullscreenStatusbar = $.pnotify(options);
-
-            // Handle clicking of the link thing
-            $(settings.selector + 'link-fullscreen a').click(function() {
-                $('body').prepend('<div id="' + settings.ID + 'link-popup-fullscreen"><input id="' + settings.ID + 'link-popup-input-fullscreen" class="diva-input" value="' + getCurrentURL() + '" /></div>');
-                var offset = $('div.ui-pnotify').offset(); // offset of the statusbar (pnotify div)
-                $(settings.selector + 'link-popup-fullscreen').css('left', offset.left + 'px').css('top', (offset.top + $('div.ui-pnotify').height() + 5) + 'px');
-
-                // Catch onmouseup events outside of this div
-                $('body').mouseup(function(event) {
-                    var targetID = event.target.id;
-                    if (targetID !== settings.ID + 'link-popup-fullscreen' && targetID !== settings.ID + 'link-popup-input-fullscreen') {
-                        $(settings.selector + 'link-popup-fullscreen').remove();
-                    }
-                });
-
-                // Also delete it upon scroll and page up/down key events
-                $(settings.outerSelector).scroll(function() {
-                    $(settings.selector + 'link-popup-fullscreen').remove();
-                });
-                return false;
             });
 
-            $(settings.selector + 'grid-icon-fullscreen').click(function() {
-                toggleGrid();
-            });
-
-            // Create the relevant slider
-            if (settings.inGrid && settings.enableGridSlider) {
-                createGridSlider();
-            } else if (settings.enableZoomSlider) {
-                createZoomSlider();
-            }
-
-            // Handle clicking, a bit redundant but better than using live(), maybe
-            $(settings.selector + 'goto-page-fullscreen').submit(function() {
-                var desiredPage = parseInt($(settings.selector + 'goto-input-fullscreen').val(), 10);
-
-                if (!gotoPage(desiredPage)) {
-                    alert("Invalid page number");
-                }
-
-                return false;
-            });
-        };
-
-        // Creates a zoomer using the min and max zoom levels specified ... PRIVATE, only if zoomSlider = true
-        var createZoomSlider = function() {
-            $(settings.selector + 'slider').remove();
-            $(settings.selector + 'slider-label').remove();
-
-            var parentDiv = (settings.inFullscreen) ? 'tools-fullscreen' : 'tools';
-            $(settings.selector + parentDiv).prepend('<div id="' + settings.ID + 'slider"></div>');
-            $(settings.selector + 'slider').slider({
-                    value: settings.zoomLevel,
-                    min: settings.minZoomLevel,
-                    max: settings.maxZoomLevel,
-                    step: 1,
-                    slide: function(event, ui) {
-                        handleZoomSlide(ui.value);
-                    }
-                });
-            $(settings.selector + 'slider').after('<div id="' + settings.ID + 'slider-label">Zoom level: <span>' + settings.zoomLevel + '</span></div>');
-        };
-
-        // Creates a slider for controlling the number of pages per grid row
-        var createGridSlider = function() {
-            $(settings.selector + 'slider').remove();
-            $(settings.selector + 'slider-label').remove();
-
-            // If we're in fullscreen mode, add it to the statusbar; otherwise, the regular toolbar
-            var parentDiv = (settings.inFullscreen) ? 'tools-fullscreen' : 'tools';
-            $(settings.selector + parentDiv).prepend('<div id="' + settings.ID + 'slider"></div>');
-            $(settings.selector + 'slider').slider({
+            $(settings.selector + 'grid-slider').slider({
                 value: settings.pagesPerRow,
                 min: settings.minPagesPerRow,
                 max: settings.maxPagesPerRow,
@@ -1436,26 +1348,28 @@ THE SOFTWARE.
                     handleGridSlide(ui.value);
                 }
             });
-            $(settings.selector + 'slider').after('<div id="' + settings.ID + 'slider-label">Pages per row: <span>' + settings.pagesPerRow + '</span></div>');
-        };
 
-        var handleGridSlide = function(newPagesPerRow) {
-            settings.pagesPerRow = newPagesPerRow;
-            enterGrid();
-        };
+            $(settings.selector + 'grid-icon').click(function() {
+                toggleGrid();
+            });
 
-        var createGridIcon = function() {
-            $(settings.selector + 'tools').prepend('<div id="' + settings.ID + 'grid-icon"></div>');
-        };
-        
-        // Creates the "go to page" box
-        var createGotoPage = function() {
-            $(settings.selector + 'tools').append('<form id="' + settings.ID + 'goto-page">Go to page <input type="text" size="3" id="' + settings.ID + 'goto-input" /> <input type="submit" value="Go" /><br /><div id="' + settings.ID + 'current">Current page: <span>1</span> of <label></label> <a href="" id="' + settings.ID + 'link">(link)</a></div></form>');
+            $(settings.selector + 'goto-page').submit(function() {
+                var desiredPage = parseInt($(settings.selector + 'goto-page-input').val(), 10);
 
-            $(settings.selector + 'link').click(function() {
+                if (!gotoPage(desiredPage)) {
+                    alert("Invalid page number");
+                }
+                return false;
+            });
+
+            $(settings.selector + 'link-icon').click(function() {
                 var leftOffset = $(settings.outerSelector).offset().left + settings.panelWidth;
                 $('body').prepend('<div id="' + settings.ID + 'link-popup"><input id="' + settings.ID + 'link-popup-input" class="diva-input" type="text" value="'+ getCurrentURL() + '"/></div>');
-                $(settings.selector + 'link-popup').css('top', $(settings.outerSelector).offset().top + 'px').css('left', (leftOffset - 298) + 'px');
+                if (settings.inFullscreen) {
+                    $(settings.selector + 'link-popup').css('top', '150px').css('right', '30px');
+                } else {
+                    $(settings.selector + 'link-popup').css('top', $(settings.outerSelector).offset().top + 'px').css('left', (leftOffset - 217) + 'px');
+                }
 
                 // Catch onmouseup events outside of this div
                 $('body').mouseup(function(event) {
@@ -1469,18 +1383,65 @@ THE SOFTWARE.
                 $(settings.outerSelector).scroll(function() {
                     $(settings.selector + 'link-popup').remove();
                 });
+                $(settings.selector + 'link-popup input').click(function() {
+                    $(this).focus().select();
+                });
                 return false;
             });
-            
-            $(settings.selector + 'goto-page').submit(function() {
-                var desiredPage = parseInt($(settings.selector + 'goto-input').val(), 10);
 
-                if (!gotoPage(desiredPage)) {
-                    alert("Invalid page number");
+            // Show the relevant slider
+            var currentSlider = (settings.inGrid) ? 'grid' : 'zoom';
+            $(settings.selector + currentSlider + '-slider').show();
+            $(settings.selector + currentSlider + '-slider-label').show();
+
+            var switchView = function() {
+                // Switch from fullscreen to not, etc
+                $(settings.selector + 'tools').toggleClass('fullscreen-tools');
+                if (!settings.inFullscreen) {
+                    // Leaving fullscreen
+                    $(settings.selector + 'tools-left').after($(settings.selector + 'tools-right'));
+                    $(settings.selector + 'tools-left').css('float', 'left').css('padding-top', '0px').css('text-align', 'left').css('clear', 'none');
+                } else {
+                    // Entering fullscreen
+                    $(settings.selector + 'tools-right').after($(settings.selector + 'tools-left'));
+                    $(settings.selector + 'tools-left').css('float', 'right').css('padding-top', '10px').css('text-align', 'right').css('clear', 'both');
                 }
+            }
 
-                return false;
-            });
+            if (settings.jumpIntoFullscreen) {
+                switchView();
+            }
+
+            var toolbar = {
+                setCurrentPage: function(newNumber) {
+                    $(settings.selector + 'current-page').text(newNumber);
+                },
+                setNumPages: function(newNumber) {
+                    $(settings.selector + 'num-pages').text(newNumber);
+                },
+                setZoomLevel: function(zoomLevel) {
+                    $(settings.selector + 'zoom-level').text(zoomLevel);
+                },
+                setPagesPerRow: function(pagesPerRow) {
+                    $(settings.selector + 'pages-per-row').text(pagesPerRow);
+                },
+                switchSlider: function() {
+                    // Switch from grid to document view etc
+                    $(settings.selector + currentSlider + '-slider').hide();
+                    $(settings.selector + currentSlider + '-slider-label').hide();
+                    currentSlider = (!settings.inGrid) ? 'grid' : 'zoom';
+                    $(settings.selector + currentSlider + '-slider').show();
+                    $(settings.selector + currentSlider + '-slider-label').show();
+                },
+                switchView: switchView
+            }
+            return toolbar;
+        };
+
+        var handleGridSlide = function(newPagesPerRow) {
+            settings.pagesPerRow = newPagesPerRow;
+            settings.toolbar.setPagesPerRow(newPagesPerRow);
+            loadGrid();
         };
 
         // Returns the page index associated with the given filename; must called after settings settings.pages
@@ -1593,21 +1554,6 @@ THE SOFTWARE.
             settings.outerSelector = settings.selector + 'outer';
             settings.innerSelector = settings.selector + 'inner';
             
-            // Create a diva-tools div only if we need to
-            if (settings.zoomSlider || settings.enableGotoPage || settings.enableGrid) {
-                $(settings.elementSelector).prepend('<div id="' + settings.ID + 'tools"></div>');
-            }
-            
-            // Create the go to page box, if enabled
-            if (settings.enableGotoPage) {
-                createGotoPage();
-            }
-
-            // Create the icon for toggling grid view, if enabled
-            if (settings.enableGrid) {
-                createGridIcon();
-            }
-            
             // Create the inner and outer panels
             $(settings.elementSelector).append('<div id="' + settings.ID + 'outer"></div>');
             $(settings.outerSelector).append('<div id="' + settings.ID + 'inner" class="dragger"></div>');
@@ -1680,6 +1626,7 @@ THE SOFTWARE.
                 // Should be set here or else resizing won't work
                 settings.inGrid = goIntoGrid;
                 toggleFullscreen();
+                settings.jumpIntoFullscreen = true;
             } else {
                 if (goIntoGrid) {
                     toggleGrid();

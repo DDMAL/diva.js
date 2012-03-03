@@ -56,35 +56,31 @@ div[id$="diva-outer"] {
     background-position: center;
 }
 
-div[id$="diva-slider"] {
-    margin: 10px;
-    font-size: 62.5%;
+div[id$="-slider"] {
     width: 100px;
-    float: left;
-    clear: left;
 }
 
-div[id$="diva-slider-label"] {
-    float: left;
-    padding-top: 7px;
-    padding-left: 5px;
+div[id$="-slider-label"] {
+    padding: 7px 0px;
+    clear: both;
 }
 
-div[id$="diva-grid-icon"], div[id$="diva-grid-icon-fullscreen"] {
-    background-image: url('../img/grid.png');
-    background-repeat: no-repeat;
-    cursor: pointer;
-    width: 50px;
-    height: 50px;
-}
-
-/* Float left for the fullscreen version, float right for the regular version */
-div[id$="diva-grid-icon"] {
+.diva-button {
     float: right;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    background-color: #F1F1F1;
+    border: 1px solid #99BBE8;
 }
 
-div[id$="diva-grid-icon-fullscreen"] {
-    float: left;
+.diva-button:hover {
+    background-color: #FDFDFD;
+}
+
+/* To offset the Go to page button margin */
+.diva-page-label {
+    padding-right: 2px;
 }
 
 form[id$="diva-goto-page"] {
@@ -94,7 +90,7 @@ form[id$="diva-goto-page"] {
 div[id$="diva-title"] {
     text-align: center;
     font-weight: bold;
-    font-size: 1.5em;
+    font-size: 2.0em;
 }
 
 .grab {
@@ -134,32 +130,32 @@ div[id$="diva-link-fullscreen"] {
 
 div[id$="diva-link-popup"] {
     position: absolute;
-    width: 290px;
+    width: 230px;
     height: 28px;
     padding: 5px;
     background-color: #FFF;
     border: 1px solid #DDD;
     z-index: 10000;
     text-align: center;
-}
-
-div[id$="diva-link-popup-fullscreen"] {
-    position: absolute;
-    border: 1px solid #DDD;
-    z-index: 10000;
-    text-align: center;
-    background-color: #FFF;
-    padding: 5px;
-    width: 150px;
+    -webkit-box-shadow: 0 1px 4px 0 #C1C1C1;
+    -moz-box-shadow: 0 1px 4px 0 #C1C1C1;
+    box-shadow: 0 1px 4px 0 #C1C1C1;
 }
 
 .diva-input {
-    width: 90%;
+    width: 200px;
     border: 1px solid #CCC;
     line-height: 18px;
     height: 18px;
     font-size: 12px;
     padding: 4px;
+}
+
+input[id$="diva-goto-page-input"] {
+    width: 30px;
+    outline: none;
+    margin: 0px;
+    padding-top: 0px;
 }
 
 .diva-row {
@@ -174,4 +170,59 @@ div[id$="diva-link-popup-fullscreen"] {
 .diva-row .diva-page div {
     position: absolute;
     background-repeat: no-repeat;
+}
+
+
+div[id$="diva-tools"] {
+    margin-top: 15px;
+}
+
+.diva-status-box-inner {
+    margin: 10px;
+    font-size: 13px;
+}
+
+.diva-status-box-inner p {
+    padding-top: 2px;
+    padding-bottom: 2px;
+    margin: 0px;
+}
+
+.diva-status-box-inner form {
+    display: inline;
+}
+
+.diva-left {
+    float: left;
+}
+
+.diva-right {
+    float: right;
+    position: relative;
+    left: 2px;
+    height: 42px;
+}
+
+.diva-pages {
+    float: left;
+    text-align: right;
+    padding-right: 4px;
+}
+
+.fullscreen-tools {
+    position: absolute;
+    top: 0px;
+    right: 30px;
+    z-index: 9001;
+    border: 1px solid #EEE;
+    background-color: #FFF;
+    width: 210px;
+    -webkit-box-shadow: 0 1px 4px 0 #C1C1C1;
+    -moz-box-shadow: 0 1px 4px 0 #C1C1C1;
+    box-shadow: 0 1px 4px 0 #C1C1C1;
+    padding: 15px 15px 10px 15px;
+}
+
+.hidden {
+    display: none;
 }
