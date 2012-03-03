@@ -930,7 +930,8 @@ THE SOFTWARE.
         // Private function for going to a page
         var gotoPage = function(pageNumber, verticalOffset, horizontalOffset) {
             if (!verticalOffset) {
-                var verticalOffset = 0;
+                // Must be > 0  to ensure that the page number is correct
+                var verticalOffset = 1;
             }
 
             if (!horizontalOffset) {
