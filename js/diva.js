@@ -722,7 +722,7 @@ THE SOFTWARE.
 
                 // The specified image size is 2 px greater than desired - see development notes, "loadRow image sizing"
                 var imgSrc = settings.iipServerBaseUrl + filename + '&amp;HEI=' + (pageHeight + 2) + '&amp;CVT=JPG';
-                stringBuilder.push('<div id="' + settings.ID + 'page-' + pageIndex + '" class="diva-page" style="width: ' + pageWidth + 'px; height: ' + pageHeight + 'px; left: ' + leftOffset + 'px;"><div style="background-image: url(\'' + imgSrc  + '\'); width: ' + pageWidth + 'px; height: ' + pageHeight + 'px;"></div></div>');
+                stringBuilder.push('<div id="' + settings.ID + 'page-' + pageIndex + '" class="diva-page" style="width: ' + pageWidth + 'px; height: ' + pageHeight + 'px; left: ' + leftOffset + 'px;"><img src="' + imgSrc  + '" style="width: ' + pageWidth + 'px; height: ' + pageHeight + 'px;" /></div>');
             }
 
             // Append, using an array as a string builder instead of string concatenation
