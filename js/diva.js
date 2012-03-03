@@ -75,7 +75,7 @@ THE SOFTWARE.
             ctrlKey: false,             // Hack for ctrl+double-clicking in Firefox on Mac
             currentPageIndex: 0,        // The current page in the viewport (center-most page)
             desiredXOffset: 0,          // Used for holding the 'x' hash parameter (x offset from left side of page)
-            desiredYOfffset: 0,         // Used for holding the 'y' hash parameter (y offset from top of page)
+            desiredYOffset: 0,         // Used for holding the 'y' hash parameter (y offset from top of page)
             dimAfterZoom: 0,            // Used for storing the item dimensions after zooming
             dimBeforeZoom: 0,           // Used for storing the item dimensions before zooming
             doubleClick: false,         // If the zoom has been triggered by a double-click event
