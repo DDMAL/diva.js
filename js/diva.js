@@ -1416,6 +1416,10 @@ THE SOFTWARE.
                 currentSlider = (!settings.inGrid) ? 'grid' : 'zoom';
                 $(settings.selector + currentSlider + '-slider').show();
                 $(settings.selector + currentSlider + '-slider-label').show();
+
+                // Also change the image for the grid icon
+                var newIconImage = (settings.inGrid) ? 'grid' : 'document';
+                $(settings.selector + 'grid-icon img').attr('src', 'img/' + newIconImage + '.png');
             };
 
             if (settings.jumpIntoFullscreen) {
