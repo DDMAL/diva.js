@@ -92,7 +92,7 @@ $pgs = array();
 
 if (!file_exists($img_cache)) {
     // Create the directory (recursively, in case diva.js does not exist)
-    mkdir($img_cache, 0, true);
+    mkdir($img_cache, 0755, true);
 }
 
 if (!file_exists($cache_file)) {
