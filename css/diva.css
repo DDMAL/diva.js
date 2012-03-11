@@ -1,4 +1,3 @@
-/* To do */
 /*
  * Inspired by the Twitter bootstrap
  *
@@ -14,7 +13,8 @@
 .ui-slider {
   display: none;
   position: relative;
-  border: 1px solid #DDD;
+  border: 1px solid #dddddd;
+  background: #fdfdfd;
   -webkit-border-radius: 4px;
   -moz-border-radius: 4px;
   border-radius: 4px;
@@ -27,7 +27,7 @@
   -moz-border-radius: 5px;
   border-radius: 5px;
   border: 1px solid #cccccc;
-  background: #F6F6F6;
+  background: #fdfdfd;
   outline: none;
   height: 11px;
   width: 11px;
@@ -38,12 +38,12 @@
   margin-left: -2px;
 }
 .ui-slider .handle.hover {
-  background-color: #FFF;
-  border: 1px solid #000000;
+  background: #ecf2fb;
+  border: 1px solid #6f9fdf;
 }
 .ui-slider .handle.active {
-  background: #FF0000;
-  border: 1px solid #555555;
+  background: #f9fbfe;
+  border: 1px solid #99bbe8;
 }
 /*
 Copyright (C) 2011 by Wendy Liu, Andrew Hankinson, Laurent Pugin
@@ -98,11 +98,11 @@ body {
   cursor: pointer;
   height: 32px;
   width: 32px;
-  background: #F1F1F1;
+  background: #f1f1f1;
   border: 1px solid #99bbe8;
 }
 .diva .tools .tools-right .button:hover {
-  background: #FDFDFD;
+  background: #fdfdfd;
 }
 .diva .tools .tools-right .page-tools {
   float: left;
@@ -126,8 +126,8 @@ body {
   top: 0px;
   right: 30px;
   z-index: 9001;
-  border: 1px solid #eeeeee;
-  background: #FFF;
+  border: 1px solid #dddddd;
+  background: #ffffff;
   width: 210px;
   -webkit-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
   -moz-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
@@ -140,7 +140,7 @@ body {
   min-width: 500px;
   height: 700px;
   overflow: auto;
-  background: #F1F1F1;
+  background: #f1f1f1;
   border: 1px solid #99bbe8;
 }
 .diva .outer .inner {
@@ -198,11 +198,18 @@ div[id$="diva-link-popup"] {
   width: 230px;
   position: absolute;
   padding: 5px;
-  background: #FFF;
+  background: #ffffff;
   border: 1px solid #dddddd;
   z-index: 10000;
   text-align: center;
   -webkit-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
   -moz-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
   box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
+}
+div[id$="diva-link-popup"] input {
+  width: 210px;
+  margin-top: 5px;
+}
+div[id$="diva-link-popup"] input:focus {
+  outline: none;
 }
