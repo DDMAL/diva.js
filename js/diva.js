@@ -1231,6 +1231,8 @@ THE SOFTWARE.
                     settings.desiredXOffset = 0;
                     settings.desiredYOffset = 0;
                     settings.goDirectlyTo = pageIndex;
+                    // Switch the slider in the toolbar (must have been created)
+                    settings.toolbar.switchSlider();
                     leaveGrid();
                 } else {
                     handleDoubleClick(event);
