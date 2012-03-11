@@ -1165,7 +1165,8 @@ THE SOFTWARE.
                 // Handle clicking of the download icon
                 $(settings.outerSelector).delegate('.download-icon', 'click', function(event) {
                     var filename = $(this).parent().attr('data-filename');
-                    var width = $(this).parent().width();
+                    // Subtract 1 to ensure that it gets the right size for JP2000
+                    var width = $(this).parent().width() - 1;
                     var image = settings.iipServerBaseUrl + filename + '&WID=' + width + '&CVT=JPG';
                     window.open(image);
                 });
