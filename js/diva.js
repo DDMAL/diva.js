@@ -28,6 +28,7 @@ THE SOFTWARE.
             adaptivePadding: 0.05,      // The ratio of padding to the page dimension
             backendServer: '',          // The URL to the script returning the JSON data; mandatory
             enableAutoTitle: true,      // Shows the title within a div of id diva-title
+            enableDownload: true,       // Allow users to download images
             enableFilename: true,       // Uses filenames instead of page numbers for links (i=bm_001.tif instead of p=1)
             enableFullscreen: true,     // Enable or disable fullscreen mode
             enableGotoPage: true,       // A "go to page" jump box
@@ -188,7 +189,7 @@ THE SOFTWARE.
                 // Only try to append the div part if the page has not already been loaded
                 if (!isPageLoaded(pageIndex)) {
                     // Magically centered using left: 50% and margin-left: -(width/2)
-                    content.push('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width: ' + width + 'px; height: ' + height + 'px; left: 50%; margin-left: -' + (width / 2) + 'px" class="page">');
+                    content.push('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width: ' + width + 'px; height: ' + height + 'px; left: 50%; margin-left: -' + (width / 2) + 'px" class="page" data-filename="' + filename + '"><div class="download-icon" title="Download image ' + filename + ' at zoom level ' + settings.zoomLevel + '"></div>');
                 }
 
                 // Calculate the width and height of the outer tiles (the ones that may have weird dimensions)
@@ -1152,6 +1153,25 @@ THE SOFTWARE.
 
         // Handles all the events
         var handleEvents = function() {
+            // Use delegate instead of live for many reasons
+            // Offers the ability to download images
+            if (settings.enableDownload) {
+                $(settings.outerSelector).delegate('.diva .page', 'mouseenter', function(event) {
+                    $(this).find('.download-icon').show();
+                }).delegate('.diva .page', 'mouseleave', function(event) {
+                    $(this).find('.download-icon').hide();
+                });
+
+                // Handle clicking of the download icon
+                $(settings.outerSelector).delegate('.download-icon', 'click', function(event) {
+                    var filename = $(this).parent().attr('data-filename');
+                    var width = $(this).parent().width();
+                    var image = settings.iipServerBaseUrl + filename + '&WID=' + width + '&CVT=JPG';
+                    window.open(image);
+                });
+            }
+
+
             // Handle the grid toggle events
             if (settings.enableGrid) {
                 $(settings.selector + 'grid-icon').click(function() {
