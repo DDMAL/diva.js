@@ -1088,8 +1088,6 @@ THE SOFTWARE.
                         loadGridImages();
                     } else {
                         adjustPages(1);
-                        // Reset the width of the inner element - should recenter pages
-                        $(settings.innerSelector).width(settings.panelWidth);
                     }
                 }, 10);
             });
