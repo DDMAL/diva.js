@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-@import url("diva.css");
+@import url("diva.min.css");
 
 #diva-wrapper {
 	width: 960px;

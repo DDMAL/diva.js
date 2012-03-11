@@ -1,0 +1,39 @@
+/*
+ * Based on the jQuery UI CSS Framework
+ * Pretty different though.
+ *
+ */
+
+.ui-slider {
+    .hidden; // only shown when necessary, in switchSlider()
+    position: relative;
+    border: 1px solid #DDD;
+    .border-radius(4px);
+    height: 6px;
+    width: 100px;
+    z-index: 1;
+    .handle {
+        .border-radius(5px);
+        .frame(#CCC);
+        background: #F6F6F6;
+        outline: none;
+        .square(11px);
+        z-index: 2;
+        cursor: default;
+        position: absolute;
+        top: -3px;
+        margin-left: -2px;
+
+        // When the mouse hovers over it
+        &.hover {
+            background-color: #FFF;
+            .frame(#000);
+        }
+
+        // When the mouse is dragging the slider
+        &.active {
+            background: #FF0000;
+            .frame(#555);
+        }
+    }
+}

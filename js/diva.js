@@ -188,7 +188,7 @@ THE SOFTWARE.
                 // Only try to append the div part if the page has not already been loaded
                 if (!isPageLoaded(pageIndex)) {
                     // Magically centered using left: 50% and margin-left: -(width/2)
-                    content.push('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width: ' + width + 'px; height: ' + height + 'px; left: 50%; margin-left: -' + (width / 2) + 'px" class="diva-page">');
+                    content.push('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width: ' + width + 'px; height: ' + height + 'px; left: 50%; margin-left: -' + (width / 2) + 'px" class="page">');
                 }
 
                 // Calculate the width and height of the outer tiles (the ones that may have weird dimensions)
@@ -646,7 +646,7 @@ THE SOFTWARE.
             $(settings.selector + 'current label').text(settings.numPages);
 
             if (settings.enableAutoTitle) {
-                $(settings.elementSelector).prepend('<div id="' + settings.ID + 'title">' + settings.itemTitle + '</div>');
+                $(settings.elementSelector).prepend('<div id="' + settings.ID + 'title" class="title">' + settings.itemTitle + '</div>');
             }
 
             // Now check that p is in range - only if using the filename is disabled
@@ -684,7 +684,7 @@ THE SOFTWARE.
             var i;
             var heightFromTop = (settings.rowHeight) * rowIndex + settings.fixedPadding;
             var stringBuilder = [];
-            stringBuilder.push('<div class="diva-row" id="' + settings.ID + 'row-' + rowIndex + '" style="height: ' + settings.rowHeight + '; top: ' + heightFromTop + 'px;">');
+            stringBuilder.push('<div class="row" id="' + settings.ID + 'row-' + rowIndex + '" style="height: ' + settings.rowHeight + '; top: ' + heightFromTop + 'px;">');
 
             // Load each page within that row
             for (i = 0; i < settings.pagesPerRow; i++) {
@@ -709,7 +709,7 @@ THE SOFTWARE.
 
                 // The specified image size is 2 px greater than desired - see development notes, "loadRow image sizing"
                 var imgSrc = settings.iipServerBaseUrl + filename + '&amp;HEI=' + (pageHeight + 2) + '&amp;CVT=JPG';
-                stringBuilder.push('<div id="' + settings.ID + 'page-' + pageIndex + '" class="diva-page" style="width: ' + pageWidth + 'px; height: ' + pageHeight + 'px; left: ' + leftOffset + 'px;"><img src="' + imgSrc  + '" style="width: ' + pageWidth + 'px; height: ' + pageHeight + 'px;" /></div>');
+                stringBuilder.push('<div id="' + settings.ID + 'page-' + pageIndex + '" class="page" style="width: ' + pageWidth + 'px; height: ' + pageHeight + 'px; left: ' + leftOffset + 'px;"><img src="' + imgSrc  + '" style="width: ' + pageWidth + 'px; height: ' + pageHeight + 'px;" /></div>');
             }
 
             // Append, using an array as a string builder instead of string concatenation
@@ -1316,19 +1316,19 @@ THE SOFTWARE.
 
         // Handles all status updating etc (both fullscreen and not)
         var createToolbar = function() {
-            var gridIconHTML = (settings.enableGrid) ? '<div class="diva-button" id="' + settings.ID + 'grid-icon"><img src="img/grid.png" title="Toggle grid" /></div>' : '';
-            var linkIconHTML = '<div class="diva-button" id="' + settings.ID + 'link-icon" style="border-left: 0px;"><img src="img/link.png" title="Link" /></div>';
-            var zoomSliderHTML = (settings.enableZoomSlider) ? '<div id="' + settings.ID + 'zoom-slider" class="hidden"></div>' : '';
-            var gridSliderHTML = (settings.enableGridSlider) ? '<div id="' + settings.ID + 'grid-slider" class="hidden"></div>' : '';
-            var gotoPageHTML = (settings.enableGotoPage) ? '<form id="' + settings.ID + 'goto-page"><input type="text" id="' + settings.ID + 'goto-page-input" /> <input type="submit" value="Go to page" style="margin-top: 0px;" /></form>' : '';
-            var zoomSliderLabelHTML = (settings.enableZoomSlider) ? '<div id="' + settings.ID + 'zoom-slider-label" class="hidden">Zoom level: <span id="' + settings.ID + 'zoom-level">' + settings.zoomLevel + '</span></div>' : '';
-            var gridSliderLabelHTML = (settings.enableGridSlider) ? '<div id="' + settings.ID + 'grid-slider-label" class="hidden">Pages per row: <span id="' + settings.ID + 'pages-per-row">' + settings.pagesPerRow + '</span></div>' : '';
-            var pageNumberHTML = '<div class="diva-page-label">Page <span id="' + settings.ID + 'current-page">1</span> of <span id="' + settings.ID + 'num-pages">' + settings.numPages + '</span></div>';
+            var gridIconHTML = (settings.enableGrid) ? '<div class="button" id="' + settings.ID + 'grid-icon"><img src="img/grid.png" title="Toggle grid" /></div>' : '';
+            var linkIconHTML = '<div class="button" id="' + settings.ID + 'link-icon" style="border-left: 0px;"><img src="img/link.png" title="Link" /></div>';
+            var zoomSliderHTML = (settings.enableZoomSlider) ? '<div id="' + settings.ID + 'zoom-slider"></div>' : '';
+            var gridSliderHTML = (settings.enableGridSlider) ? '<div id="' + settings.ID + 'grid-slider"></div>' : '';
+            var gotoPageHTML = (settings.enableGotoPage) ? '<form id="' + settings.ID + 'goto-page" class="goto-form"><input type="text" id="' + settings.ID + 'goto-page-input" / class="input"> <input type="submit" value="Go to page" style="margin-top: 0px;" /></form>' : '';
+            var zoomSliderLabelHTML = (settings.enableZoomSlider) ? '<div id="' + settings.ID + 'zoom-slider-label" class="slider-label">Zoom level: <span id="' + settings.ID + 'zoom-level">' + settings.zoomLevel + '</span></div>' : '';
+            var gridSliderLabelHTML = (settings.enableGridSlider) ? '<div id="' + settings.ID + 'grid-slider-label" class="slider-label">Pages per row: <span id="' + settings.ID + 'pages-per-row">' + settings.pagesPerRow + '</span></div>' : '';
+            var pageNumberHTML = '<div class="page-label">Page <span id="' + settings.ID + 'current-page">1</span> of <span id="' + settings.ID + 'num-pages">' + settings.numPages + '</span></div>';
 
             // CREATE IT NOW
-            var toolbarHTML = '<div id="' + settings.ID + 'tools-left" class="diva-left">' + zoomSliderHTML + gridSliderHTML + zoomSliderLabelHTML + gridSliderLabelHTML + '</div><div id="' + settings.ID + 'tools-right" class="diva-right">' + linkIconHTML + gridIconHTML + '<div class="diva-pages">' + gotoPageHTML + pageNumberHTML + '</div></div>';
+            var toolbarHTML = '<div id="' + settings.ID + 'tools-left" class="tools-left">' + zoomSliderHTML + gridSliderHTML + zoomSliderLabelHTML + gridSliderLabelHTML + '</div><div id="' + settings.ID + 'tools-right" class="tools-right">' + linkIconHTML + gridIconHTML + '<div class="page-tools">' + gotoPageHTML + pageNumberHTML + '</div></div>';
 
-            $(settings.elementSelector).prepend('<div id="' + settings.ID + 'tools">' + toolbarHTML + '</div>');
+            $(settings.elementSelector).prepend('<div id="' + settings.ID + 'tools" class="tools">' + toolbarHTML + '</div>');
 
             // Attach handlers to everything
             $(settings.selector + 'zoom-slider').slider({
@@ -1549,6 +1549,9 @@ THE SOFTWARE.
 
             // For easier selecting of the container element
             settings.elementSelector = '#' + $(element).attr('id');
+
+            // Add the "diva" class to the container (for easier styling)
+            $(settings.elementSelector).addClass('diva');
    
             // Generate an ID that can be used as a prefix for all the other IDs
             settings.ID = $.generateId('diva-');
@@ -1566,8 +1569,8 @@ THE SOFTWARE.
             settings.innerSelector = settings.selector + 'inner';
             
             // Create the inner and outer panels
-            $(settings.elementSelector).append('<div id="' + settings.ID + 'outer"></div>');
-            $(settings.outerSelector).append('<div id="' + settings.ID + 'inner" class="dragger"></div>');
+            $(settings.elementSelector).append('<div id="' + settings.ID + 'outer" class="outer"></div>');
+            $(settings.outerSelector).append('<div id="' + settings.ID + 'inner" class="inner dragger"></div>');
             
             // Adjust the document panel dimensions for Apple touch devices
             if (settings.mobileSafari) {
