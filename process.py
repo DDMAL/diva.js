@@ -112,6 +112,7 @@ def main(opts):
             vimage.resize_linear(new_width, new_height).vips2tiff('{0}:{1},tile:{2}x{2},pyramid'.format(output_file, compression, tilesize))
         else:
             vimage.vips2tiff('{0}:{1},tile:{2}x{2},pyramid'.format(output_file, compression, tilesize))
+        del vimage
         
     # Now print out the max_zoom this document has
     print "This document has a max zoom of: {0}".format(lowest_max_zoom)
@@ -126,6 +127,8 @@ def get_image_info(filepath, tilewidth):
 
     # Now figure out the number of zooms
     zoom_levels = math.ceil(math.log((largest_dim + 1) / (tilewidth), 2)) + 1
+
+    del image
     return (int(zoom_levels), (width, height))
 
 # Resize an image to the desired zoom
