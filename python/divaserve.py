@@ -22,7 +22,7 @@ except ImportError:
 from operator import itemgetter
 
 class DivaServe(object):
-    def __init__(self, directory, t=256, mode="memory"):
+    def __init__(self, directory, t=256, mode="memory", verbose=False):
         """ <directory> is the directory of images to serve 
             "mode" can be either "memory" or "disk" for the cache mode to use
             if "mode" is "disk," you must also set "cachedir".
@@ -39,7 +39,8 @@ class DivaServe(object):
 
         lmz = 0
         # Read image sizes on startup
-        print >> sys.stderr, "loading images..."
+        if verbose:
+            print >> sys.stderr, "loading images..."
         for i,f in enumerate(os.listdir(self.imgdir)):
             if os.path.splitext(f)[1] not in (".tif", ".tiff"):
                 continue
@@ -57,7 +58,8 @@ class DivaServe(object):
             }
 
         self.lowest_max_zoom = lmz
-        print >> sys.stderr, "images loaded"
+        if verbose:
+            print >> sys.stderr, "images loaded"
 
 
     def get(self, zoom):
