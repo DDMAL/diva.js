@@ -28,7 +28,6 @@ THE SOFTWARE.
             adaptivePadding: 0.05,      // The ratio of padding to the page dimension
             backendServer: '',          // The URL to the script returning the JSON data; mandatory
             enableAutoTitle: true,      // Shows the title within a div of id diva-title
-            enableDownload: true,       // Allow users to download images
             enableFilename: true,       // Uses filenames instead of page numbers for links (i=bm_001.tif instead of p=1)
             enableFullscreen: true,     // Enable or disable fullscreen mode
             enableGotoPage: true,       // A "go to page" jump box
@@ -58,6 +57,7 @@ THE SOFTWARE.
             onZoomIn: null,             // Callback function for zooming in only
             onZoomOut: null,            // Callback function for zooming out only
             pagesPerRow: 5,             // The default number of pages per row in grid view
+            plugins: false,             // Override with a list of plugin objects
             tileFadeSpeed: 300,         // The tile fade-in speed in ms (or "fast" or "slow"; 0 to disable)
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
@@ -104,6 +104,7 @@ THE SOFTWARE.
             numPages: 0,                // Number of pages in the array
             numRows: 0,                 // Number of rows
             pages: [],                  // An array containing the data for all the pages
+            pageTools: '',              // The string for page tools
             panelHeight: 0,             // Height of the panel. Set in initiateViewer()
             panelWidth: 0,              // Width of the panel. Set in initiateViewer()
             prevVptTop: 0,              // Used to determine vertical scroll direction
@@ -189,7 +190,7 @@ THE SOFTWARE.
                 // Only try to append the div part if the page has not already been loaded
                 if (!isPageLoaded(pageIndex)) {
                     // Magically centered using left: 50% and margin-left: -(width/2)
-                    content.push('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width: ' + width + 'px; height: ' + height + 'px; left: 50%; margin-left: -' + (width / 2) + 'px" class="page" data-filename="' + filename + '"><div class="download-icon" title="Download image ' + filename + ' at zoom level ' + settings.zoomLevel + '"></div>');
+                    content.push('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width: ' + width + 'px; height: ' + height + 'px; left: 50%; margin-left: -' + (width / 2) + 'px" class="page" data-filename="' + filename + '">' + settings.pageTools);
                 }
 
                 // Calculate the width and height of the outer tiles (the ones that may have weird dimensions)
@@ -782,6 +783,9 @@ THE SOFTWARE.
                     settings.verticalPadding = settings.fixedPadding;
                 }
 
+                // If the vertical padding becomes less than 50, set it to 50
+                settings.verticalPadding = Math.max(settings.verticalPadding, 50);
+
                 // Now reset some things that need to be changed after each zoom
                 settings.totalHeight = data.dims.t_hei + settings.verticalPadding * (settings.numPages + 1); 
                 settings.zoomLevel = zoomLevel;
@@ -995,6 +999,9 @@ THE SOFTWARE.
 
             // Zoom
             handleZoom(newZoomLevel);
+
+            // Update the toolbar - move this elsewhere eventually
+            settings.toolbar.setZoomLevel(newZoomLevel);
         };
 
         // Bound to an event handler if mobile Safari is detected; prevents window dragging
@@ -1153,26 +1160,6 @@ THE SOFTWARE.
 
         // Handles all the events
         var handleEvents = function() {
-            // Use delegate instead of live for many reasons
-            // Offers the ability to download images
-            if (settings.enableDownload) {
-                $(settings.outerSelector).delegate('.diva .page', 'mouseenter', function(event) {
-                    $(this).find('.download-icon').show();
-                }).delegate('.diva .page', 'mouseleave', function(event) {
-                    $(this).find('.download-icon').hide();
-                });
-
-                // Handle clicking of the download icon
-                $(settings.outerSelector).delegate('.download-icon', 'click', function(event) {
-                    var filename = $(this).parent().attr('data-filename');
-                    // Subtract 1 to ensure that it gets the right size for JP2000
-                    var width = $(this).parent().width() - 1;
-                    var image = settings.iipServerBaseUrl + filename + '&WID=' + width + '&CVT=JPG';
-                    window.open(image);
-                });
-            }
-
-
             // Handle the grid toggle events
             if (settings.enableGrid) {
                 $(settings.selector + 'grid-icon').click(function() {
@@ -1691,7 +1678,26 @@ THE SOFTWARE.
                 loadDocument(settings.zoomLevel);
             }
         
+            // Do all the plugin initialisation
+            initPlugins();
+
             handleEvents();
+        };
+
+        var initPlugins = function() {
+            if (settings.plugins) {
+                var pageTools = ['<div class="page-tools">'];
+                $.each(settings.plugins, function(index, plugin) {
+                    // Set all the settings
+                    plugin.init(settings);
+                    // Create the pageTools bar
+                    pageTools.push('<div class="' + plugin.pluginName + '-icon" title="' + plugin.titleText + '"></div>');
+                    // Also, delegate and shit
+                    $(settings.outerSelector).delegate('.' + plugin.pluginName + '-icon', 'click', plugin.handleClick);
+                });
+                pageTools.push('</div>');
+                settings.pageTools = pageTools.join('');
+            }
         };
 
         // Call the init function when this object is created.

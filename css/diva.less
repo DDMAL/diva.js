@@ -104,15 +104,18 @@ body {
                 position: absolute;
                 .pretty-shadow(6px);
                 background: url('../img/loading.gif') no-repeat center;
-                .download-icon {
+                .page-tools {
                     position: absolute;
-                    top: 0px;
-                    right: 0px;
-                    background: url('../img/download.png') no-repeat center @white;
-                    width: 80px;
-                    height: 60px;
-                    z-index: 2;
-                    .hidden;
+                    top: -25px;
+                    left: 0px;
+                    width: 75px;
+                    height: 25px;
+                    z-index: 3;
+                    div {
+                        display: inline-block;
+                        .square(25px);
+                        cursor: pointer;
+                    }
                 }
             }
 
