@@ -19,7 +19,6 @@ var divaCanvas = (function() {
     // Set up some default settings (can be overridden the normal way)
     var defaults = {
         contrastStep: 0.05,
-        mapSize: 190,
         maxBrightness: 150,
         maxContrast: 3,
         minBrightness: -100,
@@ -147,7 +146,7 @@ var divaCanvas = (function() {
         map.canvas.height = map.size;
 
         map.context = map.canvas.getContext('2d');
-        map.context.fillRect(0, 0, 190, 190);
+        map.context.fillRect(0, 0, map.size, map.size);
         map.scaleFactor = settings.mapSize / canvas.size;
         map.cornerX = canvas.cornerX * map.scaleFactor;
         map.cornerY = canvas.cornerY * map.scaleFactor;
@@ -197,6 +196,9 @@ var divaCanvas = (function() {
 
             // Create the DOM elements
             $('body').append('<div id="diva-canvas-backdrop"><div id="diva-canvas-tools" style="right: ' + (settings.scrollbarWidth + 20) + 'px"><div id="diva-map-viewbox"></div><canvas id="diva-canvas-minimap"></canvas><br /><span>Brightness: <i>0</i> <b id="brightness-reset">(Reset)</b></span><div id="brightness-slider"></div><span>Contrast: <i>1</i> <b id="contrast-reset">(Reset)</b></span><div id="contrast-slider"></div><span>Rotation: <i>0</i>&deg; (<b class="rotation-reset" id="rotation-reset">0</b>&deg; <b class="rotation-reset">90</b>&deg; <b class="rotation-reset">180</b>&deg; <b class="rotation-reset">270</b>&deg;)</span><div id="rotation-slider"></div></div><canvas id="diva-canvas"></canvas><div id="diva-canvas-close"></div></div>');
+
+            // Save the size of the map, as defined in the CSS
+            settings.mapSize = $('#diva-canvas-minimap').width();
             
             // Handle events (sliders, clicking, etc)
             $('#brightness-slider').slider({

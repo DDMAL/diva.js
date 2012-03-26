@@ -1,3 +1,5 @@
+@toolsWidth: 250px;
+
 .canvas-icon {
     .center-icon("tools");
 }
@@ -19,7 +21,7 @@
     position: fixed;
     top: 20px;
     right: 20px;
-    width: 210px;
+    width: @toolsWidth;
     z-index: 9051;
     background: rgba(0, 0, 0, 0.5);
     padding-bottom: 10px;
@@ -34,13 +36,14 @@
         }
     }
     .ui-slider {
-        width: 180px;
+        width: @toolsWidth - 30px;
         display: block;
         margin: 10px;
     }
 }
 
 #diva-canvas-minimap {
+    .square(@toolsWidth - 20px);
     margin: 10px;
     cursor: crosshair;
 }
