@@ -9,10 +9,15 @@ var divaCanvas = (function() {
     var canvas = {},
         map = {},
         settings = {},
+        oldLevels = { // fix this later
+            c: 1,
+            b: 0,
+            r: 0
+        },
         levels = {
             c: 1,
             b: 0,
-            r: 0,
+            r: 0
         },
         image;
 
@@ -39,11 +44,6 @@ var divaCanvas = (function() {
     };
 
     var rotateCanvas = function(aCanvas, angle) {
-        if (angle == levels.r) {
-            // Angle is the same - no rotation needed
-            return;
-        }
-
         // Do the actual rotation
         var context = aCanvas.context;
         var center = aCanvas.size / 2;
@@ -57,21 +57,32 @@ var divaCanvas = (function() {
     };
 
     var handleRotate = function(angle) {
-        // First figure out the current center of the viewport
-        var leftScroll = $('#diva-canvas-backdrop').scrollLeft();
-        var topScroll = $('#diva-canvas-backdrop').scrollTop();
-        var leftOffset = settings.viewport.width / 2;
-        var topOffset = settings.viewport.height / 2;
-        var newCenter = getNewCenter({x: leftScroll + leftOffset, y: topScroll + topOffset}, angle);
-
-        // Rotate and scroll
-        rotateCanvas(canvas, angle);
-        $('#diva-canvas-backdrop').scrollLeft(newCenter.x - leftOffset);
-        $('#diva-canvas-backdrop').scrollTop(newCenter.y - topOffset);
-
         // Now rotate the map
         rotateCanvas(map, angle);
+    };
 
+    var updateCanvas = function() {
+        var angle = levels['r'];
+        var oldAngle = oldLevels['r'];
+        if (angle !== oldAngle) {
+            // First figure out the current center of the viewport
+            var leftScroll = $('#diva-canvas-backdrop').scrollLeft();
+            var topScroll = $('#diva-canvas-backdrop').scrollTop();
+            var leftOffset = settings.viewport.width / 2;
+            var topOffset = settings.viewport.height / 2;
+            var newCenter = getNewCenter({x: leftScroll + leftOffset, y: topScroll + topOffset}, angle);
+
+            rotateCanvas(canvas, angle);
+            $('#diva-canvas-backdrop').scrollLeft(newCenter.x - leftOffset);
+            $('#diva-canvas-backdrop').scrollTop(newCenter.y - topOffset);
+            oldLevels['r'] = angle;
+        }
+
+        if (levels['b'] !== oldLevels['b'] || levels['c'] !== oldLevels['c']) {
+            adjustLevels(canvas);
+            oldLevels['b'] = levels['b'];
+            oldLevels['c'] = levels['c'];
+        }
     };
 
     var handleLevelUpdate = function(key, value, slider) {
@@ -82,7 +93,6 @@ var divaCanvas = (function() {
 
             levels[key] = value;
             $(slider).prev().find('i').text(value);
-            adjustLevels(canvas);
             adjustLevels(map);
         }
     };
@@ -195,7 +205,7 @@ var divaCanvas = (function() {
             settings.inCanvas = false;
 
             // Create the DOM elements
-            $('body').append('<div id="diva-canvas-backdrop"><div id="diva-canvas-tools" style="right: ' + (settings.scrollbarWidth + 20) + 'px"><div id="diva-map-viewbox"></div><canvas id="diva-canvas-minimap"></canvas><br /><span>Brightness: <i>0</i> <b id="brightness-reset">(Reset)</b></span><div id="brightness-slider"></div><span>Contrast: <i>1</i> <b id="contrast-reset">(Reset)</b></span><div id="contrast-slider"></div><span>Rotation: <i>0</i>&deg; (<b class="rotation-reset" id="rotation-reset">0</b>&deg; <b class="rotation-reset">90</b>&deg; <b class="rotation-reset">180</b>&deg; <b class="rotation-reset">270</b>&deg;)</span><div id="rotation-slider"></div></div><canvas id="diva-canvas"></canvas><div id="diva-canvas-close"></div></div>');
+            $('body').append('<div id="diva-canvas-backdrop"><div id="diva-canvas-tools" style="right: ' + (settings.scrollbarWidth + 20) + 'px"><div id="diva-map-viewbox"></div><canvas id="diva-canvas-minimap"></canvas><br /><span>Brightness: <i>0</i> <b id="brightness-reset">(Reset)</b></span><div id="brightness-slider"></div><span>Contrast: <i>1</i> <b id="contrast-reset">(Reset)</b></span><div id="contrast-slider"></div><span>Rotation: <i>0</i>&deg; (<b class="rotation-reset" id="rotation-reset">0</b>&deg; <b class="rotation-reset">90</b>&deg; <b class="rotation-reset">180</b>&deg; <b class="rotation-reset">270</b>&deg;)</span><div id="rotation-slider"></div><div id="diva-canvas-applybox"><span><button type="button" id="diva-canvas-apply">Apply</button></span><span id="diva-canvas-loading">Loading ...</span></div></div><div id="diva-canvas-wrapper"><canvas id="diva-canvas"></canvas></div><div id="diva-canvas-close"></div></div>');
 
             // Save the size of the map, as defined in the CSS
             settings.mapSize = $('#diva-canvas-minimap').width();
@@ -206,7 +216,7 @@ var divaCanvas = (function() {
                 max: settings.maxBrightness,
                 step: 1,
                 value: 0,
-                stop: function(event, ui) {
+                slide: function(event, ui) {
                     handleLevelUpdate('b', ui.value, this);
                 }
             });
@@ -216,7 +226,7 @@ var divaCanvas = (function() {
                 max: settings.maxContrast,
                 step: settings.contrastStep,
                 value: 1,
-                stop: function(event, ui) {
+                slide: function(event, ui) {
                     handleLevelUpdate('c', ui.value, this);
                 }
             });
@@ -226,7 +236,7 @@ var divaCanvas = (function() {
                 max: 359,
                 step: 1,
                 value: 0,
-                stop: function(event, ui) {
+                slide: function(event, ui) {
                     handleLevelUpdate('r', ui.value, this);
                 }
             });
@@ -242,6 +252,14 @@ var divaCanvas = (function() {
             $('.rotation-reset').click(function() {
                 var angle = $(this).text();
                 handleLevelUpdate('r', $(this).text(), $('#rotation-slider').slider('value', $(this).text()));
+            });
+
+            $('#diva-canvas-apply').click(function() {
+                $('#diva-canvas-loading').show();
+                setTimeout(function() {
+                    updateCanvas()
+                    $('#diva-canvas-loading').fadeOut(1000);
+                }, 10);
             });
 
             $('#diva-canvas-close').click(function() {
