@@ -75,13 +75,15 @@ var divaCanvas = (function() {
             rotateCanvas(canvas, angle);
             $('#diva-canvas-backdrop').scrollLeft(newCenter.x - leftOffset);
             $('#diva-canvas-backdrop').scrollTop(newCenter.y - topOffset);
-            oldLevels['r'] = angle;
         }
 
-        if (levels['b'] !== oldLevels['b'] || levels['c'] !== oldLevels['c']) {
+        // Only call adjustLevels again if something changed
+        // Brightness, contrast, or rotation
+        if (levels['b'] !== oldLevels['b'] || levels['c'] !== oldLevels['c'] || levels['r'] !== oldLevels['r']) {
             adjustLevels(canvas);
             oldLevels['b'] = levels['b'];
             oldLevels['c'] = levels['c'];
+            oldLevels['r'] = angle;
         }
     };
 
