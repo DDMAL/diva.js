@@ -663,6 +663,11 @@ THE SOFTWARE.
             if (settings.enableFilename && iParamPage >= 0) {
                 settings.goDirectlyTo = iParamPage;
             }
+
+            // Execute the setup hook for each plugin (if defined)
+            $.each(settings.plugins, function(index, plugin) {
+                $.executeCallback(plugin.setupHook, settings);
+            });
         };
 
         // Check if a row (in grid view) has been appended already
@@ -1692,8 +1697,10 @@ THE SOFTWARE.
                     plugin.init(settings);
                     // Create the pageTools bar
                     pageTools.push('<div class="' + plugin.pluginName + '-icon" title="' + plugin.titleText + '"></div>');
-                    // Also, delegate and shit
-                    $(settings.outerSelector).delegate('.' + plugin.pluginName + '-icon', 'click', plugin.handleClick);
+                    // Delegate the click event - pass it the settings
+                    $(settings.outerSelector).delegate('.' + plugin.pluginName + '-icon', 'click', function(event) {
+                        plugin.handleClick.call(this, event, settings);
+                    });
                 });
                 pageTools.push('</div>');
                 settings.pageTools = pageTools.join('');

@@ -172,7 +172,7 @@ var divaCanvas = (function() {
         updateViewBox();
     };
 
-    var loadCanvas = function(imageURL) {
+    var loadCanvas = function(imageURL, callback) {
         image = new Image();
         image.src = imageURL;
         image.onload = function() {
@@ -193,8 +193,18 @@ var divaCanvas = (function() {
             canvas.context.drawImage(image, canvas.cornerX, canvas.cornerY, canvas.width, canvas.height);
             canvas.data = canvas.context.getImageData(0, 0, canvas.size, canvas.size);
 
-            loadMap(image);
+            // Only load the map the first time (when there is no callback)
+            if (callback == undefined) {
+                loadMap(image);
+            }
+
+            $.executeCallback(callback);
         };
+    };
+
+    var getImageURL = function(zoomLevel) {
+        var width = settings.zoomWidthRatio * Math.pow(2, zoomLevel);
+        return settings.iipServerBaseUrl + settings.filename + '&WID=' + width + '&CVT=JPG';
     };
 
     return {
@@ -208,7 +218,7 @@ var divaCanvas = (function() {
             settings.inCanvas = false;
 
             // Create the DOM elements
-            $('body').append('<div id="diva-canvas-backdrop"><div id="diva-canvas-tools" style="right: ' + (settings.scrollbarWidth + 20) + 'px"><div id="diva-map-viewbox"></div><canvas id="diva-canvas-minimap"></canvas><br /><span>Brightness: <i>0</i> <b id="brightness-reset">(Reset)</b></span><div id="brightness-slider"></div><span>Contrast: <i>1</i> <b id="contrast-reset">(Reset)</b></span><div id="contrast-slider"></div><span>Rotation: <i>0</i>&deg; (<b class="rotation-reset" id="rotation-reset">0</b>&deg; <b class="rotation-reset">90</b>&deg; <b class="rotation-reset">180</b>&deg; <b class="rotation-reset">270</b>&deg;)</span><div id="rotation-slider"></div><div id="diva-canvas-applybox"><span><button type="button" id="diva-canvas-apply">Apply</button></span><span id="diva-canvas-loading">Loading ...</span></div></div><div id="diva-canvas-wrapper"><canvas id="diva-canvas"></canvas></div><div id="diva-canvas-close"></div></div>');
+            $('body').append('<div id="diva-canvas-backdrop"><div id="diva-canvas-tools" style="right: ' + (settings.scrollbarWidth + 20) + 'px"><div id="diva-map-viewbox"></div><canvas id="diva-canvas-minimap"></canvas><br /><span>Brightness: <i>0</i> <b id="brightness-reset">(Reset)</b></span><div id="brightness-slider"></div><span>Contrast: <i>1</i> <b id="contrast-reset">(Reset)</b></span><div id="contrast-slider"></div><span>Rotation: <i>0</i>&deg; (<b class="rotation-reset" id="rotation-reset">0</b>&deg; <b class="rotation-reset">90</b>&deg; <b class="rotation-reset">180</b>&deg; <b class="rotation-reset">270</b>&deg;)</span><div id="rotation-slider"></div><span>Zoom level: <i>0</i></span><div id="zoom-slider"></div><div id="diva-canvas-applybox"><span><button type="button" id="diva-canvas-apply">Apply</button></span><span id="diva-canvas-loading">Loading ...</span></div></div><div id="diva-canvas-wrapper"><canvas id="diva-canvas"></canvas></div><div id="diva-canvas-close"></div></div>');
 
             // Save the size of the map, as defined in the CSS
             settings.mapSize = $('#diva-canvas-minimap').width();
@@ -294,13 +304,11 @@ var divaCanvas = (function() {
 
             $('#diva-canvas-wrapper').scroll(function() {
                 if (settings.inCanvas) {
-                    console.log("scroll");
                     updateViewBox();
                 }
             });
 
             $('#diva-canvas-minimap, #diva-map-viewbox').click(function(event) {
-                console.log("clicked");
                 // offset - the top left corner
                 var offsetY = 30;
                 var offsetX = settings.viewport.width - settings.mapSize - 30;
@@ -322,7 +330,12 @@ var divaCanvas = (function() {
         },
         pluginName: 'canvas',
         titleText: 'View the image on a canvas and adjust various settings',
-        handleClick: function(event) {
+        setupHook: function(divaSettings) {
+            settings.minZoomLevel = divaSettings.minZoomLevel;
+            settings.maxZoomLevel = divaSettings.maxZoomLevel;
+        },
+        handleClick: function(event, divaSettings) {
+            var zoomLevel = divaSettings.zoomLevel;
             // Prevent scroll in body, and show the canvas backdrop
             $('body').addClass('overflow-hidden');
             $('#diva-canvas-backdrop').show();
@@ -334,8 +347,38 @@ var divaCanvas = (function() {
             var page = $(this).parent().parent();
             var filename = $(page).attr('data-filename');
             var width = $(page).width() - 1;
-            var imageURL = settings.iipServerBaseUrl + filename + '&WID=' + width + '&CVT=JPG';
+            settings.zoomWidthRatio = width / Math.pow(2, zoomLevel);
+            settings.filename = filename;
+            var imageURL = getImageURL(zoomLevel);
+
             loadCanvas(imageURL);
+
+            $('#zoom-slider').prev().find('i').text(zoomLevel);
+
+            $('#zoom-slider').slider({
+                min: settings.minZoomLevel,
+                max: settings.maxZoomLevel,
+                step: 1,
+                value: zoomLevel,
+                slide: function(event, ui) {
+                    $(this).prev().find('i').text(ui.value);
+                    // Figure out the new width based on the old zoom level & width
+                    var imageURL = getImageURL(ui.value);
+
+                    loadCanvas(imageURL, function() {
+                        // Reset oldLevels to defaults, then adjust again
+                        oldLevels = {c: 1, b: 0, r: 0}
+                        if (oldLevels['r'] !== levels['r']) {
+                            rotateCanvas(canvas, levels['r']);
+                        }
+                        adjustLevels(canvas);
+                        map.scaleFactor = map.size / canvas.size;
+                        updateViewBox();
+                    });
+                }
+            });
+
+            // Figure out the multiplier for width/zoomLevel ratio etc
         }
     }
 })();
