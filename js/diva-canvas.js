@@ -204,7 +204,7 @@ var divaCanvas = (function() {
 
     var getImageURL = function(zoomLevel) {
         var width = settings.zoomWidthRatio * Math.pow(2, zoomLevel);
-        return settings.iipServerBaseUrl + settings.filename + '&WID=' + width + '&CVT=JPG';
+        return settings.iipServerURL + settings.filename + '&WID=' + width + '&CVT=JPG';
     };
 
     return {

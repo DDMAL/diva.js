@@ -26,7 +26,7 @@ THE SOFTWARE.
         // These are elements that can be overridden upon instantiation
         var defaults =  {
             adaptivePadding: 0.05,      // The ratio of padding to the page dimension
-            backendServer: '',          // The URL to the script returning the JSON data; mandatory
+            divaserveURL: '',           // URL to the divaserve.php script
             enableAutoTitle: true,      // Shows the title within a div of id diva-title
             enableFilename: true,       // Uses filenames instead of page numbers for links (i=bm_001.tif instead of p=1)
             enableFullscreen: true,     // Enable or disable fullscreen mode
@@ -38,8 +38,8 @@ THE SOFTWARE.
             enableZoomSlider: true,     // Enable or disable the zoom slider (for zooming in and out)
             fixedPadding: 10,           // Fallback if adaptive padding is set to 0
             fixedHeightGrid: true,      // So each page in grid view has the same height (only widths differ)
-            viewerFloat: 'none',        // Change to left or right for dual-viewer layouts
-            iipServerBaseUrl: '',       // The URL to the IIPImage installation, including the ?FIF=
+            iipServerURL: '',          // The URL to the IIPImage installation, including the ?FIF=
+            imageDir: '',               // Image directory, relative to the root defined in divaserve
             maxPagesPerRow: 8,          // Maximum number of pages per row, grid view
             maxZoomLevel: 0,            // Optional; defaults to the max zoom returned in the JSON response
             minPagesPerRow: 2,          // 2 for the spread view. Recommended to leave it
@@ -61,6 +61,7 @@ THE SOFTWARE.
             tileFadeSpeed: 300,         // The tile fade-in speed in ms (or "fast" or "slow"; 0 to disable)
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
+            viewerFloat: 'none',        // Change to left or right for dual-viewer layouts
             viewportMargin: 400,        // Pretend tiles +/- 400px away from viewport are in
             zoomLevel: 2                // The initial zoom level (used to store the current zoom level)
         };
@@ -211,7 +212,7 @@ THE SOFTWARE.
                         var zoomLevel = (maxZoom === settings.maxZoomLevel) ? settings.zoomLevel : settings.zoomLevel + (maxZoom - settings.maxZoomLevel);
                         tileHeight = (row === rows - 1) ? lastHeight : settings.tileHeight; // If it's the LAST tile, calculate separately
                         tileWidth = (col === cols - 1) ? lastWidth : settings.tileWidth; // Otherwise, just set it to the default height/width
-                        imgSrc = settings.iipServerBaseUrl + filename + '&amp;JTL=' + zoomLevel + ',' + tileNumber;
+                        imgSrc = settings.iipServerURL + filename + '&amp;JTL=' + zoomLevel + ',' + tileNumber;
 
                         if (!isTileLoaded(pageIndex, tileNumber) && isTileVisible(pageIndex, row, col)) {
                             content.push('<div id="' + settings.ID + 'tile-' + pageIndex + '-' + tileNumber + '"style="display: ' + displayStyle + '; position: absolute; top: ' + top + 'px; left: ' + left + 'px; background-image: url(\'' + imgSrc + '\'); height: ' + tileHeight + 'px; width: ' + tileWidth + 'px;"></div>');
@@ -606,9 +607,17 @@ THE SOFTWARE.
         // Perform the AJAX request; afterwards, execute the callback
         var ajaxRequest = function(zoomLevel, successCallback) {
             $.ajax({
-                url: settings.backendServer + '&z=' + zoomLevel,
+                url: settings.divaserveURL,
+                data: {
+                    z: zoomLevel,
+                    d: settings.imageDir
+                },
                 cache: true,
                 dataType: 'json',
+                error: function(data) {
+                    // Show a basic error message within the document viewer pane
+                    $(settings.outerSelector).text("Invalid URL. Error code: " + data.status);
+                },
                 success: function(data) {
                     settings.pages = data.pgs;
                     settings.maxWidth = data.dims.max_w;
@@ -715,7 +724,7 @@ THE SOFTWARE.
                 leftOffset += (settings.fixedHeightGrid) ? (settings.gridPageWidth - pageWidth) / 2 : 0;
 
                 // The specified image size is 2 px greater than desired - see development notes, "loadRow image sizing"
-                var imgSrc = settings.iipServerBaseUrl + filename + '&amp;HEI=' + (pageHeight + 2) + '&amp;CVT=JPG';
+                var imgSrc = settings.iipServerURL + filename + '&amp;HEI=' + (pageHeight + 2) + '&amp;CVT=JPG';
                 stringBuilder.push('<div id="' + settings.ID + 'page-' + pageIndex + '" class="page" style="width: ' + pageWidth + 'px; height: ' + pageHeight + 'px; left: ' + leftOffset + 'px;"><img src="' + imgSrc  + '" style="width: ' + pageWidth + 'px; height: ' + pageHeight + 'px;" /></div>');
             }
 

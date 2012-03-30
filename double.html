@@ -24,8 +24,9 @@
             //plugins: [divaDownload, divaCanvas],
             iipLeftURL: 'http://www.example.com/fcgi-bin/iipsrv.fcgi?FIF=/path/to/images/',
             iipRightURL: 'http://www.example.com/fcgi-bin/iipsrv.fcgi?FIF=/path/to/images/',
-            divaserveLeftURL: 'http://www.example.com/divaserve.php?d=images',
-            divaserveRightURL: 'http://www.example.com/divaserve.php?d=images',
+            divaserveURL: 'http://www.example.com/divaserve.php',
+            leftImageDir: 'imagedirectory',
+            rightImageDir: 'imagedirectory2',
             resizeOffset: 50,
             tileFadeSpeed: 100
         }
@@ -44,8 +45,9 @@
         $('#diva-one').diva({
             tileFadeSpeed: settings.tileFadeSpeed,
             viewerFloat: 'left',
-            iipServerBaseUrl: settings.iipLeftURL,
-            backendServer: settings.divaserveLeftURL,
+            iipServerURL: settings.iipLeftURL,
+            divaserveURL: settings.divaserveURL,
+            imageDir: leftImageDir,
             onGrid: onGrid,
             onScroll: function(scrollSoFar) {
                 if (lockViewers) {
@@ -58,8 +60,9 @@
         $('#diva-two').diva({
             tileFadeSpeed: settings.tileFadeSpeed,
             viewerFloat: 'right',
-            iipServerBaseUrl: settings.iipRightURL,
-            backendServer: settings.divaserveRightURL,
+            iipServerURL: settings.iipRightURL,
+            divaserveURL: settings.divaserveURL,
+            imageDir: rightImageDir,
             onGrid: onGrid,
             onScroll: function(scrollSoFar) {
                 if (lockViewers) {
