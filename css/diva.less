@@ -124,13 +124,6 @@ body {
                 width: 100%;
             }
 
-            &.grab {
-                cursor: url('../img/openhand.cur'), pointer !important;
-            }
-
-            &.grabbing {
-                cursor: url('../img/closedhand.cur'), move !important;
-            }
         }
 
         &.fullscreen {
@@ -142,6 +135,14 @@ body {
             left: 0;
         }
     }
+}
+
+.grab {
+    cursor: url('../img/openhand.cur'), pointer;
+}
+
+.grabbing {
+    cursor: url('../img/closedhand.cur'), move !important;
 }
 
 // Other fullscreen tool stuff

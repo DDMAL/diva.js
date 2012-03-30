@@ -172,12 +172,6 @@ body {
   position: absolute;
   width: 100%;
 }
-.diva .outer .inner.grab {
-  cursor: url('../img/openhand.cur'), pointer !important;
-}
-.diva .outer .inner.grabbing {
-  cursor: url('../img/closedhand.cur'), move !important;
-}
 .diva .outer.fullscreen {
   width: 100% !important;
   height: 100% !important;
@@ -185,6 +179,12 @@ body {
   position: fixed !important;
   top: 0;
   left: 0;
+}
+.grab {
+  cursor: url('../img/openhand.cur'), pointer;
+}
+.grabbing {
+  cursor: url('../img/closedhand.cur'), move !important;
 }
 div[id$="diva-fullscreen"] {
   position: absolute;
@@ -223,7 +223,6 @@ div[id$="diva-link-popup"] input:focus {
 #diva-canvas-backdrop {
   z-index: 9050;
   position: fixed;
-  overflow: scroll;
   top: 0;
   left: 0;
   bottom: 0;
@@ -237,7 +236,7 @@ div[id$="diva-link-popup"] input:focus {
   top: 20px;
   right: 20px;
   width: 250px;
-  z-index: 9051;
+  z-index: 9100;
   background: rgba(0, 0, 0, 0.5);
   padding-bottom: 10px;
 }
@@ -258,7 +257,6 @@ div[id$="diva-link-popup"] input:focus {
 }
 #diva-canvas-loading {
   display: none;
-  opacity: 1;
 }
 #diva-canvas-minimap {
   height: 230px;
@@ -271,6 +269,8 @@ div[id$="diva-link-popup"] input:focus {
   left: 0;
   right: 0;
   margin: 0 auto;
+  z-index: 9051;
+  cursor: url('../img/openhand.cur'), pointer;
 }
 #diva-canvas-close {
   position: fixed;
@@ -279,7 +279,7 @@ div[id$="diva-link-popup"] input:focus {
   height: 18px;
   width: 18px;
   background: url('../img/close.png') no-repeat;
-  z-index: 9052;
+  z-index: 9058;
   cursor: pointer;
 }
 #diva-canvas-close:hover {
@@ -294,6 +294,15 @@ div[id$="diva-link-popup"] input:focus {
 }
 .overflow-hidden {
   overflow: hidden !important;
+}
+#diva-canvas-wrapper {
+  z-index: 9051;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  overflow: scroll;
 }
 .download-icon {
   background: url('../img/download.png') no-repeat center;

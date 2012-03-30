@@ -143,8 +143,8 @@ var divaCanvas = (function() {
     };
 
     var updateViewBox = function() {
-        var cornerX = $('#diva-canvas-backdrop').scrollLeft() * map.scaleFactor + 10;
-        var cornerY = $('#diva-canvas-backdrop').scrollTop() * map.scaleFactor + 10;
+        var cornerX = $('#diva-canvas-wrapper').scrollLeft() * map.scaleFactor + 10;
+        var cornerY = $('#diva-canvas-wrapper').scrollTop() * map.scaleFactor + 10;
         // Subtract 2 to compensate for the border
         var height = Math.min(settings.viewport.height * map.scaleFactor, settings.mapSize) - 2;
         var width = Math.min(settings.viewport.width * map.scaleFactor, settings.mapSize) - 2;
@@ -192,6 +192,7 @@ var divaCanvas = (function() {
             canvas.context = canvas.canvas.getContext('2d');
             canvas.context.drawImage(image, canvas.cornerX, canvas.cornerY, canvas.width, canvas.height);
             canvas.data = canvas.context.getImageData(0, 0, canvas.size, canvas.size);
+
             loadMap(image);
         };
     };
@@ -291,20 +292,32 @@ var divaCanvas = (function() {
                 }
             });
 
-            $('#diva-canvas-backdrop').scroll(function() {
+            $('#diva-canvas-wrapper').scroll(function() {
                 if (settings.inCanvas) {
+                    console.log("scroll");
                     updateViewBox();
                 }
             });
 
             $('#diva-canvas-minimap, #diva-map-viewbox').click(function(event) {
+                console.log("clicked");
                 // offset - the top left corner
                 var offsetY = 30;
                 var offsetX = settings.viewport.width - settings.mapSize - 30;
                 var scaledX = (event.pageX - offsetX) / map.scaleFactor;
                 var scaledY = (event.pageY - offsetY) / map.scaleFactor;
-                $('#diva-canvas-backdrop').scrollTop(scaledY - settings.viewport.height / 2);
-                $('#diva-canvas-backdrop').scrollLeft(scaledX - settings.viewport.width / 2);
+                $('#diva-canvas-wrapper').scrollTop(scaledY - settings.viewport.height / 2);
+                $('#diva-canvas-wrapper').scrollLeft(scaledX - settings.viewport.width / 2);
+            });
+
+            // Drag scroll
+            $('#diva-canvas').mousedown(function() {
+                $(this).addClass('grabbing');
+            }).mouseup(function() {
+                $(this).removeClass('grabbing');
+            });
+            $('#diva-canvas-wrapper').dragscrollable({
+                acceptPropagatedEvent: true
             });
         },
         pluginName: 'canvas',
