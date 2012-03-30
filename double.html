@@ -6,15 +6,22 @@
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 
     <link rel="stylesheet" href="css/double.css" type="text/css" />
-    <link rel="stylesheet" href="css/jquery-ui.css" type="text/css" />
 
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
     <script src="js/jquery-ui.min.js" type="text/javascript"></script>
     <script src="js/diva-min.js" type="text/javascript"></script>
+
+    <!--
+    <script src="js/diva-download.js" type="text/javascript"></script>
+    <script src="js/diva-canvas.js" type="text/javascript"></script>
+    -->
+
     <script type="text/javascript">
     $(document).ready(function() {
         /* Beginning of settings (i.e. things you can/should change) */
         var settings = {
+            // To enable plugins, uncomment the <script> tag + the next line
+            //plugins: [divaDownload, divaCanvas],
             iipLeftURL: 'http://www.example.com/fcgi-bin/iipsrv.fcgi?FIF=/path/to/images/',
             iipRightURL: 'http://www.example.com/fcgi-bin/iipsrv.fcgi?FIF=/path/to/images/',
             divaserveLeftURL: 'http://www.example.com/divaserve.php?d=images',
