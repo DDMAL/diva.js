@@ -1,0 +1,99 @@
+@toolsWidth: 250px;
+
+.canvas-icon {
+    .center-icon("tools");
+}
+
+#diva-canvas-backdrop {
+    z-index: 9050;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    display: none;
+    background: rgba(50, 50, 50, 0.9);
+}
+
+#diva-canvas-tools {
+    color: @white;
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: @toolsWidth;
+    z-index: 9100;
+    background: rgba(0, 0, 0, 0.5);
+    padding-bottom: 10px;
+    span {
+        margin-left: 10px;
+        i {
+            font-style: normal;
+        }
+        b {
+            font-weight: normal;
+            cursor: pointer;
+        }
+    }
+    .ui-slider {
+        width: @toolsWidth - 30px;
+        display: block;
+        margin: 10px;
+    }
+}
+
+#diva-canvas-loading {
+    .hidden;
+}
+
+#diva-canvas-minimap {
+    .square(@toolsWidth - 20px);
+    margin: 10px;
+    cursor: crosshair;
+}
+
+#diva-canvas {
+    position: absolute;
+    // Center it
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    z-index: 9051;
+    .grab;
+}
+
+#diva-canvas-close {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    .square(18px);
+    background: url('../img/close.png') no-repeat;
+    z-index: 9058;
+    cursor: pointer;
+    &:hover {
+        background-image: url('../img/close-hover.png');
+    }
+}
+
+#diva-map-viewbox {
+    border: 1px solid #FF0000;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    cursor: crosshair;
+}
+
+// Done this way so we don't have to guess the original setting
+// Added to the body upon entering canvas mode
+.overflow-hidden {
+    overflow: hidden !important;
+}
+
+#diva-canvas-wrapper {
+    z-index: 9051;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    overflow: scroll;
+}
