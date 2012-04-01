@@ -1,6 +1,7 @@
 import os
 import sys
 import math
+import tempfile
 try:
     from vipsCC import VImage
     def image_size(fn):
@@ -21,129 +22,143 @@ except ImportError:
         return size
 from operator import itemgetter
 
-class DivaServe(object):
-    def __init__(self, directory, t=256, mode="memory", verbose=False):
-        """ <directory> is the directory of images to serve 
-            "mode" can be either "memory" or "disk" for the cache mode to use
-            if "mode" is "disk," you must also set "cachedir".
-            <t> is be the tilesize. Default 256
-        """
-
-        self.imgdir = directory
-        self.images = {}
-        self.data = {}
-        self.lowest_max_zoom = 0
-
-        self.til_wid = t
-        self.til_hei = t
-
-        lmz = 0
-        # Read image sizes on startup
-        if verbose:
-            print >> sys.stderr, "loading images..."
-        for i,f in enumerate(os.listdir(self.imgdir)):
-            if os.path.splitext(f)[1] not in (".tif", ".tiff"):
-                continue
-            img_wid, img_hei = image_size(os.path.join(self.imgdir, f))
-
-            max_zoom = self._get_max_zoom_level(img_wid, img_hei, self.til_wid, self.til_hei)
-            if max_zoom > lmz:
-                lmz = max_zoom
- 
-            self.images[i] = {
-                'mx_w': img_wid,
-                'mx_h': img_hei,
-                'mx_z': max_zoom,
-                'fn': f
-            }
-
-        self.lowest_max_zoom = lmz
-        if verbose:
-            print >> sys.stderr, "images loaded"
-
-
-    def get(self, zoom):
-        if zoom in self.data.keys() and len(self.data[zoom]) > 0:
-            return self.data[zoom]
-
-        if zoom > self.lowest_max_zoom:
-            zoom = 0
-        elif zoom < 0:
-            zoom = 0
-
-        mx_h = mx_w = t_wid = t_hei = num_pages = max_ratio = 0
-        pgs = []
-
-        for v in self.images.itervalues():
-            h = self._incorporate_zoom(v['mx_h'], self.lowest_max_zoom - zoom)
-            w = self._incorporate_zoom(v['mx_w'], self.lowest_max_zoom - zoom)
-
-            c = math.ceil(w / float(self.til_wid))
-            r = math.ceil(h / float(self.til_hei))
-            m_z = v['mx_z']
-            fn = v['fn']
-            
-            pgs.append({
-                'c': c,
-                'r': r,
-                'h': h,
-                'w': w,
-                'm_z': m_z,
-                'fn': fn
-            })
-
-            if h > mx_h:
-                mx_h = h
-
-            if w > mx_w:
-                mx_w = w
-            
-            ratio = h / float(w)
-            max_ratio = ratio if ratio > max_ratio else max_ratio
-            t_wid += w
-            t_hei += h
-            num_pages += 1
-        pgs.sort(key=itemgetter("fn"))
-
-        if num_pages > 0:
-            a_wid = t_wid / float(num_pages)
-            a_hei = t_hei / float(num_pages)
-
-            dims = {
-                'a_wid': a_wid,
-                'a_hei': a_hei,
-                'max_w': mx_w,
-                'max_h': mx_h,
-                'max_ratio': max_ratio,
-                't_hei': t_hei,
-                't_wid': t_wid
-            }
-
-            title = os.path.basename(self.imgdir).replace('-', ' ').title()
-
-            self.data[zoom] = {
-                'item_title': title,
-                'dims': dims,
-                'max_zoom': self.lowest_max_zoom,
-                'pgs': pgs
-            }
-        else:
-            self.data[zoom] = {}
-
-        return self.data[zoom]
-
-    def _get_max_zoom_level(self, iwid, ihei, twid, thei):
-        largest_dim = max(iwid, ihei)
-        t_dim = twid if iwid > ihei else thei
-
-        zoom_levels = math.ceil(math.log((largest_dim + 1) / float(t_dim) + 1, 2))
-        return int(zoom_levels)
-
-    def _incorporate_zoom(self, img_dim, zoom_diff):
-        return img_dim / float(2**zoom_diff)
+try:
+    import pylibmc
+    memcached_enabled = True
+except ImportError:
+    memcached_enabled = False
 
 class DivaException(BaseException):
     def __init__(self, message):
         self.message = message
     def __str__(self):
         return repr(self.message)
+
+class DivaServe(object):
+    def __init__(self, directory, tilesize=256, mode="memory", verbose=False, cachedir=None):
+
+        if mode not in ("disk", "memory", "memcached"):
+            raise DivaException("You must specify either 'memory', 'disk' or 'memcached' for the caching mode")
+
+        if directory.endswith("/"):
+            directory = directory.rstrip("/")
+
+        if mode == "disk":
+            if cachedir is None:
+                cachedir = os.path.join(tempfile.gettempdir(), "diva")
+
+            if not os.path.exists(cachedir):
+                os.mkdir(cachedir)
+
+        self.basename = os.path.basename(directory)
+        self.cachedir = cachedir
+        self.imgdir = directory
+        self.tilesize = tilesize
+        self.images = []
+        self.zoomlevels = []
+
+        if verbose:
+            print >> sys.stderr, "Loading Images..."
+
+        for i,f in enumerate(os.listdir(self.imgdir)):
+
+            if verbose:
+                print >> sys.stderr, "Loading {0}".format(f)
+
+            if os.path.splitext(f)[1] not in (".tif", ".tiff", ".jpg", ".jpeg", ".jp2"):
+                continue
+            img_wid, img_hei = image_size(os.path.join(self.imgdir, f))
+            max_zoom = self._get_max_zoom_level(img_wid, img_hei, tilesize)
+
+            im = {
+                'mx_w': img_wid,
+                'mx_h': img_hei,
+                'mx_z': max_zoom,
+                'fn': f
+            }
+
+            self.images.append(im)
+
+            self.zoomlevels.append(max_zoom)
+        self.lowest_max_zoom = min(self.zoomlevels)
+
+        self.cache = {}
+        for zoom in range(self.lowest_max_zoom):
+            # check for cached copies first
+            if mode == "disk":
+                cachefile = "docdata_{0}".format(zoom)
+                try:
+                    f = open(os.path.join(self.cachedir, self.basename, cachefile))
+                except: IOError as e:
+                    # file doesn't exist
+                    pass
+
+            elif mode == "memcached":
+                pass
+
+            # if not, we need to do some heavy lifting.
+            pgs = []
+            dim = {}
+            pgh = []
+            pgw = []
+            rat = []
+            for img in self.images:
+                h = self._incorporate_zoom(img['mx_h'], self.lowest_max_zoom - zoom)
+                w = self._incorporate_zoom(img['mx_w'], self.lowest_max_zoom - zoom)
+                pg = {
+                    'h': h,
+                    'w': w,
+                    'c': math.ceil(w / float(self.tilesize)),
+                    'r': math.ceil(h / float(self.tilesize)),
+                    'm_z': img['mx_z'],
+                    'fn': img['fn']
+                }
+
+                pgs.append(pg)
+                pgh.append(pg['h'])
+                pgw.append(pg['w'])
+                rat.append(float(pg['h']) / float(pg['w']))
+
+            t_wid = sum(pgw)
+            t_hei = sum(pgh)
+            dim = {
+                't_wid': t_wid,
+                't_hei': t_hei,
+                'max_w': max(pgw),
+                'max_h': max(pgh),
+                'a_wid': float(t_wid) / len(pgw),
+                'a_hei': float(t_hei) / len(pgh),
+                'max_ratio': max(rat),
+                'min_ratio': min(rat),
+            }
+
+            self.cache[zoom] = {
+                'dims': dim,
+                'pgs': pgs,
+                'item_title': "",
+                'max_zoom': self.lowest_max_zoom
+            }
+
+            # other caching mechanisms will use different keys
+            if mode == 'memory':
+                pass
+            elif mode == 'disk':
+                cachekey = "docdata_{0}.txt".format(zoom)
+            elif mode == 'memcached':
+                cachekey = "{0}-{1}".format(self.imgdir, zoom)
+
+        if verbose:
+            print >> sys.stderr, "images loaded"
+
+    def get(self, zoom):
+        pass
+
+
+    def _get_max_zoom_level(self, iwid, ihei, tilesize):
+        largest_dim = max(iwid, ihei)
+        t_dim = tilesize if iwid > ihei else tilesize
+        zoom_levels = math.ceil(math.log((largest_dim + 1) / float(tilesize) + 1, 2))
+        return int(zoom_levels)
+
+    def _incorporate_zoom(self, img_dim, zoom_diff):
+        return img_dim / float(2**zoom_diff)
