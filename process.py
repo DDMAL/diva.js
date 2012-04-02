@@ -49,7 +49,8 @@ Options:
 """
 
 def main(opts):
-    directory = opts['outd']
+    directory = opts['idir']
+    processed = opts['odir']
     resize_images = opts['resz']
     quality = opts['qual']
     tilesize = opts['tsze']
@@ -65,11 +66,16 @@ def main(opts):
     
     # Create a directory called "processed" within that directory
     # If that directory already exists, fail
-    if os.path.isdir(os.path.join(directory, 'processed')):
-        print 'There already is a processed directory! Delete it and try again.'
-        sys.exit(1)
+    if processed:
+        # set the output directory to the supplied directory:
+        outputdir = processed
     else:
-        os.mkdir(os.path.join(directory, 'processed'))
+        if os.path.isdir(os.path.join(directory, 'processed')):
+            print 'There already is a processed directory! Delete it and try again.'
+            sys.exit(1)
+        else:
+            outputdir = os.path.join(directory, 'processed')
+            os.mkdir(outputdir)
         
     # Store the zooms of the files in a list
     # Use another list to store filenames (same indices etc)
@@ -98,7 +104,7 @@ def main(opts):
         fn,ext = os.path.splitext(filename)
         input_file = os.path.join(directory, filename)
         new_fn = fn.replace(' ', '_')  # Replaces all spaces with _ because spaces can cause problems in the long run
-        output_file = os.path.join(directory, 'processed', "{0}.tif".format(new_fn))
+        output_file = os.path.join(outputdir, "{0}.tif".format(new_fn))
         
         print "Processing {0}".format(input_file)
         vimage = VImage.VImage(input_file)
@@ -112,6 +118,7 @@ def main(opts):
             vimage.resize_linear(new_width, new_height).vips2tiff('{0}:{1},tile:{2}x{2},pyramid'.format(output_file, compression, tilesize))
         else:
             vimage.vips2tiff('{0}:{1},tile:{2}x{2},pyramid'.format(output_file, compression, tilesize))
+        del vimage
         
     # Now print out the max_zoom this document has
     print "This document has a max zoom of: {0}".format(lowest_max_zoom)
@@ -126,6 +133,8 @@ def get_image_info(filepath, tilewidth):
 
     # Now figure out the number of zooms
     zoom_levels = math.ceil(math.log((largest_dim + 1) / (tilewidth), 2)) + 1
+
+    del image
     return (int(zoom_levels), (width, height))
 
 # Resize an image to the desired zoom
@@ -149,7 +158,7 @@ def resize_image(desired_zoom, width, height, tilewidth):
     return new_dimensions
     
 if __name__ == "__main__":
-    usage = "%prog [options] directory"
+    usage = "%prog [options] directory [output directory]"
     parser = OptionParser(usage)
     parser.add_option("-r", "--resize", action="store_true", default=False, help = "Resizes all images so that they have the same number of zoom levels", dest="resize")
     parser.add_option("-q", "--quality", action="store", default="75", type="string", help="JPEG Image Quality level for vips (0-100, Default: 75)", dest="quality")
@@ -162,7 +171,8 @@ if __name__ == "__main__":
         parser.error("You must specify a directory to process.")
     
     opts = {
-        'outd': args[0],
+        'idir': args[0],
+        'odir': args[1],
         'resz': options.resize,
         'qual': options.quality,
         'tsze': options.tilesize,
