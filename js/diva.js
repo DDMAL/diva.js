@@ -1442,7 +1442,7 @@ THE SOFTWARE.
 
                 // Also change the image for the grid icon
                 var newIconImage = (settings.inGrid) ? 'grid' : 'document';
-                $(settings.selector + 'grid-icon img').attr('src', 'img/' + newIconImage + '.png');
+                $(settings.selector + 'grid-icon img').attr('src', settings.iconPath + newIconImage + '.png');
             };
 
             if (settings.jumpIntoFullscreen) {
