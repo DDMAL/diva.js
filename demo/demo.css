@@ -1,0 +1,51 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: "Helvetica Neue", Helvetica, sans-serif;
+    font-size: 13px;
+}
+
+#diva-wrapper {
+    width: 960px;
+    margin: 0 auto;
+}
+
+.double-viewer {
+    position: relative;
+    width: 430px;
+}
+
+#diva-one {
+    float: left;
+}
+
+#diva-two {
+    float: right;
+}
+
+.double-viewer .outer {
+    height: 600px;
+    min-width: 310px;
+    max-width: 450px;
+}
+
+#integrated-viewer {
+    width: 960px;
+    margin-bottom: 20px;
+}
+
+#integrated-viewer .outer {
+    height: 500px;
+}
+
+h1 {
+    font-size: 3.5em;
+    margin: 20px 0px;
+}
+
+p {
+    margin: 20px 0px;
+}

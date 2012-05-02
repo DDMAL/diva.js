@@ -1,0 +1,36 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Diva.js - single viewer layout demo</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+
+    <link rel="stylesheet" href="../build/css/diva.min.css" type="text/css" />
+    <link rel="stylesheet" href="demo.css" type="text/css" />
+
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript"></script>
+    <script src="../build/js/diva.min.js"></script>
+
+    <script type="text/javascript">
+    $(document).ready(function() {
+        $('#diva-wrapper').diva({
+            plugins: [divaDownload, divaCanvas],
+            adaptivePadding: 0,
+            enableDownload: true,
+            fixedHeightGrid: false,
+            fixedPadding: 20,
+            tileFadeSpeed: 0,
+            pagesPerGridRow: 9,
+            iipServerURL: "http://petrucci.musiclibs.net:9002/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/berojp2/", 
+            divaserveURL: "http://petrucci.musiclibs.net:9002/loldivaserve.php",
+            imageDir: "berojp2",
+            iconPath: "../build/img/",
+        });
+        var dv = $('#diva-wrapper').data('diva');
+    });
+    </script>
+</head>
+<body>
+    <div id="diva-wrapper"></div>
+</body>
+</html>

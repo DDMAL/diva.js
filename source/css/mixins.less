@@ -1,0 +1,60 @@
+/*
+ * Inspired by the Twitter bootstrap
+ *
+ */
+
+.border-radius(@radius) {
+    -webkit-border-radius: @radius;
+    -moz-border-radius: @radius;
+    border-radius: @radius;
+}
+
+.box-shadow(@shadow) {
+    -webkit-box-shadow: @shadow;
+    -moz-box-shadow: @shadow;
+    box-shadow: @shadow;
+}
+
+.size(@height, @width) {
+    height: @height;
+    width: @width;
+}
+
+.square(@size) {
+    .size(@size, @size);
+}
+
+.hidden {
+    display: none;
+}
+
+// Shortcut for a 1px solid border
+.frame(@colour) {
+    border: 1px solid @colour;
+}
+
+.center-icon(@url) {
+    background: no-repeat center;
+}
+
+.grab {
+    cursor: url("@{iconPath}/openhand.cur"), pointer;
+}
+
+.grabbing {
+    cursor: url("@{iconPath}/closedhand.cur"), move !important;
+}
+// Pretty translucent shadow
+.pretty-shadow(@distance: 4px) {
+    .box-shadow(2px 2px @distance 0 rgba(0, 0, 0, 0.5));
+}
+
+.full-width {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.full-height {
+    height: 100% !important;
+    max-height: 100% !important;
+}
