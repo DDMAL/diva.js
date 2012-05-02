@@ -26,10 +26,10 @@
                 float: right;
                 cursor: pointer;
                 .square(32px);
-                background: @lightGrey;
-                .frame(@lightBlue);
+                background: @buttonBg;
+                .frame(@buttonFrame);
                 &:hover {
-                    background: @lighterGrey;
+                    background: @buttonHover;
                 }
             }
             .page-tools {
@@ -58,14 +58,14 @@
             z-index: 9001;
             width: 210px;
             padding: 15px 15px 10px 15px;
-            .frame(@grey);
-            background: @white;
+            .frame(@toolsFrame);
+            background: @toolsBg;
             .pretty-shadow;
         }
     }
     .outer {
-        background: @lightGrey;
-        .frame(@lightBlue);
+        background: @viewerBg;
+        .frame(@viewerFrame);
         position: relative;
         min-height: 400px;
         min-width: 400px;
@@ -125,8 +125,8 @@ div[id$="diva-fullscreen"] {
 }
 
 div[id$="diva-link-popup"] {
-    background: @white;
-    .frame(@grey);
+    background: @linkBg;
+    .frame(@linkFrame);
     .size(28px, 230px);
     position: absolute;
     padding: 5px;
@@ -153,16 +153,16 @@ div[id$="diva-link-popup"] {
 .ui-slider {
     .hidden; // only shown when necessary, in switchSlider()
     position: relative;
-    border: 1px solid @grey;
-    background: @lighterGrey;
+    .frame(@sliderFrame);
+    background: @sliderBg;
     .border-radius(4px);
     height: 6px;
     width: 100px;
     z-index: 1;
     .handle {
         .border-radius(5px);
-        .frame(@greyMedium);
-        background: @lighterGrey;
+        .frame(@handleFrame);
+        background: @handleBg;
         outline: none;
         .square(11px);
         z-index: 2;
@@ -173,14 +173,14 @@ div[id$="diva-link-popup"] {
 
         // When the mouse hovers over it
         &.hover {
-            background: lighten(@lightBlue, 20%);
-            .frame(darken(@lightBlue, 10%));
+            background: @handleHoverBg;
+            .frame(@handleHoverFrame);
         }
 
         // When the mouse is dragging the slider
         &.active {
-            background: lighten(@lightBlue, 23%);
-            .frame(@lightBlue);
+            background: @handleActiveBg;
+            .frame(@handleActiveFrame);
         }
     }
 }
