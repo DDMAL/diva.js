@@ -140,8 +140,8 @@ div[id$="diva-fullscreen"] {
   left: 0;
   width: 40px;
   height: 40px;
-  background-repeat: no-repeat;
   cursor: pointer;
+  background: url("../img/fullscreen.png") no-repeat center;
 }
 div[id$="diva-link-popup"] {
   background: #ffffff;
@@ -206,7 +206,7 @@ div[id$="diva-link-popup"] input:focus {
   border: 1px solid #99bbe8;
 }
 .canvas-icon {
-  background: no-repeat center;
+  background: url('../img/plugins/canvas.png') no-repeat center;
 }
 #diva-canvas-backdrop {
   z-index: 9050;
@@ -290,5 +290,5 @@ div[id$="diva-link-popup"] input:focus {
   overflow: scroll;
 }
 .download-icon {
-  background: no-repeat center;
+  background: url('../img/plugins/download.png') no-repeat center;
 }
