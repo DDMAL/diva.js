@@ -1191,8 +1191,6 @@ THE SOFTWARE.
 
             // Create the fullscreen toggle icon if fullscreen is enabled
             if (settings.enableFullscreen) {
-                // Add the icon CSS (uses settings.iconPath)
-                $(settings.selector + 'fullscreen').css('background-image', "url('" + settings.iconPath + "fullscreen.png')");
                 // Event handler for fullscreen toggling
                 $(settings.selector + 'fullscreen').click(function() {
                     toggleFullscreen();
@@ -1721,7 +1719,7 @@ THE SOFTWARE.
                     // Set all the settings
                     plugin.init(settings);
                     // Create the pageTools bar
-                    pageTools.push('<div class="' + plugin.pluginName + '-icon" style="background-image: url(' + settings.iconPath + plugin.pluginName + '.png)" title="' + plugin.titleText + '"></div>');
+                    pageTools.push('<div class="' + plugin.pluginName + '-icon" title="' + plugin.titleText + '"></div>');
                     // Delegate the click event - pass it the settings
                     $(settings.outerSelector).delegate('.' + plugin.pluginName + '-icon', 'click', function(event) {
                         plugin.handleClick.call(this, event, settings);
