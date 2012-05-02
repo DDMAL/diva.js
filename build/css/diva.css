@@ -19,46 +19,6 @@
   height: 100% !important;
   max-height: 100% !important;
 }
-/*
- * Based on the jQuery UI CSS Framework
- * Pretty different though.
- *
- */
-.ui-slider {
-  display: none;
-  position: relative;
-  border: 1px solid #dddddd;
-  background: #fdfdfd;
-  -webkit-border-radius: 4px;
-  -moz-border-radius: 4px;
-  border-radius: 4px;
-  height: 6px;
-  width: 100px;
-  z-index: 1;
-}
-.ui-slider .handle {
-  -webkit-border-radius: 5px;
-  -moz-border-radius: 5px;
-  border-radius: 5px;
-  border: 1px solid #cccccc;
-  background: #fdfdfd;
-  outline: none;
-  height: 11px;
-  width: 11px;
-  z-index: 2;
-  cursor: default;
-  position: absolute;
-  top: -3px;
-  margin-left: -2px;
-}
-.ui-slider .handle.hover {
-  background: #ecf2fb;
-  border: 1px solid #6f9fdf;
-}
-.ui-slider .handle.active {
-  background: #f9fbfe;
-  border: 1px solid #99bbe8;
-}
 .diva .title {
   text-align: center;
   font-weight: bold;
@@ -204,6 +164,46 @@ div[id$="diva-link-popup"] input:focus {
 }
 .hide-scrollbar {
   overflow: hidden !important;
+}
+/*
+ * Based on the jQuery UI CSS Framework
+ * Pretty different though.
+ *
+ */
+.ui-slider {
+  display: none;
+  position: relative;
+  border: 1px solid #dddddd;
+  background: #fdfdfd;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+  height: 6px;
+  width: 100px;
+  z-index: 1;
+}
+.ui-slider .handle {
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+  border: 1px solid #cccccc;
+  background: #fdfdfd;
+  outline: none;
+  height: 11px;
+  width: 11px;
+  z-index: 2;
+  cursor: default;
+  position: absolute;
+  top: -3px;
+  margin-left: -2px;
+}
+.ui-slider .handle.hover {
+  background: #ecf2fb;
+  border: 1px solid #6f9fdf;
+}
+.ui-slider .handle.active {
+  background: #ffffff;
+  border: 1px solid #99bbe8;
 }
 .canvas-icon {
   background: no-repeat center;
