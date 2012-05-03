@@ -39,6 +39,7 @@
             }
         };
         $('#diva-one').diva({
+            disableDownload: true,
             zoomLevel: settings.zoomLevel,
             iconPath: settings.iconPath,
             tileFadeSpeed: settings.tileFadeSpeed,
@@ -57,6 +58,7 @@
         var divaOne = $('#diva-one').data('diva');
 
         $('#diva-two').diva({
+            disableCanvas: true,
             zoomLevel: settings.zoomLevel,
             iconPath: settings.iconPath,
             tileFadeSpeed: settings.tileFadeSpeed,

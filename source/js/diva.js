@@ -20,6 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+window.divaPlugins = [];
+
 // this pattern was taken from http://www.virgentech.com/blog/2009/10/building-object-oriented-jquery-plugin.html
 (function( $ ) {
     var Diva = function(element, options) {
@@ -58,7 +60,6 @@ THE SOFTWARE.
             onZoomIn: null,             // Callback function for zooming in only
             onZoomOut: null,            // Callback function for zooming out only
             pagesPerRow: 5,             // The default number of pages per row in grid view
-            plugins: false,             // Override with a list of plugin objects
             tileFadeSpeed: 300,         // The tile fade-in speed in ms (or "fast" or "slow"; 0 to disable)
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
@@ -110,6 +111,7 @@ THE SOFTWARE.
             pageTools: '',              // The string for page tools
             panelHeight: 0,             // Height of the panel. Set in initiateViewer()
             panelWidth: 0,              // Width of the panel. Set in initiateViewer()
+            plugins: [],                // Filled with the not disabled plugins in window.divaPlugins
             prevVptTop: 0,              // Used to determine vertical scroll direction
             scaleWait: false,           // For preventing double-scale on the iPad
             selector: '',               // Uses the generated ID prefix to easily select elements
@@ -1713,18 +1715,31 @@ THE SOFTWARE.
         };
 
         var initPlugins = function() {
-            if (settings.plugins) {
+            if (window.divaPlugins) {
                 var pageTools = ['<div class="page-tools">'];
-                $.each(settings.plugins, function(index, plugin) {
-                    // Set all the settings
-                    plugin.init(settings);
-                    // Create the pageTools bar
-                    pageTools.push('<div class="' + plugin.pluginName + '-icon" title="' + plugin.titleText + '"></div>');
-                    // Delegate the click event - pass it the settings
-                    $(settings.outerSelector).delegate('.' + plugin.pluginName + '-icon', 'click', function(event) {
-                        plugin.handleClick.call(this, event, settings);
-                    });
+
+                // Add all the plugins that have not been explicitly disabled to settings.plugins
+                $.each(window.divaPlugins, function(index, plugin) {
+                    var pluginProperName = plugin.pluginName[0].toUpperCase() + plugin.pluginName.substring(1)
+                    if (!settings['disable' + pluginProperName]) {
+                        // Set all the settings
+                        plugin.init(settings);
+
+                        // Create the pageTools bar
+                        pageTools.push('<div class="' + plugin.pluginName + '-icon" title="' + plugin.titleText + '"></div>');
+
+                        // Delegate the click event - pass it the settings
+                        $(settings.outerSelector).delegate('.' + plugin.pluginName + '-icon', 'click', function(event) {
+                            plugin.handleClick.call(this, event, settings);
+                        });
+
+
+                        // Add it to settings.plugins so it can be used later
+                        settings.plugins.push(plugin);
+                    }
                 });
+
+                // Save the page tools bar so it can be added for each page
                 pageTools.push('</div>');
                 settings.pageTools = pageTools.join('');
             }
@@ -1868,7 +1883,7 @@ THE SOFTWARE.
     };
 
 
-    
+
     $.fn.diva = function(options) {
         return this.each(function() {
             var element = $(this);
