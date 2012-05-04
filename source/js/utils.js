@@ -1,5 +1,5 @@
 // from http://forrst.com/posts/jQuery_element_ID_generator-RoM
-(function( $ ) {
+(function ($) {
     var counter = 1;
     $.generateId = function(suffix) {
         var generatedId;
@@ -9,10 +9,10 @@
         
         return generatedId;
     };
-})( jQuery );
+})(jQuery);
 
 // From http://www.alexandre-gomes.com/?p=115, modified slightly
-(function( $ ) {
+(function ($) {
     $.getScrollbarWidth = function() {
         var inner = document.createElement('p');
         inner.style.width = '100%';
@@ -40,27 +40,27 @@
         document.body.removeChild(outer);
         return w1 - w2;
     };
-})( jQuery);
+})(jQuery);
 
 // For executing callback functions with one parameter (maybe allow more later)
-(function( $ ) {
+(function ($) {
     $.executeCallback = function(callback, parameter) {
         // If it's not a function, it just won't execute it
         if (typeof callback == 'function') {
             callback.call(this, parameter);
             return true;
-        } else {
-            return false;
         }
+
+        return false;
     };
-})( jQuery );
+})(jQuery);
 
 // For getting the #key values from the URL. For specifying a page and zoom level
 // Look into caching, because we only need to get this during the initial load
 // Although for the tests I guess we would need to override caching somehow
-(function( $ ) {
-    var hash = window.location.hash;
+(function ($) {
     $.getHashParam = function(key) {
+        var hash = window.location.hash;
         if (hash != '') {
             // Check if there is something that looks like either &key= or #key=
             var startIndex = (hash.indexOf('&' + key + '=') > 0) ? hash.indexOf('&' + key + '=') : hash.indexOf('#' + key + '=');
@@ -89,9 +89,9 @@
             return false;
         }
     };
-})( jQuery );
+})(jQuery);
 
-(function( $ ) {
+(function ($) {
     $.updateHashParam = function(key, value) {
         // First make sure that we have to do any work at all
         var originalValue = $.getHashParam(key);
@@ -116,7 +116,7 @@
             }
         }
     };
-})( jQuery );
+})(jQuery);
 
 /* iPad one finger scroll from http://forrst.com/posts/jQuery_iPad_one_finger_scroll-B30 */
 jQuery.fn.oneFingerScroll = function() {
@@ -151,7 +151,7 @@ jQuery.fn.oneFingerScroll = function() {
  *   http://www.gnu.org/licenses/gpl.html
  *
  */
-(function($){ // secure $ jQuery alias
+(function ($) { // secure $ jQuery alias
 
 /**
  * Adds the ability to manage elements scroll by dragging
