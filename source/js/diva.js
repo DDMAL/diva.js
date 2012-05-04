@@ -1723,7 +1723,7 @@ window.divaPlugins = [];
                     var pluginProperName = plugin.pluginName[0].toUpperCase() + plugin.pluginName.substring(1)
                     if (!settings['disable' + pluginProperName]) {
                         // Set all the settings
-                        plugin.init(settings);
+                        $.executeCallback(plugin.init, settings);
 
                         // Create the pageTools bar
                         pageTools.push('<div class="' + plugin.pluginName + '-icon" title="' + plugin.titleText + '"></div>');
