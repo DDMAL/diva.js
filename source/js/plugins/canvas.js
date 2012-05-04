@@ -1,9 +1,9 @@
 /*
- * Canvas plugin for diva.js
- * Adds a little "tools" icon next to each image
- * When clicked, brings up a fullscreen panel, where you can adjust the image
- * , contrast, rotation, RBG
- */
+Canvas plugin for diva.js
+Adds a little "tools" icon next to each image
+When clicked, brings up a fullscreen panel, where you can adjust the image
+contrast, rotation, RBG
+*/
 
 window.divaPlugins.push((function() {
     var canvas = {},

@@ -1,6 +1,7 @@
-/* Download plugin for diva.js
- * Allows you to download images served by IIPImage
- */
+/*
+Download plugin for diva.js
+Allows you to download images served by IIPImage
+*/
 
 window.divaPlugins.push((function() {
     var settings = {};
