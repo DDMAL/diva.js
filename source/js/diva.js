@@ -1725,8 +1725,11 @@ window.divaPlugins = [];
                         // Set all the settings
                         $.executeCallback(plugin.init, settings);
 
+                        // If the title text is undefined, use the name of the plugin
+                        var titleText = plugin.titleText || pluginProperName + " plugin";
+
                         // Create the pageTools bar
-                        pageTools.push('<div class="' + plugin.pluginName + '-icon" title="' + plugin.titleText + '"></div>');
+                        pageTools.push('<div class="' + plugin.pluginName + '-icon" title="' + titleText + '"></div>');
 
                         // Delegate the click event - pass it the settings
                         $(settings.outerSelector).delegate('.' + plugin.pluginName + '-icon', 'click', function(event) {
