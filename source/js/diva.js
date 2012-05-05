@@ -852,7 +852,6 @@ window.divaPlugins = [];
 
                         // Execute the one-time callback, if present
                         if (settings.zoomCallbacks.length > 0) {
-                            console.log("about to pop execute callback");
                             $.executeCallback(settings.zoomCallbacks.pop(), zoomLevel);
                         }
                     } else {
@@ -903,7 +902,6 @@ window.divaPlugins = [];
             } else {
                 // Execute the callback functions anyway (required for the unit testing)
                 if (settings.zoomCallbacks.length > 0) {
-                    console.log("about to pop and execute callback");
                     $.executeCallback(settings.zoomCallbacks.pop(), settings.zoomLevel);
                 }
                 return false;
@@ -1774,7 +1772,6 @@ window.divaPlugins = [];
         };
 
         this.setZoomLevel = function (zoomLevel, callback) {
-            console.log("saving the callback");
             settings.zoomCallbacks.push(callback);
             return handleZoom(zoomLevel);
         };
