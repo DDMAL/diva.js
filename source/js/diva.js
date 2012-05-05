@@ -89,6 +89,7 @@ window.divaPlugins = [];
             firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
             firstRowLoaded: -1,         // The index of the first row loaded
             goDirectlyTo: -1,           // For the page hash param (#p=100 or &p=5)
+            gridScrollTop: 0,           // Scroll from top in grid view only
             hashParamSuffix: '',        // Used when there are multiple document viewers on a page
             heightAbovePages: [],       // The height above each page
             horizontalOffset: 0,        // Used for storing the page offset before zooming
@@ -124,8 +125,7 @@ window.divaPlugins = [];
             verticalPadding: 0,         // Either the fixed padding or adaptive padding
             viewerXOffset: 0,           // Distance between left edge of viewer and document left edge
             viewerYOffset: 0,           // ^ for top edges
-            zoomInCallback: null,       // Only executed after zoomIn() if present
-            zoomOutCallback: null       // Only executed after zoomOut() if present
+            zoomCallback: null          // Executed after zooming (or trying to)
         };
 
         $.extend(settings, globals);
@@ -845,16 +845,14 @@ window.divaPlugins = [];
                         if (settings.dimBeforeZoom > settings.dimAfterZoom) {
                             // Zooming out
                             $.executeCallback(settings.onZoomOut, zoomLevel);
-
-                            // Execute the one-time callback, too, if present
-                            $.executeCallback(settings.zoomOutCallback, zoomLevel);
-                            settings.zoomOutCallback = null;
                         } else {
                             // Zooming in
                             $.executeCallback(settings.onZoomIn, zoomLevel);
-                            $.executeCallback(settings.zoomInCallback, zoomLevel);
-                            settings.zoomInCallback = null;
                         }
+
+                        // Execute the one-time callback, if present
+                        $.executeCallback(settings.zoomCallback, zoomLevel);
+                        settings.zoomCallback = null;
                     } else {
                         // Switching between fullscreen mode
                         $.executeCallback(settings.onFullscreen, zoomLevel);
@@ -902,12 +900,10 @@ window.divaPlugins = [];
                 return true;
             } else {
                 // Execute the callback functions anyway (required for the unit testing)
-                $.executeCallback(settings.zoomInCallback, settings.zoomLevel);
-                $.executeCallback(settings.zoomOutCallback, settings.zoomLevel);
+                $.executeCallback(settings.zoomCallback, settings.zoomLevel);
 
                 // Set them to null so we don't try to call it again
-                settings.zoomOutCallback = null;
-                settings.zoomInCallback = null;
+                settings.zoomCallback = null;
                 return false;
             }
         };
@@ -1525,8 +1521,8 @@ window.divaPlugins = [];
                 'y': (settings.inGrid) ? settings.documentLeftScroll : getYOffset(),
                 'x': (settings.inGrid) ? settings.documentLeftScroll : getXOffset(),
                 'gy': (settings.inGrid) ? $(settings.outerSelector).scrollTop() : settings.gridScrollTop,
-                'h': (settings.inFullscreen) ? 0 : settings.panelHeight,
-                'w': (settings.inFullscreen) ? 0 : settings.panelWidth + settings.scrollbarWidth // add it on so it looks like a nice round number
+                'h': (settings.inFullscreen) ? false: settings.panelHeight,
+                'w': (settings.inFullscreen) ? false : settings.panelWidth + settings.scrollbarWidth // add it on so it looks like a nice round number
             }
 
             return state;
@@ -1538,7 +1534,7 @@ window.divaPlugins = [];
             hashParams.i = (settings.enableFilename) ? settings.pages[i].fn : i + 1; // make it the filename if desired, else the page number
             var hashStringBuilder = [];
             for (var param in hashParams) {
-                if (hashParams[param]) { // truthy
+                if (hashParams[param] !== false) {
                     hashStringBuilder.push(param + settings.hashParamSuffix + '=' + hashParams[param]);
                 }
             }
@@ -1775,16 +1771,19 @@ window.divaPlugins = [];
             return settings.zoomLevel;
         };
 
+        this.setZoomLevel = function (zoomLevel, callback) {
+            settings.zoomCallback = callback;
+            return handleZoom(zoomLevel);
+        };
+
         // Zoom in, with callback. Will return false if it's at the maximum zoom
         this.zoomIn = function (callback) {
-            settings.zoomInCallback = callback;
-            return handleZoom(settings.zoomLevel+1);
+            return this.setZoomLevel(settings.zoomLevel + 1, callback);
         };
 
         // Zoom out, with callback. Will return false if it's at the minimum zoom
         this.zoomOut = function (callback) {
-            settings.zoomOutCallback = callback;
-            return handleZoom(settings.zoomLevel-1);
+            return this.setZoomLevel(settings.zoomLevel - 1, callback);
         };
 
         // Uses the verticallyInViewport() function, but relative to a page
@@ -1828,7 +1827,7 @@ window.divaPlugins = [];
             // Ignore fullscreen, this is meant for syncing two viewers ... they can't both be fullscreen
             // Pass it the state retrieved from calling getState() on another diva
             settings.gridScrollTop = state.gy;
-            settings.goDirectlyTo = (isNaN(state.i)) ? getPageIndex(state.i) : state.i// if not a number, it's a filename
+            settings.goDirectlyTo = (isNaN(state.i)) ? getPageIndex(state.i) : state.i; // if not a number, it's a filename
             settings.desiredXOffset = state.x;
             settings.desiredYOffset = state.y;
 

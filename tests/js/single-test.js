@@ -1,5 +1,5 @@
 var diva;
-(function() {
+(function () {
     /*
         Unit tests writen using QUnit, jQuery's unit-testing framework
     */
@@ -10,10 +10,10 @@ var diva;
         $('#integrated-demo').diva({
             contained: true,
             enableAutoTitle: false,
-            iipServerURL: "http://petrucci.musiclibs.net:9002/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/berojp2/",
+            iipServerURL: "http://coltrane.music.mcgill.ca/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/beromunster/",
             zoomLevel: 2,
-            divaserveURL: "http://petrucci.musiclibs.net:9002/loldivaserve.php",
-            imageDir: "berojp2",
+            divaserveURL: "http://ddmal.music.mcgill.ca/divaserve.php",
+            imageDir: "beromunster",
             iconPath: "../build/img/",
             onReady: function() {
                 // Only run tests after the document viewer has loaded
@@ -24,7 +24,7 @@ var diva;
                 module("Public functions");
 
                 test("getItemTitle()", function() {
-                    equal(dv.getItemTitle(), "Berojp2", "The title should be Berojp2");
+                    equal(dv.getItemTitle(), "Beromunster", "The title should be Beromunster");
                 });
 
 
@@ -131,18 +131,33 @@ var diva;
                     dv.gotoPage(1);
                 });
 
+                // Can't really test this as we don't know the URL
+                /*
                 test("getCurrentURL()", function() {
                     dv.gotoPage(1);
                     equal(dv.getCurrentURL(), 'petrucci.musiclibs.net:9002/tests.html#z=2&i=bm_001.tif&y=1&x=158');
                 });
+                */
+
+                // Test setting the zoom level
+                asyncTest("setZoomLevel()", function () {
+                    console.log("in set zoom level");
+                    dv.setZoomLevel(2, function () {
+                        var zoomLevel = dv.getZoomLevel();
+                        equal(zoomLevel, 2, "Should be 0 now");
+                        start();
+                    });
+                });
 
                 // Sometimes does not work due to asynchronous testing issues
                 // i.e. we don't know which zoom out/etc events will finish first ...
-                test("getURLHash()", function() {
+                asyncTest("getURLHash()", function() {
                     dv.gotoPage(1);
-                    equal(dv.getURLHash(), 'z=2&i=bm_001.tif&y=1&x=158');
+                    dv.setZoomLevel(0, function () {
+                        equal(dv.getURLHash(), 'z=0&n=5&i=bm_001.tif&y=0&x=0&gy=0&h=700&w=958');
+                        start();
+                    });
                 });
-
                 // iPad-specific tests
                 if (navigator.platform == 'iPad') {
                     module("Testing on the iPad");
