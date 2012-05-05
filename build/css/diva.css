@@ -1,0 +1,298 @@
+/*
+ * Inspired by the Twitter bootstrap
+ *
+ */
+.hidden {
+  display: none;
+}
+.grab {
+  cursor: url("../img/openhand.cur"), pointer;
+}
+.grabbing {
+  cursor: url("../img/closedhand.cur"), move !important;
+}
+.full-width {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+.full-height {
+  height: 100% !important;
+  max-height: 100% !important;
+}
+.diva .title {
+  text-align: center;
+  font-weight: bold;
+  font-size: 2.0em;
+}
+.diva .tools {
+  margin-top: 15px;
+}
+.diva .tools .tools-left {
+  float: left;
+}
+.diva .tools .tools-left .slider-label {
+  display: none;
+  padding: 7px 0px;
+  clear: both;
+}
+.diva .tools .tools-left.fullscreen-space {
+  margin-left: 45px;
+}
+.diva .tools .tools-right {
+  float: right;
+  height: 42px;
+  position: relative;
+  left: 2px;
+}
+.diva .tools .tools-right .button {
+  float: right;
+  cursor: pointer;
+  height: 32px;
+  width: 32px;
+  background: #f1f1f1;
+  border: 1px solid #99bbe8;
+}
+.diva .tools .tools-right .button:hover {
+  background: #fdfdfd;
+}
+.diva .tools .tools-right .page-tools {
+  float: left;
+  text-align: right;
+  padding-right: 4px;
+}
+.diva .tools .tools-right .page-tools .page-label {
+  padding-right: 2px;
+}
+.diva .tools .tools-right .page-tools .goto-form {
+  text-align: right;
+}
+.diva .tools .tools-right .page-tools .goto-form .input {
+  width: 30px;
+  outline: none;
+  margin: 0px;
+  padding-top: 0px;
+}
+.diva .tools.fullscreen-tools {
+  position: fixed;
+  top: 0px;
+  right: 30px;
+  z-index: 9001;
+  width: 210px;
+  padding: 15px 15px 10px 15px;
+  border: 1px solid #dddddd;
+  background: #ffffff;
+  -webkit-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
+  -moz-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
+  box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
+}
+.diva .outer {
+  background: #f1f1f1;
+  border: 1px solid #99bbe8;
+  position: relative;
+  min-height: 400px;
+  min-width: 400px;
+  height: 700px;
+  overflow: auto;
+}
+.diva .outer .inner {
+  position: relative;
+  overflow: hidden;
+}
+.diva .outer .inner .page {
+  -webkit-box-shadow: 2px 2px 6px 0 rgba(0, 0, 0, 0.5);
+  -moz-box-shadow: 2px 2px 6px 0 rgba(0, 0, 0, 0.5);
+  box-shadow: 2px 2px 6px 0 rgba(0, 0, 0, 0.5);
+  background: url("../img/loading.gif") no-repeat center;
+  position: absolute;
+}
+.diva .outer .inner .page .page-tools {
+  position: absolute;
+  top: -25px;
+  left: 0px;
+  width: 75px;
+  height: 25px;
+  z-index: 3;
+}
+.diva .outer .inner .page .page-tools div {
+  display: inline-block;
+  height: 25px;
+  width: 25px;
+  cursor: pointer;
+}
+.diva .outer .inner .row {
+  position: absolute;
+  width: 100%;
+}
+.diva .outer.fullscreen {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  z-index: 9000;
+  position: fixed !important;
+  top: 0;
+  left: 0;
+}
+div[id$="diva-fullscreen"] {
+  position: absolute;
+  z-index: 8999;
+  top: 0;
+  left: 0;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  background: url("../img/fullscreen.png") no-repeat center;
+}
+div[id$="diva-link-popup"] {
+  background: #ffffff;
+  border: 1px solid #dddddd;
+  height: 28px;
+  width: 230px;
+  position: absolute;
+  padding: 5px;
+  z-index: 9001;
+  -webkit-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
+  -moz-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
+  box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
+}
+div[id$="diva-link-popup"] input {
+  width: 210px;
+  margin-top: 5px;
+}
+div[id$="diva-link-popup"] input:focus {
+  outline: none;
+}
+.hide-scrollbar {
+  overflow: hidden !important;
+}
+/*
+ * Based on the jQuery UI CSS Framework
+ * Pretty different though.
+ *
+ */
+.ui-slider {
+  display: none;
+  position: relative;
+  border: 1px solid #dddddd;
+  background: #fdfdfd;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+  height: 6px;
+  width: 100px;
+  z-index: 1;
+}
+.ui-slider .handle {
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+  border: 1px solid #cccccc;
+  background: #fdfdfd;
+  outline: none;
+  height: 11px;
+  width: 11px;
+  z-index: 2;
+  cursor: default;
+  position: absolute;
+  top: -3px;
+  margin-left: -2px;
+}
+.ui-slider .handle.hover {
+  background: #ecf2fb;
+  border: 1px solid #6f9fdf;
+}
+.ui-slider .handle.active {
+  background: #ffffff;
+  border: 1px solid #99bbe8;
+}
+/* Begin canvas plugin */
+.canvas-icon {
+  background: url('../img/plugins/canvas.png') no-repeat center;
+}
+#diva-canvas-backdrop {
+  z-index: 9050;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  display: none;
+  background: rgba(50, 50, 50, 0.9);
+}
+#diva-canvas-tools {
+  color: #ffffff;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 250px;
+  z-index: 9100;
+  background: rgba(0, 0, 0, 0.5);
+  padding-bottom: 10px;
+}
+#diva-canvas-tools span {
+  margin-left: 10px;
+}
+#diva-canvas-tools span i {
+  font-style: normal;
+}
+#diva-canvas-tools span b {
+  font-weight: normal;
+  cursor: pointer;
+}
+#diva-canvas-tools .ui-slider {
+  width: 220px;
+  display: block;
+  margin: 10px;
+}
+#diva-canvas-loading {
+  display: none;
+}
+#diva-canvas-minimap {
+  height: 230px;
+  width: 230px;
+  margin: 10px;
+  cursor: crosshair;
+}
+#diva-canvas {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  z-index: 9051;
+  cursor: url("../img/openhand.cur"), pointer;
+}
+#diva-canvas-close {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  height: 18px;
+  width: 18px;
+  background-repeat: no-repeat;
+  z-index: 9058;
+  cursor: pointer;
+}
+#diva-map-viewbox {
+  border: 1px solid #FF0000;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  cursor: crosshair;
+}
+.overflow-hidden {
+  overflow: hidden !important;
+}
+#diva-canvas-wrapper {
+  z-index: 9051;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  overflow: scroll;
+}
+/* End canvas plugin */
+/* Begin download plugin */
+.download-icon {
+  background: url('../img/plugins/download.png') no-repeat center;
+}
+/* End download plugin */
