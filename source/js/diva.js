@@ -125,7 +125,7 @@ window.divaPlugins = [];
             verticalPadding: 0,         // Either the fixed padding or adaptive padding
             viewerXOffset: 0,           // Distance between left edge of viewer and document left edge
             viewerYOffset: 0,           // ^ for top edges
-            zoomCallback: null          // Executed after zooming (or trying to)
+            zoomCallbacks: []           // Stack of functions to execute after zooming (or trying to)
         };
 
         $.extend(settings, globals);
@@ -851,8 +851,10 @@ window.divaPlugins = [];
                         }
 
                         // Execute the one-time callback, if present
-                        $.executeCallback(settings.zoomCallback, zoomLevel);
-                        settings.zoomCallback = null;
+                        if (settings.zoomCallbacks.length > 0) {
+                            console.log("about to pop execute callback");
+                            $.executeCallback(settings.zoomCallbacks.pop(), zoomLevel);
+                        }
                     } else {
                         // Switching between fullscreen mode
                         $.executeCallback(settings.onFullscreen, zoomLevel);
@@ -900,10 +902,10 @@ window.divaPlugins = [];
                 return true;
             } else {
                 // Execute the callback functions anyway (required for the unit testing)
-                $.executeCallback(settings.zoomCallback, settings.zoomLevel);
-
-                // Set them to null so we don't try to call it again
-                settings.zoomCallback = null;
+                if (settings.zoomCallbacks.length > 0) {
+                    console.log("about to pop and execute callback");
+                    $.executeCallback(settings.zoomCallbacks.pop(), settings.zoomLevel);
+                }
                 return false;
             }
         };
@@ -1772,7 +1774,8 @@ window.divaPlugins = [];
         };
 
         this.setZoomLevel = function (zoomLevel, callback) {
-            settings.zoomCallback = callback;
+            console.log("saving the callback");
+            settings.zoomCallbacks.push(callback);
             return handleZoom(zoomLevel);
         };
 

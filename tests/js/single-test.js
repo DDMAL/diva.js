@@ -12,7 +12,7 @@ var diva;
             enableAutoTitle: false,
             iipServerURL: "http://coltrane.music.mcgill.ca/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/beromunster/",
             zoomLevel: 2,
-            divaserveURL: "http://ddmal.music.mcgill.ca/divaserve.php",
+            divaserveURL: "http://petrucci.musiclibs.net:9002/loldivaserve.php",
             imageDir: "beromunster",
             iconPath: "../build/img/",
             onReady: function() {
@@ -40,87 +40,51 @@ var diva;
                     dv.gotoPage(1);
                 });
 
-                test("getZoomLevel()", function() {
-                    equal(dv.getZoomLevel(), 2, "The initial zoom level should be 2");
+                test("getZoomLevel() and zoomIn()", function () {
+                    stop();
+                    expect(4);
+                    // First make sure the initial zoom level is correct
+                    equal(dv.getZoomLevel(), 2, "Initial should be 2");
+
+                    // Then, try zooming in
+                    dv.zoomIn(function (zoomLevel) {
+                        equal(zoomLevel, 3, "After zooming in once, should be 3");
+                        dv.zoomIn(function (zoomLevel) {
+                            equal(zoomLevel, 4, "After zooming in again, should be 4");
+                            dv.zoomIn(function (zoomLevel) {
+                                equal(zoomLevel, 4, "Should still be 4");
+
+                                // Set the zoom level back to 2
+                                dv.setZoomLevel(2, function () {
+                                    start();
+                                });
+                            });
+                        });
+                    });
                 });
 
-                asyncTest("zoomIn(), callback and return value", function() {
-                    expect(2);
-                    var canZoomIn = dv.zoomIn(function(zoomLevel) {
-                        equal(zoomLevel, 3, "After zooming in, level should be 3");
-                        start();
+                test("getZoomLevel() and zoomOut()", function () {
+                    stop();
+                    expect(4);
+
+                    // Zoom level should be back to 2
+                    equal(dv.getZoomLevel(), 2, "Initial should be 2");
+
+                    // Then, try zooming out
+                    dv.zoomOut(function (zoomLevel) {
+                        equal(zoomLevel, 1, "After zooming in once, should be 1");
+                        dv.zoomOut(function (zoomLevel) {
+                            equal(zoomLevel, 0, "After zooming in again, should be 0");
+                            dv.zoomOut(function (zoomLevel) {
+                                equal(zoomLevel, 0, "Should still be 0");
+
+                                // Set the zoom level back to 2
+                                dv.setZoomLevel(2, function () {
+                                    start();
+                                });
+                            });
+                        });
                     });
-
-                    ok(canZoomIn, "Should be able to zoom in");
-                });
-
-                // Unit tests shouldn't change state but it's hard to avoid in this case
-                // Looks like each async test has to be done separately
-                asyncTest("zoomIn() again", function() {
-                    expect(2);
-                    var canZoomIn = dv.zoomIn(function(zoomLevel) {
-                        equal(zoomLevel, 4, "Should be 4 after zooming again");
-                        start();
-                    });
-
-                    ok(canZoomIn, "Should be able to zoom in");
-                });
-
-                asyncTest("zoomIn() when we can't zoom in", function() {
-                    expect(2);
-                    var canZoomIn = dv.zoomIn(function(zoomLevel) {
-                        equal(zoomLevel, 4, "Should still be 4");
-                        start();
-                    });
-
-                    ok(!canZoomIn, "Should not be able to zoom in");
-                });
-
-                // Now make sure zooming out works
-                asyncTest("zoomOut() once", function() {
-                    expect(2);
-                    var canZoomOut = dv.zoomOut(function(zoomLevel) {
-                        equal(zoomLevel, 3, "Should be 3 now");
-                        start();
-                    });
-
-                    ok(canZoomOut, "Should be able to zoom out");
-                });
-
-                asyncTest("zoomOut() again", function() {
-                    var canZoomOut = dv.zoomOut(function(zoomLevel) {
-                        equal(zoomLevel, 2, "Should be 2 now");
-                        start();
-                    });
-
-                    ok(canZoomOut, "Should work");
-                });
-
-                asyncTest("zoomOut() once again", function() {
-                    var canZoomOut = dv.zoomOut(function(zoomLevel) {
-                        equal(zoomLevel, 1, "Should be one now");
-                        start();
-                    });
-
-                    ok(canZoomOut, "Zooming out should work");
-                });
-
-                asyncTest("last working zoomOut()", function() {
-                    var canZoomOut = dv.zoomOut(function(zoomLevel) {
-                        equal(zoomLevel, 0, "Should be 0");
-                        start();
-                    });
-
-                    ok(canZoomOut, "Should still work");
-                });
-
-                asyncTest("zoomOut() when we can't zoom out", function() {
-                    var canZoomOut = dv.zoomOut(function(zoomLevel) {
-                        equal(zoomLevel, 0, "Should still be 0");
-                        start();
-                    });
-
-                    ok(!canZoomOut, "Can't zoom out anymore");
                 });
 
                 test("gotoPageByName()", function() {
@@ -140,24 +104,35 @@ var diva;
                 */
 
                 // Test setting the zoom level
-                asyncTest("setZoomLevel()", function () {
-                    console.log("in set zoom level");
-                    dv.setZoomLevel(2, function () {
+                test("setZoomLevel()", function () {
+                    stop();
+                    expect(2);
+                    dv.setZoomLevel(0, function () {
                         var zoomLevel = dv.getZoomLevel();
-                        equal(zoomLevel, 2, "Should be 0 now");
-                        start();
+                        equal(zoomLevel, 0, "Should be 0 now");
+                        dv.setZoomLevel(2, function () {
+                            equal(dv.getZoomLevel(), 2, "Should be 2 now");
+                            start();
+                        });
                     });
                 });
 
-                // Sometimes does not work due to asynchronous testing issues
-                // i.e. we don't know which zoom out/etc events will finish first ...
-                asyncTest("getURLHash()", function() {
-                    dv.gotoPage(1);
-                    dv.setZoomLevel(0, function () {
-                        equal(dv.getURLHash(), 'z=0&n=5&i=bm_001.tif&y=0&x=0&gy=0&h=700&w=958');
-                        start();
+                test("getURLHash()", function() {
+                    expect(2);
+                    equal(dv.getURLHash(), 'z=2&n=5&i=bm_001.tif&y=0&x=157&gy=0&h=700&w=958');
+                    stop();
+
+                    // Now zoom in once
+                    dv.zoomIn(function (zoomLevel) {
+                        equal(dv.getURLHash(), 'z=3&n=5&i=bm_001.tif&y=0&x=786&gy=0&h=700&w=958');
+
+                        // Zoom back out to reset it
+                        dv.zoomOut(function (zoomLevel) {
+                            start();
+                        });
                     });
                 });
+
                 // iPad-specific tests
                 if (navigator.platform == 'iPad') {
                     module("Testing on the iPad");
