@@ -26,10 +26,10 @@
                 float: right;
                 cursor: pointer;
                 .square(32px);
-                background: @buttonBg;
+                background-color: @buttonBg;
                 .frame(@buttonFrame);
                 &:hover {
-                    background: @buttonHover;
+                    background-color: @buttonHover;
                 }
             }
             .page-tools {
@@ -139,6 +139,17 @@ div[id$="diva-link-popup"] {
             outline: none;
         }
     }
+}
+
+div[id$="grid-icon"] {
+    background-image: url("@{iconPath}document.png");
+    &.in-grid {
+        background-image: url("@{iconPath}grid.png");
+    }
+}
+
+div[id$="link-icon"] {
+    background-image: url("@{iconPath}link.png");
 }
 
 .hide-scrollbar {

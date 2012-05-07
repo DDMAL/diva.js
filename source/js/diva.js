@@ -66,7 +66,6 @@ window.divaPlugins = [];
             viewerFloat: 'none',        // Change to left or right for dual-viewer layouts
             viewportMargin: 400,        // Pretend tiles +/- 400px away from viewport are in
             zoomLevel: 2,               // The initial zoom level (used to store the current zoom level)
-            iconPath: "img/"            // The path to the diva 'img' directory to load the icons
         };
 
         // Apply the defaults, or override them with passed-in options.
@@ -1344,8 +1343,8 @@ window.divaPlugins = [];
 
         // Handles all status updating etc (both fullscreen and not)
         var createToolbar = function () {
-            var gridIconHTML = (settings.enableGrid) ? '<div class="button" id="' + settings.ID + 'grid-icon"><img src="' + settings.iconPath + 'grid.png" title="Toggle grid" /></div>' : '';
-            var linkIconHTML = '<div class="button" id="' + settings.ID + 'link-icon" style="border-left: 0px;"><img src="' + settings.iconPath + 'link.png" title="Link" /></div>';
+            var gridIconHTML = (settings.enableGrid) ? '<div class="button' + (settings.inGrid ? ' in-grid' : '') + '" id="' + settings.ID + 'grid-icon" title="Toggle grid"></div>' : '';
+            var linkIconHTML = (settings.enableLink) ? '<div class="button" id="' + settings.ID + 'link-icon" style="' + (settings.enableGrid ? 'border-left: 0px' : '') + '" title="Link to this page"></div>' : '';
             var zoomSliderHTML = (settings.enableZoomSlider) ? '<div id="' + settings.ID + 'zoom-slider"></div>' : '';
             var gridSliderHTML = (settings.enableGridSlider) ? '<div id="' + settings.ID + 'grid-slider"></div>' : '';
             var gotoPageHTML = (settings.enableGotoPage) ? '<form id="' + settings.ID + 'goto-page" class="goto-form"><input type="text" id="' + settings.ID + 'goto-page-input" / class="input"> <input type="submit" value="Go to page" style="margin-top: 0px;" /></form>' : '';
@@ -1452,8 +1451,7 @@ window.divaPlugins = [];
                 $(settings.selector + currentSlider + '-slider-label').show();
 
                 // Also change the image for the grid icon
-                var newIconImage = (settings.inGrid) ? 'grid' : 'document';
-                $(settings.selector + 'grid-icon img').attr('src', settings.iconPath + newIconImage + '.png');
+                $(settings.selector + 'grid-icon').toggleClass('in-grid');
             };
 
             if (settings.jumpIntoFullscreen) {
