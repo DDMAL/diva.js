@@ -129,6 +129,22 @@ window.divaPlugins = [];
 
         $.extend(settings, globals);
 
+        // Executes a callback function with the diva instance set as the context
+        var self = this;
+        var executeCallback = function (callback) {
+            if (typeof callback == "function") {
+                var args = [];
+                for (var i = 1, length = arguments.length; i < length; i++) {
+                    args.push(arguments[i]);
+                }
+
+                callback.apply(self, args);
+                return true;
+            } else {
+                return false;
+            }
+        };
+
         // Checks if a page is within the viewport vertically
         var verticallyInViewport = function (top, bottom) {
             var panelHeight = settings.panelHeight;
@@ -507,14 +523,14 @@ window.divaPlugins = [];
 
             // Handle the scrolling callback functions here
             if (direction !== 0) {
-                $.executeCallback(settings.onScroll, settings.scrollSoFar);
+                executeCallback(settings.onScroll, settings.scrollSoFar);
 
                 // If we're scrolling down
                 if (direction > 0) {
-                    $.executeCallback(settings.onScrollDown, settings.scrollSoFar);
+                    executeCallback(settings.onScrollDown, settings.scrollSoFar);
                 } else {
                     // We're scrolling up
-                    $.executeCallback(settings.onScrollUp, settings.scrollSoFar);
+                    executeCallback(settings.onScrollUp, settings.scrollSoFar);
                 }
             }
         };
@@ -535,14 +551,14 @@ window.divaPlugins = [];
 
             // Handle the scrolling callback functions here
             if (direction !== 0) {
-                $.executeCallback(settings.onScroll, settings.scrollSoFar);
+                executeCallback(settings.onScroll, settings.scrollSoFar);
 
                 // If we're scrolling down
                 if (direction > 0) {
-                    $.executeCallback(settings.onScrollDown, settings.scrollSoFar);
+                    executeCallback(settings.onScrollDown, settings.scrollSoFar);
                 } else {
                     // We're scrolling up
-                    $.executeCallback(settings.onScrollUp, settings.scrollSoFar);
+                    executeCallback(settings.onScrollUp, settings.scrollSoFar);
                 }
             }
         };

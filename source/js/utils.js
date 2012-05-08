@@ -42,19 +42,6 @@
     };
 })(jQuery);
 
-// For executing callback functions with one parameter (maybe allow more later)
-(function ($) {
-    $.executeCallback = function(callback, parameter) {
-        // If it's not a function, it just won't execute it
-        if (typeof callback == 'function') {
-            callback.call(this, parameter);
-            return true;
-        }
-
-        return false;
-    };
-})(jQuery);
-
 // For getting the #key values from the URL. For specifying a page and zoom level
 // Look into caching, because we only need to get this during the initial load
 // Although for the tests I guess we would need to override caching somehow
