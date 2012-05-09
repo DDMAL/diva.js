@@ -66,12 +66,11 @@ if($MEMCACHE_AVAILABLE) {
     $MEMCONN->addServer($MEMCACHE_SERVER, $MEMCACHE_PORT);
 }
 
-if (!isset($_GET['d']) || !isset($_GET['z'])) {
-    die("Missing params");
+if (!isset($_GET['d'])) {
+    die("Missing 'd' param (image directory)");
 }
 
 $dir = preg_replace('/[^-a-zA-Z0-9_]/', '', $_GET['d']);
-$zoom = preg_replace('/[^0-9]/', '', $_GET['z']);
 
 $til_wid_get = (isset($_GET['w'])) ? $_GET['w'] : 0;
 $til_hei_get = (isset($_GET['h'])) ? $_GET['h'] : 0;
@@ -83,11 +82,10 @@ $img_cache = $CACHE_DIR . "/" . $dir;
 $img_dir = $IMAGE_DIR . "/" . $dir;
 
 if ($MEMCACHE_AVAILABLE) {
-     $cachekey = $dir . "-" . $zoom;
+     $cachekey = $dir;
 }
 
-$gen_cache_file = $img_cache . '/docdata.txt';
-$cache_file = $img_cache . '/docdata_' . $zoom . '.txt';
+$cache_file = $img_cache . '/docdata.txt';
 $pgs = array();
 
 if (!file_exists($img_cache)) {
@@ -98,91 +96,89 @@ if (!file_exists($img_cache)) {
 if (!file_exists($cache_file)) {
     $images = array();
     $lowest_max_zoom = 0;
-    
-    // Check if the general docdata.txt file exists (not zoom-level-specific)
-    if (!file_exists($gen_cache_file)) {
-        // Does not exist, so make it
-        $i = 0;
-        foreach (glob($img_dir . '/*') as $img_file) {
-            $img_size = getimagesize($img_file);
-            $img_wid = $img_size[0];
-            $img_hei = $img_size[1];
-            
-            $max_zoom = get_max_zoom_level($img_wid, $img_hei, $til_wid, $til_hei);
-            $lowest_max_zoom = ($lowest_max_zoom > $max_zoom || $lowest_max_zoom == 0) ? $max_zoom : $lowest_max_zoom;
-            
-            // Figure out the image filename
-            $img_fn = substr($img_file, strrpos($img_file, '/') + 1);
 
-            $images[$i] = array(
-                'mx_h'      => $img_hei,
-                'mx_w'      => $img_wid,
-                'mx_z'      => $max_zoom,
-                'fn'        => $img_fn,
-            );
-            
-            // store the lowest max zoom in the lmx key.
-            $images['lmx'] = $lowest_max_zoom;
-            file_put_contents($gen_cache_file, serialize($images));
-            $i++;
-        }
-    } else {
-        // Already exists - so store the contents in $pgs
-        $images = unserialize(file_get_contents($gen_cache_file));
-        $lowest_max_zoom = $images['lmx'];
+    $i = 0;
+    foreach (glob($img_dir . '/*') as $img_file) {
+        $img_size = getimagesize($img_file);
+        $img_wid = $img_size[0];
+        $img_hei = $img_size[1];
+
+        $max_zoom = get_max_zoom_level($img_wid, $img_hei, $til_wid, $til_hei);
+        $lowest_max_zoom = ($lowest_max_zoom > $max_zoom || $lowest_max_zoom == 0) ? $max_zoom : $lowest_max_zoom;
+
+        // Figure out the image filename
+        $img_fn = substr($img_file, strrpos($img_file, '/') + 1);
+
+        $images[$i] = array(
+            'mx_h'      => $img_hei,
+            'mx_w'      => $img_wid,
+            'mx_z'      => $max_zoom,
+            'fn'        => $img_fn,
+        );
+
+        $i++;
     }
 
-    // If we get an invalid zoom level, just set it to 0
-    if ($zoom > $lowest_max_zoom || $zoom < 0) {
-        $zoom = 0;
-    }
-    
     // Now go through them again, store in $pgs
-    $mx_h = $mx_w = $t_wid = $t_hei = $num_pages = $max_ratio = $min_ratio = 0;
-    
+    // We do it again so we don't send unnecessary data (for zooms greater than lowest_max_zoom)
+    $num_pages = $max_ratio = $min_ratio = 0;
+    $t_wid = array_fill(0, $lowest_max_zoom + 1, 0);
+    $t_hei = array_fill(0, $lowest_max_zoom + 1, 0);
+    $mx_h = array_fill(0, $lowest_max_zoom + 1, 0);
+    $mx_w = array_fill(0, $lowest_max_zoom + 1, 0);
+    $a_wid = array();
+    $a_hei = array();
+
     for ($i = 0; $i < count($images) - 1; $i++) {
         if (array_key_exists($i, $images)) {
-            $h = incorporate_zoom($images[$i]['mx_h'], $lowest_max_zoom - $zoom);
-            $w = incorporate_zoom($images[$i]['mx_w'], $lowest_max_zoom - $zoom);
-            $c = ceil($w / $til_wid);
-            $r = ceil($h / $til_hei);
+            $page_data = array();
+
+            // Get data for all zoom levels
+            for ($j = 0; $j <= $lowest_max_zoom; $j++) {
+                $h = incorporate_zoom($images[$i]['mx_h'], $lowest_max_zoom - $j);
+                $w = incorporate_zoom($images[$i]['mx_w'], $lowest_max_zoom - $j);
+                $c = ceil($w / $til_wid);
+                $r = ceil($h / $til_wid);
+                $page_data[] = array(
+                    'c'     => $c,
+                    'r'     => $r,
+                    'h'     => $h,
+                    'w'     => $w,
+                );
+
+                $t_wid[$j] += $w;
+                $t_hei[$j] += $h;
+
+                $mx_h[$j] = ($h > $mx_h[$j]) ? $h : $mx_h[$j];
+                $mx_w[$j] = ($w > $mx_w[$j]) ? $w : $mx_w[$j];
+            }
+
             $m_z = $images[$i]['mx_z'];
             $fn = $images[$i]['fn'];
             $pgs[] = array(
-                'c'     => $c,
-                'r'     => $r,
-                'h'     => $h,
-                'w'     => $w,
-                'm_z'   => $m_z,
-                'fn'    => $fn, 
+                'd'     => $page_data,
+                'm'   => $m_z,
+                'f'    => $fn,
             );
-            // Figuring out the dimensions of the tallest and widest pages
-            if ($h > $mx_h) {
-                $mx_h = $h;
-            }
-            if ($w > $mx_w) {
-                $mx_w = $w;
-            }
+
             $ratio = $h / $w;
             $max_ratio = ($ratio > $max_ratio) ? $ratio : $max_ratio;
             $min_ratio = ($ratio < $min_ratio || $min_ratio == 0) ? $ratio : $min_ratio;
-            $t_wid += $w;
-            $t_hei += $h;
             $num_pages++;
         }
     }
-    
-    $a_wid = $t_wid / $num_pages;
-    $a_hei = $t_hei / $num_pages;
-    
+
+    for ($j = 0; $j <= $lowest_max_zoom; $j++) {
+        $a_wid[] = $t_wid[$j] / $num_pages;
+        $a_hei[] = $t_hei[$j] / $num_pages;
+    }
+
     // Calculate the dimensions
     $dims = array(
         'a_wid'         => $a_wid,
         'a_hei'         => $a_hei,
         'max_w'         => $mx_w,
         'max_h'         => $mx_h,
-        // t_hei and t_wid are slightly different from those returned by the django app ... why? 
-        // Really used for the grid. The max height/width ratio
         'max_ratio'     => $max_ratio,
         'min_ratio'     => $min_ratio,
         't_hei'         => $t_hei,
@@ -193,7 +189,7 @@ if (!file_exists($cache_file)) {
     $title = str_replace('-', ' ', $dir);
     $title = ucwords($title);
 
-    // The full data to be returned
+    // The full array to be returned
     $data = array(
         'item_title'    => $title,
         'dims'          => $dims,
@@ -202,23 +198,24 @@ if (!file_exists($cache_file)) {
     );
 
     $json = json_encode($data);
+
     // Save it to a text file in the cache directory
     file_put_contents($cache_file, $json);
-    
+
     if ($MEMCACHE_AVAILABLE) {
-    $MEMCONN->set($cachekey, $json);
+        $MEMCONN->set($cachekey, $json);
     }
 
     echo $json;
 } else {
     // It might be useful to store a general docdata.txt sort of file as well
     if ($MEMCACHE_AVAILABLE) {
-    if(!($json = $MEMCONN->get($cachekey))){
-        if ($MEMCONN->getResultCode() == Memcached::RES_NOTFOUND) {
-            $json = file_get_contents($cache_file);
-            $MEMCONN->set($cachekey, $json);
-        } 
-    }
+        if (!($json = $MEMCONN->get($cachekey))) {
+            if ($MEMCONN->getResultCode() == Memcached::RES_NOTFOUND) {
+                $json = file_get_contents($cache_file);
+                $MEMCONN->set($cachekey, $json);
+            }
+        }
     } else {
         $json = file_get_contents($cache_file);
     }
