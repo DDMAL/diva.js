@@ -36,7 +36,7 @@
   clear: both;
 }
 .diva .tools .tools-left.fullscreen-space {
-  margin-left: 45px;
+  margin-left: 50px;
 }
 .diva .tools .tools-right {
   float: right;
@@ -49,11 +49,11 @@
   cursor: pointer;
   height: 32px;
   width: 32px;
-  background: #f1f1f1;
+  background-color: #f1f1f1;
   border: 1px solid #99bbe8;
 }
 .diva .tools .tools-right .button:hover {
-  background: #fdfdfd;
+  background-color: #fdfdfd;
 }
 .diva .tools .tools-right .page-tools {
   float: left;
@@ -141,7 +141,10 @@ div[id$="diva-fullscreen"] {
   width: 40px;
   height: 40px;
   cursor: pointer;
-  background: url("../img/fullscreen.png") no-repeat center;
+  background: url("../img/fullscreen.png") no-repeat top;
+}
+div[id$="diva-fullscreen"].contained {
+  top: 45px;
 }
 div[id$="diva-link-popup"] {
   background: #ffffff;
@@ -161,6 +164,15 @@ div[id$="diva-link-popup"] input {
 }
 div[id$="diva-link-popup"] input:focus {
   outline: none;
+}
+div[id$="grid-icon"] {
+  background-image: url("../img/grid.png");
+}
+div[id$="grid-icon"].in-grid {
+  background-image: url("../img/document.png");
+}
+div[id$="link-icon"] {
+  background-image: url("../img/link.png");
 }
 .hide-scrollbar {
   overflow: hidden !important;
