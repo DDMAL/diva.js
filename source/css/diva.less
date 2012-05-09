@@ -14,7 +14,7 @@
                 clear: both;
             }
             &.fullscreen-space {
-                margin-left: 45px;
+                margin-left: 50px;
             }
         }
         .tools-right {
@@ -121,7 +121,10 @@ div[id$="diva-fullscreen"] {
     width: 40px;
     height: 40px;
     cursor: pointer;
-    background: url("@{iconPath}fullscreen.png") no-repeat center;
+    background: url("@{iconPath}fullscreen.png") no-repeat top;
+    &.contained {
+        top: 45px;
+    }
 }
 
 div[id$="diva-link-popup"] {
