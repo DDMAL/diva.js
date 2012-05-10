@@ -117,6 +117,7 @@ window.divaPlugins = [];
             panelWidth: 0,              // Width of the panel. Set in initiateViewer()
             plugins: [],                // Filled with the not disabled plugins in window.divaPlugins
             prevVptTop: 0,              // Used to determine vertical scroll direction
+            realMaxZoom: -1,            // To hold the true max zoom level of the document
             rowLoadTimeout: 50,         // Less than for page loading
             scaleWait: false,           // For preventing double-scale on the iPad
             selector: '',               // Uses the generated ID prefix to easily select elements
@@ -249,7 +250,7 @@ window.divaPlugins = [];
                         var displayStyle = (settings.tileFadeSpeed) ? 'none' : 'inline';
 
                         // The zoom level might be different, if a page has a different max zoom level than the others
-                        var zoomLevel = (maxZoom === settings.maxZoomLevel) ? settings.zoomLevel : settings.zoomLevel + (maxZoom - settings.maxZoomLevel);
+                        var zoomLevel = settings.zoomLevel + (maxZoom - settings.realMaxZoom);
                         tileHeight = (row === rows - 1) ? lastHeight : settings.tileHeight; // If it's the LAST tile, calculate separately
                         tileWidth = (col === cols - 1) ? lastWidth : settings.tileWidth; // Otherwise, just set it to the default height/width
                         imgSrc = settings.iipServerURL + filename + '&amp;JTL=' + zoomLevel + ',' + tileNumber;
@@ -680,6 +681,7 @@ window.divaPlugins = [];
                     settings.totalWidths = data.dims.t_wid;
 
                     // Make sure the set max and min values are valid
+                    settings.realMaxZoom = data.max_zoom;
                     settings.maxZoomLevel = (settings.maxZoomLevel >= 0 && settings.maxZoomLevel <= data.max_zoom) ? settings.maxZoomLevel : data.max_zoom;
                     settings.minZoomLevel = (settings.minZoomLevel >= 0 && settings.minZoomLevel <= settings.maxZoomLevel) ? settings.minZoomLevel : 0;
                     settings.minPagesPerRow = Math.max(2, settings.minPagesPerRow);
