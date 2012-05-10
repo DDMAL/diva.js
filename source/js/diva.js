@@ -936,7 +936,6 @@ window.divaPlugins = [];
                 $(settings.selector + 'zoom-slider').slider({
                     value: zoomLevel
                 });
-                settings.toolbar.setZoomLevel(zoomLevel);
 
                 return true;
             } else {
@@ -1409,6 +1408,9 @@ window.divaPlugins = [];
                 step: 1,
                 slide: function (event, ui) {
                     handleZoomSlide(ui.value);
+                },
+                change: function (event, ui) {
+                    handleZoomSlide(ui.value);
                 }
             });
 
@@ -1418,6 +1420,9 @@ window.divaPlugins = [];
                 max: settings.maxPagesPerRow,
                 step: 1,
                 slide: function (event, ui) {
+                    handleGridSlide(ui.value);
+                },
+                change: function (event, ui) {
                     handleGridSlide(ui.value);
                 }
             });
