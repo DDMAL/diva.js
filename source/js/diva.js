@@ -994,6 +994,7 @@ window.divaPlugins = [];
                     var heightToScroll = settings.heightAbovePages[pageIndex] + verticalOffset;
 
                     // Change the "currently on page" thing
+                    settings.currentPageIndex = pageIndex;
                     updateCurrentPage(pageIndex);
                     $(settings.outerSelector).scrollTop(heightToScroll);
 
