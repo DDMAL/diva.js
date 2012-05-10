@@ -43,7 +43,8 @@ window.divaPlugins = [];
             fixedPadding: 10,           // Fallback if adaptive padding is set to 0
             fixedHeightGrid: true,      // So each page in grid view has the same height (only widths differ)
             iipServerURL: '',           // The URL to the IIPImage installation, including the ?FIF=
-            inGrid: false,              // Set to true when the user enters the grid view
+            inFullscreen: false,        // Set to true to load fullscreen mode initially
+            inGrid: false,              // Set to true to load grid view initially
             imageDir: '',               // Image directory, relative to the root defined in divaserve
             maxPagesPerRow: 8,          // Maximum number of pages per row, grid view
             maxZoomLevel: -1,           // Optional; defaults to the max zoom returned in the JSON response
@@ -95,7 +96,6 @@ window.divaPlugins = [];
             horizontalOffset: 0,        // Used for storing the page offset before zooming
             horizontalPadding: 0,       // Either the fixed padding or adaptive padding
             ID: null,                   // The prefix of the IDs of the elements (usually 1-diva-)
-            inFullscreen: false,        // Set to true when the user enters fullscreen mode
             itemTitle: '',              // The title of the document
             lastPageLoaded: -1,         // The ID of the last page loaded (value set later)
             lastRowLoaded: -1,          // The index of the last row loaded
@@ -1698,8 +1698,8 @@ window.divaPlugins = [];
             var fullscreenParam = $.getHashParam('f' + settings.hashParamSuffix);
             var goIntoFullscreen = fullscreenParam === 'true' && settings.enableFullscreen;
 
-            settings.inGrid = goIntoGrid;
-            settings.inFullscreen = goIntoFullscreen;
+            settings.inGrid = settings.inGrid || goIntoGrid;
+            settings.inFullscreen = settings.inFullscreen || goIntoFullscreen;
 
             var gridScrollTop = parseInt($.getHashParam('gy' + settings.hashParamSuffix), 10);
             if (gridScrollTop > 0) {
