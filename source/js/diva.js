@@ -936,6 +936,7 @@ window.divaPlugins = [];
                 $(settings.selector + 'zoom-slider').slider({
                     value: zoomLevel
                 });
+                settings.toolbar.setZoomLevel(zoomLevel);
 
                 return true;
             } else {
