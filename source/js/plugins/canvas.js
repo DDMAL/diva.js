@@ -389,6 +389,9 @@ window.divaPlugins.push((function() {
             });
 
             // Figure out the multiplier for width/zoomLevel ratio etc
+        },
+        destroy: function () {
+            $('#diva-canvas-backdrop').remove();
         }
     }
 })());

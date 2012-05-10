@@ -14,7 +14,7 @@
                 clear: both;
             }
             &.fullscreen-space {
-                margin-left: 45px;
+                margin-left: 50px;
             }
         }
         .tools-right {
@@ -26,10 +26,10 @@
                 float: right;
                 cursor: pointer;
                 .square(32px);
-                background: @buttonBg;
+                background-color: @buttonBg;
                 .frame(@buttonFrame);
                 &:hover {
-                    background: @buttonHover;
+                    background-color: @buttonHover;
                 }
             }
             .page-tools {
@@ -121,7 +121,10 @@ div[id$="diva-fullscreen"] {
     width: 40px;
     height: 40px;
     cursor: pointer;
-    background: url("@{iconPath}fullscreen.png") no-repeat center;
+    background: url("@{iconPath}fullscreen.png") no-repeat top;
+    &.contained {
+        top: 45px;
+    }
 }
 
 div[id$="diva-link-popup"] {
@@ -139,6 +142,17 @@ div[id$="diva-link-popup"] {
             outline: none;
         }
     }
+}
+
+div[id$="grid-icon"] {
+    background-image: url("@{iconPath}grid.png");
+    &.in-grid {
+        background-image: url("@{iconPath}document.png");
+    }
+}
+
+div[id$="link-icon"] {
+    background-image: url("@{iconPath}link.png");
 }
 
 .hide-scrollbar {
