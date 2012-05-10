@@ -1487,7 +1487,6 @@ window.divaPlugins = [];
                 $(settings.selector + currentSlider + '-slider-label').show();
 
                 // Also change the image for the grid icon
-                console.log("changing image for grid icon");
                 $(settings.selector + 'grid-icon').toggleClass('in-grid');
             };
 
