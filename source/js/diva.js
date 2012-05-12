@@ -1420,33 +1420,46 @@ window.divaPlugins = [];
                 max: settings.maxPagesPerRow,
                 step: 1,
                 slide: function (event, ui) {
-                    handleGridSlide(ui.value);
-                },
+                    handleGrid(ui.value);
+                }/*,
+                // Commented out for now because it causes problems
                 change: function (event, ui) {
-                    handleGridSlide(ui.value);
-                }
+                    if (event.originalEvent == undefined) {
+                        handleGrid(ui.value);
+                    }
+                }*/
             });
 
             $(settings.selector + 'grid-icon').click(function () {
-                toggleGrid();
+                toggleGridIcon();
             });
 
             $(settings.selector + 'goto-page').submit(function () {
                 var desiredPage = parseInt($(settings.selector + 'goto-page-input').val(), 10);
+                var pageIndex = desiredPage - 1;
 
-                if (!gotoPage(desiredPage)) {
+                if (!pageInRange(pageIndex)) {
                     alert("Invalid page number");
+                } else {
+                    if (settings.inGrid) {
+                        gotoRow(pageIndex);
+                    } else {
+                        gotoPage(pageIndex, 0, 0);
+                    }
                 }
+
+                // Prevent the default action of reloading the page
                 return false;
             });
 
+            // Handle the creation of the link popup box
             $(settings.selector + 'link-icon').click(function () {
                 var leftOffset = $(settings.outerSelector).offset().left + settings.panelWidth;
                 $('body').prepend('<div id="' + settings.ID + 'link-popup"><input id="' + settings.ID + 'link-popup-input" class="diva-input" type="text" value="'+ getCurrentURL() + '"/></div>');
                 if (settings.inFullscreen) {
                     $(settings.selector + 'link-popup').css('top', '150px').css('right', '30px');
                 } else {
-                    $(settings.selector + 'link-popup').css('top', $(settings.outerSelector).offset().top + 'px').css('left', (leftOffset - 217) + 'px');
+                    $(settings.selector + 'link-popup').css('top', $(settings.outerSelector).offset().top + 'px').css('left', (leftOffset - 223) + 'px');
                 }
 
                 // Catch onmouseup events outside of this div
