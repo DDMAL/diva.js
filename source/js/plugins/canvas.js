@@ -242,7 +242,7 @@ window.divaPlugins.push((function() {
             settings.inCanvas = false;
 
             // Create the DOM elements
-            $('body').append('<div id="diva-canvas-backdrop"><div id="diva-canvas-tools" style="right: ' + (settings.scrollbarWidth + 20) + 'px"><div id="diva-map-viewbox"></div><canvas id="diva-canvas-minimap"></canvas><br /><span>Brightness: <i>0</i> <b id="brightness-reset">(Reset)</b></span><div id="brightness-slider"></div><span>Contrast: <i>1</i> <b id="contrast-reset">(Reset)</b></span><div id="contrast-slider"></div><span>Rotation: <i>0</i>&deg; (<b class="rotation-reset" id="rotation-reset">0</b>&deg; <b class="rotation-reset">90</b>&deg; <b class="rotation-reset">180</b>&deg; <b class="rotation-reset">270</b>&deg;)</span><div id="rotation-slider"></div><span>Zoom level: <i>0</i> <em id="zoom-loading">Loading ...</em></span><div id="zoom-slider"></div><div id="diva-canvas-applybox"><span><button type="button" id="diva-canvas-apply">Apply</button></span><span id="diva-canvas-loading">Loading ...</span></div></div><div id="diva-canvas-wrapper"><canvas id="diva-canvas"></canvas></div><div id="diva-canvas-close"></div></div>');
+            $('body').append('<div id="diva-canvas-backdrop"><div id="diva-canvas-tools" style="right: ' + (settings.scrollbarWidth + 20) + 'px"><div id="diva-map-viewbox"></div><canvas id="diva-canvas-minimap"></canvas><br /><span>Brightness: <i>0</i> <b id="brightness-reset">(Reset)</b></span><div id="brightness-slider"></div><span>Contrast: <i>1</i> <b id="contrast-reset">(Reset)</b></span><div id="contrast-slider"></div><span>Rotation: <i>0</i>&deg; (<b class="rotation-reset" id="rotation-reset">0</b>&deg; <b class="rotation-reset">90</b>&deg; <b class="rotation-reset">180</b>&deg; <b class="rotation-reset">270</b>&deg;)</span><div id="rotation-slider"></div><div id="diva-canvas-applybox"><span><button type="button" id="diva-canvas-apply">Apply</button></span><span id="diva-canvas-loading">Loading ...</span></div><span>Zoom level: <i>0</i> <em id="zoom-loading">Loading ...</em></span><div id="zoom-slider"></div></div><div id="diva-canvas-wrapper"><canvas id="diva-canvas"></canvas></div><div id="diva-canvas-close"></div></div>');
 
             // Save the size of the map, as defined in the CSS
             settings.mapSize = $('#diva-canvas-minimap').width();
@@ -354,7 +354,7 @@ window.divaPlugins.push((function() {
 
             // Double-click to zoom in/out (with CTRL)
             $('#diva-canvas-wrapper').dblclick(function(event) {
-                updateZoom(settings.zoomLevel + 1);
+                //updateZoom(settings.zoomLevel + 1);
             });
         },
         pluginName: 'canvas',
