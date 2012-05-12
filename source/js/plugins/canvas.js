@@ -206,7 +206,8 @@ window.divaPlugins.push((function() {
 
     var getImageURL = function(zoomLevel) {
         var width = settings.zoomWidthRatio * Math.pow(2, zoomLevel);
-        return settings.iipServerURL + settings.filename + '&WID=' + width + '&CVT=JPG';
+        return "/demo/canvas.php?f=" + settings.filename + "&w=" + width;
+        //return settings.iipServerURL + settings.filename + '&WID=' + width + '&CVT=JPG';
     };
 
     var updateZoom = function(newZoomLevel, callback) {
