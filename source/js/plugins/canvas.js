@@ -198,7 +198,9 @@ window.divaPlugins.push((function() {
                 loadMap(image);
             }
 
-            $.executeCallback(callback);
+            if (typeof(callback) == 'function') {
+                callback.call(callback);
+            }
         };
     };
 
@@ -207,7 +209,7 @@ window.divaPlugins.push((function() {
         return settings.iipServerURL + settings.filename + '&WID=' + width + '&CVT=JPG';
     };
 
-    var updateZoom = function(newZoomLevel) {
+    var updateZoom = function(newZoomLevel, callback) {
         settings.zoomLevel = newZoomLevel;
         $('#zoom-slider').prev().find('i').text(newZoomLevel);
         // Figure out the new width based on the old zoom level & width
@@ -222,6 +224,9 @@ window.divaPlugins.push((function() {
             adjustLevels(canvas);
             map.scaleFactor = map.size / canvas.size;
             updateViewBox();
+            if (typeof callback == 'function') {
+                callback.call();
+            }
         });
     };
 
@@ -236,7 +241,7 @@ window.divaPlugins.push((function() {
             settings.inCanvas = false;
 
             // Create the DOM elements
-            $('body').append('<div id="diva-canvas-backdrop"><div id="diva-canvas-tools" style="right: ' + (settings.scrollbarWidth + 20) + 'px"><div id="diva-map-viewbox"></div><canvas id="diva-canvas-minimap"></canvas><br /><span>Brightness: <i>0</i> <b id="brightness-reset">(Reset)</b></span><div id="brightness-slider"></div><span>Contrast: <i>1</i> <b id="contrast-reset">(Reset)</b></span><div id="contrast-slider"></div><span>Rotation: <i>0</i>&deg; (<b class="rotation-reset" id="rotation-reset">0</b>&deg; <b class="rotation-reset">90</b>&deg; <b class="rotation-reset">180</b>&deg; <b class="rotation-reset">270</b>&deg;)</span><div id="rotation-slider"></div><span>Zoom level: <i>0</i></span><div id="zoom-slider"></div><div id="diva-canvas-applybox"><span><button type="button" id="diva-canvas-apply">Apply</button></span><span id="diva-canvas-loading">Loading ...</span></div></div><div id="diva-canvas-wrapper"><canvas id="diva-canvas"></canvas></div><div id="diva-canvas-close" style="background: url(' + settings.iconPath + 'close.png)"></div></div>');
+            $('body').append('<div id="diva-canvas-backdrop"><div id="diva-canvas-tools" style="right: ' + (settings.scrollbarWidth + 20) + 'px"><div id="diva-map-viewbox"></div><canvas id="diva-canvas-minimap"></canvas><br /><span>Brightness: <i>0</i> <b id="brightness-reset">(Reset)</b></span><div id="brightness-slider"></div><span>Contrast: <i>1</i> <b id="contrast-reset">(Reset)</b></span><div id="contrast-slider"></div><span>Rotation: <i>0</i>&deg; (<b class="rotation-reset" id="rotation-reset">0</b>&deg; <b class="rotation-reset">90</b>&deg; <b class="rotation-reset">180</b>&deg; <b class="rotation-reset">270</b>&deg;)</span><div id="rotation-slider"></div><span>Zoom level: <i>0</i> <em id="zoom-loading">Loading ...</em></span><div id="zoom-slider"></div><div id="diva-canvas-applybox"><span><button type="button" id="diva-canvas-apply">Apply</button></span><span id="diva-canvas-loading">Loading ...</span></div></div><div id="diva-canvas-wrapper"><canvas id="diva-canvas"></canvas></div><div id="diva-canvas-close"></div></div>');
 
             // Save the size of the map, as defined in the CSS
             settings.mapSize = $('#diva-canvas-minimap').width();
@@ -384,7 +389,10 @@ window.divaPlugins.push((function() {
                 step: 1,
                 value: zoomLevel,
                 slide: function(event, ui) {
-                    updateZoom(ui.value);
+                    $('#zoom-loading').show();
+                    updateZoom(ui.value, function() {
+                        $('#zoom-loading').fadeOut();
+                    });
                 }
             });
 
