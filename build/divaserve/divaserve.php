@@ -85,7 +85,7 @@ if ($MEMCACHE_AVAILABLE) {
      $cachekey = $dir;
 }
 
-$cache_file = $img_cache . '/docdata.txt';
+$cache_file = $img_cache . '/docdata.json';
 $pgs = array();
 
 if (!file_exists($img_cache)) {
