@@ -1,19 +1,46 @@
 module("Hash params");
 
-var hashParamTest = function (testName, hashParam, hashValue, onReadyCallback) {
+var multipleHashParamTest = function (testName, hashParams, onReadyCallback, settings) {
     asyncTest(testName, function () {
         var previousHash = window.location.hash;
         var suffix = parseInt($.generateId(), 10) + 1;
-        window.location.hash += hashParam + suffix + '=' + hashValue;
-        $.tempDiva({
+
+        var hashValue;
+        var first = true;
+        var prefix = '';
+        for (hashParam in hashParams) {
+            hashValue = hashParams[hashParam];
+
+            window.location.hash += prefix + hashParam + suffix + '=' + hashValue;
+
+            if (first) {
+                prefix = '&';
+                first = false;
+            }
+        }
+
+        var allSettings = {
             onReady: function (settings) {
                 onReadyCallback.call(this, settings);
                 window.location.hash = previousHash;
                 start();
             }
-        });
+        };
+
+        if (settings) {
+            $.extend(allSettings, settings);
+        }
+
+        $.tempDiva(allSettings);
     });
 }
+
+var hashParamTest = function (testName, hashParam, hashValue, onReadyCallback, settings) {
+    // Has to be done this way because {hashParam: hashValue} does not work
+    var hashParams = {};
+    hashParams[hashParam] = hashValue;
+    multipleHashParamTest(testName, hashParams, onReadyCallback, settings);
+};
 
 hashParamTest("grid (g)", "g", "true", function (settings) {
     ok(settings.inGrid, "inGrid setting should be true");
@@ -27,3 +54,79 @@ hashParamTest("fullscreen (f)", "f", "true", function (settings) {
     ok(settings.inFullscreen, "inFullscreen setting should be true");
     ok($('body').hasClass('hide-scrollbar'), "The body element should have the hide-scrollbar class")
 });
+
+hashParamTest("zoom level (z) - valid value", "z", "3", function (settings) {
+    equal(settings.zoomLevel, 3, "Initial zoom level should be 3");
+});
+
+hashParamTest("zoom level (z) - invalid value", "z", "5", function (settings) {
+    equal(settings.zoomLevel, 0, "Initial zoom was invalid but >= 0, should be set to the min (0)");
+});
+
+hashParamTest("pagesPerRow (n) - valid value", "n", "3", function (settings) {
+    equal(settings.pagesPerRow, 3, "Pages per row should be 3 initially");
+});
+
+hashParamTest("pagesPerRow (n) - invalid value", "n", "1", function (settings) {
+    equal(settings.pagesPerRow, 5, "Pages per row should just be the default");
+});
+
+hashParamTest("page filename (i) - valid value", "i", "bm_005.tif", function (settings) {
+    equal(settings.currentPageIndex, 4, "The initial page should be page 5 (index of 4)");
+}, {enableFilename: true});
+
+hashParamTest("page filename (i) - invalid value", "i", "bm_000.tif", function (settings) {
+    equal(settings.currentPageIndex, 0, "The initial page should just be the first page");
+}, {enableFilename: true});
+
+hashParamTest("page number (p) - valid value", "p", "5", function (settings) {
+    equal(settings.currentPageIndex, 4, "The initial page should be page 5 (index of 4)");
+}, {enableFilename: false});
+
+hashParamTest("page number (p) - invalid value", "p", "600", function (settings) {
+    equal(settings.currentPageIndex, 0, "The initial page should just be the first page");
+}, {enableFilename: false});
+
+hashParamTest("vertical offset (y) - positive value", "y", "600", function (settings) {
+    var topScroll = $(settings.outerSelector).scrollTop();
+    equal(topScroll, 600, "Should have scrolled 600 vertically");
+});
+
+hashParamTest("vertical offset (y) - negative value", "y", "-600", function (settings) {
+    var topScroll = $(settings.outerSelector).scrollTop();
+    equal(topScroll, 0, "Should not have scrolled negatively because, well, you can't");
+});
+
+multipleHashParamTest("vertical offset (y) and page number (p)", {y: 500, p: 50}, function (settings) {
+    var topScroll = $(settings.outerSelector).scrollTop();
+    var expectedTopScroll = 52751;
+    equal(settings.currentPageIndex, 49, "Current page should be 50 (index of 49)");
+    equal(topScroll, expectedTopScroll, "Should be heightAbovePages + 500 pixels of scroll from the top");
+
+    // Check that the horizontal scroll hasn't been weirdly affected
+    var leftScroll = $(settings.outerSelector).scrollLeft();
+    var expectedLeftScroll = (settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2 - settings.panelWidth) / 2;
+    equal(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should just center it, as usual");
+}, {enableFilename: false, zoomLevel: 2});
+
+hashParamTest("horizontal offset (x) - positive value", "x", "100", function (settings) {
+    var leftScroll = $(settings.outerSelector).scrollLeft();
+    var expectedLeftScroll = (settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2 - settings.panelWidth) / 2 + 100;
+    equal(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
+});
+
+hashParamTest("horizontal offset (x) - negative value", "x", "-100", function (settings) {
+    var leftScroll = $(settings.outerSelector).scrollLeft();
+    var expectedLeftScroll = (settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2 - settings.panelWidth) / 2 - 100;
+    equal(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the left");
+});
+
+multipleHashParamTest("horizontal offset (x) and page number (p)", {x: 100, p: 50}, function (settings) {
+    var topScroll = $(settings.outerSelector).scrollTop();
+    var expectedTopScroll = 52251;
+    equal(topScroll, expectedTopScroll, "vertical scroll should be just to page 50");
+
+    var leftScroll = $(settings.outerSelector).scrollLeft();
+    var expectedLeftScroll = (settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2 - settings.panelWidth) / 2 + 100;
+    equal(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
+}, {enableFilename: false});
