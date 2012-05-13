@@ -1551,12 +1551,13 @@ window.divaPlugins = [];
                     if (settings.enableFilename) {
                         var iParam = $.getHashParam('i' + settings.hashParamSuffix);
                         var iParamPage = getPageIndex(iParam);
-                        if (iParamPage >= 0) {
+                        if (pageInRange(iParamPage)) {
                             settings.goDirectlyTo = iParamPage;
                         }
                     } else {
                         // Not using the i parameter, check the p parameter
-                        var pParam = parseInt($.getHashParam('p' + settings.hashParamSuffix), 10);
+                        // Subtract 1 to get the page index
+                        var pParam = parseInt($.getHashParam('p' + settings.hashParamSuffix), 10) - 1;
                         if (pageInRange(pParam)) {
                             settings.goDirectlyTo = pParam;
                         }
