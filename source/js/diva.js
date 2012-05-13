@@ -1342,7 +1342,7 @@ window.divaPlugins = [];
                     handleZoom(ui.value);
                 },
                 change: function (event, ui) {
-                    if (ui.value !== settings.zoomValue) {
+                    if (ui.value !== settings.zoomLevel) {
                         handleZoom(ui.value);
                     }
                 }
