@@ -1118,7 +1118,8 @@ window.divaPlugins = [];
                 'g': settings.inGrid,
                 'z': settings.zoomLevel,
                 'n': settings.pagesPerRow,
-                'i': settings.currentPageIndex,
+                'i': (settings.enableFilename) ? settings.pages[settings.currentPageIndex].f : false,
+                'p': (settings.enableFilename) ? false : settings.currentPageIndex + 1,
                 'y': (settings.inGrid) ? false : getYOffset(),
                 'x': (settings.inGrid) ? false : getXOffset(),
                 'gy': (settings.inGrid) ? $(settings.outerSelector).scrollTop() : false,
@@ -1131,8 +1132,6 @@ window.divaPlugins = [];
 
         var getURLHash = function () {
             var hashParams = getState();
-            var i = hashParams.i; // current page index
-            hashParams.i = (settings.enableFilename) ? settings.pages[i].f : i + 1; // make it the filename if desired, else the page number
             var hashStringBuilder = [];
             for (var param in hashParams) {
                 if (hashParams[param] !== false) {
