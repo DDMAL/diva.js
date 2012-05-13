@@ -1670,13 +1670,13 @@ window.divaPlugins = [];
 
             // y - vertical offset from the top of the relevant page
             var yParam = parseInt($.getHashParam('y' + settings.hashParamSuffix), 10);
-            if (yParam > 0) {
+            if (!isNaN(yParam)) {
                 settings.verticalOffset = yParam;
             }
 
-            // x - horizontal offset from the left edge of the relevant page
+            // x - horizontal offset from the center of the page
             var xParam = parseInt($.getHashParam('x' + settings.hashParamSuffix), 10);
-            if (xParam > 0) {
+            if (!isNaN(xParam)) {
                 settings.horizontalOffset = xParam;
             }
 
