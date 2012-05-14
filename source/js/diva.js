@@ -88,7 +88,6 @@ window.divaPlugins = [];
             elementSelector: '',        // The ID of the element plus the # for easy selection, set in init()
             firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
             firstRowLoaded: -1,         // The index of the first row loaded
-            gridScrollTop: 0,           // Scroll from top in grid view only
             hashParamSuffix: '',        // Used when there are multiple document viewers on a page
             heightAbovePages: [],       // The height above each page
             horizontalOffset: 0,        // Used in documentScroll for scrolling more precisely
@@ -749,13 +748,8 @@ window.divaPlugins = [];
         // Don't call this when not in grid mode please
         // Scrolls to the relevant place when in grid view
         var gridScroll = function () {
-            if (settings.gridScrollTop) {
-                $(settings.outerSelector).scrollTop(settings.gridScrollTop);
-                settings.gridScrollTop = 0;
-            } else {
-                // Figure out and scroll to the row containing the current page
-                gotoRow(settings.currentPageIndex);
-            }
+            // Figure out and scroll to the row containing the current page
+            gotoRow(settings.goDirectlyTo);
         };
 
 
@@ -928,9 +922,7 @@ window.divaPlugins = [];
         var handleModeChange = function () {
             // Save some offsets (required for scrolling properly), if it's not the initial load
             if (settings.oldZoomLevel >= 0) {
-                if (settings.inGrid) {
-                    settings.gridScrollTop = settings.scrollSoFar;
-                } else {
+                if (!settings.inGrid) {
                     var pageOffset = $(settings.selector + 'page-' + settings.currentPageIndex).offset();
                     var topOffset = -(pageOffset.top - settings.verticalPadding - settings.viewerYOffset);
                     var expectedLeft = (settings.panelWidth - getPageData(settings.currentPageIndex, 'w')) / 2;
@@ -969,15 +961,6 @@ window.divaPlugins = [];
             // Switch the slider
             settings.toolbar.switchSlider();
 
-            if (settings.inGrid) {
-                // Store the x- and y-offsets
-                // Actually, do we really need to? Yeah might as well
-                settings.pageOffsetX = 9001; // CHANGE THIS
-                settings.pageOffsetY = 9001;
-            } else {
-                settings.gridScroll = $(settings.outerSelector).scrollTop();
-            }
-
             loadViewer();
             executeCallback(settings.onViewToggle);
         };
@@ -986,7 +969,12 @@ window.divaPlugins = [];
 
         // Called when the fullscreen icon is clicked
         var toggleFullscreenIcon = function () {
-            settings.goDirectlyTo = settings.currentPageIndex;
+            if (settings.inGrid) {
+                settings.gridScrollTop = settings.scrollSoFar;
+            } else {
+                settings.goDirectlyTo = settings.currentPageIndex;
+            }
+
             settings.inFullscreen = !settings.inFullscreen;
             handleModeChange();
         };
@@ -1689,11 +1677,6 @@ window.divaPlugins = [];
 
             settings.inGrid = settings.inGrid || goIntoGrid;
             settings.inFullscreen = settings.inFullscreen || goIntoFullscreen;
-
-            var gridScrollTop = parseInt($.getHashParam('gy' + settings.hashParamSuffix), 10);
-            if (gridScrollTop > 0) {
-                settings.gridScrollTop = gridScrollTop;
-            }
 
             // Store the height and width of the viewer (the outer div), if present
             var desiredHeight = parseInt($.getHashParam('h' + settings.hashParamSuffix), 10);
