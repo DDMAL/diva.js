@@ -79,6 +79,12 @@
                 .pretty-shadow(6px);
                 background: url("@{iconPath}loading.gif") no-repeat center;
                 position: absolute;
+            }
+            .document-page {
+                .page;
+                left: 0;
+                right: 0;
+                margin: 0 auto;
                 .page-tools {
                     position: absolute;
                     top: -25px;
@@ -125,6 +131,10 @@ div[id$="diva-fullscreen"] {
     &.contained {
         top: 45px;
     }
+    &.in-fullscreen {
+        position: fixed;
+        z-index: 9001;
+    }
 }
 
 div[id$="diva-link-popup"] {
@@ -136,7 +146,7 @@ div[id$="diva-link-popup"] {
     z-index: 9001;
     .pretty-shadow;
     input {
-        width: 210px;
+        width: 226px;
         margin-top: 5px;
         &:focus {
             outline: none;

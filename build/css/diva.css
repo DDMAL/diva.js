@@ -105,7 +105,17 @@
   background: url("../img/loading.gif") no-repeat center;
   position: absolute;
 }
-.diva .outer .inner .page .page-tools {
+.diva .outer .inner .document-page {
+  -webkit-box-shadow: 2px 2px 6px 0 rgba(0, 0, 0, 0.5);
+  -moz-box-shadow: 2px 2px 6px 0 rgba(0, 0, 0, 0.5);
+  box-shadow: 2px 2px 6px 0 rgba(0, 0, 0, 0.5);
+  background: url("../img/loading.gif") no-repeat center;
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+}
+.diva .outer .inner .document-page .page-tools {
   position: absolute;
   top: -25px;
   left: 0px;
@@ -113,7 +123,7 @@
   height: 25px;
   z-index: 3;
 }
-.diva .outer .inner .page .page-tools div {
+.diva .outer .inner .document-page .page-tools div {
   display: inline-block;
   height: 25px;
   width: 25px;
@@ -146,6 +156,10 @@ div[id$="diva-fullscreen"] {
 div[id$="diva-fullscreen"].contained {
   top: 45px;
 }
+div[id$="diva-fullscreen"].in-fullscreen {
+  position: fixed;
+  z-index: 9001;
+}
 div[id$="diva-link-popup"] {
   background: #ffffff;
   border: 1px solid #dddddd;
@@ -159,7 +173,7 @@ div[id$="diva-link-popup"] {
   box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
 }
 div[id$="diva-link-popup"] input {
-  width: 210px;
+  width: 226px;
   margin-top: 5px;
 }
 div[id$="diva-link-popup"] input:focus {
@@ -279,6 +293,7 @@ div[id$="link-icon"] {
   left: 12px;
   height: 18px;
   width: 18px;
+  background-image: url("../img//close.png");
   background-repeat: no-repeat;
   z-index: 9058;
   cursor: pointer;
@@ -301,6 +316,13 @@ div[id$="link-icon"] {
   bottom: 0;
   right: 0;
   overflow: scroll;
+}
+#zoom-loading {
+  display: none;
+}
+#diva-canvas-apply {
+  padding: 5px;
+  margin-bottom: 5px;
 }
 /* End canvas plugin */
 /* Begin download plugin */
