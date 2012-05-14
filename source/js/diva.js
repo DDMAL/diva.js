@@ -1897,6 +1897,8 @@ window.divaPlugins = [];
 
         // Destroys this instance, tells plugins to do the same
         this.destroy = function () {
+            // Removes the hide-scrollbar class from the body
+            $('body').removeClass('hide-scrollbar');
             $(settings.parentSelector).empty().removeData('diva');
             $.each(settings.plugins, function (index, plugin) {
                 executeCallback(plugin.destroy);
