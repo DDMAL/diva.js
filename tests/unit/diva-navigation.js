@@ -56,20 +56,52 @@ asyncTest("Zooming using the slider", function () {
 asyncTest("Zooming by double-clicking", function () {
     $.tempDiva({
         zoomLevel: 1,
+        goDirectlyTo: 100,
         onReady: function (settings) {
-            // Try to zoom in on the bottom left corner of the first page
-            var firstPage = $(settings.selector + 'page-0');
-            var offset = firstPage.offset();
-            var height = firstPage.height();
-            var xOffset = offset.left;
-            var yOffset = offset.top + height;
             var event = $.Event("dblclick");
-            event.pageX = xOffset;
-            event.pageY = yOffset;
-            $(settings.innerSelector).trigger(event);
-            $(settings.innerSelector).trigger(event);
-            ok(true);
-            start();
+            event.pageX = 1000;
+            event.pageY = 500;
+            setTimeout(function () {
+                $(settings.selector + 'page-100').trigger(event);
+                setTimeout(function () {
+                    equal(settings.zoomLevel, 2, "Zoom level should now be 2");
+                    equal(settings.currentPageIndex, 100, "Should still be on page 100");
+                    start();
+                }, 10);
+            }, 10);
+        }
+    });
+});
+
+asyncTest("Switching between document and grid view", function () {
+    $.tempDiva({
+        onReady: function (settings) {
+            ok(!settings.inGrid, "Not in grid initially");
+            $(settings.selector + 'grid-icon').click();
+
+            // Click the grid icon, then wait a bit for the event to be triggered
+            setTimeout(function () {
+                ok(settings.inGrid, "Should now be in grid");
+                ok($(settings.selector + 'grid-slider').is(':visible'), "Grid slider should be visible");
+                ok(!$(settings.selector + 'zoom-slider').is(':visible'), "Zoom slider should not be visible");
+                start();
+            }, 10);
+        }
+    });
+});
+
+asyncTest("Switching between regular and fullscreen mode", function () {
+    $.tempDiva({
+        onReady: function (settings) {
+            ok(!settings.inFullscreen, "Not in fullscreen initially");
+            $(settings.selector + 'fullscreen').click();
+
+            // Click the fullscreen icon, then wait for a bit for the event to be triggered
+            setTimeout(function () {
+                ok(settings.inFullscreen, "Should now be in fullscreen");
+                ok($('body').hasClass('hide-scrollbar'), "Body should have the hide-scrollbar class");
+                start();
+            }, 10);
         }
     });
 });
