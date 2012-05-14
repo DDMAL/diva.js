@@ -27,3 +27,7 @@ def minify():
 def build():
     less()
     minify()
+
+def test():
+    with settings(warn_only=True):
+        print local("phantomjs tests/run.js"),
