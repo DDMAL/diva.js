@@ -55,6 +55,11 @@ hashParamTest("fullscreen (f)", "f", "true", function (settings) {
     ok($('body').hasClass('hide-scrollbar'), "The body element should have the hide-scrollbar class")
 });
 
+multipleHashParamTest("grid (g) and fullscreen (f)", {g: "true", f: "true"}, function (settings) {
+    ok(settings.inFullscreen, "inFullscreen setting should be true");
+    ok(settings.inGrid, "inGrid setting should be true");
+});
+
 hashParamTest("zoom level (z) - valid value", "z", "3", function (settings) {
     equal(settings.zoomLevel, 3, "Initial zoom level should be 3");
 });
@@ -63,12 +68,42 @@ hashParamTest("zoom level (z) - invalid value", "z", "5", function (settings) {
     equal(settings.zoomLevel, 0, "Initial zoom was invalid but >= 0, should be set to the min (0)");
 });
 
+multipleHashParamTest("zoom level (z) and grid (g)", {z: "1", g: "true"}, function (settings) {
+    equal(settings.zoomLevel, 1, "Initial zoom level should be 1");
+    ok(settings.inGrid, "Should be in grid initially");
+
+    // Now let's switch into document view and see if the zoom level is preserved
+    $(settings.selector + 'grid-icon').click();
+    equal(settings.zoomLevel, 1, "Zoom level setting should still be 1");
+    equal($(settings.selector + 'zoom-slider-label').text(), "Zoom level: 1", "Zoom slider label should show a zoom level of 1");
+});
+
+multipleHashParamTest("zoom level (z) and fullscreen (f)", {z: "1", f: "true"}, function (settings) {
+    equal(settings.zoomLevel, 1, "Initial zoom level should be 1");
+    ok(settings.inFullscreen, "Should be in fullscreen initially");
+
+    // Check that we're actually in fullscreen mode
+    ok($('body').hasClass('hide-scrollbar'), "The body element should have the hide-scrollbar class")
+
+    // Check that the zoom level is actually 1
+    equal($(settings.selector + 'zoom-slider-label').text(), "Zoom level: 1", "Zoom slider label should show a zoom level of 1");
+});
+
 hashParamTest("pagesPerRow (n) - valid value", "n", "3", function (settings) {
     equal(settings.pagesPerRow, 3, "Pages per row should be 3 initially");
 });
 
 hashParamTest("pagesPerRow (n) - invalid value", "n", "1", function (settings) {
     equal(settings.pagesPerRow, 5, "Pages per row should just be the default");
+});
+
+multipleHashParamTest("pagesPerRow (n) and grid (g)", {n: "3", g: "true"}, function (settings) {
+    equal(settings.pagesPerRow, 3, "Pages per row should be 3 initially");
+    ok(settings.inGrid, "Should be in grid initially");
+
+    // Check that the pages per row setting is actually 3
+    equal($(settings.selector + 'grid-slider-label').text(), "Pages per row: 3", "Grid slider label should show 3 pages per row");
+    equal($(settings.selector + 'row-0').children().length, 3, "The first row should have 3 pages");
 });
 
 hashParamTest("page filename (i) - valid value", "i", "bm_005.tif", function (settings) {
@@ -85,6 +120,11 @@ hashParamTest("page number (p) - valid value", "p", "5", function (settings) {
 
 hashParamTest("page number (p) - invalid value", "p", "600", function (settings) {
     equal(settings.currentPageIndex, 0, "The initial page should just be the first page");
+}, {enableFilename: false});
+
+multipleHashParamTest("page number (p), grid (g)", {p: "100", g: "true"}, function (settings) {
+    equal(settings.currentPageIndex, 99, "The initial page should be 100 (index of 99)");
+    ok(settings.inGrid, "Should be in grid");
 }, {enableFilename: false});
 
 hashParamTest("vertical offset (y) - positive value", "y", "600", function (settings) {
@@ -130,3 +170,18 @@ multipleHashParamTest("horizontal offset (x) and page number (p)", {x: 100, p: 5
     var expectedLeftScroll = (settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2 - settings.panelWidth) / 2 + 100;
     equal(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
 }, {enableFilename: false});
+
+multipleHashParamTest("horizontal offset (x), vertical offset (y), page number (p)", {x: 100, y: 200, p: 50}, function (settings) {
+    var topScroll = $(settings.outerSelector).scrollTop();
+    var expectedTopScroll = 52451;
+    equal(topScroll, expectedTopScroll, "vertical scroll should be to page 50 + 200");
+
+    var leftScroll = $(settings.outerSelector).scrollLeft();
+    var expectedLeftScroll = (settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2 - settings.panelWidth) / 2 + 100;
+    equal(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
+}, {enableFilename: false});
+
+multipleHashParamTest("viewer size (h, w) - valid values", {h: "600", w: "500"}, function (settings) {
+    equal($(settings.outerSelector).height(), 600, "Viewer height should be 600");
+    equal($(settings.outerSelector).width(), 500, "Viewer width should be 500");
+});
