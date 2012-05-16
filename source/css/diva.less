@@ -1,125 +1,160 @@
-.diva {
-    .title {
-        text-align: center;
-        font-weight: bold;
-        font-size: 2.0em;
-    }
-    .tools {
-        margin-top: 15px;
-        .tools-left {
-            float: left;
-            .slider-label {
-                .hidden;
-                padding: 7px 0px;
-                clear: both;
-            }
-            &.fullscreen-space {
-                margin-left: 50px;
-            }
-        }
-        .tools-right {
-            float: right;
-            height: 42px;
-            position: relative;
-            left: 2px; // to align it with the end of the diva-inner border
-            .button {
-                float: right;
-                cursor: pointer;
-                .square(32px);
-                background-color: @buttonBg;
-                .frame(@buttonFrame);
-                &:hover {
-                    background-color: @buttonHover;
-                }
-            }
-            .page-tools {
-                float: left;
-                text-align: right;
-                padding-right: 4px;
-                .page-label {
-                    padding-right: 2px;
-                }
-                .goto-form {
-                    text-align: right;
-                    .input {
-                        width: 30px;
-                        outline: none;
-                        margin: 0px;
-                        padding-top: 0px;
-                    }
-                }
-            }
+
+.diva-title {
+    text-align: center;
+    font-weight: bold;
+    font-size: 2.0em;
+}
+
+.diva-tools {
+    margin-top: 15px;
+
+    .diva-tools-left {
+        float: left;
+
+        .diva-slider-label {
+            .hidden;
+            padding: 7px 0px;
+            clear: both;
         }
 
-        &.fullscreen-tools {
-            position: fixed;
-            top: 0px;
-            right: 30px;
-            z-index: 9001;
-            width: 210px;
-            padding: 15px 15px 10px 15px;
-            .frame(@toolsFrame);
-            background: @toolsBg;
-            .pretty-shadow;
+        &.diva-fullscreen-space {
+            margin-left: 50px;
         }
     }
-    .outer {
-        background: @viewerBg;
-        .frame(@viewerFrame);
+
+    .diva-tools-right {
+        float: right;
+        height: 42px;
         position: relative;
-        min-height: 400px;
-        min-width: 400px;
-        height: 700px;
-        overflow: auto;
-        .inner {
-            position: relative;
-            overflow: hidden;
+        left: 2px; // to align it with the end of the diva-inner border
 
-            .page {
-                .pretty-shadow(6px);
-                background: url("@{iconPath}loading.gif") no-repeat center;
-                position: absolute;
+        .diva-button {
+            float: right;
+            cursor: pointer;
+            .square(32px);
+            background-color: @buttonBg;
+            .frame(@buttonFrame);
+
+            &:hover {
+                background-color: @buttonHover;
             }
-            .document-page {
-                .page;
-                left: 0;
-                right: 0;
-                margin: 0 auto;
-                .page-tools {
-                    position: absolute;
-                    top: -25px;
-                    left: 0px;
-                    width: 75px;
-                    height: 25px;
-                    z-index: 3;
-                    div {
-                        display: inline-block;
-                        .square(25px);
-                        cursor: pointer;
-                    }
+        }
+
+        .diva-grid-icon {
+            .diva-button;
+            background-image: url("@{iconPath}grid.png");
+
+            &.diva-in-grid {
+                background-image: url("@{iconPath}document.png");
+            }
+        }
+
+        .diva-link-icon {
+            .diva-button;
+            background-image: url("@{iconPath}link.png");
+        }
+
+        .diva-page-nav {
+            float: left;
+            text-align: right;
+            padding-right: 4px;
+
+            .diva-page-label {
+                padding-right: 2px;
+            }
+
+            .diva-goto-form {
+                text-align: right;
+
+                .diva-input {
+                    width: 30px;
+                    outline: none;
+                    margin: 0px;
+                    padding-top: 0px;
                 }
             }
-
-            .row {
-                position: absolute;
-                width: 100%;
-            }
-
         }
+    }
 
-        &.fullscreen {
-            .full-width;
-            .full-height;
-            z-index: 9000;
-            position: fixed !important;
-            top: 0;
-            left: 0;
-        }
+    &.diva-fullscreen-tools {
+        position: fixed;
+        top: 0px;
+        right: 30px;
+        z-index: 9001;
+        width: 210px;
+        padding: 15px 15px 10px 15px;
+        .frame(@toolsFrame);
+        background: @toolsBg;
+        .pretty-shadow;
     }
 }
 
-// Other fullscreen tool stuff
-div[id$="diva-fullscreen"] {
+.diva-outer {
+    background: @viewerBg;
+    .frame(@viewerFrame);
+    position: relative;
+    min-height: 400px;
+    min-width: 400px;
+    height: 700px;
+    overflow: auto;
+
+    .diva-inner {
+        position: relative;
+        overflow: hidden;
+
+        .diva-page {
+            .pretty-shadow(6px);
+            background: url("@{iconPath}loading.gif") no-repeat center;
+            position: absolute;
+        }
+
+        .diva-document-page {
+            .diva-page;
+            left: 0;
+            right: 0;
+            margin: 0 auto;
+
+            .diva-page-tools {
+                position: absolute;
+                top: -25px;
+                left: 0px;
+                width: 75px;
+                height: 25px;
+                z-index: 3;
+
+                div {
+                    display: inline-block;
+                    .square(25px);
+                    cursor: pointer;
+                }
+            }
+        }
+
+        .diva-row {
+            position: absolute;
+            width: 100%;
+        }
+
+        &.diva-grab {
+            .grab;
+        }
+
+        &.diva-grabbing {
+            .grabbing;
+        }
+    }
+
+    &.diva-fullscreen {
+        .full-width;
+        .full-height;
+        z-index: 9000;
+        position: fixed !important;
+        top: 0;
+        left: 0;
+    }
+}
+
+.diva-fullscreen-icon {
     position: absolute;
     z-index: 8999;
     top: 0;
@@ -128,16 +163,18 @@ div[id$="diva-fullscreen"] {
     height: 40px;
     cursor: pointer;
     background: url("@{iconPath}fullscreen.png") no-repeat top;
-    &.contained {
+
+    &.diva-contained {
         top: 45px;
     }
-    &.in-fullscreen {
+
+    &.diva-in-fullscreen {
         position: fixed;
         z-index: 9001;
     }
 }
 
-div[id$="diva-link-popup"] {
+.diva-link-popup {
     background: @linkBg;
     .frame(@linkFrame);
     .size(28px, 230px);
@@ -145,6 +182,7 @@ div[id$="diva-link-popup"] {
     padding: 5px;
     z-index: 9001;
     .pretty-shadow;
+
     input {
         width: 226px;
         margin-top: 5px;
@@ -154,20 +192,15 @@ div[id$="diva-link-popup"] {
     }
 }
 
-div[id$="grid-icon"] {
-    background-image: url("@{iconPath}grid.png");
-    &.in-grid {
-        background-image: url("@{iconPath}document.png");
-    }
-}
-
-div[id$="link-icon"] {
-    background-image: url("@{iconPath}link.png");
-}
-
-.hide-scrollbar {
+.diva-hide-scrollbar {
     overflow: hidden !important;
 }
+
+// Used for the container element if its position is static and settings.contained
+.diva-relative-position {
+    position: relative;
+}
+
 /*
  * Based on the jQuery UI CSS Framework
  * Pretty different though.
@@ -183,6 +216,7 @@ div[id$="link-icon"] {
     height: 6px;
     width: 100px;
     z-index: 1;
+
     .handle {
         .border-radius(5px);
         .frame(@handleFrame);

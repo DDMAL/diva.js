@@ -246,7 +246,7 @@ window.divaPlugins = [];
 
             // If the page has not been loaded yet, append the div to the DOM
             if (!isPageLoaded(pageIndex)) {
-                $(settings.innerSelector).append('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width: ' + width + 'px; height: ' + height + 'px;" class="document-page" title="Page ' + (pageIndex + 1) + '" data-index="' + pageIndex  + '" data-filename="' + filename + '">' + settings.pageTools + '</div>');
+                $(settings.innerSelector).append('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width: ' + width + 'px; height: ' + height + 'px;" class="diva-document-page" title="Page ' + (pageIndex + 1) + '" data-index="' + pageIndex  + '" data-filename="' + filename + '">' + settings.pageTools + '</div>');
             }
 
             // There are still tiles to load, so try to load those (after a delay)
@@ -470,7 +470,7 @@ window.divaPlugins = [];
             var content = [];
 
             // Create the opening tag for the row div
-            content.push('<div class="row" id="' + settings.ID + 'row-' + rowIndex + '" style="height: ' + settings.rowHeight + '; top: ' + heightFromTop + 'px;">');
+            content.push('<div class="diva-row" id="' + settings.ID + 'row-' + rowIndex + '" style="height: ' + settings.rowHeight + '; top: ' + heightFromTop + 'px;">');
 
             // Declare variables used in the loop
             var i, pageIndex, filename, realWidth, realHeight, pageWidth, pageHeight, leftOffset, imageURL;
@@ -501,7 +501,7 @@ window.divaPlugins = [];
                 imageURL = settings.iipServerURL + filename + '&amp;HEI=' + (pageHeight + 2) + '&amp;CVT=JPG';
 
                 // Append the HTML for this page to the string builder array
-                content.push('<div id="' + settings.ID + 'page-' + pageIndex + '" class="page" style="width: ' + pageWidth + 'px; height: ' + pageHeight + 'px; left: ' + leftOffset + 'px;" title="Page ' + (pageIndex + 1) + '"></div>');
+                content.push('<div id="' + settings.ID + 'page-' + pageIndex + '" class="diva-page" style="width: ' + pageWidth + 'px; height: ' + pageHeight + 'px; left: ' + leftOffset + 'px;" title="Page ' + (pageIndex + 1) + '"></div>');
 
                 // Add each image to a queue so that images aren't loaded unnecessarily
                 addPageToQueue(rowIndex, pageIndex, imageURL, pageWidth, pageHeight);
@@ -936,10 +936,10 @@ window.divaPlugins = [];
             settings.toolbar.switchMode();
 
             // Toggle the classes
-            $(settings.selector + 'fullscreen').toggleClass('in-fullscreen');
-            $(settings.outerSelector).toggleClass('fullscreen');
-            $('body').toggleClass('hide-scrollbar');
-            $(settings.elementSelector).toggleClass('full-width');
+            $(settings.selector + 'fullscreen').toggleClass('diva-in-fullscreen');
+            $(settings.outerSelector).toggleClass('diva-fullscreen');
+            $('body').toggleClass('diva-hide-scrollbar');
+            $(settings.elementSelector).toggleClass('diva-full-width');
 
             // Reset the panel dimensions
             settings.panelHeight = $(settings.outerSelector).height();
@@ -1163,23 +1163,23 @@ window.divaPlugins = [];
 
             // Change the cursor for dragging
             $(settings.innerSelector).mouseover(function () {
-                $(this).removeClass('grabbing').addClass('grab');
+                $(this).removeClass('diva-grabbing').addClass('diva-grab');
             });
 
             $(settings.innerSelector).mouseout(function () {
-                $(this).removeClass('grab');
+                $(this).removeClass('diva-grab');
             });
 
             $(settings.innerSelector).mousedown(function () {
-                $(this).removeClass('grab').addClass('grabbing');
+                $(this).removeClass('diva-grab').addClass('diva-grabbing');
             });
 
             $(settings.innerSelector).mouseup(function () {
-                $(this).removeClass('grabbing').addClass('grab');
+                $(this).removeClass('diva-grabbing').addClass('diva-grab');
             });
 
             // Set drag scroll on first descendant of class dragger on both selected elements
-            $(settings.outerSelector + ', ' + settings.innerSelector).dragscrollable({dragSelector: '.dragger', acceptPropagatedEvent: true});
+            $(settings.outerSelector + ', ' + settings.innerSelector).dragscrollable({dragSelector: '.diva-dragger', acceptPropagatedEvent: true});
 
             // Handle the scroll
             $(settings.outerSelector).scroll(function () {
@@ -1193,18 +1193,18 @@ window.divaPlugins = [];
             });
 
             // Double-click to zoom
-            $(settings.outerSelector).on('dblclick', '.document-page', function (event) {
+            $(settings.outerSelector).on('dblclick', '.diva-document-page', function (event) {
                 handleDocumentDoubleClick.call(this, event);
             });
 
             // Handle the control key for macs (in conjunction with double-clicking)
-            $(settings.outerSelector).on('contextmenu', '.document-page', function (event) {
+            $(settings.outerSelector).on('contextmenu', '.diva-document-page', function (event) {
                 if (event.ctrlKey) {
                     return false;
                 }
             });
 
-            $(settings.outerSelector).on('dblclick', '.row', function (event) {
+            $(settings.outerSelector).on('dblclick', '.diva-row', function (event) {
                 handleGridDoubleClick.call(this, event);
             });
 
@@ -1286,28 +1286,32 @@ window.divaPlugins = [];
 
         // Handles all status updating etc (both fullscreen and not)
         var createToolbar = function () {
-            var gridIconHTML = (settings.enableGrid) ? '<div class="button' + (settings.inGrid ? ' in-grid' : '') + '" id="' + settings.ID + 'grid-icon" title="Toggle grid view"></div>' : '';
-            var linkIconHTML = (settings.enableLink) ? '<div class="button" id="' + settings.ID + 'link-icon" style="' + (settings.enableGrid ? 'border-left: 0px' : '') + '" title="Link to this page"></div>' : '';
+            var gridIconHTML = (settings.enableGrid) ? '<div class="diva-grid-icon' + (settings.inGrid ? ' diva-in-grid' : '') + '" id="' + settings.ID + 'grid-icon" title="Toggle grid view"></div>' : '';
+            var linkIconHTML = (settings.enableLink) ? '<div class="diva-link-icon" id="' + settings.ID + 'link-icon" style="' + (settings.enableGrid ? 'border-left: 0px' : '') + '" title="Link to this page"></div>' : '';
             var zoomSliderHTML = (settings.enableZoomSlider) ? '<div id="' + settings.ID + 'zoom-slider"></div>' : '';
             var gridSliderHTML = (settings.enableGridSlider) ? '<div id="' + settings.ID + 'grid-slider"></div>' : '';
-            var gotoPageHTML = (settings.enableGotoPage) ? '<form id="' + settings.ID + 'goto-page" class="goto-form"><input type="text" id="' + settings.ID + 'goto-page-input" / class="input"> <input type="submit" value="Go to page" style="margin-top: 0px;" /></form>' : '';
-            var zoomSliderLabelHTML = (settings.enableZoomSlider) ? '<div id="' + settings.ID + 'zoom-slider-label" class="slider-label">Zoom level: <span id="' + settings.ID + 'zoom-level">' + settings.zoomLevel + '</span></div>' : '';
-            var gridSliderLabelHTML = (settings.enableGridSlider) ? '<div id="' + settings.ID + 'grid-slider-label" class="slider-label">Pages per row: <span id="' + settings.ID + 'pages-per-row">' + settings.pagesPerRow + '</span></div>' : '';
-            var pageNumberHTML = '<div class="page-label">Page <span id="' + settings.ID + 'current-page">1</span> of <span id="' + settings.ID + 'num-pages">' + settings.numPages + '</span></div>';
+            var gotoPageHTML = (settings.enableGotoPage) ? '<form id="' + settings.ID + 'goto-page" class="diva-goto-form"><input type="text" id="' + settings.ID + 'goto-page-input" / class="diva-input"> <input type="submit" value="Go to page" style="margin-top: 0px;" /></form>' : '';
+            var zoomSliderLabelHTML = (settings.enableZoomSlider) ? '<div id="' + settings.ID + 'zoom-slider-label" class="diva-slider-label">Zoom level: <span id="' + settings.ID + 'zoom-level">' + settings.zoomLevel + '</span></div>' : '';
+            var gridSliderLabelHTML = (settings.enableGridSlider) ? '<div id="' + settings.ID + 'grid-slider-label" class="diva-slider-label">Pages per row: <span id="' + settings.ID + 'pages-per-row">' + settings.pagesPerRow + '</span></div>' : '';
+            var pageNumberHTML = '<div class="diva-page-label">Page <span id="' + settings.ID + 'current-page">1</span> of <span id="' + settings.ID + 'num-pages">' + settings.numPages + '</span></div>';
 
             // If the viewer is specified to be "contained", we make room for the fullscreen icon
             var otherToolbarClass = '';
             if (settings.contained) {
-                $(settings.elementSelector).css('position', 'relative');
-                otherToolbarClass = ' fullscreen-space';
+                // Make sure the container element does not have a static position
+                // (Needed for the fullscreen icon to be contained)
+                if ($(settings.elementSelector).css('position') === 'static') {
+                    $(settings.elementSelector).addClass('diva-relative-position');
+                }
+                otherToolbarClass = ' diva-fullscreen-space';
                 // If enableAutoTitle is set to TRUE, move it down
                 if (settings.enableAutoTitle) {
-                    $(settings.selector + 'fullscreen').addClass('contained');
+                    $(settings.selector + 'fullscreen').addClass('diva-contained');
                 }
             }
-            var toolbarHTML = '<div id="' + settings.ID + 'tools-left" class="tools-left' + otherToolbarClass + '">' + zoomSliderHTML + gridSliderHTML + zoomSliderLabelHTML + gridSliderLabelHTML + '</div><div id="' + settings.ID + 'tools-right" class="tools-right">' + linkIconHTML + gridIconHTML + '<div class="page-tools">' + gotoPageHTML + pageNumberHTML + '</div></div>';
+            var toolbarHTML = '<div id="' + settings.ID + 'tools-left" class="diva-tools-left' + otherToolbarClass + '">' + zoomSliderHTML + gridSliderHTML + zoomSliderLabelHTML + gridSliderLabelHTML + '</div><div id="' + settings.ID + 'tools-right" class="diva-tools-right">' + linkIconHTML + gridIconHTML + '<div class="diva-page-nav">' + gotoPageHTML + pageNumberHTML + '</div></div>';
 
-            $(settings.elementSelector).prepend('<div id="' + settings.ID + 'tools" class="tools">' + toolbarHTML + '</div>');
+            $(settings.elementSelector).prepend('<div id="' + settings.ID + 'tools" class="diva-tools">' + toolbarHTML + '</div>');
 
             // Attach handlers to everything
             $(settings.selector + 'zoom-slider').slider({
@@ -1375,7 +1379,7 @@ window.divaPlugins = [];
             // Handle the creation of the link popup box
             $(settings.selector + 'link-icon').click(function () {
                 var leftOffset = $(settings.outerSelector).offset().left + settings.panelWidth;
-                $('body').prepend('<div id="' + settings.ID + 'link-popup"><input id="' + settings.ID + 'link-popup-input" class="diva-input" type="text" value="'+ getCurrentURL() + '"/></div>');
+                $('body').prepend('<div id="' + settings.ID + 'link-popup" class="diva-link-popup"><input id="' + settings.ID + 'link-popup-input" class="diva-input" type="text" value="'+ getCurrentURL() + '"/></div>');
                 if (settings.inFullscreen) {
                     $(settings.selector + 'link-popup').css('top', '150px').css('right', '30px');
                 } else {
@@ -1407,7 +1411,7 @@ window.divaPlugins = [];
 
             var switchMode = function () {
                 // Switch from fullscreen to not, etc
-                $(settings.selector + 'tools').toggleClass('fullscreen-tools');
+                $(settings.selector + 'tools').toggleClass('diva-fullscreen-tools');
                 if (!settings.inFullscreen) {
                     // Leaving fullscreen
                     $(settings.selector + 'tools-left').after($(settings.selector + 'tools-right'));
@@ -1428,7 +1432,7 @@ window.divaPlugins = [];
                 $(settings.selector + currentSlider + '-slider-label').show();
 
                 // Also change the image for the grid icon
-                $(settings.selector + 'grid-icon').toggleClass('in-grid');
+                $(settings.selector + 'grid-icon').toggleClass('diva-in-grid');
             };
 
             if (settings.jumpIntoFullscreen) {
@@ -1468,7 +1472,7 @@ window.divaPlugins = [];
 
         var initPlugins = function () {
             if (window.divaPlugins) {
-                var pageTools = ['<div class="page-tools">'];
+                var pageTools = ['<div class="diva-page-tools">'];
 
                 // Add all the plugins that have not been explicitly disabled to settings.plugins
                 $.each(window.divaPlugins, function (index, plugin) {
@@ -1481,10 +1485,10 @@ window.divaPlugins = [];
                         var titleText = plugin.titleText || pluginProperName + " plugin";
 
                         // Create the pageTools bar
-                        pageTools.push('<div class="' + plugin.pluginName + '-icon" title="' + titleText + '"></div>');
+                        pageTools.push('<div class="diva-' + plugin.pluginName + '-icon" title="' + titleText + '"></div>');
 
                         // Delegate the click event - pass it the settings
-                        $(settings.outerSelector).delegate('.' + plugin.pluginName + '-icon', 'click', function (event) {
+                        $(settings.outerSelector).delegate('.diva-' + plugin.pluginName + '-icon', 'click', function (event) {
                             plugin.handleClick.call(this, event, settings);
                         });
 
@@ -1560,7 +1564,7 @@ window.divaPlugins = [];
                     settings.toolbar = createToolbar();
                     $(settings.selector + 'current label').text(settings.numPages);
                     if (settings.enableAutoTitle) {
-                        $(settings.elementSelector).prepend('<div id="' + settings.ID + 'title" class="title">' + settings.itemTitle + '</div>');
+                        $(settings.elementSelector).prepend('<div id="' + settings.ID + 'title" class="diva-title">' + settings.itemTitle + '</div>');
                     }
 
                     // Calculate the viewer x and y offsets
@@ -1589,9 +1593,6 @@ window.divaPlugins = [];
             // For easier selecting of the container element
             settings.elementSelector = '#' + $(element).attr('id');
 
-            // Add the "diva" class to the container (for easier styling)
-            $(settings.elementSelector).addClass('diva');
-
             // Generate an ID that can be used as a prefix for all the other IDs
             settings.ID = $.generateId('diva-');
             settings.selector = '#' + settings.ID;
@@ -1608,8 +1609,8 @@ window.divaPlugins = [];
             settings.innerSelector = settings.selector + 'inner';
 
             // Create the inner and outer panels
-            $(settings.elementSelector).append('<div id="' + settings.ID + 'outer" class="outer"></div>');
-            $(settings.outerSelector).append('<div id="' + settings.ID + 'inner" class="inner dragger"></div>');
+            $(settings.elementSelector).append('<div id="' + settings.ID + 'outer" class="diva-outer"></div>');
+            $(settings.outerSelector).append('<div id="' + settings.ID + 'inner" class="diva-inner diva-dragger"></div>');
 
             // Adjust the document panel dimensions for Apple touch devices
             if (settings.mobileSafari) {
@@ -1636,7 +1637,7 @@ window.divaPlugins = [];
 
             // Create the fullscreen icon
             if (settings.enableFullscreen) {
-                $(settings.elementSelector).prepend('<div id="' + settings.ID + 'fullscreen" title="Toggle fullscreen mode"></div>');
+                $(settings.elementSelector).prepend('<div id="' + settings.ID + 'fullscreen" class="diva-fullscreen-icon" title="Toggle fullscreen mode"></div>');
             }
 
             // First, n - check if it's in range
@@ -1898,7 +1899,7 @@ window.divaPlugins = [];
         // Destroys this instance, tells plugins to do the same
         this.destroy = function () {
             // Removes the hide-scrollbar class from the body
-            $('body').removeClass('hide-scrollbar');
+            $('body').removeClass('diva-hide-scrollbar');
             $(settings.parentSelector).empty().removeData('diva');
             $.each(settings.plugins, function (index, plugin) {
                 executeCallback(plugin.destroy);

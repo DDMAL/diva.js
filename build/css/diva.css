@@ -19,32 +19,32 @@
   height: 100% !important;
   max-height: 100% !important;
 }
-.diva .title {
+.diva-title {
   text-align: center;
   font-weight: bold;
   font-size: 2.0em;
 }
-.diva .tools {
+.diva-tools {
   margin-top: 15px;
 }
-.diva .tools .tools-left {
+.diva-tools .diva-tools-left {
   float: left;
 }
-.diva .tools .tools-left .slider-label {
+.diva-tools .diva-tools-left .diva-slider-label {
   display: none;
   padding: 7px 0px;
   clear: both;
 }
-.diva .tools .tools-left.fullscreen-space {
+.diva-tools .diva-tools-left.diva-fullscreen-space {
   margin-left: 50px;
 }
-.diva .tools .tools-right {
+.diva-tools .diva-tools-right {
   float: right;
   height: 42px;
   position: relative;
   left: 2px;
 }
-.diva .tools .tools-right .button {
+.diva-tools .diva-tools-right .diva-button {
   float: right;
   cursor: pointer;
   height: 32px;
@@ -52,27 +52,54 @@
   background-color: #f1f1f1;
   border: 1px solid #99bbe8;
 }
-.diva .tools .tools-right .button:hover {
+.diva-tools .diva-tools-right .diva-button:hover {
   background-color: #fdfdfd;
 }
-.diva .tools .tools-right .page-tools {
+.diva-tools .diva-tools-right .diva-grid-icon {
+  float: right;
+  cursor: pointer;
+  height: 32px;
+  width: 32px;
+  background-color: #f1f1f1;
+  border: 1px solid #99bbe8;
+  background-image: url("../img/grid.png");
+}
+.diva-tools .diva-tools-right .diva-grid-icon:hover {
+  background-color: #fdfdfd;
+}
+.diva-tools .diva-tools-right .diva-grid-icon.diva-in-grid {
+  background-image: url("../img/document.png");
+}
+.diva-tools .diva-tools-right .diva-link-icon {
+  float: right;
+  cursor: pointer;
+  height: 32px;
+  width: 32px;
+  background-color: #f1f1f1;
+  border: 1px solid #99bbe8;
+  background-image: url("../img/link.png");
+}
+.diva-tools .diva-tools-right .diva-link-icon:hover {
+  background-color: #fdfdfd;
+}
+.diva-tools .diva-tools-right .diva-page-nav {
   float: left;
   text-align: right;
   padding-right: 4px;
 }
-.diva .tools .tools-right .page-tools .page-label {
+.diva-tools .diva-tools-right .diva-page-nav .diva-page-label {
   padding-right: 2px;
 }
-.diva .tools .tools-right .page-tools .goto-form {
+.diva-tools .diva-tools-right .diva-page-nav .diva-goto-form {
   text-align: right;
 }
-.diva .tools .tools-right .page-tools .goto-form .input {
+.diva-tools .diva-tools-right .diva-page-nav .diva-goto-form .diva-input {
   width: 30px;
   outline: none;
   margin: 0px;
   padding-top: 0px;
 }
-.diva .tools.fullscreen-tools {
+.diva-tools.diva-fullscreen-tools {
   position: fixed;
   top: 0px;
   right: 30px;
@@ -85,7 +112,7 @@
   -moz-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
   box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
 }
-.diva .outer {
+.diva-outer {
   background: #f1f1f1;
   border: 1px solid #99bbe8;
   position: relative;
@@ -94,18 +121,18 @@
   height: 700px;
   overflow: auto;
 }
-.diva .outer .inner {
+.diva-outer .diva-inner {
   position: relative;
   overflow: hidden;
 }
-.diva .outer .inner .page {
+.diva-outer .diva-inner .diva-page {
   -webkit-box-shadow: 2px 2px 6px 0 rgba(0, 0, 0, 0.5);
   -moz-box-shadow: 2px 2px 6px 0 rgba(0, 0, 0, 0.5);
   box-shadow: 2px 2px 6px 0 rgba(0, 0, 0, 0.5);
   background: url("../img/loading.gif") no-repeat center;
   position: absolute;
 }
-.diva .outer .inner .document-page {
+.diva-outer .diva-inner .diva-document-page {
   -webkit-box-shadow: 2px 2px 6px 0 rgba(0, 0, 0, 0.5);
   -moz-box-shadow: 2px 2px 6px 0 rgba(0, 0, 0, 0.5);
   box-shadow: 2px 2px 6px 0 rgba(0, 0, 0, 0.5);
@@ -115,7 +142,7 @@
   right: 0;
   margin: 0 auto;
 }
-.diva .outer .inner .document-page .page-tools {
+.diva-outer .diva-inner .diva-document-page .diva-page-tools {
   position: absolute;
   top: -25px;
   left: 0px;
@@ -123,17 +150,23 @@
   height: 25px;
   z-index: 3;
 }
-.diva .outer .inner .document-page .page-tools div {
+.diva-outer .diva-inner .diva-document-page .diva-page-tools div {
   display: inline-block;
   height: 25px;
   width: 25px;
   cursor: pointer;
 }
-.diva .outer .inner .row {
+.diva-outer .diva-inner .diva-row {
   position: absolute;
   width: 100%;
 }
-.diva .outer.fullscreen {
+.diva-outer .diva-inner.diva-grab {
+  cursor: url("../img/openhand.cur"), pointer;
+}
+.diva-outer .diva-inner.diva-grabbing {
+  cursor: url("../img/closedhand.cur"), move !important;
+}
+.diva-outer.diva-fullscreen {
   width: 100% !important;
   max-width: 100% !important;
   height: 100% !important;
@@ -143,7 +176,7 @@
   top: 0;
   left: 0;
 }
-div[id$="diva-fullscreen"] {
+.diva-fullscreen-icon {
   position: absolute;
   z-index: 8999;
   top: 0;
@@ -153,14 +186,14 @@ div[id$="diva-fullscreen"] {
   cursor: pointer;
   background: url("../img/fullscreen.png") no-repeat top;
 }
-div[id$="diva-fullscreen"].contained {
+.diva-fullscreen-icon.diva-contained {
   top: 45px;
 }
-div[id$="diva-fullscreen"].in-fullscreen {
+.diva-fullscreen-icon.diva-in-fullscreen {
   position: fixed;
   z-index: 9001;
 }
-div[id$="diva-link-popup"] {
+.diva-link-popup {
   background: #ffffff;
   border: 1px solid #dddddd;
   height: 28px;
@@ -172,24 +205,18 @@ div[id$="diva-link-popup"] {
   -moz-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
   box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
 }
-div[id$="diva-link-popup"] input {
+.diva-link-popup input {
   width: 226px;
   margin-top: 5px;
 }
-div[id$="diva-link-popup"] input:focus {
+.diva-link-popup input:focus {
   outline: none;
 }
-div[id$="grid-icon"] {
-  background-image: url("../img/grid.png");
-}
-div[id$="grid-icon"].in-grid {
-  background-image: url("../img/document.png");
-}
-div[id$="link-icon"] {
-  background-image: url("../img/link.png");
-}
-.hide-scrollbar {
+.diva-hide-scrollbar {
   overflow: hidden !important;
+}
+.diva-relative-position {
+  position: relative;
 }
 /*
  * Based on the jQuery UI CSS Framework
@@ -232,7 +259,7 @@ div[id$="link-icon"] {
   border: 1px solid #99bbe8;
 }
 /* Begin canvas plugin */
-.canvas-icon {
+.diva-canvas-icon {
   background: url('../img/plugins/canvas.png') no-repeat center;
 }
 #diva-canvas-backdrop {
@@ -326,7 +353,7 @@ div[id$="link-icon"] {
 }
 /* End canvas plugin */
 /* Begin download plugin */
-.download-icon {
+.diva-download-icon {
   background: url('../img/plugins/download.png') no-repeat center;
 }
 /* End download plugin */
