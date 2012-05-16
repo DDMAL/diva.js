@@ -19,6 +19,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+header("Content-type: application/json");
 
 // Image directory. Images in this directory will be served by folder name,
 // so if you have a folder named ...images/old_manuscript, a request for 
@@ -72,27 +73,26 @@ if (!isset($_GET['d'])) {
 
 $dir = preg_replace('/[^-a-zA-Z0-9_]/', '', $_GET['d']);
 
-$til_wid_get = (isset($_GET['w'])) ? $_GET['w'] : 0;
-$til_hei_get = (isset($_GET['h'])) ? $_GET['h'] : 0;
-$til_wid = (intval($til_wid_get) > 0) ? intval($til_wid_get) : 256;
-$til_hei = (intval($til_hei_get) > 0) ? intval($til_hei_get) : 256;
+$til_wid_get = (isset($_GET['w'])) ? intval($_GET['w']) : 0;
+$til_hei_get = (isset($_GET['h'])) ? intval($_GET['h']) : 0;
+$til_wid = ($til_wid_get > 0) ? $til_wid_get : 256;
+$til_hei = ($til_hei_get > 0) ? $til_hei_get : 256;
 
-// where we will store the text files.
-$img_cache = $CACHE_DIR . "/" . $dir;
+$cache_file = $CACHE_DIR . "/" . $dir . ".json";
 $img_dir = $IMAGE_DIR . "/" . $dir;
 
 if ($MEMCACHE_AVAILABLE) {
      $cachekey = $dir;
 }
 
-$cache_file = $img_cache . '/docdata.json';
 $pgs = array();
 
-if (!file_exists($img_cache)) {
-    // Create the directory (recursively, in case diva.js does not exist)
-    mkdir($img_cache, 0755, true);
+if (!file_exists($CACHE_DIR)) {
+    // Create the diva.js/ directory under /tmp/
+    mkdir($img_cache, 0755);
 }
 
+// If the cache file does not exist, compute all the data
 if (!file_exists($cache_file)) {
     $images = array();
     $lowest_max_zoom = 0;
@@ -168,12 +168,13 @@ if (!file_exists($cache_file)) {
         }
     }
 
+    // Calculate and store the average widths
     for ($j = 0; $j <= $lowest_max_zoom; $j++) {
         $a_wid[] = $t_wid[$j] / $num_pages;
         $a_hei[] = $t_hei[$j] / $num_pages;
     }
 
-    // Calculate the dimensions
+    // Setup the dimensions array
     $dims = array(
         'a_wid'         => $a_wid,
         'a_hei'         => $a_hei,
@@ -185,8 +186,9 @@ if (!file_exists($cache_file)) {
         't_wid'         => $t_wid
     );
 
-    // Get the title by replacing hyphens with spaces and uppercasing it
+    // Get the title by replacing hyphens, underscores with spaces and title-casing it
     $title = str_replace('-', ' ', $dir);
+    $title = str_replace('_', ' ', $dir);
     $title = ucwords($title);
 
     // The full array to be returned
@@ -208,7 +210,6 @@ if (!file_exists($cache_file)) {
 
     echo $json;
 } else {
-    // It might be useful to store a general docdata.txt sort of file as well
     if ($MEMCACHE_AVAILABLE) {
         if (!($json = $MEMCONN->get($cachekey))) {
             if ($MEMCONN->getResultCode() == Memcached::RES_NOTFOUND) {
@@ -219,6 +220,7 @@ if (!file_exists($cache_file)) {
     } else {
         $json = file_get_contents($cache_file);
     }
+
     echo $json;
 }
 

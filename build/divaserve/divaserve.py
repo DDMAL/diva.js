@@ -20,7 +20,6 @@ except ImportError:
         size = img.size
         del img
         return size
-from operator import itemgetter
 
 try:
     import pylibmc
@@ -60,13 +59,16 @@ class DivaServe(object):
         if verbose:
             print >> sys.stderr, "Loading Images..."
 
-        for i,f in enumerate(os.listdir(self.imgdir)):
+        files = os.listdir(self.imgdir)
+        files.sort()
 
+        for i,f in enumerate(files):
             if verbose:
                 print >> sys.stderr, "Loading {0}".format(f)
 
             if os.path.splitext(f)[1] not in (".tif", ".tiff", ".jpg", ".jpeg", ".jp2"):
                 continue
+
             img_wid, img_hei = image_size(os.path.join(self.imgdir, f))
             max_zoom = self._get_max_zoom_level(img_wid, img_hei, tilesize)
 
@@ -80,23 +82,14 @@ class DivaServe(object):
             self.images.append(im)
 
             self.zoomlevels.append(max_zoom)
+
         self.lowest_max_zoom = min(self.zoomlevels)
+        self.num_pages = i + 1
 
         self.cache = {}
-        for zoom in range(self.lowest_max_zoom):
-            # check for cached copies first
-            if mode == "disk":
-                cachefile = "docdata_{0}".format(zoom)
-                try:
-                    f = open(os.path.join(self.cachedir, self.basename, cachefile))
-                except: IOError as e:
-                    # file doesn't exist
-                    pass
 
-            elif mode == "memcached":
-                pass
-
-            # if not, we need to do some heavy lifting.
+        # From 0 to lowest max zoom, inclusive
+        for zoom in range(self.lowest_max_zoom + 1):
             pgs = []
             dim = {}
             pgh = []
@@ -108,8 +101,8 @@ class DivaServe(object):
                 pg = {
                     'h': h,
                     'w': w,
-                    'c': math.ceil(w / float(self.tilesize)),
-                    'r': math.ceil(h / float(self.tilesize)),
+                    'c': int(math.ceil(w / float(self.tilesize))),
+                    'r': int(math.ceil(h / float(self.tilesize))),
                     'm_z': img['mx_z'],
                     'fn': img['fn']
                 }
@@ -150,15 +143,70 @@ class DivaServe(object):
         if verbose:
             print >> sys.stderr, "images loaded"
 
-    def get(self, zoom):
-        pass
+        dims = {
+            'a_wid': [],
+            'a_hei': [],
+            'max_w': [],
+            'max_h': [],
+            'max_ratio': self.cache[0]['dims']['max_ratio'],
+            'min_ratio': self.cache[0]['dims']['min_ratio'],
+            't_hei': [],
+            't_wid': [],
+        }
+        pgs = []
+
+        for z in range(self.lowest_max_zoom + 1):
+            heights = [page['h'] for page in self.cache[z]['pgs']]
+            widths = [page['w'] for page in self.cache[z]['pgs']]
+            t_hei = sum(heights)
+            t_wid = sum(widths)
+            dims['a_wid'].append(t_wid / self.num_pages)
+            dims['a_hei'].append(t_hei / self.num_pages)
+            dims['t_wid'].append(t_wid)
+            dims['t_hei'].append(t_hei)
+            dims['max_w'].append(max(widths))
+            dims['max_h'].append(max(heights))
+
+        for i in range(self.num_pages):
+            dim_data = []
+            for z in range(self.lowest_max_zoom + 1):
+                zoom_data = {
+                    'c': self.cache[z]['pgs'][i]['c'],
+                    'r': self.cache[z]['pgs'][i]['r'],
+                    'h': self.cache[z]['pgs'][i]['h'],
+                    'w': self.cache[z]['pgs'][i]['w'],
+                }
+                dim_data.append(zoom_data)
+            page_data = {
+                'm': self.cache[0]['pgs'][i]['m_z'],
+                'f': self.cache[0]['pgs'][i]['fn'],
+                'd': dim_data
+            }
+            pgs.append(page_data)
+
+        self.cache = {
+            "item_title": self._get_item_title(),
+            "dims": dims,
+            "max_zoom": self.lowest_max_zoom,
+            "pgs": pgs,
+        }
+
+    def get(self):
+        return self.cache
 
 
-    def _get_max_zoom_level(self, iwid, ihei, tilesize):
-        largest_dim = max(iwid, ihei)
-        t_dim = tilesize if iwid > ihei else tilesize
-        zoom_levels = math.ceil(math.log((largest_dim + 1) / float(tilesize) + 1, 2))
+    def _get_max_zoom_level(self, wid, hei, tilesize):
+        largest_dim = max(wid, hei)
+        zoom_levels = math.ceil(math.log((largest_dim + 1) / float(tilesize + 1), 2))
         return int(zoom_levels)
 
     def _incorporate_zoom(self, img_dim, zoom_diff):
         return img_dim / float(2**zoom_diff)
+
+    def _get_item_title(self):
+        """
+        Take the name of the directory, replace hyphens and underscores with
+        spaces, and title-case it.
+        """
+        title = self.imgdir
+        return title[title.rfind("/")+1:].replace('-', ' ').replace('_', ' ').title()
