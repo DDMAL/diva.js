@@ -9,6 +9,6 @@ method will introduce a slight delay to the process.
 
 $d = isset($_GET['d']) ? $_GET['d'] : 'beromunster';
 
-echo file_get_contents("http://ddmal.music.mcgill.ca/divaserve.php?d=$d&z=$z", false, NULL);
+echo file_get_contents("http://ddmal.music.mcgill.ca/diva/newdivaserve.php?d=$d", false, NULL);
 
 ?>
