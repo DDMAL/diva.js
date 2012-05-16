@@ -82,7 +82,9 @@ class DivaServe(object):
             self.images.append(im)
 
             self.zoomlevels.append(max_zoom)
+
         self.lowest_max_zoom = min(self.zoomlevels)
+        self.num_pages = i + 1
 
         self.cache = {}
         for zoom in range(self.lowest_max_zoom):
