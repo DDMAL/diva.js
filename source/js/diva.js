@@ -26,12 +26,13 @@ window.divaPlugins = [];
 (function ($) {
     var Diva = function (element, options) {
         // These are elements that can be overridden upon instantiation
+        // See https://github.com/DDMAL/diva.js/wiki/Code-documentation for more details
         var defaults =  {
             adaptivePadding: 0.05,      // The ratio of padding to the page dimension
             contained: false,           // Determines the location of the fullscreen icon
-            divaserveURL: '',           // URL to the divaserve.php script
+            divaserveURL: '',           // URL to the divaserve.php script - *MANDATORY*
             enableAutoTitle: true,      // Shows the title within a div of id diva-title
-            enableFilename: true,       // Uses filenames instead of page numbers for links (i=bm_001.tif instead of p=1)
+            enableFilename: true,       // Uses filenames and not page numbers for links (i=bm_001.tif, not p=1)
             enableFullscreen: true,     // Enable or disable fullscreen icon (mode still available)
             enableGotoPage: true,       // A "go to page" jump box
             enableGrid: true,           // A grid view of all the pages
@@ -43,10 +44,10 @@ window.divaPlugins = [];
             fixedPadding: 10,           // Fallback if adaptive padding is set to 0
             fixedHeightGrid: true,      // So each page in grid view has the same height (only widths differ)
             goDirectlyTo: 0,            // Default initial page to show (0-indexed)
-            iipServerURL: '',           // The URL to the IIPImage installation, including the ?FIF=
+            iipServerURL: '',           // The URL to the IIPImage installation, including the `?FIF=` - *MANDATORY*
             inFullscreen: false,        // Set to true to load fullscreen mode initially
             inGrid: false,              // Set to true to load grid view initially
-            imageDir: '',               // Image directory, relative to the root defined in divaserve
+            imageDir: '',               // Image directory, relative to the root defined in divaserve - *MANDATORY*
             maxPagesPerRow: 8,          // Maximum number of pages per row, grid view
             maxZoomLevel: -1,           // Optional; defaults to the max zoom returned in the JSON response
             minPagesPerRow: 2,          // 2 for the spread view. Recommended to leave it
