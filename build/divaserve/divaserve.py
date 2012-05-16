@@ -20,7 +20,6 @@ except ImportError:
         size = img.size
         del img
         return size
-from operator import itemgetter
 
 try:
     import pylibmc
