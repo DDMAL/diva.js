@@ -4,7 +4,7 @@
     // Allows you to clone, create a document viewer on, then remove an element
     $.tempDiva = function (settings) {
         // If the divaserveURL, imageDir, iconPath and iipServerURL settings aren't defined, define them
-        settings.divaserveURL = settings.divaserveURL || "http://petrucci.musiclibs.net:9002/loldivaserve.php";
+        settings.divaserveURL = settings.divaserveURL || "http://petrucci.musiclibs.net:9002/demo/demo.php";
         settings.imageDir = settings.imageDir || "beromunster";
         settings.iipServerURL = settings.iipServerURL || "http://coltrane.music.mcgill.ca/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/beromunster/";
         settings.iconPath = settings.iconPath || "../build/img/";
