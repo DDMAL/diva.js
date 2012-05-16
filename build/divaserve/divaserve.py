@@ -87,18 +87,6 @@ class DivaServe(object):
         self.num_pages = i + 1
 
         self.cache = {}
-        for zoom in range(self.lowest_max_zoom):
-            # check for cached copies first
-            if mode == "disk":
-                cachefile = "docdata_{0}".format(zoom)
-                try:
-                    f = open(os.path.join(self.cachedir, self.basename, cachefile))
-                except: IOError as e:
-                    # file doesn't exist
-                    pass
-
-            elif mode == "memcached":
-                pass
 
             # if not, we need to do some heavy lifting.
             pgs = []
