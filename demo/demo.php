@@ -8,7 +8,6 @@ method will introduce a slight delay to the process.
 */
 
 $d = isset($_GET['d']) ? $_GET['d'] : 'beromunster';
-$z = isset($_GET['z']) ? $_GET['z'] : 0;
 
 echo file_get_contents("http://ddmal.music.mcgill.ca/divaserve.php?d=$d&z=$z", false, NULL);
 
