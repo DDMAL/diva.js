@@ -19,6 +19,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+header("Content-type: application/json");
 
 // Image directory. Images in this directory will be served by folder name,
 // so if you have a folder named ...images/old_manuscript, a request for 
