@@ -215,7 +215,7 @@ window.divaPlugins = [];
 
 
         // Check if a page index is valid
-        var pageInRange = function (pageIndex) {
+        var isPageValid = function (pageIndex) {
             return pageIndex >= 0 && pageIndex < settings.numPages;
         };
 
@@ -349,7 +349,7 @@ window.divaPlugins = [];
         var attemptPageShow = function (pageIndex, direction) {
             if (direction > 0) {
                 // Direction is positive - we're scrolling down
-                if (pageInRange(pageIndex)) {
+                if (isPageValid(pageIndex)) {
                     // If the page should be visible, then yes, add it
                     if (isPageVisible(pageIndex)) {
                         loadPage(pageIndex);
@@ -365,7 +365,7 @@ window.divaPlugins = [];
                 }
             } else {
                 // Direction is negative - we're scrolling up
-                if (pageInRange(pageIndex)) {
+                if (isPageValid(pageIndex)) {
                     // If it's near the viewport, yes, add it
                     if (isPageVisible(pageIndex)) {
                         loadPage(pageIndex);
@@ -387,7 +387,7 @@ window.divaPlugins = [];
         var attemptPageHide = function (pageIndex, direction) {
             if (direction > 0) {
                 // Scrolling down - see if this page needs to be deleted from the DOM
-                if (pageInRange(pageIndex) && pageAboveViewport(pageIndex)) {
+                if (isPageValid(pageIndex) && pageAboveViewport(pageIndex)) {
                     // Yes, delete it, reset the first page loaded
                     deletePage(pageIndex);
                     settings.firstPageLoaded = pageIndex + 1;
@@ -397,7 +397,7 @@ window.divaPlugins = [];
                 }
             } else {
                 // Direction must be negative (not 0 - see adjustPages), we're scrolling up
-                if (pageInRange(pageIndex) && pageBelowViewport(pageIndex)) {
+                if (isPageValid(pageIndex) && pageBelowViewport(pageIndex)) {
                     // Yes, delete it, reset the last page loaded
                     deletePage(pageIndex);
                     settings.lastPageLoaded = pageIndex - 1;
@@ -443,7 +443,7 @@ window.divaPlugins = [];
 
 
         // Check if a row index is valid
-        var rowInRange = function (rowIndex) {
+        var isRowValid = function (rowIndex) {
             return rowIndex >= 0 && rowIndex < settings.numRows;
         };
 
@@ -481,7 +481,7 @@ window.divaPlugins = [];
                 pageIndex = rowIndex * settings.pagesPerRow + i;
 
                 // If this page is the last row, don't try to load a nonexistent page
-                if (!pageInRange(pageIndex)) {
+                if (!isPageValid(pageIndex)) {
                     break;
                 }
 
@@ -536,7 +536,7 @@ window.divaPlugins = [];
         // Same thing as attemptPageShow only with rows
         var attemptRowShow = function (rowIndex, direction) {
             if (direction > 0) {
-                if (rowInRange(rowIndex)) {
+                if (isRowValid(rowIndex)) {
                     if (isRowVisible(rowIndex)) {
                         loadRow(rowIndex);
                         settings.lastRowLoaded = rowIndex;
@@ -546,7 +546,7 @@ window.divaPlugins = [];
                     }
                 }
             } else {
-                if (rowInRange(rowIndex)) {
+                if (isRowValid(rowIndex)) {
                     if (isRowVisible(rowIndex)) {
                         loadRow(rowIndex);
                         settings.firstRowLoaded = rowIndex;
@@ -560,13 +560,13 @@ window.divaPlugins = [];
 
         var attemptRowHide = function (rowIndex, direction) {
             if (direction > 0) {
-                if (rowInRange(rowIndex) && rowAboveViewport(rowIndex)) {
+                if (isRowValid(rowIndex) && rowAboveViewport(rowIndex)) {
                     deleteRow(rowIndex);
                     settings.firstRowLoaded++;
                     attemptRowHide(settings.firstRowLoaded, direction);
                 }
             } else {
-                if (rowInRange(rowIndex) && rowBelowViewport(rowIndex)) {
+                if (isRowValid(rowIndex) && rowBelowViewport(rowIndex)) {
                     deleteRow(rowIndex);
                     settings.lastRowLoaded--;
 
@@ -659,7 +659,7 @@ window.divaPlugins = [];
                     changeCurrentRow = true;
                 }
             } else if (direction > 0) {
-                if ((settings.rowHeight * (currentRow + 1)) < settings.scrollSoFar && rowInRange(rowToConsider)) {
+                if ((settings.rowHeight * (currentRow + 1)) < settings.scrollSoFar && isRowValid(rowToConsider)) {
                     changeCurrentRow = true;
                 }
             }
@@ -1111,7 +1111,7 @@ window.divaPlugins = [];
                 'p': (settings.enableFilename) ? false : settings.currentPageIndex + 1,
                 'y': (settings.inGrid) ? false : getYOffset(),
                 'x': (settings.inGrid) ? false : getXOffset(),
-                'gy': (settings.inGrid) ? $(settings.outerSelector).scrollTop() : false,
+                //'gy': (settings.inGrid) ? $(settings.outerSelector).scrollTop() : false,
                 'h': (settings.inFullscreen) ? false: settings.panelHeight,
                 'w': (settings.inFullscreen) ? false : $(settings.outerSelector).width()
             }
@@ -1363,7 +1363,7 @@ window.divaPlugins = [];
                 var desiredPage = parseInt($(settings.selector + 'goto-page-input').val(), 10);
                 var pageIndex = desiredPage - 1;
 
-                if (!pageInRange(pageIndex)) {
+                if (!isPageValid(pageIndex)) {
                     alert("Invalid page number");
                 } else {
                     if (settings.inGrid) {
@@ -1544,14 +1544,14 @@ window.divaPlugins = [];
                     if (settings.enableFilename) {
                         var iParam = $.getHashParam('i' + settings.hashParamSuffix);
                         var iParamPage = getPageIndex(iParam);
-                        if (pageInRange(iParamPage)) {
+                        if (isPageValid(iParamPage)) {
                             settings.goDirectlyTo = iParamPage;
                         }
                     } else {
                         // Not using the i parameter, check the p parameter
                         // Subtract 1 to get the page index
                         var pParam = parseInt($.getHashParam('p' + settings.hashParamSuffix), 10) - 1;
-                        if (pageInRange(pParam)) {
+                        if (isPageValid(pParam)) {
                             settings.goDirectlyTo = pParam;
                         }
                     }
@@ -1673,12 +1673,12 @@ window.divaPlugins = [];
             // If the "fullscreen" hash param is true, go to fullscreen initially
             // If the grid hash param is true, go to grid view initially
             var gridParam = $.getHashParam('g' + settings.hashParamSuffix);
-            var goIntoGrid = gridParam === 'true' && settings.enableGrid;
+            var goIntoGrid = gridParam === 'true';
             var fullscreenParam = $.getHashParam('f' + settings.hashParamSuffix);
-            var goIntoFullscreen = fullscreenParam === 'true' && settings.enableFullscreen;
+            var goIntoFullscreen = fullscreenParam === 'true';
 
-            settings.inGrid = settings.inGrid || goIntoGrid;
-            settings.inFullscreen = settings.inFullscreen || goIntoFullscreen;
+            settings.inGrid = settings.inGrid && gridParam !== 'false' || goIntoGrid;
+            settings.inFullscreen = settings.inFullscreen && fullscreenParam !== 'false' || goIntoFullscreen;
 
             // Store the height and width of the viewer (the outer div), if present
             var desiredHeight = parseInt($.getHashParam('h' + settings.hashParamSuffix), 10);
@@ -1718,7 +1718,7 @@ window.divaPlugins = [];
         // Go to a particular page (with indexing starting at 1)
         this.gotoPage = function (pageNumber) {
             var pageIndex = pageNumber - 1;
-            if (pageInRange(pageIndex)) {
+            if (isPageValid(pageIndex)) {
                 gotoPage(pageIndex);
             }
         };
