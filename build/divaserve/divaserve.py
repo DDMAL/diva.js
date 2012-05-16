@@ -59,13 +59,16 @@ class DivaServe(object):
         if verbose:
             print >> sys.stderr, "Loading Images..."
 
-        for i,f in enumerate(os.listdir(self.imgdir)):
+        files = os.listdir(self.imgdir)
+        files.sort()
 
+        for i,f in enumerate(files):
             if verbose:
                 print >> sys.stderr, "Loading {0}".format(f)
 
             if os.path.splitext(f)[1] not in (".tif", ".tiff", ".jpg", ".jpeg", ".jp2"):
                 continue
+
             img_wid, img_hei = image_size(os.path.join(self.imgdir, f))
             max_zoom = self._get_max_zoom_level(img_wid, img_hei, tilesize)
 
