@@ -86,7 +86,6 @@ window.divaPlugins = [];
             dimAfterZoom: 0,            // Used for storing the item dimensions after zooming
             dimBeforeZoom: 0,           // Used for storing the item dimensions before zooming
             doubleClick: false,         // If the zoom has been triggered by a double-click event
-            elementSelector: '',        // The ID of the element plus the # for easy selection, set in init()
             firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
             firstRowLoaded: -1,         // The index of the first row loaded
             hashParamSuffix: '',        // Used when there are multiple document viewers on a page
@@ -940,7 +939,7 @@ window.divaPlugins = [];
             $(settings.selector + 'fullscreen').toggleClass('diva-in-fullscreen');
             $(settings.outerSelector).toggleClass('diva-fullscreen');
             $('body').toggleClass('diva-hide-scrollbar');
-            $(settings.elementSelector).toggleClass('diva-full-width');
+            $(settings.parentSelector).toggleClass('diva-full-width');
 
             // Reset the panel dimensions
             settings.panelHeight = $(settings.outerSelector).height();
@@ -1301,8 +1300,8 @@ window.divaPlugins = [];
             if (settings.contained) {
                 // Make sure the container element does not have a static position
                 // (Needed for the fullscreen icon to be contained)
-                if ($(settings.elementSelector).css('position') === 'static') {
-                    $(settings.elementSelector).addClass('diva-relative-position');
+                if ($(settings.parentSelector).css('position') === 'static') {
+                    $(settings.parentSelector).addClass('diva-relative-position');
                 }
                 otherToolbarClass = ' diva-fullscreen-space';
                 // If enableAutoTitle is set to TRUE, move it down
@@ -1312,7 +1311,7 @@ window.divaPlugins = [];
             }
             var toolbarHTML = '<div id="' + settings.ID + 'tools-left" class="diva-tools-left' + otherToolbarClass + '">' + zoomSliderHTML + gridSliderHTML + zoomSliderLabelHTML + gridSliderLabelHTML + '</div><div id="' + settings.ID + 'tools-right" class="diva-tools-right">' + linkIconHTML + gridIconHTML + '<div class="diva-page-nav">' + gotoPageHTML + pageNumberHTML + '</div></div>';
 
-            $(settings.elementSelector).prepend('<div id="' + settings.ID + 'tools" class="diva-tools">' + toolbarHTML + '</div>');
+            $(settings.parentSelector).prepend('<div id="' + settings.ID + 'tools" class="diva-tools">' + toolbarHTML + '</div>');
 
             // Attach handlers to everything
             $(settings.selector + 'zoom-slider').slider({
@@ -1565,7 +1564,7 @@ window.divaPlugins = [];
                     settings.toolbar = createToolbar();
                     $(settings.selector + 'current label').text(settings.numPages);
                     if (settings.enableAutoTitle) {
-                        $(settings.elementSelector).prepend('<div id="' + settings.ID + 'title" class="diva-title">' + settings.itemTitle + '</div>');
+                        $(settings.parentSelector).prepend('<div id="' + settings.ID + 'title" class="diva-title">' + settings.itemTitle + '</div>');
                     }
 
                     // Calculate the viewer x and y offsets
@@ -1591,9 +1590,6 @@ window.divaPlugins = [];
             // Check if the platform is the iPad/iPhone/iPod
             settings.mobileSafari = navigator.platform == 'iPad' || navigator.platform == 'iPhone' || navigator.platform == 'iPod';
 
-            // For easier selecting of the container element
-            settings.elementSelector = '#' + $(element).attr('id');
-
             // Generate an ID that can be used as a prefix for all the other IDs
             settings.ID = $.generateId('diva-');
             settings.selector = '#' + settings.ID;
@@ -1610,7 +1606,7 @@ window.divaPlugins = [];
             settings.innerSelector = settings.selector + 'inner';
 
             // Create the inner and outer panels
-            $(settings.elementSelector).append('<div id="' + settings.ID + 'outer" class="diva-outer"></div>');
+            $(settings.parentSelector).append('<div id="' + settings.ID + 'outer" class="diva-outer"></div>');
             $(settings.outerSelector).append('<div id="' + settings.ID + 'inner" class="diva-inner diva-dragger"></div>');
 
             // Adjust the document panel dimensions for Apple touch devices
@@ -1626,19 +1622,19 @@ window.divaPlugins = [];
                     settings.panelHeight = screen.height - 250;
                 }
 
-                $(settings.elementSelector).css('width', settings.panelWidth);
+                $(settings.parentSelector).css('width', settings.panelWidth);
                 $(settings.outerSelector).css('width', settings.panelWidth + 'px');
                 $(settings.outerSelector).css('height', settings.panelHeight + 'px');
             } else {
                 // For other devices, adjust to take the scrollbar into account
-                settings.panelWidth = parseInt($(settings.elementSelector).width(), 10) - 18;
+                settings.panelWidth = parseInt($(settings.parentSelector).width(), 10) - 18;
                 $(settings.outerSelector).css('width', (settings.panelWidth + 18) + 'px');
                 settings.panelHeight = parseInt($(settings.outerSelector).height(), 10);
             }
 
             // Create the fullscreen icon
             if (settings.enableFullscreen) {
-                $(settings.elementSelector).prepend('<div id="' + settings.ID + 'fullscreen" class="diva-fullscreen-icon" title="Toggle fullscreen mode"></div>');
+                $(settings.parentSelector).prepend('<div id="' + settings.ID + 'fullscreen" class="diva-fullscreen-icon" title="Toggle fullscreen mode"></div>');
             }
 
             // First, n - check if it's in range
