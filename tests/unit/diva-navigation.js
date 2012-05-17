@@ -23,14 +23,14 @@ asyncTest("Scrolling in grid view", function () {
     $.tempDiva({
         inGrid: true,
         pagesPerRow: 2,
-        fixedHeightGrid: true,
+        fixedHeightGrid: false,
         onReady: function (settings) {
             $(settings.outerSelector).scrollTop(10000);
 
             var self = this;
             setTimeout(function () {
-                equal(self.getCurrentPage(), 46, "The page should now be 47 (index of 46)");
-                equal($(settings.selector + 'current-page').text(), '47', "The toolbar should have been updated");
+                equal(self.getCurrentPage(), 26, "The page should now be 27 (index of 26)");
+                equal($(settings.selector + 'current-page').text(), '27', "The toolbar should have been updated");
                 start();
             }, 10);
         }
