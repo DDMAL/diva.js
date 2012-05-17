@@ -1901,6 +1901,9 @@ window.divaPlugins = [];
             $.each(settings.plugins, function (index, plugin) {
                 executeCallback(plugin.destroy);
             });
+
+            // Remove any additional styling on the parent element
+            $(settings.parentSelector).removeAttr('style').removeAttr('class');
         };
     };
 
