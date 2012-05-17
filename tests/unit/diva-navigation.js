@@ -99,7 +99,7 @@ asyncTest("Switching between regular and fullscreen mode", function () {
             // Click the fullscreen icon, then wait for a bit for the event to be triggered
             setTimeout(function () {
                 ok(settings.inFullscreen, "Should now be in fullscreen");
-                ok($('body').hasClass('hide-scrollbar'), "Body should have the hide-scrollbar class");
+                ok($('body').hasClass('diva-hide-scrollbar'), "Body should have the hide-scrollbar class");
                 start();
             }, 10);
         }

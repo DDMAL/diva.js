@@ -46,13 +46,13 @@ hashParamTest("grid (g)", "g", "true", function (settings) {
     ok(settings.inGrid, "inGrid setting should be true");
     ok($(settings.selector + 'grid-slider').is(':visible'), "Grid slider should be visible");
     ok(!$(settings.selector + 'zoom-slider').is(':visible'), "Zoom slider should not be visible");
-    equal($('.document-page').length, 0, "There should be no document pages");
-    notEqual($('.row').length, 0, "There should be at least one row");
+    equal($('.diva-document-page').length, 0, "There should be no document pages");
+    notEqual($('.diva-row').length, 0, "There should be at least one row");
 });
 
 hashParamTest("fullscreen (f)", "f", "true", function (settings) {
     ok(settings.inFullscreen, "inFullscreen setting should be true");
-    ok($('body').hasClass('hide-scrollbar'), "The body element should have the hide-scrollbar class")
+    ok($('body').hasClass('diva-hide-scrollbar'), "The body element should have the hide-scrollbar class")
 });
 
 multipleHashParamTest("grid (g) and fullscreen (f)", {g: "true", f: "true"}, function (settings) {
@@ -83,7 +83,7 @@ multipleHashParamTest("zoom level (z) and fullscreen (f)", {z: "1", f: "true"}, 
     ok(settings.inFullscreen, "Should be in fullscreen initially");
 
     // Check that we're actually in fullscreen mode
-    ok($('body').hasClass('hide-scrollbar'), "The body element should have the hide-scrollbar class")
+    ok($('body').hasClass('diva-hide-scrollbar'), "The body element should have the hide-scrollbar class")
 
     // Check that the zoom level is actually 1
     equal($(settings.selector + 'zoom-slider-label').text(), "Zoom level: 1", "Zoom slider label should show a zoom level of 1");

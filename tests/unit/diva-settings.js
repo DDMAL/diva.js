@@ -29,16 +29,16 @@ asyncTest("contained true, enableAutoTitle false", function () {
         enableAutoTitle: false,
         onReady: function (settings) {
             // Check that the fullscreen icon does NOT have the contained class
-            ok(!$(settings.selector + 'fullscreen').hasClass('contained'), "Should not have the contained class");
+            ok(!$(settings.selector + 'fullscreen').hasClass('diva-contained'), "Should not have the contained class");
 
             // The whole thing should be relatively positioned
-            equal($(settings.elementSelector).css('position'), 'relative', "Container should be relatively positioned");
+            equal($(settings.parentSelector).css('position'), 'relative', "Container should be relatively positioned");
 
             // Title should not be present
             equal($(settings.selector + 'title').length, 0, "Title should not be present");
 
             // The left tools section should have the fullscreen-space class
-            ok($(settings.selector + 'tools-left').hasClass('fullscreen-space'), "Left tools section should be moved over");
+            ok($(settings.selector + 'tools-left').hasClass('diva-fullscreen-space'), "Left tools section should be moved over");
             start();
         }
     });
@@ -50,7 +50,7 @@ asyncTest("contained true, enableAutoTitle true", function () {
         enableAutoTitle: true,
         onReady: function (settings) {
             // Check that it does have the contained class
-            ok($(settings.selector + 'fullscreen').hasClass('contained'), "Should have the contained class");
+            ok($(settings.selector + 'fullscreen').hasClass('diva-contained'), "Should have the contained class");
 
             // Title SHOULD be present
             notEqual($(settings.selector + 'title').length, 0, "Title SHOULD be present");
@@ -222,7 +222,7 @@ asyncTest("inGrid false", function () {
         inGrid: false,
         onReady: function (settings) {
             ok(!settings.inGrid, "inGrid setting should still be false");
-            ok(!$(settings.selector + 'grid-icon').hasClass('in-grid'), "Icon should not have the in-grid class");
+            ok(!$(settings.selector + 'grid-icon').hasClass('diva-in-grid'), "Icon should not have the in-grid class");
             start();
         }
     });
@@ -233,7 +233,7 @@ asyncTest("inGrid true", function () {
         inGrid: true,
         onReady: function (settings) {
             ok(settings.inGrid, "inGrid setting should be preserved");
-            ok($(settings.selector + 'grid-icon').hasClass('in-grid'), "Icon should hvae the in-grid class"); 
+            ok($(settings.selector + 'grid-icon').hasClass('diva-in-grid'), "Icon should have the in-grid class");
             start();
         }
     });
@@ -307,7 +307,7 @@ asyncTest("fixedHeightGrid false", function () {
         onReady: function (settings) {
             this.enterGrid();
             // Check all the widths are the same, but that the heights are different
-            var pages = $('.page');
+            var pages = $('.diva-page');
             var firstPage = $(pages[0]);
             var sameWidths = true, sameHeights = true, thisPage, i, length;
             for (i = 1, length = pages.length; i < length; i++) {
@@ -331,7 +331,7 @@ asyncTest("fixedHeightGrid true", function () {
             this.enterGrid();
 
             // Check that all the widths are the same, bu that the heights are different
-            var pages = $('.page');
+            var pages = $('.diva-page');
             var firstPage = $(pages[0]);
             var sameWidths = true, sameHeights = true, thisPage, i, length;
             for (i = 1, length = pages.length; i < length; i++) {
