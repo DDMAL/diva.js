@@ -1139,18 +1139,8 @@ window.divaPlugins = [];
         // Called in init and when the orientation changes
         var adjustMobileSafariDims = function () {
             var outerOffset = $(settings.outerSelector).offset().top;
-            settings.panelHeight = window.outerHeight - outerOffset - 15;
-            if (Math.abs(window.orientation) == 90) {
-                settings.panelWidth = screen.height - 30;
-                settings.panelHeight -= 32;
-
-                if (settings.orientationChange) {
-                    settings.panelHeight -= 213;
-                    settings.orientationChange = false;
-                }
-            } else {
-                settings.panelWidth = screen.width - 30;
-            }
+            settings.panelHeight = window.innerHeight - outerOffset - 15;
+            settings.panelWidth = window.innerWidth - 30;
 
             $(settings.parentSelector).width(settings.panelWidth);
             $(settings.outerSelector).width(settings.panelWidth).height(settings.panelHeight);
@@ -1600,7 +1590,6 @@ window.divaPlugins = [];
                         $(settings.parentSelector).prepend('<div id="' + settings.ID + 'title" class="diva-title">' + settings.itemTitle + '</div>');
                     }
 
-                    // Set the size now
                     // Adjust the document panel dimensions for Apple touch devices
                     if (settings.mobileSafari) {
                         adjustMobileSafariDims();
