@@ -1011,7 +1011,7 @@ window.divaPlugins = [];
 
 
         // Called after double-clicking on a page in grid view
-        var handleGridDoubleClick = function () {
+        var handleGridDoubleClick = function (event) {
             // Figure out the page that was clicked, scroll to that page
             var centerX = (event.pageX - settings.viewerXOffset) + $(settings.outerSelector).scrollLeft();
             var centerY = (event.pageY - settings.viewerYOffset) + $(settings.outerSelector).scrollTop();
