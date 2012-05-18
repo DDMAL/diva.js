@@ -1134,6 +1134,28 @@ window.divaPlugins = [];
             return location.protocol + '//' + location.host + location.pathname + '#' + getURLHash();
         };
 
+
+
+        // Called in init and when the orientation changes
+        var adjustMobileSafariDims = function () {
+            var outerOffset = $(settings.outerSelector).offset().top;
+            settings.panelHeight = window.outerHeight - outerOffset - 15;
+            if (Math.abs(window.orientation) == 90) {
+                settings.panelWidth = screen.height - 30;
+                settings.panelHeight -= 32;
+
+                if (settings.orientationChange) {
+                    settings.panelHeight -= 213;
+                    settings.orientationChange = false;
+                }
+            } else {
+                settings.panelWidth = screen.width - 30;
+            }
+
+            $(settings.parentSelector).width(settings.panelWidth);
+            $(settings.outerSelector).width(settings.panelWidth).height(settings.panelHeight);
+        };
+
         var resizeViewer = function (newWidth, newHeight) {
             if (newWidth >= settings.minWidth && newHeight >= settings.minHeight) {
                 var oldWidth = settings.panelWidth;
@@ -1215,7 +1237,7 @@ window.divaPlugins = [];
 
                 // Prevent resizing (below from http://matt.might.net/articles/how-to-native-iphone-ipad-apps-in-javascript/)
                 var toAppend = [];
-                toAppend.push('<meta name="viewport" content="user-scalable=no, width=device-width" />');
+                toAppend.push('<meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1" />');
 
                 // Eliminate URL and button bars if added to home screen
                 toAppend.push('<meta name="apple-mobile-web-app-capable" content="yes" />');
@@ -1228,16 +1250,19 @@ window.divaPlugins = [];
                 $('body').bind('touchmove', function (event) {
                     var e = event.originalEvent;
                     e.preventDefault();
-                    // Test this!
+                    return false;
                 });
 
                 // Allow pinch-zooming
-                // If originally in grid view, go to document view with the lowest zoom
                 $('body').bind('gestureend', function (event) {
                     var e = event.originalEvent;
                     if (!settings.scaleWait) {
+                        // Save the page we're currently on so we scroll there
+                        settings.goDirectlyTo = settings.currentPageIndex;
                         if (settings.inGrid) {
-                            leaveGrid();
+                            settings.inGrid = false;
+
+                            handleViewChange();
                         } else {
                             handlePinchZoom(e);
                         }
@@ -1245,6 +1270,14 @@ window.divaPlugins = [];
                     return false;
                 });
 
+                // Listen to orientation change event
+                $('body').bind('orientationchange', function (event) {
+                    settings.orientationChange = true;
+                    adjustMobileSafariDims();
+
+                    // Reload the viewer to account for the resized viewport
+                    loadViewer();
+                });
             }
 
             // Only check if either scrollBySpace or scrollByKeys is enabled
@@ -1567,6 +1600,17 @@ window.divaPlugins = [];
                         $(settings.parentSelector).prepend('<div id="' + settings.ID + 'title" class="diva-title">' + settings.itemTitle + '</div>');
                     }
 
+                    // Set the size now
+                    // Adjust the document panel dimensions for Apple touch devices
+                    if (settings.mobileSafari) {
+                        adjustMobileSafariDims();
+                    } else {
+                        // For other devices, adjust to take the scrollbar into account
+                        settings.panelWidth = parseInt($(settings.parentSelector).width(), 10) - 18;
+                        $(settings.outerSelector).css('width', (settings.panelWidth + 18) + 'px');
+                        settings.panelHeight = parseInt($(settings.outerSelector).height(), 10);
+                    }
+
                     // Calculate the viewer x and y offsets
                     var viewerOffset = $(settings.outerSelector).offset();
                     settings.viewerXOffset = viewerOffset.left;
@@ -1608,29 +1652,6 @@ window.divaPlugins = [];
             // Create the inner and outer panels
             $(settings.parentSelector).append('<div id="' + settings.ID + 'outer" class="diva-outer"></div>');
             $(settings.outerSelector).append('<div id="' + settings.ID + 'inner" class="diva-inner diva-dragger"></div>');
-
-            // Adjust the document panel dimensions for Apple touch devices
-            if (settings.mobileSafari) {
-                // Account for the scrollbar
-                settings.panelWidth = screen.width - settings.scrollbarWidth;
-
-                // The iPhone's toolbar etc takes up slightly more screen space
-                // So the height of the panel needs to be adjusted accordingly
-                if (navigator.platform == 'iPad') {
-                    settings.panelHeight = screen.height - 170;
-                } else {
-                    settings.panelHeight = screen.height - 250;
-                }
-
-                $(settings.parentSelector).css('width', settings.panelWidth);
-                $(settings.outerSelector).css('width', settings.panelWidth + 'px');
-                $(settings.outerSelector).css('height', settings.panelHeight + 'px');
-            } else {
-                // For other devices, adjust to take the scrollbar into account
-                settings.panelWidth = parseInt($(settings.parentSelector).width(), 10) - 18;
-                $(settings.outerSelector).css('width', (settings.panelWidth + 18) + 'px');
-                settings.panelHeight = parseInt($(settings.outerSelector).height(), 10);
-            }
 
             // Create the fullscreen icon
             if (settings.enableFullscreen) {
