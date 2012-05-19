@@ -113,11 +113,12 @@
   box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
 }
 .diva-outer {
+  clear: both;
   background: #f1f1f1;
   border: 1px solid #99bbe8;
   position: relative;
-  min-height: 400px;
-  min-width: 400px;
+  min-height: 100px;
+  min-width: 200px;
   height: 700px;
   overflow: auto;
 }
