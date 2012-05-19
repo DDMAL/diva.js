@@ -209,8 +209,8 @@ window.divaPlugins = [];
         };
 
         // Check if a tile has been appended to the DOM
-        var isTileLoaded = function (pageIndex, tileNumber) {
-            return $(settings.selector + 'tile-' + pageIndex + '-' + tileNumber).length > 0;
+        var isTileLoaded = function (pageIndex, tileIndex) {
+            return $(settings.selector + 'tile-' + pageIndex + '-' + tileIndex).length > 0;
         };
 
 
@@ -266,7 +266,7 @@ window.divaPlugins = [];
                 var tilesToLoad = [];
                 var content = [];
                 var allTilesLoaded = true;
-                var tileNumber = 0;
+                var tileIndex = 0;
 
                 // Calculate the width and height of outer tiles (non-standard dimensions)
                 var lastHeight = height - (rows - 1) * settings.tileHeight;
@@ -291,22 +291,22 @@ window.divaPlugins = [];
                         tileHeight = (row === rows - 1) ? lastHeight : settings.tileHeight;
                         tileWidth = (col === cols - 1) ? lastWidth : settings.tileWidth;
 
-                        imageURL = baseURL + zoomLevel + ',' + tileNumber;
+                        imageURL = baseURL + zoomLevel + ',' + tileIndex;
 
-                        if (!isTileLoaded(pageIndex, tileNumber)) {
+                        if (!isTileLoaded(pageIndex, tileIndex)) {
                             if (isTileVisible(pageIndex, row, col)) {
                                 // The tile needs to be loaded, so load it
-                                content.push('<div id="' + settings.ID + 'tile-' + pageIndex + '-' + tileNumber + '" style="' + displayStyle + '; position: absolute; top: ' + top + 'px; left: ' + left + 'px; background-image: url(\'' + imageURL + '\'); height: ' + tileHeight + 'px; width: ' + tileWidth + 'px;"></div>');
+                                content.push('<div id="' + settings.ID + 'tile-' + pageIndex + '-' + tileIndex + '" style="' + displayStyle + '; position: absolute; top: ' + top + 'px; left: ' + left + 'px; background-image: url(\'' + imageURL + '\'); height: ' + tileHeight + 'px; width: ' + tileWidth + 'px;"></div>');
 
                                 // Add it to the array of tiles to be faded in
-                                tilesToLoad.push(tileNumber);
+                                tilesToLoad.push(tileIndex);
                             } else {
                                 // The tile does not need to be loaded - not all have been loaded
                                 allTilesLoaded = false;
                             }
                         }
 
-                        tileNumber++;
+                        tileIndex++;
                     }
                 }
 
