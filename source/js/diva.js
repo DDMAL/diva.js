@@ -1013,7 +1013,6 @@ window.divaPlugins = [];
             handleZoom(newZoomLevel);
         };
 
-
         // Called after double-clicking on a page in grid view
         var handleGridDoubleClick = function (event) {
             // Figure out the page that was clicked, scroll to that page
