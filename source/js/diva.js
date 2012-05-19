@@ -31,7 +31,9 @@ window.divaPlugins = [];
             adaptivePadding: 0.05,      // The ratio of padding to the page dimension
             contained: false,           // Determines the location of the fullscreen icon
             divaserveURL: '',           // URL to the divaserve.php script - *MANDATORY*
+            enableAutoHeight: false,    // Automatically adjust height based on the window size
             enableAutoTitle: true,      // Shows the title within a div of id diva-title
+            enableAutoWidth: true,      // Automatically adjust width based on the window size
             enableFilename: true,       // Uses filenames and not page numbers for links (i=bm_001.tif, not p=1)
             enableFullscreen: true,     // Enable or disable fullscreen icon (mode still available)
             enableGotoPage: true,       // A "go to page" jump box
@@ -1143,7 +1145,39 @@ window.divaPlugins = [];
             settings.panelWidth = window.innerWidth - 30;
 
             $(settings.parentSelector).width(settings.panelWidth);
-            $(settings.outerSelector).width(settings.panelWidth).height(settings.panelHeight);
+            $(settings.outerSelector).height(settings.panelHeight).width(settings.panelWidth);
+        };
+
+        var adjustBrowserDims = function () {
+            // Only resize if the browser viewport is too small
+            settings.panelHeight = $(settings.outerSelector).height();
+            settings.panelWidth = $(settings.parentSelector).width() - settings.scrollbarWidth;
+            console.log(settings.scrollbarWidth);
+            console.log(settings.originalWidth);
+            console.log(settings.panelWidth);
+            var outerOffset = $(settings.outerSelector).offset().top;
+            // 15 for margin on each side, 2 (or 1) for the 1px border(s)
+            var desiredWidth = window.innerWidth - 30 - settings.scrollbarWidth - 2;
+            var desiredHeight = window.innerHeight - outerOffset - 15 - 1;
+
+            if (settings.enableAutoHeight) {
+                if (settings.panelHeight + outerOffset + 16 > window.innerHeight) {
+                    settings.panelHeight = desiredHeight;
+                } else if (settings.panelHeight <= settings.originalHeight) {
+                    settings.panelHeight = Math.min(desiredHeight, settings.originalHeight);
+                }
+            }
+
+            if (settings.enableAutoWidth) {
+                if (settings.panelWidth + 32 > window.innerWidth) {
+                    settings.panelWidth = desiredWidth;
+                } else if (settings.panelWidth <= settings.originalWidth) {
+                    settings.panelWidth = Math.min(desiredWidth, settings.originalWidth);
+                }
+                $(settings.parentSelector).width(settings.panelWidth + settings.scrollbarWidth);
+            }
+
+            $(settings.outerSelector).height(settings.panelHeight).width(settings.panelWidth + settings.scrollbarWidth);
         };
 
         var resizeViewer = function (newWidth, newHeight) {
@@ -1304,6 +1338,18 @@ window.divaPlugins = [];
                         return false;
                     }
                 });
+
+                // Handle window resizing events
+                if (settings.inFullscreen) {
+                } else if (!settings.mobileWebkit)  {
+                    $(window).resize(function () {
+                        clearTimeout(settings.resizeTimer);
+                        adjustBrowserDims();
+                        settings.resizeTimer = setTimeout(function () {
+                            loadViewer();
+                        }, 50);
+                    });
+                }
             }
         };
 
@@ -1594,10 +1640,9 @@ window.divaPlugins = [];
                     if (settings.mobileWebkit) {
                         adjustMobileSafariDims();
                     } else {
-                        // For other devices, adjust to take the scrollbar into account
-                        settings.panelWidth = parseInt($(settings.parentSelector).width(), 10) - 18;
-                        $(settings.outerSelector).css('width', (settings.panelWidth + 18) + 'px');
-                        settings.panelHeight = parseInt($(settings.outerSelector).height(), 10);
+                        settings.originalWidth = $(settings.parentSelector).width() - settings.scrollbarWidth;
+                        settings.originalHeight = $(settings.outerSelector).height();
+                        adjustBrowserDims();
                     }
 
                     // Calculate the viewer x and y offsets
