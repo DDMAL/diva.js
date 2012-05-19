@@ -69,6 +69,8 @@ def main(opts):
     if processed:
         # set the output directory to the supplied directory:
         outputdir = processed
+        if not os.path.isdir(outputdir):
+            os.mkdir(outputdir)
     else:
         if os.path.isdir(os.path.join(directory, 'processed')):
             print 'There already is a processed directory! Delete it and try again.'
