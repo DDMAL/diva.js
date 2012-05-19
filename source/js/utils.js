@@ -6,7 +6,7 @@
         do {
           generatedId = (counter++) + (suffix ? '-' + suffix : '');
         } while(document.getElementById(generatedId));
-        
+
         return generatedId;
     };
 })(jQuery);
@@ -64,7 +64,7 @@
                 } else if (endIndex < 0) {
                     // This means this hash param is the last one
                     return hash.substring(startIndex);
-                } 
+                }
                 // If the key doesn't have a value I think
                 return '';
             } else {
@@ -145,16 +145,16 @@ jQuery.fn.oneFingerScroll = function() {
  * one or more of its descendant elements. Options parameter
  * allow to specifically select which inner elements will
  * respond to the drag events.
- * 
+ *
  * options properties:
- * ------------------------------------------------------------------------     
- *  dragSelector         | jquery selector to apply to each wrapped element 
- *                       | to find which will be the dragging elements. 
- *                       | Defaults to '>:first' which is the first child of 
+ * ------------------------------------------------------------------------
+ *  dragSelector         | jquery selector to apply to each wrapped element
+ *                       | to find which will be the dragging elements.
+ *                       | Defaults to '>:first' which is the first child of
  *                       | scrollable element
- * ------------------------------------------------------------------------     
- *  acceptPropagatedEvent| Will the dragging element accept propagated 
- *                       | events? default is yes, a propagated mouse event 
+ * ------------------------------------------------------------------------
+ *  acceptPropagatedEvent| Will the dragging element accept propagated
+ *                       | events? default is yes, a propagated mouse event
  *                       | on a inner element will be accepted and processed.
  *                       | If set to false, only events originated on the
  *                       | draggable elements will be processed.
@@ -162,12 +162,12 @@ jQuery.fn.oneFingerScroll = function() {
  *  preventDefault       | Prevents the event to propagate further effectivey
  *                       | dissabling other default actions. Defaults to true
  * ------------------------------------------------------------------------
- *  
+ *
  *  usage examples:
  *
- *  To add the scroll by drag to the element id=viewport when dragging its 
+ *  To add the scroll by drag to the element id=viewport when dragging its
  *  first child accepting any propagated events
- *  $('#viewport').dragscrollable(); 
+ *  $('#viewport').dragscrollable();
  *
  *  To add the scroll by drag ability to any element div of class viewport
  *  when dragging its first descendant of class dragMe responding only to
@@ -177,32 +177,32 @@ jQuery.fn.oneFingerScroll = function() {
  *
  *  Notice that some 'viewports' could be nested within others but events
  *  would not interfere as acceptPropagatedEvent is set to false.
- *      
+ *
  */
 $.fn.dragscrollable = function( options ){
-   
+
     var settings = $.extend(
-        {   
+        {
             dragSelector:'>:first',
             acceptPropagatedEvent: true,
             preventDefault: true
         },options || {});
-     
-    
+
+
     var dragscroll= {
         mouseDownHandler : function(event) {
             // mousedown, left click, check propagation
             if (event.which!=1 ||
-                (!event.data.acceptPropagatedEvent && event.target != this)){ 
-                return false; 
+                (!event.data.acceptPropagatedEvent && event.target != this)){
+                return false;
             }
-            
+
             // Initial coordinates will be the last when dragging
-            event.data.lastCoord = {left: event.clientX, top: event.clientY}; 
-        
-            $.event.add( document, "mouseup", 
+            event.data.lastCoord = {left: event.clientX, top: event.clientY};
+
+            $.event.add( document, "mouseup",
                          dragscroll.mouseUpHandler, event.data );
-            $.event.add( document, "mousemove", 
+            $.event.add( document, "mousemove",
                          dragscroll.mouseMoveHandler, event.data );
             if (event.data.preventDefault) {
                 event.preventDefault();
@@ -213,13 +213,13 @@ $.fn.dragscrollable = function( options ){
             // How much did the mouse move?
             var delta = {left: (event.clientX - event.data.lastCoord.left),
                          top: (event.clientY - event.data.lastCoord.top)};
-            
+
             // Set the scroll position relative to what ever the scroll is now
             event.data.scrollable.scrollLeft(
                             event.data.scrollable.scrollLeft() - delta.left);
             event.data.scrollable.scrollTop(
                             event.data.scrollable.scrollTop() - delta.top);
-            
+
             // Save where the cursor is
             event.data.lastCoord={left: event.clientX, top: event.clientY};
             if (event.data.preventDefault) {
@@ -237,7 +237,7 @@ $.fn.dragscrollable = function( options ){
             }
         }
     };
-    
+
     // set up the initial events
     this.each(function() {
         // closure object data for each scrollable element
@@ -310,7 +310,7 @@ $.fn.dragscrollable = function( options ){
                               , y: true
                               , x: true
                               , slowdown: 0.9
-                              , maxvelocity: 40 
+                              , maxvelocity: 40
                               , throttleFPS: 60
                               , movingClass: {
                                   up:    'kinetic-moving-up'
@@ -396,7 +396,7 @@ $.fn.dragscrollable = function( options ){
         if (settings.velocityY < 0) {
             this.addClass(classes.up);
         }
-        
+
     };
 
     var stop = function($scroller, settings) {
@@ -412,7 +412,7 @@ $.fn.dragscrollable = function( options ){
         if (settings.x && scroller.scrollWidth > 0){
             scroller.scrollLeft = settings.scrollLeft = scroller.scrollLeft + settings.velocity;
             if (Math.abs(settings.velocity) > 0) {
-                settings.velocity = settings.decelerate ? 
+                settings.velocity = settings.decelerate ?
                     decelerateVelocity(settings.velocity, settings.slowdown) : settings.velocity;
             }
         } else {
@@ -423,7 +423,7 @@ $.fn.dragscrollable = function( options ){
         if (settings.y && scroller.scrollHeight > 0){
             scroller.scrollTop = settings.scrollTop = scroller.scrollTop + settings.velocityY;
             if (Math.abs(settings.velocityY) > 0) {
-                settings.velocityY = settings.decelerate ? 
+                settings.velocityY = settings.decelerate ?
                     decelerateVelocity(settings.velocityY, settings.slowdown) : settings.velocityY;
             }
         } else {
@@ -431,7 +431,7 @@ $.fn.dragscrollable = function( options ){
         }
 
         setMoveClasses.call($scroller, settings, settings.deceleratingClass);
-        
+
         if (typeof settings.moved === 'function') {
             settings.moved.call($scroller, settings);
         }
@@ -496,7 +496,7 @@ $.fn.dragscrollable = function( options ){
         .each(function(){
 
             var settings = $.extend({}, DEFAULT_SETTINGS, options);
-            
+
             var self = this
             ,   $this = $(this)
             ,   xpos
@@ -624,7 +624,7 @@ $.fn.dragscrollable = function( options ){
                     }
                 }
             };
-            
+
             attachListeners($this, settings);
             $this.data(SETTINGS_KEY, settings).css("cursor", "move");
 
