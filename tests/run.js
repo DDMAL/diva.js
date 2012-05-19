@@ -44,6 +44,10 @@ page.onConsoleMessage = function(msg) {
     console.log(msg);
 };
 
+page.viewportSize = {
+    width: 1000,
+    height: 800
+}
 page.settings.webSecurityEnabled = false;
 page.settings.localToRemoteUrlAccessEnabled = false;
 
