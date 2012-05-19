@@ -1149,36 +1149,48 @@ window.divaPlugins = [];
             $(settings.outerSelector).height(settings.panelHeight).width(settings.panelWidth);
         };
 
+        // Will return true if something has changed, false otherwise
         var adjustBrowserDims = function () {
             // Only resize if the browser viewport is too small
-            settings.panelHeight = $(settings.outerSelector).height();
-            settings.panelWidth = $(settings.parentSelector).width() - settings.scrollbarWidth;
-            console.log(settings.scrollbarWidth);
-            console.log(settings.originalWidth);
-            console.log(settings.panelWidth);
+            var newHeight = $(settings.outerSelector).height();
+            var newWidth = $(settings.parentSelector).width() - settings.scrollbarWidth;
             var outerOffset = $(settings.outerSelector).offset().top;
             // 15 for margin on each side, 2 (or 1) for the 1px border(s)
             var desiredWidth = window.innerWidth - 30 - settings.scrollbarWidth - 2;
             var desiredHeight = window.innerHeight - outerOffset - 15 - 1;
 
             if (settings.enableAutoHeight) {
-                if (settings.panelHeight + outerOffset + 16 > window.innerHeight) {
-                    settings.panelHeight = desiredHeight;
-                } else if (settings.panelHeight <= settings.originalHeight) {
-                    settings.panelHeight = Math.min(desiredHeight, settings.originalHeight);
+                if (newHeight + outerOffset + 16 > window.innerHeight) {
+                    newHeight = desiredHeight;
+                } else if (newHeight <= settings.originalHeight) {
+                    newHeight = Math.min(desiredHeight, settings.originalHeight);
                 }
             }
 
             if (settings.enableAutoWidth) {
-                if (settings.panelWidth + 32 > window.innerWidth) {
-                    settings.panelWidth = desiredWidth;
-                } else if (settings.panelWidth <= settings.originalWidth) {
-                    settings.panelWidth = Math.min(desiredWidth, settings.originalWidth);
+                if (newWidth + 32 > window.innerWidth) {
+                    newWidth = desiredWidth;
+                } else if (newWidth <= settings.originalWidth) {
+                    newWidth = Math.min(desiredWidth, settings.originalWidth);
                 }
-                $(settings.parentSelector).width(settings.panelWidth + settings.scrollbarWidth);
+                $(settings.parentSelector).width(newWidth + settings.scrollbarWidth);
             }
 
-            $(settings.outerSelector).height(settings.panelHeight).width(settings.panelWidth + settings.scrollbarWidth);
+            if (newWidth !== settings.panelWidth || newHeight !== settings.panelHeight) {
+                $(settings.outerSelector).height(newHeight).width(newWidth + settings.scrollbarWidth);
+                settings.panelWidth = newWidth;
+                settings.panelHeight = newHeight;
+                return true;
+            } else {
+                return false;
+            }
+        };
+
+        // Update the panelHeight and panelWidth based on the window size
+        var adjustFullscreenDims = function () {
+            settings.panelWidth = window.innerWidth - settings.scrollbarWidth;
+            settings.panelHeight = window.innerHeight;
+            return true;
         };
 
         var resizeViewer = function (newWidth, newHeight) {
@@ -1298,6 +1310,7 @@ window.divaPlugins = [];
                     adjustMobileSafariDims();
 
                     // Reload the viewer to account for the resized viewport
+                    settings.goDirectlyTo = settings.currentPageIndex;
                     loadViewer();
                 });
 
@@ -1341,14 +1354,16 @@ window.divaPlugins = [];
                 });
 
                 // Handle window resizing events
-                if (settings.inFullscreen) {
-                } else if (!settings.mobileWebkit)  {
+                if (!settings.mobileWebkit)  {
                     $(window).resize(function () {
-                        clearTimeout(settings.resizeTimer);
-                        adjustBrowserDims();
-                        settings.resizeTimer = setTimeout(function () {
-                            loadViewer();
-                        }, 50);
+                        var adjustSuccess = (settings.inFullscreen) ? adjustFullscreenDims() : adjustBrowserDims();
+                        if (adjustSuccess) {
+                            clearTimeout(settings.resizeTimer);
+                            settings.resizeTimer = setTimeout(function () {
+                                settings.goDirectlyTo = settings.currentPageIndex;
+                                loadViewer();
+                            }, 200);
+                        }
                     });
                 }
             }
