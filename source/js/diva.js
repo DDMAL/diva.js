@@ -778,6 +778,7 @@ window.divaPlugins = [];
             settings.prevVptTop = 0;
 
             // Clear all the timeouts to prevent undesired pages from loading
+            clearTimeout(settings.resizeTimer);
             while (settings.pageTimeouts.length) {
                 clearTimeout(settings.pageTimeouts.pop());
             }
