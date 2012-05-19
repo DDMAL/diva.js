@@ -1194,17 +1194,19 @@ window.divaPlugins = [];
         };
 
         var resizeViewer = function (newWidth, newHeight) {
-            if (newWidth >= settings.minWidth && newHeight >= settings.minHeight) {
-                var oldWidth = settings.panelWidth;
+            if (newWidth >= settings.minWidth) {
                 $(settings.outerSelector).width(newWidth);
-                $(settings.outerSelector).height(newHeight);
 
-                // Save the new height and width
-                settings.panelHeight = newHeight;
                 settings.panelWidth = newWidth - settings.scrollbarWidth;
 
                 // Should also change the width of the container
-                $(settings.parentSelector).width(newWidth); // including the scrollbar etc
+                $(settings.parentSelector).width(newWidth);
+            }
+
+            if (newHeight >= settings.minHeight) {
+                $(settings.outerSelector).height(newHeight);
+
+                settings.panelHeight = newHeight;
             }
         };
 
