@@ -1874,15 +1874,12 @@ window.divaPlugins = [];
 
         // Jump to an image based on its filename
         this.gotoPageByName = function (filename) {
-            // Go through all the pages looking for one whose filename matches
-            for (var i = 0; i < settings.numPages; i++) {
-                if (settings.pages[i].f == filename) {
-                    gotoPage(i);
-                    return true;
-                }
+            var pageIndex = getPageIndex(filename);
+            if (pageInRange(pageIndex)) {
+                gotoPage(pageIndex);
+                return true;
             }
 
-            // If not found, return false
             return false;
         };
 
