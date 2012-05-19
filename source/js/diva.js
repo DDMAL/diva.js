@@ -1140,7 +1140,7 @@ window.divaPlugins = [];
 
 
         // Called in init and when the orientation changes
-        var adjustMobileSafariDims = function () {
+        var adjustMobileWebkitDims = function () {
             var outerOffset = $(settings.outerSelector).offset().top;
             settings.panelHeight = window.innerHeight - outerOffset - 15;
             settings.panelWidth = window.innerWidth - 30;
@@ -1307,7 +1307,7 @@ window.divaPlugins = [];
                 // Listen to orientation change event
                 $('body').bind('orientationchange', function (event) {
                     settings.orientationChange = true;
-                    adjustMobileSafariDims();
+                    adjustMobileWebkitDims();
 
                     // Reload the viewer to account for the resized viewport
                     settings.goDirectlyTo = settings.currentPageIndex;
@@ -1654,7 +1654,7 @@ window.divaPlugins = [];
 
                     // Adjust the document panel dimensions for Apple touch devices
                     if (settings.mobileWebkit) {
-                        adjustMobileSafariDims();
+                        adjustMobileWebkitDims();
                     } else {
                         settings.originalWidth = $(settings.parentSelector).width() - settings.scrollbarWidth;
                         settings.originalHeight = $(settings.outerSelector).height();
