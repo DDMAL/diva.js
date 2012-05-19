@@ -956,6 +956,7 @@ window.divaPlugins = [];
             loadViewer();
 
             // Execute callbacks
+            executeCallback(settings.onModeToggle);
         };
 
         // Handles switching in and out of grid view
