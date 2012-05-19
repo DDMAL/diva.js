@@ -101,7 +101,7 @@ window.divaPlugins = [];
             maxWidth: 0,                // The width of the widest page
             minRatio: 0,                // The minimum height/width ratio for a page
             maxRatio: 0,                // The max height/width ratio (for grid view)
-            mobileSafari: false,        // Checks if the user is on an iPad, iPhone or iPod
+            mobileWebkit: false,        // Checks if the user is on a touch device (iPad/iPod/iPhone/Android)
             numClicks: 0,               // Hack for ctrl+double-clicking in Firefox on Mac
             numPages: 0,                // Number of pages in the array
             numPlugins: 0,              // Holds the number of initialised plugins
@@ -1221,10 +1221,7 @@ window.divaPlugins = [];
             });
 
             // Check if the user is on a iPhone or iPod touch or iPad
-            if (settings.mobileSafari) {
-                // One-finger scroll within outerdrag
-                $(settings.outerSelector).oneFingerScroll();
-
+            if (settings.mobileWebkit) {
                 // Prevent resizing (below from http://matt.might.net/articles/how-to-native-iphone-ipad-apps-in-javascript/)
                 var toAppend = [];
                 toAppend.push('<meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1" />');
@@ -1268,6 +1265,9 @@ window.divaPlugins = [];
                     // Reload the viewer to account for the resized viewport
                     loadViewer();
                 });
+
+                // Inertial scrolling
+                $(settings.outerSelector).kinetic();
             }
 
             // Only check if either scrollBySpace or scrollByKeys is enabled
@@ -1591,7 +1591,7 @@ window.divaPlugins = [];
                     }
 
                     // Adjust the document panel dimensions for Apple touch devices
-                    if (settings.mobileSafari) {
+                    if (settings.mobileWebkit) {
                         adjustMobileSafariDims();
                     } else {
                         // For other devices, adjust to take the scrollbar into account
@@ -1620,8 +1620,8 @@ window.divaPlugins = [];
         var init = function () {
             // First figure out the width of the scrollbar in this browser
             settings.scrollbarWidth = $.getScrollbarWidth();
-            // Check if the platform is the iPad/iPhone/iPod
-            settings.mobileSafari = navigator.platform == 'iPad' || navigator.platform == 'iPhone' || navigator.platform == 'iPod';
+            // If window.orientation is defined, then it's probably mobileWebkit
+            settings.mobileWebkit = typeof orientation !== 'undefined';
 
             // Generate an ID that can be used as a prefix for all the other IDs
             settings.ID = $.generateId('diva-');
