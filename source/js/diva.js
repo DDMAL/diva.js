@@ -922,7 +922,7 @@ window.divaPlugins = [];
 
         // Handles switching in and out of fullscreen mode
         // Should only be called after changing settings.inFullscreen
-        var handleModeChange = function () {
+        var handleModeChange = function (changeView) {
             // Save some offsets (required for scrolling properly), if it's not the initial load
             if (settings.oldZoomLevel >= 0) {
                 if (!settings.inGrid) {
@@ -953,7 +953,13 @@ window.divaPlugins = [];
             settings.viewerXOffset = $(settings.outerSelector).offset().left;
             settings.viewerYOffset = $(settings.outerSelector).offset().top;
 
-            loadViewer();
+            // Used by setState when we need to change the view and the mode
+            if (changeView) {
+                settings.inGrid = !settings.inGrid;
+                handleViewChange();
+            } else {
+                loadViewer();
+            }
 
             // Execute callbacks
             executeCallback(settings.onModeToggle);
@@ -1875,7 +1881,7 @@ window.divaPlugins = [];
         // Jump to an image based on its filename
         this.gotoPageByName = function (filename) {
             var pageIndex = getPageIndex(filename);
-            if (pageInRange(pageIndex)) {
+            if (isPageValid(pageIndex)) {
                 gotoPage(pageIndex);
                 return true;
             }
@@ -1897,65 +1903,47 @@ window.divaPlugins = [];
             return getState();
         };
 
-        /*
-        // Temporarily commented out (needs rewrite)
         this.setState = function (state) {
-            // Ignore fullscreen, this is meant for syncing two viewers ... they can't both be fullscreen
-            // Pass it the state retrieved from calling getState() on another diva
-            settings.gridScrollTop = state.gy;
-            settings.goDirectlyTo = (isNaN(state.i)) ? getPageIndex(state.i) : state.i; // if not a number, it's a filename
-            settings.desiredXOffset = state.x;
-            settings.desiredYOffset = state.y;
+            var changeView, pageIndex;
 
-            // The actions to take depend on both the desired state and the current state
-            if (state.g) {
-                // Save the zoom level (won't be used right away, but it must be done here)
-                settings.zoomLevel = state.z
-                // Are we already in grid mode?
-                if (settings.inGrid) {
-                    // Do we need to change the number of pages per row?
-                    if (settings.pagesPerRow === state.n) {
-                        // We don't ... now do gridScroll() just in case we need to scroll
-                        gridScroll();
-                    } else {
-                        // We do ... change that, scrolling will be taken care of automatically
-                        handleGridSlide(state.n);
-                    }
-                } else {
-                    // Enter the grid ... scrolling and pages per row should be done automatically
-                    settings.pagesPerRow = state.n;
-                    // Can't call enter grid because it overwrites the desired x and y offsets
-                    settings.inGrid = true;
-                    loadGrid(settings.pagesPerRow);
-                }
-            } else {
-                // Save the number of pages per row here in case we go into grid mode later
-                settings.pagesPerRow = state.n;
-                // Are we in grid mode right now?
-                if (settings.inGrid) {
-                    // We are ... let's get out of it
-                    settings.zoomLevel = state.z;
-                    leaveGrid();
-                } else {
-                    // Do we need to change the zoom level?
-                    if (settings.zoomLevel === state.z) {
-                        // Nope. Just scroll.
-                        documentScroll();
-                    } else {
-                        // We do, do it
-                        handleZoom(state.z);
-                    }
-                }
+            // If we need to resize the viewer, do that first
+            resizeViewer(state.w, state.h);
+
+            // Only change settings.goDirectlyTo if state.i or state.p is valid
+            pageIndex = getPageIndex(state.i);
+            if (isPageValid(pageIndex)) {
+                settings.goDirectlyTo = pageIndex;
+            } else if (isPageValid(state.p)) {
+                settings.goDirectlyTo = state.p;
             }
 
-            // If we need to resize, do it now
-            if (settings.panelHeight !== state.h || (settings.panelWidth + settings.scrollbarWidth) !== state.w) {
-                resizeViewer(state.h, state.w);
-                // Reload it
-                loadViewer();
+            settings.horizontalOffset = parseInt(state.x, 10);
+            settings.verticalOffset = parseInt(state.y, 10);
+
+            // Only change the zoom if state.z is valid
+            if (state.z >= settings.minZoomLevel && state.z <= settings.maxZoomLevel) {
+                settings.zoomLevel = state.z;
+            }
+
+            // Only change the pages per row setting if state.n is valid
+            if (state.n >= settings.minPagesPerRow && state.n <= settings.maxPagesPerRow) {
+                settings.pagesPerRow = state.n;
+            }
+
+            if (settings.inFullscreen !== state.f) {
+                // The parameter determines if we need to change the view as well
+                settings.inFullscreen = state.f;
+                handleModeChange(settings.inGrid !== state.g);
+            } else {
+                // Don't need to change the mode, may need to change view
+                if (settings.inGrid !== state.g) {
+                    handleViewChange();
+                } else {
+                    // Just reload the viewer, in case
+                    loadViewer();
+                }
             }
         };
-        */
 
         // Resizes the outer div to the specified width and height
         this.resize = function (newWidth, newHeight) {

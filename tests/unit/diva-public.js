@@ -101,3 +101,37 @@ asyncTest("gotoPageByName()", function () {
         }
     });
 });
+
+asyncTest("setState()", function () {
+    $.tempDiva({
+        onReady: function (settings) {
+            var state = {
+                f: true,
+                g: false,
+                h: 400,
+                i: "bm_005.tif",
+                n: 3,
+                p: false,
+                w: 800,
+                x: 50,
+                y: 30,
+                z: 3
+            };
+            this.setState(state);
+            ok(settings.inFullscreen, "Should now be in fullscreen");
+            ok(!settings.inGrid, "Should not be in grid");
+            equal(settings.currentPageIndex, 4, "Current page should be 5 (index of 4)");
+            equal(settings.pagesPerRow, 3, "Pages per row should be 3");
+            equal(settings.zoomLevel, 3, "Zoom level should be 3");
+
+            equal($(settings.outerSelector).scrollTop(), 8702, "Scroll from top should be 30 more");
+            equal($(settings.outerSelector).scrollLeft(), 689, "Scroll from left should be 50 more");
+
+            // Have to leave fullscreen to test h and w
+            this.leaveFullscreen();
+            equal($(settings.outerSelector).height(), 400, "Height of viewer should be 400");
+            equal($(settings.outerSelector).width(), 800, "Width of viewer should be 800");
+            start();
+        }
+    });
+});
