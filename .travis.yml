@@ -1,2 +1,2 @@
-language: java
+language: node_js
 script: phantomjs tests/run.js
