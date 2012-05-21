@@ -19,7 +19,7 @@ All of the relevant Javascript, CSS, and image files can be found in the `build/
 
 There are several ways in which you can customise your Diva installation:
 
-* Passing in settings (see the [user-configurable settings documentation](https://github.com/DDMAL/diva.js/wiki/Code-documentation#settings))
+* Passing in settings (see the [user-configurable settings documentation](https://github.com/DDMAL/diva.js/wiki/Code-documentation#wiki-js-settings))
 * Editing the CSS or LESS files (see the [stylesheet code documentation](https://github.com/DDMAL/diva.js/wiki/Code-documentation#wiki-stylesheets))
 * Editing diva.js or utils.js directly (see the [Javascript code documentation](https://github.com/DDMAL/diva.js/wiki/Code-documentation#wiki-javascript))
 * Using the [plugin system](https://github.com/DDMAL/diva.js/wiki/Plugins)
