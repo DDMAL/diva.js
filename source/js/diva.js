@@ -1201,6 +1201,7 @@ window.divaPlugins = [];
 
         var resizeViewer = function (newWidth, newHeight) {
             if (newWidth >= settings.minWidth) {
+                settings.originalWidth = newWidth;
                 $(settings.outerSelector).width(newWidth);
 
                 settings.panelWidth = newWidth - settings.scrollbarWidth;
@@ -1210,6 +1211,7 @@ window.divaPlugins = [];
             }
 
             if (newHeight >= settings.minHeight) {
+                settings.originalHeight = newHeight;
                 $(settings.outerSelector).height(newHeight);
 
                 settings.panelHeight = newHeight;
