@@ -113,8 +113,8 @@ asyncTest("setState()", function () {
                 n: 3,
                 p: false,
                 w: 800,
-                x: 50,
-                y: 30,
+                x: 500,
+                y: 300,
                 z: 3
             };
             this.setState(state);
@@ -124,13 +124,14 @@ asyncTest("setState()", function () {
             equal(settings.pagesPerRow, 3, "Pages per row should be 3");
             equal(settings.zoomLevel, 3, "Zoom level should be 3");
 
-            equal($(settings.outerSelector).scrollTop(), 8702, "Scroll from top should be 30 more");
-            equal($(settings.outerSelector).scrollLeft(), 689, "Scroll from left should be 50 more");
-
-            // Have to leave fullscreen to test h and w
+            // Have to leave fullscreen to test dimension-related things
             this.leaveFullscreen();
             equal($(settings.outerSelector).height(), 400, "Height of viewer should be 400");
             equal($(settings.outerSelector).width(), 800, "Width of viewer should be 800");
+
+            equal($(settings.outerSelector).scrollTop(), 8672, "Scroll from top should be 300 more");
+            equal($(settings.outerSelector).scrollLeft(), 865, "Scroll from left should be 500 more");
+
             start();
         }
     });
