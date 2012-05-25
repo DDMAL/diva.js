@@ -64,7 +64,8 @@ def main(opts):
     if compression == "jpeg":
         compression = "{0}:{1}".format(compression, quality)
     
-    # Create a directory called "processed" within that directory
+    # If an output directory is supplied, use that one. Else create
+    # a folder called "processed" in the original directory.
     # If that directory already exists, fail
     if processed:
         # set the output directory to the supplied directory:
