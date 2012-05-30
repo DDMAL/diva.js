@@ -708,7 +708,7 @@ window.divaPlugins = [];
             // Pretend that this is the current page (it probably isn't)
             settings.currentPageIndex = pageIndex;
             settings.toolbar.updateCurrentPage();
-        }
+        };
 
 
 
@@ -743,7 +743,7 @@ window.divaPlugins = [];
             } else {
                 // Otherwise, we just scroll to the page saved in settings.goDirectlyTo (must be valid)
                 // We use the stored y/x offsets (relative to the top of the page and the center, respectively)
-                gotoPage(settings.goDirectlyTo, settings.verticalOffset, settings.horizontalOffset)
+                gotoPage(settings.goDirectlyTo, settings.verticalOffset, settings.horizontalOffset);
                 settings.horizontalOffset = 0;
                 settings.verticalOffset = 0;
             }
@@ -1102,13 +1102,13 @@ window.divaPlugins = [];
             var yScroll = $(settings.outerSelector).scrollTop();
             var topOfPage = settings.heightAbovePages[settings.currentPageIndex];
 
-            return parseInt(yScroll - topOfPage);
+            return parseInt(yScroll - topOfPage, 10);
         };
 
         var getXOffset = function () {
             var innerWidth = settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2;
             var centerX = (innerWidth - settings.panelWidth) / 2;
-            return parseInt($(settings.outerSelector).scrollLeft() - centerX);
+            return parseInt($(settings.outerSelector).scrollLeft() - centerX, 10);
         };
 
         var getState = function () {
@@ -1124,7 +1124,7 @@ window.divaPlugins = [];
                 //'gy': (settings.inGrid) ? $(settings.outerSelector).scrollTop() : false,
                 'h': (settings.inFullscreen) ? false: settings.panelHeight,
                 'w': (settings.inFullscreen) ? false : $(settings.outerSelector).width()
-            }
+            };
 
             return state;
         };
@@ -1518,7 +1518,7 @@ window.divaPlugins = [];
                     $(settings.selector + 'tools-right').after($(settings.selector + 'tools-left'));
                     $(settings.selector + 'tools-left').css('float', 'right').css('padding-top', '10px').css('text-align', 'right').css('clear', 'both');
                 }
-            }
+            };
 
             var switchSlider = function () {
                 // Switch from grid to document view etc
@@ -1563,7 +1563,7 @@ window.divaPlugins = [];
                 },
                 switchSlider: switchSlider,
                 switchMode: switchMode
-            }
+            };
             return toolbar;
         };
 
@@ -1573,7 +1573,7 @@ window.divaPlugins = [];
 
                 // Add all the plugins that have not been explicitly disabled to settings.plugins
                 $.each(window.divaPlugins, function (index, plugin) {
-                    var pluginProperName = plugin.pluginName[0].toUpperCase() + plugin.pluginName.substring(1)
+                    var pluginProperName = plugin.pluginName[0].toUpperCase() + plugin.pluginName.substring(1);
                     if (settings['enable' + pluginProperName]) {
                         // Set all the settings
                         executeCallback(plugin.init, settings);
@@ -1764,8 +1764,8 @@ window.divaPlugins = [];
             var desiredWidth = parseInt($.getHashParam('w' + settings.hashParamSuffix), 10);
 
             // Store the minimum and maximum height too
-            settings.minHeight = parseInt($(settings.outerSelector).css('min-height'));
-            settings.minWidth = parseInt($(settings.outerSelector).css('min-width'));
+            settings.minHeight = parseInt($(settings.outerSelector).css('min-height'), 10);
+            settings.minWidth = parseInt($(settings.outerSelector).css('min-width'), 10);
 
             // Just call resize, it'll take care of bounds-checking etc
             if (desiredHeight > 0 || desiredWidth > 0) {
