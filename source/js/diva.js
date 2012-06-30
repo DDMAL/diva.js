@@ -1893,6 +1893,10 @@ window.divaPlugins = [];
             return false;
         };
 
+        this.getPageIndex = function (filename) {
+            return getPageIndex(filename);
+        };
+
         // Get the current URL (exposes the private method)
         this.getCurrentURL = function () {
             return getCurrentURL();
