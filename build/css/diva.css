@@ -179,7 +179,7 @@
 }
 .diva-fullscreen-icon {
   position: absolute;
-  z-index: 8999;
+  z-index: 99;
   top: 0;
   left: 0;
   width: 40px;

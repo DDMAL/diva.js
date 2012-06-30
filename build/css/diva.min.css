@@ -19,7 +19,7 @@
 .diva-outer .diva-inner.diva-grab{cursor:url("../img/openhand.cur"),pointer;}
 .diva-outer .diva-inner.diva-grabbing{cursor:url("../img/closedhand.cur"),move !important;}
 .diva-outer.diva-fullscreen{width:100% !important;max-width:100% !important;height:100% !important;max-height:100% !important;z-index:9000;position:fixed !important;top:0;left:0;}
-.diva-fullscreen-icon{position:absolute;z-index:8999;top:0;left:0;width:40px;height:40px;cursor:pointer;background:url("../img/fullscreen.png") no-repeat top;}.diva-fullscreen-icon.diva-contained{top:45px;}
+.diva-fullscreen-icon{position:absolute;z-index:99;top:0;left:0;width:40px;height:40px;cursor:pointer;background:url("../img/fullscreen.png") no-repeat top;}.diva-fullscreen-icon.diva-contained{top:45px;}
 .diva-fullscreen-icon.diva-in-fullscreen{position:fixed;z-index:9001;}
 .diva-link-popup{background:#ffffff;border:1px solid #dddddd;height:28px;width:230px;position:absolute;padding:5px;z-index:9001;-webkit-box-shadow:2px 2px 4px 0 rgba(0, 0, 0, 0.5);-moz-box-shadow:2px 2px 4px 0 rgba(0, 0, 0, 0.5);box-shadow:2px 2px 4px 0 rgba(0, 0, 0, 0.5);}.diva-link-popup input{width:226px;margin-top:5px;}.diva-link-popup input:focus{outline:none;}
 .diva-hide-scrollbar{overflow:hidden !important;}
