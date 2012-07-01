@@ -59,6 +59,7 @@ window.divaPlugins = [];
             onModeToggle: null,         // Callback for toggling fullscreen mode
             onViewToggle: null,         // Callback for switching between grid and document view
             onJump: null,               // Callback function for jumping to a specific page (using the gotoPage feature)
+            onPageLoad: null,           // Callback function for loading pages
             onReady: null,              // Callback function for initial load
             onScroll: null,             // Callback function for scrolling
             onScrollDown: null,         // Callback function for scrolling down, only
@@ -251,6 +252,9 @@ window.divaPlugins = [];
             // If the page has not been loaded yet, append the div to the DOM
             if (!isPageLoaded(pageIndex)) {
                 $(settings.innerSelector).append('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width: ' + width + 'px; height: ' + height + 'px;" class="diva-document-page" title="Page ' + (pageIndex + 1) + '" data-index="' + pageIndex  + '" data-filename="' + filename + '">' + settings.pageTools + '</div>');
+
+                // Call the callback function
+                executeCallback(settings.onPageLoad, pageIndex);
             }
 
             // There are still tiles to load, so try to load those (after a delay)
