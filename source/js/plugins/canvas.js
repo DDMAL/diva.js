@@ -170,7 +170,7 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
             // Subtract 1 to compensate for the border
             var height = Math.min(settings.viewport.height * map.scaleFactor, settings.mapSize) - 1;
             var width = Math.min(settings.viewport.width * map.scaleFactor, settings.mapSize) - 1;
-            $('#diva-map-viewbox').height(height).width(width).css('top', cornerY + 'px').css('left', cornerX + 'px');
+            $('#diva-map-viewbox').height(height).width(width).css({top: cornerY, left: cornerX});
         };
 
         var loadMap = function(image) {
