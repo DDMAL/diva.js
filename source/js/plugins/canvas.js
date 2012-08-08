@@ -260,7 +260,7 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                 // Set up the settings for the sliders/icons
                 sliders = {
                     'contrast': {
-                        'default': 1,
+                        'initial': 1,
                         'min': settings.contrastMin,
                         'max': settings.contrastMax,
                         'step': settings.contrastStep,
@@ -270,14 +270,14 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                         'title': 'Change the contrast'
                     },
                     'brightness': {
-                        'default': 0,
+                        'initial': 0,
                         'min': settings.brightnessMin,
                         'max': settings.brightnessMax,
                         'step': settings.brightnessStep,
                         'title': 'Adjust the brightness'
                     },
                     'rotation': {
-                        'default': 0,
+                        'initial': 0,
                         'min': 0,
                         'max': 359,
                         'step': 1,
@@ -288,28 +288,28 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                     },
                     'zoom': {
                         // Default, min and max values updated within setupHook
-                        'default': 0,
+                        'initial': 0,
                         'min': 0,
                         'max': 0,
                         'step': 1,
                         'title': 'Adjust the zoom level'
                     },
                     'red': {
-                        'default': 0,
+                        'initial': 0,
                         'min': 0,
                         'max': settings.rgbMax,
                         'step': 1,
                         'title': 'Adjust the red channel'
                     },
                     'green': {
-                        'default': 0,
+                        'initial': 0,
                         'min': 0,
                         'max': settings.rgbMax,
                         'step': 1,
                         'title': 'Adjust the green channel'
                     },
                     'blue': {
-                        'default': 0,
+                        'initial': 0,
                         'min': 0,
                         'max': settings.rgbMax,
                         'step': 1,
@@ -322,7 +322,7 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                     var defaultValue, thisSlider;
                     for (slider in sliders) {
                         thisSlider = sliders[slider];
-                        defaultValue = thisSlider.default;
+                        defaultValue = thisSlider.initial;
                         thisSlider.current = defaultValue;
                         thisSlider.previous = defaultValue;
                     }
@@ -444,7 +444,7 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
 
                 $('#diva-canvas-reset-all').click(function () {
                     for (slider in sliders) {
-                        sliders[slider].current = sliders[slider].default;
+                        sliders[slider].current = sliders[slider].initial;
                     }
 
                     // Change the value of the label
@@ -457,7 +457,7 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
 
                 $('#diva-canvas-reset').click(function () {
                     // Update the current value and the slider
-                    sliders[sliderMode].current = sliders[sliderMode].default;
+                    sliders[sliderMode].current = sliders[sliderMode].initial;
                     updateSliderLabel();
                     updateSliderValue();
 
@@ -561,7 +561,7 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                 settings.maxZoomLevel = divaSettings.maxZoomLevel;
                 sliders.zoom.min = settings.minZoomLevel;
                 sliders.zoom.max = settings.maxZoomLevel;
-                sliders.zoom.default = divaSettings.zoomLevel;
+                sliders.zoom.initial = divaSettings.zoomLevel;
                 sliders.zoom.current = divaSettings.zoomLevel;
                 sliders.zoom.previous = divaSettings.zoomLevel;
             },
