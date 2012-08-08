@@ -43,7 +43,7 @@
 #diva-canvas-buttons .green.clicked{background-color:#dddddd;}
 #diva-canvas-buttons .blue{background-color:#fdfdfd;background-image:url("../img/plugins/canvas-buttons.png");background-position:-175px 5px;background-repeat:no-repeat;width:20px;height:20px;padding:5px;display:inline-block;}#diva-canvas-buttons .blue:hover,#diva-canvas-buttons .blue.clicked{background-position:-175px -25px;}
 #diva-canvas-buttons .blue.clicked{background-color:#dddddd;}
-#diva-canvas-pane{background:#dddddd;margin:0 10px;padding-bottom:10px;}#diva-canvas-pane p{padding-top:10px;}
+#diva-canvas-pane{background:#dddddd;margin:0 10px;padding-bottom:10px;}#diva-canvas-pane p{margin-left:10px;padding-top:10px;}#diva-canvas-pane p .link{cursor:pointer;}#diva-canvas-pane p .link:hover{text-decoration:underline;}
 #diva-canvas-pane #diva-canvas-mode{text-transform:capitalize;}
 #diva-canvas-slider{width:188px;margin:0 auto;display:block;}#diva-canvas-slider .handle{margin-left:-6px;}
 #diva-canvas-loading{display:none;}

@@ -90,7 +90,14 @@
     background: @grey;
     margin: 0 10px;
     p {
+        margin-left: 10px;
         padding-top: 10px;
+        .link {
+            cursor: pointer;
+            &:hover {
+                text-decoration: underline;
+            }
+        }
     }
     padding-bottom: 10px;
     #diva-canvas-mode {

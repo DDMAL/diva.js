@@ -428,7 +428,14 @@
   padding-bottom: 10px;
 }
 #diva-canvas-pane p {
+  margin-left: 10px;
   padding-top: 10px;
+}
+#diva-canvas-pane p .link {
+  cursor: pointer;
+}
+#diva-canvas-pane p .link:hover {
+  text-decoration: underline;
 }
 #diva-canvas-pane #diva-canvas-mode {
   text-transform: capitalize;

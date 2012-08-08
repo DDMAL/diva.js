@@ -354,14 +354,15 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                     '</div>' +
                     '<div id="diva-canvas-pane">' +
                         '<p id="diva-canvas-tooltip">' +
-                            '<span id="diva-canvas-mode">contrast</span>:' +
-                            '<span id="diva-canvas-value">0</span>' +
+                            '<span id="diva-canvas-mode">contrast</span>: ' +
+                            '<span id="diva-canvas-value">0</span> ' +
+                            '<span id="diva-canvas-reset" class="link">(Reset)</span>' +
                         '</p>' +
                         '<div id="diva-canvas-slider"></div>' +
                     '</div>' +
                     '<br />' +
                     '<div class="action-buttons">' +
-                        '<a href="#" id="diva-canvas-reset">Reset all</a>' +
+                        '<a href="#" id="diva-canvas-reset-all">Reset all</a>' +
                         '<a href="#" id="diva-canvas-apply">Apply</a>' +
                     '</div>' +
                 '</div>';
@@ -423,6 +424,12 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                     $('#diva-canvas-value').html(stringValue);
                 };
 
+                var updateSliderValue = function () {
+                    $('#diva-canvas-slider').slider({
+                        value: sliders[sliderMode].current
+                    });
+                };
+
                 var updateMap = function () {
                     rotateCanvas(map, sliders.rotation.current);
                     adjustLevels(map);
@@ -431,16 +438,24 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                 // Save the size of the map, as defined in the CSS
                 settings.mapSize = $('#diva-canvas-minimap').width();
 
-                $('#diva-canvas-reset').click(function () {
+                $('#diva-canvas-reset-all').click(function () {
                     for (slider in sliders) {
                         sliders[slider].current = sliders[slider].default;
                     }
 
                     // Change the value of the label
                     updateSliderLabel();
+                    updateSliderValue();
 
-                    // Change the value of the slider itself
-                    $('#diva-canvas-slider').slider({value: sliders[sliderMode].current});
+                    // Update the preview
+                    updateMap();
+                });
+
+                $('#diva-canvas-reset').click(function () {
+                    // Update the current value and the slider
+                    sliders[sliderMode].current = sliders[sliderMode].default;
+                    updateSliderLabel();
+                    updateSliderValue();
 
                     // Update the preview
                     updateMap();
@@ -528,7 +543,7 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                         // We only need to update the slider label if the slider is zoom
                         if (sliderMode == 'zoom') {
                             updateSliderLabel();
-                            $('#diva-canvas-slider').slider({value: newZoomLevel});
+                            updateSliderValue();
                         }
                     }
                 });
