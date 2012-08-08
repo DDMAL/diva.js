@@ -1949,6 +1949,7 @@ window.divaPlugins = [];
             } else {
                 // Don't need to change the mode, may need to change view
                 if (settings.inGrid !== state.g) {
+                    settings.inGrid = state.g;
                     handleViewChange();
                 } else {
                     // Just reload the viewer, in case
