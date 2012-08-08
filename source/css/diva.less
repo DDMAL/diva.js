@@ -80,7 +80,7 @@
         position: fixed;
         top: 0px;
         right: 30px;
-        z-index: 9001;
+        z-index: @fullscreenZIndex + 1;
         width: 210px;
         padding: 15px 15px 10px 15px;
         .frame(@toolsFrame);
@@ -148,7 +148,7 @@
     &.diva-fullscreen {
         .full-width;
         .full-height;
-        z-index: 9000;
+        z-index: @fullscreenZIndex;
         position: fixed !important;
         top: 0;
         left: 0;
@@ -157,7 +157,7 @@
 
 .diva-fullscreen-icon {
     position: absolute;
-    z-index: 99;
+    z-index: @fullscreenZIndex + 1;
     top: 0;
     left: 0;
     width: 40px;
@@ -171,7 +171,6 @@
 
     &.diva-in-fullscreen {
         position: fixed;
-        z-index: 9001;
     }
 }
 
@@ -181,7 +180,7 @@
     .size(28px, 230px);
     position: absolute;
     padding: 5px;
-    z-index: 9001;
+    z-index: @fullscreenZIndex + 1;
     .pretty-shadow;
 
     input {

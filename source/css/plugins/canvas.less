@@ -8,7 +8,7 @@
 @toolsWidth:        230px;
 
 // Defines a base z-index for the backdrop div
-@baseZIndex:            9050;
+@canvasZIndex:          @fullscreenZIndex + 5;
 
 // Colour scheme
 @canvasBackdropBg:      rgba(50, 50, 50, 0.9);
@@ -26,7 +26,7 @@
 }
 
 #diva-canvas-backdrop {
-    z-index: @baseZIndex;
+    z-index: @canvasZIndex;
     position: fixed;
     top: 0;
     left: 0;
@@ -42,7 +42,7 @@
     top: 45px;
     left: 10px;
     width: @toolsWidth;
-    z-index: @baseZIndex + 3;
+    z-index: @canvasZIndex + 3;
     background: @canvasToolsBg;
     padding-bottom: 10px;
 
@@ -174,7 +174,7 @@
     left: 0;
     right: 0;
     margin: 0 auto;
-    z-index: @baseZIndex + 2;
+    z-index: @canvasZIndex + 2;
     .grab;
 }
 
@@ -185,7 +185,7 @@
         cursor: pointer;
         position: fixed;
         top: 12px;
-        z-index: @baseZIndex + 4;
+        z-index: @canvasZIndex + 4;
 
         &:hover {
             background-position: -20px 0;
@@ -226,7 +226,7 @@
 }
 
 #diva-canvas-wrapper {
-    z-index: @baseZIndex + 1;
+    z-index: @canvasZIndex + 1;
     position: absolute;
     top: 0;
     left: 0;
