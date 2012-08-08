@@ -228,8 +228,12 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
 
         var getImageURL = function(zoomLevel) {
             var width = settings.zoomWidthRatio * Math.pow(2, zoomLevel);
-            return "/demo/canvas.php?f=" + settings.filename + "&w=" + width;
-            //return settings.iipServerURL + settings.filename + '&WID=' + width + '&CVT=JPG';
+
+            if (settings.canvasProxyURL) {
+                return settings.canvasProxyURL + "?f=" + settings.filename + "&w=" + width;
+            } else {
+                return settings.iipServerURL + settings.filename + '&WID=' + width + '&CVT=JPG';
+            }
         };
 
         var updateZoom = function(newZoomLevel, callback) {
