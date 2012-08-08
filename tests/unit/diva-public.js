@@ -132,6 +132,26 @@ asyncTest("setState()", function () {
             equal($(settings.outerSelector).scrollTop(), 8672, "Scroll from top should be 300 more");
             equal($(settings.outerSelector).scrollLeft(), 865, "Scroll from left should be 500 more");
 
+            state = {
+                f: false,
+                g: true,
+                h: 500,
+                i: "bm_500.tif",
+                n: 4,
+                p: true,
+                w: 700,
+                x: 100,
+                y: 200,
+                z: 4
+            };
+
+            this.setState(state);
+            ok(!settings.inFullscreen, "Should not be in fullscreen");
+            ok(settings.inGrid, "Should be in grid");
+            equal(settings.currentPageIndex, 498, "Current page should be 500 (index of 499)");
+            equal(settings.pagesPerRow, 4, "Pages per row should be 4");
+            equal(settings.zoomLevel, 4, "Zoom level should be 4");
+
             start();
         }
     });
