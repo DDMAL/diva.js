@@ -1,44 +1,70 @@
 /* Begin canvas plugin */
 
-@toolsWidth: 230px;
+// Colours - should not be changed
+@black:                 #000;
+@darkGrey:              #333;
+
+// Dimensions - should not be changed
+@toolsWidth:        230px;
+
+// Defines a base z-index for the backdrop div
+@baseZIndex:            9050;
+
+// Colour scheme
+@canvasBackdropBg:      rgba(50, 50, 50, 0.9);
+@canvasToolsText:       @darkGrey;
+@canvasToolsBg:         @white;
+@canvasButtonText:      @darkGrey;
+@canvasButtonBg:        @lightGrey;
+@canvasButtonHoverBg:   @lighterGrey;
+@canvasPaneBg:          @grey;
+@canvasPreviewBg:       @black;
+@canvasViewboxFrame:    @lightBlue;
 
 .diva-canvas-icon {
     .plugin-icon("canvas");
 }
 
 #diva-canvas-backdrop {
-    z-index: 9050;
+    z-index: @baseZIndex;
     position: fixed;
     top: 0;
     left: 0;
     bottom: 0;
     right: 0;
     display: none;
-    background: rgba(50, 50, 50, 0.9);
+    background: @canvasBackdropBg;
 }
 
 #diva-canvas-tools {
-    color: @darkGrey;
+    color: @canvasToolsText;
     position: fixed;
     top: 45px;
     left: 10px;
     width: @toolsWidth;
-    z-index: 9100;
-    background: @white;
+    z-index: @baseZIndex + 3;
+    background: @canvasToolsBg;
     padding-bottom: 10px;
+
     .action-buttons {
         clear: both;
         margin-bottom: 5px;
         text-align: right;
+
         a {
-            color: @darkGrey;
+            color: @canvasButtonText;
             text-decoration: none;
-            background: @lightGrey;
+            background: @canvasButtonBg;
             padding: 5px;
             .frame(@buttonFrame);
+
             &:last-child {
                 border-left: 0;
                 margin-right: 10px;
+            }
+
+            &:hover {
+                background: @canvasButtonHoverBg;
             }
         }
     }
@@ -46,69 +72,86 @@
 
 #diva-canvas-buttons {
     margin: 0 10px;
-    cursor: pointer;
-    .button (@x) {
-        background-color: @lighterGrey;
+
+    div {
+        cursor: pointer;
         background-image: url("@{iconPath}plugins/canvas-buttons.png");
-        background-position: (5px - @x * 30px) 5px;
         background-repeat: no-repeat;
         width: 20px;
         height: 20px;
         padding: 5px;
+        display: inline-block;
+
+        &.clicked {
+            background-color: @canvasPaneBg;
+        }
+    }
+
+    .button (@x) {
+        background-position: (5px - @x * 30px) 5px;
+
         &:hover, &.clicked {
             background-position: (5px - @x * 30px) -25px;
         }
-        &.clicked {
-            background-color: @grey;
-        }
-        display: inline-block;
     }
+
     .contrast {
         .button(0);
     }
+
     .brightness {
         .button(1);
     }
+
     .rotation {
         .button(2);
     }
+
     .zoom {
         .button(3);
     }
+
     .red {
         .button(4);
     }
+
     .green {
         .button(5);
     }
+
     .blue {
         .button(6);
     }
 }
 
 #diva-canvas-pane {
-    background: @grey;
+    background: @canvasPaneBg;
     margin: 0 10px;
+    padding-bottom: 10px;
+
     p {
         margin-left: 10px;
         padding-top: 10px;
+
         .link {
             cursor: pointer;
+
             &:hover {
                 text-decoration: underline;
             }
         }
     }
-    padding-bottom: 10px;
-    #diva-canvas-mode {
-        text-transform: capitalize;
-    }
+}
+
+#diva-canvas-mode {
+    text-transform: capitalize;
 }
 
 #diva-canvas-slider {
     width: 188px;
     margin: 0 auto;
     display: block;
+
     .handle {
         margin-left: -6px;
     }
@@ -122,16 +165,16 @@
     .square(@toolsWidth - 20px);
     margin: 10px;
     cursor: crosshair;
-    background: @black;
+    background: @canvasPreviewBg;
 }
 
 #diva-canvas {
     position: absolute;
-    // Center it
+    // Center it (if it's smaller than the browser window)
     left: 0;
     right: 0;
     margin: 0 auto;
-    z-index: 9051;
+    z-index: @baseZIndex + 2;
     .grab;
 }
 
@@ -142,29 +185,34 @@
         cursor: pointer;
         position: fixed;
         top: 12px;
+        z-index: @baseZIndex + 4;
+
         &:hover {
             background-position: -20px 0;
         }
-        z-index: 10000;
     }
-    #diva-canvas-close {
-        background-image: url("@{iconPath}close.png");
-        left: 12px;
-    }
-    #diva-canvas-minimise {
-        background-image: url("@{iconPath}minimise.png");
-        left: 42px;
-        &.active {
-            background-position: -40px 0;
-            &:hover {
-                background-position: -60px 0;
-            }
+}
+
+#diva-canvas-close {
+    background-image: url("@{iconPath}close.png");
+    left: 12px;
+}
+
+#diva-canvas-minimise {
+    background-image: url("@{iconPath}minimise.png");
+    left: 42px;
+
+    &.active {
+        background-position: -40px 0;
+
+        &:hover {
+            background-position: -60px 0;
         }
     }
 }
 
 #diva-map-viewbox {
-    border: 2px solid @lightBlue;
+    border: 2px solid @canvasViewboxFrame;
     position: absolute;
     top: 10px;
     left: 10px;
@@ -172,14 +220,13 @@
     .prevent-selection;
 }
 
-// Done this way so we don't have to guess the original setting
-// Added to the body upon entering canvas mode
+// Added to the body upon entering canvas mode (to hide the scrollbar)
 .overflow-hidden {
     overflow: hidden !important;
 }
 
 #diva-canvas-wrapper {
-    z-index: 9051;
+    z-index: @baseZIndex + 1;
     position: absolute;
     top: 0;
     left: 0;
