@@ -167,9 +167,9 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
             var cornerX = $('#diva-canvas-wrapper').scrollLeft() * map.scaleFactor + 10;
             var cornerY = $('#diva-canvas-wrapper').scrollTop() * map.scaleFactor + 10;
 
-            // Subtract 1 to compensate for the border
-            var height = Math.min(settings.viewport.height * map.scaleFactor, settings.mapSize) - 1;
-            var width = Math.min(settings.viewport.width * map.scaleFactor, settings.mapSize) - 1;
+            // Subtract 4 to compensate for the border
+            var height = Math.min(Math.round(settings.viewport.height * map.scaleFactor), settings.mapSize) - 4;
+            var width = Math.min(Math.round(settings.viewport.width * map.scaleFactor), settings.mapSize) - 4;
             $('#diva-map-viewbox').height(height).width(width).css({top: cornerY, left: cornerX});
         };
 
