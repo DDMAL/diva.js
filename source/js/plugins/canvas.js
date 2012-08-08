@@ -318,13 +318,17 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                 };
 
                 // Copy the "default" value into "value" and "previous" for each slider
-                var defaultValue, thisSlider;
-                for (slider in sliders) {
-                    thisSlider = sliders[slider];
-                    defaultValue = thisSlider.default;
-                    thisSlider.current = defaultValue;
-                    thisSlider.previous = defaultValue;
-                }
+                var resetSliders = function () {
+                    var defaultValue, thisSlider;
+                    for (slider in sliders) {
+                        thisSlider = sliders[slider];
+                        defaultValue = thisSlider.default;
+                        thisSlider.current = defaultValue;
+                        thisSlider.previous = defaultValue;
+                    }
+                };
+
+                resetSliders();
 
                 // Create the DOM elements
                 var buttons = [
@@ -395,7 +399,7 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
 
                     $('#diva-canvas-mode').text(sliderMode);
 
-                    var newValue = (sliderData.current !== undefined) ? sliderData.current : sliderData.default;
+                    var newValue = sliderData.current;
                     var newValueString = (sliderData.transform) ? sliderData.transform(newValue) : newValue;
 
                     $('#diva-canvas-slider').slider({
@@ -483,9 +487,11 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                     $('#diva-canvas-backdrop').hide();
 
                     // Reset everything
-                    for (slider in sliders) {
-                        // Later
-                    }
+                    resetSliders();
+                    updateSliderLabel();
+                    updateSliderValue();
+                    $('#diva-canvas-buttons .clicked').removeClass('clicked');
+                    updateSlider('contrast');
                 });
 
                 $('#diva-canvas-minimise').click(function () {
