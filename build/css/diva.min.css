@@ -28,13 +28,32 @@
 .ui-slider .handle.active{background:#ffffff;border:1px solid #99bbe8;}
 .diva-canvas-icon{background:url('../img/plugins/canvas.png') no-repeat center;}
 #diva-canvas-backdrop{z-index:9050;position:fixed;top:0;left:0;bottom:0;right:0;display:none;background:rgba(50, 50, 50, 0.9);}
-#diva-canvas-tools{color:#ffffff;position:fixed;top:20px;right:20px;width:250px;z-index:9100;background:rgba(0, 0, 0, 0.5);padding-bottom:10px;}#diva-canvas-tools span{margin-left:10px;}#diva-canvas-tools span i{font-style:normal;}
+#diva-canvas-tools{color:#333333;position:fixed;top:45px;left:10px;width:230px;z-index:9100;background:#ffffff;padding-bottom:10px;}#diva-canvas-tools span{margin-left:10px;}#diva-canvas-tools span i{font-style:normal;}
 #diva-canvas-tools span b{font-weight:normal;cursor:pointer;}
-#diva-canvas-tools .ui-slider{width:220px;display:block;margin:10px;}
+#diva-canvas-tools .action-buttons{clear:both;margin-bottom:5px;text-align:right;}#diva-canvas-tools .action-buttons a{color:#333333;text-decoration:none;background:#f1f1f1;padding:5px;border:1px solid #99bbe8;}#diva-canvas-tools .action-buttons a:last-child{border-left:0;margin-right:10px;}
+#diva-canvas-buttons{margin:0 10px;cursor:pointer;}#diva-canvas-buttons .contrast{background-color:#fdfdfd;background-image:url("../img/plugins/canvas-buttons.png");background-position:5px 5px;background-repeat:no-repeat;width:20px;height:20px;padding:5px;display:inline-block;}#diva-canvas-buttons .contrast:hover,#diva-canvas-buttons .contrast.clicked{background-position:5px -25px;}
+#diva-canvas-buttons .contrast.clicked{background-color:#dddddd;}
+#diva-canvas-buttons .brightness{background-color:#fdfdfd;background-image:url("../img/plugins/canvas-buttons.png");background-position:-25px 5px;background-repeat:no-repeat;width:20px;height:20px;padding:5px;display:inline-block;}#diva-canvas-buttons .brightness:hover,#diva-canvas-buttons .brightness.clicked{background-position:-25px -25px;}
+#diva-canvas-buttons .brightness.clicked{background-color:#dddddd;}
+#diva-canvas-buttons .rotation{background-color:#fdfdfd;background-image:url("../img/plugins/canvas-buttons.png");background-position:-55px 5px;background-repeat:no-repeat;width:20px;height:20px;padding:5px;display:inline-block;}#diva-canvas-buttons .rotation:hover,#diva-canvas-buttons .rotation.clicked{background-position:-55px -25px;}
+#diva-canvas-buttons .rotation.clicked{background-color:#dddddd;}
+#diva-canvas-buttons .zoom{background-color:#fdfdfd;background-image:url("../img/plugins/canvas-buttons.png");background-position:-85px 5px;background-repeat:no-repeat;width:20px;height:20px;padding:5px;display:inline-block;}#diva-canvas-buttons .zoom:hover,#diva-canvas-buttons .zoom.clicked{background-position:-85px -25px;}
+#diva-canvas-buttons .zoom.clicked{background-color:#dddddd;}
+#diva-canvas-buttons .red{background-color:#fdfdfd;background-image:url("../img/plugins/canvas-buttons.png");background-position:-115px 5px;background-repeat:no-repeat;width:20px;height:20px;padding:5px;display:inline-block;}#diva-canvas-buttons .red:hover,#diva-canvas-buttons .red.clicked{background-position:-115px -25px;}
+#diva-canvas-buttons .red.clicked{background-color:#dddddd;}
+#diva-canvas-buttons .green{background-color:#fdfdfd;background-image:url("../img/plugins/canvas-buttons.png");background-position:-145px 5px;background-repeat:no-repeat;width:20px;height:20px;padding:5px;display:inline-block;}#diva-canvas-buttons .green:hover,#diva-canvas-buttons .green.clicked{background-position:-145px -25px;}
+#diva-canvas-buttons .green.clicked{background-color:#dddddd;}
+#diva-canvas-buttons .blue{background-color:#fdfdfd;background-image:url("../img/plugins/canvas-buttons.png");background-position:-175px 5px;background-repeat:no-repeat;width:20px;height:20px;padding:5px;display:inline-block;}#diva-canvas-buttons .blue:hover,#diva-canvas-buttons .blue.clicked{background-position:-175px -25px;}
+#diva-canvas-buttons .blue.clicked{background-color:#dddddd;}
+#diva-canvas-pane{background:#dddddd;margin:0 10px;padding-bottom:10px;}#diva-canvas-pane p{padding-top:10px;}
+#diva-canvas-pane #diva-canvas-mode{text-transform:capitalize;}
+#diva-canvas-slider{width:188px;margin:0 auto;display:block;}#diva-canvas-slider .handle{margin-left:-6px;}
 #diva-canvas-loading{display:none;}
-#diva-canvas-minimap{height:230px;width:230px;margin:10px;cursor:crosshair;}
+#diva-canvas-minimap{height:210px;width:210px;margin:10px;cursor:crosshair;background:#000000;}
 #diva-canvas{position:absolute;left:0;right:0;margin:0 auto;z-index:9051;cursor:url("../img/openhand.cur"),pointer;}
-#diva-canvas-close{position:fixed;top:12px;left:12px;height:18px;width:18px;background-image:url("../img//close.png");background-repeat:no-repeat;z-index:9058;cursor:pointer;}
+#diva-canvas-actions div{height:18px;width:18px;background-repeat:no-repeat;cursor:pointer;position:fixed;top:12px;z-index:10000;}#diva-canvas-actions div:hover{background-position:-20px 0;}
+#diva-canvas-actions #diva-canvas-close{background-image:url("../img/close.png");left:12px;}
+#diva-canvas-actions #diva-canvas-minimise{background-image:url("../img/minimise.png");left:42px;}#diva-canvas-actions #diva-canvas-minimise.active{background-position:-40px 0;}#diva-canvas-actions #diva-canvas-minimise.active:hover{background-position:-60px 0;}
 #diva-map-viewbox{border:1px solid #FF0000;position:absolute;top:10px;left:10px;cursor:crosshair;}
 .overflow-hidden{overflow:hidden !important;}
 #diva-canvas-wrapper{z-index:9051;position:absolute;top:0;left:0;bottom:0;right:0;overflow:scroll;}

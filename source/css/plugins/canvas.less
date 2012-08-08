@@ -1,6 +1,6 @@
 /* Begin canvas plugin */
 
-@toolsWidth: 250px;
+@toolsWidth: 230px;
 
 .diva-canvas-icon {
     .plugin-icon("canvas");
@@ -18,13 +18,13 @@
 }
 
 #diva-canvas-tools {
-    color: @white;
+    color: @darkGrey;
     position: fixed;
-    top: 20px;
-    right: 20px;
+    top: 45px;
+    left: 10px;
     width: @toolsWidth;
     z-index: 9100;
-    background: rgba(0, 0, 0, 0.5);
+    background: @white;
     padding-bottom: 10px;
     span {
         margin-left: 10px;
@@ -36,10 +36,84 @@
             cursor: pointer;
         }
     }
-    .ui-slider {
-        width: @toolsWidth - 30px;
-        display: block;
-        margin: 10px;
+    .action-buttons {
+        clear: both;
+        margin-bottom: 5px;
+        text-align: right;
+        a {
+            color: @darkGrey;
+            text-decoration: none;
+            background: @lightGrey;
+            padding: 5px;
+            .frame(@buttonFrame);
+            &:last-child {
+                border-left: 0;
+                margin-right: 10px;
+            }
+        }
+    }
+}
+
+#diva-canvas-buttons {
+    margin: 0 10px;
+    cursor: pointer;
+    .button (@x) {
+        background-color: @lighterGrey;
+        background-image: url("@{iconPath}plugins/canvas-buttons.png");
+        background-position: (5px - @x * 30px) 5px;
+        background-repeat: no-repeat;
+        width: 20px;
+        height: 20px;
+        padding: 5px;
+        &:hover, &.clicked {
+            background-position: (5px - @x * 30px) -25px;
+        }
+        &.clicked {
+            background-color: @grey;
+        }
+        display: inline-block;
+    }
+    .contrast {
+        .button(0);
+    }
+    .brightness {
+        .button(1);
+    }
+    .rotation {
+        .button(2);
+    }
+    .zoom {
+        .button(3);
+    }
+    .red {
+        .button(4);
+    }
+    .green {
+        .button(5);
+    }
+    .blue {
+        .button(6);
+    }
+}
+
+#diva-canvas-pane {
+    background: @grey;
+    margin: 0 10px;
+    p {
+        padding-top: 10px;
+    }
+    padding-bottom: 10px;
+    #diva-canvas-mode {
+        text-transform: capitalize;
+    }
+}
+
+#diva-canvas-slider {
+    width: 188px;
+    margin: 0 auto;
+    display: block;
+    .handle {
+        margin-left: -6px;
     }
 }
 
@@ -51,6 +125,7 @@
     .square(@toolsWidth - 20px);
     margin: 10px;
     cursor: crosshair;
+    background: @black;
 }
 
 #diva-canvas {
@@ -63,15 +138,32 @@
     .grab;
 }
 
-#diva-canvas-close {
-    position: fixed;
-    top: 12px;
-    left: 12px;
-    .square(18px);
-    background-image: url("@{iconPath}/close.png");
-    background-repeat: no-repeat;
-    z-index: 9058;
-    cursor: pointer;
+#diva-canvas-actions {
+    div {
+        .square(18px);
+        background-repeat: no-repeat;
+        cursor: pointer;
+        position: fixed;
+        top: 12px;
+        &:hover {
+            background-position: -20px 0;
+        }
+        z-index: 10000;
+    }
+    #diva-canvas-close {
+        background-image: url("@{iconPath}close.png");
+        left: 12px;
+    }
+    #diva-canvas-minimise {
+        background-image: url("@{iconPath}minimise.png");
+        left: 42px;
+        &.active {
+            background-position: -40px 0;
+            &:hover {
+                background-position: -60px 0;
+            }
+        }
+    }
 }
 
 #diva-map-viewbox {

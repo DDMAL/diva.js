@@ -1,34 +1,26 @@
-    /*
-    Canvas plugin for diva.js
-    Adds a little "tools" icon next to each image
-    When clicked, brings up a fullscreen panel, where you can adjust the image
-    contrast, rotation, RBG
-    */
+/*
+Canvas plugin for diva.js
+Adds a little "tools" icon next to each image
+When clicked, brings up a fullscreen panel, where you can adjust the image
+*/
 
 (function ($) {
     window.divaPlugins.push((function() {
         var canvas = {},
             map = {},
             settings = {},
-            oldLevels = { // fix this later
-                c: 1,
-                b: 0,
-                r: 0
-            },
-            levels = {
-                c: 1,
-                b: 0,
-                r: 0
-            },
-            image;
+            image,
+            sliders;
 
         // Set up some default settings (can be overridden the normal way)
         var defaults = {
+            brightnessMax: 150,
+            brightnessMin: -100,
+            brightnessStep: 1,
+            contrastMax: 3,
+            contrastMin: -1,
             contrastStep: 0.05,
-            maxBrightness: 150,
-            maxContrast: 3,
-            minBrightness: -100,
-            minContrast: -1
+            rgbMax: 100
         };
 
         // Define the main functions here
@@ -38,16 +30,20 @@
 
         var getNewCenter = function(currentCenter, angle) {
             var x = currentCenter.x - canvas.centerX;
+            // Take the negative because the rotation is counterclockwise
             var y = -(currentCenter.y - canvas.centerY);
-            // negative because, counterclockwise
-            var theta = toRadians(levels.r - angle);
-            return {x: Math.cos(theta) * x - Math.sin(theta) * y + canvas.centerX, y: -(Math.sin(theta) * x + Math.cos(theta) * y) + canvas.centerY};
+
+            var theta = toRadians(sliders.rotation.previous - angle);
+            var x = Math.cos(theta) * x - Math.sin(theta) * y + canvas.centerX;
+            var y = -(Math.sin(theta) * x + Math.cos(theta) * y) + canvas.centerY;
+
+            return {'x': x, 'y': y};
         };
 
         var rotateCanvas = function(aCanvas, angle) {
-            // Do the actual rotation
             var context = aCanvas.context;
             var center = aCanvas.size / 2;
+
             context.clearRect(0, 0, aCanvas.size, aCanvas.size);
             context.save();
             context.translate(center, center);
@@ -57,46 +53,52 @@
             aCanvas.data = context.getImageData(0, 0, aCanvas.size, aCanvas.size);
         };
 
-        var handleRotate = function(angle) {
-            // Now rotate the map
-            rotateCanvas(map, angle);
+        var shouldAdjustLevels = function () {
+            // Returns true if something has been changed
+            for (slider in sliders) {
+                if (sliders[slider].current !== sliders[slider].previous) {
+                    return true;
+                }
+            }
+
+            return false;
+        };
+
+        var updatePreviousLevels = function () {
+            for (slider in sliders) {
+                sliders[slider].previous = sliders[slider].current;
+            }
         };
 
         var updateCanvas = function() {
-            var angle = levels['r'];
-            var oldAngle = oldLevels['r'];
-            if (angle !== oldAngle) {
+            var angle = sliders.rotation.current;
+            var oldAngle = sliders.rotation.previous;
+            var zoomLevel = sliders.zoom.current;
+            var oldZoomLevel = sliders.zoom.previous;
+
+            // Scroll the user to the desired location
+            if (angle !== oldAngle || zoomLevel !== oldZoomLevel) {
                 // First figure out the current center of the viewport
-                var leftScroll = $('#diva-canvas-backdrop').scrollLeft();
-                var topScroll = $('#diva-canvas-backdrop').scrollTop();
+                var leftScroll = $('#diva-canvas-wrapper').scrollLeft();
+                var topScroll = $('#diva-canvas-wrapper').scrollTop();
                 var leftOffset = settings.viewport.width / 2;
                 var topOffset = settings.viewport.height / 2;
                 var newCenter = getNewCenter({x: leftScroll + leftOffset, y: topScroll + topOffset}, angle);
 
+                var zoomChange = Math.pow(2, zoomLevel - oldZoomLevel);
+                var toLeftScroll = zoomChange * newCenter.x - leftOffset;
+                var toTopScroll = zoomChange * newCenter.y - topOffset;
+
                 rotateCanvas(canvas, angle);
-                $('#diva-canvas-backdrop').scrollLeft(newCenter.x - leftOffset);
-                $('#diva-canvas-backdrop').scrollTop(newCenter.y - topOffset);
+
+                $('#diva-canvas-wrapper').scrollLeft(toLeftScroll);
+                $('#diva-canvas-wrapper').scrollTop(toTopScroll);
             }
 
             // Only call adjustLevels again if something changed
-            // Brightness, contrast, or rotation
-            if (levels['b'] !== oldLevels['b'] || levels['c'] !== oldLevels['c'] || levels['r'] !== oldLevels['r']) {
+            if (shouldAdjustLevels()) {
                 adjustLevels(canvas);
-                oldLevels['b'] = levels['b'];
-                oldLevels['c'] = levels['c'];
-                oldLevels['r'] = angle;
-            }
-        };
-
-        var handleLevelUpdate = function(key, value, slider) {
-            if (levels[key] !== value) {
-                if (key == 'r') {
-                    handleRotate(value);
-                }
-
-                levels[key] = value;
-                $(slider).prev().find('i').text(value);
-                adjustLevels(map);
+                updatePreviousLevels();
             }
         };
 
@@ -114,23 +116,41 @@
         };
 
         var adjustLevels = function(aCanvas) {
+            var brightness = sliders.brightness.current;
+            var contrast = sliders.contrast.current;
             var imageData = copyImageData(aCanvas);
             var pixelArray = imageData.data;
             var x, y, width, height, offset, r, g, b, newR, newG, newB;
-            var brightMul = 1 + Math.min(settings.maxBrightness, Math.max(settings.minBrightness, levels.b)) / settings.maxBrightness;
+            var brightMul = 1 + Math.min(settings.brightnessMax, Math.max(settings.brightnessMin, brightness)) / settings.brightnessMax;
+
+            var redOffset = sliders.red.current;
+            var greenOffset = sliders.green.current;
+            var blueOffset = sliders.blue.current;
 
             for (x = 0, width = imageData.width; x < width; x++) {
                 for (y = 0, height = imageData.height; y < height; y++) {
                     offset = (y * width + x) * 4;
+                    // Adjust the red channel only if not black
                     r = pixelArray[offset];
+                    if (r) {
+                        r = Math.max(Math.min(r + redOffset, 255), 0);
+                    }
+
                     g = pixelArray[offset + 1];
+                    if (g) {
+                        g = Math.max(Math.min(g + greenOffset, 255), 0);
+                    }
+
                     b = pixelArray[offset + 2];
+                    if (b) {
+                        b = Math.max(Math.min(b + blueOffset, 255), 0);
+                    }
                     
                     // Only do something if the pixel is not black originally
                     if (r + g + b > 0) {
-                        newR = r * brightMul * levels.c + 128 - (levels.c * 128);
-                        newG = g * brightMul * levels.c + 128 - (levels.c * 128);
-                        newB = b * brightMul * levels.c + 128 - (levels.c * 128);
+                        newR = r * brightMul * contrast + 128 - (contrast * 128);
+                        newG = g * brightMul * contrast + 128 - (contrast * 128);
+                        newB = b * brightMul * contrast + 128 - (contrast * 128);
 
                         pixelArray[offset] = (newR > 0) ? Math.min(newR, 255) : 0;
                         pixelArray[offset + 1] = (newG > 0) ? Math.min(newG, 255) : 0;
@@ -146,9 +166,10 @@
         var updateViewBox = function() {
             var cornerX = $('#diva-canvas-wrapper').scrollLeft() * map.scaleFactor + 10;
             var cornerY = $('#diva-canvas-wrapper').scrollTop() * map.scaleFactor + 10;
-            // Subtract 2 to compensate for the border
-            var height = Math.min(settings.viewport.height * map.scaleFactor, settings.mapSize) - 2;
-            var width = Math.min(settings.viewport.width * map.scaleFactor, settings.mapSize) - 2;
+
+            // Subtract 1 to compensate for the border
+            var height = Math.min(settings.viewport.height * map.scaleFactor, settings.mapSize) - 1;
+            var width = Math.min(settings.viewport.width * map.scaleFactor, settings.mapSize) - 1;
             $('#diva-map-viewbox').height(height).width(width).css('top', cornerY + 'px').css('left', cornerX + 'px');
         };
 
@@ -213,17 +234,11 @@
 
         var updateZoom = function(newZoomLevel, callback) {
             settings.zoomLevel = newZoomLevel;
-            $('#zoom-slider').prev().find('i').text(newZoomLevel);
             // Figure out the new width based on the old zoom level & width
             var imageURL = getImageURL(newZoomLevel);
 
             loadCanvas(imageURL, function() {
-                // Reset oldLevels to defaults, then adjust again
-                oldLevels = {c: 1, b: 0, r: 0};
-                if (oldLevels['r'] !== levels['r']) {
-                    rotateCanvas(canvas, levels['r']);
-                }
-                adjustLevels(canvas);
+                updateCanvas();
                 map.scaleFactor = map.size / canvas.size;
                 updateViewBox();
                 if (typeof callback == 'function') {
@@ -242,60 +257,203 @@
                 };
                 settings.inCanvas = false;
 
+                // Set up the settings for the sliders/icons
+                sliders = {
+                    'contrast': {
+                        'default': 1,
+                        'min': settings.contrastMin,
+                        'max': settings.contrastMax,
+                        'step': settings.contrastStep,
+                        'transform': function (value) {
+                            return value.toFixed(2);
+                        },
+                        'title': 'Change the contrast'
+                    },
+                    'brightness': {
+                        'default': 0,
+                        'min': settings.brightnessMin,
+                        'max': settings.brightnessMax,
+                        'step': settings.brightnessStep,
+                        'title': 'Adjust the brightness'
+                    },
+                    'rotation': {
+                        'default': 0,
+                        'min': 0,
+                        'max': 359,
+                        'step': 1,
+                        'transform': function (value) {
+                            return value + '&deg;';
+                        },
+                        'title': 'Rotate the image'
+                    },
+                    'zoom': {
+                        // Default, min and max values updated within setupHook
+                        'default': 0,
+                        'min': 0,
+                        'max': 0,
+                        'step': 1,
+                        'title': 'Adjust the zoom level'
+                    },
+                    'red': {
+                        'default': 0,
+                        'min': 0,
+                        'max': settings.rgbMax,
+                        'step': 1,
+                        'title': 'Adjust the red channel'
+                    },
+                    'green': {
+                        'default': 0,
+                        'min': 0,
+                        'max': settings.rgbMax,
+                        'step': 1,
+                        'title': 'Adjust the green channel'
+                    },
+                    'blue': {
+                        'default': 0,
+                        'min': 0,
+                        'max': settings.rgbMax,
+                        'step': 1,
+                        'title': 'Adjust the blue channel'
+                    }
+                };
+
+                // Copy the "default" value into "value" and "previous" for each slider
+                var defaultValue, thisSlider;
+                for (slider in sliders) {
+                    thisSlider = sliders[slider];
+                    defaultValue = thisSlider.default;
+                    thisSlider.current = defaultValue;
+                    thisSlider.previous = defaultValue;
+                }
+
                 // Create the DOM elements
-                $('body').append('<div id="diva-canvas-backdrop"><div id="diva-canvas-tools" style="right: ' + (settings.scrollbarWidth + 20) + 'px"><div id="diva-map-viewbox"></div><canvas id="diva-canvas-minimap"></canvas><br /><span>Brightness: <i>0</i> <b id="brightness-reset">(Reset)</b></span><div id="brightness-slider"></div><span>Contrast: <i>1</i> <b id="contrast-reset">(Reset)</b></span><div id="contrast-slider"></div><span>Rotation: <i>0</i>&deg; (<b class="rotation-reset" id="rotation-reset">0</b>&deg; <b class="rotation-reset">90</b>&deg; <b class="rotation-reset">180</b>&deg; <b class="rotation-reset">270</b>&deg;)</span><div id="rotation-slider"></div><div id="diva-canvas-applybox"><span><button type="button" id="diva-canvas-apply">Apply</button></span><span id="diva-canvas-loading">Loading ...</span></div><span>Zoom level: <i>0</i> <em id="zoom-loading">Loading ...</em></span><div id="zoom-slider"></div></div><div id="diva-canvas-wrapper"><canvas id="diva-canvas"></canvas></div><div id="diva-canvas-close"></div></div>');
+                var buttons = [
+                    'contrast',
+                    'brightness',
+                    'rotation',
+                    'zoom',
+                    'red',
+                    'green',
+                    'blue'
+                ];
+
+                var canvasButtonsList = [], buttonHTML, button, buttonTitle;
+                for (i in buttons) {
+                    button = buttons[i];
+                    buttonTitle = sliders[button].title;
+                    buttonHTML = '<div class="' + button + '" title="' + buttonTitle + '"></div>';
+                    canvasButtonsList.push(buttonHTML);
+                }
+                var canvasButtons = canvasButtonsList.join('');
+
+                var canvasTools = '<div id="diva-canvas-tools">' +
+                    '<div id="diva-map-viewbox"></div>' +
+                    '<canvas id="diva-canvas-minimap"></canvas>' +
+                    '<div id="diva-canvas-buttons">' +
+                        canvasButtons +
+                    '</div>' +
+                    '<div id="diva-canvas-pane">' +
+                        '<p id="diva-canvas-tooltip">' +
+                            '<span id="diva-canvas-mode">contrast</span>:' +
+                            '<span id="diva-canvas-value">0</span>' +
+                        '</p>' +
+                        '<div id="diva-canvas-slider"></div>' +
+                    '</div>' +
+                    '<br />' +
+                    '<div class="action-buttons">' +
+                        '<a href="#" id="diva-canvas-reset">Reset all</a>' +
+                        '<a href="#" id="diva-canvas-apply">Apply</a>' +
+                    '</div>' +
+                '</div>';
+                var canvasWrapper = '<div id="diva-canvas-wrapper">' +
+                    '<canvas id="diva-canvas"></canvas>' +
+                '</div>';
+                var canvasActions = '<div id="diva-canvas-actions">' +
+                    '<div id="diva-canvas-close" title="Return to the document viewer"></div>' +
+                    '<div id="diva-canvas-minimise" title="Minimise the toolbar"></div>' +
+                '</div>';
+                var canvasString = '<div id="diva-canvas-backdrop">' +
+                    canvasTools +
+                    canvasWrapper +
+                    canvasActions +
+                '</div>';
+                $('body').append(canvasString);
+
+                // Adjust the slider when something is clicked, and make that the current mode
+                var sliderMode;
+                $('#diva-canvas-buttons div').click(function () {
+                    $('#diva-canvas-buttons .clicked').removeClass('clicked');
+                    updateSlider($(this).attr('class'));
+                });
+
+                var updateSlider = function (newMode) {
+                    sliderMode = newMode;
+                    var sliderData = sliders[sliderMode];
+
+                    $('#diva-canvas-buttons .' + sliderMode).addClass('clicked');
+
+                    $('#diva-canvas-mode').text(sliderMode);
+
+                    var newValue = (sliderData.current !== undefined) ? sliderData.current : sliderData.default;
+                    var newValueString = (sliderData.transform) ? sliderData.transform(newValue) : newValue;
+
+                    $('#diva-canvas-slider').slider({
+                        'min': sliderData.min,
+                        'max': sliderData.max,
+                        'step': sliderData.step
+                    }).slider('value', newValue);
+                    $('#diva-canvas-value').html(newValueString);
+                };
+
+                updateSlider('contrast');
+
+                // Create the slider
+                $('#diva-canvas-slider').slider({
+                    slide: function (event, ui) {
+                        sliders[sliderMode].current = ui.value;
+                        updateSliderLabel();
+                        updateMap();
+                    }
+                });
+
+                var updateSliderLabel = function () {
+                    var thisSlider = sliders[sliderMode];
+                    var value = thisSlider.current;
+                    var stringValue = (thisSlider.transform) ? thisSlider.transform(value) : value;
+                    $('#diva-canvas-value').html(stringValue);
+                };
+
+                var updateMap = function () {
+                    rotateCanvas(map, sliders.rotation.current);
+                    adjustLevels(map);
+                };
 
                 // Save the size of the map, as defined in the CSS
                 settings.mapSize = $('#diva-canvas-minimap').width();
-                
-                // Handle events (sliders, clicking, etc)
-                $('#brightness-slider').slider({
-                    min: settings.minBrightness,
-                    max: settings.maxBrightness,
-                    step: 1,
-                    value: 0,
-                    slide: function(event, ui) {
-                        handleLevelUpdate('b', ui.value, this);
+
+                $('#diva-canvas-reset').click(function () {
+                    for (slider in sliders) {
+                        sliders[slider].current = sliders[slider].default;
                     }
-                });
 
-                $('#contrast-slider').slider({
-                    min: settings.minContrast,
-                    max: settings.maxContrast,
-                    step: settings.contrastStep,
-                    value: 1,
-                    slide: function(event, ui) {
-                        handleLevelUpdate('c', ui.value, this);
-                    }
-                });
+                    // Change the value of the label
+                    updateSliderLabel();
 
-                $('#rotation-slider').slider({
-                    min: 0,
-                    max: 359,
-                    step: 1,
-                    value: 0,
-                    slide: function(event, ui) {
-                        handleLevelUpdate('r', ui.value, this);
-                    }
-                });
+                    // Change the value of the slider itself
+                    $('#diva-canvas-slider').slider({value: sliders[sliderMode].current});
 
-                $('#brightness-reset').click(function() {
-                    handleLevelUpdate('b', 0, $('#brightness-slider').slider('value', 0));
-                });
-
-                $('#contrast-reset').click(function() {
-                    handleLevelUpdate('c', 1, $('#contrast-slider').slider('value', 1));
-                });
-
-                $('.rotation-reset').click(function() {
-                    var angle = $(this).text();
-                    handleLevelUpdate('r', $(this).text(), $('#rotation-slider').slider('value', $(this).text()));
+                    // Update the preview
+                    updateMap();
                 });
 
                 $('#diva-canvas-apply').click(function() {
                     $('#diva-canvas-loading').show();
                     setTimeout(function() {
-                        updateCanvas();
+                        if (sliders.zoom.current !== sliders.zoom.previous) {
+                            updateZoom(sliders.zoom.current);
+                        } else {
+                            updateCanvas();
+                        }
                         $('#diva-canvas-loading').fadeOut(1000);
                     }, 10);
                 });
@@ -309,10 +467,16 @@
                     map.context.clearRect(0, 0, map.size, map.size);
                     $('#diva-canvas-backdrop').hide();
 
-                    // Clear the sliders ...
-                    $('#brightness-reset').click();
-                    $('#contrast-reset').click();
-                    $('#rotation-reset').click();
+                    // Reset everything
+                    for (slider in sliders) {
+                        // Later
+                    }
+                });
+
+                $('#diva-canvas-minimise').click(function () {
+                    $('#diva-canvas-tools').slideToggle('fast', function () {
+                        $('#diva-canvas-minimise').toggleClass('active');
+                    });
                 });
 
                 $(window).resize(function() {
@@ -334,9 +498,8 @@
                 });
 
                 $('#diva-canvas-minimap, #diva-map-viewbox').click(function(event) {
-                    // offset - the top left corner
-                    var offsetY = 30;
-                    var offsetX = settings.viewport.width - settings.mapSize - 30;
+                    var offsetY = 55;
+                    var offsetX = 20;
                     var scaledX = (event.pageX - offsetX) / map.scaleFactor;
                     var scaledY = (event.pageY - offsetY) / map.scaleFactor;
                     $('#diva-canvas-wrapper').scrollTop(scaledY - settings.viewport.height / 2);
@@ -355,7 +518,19 @@
 
                 // Double-click to zoom in/out (with CTRL)
                 $('#diva-canvas-wrapper').dblclick(function(event) {
-                    //updateZoom(settings.zoomLevel + 1);
+                    var zoomChange = (event.ctrlKey) ? -1 : 1;
+                    var newZoomLevel = sliders.zoom.current + zoomChange;
+
+                    if (newZoomLevel >= settings.minZoomLevel && newZoomLevel <= settings.maxZoomLevel) {
+                        sliders.zoom.current = newZoomLevel;
+                        updateZoom(sliders.zoom.current);
+
+                        // We only need to update the slider label if the slider is zoom
+                        if (sliderMode == 'zoom') {
+                            updateSliderLabel();
+                            $('#diva-canvas-slider').slider({value: newZoomLevel});
+                        }
+                    }
                 });
             },
             pluginName: 'canvas',
@@ -363,6 +538,11 @@
             setupHook: function(divaSettings) {
                 settings.minZoomLevel = divaSettings.minZoomLevel;
                 settings.maxZoomLevel = divaSettings.maxZoomLevel;
+                sliders.zoom.min = settings.minZoomLevel;
+                sliders.zoom.max = settings.maxZoomLevel;
+                sliders.zoom.default = divaSettings.zoomLevel;
+                sliders.zoom.current = divaSettings.zoomLevel;
+                sliders.zoom.previous = divaSettings.zoomLevel;
             },
             handleClick: function(event, divaSettings) {
                 var zoomLevel = divaSettings.zoomLevel;
@@ -382,23 +562,6 @@
                 var imageURL = getImageURL(zoomLevel);
 
                 loadCanvas(imageURL);
-
-                $('#zoom-slider').prev().find('i').text(zoomLevel);
-
-                $('#zoom-slider').slider({
-                    min: settings.minZoomLevel,
-                    max: settings.maxZoomLevel,
-                    step: 1,
-                    value: zoomLevel,
-                    slide: function(event, ui) {
-                        $('#zoom-loading').show();
-                        updateZoom(ui.value, function() {
-                            $('#zoom-loading').fadeOut();
-                        });
-                    }
-                });
-
-                // Figure out the multiplier for width/zoomLevel ratio etc
             },
             destroy: function () {
                 $('#diva-canvas-backdrop').remove();
