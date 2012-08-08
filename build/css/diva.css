@@ -283,16 +283,6 @@
   background: #ffffff;
   padding-bottom: 10px;
 }
-#diva-canvas-tools span {
-  margin-left: 10px;
-}
-#diva-canvas-tools span i {
-  font-style: normal;
-}
-#diva-canvas-tools span b {
-  font-weight: normal;
-  cursor: pointer;
-}
 #diva-canvas-tools .action-buttons {
   clear: both;
   margin-bottom: 5px;

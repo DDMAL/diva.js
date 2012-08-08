@@ -28,9 +28,7 @@
 .ui-slider .handle.active{background:#ffffff;border:1px solid #99bbe8;}
 .diva-canvas-icon{background:url('../img/plugins/canvas.png') no-repeat center;}
 #diva-canvas-backdrop{z-index:9050;position:fixed;top:0;left:0;bottom:0;right:0;display:none;background:rgba(50, 50, 50, 0.9);}
-#diva-canvas-tools{color:#333333;position:fixed;top:45px;left:10px;width:230px;z-index:9100;background:#ffffff;padding-bottom:10px;}#diva-canvas-tools span{margin-left:10px;}#diva-canvas-tools span i{font-style:normal;}
-#diva-canvas-tools span b{font-weight:normal;cursor:pointer;}
-#diva-canvas-tools .action-buttons{clear:both;margin-bottom:5px;text-align:right;}#diva-canvas-tools .action-buttons a{color:#333333;text-decoration:none;background:#f1f1f1;padding:5px;border:1px solid #99bbe8;}#diva-canvas-tools .action-buttons a:last-child{border-left:0;margin-right:10px;}
+#diva-canvas-tools{color:#333333;position:fixed;top:45px;left:10px;width:230px;z-index:9100;background:#ffffff;padding-bottom:10px;}#diva-canvas-tools .action-buttons{clear:both;margin-bottom:5px;text-align:right;}#diva-canvas-tools .action-buttons a{color:#333333;text-decoration:none;background:#f1f1f1;padding:5px;border:1px solid #99bbe8;}#diva-canvas-tools .action-buttons a:last-child{border-left:0;margin-right:10px;}
 #diva-canvas-buttons{margin:0 10px;cursor:pointer;}#diva-canvas-buttons .contrast{background-color:#fdfdfd;background-image:url("../img/plugins/canvas-buttons.png");background-position:5px 5px;background-repeat:no-repeat;width:20px;height:20px;padding:5px;display:inline-block;}#diva-canvas-buttons .contrast:hover,#diva-canvas-buttons .contrast.clicked{background-position:5px -25px;}
 #diva-canvas-buttons .contrast.clicked{background-color:#dddddd;}
 #diva-canvas-buttons .brightness{background-color:#fdfdfd;background-image:url("../img/plugins/canvas-buttons.png");background-position:-25px 5px;background-repeat:no-repeat;width:20px;height:20px;padding:5px;display:inline-block;}#diva-canvas-buttons .brightness:hover,#diva-canvas-buttons .brightness.clicked{background-position:-25px -25px;}
