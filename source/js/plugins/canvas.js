@@ -518,11 +518,12 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                     }
                 });
 
-                $('#diva-canvas-minimap, #diva-map-viewbox').click(function(event) {
+                $('#diva-canvas-minimap, #diva-map-viewbox').mouseup(function(event) {
                     var offsetY = 55;
                     var offsetX = 20;
                     var scaledX = (event.pageX - offsetX) / map.scaleFactor;
                     var scaledY = (event.pageY - offsetY) / map.scaleFactor;
+
                     $('#diva-canvas-wrapper').scrollTop(scaledY - settings.viewport.height / 2);
                     $('#diva-canvas-wrapper').scrollLeft(scaledX - settings.viewport.width / 2);
                 });
