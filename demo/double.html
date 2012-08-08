@@ -19,6 +19,7 @@
             iipLeftURL: 'http://ddmal.music.mcgill.ca/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/beromunster/',
             iipRightURL: 'http://ddmal.music.mcgill.ca/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/beromunster/',
             divaserveURL: 'demo.php',
+            canvasProxyURL: 'canvas.php',
             leftImageDir: 'beromunster',
             rightImageDir: 'beromunster',
             resizeOffset: 20,
@@ -40,7 +41,6 @@
         $('#diva-one').diva({
             enableDownload: false,
             zoomLevel: settings.zoomLevel,
-            iconPath: settings.iconPath,
             tileFadeSpeed: settings.tileFadeSpeed,
             viewerFloat: 'left',
             iipServerURL: settings.iipLeftURL,
@@ -48,6 +48,7 @@
             imageDir: settings.leftImageDir,
             fixedHeightGrid: false,
             onGrid: onGrid,
+            canvasProxyURL: settings.canvasProxyURL,
             onScroll: function(scrollSoFar) {
                 if (lockViewers) {
                     $('#2-diva-outer').scrollTop(scrollSoFar - firstScroll + secondScroll);
@@ -59,13 +60,13 @@
         $('#diva-two').diva({
             enableCanvas: false,
             zoomLevel: settings.zoomLevel,
-            iconPath: settings.iconPath,
             tileFadeSpeed: settings.tileFadeSpeed,
             viewerFloat: 'right',
             iipServerURL: settings.iipRightURL,
             divaserveURL: settings.divaserveURL,
             imageDir: settings.rightImageDir,
             onGrid: onGrid,
+            canvasProxyURL: settings.canvasProxyURL,
             onScroll: function(scrollSoFar) {
                 if (lockViewers) {
                     $('#1-diva-outer').scrollTop(scrollSoFar - secondScroll + firstScroll);

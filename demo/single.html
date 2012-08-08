@@ -14,14 +14,12 @@
     <script type="text/javascript">
     $(document).ready(function() {
         $('#diva-wrapper').diva({
-            adaptivePadding: 0,
+            enableAutoHeight: true,
             fixedHeightGrid: false,
-            fixedPadding: 20,
-            tileFadeSpeed: 0,
-            pagesPerGridRow: 9,
             iipServerURL: "http://coltrane.music.mcgill.ca/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/beromunster/",
             divaserveURL: "demo.php",
             imageDir: "beromunster",
+            canvasProxyURL: "canvas.php"
         });
         var dv = $('#diva-wrapper').data('diva');
     });
