@@ -549,12 +549,14 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                 settings.maxZoomLevel = divaSettings.maxZoomLevel;
                 sliders.zoom.min = settings.minZoomLevel;
                 sliders.zoom.max = settings.maxZoomLevel;
-                sliders.zoom.initial = divaSettings.zoomLevel;
-                sliders.zoom.current = divaSettings.zoomLevel;
-                sliders.zoom.previous = divaSettings.zoomLevel;
             },
             handleClick: function(event, divaSettings) {
                 var zoomLevel = divaSettings.zoomLevel;
+
+                sliders.zoom.initial = zoomLevel;
+                sliders.zoom.current = zoomLevel;
+                sliders.zoom.previous = zoomLevel;
+
                 // Prevent scroll in body, and show the canvas backdrop
                 $('body').addClass('overflow-hidden');
                 $('#diva-canvas-backdrop').show();
