@@ -236,6 +236,10 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
             }
         };
 
+        var hideThrobber = function () {
+            $('#diva-canvas-loading').fadeOut('slow');
+        };
+
         var updateZoom = function(newZoomLevel, callback) {
             settings.zoomLevel = newZoomLevel;
             // Figure out the new width based on the old zoom level & width
@@ -245,9 +249,7 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                 updateCanvas();
                 map.scaleFactor = map.size / canvas.size;
                 updateViewBox();
-                if (typeof callback == 'function') {
-                    callback.call();
-                }
+                hideThrobber();
             });
         };
 
@@ -381,10 +383,13 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                     '<div id="diva-canvas-close" title="Return to the document viewer"></div>' +
                     '<div id="diva-canvas-minimise" title="Minimise the toolbar"></div>' +
                 '</div>';
+                var canvasLoading = '<div id="diva-canvas-loading">' +
+                '</div>';
                 var canvasString = '<div id="diva-canvas-backdrop">' +
                     canvasTools +
                     canvasWrapper +
                     canvasActions +
+                    canvasLoading +
                 '</div>';
                 $('body').append(canvasString);
 
@@ -470,15 +475,24 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                 });
 
                 $('#diva-canvas-apply').click(function() {
-                    $('#diva-canvas-loading').show();
-                    setTimeout(function() {
-                        if (sliders.zoom.current !== sliders.zoom.previous) {
-                            updateZoom(sliders.zoom.current);
-                        } else {
-                            updateCanvas();
+                    var timeout = 0;
+                    if (shouldAdjustLevels()) {
+                        // Only show the throbber if it will take a long time
+                        if (sliders.zoom.current > 2) {
+                            // The timeout is needed for the loading indicator to be shown
+                            timeout = 200;
+                            $('#diva-canvas-loading').fadeIn(timeout);
                         }
-                        $('#diva-canvas-loading').fadeOut(1000);
-                    }, 10);
+
+                        setTimeout(function() {
+                            if (sliders.zoom.current !== sliders.zoom.previous) {
+                                updateZoom(sliders.zoom.current);
+                            } else {
+                                updateCanvas();
+                                hideThrobber();
+                            }
+                        }, timeout);
+                    }
                 });
 
                 $('#diva-canvas-close').click(function() {
