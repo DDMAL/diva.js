@@ -541,23 +541,6 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                 $('#diva-canvas-wrapper').dragscrollable({
                     acceptPropagatedEvent: true
                 });
-
-                // Double-click to zoom in/out (with CTRL)
-                $('#diva-canvas-wrapper').dblclick(function(event) {
-                    var zoomChange = (event.ctrlKey) ? -1 : 1;
-                    var newZoomLevel = sliders.zoom.current + zoomChange;
-
-                    if (newZoomLevel >= settings.minZoomLevel && newZoomLevel <= settings.maxZoomLevel) {
-                        sliders.zoom.current = newZoomLevel;
-                        updateZoom(sliders.zoom.current);
-
-                        // We only need to update the slider label if the slider is zoom
-                        if (sliderMode == 'zoom') {
-                            updateSliderLabel();
-                            updateSliderValue();
-                        }
-                    }
-                });
             },
             pluginName: 'canvas',
             titleText: 'View the image on a canvas and adjust various settings',
