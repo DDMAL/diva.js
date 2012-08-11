@@ -115,6 +115,14 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
             return newImageData;
         };
 
+        // Determines whether or not we need to adjust this level - very simple
+        var shouldAdjust = function (mode) {
+            var thisChanged = sliders[mode].current !== sliders[mode].previous;
+            var thisNotDefault = sliders[mode].current !== sliders[mode].initial;
+
+            return thisChanged || thisNotDefault;
+        };
+
         var adjustLevels = function(aCanvas) {
             var brightness = sliders.brightness.current;
             var contrast = sliders.contrast.current;
@@ -129,12 +137,12 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
             var greenOffset = sliders.green.current;
             var blueOffset = sliders.blue.current;
 
-            var adjustRed = sliders.red.current !== sliders.red.previous;
-            var adjustGreen = sliders.green.current !== sliders.green.previous;
-            var adjustBlue = sliders.blue.current !== sliders.blue.previous;
+            var adjustRed = shouldAdjust('red');
+            var adjustGreen = shouldAdjust('green');
+            var adjustBlue = shouldAdjust('blue');
 
-            var adjustBrightness = sliders.brightness.current !== sliders.brightness.previous;
-            var adjustContrast = sliders.contrast.current !== sliders.contrast.previous;
+            var adjustBrightness = shouldAdjust('brightness');
+            var adjustContrast = shouldAdjust('contrast');
             var adjustOthers = adjustBrightness || adjustContrast;
 
             for (x = 0, width = imageData.width; x < width; x++) {
