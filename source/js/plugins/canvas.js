@@ -122,39 +122,74 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
             var pixelArray = imageData.data;
             var x, y, width, height, offset, r, g, b, newR, newG, newB;
             var brightMul = 1 + Math.min(settings.brightnessMax, Math.max(settings.brightnessMin, brightness)) / settings.brightnessMax;
+            var brightTimesContrast = brightMul * contrast;
+            var contrastOffset = 128 - (contrast * 128);
 
             var redOffset = sliders.red.current;
             var greenOffset = sliders.green.current;
             var blueOffset = sliders.blue.current;
 
+            var adjustRed = sliders.red.current !== sliders.red.previous;
+            var adjustGreen = sliders.green.current !== sliders.green.previous;
+            var adjustBlue = sliders.blue.current !== sliders.blue.previous;
+
+            var adjustBrightness = sliders.brightness.current !== sliders.brightness.previous;
+            var adjustContrast = sliders.contrast.current !== sliders.contrast.previous;
+            var adjustOthers = adjustBrightness || adjustContrast;
+
             for (x = 0, width = imageData.width; x < width; x++) {
                 for (y = 0, height = imageData.height; y < height; y++) {
                     offset = (y * width + x) * 4;
-                    // Adjust the red channel only if not black
+
                     r = pixelArray[offset];
-                    if (r) {
-                        r = Math.max(Math.min(r + redOffset, 255), 0);
-                    }
-
                     g = pixelArray[offset + 1];
-                    if (g) {
-                        g = Math.max(Math.min(g + greenOffset, 255), 0);
-                    }
-
                     b = pixelArray[offset + 2];
-                    if (b) {
-                        b = Math.max(Math.min(b + blueOffset, 255), 0);
-                    }
-                    
+
                     // Only do something if the pixel is not black originally
                     if (r + g + b > 0) {
-                        newR = r * brightMul * contrast + 128 - (contrast * 128);
-                        newG = g * brightMul * contrast + 128 - (contrast * 128);
-                        newB = b * brightMul * contrast + 128 - (contrast * 128);
+                        // Only adjust individual colour channels if necessary
+                        if (adjustRed && r) {
+                            r += redOffset;
+                            r = (r < 255) ? r : 255;
+                            r = (r > 0) ? r : 0;
+                        }
 
-                        pixelArray[offset] = (newR > 0) ? Math.min(newR, 255) : 0;
-                        pixelArray[offset + 1] = (newG > 0) ? Math.min(newG, 255) : 0;
-                        pixelArray[offset + 2] = (newB > 0) ? Math.min(newB, 255) : 0;
+                        if (adjustGreen && g) {
+                            g += greenOffset;
+                            g = (g < 255) ? g : 255;
+                            g = (g > 0) ? g : 0;
+                        }
+
+                        if (adjustBlue && b) {
+                            b += blueOffset;
+                            b = (b < 255) ? b : 255;
+                            b = (b > 0) ? b : 0;
+                        }
+
+                        // If we need to adjust brightness and/or contrast
+                        if (adjustOthers) {
+                            if (r) {
+                                r = r * brightTimesContrast + contrastOffset;
+                                r = (r < 255) ? r : 255;
+                                r = (r > 0) ? r : 0;
+                            }
+
+                            if (g) {
+                                g = g * brightTimesContrast + contrastOffset;
+                                g = (g < 255) ? g : 255;
+                                g = (g > 0) ? g : 0;
+                            }
+
+                            if (b) {
+                                b = b * brightTimesContrast + contrastOffset;
+                                b = (b < 255) ? b : 255;
+                                b = (b > 0) ? b : 0;
+                            }
+                        }
+
+                        pixelArray[offset] = r;
+                        pixelArray[offset + 1] = g;
+                        pixelArray[offset + 2] = b;
                     }
                 }
             }
