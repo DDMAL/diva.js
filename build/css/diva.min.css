@@ -1,6 +1,7 @@
 .hidden{display:none;}
 .grab{cursor:url("../img/openhand.cur"),pointer;}
 .grabbing{cursor:url("../img/closedhand.cur"),move !important;}
+.loading{background:url("../img/loading.gif") no-repeat center;}
 .full-width{width:100% !important;max-width:100% !important;}
 .full-height{height:100% !important;max-height:100% !important;}
 .prevent-selection{-webkit-touch-callout:none;-webkit-user-select:none;-khtml-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;}
@@ -42,7 +43,7 @@
 #diva-canvas-pane{background:#dddddd;margin:0 10px;padding-bottom:10px;}#diva-canvas-pane p{margin-left:10px;padding-top:10px;}#diva-canvas-pane p .link{cursor:pointer;}#diva-canvas-pane p .link:hover{text-decoration:underline;}
 #diva-canvas-mode{text-transform:capitalize;}
 #diva-canvas-slider{width:188px;margin:0 auto;display:block;}#diva-canvas-slider .handle{margin-left:-6px;}
-#diva-canvas-loading{display:none;}
+#diva-canvas-loading{z-index:110;display:none;position:absolute;width:50px;height:50px;background:url("../img/loading.gif") no-repeat center;background-color:#ffffff;border:1px solid #dddddd;-webkit-box-shadow:2px 2px 4px 0 rgba(0, 0, 0, 0.5);-moz-box-shadow:2px 2px 4px 0 rgba(0, 0, 0, 0.5);box-shadow:2px 2px 4px 0 rgba(0, 0, 0, 0.5);top:50%;left:50%;margin-left:-25px;margin-top:-25px;}
 #diva-canvas-minimap{height:210px;width:210px;margin:10px;cursor:crosshair;background:#000000;}
 #diva-canvas{position:absolute;left:0;right:0;margin:0 auto;z-index:107;cursor:url("../img/openhand.cur"),pointer;}
 #diva-canvas-actions div{height:18px;width:18px;background-repeat:no-repeat;cursor:pointer;position:fixed;top:12px;z-index:109;}#diva-canvas-actions div:hover{background-position:-20px 0;}
@@ -51,6 +52,4 @@
 #diva-map-viewbox{border:2px solid #99bbe8;position:absolute;top:10px;left:10px;cursor:crosshair;-webkit-touch-callout:none;-webkit-user-select:none;-khtml-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;}
 .overflow-hidden{overflow:hidden !important;}
 #diva-canvas-wrapper{z-index:106;position:absolute;top:0;left:0;bottom:0;right:0;overflow:scroll;}
-#zoom-loading{display:none;}
-#diva-canvas-apply{padding:5px;margin-bottom:5px;}
 .diva-download-icon{background:url('../img/plugins/download.png') no-repeat center;}
