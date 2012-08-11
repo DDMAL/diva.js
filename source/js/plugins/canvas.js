@@ -1,11 +1,12 @@
 /*
+
 Canvas plugin for diva.js
 Adds a little "tools" icon next to each image
-When clicked, brings up a fullscreen panel, where you can adjust the image
+
 */
 
 (function ($) {
-    window.divaPlugins.push((function() {
+    window.divaPlugins.push((function () {
         var canvas = {},
             map = {},
             settings = {},
@@ -24,12 +25,13 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
             rgbMin: -100
         };
 
-        // Define the main functions here
-        var toRadians = function(angle) {
+        // Convert an angle from degrees to radians
+        var toRadians = function (angle) {
             return angle * Math.PI / 180;
         };
 
-        var getNewCenter = function(currentCenter, angle) {
+        // Determine the new center of the page after rotating by the given angle
+        var getNewCenter = function (currentCenter, angle) {
             var x = currentCenter.x - canvas.centerX;
             // Take the negative because the rotation is counterclockwise
             var y = -(currentCenter.y - canvas.centerY);
@@ -41,19 +43,26 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
             return {'x': x, 'y': y};
         };
 
-        var rotateCanvas = function(aCanvas, angle) {
+        // Rotates the image on the given canvas by the given angle
+        var rotateCanvas = function (aCanvas, angle) {
             var context = aCanvas.context;
             var center = aCanvas.size / 2;
 
+            // Clear the canvas so that remnants of the old image don't show
             context.clearRect(0, 0, aCanvas.size, aCanvas.size);
+
+            // Do the rotation
             context.save();
             context.translate(center, center);
             context.rotate(toRadians(angle));
             context.drawImage(image, -(aCanvas.width/2), -(aCanvas.height/2), aCanvas.width, aCanvas.height);
             context.restore();
+
+            // Save the new pixel data so that it can later be adjusted in adjustLevels
             aCanvas.data = context.getImageData(0, 0, aCanvas.size, aCanvas.size);
         };
 
+        // Determine if we need to update the large canvas
         var shouldAdjustLevels = function () {
             // Returns true if something has been changed
             for (slider in sliders) {
@@ -65,13 +74,15 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
             return false;
         };
 
+        // Sets the "previous" value to the "current" value for every slider
         var updatePreviousLevels = function () {
             for (slider in sliders) {
                 sliders[slider].previous = sliders[slider].current;
             }
         };
 
-        var updateCanvas = function() {
+        // Update the large canvas (rotation, zooming, scrolling, pixel manipulation)
+        var updateCanvas = function () {
             var angle = sliders.rotation.current;
             var oldAngle = sliders.rotation.previous;
             var zoomLevel = sliders.zoom.current;
@@ -84,27 +95,32 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                 var topScroll = $('#diva-canvas-wrapper').scrollTop();
                 var leftOffset = settings.viewport.width / 2;
                 var topOffset = settings.viewport.height / 2;
+
+                // Then determine the new center (the same part of the image)
                 var newCenter = getNewCenter({x: leftScroll + leftOffset, y: topScroll + topOffset}, angle);
 
+                // Incorporate the zoom change ratio (would be 1 if no change)
                 var zoomChange = Math.pow(2, zoomLevel - oldZoomLevel);
                 var toLeftScroll = zoomChange * newCenter.x - leftOffset;
                 var toTopScroll = zoomChange * newCenter.y - topOffset;
 
+                // Rotate the large canvas
                 rotateCanvas(canvas, angle);
 
+                // Scroll to the new center
                 $('#diva-canvas-wrapper').scrollLeft(toLeftScroll);
                 $('#diva-canvas-wrapper').scrollTop(toTopScroll);
             }
 
-            // Only call adjustLevels again if something changed
+            // Only call adjustLevels again if we really need to (expensive)
             if (shouldAdjustLevels()) {
                 adjustLevels(canvas);
                 updatePreviousLevels();
             }
         };
 
-        // Returns a new array with copied image data etc
-        var copyImageData = function(aCanvas) {
+        // Copies the canvas' pixel array and returns the copy
+        var copyImageData = function (aCanvas) {
             var oldImageData = aCanvas.data;
             var newImageData = aCanvas.context.createImageData(oldImageData);
             var pixelArray = newImageData.data;
@@ -124,12 +140,15 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
             return thisChanged || thisNotDefault;
         };
 
-        var adjustLevels = function(aCanvas) {
-            var brightness = sliders.brightness.current;
-            var contrast = sliders.contrast.current;
+        var adjustLevels = function (aCanvas) {
+            // Copy the pixel array to avoid destructively modifying the original
             var imageData = copyImageData(aCanvas);
             var pixelArray = imageData.data;
-            var x, y, width, height, offset, r, g, b, newR, newG, newB;
+
+            // Store and calculate some scale factors and offsets
+            var brightness = sliders.brightness.current;
+            var contrast = sliders.contrast.current;
+
             var brightMul = 1 + Math.min(settings.brightnessMax, Math.max(settings.brightnessMin, brightness)) / settings.brightnessMax;
             var brightTimesContrast = brightMul * contrast;
             var contrastOffset = 128 - (contrast * 128);
@@ -138,6 +157,7 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
             var greenOffset = sliders.green.current;
             var blueOffset = sliders.blue.current;
 
+            // Determine whether or not we need to adjust certain things
             var adjustRed = shouldAdjust('red');
             var adjustGreen = shouldAdjust('green');
             var adjustBlue = shouldAdjust('blue');
@@ -145,6 +165,8 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
             var adjustBrightness = shouldAdjust('brightness');
             var adjustContrast = shouldAdjust('contrast');
             var adjustOthers = adjustBrightness || adjustContrast;
+
+            var x, y, width, height, offset, r, g, b;
 
             for (x = 0, width = imageData.width; x < width; x++) {
                 for (y = 0, height = imageData.height; y < height; y++) {
@@ -195,44 +217,55 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
             aCanvas.context.putImageData(imageData, 0, 0);
         };
 
-        var updateViewBox = function() {
+        // Update the box in the preview showing where you currently are
+        var updateViewbox = function () {
+            // Determine the top left corner coordinates based on our current position
             var cornerX = $('#diva-canvas-wrapper').scrollLeft() * map.scaleFactor + 10;
             var cornerY = $('#diva-canvas-wrapper').scrollTop() * map.scaleFactor + 10;
 
-            // Subtract 4 to compensate for the border
+            // Subtract 4 to compensate for the borders
             var height = Math.min(Math.round(settings.viewport.height * map.scaleFactor), settings.mapSize) - 4;
             var width = Math.min(Math.round(settings.viewport.width * map.scaleFactor), settings.mapSize) - 4;
+
             $('#diva-map-viewbox').height(height).width(width).css({top: cornerY, left: cornerX});
         };
 
-        var loadMap = function(image) {
+        // Draw the thumbnail preview in the toolbar
+        var loadMap = function (image) {
             map.canvas = document.getElementById('diva-canvas-minimap');
             map.size = settings.mapSize;
             map.canvas.width = map.size;
             map.canvas.height = map.size;
 
+            // Give it a black background
             map.context = map.canvas.getContext('2d');
             map.context.fillRect(0, 0, map.size, map.size);
+
+            // Determine the coordinates/dimensions of the preview
             map.scaleFactor = settings.mapSize / canvas.size;
             map.cornerX = canvas.cornerX * map.scaleFactor;
             map.cornerY = canvas.cornerY * map.scaleFactor;
-            // Image width and height
             map.width = image.width * map.scaleFactor;
             map.height = image.height * map.scaleFactor;
 
+            // Draw the image within the map (no adjustments) and save the pixel array
             map.context.drawImage(image, map.cornerX, map.cornerY, map.width, map.height);
             map.data = map.context.getImageData(0, 0, settings.mapSize, settings.mapSize);
 
-            updateViewBox();
+            // Make the viewbox reflect where we currently are
+            updateViewbox();
         };
 
-        var loadCanvas = function(imageURL, callback) {
+        // Load the image within the large and small canvases
+        var loadCanvas = function (imageURL, callback) {
             image = new Image();
             image.src = imageURL;
-            image.onload = function() {
+
+            image.onload = function () {
+                // Determine the size of the (square) canvas based on the hypoteneuse
                 canvas.size = Math.sqrt(image.width * image.width + image.height * image.height);
 
-                // Resize canvas if necessary
+                // Resize the canvas if necessary
                 canvas.canvas = document.getElementById('diva-canvas');
                 canvas.canvas.width = canvas.size;
                 canvas.canvas.height = canvas.size;
@@ -243,6 +276,7 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                 canvas.centerX = canvas.size / 2;
                 canvas.centerY = canvas.size / 2;
 
+                // Draw the image to the large canvas, and save the pixel array
                 canvas.context = canvas.canvas.getContext('2d');
                 canvas.context.drawImage(image, canvas.cornerX, canvas.cornerY, canvas.width, canvas.height);
                 canvas.data = canvas.context.getImageData(0, 0, canvas.size, canvas.size);
@@ -252,13 +286,15 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                     loadMap(image);
                 }
 
+                // If the callback function exists, execute it (for zooming)
                 if (typeof(callback) == 'function') {
                     callback.call(callback);
                 }
             };
         };
 
-        var getImageURL = function(zoomLevel) {
+        // Returns the URL for the image at the specified zoom level
+        var getImageURL = function (zoomLevel) {
             var width = settings.zoomWidthRatio * Math.pow(2, zoomLevel);
 
             if (settings.canvasProxyURL) {
@@ -268,25 +304,31 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
             }
         };
 
+        // Hides the loading indicator icon
         var hideThrobber = function () {
             $('#diva-canvas-loading').fadeOut('slow');
         };
 
-        var updateZoom = function(newZoomLevel, callback) {
+        // Handles zooming in when the zoom slider is changed and the change is applied
+        var updateZoom = function (newZoomLevel, callback) {
             settings.zoomLevel = newZoomLevel;
-            // Figure out the new width based on the old zoom level & width
+
+            // Figure out the URL for the image at this new zoom level
             var imageURL = getImageURL(newZoomLevel);
 
-            loadCanvas(imageURL, function() {
+            loadCanvas(imageURL, function () {
                 updateCanvas();
+
+                // Set the new scale factor and update the viewbox
                 map.scaleFactor = map.size / canvas.size;
-                updateViewBox();
+                updateViewbox();
+
                 hideThrobber();
             });
         };
 
         return {
-            init: function(divaSettings) {
+            init: function (divaSettings) {
                 // Save some settings
                 settings = $.extend(settings, defaults, divaSettings);
                 settings.viewport = {
@@ -423,7 +465,11 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                     canvasActions +
                     canvasLoading +
                 '</div>';
+
                 $('body').append(canvasString);
+
+                // Save the size of the map, as defined in the CSS
+                settings.mapSize = $('#diva-canvas-minimap').width();
 
                 // Adjust the slider when something is clicked, and make that the current mode
                 var sliderMode;
@@ -475,14 +521,13 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                     });
                 };
 
+                // Update the thumbnail preview (called when a slider is moved/reset)
                 var updateMap = function () {
                     rotateCanvas(map, sliders.rotation.current);
                     adjustLevels(map);
                 };
 
-                // Save the size of the map, as defined in the CSS
-                settings.mapSize = $('#diva-canvas-minimap').width();
-
+                // Reset all the sliders to the default value
                 $('#diva-canvas-reset-all').click(function () {
                     for (slider in sliders) {
                         sliders[slider].current = sliders[slider].initial;
@@ -496,6 +541,7 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                     updateMap();
                 });
 
+                // Reset the current slider to the default value
                 $('#diva-canvas-reset').click(function () {
                     // Update the current value and the slider
                     sliders[sliderMode].current = sliders[sliderMode].initial;
@@ -506,7 +552,8 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                     updateMap();
                 });
 
-                $('#diva-canvas-apply').click(function() {
+                // Update the large canvas when the apply button is clicked
+                $('#diva-canvas-apply').click(function () {
                     var timeout = 0;
                     if (shouldAdjustLevels()) {
                         // Only show the throbber if it will take a long time
@@ -516,7 +563,7 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                             $('#diva-canvas-loading').fadeIn(timeout);
                         }
 
-                        setTimeout(function() {
+                        setTimeout(function () {
                             if (sliders.zoom.current !== sliders.zoom.previous) {
                                 updateZoom(sliders.zoom.current);
                             } else {
@@ -527,7 +574,8 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                     }
                 });
 
-                $('#diva-canvas-close').click(function() {
+                // Handle exiting canvas mode
+                $('#diva-canvas-close').click(function () {
                     $('body').removeClass('overflow-hidden');
 
                     // Clear the canvases
@@ -544,31 +592,35 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                     updateSlider('contrast');
                 });
 
+                // Hide the toolbar when the minimise icon is clicked
                 $('#diva-canvas-minimise').click(function () {
                     $('#diva-canvas-tools').slideToggle('fast', function () {
                         $('#diva-canvas-minimise').toggleClass('active');
                     });
                 });
 
-                $(window).resize(function() {
+                // Adjust the size of the canvas when the browser window is resized
+                $(window).resize(function () {
                     settings.viewport = {
-                        height: window.innerHeight - settings.scrollbarWidth,
-                        width: window.innerWidth - settings.scrollbarWidth
+                        height: window.innerHeight - divaSettings.scrollbarWidth,
+                        width: window.innerWidth - divaSettings.scrollbarWidth
                     };
 
                     // Always update the settings but only redraw if in canvas
                     if (settings.inCanvas) {
-                        updateViewBox();
+                        updateViewbox();
                     }
                 });
 
-                $('#diva-canvas-wrapper').scroll(function() {
+                // Update the viewbox when the large canvas is scrolled
+                $('#diva-canvas-wrapper').scroll(function () {
                     if (settings.inCanvas) {
-                        updateViewBox();
+                        updateViewbox();
                     }
                 });
 
-                $('#diva-canvas-minimap, #diva-map-viewbox').mouseup(function(event) {
+                // Handle clicking/dragging of the viewbox (should scroll the large canvas)
+                $('#diva-canvas-minimap, #diva-map-viewbox').mouseup(function (event) {
                     var offsetY = 55;
                     var offsetX = 20;
                     var scaledX = (event.pageX - offsetX) / map.scaleFactor;
@@ -578,25 +630,27 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                     $('#diva-canvas-wrapper').scrollLeft(scaledX - settings.viewport.width / 2);
                 });
 
-                // Drag scroll
-                $('#diva-canvas').mousedown(function() {
+                // Enable drag scroll
+                $('#diva-canvas').mousedown(function () {
                     $(this).addClass('grabbing');
-                }).mouseup(function() {
+                }).mouseup(function () {
                     $(this).removeClass('grabbing');
                 });
+
                 $('#diva-canvas-wrapper').dragscrollable({
                     acceptPropagatedEvent: true
                 });
             },
             pluginName: 'canvas',
             titleText: 'View the image on a canvas and adjust various settings',
-            setupHook: function(divaSettings) {
+            setupHook: function (divaSettings) {
+                // Save the min and max zoom level, and update the zoom slider
                 settings.minZoomLevel = divaSettings.minZoomLevel;
                 settings.maxZoomLevel = divaSettings.maxZoomLevel;
                 sliders.zoom.min = settings.minZoomLevel;
                 sliders.zoom.max = settings.maxZoomLevel;
             },
-            handleClick: function(event, divaSettings) {
+            handleClick: function (event, divaSettings) {
                 var zoomLevel = divaSettings.zoomLevel;
 
                 sliders.zoom.initial = zoomLevel;
@@ -620,6 +674,7 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
 
                 loadCanvas(imageURL);
             },
+            // Used only for running the unit tests
             destroy: function () {
                 $('#diva-canvas-backdrop').remove();
             }
