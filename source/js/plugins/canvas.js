@@ -158,40 +158,28 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                         // Only adjust individual colour channels if necessary
                         if (adjustRed && r) {
                             r += redOffset;
-                            r = (r < 255) ? r : 255;
-                            r = (r > 0) ? r : 0;
                         }
 
                         if (adjustGreen && g) {
                             g += greenOffset;
-                            g = (g < 255) ? g : 255;
-                            g = (g > 0) ? g : 0;
                         }
 
                         if (adjustBlue && b) {
                             b += blueOffset;
-                            b = (b < 255) ? b : 255;
-                            b = (b > 0) ? b : 0;
                         }
 
                         // If we need to adjust brightness and/or contrast
                         if (adjustOthers) {
                             if (r) {
                                 r = r * brightTimesContrast + contrastOffset;
-                                r = (r < 255) ? r : 255;
-                                r = (r > 0) ? r : 0;
                             }
 
                             if (g) {
                                 g = g * brightTimesContrast + contrastOffset;
-                                g = (g < 255) ? g : 255;
-                                g = (g > 0) ? g : 0;
                             }
 
                             if (b) {
                                 b = b * brightTimesContrast + contrastOffset;
-                                b = (b < 255) ? b : 255;
-                                b = (b > 0) ? b : 0;
                             }
                         }
 
