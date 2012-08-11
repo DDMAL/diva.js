@@ -20,7 +20,8 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
             contrastMax: 3,
             contrastMin: -1,
             contrastStep: 0.05,
-            rgbMax: 100
+            rgbMax: 100,
+            rgbMin: -100
         };
 
         // Define the main functions here
@@ -333,21 +334,21 @@ When clicked, brings up a fullscreen panel, where you can adjust the image
                     },
                     'red': {
                         'initial': 0,
-                        'min': 0,
+                        'min': settings.rgbMin,
                         'max': settings.rgbMax,
                         'step': 1,
                         'title': 'Adjust the red channel'
                     },
                     'green': {
                         'initial': 0,
-                        'min': 0,
+                        'min': settings.rgbMin,
                         'max': settings.rgbMax,
                         'step': 1,
                         'title': 'Adjust the green channel'
                     },
                     'blue': {
                         'initial': 0,
-                        'min': 0,
+                        'min': settings.rgbMin,
                         'max': settings.rgbMax,
                         'step': 1,
                         'title': 'Adjust the blue channel'
