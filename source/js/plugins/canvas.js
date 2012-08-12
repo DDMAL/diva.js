@@ -220,8 +220,8 @@ Adds a little "tools" icon next to each image
         // Update the box in the preview showing where you currently are
         var updateViewbox = function () {
             // Determine the top left corner coordinates based on our current position
-            var cornerX = $('#diva-canvas-wrapper').scrollLeft() * map.scaleFactor + 10;
-            var cornerY = $('#diva-canvas-wrapper').scrollTop() * map.scaleFactor + 10;
+            var cornerX = $('#diva-canvas-wrapper').scrollLeft() * map.scaleFactor;
+            var cornerY = $('#diva-canvas-wrapper').scrollTop() * map.scaleFactor;
 
             // Subtract 4 to compensate for the borders
             var height = Math.min(Math.round(settings.viewport.height * map.scaleFactor), settings.mapSize) - 4;
@@ -434,38 +434,40 @@ Adds a little "tools" icon next to each image
                 var canvasButtons = canvasButtonsList.join('');
 
                 var canvasTools = '<div id="diva-canvas-tools">' +
-                    '<div id="diva-map-viewbox"></div>' +
-                    '<canvas id="diva-canvas-minimap"></canvas>' +
-                    '<div id="diva-canvas-buttons">' +
-                        canvasButtons +
+                    '<div id="diva-canvas-toolbar">' +
+                        '<div id="diva-canvas-close" title="Return to the document viewer"></div>' +
+                        '<div id="diva-canvas-minimise" title="Minimise the toolbar"></div>' +
+                        '<span id="diva-canvas-info">Test</span>' +
                     '</div>' +
-                    '<div id="diva-canvas-pane">' +
-                        '<p id="diva-canvas-tooltip">' +
-                            '<span id="diva-canvas-mode">contrast</span>: ' +
-                            '<span id="diva-canvas-value">0</span> ' +
-                            '<span id="diva-canvas-reset" class="link">(Reset)</span>' +
-                        '</p>' +
-                        '<div id="diva-canvas-slider"></div>' +
-                    '</div>' +
-                    '<br />' +
-                    '<div class="action-buttons">' +
-                        '<a href="#" id="diva-canvas-reset-all">Reset all</a>' +
-                        '<a href="#" id="diva-canvas-apply">Apply</a>' +
+                    '<div id="diva-canvas-toolwindow">' +
+                        '<div id="diva-map-viewbox"></div>' +
+                        '<canvas id="diva-canvas-minimap"></canvas>' +
+                        '<div id="diva-canvas-buttons">' +
+                            canvasButtons +
+                        '</div>' +
+                        '<div id="diva-canvas-pane">' +
+                            '<p id="diva-canvas-tooltip">' +
+                                '<span id="diva-canvas-mode">contrast</span>: ' +
+                                '<span id="diva-canvas-value">0</span> ' +
+                                '<span id="diva-canvas-reset" class="link">(Reset)</span>' +
+                            '</p>' +
+                            '<div id="diva-canvas-slider"></div>' +
+                        '</div>' +
+                        '<br />' +
+                        '<div class="action-buttons">' +
+                            '<a href="#" id="diva-canvas-reset-all">Reset all</a>' +
+                            '<a href="#" id="diva-canvas-apply">Apply</a>' +
+                        '</div>' +
                     '</div>' +
                 '</div>';
                 var canvasWrapper = '<div id="diva-canvas-wrapper">' +
                     '<canvas id="diva-canvas"></canvas>' +
-                '</div>';
-                var canvasActions = '<div id="diva-canvas-actions">' +
-                    '<div id="diva-canvas-close" title="Return to the document viewer"></div>' +
-                    '<div id="diva-canvas-minimise" title="Minimise the toolbar"></div>' +
                 '</div>';
                 var canvasLoading = '<div id="diva-canvas-loading">' +
                 '</div>';
                 var canvasString = '<div id="diva-canvas-backdrop">' +
                     canvasTools +
                     canvasWrapper +
-                    canvasActions +
                     canvasLoading +
                 '</div>';
 
@@ -597,9 +599,7 @@ Adds a little "tools" icon next to each image
 
                 // Hide the toolbar when the minimise icon is clicked
                 $('#diva-canvas-minimise').click(function () {
-                    $('#diva-canvas-tools').slideToggle('fast', function () {
-                        $('#diva-canvas-minimise').toggleClass('active');
-                    });
+                    $('#diva-canvas-toolwindow').slideToggle('fast');
                 });
 
                 // Adjust the size of the canvas when the browser window is resized
@@ -624,10 +624,11 @@ Adds a little "tools" icon next to each image
 
                 // Handle clicking/dragging of the viewbox (should scroll the large canvas)
                 $('#diva-canvas-minimap, #diva-map-viewbox').mouseup(function (event) {
-                    var offsetY = 55;
-                    var offsetX = 20;
-                    var scaledX = (event.pageX - offsetX) / map.scaleFactor;
-                    var scaledY = (event.pageY - offsetY) / map.scaleFactor;
+                    // Consider caching this eventually (can't be done in init though)
+                    var offset = $('#diva-canvas-minimap').offset();
+
+                    var scaledX = (event.pageX - offset.left) / map.scaleFactor;
+                    var scaledY = (event.pageY - offset.top) / map.scaleFactor;
 
                     $('#diva-canvas-wrapper').scrollTop(scaledY - settings.viewport.height / 2);
                     $('#diva-canvas-wrapper').scrollLeft(scaledX - settings.viewport.width / 2);
@@ -680,6 +681,9 @@ Adds a little "tools" icon next to each image
                 settings.zoomWidthRatio = width / Math.pow(2, zoomLevel);
                 settings.filename = filename;
                 var imageURL = getImageURL(zoomLevel);
+
+                // Change the title of the page
+                $('#diva-canvas-info').text($(page).attr('title'));
 
                 loadCanvas(imageURL);
             },

@@ -286,12 +286,15 @@
 #diva-canvas-tools {
   color: #333333;
   position: fixed;
-  top: 45px;
+  top: 10px;
   left: 10px;
   width: 230px;
   z-index: 108;
   background: #ffffff;
   padding-bottom: 10px;
+  -webkit-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
+  -moz-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
+  box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
 }
 #diva-canvas-tools .action-buttons {
   clear: both;
@@ -307,13 +310,41 @@
 }
 #diva-canvas-tools .action-buttons a:last-child {
   border-left: 0;
-  margin-right: 10px;
 }
 #diva-canvas-tools .action-buttons a:hover {
   background: #fdfdfd;
 }
-#diva-canvas-buttons {
-  margin: 0 10px;
+#diva-canvas-toolbar {
+  height: 16px;
+  padding: 10px;
+  padding-bottom: 0;
+}
+#diva-canvas-toolbar div {
+  height: 16px;
+  width: 16px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+  z-index: 109;
+  display: inline-block;
+  margin-right: 5px;
+  background-image: url("../img/actions.png");
+}
+#diva-canvas-toolbar span {
+  vertical-align: top;
+  float: right;
+}
+#diva-canvas-toolwindow {
+  position: relative;
+  margin: 10px;
+}
+#diva-canvas-close:hover {
+  background-position: -16px 0;
+}
+#diva-canvas-minimise {
+  background-position: -48px 0;
+}
+#diva-canvas-minimise:hover {
+  background-position: -32px 0;
 }
 #diva-canvas-buttons div {
   cursor: pointer;
@@ -378,7 +409,6 @@
 }
 #diva-canvas-pane {
   background: #dddddd;
-  margin: 0 10px;
   padding-bottom: 10px;
 }
 #diva-canvas-pane p {
@@ -422,8 +452,8 @@
 #diva-canvas-minimap {
   height: 210px;
   width: 210px;
-  margin: 10px;
   cursor: crosshair;
+  margin-bottom: 10px;
   background: #000000;
 }
 #diva-canvas {
@@ -433,32 +463,6 @@
   margin: 0 auto;
   z-index: 107;
   cursor: url("../img/openhand.cur"), pointer;
-}
-#diva-canvas-actions div {
-  height: 18px;
-  width: 18px;
-  background-repeat: no-repeat;
-  cursor: pointer;
-  position: fixed;
-  top: 12px;
-  z-index: 109;
-}
-#diva-canvas-actions div:hover {
-  background-position: -20px 0;
-}
-#diva-canvas-close {
-  background-image: url("../img/close.png");
-  left: 12px;
-}
-#diva-canvas-minimise {
-  background-image: url("../img/minimise.png");
-  left: 42px;
-}
-#diva-canvas-minimise.active {
-  background-position: -40px 0;
-}
-#diva-canvas-minimise.active:hover {
-  background-position: -60px 0;
 }
 #diva-map-viewbox {
   border: 2px solid #99bbe8;

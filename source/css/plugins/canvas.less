@@ -41,12 +41,13 @@
 #diva-canvas-tools {
     color: @canvasToolsText;
     position: fixed;
-    top: 45px;
+    top: 10px;
     left: 10px;
     width: @toolsWidth;
     z-index: @canvasZIndex + 3;
     background: @canvasToolsBg;
     padding-bottom: 10px;
+    .pretty-shadow;
 
     .action-buttons {
         clear: both;
@@ -62,7 +63,6 @@
 
             &:last-child {
                 border-left: 0;
-                margin-right: 10px;
             }
 
             &:hover {
@@ -72,9 +72,46 @@
     }
 }
 
-#diva-canvas-buttons {
-    margin: 0 10px;
+#diva-canvas-toolbar {
+    height: 16px;
+    padding: 10px;
+    padding-bottom: 0;
+    div {
+        .square(16px);
+        background-repeat: no-repeat;
+        cursor: pointer;
+        z-index: @canvasZIndex + 4;
+        display: inline-block;
+        margin-right: 5px;
+        background-image: url("@{iconPath}actions.png");
+    }
+    span {
+        vertical-align: top;
+        float: right;
+    }
+}
 
+#diva-canvas-toolwindow {
+    // Needs to be set to ensure the viewbox is hidden when minimising
+    position: relative;
+    margin: 10px;
+}
+
+#diva-canvas-close {
+    &:hover {
+        background-position: -16px 0;
+    }
+}
+
+#diva-canvas-minimise {
+    background-position: -48px 0;
+
+    &:hover {
+        background-position: -32px 0;
+    }
+}
+
+#diva-canvas-buttons {
     div {
         cursor: pointer;
         background-image: url("@{iconPath}plugins/canvas-buttons.png");
@@ -128,7 +165,6 @@
 
 #diva-canvas-pane {
     background: @canvasPaneBg;
-    margin: 0 10px;
     padding-bottom: 10px;
 
     p {
@@ -177,8 +213,8 @@
 
 #diva-canvas-minimap {
     .square(@toolsWidth - 20px);
-    margin: 10px;
     cursor: crosshair;
+    margin-bottom: 10px;
     background: @canvasPreviewBg;
 }
 
@@ -190,39 +226,6 @@
     margin: 0 auto;
     z-index: @canvasZIndex + 2;
     .grab;
-}
-
-#diva-canvas-actions {
-    div {
-        .square(18px);
-        background-repeat: no-repeat;
-        cursor: pointer;
-        position: fixed;
-        top: 12px;
-        z-index: @canvasZIndex + 4;
-
-        &:hover {
-            background-position: -20px 0;
-        }
-    }
-}
-
-#diva-canvas-close {
-    background-image: url("@{iconPath}close.png");
-    left: 12px;
-}
-
-#diva-canvas-minimise {
-    background-image: url("@{iconPath}minimise.png");
-    left: 42px;
-
-    &.active {
-        background-position: -40px 0;
-
-        &:hover {
-            background-position: -60px 0;
-        }
-    }
 }
 
 #diva-map-viewbox {
