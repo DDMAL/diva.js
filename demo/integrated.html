@@ -23,7 +23,9 @@
             iipServerURL: "http://coltrane.music.mcgill.ca/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/beromunster/",
             divaserveURL: "demo.php",
             imageDir: "beromunster",
-            canvasProxyURL: "canvas.php",
+            canvasPlugin: {
+                proxyURL: 'canvas.php'
+            }
             contained: true
         });
         var dv = $('#diva-wrapper').data('diva');

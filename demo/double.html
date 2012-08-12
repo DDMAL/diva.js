@@ -19,7 +19,9 @@
             iipLeftURL: 'http://ddmal.music.mcgill.ca/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/beromunster/',
             iipRightURL: 'http://ddmal.music.mcgill.ca/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/beromunster/',
             divaserveURL: 'demo.php',
-            canvasProxyURL: 'canvas.php',
+            canvasPlugin: {
+                proxyURL: 'canvas.php'
+            }
             leftImageDir: 'beromunster',
             rightImageDir: 'beromunster',
             resizeOffset: 20,
@@ -48,7 +50,7 @@
             imageDir: settings.leftImageDir,
             fixedHeightGrid: false,
             onGrid: onGrid,
-            canvasProxyURL: settings.canvasProxyURL,
+            canvasPlugin: settings.canvasPlugin,
             onScroll: function(scrollSoFar) {
                 if (lockViewers) {
                     $('#2-diva-outer').scrollTop(scrollSoFar - firstScroll + secondScroll);
@@ -66,7 +68,7 @@
             divaserveURL: settings.divaserveURL,
             imageDir: settings.rightImageDir,
             onGrid: onGrid,
-            canvasProxyURL: settings.canvasProxyURL,
+            canvasPlugin: settings.canvasPlugin,
             onScroll: function(scrollSoFar) {
                 if (lockViewers) {
                     $('#1-diva-outer').scrollTop(scrollSoFar - secondScroll + firstScroll);

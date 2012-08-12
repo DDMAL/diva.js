@@ -297,8 +297,8 @@ Adds a little "tools" icon next to each image
         var getImageURL = function (zoomLevel) {
             var width = settings.zoomWidthRatio * Math.pow(2, zoomLevel);
 
-            if (settings.canvasProxyURL) {
-                return settings.canvasProxyURL + "?f=" + settings.filename + "&w=" + width;
+            if (settings.proxyURL) {
+                return settings.proxyURL + "?f=" + settings.filename + "&w=" + width;
             } else {
                 return settings.iipServerURL + settings.filename + '&WID=' + width + '&CVT=JPG';
             }
@@ -329,13 +329,16 @@ Adds a little "tools" icon next to each image
 
         return {
             init: function (divaSettings) {
-                // Save some settings
-                settings = $.extend(settings, defaults, divaSettings);
+                // Override all the configurable settings defined under canvasPlugin
+                $.extend(settings, defaults, divaSettings.canvasPlugin);
+
                 settings.viewport = {
-                    height: window.innerHeight - settings.scrollbarWidth,
-                    width: window.innerWidth - settings.scrollbarWidth
+                    height: window.innerHeight - divaSettings.scrollbarWidth,
+                    width: window.innerWidth - divaSettings.scrollbarWidth
                 };
+
                 settings.inCanvas = false;
+                settings.iipServerURL = divaSettings.iipServerURL;
 
                 // Set up the settings for the sliders/icons
                 sliders = {
@@ -640,6 +643,12 @@ Adds a little "tools" icon next to each image
                 $('#diva-canvas-wrapper').dragscrollable({
                     acceptPropagatedEvent: true
                 });
+
+                // Execute the onInit callback function, if defined
+                if (typeof settings.onInit === 'function') {
+                    // The context is the diva instance
+                    settings.onInit.call(self, settings);
+                }
             },
             pluginName: 'canvas',
             titleText: 'View the image on a canvas and adjust various settings',
