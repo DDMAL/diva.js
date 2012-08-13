@@ -350,13 +350,24 @@ Adds a little "tools" icon next to each image
         // If any modifications have been applied, save them to localStorage
         var saveSettings = function () {
             var sliderSettings = {};
+            var changed = false;
+            var storageKey = settings.localStoragePrefix + settings.filename;
+
             for (slider in sliders) {
                 if (sliders[slider].previous !== sliders[slider].initial) {
                     sliderSettings[slider] = sliders[slider].previous;
+                    changed = true;
                 }
             }
 
-            localStorage.setObject(settings.localStoragePrefix + settings.filename, sliderSettings);
+            // If modifications need to be saved, update the canvas plugin icon
+            if (changed) {
+                settings.pluginIcon.addClass('new');
+                localStorage.setObject(storageKey, sliderSettings);
+            } else {
+                settings.pluginIcon.removeClass('new');
+                localStorage.removeItem(storageKey);
+            }
         };
 
         // Handles zooming in when the zoom slider is changed and the change is applied
@@ -387,6 +398,7 @@ Adds a little "tools" icon next to each image
 
                 settings.inCanvas = false;
                 settings.iipServerURL = divaSettings.iipServerURL;
+                settings.selector = divaSettings.selector;
 
                 // Set up the settings for the sliders/icons
                 sliders = {
@@ -695,6 +707,7 @@ Adds a little "tools" icon next to each image
                 var width = $(page).width() - 1;
                 var zoomLevel = divaSettings.zoomLevel;
                 settings.zoomWidthRatio = width / Math.pow(2, zoomLevel);
+                settings.pluginIcon = $(this);
 
                 settings.filename = filename;
                 sliders.zoom.initial = zoomLevel;
@@ -735,6 +748,14 @@ Adds a little "tools" icon next to each image
                 showThrobber();
 
                 loadCanvas(imageURL);
+            },
+            onPageLoad: function (pageIndex, filename) {
+                // If something exists for this page in localStorage, then change icon color
+                var storageKey = settings.localStoragePrefix + filename;
+
+                if (localStorage.getItem(storageKey) !== null) {
+                    $(settings.selector + 'page-' + pageIndex).find('.diva-canvas-icon').addClass('new');
+                }
             },
             // Used only for running the unit tests
             destroy: function () {

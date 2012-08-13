@@ -34,7 +34,11 @@
 }
 
 .plugin-icon(@plugin) {
-    background: url('@{iconPath}plugins/@{plugin}.png') no-repeat center;
+    background: url('@{iconPath}plugins/@{plugin}.png') no-repeat;
+    background-position: left center;
+    &:hover {
+        background-position: -25px center;
+    }
 }
 
 .grab {
