@@ -253,7 +253,12 @@ window.divaPlugins = [];
                 $(settings.innerSelector).append('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width: ' + width + 'px; height: ' + height + 'px;" class="diva-document-page" title="Page ' + (pageIndex + 1) + '" data-index="' + pageIndex  + '" data-filename="' + filename + '">' + settings.pageTools + '</div>');
 
                 // Call the callback function
-                executeCallback(settings.onPageLoad, pageIndex);
+                executeCallback(settings.onPageLoad, pageIndex, filename);
+
+                // Execute the callback functions for any of the enabled plugins
+                for (plugin in settings.plugins) {
+                    executeCallback(settings.plugins[plugin].onPageLoad, pageIndex, filename);
+                }
             }
 
             // There are still tiles to load, so try to load those (after a delay)
