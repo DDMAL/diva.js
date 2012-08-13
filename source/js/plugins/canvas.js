@@ -11,7 +11,8 @@ Adds a little "tools" icon next to each image
             map = {},
             settings = {},
             image,
-            sliders;
+            sliders,
+            sliderMode;
 
         // Set up some default settings (can be overridden the normal way)
         var defaults = {
@@ -79,6 +80,12 @@ Adds a little "tools" icon next to each image
             for (slider in sliders) {
                 sliders[slider].previous = sliders[slider].current;
             }
+        };
+
+        // Update the thumbnail preview (called when a slider is moved/reset)
+        var updateMap = function () {
+            rotateCanvas(map, sliders.rotation.current);
+            adjustLevels(map);
         };
 
         // Update the large canvas (rotation, zooming, scrolling, pixel manipulation)
@@ -293,6 +300,13 @@ Adds a little "tools" icon next to each image
             };
         };
 
+        var updateSliderLabel = function () {
+            var thisSlider = sliders[sliderMode];
+            var value = thisSlider.current;
+            var stringValue = (thisSlider.transform) ? thisSlider.transform(value) : value;
+            $('#diva-canvas-value').html(stringValue);
+        };
+
         // Returns the URL for the image at the specified zoom level
         var getImageURL = function (zoomLevel) {
             var width = settings.zoomWidthRatio * Math.pow(2, zoomLevel);
@@ -477,7 +491,6 @@ Adds a little "tools" icon next to each image
                 settings.mapSize = $('#diva-canvas-minimap').width();
 
                 // Adjust the slider when something is clicked, and make that the current mode
-                var sliderMode;
                 $('#diva-canvas-buttons div').click(function () {
                     $('#diva-canvas-buttons .clicked').removeClass('clicked');
                     updateSlider($(this).attr('class'));
@@ -513,23 +526,10 @@ Adds a little "tools" icon next to each image
                     }
                 });
 
-                var updateSliderLabel = function () {
-                    var thisSlider = sliders[sliderMode];
-                    var value = thisSlider.current;
-                    var stringValue = (thisSlider.transform) ? thisSlider.transform(value) : value;
-                    $('#diva-canvas-value').html(stringValue);
-                };
-
                 var updateSliderValue = function () {
                     $('#diva-canvas-slider').slider({
                         value: sliders[sliderMode].current
                     });
-                };
-
-                // Update the thumbnail preview (called when a slider is moved/reset)
-                var updateMap = function () {
-                    rotateCanvas(map, sliders.rotation.current);
-                    adjustLevels(map);
                 };
 
                 // Reset all the sliders to the default value
