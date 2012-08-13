@@ -109,7 +109,6 @@ window.divaPlugins = [];
             mobileWebkit: false,        // Checks if the user is on a touch device (iPad/iPod/iPhone/Android)
             numClicks: 0,               // Hack for ctrl+double-clicking in Firefox on Mac
             numPages: 0,                // Number of pages in the array
-            numPlugins: 0,              // Holds the number of initialised plugins
             numRows: 0,                 // Number of rows
             pageLoadTimeout: 200,       // Number of milliseconds to wait before loading pages
             pages: [],                  // An array containing the data for all the pages
