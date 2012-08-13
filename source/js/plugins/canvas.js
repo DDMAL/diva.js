@@ -260,7 +260,8 @@ Adds a little "tools" icon next to each image
             map.context.drawImage(image, map.cornerX, map.cornerY, map.width, map.height);
             map.data = map.context.getImageData(0, 0, settings.mapSize, settings.mapSize);
 
-            // Make the viewbox reflect where we currently are
+            // Show the viewbox, make it reflect where we currently are
+            $('#diva-map-viewbox').show();
             updateViewbox();
         };
 
@@ -608,11 +609,12 @@ Adds a little "tools" icon next to each image
                 $('#diva-canvas-close').click(function () {
                     $('body').removeClass('overflow-hidden');
 
-                    // Clear the canvases
+                    // Clear the canvases and hide things
                     // This needs to be improved - not done properly?
                     canvas.context.clearRect(0, 0, canvas.size, canvas.size);
                     map.context.clearRect(0, 0, map.size, map.size);
                     $('#diva-canvas-backdrop').hide();
+                    $('#diva-map-viewbox').hide();
 
                     // Reset everything
                     resetSliders();
