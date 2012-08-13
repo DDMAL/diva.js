@@ -21,8 +21,8 @@ Adds a little "tools" icon next to each image
             contrastMax: 3,
             contrastMin: -1,
             contrastStep: 0.05,
-            rgbMax: 100,
-            rgbMin: -100
+            rgbMax: 50,
+            rgbMin: -50
         };
 
         // Convert an angle from degrees to radians
