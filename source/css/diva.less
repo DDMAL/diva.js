@@ -117,15 +117,14 @@
 
             .diva-page-tools {
                 position: absolute;
-                top: -25px;
+                top: -@pluginIconSize;
                 left: 0px;
-                width: 75px;
-                height: 25px;
+                height: @pluginIconSize;
                 z-index: 3;
 
                 div {
                     display: inline-block;
-                    .square(25px);
+                    .square(@pluginIconSize);
                     cursor: pointer;
                 }
             }
