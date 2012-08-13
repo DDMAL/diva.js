@@ -318,6 +318,15 @@ Adds a little "tools" icon next to each image
             }
         };
 
+        var showThrobber = function () {
+            // Only show the throbber if it will take a long time
+            if (sliders.zoom.current > 2) {
+                // The timeout is needed for the loading indicator to be shown
+                timeout = 200;
+                $('#diva-canvas-loading').fadeIn(timeout);
+            }
+        };
+
         // Hides the loading indicator icon
         var hideThrobber = function () {
             $('#diva-canvas-loading').fadeOut('slow');
@@ -561,12 +570,7 @@ Adds a little "tools" icon next to each image
                 $('#diva-canvas-apply').click(function () {
                     var timeout = 0;
                     if (shouldAdjustLevels()) {
-                        // Only show the throbber if it will take a long time
-                        if (sliders.zoom.current > 2) {
-                            // The timeout is needed for the loading indicator to be shown
-                            timeout = 200;
-                            $('#diva-canvas-loading').fadeIn(timeout);
-                        }
+                        showThrobber();
 
                         setTimeout(function () {
                             if (sliders.zoom.current !== sliders.zoom.previous) {
