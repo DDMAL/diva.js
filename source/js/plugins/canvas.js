@@ -613,6 +613,7 @@ Adds a little "tools" icon next to each image
                     // This needs to be improved - not done properly?
                     canvas.context.clearRect(0, 0, canvas.size, canvas.size);
                     map.context.clearRect(0, 0, map.size, map.size);
+                    $('#diva-canvas-wrapper').scrollTop(0).scrollLeft(0);
                     $('#diva-canvas-backdrop').hide();
                     $('#diva-map-viewbox').hide();
 
