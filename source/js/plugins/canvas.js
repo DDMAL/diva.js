@@ -22,6 +22,7 @@ Adds a little "tools" icon next to each image
             contrastMax: 3,
             contrastMin: -1,
             contrastStep: 0.05,
+            localStoragePrefix: 'canvas-',
             rgbMax: 50,
             rgbMin: -50
         };
@@ -293,6 +294,13 @@ Adds a little "tools" icon next to each image
                     loadMap(image);
                 }
 
+                // Update the map and the canvas if necessary
+                updateMap();
+                updateCanvas(canvas);
+
+                // Hide the throbber if it is visible
+                hideThrobber();
+
                 // If the callback function exists, execute it (for zooming)
                 if (typeof(callback) == 'function') {
                     callback.call(callback);
@@ -305,6 +313,12 @@ Adds a little "tools" icon next to each image
             var value = thisSlider.current;
             var stringValue = (thisSlider.transform) ? thisSlider.transform(value) : value;
             $('#diva-canvas-value').html(stringValue);
+        };
+
+        var updateSliderValue = function () {
+            $('#diva-canvas-slider').slider({
+                value: sliders[sliderMode].current
+            });
         };
 
         // Returns the URL for the image at the specified zoom level
@@ -332,6 +346,18 @@ Adds a little "tools" icon next to each image
             $('#diva-canvas-loading').fadeOut('slow');
         };
 
+        // If any modifications have been applied, save them to localStorage
+        var saveSettings = function () {
+            var sliderSettings = {};
+            for (slider in sliders) {
+                if (sliders[slider].previous !== sliders[slider].initial) {
+                    sliderSettings[slider] = sliders[slider].previous;
+                }
+            }
+
+            localStorage.setObject(settings.localStoragePrefix + settings.filename, sliderSettings);
+        };
+
         // Handles zooming in when the zoom slider is changed and the change is applied
         var updateZoom = function (newZoomLevel, callback) {
             settings.zoomLevel = newZoomLevel;
@@ -340,13 +366,11 @@ Adds a little "tools" icon next to each image
             var imageURL = getImageURL(newZoomLevel);
 
             loadCanvas(imageURL, function () {
-                updateCanvas();
-
                 // Set the new scale factor and update the viewbox
                 map.scaleFactor = map.size / canvas.size;
                 updateViewbox();
 
-                hideThrobber();
+                saveSettings();
             });
         };
 
@@ -535,12 +559,6 @@ Adds a little "tools" icon next to each image
                     }
                 });
 
-                var updateSliderValue = function () {
-                    $('#diva-canvas-slider').slider({
-                        value: sliders[sliderMode].current
-                    });
-                };
-
                 // Reset all the sliders to the default value
                 $('#diva-canvas-reset-all').click(function () {
                     for (slider in sliders) {
@@ -578,6 +596,9 @@ Adds a little "tools" icon next to each image
                             } else {
                                 updateCanvas();
                                 hideThrobber();
+
+                                // Save modifications to localSetttings (also done in updateZoom callback)
+                                saveSettings();
                             }
                         }, timeout);
                     }
@@ -665,10 +686,35 @@ Adds a little "tools" icon next to each image
                 sliders.zoom.max = settings.maxZoomLevel;
             },
             handleClick: function (event, divaSettings) {
+                // loadCanvas() calls all the other necessary functions to load
+                var page = $(this).parent().parent();
+                var filename = $(page).attr('data-filename');
+                var width = $(page).width() - 1;
                 var zoomLevel = divaSettings.zoomLevel;
+                settings.zoomWidthRatio = width / Math.pow(2, zoomLevel);
 
+                settings.filename = filename;
                 sliders.zoom.initial = zoomLevel;
                 sliders.zoom.current = zoomLevel;
+
+                // Find the settings stored in localStorage, if they exist
+                var sliderSettings = localStorage.getObject(settings.localStoragePrefix + settings.filename);
+                if (sliderSettings) {
+                    for (slider in sliderSettings) {
+                        sliders[slider].current = sliderSettings[slider];
+
+                        // If the current slider's value has changed, update it
+                        if (slider === sliderMode) {
+                            updateSliderLabel();
+                            updateSliderValue();
+                        }
+
+                        if (slider === 'zoom') {
+                            zoomLevel = sliderSettings[slider];
+                        }
+                    }
+                }
+
                 sliders.zoom.previous = zoomLevel;
 
                 // Prevent scroll in body, and show the canvas backdrop
@@ -678,16 +724,12 @@ Adds a little "tools" icon next to each image
                 // Set this to true so events can be captured
                 settings.inCanvas = true;
 
-                // loadCanvas() calls all the other necessary functions to load
-                var page = $(this).parent().parent();
-                var filename = $(page).attr('data-filename');
-                var width = $(page).width() - 1;
-                settings.zoomWidthRatio = width / Math.pow(2, zoomLevel);
-                settings.filename = filename;
                 var imageURL = getImageURL(zoomLevel);
 
                 // Change the title of the page
                 $('#diva-canvas-info').text($(page).attr('title'));
+
+                showThrobber();
 
                 loadCanvas(imageURL);
             },
