@@ -472,7 +472,11 @@ Adds a little "tools" icon next to each image
 
                 resetSliders();
 
-                // Create the DOM elements
+                // Create the DOM elements if they haven't already been created
+                if ($('#diva-canvas-backdrop').length) {
+                    return;
+                }
+
                 var buttons = [
                     'contrast',
                     'brightness',
