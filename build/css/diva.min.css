@@ -34,11 +34,11 @@
 #diva-canvas-backdrop{z-index:105;position:fixed;top:0;left:0;bottom:0;right:0;display:none;background:rgba(50, 50, 50, 0.9);}
 #diva-canvas-tools{color:#333333;position:fixed;top:10px;left:10px;width:230px;z-index:108;background:#ffffff;padding-bottom:10px;-webkit-box-shadow:2px 2px 4px 0 rgba(0, 0, 0, 0.5);-moz-box-shadow:2px 2px 4px 0 rgba(0, 0, 0, 0.5);box-shadow:2px 2px 4px 0 rgba(0, 0, 0, 0.5);}#diva-canvas-tools .action-buttons{clear:both;margin-bottom:5px;text-align:right;}#diva-canvas-tools .action-buttons a{color:#333333;text-decoration:none;background:#f1f1f1;padding:5px;border:1px solid #99bbe8;}#diva-canvas-tools .action-buttons a:last-child{border-left:0;}
 #diva-canvas-tools .action-buttons a:hover{background:#fdfdfd;}
-#diva-canvas-toolbar{height:16px;padding:10px;padding-bottom:0;}#diva-canvas-toolbar div{height:16px;width:16px;background-repeat:no-repeat;cursor:pointer;z-index:109;display:inline-block;margin-right:5px;background-image:url("../img/actions.png");}
+#diva-canvas-toolbar{height:16px;padding:10px;padding-bottom:0;}#diva-canvas-toolbar div{height:18px;width:18px;background-repeat:no-repeat;cursor:pointer;z-index:109;display:inline-block;margin-right:5px;background-image:url("../img/actions.png");}
 #diva-canvas-toolbar span{vertical-align:top;float:right;}
 #diva-canvas-toolwindow{position:relative;margin:10px;}
-#diva-canvas-close:hover{background-position:-16px 0;}
-#diva-canvas-minimise{background-position:-48px 0;}#diva-canvas-minimise:hover{background-position:-32px 0;}
+#diva-canvas-close:hover{background-position:-20px 0;}
+#diva-canvas-minimise{background-position:-40px 0;}#diva-canvas-minimise:hover{background-position:-60px 0;}
 #diva-canvas-buttons div{cursor:pointer;background-image:url("../img/plugins/canvas-buttons.png");background-repeat:no-repeat;width:20px;height:20px;padding:5px;display:inline-block;}#diva-canvas-buttons div.clicked{background-color:#dddddd;}
 #diva-canvas-buttons .contrast{background-position:5px 5px;}#diva-canvas-buttons .contrast:hover,#diva-canvas-buttons .contrast.clicked{background-position:5px -25px;}
 #diva-canvas-buttons .brightness{background-position:-25px 5px;}#diva-canvas-buttons .brightness:hover,#diva-canvas-buttons .brightness.clicked{background-position:-25px -25px;}

@@ -339,8 +339,8 @@
   padding-bottom: 0;
 }
 #diva-canvas-toolbar div {
-  height: 16px;
-  width: 16px;
+  height: 18px;
+  width: 18px;
   background-repeat: no-repeat;
   cursor: pointer;
   z-index: 109;
@@ -357,13 +357,13 @@
   margin: 10px;
 }
 #diva-canvas-close:hover {
-  background-position: -16px 0;
+  background-position: -20px 0;
 }
 #diva-canvas-minimise {
-  background-position: -48px 0;
+  background-position: -40px 0;
 }
 #diva-canvas-minimise:hover {
-  background-position: -32px 0;
+  background-position: -60px 0;
 }
 #diva-canvas-buttons div {
   cursor: pointer;
