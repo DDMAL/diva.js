@@ -158,12 +158,16 @@
 .diva-fullscreen-icon {
     position: absolute;
     z-index: @fullscreenZIndex + 1;
-    top: 0;
-    left: 0;
-    width: 40px;
-    height: 40px;
+    top: 10px;
+    left: 10px;
+    width: 24px;
+    height: 24px;
     cursor: pointer;
-    background: url("@{iconPath}fullscreen.png") no-repeat top;
+    background: url("@{iconPath}fullscreen.png") no-repeat;
+
+    &:hover {
+        background-position: -24px 0;
+    }
 
     &.diva-contained {
         top: 45px;
