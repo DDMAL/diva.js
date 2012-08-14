@@ -247,17 +247,18 @@ window.divaPlugins = [];
             var width = getPageData(pageIndex, 'w');
             var height = getPageData(pageIndex, 'h');
             var heightFromTop = settings.heightAbovePages[pageIndex] + settings.verticalPadding;
+            var pageSelector = settings.selector + 'page-' + pageIndex;
 
             // If the page has not been loaded yet, append the div to the DOM
             if (!isPageLoaded(pageIndex)) {
                 $(settings.innerSelector).append('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width: ' + width + 'px; height: ' + height + 'px;" class="diva-document-page" title="Page ' + (pageIndex + 1) + '" data-index="' + pageIndex  + '" data-filename="' + filename + '">' + settings.pageTools + '</div>');
 
                 // Call the callback function
-                executeCallback(settings.onPageLoad, pageIndex, filename);
+                executeCallback(settings.onPageLoad, pageIndex, filename, pageSelector);
 
                 // Execute the callback functions for any of the enabled plugins
                 for (plugin in settings.plugins) {
-                    executeCallback(settings.plugins[plugin].onPageLoad, pageIndex, filename);
+                    executeCallback(settings.plugins[plugin].onPageLoad, pageIndex, filename, pageSelector);
                 }
             }
 

@@ -398,7 +398,6 @@ Adds a little "tools" icon next to each image
 
                 settings.inCanvas = false;
                 settings.iipServerURL = divaSettings.iipServerURL;
-                settings.selector = divaSettings.selector;
 
                 // Set up the settings for the sliders/icons
                 sliders = {
@@ -749,12 +748,12 @@ Adds a little "tools" icon next to each image
 
                 loadCanvas(imageURL);
             },
-            onPageLoad: function (pageIndex, filename) {
+            onPageLoad: function (pageIndex, filename, selector) {
                 // If something exists for this page in localStorage, then change icon color
                 var storageKey = settings.localStoragePrefix + filename;
 
                 if (localStorage.getItem(storageKey) !== null) {
-                    $(settings.selector + 'page-' + pageIndex).find('.diva-canvas-icon').addClass('new');
+                    $(selector).find('.diva-canvas-icon').addClass('new');
                 }
             },
             // Used only for running the unit tests
