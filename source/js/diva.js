@@ -84,6 +84,8 @@ window.divaPlugins = [];
         // Many of these are declared with arbitrary values that are changed later on
         var globals = {
             allTilesLoaded: [],         // A boolean for each page, indicating if all tiles have been loaded
+            averageHeights: [],         // The average page height for each zoom level
+            averageWidths: [],          // The average page width for each zoom level
             centerX: 0,                 // Only used if doubleClick is true - for zooming in
             centerY: 0,                 // Y-coordinate, see above
             ctrlKey: false,             // Hack for ctrl+double-clicking in Firefox on Mac
@@ -95,23 +97,33 @@ window.divaPlugins = [];
             doubleClick: false,         // If the zoom has been triggered by a double-click event
             firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
             firstRowLoaded: -1,         // The index of the first row loaded
+            gridPageWidth: 0,           // Holds the max width of each row in grid view. Calculated in loadGrid()
             hashParamSuffix: '',        // Used when there are multiple document viewers on a page
             heightAbovePages: [],       // The height above each page
             horizontalOffset: 0,        // Used in documentScroll for scrolling more precisely
             horizontalPadding: 0,       // Either the fixed padding or adaptive padding
             ID: null,                   // The prefix of the IDs of the elements (usually 1-diva-)
+            innerSelector: '',          // settings.selector + 'inner', for selecting the .diva-inner element
             itemTitle: '',              // The title of the document
             lastPageLoaded: -1,         // The ID of the last page loaded (value set later)
             lastRowLoaded: -1,          // The index of the last row loaded
             leftScrollSoFar: 0,         // Current scroll from the left edge of the pane
             maxHeight: 0,               // The height of the tallest page
-            maxWidth: 0,                // The width of the widest page
-            minRatio: 0,                // The minimum height/width ratio for a page
+            maxWidths: [],              // The width of the widest page for each zoom level
             maxRatio: 0,                // The max height/width ratio (for grid view)
+            minHeight: 0,               // Minimum height of the .diva-outer element, as defined in the CSS
+            minRatio: 0,                // The minimum height/width ratio for a page
+            minWidth: 0,                // Minimum width of the .diva-outer element, as defined in the CSS
             mobileWebkit: false,        // Checks if the user is on a touch device (iPad/iPod/iPhone/Android)
             numClicks: 0,               // Hack for ctrl+double-clicking in Firefox on Mac
             numPages: 0,                // Number of pages in the array
             numRows: 0,                 // Number of rows
+            oldPagesPerRow: 0,          // Holds the previous number of pages per row after it is changed
+            oldZoomLevel: 0,            // Holds the previous zoom level after zooming in or out
+            orientationChange: false,   // For handling device orientation changes for touch devices
+            originalHeight: 0,          // Stores the original height of the .diva-outer element
+            originalWidth: 0,           // Stores the original width of the .diva-outer element
+            outerSelector: '',          // settings.selector + 'outer', for selecting the .diva-outer element
             pages: [],                  // An array containing the data for all the pages
             pageLeftOffsets: [],        // Offset from the left side of the pane to the edge of the page
             pageTimeouts: [],           // Stack to hold the loadPage timeouts
@@ -120,14 +132,19 @@ window.divaPlugins = [];
             panelWidth: 0,              // Width of the panel. Set in initiateViewer()
             plugins: [],                // Filled with the not disabled plugins in window.divaPlugins
             previousTopScroll: 0,       // Used to determine vertical scroll direction
+            preZoomOffset: null,        // Holds the offset prior to zooming when double-clicking
             realMaxZoom: -1,            // To hold the true max zoom level of the document
-            scaleWait: false,           // For preventing double-scale on the iPad
+            resizeTimer: -1,            // Holds the ID of the timeout used when resizing the window (for clearing)
+            rowHeight: 0,               // Holds the max height of each row in grid view. Calculated in loadGrid()
+            scaleWait: false,           // For preventing double-zoom on touch devices (iPad, etc)
             selector: '',               // Uses the generated ID prefix to easily select elements
             scrollbarWidth: 0,          // Set to the actual scrollbar width in init()
             scrollLeft: -1,             // Total scroll from the left
             scrollTop: -1,              // Total scroll from the top
-            totalHeight: 0,             // Height of all the image stacked together, value set later
+            toolbar: null,              // Holds an object with some toolbar-related functions
             topScrollSoFar: 0,          // Holds the number of pixels of vertical scroll
+            totalHeights: [],           // The total height of all pages (stacked together) for each zoom level
+            totalHeight: 0,             // The total height for the current zoom level (including padding)
             verticalOffset: 0,          // See horizontalOffset
             verticalPadding: 0,         // Either the fixed padding or adaptive padding
             viewerXOffset: 0,           // Distance between left edge of viewer and document left edge
