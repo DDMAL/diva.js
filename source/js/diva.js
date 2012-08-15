@@ -1603,13 +1603,15 @@ window.divaPlugins = [];
                         // If the title text is undefined, use the name of the plugin
                         var titleText = plugin.titleText || pluginProperName + " plugin";
 
-                        // Create the pageTools bar
-                        pageTools.push('<div class="diva-' + plugin.pluginName + '-icon" title="' + titleText + '"></div>');
+                        // Create the pageTools bar if handleClick is set to a function
+                        if (typeof plugin.handleClick == 'function') {
+                            pageTools.push('<div class="diva-' + plugin.pluginName + '-icon" title="' + titleText + '"></div>');
 
-                        // Delegate the click event - pass it the settings
-                        $(settings.outerSelector).delegate('.diva-' + plugin.pluginName + '-icon', 'click', function (event) {
-                            plugin.handleClick.call(this, event, settings);
-                        });
+                            // Delegate the click event - pass it the settings
+                            $(settings.outerSelector).delegate('.diva-' + plugin.pluginName + '-icon', 'click', function (event) {
+                                plugin.handleClick.call(this, event, settings);
+                            });
+                        }
 
 
                         // Add it to settings.plugins so it can be used later
