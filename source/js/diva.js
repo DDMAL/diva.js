@@ -118,16 +118,16 @@ window.divaPlugins = [];
             panelHeight: 0,             // Height of the panel. Set in initiateViewer()
             panelWidth: 0,              // Width of the panel. Set in initiateViewer()
             plugins: [],                // Filled with the not disabled plugins in window.divaPlugins
-            prevVptTop: 0,              // Used to determine vertical scroll direction
+            previousTopScroll: 0,       // Used to determine vertical scroll direction
             realMaxZoom: -1,            // To hold the true max zoom level of the document
             rowLoadTimeout: 50,         // Less than for page loading
             scaleWait: false,           // For preventing double-scale on the iPad
             selector: '',               // Uses the generated ID prefix to easily select elements
             scrollbarWidth: 0,          // Set to the actual scrollbar width in init()
             scrollLeft: -1,             // Total scroll from the left
-            scrollSoFar: 0,             // Holds the number of pixels of vertical scroll
             scrollTop: -1,              // Total scroll from the top
             totalHeight: 0,             // Height of all the image stacked together, value set later
+            topScrollSoFar: 0,          // Holds the number of pixels of vertical scroll
             verticalOffset: 0,          // See horizontalOffset
             verticalPadding: 0,         // Either the fixed padding or adaptive padding
             viewerXOffset: 0,           // Distance between left edge of viewer and document left edge
@@ -188,7 +188,7 @@ window.divaPlugins = [];
         // Checks if a page or tile is within the viewport vertically
         var verticallyInViewport = function (top, bottom) {
             var panelHeight = settings.panelHeight;
-            var topOfViewport = settings.scrollSoFar - settings.viewportMargin;
+            var topOfViewport = settings.topScrollSoFar - settings.viewportMargin;
             var bottomOfViewport = topOfViewport + panelHeight + settings.viewportMargin * 2;
 
             var topVisible = top >= topOfViewport && top <= bottomOfViewport;
@@ -344,7 +344,7 @@ window.divaPlugins = [];
         // For when you want to keep looping but don't want to load a specific page
         var pageAboveViewport = function (pageIndex) {
             var bottomOfPage = settings.heightAbovePages[pageIndex] + getPageData(pageIndex, 'h') + settings.verticalPadding;
-            var topOfViewport = settings.scrollSoFar;
+            var topOfViewport = settings.topScrollSoFar;
 
             return bottomOfPage < topOfViewport;
         };
@@ -352,7 +352,7 @@ window.divaPlugins = [];
         // Check if the top of a page is below the bottom of a viewport (scrolling up)
         var pageBelowViewport = function (pageIndex) {
             var topOfPage = settings.heightAbovePages[pageIndex];
-            var bottomOfViewport = settings.scrollSoFar + settings.panelHeight;
+            var bottomOfViewport = settings.topScrollSoFar + settings.panelHeight;
 
             return topOfPage > bottomOfViewport;
         };
@@ -441,14 +441,14 @@ window.divaPlugins = [];
                 }
             }
 
-            executeCallback(settings.onScroll, settings.scrollSoFar);
+            executeCallback(settings.onScroll, settings.topScrollSoFar);
 
             // If we're scrolling down
             if (direction > 0) {
-                executeCallback(settings.onScrollDown, settings.scrollSoFar);
+                executeCallback(settings.onScrollDown, settings.topScrollSoFar);
             } else if (direction < 0) {
                 // We're scrolling up
-                executeCallback(settings.onScrollUp, settings.scrollSoFar);
+                executeCallback(settings.onScrollUp, settings.topScrollSoFar);
             }
         };
 
@@ -532,7 +532,7 @@ window.divaPlugins = [];
         // Check if the bottom of a row is above the top of the viewport (scrolling down)
         var rowAboveViewport = function (rowIndex) {
             var bottomOfRow = settings.rowHeight * (rowIndex + 1);
-            var topOfViewport = settings.scrollSoFar;
+            var topOfViewport = settings.topScrollSoFar;
 
             return (bottomOfRow < topOfViewport);
         };
@@ -540,7 +540,7 @@ window.divaPlugins = [];
         // Check if the top of a row is below the bottom of the viewport (scrolling up)
         var rowBelowViewport = function (rowIndex) {
             var topOfRow = settings.rowHeight * rowIndex;
-            var bottomOfViewport = settings.scrollSoFar + settings.panelHeight;
+            var bottomOfViewport = settings.topScrollSoFar + settings.panelHeight;
 
             return (topOfRow > bottomOfViewport);
         };
@@ -598,14 +598,14 @@ window.divaPlugins = [];
                 attemptRowHide(settings.firstRowLoaded, 1);
             }
 
-            executeCallback(settings.onScroll, settings.scrollSoFar);
+            executeCallback(settings.onScroll, settings.topScrollSoFar);
 
             // If we're scrolling down
             if (direction > 0) {
-                executeCallback(settings.onScrollDown, settings.scrollSoFar);
+                executeCallback(settings.onScrollDown, settings.topScrollSoFar);
             } else if (direction < 0) {
                 // We're scrolling up
-                executeCallback(settings.onScrollUp, settings.scrollSoFar);
+                executeCallback(settings.onScrollUp, settings.topScrollSoFar);
             }
         };
 
@@ -623,7 +623,7 @@ window.divaPlugins = [];
         // Determines and sets the "current page" (settings.currentPageIndex); called within adjustPages
         // The "direction" can be 0, 1 or -1; 1 for down, -1 for up, and 0 to go straight to a specific page
         var setCurrentPage = function (direction) {
-            var middleOfViewport = settings.scrollSoFar + (settings.panelHeight / 2);
+            var middleOfViewport = settings.topScrollSoFar + (settings.panelHeight / 2);
             var currentPage = settings.currentPageIndex;
             var pageToConsider = settings.currentPageIndex + parseInt(direction, 10);
             var changeCurrentPage = false;
@@ -663,15 +663,15 @@ window.divaPlugins = [];
         var setCurrentRow = function (direction) {
             var currentRow = Math.floor(settings.currentPageIndex / settings.pagesPerRow);
             var rowToConsider = currentRow + parseInt(direction, 10);
-            var middleOfViewport = settings.scrollSoFar + (settings.panelHeight / 2);
+            var middleOfViewport = settings.topScrollSoFar + (settings.panelHeight / 2);
             var changeCurrentRow = false;
 
             if (direction < 0) {
-                if (rowToConsider >= 0 && (settings.rowHeight * currentRow >= middleOfViewport || settings.rowHeight * rowToConsider >= settings.scrollSoFar)) {
+                if (rowToConsider >= 0 && (settings.rowHeight * currentRow >= middleOfViewport || settings.rowHeight * rowToConsider >= settings.topScrollSoFar)) {
                     changeCurrentRow = true;
                 }
             } else if (direction > 0) {
-                if ((settings.rowHeight * (currentRow + 1)) < settings.scrollSoFar && isRowValid(rowToConsider)) {
+                if ((settings.rowHeight * (currentRow + 1)) < settings.topScrollSoFar && isRowValid(rowToConsider)) {
                     changeCurrentRow = true;
                 }
             }
@@ -782,11 +782,11 @@ window.divaPlugins = [];
         var clearViewer = function () {
             settings.allTilesLoaded = [];
             $(settings.outerSelector).scrollTop(0);
-            settings.scrollSoFar = 0;
+            settings.topScrollSoFar = 0;
             $(settings.innerSelector).empty();
             settings.firstPageLoaded = 0;
             settings.firstRowLoaded = -1;
-            settings.prevVptTop = 0;
+            settings.previousTopScroll = 0;
 
             // Clear all the timeouts to prevent undesired pages from loading
             clearTimeout(settings.resizeTimer);
@@ -918,15 +918,15 @@ window.divaPlugins = [];
 
         // The handle_Scrolls are called whenever there is a scroll event in the the #diva-outer element
         var handleDocumentScroll = function () {
-            settings.scrollSoFar = $(settings.outerSelector).scrollTop();
-            adjustPages(settings.scrollSoFar - settings.prevVptTop);
-            settings.prevVptTop = settings.scrollSoFar;
+            settings.topScrollSoFar = $(settings.outerSelector).scrollTop();
+            adjustPages(settings.topScrollSoFar - settings.previousTopScroll);
+            settings.previousTopScroll = settings.topScrollSoFar;
         };
 
         var handleGridScroll = function () {
-            settings.scrollSoFar = $(settings.outerSelector).scrollTop();
-            adjustRows(settings.scrollSoFar - settings.prevVptTop);
-            settings.prevVptTop = settings.scrollSoFar;
+            settings.topScrollSoFar = $(settings.outerSelector).scrollTop();
+            adjustRows(settings.topScrollSoFar - settings.previousTopScroll);
+            settings.previousTopScroll = settings.topScrollSoFar;
         };
 
 
@@ -1351,13 +1351,13 @@ window.divaPlugins = [];
                 $(document).keydown(function (event) {
                     // Space or page down - go to the next page
                     if ((settings.enableSpaceScroll && event.keyCode == spaceKey) || (settings.enableKeyScroll && event.keyCode == pageDownKey)) {
-                        $(settings.outerSelector).scrollTop(settings.scrollSoFar + settings.panelHeight);
+                        $(settings.outerSelector).scrollTop(settings.topScrollSoFar + settings.panelHeight);
                         return false;
                     }
 
                     // Page up - go to the previous page
                     if (settings.enableKeyScroll && event.keyCode == pageUpKey) {
-                        $(settings.outerSelector).scrollTop(settings.scrollSoFar - settings.panelHeight);
+                        $(settings.outerSelector).scrollTop(settings.topScrollSoFar - settings.panelHeight);
                         return false;
                     }
 
