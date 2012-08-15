@@ -59,6 +59,12 @@ asyncTest("contained true, enableAutoTitle true", function () {
     });
 });
 
+// divaserveURL can't really be tested - just have to rely on this to work
+
+// enableCanvas and enableDownload are tested in plugins.js
+
+// enableFilename is tested in link.js
+
 asyncTest("enableFullscreen false", function () {
     $.tempDiva({
         enableFullscreen: false,
@@ -145,48 +151,6 @@ asyncTest("enableLink false, enableGrid true", function () {
     });
 });
 
-/*
-asyncTest("enableKeyScroll false", function () {
-    $.tempDiva({
-        enableKeyScroll: false,
-        onReady: function (settings) {
-            var dv = $('#diva-temp').data('diva');
-            // Page number should be 0 at first
-            equal(dv.getCurrentPage(), 0, "Initially, the current page should be 0");
-            $('body').keypress({
-                keyCode: $.ui.keyCode.END
-            });
-
-            setTimeout(function () {
-                // Now, the page number should still be 0
-                equal(dv.getCurrentPage(), 0, "The current page should still be 0");
-
-                start();
-            }, 100);
-        }
-    });
-});
-
-asyncTest("enableKeyScroll true", function () {
-    $.tempDiva({
-        enableKeyScroll:  true,
-        onReady: function (settings) {
-            var dv = $('#diva-temp').data('diva');
-            equal(dv.getCurrentPage(), 0, "Initially, the current page should be 0");
-            $('body').keypress({
-                keyCode: $.ui.keyCode.END
-            });
-
-            setTimeout(function () {
-                // Now, the page index should be 585
-                notEqual(dv.getCurrentPage(), 0, "The current page should be the last");
-                start();
-            }, 150);
-        }
-    });
-});
-*/
-
 asyncTest("enableGridSlider false", function () {
     $.tempDiva({
         enableGridSlider: false,
@@ -207,11 +171,116 @@ asyncTest("enableGridSlider true", function () {
     });
 });
 
+// Skipping the key and space scroll ones, because they're hard to test
+
 asyncTest("enableZoomSlider false", function () {
     $.tempDiva({
         enableZoomSlider: false,
         onReady: function (settings) {
             equal($(settings.selector + 'zoom-slider').length, 0, "Zoom slider should not be present");
+            start();
+        }
+    });
+});
+
+asyncTest("enableZoomSlider true", function () {
+    $.tempDiva({
+        enableZoomSlider: true,
+        onReady: function (settings) {
+            notEqual($(settings.selector + 'zoom-slider').length, 0, "Zoom slider should not be present");
+            start();
+        }
+    });
+});
+
+// fixedPadding tested at the top (along with adaptivePadding)
+
+asyncTest("fixedHeightGrid false", function () {
+    $.tempDiva({
+        fixedHeightGrid: false,
+        onReady: function (settings) {
+            this.enterGrid();
+            // Check all the widths are the same, but that the heights are different
+            var pages = $('.diva-page');
+            var firstPage = $(pages[0]);
+            var sameWidths = true, sameHeights = true, thisPage, i, length;
+            for (i = 1, length = pages.length; i < length; i++) {
+                thisPage = $(pages[i]);
+                sameWidths = sameWidths && (thisPage.width() == firstPage.width());
+                sameHeights = sameHeights && (thisPage.height() == firstPage.height());
+            }
+
+            ok(sameWidths, "All page widths should be equal");
+            ok(!sameHeights, "All page heights should NOT be equal");
+
+            start();
+        }
+    });
+});
+
+asyncTest("fixedHeightGrid true", function () {
+    $.tempDiva({
+        fixedHeightGrid: true,
+        onReady: function (settings) {
+            this.enterGrid();
+
+            // Check that all the widths are the same, bu that the heights are different
+            var pages = $('.diva-page');
+            var firstPage = $(pages[0]);
+            var sameWidths = true, sameHeights = true, thisPage, i, length;
+            for (i = 1, length = pages.length; i < length; i++) {
+                thisPage = $(pages[i]);
+                sameWidths = sameWidths && (thisPage.width() == firstPage.width());
+                sameHeights = sameHeights && (thisPage.height() == firstPage.height());
+            }
+
+            ok(!sameWidths, "All page widths should NOT be equal");
+            ok(sameHeights, "All page heights should be equal");
+
+            start();
+        }
+    });
+});
+
+asyncTest("goDirectlyTo, valid", function () {
+    $.tempDiva({
+        goDirectlyTo: 10,
+        onReady: function (settings) {
+            equal(settings.currentPageIndex, 10, "The initial page index should be 10");
+            start();
+        }
+    });
+});
+
+asyncTest("goDirectlyTo, invalid", function () {
+    $.tempDiva({
+        goDirectlyTo: -10,
+        onReady: function (settings) {
+            equal(settings.currentPageIndex, 0, "The initial page index should be 0 (the fallback)");
+            start();
+        }
+    });
+});
+
+// iipServerURL can't really be tested, just have to rely on this to work
+
+asyncTest("inFullscreen false", function () {
+    $.tempDiva({
+        inFullscreen: false,
+        onReady: function (settings) {
+            ok(!settings.inFullscreen, "inFullscreen setting should still be false");
+            ok(!$(settings.selector + 'fullscreen').hasClass('diva-in-fullscreen'), "Icon should not have the diva-in-fullscreen class");
+            start();
+        }
+    });
+});
+
+asyncTest("inFullscreen true", function () {
+    $.tempDiva({
+        inFullscreen: true,
+        onReady: function (settings) {
+            ok(settings.inFullscreen, "inFullscreen setting should still be true");
+            ok($(settings.selector + 'fullscreen').hasClass('diva-in-fullscreen'), "Icon should have the diva-in-fullscreen class");
             start();
         }
     });
@@ -239,11 +308,36 @@ asyncTest("inGrid true", function () {
     });
 });
 
-asyncTest("enableZoomSlider true", function () {
+// imageDir cannot really be tested either
+
+asyncTest("valid max/minPagesPerRow, valid pagesPerRow", function () {
     $.tempDiva({
-        enableZoomSlider: true,
+        minPagesPerRow: 3,
+        maxPagesPerRow: 5,
+        pagesPerRow: 5,
         onReady: function (settings) {
-            notEqual($(settings.selector + 'zoom-slider').length, 0, "Zoom slider should not be present");
+            // Have to enter the grid first, otherwise pagesPerRow isn't changed
+            this.enterGrid();
+
+            equal(settings.minPagesPerRow, 3, "minPagesPerRow should be 3");
+            equal(settings.maxPagesPerRow, 5, "maxPagesPerRow should be 5");
+            equal(settings.pagesPerRow, 5, "pagesPerRow is valid");
+            start();
+        }
+    });
+});
+
+asyncTest("invalid max/minPagesPerRow, valid pagesPerRow", function () {
+    $.tempDiva({
+        minPagesPerRow: 1,
+        maxPagesPerRow: 0,
+        pagesPerRow: 4,
+        onReady: function (settings) {
+            this.enterGrid();
+
+            equal(settings.minPagesPerRow, 2, "minPagesPerRow is invalid, set to 2");
+            equal(settings.maxPagesPerRow, 2, "maxPagesPerRow should be set to min");
+            equal(settings.pagesPerRow, 2, "invalid pages per row should be set to min");
             start();
         }
     });
@@ -301,85 +395,18 @@ asyncTest("max/minZoomLevel, invalid/valid values, invalid zoomLevel", function 
     });
 });
 
-asyncTest("fixedHeightGrid false", function () {
-    $.tempDiva({
-        fixedHeightGrid: false,
-        onReady: function (settings) {
-            this.enterGrid();
-            // Check all the widths are the same, but that the heights are different
-            var pages = $('.diva-page');
-            var firstPage = $(pages[0]);
-            var sameWidths = true, sameHeights = true, thisPage, i, length;
-            for (i = 1, length = pages.length; i < length; i++) {
-                thisPage = $(pages[i]);
-                sameWidths = sameWidths && (thisPage.width() == firstPage.width());
-                sameHeights = sameHeights && (thisPage.height() == firstPage.height());
-            }
+// All the on_____ settings are callback functions that are tested in callbacks.js
+// Except onReady - we can only assume that it works.
 
-            ok(sameWidths, "All page widths should be equal");
-            ok(!sameHeights, "All page heights should NOT be equal");
+// pageLoadTimeout is a bit weird to test, but the code is simple so it should be fine
 
-            start();
-        }
-    });
-});
+// pagesPerRow is tested above, along with max/minPagesPerRow
 
-asyncTest("fixedHeightGrid true", function () {
-    $.tempDiva({
-        fixedHeightGrid: true,
-        onReady: function (settings) {
-            this.enterGrid();
+// rowLoadTimeout is in the same boat as pageLoadTimeout
 
-            // Check that all the widths are the same, bu that the heights are different
-            var pages = $('.diva-page');
-            var firstPage = $(pages[0]);
-            var sameWidths = true, sameHeights = true, thisPage, i, length;
-            for (i = 1, length = pages.length; i < length; i++) {
-                thisPage = $(pages[i]);
-                sameWidths = sameWidths && (thisPage.width() == firstPage.width());
-                sameHeights = sameHeights && (thisPage.height() == firstPage.height());
-            }
+// tileFadeSpeed is also difficult, so let's skip it
 
-            ok(!sameWidths, "All page widths should NOT be equal");
-            ok(sameHeights, "All page heights should be equal");
-
-            start();
-        }
-    });
-});
-
-asyncTest("valid max/minPagesPerRow, valid pagesPerRow", function () {
-    $.tempDiva({
-        minPagesPerRow: 3,
-        maxPagesPerRow: 5,
-        pagesPerRow: 5,
-        onReady: function (settings) {
-            // Have to enter the grid first, otherwise pagesPerRow isn't changed
-            this.enterGrid();
-
-            equal(settings.minPagesPerRow, 3, "minPagesPerRow should be 3");
-            equal(settings.maxPagesPerRow, 5, "maxPagesPerRow should be 5");
-            equal(settings.pagesPerRow, 5, "pagesPerRow is valid");
-            start();
-        }
-    });
-});
-
-asyncTest("invalid max/minPagesPerRow, valid pagesPerRow", function () {
-    $.tempDiva({
-        minPagesPerRow: 1,
-        maxPagesPerRow: 0,
-        pagesPerRow: 4,
-        onReady: function (settings) {
-            this.enterGrid();
-
-            equal(settings.minPagesPerRow, 2, "minPagesPerRow is invalid, set to 2");
-            equal(settings.maxPagesPerRow, 2, "maxPagesPerRow should be set to min");
-            equal(settings.pagesPerRow, 2, "invalid pages per row should be set to min");
-            start();
-        }
-    });
-});
+// No real point testing tileHeight/Width as we don't have images of different tile sizes
 
 asyncTest("viewportMargin, value of 0", function () {
     $.tempDiva({
