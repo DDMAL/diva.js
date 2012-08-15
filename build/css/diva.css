@@ -49,6 +49,12 @@
 .diva-tools .diva-tools-left.diva-fullscreen-space {
   margin-left: 50px;
 }
+.diva-tools .diva-tools-left.in-fullscreen {
+  float: right;
+  padding-top: 10px;
+  text-align: right;
+  clear: both;
+}
 .diva-tools .diva-tools-right {
   float: right;
   height: 42px;
@@ -199,13 +205,13 @@
   z-index: 101;
   top: 10px;
   left: 10px;
-  width: 24px;
-  height: 24px;
+  height: 26px;
+  width: 26px;
   cursor: pointer;
   background: url("../img/fullscreen.png") no-repeat;
 }
 .diva-fullscreen-icon:hover {
-  background-position: -24px 0;
+  background-position: -26px 0;
 }
 .diva-fullscreen-icon.diva-contained {
   top: 45px;
@@ -231,6 +237,10 @@
 }
 .diva-link-popup input:focus {
   outline: none;
+}
+.diva-link-popup.in-fullscreen {
+  top: 150px;
+  right: 30px;
 }
 .diva-hide-scrollbar {
   overflow: hidden !important;
