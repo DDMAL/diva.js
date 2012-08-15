@@ -991,12 +991,7 @@ window.divaPlugins = [];
 
         // Called when the fullscreen icon is clicked
         var toggleFullscreenIcon = function () {
-            if (settings.inGrid) {
-                settings.gridScrollTop = settings.scrollSoFar;
-            } else {
-                settings.goDirectlyTo = settings.currentPageIndex;
-            }
-
+            settings.goDirectlyTo = settings.currentPageIndex;
             settings.inFullscreen = !settings.inFullscreen;
             handleModeChange();
         };
