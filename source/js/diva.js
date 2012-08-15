@@ -67,7 +67,9 @@ window.divaPlugins = [];
             onZoom: null,               // Callback function for zooming in general
             onZoomIn: null,             // Callback function for zooming in only
             onZoomOut: null,            // Callback function for zooming out only
+            pageLoadTimeout: 200,       // Number of milliseconds to wait before loading pages
             pagesPerRow: 5,             // The default number of pages per row in grid view
+            rowLoadTimeout: 50,         // Number of milliseconds to wait before loading a row
             tileFadeSpeed: 0,           // The tile fade-in speed in ms (or "fast" or "slow"; 0 to disable)
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
@@ -110,7 +112,6 @@ window.divaPlugins = [];
             numClicks: 0,               // Hack for ctrl+double-clicking in Firefox on Mac
             numPages: 0,                // Number of pages in the array
             numRows: 0,                 // Number of rows
-            pageLoadTimeout: 200,       // Number of milliseconds to wait before loading pages
             pages: [],                  // An array containing the data for all the pages
             pageLeftOffsets: [],        // Offset from the left side of the pane to the edge of the page
             pageTimeouts: [],           // Stack to hold the loadPage timeouts
@@ -120,7 +121,6 @@ window.divaPlugins = [];
             plugins: [],                // Filled with the not disabled plugins in window.divaPlugins
             previousTopScroll: 0,       // Used to determine vertical scroll direction
             realMaxZoom: -1,            // To hold the true max zoom level of the document
-            rowLoadTimeout: 50,         // Less than for page loading
             scaleWait: false,           // For preventing double-scale on the iPad
             selector: '',               // Uses the generated ID prefix to easily select elements
             scrollbarWidth: 0,          // Set to the actual scrollbar width in init()
