@@ -156,6 +156,7 @@ window.divaPlugins = [];
         // Executes a callback function with the diva instance set as the context
         // Can take an unlimited number to arguments to pass to the callback function
         var self = this;
+
         var executeCallback = function (callback) {
             if (typeof callback == "function") {
                 var args = [];
@@ -164,6 +165,7 @@ window.divaPlugins = [];
                 }
 
                 callback.apply(self, args);
+
                 return true;
             } else {
                 return false;
@@ -569,6 +571,7 @@ window.divaPlugins = [];
                     if (isRowVisible(rowIndex)) {
                         loadRow(rowIndex);
                         settings.lastRowLoaded = rowIndex;
+
                         attemptRowShow(settings.lastRowLoaded+1, direction);
                     } else if (rowAboveViewport(rowIndex)) {
                         attemptRowShow(rowIndex+1, direction);
@@ -579,6 +582,7 @@ window.divaPlugins = [];
                     if (isRowVisible(rowIndex)) {
                         loadRow(rowIndex);
                         settings.firstRowLoaded = rowIndex;
+
                         attemptRowShow(settings.firstRowLoaded-1, direction);
                     } else if (rowBelowViewport(rowIndex)) {
                         attemptRowShow(rowIndex-1, direction);
@@ -592,6 +596,7 @@ window.divaPlugins = [];
                 if (isRowValid(rowIndex) && rowAboveViewport(rowIndex)) {
                     deleteRow(rowIndex);
                     settings.firstRowLoaded++;
+
                     attemptRowHide(settings.firstRowLoaded, direction);
                 }
             } else {
@@ -807,6 +812,7 @@ window.divaPlugins = [];
 
             // Clear all the timeouts to prevent undesired pages from loading
             clearTimeout(settings.resizeTimer);
+
             while (settings.pageTimeouts.length) {
                 clearTimeout(settings.pageTimeouts.pop());
             }
@@ -1130,6 +1136,7 @@ window.divaPlugins = [];
         var getXOffset = function () {
             var innerWidth = settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2;
             var centerX = (innerWidth - settings.panelWidth) / 2;
+
             return parseInt($(settings.outerSelector).scrollLeft() - centerX, 10);
         };
 
@@ -1143,7 +1150,6 @@ window.divaPlugins = [];
                 'p': (settings.enableFilename) ? false : settings.currentPageIndex + 1,
                 'y': (settings.inGrid) ? false : getYOffset(),
                 'x': (settings.inGrid) ? false : getXOffset(),
-                //'gy': (settings.inGrid) ? $(settings.outerSelector).scrollTop() : false,
                 'h': (settings.inFullscreen) ? false: settings.panelHeight,
                 'w': (settings.inFullscreen) ? false : $(settings.outerSelector).width()
             };
@@ -1154,11 +1160,13 @@ window.divaPlugins = [];
         var getURLHash = function () {
             var hashParams = getState();
             var hashStringBuilder = [];
+
             for (var param in hashParams) {
                 if (hashParams[param] !== false) {
                     hashStringBuilder.push(param + settings.hashParamSuffix + '=' + hashParams[param]);
                 }
             }
+
             return hashStringBuilder.join('&');
         };
 
@@ -1185,6 +1193,7 @@ window.divaPlugins = [];
             var newHeight = $(settings.outerSelector).height();
             var newWidth = $(settings.parentSelector).width() - settings.scrollbarWidth;
             var outerOffset = $(settings.outerSelector).offset().top;
+
             // 15 for margin on each side, 2 (or 1) for the 1px border(s)
             var desiredWidth = window.innerWidth - 30 - settings.scrollbarWidth - 2;
             var desiredHeight = window.innerHeight - outerOffset - 15 - 1;
@@ -1203,6 +1212,7 @@ window.divaPlugins = [];
                 } else if (newWidth <= settings.originalWidth) {
                     newWidth = Math.min(desiredWidth, settings.originalWidth);
                 }
+
                 $(settings.parentSelector).width(newWidth + settings.scrollbarWidth);
             }
 
@@ -1324,9 +1334,11 @@ window.divaPlugins = [];
                 // Allow pinch-zooming
                 $('body').bind('gestureend', function (event) {
                     var e = event.originalEvent;
+
                     if (!settings.scaleWait) {
                         // Save the page we're currently on so we scroll there
                         settings.goDirectlyTo = settings.currentPageIndex;
+
                         if (settings.inGrid) {
                             settings.inGrid = false;
 
@@ -1391,8 +1403,11 @@ window.divaPlugins = [];
                 if (!settings.mobileWebkit)  {
                     $(window).resize(function () {
                         var adjustSuccess = (settings.inFullscreen) ? adjustFullscreenDims() : adjustBrowserDims();
+
                         if (adjustSuccess) {
+                            // Cancel any previously-set resize timeouts
                             clearTimeout(settings.resizeTimer);
+
                             settings.resizeTimer = setTimeout(function () {
                                 settings.goDirectlyTo = settings.currentPageIndex;
                                 loadViewer();
@@ -1405,6 +1420,7 @@ window.divaPlugins = [];
 
         // Handles all status updating etc (both fullscreen and not)
         var createToolbar = function () {
+            // Prepare the HTML for the various components
             var gridIconHTML = (settings.enableGrid) ? '<div class="diva-grid-icon' + (settings.inGrid ? ' diva-in-grid' : '') + '" id="' + settings.ID + 'grid-icon" title="Toggle grid view"></div>' : '';
             var linkIconHTML = (settings.enableLink) ? '<div class="diva-link-icon" id="' + settings.ID + 'link-icon" style="' + (settings.enableGrid ? 'border-left: 0px' : '') + '" title="Link to this page"></div>' : '';
             var zoomSliderHTML = (settings.enableZoomSlider) ? '<div id="' + settings.ID + 'zoom-slider"></div>' : '';
@@ -1416,23 +1432,27 @@ window.divaPlugins = [];
 
             // If the viewer is specified to be "contained", we make room for the fullscreen icon
             var otherToolbarClass = '';
+
             if (settings.contained) {
                 // Make sure the container element does not have a static position
                 // (Needed for the fullscreen icon to be contained)
                 if ($(settings.parentSelector).css('position') === 'static') {
                     $(settings.parentSelector).addClass('diva-relative-position');
                 }
+
                 otherToolbarClass = ' diva-fullscreen-space';
+
                 // If enableAutoTitle is set to TRUE, move it down
                 if (settings.enableAutoTitle) {
                     $(settings.selector + 'fullscreen').addClass('diva-contained');
                 }
             }
+
             var toolbarHTML = '<div id="' + settings.ID + 'tools-left" class="diva-tools-left' + otherToolbarClass + '">' + zoomSliderHTML + gridSliderHTML + zoomSliderLabelHTML + gridSliderLabelHTML + '</div><div id="' + settings.ID + 'tools-right" class="diva-tools-right">' + linkIconHTML + gridIconHTML + '<div class="diva-page-nav">' + gotoPageHTML + pageNumberHTML + '</div></div>';
 
             $(settings.parentSelector).prepend('<div id="' + settings.ID + 'tools" class="diva-tools">' + toolbarHTML + '</div>');
 
-            // Attach handlers to everything
+            // Create the zoom slider
             $(settings.selector + 'zoom-slider').slider({
                 value: settings.zoomLevel,
                 min: settings.minZoomLevel,
@@ -1449,6 +1469,7 @@ window.divaPlugins = [];
                     var centerX = $(settings.outerSelector).scrollLeft() - (innerWidth - settings.panelWidth) / 2;
                     settings.horizontalOffset = (innerWidth > settings.panelWidth) ? centerX * zoomRatio : 0;
                     settings.verticalOffset = zoomRatio * ($(settings.outerSelector).scrollTop() - settings.heightAbovePages[i]);
+
                     handleZoom(ui.value);
                 },
                 change: function (event, ui) {
@@ -1458,6 +1479,7 @@ window.divaPlugins = [];
                 }
             });
 
+            // Create the grid slider
             $(settings.selector + 'grid-slider').slider({
                 value: settings.pagesPerRow,
                 min: settings.minPagesPerRow,
@@ -1473,10 +1495,12 @@ window.divaPlugins = [];
                 }
             });
 
+            // Handle clicking of the grid icon
             $(settings.selector + 'grid-icon').click(function () {
                 toggleGridIcon();
             });
 
+            // Handle going to a specific page using the input box
             $(settings.selector + 'goto-page').submit(function () {
                 var desiredPage = parseInt($(settings.selector + 'goto-page-input').val(), 10);
                 var pageIndex = desiredPage - 1;
@@ -1508,11 +1532,12 @@ window.divaPlugins = [];
                 // Catch onmouseup events outside of this div
                 $('body').mouseup(function (event) {
                     var targetID = event.target.id;
-                    if (targetID == settings.ID + 'link-popup' || targetID == settings.ID + 'link-popup-input') {
-                    } else {
+
+                    if (targetID !== settings.ID + 'link-popup' && targetID !== settings.ID + 'link-popup-input') {
                         $(settings.selector + 'link-popup').remove();
                     }
                 });
+
                 // Also delete it upon scroll and page up/down key events
                 $(settings.outerSelector).scroll(function () {
                     $(settings.selector + 'link-popup').remove();
@@ -1529,8 +1554,9 @@ window.divaPlugins = [];
             $(settings.selector + currentSlider + '-slider-label').show();
 
             var switchMode = function () {
-                // Switch from fullscreen to not, etc
+                // Switch from fullscreen to not
                 $(settings.selector + 'tools').toggleClass('diva-fullscreen-tools');
+
                 if (!settings.inFullscreen) {
                     // Leaving fullscreen
                     $(settings.selector + 'tools-left').after($(settings.selector + 'tools-right'));
@@ -1562,21 +1588,25 @@ window.divaPlugins = [];
                     $(settings.selector + 'num-pages').text(newNumber);
                 },
                 updateZoomSlider: function () {
+                    // Update the position of the handle within the slider
                     if (settings.zoomLevel !== $(settings.selector + 'zoom-slider').slider('value')) {
                         $(settings.selector + 'zoom-slider').slider({
                             value: settings.zoomLevel
                         });
                     }
 
+                    // Update the slider label
                     $(settings.selector + 'zoom-level').text(settings.zoomLevel);
                 },
                 updateGridSlider: function () {
+                    // Update the position of the handle within the slider
                     if (settings.pagesPerRow !== $(settings.selector + 'grid-slider').slider('value')) {
                         $(settings.selector + 'grid-slider').slider({
                             value: settings.pagesPerRow
                         });
                     }
 
+                    // Update the slider label
                     $(settings.selector + 'pages-per-row').text(settings.pagesPerRow);
                 },
                 switchSlider: switchSlider,
@@ -1592,6 +1622,7 @@ window.divaPlugins = [];
                 // Add all the plugins that have not been explicitly disabled to settings.plugins
                 $.each(window.divaPlugins, function (index, plugin) {
                     var pluginProperName = plugin.pluginName[0].toUpperCase() + plugin.pluginName.substring(1);
+
                     if (settings['enable' + pluginProperName]) {
                         // Set all the settings
                         executeCallback(plugin.init, settings);
@@ -1608,7 +1639,6 @@ window.divaPlugins = [];
                                 plugin.handleClick.call(this, event, settings);
                             });
                         }
-
 
                         // Add it to settings.plugins so it can be used later
                         settings.plugins.push(plugin);
@@ -1660,6 +1690,7 @@ window.divaPlugins = [];
                     if (settings.enableFilename) {
                         var iParam = $.getHashParam('i' + settings.hashParamSuffix);
                         var iParamPage = getPageIndex(iParam);
+
                         if (isPageValid(iParamPage)) {
                             settings.goDirectlyTo = iParamPage;
                         }
@@ -1667,6 +1698,7 @@ window.divaPlugins = [];
                         // Not using the i parameter, check the p parameter
                         // Subtract 1 to get the page index
                         var pParam = parseInt($.getHashParam('p' + settings.hashParamSuffix), 10) - 1;
+
                         if (isPageValid(pParam)) {
                             settings.goDirectlyTo = pParam;
                         }
@@ -1680,11 +1712,12 @@ window.divaPlugins = [];
                     // Create the toolbar and display the title + total number of pages
                     settings.toolbar = createToolbar();
                     $(settings.selector + 'current label').text(settings.numPages);
+
                     if (settings.enableAutoTitle) {
                         $(settings.parentSelector).prepend('<div id="' + settings.ID + 'title" class="diva-title">' + settings.itemTitle + '</div>');
                     }
 
-                    // Adjust the document panel dimensions for Apple touch devices
+                    // Adjust the document panel dimensions for touch devices
                     if (settings.mobileWebkit) {
                         adjustMobileWebkitDims();
                     } else {
@@ -1713,6 +1746,7 @@ window.divaPlugins = [];
         var init = function () {
             // First figure out the width of the scrollbar in this browser
             settings.scrollbarWidth = $.getScrollbarWidth();
+
             // If window.orientation is defined, then it's probably mobileWebkit
             settings.mobileWebkit = typeof orientation !== 'undefined';
 
@@ -1722,6 +1756,7 @@ window.divaPlugins = [];
 
             // Figure out the hashParamSuffix from the ID
             var divaNumber = parseInt(settings.ID, 10);
+
             if (divaNumber > 1) {
                 // If this is document viewer #1, don't use a suffix; otherwise, use the document viewer number
                 settings.hashParamSuffix = divaNumber;
@@ -1742,15 +1777,18 @@ window.divaPlugins = [];
 
             // First, n - check if it's in range
             var nParam = parseInt($.getHashParam('n' + settings.hashParamSuffix), 10);
+
             if (nParam >= settings.minPagesPerRow && nParam <= settings.maxPagesPerRow) {
                 settings.pagesPerRow = nParam;
             }
 
             // Now z - check that it's in range
             var zParam = $.getHashParam('z' + settings.hashParamSuffix);
+
             if (zParam !== '') {
                 // If it's empty, we don't want to change the default zoom level
                 zParam = parseInt(zParam, 10);
+
                 // Can't check if it exceeds the max zoom level or not because that data is not available yet ...
                 if (zParam >= settings.minZoomLevel) {
                     settings.zoomLevel = zParam;
@@ -1759,12 +1797,14 @@ window.divaPlugins = [];
 
             // y - vertical offset from the top of the relevant page
             var yParam = parseInt($.getHashParam('y' + settings.hashParamSuffix), 10);
+
             if (!isNaN(yParam)) {
                 settings.verticalOffset = yParam;
             }
 
             // x - horizontal offset from the center of the page
             var xParam = parseInt($.getHashParam('x' + settings.hashParamSuffix), 10);
+
             if (!isNaN(xParam)) {
                 settings.horizontalOffset = xParam;
             }
@@ -1832,6 +1872,8 @@ window.divaPlugins = [];
             return settings.zoomLevel;
         };
 
+        // Use the provided zoom level (will check for validity first)
+        // Returns false if the zoom level is the same as the current, true otherwise
         this.setZoomLevel = function (zoomLevel) {
             return handleZoom(zoomLevel);
         };
@@ -1855,35 +1897,41 @@ window.divaPlugins = [];
             return verticallyInViewport(top, bottom);
         };
 
+        // Toggle fullscreen mode
         this.toggleMode = function () {
             toggleFullscreenIcon();
         };
 
+        // Enter fullscreen mode if currently not in fullscreen mode
+        // Returns false if in fullscreen mode initially, true otherwise
         // This function will work even if enableFullscreen is set to false
         this.enterFullscreen = function () {
             if (!settings.inFullscreen) {
                 toggleFullscreenIcon();
                 return true;
             } else {
-                // We're already in fullscreen, return false
                 return false;
             }
         };
 
+        // Leave fullscreen mode if currently in fullscreen mode
+        // Returns true if in fullscreen mode intitially, false otherwise
         this.leaveFullscreen = function () {
             if (settings.inFullscreen) {
                 toggleFullscreenIcon();
                 return true;
             } else {
-                // We're not in fullscreen, return false
                 return false;
             }
         };
 
+        // Toggle grid view
         this.toggleView = function () {
             toggleGridIcon();
         };
 
+        // Enter grid view if currently not in grid view
+        // Returns false if in grid view initially, true otherwise
         this.enterGrid = function () {
             if (!settings.inGrid) {
                 toggleGridIcon();
@@ -1893,6 +1941,8 @@ window.divaPlugins = [];
             }
         };
 
+        // Leave grid view if currently in grid view
+        // Returns true if in grid view initially, false otherwise
         this.leaveGrid = function () {
             if (settings.inGrid) {
                 toggleGridIcon();
@@ -1903,6 +1953,7 @@ window.divaPlugins = [];
         };
 
         // Jump to an image based on its filename
+        // Returns true if successful and false if the filename is invalid
         this.gotoPageByName = function (filename) {
             var pageIndex = getPageIndex(filename);
             if (isPageValid(pageIndex)) {
@@ -1913,6 +1964,8 @@ window.divaPlugins = [];
             return false;
         };
 
+        // Get the page index (0-based) corresponding to a given filename
+        // If the page index doesn't exist, this will return -1
         this.getPageIndex = function (filename) {
             return getPageIndex(filename);
         };
@@ -1927,10 +1980,12 @@ window.divaPlugins = [];
             return getURLHash();
         };
 
+        // Get an object representing the state of this diva instance (for setState)
         this.getState = function () {
             return getState();
         };
 
+        // Align this diva instance with a state object (as returned by getState)
         this.setState = function (state) {
             var changeView, pageIndex;
 
@@ -1939,6 +1994,7 @@ window.divaPlugins = [];
 
             // Only change settings.goDirectlyTo if state.i or state.p is valid
             pageIndex = getPageIndex(state.i);
+
             if (isPageValid(pageIndex)) {
                 settings.goDirectlyTo = pageIndex;
             } else if (isPageValid(state.p)) {
@@ -1968,7 +2024,7 @@ window.divaPlugins = [];
                     settings.inGrid = state.g;
                     handleViewChange();
                 } else {
-                    // Just reload the viewer, in case
+                    // Reload the viewer, just in case
                     loadViewer();
                 }
             }
@@ -1980,11 +2036,15 @@ window.divaPlugins = [];
             loadViewer();
         };
 
-        // Destroys this instance, tells plugins to do the same
+        // Destroys this instance, tells plugins to do the same (for testing)
         this.destroy = function () {
             // Removes the hide-scrollbar class from the body
             $('body').removeClass('diva-hide-scrollbar');
+
+            // Empty the parent container and remove any diva-related data
             $(settings.parentSelector).empty().removeData('diva');
+
+            // Call the destroy function for all the enabled plugins (if it exists)
             $.each(settings.plugins, function (index, plugin) {
                 executeCallback(plugin.destroy);
             });
@@ -2004,12 +2064,13 @@ window.divaPlugins = [];
             if (element.data('diva')) {
                 return;
             }
+
+            // Save the reference to the container element
             options.parentSelector = element;
 
             // Otherwise, instantiate the document viewer
             var diva = new Diva(this, options);
             element.data('diva', diva);
-            options.diva = diva;
         });
     };
 
