@@ -766,6 +766,11 @@ window.divaPlugins = [];
                 settings.preZoomOffset = undefined;
             } else {
                 // Otherwise, we just scroll to the page saved in settings.goDirectlyTo (must be valid)
+                // Make sure the value for settings.goDirectlyTo is valid
+                if (!isPageValid(settings.goDirectlyTo)) {
+                    settings.goDirectlyTo = 0;
+                }
+
                 // We use the stored y/x offsets (relative to the top of the page and the center, respectively)
                 gotoPage(settings.goDirectlyTo, settings.verticalOffset, settings.horizontalOffset);
                 settings.horizontalOffset = 0;
