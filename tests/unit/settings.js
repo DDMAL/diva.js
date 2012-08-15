@@ -63,7 +63,7 @@ asyncTest("contained true, enableAutoTitle true", function () {
 
 // enableCanvas and enableDownload are tested in plugins.js
 
-// enableFilename is tested in link.js
+// enableFilename is tested in hashparams.js
 
 asyncTest("enableFullscreen false", function () {
     $.tempDiva({
