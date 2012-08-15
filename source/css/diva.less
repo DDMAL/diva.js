@@ -161,13 +161,12 @@
     z-index: @fullscreenZIndex + 1;
     top: 10px;
     left: 10px;
-    width: 24px;
-    height: 24px;
+    .square(@fullscreenIconSize);
     cursor: pointer;
     background: url("@{iconPath}fullscreen.png") no-repeat;
 
     &:hover {
-        background-position: -24px 0;
+        background-position: -@fullscreenIconSize 0;
     }
 
     &.diva-contained {
