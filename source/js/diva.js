@@ -718,6 +718,9 @@ window.divaPlugins = [];
             // Pretend that this is the current page
             settings.currentPageIndex = pageIndex;
             settings.toolbar.updateCurrentPage();
+
+            // Execute the onJump callback
+            executeCallback(settings.onJump, pageIndex);
         };
 
         // Calculates the desired row, then scrolls there
