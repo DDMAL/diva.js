@@ -119,7 +119,7 @@ window.divaPlugins = [];
             numPages: 0,                // Number of pages in the array
             numRows: 0,                 // Number of rows
             oldPagesPerRow: 0,          // Holds the previous number of pages per row after it is changed
-            oldZoomLevel: 0,            // Holds the previous zoom level after zooming in or out
+            oldZoomLevel: -1,           // Holds the previous zoom level after zooming in or out
             orientationChange: false,   // For handling device orientation changes for touch devices
             originalHeight: 0,          // Stores the original height of the .diva-outer element
             originalWidth: 0,           // Stores the original width of the .diva-outer element
