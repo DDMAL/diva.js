@@ -868,8 +868,8 @@ window.divaPlugins = [];
             }
 
             // Set the height and width of documentpane (necessary for dragscrollable)
-            $(settings.innerSelector).css('height', Math.round(settings.totalHeight));
-            $(settings.innerSelector).css('width', Math.round(widthToSet));
+            $(settings.innerSelector).height(Math.round(settings.totalHeight));
+            $(settings.innerSelector).width(Math.round(widthToSet));
 
             // Scroll to the proper place
             documentScroll();
@@ -894,8 +894,9 @@ window.divaPlugins = [];
             settings.rowHeight = (settings.fixedHeightGrid) ? settings.fixedPadding + settings.minRatio * pageWidth : settings.fixedPadding + settings.maxRatio * pageWidth;
             settings.numRows = Math.ceil(settings.numPages / settings.pagesPerRow);
             settings.totalHeight = settings.numRows * settings.rowHeight + settings.fixedPadding;
-            $(settings.innerSelector).css('height', Math.round(settings.totalHeight));
-            $(settings.innerSelector).css('width', Math.round(settings.panelWidth));
+
+            $(settings.innerSelector).height(Math.round(settings.totalHeight));
+            $(settings.innerSelector).width(Math.round(settings.panelWidth));
 
             // First scroll directly to the row containing the current page
             gridScroll();
