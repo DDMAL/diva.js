@@ -1554,10 +1554,6 @@ window.divaPlugins = [];
                 $(settings.selector + 'grid-icon').toggleClass('diva-in-grid');
             };
 
-            if (settings.jumpIntoFullscreen) {
-                switchMode();
-            }
-
             var toolbar = {
                 updateCurrentPage: function () {
                     $(settings.selector + 'current-page').text(settings.currentPageIndex + 1);
