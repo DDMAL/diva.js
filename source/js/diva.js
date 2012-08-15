@@ -1534,11 +1534,11 @@ window.divaPlugins = [];
                 if (!settings.inFullscreen) {
                     // Leaving fullscreen
                     $(settings.selector + 'tools-left').after($(settings.selector + 'tools-right'));
-                    $(settings.selector + 'tools-left').css('float', 'left').css('padding-top', '0px').css('text-align', 'left').css('clear', 'none');
+                    $(settings.selector + 'tools-left').removeClass('in-fullscreen');
                 } else {
                     // Entering fullscreen
                     $(settings.selector + 'tools-right').after($(settings.selector + 'tools-left'));
-                    $(settings.selector + 'tools-left').css('float', 'right').css('padding-top', '10px').css('text-align', 'right').css('clear', 'both');
+                    $(settings.selector + 'tools-left').addClass('in-fullscreen');
                 }
             };
 
