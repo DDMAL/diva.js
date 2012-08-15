@@ -1521,12 +1521,21 @@ window.divaPlugins = [];
 
             // Handle the creation of the link popup box
             $(settings.selector + 'link-icon').click(function () {
-                var leftOffset = $(settings.outerSelector).offset().left + settings.panelWidth;
-                $('body').prepend('<div id="' + settings.ID + 'link-popup" class="diva-link-popup"><input id="' + settings.ID + 'link-popup-input" class="diva-input" type="text" value="'+ getCurrentURL() + '"/></div>');
+                $('body').prepend('<div id="' + settings.ID + 'link-popup" class="diva-link-popup"><input id="' + settings.ID + 'link-popup-input" class="diva-input" type="text" value="' + getCurrentURL() + '"/></div>');
+
                 if (settings.inFullscreen) {
-                    $(settings.selector + 'link-popup').css('top', '150px').css('right', '30px');
+                    $(settings.selector + 'link-popup').addClass('in-fullscreen');
                 } else {
-                    $(settings.selector + 'link-popup').css('top', $(settings.outerSelector).offset().top + 'px').css('left', (leftOffset - 223) + 'px');
+                    // Calculate the left and top offsets
+                    // Compensate for border, popup width
+                    var leftOffset = $(settings.outerSelector).offset().left + settings.panelWidth;
+                    leftOffset += settings.scrollbarWidth - 240 - 1;
+                    var topOffset = $(settings.outerSelector).offset().top + 1;
+
+                    $(settings.selector + 'link-popup').removeClass('in-fullscreen').css({
+                        'top': topOffset + 'px',
+                        'left': leftOffset + 'px'
+                    });
                 }
 
                 // Catch onmouseup events outside of this div
