@@ -23,7 +23,7 @@ asyncTest("gotoPage() and getCurrentPage()", function () {
     });
 });
 
-asyncTest("getZoomLevel(), zoomIn() and zoomOut()", function () {
+asyncTest("get/setZoomLevel(), zoomIn() and zoomOut()", function () {
     $.tempDiva({
         zoomLevel: 2,
         minZoomLevel: 1,
@@ -42,8 +42,25 @@ asyncTest("getZoomLevel(), zoomIn() and zoomOut()", function () {
             ok(!this.zoomIn(), "It should not be possible to zoom in again (hit max)");
             equal(this.getZoomLevel(), 3, "Zoom level should still be 3");
 
-            ok(this.zoomOut(), "It should be possible to zoom out");
+            ok(!this.setZoomLevel(5), "Setting zoom level to 5 should fail");
+            equal(this.getZoomLevel(), 3, "Zoom level should still be 3");
+
+            ok(this.setZoomLevel(2), "Setting zoom level to 2 should be fine");
             equal(this.getZoomLevel(), 2, "Zoom level should now be 2");
+            start();
+        }
+    });
+});
+
+asyncTest("inViewport()", function () {
+    $.tempDiva({
+        viewportMargin: 0,
+        onReady: function (settings) {
+            // Can only do fairly simple checks
+            ok(this.inViewport(1, 100, 50));
+            ok(!this.inViewport(1, -100, 50));
+            ok(!this.inViewport(40, 100, 50));
+
             start();
         }
     });
@@ -102,6 +119,49 @@ asyncTest("gotoPageByName()", function () {
     });
 });
 
+asyncTest("getPageIndex()", function () {
+    $.tempDiva({
+        onReady: function (settings) {
+            equal(this.getPageIndex('bm_002.tif'), 1, "Valid filename");
+            equal(this.getPageIndex('bm_lol.tif'), -1, "Invalid filename");
+
+            start();
+        }
+    });
+});
+
+// Can't really test the getCurrentURL function
+
+// Can't really test getURLHash easily either
+// Since it relies on getState, we can test the public version of that instead
+
+asyncTest("getState()", function () {
+    $.tempDiva({
+        onReady: function (settings) {
+            var expected = {
+                f: false,
+                g: false,
+                h: 700,
+                i: 'bm_001.tif',
+                n: 5,
+                p: false,
+                w: 960,
+                x: 0,
+                y: 0,
+                z: 2
+            };
+
+            var actual = this.getState();
+
+            for (key in expected) {
+                equal(actual[key], expected[key], "Checking key '" + key + "'");
+            }
+
+            start();
+        }
+    });
+});
+
 asyncTest("setState()", function () {
     $.tempDiva({
         onReady: function (settings) {
@@ -151,6 +211,33 @@ asyncTest("setState()", function () {
             equal(settings.currentPageIndex, 498, "Current page should be 500 (index of 499)");
             equal(settings.pagesPerRow, 4, "Pages per row should be 4");
             equal(settings.zoomLevel, 4, "Zoom level should be 4");
+
+            start();
+        }
+    });
+});
+
+asyncTest("resizeViewer()", function () {
+    $.tempDiva({
+        onReady: function (settings) {
+            var width = $(settings.outerSelector).width();
+            var height = $(settings.outerSelector).height();
+            notEqual(width, 500, "Original width should not be 500");
+            notEqual(height, 600, "Original height should not be 600");
+
+            this.resize(500, 600);
+
+            width = $(settings.outerSelector).width();
+            height = $(settings.outerSelector).height();
+            equal(width, 500, "Width should now be 500");
+            equal(height, 600, "Height should now be 600");
+
+            // Try an invalid value
+            this.resize(10, 500);
+            width = $(settings.outerSelector).width();
+            height = $(settings.outerSelector).height();
+            equal(width, 500, "Width should still be 500");
+            equal(height, 500, "Height should now be 500");
 
             start();
         }
