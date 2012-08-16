@@ -1,3 +1,8 @@
+/*
+Test coverage: pretty much complete
+Could also test key navigation, but it's pretty difficult and doesn't seem worth it
+*/
+
 module("Navigation");
 
 asyncTest("Scrolling in document view", function () {

@@ -1,3 +1,8 @@
+/*
+Test coverage: pretty much complete
+Can't really (or don't need to) test any of the others
+*/
+
 module("Utility methods");
 
 test("getHashParam()", function () {

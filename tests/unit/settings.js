@@ -1,3 +1,7 @@
+/*
+Test coverage: pretty much complete
+*/
+
 module("Settings");
 
 asyncTest("adaptivePadding enabled", function () {

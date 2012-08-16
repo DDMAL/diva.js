@@ -1,3 +1,7 @@
+/*
+Test coverage: pretty much complete
+*/
+
 module("Hash params");
 
 var multipleHashParamTest = function (testName, hashParams, onReadyCallback, settings) {

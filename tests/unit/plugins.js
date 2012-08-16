@@ -1,3 +1,7 @@
+/*
+Test coverage: incomplete
+*/
+
 module("Download plugin");
 
 module("Canvas plugin");

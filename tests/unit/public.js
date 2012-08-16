@@ -1,3 +1,7 @@
+/*
+Test coverage: pretty much complete
+*/
+
 module("Public functions");
 
 asyncTest("getItemTitle()", function () {
