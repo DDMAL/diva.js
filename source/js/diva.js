@@ -1900,6 +1900,7 @@ window.divaPlugins = [];
             var pageIndex = pageNumber - 1;
             var top = settings.heightAbovePages[pageIndex] + topOffset;
             var bottom = top + height;
+
             return verticallyInViewport(top, bottom);
         };
 
