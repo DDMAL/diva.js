@@ -39,10 +39,10 @@ Adds a little "tools" icon next to each image
             var y = -(currentCenter.y - canvas.centerY);
 
             var theta = toRadians(sliders.rotation.previous - angle);
-            x = Math.cos(theta) * x - Math.sin(theta) * y + canvas.centerX;
-            y = -(Math.sin(theta) * x + Math.cos(theta) * y) + canvas.centerY;
+            var newX = Math.cos(theta) * x - Math.sin(theta) * y + canvas.centerX;
+            var newY = -(Math.sin(theta) * x + Math.cos(theta) * y) + canvas.centerY;
 
-            return {'x': x, 'y': y};
+            return {'x': newX, 'y': newY};
         };
 
         // Rotates the image on the given canvas by the given angle
