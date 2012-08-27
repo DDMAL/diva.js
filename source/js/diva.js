@@ -1765,7 +1765,7 @@ window.divaPlugins = [];
             settings.scrollbarWidth = $.getScrollbarWidth();
 
             // If window.orientation is defined, then it's probably mobileWebkit
-            settings.mobileWebkit = orientation !== undefined;
+            settings.mobileWebkit = window.orientation !== undefined;
 
             // Generate an ID that can be used as a prefix for all the other IDs
             settings.ID = $.generateId('diva-');
