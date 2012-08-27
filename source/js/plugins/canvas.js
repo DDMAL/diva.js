@@ -311,7 +311,7 @@ Adds a little "tools" icon next to each image
                 hideThrobber();
 
                 // If the callback function exists, execute it (for zooming)
-                if (typeof(callback) == 'function') {
+                if (typeof callback === 'function') {
                     callback.call(callback);
                 }
             };
@@ -336,9 +336,9 @@ Adds a little "tools" icon next to each image
 
             if (settings.proxyURL) {
                 return settings.proxyURL + "?f=" + settings.filename + "&w=" + width;
-            } else {
-                return settings.iipServerURL + settings.filename + '&WID=' + width + '&CVT=JPG';
             }
+
+            return settings.iipServerURL + settings.filename + '&WID=' + width + '&CVT=JPG';
         };
 
         var showThrobber = function () {
