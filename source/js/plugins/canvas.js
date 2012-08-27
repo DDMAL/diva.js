@@ -338,7 +338,7 @@ Adds a little "tools" icon next to each image
                 return settings.proxyURL + "?f=" + settings.filename + "&w=" + width;
             }
 
-            return settings.iipServerURL + settings.filename + '&WID=' + width + '&CVT=JPG';
+            return settings.iipServerURL + settings.filename + '&WID=' + width + '&CVT=JPEG';
         };
 
         var showThrobber = function () {
