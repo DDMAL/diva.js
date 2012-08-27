@@ -72,8 +72,6 @@ Adds a little "tools" icon next to each image
 
             // Returns true if something has been changed
             for (slider in sliders) {
-                console.log(slider);
-
                 if (sliders[slider].current !== sliders[slider].previous) {
                     return true;
                 }
