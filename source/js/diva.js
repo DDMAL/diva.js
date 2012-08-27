@@ -2005,7 +2005,7 @@ window.divaPlugins = [];
 
         // Align this diva instance with a state object (as returned by getState)
         this.setState = function (state) {
-            var changeView, pageIndex;
+            var pageIndex;
 
             // If we need to resize the viewer, do that first
             resizeViewer(state.w, state.h);
