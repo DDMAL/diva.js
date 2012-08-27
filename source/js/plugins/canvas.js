@@ -24,7 +24,8 @@ Adds a little "tools" icon next to each image
             contrastStep: 0.05,
             localStoragePrefix: 'canvas-',
             rgbMax: 50,
-            rgbMin: -50
+            rgbMin: -50,
+            timeout: 200
         };
 
         // Convert an angle from degrees to radians
@@ -343,8 +344,7 @@ Adds a little "tools" icon next to each image
             // Only show the throbber if it will take a long time
             if (sliders.zoom.current > 2) {
                 // The timeout is needed for the loading indicator to be shown
-                timeout = 200;
-                $('#diva-canvas-loading').fadeIn(timeout);
+                $('#diva-canvas-loading').fadeIn(settings.timeout);
             }
         };
 
