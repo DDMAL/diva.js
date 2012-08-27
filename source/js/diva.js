@@ -1927,9 +1927,9 @@ window.divaPlugins = [];
             if (!settings.inFullscreen) {
                 toggleFullscreenIcon();
                 return true;
-            } else {
-                return false;
             }
+
+            return false;
         };
 
         // Leave fullscreen mode if currently in fullscreen mode
@@ -1938,9 +1938,9 @@ window.divaPlugins = [];
             if (settings.inFullscreen) {
                 toggleFullscreenIcon();
                 return true;
-            } else {
-                return false;
             }
+
+            return false;
         };
 
         // Toggle grid view
@@ -1954,9 +1954,9 @@ window.divaPlugins = [];
             if (!settings.inGrid) {
                 toggleGridIcon();
                 return true;
-            } else {
-                return false;
             }
+
+            return false;
         };
 
         // Leave grid view if currently in grid view
@@ -1965,9 +1965,9 @@ window.divaPlugins = [];
             if (settings.inGrid) {
                 toggleGridIcon();
                 return true;
-            } else {
-                return false;
             }
+
+            return false;
         };
 
         // Jump to an image based on its filename
