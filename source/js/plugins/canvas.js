@@ -703,7 +703,7 @@ Adds a little "tools" icon next to each image
                 // Execute the onInit callback function, if defined
                 if (typeof settings.onInit === 'function') {
                     // The context is the diva instance
-                    settings.onInit.call(self, settings);
+                    settings.onInit.call(this, settings);
                 }
             },
             pluginName: 'canvas',
