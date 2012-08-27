@@ -27,7 +27,7 @@ window.divaPlugins = [];
     var Diva = function (element, options) {
         // These are elements that can be overridden upon instantiation
         // See https://github.com/DDMAL/diva.js/wiki/Code-documentation for more details
-        var defaults =  {
+        var defaults = {
             adaptivePadding: 0.05,      // The ratio of padding to the page dimension
             contained: false,           // Determines the location of the fullscreen icon
             divaserveURL: '',           // URL to the divaserve.php script - *MANDATORY*

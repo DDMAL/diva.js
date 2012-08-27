@@ -39,8 +39,8 @@ Adds a little "tools" icon next to each image
             var y = -(currentCenter.y - canvas.centerY);
 
             var theta = toRadians(sliders.rotation.previous - angle);
-            var x = Math.cos(theta) * x - Math.sin(theta) * y + canvas.centerX;
-            var y = -(Math.sin(theta) * x + Math.cos(theta) * y) + canvas.centerY;
+            x = Math.cos(theta) * x - Math.sin(theta) * y + canvas.centerX;
+            y = -(Math.sin(theta) * x + Math.cos(theta) * y) + canvas.centerY;
 
             return {'x': x, 'y': y};
         };
