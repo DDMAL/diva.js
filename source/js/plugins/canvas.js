@@ -49,6 +49,8 @@ Adds a little "tools" icon next to each image
         var rotateCanvas = function (aCanvas, angle) {
             var context = aCanvas.context;
             var center = aCanvas.size / 2;
+            var startX = -(aCanvas.width / 2);
+            var startY = -(aCanvas.height / 2);
 
             // Clear the canvas so that remnants of the old image don't show
             context.clearRect(0, 0, aCanvas.size, aCanvas.size);
@@ -57,7 +59,7 @@ Adds a little "tools" icon next to each image
             context.save();
             context.translate(center, center);
             context.rotate(toRadians(angle));
-            context.drawImage(image, -(aCanvas.width/2), -(aCanvas.height/2), aCanvas.width, aCanvas.height);
+            context.drawImage(image, startX, startY, aCanvas.width, aCanvas.height);
             context.restore();
 
             // Save the new pixel data so that it can later be adjusted in adjustLevels
@@ -66,8 +68,12 @@ Adds a little "tools" icon next to each image
 
         // Determine if we need to update the large canvas
         var shouldAdjustLevels = function () {
+            var slider;
+
             // Returns true if something has been changed
             for (slider in sliders) {
+                console.log(slider);
+
                 if (sliders[slider].current !== sliders[slider].previous) {
                     return true;
                 }
@@ -78,6 +84,8 @@ Adds a little "tools" icon next to each image
 
         // Sets the "previous" value to the "current" value for every slider
         var updatePreviousLevels = function () {
+            var slider;
+
             for (slider in sliders) {
                 sliders[slider].previous = sliders[slider].current;
             }
@@ -352,6 +360,7 @@ Adds a little "tools" icon next to each image
             var sliderSettings = {};
             var changed = false;
             var storageKey = settings.localStoragePrefix + settings.filename;
+            var slider;
 
             for (slider in sliders) {
                 if (sliders[slider].previous !== sliders[slider].initial) {
@@ -461,7 +470,7 @@ Adds a little "tools" icon next to each image
 
                 // Copy the "default" value into "value" and "previous" for each slider
                 var resetSliders = function () {
-                    var defaultValue, thisSlider;
+                    var defaultValue, thisSlider, slider;
                     for (slider in sliders) {
                         thisSlider = sliders[slider];
                         defaultValue = thisSlider.initial;
@@ -488,7 +497,7 @@ Adds a little "tools" icon next to each image
                 ];
 
                 var canvasButtonsList = [], buttonHTML, button, buttonTitle;
-                for (i in buttons) {
+                for (var i in buttons) {
                     button = buttons[i];
                     buttonTitle = sliders[button].title;
                     buttonHTML = '<div class="' + button + '" title="' + buttonTitle + '"></div>';
@@ -577,6 +586,8 @@ Adds a little "tools" icon next to each image
 
                 // Reset all the sliders to the default value
                 $('#diva-canvas-reset-all').click(function () {
+                    var slider;
+
                     for (slider in sliders) {
                         sliders[slider].current = sliders[slider].initial;
                     }
@@ -709,6 +720,8 @@ Adds a little "tools" icon next to each image
                 var filename = $(page).attr('data-filename');
                 var width = $(page).width() - 1;
                 var zoomLevel = divaSettings.zoomLevel;
+                var slider;
+
                 settings.zoomWidthRatio = width / Math.pow(2, zoomLevel);
                 settings.pluginIcon = $(this);
 
