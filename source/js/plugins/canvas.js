@@ -139,8 +139,9 @@ Adds a little "tools" icon next to each image
             var oldImageData = aCanvas.data;
             var newImageData = aCanvas.context.createImageData(oldImageData);
             var pixelArray = newImageData.data;
+            var i;
 
-            for (var i = 0, length = pixelArray.length; i < length; i++) {
+            for (i = 0, length = pixelArray.length; i < length; i++) {
                 pixelArray[i] = oldImageData.data[i];
             }
 
@@ -494,8 +495,10 @@ Adds a little "tools" icon next to each image
                     'blue'
                 ];
 
-                var canvasButtonsList = [], buttonHTML, button, buttonTitle;
-                for (var i in buttons) {
+                var canvasButtonsList = [];
+                var buttonHTML, button, buttonTitle, i;
+
+                for (i in buttons) {
                     button = buttons[i];
                     buttonTitle = sliders[button].title;
                     buttonHTML = '<div class="' + button + '" title="' + buttonTitle + '"></div>';
