@@ -139,7 +139,7 @@ Adds a little "tools" icon next to each image
             var oldImageData = aCanvas.data;
             var newImageData = aCanvas.context.createImageData(oldImageData);
             var pixelArray = newImageData.data;
-            var i;
+            var i, length;
 
             for (i = 0, length = pixelArray.length; i < length; i++) {
                 pixelArray[i] = oldImageData.data[i];
