@@ -109,6 +109,7 @@
   float: left;
   text-align: right;
   padding-right: 4px;
+  white-space: nowrap;
 }
 .diva-tools .diva-tools-right .diva-page-nav .diva-page-label {
   padding-top: 2px;
