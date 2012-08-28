@@ -1204,8 +1204,10 @@ window.divaPlugins = [];
             var outerOffset = $(settings.outerSelector).offset().top;
 
             // 15 for margin on each side, 2 (or 1) for the 1px border(s)
-            var desiredWidth = window.innerWidth - 30 - settings.scrollbarWidth - 2;
-            var desiredHeight = window.innerHeight - outerOffset - 15 - 1;
+            var windowHeight = window.innerHeight || document.documentElement.clientHeight;
+            var windowWidth = window.innerWidth || document.documentElement.clientWidth;
+            var desiredWidth = windowWidth - 30 - settings.scrollbarWidth - 2;
+            var desiredHeight = windowHeight - outerOffset - 15 - 1;
 
             if (settings.enableAutoHeight) {
                 if (newHeight + outerOffset + 16 > window.innerHeight) {
