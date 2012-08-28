@@ -130,6 +130,7 @@ window.divaPlugins = [];
             rowHeight: 0,               // Holds the max height of each row in grid view. Calculated in loadGrid()
             scaleWait: false,           // For preventing double-zoom on touch devices (iPad, etc)
             selector: '',               // Uses the generated ID prefix to easily select elements
+            singleClick: false,         // Used for catching ctrl+double-click events in Firefox in Mac OS
             scrollbarWidth: 0,          // Set to the actual scrollbar width in init()
             toolbar: null,              // Holds an object with some toolbar-related functions
             topScrollSoFar: 0,          // Holds the number of pixels of vertical scroll
@@ -1315,6 +1316,21 @@ window.divaPlugins = [];
             // Handle the control key for macs (in conjunction with double-clicking)
             $(settings.outerSelector).on('contextmenu', '.diva-document-page', function (event) {
                 if (event.ctrlKey) {
+                    // In Firefox, this doesn't trigger a double-click, so we apply one manually
+                    clearTimeout(settings.singleClickTimeout);
+
+                    if (settings.singleClick) {
+                        handleDocumentDoubleClick.call(this, event);
+                        settings.singleClick = false;
+                    } else {
+                        settings.singleClick = true;
+
+                        // Set it to false again after 500 milliseconds (standard double-click timeout)
+                        settings.singleClickTimeout = setTimeout(function () {
+                            settings.singleClick = false;
+                        }, 500);
+                    }
+
                     return false;
                 }
             });
