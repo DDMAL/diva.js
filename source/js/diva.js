@@ -1241,6 +1241,7 @@ window.divaPlugins = [];
         var adjustFullscreenDims = function () {
             settings.panelWidth = window.innerWidth - settings.scrollbarWidth;
             settings.panelHeight = window.innerHeight;
+
             return true;
         };
 
