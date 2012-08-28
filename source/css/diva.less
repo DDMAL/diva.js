@@ -259,3 +259,19 @@
         }
     }
 }
+
+// The loading indicator, shown if the AJAX request is slow
+.diva-throbber {
+    .hidden;
+    position: absolute;
+    width: @throbberWidth;
+    height: @throbberHeight;
+    .loading;
+    background-color: @white;
+    border: 1px solid @grey;
+    .pretty-shadow;
+    top: 50%;
+    left: 50%;
+    margin-left: -@throbberWidth / 2;
+    margin-top: -@throbberHeight / 2;
+}

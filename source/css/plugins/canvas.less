@@ -6,8 +6,6 @@
 
 // Dimensions - should not be changed
 @toolsWidth:            230px;
-@loadingWidth:          50px;
-@loadingHeight:         50px;
 
 // Defines a base z-index for the backdrop div
 @canvasZIndex:          @fullscreenZIndex + 5;
@@ -201,22 +199,6 @@
     }
 }
 
-#diva-canvas-loading {
-    z-index: @canvasZIndex + 5;
-    .hidden;
-    position: absolute;
-    width: @loadingWidth;
-    height: @loadingHeight;
-    .loading;
-    background-color: @white;
-    border: 1px solid @grey;
-    .pretty-shadow;
-    top: 50%;
-    left: 50%;
-    margin-left: -@loadingWidth/2;
-    margin-top: -@loadingHeight/2;
-}
-
 #diva-canvas-minimap {
     .square(@toolsWidth - 20px);
     cursor: crosshair;
@@ -257,6 +239,11 @@
     bottom: 0;
     right: 0;
     overflow: scroll;
+}
+
+.canvas-throbber {
+    z-index: @canvasZIndex + 5;
+    position: fixed;
 }
 
 /* End canvas plugin */

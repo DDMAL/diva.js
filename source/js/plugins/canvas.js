@@ -25,7 +25,8 @@ Adds a little "tools" icon next to each image
             localStoragePrefix: 'canvas-',
             rgbMax: 50,
             rgbMin: -50,
-            timeout: 200
+            throbberFadeSpeed: 200,
+            throbberTimeout: 100
         };
 
         // Convert an angle from degrees to radians
@@ -344,14 +345,13 @@ Adds a little "tools" icon next to each image
         var showThrobber = function () {
             // Only show the throbber if it will take a long time
             if (sliders.zoom.current > 2) {
-                // The timeout is needed for the loading indicator to be shown
-                $('#diva-canvas-loading').fadeIn(settings.timeout);
+                $(settings.selector + 'throbber').addClass('canvas-throbber').show();
             }
         };
 
         // Hides the loading indicator icon
         var hideThrobber = function () {
-            $('#diva-canvas-loading').fadeOut('slow');
+            $(settings.selector + 'throbber').removeClass('canvas-throbber').hide();
         };
 
         // If any modifications have been applied, save them to localStorage
@@ -413,6 +413,7 @@ Adds a little "tools" icon next to each image
 
                 settings.inCanvas = false;
                 settings.iipServerURL = divaSettings.iipServerURL;
+                settings.selector = divaSettings.selector;
 
                 // Set up the settings for the sliders/icons
                 sliders = {
@@ -544,12 +545,9 @@ Adds a little "tools" icon next to each image
                 var canvasWrapper = '<div id="diva-canvas-wrapper">' +
                     '<canvas id="diva-canvas"></canvas>' +
                 '</div>';
-                var canvasLoading = '<div id="diva-canvas-loading">' +
-                '</div>';
                 var canvasString = '<div id="diva-canvas-backdrop">' +
                     canvasTools +
                     canvasWrapper +
-                    canvasLoading +
                 '</div>';
 
                 $('body').append(canvasString);
@@ -622,7 +620,6 @@ Adds a little "tools" icon next to each image
 
                 // Update the large canvas when the apply button is clicked
                 $('#diva-canvas-apply').click(function () {
-                    var timeout = 0;
                     if (shouldAdjustLevels()) {
                         showThrobber();
 
@@ -636,7 +633,7 @@ Adds a little "tools" icon next to each image
                                 // Save modifications to localSetttings (also done in updateZoom callback)
                                 saveSettings();
                             }
-                        }, timeout);
+                        }, settings.throbberTimeout);
                     }
                 });
 

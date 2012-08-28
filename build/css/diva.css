@@ -289,6 +289,22 @@
   background: #ffffff;
   border: 1px solid #99bbe8;
 }
+.diva-throbber {
+  display: none;
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  background: url("../img/loading.gif") no-repeat center;
+  background-color: #ffffff;
+  border: 1px solid #dddddd;
+  -webkit-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
+  -moz-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
+  box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
+  top: 50%;
+  left: 50%;
+  margin-left: -25px;
+  margin-top: -25px;
+}
 /* Begin canvas plugin */
 .diva-canvas-icon {
   background: url('../img/plugins/canvas.png') no-repeat;
@@ -462,23 +478,6 @@
 #diva-canvas-slider .handle {
   margin-left: -6px;
 }
-#diva-canvas-loading {
-  z-index: 110;
-  display: none;
-  position: absolute;
-  width: 50px;
-  height: 50px;
-  background: url("../img/loading.gif") no-repeat center;
-  background-color: #ffffff;
-  border: 1px solid #dddddd;
-  -webkit-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
-  -moz-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
-  box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
-  top: 50%;
-  left: 50%;
-  margin-left: -25px;
-  margin-top: -25px;
-}
 #diva-canvas-minimap {
   height: 210px;
   width: 210px;
@@ -519,6 +518,10 @@
   bottom: 0;
   right: 0;
   overflow: scroll;
+}
+.canvas-throbber {
+  z-index: 110;
+  position: fixed;
 }
 /* End canvas plugin */
 /* Begin download plugin */

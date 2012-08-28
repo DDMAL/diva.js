@@ -70,6 +70,7 @@ window.divaPlugins = [];
             pageLoadTimeout: 200,       // Number of milliseconds to wait before loading pages
             pagesPerRow: 5,             // The default number of pages per row in grid view
             rowLoadTimeout: 50,         // Number of milliseconds to wait before loading a row
+            throbberTimeout: 100,       // Number of milliseconds to wait before showing throbber
             tileFadeSpeed: 0,           // The tile fade-in speed in ms (or "fast" or "slow"; 0 to disable)
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
@@ -132,6 +133,7 @@ window.divaPlugins = [];
             selector: '',               // Uses the generated ID prefix to easily select elements
             singleClick: false,         // Used for catching ctrl+double-click events in Firefox in Mac OS
             scrollbarWidth: 0,          // Set to the actual scrollbar width in init()
+            throbberTimeoutID: -1,      // Holds the ID of the throbber loading timeout
             toolbar: null,              // Holds an object with some toolbar-related functions
             topScrollSoFar: 0,          // Holds the number of pixels of vertical scroll
             totalHeights: [],           // The total height of all pages (stacked together) for each zoom level
@@ -1693,7 +1695,24 @@ window.divaPlugins = [];
             }
         };
 
+        var hideThrobber = function () {
+            // Clear the timeout, if it hasn't executed yet
+            clearTimeout(settings.throbberTimeoutID);
+
+            // Hide the throbber if it has already executed
+            $(settings.selector + 'throbber').hide();
+        };
+
         var setupViewer = function () {
+            // Create the throbber element
+            var throbberHTML = '<div id="' + settings.ID + 'throbber" class="diva-throbber"></div>';
+            $(settings.outerSelector).append(throbberHTML);
+
+            // If the request hasn't completed after a specified time, show it
+            settings.throbberTimeoutID = setTimeout(function () {
+                $(settings.selector + 'throbber').show();
+            }, settings.throbberTimeout);
+
             $.ajax({
                 url: settings.divaserveURL,
                 data: {
@@ -1702,10 +1721,14 @@ window.divaPlugins = [];
                 cache: true,
                 dataType: 'json',
                 error: function (data) {
+                    hideThrobber();
+
                     // Show a basic error message within the document viewer pane
                     $(settings.outerSelector).text("Invalid URL. Error code: " + data.status);
                 },
                 success: function (data) {
+                    hideThrobber();
+
                     // Save all the data we need
                     settings.pages = data.pgs;
                     settings.maxRatio = data.dims.max_ratio;
