@@ -1644,8 +1644,13 @@ window.divaPlugins = [];
                     var pluginProperName = plugin.pluginName[0].toUpperCase() + plugin.pluginName.substring(1);
 
                     if (settings['enable' + pluginProperName]) {
-                        // Set all the settings
-                        executeCallback(plugin.init, settings);
+                        // Call the init function and check return value
+                        var enablePlugin = plugin.init(settings);
+
+                        // If int returns false, consider the plugin disabled
+                        if (!enablePlugin) {
+                            return;
+                        }
 
                         // If the title text is undefined, use the name of the plugin
                         var titleText = plugin.titleText || pluginProperName + " plugin";

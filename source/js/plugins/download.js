@@ -9,6 +9,7 @@ Allows you to download images served by IIPImage
         return {
             init: function(divaSettings) {
                 settings.iipServerURL = divaSettings.iipServerURL;
+                return true;
             },
             pluginName: 'download',
             titleText: 'Download image at the given zoom level',

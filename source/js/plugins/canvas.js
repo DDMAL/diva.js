@@ -396,6 +396,13 @@ Adds a little "tools" icon next to each image
 
         return {
             init: function (divaSettings) {
+                // If the browser does not support canvas, do nothing
+                // And, disable this plugin
+                var canvasSupported = !!window.HTMLCanvasElement;
+                if (!canvasSupported) {
+                    return false;
+                }
+
                 // Override all the configurable settings defined under canvasPlugin
                 $.extend(settings, defaults, divaSettings.canvasPlugin);
 
@@ -482,7 +489,8 @@ Adds a little "tools" icon next to each image
 
                 // Create the DOM elements if they haven't already been created
                 if ($('#diva-canvas-backdrop').length) {
-                    return;
+                    // Return true to keep the plugin enabled
+                    return true;
                 }
 
                 var buttons = [
@@ -705,6 +713,8 @@ Adds a little "tools" icon next to each image
                     // The context is the diva instance
                     settings.onInit.call(this, settings);
                 }
+
+                return true;
             },
             pluginName: 'canvas',
             titleText: 'View the image on a canvas and adjust various settings',
