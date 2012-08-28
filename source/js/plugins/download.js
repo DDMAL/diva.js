@@ -17,7 +17,7 @@ Allows you to download images served by IIPImage
                 var pageDiv = $(this).parent().parent();
                 var filename = $(pageDiv).attr('data-filename');
                 var width = $(pageDiv).width() - 1;
-                var image = settings.iipServerURL + filename + '&WID=' + width + '&CVT=JPG';
+                var image = settings.iipServerURL + filename + '&WID=' + width + '&CVT=JPEG';
                 window.open(image);
             }
         };
