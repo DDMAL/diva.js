@@ -892,7 +892,7 @@ window.divaPlugins = [];
 
             // If this is not the initial load, execute the zoom callbacks
             if (settings.oldZoomLevel >= 0) {
-                if (settings.oldZoomLevel > settings.zoomLevel) {
+                if (settings.oldZoomLevel < settings.zoomLevel) {
                     executeCallback(settings.onZoomIn, z);
                 } else {
                     executeCallback(settings.onZoomOut, z);
