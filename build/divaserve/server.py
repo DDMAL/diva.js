@@ -2,27 +2,41 @@ import tornado.web
 import tornado.ioloop
 import tornado.httpserver
 import divaserve
-try:
-    import cjson as json
-except ImportError:
-    import json
-    json.encode = json.dumps
+import json
 
 """
 This is a sample server.py file for incorporating the divaserve module
-into the Tornado web server.
+into the Tornado web server. By default, this is configured to
+handle a request for:
+
+  http://example.com/divaserve?d=my_document_images
+
+and assumes that "/divaserve" is set as your divaserveURL in your diva.js
+instantiation.
+
 """
 
-diva = divaserve.DivaServe("/mnt/images/beromunster")
+img_server = divaserve.DivaServe()
+
 
 class DivaHandler(tornado.web.RequestHandler):
     def get(self):
-        info = diva.get()
+        """
+        Grab the document directory. This is passed as a ?d argument, e.g.,
+           'http://www.example.com/divaserve?d=my_document_images'
+        This assumes that the folder:
+           /path/to/image/collections/my_document_images
+        exists, and that:
+           /path/to/image/collections
+         is set as your conf.IMG_DIR variable in the divaserve module.
+        """
+        docdir = self.get_argument('d')
         self.set_header("Content-Type", "application/json")
-        self.write(json.encode(info))
+        js = img_server.getc(docdir)
+        self.write(json.dumps(js))
 
 application = tornado.web.Application([
-    ("/", DivaHandler),
+    ("/divaserve", DivaHandler),
 ])
 
 if __name__ == "__main__":
