@@ -26,8 +26,8 @@ body {
     float: right;
 }
 
-.double-viewer .outer {
-    height: 600px;
+.double-viewer .diva-outer {
+    height: 500px;
     min-width: 310px;
     max-width: 450px;
 }
@@ -37,7 +37,7 @@ body {
     margin-bottom: 20px;
 }
 
-#integrated-viewer .outer {
+#integrated-viewer .diva-outer {
     height: 500px;
 }
 
