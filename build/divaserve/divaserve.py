@@ -24,6 +24,7 @@ import os
 import math
 import json
 import warnings
+import re
 
 try:
     # you can set a site-wide configuration file named 'conf'
@@ -117,7 +118,7 @@ class DivaServe(object):
         img_dir = os.path.join(self.srvdir, mdir)
 
         files = os.listdir(img_dir)
-        files.sort()
+        files.sort(key=alphanum_key)  # sort alphabetical, not asciibetical
         lowest_max_zoom = 0
         zoomlevels = []
         images = []
@@ -243,3 +244,17 @@ class DivaServe(object):
 
     def __incorporate_zoom(self, img_dim, zoom_diff):
         return img_dim / float(2 ** zoom_diff)
+
+
+def tryint(s):
+    try:
+        return int(s)
+    except:
+        return s
+
+
+def alphanum_key(s):
+    """ Turn a string into a list of string and number chunks.
+        "z23a" -> ["z", 23, "a"]
+    """
+    return [tryint(c) for c in re.split('([0-9]+)', s)]
