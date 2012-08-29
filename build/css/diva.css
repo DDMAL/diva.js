@@ -47,7 +47,7 @@
   clear: both;
 }
 .diva-tools .diva-tools-left.diva-fullscreen-space {
-  margin-left: 50px;
+  margin-left: 40px;
 }
 .diva-tools .diva-tools-left.in-fullscreen {
   float: right;
@@ -204,8 +204,8 @@
 .diva-fullscreen-icon {
   position: absolute;
   z-index: 101;
-  top: 10px;
-  left: 10px;
+  top: 5px;
+  left: 5px;
   height: 26px;
   width: 26px;
   cursor: pointer;
@@ -215,7 +215,7 @@
   background-position: -26px 0;
 }
 .diva-fullscreen-icon.diva-contained {
-  top: 45px;
+  top: 50px;
 }
 .diva-fullscreen-icon.diva-in-fullscreen {
   position: fixed;
