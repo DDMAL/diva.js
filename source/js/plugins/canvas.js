@@ -23,6 +23,7 @@ Adds a little "tools" icon next to each image
             contrastMin: -1,
             contrastStep: 0.05,
             localStoragePrefix: 'canvas-',
+            onInit: null,
             rgbMax: 50,
             rgbMin: -50,
             throbberFadeSpeed: 200,
