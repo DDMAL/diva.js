@@ -23,6 +23,7 @@ Adds a little "tools" icon next to each image
             contrastMin: -1,
             contrastStep: 0.05,
             localStoragePrefix: 'canvas-',
+            mobileWebkitMaxZoom: 2,
             onInit: null,
             rgbMax: 50,
             rgbMin: -50,
@@ -407,11 +408,6 @@ Adds a little "tools" icon next to each image
                 // Override all the configurable settings defined under canvasPlugin
                 $.extend(settings, defaults, divaSettings.canvasPlugin);
 
-                settings.viewport = {
-                    height: window.innerHeight - divaSettings.scrollbarWidth,
-                    width: window.innerWidth - divaSettings.scrollbarWidth
-                };
-
                 settings.inCanvas = false;
                 settings.iipServerURL = divaSettings.iipServerURL;
                 settings.selector = divaSettings.selector;
@@ -722,9 +718,21 @@ Adds a little "tools" icon next to each image
             pluginName: 'canvas',
             titleText: 'View the image on a canvas and adjust various settings',
             setupHook: function (divaSettings) {
+                settings.viewport = {
+                    height: window.innerHeight - divaSettings.scrollbarWidth,
+                    width: window.innerWidth - divaSettings.scrollbarWidth
+                };
+
                 // Save the min and max zoom level, and update the zoom slider
                 settings.minZoomLevel = divaSettings.minZoomLevel;
                 settings.maxZoomLevel = divaSettings.maxZoomLevel;
+
+                // If we're on the iPad, limit the max zoom level to 2
+                // Can't do canvas elements that are > 5 megapixels (issue #112)
+                if (settings.mobileWebkit) {
+                    settings.maxZoomLevel = Math.min(settings.maxZoomLevel, settings.mobileWebkitMaxZoom);
+                }
+
                 sliders.zoom.min = settings.minZoomLevel;
                 sliders.zoom.max = settings.maxZoomLevel;
             },
@@ -738,6 +746,11 @@ Adds a little "tools" icon next to each image
 
                 settings.zoomWidthRatio = width / Math.pow(2, zoomLevel);
                 settings.pluginIcon = $(this);
+
+                // Limit the max zoom level if we're on the iPad
+                if (settings.mobileWebkit) {
+                    zoomLevel = Math.min(settings.maxZoomLevel, zoomLevel);
+                }
 
                 settings.filename = filename;
                 sliders.zoom.initial = zoomLevel;
