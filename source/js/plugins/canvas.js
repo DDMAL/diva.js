@@ -703,9 +703,13 @@ Adds a little "tools" icon next to each image
                     $(this).removeClass('grabbing');
                 });
 
-                $('#diva-canvas-wrapper').dragscrollable({
-                    acceptPropagatedEvent: true
-                });
+                if (settings.mobileWebkit) {
+                    $('#diva-canvas-wrapper').kinetic();
+                } else {
+                    $('#diva-canvas-wrapper').dragscrollable({
+                        acceptPropagatedEvent: true
+                    });
+                }
 
                 // Execute the onInit callback function, if defined
                 if (typeof settings.onInit === 'function') {
