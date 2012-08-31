@@ -345,7 +345,7 @@ Adds a little "tools" icon next to each image
 
         var showThrobber = function () {
             // Only show the throbber if it will take a long time
-            if (sliders.zoom.current > 2) {
+            if (sliders.zoom.current > 2 || settings.mobileWebkit) {
                 $(settings.selector + 'throbber').addClass('canvas-throbber').show();
             }
         };
@@ -415,6 +415,7 @@ Adds a little "tools" icon next to each image
                 settings.inCanvas = false;
                 settings.iipServerURL = divaSettings.iipServerURL;
                 settings.selector = divaSettings.selector;
+                settings.mobileWebkit = divaSettings.mobileWebkit;
 
                 // Set up the settings for the sliders/icons
                 sliders = {
