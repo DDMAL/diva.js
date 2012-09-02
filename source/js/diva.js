@@ -855,8 +855,8 @@ window.divaPlugins = [];
                 settings.verticalPadding = settings.fixedPadding;
             }
 
-            // Make sure the vertical padding is at least 40, if plugins are enabled
-            if (settings.plugins) {
+            // Make sure the vertical padding is at least 40, if plugin icons are enabled
+            if (settings.pageTools.length) {
                 settings.verticalPadding = Math.max(40, settings.horizontalPadding);
             }
 
