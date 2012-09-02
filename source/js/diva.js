@@ -1009,7 +1009,7 @@ window.divaPlugins = [];
             }
 
             // Execute callbacks
-            executeCallback(settings.onModeToggle);
+            executeCallback(settings.onModeToggle, settings.inFullscreen);
         };
 
         // Handles switching in and out of grid view
@@ -1019,7 +1019,7 @@ window.divaPlugins = [];
             settings.toolbar.switchSlider();
 
             loadViewer();
-            executeCallback(settings.onViewToggle);
+            executeCallback(settings.onViewToggle, settings.inGrid);
         };
 
 

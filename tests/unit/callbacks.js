@@ -6,19 +6,24 @@ module("Callbacks");
 
 asyncTest("onModeToggle", function () {
     var callbackExecuted = false;
+    var inFullscreen = false;
 
     $.tempDiva({
-        onModeToggle: function () {
+        onModeToggle: function (fullscreen) {
             callbackExecuted = true;
+            inFullscreen = fullscreen;
         },
         onReady: function (settings) {
             ok(!callbackExecuted);
+            ok(!inFullscreen);
             this.enterFullscreen();
             ok(callbackExecuted);
+            ok(inFullscreen);
 
             callbackExecuted = false;
             this.leaveFullscreen();
             ok(callbackExecuted);
+            ok(!inFullscreen);
 
             start();
         }
@@ -27,18 +32,23 @@ asyncTest("onModeToggle", function () {
 
 asyncTest("onViewToggle", function () {
     var callbackExecuted = false;
+    var inGrid = false;
 
     $.tempDiva({
-        onViewToggle: function () {
+        onViewToggle: function (grid) {
             callbackExecuted = true;
+            inGrid = grid;
         },
         onReady: function (settings) {
             ok(!callbackExecuted);
+            ok(!inGrid);
             this.enterGrid();
             ok(callbackExecuted);
+            ok(inGrid);
 
             callbackExecuted = false;
             this.leaveGrid();
+            ok(!inGrid);
             ok(callbackExecuted);
 
             start();
