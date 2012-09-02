@@ -29,6 +29,7 @@ window.divaPlugins = [];
         // See https://github.com/DDMAL/diva.js/wiki/Code-documentation for more details
         var defaults = {
             adaptivePadding: 0.05,      // The ratio of padding to the page dimension
+            blockMobileMove: true,      // Prevent moving or scrolling the page on mobile devices
             contained: false,           // Determines the location of the fullscreen icon
             divaserveURL: '',           // URL to the divaserve.php script - *MANDATORY*
             enableAutoHeight: false,    // Automatically adjust height based on the window size
@@ -1354,12 +1355,15 @@ window.divaPlugins = [];
                 toAppend.push('<meta name="apple-mobile-web-app-status-bar-style" content="black" />');
                 $('head').append(toAppend.join('\n'));
 
-                // Block the user from moving the window
-                $('body').bind('touchmove', function (event) {
-                    var e = event.originalEvent;
-                    e.preventDefault();
-                    return false;
-                });
+                // Block the user from moving the window only if it's not integrated
+                if (settings.blockMobileMove) {
+                    $('body').bind('touchmove', function (event) {
+                        var e = event.originalEvent;
+                        e.preventDefault();
+
+                        return false;
+                    });
+                }
 
                 // Allow pinch-zooming
                 $('body').bind('gestureend', function (event) {
