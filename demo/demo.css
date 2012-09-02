@@ -9,8 +9,9 @@ body {
 }
 
 #diva-wrapper {
-    width: 960px;
+    max-width: 9995px;
     margin: 0 auto;
+    padding: 0 13px;
 }
 
 .double-viewer {
@@ -33,7 +34,6 @@ body {
 }
 
 #integrated-viewer {
-    width: 960px;
     margin-bottom: 20px;
 }
 
