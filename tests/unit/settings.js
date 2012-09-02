@@ -111,9 +111,9 @@ asyncTest("enableGotoPage true", function () {
     });
 });
 
-asyncTest("enableGrid false, enableLink true", function () {
+asyncTest("enableGridIcon false, enableLinkIcon true", function () {
     $.tempDiva({
-        enableGrid: false,
+        enableGridIcon: false,
         onReady: function (settings) {
             equal($(settings.selector + 'grid-icon').length, 0, "Grid icon should not be present");
 
@@ -127,9 +127,9 @@ asyncTest("enableGrid false, enableLink true", function () {
     });
 });
 
-asyncTest("enableGrid true, enableLink true", function () {
+asyncTest("enableGridIcon true, enableLinkIcon true", function () {
     $.tempDiva({
-        enableGrid: true,
+        enableGridIcon: true,
         onReady: function (settings) {
             notEqual($(settings.selector + 'grid-icon').length, 0, "Grid icon should be present");
 
@@ -141,10 +141,10 @@ asyncTest("enableGrid true, enableLink true", function () {
     });
 });
 
-asyncTest("enableLink false, enableGrid true", function () {
+asyncTest("enableLinkIcon false, enableGridIcon true", function () {
     $.tempDiva({
-        enableLink: false,
-        enableGrid: true,
+        enableLinkIcon: false,
+        enableGridIcon: true,
         onReady: function (settings) {
             equal($(settings.selector + 'link-icon').length, 0, "Link icon should not be present");
 
