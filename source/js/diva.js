@@ -1197,7 +1197,14 @@ window.divaPlugins = [];
             settings.panelWidth = window.innerWidth - 30;
 
             $(settings.parentSelector).width(settings.panelWidth);
-            $(settings.outerSelector).height(settings.panelHeight).width(settings.panelWidth);
+
+            if (settings.enableAutoHeight) {
+                $(settings.outerSelector).height(settings.panelHeight);
+            }
+
+            if (settings.enableAutoWidth) {
+                $(settings.outerSelector).width(settings.panelWidth);
+            }
         };
 
         // Will return true if something has changed, false otherwise
