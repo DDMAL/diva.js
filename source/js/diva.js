@@ -94,7 +94,7 @@ window.divaPlugins = [];
             firstRowLoaded: -1,         // The index of the first row loaded
             gridPageWidth: 0,           // Holds the max width of each row in grid view. Calculated in loadGrid()
             hashParamSuffix: '',        // Used when there are multiple document viewers on a page
-            heightAbovePages: [],       // The height above each page
+            heightAbovePages: [],       // The height above each page at the current zoom level
             horizontalOffset: 0,        // Used in documentScroll for scrolling more precisely
             horizontalPadding: 0,       // Either the fixed padding or adaptive padding
             ID: null,                   // The prefix of the IDs of the elements (usually 1-diva-)
