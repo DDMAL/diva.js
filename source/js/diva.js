@@ -103,7 +103,6 @@ window.divaPlugins = [];
             lastPageLoaded: -1,         // The ID of the last page loaded (value set later)
             lastRowLoaded: -1,          // The index of the last row loaded
             leftScrollSoFar: 0,         // Current scroll from the left edge of the pane
-            maxHeights: [],             // The height of the tallest page for each zoom level
             maxWidths: [],              // The width of the widest page for each zoom level
             maxRatio: 0,                // The max height/width ratio (for grid view)
             minHeight: 0,               // Minimum height of the .diva-outer element, as defined in the CSS
@@ -1749,7 +1748,6 @@ window.divaPlugins = [];
 
                     // These are arrays, the index corresponding to the zoom level
                     settings.maxWidths = data.dims.max_w;
-                    settings.maxHeights = data.dims.max_h;
                     settings.averageWidths = data.dims.a_wid;
                     settings.averageHeights = data.dims.a_hei;
                     settings.totalHeights = data.dims.t_hei;
