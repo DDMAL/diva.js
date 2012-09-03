@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2011 by Wendy Liu, Andrew Hankinson
+# Copyright (C) 2011, 2012 by Wendy Liu, Andrew Hankinson
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
