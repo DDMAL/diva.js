@@ -121,9 +121,9 @@ window.divaPlugins = [];
             pageLeftOffsets: [],        // Offset from the left side of the pane to the edge of the page
             pageTimeouts: [],           // Stack to hold the loadPage timeouts
             pageTools: '',              // The string for page tools
-            panelHeight: 0,             // Height of the panel. Set in initiateViewer()
-            panelWidth: 0,              // Width of the panel. Set in initiateViewer()
-            plugins: [],                // Filled with the not disabled plugins in window.divaPlugins
+            panelHeight: 0,             // Height of the document viewer pane
+            panelWidth: 0,              // Width of the document viewer pane
+            plugins: [],                // Filled with the enabled plugins from window.divaPlugins
             previousTopScroll: 0,       // Used to determine vertical scroll direction
             preZoomOffset: null,        // Holds the offset prior to zooming when double-clicking
             realMaxZoom: -1,            // To hold the true max zoom level of the document (needed for calculations)
@@ -141,7 +141,7 @@ window.divaPlugins = [];
             verticalOffset: 0,          // See horizontalOffset
             verticalPadding: 0,         // Either the fixed padding or adaptive padding
             viewerXOffset: 0,           // Distance between left edge of viewer and document left edge
-            viewerYOffset: 0            // ^ for top edges
+            viewerYOffset: 0            // Like viewerXOffset but for the top edges
         };
 
         $.extend(settings, globals);
