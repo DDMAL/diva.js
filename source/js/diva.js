@@ -1666,7 +1666,7 @@ window.divaPlugins = [];
 
         var initPlugins = function () {
             if (window.divaPlugins) {
-                var pageTools = ['<div class="diva-page-tools">'];
+                var pageTools = [];
 
                 // Add all the plugins that have not been explicitly disabled to settings.plugins
                 $.each(window.divaPlugins, function (index, plugin) {
@@ -1700,8 +1700,9 @@ window.divaPlugins = [];
                 });
 
                 // Save the page tools bar so it can be added for each page
-                pageTools.push('</div>');
-                settings.pageTools = pageTools.join('');
+                if (pageTools.length) {
+                    settings.pageTools = '<div class="diva-page-tools">' + pageTools.join('') + '</div>';
+                }
             }
         };
 
