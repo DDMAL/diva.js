@@ -1000,7 +1000,7 @@ window.divaPlugins = [];
         // Should only be called after changing settings.inGrid
         var handleViewChange = function () {
             // Switch the slider
-            settings.toolbar.switchSlider();
+            settings.toolbar.switchView();
 
             loadViewer();
             executeCallback(settings.onViewToggle, settings.inGrid);
@@ -1606,7 +1606,7 @@ window.divaPlugins = [];
                 }
             };
 
-            var switchSlider = function () {
+            var switchView = function () {
                 // Switch from grid to document view etc
                 $(settings.selector + currentSlider + '-slider').hide();
                 $(settings.selector + currentSlider + '-slider-label').hide();
@@ -1647,7 +1647,7 @@ window.divaPlugins = [];
                     // Update the slider label
                     $(settings.selector + 'pages-per-row').text(settings.pagesPerRow);
                 },
-                switchSlider: switchSlider,
+                switchView: switchView,
                 switchMode: switchMode
             };
             return toolbar;
