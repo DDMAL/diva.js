@@ -1012,7 +1012,7 @@ window.divaPlugins = [];
         var toggleFullscreenIcon = function () {
             settings.goDirectlyTo = settings.currentPageIndex;
             settings.inFullscreen = !settings.inFullscreen;
-            handleModeChange();
+            handleModeChange(false);
         };
 
         // Called when the grid icon is clicked
@@ -1795,7 +1795,7 @@ window.divaPlugins = [];
                     settings.viewerYOffset = viewerOffset.top;
 
                     if (settings.inFullscreen) {
-                        handleModeChange();
+                        handleModeChange(false);
                     } else {
                         loadViewer();
                     }
