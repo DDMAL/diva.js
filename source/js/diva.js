@@ -648,7 +648,7 @@ window.divaPlugins = [];
         var setCurrentPage = function (direction) {
             var middleOfViewport = settings.topScrollSoFar + (settings.panelHeight / 2);
             var currentPage = settings.currentPageIndex;
-            var pageToConsider = settings.currentPageIndex + parseInt(direction, 10);
+            var pageToConsider = settings.currentPageIndex + direction;
             var changeCurrentPage = false;
 
             // When scrolling up:
