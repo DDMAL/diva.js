@@ -1060,7 +1060,7 @@ window.divaPlugins = [];
             handleViewChange();
         };
 
-        // Handles pinch-zooming for mobile Safari
+        // Handles pinch-zooming for mobile devices
         var handlePinchZoom = function (event) {
             var newZoomLevel = settings.zoomLevel;
 
