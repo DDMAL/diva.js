@@ -951,21 +951,6 @@ window.divaPlugins = [];
 
 
 
-        // The handle_Scrolls are called whenever there is a scroll event in the the #diva-outer element
-        var handleDocumentScroll = function () {
-            settings.topScrollSoFar = $(settings.outerSelector).scrollTop();
-            adjustPages(settings.topScrollSoFar - settings.previousTopScroll);
-            settings.previousTopScroll = settings.topScrollSoFar;
-        };
-
-        var handleGridScroll = function () {
-            settings.topScrollSoFar = $(settings.outerSelector).scrollTop();
-            adjustRows(settings.topScrollSoFar - settings.previousTopScroll);
-            settings.previousTopScroll = settings.topScrollSoFar;
-        };
-
-
-
         // Handles switching in and out of fullscreen mode
         // Should only be called after changing settings.inFullscreen
         var handleModeChange = function (changeView) {
@@ -1308,13 +1293,17 @@ window.divaPlugins = [];
 
             // Handle the scroll
             $(settings.outerSelector).scroll(function () {
-                // Has to be within this otherwise settings.inGrid is checked ONCE
+                settings.topScrollSoFar = $(settings.outerSelector).scrollTop();
+                var direction = settings.topScrollSoFar - settings.previousTopScroll;
+
                 if (settings.inGrid) {
-                    handleGridScroll();
+                    adjustRows(direction);
                 } else {
-                    handleDocumentScroll();
+                    adjustPages(direction);
                     settings.leftScrollSoFar = $(this).scrollLeft();
                 }
+
+                settings.previousTopScroll = settings.topScrollSoFar;
             });
 
             // Double-click to zoom
