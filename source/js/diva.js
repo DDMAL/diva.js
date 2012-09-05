@@ -644,7 +644,7 @@ window.divaPlugins = [];
 
 
         // Determines and sets the "current page" (settings.currentPageIndex); called within adjustPages
-        // The "direction" can be 0, 1 or -1; 1 for down, -1 for up, and 0 to go straight to a specific page
+        // The "direction" is either 1 (downward scroll) or -1 (upward scroll)
         var setCurrentPage = function (direction) {
             var middleOfViewport = settings.topScrollSoFar + (settings.panelHeight / 2);
             var currentPage = settings.currentPageIndex;
