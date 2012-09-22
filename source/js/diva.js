@@ -75,6 +75,8 @@ window.divaPlugins = [];
             tileFadeSpeed: 0,           // The tile fade-in speed in ms (or "fast" or "slow"; 0 to disable)
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
+            viewerHeightPadding: 15,    // Vertical padding when resizing the viewer, if enableAutoHeight is set
+            viewerWidthPadding: 30,     // Horizontal padding when resizing the viewer, if enableAutoHeight is set
             viewportMargin: 200,        // Pretend tiles +/- 200px away from viewport are in
             zoomLevel: 2                // The initial zoom level (used to store the current zoom level)
         };
@@ -1177,8 +1179,8 @@ window.divaPlugins = [];
         // Called in init and when the orientation changes
         var adjustMobileWebkitDims = function () {
             var outerOffset = $(settings.outerSelector).offset().top;
-            settings.panelHeight = window.innerHeight - outerOffset - 15;
-            settings.panelWidth = window.innerWidth - 30;
+            settings.panelHeight = window.innerHeight - outerOffset - settings.viewerHeightPadding;
+            settings.panelWidth = window.innerWidth - settings.viewerWidthPadding;
 
             $(settings.parentSelector).width(settings.panelWidth);
 
@@ -1198,11 +1200,11 @@ window.divaPlugins = [];
             var newWidth = $(settings.parentSelector).width() - settings.scrollbarWidth;
             var outerOffset = $(settings.outerSelector).offset().top;
 
-            // 15 for margin on each side, 2 (or 1) for the 1px border(s)
             var windowHeight = window.innerHeight || document.documentElement.clientHeight;
             var windowWidth = window.innerWidth || document.documentElement.clientWidth;
-            var desiredWidth = windowWidth - 30 - settings.scrollbarWidth - 2;
-            var desiredHeight = windowHeight - outerOffset - 15 - 1;
+            // 2 or 1 pixels for the border
+            var desiredWidth = windowWidth - settings.viewerWidthPadding - settings.scrollbarWidth - 2;
+            var desiredHeight = windowHeight - outerOffset - settings.viewerHeightPadding - 1;
 
             if (settings.enableAutoHeight) {
                 if (newHeight + outerOffset + 16 > window.innerHeight) {
