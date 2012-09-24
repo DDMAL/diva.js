@@ -1,0 +1,18 @@
+{% load extras %}
+
+<div class="toc" id="private-functions-list">
+    <ul>
+        {% for function in private_functions %}
+        <li><a href="#{{ function.name }}">{{ function.name }}</a></li>
+        {% endfor %}
+    </ul>
+</div>
+
+{% for function in private_functions %}
+<h3 id="{{ function.name }}">{{ function.name }}<a class="headerlink" href="#{{ function.name }}">&para;</a> <small><a href="{{ DIVA_GITHUB_URL }}#L{{ function.i }}">View code &raquo;</a></small></h3>
+
+{% show function.filename %}
+
+<p><a href="#private-functions-list">Back to settings list</a></p>
+
+{% endfor %}

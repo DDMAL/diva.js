@@ -1,0 +1,1 @@
+See [`settings.panelHeight`](#panelHeight).
