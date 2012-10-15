@@ -1947,12 +1947,12 @@ window.divaPlugins = [];
             return handleZoom(zoomLevel);
         };
 
-        // Zoom in, with callback. Will return false if it's at the maximum zoom
+        // Zoom in. Will return false if it's at the maximum zoom
         this.zoomIn = function () {
             return this.setZoomLevel(settings.zoomLevel + 1);
         };
 
-        // Zoom out, with callback. Will return false if it's at the minimum zoom
+        // Zoom out. Will return false if it's at the minimum zoom
         this.zoomOut = function () {
             return this.setZoomLevel(settings.zoomLevel - 1);
         };
@@ -2022,7 +2022,7 @@ window.divaPlugins = [];
             return false;
         };
 
-        // Jump to an image based on its filename
+        // Jump to a page based on its filename
         // Returns true if successful and false if the filename is invalid
         this.gotoPageByName = function (filename) {
             var pageIndex = getPageIndex(filename);
