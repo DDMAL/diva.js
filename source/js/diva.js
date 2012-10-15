@@ -1938,8 +1938,12 @@ window.divaPlugins = [];
         };
 
         // Use the provided zoom level (will check for validity first)
-        // Returns false if the zoom level is the same as the current, true otherwise
+        // Returns false if the zoom level is invalid, true otherwise
         this.setZoomLevel = function (zoomLevel) {
+            if (settings.inGrid) {
+                toggleGridIcon();
+            }
+
             return handleZoom(zoomLevel);
         };
 
