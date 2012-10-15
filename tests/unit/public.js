@@ -149,7 +149,7 @@ asyncTest("getState()", function () {
                 i: 'bm_001.tif',
                 n: 5,
                 p: false,
-                w: 960,
+                w: 968,
                 x: 0,
                 y: 0,
                 z: 2
