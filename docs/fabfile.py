@@ -15,3 +15,6 @@ def build():
 
 def deploy():
     put(settings.BUILD_DIR, 'deploy')
+
+def wc():
+    local("wc -w `find content -type f`")
