@@ -1,3 +1,5 @@
+{% load extras %}
+
 * **Parameters**: 1
     * **newValue**: the desired number of pages per row
 * **Return type**: boolean
@@ -8,7 +10,7 @@ Called when we're already in grid view and we need to change the number of
 pages per row.
 
 Takes care of validating the desired number of pages per row, updating
-[`settings.oldPagesPerRow`](#MONKEY) and [`settings.oldPagesPerRow`](#MONKEY),
+{% settings_link "oldPagesPerRow" %} and {% settings_link "pagesPerRow" %},
 updating the slider, and loading the grid with the desired number of pages per
 row.
 

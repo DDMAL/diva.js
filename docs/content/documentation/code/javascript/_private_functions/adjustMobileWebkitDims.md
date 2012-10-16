@@ -1,3 +1,5 @@
+{% load extras %}
+
 * **Parameters**: 0
 * **Return type**: none
 * **Called by**: [`handleEvents()`](#handleEvents) (within the event handler
@@ -9,5 +11,5 @@ the window for mobile devices. This adjustment is performed following the
 initial load, and again whenever the orientation of the device is changed.
 
 To disable this automatic resizing for either width or height, set
-[`settings.enableAutoHeight`](#MONKEY) or [`settings.enableAutoWidth`](#MONKEY)
+{% settings_link "enableAutoHeight" %} or {% settings_link "enableAutoWidth" %}
 to false, respectively.

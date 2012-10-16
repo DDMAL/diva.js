@@ -1,5 +1,3 @@
-{% load extras %}
-
 The diva.js viewer is best viewed on a desktop/laptop computer, using a modern
 browser such as Google Chrome, Firefox, Safari, Opera, or Internet Explorer 9.
 Other browsers/devices are supported as well, although certain functionality

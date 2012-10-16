@@ -1,7 +1,6 @@
 import markdown
 from django import template
-
-import settings
+from django.conf import settings
 
 
 register = template.Library()
@@ -24,3 +23,34 @@ def docs_image(filename):
     static/img/docs/{{ filename }}.png.
     """
     return '<img src="' + settings.STATIC_URL + 'img/docs/' + filename + '.png" alt="Screenshot" />'
+
+
+@register.simple_tag
+def settings_link(setting):
+    """
+    Pass it the name of a setting, it will return the absolute URL to it
+    """
+    return "<a href=\"%scode/javascript/settings#%s\"><code>settings.%s</code></a>" % (
+        settings.DOCS_URL, setting, setting)
+
+
+@register.simple_tag
+def private_link(function):
+    """
+    Pass it the name of a private function, it will return the absolute URL to it
+    """
+    return '<a href="%scode/javascript/functions#%s"><code>%s()</code></a>' % (
+        settings.DOCS_URL, function, function)
+
+
+@register.simple_tag
+def public_link(function):
+    return private_link('this.' + function)
+
+
+@register.simple_tag
+def link(key):
+    """
+    For commonly-used links
+    """
+    return '<a href="%s">%s</a>' % (settings.COMMON_LINKS[key], key)

@@ -1,3 +1,5 @@
+{% load extras %}
+
 * **Parameters**: 3
     * **pageIndex**: the index of the page we wish to jump to
     * **verticalOffset**: the amount of vertical scroll, in pixels, from the
@@ -11,5 +13,5 @@
   [`this.gotoPageByName`](#this.gotoPageByName)
 
 Jumps to the location specified by the vertical and horizontal offsets relative
-to the desired page. Sets [`settings.currentPageIndex`](#MONKEY) to the index
+to the desired page. Sets {% settings_link "currentPageIndex" %} to the index
 of this page.

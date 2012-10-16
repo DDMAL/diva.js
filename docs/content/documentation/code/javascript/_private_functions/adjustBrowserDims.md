@@ -1,3 +1,5 @@
+{% load extras %}
+
 * **Parameters**: 0
 * **Return type**: none
 * **Called by**: [`handleEvents()`](#handleEvents) (within the event handler
@@ -10,5 +12,5 @@ is performed following the initial load, and again whenever the window is
 resized (and the user is not in fullscreen mode).
 
 To disable this automatic resizing for either width or height, set
-[`settings.enableAutoHeight`](#MONKEY) or [`settings.enableAutoWidth`](#MONKEY)
+{% settings_link "enableAutoHeight" %} or {% settings_link "enableAutoWidth" %}
 to false, respectively.

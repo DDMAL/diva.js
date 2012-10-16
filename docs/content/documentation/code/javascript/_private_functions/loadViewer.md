@@ -1,3 +1,5 @@
+{% load extras %}
+
 * **Parameters**: 0
 * **Return type**: none
 * **Called by**: [`handleModeChange()`](#handleModeChange),
@@ -8,4 +10,4 @@
   [`this.resize`](#this.resize)
 
 Shortcut function to load either grid view or document view depending on the
-value of [`settings.inGrid`](#MONKEY).
+value of {% settings_link "inGrid" %}.

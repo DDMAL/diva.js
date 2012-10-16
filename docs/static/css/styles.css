@@ -3,6 +3,14 @@
     padding: 0;
 }
 
+html, body {
+    height: 100%;
+}
+
+#non-footer {
+    min-height: 100%;
+}
+
 body {
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 13px;
@@ -23,6 +31,10 @@ a:hover {
     background-repeat: no-repeat;
     background-position: center top;
     min-width: 960px;
+}
+
+#logo {
+    width: 330px;
 }
 
 #masthead {
@@ -46,11 +58,14 @@ a:hover {
     background: #FFF;
     position: relative;
     z-index: 200;
+    overflow: auto;
+    padding-bottom: 70px;
 }
 
 #block-links {
     padding: 0;
     margin: 0;
+    margin-bottom: 30px;
 }
 
 #block-links li {
@@ -186,6 +201,10 @@ p {
 }
 
 #footer {
+    clear: both;
+    position: relative;
+    z-index: 201;
+    margin-top: -50px;
     background: #2D2E2D;
     height: 50px;
     text-align: right;
@@ -299,6 +318,10 @@ h2:hover > .headerlink, h3:hover > .headerlink {
 ol, ul {
     padding: 10px 0;
     margin-left: 20px;
+}
+
+ul ul {
+    padding: 5px 0;
 }
 
 hr {

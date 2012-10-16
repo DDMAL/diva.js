@@ -1,4 +1,4 @@
-DOCS_URL = '/diva/documentation/'
+from django.conf import settings
 
 doc_sections = [
     ('using', 'Using the viewer', [
@@ -7,41 +7,41 @@ doc_sections = [
         ('plugins', 'Using the plugins', []),
         ('browser-support', 'Browser/platform support', []),
     ]),
-    ('image-preprocessing', 'Image pre-processing', [
-        ('tiled-images', 'Introduction to tiled images', []),
-        ('image-formats', 'Image formats', []),
-        ('using-processing-scripts', 'Using the processing scripts', []),
-    ]),
+    #('image-preprocessing', 'Image pre-processing', [
+        #('tiled-images', 'Introduction to tiled images', []),
+        #('image-formats', 'Image formats', []),
+        #('using-processing-scripts', 'Using the processing scripts', []),
+    #]),
     ('setup', 'Setup and installation', [
-        ('backend', 'Backend', [
-            ('iipimage', 'Installing IIPImage', []),
-            ('data-server', 'The data server', []),
-        ]),
+        #('backend', 'Backend', [
+            #('iipimage', 'Installing IIPImage', []),
+            #('data-server', 'The data server', []),
+        #]),
         ('frontend', 'Frontend', [
             ('html', 'The HTML', []),
             ('javascript', 'The Javascript', []),
             ('multiple-viewers', 'Multiple viewer setups', []),
-            ('integrated', 'Integrated viewer setups', []),
+            #('integrated', 'Integrated viewer setups', []),
         ]),
     ]),
     ('customising', 'Customising the viewer', [
-        ('look-and-feel', 'Changing the look and feel', []),
-        ('configuring-plugins', 'Configuring the default plugins', []),
-        ('writing-plugins', 'Writing plugins', []),
-        ('performance', 'Performance optimisations', []),
+        #('look-and-feel', 'Changing the look and feel', []),
+        #('configuring-plugins', 'Configuring the default plugins', []),
+        #('writing-plugins', 'Writing plugins', []),
+        #('performance', 'Performance optimisations', []),
         ('security', 'Security tips', []),
     ]),
     ('code', 'Code documentation', [
-        ('build-process', 'The build process', []),
-        ('stylesheets', 'Stylesheets', [
-            ('how-less-works', 'How LESS works', []),
-            ('organisation', 'Stylesheet organisation', []),
-            ('variables', 'Variables', []),
-            ('mixins', 'Mixins', []),
-        ]),
+        #('build-process', 'The build process', []),
+        #('stylesheets', 'Stylesheets', [
+            #('how-less-works', 'How LESS works', []),
+            #('organisation', 'Stylesheet organisation', []),
+            #('variables', 'Variables', []),
+            #('mixins', 'Mixins', []),
+        #]),
         ('javascript', 'Javascript', [
             ('minification', 'The minification process', []),
-            ('loading', 'Loading a viewer', []),
+            #('loading', 'Loading a viewer', []),
             ('settings', 'Setting reference', []),
             ('functions', 'Function reference', []),
             ('miscellaneous', 'Miscellaneous', []),
@@ -56,7 +56,7 @@ doc_children = {}
 def make_link(section, title, subsections):
     doc_titles[section] = title
 
-    link = '<a href="%s">%s</a>' % (DOCS_URL + section, title)
+    link = '<a href="%s">%s</a>' % (settings.DOCS_URL + section, title)
     links = []
 
     for subsection, subtitle, subsubsections in subsections:
@@ -80,9 +80,9 @@ doc_prev_pages = {}
 
 def set_next_page(section, subsections, previous=None):
     if previous:
-        url = DOCS_URL + section
+        url = settings.DOCS_URL + section
         doc_next_pages[previous] = url
-        doc_prev_pages[section] = DOCS_URL + previous
+        doc_prev_pages[section] = settings.DOCS_URL + previous
 
     next_section = section
     for child_section, _, child_subsections in subsections:

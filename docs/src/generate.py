@@ -51,6 +51,8 @@ os.mkdir(settings.BUILD_DIR)
 
 content_files = []
 
+loader.add_to_builtins('generator.templatetags.extras')
+
 for root, dirnames, filenames in os.walk(settings.CONTENT_DIR):
     for dirname in dirnames:
         dir_path = os.path.join(root, dirname)

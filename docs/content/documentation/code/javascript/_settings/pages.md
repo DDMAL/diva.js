@@ -1,7 +1,9 @@
+{% load extras %}
+
 The format of this array is identical to the format of the `pgs` array returned
 in the JSON response by the divaserve script. The data for each page is stored
 in an object, and all the zoom-level-specific data is stored in the under the
-`d` key, with one object per zoom level. The [`getPageData()`](#MONKEY)
+`d` key, with one object per zoom level. The {% private_link "getPageData" %}
 function is a shortcut for looking up an attribute in the `d` object of a given
 page at the current zoom level.
 

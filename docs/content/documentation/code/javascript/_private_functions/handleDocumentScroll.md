@@ -1,3 +1,5 @@
+{% load extras %}
+
 * **Parameters**: 0
 * **Return type**: none
 * **Called by**: [`handleEvents()`](#handleEvents) (in the event handler for
@@ -5,6 +7,6 @@
   view)
 
 Called any time the user scrolls while in document view. Updates
-[`settings.topScrollSoFar`](#MONKEY) and
-[`settings.previousTopScroll`](#MONKEY), and calls
+{% settings_link "topScrollSoFar" %} and
+{% settings_link "previousTopScroll" %}, and calls
 [`adjustPages()`](#adjustPages).

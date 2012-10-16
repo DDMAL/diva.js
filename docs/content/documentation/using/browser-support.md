@@ -1,5 +1,3 @@
-{% load extras %}
-
 Here is a table summarising the supported browsers and any things that don't
 work, etc.
 
