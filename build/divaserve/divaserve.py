@@ -46,6 +46,7 @@ if memcached_enabled:
         import pylibmc
     except ImportError:
         warnings.warn("No Memcached module detected. Disabling Memcached support")
+        memcached_enabled = False
 
 
 class DivaServe(object):
