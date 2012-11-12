@@ -1,0 +1,78 @@
+/*
+ * Inspired by the Twitter bootstrap
+ *
+ */
+
+.border-radius(@radius) {
+    -webkit-border-radius: @radius;
+    -moz-border-radius: @radius;
+    border-radius: @radius;
+}
+
+.box-shadow(@shadow) {
+    -webkit-box-shadow: @shadow;
+    -moz-box-shadow: @shadow;
+    box-shadow: @shadow;
+}
+
+.size(@height, @width) {
+    height: @height;
+    width: @width;
+}
+
+.square(@size) {
+    .size(@size, @size);
+}
+
+.hidden {
+    display: none;
+}
+
+// Shortcut for a 1px solid border
+.frame(@colour) {
+    border: 1px solid @colour;
+}
+
+.plugin-icon(@plugin) {
+    background: url('@{iconPath}plugins/@{plugin}.png') no-repeat;
+    background-position: left center;
+    &:hover {
+        background-position: -25px center;
+    }
+}
+
+.grab {
+    cursor: url("@{iconPath}openhand.cur"), pointer;
+}
+
+.grabbing {
+    cursor: url("@{iconPath}closedhand.cur"), move !important;
+}
+
+.loading {
+    background: url("@{iconPath}loading.gif") no-repeat center;
+}
+
+// Pretty translucent shadow
+.pretty-shadow(@distance: 4px) {
+    .box-shadow(2px 2px @distance 0 rgba(0, 0, 0, 0.5));
+}
+
+.full-width {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.full-height {
+    height: 100% !important;
+    max-height: 100% !important;
+}
+
+.prevent-selection {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}

@@ -1,0 +1,71 @@
+#container {
+	width: 468px;
+    padding-top: 20px;
+	margin: 0 auto;
+	position: relative;
+	z-index: 0;
+}
+
+#example {
+	width: 468px;
+	height: 340px;
+	position: relative;
+}
+
+#frame {
+	position: absolute;
+	z-index: 101;
+	top: 0;
+    left: 0;
+}
+
+#slides {
+	position: absolute;
+	top: 16px;
+    left: 16px;
+	z-index: 100;
+}
+
+.slides_container {
+	width: 440px;
+	overflow: hidden;
+	position: relative;
+	display: none;
+}
+
+.slides_container div.slide {
+	width: 440;
+	height: 275px;
+	display: block;
+}
+
+#slides .next, #slides .prev {
+	position: absolute;
+	top: 140px;
+	left: -40px;
+	display: block;
+	z-index: 101;
+}
+
+#slides .next {
+	left: 433px;
+}
+
+.caption {
+    text-align: left;
+	z-index: 500;
+	position: absolute;
+	bottom: 21px;
+	left: -5px;
+	height: 40px;
+	background: #000;
+	background: rgba(0,0,0,.7);
+	width: 468px;
+    padding-left: 20px;
+	font-size: 14px;
+	color: #FFF;
+}
+
+.caption p {
+    line-height: 40px;
+}

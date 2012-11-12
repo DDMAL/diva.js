@@ -1,0 +1,1 @@
+See [`settings.viewerXOffset`](#viewerXOffset).
