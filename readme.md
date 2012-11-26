@@ -11,26 +11,52 @@ Diva.js (Document Image Viewer with AJAX) is a Javascript frontend for viewing d
 Installation and setup
 ----------------------
 
-Setting up the document viewer comes in two parts: the jQuery plugin on the frontend, and the tile image server and PHP script on the backend. First, download the contents of this repository, using `git clone https://github.com/DDMAL/diva.js.git`, or by downloading the [zip](https://github.com/DDMAL/diva.js/zipball/master] or [compressed tar](https://github.com/DDMAL/diva.js/tarball/master) package and extracting.
+## Overview
+
+Diva has three main components: The front-end that runs in the browser, the image server, currently only tested with the [IIP Image Server](http://iipimage.sourceforge.net) and the Diva data server, a small PHP or Python script that processes the image files for their measurements, which are then sent to the front-end when a user first loads a document.
+
+## Easy Install
+
+If you do not want to modify the Diva code, or just want to play around with it for a bit, the easiest way to get going is to download one of the pre-packaged releases available in the [downloads section](https://github.com/DDMAL/diva.js/downloads). This package contains what you will need to get started: full minified versions of the JavaScript and CSS, a few demo pages, and a basic Diva data server in both Python and PHP. (You will still have to download and install the IIP Image Server separately).
+
+### Dependencies
+
+To run the basic Diva data server in Python, you will also need to install the [Tornado](http://www.tornadoweb.org) web server and the [VIPS Python module](http://www.vips.ecs.soton.ac.uk/index.php?title=Python)
+
+To run the image processing scripts `process.py` and `process_jp2.py` you will also need the VIPS Python module.
 
 ### Setting up the frontend
 
-All of the relevant Javascript, CSS, and image files can be found in the `build/` directory, under the subdirectories `js`/, `css/`, and `img/`, respectively. The included HTML files in the `demo/` directory give an example of how the document viewer can set up, with some more setup details in the readme.md file in that directory.
-
-There are several ways in which you can customise your Diva installation:
-
-* Passing in settings (see the [user-configurable settings documentation](https://github.com/DDMAL/diva.js/wiki/Code-documentation#wiki-js-settings))
-* Editing the CSS or LESS files (see the [stylesheet code documentation](https://github.com/DDMAL/diva.js/wiki/Code-documentation#wiki-stylesheets))
-* Editing diva.js or utils.js directly (see the [Javascript code documentation](https://github.com/DDMAL/diva.js/wiki/Code-documentation#wiki-javascript))
-* Using the [plugin system](https://github.com/DDMAL/diva.js/wiki/Plugins)
-
-For more information, see [Setup and installation - Configuring the frontend](https://github.com/DDMAL/diva.js/wiki/Installation#configuring-the-frontend).
+All of the relevant Javascript, CSS, and image files can be found in the `diva.js/` directory, under the subdirectories `js`/, `css/`, and `img/`, respectively. The included HTML files in the `examples/` directory give an example of how the document viewer can be initialized, with further setup details in the readme.md file in that directory.
 
 ### Setting up the backend
 
-Setting up the backend requires access to a server capable of running IIPImage, as well as PHP or Python. The PHP and Python "divaserve" scripts for sending the image information can be found under `build/divaserve/`, with some usage instructions in the readme.md file in that directory. You will also need to preprocess the images you wish to display, which should be in either TIFF or JPEG2000 format; the relevant scripts and processing instructions can be found under `source/processing/`.
+Setting up the backend requires access to a server capable of running IIPImage, as well as PHP or Python. The PHP and Python "divaserve" scripts for sending the image information can be found under `dataservers` directory, with some usage instructions in the readme.md file in that directory. The download also ships with a very basic Tornado web application, `server.py` that illustrates how you might integrate the `divaserve.py` module in your own web application.
 
-For more, see [Setup and installation - Setting up the backend](https://github.com/DDMAL/diva.js/wiki/Installation#setting-up-the-backend).
+You will configure the address of where the Diva front-end can find both the IIP Image Server and the Diva data server when you initialize the viewer. See the `examples/` directory for more details.
+
+### Image processing
+
+You will also need to preprocess the images you wish to display, which should be in either TIFF or JPEG2000 format; the relevant scripts and processing instructions can be found under `processing/`.
+
+The `process.py` script uses the VIPS Python library to produce [Pyramid TIFF](http://www.digitalpreservation.gov/formats/fdd/fdd000237.shtml) images, while the `process_jp2.py` script uses the [Kakadu](http://www.kakadusoftware.com) `kdu_compress` utility to produce JPEG2000 images. You can find a free version of this script on their website.
+
+## Full Installation
+
+If you wish to install from source, you can check out the code from [our GitHub repository](http://github.com/DDMAL/diva.js). To fully build Diva you will need the following dependencies:
+
+ * the Python Fabric module for running the build scripts
+ * the [LESS stylesheet compiler](http://lesscss.org)
+ * the [Closure](https://developers.google.com/closure/) JavaScript compiler
+
+All other dependencies are listed above.
+
+The full installation gives you access to the un-minified JavaScript source and the plugins, the documentation, and our unit-tests. We have pre-defined Fabric commands for performing basic development tasks:
+
+ * `fab less`: Compiles and minifies the LESS files into CSS.
+ * `fab minify`: Minifies the JavaScript files using the Closure compiler.
+ * `fab build`: Performs both less and minify.
+ * `fab release:xxx`: Builds the release package. `:xxx` is the release name, so `fab release:2.0.0` will create `diva-2.0.0.tar.gz`. 
 
 Getting help
 ------------
