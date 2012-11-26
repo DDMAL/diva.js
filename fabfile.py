@@ -1,9 +1,9 @@
 import os
-
 from fabric.api import *
 
 # Path to the Closure Compiler .jar file
 CLOSURE_COMPILER_PATH = '/usr/lib/closure/compiler.jar'
+
 
 def less():
     """
@@ -14,6 +14,7 @@ def less():
     """
     local('lessc source/css/imports.less > build/css/diva.css')
     local('lessc source/css/imports.less > build/css/diva.min.css -x')
+
 
 def minify():
     """
@@ -26,51 +27,56 @@ def minify():
     source_files = ['utils.js', 'diva.js', 'plugins/*']
     local("cd source/js && java -jar " + CLOSURE_COMPILER_PATH + " --js " + " ".join(source_files) + " --js_output_file ../../build/js/diva.min.js")
 
+
 def build():
     less()
     minify()
 
+
 def test():
     with settings(warn_only=True):
         print local("phantomjs tests/run.js"),
+
 
 def release(version):
     """
     Creates a zip file containing just the files we need for the release.
     Also adds the "latest version" text to diva.min.js.
     """
+    import shutil
     files = {
         'readme.md': 'readme.md',
         'AUTHORS': 'AUTHORS',
         'LICENSE': 'LICENSE',
-        'build/js/*': 'diva.js/js/',
-        'build/css/*': 'diva.js/css/',
-        'build/img/*': 'diva.js/img/',
-        'build/divaserve/*': 'dataservers/',
-        'source/processing/*': 'processing/',
-        'demo/*': 'examples/',
+        'build/js': 'diva.js/js/',
+        'build/css': 'diva.js/css/',
+        'build/img': 'diva.js/img/',
+        'build/divaserve': 'dataservers/',
+        'source/processing': 'processing/',
+        'demo': 'examples/',
     }
 
     release_dir = "diva-%s" % version
-    try:
-        os.mkdir(release_dir)
-    except OSError:
-        # Empty the directory
-        try:
-            local("rm -r %s/*" % release_dir)
-        except OSError:
-            pass
+
+    if os.path.exists(release_dir):
+        print "Release Path Exists. Removing."
+        shutil.rmtree(release_dir)
+
+    os.mkdir(release_dir)
 
     # Copy all the files over
     for source, dest in files.iteritems():
-        if dest.endswith('/'):
-            try:
-                os.makedirs(os.path.join(release_dir, dest))
-            except OSError:
-                # Already been created
-                pass
+        build_path = os.path.join(release_dir, dest)
+        # if not os.path.exists(build_path):
+        #     os.makedirs(build_path)
+        if os.path.isfile(source):
+            shutil.copy(source, build_path)
+        elif os.path.isdir(source):
+            shutil.copytree(source, build_path)
+        else:
+            print "Skipping {0}".format(build_path)
 
-        local("cp -R %s %s/%s" % (source, release_dir, dest))
+        # local("cp -R %s %s/%s" % (source, release_dir, dest))
 
-    local("tar czf %s.tar.gz %s" % (release_dir, release_dir))
-    local("zip %s.zip %s" % (release_dir, release_dir))
+    shutil.make_archive("%s" % (release_dir,), "gztar", release_dir)
+    shutil.make_archive("%s" % (release_dir,), "zip", release_dir)
