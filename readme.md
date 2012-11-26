@@ -21,6 +21,8 @@ If you do not want to modify the Diva code, or just want to play around with it 
 
 ### Dependencies
 
+Diva depends on the [jQuery library](http://www.jquery.com).
+
 To run the basic Diva data server in Python, you will also need to install the [Tornado](http://www.tornadoweb.org) web server and the [VIPS Python module](http://www.vips.ecs.soton.ac.uk/index.php?title=Python)
 
 To run the image processing scripts `process.py` and `process_jp2.py` you will also need the VIPS Python module.
