@@ -47,6 +47,8 @@ Setting up the backend requires access to a server capable of running IIPImage, 
 
 You will configure the address of where the Diva front-end can find both the IIP Image Server and the Diva data server when you initialize the viewer. See the `examples/` directory for more details.
 
+The PHP version of the divaserve script requires the GD PHP extension. The Python version requires the VIPS Python module, and can be optionally configured to use a Memcached installation.
+
 ### Image processing
 
 You will also need to preprocess the images you wish to display, which should be in either TIFF or JPEG2000 format; the relevant scripts and processing instructions can be found under `processing/`.
