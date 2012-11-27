@@ -143,6 +143,7 @@ class DivaConverter(object):
 if __name__ == "__main__":
     if len(sys.argv) < 3:
         print "You must specify both an input and an output directory."
+        print "Usage: process_jp2.py input_directory output_directory"
         sys.exit(-1)
 
     c = DivaConverter(sys.argv[1], sys.argv[2])
