@@ -99,7 +99,19 @@ if (!file_exists($cache_file)) {
 
     $i = 0;
     foreach (glob($img_dir . '/*') as $img_file) {
+        $img_size = false;
+
         $img_size = getimagesize($img_file);
+
+        /* 
+            Since we're fairly liberal with the files we pull in,
+            and we don't just want to go on image extensions
+            we need to check if it's actually an image.
+        */
+        if(!$img_size) {
+            continue;
+        }
+
         $img_wid = $img_size[0];
         $img_hei = $img_size[1];
 
