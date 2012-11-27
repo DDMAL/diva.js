@@ -129,7 +129,7 @@ if (!file_exists($cache_file)) {
     $a_wid = array();
     $a_hei = array();
 
-    for ($i = 0; $i < count($images) - 1; $i++) {
+    for ($i = 0; $i < count($images); $i++) {
         if (array_key_exists($i, $images)) {
             $page_data = array();
 
