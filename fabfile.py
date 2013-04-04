@@ -2,7 +2,7 @@ import os
 from fabric.api import *
 
 # Path to the Closure Compiler .jar file
-CLOSURE_COMPILER_PATH = '/usr/lib/closure/compiler.jar'
+CLOSURE_COMPILER_PATH = '/usr/local/Cellar/closure-compiler/20121212/libexec/build/compiler.jar'
 
 
 def less():
@@ -12,6 +12,9 @@ def less():
         and a non-minified version called diva.css.
     See build/css/readme.md for more information.
     """
+    if not os.path.exists("build/css"):
+        local("mkdir -p build/css")
+
     local('lessc source/css/imports.less > build/css/diva.css')
     local('lessc source/css/imports.less > build/css/diva.min.css -x')
 
@@ -24,11 +27,21 @@ def minify():
         be included separately).
     See build/js/readme.md for more information.
     """
+    if not os.path.exists("build/js"):
+        local("mkdir -p build/js")
+
     source_files = ['utils.js', 'diva.js', 'plugins/*']
     local("cd source/js && java -jar " + CLOSURE_COMPILER_PATH + " --js " + " ".join(source_files) + " --js_output_file ../../build/js/diva.min.js")
 
 
 def build():
+    if os.path.exists("build"):
+        print "Removing old build directory"
+        local("rm -r build")
+
+    local("mkdir -p build")
+    local("cp -R source/img build/")
+    local("cp -R source/divaserve build/")
     less()
     minify()
 
@@ -44,6 +57,10 @@ def release(version):
     Also adds the "latest version" text to diva.min.js.
     """
     import shutil
+
+    print "Building a release version of Diva"
+    build()
+
     files = {
         'readme.md': 'readme.md',
         'AUTHORS': 'AUTHORS',
