@@ -1382,7 +1382,7 @@ window.divaPlugins = [];
                 });
 
                 // Listen to orientation change event
-                $('body').bind('orientationchange', function (event) {
+                $(window).bind('orientationchange', function (event) {
                     settings.orientationChange = true;
                     adjustMobileWebkitDims();
 
