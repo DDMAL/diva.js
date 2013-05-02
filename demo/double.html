@@ -16,9 +16,10 @@
         /* Beginning of settings (i.e. things you can/should change) */
         var settings = {
             zoomLevel: 1,
-            iipLeftURL: 'http://ddmal.music.mcgill.ca/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/beromunster/',
-            iipRightURL: 'http://ddmal.music.mcgill.ca/fcgi-bin/iipsrv.fcgi?FIF=/mnt/images/beromunster/',
+            iipLeftURL: 'http://ddmal.music.mcgill.ca/fcgi-bin/iipsrv.fcgi',
+            iipRightURL: 'http://ddmal.music.mcgill.ca/fcgi-bin/iipsrv.fcgi',
             divaserveURL: 'demo.php',
+            imageRoot: "/mnt/images",
             canvasPlugin: {
                 proxyURL: 'canvas.php'
             },
@@ -48,6 +49,7 @@
             iipServerURL: settings.iipLeftURL,
             divaserveURL: settings.divaserveURL,
             imageDir: settings.leftImageDir,
+            imageRoot: settings.imageRoot,
             fixedHeightGrid: false,
             onGrid: onGrid,
             canvasPlugin: settings.canvasPlugin,
@@ -67,6 +69,7 @@
             iipServerURL: settings.iipRightURL,
             divaserveURL: settings.divaserveURL,
             imageDir: settings.rightImageDir,
+            imageRoot: settings.imageRoot,
             onGrid: onGrid,
             canvasPlugin: settings.canvasPlugin,
             onScroll: function(scrollSoFar) {

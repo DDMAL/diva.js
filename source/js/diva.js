@@ -52,7 +52,8 @@ window.divaPlugins = [];
             iipServerURL: '',           // The URL to the IIPImage installation, including the `?FIF=` - *MANDATORY*
             inFullscreen: false,        // Set to true to load fullscreen mode initially
             inGrid: false,              // Set to true to load grid view initially
-            imageDir: '',               // Image directory, relative to the root defined in divaserve - *MANDATORY*
+            imageDir: '',               // Image directory, relative to the variable defined in imageRoot - *MANDATORY*
+            imageRoot: '',              // Root image directory, must match the root directory in divaserve. NO TRAILING SLASH. - *MANDATORY*
             maxPagesPerRow: 8,          // Maximum number of pages per row, grid view
             maxZoomLevel: -1,           // Optional; defaults to the max zoom returned in the JSON response
             minPagesPerRow: 2,          // 2 for the spread view. Recommended to leave it
@@ -288,11 +289,12 @@ window.divaPlugins = [];
                     return;
                 }
 
+                var imdir = settings.imageRoot + "/" + settings.imageDir + "/";
                 // Load some more data and initialise some variables
                 var rows = getPageData(pageIndex, 'r');
                 var cols = getPageData(pageIndex, 'c');
                 var maxZoom = settings.pages[pageIndex].m;
-                var baseURL = settings.iipServerURL + filename + '&amp;JTL=';
+                var baseURL = settings.iipServerURL + "?FIF=" + imdir + filename + '&amp;JTL=';
                 var tilesToLoad = [];
                 var content = [];
                 var allTilesLoaded = true;
@@ -509,6 +511,7 @@ window.divaPlugins = [];
 
             // Declare variables used in the loop
             var i, pageIndex, filename, realWidth, realHeight, pageWidth, pageHeight, leftOffset, imageURL;
+            var imdir = settings.imageRoot + "/" + settings.imageDir + "/";
 
             // Load each page within that row
             for (i = 0; i < settings.pagesPerRow; i++) {
@@ -533,7 +536,7 @@ window.divaPlugins = [];
 
                 // Center the page if the height is fixed (otherwise, there is no horizontal padding)
                 leftOffset += (settings.fixedHeightGrid) ? (settings.gridPageWidth - pageWidth) / 2 : 0;
-                imageURL = settings.iipServerURL + filename + '&amp;HEI=' + (pageHeight + 2) + '&amp;CVT=JPEG';
+                imageURL = settings.iipServerURL + "?FIF=" + imdir + filename + '&amp;HEI=' + (pageHeight + 2) + '&amp;CVT=JPEG';
 
                 // Append the HTML for this page to the string builder array
                 content.push('<div id="' + settings.ID + 'page-' + pageIndex + '" class="diva-page" style="width: ' + pageWidth + 'px; height: ' + pageHeight + 'px; left: ' + leftOffset + 'px;" title="Page ' + (pageIndex + 1) + '"></div>');
