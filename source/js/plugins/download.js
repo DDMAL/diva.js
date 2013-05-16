@@ -9,6 +9,8 @@ Allows you to download images served by IIPImage
         return {
             init: function(divaSettings) {
                 settings.iipServerURL = divaSettings.iipServerURL;
+                settings.imageRoot = divaSettings.imageRoot;
+                settings.imageDir = divaSettings.imageDir;
                 return true;
             },
             pluginName: 'download',
@@ -17,7 +19,8 @@ Allows you to download images served by IIPImage
                 var pageDiv = $(this).parent().parent();
                 var filename = $(pageDiv).attr('data-filename');
                 var width = $(pageDiv).width() - 1;
-                var image = settings.iipServerURL + filename + '&WID=' + width + '&CVT=JPEG';
+                var imdir = settings.imageRoot + "/" + settings.imageDir + "/";
+                var image = settings.iipServerURL + "?FIF=" + imdir + filename + '&WID=' + width + '&CVT=JPEG';
                 window.open(image);
             }
         };
