@@ -170,8 +170,6 @@ window.divaPlugins = [];
             return false;
         };
 
-
-
         var getPageData = function (pageIndex, attribute) {
             return settings.pages[pageIndex].d[settings.zoomLevel][attribute];
         };
@@ -188,8 +186,6 @@ window.divaPlugins = [];
 
             return -1;
         };
-
-
 
         // Checks if a tile is within the viewport horizontally
         var horizontallyInViewport = function (left, right) {
@@ -217,8 +213,6 @@ window.divaPlugins = [];
             return (topVisible || middleVisible || bottomVisible);
         };
 
-
-
         // Check if a tile is near the viewport and thus should be loaded
         var isTileVisible = function (pageIndex, tileRow, tileCol) {
             var tileTop = settings.heightAbovePages[pageIndex] + (tileRow * settings.tileHeight) + settings.verticalPadding;
@@ -233,8 +227,6 @@ window.divaPlugins = [];
         var isTileLoaded = function (pageIndex, tileIndex) {
             return $(settings.selector + 'tile-' + pageIndex + '-' + tileIndex).length > 0;
         };
-
-
 
         // Check if a page index is valid
         var isPageValid = function (pageIndex) {
@@ -476,8 +468,6 @@ window.divaPlugins = [];
             }
         };
 
-
-
         // Check if a row index is valid
         var isRowValid = function (rowIndex) {
             return rowIndex >= 0 && rowIndex < settings.numRows;
@@ -646,8 +636,6 @@ window.divaPlugins = [];
             }, settings.rowLoadTimeout));
         };
 
-
-
         // Determines and sets the "current page" (settings.currentPageIndex); called within adjustPages
         // The "direction" is either 1 (downward scroll) or -1 (upward scroll)
         var setCurrentPage = function (direction) {
@@ -719,8 +707,6 @@ window.divaPlugins = [];
             return false;
         };
 
-
-
         // Helper function for going to a particular page
         // Vertical offset: from the top of the page (including the top padding)
         // Horizontal offset: from the center of the page; can be negative if to the left
@@ -749,8 +735,6 @@ window.divaPlugins = [];
             settings.currentPageIndex = pageIndex;
             settings.toolbar.updateCurrentPage();
         };
-
-
 
         // Helper function called by loadDocument to scroll to the desired place
         var documentScroll = function () {
@@ -801,8 +785,6 @@ window.divaPlugins = [];
             gotoRow(settings.goDirectlyTo);
         };
 
-
-
         // If the given zoom level is valid, returns it; else, returns the min
         var getValidZoomLevel = function (zoomLevel) {
             return (zoomLevel >= settings.minZoomLevel && zoomLevel <= settings.maxZoomLevel) ? zoomLevel : settings.minZoomLevel;
@@ -811,8 +793,6 @@ window.divaPlugins = [];
         var getValidPagesPerRow = function (pagesPerRow) {
             return (pagesPerRow >= settings.minPagesPerRow && pagesPerRow <= settings.maxPagesPerRow) ? pagesPerRow : settings.maxPagesPerRow;
         };
-
-
 
         // Reset some settings and empty the viewport
         var clearViewer = function () {
@@ -954,8 +934,6 @@ window.divaPlugins = [];
             }
         };
 
-
-
         // Handles switching in and out of fullscreen mode
         // Should only be called after changing settings.inFullscreen
         var handleModeChange = function (changeView) {
@@ -1011,8 +989,6 @@ window.divaPlugins = [];
             executeCallback(settings.onViewToggle, settings.inGrid);
         };
 
-
-
         // Called when the fullscreen icon is clicked
         var toggleFullscreenIcon = function () {
             settings.goDirectlyTo = settings.currentPageIndex;
@@ -1026,8 +1002,6 @@ window.divaPlugins = [];
             settings.inGrid = !settings.inGrid;
             handleViewChange();
         };
-
-
 
         // Called after double-click or ctrl+double-click events on pages in document view
         var handleDocumentDoubleClick = function (event) {
@@ -1085,8 +1059,6 @@ window.divaPlugins = [];
             handleZoom(newZoomLevel);
         };
 
-
-
         // Called to handle any zoom level
         var handleZoom = function (newValue) {
             var newZoomLevel = getValidZoomLevel(newValue);
@@ -1124,8 +1096,6 @@ window.divaPlugins = [];
 
             loadGrid();
         };
-
-
 
         var getYOffset = function () {
             var yScroll = $(settings.outerSelector).scrollTop();
@@ -1176,8 +1146,6 @@ window.divaPlugins = [];
         var getCurrentURL = function () {
             return location.protocol + '//' + location.host + location.pathname + '#' + getURLHash();
         };
-
-
 
         // Called in init and when the orientation changes
         var adjustMobileWebkitDims = function () {
@@ -1263,8 +1231,6 @@ window.divaPlugins = [];
                 settings.panelHeight = newHeight;
             }
         };
-
-
 
         // Binds most of the event handlers (some more in createToolbar)
         var handleEvents = function () {
@@ -1909,7 +1875,6 @@ window.divaPlugins = [];
             handleEvents();
         };
 
-
         // Call the init function when this object is created.
         init();
 
@@ -2126,8 +2091,6 @@ window.divaPlugins = [];
             $(settings.parentSelector).removeAttr('style').removeAttr('class');
         };
     };
-
-
 
     $.fn.diva = function (options) {
         return this.each(function () {
