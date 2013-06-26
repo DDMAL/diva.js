@@ -8,7 +8,7 @@ Description
 
 Diva.js (Document Image Viewer with AJAX) is a Javascript frontend for viewing documents, designed to work with digital libraries to present multi-page documents as a single, continuous item. Using "lazy loading" methods for loading parts of a document on demand, it presents a quick and efficient way of displaying hundreds (or even thousands) of high-resolution page images from digitized books and other documents on a single web page.
 
-Version 2.0 (released Fall 2012) contains many new features and improvements:
+Version 2.0+ contains many new features and improvements:
 
  * Support for JPEG2000 images.
  * New plug-in architecture for extending the functionality of Diva without 'hacking' the core.
@@ -23,11 +23,11 @@ Installation and setup
 
 ## Overview
 
-Diva has three main components: The front-end that runs in the browser, the image server, currently only tested with the [IIP Image Server](http://iipimage.sourceforge.net) and the Diva data server, a small PHP or Python script that processes the image files for their measurements, which are then sent to the front-end when a user first loads a document.
+Diva has three main components: The front-end that runs in the browser, the image server ([IIP Image Server](http://iipimage.sourceforge.net)) and the Diva data server, a small PHP or Python script that processes the image files for their measurements which are then sent to the front-end when a user first loads a document.
 
 ## Easy Install
 
-If you do not want to modify the Diva code, or just want to play around with it for a bit, the easiest way to get going is to download one of the pre-packaged releases available in the [downloads section](https://github.com/DDMAL/diva.js/downloads). This package contains what you will need to get started: full minified versions of the JavaScript and CSS, a few demo pages, and a basic Diva data server in both Python and PHP. (You will still have to download and install the IIP Image Server separately).
+The easiest way to get going is to download the [latest tagged release](https://github.com/DDMAL/diva.js/tags). This package contains what you will need to get started: full minified versions of the JavaScript and CSS, a few demo pages, and a basic Diva data server in both Python and PHP. (You will still have to download and install the IIP Image Server separately).
 
 ### Dependencies
 
@@ -39,7 +39,7 @@ To run the image processing scripts `process.py` and `process_jp2.py` you will a
 
 ### Setting up the frontend
 
-All of the relevant Javascript, CSS, and image files can be found in the `diva.js/` directory, under the subdirectories `js`/, `css/`, and `img/`, respectively. The included HTML files in the `examples/` directory give an example of how the document viewer can be initialized, with further setup details in the readme.md file in that directory.
+All of the relevant Javascript, CSS, and image files can be found in the `build` directory, under the subdirectories `js`/, `css/`, and `img/`, respectively. The included HTML files in the `demo/` directory give an example of how the document viewer can be initialized, with further setup details in the readme.md file in that directory.
 
 ### Setting up the backend
 
