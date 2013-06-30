@@ -58,6 +58,7 @@ window.divaPlugins = [];
             maxZoomLevel: -1,           // Optional; defaults to the max zoom returned in the JSON response
             minPagesPerRow: 2,          // 2 for the spread view. Recommended to leave it
             minZoomLevel: 0,            // Defaults to 0 (the minimum zoom)
+            onDocumentLoaded: null,     // Callback function for when the document is fully loaded
             onModeToggle: null,         // Callback for toggling fullscreen mode
             onViewToggle: null,         // Callback for switching between grid and document view
             onJump: null,               // Callback function for jumping to a specific page (using the gotoPage feature)
@@ -901,6 +902,8 @@ window.divaPlugins = [];
             if (settings.scaleWait) {
                 settings.scaleWait = false;
             }
+
+            executeCallback(settings.onDocumentLoaded, settings.lastPageLoaded, settings.pages[settings.lastPageLoaded].f);
         };
 
         var loadGrid = function () {
