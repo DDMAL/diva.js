@@ -66,6 +66,7 @@ window.divaPlugins = [];
             onScroll: null,             // Callback function for scrolling
             onScrollDown: null,         // Callback function for scrolling down, only
             onScrollUp: null,           // Callback function for scrolling up only
+            onSetCurrentPage: null,     // Callback function for when the current page is set
             onZoom: null,               // Callback function for zooming in general
             onZoomIn: null,             // Callback function for zooming in only
             onZoomOut: null,            // Callback function for zooming out only
@@ -644,6 +645,8 @@ window.divaPlugins = [];
             var currentPage = settings.currentPageIndex;
             var pageToConsider = settings.currentPageIndex + direction;
             var changeCurrentPage = false;
+            var filename = settings.pages[pageToConsider].f;
+            var pageSelector = settings.selector + 'page-' + pageToConsider;
 
             // When scrolling up:
             if (direction < 0) {
@@ -662,7 +665,7 @@ window.divaPlugins = [];
             if (changeCurrentPage) {
                 // Set this to the current page
                 settings.currentPageIndex = pageToConsider;
-
+                executeCallback(settings.onSetCurrentPage, pageToConsider, filename, pageSelector);
                 // Now try to change the next page, given that we're not going to a specific page
                 // Calls itself recursively - this way we accurately obtain the current page
                 if (direction !== 0) {
