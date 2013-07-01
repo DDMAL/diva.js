@@ -670,7 +670,7 @@ window.divaPlugins = [];
                 if (direction !== 0) {
                     if (!setCurrentPage(direction)) {
                         var filename = settings.pages[pageToConsider].f;
-                        executeCallback(settings.onSetCurrentPage, pageToConsider, filename, pageSelector);
+                        executeCallback(settings.onSetCurrentPage, pageToConsider, filename);
 
                         settings.toolbar.updateCurrentPage();
                     }
@@ -726,6 +726,8 @@ window.divaPlugins = [];
             // Pretend that this is the current page
             settings.currentPageIndex = pageIndex;
             settings.toolbar.updateCurrentPage();
+            var filename = settings.pages[pageIndex].f;
+            executeCallback(settings.onSetCurrentPage, pageIndex, filename);
 
             // Execute the onJump callback
             executeCallback(settings.onJump, pageIndex);
