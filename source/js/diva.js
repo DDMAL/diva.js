@@ -646,7 +646,6 @@ window.divaPlugins = [];
             var currentPage = settings.currentPageIndex;
             var pageToConsider = settings.currentPageIndex + direction;
             var changeCurrentPage = false;
-            var filename = settings.pages[pageToConsider].f;
             var pageSelector = settings.selector + 'page-' + pageToConsider;
 
             // When scrolling up:
@@ -666,11 +665,13 @@ window.divaPlugins = [];
             if (changeCurrentPage) {
                 // Set this to the current page
                 settings.currentPageIndex = pageToConsider;
-                executeCallback(settings.onSetCurrentPage, pageToConsider, filename, pageSelector);
                 // Now try to change the next page, given that we're not going to a specific page
                 // Calls itself recursively - this way we accurately obtain the current page
                 if (direction !== 0) {
                     if (!setCurrentPage(direction)) {
+                        var filename = settings.pages[pageToConsider].f;
+                        executeCallback(settings.onSetCurrentPage, pageToConsider, filename, pageSelector);
+
                         settings.toolbar.updateCurrentPage();
                     }
                 }
@@ -903,7 +904,8 @@ window.divaPlugins = [];
                 settings.scaleWait = false;
             }
 
-            executeCallback(settings.onDocumentLoaded, settings.lastPageLoaded, settings.pages[settings.lastPageLoaded].f);
+            var fileName = settings.pages[settings.currentPageIndex].f;
+            executeCallback(settings.onDocumentLoaded, settings.lastPageLoaded, fileName);
         };
 
         var loadGrid = function () {
