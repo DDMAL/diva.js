@@ -75,7 +75,6 @@ window.divaPlugins = [];
             pagesPerRow: 5,             // The default number of pages per row in grid view
             rowLoadTimeout: 50,         // Number of milliseconds to wait before loading a row
             throbberTimeout: 100,       // Number of milliseconds to wait before showing throbber
-            tileFadeSpeed: 0,           // The tile fade-in speed in ms (or "fast" or "slow"; 0 to disable)
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
             toolbarParentSelector: null, // The toolbar parent selector. If null, it defaults to the primary diva element. Must be a jQuery selector (leading '#')
@@ -339,16 +338,6 @@ window.divaPlugins = [];
                 }
 
                 settings.allTilesLoaded[pageIndex] = allTilesLoaded;
-
-                // If there are any times to load, add them to the page
-                if (tilesToLoad.length) {
-                    $(settings.selector + 'page-' + pageIndex).append(content.join(''));
-
-                    // If tileFadeSpeed is set, make the tiles we just appended fade in
-                    for (i = 0; i < tilesToLoad.length; i++) {
-                        $(settings.selector + 'tile-' + pageIndex + '-' + tilesToLoad[i]).fadeIn(settings.tileFadeSpeed);
-                    }
-                }
             }, settings.pageLoadTimeout));
         };
 
