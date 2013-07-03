@@ -227,7 +227,7 @@ window.divaPlugins = [];
 
         // Check if a tile has been appended to the DOM
         var isTileLoaded = function (pageIndex, tileIndex) {
-            return $(settings.selector + 'tile-' + pageIndex + '-' + tileIndex).length > 0;
+            return $(document.getElementById(settings.selector.substring(1) + 'tile-' + pageIndex + '-' + tileIndex)).length > 0;
         };
 
         // Check if a page index is valid
@@ -245,7 +245,7 @@ window.divaPlugins = [];
 
         // Check if a page has been appended to the DOM
         var isPageLoaded = function (pageIndex) {
-            return $(settings.selector + 'page-' + pageIndex).length > 0;
+            return $(document.getElementById(settings.selector.substring(1) + 'page-' + pageIndex)).length > 0;
         };
 
         // Appends the page directly into the document body, or loads the relevant tiles
@@ -265,7 +265,7 @@ window.divaPlugins = [];
 
             // If the page has not been loaded yet, append the div to the DOM
             if (!isPageLoaded(pageIndex)) {
-                $(settings.innerSelector).append('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width: ' + width + 'px; height: ' + height + 'px;" class="diva-document-page" title="Page ' + (pageIndex + 1) + '" data-index="' + pageIndex  + '" data-filename="' + filename + '">' + settings.pageTools + '</div>');
+                $(document.getElementById(settings.innerSelector.substring(1))).append('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width: ' + width + 'px; height: ' + height + 'px;" class="diva-document-page" title="Page ' + (pageIndex + 1) + '" data-index="' + pageIndex  + '" data-filename="' + filename + '">' + settings.pageTools + '</div>');
 
                 // Call the callback function
                 executeCallback(settings.onPageLoad, pageIndex, filename, pageSelector);
@@ -288,8 +288,7 @@ window.divaPlugins = [];
                 var rows = getPageData(pageIndex, 'r');
                 var cols = getPageData(pageIndex, 'c');
                 var maxZoom = settings.pages[pageIndex].m;
-                var baseURL = settings.iipServerURL + "?FIF=" + imdir + filename + '&amp;JTL=';
-                var tilesToLoad = [];
+                var baseURL = settings.iipServerURL + "?FIF=" + imdir + filename + '&JTL=';
                 var content = [];
                 var allTilesLoaded = true;
                 var tileIndex = 0;
@@ -308,9 +307,6 @@ window.divaPlugins = [];
                         top = row * settings.tileHeight;
                         left = col * settings.tileWidth;
 
-                        // If there is a tile fade speed set, hide this tile initially
-                        displayStyle = (settings.tileFadeSpeed) ? 'none' : 'inline';
-
                         // Adjust the zoom level based on the max zoom level of the page
                         zoomLevel = settings.zoomLevel + maxZoom - settings.realMaxZoom;
 
@@ -322,28 +318,24 @@ window.divaPlugins = [];
 
                         if (!isTileLoaded(pageIndex, tileIndex)) {
                             if (isTileVisible(pageIndex, row, col)) {
-                                // The tile needs to be loaded, so load it
-                                content.push('<div id="' + settings.ID + 'tile-' + pageIndex + '-' + tileIndex + '" style="' + displayStyle + '; position: absolute; top: ' + top + 'px; left: ' + left + 'px; background-image: url(\'' + imageURL + '\'); height: ' + tileHeight + 'px; width: ' + tileWidth + 'px;"></div>');
-
-                                // Add it to the array of tiles to be faded in
-                                tilesToLoad.push(tileIndex);
+                                content.push('<div id="' + settings.ID + 'tile-' + pageIndex + '-' + tileIndex + '" style="display:inline; position: absolute; top: ' + top + 'px; left: ' + left + 'px; background-image: url(\'' + imageURL + '\'); height: ' + tileHeight + 'px; width: ' + tileWidth + 'px;"></div>');
                             } else {
                                 // The tile does not need to be loaded - not all have been loaded
                                 allTilesLoaded = false;
                             }
                         }
-
                         tileIndex++;
                     }
                 }
 
                 settings.allTilesLoaded[pageIndex] = allTilesLoaded;
+                $(document.getElementById(settings.selector.substring(1) + 'page-' + pageIndex)).append(content.join(''));
             }, settings.pageLoadTimeout));
         };
 
         // Delete a page from the DOM; will occur when a page is scrolled out of the viewport
         var deletePage = function (pageIndex) {
-            $(settings.selector + 'page-' + pageIndex).empty().remove();
+            $(document.getElementById(settings.selector.substring(1) + 'page-' + pageIndex)).empty().remove();
         };
 
         // Check if the bottom of a page is above the top of a viewport (scrolling down)
@@ -529,11 +521,11 @@ window.divaPlugins = [];
 
             // Append this row to the DOM
             content.push('</div>');
-            $(settings.innerSelector).append(content.join(''));
+            $(document.getElementById(settings.innerSelector.substring(1))).append(content.join(''));
         };
 
         var deleteRow = function (rowIndex) {
-            $(settings.selector + 'row-' + rowIndex).empty().remove();
+            $(document.getElementById(settings.selector.substring(1) + 'row-' + rowIndex)).empty().remove();
         };
 
         // Check if the bottom of a row is above the top of the viewport (scrolling down)
@@ -1027,8 +1019,10 @@ window.divaPlugins = [];
         // Called after double-clicking on a page in grid view
         var handleGridDoubleClick = function (event) {
             // Figure out the page that was clicked, scroll to that page
-            var centerX = (event.pageX - settings.viewerXOffset) + $(settings.outerSelector).scrollLeft();
-            var centerY = (event.pageY - settings.viewerYOffset) + $(settings.outerSelector).scrollTop();
+            var sel = document.getElementById(settings.outerSelector.substring(1));
+            // var centerX = (event.pageX - settings.viewerXOffset) + $(settings.outerSelector).scrollLeft();
+            var centerX = (event.pageX - settings.viewerXOffset) + sel.scrollLeft;
+            var centerY = (event.pageY - settings.viewerYOffset) + sel.scrollTop;
             var rowIndex = Math.floor(centerY / settings.rowHeight);
             var colIndex = Math.floor(centerX / (settings.panelWidth / settings.pagesPerRow));
             var pageIndex = rowIndex * settings.pagesPerRow + colIndex;
@@ -1098,7 +1092,8 @@ window.divaPlugins = [];
         };
 
         var getYOffset = function () {
-            var yScroll = $(settings.outerSelector).scrollTop();
+            // var yScroll = $(settings.outerSelector).scrollTop();
+            var yScroll = document.getElementById(settings.outerSelector.substring(1)).scrollTop;
             var topOfPage = settings.heightAbovePages[settings.currentPageIndex];
 
             return parseInt(yScroll - topOfPage, 10);
@@ -1107,8 +1102,8 @@ window.divaPlugins = [];
         var getXOffset = function () {
             var innerWidth = settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2;
             var centerX = (innerWidth - settings.panelWidth) / 2;
-
-            return parseInt($(settings.outerSelector).scrollLeft() - centerX, 10);
+            var xoff = document.getElementById(settings.outerSelector.substring(1)).scrollLeft - centerX;
+            return parseInt(xoff, 10);
         };
 
         var getState = function () {
@@ -1153,14 +1148,18 @@ window.divaPlugins = [];
             settings.panelHeight = window.innerHeight - outerOffset - settings.viewerHeightPadding;
             settings.panelWidth = window.innerWidth - settings.viewerWidthPadding;
 
-            $(settings.parentSelector).width(settings.panelWidth);
+            // $(settings.parentSelector).width(settings.panelWidth);
+            // document.getElementById(settings.parentSelector.substring(1)).style.width = settings.panelWidth + "px";
+            settings.parentSelector.style.width = settings.panelWidth + "px";
 
             if (settings.enableAutoHeight) {
-                $(settings.outerSelector).height(settings.panelHeight);
+                // $(settings.outerSelector).height(settings.panelHeight);
+                document.getElementById(settings.outerSelector.substring(1)).style.height = settings.panelHeight + "px";
             }
 
             if (settings.enableAutoWidth) {
-                $(settings.outerSelector).width(settings.panelWidth);
+                // $(settings.outerSelector).width(settings.panelWidth);
+                document.getElementById(settings.outerSelector.substring(1)).style.width = settings.panelWidth + "px";
             }
         };
 
@@ -1192,11 +1191,14 @@ window.divaPlugins = [];
                     newWidth = Math.min(desiredWidth, settings.originalWidth);
                 }
 
-                $(settings.parentSelector).width(newWidth + settings.scrollbarWidth);
+                settings.parentSelector[0].style.width = newWidth + settings.scrollbarWidth;
             }
 
             if (newWidth !== settings.panelWidth || newHeight !== settings.panelHeight) {
-                $(settings.outerSelector).height(newHeight).width(newWidth + settings.scrollbarWidth);
+                // $(settings.outerSelector).height(newHeight).width(newWidth + settings.scrollbarWidth);
+                var el = document.getElementById(settings.outerSelector.substring(1));
+                el.style.height = newHeight + "px";
+                el.style.width = newWidth + settings.scrollbarWidth + "px";
                 settings.panelWidth = newWidth;
                 settings.panelHeight = newHeight;
                 return true;
@@ -1217,16 +1219,19 @@ window.divaPlugins = [];
             if (newWidth >= settings.minWidth) {
                 settings.originalWidth = newWidth;
                 $(settings.outerSelector).width(newWidth);
+                document.getElementById(settings.outerSelector.substring(1)).style.width = newWidth + "px";
 
                 settings.panelWidth = newWidth - settings.scrollbarWidth;
 
                 // Should also change the width of the container
-                $(settings.parentSelector).width(newWidth);
+                // $(settings.parentSelector).width(newWidth);
+                settings.parentSelector[0].style.width = newWidth + "px";
             }
 
             if (newHeight >= settings.minHeight) {
                 settings.originalHeight = newHeight;
-                $(settings.outerSelector).height(newHeight);
+                // $(settings.outerSelector).height(newHeight);
+                document.getElementById(settings.outerSelector.substring(1)).style.height = newHeight + "px";
 
                 settings.panelHeight = newHeight;
             }
@@ -1264,7 +1269,7 @@ window.divaPlugins = [];
 
             // Handle the scroll
             $(settings.outerSelector).scroll(function () {
-                settings.topScrollSoFar = $(settings.outerSelector).scrollTop();
+                settings.topScrollSoFar = document.getElementById(settings.outerSelector.substring(1)).scrollTop;
                 var direction = settings.topScrollSoFar - settings.previousTopScroll;
 
                 if (settings.inGrid) {
