@@ -283,7 +283,7 @@ $.fn.dragscrollable = function( options ){
 (function(t){var e=5;t.widget("ui.slider",t.ui.mouse,{version:"1.10.3",widgetEventPrefix:"slide",options:{animate:!1,distance:0,max:100,min:0,orientation:"horizontal",range:!1,step:1,value:0,values:null,change:null,slide:null,start:null,stop:null},_create:function(){this._keySliding=!1,this._mouseSliding=!1,this._animateOff=!0,this._handleIndex=null,this._detectOrientation(),this._mouseInit(),this.element.addClass("ui-slider ui-slider-"+this.orientation+" ui-widget"+" ui-widget-content"+" ui-corner-all"),this._refresh(),this._setOption("disabled",this.options.disabled),this._animateOff=!1},_refresh:function(){this._createRange(),this._createHandles(),this._setupEvents(),this._refreshValue()},_createHandles:function(){var e,i,s=this.options,n=this.element.find(".ui-slider-handle").addClass("ui-state-default ui-corner-all"),a="<a class='ui-slider-handle ui-state-default ui-corner-all' href='#'></a>",o=[];for(i=s.values&&s.values.length||1,n.length>i&&(n.slice(i).remove(),n=n.slice(0,i)),e=n.length;i>e;e++)o.push(a);this.handles=n.add(t(o.join("")).appendTo(this.element)),this.handle=this.handles.eq(0),this.handles.each(function(e){t(this).data("ui-slider-handle-index",e)})},_createRange:function(){var e=this.options,i="";e.range?(e.range===!0&&(e.values?e.values.length&&2!==e.values.length?e.values=[e.values[0],e.values[0]]:t.isArray(e.values)&&(e.values=e.values.slice(0)):e.values=[this._valueMin(),this._valueMin()]),this.range&&this.range.length?this.range.removeClass("ui-slider-range-min ui-slider-range-max").css({left:"",bottom:""}):(this.range=t("<div></div>").appendTo(this.element),i="ui-slider-range ui-widget-header ui-corner-all"),this.range.addClass(i+("min"===e.range||"max"===e.range?" ui-slider-range-"+e.range:""))):this.range=t([])},_setupEvents:function(){var t=this.handles.add(this.range).filter("a");this._off(t),this._on(t,this._handleEvents),this._hoverable(t),this._focusable(t)},_destroy:function(){this.handles.remove(),this.range.remove(),this.element.removeClass("ui-slider ui-slider-horizontal ui-slider-vertical ui-widget ui-widget-content ui-corner-all"),this._mouseDestroy()},_mouseCapture:function(e){var i,s,n,a,o,r,h,l,u=this,c=this.options;return c.disabled?!1:(this.elementSize={width:this.element.outerWidth(),height:this.element.outerHeight()},this.elementOffset=this.element.offset(),i={x:e.pageX,y:e.pageY},s=this._normValueFromMouse(i),n=this._valueMax()-this._valueMin()+1,this.handles.each(function(e){var i=Math.abs(s-u.values(e));(n>i||n===i&&(e===u._lastChangedValue||u.values(e)===c.min))&&(n=i,a=t(this),o=e)}),r=this._start(e,o),r===!1?!1:(this._mouseSliding=!0,this._handleIndex=o,a.addClass("ui-state-active").focus(),h=a.offset(),l=!t(e.target).parents().addBack().is(".ui-slider-handle"),this._clickOffset=l?{left:0,top:0}:{left:e.pageX-h.left-a.width()/2,top:e.pageY-h.top-a.height()/2-(parseInt(a.css("borderTopWidth"),10)||0)-(parseInt(a.css("borderBottomWidth"),10)||0)+(parseInt(a.css("marginTop"),10)||0)},this.handles.hasClass("ui-state-hover")||this._slide(e,o,s),this._animateOff=!0,!0))},_mouseStart:function(){return!0},_mouseDrag:function(t){var e={x:t.pageX,y:t.pageY},i=this._normValueFromMouse(e);return this._slide(t,this._handleIndex,i),!1},_mouseStop:function(t){return this.handles.removeClass("ui-state-active"),this._mouseSliding=!1,this._stop(t,this._handleIndex),this._change(t,this._handleIndex),this._handleIndex=null,this._clickOffset=null,this._animateOff=!1,!1},_detectOrientation:function(){this.orientation="vertical"===this.options.orientation?"vertical":"horizontal"},_normValueFromMouse:function(t){var e,i,s,n,a;return"horizontal"===this.orientation?(e=this.elementSize.width,i=t.x-this.elementOffset.left-(this._clickOffset?this._clickOffset.left:0)):(e=this.elementSize.height,i=t.y-this.elementOffset.top-(this._clickOffset?this._clickOffset.top:0)),s=i/e,s>1&&(s=1),0>s&&(s=0),"vertical"===this.orientation&&(s=1-s),n=this._valueMax()-this._valueMin(),a=this._valueMin()+s*n,this._trimAlignValue(a)},_start:function(t,e){var i={handle:this.handles[e],value:this.value()};return this.options.values&&this.options.values.length&&(i.value=this.values(e),i.values=this.values()),this._trigger("start",t,i)},_slide:function(t,e,i){var s,n,a;this.options.values&&this.options.values.length?(s=this.values(e?0:1),2===this.options.values.length&&this.options.range===!0&&(0===e&&i>s||1===e&&s>i)&&(i=s),i!==this.values(e)&&(n=this.values(),n[e]=i,a=this._trigger("slide",t,{handle:this.handles[e],value:i,values:n}),s=this.values(e?0:1),a!==!1&&this.values(e,i,!0))):i!==this.value()&&(a=this._trigger("slide",t,{handle:this.handles[e],value:i}),a!==!1&&this.value(i))},_stop:function(t,e){var i={handle:this.handles[e],value:this.value()};this.options.values&&this.options.values.length&&(i.value=this.values(e),i.values=this.values()),this._trigger("stop",t,i)},_change:function(t,e){if(!this._keySliding&&!this._mouseSliding){var i={handle:this.handles[e],value:this.value()};this.options.values&&this.options.values.length&&(i.value=this.values(e),i.values=this.values()),this._lastChangedValue=e,this._trigger("change",t,i)}},value:function(t){return arguments.length?(this.options.value=this._trimAlignValue(t),this._refreshValue(),this._change(null,0),undefined):this._value()},values:function(e,i){var s,n,a;if(arguments.length>1)return this.options.values[e]=this._trimAlignValue(i),this._refreshValue(),this._change(null,e),undefined;if(!arguments.length)return this._values();if(!t.isArray(arguments[0]))return this.options.values&&this.options.values.length?this._values(e):this.value();for(s=this.options.values,n=arguments[0],a=0;s.length>a;a+=1)s[a]=this._trimAlignValue(n[a]),this._change(null,a);this._refreshValue()},_setOption:function(e,i){var s,n=0;switch("range"===e&&this.options.range===!0&&("min"===i?(this.options.value=this._values(0),this.options.values=null):"max"===i&&(this.options.value=this._values(this.options.values.length-1),this.options.values=null)),t.isArray(this.options.values)&&(n=this.options.values.length),t.Widget.prototype._setOption.apply(this,arguments),e){case"orientation":this._detectOrientation(),this.element.removeClass("ui-slider-horizontal ui-slider-vertical").addClass("ui-slider-"+this.orientation),this._refreshValue();break;case"value":this._animateOff=!0,this._refreshValue(),this._change(null,0),this._animateOff=!1;break;case"values":for(this._animateOff=!0,this._refreshValue(),s=0;n>s;s+=1)this._change(null,s);this._animateOff=!1;break;case"min":case"max":this._animateOff=!0,this._refreshValue(),this._animateOff=!1;break;case"range":this._animateOff=!0,this._refresh(),this._animateOff=!1}},_value:function(){var t=this.options.value;return t=this._trimAlignValue(t)},_values:function(t){var e,i,s;if(arguments.length)return e=this.options.values[t],e=this._trimAlignValue(e);if(this.options.values&&this.options.values.length){for(i=this.options.values.slice(),s=0;i.length>s;s+=1)i[s]=this._trimAlignValue(i[s]);return i}return[]},_trimAlignValue:function(t){if(this._valueMin()>=t)return this._valueMin();if(t>=this._valueMax())return this._valueMax();var e=this.options.step>0?this.options.step:1,i=(t-this._valueMin())%e,s=t-i;return 2*Math.abs(i)>=e&&(s+=i>0?e:-e),parseFloat(s.toFixed(5))},_valueMin:function(){return this.options.min},_valueMax:function(){return this.options.max},_refreshValue:function(){var e,i,s,n,a,o=this.options.range,r=this.options,h=this,l=this._animateOff?!1:r.animate,u={};this.options.values&&this.options.values.length?this.handles.each(function(s){i=100*((h.values(s)-h._valueMin())/(h._valueMax()-h._valueMin())),u["horizontal"===h.orientation?"left":"bottom"]=i+"%",t(this).stop(1,1)[l?"animate":"css"](u,r.animate),h.options.range===!0&&("horizontal"===h.orientation?(0===s&&h.range.stop(1,1)[l?"animate":"css"]({left:i+"%"},r.animate),1===s&&h.range[l?"animate":"css"]({width:i-e+"%"},{queue:!1,duration:r.animate})):(0===s&&h.range.stop(1,1)[l?"animate":"css"]({bottom:i+"%"},r.animate),1===s&&h.range[l?"animate":"css"]({height:i-e+"%"},{queue:!1,duration:r.animate}))),e=i}):(s=this.value(),n=this._valueMin(),a=this._valueMax(),i=a!==n?100*((s-n)/(a-n)):0,u["horizontal"===this.orientation?"left":"bottom"]=i+"%",this.handle.stop(1,1)[l?"animate":"css"](u,r.animate),"min"===o&&"horizontal"===this.orientation&&this.range.stop(1,1)[l?"animate":"css"]({width:i+"%"},r.animate),"max"===o&&"horizontal"===this.orientation&&this.range[l?"animate":"css"]({width:100-i+"%"},{queue:!1,duration:r.animate}),"min"===o&&"vertical"===this.orientation&&this.range.stop(1,1)[l?"animate":"css"]({height:i+"%"},r.animate),"max"===o&&"vertical"===this.orientation&&this.range[l?"animate":"css"]({height:100-i+"%"},{queue:!1,duration:r.animate}))},_handleEvents:{keydown:function(i){var s,n,a,o,r=t(i.target).data("ui-slider-handle-index");switch(i.keyCode){case t.ui.keyCode.HOME:case t.ui.keyCode.END:case t.ui.keyCode.PAGE_UP:case t.ui.keyCode.PAGE_DOWN:case t.ui.keyCode.UP:case t.ui.keyCode.RIGHT:case t.ui.keyCode.DOWN:case t.ui.keyCode.LEFT:if(i.preventDefault(),!this._keySliding&&(this._keySliding=!0,t(i.target).addClass("ui-state-active"),s=this._start(i,r),s===!1))return}switch(o=this.options.step,n=a=this.options.values&&this.options.values.length?this.values(r):this.value(),i.keyCode){case t.ui.keyCode.HOME:a=this._valueMin();break;case t.ui.keyCode.END:a=this._valueMax();break;case t.ui.keyCode.PAGE_UP:a=this._trimAlignValue(n+(this._valueMax()-this._valueMin())/e);break;case t.ui.keyCode.PAGE_DOWN:a=this._trimAlignValue(n-(this._valueMax()-this._valueMin())/e);break;case t.ui.keyCode.UP:case t.ui.keyCode.RIGHT:if(n===this._valueMax())return;a=this._trimAlignValue(n+o);break;case t.ui.keyCode.DOWN:case t.ui.keyCode.LEFT:if(n===this._valueMin())return;a=this._trimAlignValue(n-o)}this._slide(i,r,a)},click:function(t){t.preventDefault()},keyup:function(e){var i=t(e.target).data("ui-slider-handle-index");this._keySliding&&(this._keySliding=!1,this._stop(e,i),this._change(e,i),t(e.target).removeClass("ui-state-active"))}}})})(jQuery);
 
 /*!
-    jQuery.kinetic v1.5
+    jQuery.kinetic v1.8.2
     Dave Taylor http://the-taylors.org/jquery.kinetic
 
     The MIT License (MIT)
@@ -293,29 +293,30 @@ $.fn.dragscrollable = function( options ){
 (function($){
     'use strict';
 
-    var DEFAULT_SETTINGS    = { decelerate: true
-                              , triggerHardware: false
-                              , y: true
-                              , x: true
-                              , slowdown: 0.9
-                              , maxvelocity: 40
-                              , throttleFPS: 60
-                              , movingClass: {
-                                  up:    'kinetic-moving-up'
-                                , down:  'kinetic-moving-down'
-                                , left:  'kinetic-moving-left'
-                                , right: 'kinetic-moving-right'
-                                }
-                              , deceleratingClass: {
-                                  up:    'kinetic-decelerating-up'
-                                , down:  'kinetic-decelerating-down'
-                                , left:  'kinetic-decelerating-left'
-                                , right: 'kinetic-decelerating-right'
-                                }
-                              },
-        SETTINGS_KEY        = 'kinetic-settings',
-        ACTIVE_CLASS        = 'kinetic-active';
-
+    var DEFAULT_SETTINGS = {
+            cursor: 'move',
+            decelerate: true,
+            triggerHardware: false,
+            y: true,
+            x: true,
+            slowdown: 0.9,
+            maxvelocity: 40,
+            throttleFPS: 60,
+            movingClass: {
+                up: 'kinetic-moving-up',
+                down: 'kinetic-moving-down',
+                left: 'kinetic-moving-left',
+                right: 'kinetic-moving-right'
+            },
+            deceleratingClass: {
+                up: 'kinetic-decelerating-up',
+                down: 'kinetic-decelerating-down',
+                left: 'kinetic-decelerating-left',
+                right: 'kinetic-decelerating-right'
+            }
+        },
+        SETTINGS_KEY = 'kinetic-settings',
+        ACTIVE_CLASS = 'kinetic-active';
     /**
      * Provides requestAnimationFrame in a cross browser way.
      * http://paulirish.com/2011/requestanimationframe-for-smart-animating/
@@ -388,6 +389,9 @@ $.fn.dragscrollable = function( options ){
     };
 
     var stop = function($scroller, settings) {
+        settings.velocity = 0;
+        settings.velocityY = 0;
+        settings.decelerate = true;
         if (typeof settings.stopped === 'function') {
             settings.stopped.call($scroller, settings);
         }
@@ -433,8 +437,8 @@ $.fn.dragscrollable = function( options ){
     };
 
     var callOption = function(method, options) {
-        var methodFn = $.kinetic.callMethods[method]
-        ,   args = Array.prototype.slice.call(arguments)
+        var methodFn = $.kinetic.callMethods[method],
+            args = Array.prototype.slice.call(arguments)
         ;
         if (methodFn) {
             this.each(function(){
@@ -448,30 +452,35 @@ $.fn.dragscrollable = function( options ){
     var attachListeners = function($this, settings) {
         var element = $this[0];
         if ($.support.touch) {
-            element.addEventListener('touchstart', settings.events.touchStart, false);
-            element.addEventListener('touchend', settings.events.inputEnd, false);
-            element.addEventListener('touchmove', settings.events.touchMove,false);
+            $this.bind('touchstart', settings.events.touchStart)
+                .bind('touchend', settings.events.inputEnd)
+                .bind('touchmove', settings.events.touchMove)
+            ;
         } else {
             $this
-            .mousedown(settings.events.inputDown)
-            .mouseup(settings.events.inputEnd)
-            .mousemove(settings.events.inputMove);
+                .mousedown(settings.events.inputDown)
+                .mouseup(settings.events.inputEnd)
+                .mousemove(settings.events.inputMove)
+            ;
         }
-        $this.click(settings.events.inputClick)
-        .bind("selectstart", selectStart); // prevent selection when dragging
-        $this.bind('dragstart', settings.events.dragStart);
+        $this
+            .click(settings.events.inputClick)
+            .scroll(settings.events.scroll)
+            .bind("selectstart", selectStart) // prevent selection when dragging
+            .bind('dragstart', settings.events.dragStart);
     };
     var detachListeners = function($this, settings) {
         var element = $this[0];
         if ($.support.touch) {
-            element.removeEventListener('touchstart', settings.events.touchStart, false);
-            element.removeEventListener('touchend', settings.events.inputEnd, false);
-            element.removeEventListener('touchmove', settings.events.touchMove,false);
+            $this.unbind('touchstart', settings.events.touchStart)
+                .unbind('touchend', settings.events.inputEnd)
+                .unbind('touchmove', settings.events.touchMove);
         } else {
             $this
             .unbind('mousedown', settings.events.inputDown)
             .unbind('mouseup', settings.events.inputEnd)
-            .unbind('mousemove', settings.events.inputMove);
+            .unbind('mousemove', settings.events.inputMove)
+            .unbind('scroll', settings.events.scroll);
         }
         $this.unbind('click', settings.events.inputClick)
         .unbind("selectstart", selectStart); // prevent selection when dragging
@@ -483,20 +492,24 @@ $.fn.dragscrollable = function( options ){
         .addClass(ACTIVE_CLASS)
         .each(function(){
 
-            var settings = $.extend({}, DEFAULT_SETTINGS, options);
+            var self = this,
+                $this = $(this);
 
-            var self = this
-            ,   $this = $(this)
-            ,   xpos
-            ,   prevXPos = false
-            ,   ypos
-            ,   prevYPos = false
-            ,   mouseDown = false
-            ,   scrollLeft
-            ,   scrollTop
-            ,   throttleTimeout = 1000 / settings.throttleFPS
-            ,   lastMove
-            ,   elementFocused
+            if ($this.data(SETTINGS_KEY)){
+                return;
+            }
+
+            var settings = $.extend({}, DEFAULT_SETTINGS, options),
+                xpos,
+                prevXPos = false,
+                ypos,
+                prevYPos = false,
+                mouseDown = false,
+                scrollLeft,
+                scrollTop,
+                throttleTimeout = 1000 / settings.throttleFPS,
+                lastMove,
+                elementFocused
             ;
 
             settings.velocity = 0;
@@ -567,14 +580,18 @@ $.fn.dragscrollable = function( options ){
             // Events
             settings.events = {
                 touchStart: function(e){
+                    var touch;
                     if (useTarget(e.target)) {
-                        start(e.touches[0].clientX, e.touches[0].clientY);
+                        touch = e.originalEvent.touches[0];
+                        start(touch.clientX, touch.clientY);
                         e.stopPropagation();
                     }
                 },
                 touchMove: function(e){
+                    var touch;
                     if (mouseDown) {
-                        inputmove(e.touches[0].clientX, e.touches[0].clientY);
+                        touch = e.originalEvent.touches[0];
+                        inputmove(touch.clientX, touch.clientY);
                         if (e.preventDefault) {e.preventDefault();}
                     }
                 },
@@ -599,6 +616,12 @@ $.fn.dragscrollable = function( options ){
                         if (e.preventDefault) {e.preventDefault();}
                     }
                 },
+                scroll: function(e) {
+                    if (typeof settings.moved === 'function') {
+                        settings.moved.call($this, settings);
+                    }
+                    if (e.preventDefault) {e.preventDefault();}
+                },
                 inputClick: function(e){
                     if (Math.abs(settings.velocity) > 0) {
                         e.preventDefault();
@@ -614,10 +637,15 @@ $.fn.dragscrollable = function( options ){
             };
 
             attachListeners($this, settings);
-            $this.data(SETTINGS_KEY, settings).css("cursor", "move");
+            $this.data(SETTINGS_KEY, settings)
+                .css("cursor", settings.cursor);
 
             if (settings.triggerHardware) {
-                $this.css('-webkit-transform', 'translate3d(0,0,0)');
+                $this.css({
+                    '-webkit-transform': 'translate3d(0,0,0)',
+                    '-webkit-perspective': '1000',
+                    '-webkit-backface-visibility': 'hidden'
+                });
             }
         });
     };
@@ -627,7 +655,7 @@ $.fn.dragscrollable = function( options ){
         callMethods: {
             start: function(settings, options){
                 var $this = $(this);
-                    settings = $.extend(settings, options);
+                settings = $.extend(settings, options);
                 if (settings) {
                     settings.decelerate = false;
                     move($this, settings);
@@ -640,9 +668,8 @@ $.fn.dragscrollable = function( options ){
                 }
             },
             stop: function(settings, options){
-                settings.velocity = 0;
-                settings.velocityY = 0;
-                settings.decelerate = true;
+                var $this = $(this);
+                stop($this, settings);
             },
             detach: function(settings, options) {
                 var $this = $(this);
