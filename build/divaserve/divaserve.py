@@ -126,10 +126,15 @@ class DivaServe(object):
 
         for i, f in enumerate(files):
             ignore, ext = os.path.splitext(f)
+            if f.startswith("."):
+                continue    # ignore hidden files
+
             if ext in ('.jp2'):
                 width, height = self.__img_size_jp2(os.path.join(img_dir, f))
             elif ext in ('.tiff', '.tif'):
                 width, height = self.__img_size_tiff(os.path.join(img_dir, f))
+            else:
+                continue    # ignore anything else.
 
             max_zoom = self.__get_max_zoom_level(width, height)
             im = {
