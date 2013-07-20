@@ -179,9 +179,10 @@ window.divaPlugins = [];
 
         // Returns the page index associated with the given filename; must called after settings settings.pages
         var getPageIndex = function (filename) {
-            var i;
+            var i,
+                np = settings.numPages;
 
-            for (i = 0; i < settings.numPages; i++) {
+            for (i = 0; i < np; i++) {
                 if (settings.pages[i].f === filename) {
                     return i;
                 }
@@ -435,7 +436,8 @@ window.divaPlugins = [];
                 attemptPageHide(settings.firstPageLoaded, direction);
             } else {
                 // Horizontal scroll, check if we need to reveal any tiles
-                for (i = Math.max(settings.firstPageLoaded, 0); i <= settings.lastPageLoaded; i++) {
+                var lpl = settings.lastPageLoaded;
+                for (i = Math.max(settings.firstPageLoaded, 0); i <= lpl; i++) {
                     if (isPageVisible(i)) {
                         loadPage(i);
                     }
@@ -489,7 +491,8 @@ window.divaPlugins = [];
             var imdir = settings.imageRoot + "/" + settings.imageDir + "/";
 
             // Load each page within that row
-            for (i = 0; i < settings.pagesPerRow; i++) {
+            var ppr = settings.pagesPerRow;
+            for (i = 0; i < ppr; i++) {
                 pageIndex = rowIndex * settings.pagesPerRow + i;
 
                 // If this page is the last row, don't try to load a nonexistent page
@@ -922,7 +925,8 @@ window.divaPlugins = [];
             var i, rowIndex;
 
             // Figure out the row each page is in
-            for (i = 0; i < settings.numPages; i += settings.pagesPerRow) {
+            var np = settings.numPages;
+            for (i = 0; i < np; i += settings.pagesPerRow) {
                 rowIndex = Math.floor(i / settings.pagesPerRow);
 
                 if (isRowVisible(rowIndex)) {
