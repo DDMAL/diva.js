@@ -990,14 +990,14 @@ window.divaPlugins = [];
         };
 
         // Called when the fullscreen icon is clicked
-        var toggleFullscreenIcon = function () {
+        var toggleFullscreen = function () {
             settings.goDirectlyTo = settings.currentPageIndex;
             settings.inFullscreen = !settings.inFullscreen;
             handleModeChange(false);
         };
 
         // Called when the grid icon is clicked
-        var toggleGridIcon = function () {
+        var toggleGrid = function () {
             settings.goDirectlyTo = settings.currentPageIndex;
             settings.inGrid = !settings.inGrid;
             handleViewChange();
@@ -1253,7 +1253,7 @@ window.divaPlugins = [];
             if (settings.enableFullscreen) {
                 // Event handler for fullscreen toggling
                 $(settings.selector + 'fullscreen').click(function () {
-                    toggleFullscreenIcon();
+                    toggleFullscreen();
                 });
             }
 
@@ -1516,7 +1516,7 @@ window.divaPlugins = [];
 
             // Handle clicking of the grid icon
             $(settings.selector + 'grid-icon').click(function () {
-                toggleGridIcon();
+                toggleGrid();
             });
 
             // Handle going to a specific page using the input box
@@ -1936,7 +1936,7 @@ window.divaPlugins = [];
         // Returns false if the zoom level is invalid, true otherwise
         this.setZoomLevel = function (zoomLevel) {
             if (settings.inGrid) {
-                toggleGridIcon();
+                toggleGrid();
             }
 
             return handleZoom(zoomLevel);
@@ -1964,7 +1964,7 @@ window.divaPlugins = [];
 
         // Toggle fullscreen mode
         this.toggleMode = function () {
-            toggleFullscreenIcon();
+            toggleFullscreen();
         };
 
         // Enter fullscreen mode if currently not in fullscreen mode
@@ -1972,7 +1972,7 @@ window.divaPlugins = [];
         // This function will work even if enableFullscreen is set to false
         this.enterFullscreen = function () {
             if (!settings.inFullscreen) {
-                toggleFullscreenIcon();
+                toggleFullscreen();
                 return true;
             }
 
@@ -1983,7 +1983,7 @@ window.divaPlugins = [];
         // Returns true if in fullscreen mode intitially, false otherwise
         this.leaveFullscreen = function () {
             if (settings.inFullscreen) {
-                toggleFullscreenIcon();
+                toggleFullscreen();
                 return true;
             }
 
@@ -1992,14 +1992,14 @@ window.divaPlugins = [];
 
         // Toggle grid view
         this.toggleView = function () {
-            toggleGridIcon();
+            toggleGrid();
         };
 
         // Enter grid view if currently not in grid view
         // Returns false if in grid view initially, true otherwise
         this.enterGrid = function () {
             if (!settings.inGrid) {
-                toggleGridIcon();
+                toggleGrid();
                 return true;
             }
 
@@ -2010,7 +2010,7 @@ window.divaPlugins = [];
         // Returns true if in grid view initially, false otherwise
         this.leaveGrid = function () {
             if (settings.inGrid) {
-                toggleGridIcon();
+                toggleGrid();
                 return true;
             }
 
