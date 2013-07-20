@@ -192,7 +192,7 @@ window.divaPlugins = [];
         };
 
         // Checks if a tile is within the viewport horizontally
-        var horizontallyInViewport = function (left, right) {
+        var isHorizontallyInViewport = function (left, right) {
             var panelWidth = settings.panelWidth;
             var leftOfViewport = settings.leftScrollSoFar - settings.viewportMargin;
             var rightOfViewport = leftOfViewport + panelWidth + settings.viewportMargin * 2;
@@ -205,7 +205,7 @@ window.divaPlugins = [];
         };
 
         // Checks if a page or tile is within the viewport vertically
-        var verticallyInViewport = function (top, bottom) {
+        var isVerticallyInViewport = function (top, bottom) {
             var panelHeight = settings.panelHeight;
             var topOfViewport = settings.topScrollSoFar - settings.viewportMargin;
             var bottomOfViewport = topOfViewport + panelHeight + settings.viewportMargin * 2;
@@ -224,7 +224,7 @@ window.divaPlugins = [];
             var tileLeft = settings.pageLeftOffsets[pageIndex] + (tileCol * settings.tileWidth);
             var tileRight = tileLeft + settings.tileWidth;
 
-            return verticallyInViewport(tileTop, tileBottom) && horizontallyInViewport(tileLeft, tileRight);
+            return isVerticallyInViewport(tileTop, tileBottom) && isHorizontallyInViewport(tileLeft, tileRight);
         };
 
         // Check if a tile has been appended to the DOM
@@ -242,7 +242,7 @@ window.divaPlugins = [];
             var topOfPage = settings.heightAbovePages[pageIndex];
             var bottomOfPage = topOfPage + getPageData(pageIndex, 'h') + settings.verticalPadding;
 
-            return verticallyInViewport(topOfPage, bottomOfPage);
+            return isVerticallyInViewport(topOfPage, bottomOfPage);
         };
 
         // Check if a page has been appended to the DOM
@@ -465,7 +465,7 @@ window.divaPlugins = [];
             var topOfRow = settings.rowHeight * rowIndex;
             var bottomOfRow = topOfRow + settings.rowHeight + settings.fixedPadding;
 
-            return verticallyInViewport(topOfRow, bottomOfRow);
+            return isVerticallyInViewport(topOfRow, bottomOfRow);
         };
 
         // Check if a row (in grid view) is present in the DOM
@@ -1955,14 +1955,14 @@ window.divaPlugins = [];
             return this.setZoomLevel(settings.zoomLevel - 1);
         };
 
-        // Uses the verticallyInViewport() function, but relative to a page
+        // Uses the isVerticallyInViewport() function, but relative to a page
         // Check if something (e.g. a highlight box on a particular page) is visible
         this.inViewport = function (pageNumber, topOffset, height) {
             var pageIndex = pageNumber - 1;
             var top = settings.heightAbovePages[pageIndex] + topOffset;
             var bottom = top + height;
 
-            return verticallyInViewport(top, bottom);
+            return isVerticallyInViewport(top, bottom);
         };
 
         // Toggle fullscreen mode
