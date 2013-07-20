@@ -45,6 +45,7 @@ window.divaPlugins = [];
             enableKeyScroll: true,      // Scrolling using the page up/down keys
             enableLinkIcon: true,       // Controls the visibility of the link icon
             enableSpaceScroll: false,   // Scrolling down by pressing the space key
+            enableToolbar: true,        // Enables the toolbar. Note that disabling this means you have to handle all controls yourself.
             enableZoomSlider: true,     // Enable or disable the zoom slider (for zooming in and out)
             fixedPadding: 10,           // Fallback if adaptive padding is set to 0
             fixedHeightGrid: true,      // So each page in grid view has the same height (only widths differ)
@@ -652,8 +653,9 @@ window.divaPlugins = [];
                     if (!setCurrentPage(direction)) {
                         var filename = settings.pages[pageToConsider].f;
                         executeCallback(settings.onSetCurrentPage, pageToConsider, filename);
+                        Events.publish("UpdateCurrentPage", null);
 
-                        settings.toolbar.updateCurrentPage();
+                        // settings.toolbar.updateCurrentPage();
                     }
                 }
                 return true;
@@ -684,7 +686,8 @@ window.divaPlugins = [];
 
                 if (direction !== 0) {
                     if (!setCurrentRow(direction)) {
-                        settings.toolbar.updateCurrentPage();
+                        Events.publish("UpdateCurrentPage", null);
+                        // settings.toolbar.updateCurrentPage();
                     }
                 }
 
@@ -708,7 +711,8 @@ window.divaPlugins = [];
 
             // Pretend that this is the current page
             settings.currentPageIndex = pageIndex;
-            settings.toolbar.updateCurrentPage();
+            Events.publish("UpdateCurrentPage", null);
+            //settings.toolbar.updateCurrentPage();
             var filename = settings.pages[pageIndex].f;
             executeCallback(settings.onSetCurrentPage, pageIndex, filename);
 
@@ -724,7 +728,8 @@ window.divaPlugins = [];
 
             // Pretend that this is the current page (it probably isn't)
             settings.currentPageIndex = pageIndex;
-            settings.toolbar.updateCurrentPage();
+            Events.publish("UpdateCurrentPage", null);
+            // settings.toolbar.updateCurrentPage();
         };
 
         // Helper function called by loadDocument to scroll to the desired place
@@ -944,7 +949,7 @@ window.divaPlugins = [];
             }
 
             // Change the look of the toolbar
-            settings.toolbar.switchMode();
+            Events.publish("SwitchMode", null);
 
             // Toggle the classes
             $(settings.selector + 'fullscreen').toggleClass('diva-in-fullscreen');
@@ -977,7 +982,8 @@ window.divaPlugins = [];
         // Should only be called after changing settings.inGrid
         var handleViewChange = function () {
             // Switch the slider
-            settings.toolbar.switchView();
+            // settings.toolbar.switchView();
+            Events.publish("SwitchView", null);
 
             loadViewer();
             executeCallback(settings.onViewToggle, settings.inGrid);
@@ -1068,7 +1074,8 @@ window.divaPlugins = [];
             settings.zoomLevel = newZoomLevel;
 
             // Update the slider
-            settings.toolbar.updateZoomSlider();
+            // settings.toolbar.updateZoomSlider();
+            Events.publish("UpdateZoomSlider", null);
 
             loadDocument();
 
@@ -1088,7 +1095,8 @@ window.divaPlugins = [];
             settings.pagesPerRow = newPagesPerRow;
 
             // Update the slider
-            settings.toolbar.updateGridSlider();
+            // settings.toolbar.updateGridSlider();
+            Events.publish("UpdateGridSlider", null);
 
             loadGrid();
         };
@@ -1755,7 +1763,15 @@ window.divaPlugins = [];
                     });
 
                     // Create the toolbar and display the title + total number of pages
-                    settings.toolbar = createToolbar();
+                    if (settings.enableToolbar) {
+                        settings.toolbar = createToolbar();
+                        Events.subscribe("UpdateCurrentPage", settings.toolbar.updateCurrentPage);
+                        Events.subscribe("SwitchMode", settings.toolbar.switchMode);
+                        Events.subscribe("SwitchView", settings.toolbar.switchView);
+                        Events.subscribe("UpdateZoomSlider", settings.toolbar.updateZoomSlider);
+                        Events.subscribe("UpdateGridSlider", settings.toolbar.updateGridSlider);
+                    }
+
                     $(settings.selector + 'current label').text(settings.numPages);
 
                     if (settings.enableAutoTitle) {
