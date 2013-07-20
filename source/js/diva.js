@@ -653,7 +653,7 @@ window.divaPlugins = [];
                     if (!setCurrentPage(direction)) {
                         var filename = settings.pages[pageToConsider].f;
                         executeCallback(settings.onSetCurrentPage, pageToConsider, filename);
-                        Events.publish("UpdateCurrentPage", null);
+                        Events.publish("ToolbarUpdateCurrentPage", null);
 
                         // settings.toolbar.updateCurrentPage();
                     }
@@ -686,7 +686,7 @@ window.divaPlugins = [];
 
                 if (direction !== 0) {
                     if (!setCurrentRow(direction)) {
-                        Events.publish("UpdateCurrentPage", null);
+                        Events.publish("ToolbarUpdateCurrentPage", null);
                         // settings.toolbar.updateCurrentPage();
                     }
                 }
@@ -711,7 +711,7 @@ window.divaPlugins = [];
 
             // Pretend that this is the current page
             settings.currentPageIndex = pageIndex;
-            Events.publish("UpdateCurrentPage", null);
+            Events.publish("ToolbarUpdateCurrentPage", null);
             //settings.toolbar.updateCurrentPage();
             var filename = settings.pages[pageIndex].f;
             executeCallback(settings.onSetCurrentPage, pageIndex, filename);
@@ -728,7 +728,7 @@ window.divaPlugins = [];
 
             // Pretend that this is the current page (it probably isn't)
             settings.currentPageIndex = pageIndex;
-            Events.publish("UpdateCurrentPage", null);
+            Events.publish("ToolbarUpdateCurrentPage", null);
             // settings.toolbar.updateCurrentPage();
         };
 
@@ -949,7 +949,7 @@ window.divaPlugins = [];
             }
 
             // Change the look of the toolbar
-            Events.publish("SwitchMode", null);
+            Events.publish("ToolbarSwitchMode", null);
 
             // Toggle the classes
             $(settings.selector + 'fullscreen').toggleClass('diva-in-fullscreen');
@@ -982,8 +982,7 @@ window.divaPlugins = [];
         // Should only be called after changing settings.inGrid
         var handleViewChange = function () {
             // Switch the slider
-            // settings.toolbar.switchView();
-            Events.publish("SwitchView", null);
+            Events.publish("ToolbarSwitchView", null);
 
             loadViewer();
             executeCallback(settings.onViewToggle, settings.inGrid);
@@ -1075,7 +1074,7 @@ window.divaPlugins = [];
 
             // Update the slider
             // settings.toolbar.updateZoomSlider();
-            Events.publish("UpdateZoomSlider", null);
+            Events.publish("ToolbarUpdateZoomSlider", null);
 
             loadDocument();
 
@@ -1096,7 +1095,7 @@ window.divaPlugins = [];
 
             // Update the slider
             // settings.toolbar.updateGridSlider();
-            Events.publish("UpdateGridSlider", null);
+            Events.publish("ToolbarUpdateGridSlider", null);
 
             loadGrid();
         };
@@ -1765,11 +1764,11 @@ window.divaPlugins = [];
                     // Create the toolbar and display the title + total number of pages
                     if (settings.enableToolbar) {
                         settings.toolbar = createToolbar();
-                        Events.subscribe("UpdateCurrentPage", settings.toolbar.updateCurrentPage);
-                        Events.subscribe("SwitchMode", settings.toolbar.switchMode);
-                        Events.subscribe("SwitchView", settings.toolbar.switchView);
-                        Events.subscribe("UpdateZoomSlider", settings.toolbar.updateZoomSlider);
-                        Events.subscribe("UpdateGridSlider", settings.toolbar.updateGridSlider);
+                        Events.subscribe("ToolbarUpdateCurrentPage", settings.toolbar.updateCurrentPage);
+                        Events.subscribe("ToolbarSwitchMode", settings.toolbar.switchMode);
+                        Events.subscribe("ToolbarSwitchView", settings.toolbar.switchView);
+                        Events.subscribe("ToolbarUpdateZoomSlider", settings.toolbar.updateZoomSlider);
+                        Events.subscribe("ToolbarUpdateGridSlider", settings.toolbar.updateGridSlider);
                     }
 
                     $(settings.selector + 'current label').text(settings.numPages);
