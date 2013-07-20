@@ -1962,7 +1962,7 @@ window.divaPlugins = [];
         };
 
         // Toggle fullscreen mode
-        this.toggleMode = function () {
+        this.toggleFullscreen = function () {
             toggleFullscreen();
         };
 
@@ -1990,7 +1990,7 @@ window.divaPlugins = [];
         };
 
         // Toggle grid view
-        this.toggleView = function () {
+        this.toggleGrid = function () {
             toggleGrid();
         };
 
