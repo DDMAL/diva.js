@@ -1962,14 +1962,14 @@ window.divaPlugins = [];
         };
 
         // Toggle fullscreen mode
-        this.toggleFullscreen = function () {
+        this.toggleFullscreenMode = function () {
             toggleFullscreen();
         };
 
         // Enter fullscreen mode if currently not in fullscreen mode
         // Returns false if in fullscreen mode initially, true otherwise
         // This function will work even if enableFullscreen is set to false
-        this.enterFullscreen = function () {
+        this.enterFullscreenMode = function () {
             if (!settings.inFullscreen) {
                 toggleFullscreen();
                 return true;
@@ -1980,7 +1980,7 @@ window.divaPlugins = [];
 
         // Leave fullscreen mode if currently in fullscreen mode
         // Returns true if in fullscreen mode intitially, false otherwise
-        this.leaveFullscreen = function () {
+        this.leaveFullscreenMode = function () {
             if (settings.inFullscreen) {
                 toggleFullscreen();
                 return true;
@@ -1990,13 +1990,13 @@ window.divaPlugins = [];
         };
 
         // Toggle grid view
-        this.toggleGrid = function () {
+        this.toggleGridView = function () {
             toggleGrid();
         };
 
         // Enter grid view if currently not in grid view
         // Returns false if in grid view initially, true otherwise
-        this.enterGrid = function () {
+        this.enterGridView = function () {
             if (!settings.inGrid) {
                 toggleGrid();
                 return true;
@@ -2007,7 +2007,7 @@ window.divaPlugins = [];
 
         // Leave grid view if currently in grid view
         // Returns true if in grid view initially, false otherwise
-        this.leaveGrid = function () {
+        this.leaveGridView = function () {
             if (settings.inGrid) {
                 toggleGrid();
                 return true;
