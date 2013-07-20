@@ -722,9 +722,9 @@ var Events = (function (){
     publish = function (topic, args, scope) {
         if (cache[topic]) {
             var thisTopic = cache[topic],
-                i = thisTopic.length - 1;
+                i = thisTopic.length;
 
-            for (i; i >= 0; i -= 1) {
+            while (i--) {
                 thisTopic[i].apply( scope || this, args || []);
             }
         }
@@ -759,10 +759,10 @@ var Events = (function (){
      */
     unsubscribe = function (handle, completely) {
         var t = handle[0],
-            i = cache[t].length - 1;
+            i = cache[t].length;
 
         if (cache[t]) {
-            for (i; i >= 0; i -= 1) {
+            while (i--) {
                 if (cache[t][i] === handle[1]) {
                     cache[t].splice(cache[t][i], 1);
                     if(completely){ delete cache[t]; }
