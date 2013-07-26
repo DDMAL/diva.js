@@ -1935,6 +1935,14 @@ window.divaPlugins = [];
             return settings.zoomLevel;
         };
 
+        this.getMaxZoomLevel = function () {
+            return settings.maxZoomLevel;
+        };
+
+        this.getMinZoomLevel = function () {
+            return settings.minZoomLevel;
+        };
+
         // Use the provided zoom level (will check for validity first)
         // Returns false if the zoom level is invalid, true otherwise
         this.setZoomLevel = function (zoomLevel) {
