@@ -2061,6 +2061,11 @@ window.divaPlugins = [];
             return getState();
         };
 
+        // Get the instance selector for this instance, since it's auto-generated.
+        this.getInstanceSelector = function () {
+            return settings.selector;
+        };
+
         // Align this diva instance with a state object (as returned by getState)
         this.setState = function (state) {
             var pageIndex;
