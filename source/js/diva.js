@@ -23,8 +23,10 @@ THE SOFTWARE.
 window.divaPlugins = [];
 
 // this pattern was taken from http://www.virgentech.com/blog/2009/10/building-object-oriented-jquery-plugin.html
-(function ($) {
-    var Diva = function (element, options) {
+(function ($)
+{
+    var Diva = function (element, options)
+    {
         // These are elements that can be overridden upon instantiation
         // See https://github.com/DDMAL/diva.js/wiki/Code-documentation for more details
         var defaults = {
@@ -156,12 +158,15 @@ window.divaPlugins = [];
         // Can take an unlimited number to arguments to pass to the callback function
         var self = this;
 
-        var executeCallback = function (callback) {
+        var executeCallback = function (callback)
+        {
             var args, i, length;
 
-            if (typeof callback === "function") {
+            if (typeof callback === "function")
+            {
                 args = [];
-                for (i = 1, length = arguments.length; i < length; i++) {
+                for (i = 1, length = arguments.length; i < length; i++)
+                {
                     args.push(arguments[i]);
                 }
 
@@ -173,17 +178,21 @@ window.divaPlugins = [];
             return false;
         };
 
-        var getPageData = function (pageIndex, attribute) {
+        var getPageData = function (pageIndex, attribute)
+        {
             return settings.pages[pageIndex].d[settings.zoomLevel][attribute];
         };
 
         // Returns the page index associated with the given filename; must called after settings settings.pages
-        var getPageIndex = function (filename) {
+        var getPageIndex = function (filename)
+        {
             var i,
                 np = settings.numPages;
 
-            for (i = 0; i < np; i++) {
-                if (settings.pages[i].f === filename) {
+            for (i = 0; i < np; i++)
+            {
+                if (settings.pages[i].f === filename)
+                {
                     return i;
                 }
             }
@@ -192,7 +201,8 @@ window.divaPlugins = [];
         };
 
         // Checks if a tile is within the viewport horizontally
-        var isHorizontallyInViewport = function (left, right) {
+        var isHorizontallyInViewport = function (left, right)
+        {
             var panelWidth = settings.panelWidth;
             var leftOfViewport = settings.leftScrollSoFar - settings.viewportMargin;
             var rightOfViewport = leftOfViewport + panelWidth + settings.viewportMargin * 2;
@@ -205,7 +215,8 @@ window.divaPlugins = [];
         };
 
         // Checks if a page or tile is within the viewport vertically
-        var isVerticallyInViewport = function (top, bottom) {
+        var isVerticallyInViewport = function (top, bottom)
+        {
             var panelHeight = settings.panelHeight;
             var topOfViewport = settings.topScrollSoFar - settings.viewportMargin;
             var bottomOfViewport = topOfViewport + panelHeight + settings.viewportMargin * 2;
@@ -218,7 +229,8 @@ window.divaPlugins = [];
         };
 
         // Check if a tile is near the viewport and thus should be loaded
-        var isTileVisible = function (pageIndex, tileRow, tileCol) {
+        var isTileVisible = function (pageIndex, tileRow, tileCol)
+        {
             var tileTop = settings.heightAbovePages[pageIndex] + (tileRow * settings.tileHeight) + settings.verticalPadding;
             var tileBottom = tileTop + settings.tileHeight;
             var tileLeft = settings.pageLeftOffsets[pageIndex] + (tileCol * settings.tileWidth);
@@ -228,17 +240,20 @@ window.divaPlugins = [];
         };
 
         // Check if a tile has been appended to the DOM
-        var isTileLoaded = function (pageIndex, tileIndex) {
+        var isTileLoaded = function (pageIndex, tileIndex)
+        {
             return $(document.getElementById(settings.selector.substring(1) + 'tile-' + pageIndex + '-' + tileIndex)).length > 0;
         };
 
         // Check if a page index is valid
-        var isPageValid = function (pageIndex) {
+        var isPageValid = function (pageIndex)
+        {
             return pageIndex >= 0 && pageIndex < settings.numPages;
         };
 
         // Check if a page is in or near the viewport and thus should be loaded
-        var isPageVisible = function (pageIndex) {
+        var isPageVisible = function (pageIndex)
+        {
             var topOfPage = settings.heightAbovePages[pageIndex];
             var bottomOfPage = topOfPage + getPageData(pageIndex, 'h') + settings.verticalPadding;
 
@@ -246,14 +261,17 @@ window.divaPlugins = [];
         };
 
         // Check if a page has been appended to the DOM
-        var isPageLoaded = function (pageIndex) {
+        var isPageLoaded = function (pageIndex)
+        {
             return $(document.getElementById(settings.selector.substring(1) + 'page-' + pageIndex)).length > 0;
         };
 
         // Appends the page directly into the document body, or loads the relevant tiles
-        var loadPage = function (pageIndex) {
+        var loadPage = function (pageIndex)
+        {
             // If the page and all of its tiles have been loaded, exit
-            if (isPageLoaded(pageIndex) && settings.allTilesLoaded[pageIndex]) {
+            if (isPageLoaded(pageIndex) && settings.allTilesLoaded[pageIndex])
+            {
                 return;
             }
 
@@ -266,7 +284,8 @@ window.divaPlugins = [];
             var plugin;
 
             // If the page has not been loaded yet, append the div to the DOM
-            if (!isPageLoaded(pageIndex)) {
+            if (!isPageLoaded(pageIndex))
+            {
                 $(document.getElementById(settings.innerSelector.substring(1))).append('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width: ' + width + 'px; height: ' + height + 'px;" class="diva-document-page" title="Page ' + (pageIndex + 1) + '" data-index="' + pageIndex  + '" data-filename="' + filename + '">' + settings.pageTools + '</div>');
 
                 // Call the callback function
@@ -279,9 +298,11 @@ window.divaPlugins = [];
             }
 
             // There are still tiles to load, so try to load those (after a delay)
-            settings.pageTimeouts.push(setTimeout(function () {
+            settings.pageTimeouts.push(setTimeout(function ()
+            {
                 // If the page is no longer in the viewport, don't load any tiles
-                if (!isPageVisible(pageIndex)) {
+                if (!isPageVisible(pageIndex))
+                {
                     return;
                 }
 
@@ -304,8 +325,10 @@ window.divaPlugins = [];
                 var row, col, tileHeight, tileWidth, top, left, displayStyle, zoomLevel, imageURL;
 
                 // Loop through all the tiles in this page
-                for (row = 0; row < rows; row++) {
-                    for (col = 0; col < cols; col++) {
+                for (row = 0; row < rows; row++)
+                {
+                    for (col = 0; col < cols; col++)
+                    {
                         top = row * settings.tileHeight;
                         left = col * settings.tileWidth;
 
@@ -336,13 +359,15 @@ window.divaPlugins = [];
         };
 
         // Delete a page from the DOM; will occur when a page is scrolled out of the viewport
-        var deletePage = function (pageIndex) {
+        var deletePage = function (pageIndex)
+        {
             $(document.getElementById(settings.selector.substring(1) + 'page-' + pageIndex)).empty().remove();
         };
 
         // Check if the bottom of a page is above the top of a viewport (scrolling down)
         // For when you want to keep looping but don't want to load a specific page
-        var pageAboveViewport = function (pageIndex) {
+        var pageAboveViewport = function (pageIndex)
+        {
             var bottomOfPage = settings.heightAbovePages[pageIndex] + getPageData(pageIndex, 'h') + settings.verticalPadding;
             var topOfViewport = settings.topScrollSoFar;
 
@@ -350,7 +375,8 @@ window.divaPlugins = [];
         };
 
         // Check if the top of a page is below the bottom of a viewport (scrolling up)
-        var pageBelowViewport = function (pageIndex) {
+        var pageBelowViewport = function (pageIndex)
+        {
             var topOfPage = settings.heightAbovePages[pageIndex];
             var bottomOfViewport = settings.topScrollSoFar + settings.panelHeight;
 
@@ -358,28 +384,38 @@ window.divaPlugins = [];
         };
 
         // Called by adjust pages - determine what pages should be visible, and show them
-        var attemptPageShow = function (pageIndex, direction) {
-            if (direction > 0) {
+        var attemptPageShow = function (pageIndex, direction)
+        {
+            if (direction > 0)
+            {
                 // Direction is positive - we're scrolling down
-                if (isPageValid(pageIndex)) {
+                if (isPageValid(pageIndex))
+                {
                     // If the page should be visible, then yes, add it
-                    if (isPageVisible(pageIndex)) {
+                    if (isPageVisible(pageIndex))
+                    {
                         loadPage(pageIndex);
 
                         settings.lastPageLoaded = pageIndex;
 
                         // Recursively call this function until there's nothing to add
                         attemptPageShow(settings.lastPageLoaded + 1, direction);
-                    } else if (pageAboveViewport(pageIndex)) {
+                    }
+                    else if (pageAboveViewport(pageIndex))
+                    {
                         //  If the page is below the viewport. try to load the next one
                         attemptPageShow(pageIndex + 1, direction);
                     }
                 }
-            } else {
+            }
+            else
+            {
                 // Direction is negative - we're scrolling up
-                if (isPageValid(pageIndex)) {
+                if (isPageValid(pageIndex))
+                {
                     // If it's near the viewport, yes, add it
-                    if (isPageVisible(pageIndex)) {
+                    if (isPageVisible(pageIndex))
+                    {
                         loadPage(pageIndex);
 
                         // Reset the first page loaded to this one
@@ -387,7 +423,9 @@ window.divaPlugins = [];
 
                         // Recursively call this function until there's nothing to add
                         attemptPageShow(settings.firstPageLoaded - 1, direction);
-                    } else if (pageBelowViewport(pageIndex)) {
+                    }
+                    else if (pageBelowViewport(pageIndex))
+                    {
                         // Attempt to call this on the next page, do not increment anything
                         attemptPageShow(pageIndex - 1, direction);
                     }
@@ -396,10 +434,13 @@ window.divaPlugins = [];
         };
 
         // Called by adjustPages - see what pages need to be hidden, and hide them
-        var attemptPageHide = function (pageIndex, direction) {
-            if (direction > 0) {
+        var attemptPageHide = function (pageIndex, direction)
+        {
+            if (direction > 0)
+            {
                 // Scrolling down - see if this page needs to be deleted from the DOM
-                if (isPageValid(pageIndex) && pageAboveViewport(pageIndex)) {
+                if (isPageValid(pageIndex) && pageAboveViewport(pageIndex))
+                {
                     // Yes, delete it, reset the first page loaded
                     deletePage(pageIndex);
                     settings.firstPageLoaded = pageIndex + 1;
@@ -407,9 +448,12 @@ window.divaPlugins = [];
                     // Try to call this function recursively until there's nothing to delete
                     attemptPageHide(settings.firstPageLoaded, direction);
                 }
-            } else {
+            }
+            else
+            {
                 // Direction must be negative (not 0 - see adjustPages), we're scrolling up
-                if (isPageValid(pageIndex) && pageBelowViewport(pageIndex)) {
+                if (isPageValid(pageIndex) && pageBelowViewport(pageIndex))
+                {
                     // Yes, delete it, reset the last page loaded
                     deletePage(pageIndex);
                     settings.lastPageLoaded = pageIndex - 1;
@@ -421,24 +465,32 @@ window.divaPlugins = [];
         };
 
         // Handles showing and hiding pages when the user scrolls
-        var adjustPages = function (direction) {
+        var adjustPages = function (direction)
+        {
             var i;
 
             // Direction is negative, so we're scrolling up
-            if (direction < 0) {
+            if (direction < 0)
+            {
                 attemptPageShow(settings.firstPageLoaded, direction);
                 setCurrentPage(-1);
                 attemptPageHide(settings.lastPageLoaded, direction);
-            } else if (direction > 0) {
+            }
+            else if (direction > 0)
+            {
                 // Direction is positive so we're scrolling down
                 attemptPageShow(settings.lastPageLoaded, direction);
                 setCurrentPage(1);
                 attemptPageHide(settings.firstPageLoaded, direction);
-            } else {
+            }
+            else
+            {
                 // Horizontal scroll, check if we need to reveal any tiles
                 var lpl = settings.lastPageLoaded;
-                for (i = Math.max(settings.firstPageLoaded, 0); i <= lpl; i++) {
-                    if (isPageVisible(i)) {
+                for (i = Math.max(settings.firstPageLoaded, 0); i <= lpl; i++)
+                {
+                    if (isPageVisible(i))
+                    {
                         loadPage(i);
                     }
                 }
@@ -447,21 +499,26 @@ window.divaPlugins = [];
             executeCallback(settings.onScroll, settings.topScrollSoFar);
 
             // If we're scrolling down
-            if (direction > 0) {
+            if (direction > 0)
+            {
                 executeCallback(settings.onScrollDown, settings.topScrollSoFar);
-            } else if (direction < 0) {
+            }
+            else if (direction < 0)
+            {
                 // We're scrolling up
                 executeCallback(settings.onScrollUp, settings.topScrollSoFar);
             }
         };
 
         // Check if a row index is valid
-        var isRowValid = function (rowIndex) {
+        var isRowValid = function (rowIndex)
+        {
             return rowIndex >= 0 && rowIndex < settings.numRows;
         };
 
         // Check if a row should be visible in the viewport
-        var isRowVisible = function (rowIndex) {
+        var isRowVisible = function (rowIndex)
+        {
             var topOfRow = settings.rowHeight * rowIndex;
             var bottomOfRow = topOfRow + settings.rowHeight + settings.fixedPadding;
 
@@ -469,13 +526,16 @@ window.divaPlugins = [];
         };
 
         // Check if a row (in grid view) is present in the DOM
-        var isRowLoaded = function (rowIndex) {
+        var isRowLoaded = function (rowIndex)
+        {
             return $(settings.selector + 'row-' + rowIndex).length > 0;
         };
 
-        var loadRow = function (rowIndex) {
+        var loadRow = function (rowIndex)
+        {
             // If the row has already been loaded, don't attempt to load it again
-            if (isRowLoaded(rowIndex)) {
+            if (isRowLoaded(rowIndex))
+            {
                 return;
             }
 
@@ -492,11 +552,13 @@ window.divaPlugins = [];
 
             // Load each page within that row
             var ppr = settings.pagesPerRow;
-            for (i = 0; i < ppr; i++) {
+            for (i = 0; i < ppr; i++)
+            {
                 pageIndex = rowIndex * settings.pagesPerRow + i;
 
                 // If this page is the last row, don't try to load a nonexistent page
-                if (!isPageValid(pageIndex)) {
+                if (!isPageValid(pageIndex))
+                {
                     break;
                 }
 
@@ -528,12 +590,14 @@ window.divaPlugins = [];
             $(document.getElementById(settings.innerSelector.substring(1))).append(content.join(''));
         };
 
-        var deleteRow = function (rowIndex) {
+        var deleteRow = function (rowIndex)
+        {
             $(document.getElementById(settings.selector.substring(1) + 'row-' + rowIndex)).empty().remove();
         };
 
         // Check if the bottom of a row is above the top of the viewport (scrolling down)
-        var rowAboveViewport = function (rowIndex) {
+        var rowAboveViewport = function (rowIndex)
+        {
             var bottomOfRow = settings.rowHeight * (rowIndex + 1);
             var topOfViewport = settings.topScrollSoFar;
 
@@ -541,7 +605,8 @@ window.divaPlugins = [];
         };
 
         // Check if the top of a row is below the bottom of the viewport (scrolling up)
-        var rowBelowViewport = function (rowIndex) {
+        var rowBelowViewport = function (rowIndex)
+        {
             var topOfRow = settings.rowHeight * rowIndex;
             var bottomOfViewport = settings.topScrollSoFar + settings.panelHeight;
 
@@ -549,42 +614,60 @@ window.divaPlugins = [];
         };
 
         // Same thing as attemptPageShow only with rows
-        var attemptRowShow = function (rowIndex, direction) {
-            if (direction > 0) {
-                if (isRowValid(rowIndex)) {
-                    if (isRowVisible(rowIndex)) {
+        var attemptRowShow = function (rowIndex, direction)
+        {
+            if (direction > 0)
+            {
+                if (isRowValid(rowIndex))
+                {
+                    if (isRowVisible(rowIndex))
+                    {
                         loadRow(rowIndex);
                         settings.lastRowLoaded = rowIndex;
 
                         attemptRowShow(settings.lastRowLoaded + 1, direction);
-                    } else if (rowAboveViewport(rowIndex)) {
+                    }
+                    else if (rowAboveViewport(rowIndex))
+                    {
                         attemptRowShow(rowIndex + 1, direction);
                     }
                 }
-            } else {
-                if (isRowValid(rowIndex)) {
-                    if (isRowVisible(rowIndex)) {
+            }
+            else
+            {
+                if (isRowValid(rowIndex))
+                {
+                    if (isRowVisible(rowIndex))
+                    {
                         loadRow(rowIndex);
                         settings.firstRowLoaded = rowIndex;
 
                         attemptRowShow(settings.firstRowLoaded - 1, direction);
-                    } else if (rowBelowViewport(rowIndex)) {
+                    }
+                    else if (rowBelowViewport(rowIndex))
+                    {
                         attemptRowShow(rowIndex - 1, direction);
                     }
                 }
             }
         };
 
-        var attemptRowHide = function (rowIndex, direction) {
-            if (direction > 0) {
-                if (isRowValid(rowIndex) && rowAboveViewport(rowIndex)) {
+        var attemptRowHide = function (rowIndex, direction)
+        {
+            if (direction > 0)
+            {
+                if (isRowValid(rowIndex) && rowAboveViewport(rowIndex))
+                {
                     deleteRow(rowIndex);
                     settings.firstRowLoaded++;
 
                     attemptRowHide(settings.firstRowLoaded, direction);
                 }
-            } else {
-                if (isRowValid(rowIndex) && rowBelowViewport(rowIndex)) {
+            }
+            else
+            {
+                if (isRowValid(rowIndex) && rowBelowViewport(rowIndex))
+                {
                     deleteRow(rowIndex);
                     settings.lastRowLoaded--;
 
@@ -593,12 +676,16 @@ window.divaPlugins = [];
             }
         };
 
-        var adjustRows = function (direction) {
-            if (direction < 0) {
+        var adjustRows = function (direction)
+        {
+            if (direction < 0)
+            {
                 attemptRowShow(settings.firstRowLoaded, -1);
                 setCurrentRow(-1);
                 attemptRowHide(settings.lastRowLoaded, -1);
-            } else if (direction > 0) {
+            }
+            else if (direction > 0)
+            {
                 attemptRowShow(settings.lastRowLoaded, 1);
                 setCurrentRow(1);
                 attemptRowHide(settings.firstRowLoaded, 1);
@@ -607,18 +694,24 @@ window.divaPlugins = [];
             executeCallback(settings.onScroll, settings.topScrollSoFar);
 
             // If we're scrolling down
-            if (direction > 0) {
+            if (direction > 0)
+            {
                 executeCallback(settings.onScrollDown, settings.topScrollSoFar);
-            } else if (direction < 0) {
+            }
+            else if (direction < 0)
+            {
                 // We're scrolling up
                 executeCallback(settings.onScrollUp, settings.topScrollSoFar);
             }
         };
 
         // Used to delay loading of page images in grid view to prevent unnecessary loads
-        var addPageToQueue = function (rowIndex, pageIndex, imageURL, pageWidth, pageHeight) {
-            settings.pageTimeouts.push(setTimeout(function () {
-                if (isRowVisible(rowIndex)) {
+        var addPageToQueue = function (rowIndex, pageIndex, imageURL, pageWidth, pageHeight)
+        {
+            settings.pageTimeouts.push(setTimeout(function ()
+            {
+                if (isRowVisible(rowIndex))
+                {
                     $(settings.selector + 'page-' + pageIndex).html('<img src="' + imageURL + '" style="width: ' + pageWidth + 'px; height: ' + pageHeight + 'px;" />');
                 }
             }, settings.rowLoadTimeout));
@@ -626,7 +719,8 @@ window.divaPlugins = [];
 
         // Determines and sets the "current page" (settings.currentPageIndex); called within adjustPages
         // The "direction" is either 1 (downward scroll) or -1 (upward scroll)
-        var setCurrentPage = function (direction) {
+        var setCurrentPage = function (direction)
+        {
             var middleOfViewport = settings.topScrollSoFar + (settings.panelHeight / 2);
             var currentPage = settings.currentPageIndex;
             var pageToConsider = settings.currentPageIndex + direction;
@@ -634,26 +728,34 @@ window.divaPlugins = [];
             var pageSelector = settings.selector + 'page-' + pageToConsider;
 
             // When scrolling up:
-            if (direction < 0) {
+            if (direction < 0)
+            {
                 // If the previous page > middle of viewport
-                if (pageToConsider >= 0 && (settings.heightAbovePages[pageToConsider] + getPageData(pageToConsider, 'h') + (settings.verticalPadding) >= middleOfViewport)) {
+                if (pageToConsider >= 0 && (settings.heightAbovePages[pageToConsider] + getPageData(pageToConsider, 'h') + (settings.verticalPadding) >= middleOfViewport))
+                {
                     changeCurrentPage = true;
                 }
-            } else if (direction > 0) {
+            }
+            else if (direction > 0)
+            {
                 // When scrolling down:
                 // If this page < middle of viewport
-                if (settings.heightAbovePages[currentPage] + getPageData(currentPage, 'h') + settings.verticalPadding < middleOfViewport) {
+                if (settings.heightAbovePages[currentPage] + getPageData(currentPage, 'h') + settings.verticalPadding < middleOfViewport)
+                {
                     changeCurrentPage = true;
                 }
             }
 
-            if (changeCurrentPage) {
+            if (changeCurrentPage)
+            {
                 // Set this to the current page
                 settings.currentPageIndex = pageToConsider;
                 // Now try to change the next page, given that we're not going to a specific page
                 // Calls itself recursively - this way we accurately obtain the current page
-                if (direction !== 0) {
-                    if (!setCurrentPage(direction)) {
+                if (direction !== 0)
+                {
+                    if (!setCurrentPage(direction))
+                    {
                         var filename = settings.pages[pageToConsider].f;
                         executeCallback(settings.onSetCurrentPage, pageToConsider, filename);
                         Events.publish("ToolbarUpdateCurrentPage", null);
@@ -668,27 +770,36 @@ window.divaPlugins = [];
         };
 
         // Sets the current page in grid view
-        var setCurrentRow = function (direction) {
+        var setCurrentRow = function (direction)
+        {
             var currentRow = Math.floor(settings.currentPageIndex / settings.pagesPerRow);
             var rowToConsider = currentRow + parseInt(direction, 10);
             var middleOfViewport = settings.topScrollSoFar + (settings.panelHeight / 2);
             var changeCurrentRow = false;
 
-            if (direction < 0) {
-                if (rowToConsider >= 0 && (settings.rowHeight * currentRow >= middleOfViewport || settings.rowHeight * rowToConsider >= settings.topScrollSoFar)) {
+            if (direction < 0)
+            {
+                if (rowToConsider >= 0 && (settings.rowHeight * currentRow >= middleOfViewport || settings.rowHeight * rowToConsider >= settings.topScrollSoFar))
+                {
                     changeCurrentRow = true;
                 }
-            } else if (direction > 0) {
-                if ((settings.rowHeight * (currentRow + 1)) < settings.topScrollSoFar && isRowValid(rowToConsider)) {
+            }
+            else if (direction > 0)
+            {
+                if ((settings.rowHeight * (currentRow + 1)) < settings.topScrollSoFar && isRowValid(rowToConsider))
+                {
                     changeCurrentRow = true;
                 }
             }
 
-            if (changeCurrentRow) {
+            if (changeCurrentRow)
+            {
                 settings.currentPageIndex = rowToConsider * settings.pagesPerRow;
 
-                if (direction !== 0) {
-                    if (!setCurrentRow(direction)) {
+                if (direction !== 0)
+                {
+                    if (!setCurrentRow(direction))
+                    {
                         Events.publish("ToolbarUpdateCurrentPage", null);
                         // settings.toolbar.updateCurrentPage();
                     }
@@ -703,7 +814,8 @@ window.divaPlugins = [];
         // Helper function for going to a particular page
         // Vertical offset: from the top of the page (including the top padding)
         // Horizontal offset: from the center of the page; can be negative if to the left
-        var gotoPage = function (pageIndex, verticalOffset, horizontalOffset) {
+        var gotoPage = function (pageIndex, verticalOffset, horizontalOffset)
+        {
             verticalOffset = (typeof verticalOffset !== 'undefined') ? verticalOffset : 0;
             horizontalOffset = (typeof horizontalOffset !== 'undefined') ? horizontalOffset: 0;
             var desiredTop = settings.heightAbovePages[pageIndex] + verticalOffset;
@@ -724,7 +836,8 @@ window.divaPlugins = [];
         };
 
         // Calculates the desired row, then scrolls there
-        var gotoRow = function (pageIndex) {
+        var gotoRow = function (pageIndex)
+        {
             var desiredRow = Math.floor(pageIndex / settings.pagesPerRow);
             var desiredTop = desiredRow * settings.rowHeight;
             $(settings.outerSelector).scrollTop(desiredTop);
@@ -736,10 +849,12 @@ window.divaPlugins = [];
         };
 
         // Helper function called by loadDocument to scroll to the desired place
-        var documentScroll = function () {
+        var documentScroll = function ()
+        {
             // If settings.preZoomOffset is defined, the zoom was trigged by double-clicking
             // We then zoom in on a specific region
-            if (settings.preZoomOffset) {
+            if (settings.preZoomOffset)
+            {
                 var clickedPage = settings.preZoomOffset.i;
                 var heightAbovePage = settings.heightAbovePages[clickedPage] + settings.verticalPadding;
                 var pageLeftOffset = settings.pageLeftOffsets[clickedPage];
@@ -763,10 +878,13 @@ window.divaPlugins = [];
                 $(settings.outerSelector).scrollTop(newScroll.y).scrollLeft(newScroll.x);
 
                 settings.preZoomOffset = undefined;
-            } else {
+            }
+            else
+            {
                 // Otherwise, we just scroll to the page saved in settings.goDirectlyTo (must be valid)
                 // Make sure the value for settings.goDirectlyTo is valid
-                if (!isPageValid(settings.goDirectlyTo)) {
+                if (!isPageValid(settings.goDirectlyTo))
+                {
                     settings.goDirectlyTo = 0;
                 }
 
@@ -779,22 +897,26 @@ window.divaPlugins = [];
 
         // Don't call this when not in grid mode please
         // Scrolls to the relevant place when in grid view
-        var gridScroll = function () {
+        var gridScroll = function ()
+        {
             // Figure out and scroll to the row containing the current page
             gotoRow(settings.goDirectlyTo);
         };
 
         // If the given zoom level is valid, returns it; else, returns the min
-        var getValidZoomLevel = function (zoomLevel) {
+        var getValidZoomLevel = function (zoomLevel)
+        {
             return (zoomLevel >= settings.minZoomLevel && zoomLevel <= settings.maxZoomLevel) ? zoomLevel : settings.minZoomLevel;
         };
 
-        var getValidPagesPerRow = function (pagesPerRow) {
+        var getValidPagesPerRow = function (pagesPerRow)
+        {
             return (pagesPerRow >= settings.minPagesPerRow && pagesPerRow <= settings.maxPagesPerRow) ? pagesPerRow : settings.maxPagesPerRow;
         };
 
         // Reset some settings and empty the viewport
-        var clearViewer = function () {
+        var clearViewer = function ()
+        {
             settings.allTilesLoaded = [];
             $(settings.outerSelector).scrollTop(0);
             settings.topScrollSoFar = 0;
@@ -806,22 +928,28 @@ window.divaPlugins = [];
             // Clear all the timeouts to prevent undesired pages from loading
             clearTimeout(settings.resizeTimer);
 
-            while (settings.pageTimeouts.length) {
+            while (settings.pageTimeouts.length)
+            {
                 clearTimeout(settings.pageTimeouts.pop());
             }
         };
 
         // Called when we don't necessarily know which view to go into
-        var loadViewer = function () {
-            if (settings.inGrid) {
+        var loadViewer = function ()
+        {
+            if (settings.inGrid)
+            {
                 loadGrid();
-            } else {
+            }
+            else
+            {
                 loadDocument();
             }
         };
 
         // Called every time we need to load document view (after zooming, fullscreen, etc)
-        var loadDocument = function () {
+        var loadDocument = function ()
+        {
             clearViewer();
 
             // Make sure the zoom level we've been given is valid
@@ -829,17 +957,21 @@ window.divaPlugins = [];
             var z = settings.zoomLevel;
 
             // Calculate the horizontal and vertical inter-page padding
-            if (settings.adaptivePadding > 0) {
+            if (settings.adaptivePadding > 0)
+            {
                 settings.horizontalPadding = settings.averageWidths[z] * settings.adaptivePadding;
                 settings.verticalPadding = settings.averageHeights[z] * settings.adaptivePadding;
-            } else {
+            }
+            else
+            {
                 // It's less than or equal to 0; use fixedPadding instead
                 settings.horizontalPadding = settings.fixedPadding;
                 settings.verticalPadding = settings.fixedPadding;
             }
 
             // Make sure the vertical padding is at least 40, if plugin icons are enabled
-            if (settings.pageTools.length) {
+            if (settings.pageTools.length)
+            {
                 settings.verticalPadding = Math.max(40, settings.horizontalPadding);
             }
 
@@ -855,7 +987,8 @@ window.divaPlugins = [];
             var heightSoFar = 0;
             var i;
 
-            for (i = 0; i < settings.numPages; i++) {
+            for (i = 0; i < settings.numPages; i++)
+            {
                 // First set the height above that page by adding this height to the previous total
                 // A page includes the padding above it
                 settings.heightAbovePages[i] = heightSoFar;
@@ -868,17 +1001,22 @@ window.divaPlugins = [];
 
                 // Now try to load the page ONLY if the page needs to be loaded
                 // Take scrolling into account later, just try this for now
-                if (isPageVisible(i)) {
+                if (isPageVisible(i))
+                {
                     loadPage(i);
                     settings.lastPageLoaded = i;
                 }
             }
 
             // If this is not the initial load, execute the zoom callbacks
-            if (settings.oldZoomLevel >= 0) {
-                if (settings.oldZoomLevel < settings.zoomLevel) {
+            if (settings.oldZoomLevel >= 0)
+            {
+                if (settings.oldZoomLevel < settings.zoomLevel)
+                {
                     executeCallback(settings.onZoomIn, z);
-                } else {
+                }
+                else
+                {
                     executeCallback(settings.onZoomOut, z);
                 }
 
@@ -893,7 +1031,8 @@ window.divaPlugins = [];
             documentScroll();
 
             // For the iPad - wait until this request finishes before accepting others
-            if (settings.scaleWait) {
+            if (settings.scaleWait)
+            {
                 settings.scaleWait = false;
             }
 
@@ -901,7 +1040,8 @@ window.divaPlugins = [];
             executeCallback(settings.onDocumentLoaded, settings.lastPageLoaded, fileName);
         };
 
-        var loadGrid = function () {
+        var loadGrid = function ()
+        {
             clearViewer();
 
             // Make sure the pages per row setting is valid
@@ -926,10 +1066,12 @@ window.divaPlugins = [];
 
             // Figure out the row each page is in
             var np = settings.numPages;
-            for (i = 0; i < np; i += settings.pagesPerRow) {
+            for (i = 0; i < np; i += settings.pagesPerRow)
+            {
                 rowIndex = Math.floor(i / settings.pagesPerRow);
 
-                if (isRowVisible(rowIndex)) {
+                if (isRowVisible(rowIndex))
+                {
                     settings.firstRowLoaded = (settings.firstRowLoaded < 0) ? rowIndex : settings.firstRowLoaded;
                     loadRow(rowIndex);
                     settings.lastRowLoaded = rowIndex;
@@ -939,10 +1081,13 @@ window.divaPlugins = [];
 
         // Handles switching in and out of fullscreen mode
         // Should only be called after changing settings.inFullscreen
-        var handleModeChange = function (changeView) {
+        var handleModeChange = function (changeView)
+        {
             // Save some offsets (required for scrolling properly), if it's not the initial load
-            if (settings.oldZoomLevel >= 0) {
-                if (!settings.inGrid) {
+            if (settings.oldZoomLevel >= 0)
+            {
+                if (!settings.inGrid)
+                {
                     var pageOffset = $(settings.selector + 'page-' + settings.currentPageIndex).offset();
                     var topOffset = -(pageOffset.top - settings.verticalPadding - settings.viewerYOffset);
                     var expectedLeft = (settings.panelWidth - getPageData(settings.currentPageIndex, 'w')) / 2;
@@ -971,10 +1116,13 @@ window.divaPlugins = [];
             settings.viewerYOffset = $(settings.outerSelector).offset().top;
 
             // Used by setState when we need to change the view and the mode
-            if (changeView) {
+            if (changeView)
+            {
                 settings.inGrid = !settings.inGrid;
                 handleViewChange();
-            } else {
+            }
+            else
+            {
                 loadViewer();
             }
 
@@ -984,7 +1132,8 @@ window.divaPlugins = [];
 
         // Handles switching in and out of grid view
         // Should only be called after changing settings.inGrid
-        var handleViewChange = function () {
+        var handleViewChange = function ()
+        {
             // Switch the slider
             Events.publish("ToolbarSwitchView", null);
 
@@ -993,21 +1142,24 @@ window.divaPlugins = [];
         };
 
         // Called when the fullscreen icon is clicked
-        var toggleFullscreen = function () {
+        var toggleFullscreen = function ()
+        {
             settings.goDirectlyTo = settings.currentPageIndex;
             settings.inFullscreen = !settings.inFullscreen;
             handleModeChange(false);
         };
 
         // Called when the grid icon is clicked
-        var toggleGrid = function () {
+        var toggleGrid = function ()
+        {
             settings.goDirectlyTo = settings.currentPageIndex;
             settings.inGrid = !settings.inGrid;
             handleViewChange();
         };
 
         // Called after double-click or ctrl+double-click events on pages in document view
-        var handleDocumentDoubleClick = function (event) {
+        var handleDocumentDoubleClick = function (event)
+        {
             var pageOffset = $(this).offset();
             var offsetX = event.pageX - pageOffset.left;
             var offsetY = event.pageY - pageOffset.top;
@@ -1028,7 +1180,8 @@ window.divaPlugins = [];
         };
 
         // Called after double-clicking on a page in grid view
-        var handleGridDoubleClick = function (event) {
+        var handleGridDoubleClick = function (event)
+        {
             // Figure out the page that was clicked, scroll to that page
             var sel = document.getElementById(settings.outerSelector.substring(1));
             // var centerX = (event.pageX - settings.viewerXOffset) + $(settings.outerSelector).scrollLeft();
@@ -1045,15 +1198,21 @@ window.divaPlugins = [];
         };
 
         // Handles pinch-zooming for mobile devices
-        var handlePinchZoom = function (event) {
+        var handlePinchZoom = function (event)
+        {
             var newZoomLevel = settings.zoomLevel;
 
             // First figure out the new zoom level:
-            if (event.scale > 1 && newZoomLevel < settings.maxZoomLevel) {
+            if (event.scale > 1 && newZoomLevel < settings.maxZoomLevel)
+            {
                 newZoomLevel++;
-            } else if (event.scale < 1 && newZoomLevel > settings.minZoomLevel) {
+            }
+            else if (event.scale < 1 && newZoomLevel > settings.minZoomLevel)
+            {
                 newZoomLevel--;
-            } else {
+            }
+            else
+            {
                 return;
             }
 
@@ -1065,11 +1224,13 @@ window.divaPlugins = [];
         };
 
         // Called to handle any zoom level
-        var handleZoom = function (newValue) {
+        var handleZoom = function (newValue)
+        {
             var newZoomLevel = getValidZoomLevel(newValue);
 
             // If the zoom level provided is invalid, return false
-            if (newZoomLevel !== newValue) {
+            if (newZoomLevel !== newValue)
+            {
                 return false;
             }
 
@@ -1086,11 +1247,13 @@ window.divaPlugins = [];
         };
 
         // Called to handle changing the pages per row slider
-        var handleGrid = function (newValue) {
+        var handleGrid = function (newValue)
+        {
             var newPagesPerRow = getValidPagesPerRow(newValue);
 
             // If the value provided is invalid, return false
-            if (newPagesPerRow !== newValue) {
+            if (newPagesPerRow !== newValue)
+            {
                 return false;
             }
 
@@ -1104,7 +1267,8 @@ window.divaPlugins = [];
             loadGrid();
         };
 
-        var getYOffset = function () {
+        var getYOffset = function ()
+        {
             // var yScroll = $(settings.outerSelector).scrollTop();
             var yScroll = document.getElementById(settings.outerSelector.substring(1)).scrollTop;
             var topOfPage = settings.heightAbovePages[settings.currentPageIndex];
@@ -1112,14 +1276,16 @@ window.divaPlugins = [];
             return parseInt(yScroll - topOfPage, 10);
         };
 
-        var getXOffset = function () {
+        var getXOffset = function ()
+        {
             var innerWidth = settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2;
             var centerX = (innerWidth - settings.panelWidth) / 2;
             var xoff = document.getElementById(settings.outerSelector.substring(1)).scrollLeft - centerX;
             return parseInt(xoff, 10);
         };
 
-        var getState = function () {
+        var getState = function ()
+        {
             var state = {
                 'f': settings.inFullscreen,
                 'g': settings.inGrid,
@@ -1136,13 +1302,16 @@ window.divaPlugins = [];
             return state;
         };
 
-        var getURLHash = function () {
+        var getURLHash = function ()
+        {
             var hashParams = getState();
             var hashStringBuilder = [];
             var param;
 
-            for (param in hashParams) {
-                if (hashParams[param] !== false) {
+            for (param in hashParams)
+            {
+                if (hashParams[param] !== false)
+                {
                     hashStringBuilder.push(param + settings.hashParamSuffix + '=' + hashParams[param]);
                 }
             }
@@ -1151,12 +1320,14 @@ window.divaPlugins = [];
         };
 
         // Returns the URL to the current state of the document viewer (so it should be an exact replica)
-        var getCurrentURL = function () {
+        var getCurrentURL = function ()
+        {
             return location.protocol + '//' + location.host + location.pathname + '#' + getURLHash();
         };
 
         // Called in init and when the orientation changes
-        var adjustMobileWebkitDims = function () {
+        var adjustMobileWebkitDims = function ()
+        {
             var outerOffset = $(settings.outerSelector).offset().top;
             settings.panelHeight = window.innerHeight - outerOffset - settings.viewerHeightPadding;
             settings.panelWidth = window.innerWidth - settings.viewerWidthPadding;
@@ -1165,19 +1336,22 @@ window.divaPlugins = [];
             // document.getElementById(settings.parentSelector.substring(1)).style.width = settings.panelWidth + "px";
             settings.parentSelector.style.width = settings.panelWidth + "px";
 
-            if (settings.enableAutoHeight) {
+            if (settings.enableAutoHeight)
+            {
                 // $(settings.outerSelector).height(settings.panelHeight);
                 document.getElementById(settings.outerSelector.substring(1)).style.height = settings.panelHeight + "px";
             }
 
-            if (settings.enableAutoWidth) {
+            if (settings.enableAutoWidth)
+            {
                 // $(settings.outerSelector).width(settings.panelWidth);
                 document.getElementById(settings.outerSelector.substring(1)).style.width = settings.panelWidth + "px";
             }
         };
 
         // Will return true if something has changed, false otherwise
-        var adjustBrowserDims = function () {
+        var adjustBrowserDims = function ()
+        {
             // Only resize if the browser viewport is too small
             var newHeight = $(settings.outerSelector).height();
             var newWidth = $(settings.parentSelector).width() - settings.scrollbarWidth;
@@ -1189,25 +1363,34 @@ window.divaPlugins = [];
             var desiredWidth = windowWidth - settings.viewerWidthPadding - settings.scrollbarWidth - 2;
             var desiredHeight = windowHeight - outerOffset - settings.viewerHeightPadding - 1;
 
-            if (settings.enableAutoHeight) {
-                if (newHeight + outerOffset + 16 > window.innerHeight) {
+            if (settings.enableAutoHeight)
+            {
+                if (newHeight + outerOffset + 16 > window.innerHeight)
+                {
                     newHeight = desiredHeight;
-                } else if (newHeight <= settings.originalHeight) {
+                }
+                else if (newHeight <= settings.originalHeight)
+                {
                     newHeight = Math.min(desiredHeight, settings.originalHeight);
                 }
             }
 
-            if (settings.enableAutoWidth) {
-                if (newWidth + 32 > window.innerWidth) {
+            if (settings.enableAutoWidth)
+            {
+                if (newWidth + 32 > window.innerWidth)
+                {
                     newWidth = desiredWidth;
-                } else if (newWidth <= settings.originalWidth) {
+                }
+                else if (newWidth <= settings.originalWidth)
+                {
                     newWidth = Math.min(desiredWidth, settings.originalWidth);
                 }
 
                 settings.parentSelector[0].style.width = newWidth + settings.scrollbarWidth;
             }
 
-            if (newWidth !== settings.panelWidth || newHeight !== settings.panelHeight) {
+            if (newWidth !== settings.panelWidth || newHeight !== settings.panelHeight)
+            {
                 // $(settings.outerSelector).height(newHeight).width(newWidth + settings.scrollbarWidth);
                 var el = document.getElementById(settings.outerSelector.substring(1));
                 el.style.height = newHeight + "px";
@@ -1221,15 +1404,18 @@ window.divaPlugins = [];
         };
 
         // Update the panelHeight and panelWidth based on the window size
-        var adjustFullscreenDims = function () {
+        var adjustFullscreenDims = function ()
+        {
             settings.panelWidth = window.innerWidth - settings.scrollbarWidth;
             settings.panelHeight = window.innerHeight;
 
             return true;
         };
 
-        var resizeViewer = function (newWidth, newHeight) {
-            if (newWidth >= settings.minWidth) {
+        var resizeViewer = function (newWidth, newHeight)
+        {
+            if (newWidth >= settings.minWidth)
+            {
                 settings.originalWidth = newWidth;
                 $(settings.outerSelector).width(newWidth);
                 document.getElementById(settings.outerSelector.substring(1)).style.width = newWidth + "px";
@@ -1241,7 +1427,8 @@ window.divaPlugins = [];
                 settings.parentSelector[0].style.width = newWidth + "px";
             }
 
-            if (newHeight >= settings.minHeight) {
+            if (newHeight >= settings.minHeight)
+            {
                 settings.originalHeight = newHeight;
                 // $(settings.outerSelector).height(newHeight);
                 document.getElementById(settings.outerSelector.substring(1)).style.height = newHeight + "px";
@@ -1251,29 +1438,36 @@ window.divaPlugins = [];
         };
 
         // Binds most of the event handlers (some more in createToolbar)
-        var handleEvents = function () {
+        var handleEvents = function ()
+        {
             // Create the fullscreen toggle icon if fullscreen is enabled
-            if (settings.enableFullscreen) {
+            if (settings.enableFullscreen)
+            {
                 // Event handler for fullscreen toggling
-                $(settings.selector + 'fullscreen').click(function () {
+                $(settings.selector + 'fullscreen').click(function ()
+                {
                     toggleFullscreen();
                 });
             }
 
             // Change the cursor for dragging
-            $(settings.innerSelector).mouseover(function () {
+            $(settings.innerSelector).mouseover(function ()
+            {
                 $(this).removeClass('diva-grabbing').addClass('diva-grab');
             });
 
-            $(settings.innerSelector).mouseout(function () {
+            $(settings.innerSelector).mouseout(function ()
+            {
                 $(this).removeClass('diva-grab');
             });
 
-            $(settings.innerSelector).mousedown(function () {
+            $(settings.innerSelector).mousedown(function ()
+            {
                 $(this).removeClass('diva-grab').addClass('diva-grabbing');
             });
 
-            $(settings.innerSelector).mouseup(function () {
+            $(settings.innerSelector).mouseup(function ()
+            {
                 $(this).removeClass('diva-grabbing').addClass('diva-grab');
             });
 
@@ -1281,13 +1475,17 @@ window.divaPlugins = [];
             $(settings.outerSelector + ', ' + settings.innerSelector).dragscrollable({dragSelector: '.diva-dragger', acceptPropagatedEvent: true});
 
             // Handle the scroll
-            $(settings.outerSelector).scroll(function () {
+            $(settings.outerSelector).scroll(function ()
+            {
                 settings.topScrollSoFar = document.getElementById(settings.outerSelector.substring(1)).scrollTop;
                 var direction = settings.topScrollSoFar - settings.previousTopScroll;
 
-                if (settings.inGrid) {
+                if (settings.inGrid)
+                {
                     adjustRows(direction);
-                } else {
+                }
+                else
+                {
                     adjustPages(direction);
                     settings.leftScrollSoFar = $(this).scrollLeft();
                 }
@@ -1296,24 +1494,31 @@ window.divaPlugins = [];
             });
 
             // Double-click to zoom
-            $(settings.outerSelector).on('dblclick', '.diva-document-page', function (event) {
+            $(settings.outerSelector).on('dblclick', '.diva-document-page', function (event)
+            {
                 handleDocumentDoubleClick.call(this, event);
             });
 
             // Handle the control key for macs (in conjunction with double-clicking)
-            $(settings.outerSelector).on('contextmenu', '.diva-document-page', function (event) {
-                if (event.ctrlKey) {
+            $(settings.outerSelector).on('contextmenu', '.diva-document-page', function (event)
+            {
+                if (event.ctrlKey)
+                {
                     // In Firefox, this doesn't trigger a double-click, so we apply one manually
                     clearTimeout(settings.singleClickTimeout);
 
-                    if (settings.singleClick) {
+                    if (settings.singleClick)
+                    {
                         handleDocumentDoubleClick.call(this, event);
                         settings.singleClick = false;
-                    } else {
+                    }
+                    else
+                    {
                         settings.singleClick = true;
 
                         // Set it to false again after 500 milliseconds (standard double-click timeout)
-                        settings.singleClickTimeout = setTimeout(function () {
+                        settings.singleClickTimeout = setTimeout(function ()
+                        {
                             settings.singleClick = false;
                         }, 500);
                     }
@@ -1322,12 +1527,14 @@ window.divaPlugins = [];
                 }
             });
 
-            $(settings.outerSelector).on('dblclick', '.diva-row', function (event) {
+            $(settings.outerSelector).on('dblclick', '.diva-row', function (event)
+            {
                 handleGridDoubleClick.call(this, event);
             });
 
             // Check if the user is on a iPhone or iPod touch or iPad
-            if (settings.mobileWebkit) {
+            if (settings.mobileWebkit)
+            {
                 // Prevent resizing (below from http://matt.might.net/articles/how-to-native-iphone-ipad-apps-in-javascript/)
                 var toAppend = [];
                 toAppend.push('<meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1" />');
@@ -1340,8 +1547,10 @@ window.divaPlugins = [];
                 $('head').append(toAppend.join('\n'));
 
                 // Block the user from moving the window only if it's not integrated
-                if (settings.blockMobileMove) {
-                    $('body').bind('touchmove', function (event) {
+                if (settings.blockMobileMove)
+                {
+                    $('body').bind('touchmove', function (event)
+                    {
                         var e = event.originalEvent;
                         e.preventDefault();
 
@@ -1350,18 +1559,23 @@ window.divaPlugins = [];
                 }
 
                 // Allow pinch-zooming
-                $('body').bind('gestureend', function (event) {
+                $('body').bind('gestureend', function (event)
+                {
                     var e = event.originalEvent;
 
-                    if (!settings.scaleWait) {
+                    if (!settings.scaleWait)
+                    {
                         // Save the page we're currently on so we scroll there
                         settings.goDirectlyTo = settings.currentPageIndex;
 
-                        if (settings.inGrid) {
+                        if (settings.inGrid)
+                        {
                             settings.inGrid = false;
 
                             handleViewChange();
-                        } else {
+                        }
+                        else
+                        {
                             handlePinchZoom(e);
                         }
                     }
@@ -1369,7 +1583,8 @@ window.divaPlugins = [];
                 });
 
                 // Listen to orientation change event
-                $(window).bind('orientationchange', function (event) {
+                $(window).bind('orientationchange', function (event)
+                {
                     settings.orientationChange = true;
                     adjustMobileWebkitDims();
 
@@ -1383,7 +1598,8 @@ window.divaPlugins = [];
             }
 
             // Only check if either scrollBySpace or scrollByKeys is enabled
-            if (settings.enableSpaceScroll || settings.enableKeyScroll) {
+            if (settings.enableSpaceScroll || settings.enableKeyScroll)
+            {
                 var spaceKey = $.ui.keyCode.SPACE;
                 var pageUpKey = $.ui.keyCode.PAGE_UP;
                 var pageDownKey = $.ui.keyCode.PAGE_DOWN;
@@ -1391,42 +1607,51 @@ window.divaPlugins = [];
                 var endKey = $.ui.keyCode.END;
 
                 // Catch the key presses in document
-                $(document).keydown(function (event) {
+                $(document).keydown(function (event)
+                {
                     // Space or page down - go to the next page
-                    if ((settings.enableSpaceScroll && event.keyCode === spaceKey) || (settings.enableKeyScroll && event.keyCode === pageDownKey)) {
+                    if ((settings.enableSpaceScroll && event.keyCode === spaceKey) || (settings.enableKeyScroll && event.keyCode === pageDownKey))
+                    {
                         $(settings.outerSelector).scrollTop(settings.topScrollSoFar + settings.panelHeight);
                         return false;
                     }
 
                     // Page up - go to the previous page
-                    if (settings.enableKeyScroll && event.keyCode === pageUpKey) {
+                    if (settings.enableKeyScroll && event.keyCode === pageUpKey)
+                    {
                         $(settings.outerSelector).scrollTop(settings.topScrollSoFar - settings.panelHeight);
                         return false;
                     }
 
                     // Home key - go to the beginning of the document
-                    if (settings.enableKeyScroll && event.keyCode === homeKey) {
+                    if (settings.enableKeyScroll && event.keyCode === homeKey)
+                    {
                         $(settings.outerSelector).scrollTop(0);
                         return false;
                     }
 
                     // End key - go to the end of the document
-                    if (settings.enableKeyScroll && event.keyCode === endKey) {
+                    if (settings.enableKeyScroll && event.keyCode === endKey)
+                    {
                         $(settings.outerSelector).scrollTop(settings.totalHeight);
                         return false;
                     }
                 });
 
                 // Handle window resizing events
-                if (!settings.mobileWebkit) {
-                    $(window).resize(function () {
+                if (!settings.mobileWebkit)
+                {
+                    $(window).resize(function ()
+                    {
                         var adjustSuccess = (settings.inFullscreen) ? adjustFullscreenDims() : adjustBrowserDims();
 
-                        if (adjustSuccess) {
+                        if (adjustSuccess)
+                        {
                             // Cancel any previously-set resize timeouts
                             clearTimeout(settings.resizeTimer);
 
-                            settings.resizeTimer = setTimeout(function () {
+                            settings.resizeTimer = setTimeout(function ()
+                            {
                                 settings.goDirectlyTo = settings.currentPageIndex;
                                 loadViewer();
                             }, 200);
@@ -1451,26 +1676,32 @@ window.divaPlugins = [];
             // If the viewer is specified to be "contained", we make room for the fullscreen icon
             var otherToolbarClass = '';
 
-            if (settings.contained) {
+            if (settings.contained)
+            {
                 // Make sure the container element does not have a static position
                 // (Needed for the fullscreen icon to be contained)
-                if ($(settings.parentSelector).css('position') === 'static') {
+                if ($(settings.parentSelector).css('position') === 'static')
+                {
                     $(settings.parentSelector).addClass('diva-relative-position');
                 }
 
                 otherToolbarClass = ' diva-fullscreen-space';
 
                 // If enableAutoTitle is set to TRUE, move it down
-                if (settings.enableAutoTitle) {
+                if (settings.enableAutoTitle)
+                {
                     $(settings.selector + 'fullscreen').addClass('diva-contained');
                 }
             }
 
             var toolbarHTML = '<div id="' + settings.ID + 'tools-left" class="diva-tools-left' + otherToolbarClass + '">' + zoomSliderHTML + gridSliderHTML + zoomSliderLabelHTML + gridSliderLabelHTML + '</div><div id="' + settings.ID + 'tools-right" class="diva-tools-right">' + linkIconHTML + gridIconHTML + '<div class="diva-page-nav">' + gotoPageHTML + pageNumberHTML + '</div></div>';
 
-            if (settings.toolbarParentSelector) {
+            if (settings.toolbarParentSelector)
+            {
                 $(settings.toolbarParentSelector).prepend('<div id="' + settings.ID + 'tools" class="diva-tools">' + toolbarHTML + '</div>');
-            } else {
+            }
+            else
+            {
                 $(settings.parentSelector).prepend('<div id="' + settings.ID + 'tools" class="diva-tools">' + toolbarHTML + '</div>');
             }
 
@@ -1480,7 +1711,8 @@ window.divaPlugins = [];
                 min: settings.minZoomLevel,
                 max: settings.maxZoomLevel,
                 step: 1,
-                slide: function (event, ui) {
+                slide: function (event, ui)
+                {
                     var i = settings.currentPageIndex;
                     settings.goDirectlyTo = i;
 
@@ -1494,45 +1726,59 @@ window.divaPlugins = [];
 
                     handleZoom(ui.value);
                 },
-                change: function (event, ui) {
-                    if (ui.value !== settings.zoomLevel) {
+                change: function (event, ui)
+                {
+                    if (ui.value !== settings.zoomLevel)
+                    {
                         handleZoom(ui.value);
                     }
                 }
             });
 
             // Create the grid slider
-            $(settings.selector + 'grid-slider').slider({
+            $(settings.selector + 'grid-slider').slider(
+            {
                 value: settings.pagesPerRow,
                 min: settings.minPagesPerRow,
                 max: settings.maxPagesPerRow,
                 step: 1,
-                slide: function (event, ui) {
+                slide: function (event, ui)
+                {
                     handleGrid(ui.value);
                 },
-                change: function (event, ui) {
-                    if (ui.value !== settings.pagesPerRow) {
+                change: function (event, ui)
+                {
+                    if (ui.value !== settings.pagesPerRow)
+                    {
                         handleGrid(ui.value);
                     }
                 }
             });
 
             // Handle clicking of the grid icon
-            $(settings.selector + 'grid-icon').click(function () {
+            $(settings.selector + 'grid-icon').click(function ()
+            {
                 toggleGrid();
             });
 
             // Handle going to a specific page using the input box
-            $(settings.selector + 'goto-page').submit(function () {
+            $(settings.selector + 'goto-page').submit(function ()
+            {
                 var desiredPage = parseInt($(settings.selector + 'goto-page-input').val(), 10);
                 var pageIndex = desiredPage - 1;
 
-                if (!isPageValid(pageIndex)) {
+                if (!isPageValid(pageIndex))
+                {
                     alert("Invalid page number");
-                } else {
-                    if (settings.inGrid) {
+                }
+                else
+                {
+                    if (settings.inGrid)
+                    {
                         gotoRow(pageIndex);
-                    } else {
+                    }
+                    else
+                    {
                         gotoPage(pageIndex, 0, 0);
                     }
                 }
@@ -1542,38 +1788,47 @@ window.divaPlugins = [];
             });
 
             // Handle the creation of the link popup box
-            $(settings.selector + 'link-icon').click(function () {
+            $(settings.selector + 'link-icon').click(function ()
+            {
                 $('body').prepend('<div id="' + settings.ID + 'link-popup" class="diva-link-popup"><input id="' + settings.ID + 'link-popup-input" class="diva-input" type="text" value="' + getCurrentURL() + '"/></div>');
 
-                if (settings.inFullscreen) {
+                if (settings.inFullscreen)
+                {
                     $(settings.selector + 'link-popup').addClass('in-fullscreen');
-                } else {
+                }
+                else
+                {
                     // Calculate the left and top offsets
                     // Compensate for border, popup width
                     var leftOffset = $(settings.outerSelector).offset().left + settings.panelWidth;
                     leftOffset += settings.scrollbarWidth - 240 - 1;
                     var topOffset = $(settings.outerSelector).offset().top + 1;
 
-                    $(settings.selector + 'link-popup').removeClass('in-fullscreen').css({
+                    $(settings.selector + 'link-popup').removeClass('in-fullscreen').css(
+                    {
                         'top': topOffset + 'px',
                         'left': leftOffset + 'px'
                     });
                 }
 
                 // Catch onmouseup events outside of this div
-                $('body').mouseup(function (event) {
+                $('body').mouseup(function (event)
+                {
                     var targetID = event.target.id;
 
-                    if (targetID !== settings.ID + 'link-popup' && targetID !== settings.ID + 'link-popup-input') {
+                    if (targetID !== settings.ID + 'link-popup' && targetID !== settings.ID + 'link-popup-input')
+                    {
                         $(settings.selector + 'link-popup').remove();
                     }
                 });
 
                 // Also delete it upon scroll and page up/down key events
-                $(settings.outerSelector).scroll(function () {
+                $(settings.outerSelector).scroll(function ()
+                {
                     $(settings.selector + 'link-popup').remove();
                 });
-                $(settings.selector + 'link-popup input').click(function () {
+                $(settings.selector + 'link-popup input').click(function ()
+                {
                     $(this).focus().select();
                 });
                 return false;
@@ -1584,22 +1839,27 @@ window.divaPlugins = [];
             $(settings.selector + currentSlider + '-slider').show();
             $(settings.selector + currentSlider + '-slider-label').show();
 
-            var switchMode = function () {
+            var switchMode = function ()
+            {
                 // Switch from fullscreen to not
                 $(settings.selector + 'tools').toggleClass('diva-fullscreen-tools');
 
-                if (!settings.inFullscreen) {
+                if (!settings.inFullscreen)
+                {
                     // Leaving fullscreen
                     $(settings.selector + 'tools-left').after($(settings.selector + 'tools-right'));
                     $(settings.selector + 'tools-left').removeClass('in-fullscreen');
-                } else {
+                }
+                else
+                {
                     // Entering fullscreen
                     $(settings.selector + 'tools-right').after($(settings.selector + 'tools-left'));
                     $(settings.selector + 'tools-left').addClass('in-fullscreen');
                 }
             };
 
-            var switchView = function () {
+            var switchView = function ()
+            {
                 // Switch from grid to document view etc
                 $(settings.selector + currentSlider + '-slider').hide();
                 $(settings.selector + currentSlider + '-slider-label').hide();
@@ -1611,17 +1871,23 @@ window.divaPlugins = [];
                 $(settings.selector + 'grid-icon').toggleClass('diva-in-grid');
             };
 
-            var toolbar = {
-                updateCurrentPage: function () {
+            var toolbar = 
+            {
+                updateCurrentPage: function ()
+                {
                     $(settings.selector + 'current-page').text(settings.currentPageIndex + 1);
                 },
-                setNumPages: function (newNumber) {
+                setNumPages: function (newNumber)
+                {
                     $(settings.selector + 'num-pages').text(newNumber);
                 },
-                updateZoomSlider: function () {
+                updateZoomSlider: function ()
+                {
                     // Update the position of the handle within the slider
-                    if (settings.zoomLevel !== $(settings.selector + 'zoom-slider').slider('value')) {
-                        $(settings.selector + 'zoom-slider').slider({
+                    if (settings.zoomLevel !== $(settings.selector + 'zoom-slider').slider('value'))
+                    {
+                        $(settings.selector + 'zoom-slider').slider(
+                        {
                             value: settings.zoomLevel
                         });
                     }
@@ -1629,10 +1895,13 @@ window.divaPlugins = [];
                     // Update the slider label
                     $(settings.selector + 'zoom-level').text(settings.zoomLevel);
                 },
-                updateGridSlider: function () {
+                updateGridSlider: function ()
+                {
                     // Update the position of the handle within the slider
-                    if (settings.pagesPerRow !== $(settings.selector + 'grid-slider').slider('value')) {
-                        $(settings.selector + 'grid-slider').slider({
+                    if (settings.pagesPerRow !== $(settings.selector + 'grid-slider').slider('value'))
+                    {
+                        $(settings.selector + 'grid-slider').slider(
+                        {
                             value: settings.pagesPerRow
                         });
                     }
@@ -1646,12 +1915,15 @@ window.divaPlugins = [];
             return toolbar;
         };
 
-        var initPlugins = function () {
-            if (window.divaPlugins) {
+        var initPlugins = function ()
+        {
+            if (window.divaPlugins)
+            {
                 var pageTools = [];
 
                 // Add all the plugins that have not been explicitly disabled to settings.plugins
-                $.each(window.divaPlugins, function (index, plugin) {
+                $.each(window.divaPlugins, function (index, plugin)
+                {
                     var pluginProperName = plugin.pluginName[0].toUpperCase() + plugin.pluginName.substring(1);
 
                     if (settings['enable' + pluginProperName]) {
@@ -1667,11 +1939,13 @@ window.divaPlugins = [];
                         var titleText = plugin.titleText || pluginProperName + " plugin";
 
                         // Create the pageTools bar if handleClick is set to a function
-                        if (typeof plugin.handleClick === 'function') {
+                        if (typeof plugin.handleClick === 'function')
+                        {
                             pageTools.push('<div class="diva-' + plugin.pluginName + '-icon" title="' + titleText + '"></div>');
 
                             // Delegate the click event - pass it the settings
-                            $(settings.outerSelector).delegate('.diva-' + plugin.pluginName + '-icon', 'click', function (event) {
+                            $(settings.outerSelector).delegate('.diva-' + plugin.pluginName + '-icon', 'click', function (event)
+                            {
                                 plugin.handleClick.call(this, event, settings);
                             });
                         }
@@ -1682,13 +1956,15 @@ window.divaPlugins = [];
                 });
 
                 // Save the page tools bar so it can be added for each page
-                if (pageTools.length) {
+                if (pageTools.length)
+                {
                     settings.pageTools = '<div class="diva-page-tools">' + pageTools.join('') + '</div>';
                 }
             }
         };
 
-        var hideThrobber = function () {
+        var hideThrobber = function ()
+        {
             // Clear the timeout, if it hasn't executed yet
             clearTimeout(settings.throbberTimeoutID);
 
@@ -1696,13 +1972,15 @@ window.divaPlugins = [];
             $(settings.selector + 'throbber').hide();
         };
 
-        var setupViewer = function () {
+        var setupViewer = function ()
+        {
             // Create the throbber element
             var throbberHTML = '<div id="' + settings.ID + 'throbber" class="diva-throbber"></div>';
             $(settings.outerSelector).append(throbberHTML);
 
             // If the request hasn't completed after a specified time, show it
-            settings.throbberTimeoutID = setTimeout(function () {
+            settings.throbberTimeoutID = setTimeout(function ()
+            {
                 $(settings.selector + 'throbber').show();
             }, settings.throbberTimeout);
 
@@ -1713,13 +1991,15 @@ window.divaPlugins = [];
                 },
                 cache: true,
                 dataType: 'json',
-                error: function (data) {
+                error: function (data)
+                {
                     hideThrobber();
 
                     // Show a basic error message within the document viewer pane
                     $(settings.outerSelector).text("Invalid URL. Error code: " + data.status);
                 },
-                success: function (data) {
+                success: function (data)
+                {
                     hideThrobber();
 
                     // Save all the data we need
@@ -1743,30 +2023,37 @@ window.divaPlugins = [];
                     settings.maxPagesPerRow = Math.max(settings.minPagesPerRow, settings.maxPagesPerRow);
 
                     // Check that the desired page is in range
-                    if (settings.enableFilename) {
+                    if (settings.enableFilename)
+                    {
                         var iParam = $.getHashParam('i' + settings.hashParamSuffix);
                         var iParamPage = getPageIndex(iParam);
 
-                        if (isPageValid(iParamPage)) {
+                        if (isPageValid(iParamPage))
+                        {
                             settings.goDirectlyTo = iParamPage;
                         }
-                    } else {
+                    }
+                    else
+                    {
                         // Not using the i parameter, check the p parameter
                         // Subtract 1 to get the page index
                         var pParam = parseInt($.getHashParam('p' + settings.hashParamSuffix), 10) - 1;
 
-                        if (isPageValid(pParam)) {
+                        if (isPageValid(pParam))
+                        {
                             settings.goDirectlyTo = pParam;
                         }
                     }
 
                     // Execute the setup hook for each plugin (if defined)
-                    $.each(settings.plugins, function (index, plugin) {
+                    $.each(settings.plugins, function (index, plugin)
+                    {
                         executeCallback(plugin.setupHook, settings);
                     });
 
                     // Create the toolbar and display the title + total number of pages
-                    if (settings.enableToolbar) {
+                    if (settings.enableToolbar)
+                    {
                         settings.toolbar = createToolbar();
                         Events.subscribe("ToolbarUpdateCurrentPage", settings.toolbar.updateCurrentPage);
                         Events.subscribe("ToolbarSwitchMode", settings.toolbar.switchMode);
@@ -1777,14 +2064,18 @@ window.divaPlugins = [];
 
                     $(settings.selector + 'current label').text(settings.numPages);
 
-                    if (settings.enableAutoTitle) {
+                    if (settings.enableAutoTitle)
+                    {
                         $(settings.parentSelector).prepend('<div id="' + settings.ID + 'title" class="diva-title">' + settings.itemTitle + '</div>');
                     }
 
                     // Adjust the document panel dimensions for touch devices
-                    if (settings.mobileWebkit) {
+                    if (settings.mobileWebkit)
+                    {
                         adjustMobileWebkitDims();
-                    } else {
+                    }
+                    else
+                    {
                         settings.originalWidth = $(settings.parentSelector).width() - settings.scrollbarWidth;
                         settings.originalHeight = $(settings.outerSelector).height();
                         adjustBrowserDims();
@@ -1795,9 +2086,12 @@ window.divaPlugins = [];
                     settings.viewerXOffset = viewerOffset.left;
                     settings.viewerYOffset = viewerOffset.top;
 
-                    if (settings.inFullscreen) {
+                    if (settings.inFullscreen)
+                    {
                         handleModeChange(false);
-                    } else {
+                    }
+                    else
+                    {
                         loadViewer();
                     }
 
@@ -1807,7 +2101,8 @@ window.divaPlugins = [];
             });
         };
 
-        var init = function () {
+        var init = function ()
+        {
             // First figure out the width of the scrollbar in this browser
             settings.scrollbarWidth = $.getScrollbarWidth();
 
@@ -1821,7 +2116,8 @@ window.divaPlugins = [];
             // Figure out the hashParamSuffix from the ID
             var divaNumber = parseInt(settings.ID, 10);
 
-            if (divaNumber > 1) {
+            if (divaNumber > 1)
+            {
                 // If this is document viewer #1, don't use a suffix; otherwise, use the document viewer number
                 settings.hashParamSuffix = divaNumber;
             }
@@ -1835,26 +2131,30 @@ window.divaPlugins = [];
             $(settings.outerSelector).append('<div id="' + settings.ID + 'inner" class="diva-inner diva-dragger"></div>');
 
             // Create the fullscreen icon
-            if (settings.enableFullscreen) {
+            if (settings.enableFullscreen)
+            {
                 $(settings.parentSelector).prepend('<div id="' + settings.ID + 'fullscreen" class="diva-fullscreen-icon" title="Toggle fullscreen mode"></div>');
             }
 
             // First, n - check if it's in range
             var nParam = parseInt($.getHashParam('n' + settings.hashParamSuffix), 10);
 
-            if (nParam >= settings.minPagesPerRow && nParam <= settings.maxPagesPerRow) {
+            if (nParam >= settings.minPagesPerRow && nParam <= settings.maxPagesPerRow)
+            {
                 settings.pagesPerRow = nParam;
             }
 
             // Now z - check that it's in range
             var zParam = $.getHashParam('z' + settings.hashParamSuffix);
 
-            if (zParam !== '') {
+            if (zParam !== '')
+            {
                 // If it's empty, we don't want to change the default zoom level
                 zParam = parseInt(zParam, 10);
 
                 // Can't check if it exceeds the max zoom level or not because that data is not available yet ...
-                if (zParam >= settings.minZoomLevel) {
+                if (zParam >= settings.minZoomLevel)
+                {
                     settings.zoomLevel = zParam;
                 }
             }
@@ -1862,14 +2162,16 @@ window.divaPlugins = [];
             // y - vertical offset from the top of the relevant page
             var yParam = parseInt($.getHashParam('y' + settings.hashParamSuffix), 10);
 
-            if (!isNaN(yParam)) {
+            if (!isNaN(yParam))
+            {
                 settings.verticalOffset = yParam;
             }
 
             // x - horizontal offset from the center of the page
             var xParam = parseInt($.getHashParam('x' + settings.hashParamSuffix), 10);
 
-            if (!isNaN(xParam)) {
+            if (!isNaN(xParam))
+            {
                 settings.horizontalOffset = xParam;
             }
 
@@ -1892,7 +2194,8 @@ window.divaPlugins = [];
             settings.minWidth = parseInt($(settings.outerSelector).css('min-width'), 10);
 
             // Just call resize, it'll take care of bounds-checking etc
-            if (desiredHeight > 0 || desiredWidth > 0) {
+            if (desiredHeight > 0 || desiredWidth > 0)
+            {
                 resizeViewer(desiredWidth, desiredHeight);
             }
 
@@ -1913,49 +2216,60 @@ window.divaPlugins = [];
         */
 
         // Returns the title of the document, based on the directory name
-        this.getItemTitle = function () {
+        this.getItemTitle = function ()
+        {
             return settings.itemTitle;
         };
 
         // Go to a particular page (with indexing starting at 1)
-        this.gotoPageByNumber = function (pageNumber) {
+        this.gotoPageByNumber = function (pageNumber)
+        {
             var pageIndex = pageNumber - 1;
-            if (isPageValid(pageIndex)) {
+            if (isPageValid(pageIndex))
+            {
                 gotoPage(pageIndex, 0, 0);
             }
         };
 
         // Returns the page index (with indexing starting at 0)
-        this.getCurrentPage = function () {
+        this.getCurrentPage = function ()
+        {
             console.warn("Deprecated. Use getCurrentPageIndex instead.");
             return settings.currentPageIndex;
         };
 
-        this.getCurrentPageIndex = function () {
+        this.getCurrentPageIndex = function ()
+        {
             return settings.currentPageIndex;
         };
 
-        this.getCurrentPageFilename = function () {
+        this.getCurrentPageFilename = function ()
+        {
             return settings.pages[settings.currentPageIndex].f;
         };
 
         // Returns the current zoom level
-        this.getZoomLevel = function () {
+        this.getZoomLevel = function ()
+        {
             return settings.zoomLevel;
         };
 
-        this.getMaxZoomLevel = function () {
+        this.getMaxZoomLevel = function ()
+        {
             return settings.maxZoomLevel;
         };
 
-        this.getMinZoomLevel = function () {
+        this.getMinZoomLevel = function ()
+        {
             return settings.minZoomLevel;
         };
 
         // Use the provided zoom level (will check for validity first)
         // Returns false if the zoom level is invalid, true otherwise
-        this.setZoomLevel = function (zoomLevel) {
-            if (settings.inGrid) {
+        this.setZoomLevel = function (zoomLevel)
+        {
+            if (settings.inGrid)
+            {
                 toggleGrid();
             }
 
@@ -1963,18 +2277,21 @@ window.divaPlugins = [];
         };
 
         // Zoom in. Will return false if it's at the maximum zoom
-        this.zoomIn = function () {
+        this.zoomIn = function ()
+        {
             return this.setZoomLevel(settings.zoomLevel + 1);
         };
 
         // Zoom out. Will return false if it's at the minimum zoom
-        this.zoomOut = function () {
+        this.zoomOut = function ()
+        {
             return this.setZoomLevel(settings.zoomLevel - 1);
         };
 
         // Uses the isVerticallyInViewport() function, but relative to a page
         // Check if something (e.g. a highlight box on a particular page) is visible
-        this.inViewport = function (pageNumber, topOffset, height) {
+        this.inViewport = function (pageNumber, topOffset, height)
+        {
             var pageIndex = pageNumber - 1;
             var top = settings.heightAbovePages[pageIndex] + topOffset;
             var bottom = top + height;
@@ -1983,15 +2300,18 @@ window.divaPlugins = [];
         };
 
         // Toggle fullscreen mode
-        this.toggleFullscreenMode = function () {
+        this.toggleFullscreenMode = function ()
+        {
             toggleFullscreen();
         };
 
         // Enter fullscreen mode if currently not in fullscreen mode
         // Returns false if in fullscreen mode initially, true otherwise
         // This function will work even if enableFullscreen is set to false
-        this.enterFullscreenMode = function () {
-            if (!settings.inFullscreen) {
+        this.enterFullscreenMode = function ()
+        {
+            if (!settings.inFullscreen)
+            {
                 toggleFullscreen();
                 return true;
             }
@@ -2001,8 +2321,10 @@ window.divaPlugins = [];
 
         // Leave fullscreen mode if currently in fullscreen mode
         // Returns true if in fullscreen mode intitially, false otherwise
-        this.leaveFullscreenMode = function () {
-            if (settings.inFullscreen) {
+        this.leaveFullscreenMode = function ()
+        {
+            if (settings.inFullscreen)
+            {
                 toggleFullscreen();
                 return true;
             }
@@ -2011,13 +2333,15 @@ window.divaPlugins = [];
         };
 
         // Toggle grid view
-        this.toggleGridView = function () {
+        this.toggleGridView = function ()
+        {
             toggleGrid();
         };
 
         // Enter grid view if currently not in grid view
         // Returns false if in grid view initially, true otherwise
-        this.enterGridView = function () {
+        this.enterGridView = function ()
+        {
             if (!settings.inGrid) {
                 toggleGrid();
                 return true;
@@ -2028,8 +2352,10 @@ window.divaPlugins = [];
 
         // Leave grid view if currently in grid view
         // Returns true if in grid view initially, false otherwise
-        this.leaveGridView = function () {
-            if (settings.inGrid) {
+        this.leaveGridView = function ()
+        {
+            if (settings.inGrid)
+            {
                 toggleGrid();
                 return true;
             }
@@ -2039,9 +2365,11 @@ window.divaPlugins = [];
 
         // Jump to a page based on its filename
         // Returns true if successful and false if the filename is invalid
-        this.gotoPageByName = function (filename) {
+        this.gotoPageByName = function (filename)
+        {
             var pageIndex = getPageIndex(filename);
-            if (isPageValid(pageIndex)) {
+            if (isPageValid(pageIndex))
+            {
                 gotoPage(pageIndex, 0, 0);
                 return true;
             }
@@ -2051,32 +2379,38 @@ window.divaPlugins = [];
 
         // Get the page index (0-based) corresponding to a given filename
         // If the page index doesn't exist, this will return -1
-        this.getPageIndex = function (filename) {
+        this.getPageIndex = function (filename)
+        {
             return getPageIndex(filename);
         };
 
         // Get the current URL (exposes the private method)
-        this.getCurrentURL = function () {
+        this.getCurrentURL = function ()
+        {
             return getCurrentURL();
         };
 
         // Get the hash part only of the current URL (without the leading #)
-        this.getURLHash = function () {
+        this.getURLHash = function ()
+        {
             return getURLHash();
         };
 
         // Get an object representing the state of this diva instance (for setState)
-        this.getState = function () {
+        this.getState = function ()
+        {
             return getState();
         };
 
         // Get the instance selector for this instance, since it's auto-generated.
-        this.getInstanceSelector = function () {
+        this.getInstanceSelector = function ()
+        {
             return settings.selector;
         };
 
         // Align this diva instance with a state object (as returned by getState)
-        this.setState = function (state) {
+        this.setState = function (state)
+        {
             var pageIndex;
 
             // If we need to resize the viewer, do that first
@@ -2085,9 +2419,12 @@ window.divaPlugins = [];
             // Only change settings.goDirectlyTo if state.i or state.p is valid
             pageIndex = getPageIndex(state.i);
 
-            if (isPageValid(pageIndex)) {
+            if (isPageValid(pageIndex))
+            {
                 settings.goDirectlyTo = pageIndex;
-            } else if (isPageValid(state.p)) {
+            }
+            else if (isPageValid(state.p))
+            {
                 settings.goDirectlyTo = state.p;
             }
 
@@ -2095,25 +2432,33 @@ window.divaPlugins = [];
             settings.verticalOffset = parseInt(state.y, 10);
 
             // Only change the zoom if state.z is valid
-            if (state.z >= settings.minZoomLevel && state.z <= settings.maxZoomLevel) {
+            if (state.z >= settings.minZoomLevel && state.z <= settings.maxZoomLevel)
+            {
                 settings.zoomLevel = state.z;
             }
 
             // Only change the pages per row setting if state.n is valid
-            if (state.n >= settings.minPagesPerRow && state.n <= settings.maxPagesPerRow) {
+            if (state.n >= settings.minPagesPerRow && state.n <= settings.maxPagesPerRow)
+            {
                 settings.pagesPerRow = state.n;
             }
 
-            if (settings.inFullscreen !== state.f) {
+            if (settings.inFullscreen !== state.f)
+            {
                 // The parameter determines if we need to change the view as well
                 settings.inFullscreen = state.f;
                 handleModeChange(settings.inGrid !== state.g);
-            } else {
+            }
+            else
+            {
                 // Don't need to change the mode, may need to change view
-                if (settings.inGrid !== state.g) {
+                if (settings.inGrid !== state.g)
+                {
                     settings.inGrid = state.g;
                     handleViewChange();
-                } else {
+                }
+                else
+                {
                     // Reload the viewer, just in case
                     loadViewer();
                 }
@@ -2121,13 +2466,15 @@ window.divaPlugins = [];
         };
 
         // Resizes the outer div to the specified width and height
-        this.resize = function (newWidth, newHeight) {
+        this.resize = function (newWidth, newHeight)
+        {
             resizeViewer(newWidth, newHeight);
             loadViewer();
         };
 
         // Destroys this instance, tells plugins to do the same (for testing)
-        this.destroy = function () {
+        this.destroy = function ()
+        {
             // Removes the hide-scrollbar class from the body
             $('body').removeClass('diva-hide-scrollbar');
 
@@ -2135,7 +2482,8 @@ window.divaPlugins = [];
             $(settings.parentSelector).empty().removeData('diva');
 
             // Call the destroy function for all the enabled plugins (if it exists)
-            $.each(settings.plugins, function (index, plugin) {
+            $.each(settings.plugins, function (index, plugin)
+            {
                 executeCallback(plugin.destroy);
             });
 
@@ -2144,12 +2492,15 @@ window.divaPlugins = [];
         };
     };
 
-    $.fn.diva = function (options) {
-        return this.each(function () {
+    $.fn.diva = function (options)
+    {
+        return this.each(function ()
+        {
             var element = $(this);
 
             // Return early if this element already has a plugin instance
-            if (element.data('diva')) {
+            if (element.data('diva'))
+            {
                 return;
             }
 
