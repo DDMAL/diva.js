@@ -14,7 +14,7 @@ Storage.prototype.getObject = function (key) {
     $.generateId = function(suffix) {
         var generatedId;
         do {
-          generatedId = (counter++) + (suffix ? '-' + suffix : '');
+            generatedId = (counter++) + (suffix ? '-' + suffix : '');
         } while(document.getElementById(generatedId));
 
         return generatedId;
@@ -100,7 +100,7 @@ Storage.prototype.getObject = function (key) {
                 var startIndex = (hash.indexOf('&' + key + '=') > 0) ? hash.indexOf('&' + key + '=') : hash.indexOf('#' + key + '=');
                 var endIndex = startIndex + key.length + 2 + originalValue.length;
                 // # if it's the first, & otherwise
-                var startThing = (startIndex == 0) ? '#' : '&';
+                var startThing = (startIndex === 0) ? '#' : '&';
                 window.location.replace(hash.substring(0, startIndex) + startThing + key + '=' + value + hash.substring(endIndex));
             } else {
                 // It's not present - add it
