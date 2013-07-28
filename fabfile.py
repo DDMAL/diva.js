@@ -1,5 +1,5 @@
 import os
-from fabric.api import *
+from fabric.api import local, settings
 
 # Path to the Closure Compiler .jar file
 CLOSURE_COMPILER_PATH = '/usr/local/Cellar/closure-compiler/20121212/libexec/build/compiler.jar'
