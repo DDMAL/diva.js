@@ -26,7 +26,6 @@ import re
 import tempfile
 import subprocess
 import shutil
-from optparse import OptionParser
 
 """
 This is a python script that will process all the images in a directory and
@@ -73,7 +72,7 @@ class DivaConverter(object):
             os.mkdir(self.output_directory)
 
         to_process = [os.path.join(self.input_directory, f)
-                        for f in os.listdir(self.input_directory) if self.__filter_fnames(f)]
+                      for f in os.listdir(self.input_directory) if self.__filter_fnames(f)]
         to_process.sort(key=self.alphanum_key)
 
         for image in to_process:
@@ -88,25 +87,26 @@ class DivaConverter(object):
             if self.verbose:
                 print "Using ImageMagick to convert {0} to TIFF".format(image)
             subprocess.call([PATH_TO_IMAGEMAGICK,
-                                "-compress", "None",
-                                image,
-                                input_file])
+                             "-compress", "None",
+                             image,
+                             input_file])
 
             if self.verbose:
                 print "Converting {0} to JPEG2000".format(name)
+
             subprocess.call([PATH_TO_KDU_COMPRESS,
-                                "-i", input_file,
-                                "-o", output_file,
-                                "Clevels=5",
-                                "Cblk={64,64}",
-                                "Cprecincts={256,256},{256,256},{128,128}",
-                                "Creversible=yes",
-                                "Cuse_sop=yes",
-                                "Corder=LRCP",
-                                "ORGgen_plt=yes",
-                                "ORGtparts=R",
-                                "-rate", "-,1,0.5,0.25"
-                            ])
+                            "-i", input_file,
+                            "-o", output_file,
+                            "Clevels=5",
+                            "Cblk={64,64}",
+                            "Cprecincts={256,256},{256,256},{128,128}",
+                            "Creversible=yes",
+                            "Cuse_sop=yes",
+                            "Corder=LRCP",
+                            "ORGgen_plt=yes",
+                            "ORGtparts=R",
+                            "-rate", "-,1,0.5,0.25"])
+
             if self.verbose:
                 print "Cleaning up"
             shutil.rmtree(tdir)
