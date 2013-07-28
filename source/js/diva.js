@@ -1927,7 +1927,16 @@ window.divaPlugins = [];
 
         // Returns the page index (with indexing starting at 0)
         this.getCurrentPage = function () {
+            console.warn("Deprecated. Use getCurrentPageIndex instead.");
             return settings.currentPageIndex;
+        };
+
+        this.getCurrentPageIndex = function () {
+            return settings.currentPageIndex;
+        };
+
+        this.getCurrentPageFilename = function () {
+            return settings.pages[settings.currentPageIndex].f;
         };
 
         // Returns the current zoom level
