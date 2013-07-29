@@ -324,23 +324,28 @@ window.divaPlugins = [];
                 // Declare variables used within the loops
                 var row, col, tileHeight, tileWidth, top, left, displayStyle, zoomLevel, imageURL;
 
+                // Adjust the zoom level based on the max zoom level of the page
+                zoomLevel = settings.zoomLevel + maxZoom - settings.realMaxZoom;
+                baseImageURL = baseURL + zoomLevel + ',';
+
                 // Loop through all the tiles in this page
-                for (row = 0; row < rows; row++)
+                row = 0;
+                while (row < rows)
                 {
-                    for (col = 0; col < cols; col++)
+                    col = 0;
+                    while (col < cols)
                     {
                         top = row * settings.tileHeight;
                         left = col * settings.tileWidth;
-
-                        // Adjust the zoom level based on the max zoom level of the page
-                        zoomLevel = settings.zoomLevel + maxZoom - settings.realMaxZoom;
 
                         // If the tile is in the last row or column, its dimensions will be different
                         tileHeight = (row === rows - 1) ? lastHeight : settings.tileHeight;
                         tileWidth = (col === cols - 1) ? lastWidth : settings.tileWidth;
 
-                        imageURL = baseURL + zoomLevel + ',' + tileIndex;
+                        imageURL = baseImageURL + tileIndex;
 
+                        // this check looks to see if the tile is already loaded, and then if
+                        // it isn't, if it should be visible.
                         if (!isTileLoaded(pageIndex, tileIndex)) {
                             if (isTileVisible(pageIndex, row, col)) {
                                 content.push('<div id="' + settings.ID + 'tile-' + pageIndex + '-' + tileIndex + '" style="display:inline; position: absolute; top: ' + top + 'px; left: ' + left + 'px; background-image: url(\'' + imageURL + '\'); height: ' + tileHeight + 'px; width: ' + tileWidth + 'px;"></div>');
@@ -350,7 +355,9 @@ window.divaPlugins = [];
                             }
                         }
                         tileIndex++;
+                        col++;
                     }
+                    row++;
                 }
 
                 settings.allTilesLoaded[pageIndex] = allTilesLoaded;
