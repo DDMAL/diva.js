@@ -66,6 +66,7 @@ window.divaPlugins = [];
             onViewToggle: null,         // Callback for switching between grid and document view
             onJump: null,               // Callback function for jumping to a specific page (using the gotoPage feature)
             onPageLoad: null,           // Callback function for loading pages
+            onPageLoaded: null,         // Callback function for after the page has been loaded
             onReady: null,              // Callback function for initial load
             onScroll: null,             // Callback function for scrolling
             onScrollDown: null,         // Callback function for scrolling down, only
@@ -362,6 +363,9 @@ window.divaPlugins = [];
 
                 settings.allTilesLoaded[pageIndex] = allTilesLoaded;
                 $(document.getElementById(settings.selector.substring(1) + 'page-' + pageIndex)).append(content.join(''));
+
+                executeCallback(settings.onPageLoaded, pageIndex, filename, pageSelector);
+
             }, settings.pageLoadTimeout));
         };
 
