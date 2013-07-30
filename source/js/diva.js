@@ -2232,10 +2232,19 @@ window.divaPlugins = [];
             return settings.itemTitle;
         };
 
-        // Go to a particular page (with indexing starting at 1)
+        // Go to a particular page by its page number (with indexing starting at 1)
         this.gotoPageByNumber = function (pageNumber)
         {
             var pageIndex = pageNumber - 1;
+            if (isPageValid(pageIndex))
+            {
+                gotoPage(pageIndex, 0, 0);
+            }
+        };
+
+        // Go to a particular page (with indexing starting at 0)
+        this.gotoPageByIndex = function (pageIndex)
+        {
             if (isPageValid(pageIndex))
             {
                 gotoPage(pageIndex, 0, 0);
