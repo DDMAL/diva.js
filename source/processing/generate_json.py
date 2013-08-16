@@ -160,6 +160,12 @@ class GenerateJson(object):
     def __img_size_tiff(self, fn):
         # We can use the VIPS module here for TIFF, since it can handle all the
         # ins and outs of the TIFF image format quite nicely.
+
+        # if we're not dealing with TIFF, we don't need to import a non-core library.
+        # Since jpeg2000 works by reading the header directly, we've made the choice to
+        # import this with every call. It's not ideal, but it shouldn't be too bad.
+        # If you are dealing with TIFF files and want to make a slight optimization you
+        # can move this import statement to the top of this script.
         from vipsCC import VImage
         im = VImage.VImage(fn)
         size = (im.Xsize(), im.Ysize())
