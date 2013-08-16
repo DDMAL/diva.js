@@ -3,11 +3,15 @@ Download plugin for diva.js
 Allows you to download images served by IIPImage
 */
 
-(function ($) {
-    window.divaPlugins.push((function() {
+(function ($)
+{
+    window.divaPlugins.push((function()
+    {
         var settings = {};
-        return {
-            init: function(divaSettings) {
+        var retval =
+        {
+            init: function(divaSettings)
+            {
                 settings.iipServerURL = divaSettings.iipServerURL;
                 settings.imageRoot = divaSettings.imageRoot;
                 settings.imageDir = divaSettings.imageDir;
@@ -15,7 +19,8 @@ Allows you to download images served by IIPImage
             },
             pluginName: 'download',
             titleText: 'Download image at the given zoom level',
-            handleClick: function(event) {
+            handleClick: function(event)
+            {
                 var pageDiv = $(this).parent().parent();
                 var filename = $(pageDiv).attr('data-filename');
                 var width = $(pageDiv).width() - 1;
@@ -24,5 +29,7 @@ Allows you to download images served by IIPImage
                 window.open(image);
             }
         };
+
+        return retval;
     })());
 })(jQuery);

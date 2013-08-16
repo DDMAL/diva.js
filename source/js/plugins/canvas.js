@@ -5,8 +5,10 @@ Adds a little "tools" icon next to each image
 
 */
 
-(function ($) {
-    window.divaPlugins.push((function () {
+(function ($)
+{
+    window.divaPlugins.push((function ()
+    {
         var canvas = {},
             map = {},
             settings = {},
@@ -32,12 +34,14 @@ Adds a little "tools" icon next to each image
         };
 
         // Convert an angle from degrees to radians
-        var toRadians = function (angle) {
+        var toRadians = function (angle)
+        {
             return angle * Math.PI / 180;
         };
 
         // Determine the new center of the page after rotating by the given angle
-        var getNewCenter = function (currentCenter, angle) {
+        var getNewCenter = function (currentCenter, angle)
+        {
             var x = currentCenter.x - canvas.centerX;
             // Take the negative because the rotation is counterclockwise
             var y = -(currentCenter.y - canvas.centerY);
@@ -50,7 +54,8 @@ Adds a little "tools" icon next to each image
         };
 
         // Rotates the image on the given canvas by the given angle
-        var rotateCanvas = function (aCanvas, angle) {
+        var rotateCanvas = function (aCanvas, angle)
+        {
             var context = aCanvas.context;
             var center = aCanvas.size / 2;
             var startX = -(aCanvas.width / 2);
@@ -71,12 +76,15 @@ Adds a little "tools" icon next to each image
         };
 
         // Determine if we need to update the large canvas
-        var shouldAdjustLevels = function () {
+        var shouldAdjustLevels = function ()
+        {
             var slider;
 
             // Returns true if something has been changed
-            for (slider in sliders) {
-                if (sliders[slider].current !== sliders[slider].previous) {
+            for (slider in sliders)
+            {
+                if (sliders[slider].current !== sliders[slider].previous)
+                {
                     return true;
                 }
             }
@@ -85,29 +93,34 @@ Adds a little "tools" icon next to each image
         };
 
         // Sets the "previous" value to the "current" value for every slider
-        var updatePreviousLevels = function () {
+        var updatePreviousLevels = function ()
+        {
             var slider;
 
-            for (slider in sliders) {
+            for (slider in sliders)
+            {
                 sliders[slider].previous = sliders[slider].current;
             }
         };
 
         // Update the thumbnail preview (called when a slider is moved/reset)
-        var updateMap = function () {
+        var updateMap = function ()
+        {
             rotateCanvas(map, sliders.rotation.current);
             adjustLevels(map);
         };
 
         // Update the large canvas (rotation, zooming, scrolling, pixel manipulation)
-        var updateCanvas = function () {
+        var updateCanvas = function ()
+        {
             var angle = sliders.rotation.current;
             var oldAngle = sliders.rotation.previous;
             var zoomLevel = sliders.zoom.current;
             var oldZoomLevel = sliders.zoom.previous;
 
             // Scroll the user to the desired location
-            if (angle !== oldAngle || zoomLevel !== oldZoomLevel) {
+            if (angle !== oldAngle || zoomLevel !== oldZoomLevel)
+            {
                 // First figure out the current center of the viewport
                 var leftScroll = $('#diva-canvas-wrapper').scrollLeft();
                 var topScroll = $('#diva-canvas-wrapper').scrollTop();
@@ -131,20 +144,23 @@ Adds a little "tools" icon next to each image
             }
 
             // Only call adjustLevels again if we really need to (expensive)
-            if (shouldAdjustLevels()) {
+            if (shouldAdjustLevels())
+            {
                 adjustLevels(canvas);
                 updatePreviousLevels();
             }
         };
 
         // Copies the canvas' pixel array and returns the copy
-        var copyImageData = function (aCanvas) {
+        var copyImageData = function (aCanvas)
+        {
             var oldImageData = aCanvas.data;
             var newImageData = aCanvas.context.createImageData(oldImageData);
             var pixelArray = newImageData.data;
             var i, length;
 
-            for (i = 0, length = pixelArray.length; i < length; i++) {
+            for (i = 0, length = pixelArray.length; i < length; i++)
+            {
                 pixelArray[i] = oldImageData.data[i];
             }
 
@@ -152,14 +168,16 @@ Adds a little "tools" icon next to each image
         };
 
         // Determines whether or not we need to adjust this level - very simple
-        var shouldAdjust = function (mode) {
+        var shouldAdjust = function (mode)
+        {
             var thisChanged = sliders[mode].current !== sliders[mode].previous;
             var thisNotDefault = sliders[mode].current !== sliders[mode].initial;
 
             return thisChanged || thisNotDefault;
         };
 
-        var adjustLevels = function (aCanvas) {
+        var adjustLevels = function (aCanvas)
+        {
             // Copy the pixel array to avoid destructively modifying the original
             var imageData = copyImageData(aCanvas);
             var pixelArray = imageData.data;
@@ -187,8 +205,10 @@ Adds a little "tools" icon next to each image
 
             var x, y, width, height, offset, r, g, b;
 
-            for (x = 0, width = imageData.width; x < width; x++) {
-                for (y = 0, height = imageData.height; y < height; y++) {
+            for (x = 0, width = imageData.width; x < width; x++)
+            {
+                for (y = 0, height = imageData.height; y < height; y++)
+                {
                     offset = (y * width + x) * 4;
 
                     r = pixelArray[offset];
@@ -196,31 +216,39 @@ Adds a little "tools" icon next to each image
                     b = pixelArray[offset + 2];
 
                     // Only do something if the pixel is not black originally
-                    if (r + g + b > 0) {
+                    if (r + g + b > 0)
+                    {
                         // Only adjust individual colour channels if necessary
-                        if (adjustRed && r) {
+                        if (adjustRed && r)
+                        {
                             r += redOffset;
                         }
 
-                        if (adjustGreen && g) {
+                        if (adjustGreen && g)
+                        {
                             g += greenOffset;
                         }
 
-                        if (adjustBlue && b) {
+                        if (adjustBlue && b)
+                        {
                             b += blueOffset;
                         }
 
                         // If we need to adjust brightness and/or contrast
-                        if (adjustOthers) {
-                            if (r) {
+                        if (adjustOthers)
+                        {
+                            if (r)
+                            {
                                 r = r * brightTimesContrast + contrastOffset;
                             }
 
-                            if (g) {
+                            if (g)
+                            {
                                 g = g * brightTimesContrast + contrastOffset;
                             }
 
-                            if (b) {
+                            if (b)
+                            {
                                 b = b * brightTimesContrast + contrastOffset;
                             }
                         }
@@ -237,7 +265,8 @@ Adds a little "tools" icon next to each image
         };
 
         // Update the box in the preview showing where you currently are
-        var updateViewbox = function () {
+        var updateViewbox = function ()
+        {
             // Determine the top left corner coordinates based on our current position
             var cornerX = $('#diva-canvas-wrapper').scrollLeft() * map.scaleFactor;
             var cornerY = $('#diva-canvas-wrapper').scrollTop() * map.scaleFactor;
@@ -250,7 +279,8 @@ Adds a little "tools" icon next to each image
         };
 
         // Draw the thumbnail preview in the toolbar
-        var loadMap = function (image) {
+        var loadMap = function (image)
+        {
             map.canvas = document.getElementById('diva-canvas-minimap');
             map.size = settings.mapSize;
             map.canvas.width = map.size;
@@ -277,11 +307,13 @@ Adds a little "tools" icon next to each image
         };
 
         // Load the image within the large and small canvases
-        var loadCanvas = function (imageURL, callback) {
+        var loadCanvas = function (imageURL, callback)
+        {
             image = new Image();
             image.src = imageURL;
 
-            image.onload = function () {
+            image.onload = function ()
+            {
                 // Determine the size of the (square) canvas based on the hypoteneuse
                 canvas.size = Math.sqrt(image.width * image.width + image.height * image.height);
 
@@ -314,80 +346,97 @@ Adds a little "tools" icon next to each image
                 hideThrobber();
 
                 // If the callback function exists, execute it (for zooming)
-                if (typeof callback === 'function') {
+                if (typeof callback === 'function')
+                {
                     callback.call(callback);
                 }
             };
         };
 
-        var updateSliderLabel = function () {
+        var updateSliderLabel = function ()
+        {
             var thisSlider = sliders[sliderMode];
             var value = thisSlider.current;
             var stringValue = (thisSlider.transform) ? thisSlider.transform(value) : value;
             $('#diva-canvas-value').html(stringValue);
         };
 
-        var updateSliderValue = function () {
+        var updateSliderValue = function ()
+        {
             $('#diva-canvas-slider').slider({
                 value: sliders[sliderMode].current
             });
         };
 
         // Returns the URL for the image at the specified zoom level
-        var getImageURL = function (zoomLevel) {
+        var getImageURL = function (zoomLevel)
+        {
             var width = settings.zoomWidthRatio * Math.pow(2, zoomLevel);
 
-            if (settings.proxyURL) {
+            if (settings.proxyURL)
+            {
                 return settings.proxyURL + "?f=" + settings.filename + "&w=" + width;
             }
+
             var imdir = settings.imageRoot + "/" + settings.imageDir + "/";
             return settings.iipServerURL + "?FIF=" + imdir + settings.filename + '&WID=' + width + '&CVT=JPEG';
         };
 
-        var showThrobber = function () {
+        var showThrobber = function ()
+        {
             // Only show the throbber if it will take a long time
-            if (sliders.zoom.current > 2 || settings.mobileWebkit) {
+            if (sliders.zoom.current > 2 || settings.mobileWebkit)
+            {
                 $(settings.selector + 'throbber').addClass('canvas-throbber').show();
             }
         };
 
         // Hides the loading indicator icon
-        var hideThrobber = function () {
+        var hideThrobber = function ()
+        {
             $(settings.selector + 'throbber').removeClass('canvas-throbber').hide();
         };
 
         // If any modifications have been applied, save them to localStorage
-        var saveSettings = function () {
+        var saveSettings = function ()
+        {
             var sliderSettings = {};
             var changed = false;
             var storageKey = settings.localStoragePrefix + settings.filename;
             var slider;
 
-            for (slider in sliders) {
-                if (sliders[slider].previous !== sliders[slider].initial) {
+            for (slider in sliders)
+            {
+                if (sliders[slider].previous !== sliders[slider].initial)
+                {
                     sliderSettings[slider] = sliders[slider].previous;
                     changed = true;
                 }
             }
 
             // If modifications need to be saved, update the canvas plugin icon
-            if (changed) {
+            if (changed)
+            {
                 settings.pluginIcon.addClass('new');
                 localStorage.setObject(storageKey, sliderSettings);
-            } else {
+            }
+            else
+            {
                 settings.pluginIcon.removeClass('new');
                 localStorage.removeItem(storageKey);
             }
         };
 
         // Handles zooming in when the zoom slider is changed and the change is applied
-        var updateZoom = function (newZoomLevel, callback) {
+        var updateZoom = function (newZoomLevel, callback)
+        {
             settings.zoomLevel = newZoomLevel;
 
             // Figure out the URL for the image at this new zoom level
             var imageURL = getImageURL(newZoomLevel);
 
-            loadCanvas(imageURL, function () {
+            loadCanvas(imageURL, function ()
+            {
                 // Set the new scale factor and update the viewbox
                 map.scaleFactor = map.size / canvas.size;
                 updateViewbox();
@@ -396,12 +445,15 @@ Adds a little "tools" icon next to each image
             });
         };
 
-        return {
-            init: function (divaSettings) {
+        var retval =
+        {
+            init: function(divaSettings)
+            {
                 // If the browser does not support canvas, do nothing
                 // And, disable this plugin
                 var canvasSupported = !!window.HTMLCanvasElement;
-                if (!canvasSupported) {
+                if (!canvasSupported)
+                {
                     return false;
                 }
 
@@ -476,9 +528,11 @@ Adds a little "tools" icon next to each image
                 };
 
                 // Copy the "default" value into "value" and "previous" for each slider
-                var resetSliders = function () {
+                var resetSliders = function ()
+                {
                     var defaultValue, thisSlider, slider;
-                    for (slider in sliders) {
+                    for (slider in sliders)
+                    {
                         thisSlider = sliders[slider];
                         defaultValue = thisSlider.initial;
                         thisSlider.current = defaultValue;
@@ -489,7 +543,8 @@ Adds a little "tools" icon next to each image
                 resetSliders();
 
                 // Create the DOM elements if they haven't already been created
-                if ($('#diva-canvas-backdrop').length) {
+                if ($('#diva-canvas-backdrop').length)
+                {
                     // Return true to keep the plugin enabled
                     return true;
                 }
@@ -507,7 +562,8 @@ Adds a little "tools" icon next to each image
                 var canvasButtonsList = [];
                 var buttonHTML, button, buttonTitle, i;
 
-                for (i in buttons) {
+                for (i in buttons)
+                {
                     button = buttons[i];
                     buttonTitle = sliders[button].title;
                     buttonHTML = '<div class="' + button + '" title="' + buttonTitle + '"></div>';
@@ -556,12 +612,14 @@ Adds a little "tools" icon next to each image
                 settings.mapSize = $('#diva-canvas-minimap').width();
 
                 // Adjust the slider when something is clicked, and make that the current mode
-                $('#diva-canvas-buttons div').click(function () {
+                $('#diva-canvas-buttons div').click(function ()
+                {
                     $('#diva-canvas-buttons .clicked').removeClass('clicked');
                     updateSlider($(this).attr('class'));
                 });
 
-                var updateSlider = function (newMode) {
+                var updateSlider = function (newMode)
+                {
                     sliderMode = newMode;
                     var sliderData = sliders[sliderMode];
 
@@ -584,7 +642,8 @@ Adds a little "tools" icon next to each image
 
                 // Create the slider
                 $('#diva-canvas-slider').slider({
-                    slide: function (event, ui) {
+                    slide: function (event, ui)
+                    {
                         sliders[sliderMode].current = ui.value;
                         updateSliderLabel();
                         updateMap();
@@ -592,10 +651,12 @@ Adds a little "tools" icon next to each image
                 });
 
                 // Reset all the sliders to the default value
-                $('#diva-canvas-reset-all').click(function () {
+                $('#diva-canvas-reset-all').click(function ()
+                {
                     var slider;
 
-                    for (slider in sliders) {
+                    for (slider in sliders)
+                    {
                         sliders[slider].current = sliders[slider].initial;
                     }
 
@@ -608,7 +669,8 @@ Adds a little "tools" icon next to each image
                 });
 
                 // Reset the current slider to the default value
-                $('#diva-canvas-reset').click(function () {
+                $('#diva-canvas-reset').click(function ()
+                {
                     // Update the current value and the slider
                     sliders[sliderMode].current = sliders[sliderMode].initial;
                     updateSliderLabel();
@@ -619,14 +681,20 @@ Adds a little "tools" icon next to each image
                 });
 
                 // Update the large canvas when the apply button is clicked
-                $('#diva-canvas-apply').click(function () {
-                    if (shouldAdjustLevels()) {
+                $('#diva-canvas-apply').click(function ()
+                {
+                    if (shouldAdjustLevels())
+                    {
                         showThrobber();
 
-                        setTimeout(function () {
-                            if (sliders.zoom.current !== sliders.zoom.previous) {
+                        setTimeout(function ()
+                        {
+                            if (sliders.zoom.current !== sliders.zoom.previous)
+                            {
                                 updateZoom(sliders.zoom.current);
-                            } else {
+                            }
+                            else
+                            {
                                 updateCanvas();
                                 hideThrobber();
 
@@ -638,7 +706,8 @@ Adds a little "tools" icon next to each image
                 });
 
                 // Handle exiting canvas mode
-                $('#diva-canvas-close').click(function () {
+                $('#diva-canvas-close').click(function ()
+                {
                     $('body').removeClass('overflow-hidden');
 
                     // Clear the canvases and hide things
@@ -658,32 +727,38 @@ Adds a little "tools" icon next to each image
                 });
 
                 // Hide the toolbar when the minimise icon is clicked
-                $('#diva-canvas-minimise').click(function () {
+                $('#diva-canvas-minimise').click(function ()
+                {
                     $('#diva-canvas-toolwindow').slideToggle('fast');
                 });
 
                 // Adjust the size of the canvas when the browser window is resized
-                $(window).resize(function () {
+                $(window).resize(function ()
+                {
                     settings.viewport = {
                         height: window.innerHeight - divaSettings.scrollbarWidth,
                         width: window.innerWidth - divaSettings.scrollbarWidth
                     };
 
                     // Always update the settings but only redraw if in canvas
-                    if (settings.inCanvas) {
+                    if (settings.inCanvas)
+                    {
                         updateViewbox();
                     }
                 });
 
                 // Update the viewbox when the large canvas is scrolled
-                $('#diva-canvas-wrapper').scroll(function () {
-                    if (settings.inCanvas) {
+                $('#diva-canvas-wrapper').scroll(function ()
+                {
+                    if (settings.inCanvas)
+                    {
                         updateViewbox();
                     }
                 });
 
                 // Handle clicking/dragging of the viewbox (should scroll the large canvas)
-                $('#diva-canvas-minimap, #diva-map-viewbox').mouseup(function (event) {
+                $('#diva-canvas-minimap, #diva-map-viewbox').mouseup(function (event)
+                {
                     // Consider caching this eventually (can't be done in init though)
                     var offset = $('#diva-canvas-minimap').offset();
 
@@ -695,31 +770,41 @@ Adds a little "tools" icon next to each image
                 });
 
                 // Enable drag scroll
-                $('#diva-canvas').mousedown(function () {
+                $('#diva-canvas').mousedown(function ()
+                {
                     $(this).addClass('grabbing');
-                }).mouseup(function () {
+                }).mouseup(function ()
+                {
                     $(this).removeClass('grabbing');
                 });
 
-                if (settings.mobileWebkit) {
+                if (settings.mobileWebkit)
+                {
                     $('#diva-canvas-wrapper').kinetic();
-                } else {
+                }
+                else
+                {
                     $('#diva-canvas-wrapper').dragscrollable({
                         acceptPropagatedEvent: true
                     });
                 }
 
                 // Execute the onInit callback function, if defined
-                if (typeof settings.onInit === 'function') {
+                if (typeof settings.onInit === 'function')
+                {
                     // The context is the diva instance
                     settings.onInit.call(this, settings);
                 }
 
                 return true;
             },
+
             pluginName: 'canvas',
+
             titleText: 'View the image on a canvas and adjust various settings',
-            setupHook: function (divaSettings) {
+
+            setupHook: function(divaSettings)
+            {
                 settings.viewport = {
                     height: window.innerHeight - divaSettings.scrollbarWidth,
                     width: window.innerWidth - divaSettings.scrollbarWidth
@@ -731,14 +816,17 @@ Adds a little "tools" icon next to each image
 
                 // If we're on the iPad, limit the max zoom level to 2
                 // Can't do canvas elements that are > 5 megapixels (issue #112)
-                if (settings.mobileWebkit) {
+                if (settings.mobileWebkit)
+                {
                     settings.maxZoomLevel = Math.min(settings.maxZoomLevel, settings.mobileWebkitMaxZoom);
                 }
 
                 sliders.zoom.min = settings.minZoomLevel;
                 sliders.zoom.max = settings.maxZoomLevel;
             },
-            handleClick: function (event, divaSettings) {
+
+            handleClick: function(event, divaSettings)
+            {
                 // loadCanvas() calls all the other necessary functions to load
                 var page = $(this).parent().parent();
                 var filename = $(page).attr('data-filename');
@@ -760,17 +848,21 @@ Adds a little "tools" icon next to each image
 
                 // Find the settings stored in localStorage, if they exist
                 var sliderSettings = localStorage.getObject(settings.localStoragePrefix + settings.filename);
-                if (sliderSettings) {
-                    for (slider in sliderSettings) {
+                if (sliderSettings)
+                {
+                    for (slider in sliderSettings)
+                    {
                         sliders[slider].current = sliderSettings[slider];
 
                         // If the current slider's value has changed, update it
-                        if (slider === sliderMode) {
+                        if (slider === sliderMode)
+                        {
                             updateSliderLabel();
                             updateSliderValue();
                         }
 
-                        if (slider === 'zoom') {
+                        if (slider === 'zoom')
+                        {
                             zoomLevel = sliderSettings[slider];
                         }
                     }
@@ -794,18 +886,28 @@ Adds a little "tools" icon next to each image
 
                 loadCanvas(imageURL);
             },
-            onPageLoad: function (pageIndex, filename, selector) {
+
+            onPageLoad: function(pageIndex, filename, selector)
+            {
                 // If something exists for this page in localStorage, then change icon color
                 var storageKey = settings.localStoragePrefix + filename;
 
-                if (localStorage.getItem(storageKey) !== null) {
+                if (localStorage.getItem(storageKey) !== null)
+                {
                     $(selector).find('.diva-canvas-icon').addClass('new');
                 }
             },
+
             // Used only for running the unit tests
-            destroy: function () {
+            destroy: function()
+            {
                 $('#diva-canvas-backdrop').remove();
             }
         };
+
+        // this returns an object with all of the necessary hooks and callbacks
+        // embedded.
+        return retval;
+
     })());
 })(jQuery);
