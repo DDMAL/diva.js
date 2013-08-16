@@ -129,7 +129,7 @@ class DivaServe(object):
             if f.startswith("."):
                 continue    # ignore hidden files
 
-            if ext in ('.jp2'):
+            if ext in ('.jp2', '.jpx'):
                 width, height = self.__img_size_jp2(os.path.join(img_dir, f))
             elif ext in ('.tiff', '.tif'):
                 width, height = self.__img_size_tiff(os.path.join(img_dir, f))
