@@ -129,7 +129,7 @@ class DivaServe(object):
             if f.startswith("."):
                 continue    # ignore hidden files
 
-            if ext in ('.jp2'):
+            if ext in ('.jp2', '.jpx'):
                 width, height = self.__img_size_jp2(os.path.join(img_dir, f))
             elif ext in ('.tiff', '.tif'):
                 width, height = self.__img_size_tiff(os.path.join(img_dir, f))
@@ -226,12 +226,13 @@ class DivaServe(object):
         # JPEG2000 libraries seem to read the entire image in, and they're
         # just tooooo sloooowww.
         f = open(fn, 'rb')
-        d = f.read(100)
+        d = f.read(100)  # the dimension data is within the first 100 bytes
         startHeader = d.find('ihdr')
         hs = startHeader + 4
         ws = startHeader + 8
         height = ord(d[hs]) * 256 ** 3 + ord(d[hs + 1]) * 256 ** 2 + ord(d[hs + 2]) * 256 + ord(d[hs + 3])
         width = ord(d[ws]) * 256 ** 3 + ord(d[ws + 1]) * 256 ** 2 + ord(d[ws + 2]) * 256 + ord(d[ws + 3])
+        f.close()
         return (width, height)
 
     def __img_size_tiff(self, fn):
