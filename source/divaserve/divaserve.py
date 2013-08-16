@@ -226,7 +226,7 @@ class DivaServe(object):
         # JPEG2000 libraries seem to read the entire image in, and they're
         # just tooooo sloooowww.
         f = open(fn, 'rb')
-        d = f.read(100)
+        d = f.read(100)  # the dimension data is within the first 100 bytes
         startHeader = d.find('ihdr')
         hs = startHeader + 4
         ws = startHeader + 8
