@@ -232,6 +232,7 @@ class DivaServe(object):
         ws = startHeader + 8
         height = ord(d[hs]) * 256 ** 3 + ord(d[hs + 1]) * 256 ** 2 + ord(d[hs + 2]) * 256 + ord(d[hs + 3])
         width = ord(d[ws]) * 256 ** 3 + ord(d[ws + 1]) * 256 ** 2 + ord(d[ws + 2]) * 256 + ord(d[ws + 3])
+        f.close()
         return (width, height)
 
     def __img_size_tiff(self, fn):
