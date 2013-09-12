@@ -266,7 +266,7 @@
   width: 100px;
   z-index: 1;
 }
-.ui-slider .handle {
+.ui-slider .ui-slider-handle {
   -webkit-border-radius: 5px;
   -moz-border-radius: 5px;
   border-radius: 5px;
@@ -281,11 +281,11 @@
   top: -3px;
   margin-left: -2px;
 }
-.ui-slider .handle.hover {
+.ui-slider .ui-slider-handle.hover {
   background: #ecf2fb;
   border: 1px solid #6f9fdf;
 }
-.ui-slider .handle.active {
+.ui-slider .ui-slider-handle.active {
   background: #ffffff;
   border: 1px solid #99bbe8;
 }
