@@ -2233,22 +2233,28 @@ window.divaPlugins = [];
         };
 
         // Go to a particular page by its page number (with indexing starting at 1)
+        // returns True if the page number passed is valid; false if it is not.
         this.gotoPageByNumber = function (pageNumber)
         {
             var pageIndex = pageNumber - 1;
             if (isPageValid(pageIndex))
             {
                 gotoPage(pageIndex, 0, 0);
+                return true;
             }
+            return false;
         };
 
         // Go to a particular page (with indexing starting at 0)
+        // returns True if the page index is valid; false if it is not.
         this.gotoPageByIndex = function (pageIndex)
         {
             if (isPageValid(pageIndex))
             {
                 gotoPage(pageIndex, 0, 0);
+                return true;
             }
+            return false;
         };
 
         // Returns the page index (with indexing starting at 0)
