@@ -2274,6 +2274,11 @@ window.divaPlugins = [];
             return settings.pages[settings.currentPageIndex].f;
         };
 
+        this.getCurrentPageNumber = function ()
+        {
+            return settings.currentPageIndex + 1;
+        };
+
         // Returns the current zoom level
         this.getZoomLevel = function ()
         {
