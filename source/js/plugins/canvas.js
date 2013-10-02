@@ -447,7 +447,7 @@ Adds a little "tools" icon next to each image
 
         var retval =
         {
-            init: function(divaSettings)
+            init: function(divaSettings, divaInstance)
             {
                 // If the browser does not support canvas, do nothing
                 // And, disable this plugin

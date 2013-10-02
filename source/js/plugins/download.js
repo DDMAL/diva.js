@@ -10,7 +10,7 @@ Allows you to download images served by IIPImage
         var settings = {};
         var retval =
         {
-            init: function(divaSettings)
+            init: function(divaSettings, divaInstance)
             {
                 settings.iipServerURL = divaSettings.iipServerURL;
                 settings.imageRoot = divaSettings.imageRoot;

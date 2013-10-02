@@ -1937,12 +1937,14 @@ window.divaPlugins = [];
                 {
                     var pluginProperName = plugin.pluginName[0].toUpperCase() + plugin.pluginName.substring(1);
 
-                    if (settings['enable' + pluginProperName]) {
+                    if (settings['enable' + pluginProperName])
+                    {
                         // Call the init function and check return value
-                        var enablePlugin = plugin.init(settings);
+                        var enablePlugin = plugin.init(settings, self);
 
                         // If int returns false, consider the plugin disabled
-                        if (!enablePlugin) {
+                        if (!enablePlugin)
+                        {
                             return;
                         }
 
