@@ -769,7 +769,7 @@ window.divaPlugins = [];
                     {
                         var filename = settings.pages[pageToConsider].f;
                         executeCallback(settings.onSetCurrentPage, pageToConsider, filename);
-                        Events.publish("ToolbarUpdateCurrentPage", null);
+                        Events.publish("UpdateCurrentPage", null);
 
                         // settings.toolbar.updateCurrentPage();
                     }
@@ -811,7 +811,7 @@ window.divaPlugins = [];
                 {
                     if (!setCurrentRow(direction))
                     {
-                        Events.publish("ToolbarUpdateCurrentPage", null);
+                        Events.publish("UpdateCurrentPage", null);
                         // settings.toolbar.updateCurrentPage();
                     }
                 }
@@ -837,7 +837,7 @@ window.divaPlugins = [];
 
             // Pretend that this is the current page
             settings.currentPageIndex = pageIndex;
-            Events.publish("ToolbarUpdateCurrentPage", null);
+            Events.publish("UpdateCurrentPage", null);
             //settings.toolbar.updateCurrentPage();
             var filename = settings.pages[pageIndex].f;
             executeCallback(settings.onSetCurrentPage, pageIndex, filename);
@@ -855,7 +855,7 @@ window.divaPlugins = [];
 
             // Pretend that this is the current page (it probably isn't)
             settings.currentPageIndex = pageIndex;
-            Events.publish("ToolbarUpdateCurrentPage", null);
+            Events.publish("UpdateCurrentPage", null);
             // settings.toolbar.updateCurrentPage();
         };
 
@@ -1109,7 +1109,7 @@ window.divaPlugins = [];
             }
 
             // Change the look of the toolbar
-            Events.publish("ToolbarSwitchMode", null);
+            Events.publish("SwitchMode", null);
 
             // Toggle the classes
             $(settings.selector + 'fullscreen').toggleClass('diva-in-fullscreen');
@@ -1146,7 +1146,7 @@ window.divaPlugins = [];
         var handleViewChange = function ()
         {
             // Switch the slider
-            Events.publish("ToolbarSwitchView", null);
+            Events.publish("SwitchView", null);
 
             loadViewer();
             executeCallback(settings.onViewToggle, settings.inGrid);
@@ -1250,7 +1250,7 @@ window.divaPlugins = [];
 
             // Update the slider
             // settings.toolbar.updateZoomSlider();
-            Events.publish("ToolbarUpdateZoomSlider", null);
+            Events.publish("UpdateZoomSlider", null);
 
             loadDocument();
 
@@ -1273,7 +1273,7 @@ window.divaPlugins = [];
 
             // Update the slider
             // settings.toolbar.updateGridSlider();
-            Events.publish("ToolbarUpdateGridSlider", null);
+            Events.publish("UpdateGridSlider", null);
 
             loadGrid();
         };
@@ -2068,11 +2068,11 @@ window.divaPlugins = [];
                     if (settings.enableToolbar)
                     {
                         settings.toolbar = createToolbar();
-                        Events.subscribe("ToolbarUpdateCurrentPage", settings.toolbar.updateCurrentPage);
-                        Events.subscribe("ToolbarSwitchMode", settings.toolbar.switchMode);
-                        Events.subscribe("ToolbarSwitchView", settings.toolbar.switchView);
-                        Events.subscribe("ToolbarUpdateZoomSlider", settings.toolbar.updateZoomSlider);
-                        Events.subscribe("ToolbarUpdateGridSlider", settings.toolbar.updateGridSlider);
+                        Events.subscribe("UpdateCurrentPage", settings.toolbar.updateCurrentPage);
+                        Events.subscribe("SwitchMode", settings.toolbar.switchMode);
+                        Events.subscribe("SwitchView", settings.toolbar.switchView);
+                        Events.subscribe("UpdateZoomSlider", settings.toolbar.updateZoomSlider);
+                        Events.subscribe("UpdateGridSlider", settings.toolbar.updateGridSlider);
                     }
 
                     $(settings.selector + 'current label').text(settings.numPages);
