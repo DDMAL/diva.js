@@ -33,7 +33,7 @@ window.divaPlugins = [];
             adaptivePadding: 0.05,      // The ratio of padding to the page dimension
             blockMobileMove: true,      // Prevent moving or scrolling the page on mobile devices
             contained: false,           // Determines the location of the fullscreen icon
-            divaserveURL: '',           // URL to the divaserve.php script - *MANDATORY*
+            objectData: '',             // URL to the JSON file that provides the object dimension data - *MANDATORY*
             enableAutoHeight: false,    // Automatically adjust height based on the window size
             enableAutoTitle: true,      // Shows the title within a div of id diva-title
             enableAutoWidth: true,      // Automatically adjust width based on the window size
