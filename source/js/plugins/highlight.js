@@ -12,25 +12,54 @@ Allows you to highlight regions of a page image
         {
             init: function(divaSettings, divaInstance)
             {
-                divaInstance.highlightOnPage = function(pageId, region, colour)
+                /*
+                    Highlights regions on a page. `colour` is optional, and specified
+                    using the RGBA CSS string.
+                */
+                var _incorporate_zoom = function(position, zoomDifference)
                 {
-                    console.log("Highlighting page " + pageId + " region " + region + " in colour " + colour);
-                    return true;
+                    return position / Math.pow(2, zoomDifference);
                 };
+
+                // divaInstance.highlightOnPage = function(pageId, regions, colour)
+                // {
+                //     if (typeof colour === 'undefined')
+                //     {
+                //         colour = 'rgba(255, 0, 0, 0.5)';
+                //     }
+
+                //     var maxZoom = dv.getMaxZoomLevel();
+                //     var zoomDifference = maxZoom - dv.getZoomLevel();
+
+                //     var pageobj = $(pageId);
+                //     var highlightArr = [];
+                //     var j = regions.length;
+                //     while (j--)
+                //     {
+                //         var box = $("<div></div>");
+                //         box.width(_incorporate_zoom(thisHighlight.width, zoomDifference));
+                //         box.height(_incorporate_zoom(thisHighlight.height, zoomDifference));
+                //         box.offset({top: _incorporate_zoom(thisHighlight.uly, zoomDifference), left: _incorporate_zoom(thisHighlight.ulx, zoomDifference)});
+
+                //         box.css('background-color', 'rgba(225, 0, 0, 0.4)');
+                //         box.css('border', '1px solid #555');
+                //         box.css('position', 'absolute');
+                //         box.css('z-index', 1000);
+
+                //         box.addClass('search-result');
+
+                //         page.append(box);
+                //     }
+
+                //     pageobj.data('highlights', highlightArr);
+
+                //     return true;
+                // };
 
                 return true;
             },
             pluginName: 'highlight',
             titleText: 'Highlight a region of a page',
-            // handleClick: function(event)
-            // {
-            //     var pageDiv = $(this).parent().parent();
-            //     var filename = $(pageDiv).attr('data-filename');
-            //     var width = $(pageDiv).width() - 1;
-            //     var imdir = settings.imageRoot + "/" + settings.imageDir + "/";
-            //     var image = settings.iipServerURL + "?FIF=" + imdir + filename + '&WID=' + width + '&CVT=JPEG';
-            //     window.open(image);
-            // }
         };
 
         return retval;
