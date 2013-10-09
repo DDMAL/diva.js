@@ -1882,7 +1882,7 @@ window.divaPlugins = [];
                 $(settings.selector + 'grid-icon').toggleClass('diva-in-grid');
             };
 
-            var toolbar = 
+            var toolbar =
             {
                 updateCurrentPage: function ()
                 {
