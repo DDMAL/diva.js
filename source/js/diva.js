@@ -1998,20 +1998,17 @@ window.divaPlugins = [];
             }, settings.throbberTimeout);
 
             $.ajax({
-                url: settings.divaserveURL,
-                data: {
-                    d: settings.imageDir
-                },
+                url: settings.objectData,
                 cache: true,
                 dataType: 'json',
-                error: function (data)
+                error: function (jqxhr, status, error)
                 {
                     hideThrobber();
 
                     // Show a basic error message within the document viewer pane
-                    $(settings.outerSelector).text("Invalid URL. Error code: " + data.status);
+                    $(settings.outerSelector).text("Invalid URL. Error code: " + status + " " + error);
                 },
-                success: function (data)
+                success: function (data, status, jqxhr)
                 {
                     hideThrobber();
 
