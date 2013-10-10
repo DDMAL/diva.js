@@ -28,19 +28,16 @@ from optparse import OptionParser
 
 
 class GenerateJson(object):
-    def __init__(self, input_directory, output_directory, title=None):
+    def __init__(self, input_directory, output_directory):
         self.input_directory = input_directory
         self.output_directory = output_directory
-        if title:
-            self.title = title
-        else:
-            self.title = os.path.basename(self.input_directory)
+        self.title = os.path.basename(self.input_directory)
 
     def generate(self):
-        self._cache(self.input_directory)
+        self.__generate()
         return True
 
-    def _cache(self):
+    def __generate(self):
         img_dir = self.input_directory
 
         files = os.listdir(img_dir)
@@ -139,7 +136,7 @@ class GenerateJson(object):
         }
 
         # write the JSON out to a file in the output directory
-        f = open(os.path.join(self.output_directory, "{0}.json".format(os.path.basename(self.input_directory))), 'w')
+        f = open(os.path.join(self.output_directory, "{0}.json".format(self.title)), 'w')
         json.dump(data, f)
         f.close()
 
@@ -194,9 +191,8 @@ class GenerateJson(object):
 
 
 if __name__ == "__main__":
-    usage = "%prog [options] input_directory output directory"
+    usage = "%prog [options] input_directory output_directory"
     parser = OptionParser(usage)
-    parser.add_option("-t", "--title", action="store", help="Specify an item title", dest="title")
     options, args = parser.parse_args()
 
     if len(args) < 1:
