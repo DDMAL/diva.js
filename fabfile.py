@@ -2,7 +2,7 @@ import os
 from fabric.api import local, settings
 
 # Path to the Closure Compiler .jar file
-CLOSURE_COMPILER_PATH = '/usr/local/Cellar/closure-compiler/20121212/libexec/build/compiler.jar'
+CLOSURE_COMPILER_PATH = '/usr/local/Cellar/closure-compiler/20130411/libexec/build/compiler.jar'
 
 
 def less():
@@ -36,19 +36,19 @@ def minify():
 
 def build():
     if os.path.exists("build"):
-        print "Removing old build directory"
+        print("Removing old build directory")
         local("rm -r build")
 
     local("mkdir -p build")
     local("cp -R source/img build/")
-    local("cp -R source/divaserve build/")
+    local("cp -R source/processing build/")
     less()
     minify()
 
 
 def test():
     with settings(warn_only=True):
-        print local("phantomjs tests/run.js"),
+        print(local("phantomjs tests/run.js"))
 
 
 def release(version):
@@ -58,7 +58,7 @@ def release(version):
     """
     import shutil
 
-    print "Building a release version of Diva"
+    print("Building a release version of Diva")
     build()
 
     files = {
@@ -68,7 +68,6 @@ def release(version):
         'build/js': 'diva.js/js/',
         'build/css': 'diva.js/css/',
         'build/img': 'diva.js/img/',
-        'build/divaserve': 'dataservers/',
         'source/processing': 'processing/',
         'demo': 'examples/',
     }
@@ -76,7 +75,7 @@ def release(version):
     release_dir = "diva-%s" % version
 
     if os.path.exists(release_dir):
-        print "Release Path Exists. Removing."
+        print("Release Path Exists. Removing.")
         shutil.rmtree(release_dir)
 
     os.mkdir(release_dir)
@@ -91,7 +90,7 @@ def release(version):
         elif os.path.isdir(source):
             shutil.copytree(source, build_path)
         else:
-            print "Skipping {0}".format(build_path)
+            print("Skipping {0}".format(build_path))
 
         # local("cp -R %s %s/%s" % (source, release_dir, dest))
 
