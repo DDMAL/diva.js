@@ -41,7 +41,7 @@ class GenerateJson(object):
         img_dir = self.input_directory
 
         files = os.listdir(img_dir)
-        files.sort(key=self.alphanum_key)  # sort alphabetical, not asciibetical
+        files.sort(key=self.__alphanum_key)  # sort alphabetical, not asciibetical
         lowest_max_zoom = 0
         zoomlevels = []
         images = []
@@ -201,8 +201,7 @@ if __name__ == "__main__":
 
     opts = {
         'input_directory': args[0],
-        'output_directory': args[1],
-        'title': options.title
+        'output_directory': args[1]
     }
 
     gen = GenerateJson(**opts)

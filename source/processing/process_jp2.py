@@ -26,6 +26,7 @@ import re
 import tempfile
 import subprocess
 import shutil
+import generate_json
 
 """
 This is a python script that will process all the images in a directory and
@@ -59,9 +60,10 @@ VALID_EXTENSIONS = [".jpg", ".jpeg", ".tif", ".tiff", ".JPG", ".JPEG", ".TIF", "
 
 
 class DivaConverter(object):
-    def __init__(self, input_directory, output_directory):
+    def __init__(self, input_directory, output_directory, data_output_directory):
         self.input_directory = os.path.abspath(input_directory)
         self.output_directory = os.path.abspath(output_directory)
+        self.data_output_directory = os.path.abspath(data_output_directory)
         self.verbose = True
 
     def convert(self):
@@ -73,7 +75,7 @@ class DivaConverter(object):
 
         to_process = [os.path.join(self.input_directory, f)
                       for f in os.listdir(self.input_directory) if self.__filter_fnames(f)]
-        to_process.sort(key=self.alphanum_key)
+        to_process.sort(key=self.__alphanum_key)
 
         for image in to_process:
             tdir = None
@@ -85,14 +87,14 @@ class DivaConverter(object):
             output_file = os.path.join(self.output_directory, "{0}.jp2".format(name))
 
             if self.verbose:
-                print "Using ImageMagick to convert {0} to TIFF".format(image)
+                print("Using ImageMagick to convert {0} to TIFF".format(image))
             subprocess.call([PATH_TO_IMAGEMAGICK,
                              "-compress", "None",
                              image,
                              input_file])
 
             if self.verbose:
-                print "Converting {0} to JPEG2000".format(name)
+                print("Converting {0} to JPEG2000".format(name))
 
             subprocess.call([PATH_TO_KDU_COMPRESS,
                             "-i", input_file,
@@ -108,11 +110,20 @@ class DivaConverter(object):
                             "-rate", "-,1,0.5,0.25"])
 
             if self.verbose:
-                print "Cleaning up"
+                print("Cleaning up")
             shutil.rmtree(tdir)
 
             if self.verbose:
-                print "Done converting {0}".format(image)
+                print("Done converting {0}".format(image))
+
+        json_opts = {
+            'input_directory': self.output_directory,
+            'output_directory': self.data_output_directory
+        }
+        json_generator = generate_json.GenerateJson(**json_opts)
+        json_generator.generate()
+
+        return True
 
     def __filter_fnames(self, fname):
         if fname.startswith('.'):
@@ -131,7 +142,7 @@ class DivaConverter(object):
         except:
             return s
 
-    def alphanum_key(self, s):
+    def __alphanum_key(self, s):
         """ Turn a string into a list of string and number chunks.
             "z23a" -> ["z", 23, "a"]
             See:
@@ -142,11 +153,11 @@ class DivaConverter(object):
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print "You must specify both an input and an output directory."
-        print "Usage: process_jp2.py input_directory output_directory"
+        print("You must specify both an input and an output directory.")
+        print("Usage: process_jp2.py input_directory output_directory data_output_directory")
         sys.exit(-1)
 
-    c = DivaConverter(sys.argv[1], sys.argv[2])
+    c = DivaConverter(sys.argv[1], sys.argv[2], sys.argv[3])
     c.convert()
 
     sys.exit(0)

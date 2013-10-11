@@ -76,7 +76,7 @@ def main(opts):
             os.mkdir(outputdir)
     else:
         if os.path.isdir(os.path.join(directory, 'processed')):
-            print 'There already is a processed directory! Delete it and try again.'
+            print('There already is a processed directory! Delete it and try again.')
             sys.exit(1)
         else:
             outputdir = os.path.join(directory, 'processed')
