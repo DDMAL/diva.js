@@ -92,7 +92,7 @@ def main(opts):
             if filename.startswith("."):
                 continue
             max_zoom, dimensions = get_image_info(os.path.join(directory, filename), twid)
-            print "file: {0} has a maximum zoom of {1} ({2} zoom levels).".format(filename, (max_zoom - 1), max_zoom)
+            print("file: {0} has a maximum zoom of {1} ({2} zoom levels).".format(filename, (max_zoom - 1), max_zoom))
             max_zoom_list.append(max_zoom)
             filename_list.append(filename)
             dimensions_list.append(dimensions)
@@ -107,12 +107,12 @@ def main(opts):
         new_fn = fn.replace(' ', '_')  # Replaces all spaces with _ because spaces can cause problems in the long run
         output_file = os.path.join(outputdir, "{0}.tif".format(new_fn))
 
-        print "Processing {0}".format(input_file)
+        print("Processing {0}".format(input_file))
         vimage = VImage.VImage(input_file)
 
         # If the image needs to be resized
         if max_zoom_list[i] > lowest_max_zoom and resize_images:
-            print '{0} needs to be resized, resizing and converting now'.format(filename)
+            print('{0} needs to be resized, resizing and converting now'.format(filename))
             # Resize this image to the proper size ... prepend resized_
             width, height = dimensions_list[i]
             new_width, new_height = resize_image(lowest_max_zoom, width, height, twid)
@@ -122,7 +122,7 @@ def main(opts):
         del vimage
 
     # Now print out the max_zoom this document has
-    print "This document has a max zoom of: {0}".format(lowest_max_zoom)
+    print("This document has a max zoom of: {0}".format(lowest_max_zoom))
 
 
 # Calculate the maximum zoom of an image given its filepath
