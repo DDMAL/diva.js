@@ -27,6 +27,7 @@ import tempfile
 import subprocess
 import shutil
 import generate_json
+from optparse import OptionParser
 
 """
 This is a python script that will process all the images in a directory and
@@ -60,11 +61,13 @@ VALID_EXTENSIONS = [".jpg", ".jpeg", ".tif", ".tiff", ".JPG", ".JPEG", ".TIF", "
 
 
 class DivaConverter(object):
-    def __init__(self, input_directory, output_directory, data_output_directory):
+    def __init__(self, input_directory, output_directory, data_output_directory, image_type="jpeg"):
         self.input_directory = os.path.abspath(input_directory)
         self.output_directory = os.path.abspath(output_directory)
         self.data_output_directory = os.path.abspath(data_output_directory)
         self.verbose = True
+        self.image_type = image_type
+        self.compression = "none"
 
     def convert(self):
         # If an output directory is supplied, use that one. Else create
@@ -96,18 +99,10 @@ class DivaConverter(object):
             if self.verbose:
                 print("Converting {0} to JPEG2000".format(name))
 
-            subprocess.call([PATH_TO_KDU_COMPRESS,
-                            "-i", input_file,
-                            "-o", output_file,
-                            "Clevels=5",
-                            "Cblk={64,64}",
-                            "Cprecincts={256,256},{256,256},{128,128}",
-                            "Creversible=yes",
-                            "Cuse_sop=yes",
-                            "Corder=LRCP",
-                            "ORGgen_plt=yes",
-                            "ORGtparts=R",
-                            "-rate", "-,1,0.5,0.25"])
+            if self.image_type == "tiff":
+                self.__process_tiff(input_file, output_file)
+            else:
+                self.__process_jpeg2000(input_file, output_file)
 
             if self.verbose:
                 print("Cleaning up")
@@ -124,6 +119,26 @@ class DivaConverter(object):
         json_generator.generate()
 
         return True
+
+    def __process_jpeg2000(self, input_file, output_file):
+        subprocess.call([PATH_TO_KDU_COMPRESS,
+                "-i", input_file,
+                "-o", output_file,
+                "Clevels=5",
+                "Cblk={64,64}",
+                "Cprecincts={256,256},{256,256},{128,128}",
+                "Creversible=yes",
+                "Cuse_sop=yes",
+                "Corder=LRCP",
+                "ORGgen_plt=yes",
+                "ORGtparts=R",
+                "-rate", "-,1,0.5,0.25"])
+
+    def __process_tiff(self, input_file, output_file):
+        from vipsCC import VImage
+        vimage = VImage.VImage(input_file)
+        vimage.vips2tiff('{0}:{1},tile:256x256,pyramid'.format(output_file, self.compression))
+        del vimage
 
     def __filter_fnames(self, fname):
         if fname.startswith('.'):
@@ -152,12 +167,24 @@ class DivaConverter(object):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("You must specify both an input and an output directory.")
-        print("Usage: process_jp2.py input_directory output_directory data_output_directory")
+    usage = "%prog [options] input_directory output_directory data_output_directory"
+    parser = OptionParser(usage)
+    parser.add_option("-t", "--type", action="store", default="jpeg", help="The type of images this script should produce. Options are 'jpeg' or 'tiff'", dest="type")
+    options, args = parser.parse_args()
+
+    if len(args) < 3:
+        print("You must specify an input, output, and data output directory.")
+        print("Usage: process.py input_directory output_directory data_output_directory")
         sys.exit(-1)
 
-    c = DivaConverter(sys.argv[1], sys.argv[2], sys.argv[3])
+    opts = {
+        'input_directory': args[0],
+        'output_directory': args[1],
+        'data_output_directory': args[2],
+        'image_type': options.type
+    }
+
+    c = DivaConverter(**opts)
     c.convert()
 
     sys.exit(0)
