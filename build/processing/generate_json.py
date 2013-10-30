@@ -1,17 +1,17 @@
-# Diva.js divaserve module
+#!/usr/bin/env python
 
-# Copyright (C) 2011, 2012 by Wendy Liu, Andrew Hankinson, Laurent Pugin
-
+# Copyright (C) 2013 by Andrew Hankinson
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-
+#
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software.
-
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -19,107 +19,29 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
-
 import os
-import math
-import json
-import warnings
 import re
-
-try:
-    # you can set a site-wide configuration file named 'conf'
-    # where you can store settings for both your web application server
-    # and this module.
-    import conf
-except ImportError:
-    # if you do not have a site-wide configuration file named
-    # 'conf.py', you can adjust your settings here.
-    class conf(object):
-        MEMCACHED_ENABLED = True
-        MEMCACHED_SERVER = '127.0.0.1:11211'
-        IMG_DIR = '/mnt/images'
-        TMP_DIR = '/tmp/diva.js'
-
-memcached_enabled = conf.MEMCACHED_ENABLED
-if memcached_enabled:
-    try:
-        import pylibmc
-    except ImportError:
-        warnings.warn("No Memcached module detected. Disabling Memcached support")
-        memcached_enabled = False
+import math
+import sys
+import json
+from optparse import OptionParser
 
 
-class DivaServe(object):
-    """
-        This Python module provides the metadata necessary for the JavaScript
-        front-end to function. It computes all of the tiled data dimensions
-        on the server, which is then sent back to the client as a JSON response.
+class GenerateJson(object):
+    def __init__(self, input_directory, output_directory):
+        self.input_directory = input_directory
+        self.output_directory = output_directory
+        self.title = os.path.basename(self.input_directory)
 
-        To ensure we don't have to continually process these large images for
-        every request, we cache the results in a cache directory. If the pylibmc
-        Python module is installed and Memcached support is enabled, it will cache
-        the image data in there as well.
+    def generate(self):
+        self.__generate()
+        return True
 
-        To use this module, instantiate this class. This will set up your Memcached
-        connection and ensure your temporary directory exists.
-
-        >>> img_server = divaserve.DivaServe()
-
-        To have it serve data, call getc() with the name of the image directory. This
-        must be a directory that is present in the location where you have configured your
-        IMG_DIR.
-
-        >>> json_response = img_server.getc(document_dir)
-    """
-    def __init__(self):
-        if memcached_enabled:
-            self.mc_conn = pylibmc.Client([conf.MEMCACHED_SERVER], binary=True)
-            self.mc_conn.behaviors = {"tcp_nodelay": True, "ketama": True}
-
-        self.srvdir = conf.IMG_DIR
-        self.tmpdir = conf.TMP_DIR
-        if not os.path.exists(self.tmpdir):
-            os.mkdir(self.tmpdir)
-
-    def getc(self, mdir):
-        return self._get_or_cache(str(mdir))
-
-    def _get_or_cache(self, mdir):
-        if self._try_memcache(mdir):
-            return self.mc_conn[mdir]
-        elif self._try_filecache(mdir):
-            f = open(os.path.join(self.tmpdir, "{0}.json".format(mdir)), 'r')
-            j = json.load(f)
-            f.close()
-            if memcached_enabled:
-                self.mc_conn.set(mdir, j)
-                return self.mc_conn[mdir]
-            else:
-                return j
-        else:
-            self._cache(mdir)
-            return self._get_or_cache(mdir)
-
-    def _try_memcache(self, mdir):
-        if not memcached_enabled:
-            return False
-        if mdir in self.mc_conn:
-            return True
-        else:
-            return False
-
-    def _try_filecache(self, mdir):
-        if os.path.exists(os.path.join(self.tmpdir, "{0}.json".format(mdir))):
-            return True
-        else:
-            return False
-
-    def _cache(self, mdir):
-        key = mdir
-        img_dir = os.path.join(self.srvdir, mdir)
+    def __generate(self):
+        img_dir = self.input_directory
 
         files = os.listdir(img_dir)
-        files.sort(key=alphanum_key)  # sort alphabetical, not asciibetical
+        files.sort(key=self.__alphanum_key)  # sort alphabetical, not asciibetical
         lowest_max_zoom = 0
         zoomlevels = []
         images = []
@@ -145,6 +67,7 @@ class DivaServe(object):
             }
             images.append(im)
             zoomlevels.append(max_zoom)
+
         lowest_max_zoom = min(zoomlevels)
         max_ratio = min_ratio = 0
         t_wid = [0] * (lowest_max_zoom + 1)
@@ -206,27 +129,23 @@ class DivaServe(object):
         }
 
         data = {
-            'item_title': mdir,
+            'item_title': self.title,
             'dims': dims,
             'max_zoom': lowest_max_zoom,
             'pgs': pgs
         }
 
-        # cache it to disk so we don't have to re-do it if memcached gets restarted
-        if not os.path.exists(os.path.join(self.tmpdir, "{0}.json".format(mdir))):
-            f = open(os.path.join(self.tmpdir, "{0}.json".format(mdir)), 'w')
-            json.dump(data, f)
-            f.close()
-
-        if memcached_enabled:
-            self.mc_conn.set(key, data)
+        # write the JSON out to a file in the output directory
+        f = open(os.path.join(self.output_directory, "{0}.json".format(self.title)), 'w')
+        json.dump(data, f)
+        f.close()
 
     def __img_size_jp2(self, fn):
         # we implement our own header reader since all the existing
         # JPEG2000 libraries seem to read the entire image in, and they're
         # just tooooo sloooowww.
         f = open(fn, 'rb')
-        d = f.read(100)  # the dimension data is within the first 100 bytes
+        d = f.read(100)
         startHeader = d.find('ihdr')
         hs = startHeader + 4
         ws = startHeader + 8
@@ -238,6 +157,12 @@ class DivaServe(object):
     def __img_size_tiff(self, fn):
         # We can use the VIPS module here for TIFF, since it can handle all the
         # ins and outs of the TIFF image format quite nicely.
+
+        # if we're not dealing with TIFF, we don't need to import a non-core library.
+        # Since jpeg2000 works by reading the header directly, we've made the choice to
+        # import this with every call. It's not ideal, but it shouldn't be too bad.
+        # If you are dealing with TIFF files and want to make a slight optimization you
+        # can move this import statement to the top of this script.
         from vipsCC import VImage
         im = VImage.VImage(fn)
         size = (im.Xsize(), im.Ysize())
@@ -252,16 +177,32 @@ class DivaServe(object):
     def __incorporate_zoom(self, img_dim, zoom_diff):
         return img_dim / float(2 ** zoom_diff)
 
+    def __tryint(self, s):
+        try:
+            return int(s)
+        except:
+            return s
 
-def tryint(s):
-    try:
-        return int(s)
-    except:
-        return s
+    def __alphanum_key(self, s):
+        """ Turn a string into a list of string and number chunks.
+            "z23a" -> ["z", 23, "a"]
+        """
+        return [self.__tryint(c) for c in re.split('([0-9]+)', s)]
 
 
-def alphanum_key(s):
-    """ Turn a string into a list of string and number chunks.
-        "z23a" -> ["z", 23, "a"]
-    """
-    return [tryint(c) for c in re.split('([0-9]+)', s)]
+if __name__ == "__main__":
+    usage = "%prog [options] input_directory output_directory"
+    parser = OptionParser(usage)
+    options, args = parser.parse_args()
+
+    if len(args) < 1:
+        parser.print_help()
+        parser.error("You must specify a directory to process.")
+
+    opts = {
+        'input_directory': args[0],
+        'output_directory': args[1]
+    }
+
+    gen = GenerateJson(**opts)
+    sys.exit(gen.generate())
