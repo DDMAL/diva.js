@@ -1,6 +1,6 @@
 import os
 
-from fabric.api import local, run, cd, put
+from fabric.api import local, cd, put
 
 from src import settings
 
@@ -13,8 +13,10 @@ def build():
         print settings.BUILD_DIR
         local("cp -R static %s" % settings.BUILD_DIR)
 
+
 def deploy():
     put(settings.BUILD_DIR, 'deploy')
+
 
 def wc():
     local("wc -w `find content -type f`")
