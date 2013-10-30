@@ -32,6 +32,7 @@ def minify():
 
     source_files = ['utils.js', 'diva.js', 'plugins/*']
     local("cd source/js && java -jar " + CLOSURE_COMPILER_PATH + " --js " + " ".join(source_files) + " --js_output_file ../../build/js/diva.min.js")
+    local("cp -R source/js/ build/js/")
 
 
 def build():
@@ -39,11 +40,13 @@ def build():
         print("Removing old build directory")
         local("rm -r build")
 
-    local("mkdir -p build")
+    local("mkdir -p build/demo")
     local("cp -R source/img build/")
     local("cp -R source/processing build/")
     less()
     minify()
+    local("cp demo/index.html build/")
+    local("cp demo/beromunster.json build/demo/")
 
 
 def test():
@@ -69,7 +72,6 @@ def release(version):
         'build/css': 'diva.js/css/',
         'build/img': 'diva.js/img/',
         'source/processing': 'processing/',
-        'demo': 'examples/',
     }
 
     release_dir = "diva-%s" % version
