@@ -12,56 +12,104 @@ Allows you to highlight regions of a page image
         {
             init: function(divaSettings, divaInstance)
             {
-                /*
-                    Highlights regions on a page. `colour` is optional, and specified
-                    using the RGBA CSS string.
-                */
+                // initialize an empty highlights object.
+                divaSettings.parentSelector.data('highlights', {});
+                divaSettings.parentSelector.data('highlighted', {});
+
+                function _highlight(pageIdx, filename)
+                {
+                    var highlightObj = divaSettings.parentSelector.data('highlights');
+
+                    if (highlightObj.hasOwnProperty(pageIdx))
+                    {
+                        var pageHighlights = highlightObj[pageIdx];
+                        var j = pageHighlights.length;
+                        var pageobj = $(divaInstance.getInstanceSelector() + 'page-' + pageIdx);
+
+                        while (j--)
+                        {
+                            pageobj.append(pageHighlights[j]);
+                        }
+                    }
+                }
+
+                Events.subscribe("UpdateCurrentPage", _highlight);
+
                 var _incorporate_zoom = function(position, zoomDifference)
                 {
                     return position / Math.pow(2, zoomDifference);
                 };
 
-                // divaInstance.highlightOnPage = function(pageId, regions, colour)
-                // {
-                //     if (typeof colour === 'undefined')
-                //     {
-                //         colour = 'rgba(255, 0, 0, 0.5)';
-                //     }
+                /*
+                    Reset the highlights object;
+                */
+                divaInstance.resetHighlights = function()
+                {
+                    divaSettings.parentSelector.data('highlights', {});
+                };
 
-                //     var maxZoom = dv.getMaxZoomLevel();
-                //     var zoomDifference = maxZoom - dv.getZoomLevel();
+                /*
+                    Highlights regions on multiple pages.
+                    @param pageIdxs An array of page index numbers
+                    @param regions  An array of regions
+                    @param colour   (optional) A colour for the highlighting, specified in RGBA CSS format
+                */
+                divaInstance.highlighOnPages = function(pageIdxs, regions, colour)
+                {
+                    var j = pageIdxs.length;
+                    while(j--)
+                    {
+                        divaInstance.highlightOnPage(pageIdxs[j], regions, colour);
+                    }
+                };
 
-                //     var pageobj = $(pageId);
-                //     var highlightArr = [];
-                //     var j = regions.length;
-                //     while (j--)
-                //     {
-                //         var box = $("<div></div>");
-                //         box.width(_incorporate_zoom(thisHighlight.width, zoomDifference));
-                //         box.height(_incorporate_zoom(thisHighlight.height, zoomDifference));
-                //         box.offset({top: _incorporate_zoom(thisHighlight.uly, zoomDifference), left: _incorporate_zoom(thisHighlight.ulx, zoomDifference)});
+                /*
+                    Highlights regions on multiple pages.
+                    @param pageIdxs An array of page index numbers
+                    @param regions  An array of regions. Use {'width':i, 'height':i, 'ulx':i, 'uly': i} for each region.
+                    @param colour   (optional) A colour for the highlighting, specified in RGBA CSS format
+                */
+                divaInstance.highlightOnPage = function(pageIdx, regions, colour)
+                {
+                    if (typeof colour === 'undefined')
+                    {
+                        colour = 'rgba(255, 0, 0, 0.5)';
+                    }
 
-                //         box.css('background-color', 'rgba(225, 0, 0, 0.4)');
-                //         box.css('border', '1px solid #555');
-                //         box.css('position', 'absolute');
-                //         box.css('z-index', 1000);
+                    var maxZoom = divaInstance.getMaxZoomLevel();
+                    var zoomDifference = maxZoom - divaInstance.getZoomLevel();
+                    console.log(zoomDifference);
 
-                //         box.addClass('search-result');
+                    var highlightsObj = divaSettings.parentSelector.data('highlights');
 
-                //         page.append(box);
-                //     }
+                    var highlightArr = [];
+                    var j = regions.length;
+                    while (j--)
+                    {
+                        var box = $("<div></div>");
+                        box.width(_incorporate_zoom(regions[j].width, zoomDifference));
+                        box.height(_incorporate_zoom(regions[j].height, zoomDifference));
+                        box.offset({top: _incorporate_zoom(regions[j].uly, zoomDifference), left: _incorporate_zoom(regions[j].ulx, zoomDifference)});
 
-                //     pageobj.data('highlights', highlightArr);
+                        box.css('background-color', colour);
+                        box.css('border', '1px solid #555');
+                        box.css('position', 'absolute');
+                        box.css('z-index', 1000);
 
-                //     return true;
-                // };
+                        box.addClass('search-result');
+
+                        highlightArr.push(box);
+                    }
+
+                    highlightsObj[pageIdx] = highlightArr;
+                    return true;
+                };
 
                 return true;
             },
             pluginName: 'highlight',
-            titleText: 'Highlight a region of a page',
+            titleText: 'Highlight regions of pages'
         };
-
         return retval;
     })());
 })(jQuery);
