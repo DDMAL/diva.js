@@ -60,7 +60,7 @@ Gives a view of the text of this page.
                 return true;
             },
             pluginName: 'text',
-            titleText: 'View the text of this page',
+            titleText: 'View the text of this page'
         };
 
         return retval;
