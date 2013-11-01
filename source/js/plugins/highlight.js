@@ -33,7 +33,8 @@ Allows you to highlight regions of a page image
                     }
                 }
 
-                Events.subscribe("UpdateCurrentPage", _highlight);
+                // subscribe the highlight method to the page change notification
+                Events.subscribe("VisiblePageDidChange", _highlight);
 
                 var _incorporate_zoom = function(position, zoomDifference)
                 {
@@ -78,7 +79,6 @@ Allows you to highlight regions of a page image
 
                     var maxZoom = divaInstance.getMaxZoomLevel();
                     var zoomDifference = maxZoom - divaInstance.getZoomLevel();
-                    console.log(zoomDifference);
 
                     var highlightsObj = divaSettings.parentSelector.data('highlights');
 
