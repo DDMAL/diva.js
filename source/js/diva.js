@@ -291,7 +291,9 @@ window.divaPlugins = [];
 
                 // Call the callback function
                 executeCallback(settings.onPageLoad, pageIndex, filename, pageSelector);
+                Events.publish("PageHasLoaded", [pageIndex, filename, pageSelector]);
 
+                // @TODO: Replace this with a callback.
                 // Execute the callback functions for any of the enabled plugins
                 for (plugin in settings.plugins) {
                     executeCallback(settings.plugins[plugin].onPageLoad, pageIndex, filename, pageSelector);
@@ -770,8 +772,6 @@ window.divaPlugins = [];
                         var filename = settings.pages[pageToConsider].f;
                         executeCallback(settings.onSetCurrentPage, pageToConsider, filename);
                         Events.publish("VisiblePageDidChange", [pageToConsider, filename]);
-
-                        // settings.toolbar.updateCurrentPage();
                     }
                 }
                 return true;
@@ -811,8 +811,9 @@ window.divaPlugins = [];
                 {
                     if (!setCurrentRow(direction))
                     {
-                        Events.publish("VisiblePageDidChange", null);
-                        // settings.toolbar.updateCurrentPage();
+                        var pageIndex = settings.currentPageIndex;
+                        var filename = settings.pages[pageIndex].f;
+                        Events.publish("VisiblePageDidChange", [pageIndex, filename]);
                     }
                 }
 
@@ -856,8 +857,8 @@ window.divaPlugins = [];
 
             // Pretend that this is the current page (it probably isn't)
             settings.currentPageIndex = pageIndex;
-            Events.publish("VisiblePageDidChange", null);
-            // settings.toolbar.updateCurrentPage();
+            var filename = settings.pages[pageIndex].f;
+            Events.publish("VisiblePageDidChange", [pageIndex, filename]);
         };
 
         // Helper function called by loadDocument to scroll to the desired place
@@ -1050,6 +1051,7 @@ window.divaPlugins = [];
 
             var fileName = settings.pages[settings.currentPageIndex].f;
             executeCallback(settings.onDocumentLoaded, settings.lastPageLoaded, fileName);
+            Events.publish("DocumentHasFinishedLoading", [settings.lastPageLoaded, fileName]);
         };
 
         var loadGrid = function ()
@@ -1140,6 +1142,7 @@ window.divaPlugins = [];
 
             // Execute callbacks
             executeCallback(settings.onModeToggle, settings.inFullscreen);
+            Events.publish("ModeHasChanged", [settings.inFullScreen]);
         };
 
         // Handles switching in and out of grid view
@@ -1147,10 +1150,11 @@ window.divaPlugins = [];
         var handleViewChange = function ()
         {
             // Switch the slider
-            Events.publish("ViewDidSwitch", null);
+            // Events.publish("ViewDidSwitch", null);
 
             loadViewer();
             executeCallback(settings.onViewToggle, settings.inGrid);
+            Events.publish("ViewDidSwitch", [settings.inGrid]);
         };
 
         // Called when the fullscreen icon is clicked
@@ -1250,8 +1254,7 @@ window.divaPlugins = [];
             settings.zoomLevel = newZoomLevel;
 
             // Update the slider
-            // settings.toolbar.updateZoomSlider();
-            Events.publish("ZoomSliderDidChange", null);
+            Events.publish("ZoomLevelDidChange", null);
 
             loadDocument();
 
@@ -1273,8 +1276,7 @@ window.divaPlugins = [];
             settings.pagesPerRow = newPagesPerRow;
 
             // Update the slider
-            // settings.toolbar.updateGridSlider();
-            Events.publish("GridSliderDidChange", null);
+            Events.publish("GridRowNumberDidChange", null);
 
             loadGrid();
         };
@@ -2069,8 +2071,8 @@ window.divaPlugins = [];
                         Events.subscribe("VisiblePageDidChange", settings.toolbar.updateCurrentPage);
                         Events.subscribe("ModeDidSwitch", settings.toolbar.switchMode);
                         Events.subscribe("ViewDidSwitch", settings.toolbar.switchView);
-                        Events.subscribe("ZoomSliderDidChange", settings.toolbar.updateZoomSlider);
-                        Events.subscribe("GridSliderDidChange", settings.toolbar.updateGridSlider);
+                        Events.subscribe("ZoomLevelDidChange", settings.toolbar.updateZoomSlider);
+                        Events.subscribe("GridRowNumberDidChange", settings.toolbar.updateGridSlider);
                     }
 
                     $(settings.selector + 'current label').text(settings.numPages);
@@ -2108,6 +2110,7 @@ window.divaPlugins = [];
 
                     // Execute the callback
                     executeCallback(settings.onReady, settings);
+                    Events.publish("ViewerHasFinishedLoading", [settings]);
                 }
             });
         };
