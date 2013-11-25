@@ -55,8 +55,7 @@ window.divaPlugins = [];
             iipServerURL: '',           // The URL to the IIPImage installation, including the `?FIF=` - *MANDATORY*
             inFullscreen: false,        // Set to true to load fullscreen mode initially
             inGrid: false,              // Set to true to load grid view initially
-            imageDir: '',               // Image directory, relative to the variable defined in imageRoot - *MANDATORY*
-            imageRoot: '',              // Root image directory, must match the root directory in divaserve. NO TRAILING SLASH. - *MANDATORY*
+            imageDir: '',               // Image directory, either absolute path or relative to IIP's FILESYSTEM_PREFIX - *MANDATORY*
             maxPagesPerRow: 8,          // Maximum number of pages per row, grid view
             maxZoomLevel: -1,           // Optional; defaults to the max zoom returned in the JSON response
             minPagesPerRow: 2,          // 2 for the spread view. Recommended to leave it
@@ -309,7 +308,7 @@ window.divaPlugins = [];
                     return;
                 }
 
-                var imdir = settings.imageRoot + "/" + settings.imageDir + "/";
+                var imdir = settings.imageDir + "/";
                 // Load some more data and initialise some variables
                 var rows = getPageData(pageIndex, 'r');
                 var cols = getPageData(pageIndex, 'c');
@@ -561,7 +560,7 @@ window.divaPlugins = [];
 
             // Declare variables used in the loop
             var i, pageIndex, filename, realWidth, realHeight, pageWidth, pageHeight, leftOffset, imageURL;
-            var imdir = settings.imageRoot + "/" + settings.imageDir + "/";
+            var imdir = settings.imageDir + "/";
 
             // Load each page within that row
             var ppr = settings.pagesPerRow;
