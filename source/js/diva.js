@@ -2282,6 +2282,27 @@ window.divaPlugins = [];
 
             return settings.numPages;
         }
+
+        // Returns the dimensions of a given page index at a given zoom level
+        this.getPageDimensionsAtZoomLevel = function(pageIdx, zoomLevel)
+        {
+            if (!checkLoaded())
+            {
+                return false;
+            }
+
+            var zoomLevel = zoomLevel - 1; // zoom levels are 1-based, but our array is 0-based;
+            var pg = settings.pages[pageIdx];
+            var pgAtZoom = pg.d[parseInt(zoomLevel, 10)];
+            return {'width': pgAtZoom.w, 'height': pgAtZoom.h}
+        };
+
+        // Returns the dimensions of the current page at the current zoom level
+        this.getCurrentPageDimensionsAtCurrentZoomLevel = function()
+        {
+            return this.getPageDimensionsAtZoomLevel(settings.currentPageIndex, settings.zoomLevel);
+        };
+
         this.getCurrentPageIndex = function ()
         {
             return settings.currentPageIndex;
