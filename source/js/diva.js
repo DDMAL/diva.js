@@ -2440,6 +2440,11 @@ window.divaPlugins = [];
             return settings.ID;
         };
 
+        this.getSettings = function()
+        {
+            return settings;
+        };
+
         // Align this diva instance with a state object (as returned by getState)
         this.setState = function (state)
         {
