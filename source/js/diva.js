@@ -111,6 +111,7 @@ window.divaPlugins = [];
             lastPageLoaded: -1,         // The ID of the last page loaded (value set later)
             lastRowLoaded: -1,          // The index of the last row loaded
             leftScrollSoFar: 0,         // Current scroll from the left edge of the pane
+            loaded: false,              // A flag for when everything is loaded and ready to go.
             maxWidths: [],              // The width of the widest page for each zoom level
             maxRatio: 0,                // The max height/width ratio (for grid view)
             minHeight: 0,               // Minimum height of the .diva-outer element, as defined in the CSS
@@ -2103,8 +2104,21 @@ window.divaPlugins = [];
                     // Execute the callback
                     executeCallback(settings.onReady, settings);
                     Events.publish("ViewerHasFinishedLoading", [settings]);
+
+                    // signal that everything should be set up and ready to go.
+                    settings.loaded = true;
                 }
             });
+        };
+
+        var checkLoaded = function()
+        {
+            if (!settings.loaded)
+            {
+                console.warn("The viewer is not completely initialized. This is likely because it is still downloading data. To fix this, only call this function if the isReady() method returns true.");
+                return false;
+            }
+            return true;
         };
 
         var init = function ()
