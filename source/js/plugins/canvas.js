@@ -378,7 +378,7 @@ Adds a little "tools" icon next to each image
                 return settings.proxyURL + "?f=" + settings.filename + "&w=" + width;
             }
 
-            var imdir = settings.imageRoot + "/" + settings.imageDir + "/";
+            var imdir = settings.imageDir + "/";
             return settings.iipServerURL + "?FIF=" + imdir + settings.filename + '&WID=' + width + '&CVT=JPEG';
         };
 
@@ -462,7 +462,6 @@ Adds a little "tools" icon next to each image
 
                 settings.inCanvas = false;
                 settings.iipServerURL = divaSettings.iipServerURL;
-                settings.imageRoot = divaSettings.imageRoot;
                 settings.imageDir = divaSettings.imageDir;
                 settings.selector = divaSettings.selector;
                 settings.mobileWebkit = divaSettings.mobileWebkit;
