@@ -6,56 +6,55 @@ diva.js - Document Image Viewer with AJAX
 Description
 -----------
 
-Diva.js (Document Image Viewer with AJAX) is a JavaScript book image viewer, designed to work with digital libraries to present multi-page documents as a single, continuous item. Using "lazy loading" methods for loading parts of a document on demand, it presents a quick and efficient way of displaying hundreds (or even thousands) of high-resolution page images from digitized books and other documents on a single web page.
+Diva.js (Document Image Viewer with AJAX) is a JavaScript book image viewer designed to present multi-page documents at multiple resolutions.
 
-Version 2.0+ contains many new features and improvements:
+Version 3.0 contains many new features and improvements:
 
- * Support for JPEG2000 images.
- * New plug-in architecture for extending the functionality of Diva without hacking the core.
- * In-browser image manipulation for adjusting brightness, contrast, and page rotation.
- * Speed improvements thanks to fewer calls to the server.
- * A cleaner default interface.
- * Built using LESS for easier style development.
- * Lots and lots of bug-fixes (See our [commits](https://github.com/DDMAL/diva.js/commits/master) for more details).
+ * JavaScript Performance improvements
+ * Simplified setup by removing dependency on `divaserve` script
+ * Improved API
+ * A new publish/subscribe system for viewer
+ * Bug-fixes (See our [commits](https://github.com/DDMAL/diva.js/commits/master) for more details).
 
-Installation and setup
+Overview
 ----------------------
 
-## Overview
+The IIP Image Server is required by Diva to serve image data. IIP creates the image tiles and other image representations "on the fly". Instructions for building and installing IIP are available on the [project's website](http://iipimage.sourceforge.net/documentation/server/). If you want to support JPEG 2000 you will either need to download a pre-compiled version (available on the [Old Maps Online site](http://help.oldmapsonline.org/jpeg2000/installation)) or [purchase the Kakadu libraries](http://www.kakadusoftware.com) and build it yourself.
 
-Diva has three main components: The front-end that runs in the browser, the image server ([IIP Image Server](http://iipimage.sourceforge.net)) and the Diva data server, a small PHP or Python script that processes the image files for their measurements which are then sent to the front-end when a user first loads a document.
+Additionally, Diva relies on a JavaScript Object Notation (JSON) file that contains data about your document. This JSON file is automatically generated when you use the image conversion scripts that we distribute with Diva. These files can be served using a regular web server. (If you used previous versions of Diva, we had a dedicated `divaserve` script to do this. This dependency has been removed in version 3.0).
 
-## Easy Install
+Download the [latest release](https://github.com/DDMAL/diva.js/releases) of Diva. In the `build` directory you can find a pre-compiled version of Diva. The `css`, `js` and `img` directories contain the files necssary to use Diva. You will also find a number of demos and some helper scripts for processing your image files.
 
-The easiest way to get going is to download the [latest tagged release](https://github.com/DDMAL/diva.js/tags). This package contains what you will need to get started: full minified versions of the JavaScript and CSS, a few demo pages, and a basic Diva data server in both Python and PHP. (You will still have to download and install the IIP Image Server separately).
+There are two image formats supported by IIP: Pyramid TIFF and, with the inclusion of the Kakadu libraries, JPEG2000. These formats support multiple file resolutions and image tiling. We have included a few Python scripts to help you convert your images, but you can also use other image manipulation systems. In the `processing` directory you will find:
 
-### Dependencies
+ * `process.py`: Converts a directory of images to JPEG2000 or Pyramid TIFF. This script requires the Kakadu `kdu_compress` command and the ImageMagick `convert` command. If you choose Pyramid TIFF you must also have the VIPS Python library installed. This script will produce images, as well as a JSON file containing the document's measurement data.
+ * `generate_json.py`: This script creates the JSON file necessary to serve the images in Diva. Your images must already be in JPEG2000 or Pyramid TIFF format for this script to work.
 
-Diva depends on the [jQuery library](http://www.jquery.com).
+## Installing
 
-To run the basic Diva data server in Python, you will also need to install the [Tornado](http://www.tornadoweb.org) web server and the [VIPS Python module](http://www.vips.ecs.soton.ac.uk/index.php?title=Python)
+The most basic Diva viewer requires three parameters:
 
-To run the image processing scripts `process.py` and `process_jp2.py` you will also need the VIPS Python module.
+```javascript
 
-### Setting up the frontend
+$('#diva-wrapper').diva({
+    iipServerURL: "http://www.example.com/fcgi-bin/iipsrv.fcgi",
+    objectData: "http://www.example.com/beromunster.json",
+    imageDir: "/mnt/images/beromunster"
+});
+```
 
-All of the relevant Javascript, CSS, and image files can be found in the `build` directory, under the subdirectories `js`/, `css/`, and `img/`, respectively. The included HTML files in the `demo/` directory give an example of how the document viewer can be initialized, with further setup details in the readme.md file in that directory.
+ * `iipServerURL`: The URL to your IIP installation.
+ * `objectData`: The URL (absolute or relative) to your document's `.json` file
+ * `imageDir`: Either the absolute path to your images on your server, OR the path relative to your IIP installation's `FILESYSTEM_PREFIX` configuration option.
 
-### Setting up the backend
+Since IIP will be serving the images you do not need to place your images in directory accessible by your web server. In other words, if your web server uses `/srv/www` as its root directory you do not need to place your images there -- they can reside in any directory outside of this.
 
-Setting up the backend requires access to a server capable of running IIPImage, as well as PHP or Python. The PHP and Python "divaserve" scripts for sending the image information can be found under `dataservers` directory, with some usage instructions in the readme.md file in that directory. The download also ships with a very basic Tornado web application, `server.py` that illustrates how you might integrate the `divaserve.py` module in your own web application.
+## Running the Demos
 
-You will configure the address of where the Diva front-end can find both the IIP Image Server and the Diva data server when you initialize the viewer. See the `examples/` directory for more details.
 
-The PHP version of the divaserve script requires the GD PHP extension. The Python version requires the VIPS Python module, and can be optionally configured to use a Memcached installation.
 
-### Image processing
-
-You will also need to preprocess the images you wish to display, which should be in either TIFF or JPEG2000 format; the relevant scripts and processing instructions can be found under `processing/`.
-
-The `process.py` script uses the VIPS Python library to produce [Pyramid TIFF](http://www.digitalpreservation.gov/formats/fdd/fdd000237.shtml) images, while the `process_jp2.py` script uses the [Kakadu](http://www.kakadusoftware.com) `kdu_compress` utility to produce JPEG2000 images. You can find a free version of this script on their website.
-
-## Full Installation
+Building from source
+--------------------
 
 If you wish to install from source, you can check out the code from [our GitHub repository](http://github.com/DDMAL/diva.js). To fully build Diva you will need the following dependencies:
 
