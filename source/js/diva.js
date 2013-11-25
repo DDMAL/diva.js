@@ -2273,6 +2273,15 @@ window.divaPlugins = [];
             return settings.currentPageIndex;
         };
 
+        this.getNumberOfPages = function()
+        {
+            if (!checkLoaded())
+            {
+                return false;
+            }
+
+            return settings.numPages;
+        }
         this.getCurrentPageIndex = function ()
         {
             return settings.currentPageIndex;
