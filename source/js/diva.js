@@ -2329,10 +2329,22 @@ window.divaPlugins = [];
             return settings.zoomLevel;
         };
 
+        // gets the maximum zoom level for the entire document
         this.getMaxZoomLevel = function ()
         {
             return settings.maxZoomLevel;
         };
+
+        // gets the max zoom level for a given page
+        this.getMaxZoomLevelForPage = function(pageIdx)
+        {
+            if (!checkLoaded)
+            {
+                return false;
+            }
+
+            return settings.pages[pageIdx].m;
+        }
 
         this.getMinZoomLevel = function ()
         {
