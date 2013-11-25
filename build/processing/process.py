@@ -22,161 +22,174 @@
 
 import sys
 import os
-import math
-from vipsCC import VImage
+import re
+import tempfile
+import subprocess
+import shutil
+import generate_json
 from optparse import OptionParser
 
 """
 This is a python script that will process all the images in a directory and
-try to convert them into pyramidal tiff format using the vips image processing
-library. The converted images will then be moved into a subdirectory named
-"processed" within the specified directory.
+try to convert them into the JPEG 2000 image format. You must have the Kakadu
+JPEG 2000 tools installed, most importantly the kdu_compress command.
+
+You can download these tools for free at:
+http://www.kakadusoftware.com/index.php?option=com_content&task=view&id=26&Itemid=22
 
 Dependencies:
     Python (version < 3.0)
-    vips (http://www.vips.ecs.soton.ac.uk/index.php?title=VIPS)
+    Kakadu Command-line Utilities
+    ImageMagick convert utility
 
 Usage:
     Either run it with
-        python process.py [directory]
+        python process_jp2.py [directory]
     or chmod it to executable (chmod +x process.py) and run it with
-        ./process.py directory
+        ./process_jp2.py directory
 
-Options:
-    If you want to resize all the images so that they have the same number
-    of zoom levels, add the -r or --resize switch. This is not necessary,
-    but will result in all the images being closer to the same size than
-    processing without the switch.
+    You can also use this as a Python module:
+
+        import process_jp2
+        c = DivaConverter(input_directory, output_directory)
+        c.convert()
 """
 
+PATH_TO_IMAGEMAGICK = "/usr/local/bin/convert"
+PATH_TO_KDU_COMPRESS = "/usr/local/bin/kdu_compress"
+VALID_EXTENSIONS = [".jpg", ".jpeg", ".tif", ".tiff", ".JPG", ".JPEG", ".TIF", ".TIFF", '.png', '.PNG']
 
-def main(opts):
-    directory = opts['idir']
-    processed = opts['odir']
-    resize_images = opts['resz']
-    quality = opts['qual']
-    tilesize = opts['tsze']
-    compression = opts['comp']
 
-    twid = float(tilesize)
+class DivaConverter(object):
+    def __init__(self, input_directory, output_directory, data_output_directory, image_type="jpeg"):
+        self.input_directory = os.path.abspath(input_directory)
+        self.output_directory = os.path.abspath(output_directory)
+        self.data_output_directory = os.path.abspath(data_output_directory)
+        self.verbose = True
+        self.image_type = image_type
+        self.compression = "none"
 
-    # set the compression options. We only need to munge it
-    # for jpeg -- all the other options we don't need a quality
-    # declaration. If one is specified, we ignore it.
-    if compression == "jpeg":
-        compression = "{0}:{1}".format(compression, quality)
+        if self.image_type == "tiff":
+            try:
+                from vipsCC import VImage
+            except ImportError:
+                print("You have specified TIFF as the output format, but do not have the VIPS Python library installed.")
+                sys.exit(-1)
 
-    # If an output directory is supplied, use that one. Else create
-    # a folder called "processed" in the original directory.
-    # If that directory already exists, fail
-    if processed:
-        # set the output directory to the supplied directory:
-        outputdir = processed
-        if not os.path.isdir(outputdir):
-            os.mkdir(outputdir)
-    else:
-        if os.path.isdir(os.path.join(directory, 'processed')):
-            print('There already is a processed directory! Delete it and try again.')
-            sys.exit(1)
-        else:
-            outputdir = os.path.join(directory, 'processed')
-            os.mkdir(outputdir)
+    def convert(self):
+        if not os.path.isdir(self.output_directory):
+            os.mkdir(self.output_directory)
 
-    # Store the zooms of the files in a list
-    # Use another list to store filenames (same indices etc)
-    max_zoom_list = []
-    filename_list = []
-    dimensions_list = []
-    for dirpath, dirnames, filenames in os.walk(directory):
-        for filename in filenames:
-            if filename.startswith("."):
-                continue
-            max_zoom, dimensions = get_image_info(os.path.join(directory, filename), twid)
-            print("file: {0} has a maximum zoom of {1} ({2} zoom levels).".format(filename, (max_zoom - 1), max_zoom))
-            max_zoom_list.append(max_zoom)
-            filename_list.append(filename)
-            dimensions_list.append(dimensions)
+        to_process = [os.path.join(self.input_directory, f)
+                      for f in os.listdir(self.input_directory) if self.__filter_fnames(f)]
 
-    # Now get the absolute lowest and highest max zoom
-    lowest_max_zoom = min(max_zoom_list)
+        to_process.sort(key=self.__alphanum_key)
 
-    # Now figure out which files have a zoom larger than that
-    for i, filename in enumerate(filename_list):
-        fn, ext = os.path.splitext(filename)
-        input_file = os.path.join(directory, filename)
-        new_fn = fn.replace(' ', '_')  # Replaces all spaces with _ because spaces can cause problems in the long run
-        output_file = os.path.join(outputdir, "{0}.tif".format(new_fn))
+        for image in to_process:
+            tdir = None
+            name = os.path.basename(image)
+            name, ext = os.path.splitext(name)
+            tdir = tempfile.mkdtemp()
 
-        print("Processing {0}".format(input_file))
+            input_file = os.path.join(tdir, "{0}.tiff".format(name))
+            output_file = os.path.join(self.output_directory, "{0}.jp2".format(name))
+
+            if self.verbose:
+                print("Using ImageMagick to convert {0} to TIFF".format(image))
+            subprocess.call([PATH_TO_IMAGEMAGICK,
+                             "-compress", "None",
+                             image,
+                             input_file])
+
+            if self.verbose:
+                print("Converting {0} to {1}".format(name, self.image_type))
+
+            if self.image_type == "tiff":
+                self.__process_tiff(input_file, output_file)
+            else:
+                self.__process_jpeg2000(input_file, output_file)
+
+            if self.verbose:
+                print("Cleaning up")
+            shutil.rmtree(tdir)
+
+            if self.verbose:
+                print("Done converting {0}".format(image))
+
+        json_opts = {
+            'input_directory': self.output_directory,
+            'output_directory': self.data_output_directory
+        }
+        json_generator = generate_json.GenerateJson(**json_opts)
+        json_generator.generate()
+
+        return True
+
+    def __process_jpeg2000(self, input_file, output_file):
+        subprocess.call([PATH_TO_KDU_COMPRESS,
+                "-i", input_file,
+                "-o", output_file,
+                "Clevels=5",
+                "Cblk={64,64}",
+                "Cprecincts={256,256},{256,256},{128,128}",
+                "Creversible=yes",
+                "Cuse_sop=yes",
+                "Corder=LRCP",
+                "ORGgen_plt=yes",
+                "ORGtparts=R",
+                "-rate", "-,1,0.5,0.25"])
+
+    def __process_tiff(self, input_file, output_file):
+        from vipsCC import VImage
         vimage = VImage.VImage(input_file)
-
-        # If the image needs to be resized
-        if max_zoom_list[i] > lowest_max_zoom and resize_images:
-            print('{0} needs to be resized, resizing and converting now'.format(filename))
-            # Resize this image to the proper size ... prepend resized_
-            width, height = dimensions_list[i]
-            new_width, new_height = resize_image(lowest_max_zoom, width, height, twid)
-            vimage.resize_linear(new_width, new_height).vips2tiff('{0}:{1},tile:{2}x{2},pyramid'.format(output_file, compression, tilesize))
-        else:
-            vimage.vips2tiff('{0}:{1},tile:{2}x{2},pyramid'.format(output_file, compression, tilesize))
+        vimage.vips2tiff('{0}:{1},tile:256x256,pyramid'.format(output_file, self.compression))
         del vimage
 
-    # Now print out the max_zoom this document has
-    print("This document has a max zoom of: {0}".format(lowest_max_zoom))
+    def __filter_fnames(self, fname):
+        if fname.startswith('.'):
+            return False
+        if fname.startswith('_'):
+            return False
+        if fname == "Thumbs.db":
+            return False
+        if os.path.splitext(fname)[-1].lower() not in VALID_EXTENSIONS:
+            return False
+        return True
 
+    def __tryint(self, s):
+        try:
+            return int(s)
+        except:
+            return s
 
-# Calculate the maximum zoom of an image given its filepath
-def get_image_info(filepath, tilewidth):
-    # First, find the largest dimension of the image
-    image = VImage.VImage(filepath)
-    width = image.Xsize()
-    height = image.Ysize()
-    largest_dim = width if width > height else height
+    def __alphanum_key(self, s):
+        """ Turn a string into a list of string and number chunks.
+            "z23a" -> ["z", 23, "a"]
+            See:
+            http://www.codinghorror.com/blog/2007/12/sorting-for-humans-natural-sort-order.html
+        """
+        return [self.__tryint(c) for c in re.split('([0-9]+)', s)]
 
-    # Now figure out the number of zooms
-    zoom_levels = math.ceil(math.log((largest_dim + 1) / (tilewidth), 2)) + 1
-
-    del image
-    return (int(zoom_levels), (width, height))
-
-
-# Resize an image to the desired zoom
-def resize_image(desired_zoom, width, height, tilewidth):
-    # Figure out the maximum dimensions we can give it with this zoom
-    max_dim = (2 ** (desired_zoom - 1) * tilewidth) - 1
-
-    if width > height:
-        width_largest = True
-    else:
-        width_largest = False
-
-    # Now figure out the new dimensions
-    if width_largest:
-        # imagemagick will figure out the aspect ratio stuff
-        new_dimensions = max_dim, height
-    else:
-        new_dimensions = width, max_dim
-    return new_dimensions
 
 if __name__ == "__main__":
-    usage = "%prog [options] directory [output directory]"
+    usage = "%prog [options] input_directory output_directory data_output_directory"
     parser = OptionParser(usage)
-    parser.add_option("-r", "--resize", action="store_true", default=False, help="Resizes all images so that they have the same number of zoom levels", dest="resize")
-    parser.add_option("-q", "--quality", action="store", default="75", type="string", help="JPEG Image Quality level for vips (0-100, Default: 75)", dest="quality")
-    parser.add_option("-s", "--tilesize", action="store", default="256", type="string", help="Pyramid TIFF tile size (square, default 256)", dest="tilesize")
-    parser.add_option("-m", "--compression", action="store", default="jpeg", choices=["jpeg", "none", "deflate"], help="The type of compression to use. Choose jpeg (default), none, or deflate", dest="compression")
+    parser.add_option("-t", "--type", action="store", default="jpeg", help="The type of images this script should produce. Options are 'jpeg' or 'tiff'", dest="type")
     options, args = parser.parse_args()
 
-    if len(args) < 1:
-        parser.print_help()
-        parser.error("You must specify a directory to process.")
+    if len(args) < 3:
+        print("You must specify an input, output, and data output directory.")
+        print("Usage: process.py input_directory output_directory data_output_directory")
+        sys.exit(-1)
 
     opts = {
-        'idir': args[0],
-        'odir': args[1],
-        'resz': options.resize,
-        'qual': options.quality,
-        'tsze': options.tilesize,
-        'comp': options.compression
+        'input_directory': args[0],
+        'output_directory': args[1],
+        'data_output_directory': args[2],
+        'image_type': options.type
     }
-    sys.exit(main(opts))
+
+    c = DivaConverter(**opts)
+    c.convert()
+
+    sys.exit(0)
