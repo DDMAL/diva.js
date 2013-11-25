@@ -34,8 +34,8 @@ Allows you to highlight regions of a page image
 
                             box.style.width = _incorporate_zoom(regions[j].width, zoomDifference) + "px";
                             box.style.height = _incorporate_zoom(regions[j].height, zoomDifference) + "px";
-                            box.style.top = _incorporate_zoom(regions[j].uly, zoomDifference);
-                            box.style.left = _incorporate_zoom(regions[j].ulx, zoomDifference);
+                            box.style.top = _incorporate_zoom(regions[j].uly, zoomDifference) + "px";
+                            box.style.left = _incorporate_zoom(regions[j].ulx, zoomDifference) + "px";
                             box.style.backgroundColor = colour;
                             box.style.border = "1px solid #555";
                             box.style.position = "absolute";
