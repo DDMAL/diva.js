@@ -13,7 +13,6 @@ Allows you to download images served by IIPImage
             init: function(divaSettings, divaInstance)
             {
                 settings.iipServerURL = divaSettings.iipServerURL;
-                settings.imageRoot = divaSettings.imageRoot;
                 settings.imageDir = divaSettings.imageDir;
                 return true;
             },
@@ -24,7 +23,7 @@ Allows you to download images served by IIPImage
                 var pageDiv = $(this).parent().parent();
                 var filename = $(pageDiv).attr('data-filename');
                 var width = $(pageDiv).width() - 1;
-                var imdir = settings.imageRoot + "/" + settings.imageDir + "/";
+                var imdir = settings.imageDir + "/";
                 var image = settings.iipServerURL + "?FIF=" + imdir + filename + '&WID=' + width + '&CVT=JPEG';
                 window.open(image);
             }
