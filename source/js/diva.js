@@ -243,7 +243,7 @@ window.divaPlugins = [];
         // Check if a tile has been appended to the DOM
         var isTileLoaded = function (pageIndex, tileIndex)
         {
-            return document.getElementById(settings.selector.substring(1) + 'tile-' + pageIndex + '-' + tileIndex) === false;
+            return document.getElementById(settings.ID + 'tile-' + pageIndex + '-' + tileIndex) === false;
         };
 
         // Check if a page index is valid
@@ -264,7 +264,7 @@ window.divaPlugins = [];
         // Check if a page has been appended to the DOM
         var isPageLoaded = function (pageIndex)
         {
-            return $(document.getElementById(settings.selector.substring(1) + 'page-' + pageIndex)).length > 0;
+            return $(document.getElementById(settings.ID + 'page-' + pageIndex)).length > 0;
         };
 
         // Appends the page directly into the document body, or loads the relevant tiles
@@ -287,7 +287,7 @@ window.divaPlugins = [];
             // If the page has not been loaded yet, append the div to the DOM
             if (!isPageLoaded(pageIndex))
             {
-                $(document.getElementById(settings.innerSelector.substring(1))).append('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width: ' + width + 'px; height: ' + height + 'px;" class="diva-document-page" title="Page ' + (pageIndex + 1) + '" data-index="' + pageIndex  + '" data-filename="' + filename + '">' + settings.pageTools + '</div>');
+                $(document.getElementById(settings.ID + "inner")).append('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width: ' + width + 'px; height: ' + height + 'px;" class="diva-document-page" title="Page ' + (pageIndex + 1) + '" data-index="' + pageIndex  + '" data-filename="' + filename + '">' + settings.pageTools + '</div>');
 
                 // Call the callback function
                 executeCallback(settings.onPageLoad, pageIndex, filename, pageSelector);
@@ -364,7 +364,7 @@ window.divaPlugins = [];
                 }
 
                 settings.allTilesLoaded[pageIndex] = allTilesLoaded;
-                $(document.getElementById(settings.selector.substring(1) + 'page-' + pageIndex)).append(content.join(''));
+                $(document.getElementById(settings.ID + 'page-' + pageIndex)).append(content.join(''));
 
                 executeCallback(settings.onPageLoaded, pageIndex, filename, pageSelector);
 
@@ -374,7 +374,7 @@ window.divaPlugins = [];
         // Delete a page from the DOM; will occur when a page is scrolled out of the viewport
         var deletePage = function (pageIndex)
         {
-            $(document.getElementById(settings.selector.substring(1) + 'page-' + pageIndex)).empty().remove();
+            $(document.getElementById(settings.ID + 'page-' + pageIndex)).empty().remove();
         };
 
         // Check if the bottom of a page is above the top of a viewport (scrolling down)
@@ -600,12 +600,12 @@ window.divaPlugins = [];
 
             // Append this row to the DOM
             content.push('</div>');
-            $(document.getElementById(settings.innerSelector.substring(1))).append(content.join(''));
+            $(document.getElementById(settings.ID + "inner")).append(content.join(''));
         };
 
         var deleteRow = function (rowIndex)
         {
-            $(document.getElementById(settings.selector.substring(1) + 'row-' + rowIndex)).empty().remove();
+            $(document.getElementById(settings.ID + 'row-' + rowIndex)).empty().remove();
         };
 
         // Check if the bottom of a row is above the top of the viewport (scrolling down)
@@ -1199,8 +1199,7 @@ window.divaPlugins = [];
         var handleGridDoubleClick = function (event)
         {
             // Figure out the page that was clicked, scroll to that page
-            var sel = document.getElementById(settings.outerSelector.substring(1));
-            // var centerX = (event.pageX - settings.viewerXOffset) + $(settings.outerSelector).scrollLeft();
+            var sel = document.getElementById(settings.ID + "outer");
             var centerX = (event.pageX - settings.viewerXOffset) + sel.scrollLeft;
             var centerY = (event.pageY - settings.viewerYOffset) + sel.scrollTop;
             var rowIndex = Math.floor(centerY / settings.rowHeight);
@@ -1283,8 +1282,7 @@ window.divaPlugins = [];
 
         var getYOffset = function ()
         {
-            // var yScroll = $(settings.outerSelector).scrollTop();
-            var yScroll = document.getElementById(settings.outerSelector.substring(1)).scrollTop;
+            var yScroll = document.getElementById(settings.ID + "outer").scrollTop;
             var topOfPage = settings.heightAbovePages[settings.currentPageIndex];
 
             return parseInt(yScroll - topOfPage, 10);
@@ -1294,7 +1292,7 @@ window.divaPlugins = [];
         {
             var innerWidth = settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2;
             var centerX = (innerWidth - settings.panelWidth) / 2;
-            var xoff = document.getElementById(settings.outerSelector.substring(1)).scrollLeft - centerX;
+            var xoff = document.getElementById(settings.ID + "outer").scrollLeft - centerX;
             return parseInt(xoff, 10);
         };
 
@@ -1352,14 +1350,12 @@ window.divaPlugins = [];
 
             if (settings.enableAutoHeight)
             {
-                // $(settings.outerSelector).height(settings.panelHeight);
-                document.getElementById(settings.outerSelector.substring(1)).style.height = settings.panelHeight + "px";
+                document.getElementById(settings.ID + "outer").style.height = settings.panelHeight + "px";
             }
 
             if (settings.enableAutoWidth)
             {
-                // $(settings.outerSelector).width(settings.panelWidth);
-                document.getElementById(settings.outerSelector.substring(1)).style.width = settings.panelWidth + "px";
+                document.getElementById(settings.ID + "outer").style.width = settings.panelWidth + "px";
             }
         };
 
@@ -1405,8 +1401,7 @@ window.divaPlugins = [];
 
             if (newWidth !== settings.panelWidth || newHeight !== settings.panelHeight)
             {
-                // $(settings.outerSelector).height(newHeight).width(newWidth + settings.scrollbarWidth);
-                var el = document.getElementById(settings.outerSelector.substring(1));
+                var el = document.getElementById(settings.ID + "outer");
                 el.style.height = newHeight + "px";
                 el.style.width = newWidth + settings.scrollbarWidth + "px";
                 settings.panelWidth = newWidth;
@@ -1432,20 +1427,18 @@ window.divaPlugins = [];
             {
                 settings.originalWidth = newWidth;
                 $(settings.outerSelector).width(newWidth);
-                document.getElementById(settings.outerSelector.substring(1)).style.width = newWidth + "px";
+                document.getElementById(settings.ID + "outer").style.width = newWidth + "px";
 
                 settings.panelWidth = newWidth - settings.scrollbarWidth;
 
                 // Should also change the width of the container
-                // $(settings.parentSelector).width(newWidth);
                 settings.parentSelector[0].style.width = newWidth + "px";
             }
 
             if (newHeight >= settings.minHeight)
             {
                 settings.originalHeight = newHeight;
-                // $(settings.outerSelector).height(newHeight);
-                document.getElementById(settings.outerSelector.substring(1)).style.height = newHeight + "px";
+                document.getElementById(settings.ID + "outer").style.height = newHeight + "px";
 
                 settings.panelHeight = newHeight;
             }
@@ -1491,7 +1484,7 @@ window.divaPlugins = [];
             // Handle the scroll
             $(settings.outerSelector).scroll(function ()
             {
-                settings.topScrollSoFar = document.getElementById(settings.outerSelector.substring(1)).scrollTop;
+                settings.topScrollSoFar = document.getElementById(settings.ID + "outer").scrollTop;
                 var direction = settings.topScrollSoFar - settings.previousTopScroll;
 
                 if (settings.inGrid)
@@ -2440,6 +2433,12 @@ window.divaPlugins = [];
         this.getInstanceSelector = function ()
         {
             return settings.selector;
+        };
+
+        // Get the instance ID -- essentially the selector without the leading '#'.
+        this.getInstanceId = function()
+        {
+            return settings.ID;
         };
 
         // Align this diva instance with a state object (as returned by getState)
