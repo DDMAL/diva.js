@@ -2303,6 +2303,11 @@ window.divaPlugins = [];
             return this.getPageDimensionsAtZoomLevel(settings.currentPageIndex, settings.zoomLevel);
         };
 
+        this.isReady = function()
+        {
+            return settings.loaded;
+        };
+
         this.getCurrentPageIndex = function ()
         {
             return settings.currentPageIndex;
