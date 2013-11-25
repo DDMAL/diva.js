@@ -2,7 +2,7 @@ import os
 from fabric.api import local, settings
 
 # Path to the Closure Compiler .jar file
-CLOSURE_COMPILER_PATH = '/usr/local/Cellar/closure-compiler/20130411/libexec/build/compiler.jar'
+CLOSURE_COMPILER_PATH = "/usr/local/Cellar/closure-compiler/20130823/libexec/build/compiler.jar"
 
 
 def less():
@@ -46,7 +46,9 @@ def build():
     less()
     minify()
     local("cp demo/index.html build/")
+    local("cp demo/diva/* build/demo")
     local("cp demo/beromunster.json build/demo/")
+    local("cp readme.md build/")
 
 
 def test():
