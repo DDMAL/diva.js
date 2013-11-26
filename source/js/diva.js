@@ -293,7 +293,7 @@ window.divaPlugins = [];
                 executeCallback(settings.onPageLoad, pageIndex, filename, pageSelector);
                 Events.publish("PageHasLoaded", [pageIndex, filename, pageSelector]);
 
-                // @TODO: Replace this with a callback.
+                // @TODO: Replace this with a notification.
                 // Execute the callback functions for any of the enabled plugins
                 for (plugin in settings.plugins) {
                     executeCallback(settings.plugins[plugin].onPageLoad, pageIndex, filename, pageSelector);
