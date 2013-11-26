@@ -30,7 +30,13 @@ Adds a little "tools" icon next to each image
             rgbMax: 50,
             rgbMin: -50,
             throbberFadeSpeed: 200,
-            throbberTimeout: 100
+            throbberTimeout: 100,
+            buttons: [
+                'contrast',
+                'brightness',
+                'rotation',
+                'zoom'
+            ]
         };
 
         // Convert an angle from degrees to radians
@@ -548,22 +554,12 @@ Adds a little "tools" icon next to each image
                     return true;
                 }
 
-                var buttons = [
-                    'contrast',
-                    'brightness',
-                    'rotation',
-                    'zoom',
-                    'red',
-                    'green',
-                    'blue'
-                ];
-
                 var canvasButtonsList = [];
                 var buttonHTML, button, buttonTitle, i;
 
-                for (i in buttons)
+                for (i in settings.buttons)
                 {
-                    button = buttons[i];
+                    button = settings.buttons[i];
                     buttonTitle = sliders[button].title;
                     buttonHTML = '<div class="' + button + '" title="' + buttonTitle + '"></div>';
                     canvasButtonsList.push(buttonHTML);
