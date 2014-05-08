@@ -2,7 +2,7 @@ import os
 from fabric.api import local, settings
 
 # Path to the Closure Compiler .jar file
-CLOSURE_COMPILER_PATH = "/usr/local/Cellar/closure-compiler/20130823/libexec/build/compiler.jar"
+CLOSURE_COMPILER_PATH = "/usr/local/bin/closure-compiler"
 
 
 def less():
@@ -31,7 +31,7 @@ def minify():
         local("mkdir -p build/js")
 
     source_files = ['utils.js', 'diva.js', 'plugins/*']
-    local("cd source/js && java -jar " + CLOSURE_COMPILER_PATH + " --js " + " ".join(source_files) + " --js_output_file ../../build/js/diva.min.js")
+    local("cd source/js && " + CLOSURE_COMPILER_PATH + " --js " + " ".join(source_files) + " --js_output_file ../../build/js/diva.min.js")
     local("cp -R source/js/ build/js/")
 
 
