@@ -127,6 +127,11 @@ Allows you to highlight regions of a page image
                         'regions': regions, 'colour': colour
                     };
 
+                    // Since the highlighting won't take place until the viewer is scrolled
+                    // to a new page we should explicitly call the _highlight method for visible page.
+                    var currentPage = divaInstance.getCurrentPageIndex();
+                    _highlight(currentPage, null, null);
+
                     return true;
                 };
 
