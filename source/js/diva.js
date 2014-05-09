@@ -2344,7 +2344,7 @@ window.divaPlugins = [];
             }
 
             return settings.pages[pageIdx].m;
-        }
+        };
 
         this.getMinZoomLevel = function ()
         {
