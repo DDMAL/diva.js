@@ -14,6 +14,25 @@ Allows you to highlight regions of a page image
             {
                 // initialize an empty highlights object.
                 divaSettings.parentSelector.data('highlights', {});
+
+                /*
+                    When a new page is loaded, this method will be called with the
+                    page index for the page. This method looks at the 'highlights'
+                    data object set on the diva parent element, and determines whether
+                    highlights exist for that page.
+
+                    If so, this method will create and render elements for every
+                    highlighted box.
+
+                    If a page scrolls out of the viewer, the highlight elements
+                    will be removed as part of the Diva DOM pruning process, since
+                    each highlight element is a child of the the page object. When the page
+                    is scrolled back in to view, this method is called again.
+
+                    @param pageIdx       The page index of the page that is to be highlighted
+                    @param filename      The image filename of the page
+                    @param pageSelector  The 
+                */
                 function _highlight(pageIdx, filename, pageSelector)
                 {
                     var highlightObj = divaSettings.parentSelector.data('highlights');
