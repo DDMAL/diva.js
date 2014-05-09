@@ -21,8 +21,8 @@ Allows you to highlight regions of a page image
                     {
                         var pageId = divaInstance.getInstanceId() + 'page-' + pageIdx;
                         var pageObj = document.getElementById(pageId);
-                        var regions = highlightObj[pageIdx]['regions'];
-                        var colour = highlightObj[pageIdx]['colour'];
+                        var regions = highlightObj[pageIdx].regions;
+                        var colour = highlightObj[pageIdx].colour;
 
                         var maxZoom = divaInstance.getMaxZoomLevel();
                         var zoomDifference = maxZoom - divaInstance.getZoomLevel();
@@ -90,7 +90,7 @@ Allows you to highlight regions of a page image
                         }
                         delete highlightsObj[pageIdx];
                     }
-                }
+                };
 
                 /*
                     Highlights regions on multiple pages.
