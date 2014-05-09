@@ -243,7 +243,7 @@ window.divaPlugins = [];
         // Check if a tile has been appended to the DOM
         var isTileLoaded = function (pageIndex, tileIndex)
         {
-            return document.getElementById(settings.ID + 'tile-' + pageIndex + '-' + tileIndex) === false;
+            return $(settings.selector + 'tile-' + pageIndex + '-' + tileIndex).length > 0;
         };
 
         // Check if a page index is valid
@@ -2281,20 +2281,20 @@ window.divaPlugins = [];
             }
 
             return settings.numPages;
-        }
+        };
 
         // Returns the dimensions of a given page index at a given zoom level
         this.getPageDimensionsAtZoomLevel = function(pageIdx, zoomLevel)
         {
             if (!checkLoaded())
-            {
                 return false;
-            }
 
-            var zoomLevel = zoomLevel - 1; // zoom levels are 1-based, but our array is 0-based;
+            if (zoomLevel > settings.maxZoomLevel)
+                zoomLevel = settings.maxZoomLevel;
+
             var pg = settings.pages[pageIdx];
             var pgAtZoom = pg.d[parseInt(zoomLevel, 10)];
-            return {'width': pgAtZoom.w, 'height': pgAtZoom.h}
+            return {'width': pgAtZoom.w, 'height': pgAtZoom.h};
         };
 
         // Returns the dimensions of the current page at the current zoom level
@@ -2344,7 +2344,7 @@ window.divaPlugins = [];
             }
 
             return settings.pages[pageIdx].m;
-        }
+        };
 
         this.getMinZoomLevel = function ()
         {

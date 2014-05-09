@@ -127,17 +127,17 @@ class DivaConverter(object):
 
     def __process_jpeg2000(self, input_file, output_file):
         subprocess.call([PATH_TO_KDU_COMPRESS,
-                "-i", input_file,
-                "-o", output_file,
-                "Clevels=5",
-                "Cblk={64,64}",
-                "Cprecincts={256,256},{256,256},{128,128}",
-                "Creversible=yes",
-                "Cuse_sop=yes",
-                "Corder=LRCP",
-                "ORGgen_plt=yes",
-                "ORGtparts=R",
-                "-rate", "-,1,0.5,0.25"])
+                        "-i", input_file,
+                         "-o", output_file,
+                         "Clevels=5",
+                         "Cblk={64,64}",
+                         "Cprecincts={256,256},{256,256},{128,128}",
+                         "Creversible=yes",
+                         "Cuse_sop=yes",
+                         "Corder=LRCP",
+                         "ORGgen_plt=yes",
+                         "ORGtparts=R",
+                         "-rate", "-,1,0.5,0.25"])
 
     def __process_tiff(self, input_file, output_file):
         from vipsCC import VImage
