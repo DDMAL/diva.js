@@ -243,7 +243,7 @@ window.divaPlugins = [];
         // Check if a tile has been appended to the DOM
         var isTileLoaded = function (pageIndex, tileIndex)
         {
-            return document.getElementById(settings.ID + 'tile-' + pageIndex + '-' + tileIndex) === false;
+            return $(settings.selector + 'tile-' + pageIndex + '-' + tileIndex).length > 0;
         };
 
         // Check if a page index is valid
