@@ -272,9 +272,7 @@ window.divaPlugins = [];
         {
             // If the page and all of its tiles have been loaded, exit
             if (isPageLoaded(pageIndex) && settings.allTilesLoaded[pageIndex])
-            {
                 return;
-            }
 
             // Load some data for this page
             var filename = settings.pages[pageIndex].f;
@@ -305,9 +303,7 @@ window.divaPlugins = [];
             {
                 // If the page is no longer in the viewport, don't load any tiles
                 if (!isPageVisible(pageIndex))
-                {
                     return;
-                }
 
                 var imdir = settings.imageDir + "/";
                 // Load some more data and initialise some variables
@@ -408,7 +404,6 @@ window.divaPlugins = [];
                     if (isPageVisible(pageIndex))
                     {
                         loadPage(pageIndex);
-
                         settings.lastPageLoaded = pageIndex;
 
                         // Recursively call this function until there's nothing to add
@@ -503,9 +498,7 @@ window.divaPlugins = [];
                 for (i = Math.max(settings.firstPageLoaded, 0); i <= lpl; i++)
                 {
                     if (isPageVisible(i))
-                    {
                         loadPage(i);
-                    }
                 }
             }
 
@@ -513,14 +506,9 @@ window.divaPlugins = [];
 
             // If we're scrolling down
             if (direction > 0)
-            {
                 executeCallback(settings.onScrollDown, settings.topScrollSoFar);
-            }
             else if (direction < 0)
-            {
-                // We're scrolling up
-                executeCallback(settings.onScrollUp, settings.topScrollSoFar);
-            }
+                executeCallback(settings.onScrollUp, settings.topScrollSoFar);  // We're scrolling up
         };
 
         // Check if a row index is valid
@@ -548,9 +536,7 @@ window.divaPlugins = [];
         {
             // If the row has already been loaded, don't attempt to load it again
             if (isRowLoaded(rowIndex))
-            {
                 return;
-            }
 
             // Load some data for this and initialise some variables
             var heightFromTop = (settings.rowHeight * rowIndex) + settings.fixedPadding;
@@ -571,9 +557,7 @@ window.divaPlugins = [];
 
                 // If this page is the last row, don't try to load a nonexistent page
                 if (!isPageValid(pageIndex))
-                {
                     break;
-                }
 
                 // Calculate the width, height and horizontal placement of this page
                 filename = settings.pages[pageIndex].f;
@@ -897,9 +881,7 @@ window.divaPlugins = [];
                 // Otherwise, we just scroll to the page saved in settings.goDirectlyTo (must be valid)
                 // Make sure the value for settings.goDirectlyTo is valid
                 if (!isPageValid(settings.goDirectlyTo))
-                {
                     settings.goDirectlyTo = 0;
-                }
 
                 // We use the stored y/x offsets (relative to the top of the page and the center, respectively)
                 gotoPage(settings.goDirectlyTo, settings.verticalOffset, settings.horizontalOffset);
@@ -951,13 +933,9 @@ window.divaPlugins = [];
         var loadViewer = function ()
         {
             if (settings.inGrid)
-            {
                 loadGrid();
-            }
             else
-            {
                 loadDocument();
-            }
         };
 
         // Called every time we need to load document view (after zooming, fullscreen, etc)
@@ -984,9 +962,7 @@ window.divaPlugins = [];
 
             // Make sure the vertical padding is at least 40, if plugin icons are enabled
             if (settings.pageTools.length)
-            {
                 settings.verticalPadding = Math.max(40, settings.horizontalPadding);
-            }
 
             // Now reset some things that need to be changed after each zoom
             settings.totalHeight = settings.totalHeights[z] + settings.verticalPadding * (settings.numPages + 1);
@@ -1025,13 +1001,9 @@ window.divaPlugins = [];
             if (settings.oldZoomLevel >= 0)
             {
                 if (settings.oldZoomLevel < settings.zoomLevel)
-                {
                     executeCallback(settings.onZoomIn, z);
-                }
                 else
-                {
                     executeCallback(settings.onZoomOut, z);
-                }
 
                 executeCallback(settings.onZoom, z);
             }
@@ -1045,9 +1017,7 @@ window.divaPlugins = [];
 
             // For the iPad - wait until this request finishes before accepting others
             if (settings.scaleWait)
-            {
                 settings.scaleWait = false;
-            }
 
             var fileName = settings.pages[settings.currentPageIndex].f;
             executeCallback(settings.onDocumentLoaded, settings.lastPageLoaded, fileName);
@@ -1219,17 +1189,11 @@ window.divaPlugins = [];
 
             // First figure out the new zoom level:
             if (event.scale > 1 && newZoomLevel < settings.maxZoomLevel)
-            {
                 newZoomLevel++;
-            }
             else if (event.scale < 1 && newZoomLevel > settings.minZoomLevel)
-            {
                 newZoomLevel--;
-            }
             else
-            {
                 return;
-            }
 
             // Set it to true so we have to wait for this one to finish
             settings.scaleWait = true;
@@ -1245,16 +1209,13 @@ window.divaPlugins = [];
 
             // If the zoom level provided is invalid, return false
             if (newZoomLevel !== newValue)
-            {
                 return false;
-            }
 
             settings.oldZoomLevel = settings.zoomLevel;
             settings.zoomLevel = newZoomLevel;
 
             // Update the slider
             Events.publish("ZoomLevelDidChange", null);
-
             loadDocument();
 
             return true;
@@ -1267,9 +1228,7 @@ window.divaPlugins = [];
 
             // If the value provided is invalid, return false
             if (newPagesPerRow !== newValue)
-            {
                 return false;
-            }
 
             settings.oldPagesPerRow = settings.zoomLevel;
             settings.pagesPerRow = newPagesPerRow;
@@ -1284,7 +1243,6 @@ window.divaPlugins = [];
         {
             var yScroll = document.getElementById(settings.ID + "outer").scrollTop;
             var topOfPage = settings.heightAbovePages[settings.currentPageIndex];
-
             return parseInt(yScroll - topOfPage, 10);
         };
 
@@ -1323,9 +1281,7 @@ window.divaPlugins = [];
             for (param in hashParams)
             {
                 if (hashParams[param] !== false)
-                {
                     hashStringBuilder.push(param + settings.hashParamSuffix + '=' + hashParams[param]);
-                }
             }
 
             return hashStringBuilder.join('&');
@@ -1349,14 +1305,10 @@ window.divaPlugins = [];
             settings.parentSelector.style.width = settings.panelWidth + "px";
 
             if (settings.enableAutoHeight)
-            {
                 document.getElementById(settings.ID + "outer").style.height = settings.panelHeight + "px";
-            }
 
             if (settings.enableAutoWidth)
-            {
                 document.getElementById(settings.ID + "outer").style.width = settings.panelWidth + "px";
-            }
         };
 
         // Will return true if something has changed, false otherwise
@@ -1376,25 +1328,17 @@ window.divaPlugins = [];
             if (settings.enableAutoHeight)
             {
                 if (newHeight + outerOffset + 16 > window.innerHeight)
-                {
                     newHeight = desiredHeight;
-                }
                 else if (newHeight <= settings.originalHeight)
-                {
                     newHeight = Math.min(desiredHeight, settings.originalHeight);
-                }
             }
 
             if (settings.enableAutoWidth)
             {
                 if (newWidth + 32 > window.innerWidth)
-                {
                     newWidth = desiredWidth;
-                }
                 else if (newWidth <= settings.originalWidth)
-                {
                     newWidth = Math.min(desiredWidth, settings.originalWidth);
-                }
 
                 settings.parentSelector[0].style.width = newWidth + settings.scrollbarWidth;
             }
@@ -1578,7 +1522,6 @@ window.divaPlugins = [];
                         if (settings.inGrid)
                         {
                             settings.inGrid = false;
-
                             handleViewChange();
                         }
                         else
@@ -1688,29 +1631,21 @@ window.divaPlugins = [];
                 // Make sure the container element does not have a static position
                 // (Needed for the fullscreen icon to be contained)
                 if ($(settings.parentSelector).css('position') === 'static')
-                {
                     $(settings.parentSelector).addClass('diva-relative-position');
-                }
 
                 otherToolbarClass = ' diva-fullscreen-space';
 
                 // If enableAutoTitle is set to TRUE, move it down
                 if (settings.enableAutoTitle)
-                {
                     $(settings.selector + 'fullscreen').addClass('diva-contained');
-                }
             }
 
             var toolbarHTML = '<div id="' + settings.ID + 'tools-left" class="diva-tools-left' + otherToolbarClass + '">' + zoomSliderHTML + gridSliderHTML + zoomSliderLabelHTML + gridSliderLabelHTML + '</div><div id="' + settings.ID + 'tools-right" class="diva-tools-right">' + linkIconHTML + gridIconHTML + '<div class="diva-page-nav">' + gotoPageHTML + pageNumberHTML + '</div></div>';
 
             if (settings.toolbarParentSelector)
-            {
                 $(settings.toolbarParentSelector).prepend('<div id="' + settings.ID + 'tools" class="diva-tools">' + toolbarHTML + '</div>');
-            }
             else
-            {
                 $(settings.parentSelector).prepend('<div id="' + settings.ID + 'tools" class="diva-tools">' + toolbarHTML + '</div>');
-            }
 
             // Create the zoom slider
             $(settings.selector + 'zoom-slider').slider({
@@ -1736,9 +1671,7 @@ window.divaPlugins = [];
                 change: function (event, ui)
                 {
                     if (ui.value !== settings.zoomLevel)
-                    {
                         handleZoom(ui.value);
-                    }
                 }
             });
 
@@ -1756,9 +1689,7 @@ window.divaPlugins = [];
                 change: function (event, ui)
                 {
                     if (ui.value !== settings.pagesPerRow)
-                    {
                         handleGrid(ui.value);
-                    }
                 }
             });
 
@@ -1781,13 +1712,9 @@ window.divaPlugins = [];
                 else
                 {
                     if (settings.inGrid)
-                    {
                         gotoRow(pageIndex);
-                    }
                     else
-                    {
                         gotoPage(pageIndex, 0, 0);
-                    }
                 }
 
                 // Prevent the default action of reloading the page
@@ -1824,9 +1751,7 @@ window.divaPlugins = [];
                     var targetID = event.target.id;
 
                     if (targetID !== settings.ID + 'link-popup' && targetID !== settings.ID + 'link-popup-input')
-                    {
                         $(settings.selector + 'link-popup').remove();
-                    }
                 });
 
                 // Also delete it upon scroll and page up/down key events
@@ -1838,6 +1763,7 @@ window.divaPlugins = [];
                 {
                     $(this).focus().select();
                 });
+
                 return false;
             });
 
@@ -1919,6 +1845,7 @@ window.divaPlugins = [];
                 switchView: switchView,
                 switchMode: switchMode
             };
+
             return toolbar;
         };
 
@@ -1940,9 +1867,7 @@ window.divaPlugins = [];
 
                         // If int returns false, consider the plugin disabled
                         if (!enablePlugin)
-                        {
                             return;
-                        }
 
                         // If the title text is undefined, use the name of the plugin
                         var titleText = plugin.titleText || pluginProperName + " plugin";
@@ -1966,9 +1891,7 @@ window.divaPlugins = [];
 
                 // Save the page tools bar so it can be added for each page
                 if (pageTools.length)
-                {
                     settings.pageTools = '<div class="diva-page-tools">' + pageTools.join('') + '</div>';
-                }
             }
         };
 
@@ -2035,9 +1958,7 @@ window.divaPlugins = [];
                         var iParamPage = getPageIndex(iParam);
 
                         if (isPageValid(iParamPage))
-                        {
                             settings.goDirectlyTo = iParamPage;
-                        }
                     }
                     else
                     {
@@ -2046,9 +1967,7 @@ window.divaPlugins = [];
                         var pParam = parseInt($.getHashParam('p' + settings.hashParamSuffix), 10) - 1;
 
                         if (isPageValid(pParam))
-                        {
                             settings.goDirectlyTo = pParam;
-                        }
                     }
 
                     // Execute the setup hook for each plugin (if defined)
@@ -2093,13 +2012,9 @@ window.divaPlugins = [];
                     settings.viewerYOffset = viewerOffset.top;
 
                     if (settings.inFullscreen)
-                    {
                         handleModeChange(false);
-                    }
                     else
-                    {
                         loadViewer();
-                    }
 
                     // Execute the callback
                     executeCallback(settings.onReady, settings);
@@ -2215,9 +2130,7 @@ window.divaPlugins = [];
 
             // Just call resize, it'll take care of bounds-checking etc
             if (desiredHeight > 0 || desiredWidth > 0)
-            {
                 resizeViewer(desiredWidth, desiredHeight);
-            }
 
             // Do the initial AJAX request and viewer loading
             setupViewer();
@@ -2273,7 +2186,7 @@ window.divaPlugins = [];
             return settings.currentPageIndex;
         };
 
-        this.getNumberOfPages = function()
+        this.getNumberOfPages = function ()
         {
             if (!checkLoaded())
             {
@@ -2284,7 +2197,7 @@ window.divaPlugins = [];
         };
 
         // Returns the dimensions of a given page index at a given zoom level
-        this.getPageDimensionsAtZoomLevel = function(pageIdx, zoomLevel)
+        this.getPageDimensionsAtZoomLevel = function (pageIdx, zoomLevel)
         {
             if (!checkLoaded())
                 return false;
@@ -2298,12 +2211,12 @@ window.divaPlugins = [];
         };
 
         // Returns the dimensions of the current page at the current zoom level
-        this.getCurrentPageDimensionsAtCurrentZoomLevel = function()
+        this.getCurrentPageDimensionsAtCurrentZoomLevel = function ()
         {
             return this.getPageDimensionsAtZoomLevel(settings.currentPageIndex, settings.zoomLevel);
         };
 
-        this.isReady = function()
+        this.isReady = function ()
         {
             return settings.loaded;
         };
@@ -2336,7 +2249,7 @@ window.divaPlugins = [];
         };
 
         // gets the max zoom level for a given page
-        this.getMaxZoomLevelForPage = function(pageIdx)
+        this.getMaxZoomLevelForPage = function (pageIdx)
         {
             if (!checkLoaded)
             {
@@ -2496,12 +2409,12 @@ window.divaPlugins = [];
         };
 
         // Get the instance ID -- essentially the selector without the leading '#'.
-        this.getInstanceId = function()
+        this.getInstanceId = function ()
         {
             return settings.ID;
         };
 
-        this.getSettings = function()
+        this.getSettings = function ()
         {
             return settings;
         };
@@ -2518,28 +2431,20 @@ window.divaPlugins = [];
             pageIndex = getPageIndex(state.i);
 
             if (isPageValid(pageIndex))
-            {
                 settings.goDirectlyTo = pageIndex;
-            }
             else if (isPageValid(state.p))
-            {
                 settings.goDirectlyTo = state.p;
-            }
 
             settings.horizontalOffset = parseInt(state.x, 10);
             settings.verticalOffset = parseInt(state.y, 10);
 
             // Only change the zoom if state.z is valid
             if (state.z >= settings.minZoomLevel && state.z <= settings.maxZoomLevel)
-            {
                 settings.zoomLevel = state.z;
-            }
 
             // Only change the pages per row setting if state.n is valid
             if (state.n >= settings.minPagesPerRow && state.n <= settings.maxPagesPerRow)
-            {
                 settings.pagesPerRow = state.n;
-            }
 
             if (settings.inFullscreen !== state.f)
             {
@@ -2598,9 +2503,7 @@ window.divaPlugins = [];
 
             // Return early if this element already has a plugin instance
             if (element.data('diva'))
-            {
                 return;
-            }
 
             // Save the reference to the container element
             options.parentSelector = element;
