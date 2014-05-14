@@ -84,7 +84,7 @@ If you wish to install from source, you can check out the code from [our GitHub 
 
  * the Python Fabric module for running the build scripts
  * the [LESS stylesheet compiler](http://lesscss.org)
- * the [Closure](https://developers.google.com/closure/) JavaScript compiler
+ * the [Closure](https://developers.google.com/closure/) JavaScript compiler (available on Brew)
 
 All other dependencies are listed above.
 
