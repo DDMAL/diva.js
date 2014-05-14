@@ -36,12 +36,14 @@ Allows you to highlight regions of a page image
                 function _highlight(pageIdx, filename, pageSelector)
                 {
                     var highlightObj = divaSettings.parentSelector.data('highlights');
+
                     if (highlightObj.hasOwnProperty(pageIdx))
                     {
                         var pageId = divaInstance.getInstanceId() + 'page-' + pageIdx;
                         var pageObj = document.getElementById(pageId);
                         var regions = highlightObj[pageIdx].regions;
                         var colour = highlightObj[pageIdx].colour;
+                        var divClass = highlightObj[pageIdx].divClass;
 
                         var maxZoom = divaInstance.getMaxZoomLevel();
                         var zoomDifference = maxZoom - divaInstance.getZoomLevel();
@@ -58,12 +60,18 @@ Allows you to highlight regions of a page image
                             box.style.backgroundColor = colour;
                             box.style.border = "1px solid #555";
                             box.style.position = "absolute";
-                            box.style.zIndex = 1000;
-                            box.className = "search-result";
+                            box.style.zIndex = 100;
+                            box.className = divClass;
+
+                            if (typeof regions[j].divID !== 'undefined')
+                            {
+                                box.id = regions[j].divID;
+                            }
 
                             pageObj.appendChild(box);
                         }
                     }
+                    Events.publish("HighlightCompleted");
                 }
 
                 // subscribe the highlight method to the page change notification
@@ -127,29 +135,43 @@ Allows you to highlight regions of a page image
                 };
 
                 /*
-                    Highlights regions on multiple pages.
-                    @param pageIdxs An array of page index numbers
-                    @param regions  An array of regions. Use {'width':i, 'height':i, 'ulx':i, 'uly': i} for each region.
+                    Highlights regions on a page.
+                    @param pageIdx  A page index number
+                    @param regions  An array of regions. Use {'width':i, 'height':i, 'ulx':i, 'uly': i, 'divID': str} for each region.
                     @param colour   (optional) A colour for the highlighting, specified in RGBA CSS format
+                    @param divClass (optional) A class to identify a group of highlighted regions on a specific page by 
+                    @param callback (optional) The name of a function to call when the viewport is changed/highlights are refreshed
                 */
-                divaInstance.highlightOnPage = function(pageIdx, regions, colour)
+                divaInstance.highlightOnPage = function(pageIdx, regions, colour, divClass, callback)
                 {
                     if (typeof colour === 'undefined')
                     {
                         colour = 'rgba(255, 0, 0, 0.5)';
                     }
 
+                    if (typeof divClass === 'undefined')
+                    {
+                        divClass = 'search-result';
+                    } /*else 
+                    {
+                        divClass = 'search-result ' + divClass;
+                    }*/
+
                     var maxZoom = divaInstance.getMaxZoomLevel();
                     var highlightsObj = divaSettings.parentSelector.data('highlights');
 
                     highlightsObj[pageIdx] = {
-                        'regions': regions, 'colour': colour
+                        'regions': regions, 'colour': colour, 'divClass': divClass
                     };
 
                     // Since the highlighting won't take place until the viewer is scrolled
                     // to a new page we should explicitly call the _highlight method for visible page.
                     var currentPage = divaInstance.getCurrentPageIndex();
                     _highlight(currentPage, null, null);
+
+                    if (typeof callback !== 'undefined'){
+                        Events.subscribe("HighlightCompleted", callback);
+                    }
 
                     return true;
                 };
