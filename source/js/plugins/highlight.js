@@ -14,6 +14,25 @@ Allows you to highlight regions of a page image
             {
                 // initialize an empty highlights object.
                 divaSettings.parentSelector.data('highlights', {});
+
+                /*
+                    When a new page is loaded, this method will be called with the
+                    page index for the page. This method looks at the 'highlights'
+                    data object set on the diva parent element, and determines whether
+                    highlights exist for that page.
+
+                    If so, this method will create and render elements for every
+                    highlighted box.
+
+                    If a page scrolls out of the viewer, the highlight elements
+                    will be removed as part of the Diva DOM pruning process, since
+                    each highlight element is a child of the the page object. When the page
+                    is scrolled back in to view, this method is called again.
+
+                    @param pageIdx       The page index of the page that is to be highlighted
+                    @param filename      The image filename of the page
+                    @param pageSelector  The 
+                */
                 function _highlight(pageIdx, filename, pageSelector)
                 {
                     var highlightObj = divaSettings.parentSelector.data('highlights');
@@ -21,8 +40,8 @@ Allows you to highlight regions of a page image
                     {
                         var pageId = divaInstance.getInstanceId() + 'page-' + pageIdx;
                         var pageObj = document.getElementById(pageId);
-                        var regions = highlightObj[pageIdx]['regions'];
-                        var colour = highlightObj[pageIdx]['colour'];
+                        var regions = highlightObj[pageIdx].regions;
+                        var colour = highlightObj[pageIdx].colour;
 
                         var maxZoom = divaInstance.getMaxZoomLevel();
                         var zoomDifference = maxZoom - divaInstance.getZoomLevel();
@@ -90,7 +109,7 @@ Allows you to highlight regions of a page image
                         }
                         delete highlightsObj[pageIdx];
                     }
-                }
+                };
 
                 /*
                     Highlights regions on multiple pages.
@@ -126,6 +145,11 @@ Allows you to highlight regions of a page image
                     highlightsObj[pageIdx] = {
                         'regions': regions, 'colour': colour
                     };
+
+                    // Since the highlighting won't take place until the viewer is scrolled
+                    // to a new page we should explicitly call the _highlight method for visible page.
+                    var currentPage = divaInstance.getCurrentPageIndex();
+                    _highlight(currentPage, null, null);
 
                     return true;
                 };

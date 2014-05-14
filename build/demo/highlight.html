@@ -31,6 +31,10 @@
                     $("#highlight").on('click', function(event)
                     {
                         var dv = $('#diva-wrapper').data('diva');
+
+                        // remove any previous highlights
+                        dv.resetHighlights();
+
                         var j = dv.getNumberOfPages();
                         /*  Regions are highlighted according to their position on the original
                             page image, which is typically at the maximum zoom level. To highlight
