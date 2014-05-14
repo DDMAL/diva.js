@@ -92,10 +92,10 @@ class DivaConverter(object):
             tdir = tempfile.mkdtemp()
 
             input_file = os.path.join(tdir, "{0}.tiff".format(name))
-            output_file = os.path.join(self.output_directory, "{0}.jp2".format(name))
+            output_file = os.path.join(self.output_directory, "{0}.{1}".format(name, self.__image_type))
 
             if self.verbose:
-                print("Using ImageMagick to convert {0} to TIFF".format(image))
+                print("Using ImageMagick to pre-convert {0} to TIFF".format(image))
             subprocess.call([PATH_TO_IMAGEMAGICK,
                              "-compress", "None",
                              image,
