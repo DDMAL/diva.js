@@ -57,7 +57,7 @@ Allows you to highlight regions of a page image
                             box.style.height = _incorporate_zoom(regions[j].height, zoomDifference) + "px";
                             box.style.top = _incorporate_zoom(regions[j].uly, zoomDifference) + "px";
                             box.style.left = _incorporate_zoom(regions[j].ulx, zoomDifference) + "px";
-                            box.style.backgroundColor = colour;
+                            box.style.background = colour;
                             box.style.border = "1px solid #555";
                             box.style.position = "absolute";
                             box.style.zIndex = 100;
@@ -125,12 +125,12 @@ Allows you to highlight regions of a page image
                     @param regions  An array of regions
                     @param colour   (optional) A colour for the highlighting, specified in RGBA CSS format
                 */
-                divaInstance.highlightOnPages = function(pageIdxs, regions, colour)
+                divaInstance.highlightOnPages = function(pageIdxs, regions, colour, divClass, callback)
                 {
                     var j = pageIdxs.length;
-                    while(j--)
+                    while (j--)
                     {
-                        divaInstance.highlightOnPage(pageIdxs[j], regions, colour);
+                        divaInstance.highlightOnPage(pageIdxs[j], regions, colour, divClass, callback);
                     }
                 };
 
@@ -146,7 +146,7 @@ Allows you to highlight regions of a page image
                 {
                     if (typeof colour === 'undefined')
                     {
-                        colour = 'rgba(255, 0, 0, 0.5)';
+                        colour = 'rgba(255, 0, 0, 0.2)';
                     }
 
                     if (typeof divClass === 'undefined')
@@ -169,7 +169,8 @@ Allows you to highlight regions of a page image
                     var currentPage = divaInstance.getCurrentPageIndex();
                     _highlight(currentPage, null, null);
 
-                    if (typeof callback !== 'undefined'){
+                    if (typeof callback !== 'undefined')
+                    {
                         Events.subscribe("HighlightCompleted", callback);
                     }
 
