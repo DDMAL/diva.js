@@ -76,6 +76,7 @@ window.divaPlugins = [];
             onZoomOut: null,            // Callback function for zooming out only
             pageLoadTimeout: 200,       // Number of milliseconds to wait before loading pages
             pagesPerRow: 5,             // The default number of pages per row in grid view
+            percentOfWindowWidth: 1,    // Percent of the full window that the diva-wrapper object will take up
             rowLoadTimeout: 50,         // Number of milliseconds to wait before loading a row
             throbberTimeout: 100,       // Number of milliseconds to wait before showing throbber
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
@@ -1320,7 +1321,7 @@ window.divaPlugins = [];
             var outerOffset = $(settings.outerSelector).offset().top;
 
             var windowHeight = window.innerHeight || document.documentElement.clientHeight;
-            var windowWidth = window.innerWidth || document.documentElement.clientWidth;
+            var windowWidth = settings.percentOfWindowWidth*(window.innerWidth || document.documentElement.clientWidth);
             // 2 or 1 pixels for the border
             var desiredWidth = windowWidth - settings.viewerWidthPadding - settings.scrollbarWidth - 2;
             var desiredHeight = windowHeight - outerOffset - settings.viewerHeightPadding - 1;
