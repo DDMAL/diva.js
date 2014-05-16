@@ -152,7 +152,8 @@ Allows you to highlight regions of a page image
                     if (typeof divClass === 'undefined')
                     {
                         divClass = 'search-result';
-                    } else 
+                    }
+                    else 
                     {
                         divClass = 'search-result ' + divClass;
                     }
