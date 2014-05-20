@@ -189,7 +189,7 @@ asyncTest("setState()", function () {
             equal(settings.zoomLevel, 3, "Zoom level should be 3");
 
             // Have to leave fullscreen to test dimension-related things
-            this.leaveFullscreen();
+            this.leaveFullscreenMode();
             equal($(settings.outerSelector).height(), 400, "Height of viewer should be 400");
             equal($(settings.outerSelector).width(), 800, "Width of viewer should be 800");
 
