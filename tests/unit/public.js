@@ -70,20 +70,20 @@ asyncTest("inViewport()", function () {
     });
 });
 
-asyncTest("toggleMode(), enterFullscreen(), leaveFullscreen()", function () {
+asyncTest("toggleFullscreenMode(), enterFullscreen(), leaveFullscreen()", function () {
     $.tempDiva({
         onReady: function (settings) {
             ok(!settings.inFullscreen, "Should not be in fullscreen initially");
-            this.toggleMode();
+            this.toggleFullscreenMode();
             ok(settings.inFullscreen, "Should now be in fullscreen");
-            ok(!this.enterFullscreen(), "Should not be possible to enter fullscreen");
+            ok(!this.enterFullscreenMode(), "Should not be possible to enter fullscreen");
             ok(settings.inFullscreen, "Should still be in fullscreen");
-            ok(this.leaveFullscreen(), "Should be possible to exit fullscreen");
+            ok(this.leaveFullscreenMode(), "Should be possible to exit fullscreen");
             ok(!settings.inFullscreen, "No longer in fullscreen");
-            ok(!this.leaveFullscreen(), "Should not be possible to exit fullscreen");
+            ok(!this.leaveFullscreenMode(), "Should not be possible to exit fullscreen");
             ok(!settings.inFullscreen, "Still not in fullscreen");
-            ok(this.enterFullscreen(), "Should be possible to enter fullscreen");
-            this.toggleMode();
+            ok(this.enterFullscreenMode(), "Should be possible to enter fullscreen");
+            this.toggleFullscreenMode();
             ok(!settings.inFullscreen, "Should now be out of fullscreen");
             start();
         }
