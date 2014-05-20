@@ -91,20 +91,20 @@ asyncTest("toggleFullscreenMode(), enterFullscreen(), leaveFullscreen()", functi
 });
 
 
-asyncTest("toggleView(), enterGrid(), leaveGrid()", function () {
+asyncTest("toggleGridView(), enterGridView(), leaveGridView()", function () {
     $.tempDiva({
         onReady: function (settings) {
             ok(!settings.inGrid, "Should not be in grid initially");
-            this.toggleView();
+            this.toggleGridView();
             ok(settings.inGrid, "Should now be in grid");
-            ok(!this.enterGrid(), "Should not be possible to enter grid");
+            ok(!this.enterGridView(), "Should not be possible to enter grid");
             ok(settings.inGrid, "Should still be in grid");
-            ok(this.leaveGrid(), "Should be possible to exit grid");
+            ok(this.leaveGridView(), "Should be possible to exit grid");
             ok(!settings.inGrid, "No longer in grid");
-            ok(!this.leaveGrid(), "Should not be possible to exit grid");
+            ok(!this.leaveGridView(), "Should not be possible to exit grid");
             ok(!settings.inGrid, "Still not in grid");
-            ok(this.enterGrid(), "Should be possible to enter grid");
-            this.toggleView();
+            ok(this.enterGridView(), "Should be possible to enter grid");
+            this.toggleGridView();
             ok(!settings.inGrid, "Should now be out of grid");
             start();
         }
