@@ -13,15 +13,15 @@ asyncTest("getItemTitle()", function () {
     });
 });
 
-asyncTest("gotoPage() and getCurrentPage()", function () {
+asyncTest("gotoPageByNumber() and getCurrentPage()", function () {
     $.tempDiva({
         onReady: function (settings) {
             equal(this.getCurrentPage(), 0, "Initial page should be 0");
-            this.gotoPage(500); // Go to page number 500 (index: 499)
+            this.gotoPageByNumber(500); // Go to page number 500 (index: 499)
             equal(this.getCurrentPage(), 499, "The page index should now be 499");
 
             // Reset it to the first page
-            this.gotoPage(0);
+            this.gotoPageByNumber(0);
             start();
         }
     });
@@ -70,20 +70,20 @@ asyncTest("inViewport()", function () {
     });
 });
 
-asyncTest("toggleMode(), enterFullscreen(), leaveFullscreen()", function () {
+asyncTest("toggleFullscreenMode(), enterFullscreen(), leaveFullscreen()", function () {
     $.tempDiva({
         onReady: function (settings) {
             ok(!settings.inFullscreen, "Should not be in fullscreen initially");
-            this.toggleMode();
+            this.toggleFullscreenMode();
             ok(settings.inFullscreen, "Should now be in fullscreen");
-            ok(!this.enterFullscreen(), "Should not be possible to enter fullscreen");
+            ok(!this.enterFullscreenMode(), "Should not be possible to enter fullscreen");
             ok(settings.inFullscreen, "Should still be in fullscreen");
-            ok(this.leaveFullscreen(), "Should be possible to exit fullscreen");
+            ok(this.leaveFullscreenMode(), "Should be possible to exit fullscreen");
             ok(!settings.inFullscreen, "No longer in fullscreen");
-            ok(!this.leaveFullscreen(), "Should not be possible to exit fullscreen");
+            ok(!this.leaveFullscreenMode(), "Should not be possible to exit fullscreen");
             ok(!settings.inFullscreen, "Still not in fullscreen");
-            ok(this.enterFullscreen(), "Should be possible to enter fullscreen");
-            this.toggleMode();
+            ok(this.enterFullscreenMode(), "Should be possible to enter fullscreen");
+            this.toggleFullscreenMode();
             ok(!settings.inFullscreen, "Should now be out of fullscreen");
             start();
         }
@@ -91,20 +91,20 @@ asyncTest("toggleMode(), enterFullscreen(), leaveFullscreen()", function () {
 });
 
 
-asyncTest("toggleView(), enterGrid(), leaveGrid()", function () {
+asyncTest("toggleGridView(), enterGridView(), leaveGridView()", function () {
     $.tempDiva({
         onReady: function (settings) {
             ok(!settings.inGrid, "Should not be in grid initially");
-            this.toggleView();
+            this.toggleGridView();
             ok(settings.inGrid, "Should now be in grid");
-            ok(!this.enterGrid(), "Should not be possible to enter grid");
+            ok(!this.enterGridView(), "Should not be possible to enter grid");
             ok(settings.inGrid, "Should still be in grid");
-            ok(this.leaveGrid(), "Should be possible to exit grid");
+            ok(this.leaveGridView(), "Should be possible to exit grid");
             ok(!settings.inGrid, "No longer in grid");
-            ok(!this.leaveGrid(), "Should not be possible to exit grid");
+            ok(!this.leaveGridView(), "Should not be possible to exit grid");
             ok(!settings.inGrid, "Still not in grid");
-            ok(this.enterGrid(), "Should be possible to enter grid");
-            this.toggleView();
+            ok(this.enterGridView(), "Should be possible to enter grid");
+            this.toggleGridView();
             ok(!settings.inGrid, "Should now be out of grid");
             start();
         }
@@ -189,7 +189,7 @@ asyncTest("setState()", function () {
             equal(settings.zoomLevel, 3, "Zoom level should be 3");
 
             // Have to leave fullscreen to test dimension-related things
-            this.leaveFullscreen();
+            this.leaveFullscreenMode();
             equal($(settings.outerSelector).height(), 400, "Height of viewer should be 400");
             equal($(settings.outerSelector).width(), 800, "Width of viewer should be 800");
 

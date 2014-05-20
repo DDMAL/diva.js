@@ -203,7 +203,7 @@ asyncTest("fixedHeightGrid false", function () {
     $.tempDiva({
         fixedHeightGrid: false,
         onReady: function (settings) {
-            this.enterGrid();
+            this.enterGridView();
             // Check all the widths are the same, but that the heights are different
             var pages = $('.diva-page');
             var firstPage = $(pages[0]);
@@ -226,7 +226,7 @@ asyncTest("fixedHeightGrid true", function () {
     $.tempDiva({
         fixedHeightGrid: true,
         onReady: function (settings) {
-            this.enterGrid();
+            this.enterGridView();
 
             // Check that all the widths are the same, bu that the heights are different
             var pages = $('.diva-page');
@@ -321,7 +321,7 @@ asyncTest("valid max/minPagesPerRow, valid pagesPerRow", function () {
         pagesPerRow: 5,
         onReady: function (settings) {
             // Have to enter the grid first, otherwise pagesPerRow isn't changed
-            this.enterGrid();
+            this.enterGridView();
 
             equal(settings.minPagesPerRow, 3, "minPagesPerRow should be 3");
             equal(settings.maxPagesPerRow, 5, "maxPagesPerRow should be 5");
@@ -337,7 +337,7 @@ asyncTest("invalid max/minPagesPerRow, valid pagesPerRow", function () {
         maxPagesPerRow: 0,
         pagesPerRow: 4,
         onReady: function (settings) {
-            this.enterGrid();
+            this.enterGridView();
 
             equal(settings.minPagesPerRow, 2, "minPagesPerRow is invalid, set to 2");
             equal(settings.maxPagesPerRow, 2, "maxPagesPerRow should be set to min");
