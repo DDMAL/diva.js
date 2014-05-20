@@ -70,7 +70,7 @@ asyncTest("onJump", function () {
             callbackExecuted = false;
 
             ok(!callbackExecuted);
-            this.gotoPage(100);
+            this.gotoPageByNumber(100);
             ok(callbackExecuted);
 
             equal(pageIndexParam, 99);
