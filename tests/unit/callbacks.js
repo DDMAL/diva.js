@@ -42,12 +42,12 @@ asyncTest("onViewToggle", function () {
         onReady: function (settings) {
             ok(!callbackExecuted);
             ok(!inGrid);
-            this.enterGrid();
+            this.enterGridView();
             ok(callbackExecuted);
             ok(inGrid);
 
             callbackExecuted = false;
-            this.leaveGrid();
+            this.leaveGridView();
             ok(!inGrid);
             ok(callbackExecuted);
 
