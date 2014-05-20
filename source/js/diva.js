@@ -76,14 +76,13 @@ window.divaPlugins = [];
             onZoomOut: null,            // Callback function for zooming out only
             pageLoadTimeout: 200,       // Number of milliseconds to wait before loading pages
             pagesPerRow: 5,             // The default number of pages per row in grid view
-            percentOfWindowWidth: 1,    // Percent of the full window that the diva-wrapper object will take up
             rowLoadTimeout: 50,         // Number of milliseconds to wait before loading a row
             throbberTimeout: 100,       // Number of milliseconds to wait before showing throbber
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
             toolbarParentSelector: null, // The toolbar parent selector. If null, it defaults to the primary diva element. Must be a jQuery selector (leading '#')
             viewerHeightPadding: 15,    // Vertical padding when resizing the viewer, if enableAutoHeight is set
-            viewerWidthPadding: 30,     // Horizontal padding when resizing the viewer, if enableAutoHeight is set
+            viewerWidthPadding: 30,     // Horizontal padding when resizing the viewer, if enableAutoWidth is set
             viewportMargin: 200,        // Pretend tiles +/- 200px away from viewport are in
             zoomLevel: 2                // The initial zoom level (used to store the current zoom level)
         };
@@ -135,6 +134,8 @@ window.divaPlugins = [];
             panelWidth: 0,              // Width of the document viewer pane
             plugins: [],                // Filled with the enabled plugins from window.divaPlugins
             previousTopScroll: 0,       // Used to determine vertical scroll direction
+            previousWindowHeight: 0,
+            previousWindowWidth: 0,
             preZoomOffset: null,        // Holds the offset prior to zooming when double-clicking
             realMaxZoom: -1,            // To hold the true max zoom level of the document (needed for calculations)
             resizeTimer: -1,            // Holds the ID of the timeout used when resizing the window (for clearing)
@@ -1297,8 +1298,7 @@ window.divaPlugins = [];
         // Called in init and when the orientation changes
         var adjustMobileWebkitDims = function ()
         {
-            var outerOffset = $(settings.outerSelector).offset().top;
-            settings.panelHeight = window.innerHeight - outerOffset - settings.viewerHeightPadding;
+            settings.panelHeight = window.innerHeight - settings.viewerYOffset - settings.viewerHeightPadding;
             settings.panelWidth = window.innerWidth - settings.viewerWidthPadding;
 
             // $(settings.parentSelector).width(settings.panelWidth);
@@ -1315,35 +1315,41 @@ window.divaPlugins = [];
         // Will return true if something has changed, false otherwise
         var adjustBrowserDims = function ()
         {
-            // Only resize if the browser viewport is too small
-            var newHeight = $(settings.outerSelector).height();
-            var newWidth = $(settings.parentSelector).width() - settings.scrollbarWidth;
-            var outerOffset = $(settings.outerSelector).offset().top;
+            var windowHeight = window.innerHeight;
+            var windowWidth = window.innerWidth;
 
-            var windowHeight = window.innerHeight || document.documentElement.clientHeight;
-            var windowWidth = settings.percentOfWindowWidth*(window.innerWidth || document.documentElement.clientWidth);
-            // 2 or 1 pixels for the border
-            var desiredWidth = windowWidth - settings.viewerWidthPadding - settings.scrollbarWidth - 2;
-            var desiredHeight = windowHeight - outerOffset - settings.viewerHeightPadding - 1;
-
+            // if autoHeight/autoWidth are on, resize the parent selector proportionally
             if (settings.enableAutoHeight)
             {
-                if (newHeight + outerOffset + 16 > window.innerHeight)
-                    newHeight = desiredHeight;
-                else if (newHeight <= settings.originalHeight)
-                    newHeight = Math.min(desiredHeight, settings.originalHeight);
+                $(settings.parentSelector).height(windowHeight*settings.originalHeight);
             }
 
             if (settings.enableAutoWidth)
             {
-                if (newWidth + 32 > window.innerWidth)
-                    newWidth = desiredWidth;
-                else if (newWidth <= settings.originalWidth)
-                    newWidth = Math.min(desiredWidth, settings.originalWidth);
-
-                settings.parentSelector[0].style.width = newWidth + settings.scrollbarWidth;
+                $(settings.parentSelector).width(windowWidth*settings.originalWidth);
             }
 
+            //grab useful data about the parent data
+            var parentOffset = $(settings.parentSelector).offset()
+            var parentYOffset = parentOffset.top;
+            var parentXOffset = parentOffset.left;
+
+            //reset the offset variables to make them accurate in the case that they've changed
+            var outerOffset = $(settings.outerSelector).offset()
+            settings.viewerYOffset = outerOffset.top - parentYOffset;
+            settings.viewerXOffset = outerOffset.left - parentXOffset;
+
+            //calculate the new height based off the proportions
+            var heightBorderPixels = parseInt($(settings.outerSelector).css('border-top-width')) + parseInt($(settings.outerSelector).css('border-bottom-width'));
+            var parentHeight = $(settings.parentSelector).height();
+            newHeight = parentHeight - settings.viewerYOffset - heightBorderPixels;
+
+            //calculate the new width
+            var widthBorderPixels = parseInt($(settings.outerSelector).css('border-left-width')) + parseInt($(settings.outerSelector).css('border-right-width'));
+            var parentWidth = $(settings.parentSelector).width();
+            newWidth = parentWidth - settings.viewerWidthPadding - widthBorderPixels - settings.scrollbarWidth;
+
+            //if either have changed, reflect that visually
             if (newWidth !== settings.panelWidth || newHeight !== settings.panelHeight)
             {
                 var el = document.getElementById(settings.ID + "outer");
@@ -1368,6 +1374,7 @@ window.divaPlugins = [];
 
         var resizeViewer = function (newWidth, newHeight)
         {
+            console.log('resizeViewer called');
             if (newWidth >= settings.minWidth)
             {
                 settings.originalWidth = newWidth;
@@ -1595,7 +1602,6 @@ window.divaPlugins = [];
                     $(window).resize(function ()
                     {
                         var adjustSuccess = (settings.inFullscreen) ? adjustFullscreenDims() : adjustBrowserDims();
-
                         if (adjustSuccess)
                         {
                             // Cancel any previously-set resize timeouts
@@ -1605,7 +1611,7 @@ window.divaPlugins = [];
                             {
                                 settings.goDirectlyTo = settings.currentPageIndex;
                                 loadViewer();
-                            }, 200);
+                            }, 0);
                         }
                     });
                 }
@@ -2002,8 +2008,8 @@ window.divaPlugins = [];
                     }
                     else
                     {
-                        settings.originalWidth = $(settings.parentSelector).width() - settings.scrollbarWidth;
-                        settings.originalHeight = $(settings.outerSelector).height();
+                        settings.originalWidth = $(settings.parentSelector).width() / $(window).width();
+                        settings.originalHeight = $(settings.parentSelector).height() / $(window).height();
                         adjustBrowserDims();
                     }
 
@@ -2122,8 +2128,10 @@ window.divaPlugins = [];
             settings.inFullscreen = (settings.inFullscreen && fullscreenParam !== 'false') || goIntoFullscreen;
 
             // Store the height and width of the viewer (the outer div), if present
+            console.log("setting minWidths in init");
             var desiredHeight = parseInt($.getHashParam('h' + settings.hashParamSuffix), 10);
             var desiredWidth = parseInt($.getHashParam('w' + settings.hashParamSuffix), 10);
+            console.log(desiredHeight, desiredWidth);
 
             // Store the minimum and maximum height too
             settings.minHeight = parseInt($(settings.outerSelector).css('min-height'), 10);
