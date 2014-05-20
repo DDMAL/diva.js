@@ -103,6 +103,7 @@ window.divaPlugins = [];
             gridPageWidth: 0,           // Holds the max width of each row in grid view. Calculated in loadGrid()
             hashParamSuffix: '',        // Used when there are multiple document viewers on a page
             heightAbovePages: [],       // The height above each page at the current zoom level
+            heightProportion: 0,        // Stores the original proportion between parentSelector.height and window.height
             horizontalOffset: 0,        // Used in documentScroll for scrolling more precisely
             horizontalPadding: 0,       // Either the fixed padding or adaptive padding
             ID: null,                   // The prefix of the IDs of the elements (usually 1-diva-)
@@ -123,8 +124,6 @@ window.divaPlugins = [];
             oldPagesPerRow: 0,          // Holds the previous number of pages per row after it is changed
             oldZoomLevel: -1,           // Holds the previous zoom level after zooming in or out
             orientationChange: false,   // For handling device orientation changes for touch devices
-            originalHeight: 0,          // Stores the original height of the .diva-outer element
-            originalWidth: 0,           // Stores the original width of the .diva-outer element
             outerSelector: '',          // settings.selector + 'outer', for selecting the .diva-outer element
             pages: [],                  // An array containing the data for all the pages
             pageLeftOffsets: [],        // Offset from the left side of the pane to the edge of the page
@@ -149,6 +148,7 @@ window.divaPlugins = [];
             totalHeight: 0,             // The total height for the current zoom level (including padding)
             verticalOffset: 0,          // See horizontalOffset
             verticalPadding: 0,         // Either the fixed padding or adaptive padding
+            widthProportion: 0,         // Stores the original proportion between parentSelector.width and window.width
             viewerXOffset: 0,           // Distance between left edge of viewer and document left edge
             viewerYOffset: 0            // Like viewerXOffset but for the top edges
         };
@@ -1319,12 +1319,12 @@ window.divaPlugins = [];
             // if autoHeight/autoWidth are on, resize the parent selector proportionally
             if (settings.enableAutoHeight)
             {
-                $(settings.parentSelector).height(windowHeight*settings.originalHeight);
+                $(settings.parentSelector).height(windowHeight*settings.heightProportion);
             }
 
             if (settings.enableAutoWidth)
             {
-                $(settings.parentSelector).width(windowWidth*settings.originalWidth);
+                $(settings.parentSelector).width(windowWidth*settings.widthProportion);
             }
 
             //grab useful data about the parent data
@@ -1375,7 +1375,7 @@ window.divaPlugins = [];
         {
             if (newWidth >= settings.minWidth)
             {
-                settings.originalWidth = newWidth;
+                settings.widthProportion = newWidth;
                 $(settings.outerSelector).width(newWidth);
                 document.getElementById(settings.ID + "outer").style.width = newWidth + "px";
 
@@ -1387,7 +1387,7 @@ window.divaPlugins = [];
 
             if (newHeight >= settings.minHeight)
             {
-                settings.originalHeight = newHeight;
+                settings.heightProportion = newHeight;
                 document.getElementById(settings.ID + "outer").style.height = newHeight + "px";
 
                 settings.panelHeight = newHeight;
@@ -2006,8 +2006,8 @@ window.divaPlugins = [];
                     }
                     else
                     {
-                        settings.originalWidth = $(settings.parentSelector).width() / $(window).width();
-                        settings.originalHeight = $(settings.parentSelector).height() / $(window).height();
+                        settings.widthProportion = $(settings.parentSelector).width() / $(window).width();
+                        settings.heightProportion = $(settings.parentSelector).height() / $(window).height();
                         adjustBrowserDims();
                     }
 
