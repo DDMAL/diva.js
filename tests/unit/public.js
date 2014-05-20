@@ -13,15 +13,15 @@ asyncTest("getItemTitle()", function () {
     });
 });
 
-asyncTest("gotoPage() and getCurrentPage()", function () {
+asyncTest("gotoPageByNumber() and getCurrentPage()", function () {
     $.tempDiva({
         onReady: function (settings) {
             equal(this.getCurrentPage(), 0, "Initial page should be 0");
-            this.gotoPage(500); // Go to page number 500 (index: 499)
+            this.gotoPageByNumber(500); // Go to page number 500 (index: 499)
             equal(this.getCurrentPage(), 499, "The page index should now be 499");
 
             // Reset it to the first page
-            this.gotoPage(0);
+            this.gotoPageByNumber(0);
             start();
         }
     });
