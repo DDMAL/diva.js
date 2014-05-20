@@ -134,8 +134,6 @@ window.divaPlugins = [];
             panelWidth: 0,              // Width of the document viewer pane
             plugins: [],                // Filled with the enabled plugins from window.divaPlugins
             previousTopScroll: 0,       // Used to determine vertical scroll direction
-            previousWindowHeight: 0,
-            previousWindowWidth: 0,
             preZoomOffset: null,        // Holds the offset prior to zooming when double-clicking
             realMaxZoom: -1,            // To hold the true max zoom level of the document (needed for calculations)
             resizeTimer: -1,            // Holds the ID of the timeout used when resizing the window (for clearing)
@@ -1347,7 +1345,7 @@ window.divaPlugins = [];
             //calculate the new width
             var widthBorderPixels = parseInt($(settings.outerSelector).css('border-left-width')) + parseInt($(settings.outerSelector).css('border-right-width'));
             var parentWidth = $(settings.parentSelector).width();
-            newWidth = parentWidth - settings.viewerWidthPadding - widthBorderPixels - settings.scrollbarWidth;
+            newWidth = parentWidth - (settings.viewerWidthPadding * 2) - widthBorderPixels - settings.scrollbarWidth;
 
             //if either have changed, reflect that visually
             if (newWidth !== settings.panelWidth || newHeight !== settings.panelHeight)
@@ -1355,7 +1353,8 @@ window.divaPlugins = [];
                 var el = document.getElementById(settings.ID + "outer");
                 el.style.height = newHeight + "px";
                 el.style.width = newWidth + settings.scrollbarWidth + "px";
-                settings.panelWidth = newWidth;
+                el.style.marginLeft = settings.viewerWidthPadding + "px";
+                settings.panelWidth = newWidth + settings.scrollbarWidth;
                 settings.panelHeight = newHeight;
                 return true;
             }
@@ -1374,7 +1373,6 @@ window.divaPlugins = [];
 
         var resizeViewer = function (newWidth, newHeight)
         {
-            console.log('resizeViewer called');
             if (newWidth >= settings.minWidth)
             {
                 settings.originalWidth = newWidth;
@@ -1611,7 +1609,7 @@ window.divaPlugins = [];
                             {
                                 settings.goDirectlyTo = settings.currentPageIndex;
                                 loadViewer();
-                            }, 0);
+                            }, 200);
                         }
                     });
                 }
@@ -2128,10 +2126,8 @@ window.divaPlugins = [];
             settings.inFullscreen = (settings.inFullscreen && fullscreenParam !== 'false') || goIntoFullscreen;
 
             // Store the height and width of the viewer (the outer div), if present
-            console.log("setting minWidths in init");
             var desiredHeight = parseInt($.getHashParam('h' + settings.hashParamSuffix), 10);
             var desiredWidth = parseInt($.getHashParam('w' + settings.hashParamSuffix), 10);
-            console.log(desiredHeight, desiredWidth);
 
             // Store the minimum and maximum height too
             settings.minHeight = parseInt($(settings.outerSelector).css('min-height'), 10);
