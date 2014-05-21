@@ -1997,6 +1997,7 @@ window.divaPlugins = [];
                         Events.subscribe("ModeDidSwitch", settings.toolbar.switchMode);
                         Events.subscribe("ViewDidSwitch", settings.toolbar.switchView);
                         Events.subscribe("ZoomLevelDidChange", settings.toolbar.updateZoomSlider);
+                        Events.subscribe("ZoomLevelDidChange", settings.toolbar.updateZoomButtons);
                         Events.subscribe("GridRowNumberDidChange", settings.toolbar.updateGridSlider);
                     }
 
