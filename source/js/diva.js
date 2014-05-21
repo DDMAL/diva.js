@@ -49,6 +49,7 @@ window.divaPlugins = [];
             enableSpaceScroll: false,   // Scrolling down by pressing the space key
             enableToolbar: true,        // Enables the toolbar. Note that disabling this means you have to handle all controls yourself.
             enableZoomSlider: true,     // Enable or disable the zoom slider (for zooming in and out)
+            enableZoomButtons: false,   // Enable or disable zoom buttons (in place of zoom slider)
             fixedPadding: 10,           // Fallback if adaptive padding is set to 0
             fixedHeightGrid: true,      // So each page in grid view has the same height (only widths differ)
             goDirectlyTo: 0,            // Default initial page to show (0-indexed)
