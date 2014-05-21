@@ -1836,6 +1836,11 @@ window.divaPlugins = [];
                     // Update the slider label
                     $(settings.selector + 'zoom-level').text(settings.zoomLevel);
                 },
+                updateZoomButtons: function ()
+                {
+                    // Update the buttons label
+                    $(settings.selector + 'zoom-level').text(settings.zoomLevel);
+                },
                 updateGridSlider: function ()
                 {
                     // Update the position of the handle within the slider
