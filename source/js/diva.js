@@ -1803,6 +1803,7 @@ window.divaPlugins = [];
             {
                 // Switch from grid to document view etc
                 $(settings.selector + currentSlider + '-slider').hide();
+                $(settings.selector + currentSlider + '-buttons').hide();
                 $(settings.selector + currentSlider + '-slider-label').hide();
                 currentSlider = (settings.inGrid) ? 'grid' : 'zoom';
                 $(settings.selector + currentSlider + '-slider').show();
