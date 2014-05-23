@@ -155,24 +155,63 @@ asyncTest("enableLinkIcon false, enableGridIcon true", function () {
     });
 });
 
+// Skipping the key and space scroll ones, because they're hard to test
+
+// test enableZoom/Grid Slider/Buttons settings
+asyncTest("enableGridControls 'slider'", function() {
     $.tempDiva({
+        enableGridControls: 'slider',
+        onReady: function(settings) {
+            notEqual($(settings.selector + 'grid-slider').length, 0, "Grid slider should be present");
+            notEqual($(settings.selector + 'grid-slider-label').length, 0, "Grid slider label should be present");
+            equal($(settings.selector + 'grid-out-button').length, 0, "Grid buttons should not be present");
+            equal($(settings.selector + 'grid-in-button').length, 0, "Grid buttons should not be present");
+            equal($(settings.selector + 'grid-buttons-label').length, 0, "Grid buttons label should not be present");
             start();
         }
+    })
 });
 
+asyncTest("enableZoomControls 'slider'", function() {
     $.tempDiva({
+        enableZoomControls: 'slider',
+        onReady: function(settings) {
+            notEqual($(settings.selector + 'zoom-slider').length, 0, "Zoom slider should be present");
+            notEqual($(settings.selector + 'zoom-slider-label').length, 0, "Zoom slider label should be present");
+            equal($(settings.selector + 'zoom-out-button').length, 0, "Zoom buttons should not be present");
+            equal($(settings.selector + 'zoom-in-button').length, 0, "Zoom buttons should not be present");
+            equal($(settings.selector + 'zoom-buttons-label').length, 0, "Zoom buttons label should not be present");
             start();
         }
+    })
 });
 
+asyncTest("enableGridControls 'buttons'", function() {
     $.tempDiva({
+        enableGridControls: 'buttons',
+        onReady: function(settings) {
+            notEqual($(settings.selector + 'grid-out-button').length, 0, "Grid out button should be present");
+            notEqual($(settings.selector + 'grid-in-button').length, 0, "Grid in button should be present");
+            notEqual($(settings.selector + 'grid-buttons-label').length, 0, "Grid button label should be present");
+            equal($(settings.selector + 'grid-slider').length, 0, "Grid slider should not be present");
+            equal($(settings.selector + 'grid-slider-label').length, 0, "Grid slider label should not be present");
             start();
         }
+    })
 });
 
+asyncTest("enableZoomControls 'buttons'", function() {
     $.tempDiva({
+        enableZoomControls: 'buttons',
+        onReady: function(settings) {
+            notEqual($(settings.selector + 'zoom-out-button').length, 0, "Zoom out button should be present");
+            notEqual($(settings.selector + 'zoom-in-button').length, 0, "Zoom in button should be present");
+            notEqual($(settings.selector + 'zoom-buttons-label').length, 0, "Zoom button label should be present");
+            equal($(settings.selector + 'zoom-slider').length, 0, "Grid slider should not be present");
+            equal($(settings.selector + 'zoom-slider-label').length, 0, "Grid slider label should not be present");
             start();
         }
+    })
 });
 
 // fixedPadding tested at the top (along with adaptivePadding)
