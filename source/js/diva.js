@@ -2053,6 +2053,7 @@ window.divaPlugins = [];
                         Events.subscribe("ZoomLevelDidChange", settings.toolbar.updateZoomSlider);
                         Events.subscribe("ZoomLevelDidChange", settings.toolbar.updateZoomButtons);
                         Events.subscribe("GridRowNumberDidChange", settings.toolbar.updateGridSlider);
+                        Events.subscribe("ZoomLevelDidChange", settings.toolbar.updateGridButtons);
                     }
 
                     $(settings.selector + 'current label').text(settings.numPages);
