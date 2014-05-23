@@ -1328,12 +1328,12 @@ window.divaPlugins = [];
             }
 
             //grab useful data about the parent data
-            var parentOffset = $(settings.parentSelector).offset()
+            var parentOffset = $(settings.parentSelector).offset();
             var parentYOffset = parentOffset.top;
             var parentXOffset = parentOffset.left;
 
             //reset the offset variables to make them accurate in the case that they've changed
-            var outerOffset = $(settings.outerSelector).offset()
+            var outerOffset = $(settings.outerSelector).offset();
             settings.viewerYOffset = outerOffset.top - parentYOffset;
             settings.viewerXOffset = outerOffset.left - parentXOffset;
 
