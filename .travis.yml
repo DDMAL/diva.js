@@ -1,2 +1,3 @@
 language: node_js
+script: fab build
 script: phantomjs tests/run.js
