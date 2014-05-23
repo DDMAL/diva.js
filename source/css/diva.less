@@ -17,10 +17,12 @@
         }
 
         .diva-zoom-buttons-label {
+            .hidden;
             .diva-slider-label;
         }
 
-        .diva-zoom-button {
+        .diva-zoom-button() {
+            .hidden;
             .button;
             float: left;
         }
@@ -33,6 +35,18 @@
             .diva-zoom-button;
             background-image: url("@{iconPath}zoomin.png");
             margin-left: -1px;
+        }
+
+        .diva-grid-out-button {
+            .diva-zoom-out-button;
+        }
+
+        .diva-grid-in-button {
+            .diva-zoom-in-button;
+        }
+
+        .diva-buttons-label {
+            .diva-slider-label;
         }
 
         &.diva-fullscreen-space {
