@@ -1709,7 +1709,7 @@ window.divaPlugins = [];
 
             $(settings.selector + 'zoom-in-button').click(function ()
             {
-                zoomButtonClicked(1)
+                zoomButtonClicked(1);
             });
 
             // Create the grid slider
