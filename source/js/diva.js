@@ -1684,6 +1684,34 @@ window.divaPlugins = [];
                 }
             });
 
+            // Zoom when zoom buttons clicked
+            var zoomButtonClicked = function(direction)
+            {
+                var i = settings.currentPageIndex;
+                settings.goDirectlyTo = i;
+
+                // Figure out the horizontal and vertical offsets
+                // (Try to zoom in on the current center)
+                var zoomRatio = Math.pow(2, (settings.zoomLevel - 1) - settings.zoomLevel);
+                var innerWidth = settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2;
+                var centerX = $(settings.outerSelector).scrollLeft() - (innerWidth - settings.panelWidth) / 2;
+                settings.horizontalOffset = (innerWidth > settings.panelWidth) ? centerX * zoomRatio : 0;
+                settings.verticalOffset = zoomRatio * ($(settings.outerSelector).scrollTop() - settings.heightAbovePages[i]);
+
+                handleZoom(settings.zoomLevel + direction);
+            }
+
+            // Bind the click event to zoom buttons
+            $(settings.selector + 'zoom-out-button').click(function ()
+            {
+                zoomButtonClicked(-1);
+            });
+
+            $(settings.selector + 'zoom-in-button').click(function ()
+            {
+                zoomButtonClicked(1)
+            });
+
             // Create the grid slider
             $(settings.selector + 'grid-slider').slider(
             {
