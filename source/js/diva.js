@@ -1699,7 +1699,7 @@ window.divaPlugins = [];
                 settings.verticalOffset = zoomRatio * ($(settings.outerSelector).scrollTop() - settings.heightAbovePages[i]);
 
                 handleZoom(settings.zoomLevel + direction);
-            }
+            };
 
             // Bind the click event to zoom buttons
             $(settings.selector + 'zoom-out-button').click(function ()
