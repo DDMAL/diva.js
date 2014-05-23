@@ -155,46 +155,24 @@ asyncTest("enableLinkIcon false, enableGridIcon true", function () {
     });
 });
 
-asyncTest("enableGridSlider false", function () {
     $.tempDiva({
-        enableGridSlider: false,
-        onReady: function (settings) {
-            equal($(settings.selector + 'grid-slider').length, 0, "Grid slider should not be present");
             start();
         }
-    });
 });
 
-asyncTest("enableGridSlider true", function () {
     $.tempDiva({
-        enableGridSlider: true,
-        onReady: function (settings) {
-            notEqual($(settings.selector + 'grid-slider').length, 0, "Grid slider should not be present");
             start();
         }
-    });
 });
 
-// Skipping the key and space scroll ones, because they're hard to test
-
-asyncTest("enableZoomSlider false", function () {
     $.tempDiva({
-        enableZoomSlider: false,
-        onReady: function (settings) {
-            equal($(settings.selector + 'zoom-slider').length, 0, "Zoom slider should not be present");
             start();
         }
-    });
 });
 
-asyncTest("enableZoomSlider true", function () {
     $.tempDiva({
-        enableZoomSlider: true,
-        onReady: function (settings) {
-            notEqual($(settings.selector + 'zoom-slider').length, 0, "Zoom slider should not be present");
             start();
         }
-    });
 });
 
 // fixedPadding tested at the top (along with adaptivePadding)
