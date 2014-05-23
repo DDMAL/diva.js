@@ -1904,6 +1904,11 @@ window.divaPlugins = [];
                     // Update the slider label
                     $(settings.selector + 'pages-per-row').text(settings.pagesPerRow);
                 },
+                updateGridButtons: function ()
+                {
+                    // Update the buttons label
+                    $(settings.selector + 'pages-per-row').text(settings.pagesPerRow);
+                },
                 switchView: switchView,
                 switchMode: switchMode
             };
