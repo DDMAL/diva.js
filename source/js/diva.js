@@ -1846,11 +1846,16 @@ window.divaPlugins = [];
             {
                 // Switch from grid to document view etc
                 $(settings.selector + currentSlider + '-slider').hide();
-                $(settings.selector + currentSlider + '-buttons').hide();
+                $(settings.selector + currentSlider + '-out-button').hide();
+                $(settings.selector + currentSlider + '-in-button').hide();
                 $(settings.selector + currentSlider + '-slider-label').hide();
+                $(settings.selector + currentSlider + '-buttons-label').hide();
                 currentSlider = (settings.inGrid) ? 'grid' : 'zoom';
                 $(settings.selector + currentSlider + '-slider').show();
+                $(settings.selector + currentSlider + '-out-button').show();
+                $(settings.selector + currentSlider + '-in-button').show();
                 $(settings.selector + currentSlider + '-slider-label').show();
+                $(settings.selector + currentSlider + '-buttons-label').show();
 
                 // Also change the image for the grid icon
                 $(settings.selector + 'grid-icon').toggleClass('diva-in-grid');
