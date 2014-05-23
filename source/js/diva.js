@@ -56,9 +56,9 @@ window.divaPlugins = [];
             inFullscreen: false,        // Set to true to load fullscreen mode initially
             inGrid: false,              // Set to true to load grid view initially
             imageDir: '',               // Image directory, either absolute path or relative to IIP's FILESYSTEM_PREFIX - *MANDATORY*
-            maxPagesPerRow: 8,          // Maximum number of pages per row, grid view
+            maxPagesPerRow: 8,          // Maximum number of pages per row in grid view
             maxZoomLevel: -1,           // Optional; defaults to the max zoom returned in the JSON response
-            minPagesPerRow: 2,          // 2 for the spread view. Recommended to leave it
+            minPagesPerRow: 2,          // Minimum pages per row in grid view. Recommended default.
             minZoomLevel: 0,            // Defaults to 0 (the minimum zoom)
             onDocumentLoaded: null,     // Callback function for when the document is fully loaded
             onModeToggle: null,         // Callback for toggling fullscreen mode
