@@ -1775,10 +1775,13 @@ window.divaPlugins = [];
                 return false;
             });
 
-            // Show the relevant slider
+            // Show the relevant slider (or buttons, depending on settings)
             var currentSlider = (settings.inGrid) ? 'grid' : 'zoom';
             $(settings.selector + currentSlider + '-slider').show();
+            $(settings.selector + currentSlider + '-out-button').show();
+            $(settings.selector + currentSlider + '-in-button').show();
             $(settings.selector + currentSlider + '-slider-label').show();
+            $(settings.selector + currentSlider + '-buttons-label').show();
 
             var switchMode = function ()
             {
