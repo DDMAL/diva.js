@@ -58,6 +58,73 @@ asyncTest("Zooming using the slider", function () {
     });
 });
 
+asyncTest("Zooming using +/- buttons", function () {
+    $.tempDiva({
+        zoomLevel: 4,
+        enableZoomControls: 'buttons',
+        onReady: function (settings) {
+            for (var i = 0; i < 4; i++)
+            {
+                $(settings.selector + 'zoom-out-button').trigger('click');
+            }
+            equal(this.getZoomLevel(), 0, "Zoom level should now be 0");
+            equal($(settings.selector + 'zoom-level').text(), '0', "The zoom buttons label should have been updated");
+
+            for (i = 0; i < 4; i++)
+            {
+                $(settings.selector + 'zoom-in-button').trigger('click');
+            }
+            equal(this.getZoomLevel(), 4, "Zoom level should now be 4");
+            equal($(settings.selector + 'zoom-level').text(), '4', "The zoom buttons label should have been updated");
+            start();
+        }
+    });
+});
+
+asyncTest("Changing pages per row in Grid view using slider", function () {
+    $.tempDiva({
+        enableGridControls: 'slider',
+        pagesPerRow: 2,
+        onReady: function (settings) {
+            this.enterGridView();
+            $(settings.selector + 'grid-slider').slider('value', 8);
+            equal(this.getState().n, 8, "Pages per row should now be 8");
+            equal($(settings.selector + 'pages-per-row').text(), '8', "The grid buttons label should have been updated");
+
+            $(settings.selector + 'grid-slider').slider('value', 2);
+            equal(this.getState().n, 2, "Pages per row should now be 2");
+            equal($(settings.selector + 'pages-per-row').text(), '2', "The grid buttons label should have been updated");
+
+            start();
+        }
+    });
+});
+
+asyncTest("Changing pages per row in Grid view using +/- buttons", function () {
+    $.tempDiva({
+        enableGridControls: 'buttons',
+        pagesPerRow: 2,
+        onReady: function (settings) {
+            this.enterGridView();
+            for (var i = 0; i < 6; i++)
+            {
+                $(settings.selector + 'grid-out-button').trigger('click');
+            }
+            equal(this.getState().n, 8, "Pages per row should now be 8");
+            equal($(settings.selector + 'pages-per-row').text(), '8', "The grid buttons label should have been updated");
+
+            for (i = 0; i < 6; i++)
+            {
+                $(settings.selector + 'grid-in-button').trigger('click');
+            }
+            equal(this.getState().n, 2, "Pages per row should now be 2");
+            equal($(settings.selector + 'pages-per-row').text(), '2', "The grid buttons label should have been updated");
+
+            start();
+        }
+    });
+});
+
 asyncTest("Zooming by double-clicking", function () {
     $.tempDiva({
         zoomLevel: 1,
