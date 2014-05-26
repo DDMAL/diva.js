@@ -1091,6 +1091,9 @@ window.divaPlugins = [];
             $('body').toggleClass('diva-hide-scrollbar');
             $(settings.parentSelector).toggleClass('diva-full-width');
 
+            // If in fullscreen, set margin to 0
+            settings.inFullscreen ? $(settings.outerSelector).css('margin-left', '0px') : $(settings.outerSelector).css('margin-left', '30px');
+
             // Reset the panel dimensions
             settings.panelHeight = $(settings.outerSelector).height();
             settings.panelWidth = $(settings.outerSelector).width() - settings.scrollbarWidth;
@@ -1354,7 +1357,6 @@ window.divaPlugins = [];
                 var el = document.getElementById(settings.ID + "outer");
                 el.style.height = newHeight + "px";
                 el.style.width = newWidth + settings.scrollbarWidth + "px";
-                el.style.marginLeft = settings.viewerWidthPadding + "px";
                 settings.panelWidth = newWidth + settings.scrollbarWidth;
                 settings.panelHeight = newHeight;
                 return true;
@@ -2080,6 +2082,9 @@ window.divaPlugins = [];
                     var viewerOffset = $(settings.outerSelector).offset();
                     settings.viewerXOffset = viewerOffset.left;
                     settings.viewerYOffset = viewerOffset.top;
+
+                    // Set padding
+                    $(settings.outerSelector).css('margin-left', settings.viewerWidthPadding);
 
                     if (settings.inFullscreen)
                         handleModeChange(false);
