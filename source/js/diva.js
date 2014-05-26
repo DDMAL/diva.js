@@ -1044,6 +1044,7 @@ window.divaPlugins = [];
             $(settings.innerSelector).width(Math.round(settings.panelWidth));
 
             // First scroll directly to the row containing the current page
+            settings.goDirectlyTo = settings.currentPageIndex;
             gridScroll();
 
             var i, rowIndex;
