@@ -27,6 +27,21 @@ asyncTest("gotoPageByNumber() and getCurrentPage()", function () {
     });
 });
 
+asyncTest("getCurrentPageIndex()", function () {
+    $.tempDiva({
+        onReady: function (settings) {
+            equal(this.getCurrentPageIndex(), 0, "Initial page should be 0");
+            this.gotoPageByIndex(300);
+            equal(this.getCurrentPageIndex(), 300, "The page index should now be 300");
+
+            // Reset it to the first page
+            this.gotoPageByIndex(0);
+            equal(this.getCurrentPageIndex(), 0, "The page index should now be 0");
+            start();
+        }
+    });
+});
+
 asyncTest("get/setZoomLevel(), zoomIn() and zoomOut()", function () {
     $.tempDiva({
         zoomLevel: 2,
