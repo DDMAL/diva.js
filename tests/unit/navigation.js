@@ -100,6 +100,30 @@ asyncTest("Changing pages per row in Grid view using slider", function () {
     });
 });
 
+asyncTest("Scrolling and subsequently zooming in Grid view", function () {
+    $.tempDiva({
+        inGrid: true,
+        enableGridControls: 'slider',
+        pagesPerRow: 5,
+        fixedHeightGrid: false,
+        onReady: function (settings) {
+            $(settings.outerSelector).scrollTop(10050);
+
+            var self = this;
+            setTimeout(function () {
+                equal(self.getCurrentPageIndex(), 170, "The current page should be 170 (10050px down, 1000px viewport)");
+                start();
+
+                $(settings.selector + 'grid-slider').slider('value', 8);
+                equal(self.getCurrentPageIndex(), 170, "The current page should still be 170");
+
+                $(settings.selector + 'grid-slider').slider('value', 2);
+                equal(self.getCurrentPageIndex(), 170, "The current page should still be 170");
+            }, 10);
+        }
+    });
+});
+
 asyncTest("Changing pages per row in Grid view using +/- buttons", function () {
     $.tempDiva({
         enableGridControls: 'buttons',
