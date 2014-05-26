@@ -1123,11 +1123,10 @@ window.divaPlugins = [];
         // Should only be called after changing settings.inGrid
         var handleViewChange = function ()
         {
-            // Switch the slider
-            // Events.publish("ViewDidSwitch", null);
-
             loadViewer();
             executeCallback(settings.onViewToggle, settings.inGrid);
+
+            // Switch the slider
             Events.publish("ViewDidSwitch", [settings.inGrid]);
         };
 
