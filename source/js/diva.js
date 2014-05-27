@@ -45,7 +45,7 @@ window.divaPlugins = [];
             enableGotoPage: true,       // A "go to page" jump box
             enableGridIcon: true,       // A grid view of all the pages
             enableGridControls: 'slider',  // Specify control of pages per grid row in Grid view. Possible values: 'buttons' (+/-), 'slider'. Any other value disables the controls.
-            enableKeyScroll: true,      // Scrolling using the page up/down keys
+            enableKeyScroll: true,      // Scrolling using the arrow and page up/down keys
             enableLinkIcon: true,       // Controls the visibility of the link icon
             enableSpaceScroll: false,   // Scrolling down by pressing the space key
             enableToolbar: true,        // Enables the toolbar. Note that disabling this means you have to handle all controls yourself.
