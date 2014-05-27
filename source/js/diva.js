@@ -1121,7 +1121,7 @@ window.divaPlugins = [];
 
             // Execute callbacks
             executeCallback(settings.onModeToggle, settings.inFullscreen);
-            Events.publish("ModeHasChanged", [settings.inFullScreen]);
+            Events.publish("ModeHasChanged", [settings.inFullscreen]);
         };
 
         // Handles switching in and out of grid view
