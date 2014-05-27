@@ -1693,6 +1693,11 @@ window.divaPlugins = [];
                 {
                     if (ui.value !== settings.zoomLevel)
                         handleZoom(ui.value);
+                },
+                stop: function (event, ui)
+                {
+                    // Lose focus when finished sliding (so that keystrokes are caught by the document)
+                    $('.ui-slider-handle').blur();
                 }
             });
 
