@@ -1092,7 +1092,8 @@ window.divaPlugins = [];
             $(settings.parentSelector).toggleClass('diva-full-width');
 
             // If in fullscreen, set margin to 0
-            settings.inFullscreen ? $(settings.outerSelector).css('margin-left', '0px') : $(settings.outerSelector).css('margin-left', '30px');
+            var margin = settings.inFullscreen ? '0px' : '30px';
+            $(settings.outerSelector).css('margin-left', margin);
 
             // Reset the panel dimensions
             settings.panelHeight = $(settings.outerSelector).height();
