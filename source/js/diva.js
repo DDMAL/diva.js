@@ -1564,11 +1564,15 @@ window.divaPlugins = [];
             // Only check if either scrollBySpace or scrollByKeys is enabled
             if (settings.enableSpaceScroll || settings.enableKeyScroll)
             {
-                var spaceKey = $.ui.keyCode.SPACE;
-                var pageUpKey = $.ui.keyCode.PAGE_UP;
-                var pageDownKey = $.ui.keyCode.PAGE_DOWN;
-                var homeKey = $.ui.keyCode.HOME;
-                var endKey = $.ui.keyCode.END;
+                var upArrowKey = $.ui.keyCode.UP,
+                    downArrowKey = $.ui.keyCode.DOWN,
+                    leftArrowKey = $.ui.keyCode.LEFT,
+                    rightArrowKey = $.ui.keyCode.RIGHT,
+                    spaceKey = $.ui.keyCode.SPACE,
+                    pageUpKey = $.ui.keyCode.PAGE_UP,
+                    pageDownKey = $.ui.keyCode.PAGE_DOWN,
+                    homeKey = $.ui.keyCode.HOME,
+                    endKey = $.ui.keyCode.END;
 
                 // Catch the key presses in document
                 $(document).keydown(function (event)
