@@ -31,6 +31,7 @@ window.divaPlugins = [];
         // See https://github.com/DDMAL/diva.js/wiki/Code-documentation for more details
         var defaults = {
             adaptivePadding: 0.05,      // The ratio of padding to the page dimension
+            arrowScrollAmount: 40,      // The amount (in pixels) to scroll by when using arrow keys
             blockMobileMove: true,      // Prevent moving or scrolling the page on mobile devices
             contained: false,           // Determines the location of the fullscreen icon
             objectData: '',             // URL to the JSON file that provides the object dimension data - *MANDATORY*
