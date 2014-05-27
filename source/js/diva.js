@@ -1115,6 +1115,10 @@ window.divaPlugins = [];
                 loadViewer();
             }
 
+            // If it has changed, adjust panel size coming out of fullscreen
+            if(!settings.inFullscreen)
+                adjustBrowserDims();
+
             // Execute callbacks
             executeCallback(settings.onModeToggle, settings.inFullscreen);
             Events.publish("ModeHasChanged", [settings.inFullScreen]);
