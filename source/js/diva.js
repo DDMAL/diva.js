@@ -1590,6 +1590,34 @@ window.divaPlugins = [];
                         $(settings.outerSelector).scrollTop(settings.topScrollSoFar - settings.panelHeight);
                         return false;
                     }
+ 
+                    // Up arrow - scroll up
+                    if (settings.enableKeyScroll && event.keyCode === upArrowKey)
+                    {
+                        $(settings.outerSelector).scrollTop(settings.topScrollSoFar - settings.arrowScrollAmount);
+                        return false;
+                    }
+
+                    // Down arrow - scroll down
+                    if (settings.enableKeyScroll && event.keyCode === downArrowKey)
+                    {
+                        $(settings.outerSelector).scrollTop(settings.topScrollSoFar + settings.arrowScrollAmount);
+                        return false;
+                    }
+
+                    // Left arrow - scroll left
+                    if (settings.enableKeyScroll && event.keyCode === leftArrowKey)
+                    {
+                        $(settings.outerSelector).scrollLeft(settings.leftScrollSoFar - settings.arrowScrollAmount);
+                        return false;
+                    }
+ 
+                    // Right arrow - scroll right
+                    if (settings.enableKeyScroll && event.keyCode === rightArrowKey)
+                    {
+                        $(settings.outerSelector).scrollLeft(settings.leftScrollSoFar + settings.arrowScrollAmount);
+                        return false;
+                    }
 
                     // Home key - go to the beginning of the document
                     if (settings.enableKeyScroll && event.keyCode === homeKey)
