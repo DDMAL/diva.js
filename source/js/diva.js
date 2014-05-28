@@ -1085,9 +1085,6 @@ window.divaPlugins = [];
                 }
             }
 
-            // Change the look of the toolbar
-            Events.publish("ModeDidSwitch", null);
-
             // Toggle the classes
             $(settings.selector + 'fullscreen').toggleClass('diva-in-fullscreen');
             $(settings.outerSelector).toggleClass('diva-fullscreen');
