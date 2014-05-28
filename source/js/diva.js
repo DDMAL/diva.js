@@ -99,6 +99,7 @@ window.divaPlugins = [];
             averageWidths: [],          // The average page width for each zoom level
             currentPageIndex: 0,        // The current page in the viewport (center-most page)
             dimAfterZoom: 0,            // Used for storing the item dimensions after zooming
+            divaIsFullWindow: false,    // Set to true when the parent of diva-wrapper is the body tag. Used for resizing.
             firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
             firstRowLoaded: -1,         // The index of the first row loaded
             gridPageWidth: 0,           // Holds the max width of each row in grid view. Calculated in loadGrid()
@@ -1322,18 +1323,31 @@ window.divaPlugins = [];
         // Will return true if something has changed, false otherwise
         var adjustBrowserDims = function ()
         {
-            var windowHeight = window.innerHeight;
-            var windowWidth = window.innerWidth;
+            var parentHeight;
+            var parentWidth;
+
+            //if parent is body, base these sizes off the window
+            if (settings.divaIsFullWindow)
+            {     
+                parentWidth = $(window).innerWidth();
+                parentHeight = $(window).innerHeight();
+            }
+            //else off the parent
+            else
+            {
+                parentWidth = $(settings.parentSelector).parent().innerWidth();
+                parentHeight = $(settings.parentSelector).parent().innerHeight();
+            }
 
             // if autoHeight/autoWidth are on, resize the parent selector proportionally
             if (settings.enableAutoHeight)
             {
-                $(settings.parentSelector).height(windowHeight*settings.heightProportion);
+                $(settings.parentSelector).height(parentHeight * settings.heightProportion);
             }
 
             if (settings.enableAutoWidth)
             {
-                $(settings.parentSelector).width(windowWidth*settings.widthProportion);
+                $(settings.parentSelector).width(parentWidth * settings.widthProportion);
             }
 
             //grab useful data about the parent data
@@ -2108,15 +2122,29 @@ window.divaPlugins = [];
                         $(settings.parentSelector).prepend('<div id="' + settings.ID + 'title" class="diva-title">' + settings.itemTitle + '</div>');
                     }
 
+                    //if the parent is the body, we don't want to use this to base size off, we want window instead
+                    if ($(settings.parentSelector).parent()[0] === document.body)
+                    {
+                        settings.divaIsFullWindow = true;
+                    }
+
                     // Adjust the document panel dimensions for touch devices
                     if (settings.mobileWebkit)
                     {
                         adjustMobileWebkitDims();
                     }
+                    else if (settings.divaIsFullWindow)
+                    {     
+                        //so we shall use window instead
+                        settings.widthProportion = $(settings.parentSelector).width() / $(window).innerWidth();
+                        settings.heightProportion = $(settings.parentSelector).height() / $(window).innerHeight();
+                        adjustBrowserDims();
+                    }
                     else
                     {
-                        settings.widthProportion = $(settings.parentSelector).width() / $(window).width();
-                        settings.heightProportion = $(settings.parentSelector).height() / $(window).height();
+                        //but otherwise, parent is cool
+                        settings.widthProportion = $(settings.parentSelector).width() / $(settings.parentSelector).parent().innerWidth();
+                        settings.heightProportion = $(settings.parentSelector).height() / $(settings.parentSelector).parent().innerHeight();
                         adjustBrowserDims();
                     }
 
