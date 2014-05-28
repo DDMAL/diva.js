@@ -75,7 +75,7 @@ Allows you to highlight regions of a page image
                 }
 
                 // subscribe the highlight method to the page change notification
-                Events.subscribe("PageHasLoaded", _highlight);
+                Events.subscribe("PageWillLoad", _highlight);
 
                 var _incorporate_zoom = function(position, zoomDifference)
                 {
