@@ -291,7 +291,7 @@ window.divaPlugins = [];
 
                 // Call the callback function
                 executeCallback(settings.onPageLoad, pageIndex, filename, pageSelector);
-                Events.publish("PageHasLoaded", [pageIndex, filename, pageSelector]);
+                Events.publish("PageWillLoad", [pageIndex, filename, pageSelector]);
 
                 // @TODO: Replace this with a notification.
                 // Execute the callback functions for any of the enabled plugins
@@ -365,6 +365,7 @@ window.divaPlugins = [];
                 $(document.getElementById(settings.ID + 'page-' + pageIndex)).append(content.join(''));
 
                 executeCallback(settings.onPageLoaded, pageIndex, filename, pageSelector);
+                Events.publish("PageDidLoad", [pageIndex, filename, pageSelector]);
 
             }, settings.pageLoadTimeout));
         };
@@ -1023,7 +1024,7 @@ window.divaPlugins = [];
 
             var fileName = settings.pages[settings.currentPageIndex].f;
             executeCallback(settings.onDocumentLoaded, settings.lastPageLoaded, fileName);
-            Events.publish("DocumentHasFinishedLoading", [settings.lastPageLoaded, fileName]);
+            Events.publish("DocumentDidLoad", [settings.lastPageLoaded, fileName]);
         };
 
         var loadGrid = function ()
@@ -1123,7 +1124,7 @@ window.divaPlugins = [];
 
             // Execute callbacks
             executeCallback(settings.onModeToggle, settings.inFullscreen);
-            Events.publish("ModeHasChanged", [settings.inFullscreen]);
+            Events.publish("ModeDidSwitch", [settings.inFullscreen]);
         };
 
         // Handles switching in and out of grid view
@@ -2163,7 +2164,7 @@ window.divaPlugins = [];
 
                     // Execute the callback
                     executeCallback(settings.onReady, settings);
-                    Events.publish("ViewerHasFinishedLoading", [settings]);
+                    Events.publish("ViewerDidLoad", [settings]);
 
                     // signal that everything should be set up and ready to go.
                     settings.loaded = true;
