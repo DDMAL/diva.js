@@ -755,7 +755,6 @@ var Events = (function (){
      *      @method unsubscribe
      *      @param handle {Array}
      *      @param completely {Boolean}
-     *      @return {type description }
      */
     unsubscribe = function (handle, completely) {
         var t = handle[0],
