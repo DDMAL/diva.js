@@ -1016,9 +1016,15 @@ window.divaPlugins = [];
             if (settings.oldZoomLevel >= 0)
             {
                 if (settings.oldZoomLevel < settings.zoomLevel)
+                {
                     executeCallback(settings.onZoomIn, z);
+                    Events.publish("ViewerDidZoomIn", z);
+                }
                 else
+                {
                     executeCallback(settings.onZoomOut, z);
+                    Events.publish("ViewerDidZoomOut", z);
+                }
 
                 executeCallback(settings.onZoom, z);
             }
