@@ -839,11 +839,12 @@ window.divaPlugins = [];
             //settings.toolbar.updateCurrentPage();
             var filename = settings.pages[pageIndex].f;
 
-            Events.publish("VisiblePageDidChange", [pageIndex, filename]);
             executeCallback(settings.onSetCurrentPage, pageIndex, filename);
+            Events.publish("VisiblePageDidChange", [pageIndex, filename]);
 
             // Execute the onJump callback
             executeCallback(settings.onJump, pageIndex);
+            Events.publish("ViewerDidJump", [pageIndex]);
         };
 
         // Calculates the desired row, then scrolls there
