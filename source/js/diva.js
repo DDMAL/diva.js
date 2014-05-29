@@ -506,12 +506,20 @@ window.divaPlugins = [];
             }
 
             executeCallback(settings.onScroll, settings.topScrollSoFar);
+            Events.publish("ViewerDidScroll", [settings.topScrollSoFar]);
 
             // If we're scrolling down
             if (direction > 0)
+            {
                 executeCallback(settings.onScrollDown, settings.topScrollSoFar);
+                Events.publish("ViewerDidScrollDown", [settings.topScrollSoFar]);
+            }
             else if (direction < 0)
-                executeCallback(settings.onScrollUp, settings.topScrollSoFar);  // We're scrolling up
+            {
+                // We're scrolling up
+                executeCallback(settings.onScrollUp, settings.topScrollSoFar);
+                Events.publish("ViewerDidScrollUp", [settings.topScrollSoFar]);
+            }
         };
 
         // Check if a row index is valid
