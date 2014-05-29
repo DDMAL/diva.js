@@ -1,8 +1,3 @@
 language: node_js
-install: npm install less
-install: pip install fabric
-install: wget http://dl.google.com/closure-compiler/compiler-latest.zip
-install: unzip compiler-latest.zip
-install: chmod a+rx compiler.jar
-install: fab build
+install: npm install less && pip install fabric && wget http://dl.google.com/closure-compiler/compiler-latest.zip && unzip compiler-latest.zip && chmod a+rx compiler.jar && fab build
 script: phantomjs tests/run.js
