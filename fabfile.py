@@ -4,6 +4,9 @@ from fabric.api import local, settings
 # Path to the Closure Compiler .jar file
 CLOSURE_COMPILER_PATH = "/usr/local/bin/closure-compiler"
 
+# If running in Travis CI, use local compiler.jar
+if 'TRAVIS' in os.environ:
+    CLOSURE_COMPILER_PATH = "java -jar ../../compiler.jar"
 
 def less():
     """
