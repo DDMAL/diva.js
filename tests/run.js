@@ -33,7 +33,7 @@ function waitFor(testFx, onReady, timeOutMillis) {
                 }
             }
         }, 100); //< repeat check every 250ms
-};
+}
 
 var testURL = "tests/index.html";
 
@@ -47,7 +47,7 @@ page.onConsoleMessage = function(msg) {
 page.viewportSize = {
     width: 1000,
     height: 800
-}
+};
 page.settings.webSecurityEnabled = false;
 page.settings.localToRemoteUrlAccessEnabled = false;
 
