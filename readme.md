@@ -83,11 +83,11 @@ You may then load the demos in your web browser by visiting `http://localhost:80
 If you wish to install from source, you can check out the code from [our GitHub repository](http://github.com/DDMAL/diva.js). To fully build Diva you will need the following dependencies:
 
  * the [LESS stylesheet compiler](http://lesscss.org)
- * the [Closure](https://developers.google.com/closure/) JavaScript compiler
+ * the [Closure Javascript compiler](https://developers.google.com/closure/)
 
 All other dependencies are listed above.
 
-The full installation gives you access to the un-minified JavaScript source and the plugins, the documentation, and our unit-tests. We have pre-defined Fabric commands for performing basic development tasks:
+The full installation gives you access to the un-minified JavaScript source, the plugins, the documentation, and our unit-tests. We use a build script (`build.sh`) for basic development tasks:
 
  * `./build.sh less`: Compiles and minifies the LESS files into CSS.
  * `./build.sh minify`: Minifies the JavaScript files using the Closure compiler.
