@@ -1,6 +1,3 @@
 language: node_js
-before_install: pip install virtualenv
-  - virtualenv venv
-  - source venv/bin/activate
-install: npm install less && pip install fabric && wget http://dl.google.com/closure-compiler/compiler-latest.zip && unzip compiler-latest.zip && chmod a+rx compiler.jar && fab build
+install: npm install less && wget http://dl.google.com/closure-compiler/compiler-latest.zip && unzip compiler-latest.zip && chmod a+rx compiler.jar && ./build.sh all
 script: phantomjs tests/run.js
