@@ -82,7 +82,6 @@ You may then load the demos in your web browser by visiting `http://localhost:80
 
 If you wish to install from source, you can check out the code from [our GitHub repository](http://github.com/DDMAL/diva.js). To fully build Diva you will need the following dependencies:
 
- * the Python Fabric module for running the build scripts
  * the [LESS stylesheet compiler](http://lesscss.org)
  * the [Closure](https://developers.google.com/closure/) JavaScript compiler
 
@@ -90,10 +89,11 @@ All other dependencies are listed above.
 
 The full installation gives you access to the un-minified JavaScript source and the plugins, the documentation, and our unit-tests. We have pre-defined Fabric commands for performing basic development tasks:
 
- * `fab less`: Compiles and minifies the LESS files into CSS.
- * `fab minify`: Minifies the JavaScript files using the Closure compiler.
- * `fab build`: Performs both less and minify.
- * `fab release:xxx`: Builds the release package. `:xxx` is the release name, so `fab release:2.0.0` will create `diva-3.0.0.tar.gz`. 
+ * `./build.sh less`: Compiles and minifies the LESS files into CSS.
+ * `./build.sh minify`: Minifies the JavaScript files using the Closure compiler.
+ * `./build.sh all`: Performs both less and minify.
+ * `./build.sh test`: Runs Diva's unit tests with [PhantomJS](http://phantomjs.org/).
+ * `./build.sh release VERSION`: Builds the release package. `VERSION` is the release name, so `./build.sh release 3.0.0` will create `diva-3.0.0.tar.gz`. 
 
 ## Getting help
 
