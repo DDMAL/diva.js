@@ -56,7 +56,13 @@ all ()
 
 test ()
 {
-    phantomjs tests/run.js
+    if [ "$TEST_DIVA" = "source" ]; then
+        echo "Testing source"
+        phantomjs tests/run.js tests/source.html
+    else
+        echo "Testing build"
+        phantomjs tests/run.js
+    fi
 }
 
 release()
