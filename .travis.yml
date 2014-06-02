@@ -14,5 +14,5 @@ notifications:
     channels:
       - "chat.freenode.net#ddmal"
     on_success: change
-    on_failure: always
+    on_failure: change
     skip_join: true
