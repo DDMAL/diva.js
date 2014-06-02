@@ -35,7 +35,18 @@ function waitFor(testFx, onReady, timeOutMillis) {
         }, 100); //< repeat check every 250ms
 }
 
-var testURL = "tests/index.html";
+// If called with arguments, set the testURL to the first argument
+var arg1 = (require('system').args[1]);
+if (!arg1)
+{
+    var testURL = "tests/index.html";
+    console.log("Testing using " + testURL);
+}
+else
+{
+    var testURL = arg1;
+    console.log("Testing using " + testURL);
+}
 
 var page = require('webpage').create();
 
