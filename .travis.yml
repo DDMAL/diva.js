@@ -1,5 +1,6 @@
 language: node_js
-install: npm install less
+install:
+  - npm install less
   - wget http://dl.google.com/closure-compiler/compiler-latest.zip
   - unzip compiler-latest.zip
   - chmod a+rx compiler.jar
