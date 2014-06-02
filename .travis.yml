@@ -5,3 +5,10 @@ install: npm install less
   - chmod a+rx compiler.jar
 before_script: ./build.sh all
 script: phantomjs tests/run.js
+notifications:
+  irc:
+    channels:
+      - "chat.freenode.net#ddmal"
+    on_success: change
+    on_failure: always
+    skip_join: true
