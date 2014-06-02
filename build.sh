@@ -111,7 +111,7 @@ case "$1" in
     "release" ) release $2;;
     * )
         echo "Build options:"
-        echo "  all              - Builds CSS and Javascript"
+        echo "  all              - Builds CSS and Javascript, copies source to build directory"
         echo "  less             - Compiles CSS from the LESS source"
         echo "  minify           - Builds Javascript source"
         echo "  test             - Runs unit tests with PhantomJS"
