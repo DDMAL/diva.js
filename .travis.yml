@@ -8,7 +8,7 @@ install:
   - unzip compiler-latest.zip
   - chmod a+rx compiler.jar
 before_script: ./build.sh all
-script: phantomjs tests/run.js
+script: ./build.sh test
 notifications:
   irc:
     channels:
