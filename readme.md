@@ -91,7 +91,7 @@ The full installation gives you access to the un-minified JavaScript source, the
 
  * `./build.sh less`: Compiles and minifies the LESS files into CSS.
  * `./build.sh minify`: Minifies the JavaScript files using the Closure compiler.
- * `./build.sh all`: Performs both less and minify.
+ * `./build.sh all`: Performs both less and minify. (Also copies relevant source files to the build directory.)
  * `./build.sh test`: Runs Diva's unit tests with [PhantomJS](http://phantomjs.org/).
  * `./build.sh release VERSION`: Builds the release package. `VERSION` is the release name, so `./build.sh release 3.0.0` will create `diva-3.0.0.tar.gz`. 
 
