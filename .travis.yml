@@ -1,4 +1,7 @@
 language: node_js
+env:
+  - TEST_DIVA=source
+  - TEST_DIVA=build
 install:
   - npm install less
   - wget http://dl.google.com/closure-compiler/compiler-latest.zip
