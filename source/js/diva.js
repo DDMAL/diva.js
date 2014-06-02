@@ -2153,7 +2153,8 @@ window.divaPlugins = [];
                     {     
                         //so we shall use window instead
                         settings.widthProportion = $(settings.parentSelector).width() / $(window).innerWidth();
-                        settings.heightProportion = $(settings.parentSelector).height() / $(window).innerHeight();
+                        // Do not overflow the window in the event that the initial CSS height is greater than the initial window size
+                        settings.heightProportion = Math.min(0.9, $(settings.parentSelector).height() / $(window).innerHeight());
                         adjustBrowserDims();
                     }
                     else
