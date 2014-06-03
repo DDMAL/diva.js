@@ -720,7 +720,7 @@ Adds a little "tools" icon next to each image
                     $('#diva-canvas-buttons .clicked').removeClass('clicked');
                     updateSlider('contrast');
 
-                    Events.publish("CanvasViewDidHide");
+                    diva.Events.publish("CanvasViewDidHide");
                 });
 
                 // Hide the toolbar when the minimise icon is clicked
@@ -881,7 +881,7 @@ Adds a little "tools" icon next to each image
 
                 showThrobber();
 
-                Events.publish("CanvasViewDidActivate", [page]);
+                diva.Events.publish("CanvasViewDidActivate", [page]);
 
                 loadCanvas(imageURL);
             },
