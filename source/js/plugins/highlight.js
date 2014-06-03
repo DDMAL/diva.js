@@ -71,11 +71,11 @@ Allows you to highlight regions of a page image
                             pageObj.appendChild(box);
                         }
                     }
-                    Events.publish("HighlightCompleted");
+                    diva.Events.publish("HighlightCompleted");
                 }
 
                 // subscribe the highlight method to the page change notification
-                Events.subscribe("PageWillLoad", _highlight);
+                diva.Events.subscribe("PageWillLoad", _highlight);
 
                 var _incorporate_zoom = function(position, zoomDifference)
                 {
@@ -174,7 +174,7 @@ Allows you to highlight regions of a page image
 
                     if (typeof callback !== 'undefined')
                     {
-                        Events.subscribe("HighlightCompleted", callback);
+                        diva.Events.subscribe("HighlightCompleted", callback);
                     }
 
                     return true;
