@@ -55,6 +55,7 @@ $('#diva-wrapper').diva({
 
 Since IIP will be serving the images you should not place your images in directory accessible by your web server. In other words, if your web server uses `/srv/www` as its root directory you do not need to place your images there -- they can reside in any directory on your server as long as it they can be read by the IIP instance.
 
+See [Installation](https://github.com/DDMAL/diva.js/wiki/Installation) for full instructions.
 ### Cross-site Requests
 
 You may receive an error that looks something like this:
@@ -94,6 +95,8 @@ The full installation gives you access to the un-minified JavaScript source, the
  * `./build.sh all`: Performs both less and minify. (Also copies relevant source files to the build directory.)
  * `./build.sh test`: Runs Diva's unit tests with [PhantomJS](http://phantomjs.org/).
  * `./build.sh release VERSION`: Builds the release package. `VERSION` is the release name, so `./build.sh release 3.0.0` will create `diva-3.0.0.tar.gz`. 
+
+See [Installation](https://github.com/DDMAL/diva.js/wiki/Installation) for more information.
 
 ## Getting help
 
