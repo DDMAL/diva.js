@@ -713,7 +713,7 @@ var diva = (function() {
         Events: {
             /**
              *      Events.publish
-             *      e.g.: Events.publish("/Article/added", [article], this);
+             *      e.g.: Events.publish("PageDidLoad", [pageIndex, filename, pageSelector], this);
              *
              *      @class Events
              *      @method publish
@@ -734,7 +734,7 @@ var diva = (function() {
             },
             /**
              *      Events.subscribe
-             *      e.g.: Events.subscribe("/Article/added", Articles.validate)
+             *      e.g.: Events.subscribe("PageDidLoad", highlight)
              *
              *      @class Events
              *      @method subscribe
@@ -752,7 +752,7 @@ var diva = (function() {
             },
             /**
              *      Events.unsubscribe
-             *      e.g.: var handle = Events.subscribe("/Article/added", Articles.validate);
+             *      e.g.: var handle = Events.subscribe("PageDidLoad", highlight);
              *              Events.unsubscribe(handle);
              *
              *      @class Events
