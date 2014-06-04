@@ -317,6 +317,7 @@ Adds a little "tools" icon next to each image
         {
             image = new Image();
             image.src = imageURL;
+            image.crossOrigin = "Anonymous";
 
             image.onload = function ()
             {
