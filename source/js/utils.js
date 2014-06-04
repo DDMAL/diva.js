@@ -721,14 +721,15 @@ var diva = (function() {
              *      @param args     {Array}
              *      @param scope {Object} Optional
              */
-            publish: function (topic, args, scope) {
-                if (cache[topic]) {
+            publish: function (topic, args, scope)
+            {
+                if (cache[topic])
+                {
                     var thisTopic = cache[topic],
                         i = thisTopic.length;
 
-                    while (i--) {
+                    while (i--)
                         thisTopic[i].apply( scope || this, args || []);
-                    }
                 }
             },
             /**
@@ -741,10 +742,11 @@ var diva = (function() {
              *      @param callback {Function}
              *      @return Event handler {Array}
              */
-            subscribe: function (topic, callback) {
-                if (!cache[topic]) {
+            subscribe: function (topic, callback)
+            {
+                if (!cache[topic])
                     cache[topic] = [];
-                }
+
                 cache[topic].push(callback);
                 return [topic, callback];
             },
@@ -758,15 +760,20 @@ var diva = (function() {
              *      @param handle {Array}
              *      @param completely {Boolean}
              */
-            unsubscribe: function (handle, completely) {
+            unsubscribe: function (handle, completely)
+            {
                 var t = handle[0],
                     i = cache[t].length;
 
-                if (cache[t]) {
-                    while (i--) {
-                        if (cache[t][i] === handle[1]) {
+                if (cache[t])
+                {
+                    while (i--)
+                    {
+                        if (cache[t][i] === handle[1])
+                        {
                             cache[t].splice(cache[t][i], 1);
-                            if(completely){ delete cache[t]; }
+                            if (completely)
+                                delete cache[t];
                         }
                     }
                 }
