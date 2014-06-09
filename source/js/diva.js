@@ -61,7 +61,7 @@ window.divaPlugins = [];
             maxZoomLevel: -1,           // Optional; defaults to the max zoom returned in the JSON response
             minPagesPerRow: 2,          // Minimum pages per row in grid view. Recommended default.
             minZoomLevel: 0,            // Defaults to 0 (the minimum zoom)
-            onDocumentLoaded: null,     // Callback function for when the document is fully loaded
+            onDocumentLoaded: null,     // Callback function for when the document is fully loaded (Callbacks are deprecated, use Events)
             onModeToggle: null,         // Callback for toggling fullscreen mode
             onViewToggle: null,         // Callback for switching between grid and document view
             onJump: null,               // Callback function for jumping to a specific page (using the gotoPage feature)
