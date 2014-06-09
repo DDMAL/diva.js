@@ -161,25 +161,35 @@ window.divaPlugins = [];
         // Can take an unlimited number to arguments to pass to the callback function
         var self = this;
 
-        var executeCallback = function (callback)
+        var executeCallback = (function (callback)
         {
-            var args, i, length;
-
-            if (typeof callback === "function")
+            var firstRun = true;
+            return function(callback)
             {
-                args = [];
-                for (i = 1, length = arguments.length; i < length; i++)
+                var args, i, length;
+
+                if (typeof callback === "function")
                 {
-                    args.push(arguments[i]);
+                    args = [];
+                    for (i = 1, length = arguments.length; i < length; i++)
+                    {
+                        args.push(arguments[i]);
+                    }
+
+                    if(firstRun)
+                    {
+                        console.warn("The use of callback functions is deprecated. Use diva.Events.subscribe(\"Event\", function) instead.");
+                        firstRun = false;
+                    }
+
+                    callback.apply(self, args);
+
+                    return true;
                 }
 
-                callback.apply(self, args);
-
-                return true;
-            }
-
-            return false;
-        };
+                return false;
+            };
+        })();
 
         var getPageData = function (pageIndex, attribute)
         {
