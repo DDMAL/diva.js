@@ -2344,7 +2344,7 @@ window.divaPlugins = [];
         // Returns the page index (with indexing starting at 0)
         this.getCurrentPage = function ()
         {
-            console.warn("Deprecated. Use getCurrentPageIndex instead.");
+            console.warn("The call to getCurrentPage is deprecated. Use getCurrentPageIndex instead.");
             return settings.currentPageIndex;
         };
 
