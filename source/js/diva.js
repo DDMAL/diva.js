@@ -176,7 +176,7 @@ window.divaPlugins = [];
                         args.push(arguments[i]);
                     }
 
-                    if(firstRun)
+                    if (firstRun)
                     {
                         console.warn("The use of callback functions is deprecated. Use diva.Events.subscribe(\"Event\", function) instead.");
                         firstRun = false;
@@ -1144,7 +1144,7 @@ window.divaPlugins = [];
             }
 
             // If it has changed, adjust panel size coming out of fullscreen
-            if(!settings.inFullscreen)
+            if (!settings.inFullscreen)
                 adjustBrowserDims();
 
             // Execute callbacks
