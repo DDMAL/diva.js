@@ -1402,7 +1402,7 @@ window.divaPlugins = [];
                 var el = document.getElementById(settings.ID + "outer");
                 el.style.height = newHeight + "px";
                 el.style.width = newWidth + settings.scrollbarWidth + "px";
-                settings.panelWidth = newWidth + settings.scrollbarWidth;
+                settings.panelWidth = newWidth;
                 settings.panelHeight = newHeight;
                 return true;
             }
