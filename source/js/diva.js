@@ -1394,14 +1394,19 @@ window.divaPlugins = [];
             //calculate the new width
             var widthBorderPixels = parseInt($(settings.outerSelector).css('border-left-width')) + parseInt($(settings.outerSelector).css('border-right-width'));
             parentWidth = $(settings.parentSelector).width();
-            newWidth = parentWidth - (settings.viewerWidthPadding * 2) - widthBorderPixels - settings.scrollbarWidth;
+
+            if (settings.enableAutoWidth)
+                newWidth = parentWidth - (settings.viewerWidthPadding * 2) - widthBorderPixels - settings.scrollbarWidth;
+            else
+                newWidth = $(settings.outerSelector).width() - settings.scrollbarWidth;
 
             //if either have changed, reflect that visually
             if (newWidth !== settings.panelWidth || newHeight !== settings.panelHeight)
             {
-                var el = document.getElementById(settings.ID + "outer");
-                el.style.height = newHeight + "px";
-                el.style.width = newWidth + settings.scrollbarWidth + "px";
+                // outer width
+                $(settings.outerSelector).height(newHeight);
+                $(settings.outerSelector).width(newWidth + settings.scrollbarWidth);
+                // inner width
                 settings.panelWidth = newWidth;
                 settings.panelHeight = newHeight;
                 return true;
