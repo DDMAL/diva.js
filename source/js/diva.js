@@ -2181,7 +2181,8 @@ window.divaPlugins = [];
                     settings.viewerYOffset = viewerOffset.top;
 
                     // Set padding
-                    $(settings.outerSelector).css('margin-left', settings.viewerWidthPadding);
+                    if (settings.enableAutoWidth)
+                        $(settings.outerSelector).css('margin-left', settings.viewerWidthPadding);
 
                     if (settings.inFullscreen)
                         handleModeChange(false);
