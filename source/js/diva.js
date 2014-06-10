@@ -1376,7 +1376,7 @@ window.divaPlugins = [];
                 $(settings.parentSelector).width(parentWidth * settings.widthProportion);
             }
 
-            //grab useful data about the parent data
+            //grab useful data about the parent
             var parentOffset = $(settings.parentSelector).offset();
             var parentYOffset = parentOffset.top;
             var parentXOffset = parentOffset.left;
