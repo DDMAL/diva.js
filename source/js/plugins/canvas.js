@@ -353,6 +353,10 @@ Adds a little "tools" icon next to each image
                         'canvas-and-cross-site-data" target="_blank">canvas cross-site data documentation</a>.</p>' +
                         '</div>';
                     }
+                    else
+                    {
+                        throw error;
+                    }
 
                     canvasError += '</div>';
                     $('#diva-canvas-backdrop').append(canvasError);
