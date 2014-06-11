@@ -338,7 +338,25 @@ Adds a little "tools" icon next to each image
                 // Draw the image to the large canvas, and save the pixel array
                 canvas.context = canvas.canvas.getContext('2d');
                 canvas.context.drawImage(image, canvas.cornerX, canvas.cornerY, canvas.width, canvas.height);
-                canvas.data = canvas.context.getImageData(0, 0, canvas.size, canvas.size);
+                try
+                {
+                    canvas.data = canvas.context.getImageData(0, 0, canvas.size, canvas.size);
+                }
+                catch (error)
+                {
+                    var canvasError = '<div id="diva-canvas-error" class="diva-canvas-error"><p><strong>Error</strong></p><p>' + error.message + '</p>';
+
+                    if (error.name === 'SecurityError')
+                    {
+                        canvasError += '<p>You may need to update your server configuration in order to use the image manipulation tools. ' +
+                        'For help, see the <a href="https://github.com/DDMAL/diva.js/wiki/The-API-and-Plugins#a-note-about-' +
+                        'canvas-and-cross-site-data" target="_blank">canvas cross-site data documentation</a>.</p>' +
+                        '</div>';
+                    }
+
+                    canvasError += '</div>';
+                    $('#diva-canvas-backdrop').append(canvasError);
+                }
 
                 // Only load the map the first time (when there is no callback)
                 if (callback === undefined) {
