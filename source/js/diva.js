@@ -2172,10 +2172,11 @@ window.divaPlugins = [];
                         $(settings.parentSelector).prepend('<div id="' + settings.ID + 'title" class="diva-title">' + settings.itemTitle + '</div>');
                     }
 
-                    //if the parent is the body, we don't want to use this to base size off, we want window instead
+                    //if the parent is the body and there are no siblings, we don't want to use this to base size off, we want window instead
                     if ($(settings.parentSelector).parent()[0] === document.body)
                     {
-                        settings.divaIsFullWindow = true;
+                        if (!$(settings.parentSelector).siblings().not('#diva-canvas-backdrop')[0])
+                            settings.divaIsFullWindow = true;
                     }
 
                     // Adjust the document panel dimensions for touch devices
