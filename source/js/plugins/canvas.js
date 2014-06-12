@@ -344,7 +344,7 @@ Adds a little "tools" icon next to each image
                 }
                 catch (error)
                 {
-                    var canvasError = '<div id="diva-canvas-error" class="diva-canvas-error"><p><strong>Error</strong></p><p>' + error.message + '</p>';
+                    var canvasError = '<div id="diva-error" class="diva-error"><p><strong>Error</strong></p><p>' + error.message + '</p>';
 
                     if (error.name === 'SecurityError')
                     {
