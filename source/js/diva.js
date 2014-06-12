@@ -2082,7 +2082,26 @@ window.divaPlugins = [];
                     hideThrobber();
 
                     // Show a basic error message within the document viewer pane
-                    $(settings.outerSelector).text("Invalid URL. Error code: " + status + " " + error);
+                    var requestError = '<div id="' + settings.ID + 'error" class="diva-error"><p><strong>Error</strong></p><p>Invalid objectData. Error code: ' + status + ' ' + error + '</p>';
+
+                    // Detect and handle CORS errors
+                    var dataHasAbsolutePath = settings.objectData.lastIndexOf('http', 0) === 0;
+
+                    if (dataHasAbsolutePath && error === '')
+                    {
+                        var jsonHost = settings.objectData.replace(/https?:\/\//i, "").split(/[/?#]/)[0];
+                        if (location.hostname !== jsonHost)
+                        {
+                            requestError += '<p>Attempted to access cross-origin data without CORS.</p>' +
+                                '<p>You may need to update your server configuration to support CORS. ' +
+                                'For help, see the <a href="https://github.com/DDMAL/diva.js/wiki/' +
+                                'Installation#a-note-about-cross-site-requests" target="_blank">' +
+                                'cross-site request documentation.</a></p>';
+                        }
+                    }
+
+                    requestError += '</div>';
+                    $(settings.outerSelector).append(requestError);
                 },
                 success: function (data, status, jqxhr)
                 {
