@@ -846,7 +846,6 @@ window.divaPlugins = [];
 
             // Pretend that this is the current page
             settings.currentPageIndex = pageIndex;
-            //settings.toolbar.updateCurrentPage();
             var filename = settings.pages[pageIndex].f;
 
             executeCallback(settings.onSetCurrentPage, pageIndex, filename);
