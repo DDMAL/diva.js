@@ -838,8 +838,14 @@ window.divaPlugins = [];
         {
             verticalOffset = (typeof verticalOffset !== 'undefined') ? verticalOffset : 0;
             horizontalOffset = (typeof horizontalOffset !== 'undefined') ? horizontalOffset: 0;
-            var desiredTop = settings.heightAbovePages[pageIndex] + verticalOffset;
             var desiredLeft = (settings.maxWidths[settings.zoomLevel] - settings.panelWidth) / 2 + settings.horizontalPadding + horizontalOffset;
+ 
+            // y - vertical offset from the center of the relevant page if y hash parameter is present
+            var yParam = parseInt($.getHashParam('y' + settings.hashParamSuffix), 10);
+            var pageHeight = settings.heightAbovePages[pageIndex + 1] - settings.heightAbovePages[pageIndex] - settings.verticalPadding;
+            var pageTop = settings.heightAbovePages[pageIndex];
+
+            var desiredTop = (isNaN(yParam)) ? pageTop + verticalOffset : pageTop + settings.verticalPadding + (pageHeight / 2) - (settings.panelHeight / 2) + verticalOffset;
 
             $(settings.outerSelector).scrollTop(desiredTop);
             $(settings.outerSelector).scrollLeft(desiredLeft);
@@ -1276,9 +1282,11 @@ window.divaPlugins = [];
 
         var getYOffset = function ()
         {
+            // Returns offset specified from the center of the current page
             var yScroll = document.getElementById(settings.ID + "outer").scrollTop;
-            var topOfPage = settings.heightAbovePages[settings.currentPageIndex];
-            return parseInt(yScroll - topOfPage, 10);
+            var pageTop = settings.heightAbovePages[settings.currentPageIndex];
+            var pageHeight = settings.heightAbovePages[settings.currentPageIndex + 1] - settings.heightAbovePages[settings.currentPageIndex] - settings.verticalPadding;
+            return parseInt(yScroll - pageTop - (pageHeight / 2) + (settings.panelHeight / 2) - settings.verticalPadding, 10);
         };
 
         var getXOffset = function ()
