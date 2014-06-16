@@ -185,16 +185,3 @@ multipleHashParamTest("horizontal offset (x), vertical offset (y), page number (
     equal(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
 }, {enableFilename: false});
 
-hashParamTest("viewer size (h) - valid value", "h", "450", function (settings) {
-    equal($(settings.outerSelector).height(), 450, "Viewer height should be 450");
-});
-
-hashParamTest("viewer size (w) - valid value", "w", "450", function (settings) {
-    equal($(settings.outerSelector).width(), 450, "Viewer width should be 450");
-    equal($(settings.parentSelector).width(), 450, "Parent element width should also be 450");
-});
-
-multipleHashParamTest("viewer size (h, w) - valid values", {h: "600", w: "500"}, function (settings) {
-    equal($(settings.outerSelector).height(), 600, "Viewer height should be 600");
-    equal($(settings.outerSelector).width(), 500, "Viewer width should be 500");
-});

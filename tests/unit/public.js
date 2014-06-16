@@ -160,11 +160,9 @@ asyncTest("getState()", function () {
             var expected = {
                 f: false,
                 g: false,
-                h: 700,
                 i: 'bm_001.tif',
                 n: 5,
                 p: false,
-                w: 968,
                 x: 0,
                 y: 0,
                 z: 2
@@ -187,11 +185,9 @@ asyncTest("setState()", function () {
             var state = {
                 f: true,
                 g: false,
-                h: 400,
                 i: "bm_005.tif",
                 n: 3,
                 p: false,
-                w: 800,
                 x: 500,
                 y: 300,
                 z: 3
@@ -205,8 +201,6 @@ asyncTest("setState()", function () {
 
             // Have to leave fullscreen to test dimension-related things
             this.leaveFullscreenMode();
-            equal($(settings.outerSelector).height(), 400, "Height of viewer should be 400");
-            equal($(settings.outerSelector).width(), 800, "Width of viewer should be 800");
 
             equal($(settings.outerSelector).scrollTop(), 8672, "Scroll from top should be 300 more");
             equal($(settings.outerSelector).scrollLeft(), 865, "Scroll from left should be 500 more");
@@ -236,29 +230,3 @@ asyncTest("setState()", function () {
     });
 });
 
-asyncTest("resizeViewer()", function () {
-    $.tempDiva({
-        onReady: function (settings) {
-            var width = $(settings.outerSelector).width();
-            var height = $(settings.outerSelector).height();
-            notEqual(width, 500, "Original width should not be 500");
-            notEqual(height, 600, "Original height should not be 600");
-
-            this.resize(500, 600);
-
-            width = $(settings.outerSelector).width();
-            height = $(settings.outerSelector).height();
-            equal(width, 500, "Width should now be 500");
-            equal(height, 600, "Height should now be 600");
-
-            // Try an invalid value
-            this.resize(10, 500);
-            width = $(settings.outerSelector).width();
-            height = $(settings.outerSelector).height();
-            equal(width, 500, "Width should still be 500");
-            equal(height, 500, "Height should now be 500");
-
-            start();
-        }
-    });
-});
