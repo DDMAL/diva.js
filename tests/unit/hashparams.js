@@ -12,7 +12,7 @@ var multipleHashParamTest = function (testName, hashParams, onReadyCallback, set
         var hashValue;
         var first = true;
         var prefix = '';
-        for (hashParam in hashParams) {
+        for (var hashParam in hashParams) {
             hashValue = hashParams[hashParam];
 
             window.location.hash += prefix + hashParam + suffix + '=' + hashValue;
@@ -37,7 +37,7 @@ var multipleHashParamTest = function (testName, hashParams, onReadyCallback, set
 
         $.tempDiva(allSettings);
     });
-}
+};
 
 var hashParamTest = function (testName, hashParam, hashValue, onReadyCallback, settings) {
     // Has to be done this way because {hashParam: hashValue} does not work
@@ -56,7 +56,7 @@ hashParamTest("grid (g)", "g", "true", function (settings) {
 
 hashParamTest("fullscreen (f)", "f", "true", function (settings) {
     ok(settings.inFullscreen, "inFullscreen setting should be true");
-    ok($('body').hasClass('diva-hide-scrollbar'), "The body element should have the hide-scrollbar class")
+    ok($('body').hasClass('diva-hide-scrollbar'), "The body element should have the hide-scrollbar class");
 });
 
 multipleHashParamTest("grid (g) and fullscreen (f)", {g: "true", f: "true"}, function (settings) {
@@ -87,7 +87,7 @@ multipleHashParamTest("zoom level (z) and fullscreen (f)", {z: "1", f: "true"}, 
     ok(settings.inFullscreen, "Should be in fullscreen initially");
 
     // Check that we're actually in fullscreen mode
-    ok($('body').hasClass('diva-hide-scrollbar'), "The body element should have the hide-scrollbar class")
+    ok($('body').hasClass('diva-hide-scrollbar'), "The body element should have the hide-scrollbar class");
 
     // Check that the zoom level is actually 1
     equal($(settings.selector + 'zoom-slider-label').text(), "Zoom level: 1", "Zoom slider label should show a zoom level of 1");

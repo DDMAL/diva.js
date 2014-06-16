@@ -172,7 +172,7 @@ asyncTest("getState()", function () {
 
             var actual = this.getState();
 
-            for (key in expected) {
+            for (var key in expected) {
                 equal(actual[key], expected[key], "Checking key '" + key + "'");
             }
 
