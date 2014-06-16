@@ -1299,9 +1299,7 @@ window.divaPlugins = [];
                 'i': (settings.enableFilename) ? settings.pages[settings.currentPageIndex].f : false,
                 'p': (settings.enableFilename) ? false : settings.currentPageIndex + 1,
                 'y': (settings.inGrid) ? false : getYOffset(),
-                'x': (settings.inGrid) ? false : getXOffset(),
-                'h': (settings.inFullscreen) ? false : settings.panelHeight,
-                'w': (settings.inFullscreen) ? false : $(settings.outerSelector).width()
+                'x': (settings.inGrid) ? false : getXOffset()
             };
 
             return state;
@@ -2317,17 +2315,9 @@ window.divaPlugins = [];
             settings.inGrid = (settings.inGrid && gridParam !== 'false') || goIntoGrid;
             settings.inFullscreen = (settings.inFullscreen && fullscreenParam !== 'false') || goIntoFullscreen;
 
-            // Store the height and width of the viewer (the outer div), if present
-            var desiredHeight = parseInt($.getHashParam('h' + settings.hashParamSuffix), 10);
-            var desiredWidth = parseInt($.getHashParam('w' + settings.hashParamSuffix), 10);
-
             // Store the minimum and maximum height too
             settings.minHeight = parseInt($(settings.outerSelector).css('min-height'), 10);
             settings.minWidth = parseInt($(settings.outerSelector).css('min-width'), 10);
-
-            // Just call resize, it'll take care of bounds-checking etc
-            if (desiredHeight > 0 || desiredWidth > 0)
-                resizeViewer(desiredWidth, desiredHeight);
 
             // Do the initial AJAX request and viewer loading
             setupViewer();
@@ -2620,9 +2610,6 @@ window.divaPlugins = [];
         this.setState = function (state)
         {
             var pageIndex;
-
-            // If we need to resize the viewer, do that first
-            resizeViewer(state.w, state.h);
 
             // Only change settings.goDirectlyTo if state.i or state.p is valid
             pageIndex = getPageIndex(state.i);
