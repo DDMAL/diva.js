@@ -1421,29 +1421,6 @@ window.divaPlugins = [];
             return true;
         };
 
-        var resizeViewer = function (newWidth, newHeight)
-        {
-            if (newWidth >= settings.minWidth)
-            {
-                settings.widthProportion = newWidth;
-                $(settings.outerSelector).width(newWidth);
-                document.getElementById(settings.ID + "outer").style.width = newWidth + "px";
-
-                settings.panelWidth = newWidth - settings.scrollbarWidth;
-
-                // Should also change the width of the container
-                settings.parentSelector[0].style.width = newWidth + "px";
-            }
-
-            if (newHeight >= settings.minHeight)
-            {
-                settings.heightProportion = newHeight;
-                document.getElementById(settings.ID + "outer").style.height = newHeight + "px";
-
-                settings.panelHeight = newHeight;
-            }
-        };
-
         // Binds most of the event handlers (some more in createToolbar)
         var handleEvents = function ()
         {
@@ -2650,13 +2627,6 @@ window.divaPlugins = [];
                     loadViewer();
                 }
             }
-        };
-
-        // Resizes the outer div to the specified width and height
-        this.resize = function (newWidth, newHeight)
-        {
-            resizeViewer(newWidth, newHeight);
-            loadViewer();
         };
 
         // Destroys this instance, tells plugins to do the same (for testing)
