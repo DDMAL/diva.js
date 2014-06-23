@@ -203,7 +203,7 @@ asyncTest("setState()", function () {
             this.leaveFullscreenMode();
 
             equal($(settings.outerSelector).scrollTop(), 8672, "Scroll from top should be 300 more");
-            equal($(settings.outerSelector).scrollLeft(), 865, "Scroll from left should be 500 more");
+            equal($(settings.outerSelector).scrollLeft(), 804, "Scroll from left should be 500 more");
 
             state = {
                 f: false,
