@@ -1,7 +1,7 @@
 diva.js - Document Image Viewer with AJAX
 =========================================
 
-[![Build Status](https://secure.travis-ci.org/DDMAL/diva.js.png?branch=develop)](http://travis-ci.org/DDMAL/diva.js)
+[![Build Status](https://travis-ci.org/DDMAL/diva.js.svg?branch=develop)](http://travis-ci.org/DDMAL/diva.js)
 
 # Description
 
