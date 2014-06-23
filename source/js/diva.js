@@ -2594,6 +2594,23 @@ window.divaPlugins = [];
             return settings;
         };
 
+        /*
+            Translates a measurement from the zoom level on the largest size
+            to one on the current zoom level.
+
+            For example, a point 1000 on an image that is on zoom level 2 of 5
+            translates to a position of 111.111... (1000 / (5 - 2)^2).
+
+            Works for a single pixel co-ordinate or a dimension (e.g., translates a box
+            that is 1000 pixels wide on the original to one that is 111.111 pixels wide
+            on the current zoom level).
+        */
+        this.translateFromMaxZoomLevel = function (position)
+        {
+            var zoomDifference = settings.maxZoomLevel - settings.zoomLevel;
+            return position / Math.pow(2, zoomDifference);
+        };
+
         // Align this diva instance with a state object (as returned by getState)
         this.setState = function (state)
         {

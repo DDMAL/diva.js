@@ -228,3 +228,50 @@ asyncTest("setState()", function () {
     });
 });
 
+asyncTest("translateFromMaxZoomLevel()", function () {
+    $.tempDiva({
+        onReady: function (settings) {
+            var state = {
+                f: true,
+                g: false,
+                i: "bm_005.tif",
+                n: 3,
+                p: false,
+                x: 500,
+                y: 300,
+                z: this.getMaxZoomLevel()
+            };
+
+            this.setState(state);
+
+            var boxOnMaxPage = {x: 100, y: 100, width:1234, height:1324};
+
+            // first check to make sure the box on the max zoom level is the same as the box we feed in.
+            equal(this.translateFromMaxZoomLevel(100), boxOnMaxPage.x);
+            equal(this.translateFromMaxZoomLevel(100), boxOnMaxPage.y);
+            equal(this.translateFromMaxZoomLevel(1234), boxOnMaxPage.width);
+            equal(this.translateFromMaxZoomLevel(1324), boxOnMaxPage.height);
+
+            // reset the state to a different zoom level
+            state = {
+                f: true,
+                g: false,
+                i: "bm_005.tif",
+                n: 3,
+                p: false,
+                x: 500,
+                y: 300,
+                z: 2
+            };
+            this.setState(state);
+
+            // check that the box translation has changed accordingly.
+            equal(this.translateFromMaxZoomLevel(boxOnMaxPage.x), 25);
+            equal(this.translateFromMaxZoomLevel(boxOnMaxPage.y), 25);
+            equal(this.translateFromMaxZoomLevel(boxOnMaxPage.width), 308.5);
+            equal(this.translateFromMaxZoomLevel(boxOnMaxPage.height), 331);
+
+            start();
+        }
+    });
+});
