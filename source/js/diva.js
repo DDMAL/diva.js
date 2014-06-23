@@ -1123,8 +1123,11 @@ window.divaPlugins = [];
             $('body').toggleClass('diva-hide-scrollbar');
             $(settings.parentSelector).toggleClass('diva-full-width');
 
-            // If in fullscreen, set margin to 0
-            var margin = settings.inFullscreen ? '0px' : '30px';
+            // If in fullscreen, set margin to 0; if enableAutoWidth, use viewerWidthPadding
+            var margin = settings.inFullscreen ? '0px'
+                       : settings.enableAutoWidth ? settings.viewerWidthPadding.toString() + 'px'
+                       : '';
+
             $(settings.outerSelector).css('margin-left', margin);
 
             // Reset the panel dimensions
