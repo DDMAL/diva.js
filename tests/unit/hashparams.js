@@ -133,7 +133,7 @@ multipleHashParamTest("page number (p), grid (g)", {p: "100", g: "true"}, functi
 
 hashParamTest("vertical offset (y) - positive value", "y", "600", function (settings) {
     var topScroll = $(settings.outerSelector).scrollTop();
-    equal(topScroll, 600, "Should have scrolled 600 vertically");
+    equal(topScroll, 845, "Should have scrolled 845 (600 + page y-center) vertically");
 });
 
 hashParamTest("vertical offset (y) - negative value", "y", "-600", function (settings) {
@@ -143,9 +143,9 @@ hashParamTest("vertical offset (y) - negative value", "y", "-600", function (set
 
 multipleHashParamTest("vertical offset (y) and page number (p)", {y: 500, p: 50}, function (settings) {
     var topScroll = $(settings.outerSelector).scrollTop();
-    var expectedTopScroll = 52751;
+    var expectedTopScroll = 52952;
     equal(settings.currentPageIndex, 49, "Current page should be 50 (index of 49)");
-    equal(topScroll, expectedTopScroll, "Should be heightAbovePages + 500 pixels of scroll from the top");
+    equal(topScroll, expectedTopScroll, "Should be heightAbovePages + 500 pixels of scroll from the top + page y-center");
 
     // Check that the horizontal scroll hasn't been weirdly affected
     var leftScroll = $(settings.outerSelector).scrollLeft();
@@ -177,8 +177,8 @@ multipleHashParamTest("horizontal offset (x) and page number (p)", {x: 100, p: 5
 
 multipleHashParamTest("horizontal offset (x), vertical offset (y), page number (p)", {x: 100, y: 200, p: 50}, function (settings) {
     var topScroll = $(settings.outerSelector).scrollTop();
-    var expectedTopScroll = 52451;
-    equal(topScroll, expectedTopScroll, "vertical scroll should be to page 50 + 200");
+    var expectedTopScroll = 52652;
+    equal(topScroll, expectedTopScroll, "vertical scroll should be to page 50 + 200 + page y-center");
 
     var leftScroll = $(settings.outerSelector).scrollLeft();
     var expectedLeftScroll = (settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2 - settings.panelWidth) / 2 + 100;
