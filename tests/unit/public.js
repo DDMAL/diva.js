@@ -164,7 +164,7 @@ asyncTest("getState()", function () {
                 n: 5,
                 p: false,
                 x: 0,
-                y: 0,
+                y: -245,
                 z: 2
             };
 
@@ -208,11 +208,9 @@ asyncTest("setState()", function () {
             state = {
                 f: false,
                 g: true,
-                h: 500,
                 i: "bm_500.tif",
                 n: 4,
                 p: true,
-                w: 700,
                 x: 100,
                 y: 200,
                 z: 4
