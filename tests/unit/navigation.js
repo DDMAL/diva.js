@@ -177,8 +177,10 @@ asyncTest("Switching between document and grid view", function () {
             // Click the grid icon, then wait a bit for the event to be triggered
             setTimeout(function () {
                 ok(settings.inGrid, "Should now be in grid");
-                ok($(settings.selector + 'grid-slider').is(':visible'), "Grid slider should be visible");
-                ok(!$(settings.selector + 'zoom-slider').is(':visible'), "Zoom slider should not be visible");
+                ok($(settings.selector + 'grid-out-button').is(':visible'), "Grid buttons should be visible (-)");
+                ok($(settings.selector + 'grid-in-button').is(':visible'), "Grid buttons should be visible (+)");
+                ok(!$(settings.selector + 'zoom-out-buttons').is(':visible'), "Zoom buttons should not be visible (-)");
+                ok(!$(settings.selector + 'zoom-in-buttons').is(':visible'), "Zoom buttons should not be visible (+)");
                 start();
             }, 10);
         }
