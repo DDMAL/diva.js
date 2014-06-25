@@ -2611,6 +2611,26 @@ window.divaPlugins = [];
             return position / Math.pow(2, zoomDifference);
         };
 
+        /*
+            Translates a measurement from the current zoom level to the position on the
+            largest zoom level.
+
+            Works for a single pixel co-ordinate or a dimension (e.g., translates a box
+            that is 111.111 pixels wide on the current image to one that is 1000 pixels wide
+            on the current zoom level).
+        */
+        this.translateToMaxZoomLevel = function (position)
+        {
+            var zoomDifference = settings.maxZoomLevel - settings.zoomLevel;
+
+            // if there is no difference, it's a box on the max zoom level and
+            // we can just return the position.
+            if (zoomDifference === 0)
+                return position;
+
+            return position * Math.pow(zoomDifference, 2);
+        };
+
         // Align this diva instance with a state object (as returned by getState)
         this.setState = function (state)
         {

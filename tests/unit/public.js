@@ -275,3 +275,54 @@ asyncTest("translateFromMaxZoomLevel()", function () {
         }
     });
 });
+
+asyncTest("translateToMaxZoomLevel()", function () {
+    $.tempDiva({
+        onReady: function (settings) {
+            var state = {
+                f: true,
+                g: false,
+                i: "bm_005.tif",
+                n: 3,
+                p: false,
+                x: 500,
+                y: 300,
+                z: this.getMaxZoomLevel()
+            };
+
+            this.setState(state);
+
+            var boxOnThisPage = {x: 10, y: 10, width:123, height:132};
+
+            // first check to make sure the box on the max zoom level is the same as the box we feed in.
+            equal(this.translateToMaxZoomLevel(10), boxOnThisPage.x);
+            equal(this.translateToMaxZoomLevel(10), boxOnThisPage.y);
+            equal(this.translateToMaxZoomLevel(123), boxOnThisPage.width);
+            equal(this.translateToMaxZoomLevel(132), boxOnThisPage.height);
+
+            // reset the state to a different zoom level
+            state = {
+                f: true,
+                g: false,
+                i: "bm_005.tif",
+                n: 3,
+                p: false,
+                x: 500,
+                y: 300,
+                z: 2
+            };
+            this.setState(state);
+
+            // console.log(this.translateToMaxZoomLevel(boxOnThisPage.x));
+            // check that the box translation has changed accordingly. This assumes that
+            // the co-ordinate we want to translate is on the current zoom level (2), and we want
+            // to get it on the max page. Thus: 123 * (4-2)^2 = 984
+            equal(this.translateToMaxZoomLevel(boxOnThisPage.x), 40);
+            equal(this.translateToMaxZoomLevel(boxOnThisPage.y), 40);
+            equal(this.translateToMaxZoomLevel(boxOnThisPage.width), 492);
+            equal(this.translateToMaxZoomLevel(boxOnThisPage.height), 528);
+
+            start();
+        }
+    });
+});
