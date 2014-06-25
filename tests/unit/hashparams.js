@@ -48,8 +48,8 @@ var hashParamTest = function (testName, hashParam, hashValue, onReadyCallback, s
 
 hashParamTest("grid (g)", "g", "true", function (settings) {
     ok(settings.inGrid, "inGrid setting should be true");
-    ok($(settings.selector + 'diva-grid-out-button').is(':visible'), "Grid buttons (-) should be visible");
-    ok($(settings.selector + 'diva-grid-in-button').is(':visible'), "Grid buttons (+) should be visible");
+    ok($(settings.selector + 'grid-out-button').is(':visible'), "Grid buttons (-) should be visible");
+    ok($(settings.selector + 'grid-in-button').is(':visible'), "Grid buttons (+) should be visible");
     ok(!$(settings.selector + 'zoom-slider').is(':visible'), "Zoom slider should not be visible");
     equal($('.diva-document-page').length, 0, "There should be no document pages");
     notEqual($('.diva-row').length, 0, "There should be at least one row");
@@ -107,7 +107,7 @@ multipleHashParamTest("pagesPerRow (n) and grid (g)", {n: "3", g: "true"}, funct
     ok(settings.inGrid, "Should be in grid initially");
 
     // Check that the pages per row setting is actually 3
-    equal($(settings.selector + 'diva-buttons-label').text(), "Pages per row: 3", "Grid buttons label should show 3 pages per row");
+    equal($(settings.selector + 'grid-buttons-label').text(), "Pages per row: 3", "Grid buttons label should show 3 pages per row");
     equal($(settings.selector + 'row-0').children().length, 3, "The first row should have 3 pages");
 });
 
