@@ -142,6 +142,7 @@ window.divaPlugins = [];
             scaleWait: false,           // For preventing double-zoom on touch devices (iPad, etc)
             selector: '',               // Uses the generated ID prefix to easily select elements
             singleClick: false,         // Used for catching ctrl+double-click events in Firefox in Mac OS
+            isScrollable: true,         // Used in enable/disableScrollable public methods
             scrollbarWidth: 0,          // Set to the actual scrollbar width in init()
             throbberTimeoutID: -1,      // Holds the ID of the throbber loading timeout
             toolbar: null,              // Holds an object with some toolbar-related functions
@@ -1432,61 +1433,10 @@ window.divaPlugins = [];
             return true;
         };
 
-        // Binds most of the event handlers (some more in createToolbar)
-        var handleEvents = function ()
-        {
-            // Create the fullscreen toggle icon if fullscreen is enabled
-            if (settings.enableFullscreen)
-            {
-                // Event handler for fullscreen toggling
-                $(settings.selector + 'fullscreen').click(function ()
-                {
-                    toggleFullscreen();
-                });
-            }
-
-            // Change the cursor for dragging
-            $(settings.innerSelector).mouseover(function ()
-            {
-                $(this).removeClass('diva-grabbing').addClass('diva-grab');
-            });
-
-            $(settings.innerSelector).mouseout(function ()
-            {
-                $(this).removeClass('diva-grab');
-            });
-
-            $(settings.innerSelector).mousedown(function ()
-            {
-                $(this).removeClass('diva-grab').addClass('diva-grabbing');
-            });
-
-            $(settings.innerSelector).mouseup(function ()
-            {
-                $(this).removeClass('diva-grabbing').addClass('diva-grab');
-            });
-
+        // Bind mouse events (drag to scroll, double-click)
+        var bindMouseEvents = function() {
             // Set drag scroll on first descendant of class dragger on both selected elements
             $(settings.outerSelector + ', ' + settings.innerSelector).dragscrollable({dragSelector: '.diva-dragger', acceptPropagatedEvent: true});
-
-            // Handle the scroll
-            $(settings.outerSelector).scroll(function ()
-            {
-                settings.topScrollSoFar = document.getElementById(settings.ID + "outer").scrollTop;
-                var direction = settings.topScrollSoFar - settings.previousTopScroll;
-
-                if (settings.inGrid)
-                {
-                    adjustRows(direction);
-                }
-                else
-                {
-                    adjustPages(direction);
-                    settings.leftScrollSoFar = $(this).scrollLeft();
-                }
-
-                settings.previousTopScroll = settings.topScrollSoFar;
-            });
 
             // Double-click to zoom
             $(settings.outerSelector).on('dblclick', '.diva-document-page', function (event)
@@ -1525,6 +1475,63 @@ window.divaPlugins = [];
             $(settings.outerSelector).on('dblclick', '.diva-row', function (event)
             {
                 handleGridDoubleClick.call(this, event);
+            });
+
+        };
+
+        // Binds most of the event handlers (some more in createToolbar)
+        var handleEvents = function ()
+        {
+            // Create the fullscreen toggle icon if fullscreen is enabled
+            if (settings.enableFullscreen)
+            {
+                // Event handler for fullscreen toggling
+                $(settings.selector + 'fullscreen').click(function ()
+                {
+                    toggleFullscreen();
+                });
+            }
+
+            // Change the cursor for dragging
+            $(settings.innerSelector).mouseover(function ()
+            {
+                $(this).removeClass('diva-grabbing').addClass('diva-grab');
+            });
+
+            $(settings.innerSelector).mouseout(function ()
+            {
+                $(this).removeClass('diva-grab');
+            });
+
+            $(settings.innerSelector).mousedown(function ()
+            {
+                $(this).removeClass('diva-grab').addClass('diva-grabbing');
+            });
+
+            $(settings.innerSelector).mouseup(function ()
+            {
+                $(this).removeClass('diva-grabbing').addClass('diva-grab');
+            });
+
+            bindMouseEvents();
+
+            // Handle the scroll
+            $(settings.outerSelector).scroll(function ()
+            {
+                settings.topScrollSoFar = document.getElementById(settings.ID + "outer").scrollTop;
+                var direction = settings.topScrollSoFar - settings.previousTopScroll;
+
+                if (settings.inGrid)
+                {
+                    adjustRows(direction);
+                }
+                else
+                {
+                    adjustPages(direction);
+                    settings.leftScrollSoFar = $(this).scrollLeft();
+                }
+
+                settings.previousTopScroll = settings.topScrollSoFar;
             });
 
             // Check if the user is on a iPhone or iPod touch or iPad
@@ -2674,6 +2681,28 @@ window.divaPlugins = [];
                     // Reload the viewer, just in case
                     loadViewer();
                 }
+            }
+        };
+ 
+        // Re-enable dragging of the document to scroll and zooming by double-clicking
+        this.enableScrollable = function()
+        {
+            if (!settings.isScrollable)
+            {
+                bindMouseEvents();
+                settings.isScrollable = true;
+            }
+        };
+
+        // Disables dragging of the document to scroll and zooming by double-clicking
+        this.disableScrollable = function()
+        {
+            if (settings.isScrollable)
+            {
+                $(settings.innerSelector + '.diva-dragger').unbind('mousedown');
+                $(settings.outerSelector).unbind('dblclick');
+                $(settings.outerSelector).unbind('contextmenu');
+                settings.isScrollable = false;
             }
         };
 
