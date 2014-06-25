@@ -44,6 +44,7 @@ asyncTest("Scrolling in grid view", function () {
 
 asyncTest("Zooming using the slider", function () {
     $.tempDiva({
+        enableZoomControls: 'slider',
         zoomLevel: 4,
         onReady: function (settings) {
             $(settings.selector + 'zoom-slider').slider('value', 0);
@@ -61,7 +62,6 @@ asyncTest("Zooming using the slider", function () {
 asyncTest("Zooming using +/- buttons", function () {
     $.tempDiva({
         zoomLevel: 4,
-        enableZoomControls: 'buttons',
         onReady: function (settings) {
             for (var i = 0; i < 4; i++)
             {
@@ -126,7 +126,6 @@ asyncTest("Scrolling and subsequently zooming in Grid view", function () {
 
 asyncTest("Changing pages per row in Grid view using +/- buttons", function () {
     $.tempDiva({
-        enableGridControls: 'buttons',
         pagesPerRow: 2,
         onReady: function (settings) {
             this.enterGridView();
