@@ -1434,7 +1434,8 @@ window.divaPlugins = [];
         };
 
         // Bind mouse events (drag to scroll, double-click)
-        var bindMouseEvents = function() {
+        var bindMouseEvents = function()
+        {
             // Set drag scroll on first descendant of class dragger on both selected elements
             $(settings.outerSelector + ', ' + settings.innerSelector).dragscrollable({dragSelector: '.diva-dragger', acceptPropagatedEvent: true});
 
