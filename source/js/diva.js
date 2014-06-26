@@ -1342,11 +1342,7 @@ window.divaPlugins = [];
         var adjustMobileWebkitDims = function ()
         {
             settings.panelHeight = window.innerHeight - settings.viewerYOffset - settings.viewerHeightPadding;
-            settings.panelWidth = window.innerWidth - settings.viewerWidthPadding;
-
-            // $(settings.parentSelector).width(settings.panelWidth);
-            // document.getElementById(settings.parentSelector.substring(1)).style.width = settings.panelWidth + "px";
-            settings.parentSelector.style.width = settings.panelWidth + "px";
+            settings.panelWidth = (settings.enableAutoWidth) ? window.innerWidth - settings.viewerWidthPadding * 2 : window.innerWidth;
 
             if (settings.enableAutoHeight)
                 document.getElementById(settings.ID + "outer").style.height = settings.panelHeight + "px";
