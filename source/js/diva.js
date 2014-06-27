@@ -2196,7 +2196,16 @@ window.divaPlugins = [];
 
                     // Set padding
                     if (settings.enableAutoWidth)
-                        $(settings.outerSelector).css('margin-left', settings.viewerWidthPadding);
+                    {
+                        // mobileWebkit does not include body margin in window.innerWidth, so we manually offset the viewer
+                        if (settings.mobileWebkit)
+                        {
+                            var bodyMargin = parseInt($('body').css('margin'));
+                            $(settings.outerSelector).css('margin-left', settings.viewerWidthPadding - bodyMargin);
+                        }
+                        else
+                            $(settings.outerSelector).css('margin-left', settings.viewerWidthPadding);
+                    }
 
                     if (settings.inFullscreen)
                         handleModeChange(false);
