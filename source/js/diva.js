@@ -1124,9 +1124,12 @@ window.divaPlugins = [];
             $('body').toggleClass('diva-hide-scrollbar');
             $(settings.parentSelector).toggleClass('diva-full-width');
 
+            // Compensate: mobileWebkit excludes body margin from window.innerWidth calculation
+            var bodyMargin = (settings.mobileWebkit) ? parseInt($('body').css('margin')) : 0;
+
             // If in fullscreen, set margin to 0; if enableAutoWidth, use viewerWidthPadding
             var margin = settings.inFullscreen ? '0px'
-                       : settings.enableAutoWidth ? settings.viewerWidthPadding.toString() + 'px'
+                       : settings.enableAutoWidth ? (settings.viewerWidthPadding - bodyMargin).toString() + 'px'
                        : '';
 
             $(settings.outerSelector).css('margin-left', margin);
