@@ -1153,7 +1153,12 @@ window.divaPlugins = [];
 
             // If it has changed, adjust panel size coming out of fullscreen
             if (!settings.inFullscreen)
-                adjustBrowserDims();
+            {
+                if(settings.mobileWebkit)
+                    adjustMobileWebkitDims();
+                else
+                    adjustBrowserDims();
+            }
 
             // Execute callbacks
             executeCallback(settings.onModeToggle, settings.inFullscreen);
