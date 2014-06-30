@@ -2649,7 +2649,7 @@ window.divaPlugins = [];
             if (zoomDifference === 0)
                 return position;
 
-            return position * Math.pow(zoomDifference, 2);
+            return position * Math.pow(2, zoomDifference);
         };
 
         // Align this diva instance with a state object (as returned by getState)
