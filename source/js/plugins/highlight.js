@@ -174,7 +174,11 @@ Allows you to highlight regions of a page image
 
                     if (typeof callback !== 'undefined')
                     {
-                        diva.Events.subscribe("HighlightCompleted", callback);
+                        //don't overlap the event if it already exists
+                        if(!diva.Events.isSubscribedTo("HighlightCompleted", callback))
+                        {
+                            diva.Events.subscribe("HighlightCompleted", callback);
+                        }
                     }
 
                     return true;
