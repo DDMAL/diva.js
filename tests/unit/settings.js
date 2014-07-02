@@ -247,28 +247,6 @@ asyncTest("goDirectlyTo, invalid", function () {
 
 // iipServerURL can't really be tested, just have to rely on this to work
 
-asyncTest("inFullscreen false", function () {
-    $.tempDiva({
-        inFullscreen: false,
-        onReady: function (settings) {
-            ok(!settings.inFullscreen, "inFullscreen setting should still be false");
-            ok(!$(settings.selector + 'fullscreen').hasClass('diva-in-fullscreen'), "Icon should not have the diva-in-fullscreen class");
-            start();
-        }
-    });
-});
-
-asyncTest("inFullscreen true", function () {
-    $.tempDiva({
-        inFullscreen: true,
-        onReady: function (settings) {
-            ok(settings.inFullscreen, "inFullscreen setting should still be true");
-            ok($(settings.selector + 'fullscreen').hasClass('diva-in-fullscreen'), "Icon should have the diva-in-fullscreen class");
-            start();
-        }
-    });
-});
-
 asyncTest("inGrid false", function () {
     $.tempDiva({
         inGrid: false,
