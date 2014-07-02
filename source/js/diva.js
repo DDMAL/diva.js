@@ -360,7 +360,7 @@ window.divaPlugins = [];
                         // it isn't, if it should be visible.
                         if (!isTileLoaded(pageIndex, tileIndex)) {
                             if (isTileVisible(pageIndex, row, col)) {
-                                content.push('<div id="' + settings.ID + 'tile-' + pageIndex + '-' + tileIndex + '" style="display:inline; position: absolute; top: ' + top + 'px; left: ' + left + 'px; background-image: url(\'' + imageURL + '\'); height: ' + tileHeight + 'px; width: ' + tileWidth + 'px;"></div>');
+                                content.push('<div id="' + settings.ID + 'tile-' + pageIndex + '-' + tileIndex + '" class="diva-document-tile" style="display:inline; position: absolute; top: ' + top + 'px; left: ' + left + 'px; background-image: url(\'' + imageURL + '\'); height: ' + tileHeight + 'px; width: ' + tileWidth + 'px;"></div>');
                             } else {
                                 // The tile does not need to be loaded - not all have been loaded
                                 allTilesLoaded = false;
