@@ -33,7 +33,6 @@ window.divaPlugins = [];
             adaptivePadding: 0.05,      // The ratio of padding to the page dimension
             arrowScrollAmount: 40,      // The amount (in pixels) to scroll by when using arrow keys
             blockMobileMove: true,      // Prevent moving or scrolling the page on mobile devices
-            contained: false,           // Determines the location of the fullscreen icon
             objectData: '',             // URL to the JSON file that provides the object dimension data - *MANDATORY*
             enableAutoHeight: false,    // Automatically adjust height based on the window size
             enableAutoTitle: true,      // Shows the title within a div of id diva-title
@@ -1704,13 +1703,6 @@ window.divaPlugins = [];
             var pageNumberHTML = '<div class="diva-page-label">Page <span id="' + settings.ID + 'current-page">1</span> of <span id="' + settings.ID + 'num-pages">' + settings.numPages + '</span></div>';
 
             var fullscreenIconHTML = (settings.enableFullscreen) ? '<div id="' + settings.ID + 'fullscreen" class="diva-fullscreen-icon" title="Toggle fullscreen mode"></div>' : '';
-
-            if (settings.contained)
-            {
-                // If enableAutoTitle is set to TRUE, move it down
-                if (settings.enableAutoTitle)
-                    $(settings.selector + 'fullscreen').addClass('diva-contained');
-            }
 
             var toolbarHTML = '<div id="' + settings.ID + 'tools-left" class="diva-tools-left' + '">' + zoomSliderHTML + zoomButtonsHTML + gridSliderHTML + gridButtonsHTML + zoomSliderLabelHTML + zoomButtonsLabelHTML + gridSliderLabelHTML + gridButtonsLabelHTML + '</div><div id="' + settings.ID + 'tools-right" class="diva-tools-right">' + fullscreenIconHTML + linkIconHTML + gridIconHTML + '<div class="diva-page-nav">' + gotoPageHTML + pageNumberHTML + '</div></div>';
 

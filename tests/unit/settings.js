@@ -27,44 +27,6 @@ asyncTest("adaptivePadding disabled, fixedPadding set", function () {
     });
 });
 
-asyncTest("contained true, enableAutoTitle false", function () {
-    $.tempDiva({
-        contained: true,
-        enableAutoTitle: false,
-        onReady: function (settings) {
-            // Check that the fullscreen icon does NOT have the contained class
-            ok(!$(settings.selector + 'fullscreen').hasClass('diva-contained'), "Should not have the contained class");
-
-            // The whole thing should be relatively positioned
-            equal($(settings.parentSelector).css('position'), 'relative', "Container should be relatively positioned");
-
-            // Title should not be present
-            equal($(settings.selector + 'title').length, 0, "Title should not be present");
-
-            // The left tools section should have the fullscreen-space class
-            ok($(settings.selector + 'tools-left').hasClass('diva-fullscreen-space'), "Left tools section should be moved over");
-            start();
-        }
-    });
-});
-
-asyncTest("contained true, enableAutoTitle true", function () {
-    $.tempDiva({
-        contained: true,
-        enableAutoTitle: true,
-        onReady: function (settings) {
-            // Check that it does have the contained class
-            ok($(settings.selector + 'fullscreen').hasClass('diva-contained'), "Should have the contained class");
-
-            // Title SHOULD be present
-            notEqual($(settings.selector + 'title').length, 0, "Title SHOULD be present");
-            start();
-        }
-    });
-});
-
-// divaserveURL can't really be tested - just have to rely on this to work
-
 // enableCanvas and enableDownload are tested in plugins.js
 
 // enableFilename is tested in hashparams.js
