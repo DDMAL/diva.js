@@ -49,10 +49,6 @@
             .diva-slider-label;
         }
 
-        &.diva-fullscreen-space {
-            margin-left: 40px;
-        }
-
         &.in-fullscreen {
             float: right;
             padding-top: 10px;
@@ -189,25 +185,10 @@
 }
 
 .diva-fullscreen-icon {
-    position: absolute;
-    z-index: @fullscreenZIndex + 1;
-    top: 5px;
-    left: 5px;
-    .square(@fullscreenIconSize);
-    cursor: pointer;
-    background: url("@{iconPath}fullscreen.png") no-repeat;
-
-    &:hover {
-        background-position: -@fullscreenIconSize 0;
-    }
-
-    &.diva-contained {
-        top: 50px;
-    }
-
-    &.diva-in-fullscreen {
-        position: fixed;
-    }
+    .button;
+    background-image: url("@{iconPath}fullscreen.png");
+    border-left: 0px;
+    float: right;
 }
 
 .diva-link-popup {
