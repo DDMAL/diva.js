@@ -3,7 +3,7 @@ diva.js - Document Image Viewer with AJAX
 
 [![Build Status](https://travis-ci.org/DDMAL/diva.js.svg?branch=develop)](http://travis-ci.org/DDMAL/diva.js)
 
-# Description
+## Description
 
 Diva.js (Document Image Viewer with AJAX) is a JavaScript book image viewer designed to present multi-page documents at multiple resolutions.
 
@@ -15,7 +15,7 @@ Version 3.0 contains many new features and improvements:
  * A new publish/subscribe system for viewer
  * Bug-fixes (See our [commits](https://github.com/DDMAL/diva.js/commits/master) for more details).
 
-# Overview
+## Overview
 
 There are three components to a functioning Diva system:
 
@@ -25,7 +25,7 @@ There are three components to a functioning Diva system:
 
 Additionally, your document image files must be processed into either Pyramid TIFF, or JPEG2000 format, in order to be served by IIP.
 
-## Details
+### Details
 
 The IIP Image Server is required by Diva to serve image data. IIP creates the image tiles and other image representations "on the fly". Instructions for building and installing IIP are available on the [project's website](http://iipimage.sourceforge.net/documentation/server/). If you want to support JPEG 2000 you will either need to download a pre-compiled version (available on the [Old Maps Online site](http://help.oldmapsonline.org/jpeg2000/installation)) or [purchase the Kakadu libraries](http://www.kakadusoftware.com) and build it yourself.
 
@@ -35,7 +35,7 @@ Download the [latest release](https://github.com/DDMAL/diva.js/releases) of Diva
 
 There are two image formats supported by IIP: Pyramid TIFF and, with the inclusion of the Kakadu libraries, JPEG2000. These formats support multiple file resolutions and image tiling. 
 
-# Installing
+## Installing
 
 The most basic Diva viewer is instantiated with three required parameters:
 
@@ -56,7 +56,7 @@ $('#diva-wrapper').diva({
 Since IIP will be serving the images you should not place your images in directory accessible by your web server. In other words, if your web server uses `/srv/www` as its root directory you do not need to place your images there -- they can reside in any directory on your server as long as it they can be read by the IIP instance.
 
 See [Installation](https://github.com/DDMAL/diva.js/wiki/Installation) for full instructions.
-### Cross-site Requests
+#### Cross-site Requests
 
 You may receive an error that looks something like this:
 
@@ -68,7 +68,7 @@ This is a security precaution that all browsers use to prevent cross-site reques
 
 To fix this you must ensure that the Diva HTML page, and the location pointed to by the `objectData` page are being served by the same server, or you must create an exception using the `Access-Control-Allow-Origin` header on your server to explicitly white-list the `objectData` location.
 
-## Running the Demos
+### Running the Demos
 
 Running the demos works best using a web server. The easiest is to use Python to start a small web server in the 'build' directory:
 
@@ -79,7 +79,7 @@ Serving HTTP on 0.0.0.0 port 8000 ...
 ```
 You may then load the demos in your web browser by visiting `http://localhost:8000` in your browser.
 
-# Building from source
+## Building from source
 
 If you wish to install from source, you can check out the code from [our GitHub repository](http://github.com/DDMAL/diva.js). To fully build Diva you will need the following dependencies:
 
@@ -98,7 +98,7 @@ The full installation gives you access to the un-minified JavaScript source, the
 
 See [Installation](https://github.com/DDMAL/diva.js/wiki/Installation) for more information.
 
-## Getting help
+### Getting help
 
 Help for diva.js is available through this repository's [wiki](https://github.com/DDMAL/diva.js/wiki), in the form of code documentation, installation instructions and usage tips.
 
