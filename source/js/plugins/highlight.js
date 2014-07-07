@@ -90,12 +90,15 @@ Allows you to highlight regions of a page image
                 */
                 divaInstance.resetHighlights = function()
                 {
-                    var highlights = document.getElementsByClassName("search-result");
-                    var j = highlights.length;
-                    while (j--)
-                    {
-                        var parentObj = highlights[j].parentNode;
-                        parentObj.removeChild(highlights[j]);
+                    var inner = document.getElementById(divaSettings.ID + 'inner');
+                    var descendents = inner.getElementsByTagName('div');
+                    var j = descendents.length;
+
+                    while (j--) {
+                        if (descendents[j].className === 'search-result') {
+                            var parentObj = descendents[j].parentNode;
+                            parentObj.removeChild(descendents[j]);
+                        }
                     }
 
                     divaSettings.parentSelector.data('highlights', {});
