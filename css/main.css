@@ -1,0 +1,150 @@
+/* global */
+body {
+    padding-top: 80px;
+    -webkit-font-smoothing: antialiased;
+    font-size: 16px;
+    background-color: #f7f7f7;
+}
+
+section {
+    padding: 3em 0;
+}
+
+.navbar-nav > li > a, .navbar-brand, a.navbar-brand:hover {
+    color: #000;
+}
+
+.navbar .fa-bars {
+    font-size: 21px;
+}
+
+.navbar-toggle {
+    padding: 0;
+    margin-bottom: 0;
+    margin-top: 18px;
+}
+
+/* front page */
+.jumbotron {
+    background: url('/img/jumbobg.jpg') center;
+    height: 446px;
+    border-top: 1px solid #cacaca;
+    border-bottom: 1px solid #cacaca;
+    -webkit-box-shadow: 0px 0px 20px 0px rgba(50, 50, 50, 0.2);
+    -moz-box-shadow: 0px 0px 20px 0px rgba(50, 50, 50, 0.2);
+    box-shadow: 0px 0px 20px 0px rgba(50, 50, 50, 0.2);
+}
+
+.jumbotron h2 {
+    margin-top: 140px;
+    max-width: 66%;
+    text-shadow: 0px 1px 0px rgba(255, 255, 255, 0.3);
+    color: #222;
+}
+
+section.light {
+    background-color: #fff;
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+}
+
+section.last {
+    border-top: 0;
+    padding: 3em 0;
+}
+
+section#features {
+    /* background: #EEEEEE; */
+    background-color: #f7f7f7;
+    border-top: 1px solid #cacaca;
+    border-bottom: 1px solid #cacaca;
+    text-align: justify;
+}
+
+section#features h2 {
+    margin: 0 0 4px 0;
+}
+
+section.feature.first {
+    padding-top: 1em;
+}
+
+.window-shadow {
+    -moz-box-shadow:    0px 4px 11px 0px rgba(0,0,0,0.56);
+    box-shadow:         0px 4px 11px 0px rgba(0,0,0,0.56);
+}
+
+.ficon {
+    text-align: center;
+    font-size: 25px;
+}
+
+.vcenter {
+    display: inline-block;
+    vertical-align: middle;
+    float: none;
+}
+
+.feature {
+    text-shadow: 1px 1px 0px #ffffff;
+}
+
+.feature.lastf {
+    border-bottom: 0 !important;
+    margin-bottom: 0;
+}
+
+/* about */
+section.about {
+    padding-bottom:0em;
+}
+
+.about h2, .sponsors {
+    text-align: center;
+}
+
+.sponsors img {
+    padding: 1.5em 0;
+}
+
+/* getting started */
+.getting-started {
+    background-color: #fff;
+}
+
+article#about {
+    background-color: #fff;
+}
+
+/* footer */
+section#footer {
+    color: #fff;
+    padding: 50px 0;
+    position: relative;
+    background: url('/img/darkgray.png') #454545;
+    margin-bottom: 0;
+}
+
+section#footer p {
+    float: left;
+    position: absolute;
+    top: 50%;
+    -ms-transform: translateY(-50%);
+    -webkit-transform: translateY(-50%);
+    transform: translateY(-50%);
+}
+section#footer img {
+    float: right;
+    clear: none;
+    position: relative;
+    top: 5px;
+}
+footer p {
+    padding: 0;
+    margin: 0;
+    text-shadow: 0 1px 2px #222;
+}
+
+.navbar-brand {
+    padding: 15px 0 0 0;
+}
