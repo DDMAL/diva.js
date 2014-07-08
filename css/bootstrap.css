@@ -3811,8 +3811,7 @@ select[multiple].input-group-sm > .input-group-btn > .btn {
 .container-fluid > .navbar-header,
 .container > .navbar-collapse,
 .container-fluid > .navbar-collapse {
-  margin-right: -15px;
-  margin-left: -15px;
+  height: 80px;
 }
 @media (min-width: 768px) {
   .container > .navbar-header,
@@ -4559,7 +4558,7 @@ a.list-group-item.active > .badge,
 }
 .thumbnail {
   display: block;
-  padding: 4px;
+  padding: 8px;
   margin-bottom: 21px;
   line-height: 1.42857143;
   background-color: #ffffff;
@@ -4573,6 +4572,8 @@ a.list-group-item.active > .badge,
 .thumbnail a > img {
   margin-left: auto;
   margin-right: auto;
+  border: 1px solid #DFDFDF;
+  padding: 2px;
 }
 a.thumbnail:hover,
 a.thumbnail:focus,
@@ -4581,7 +4582,6 @@ a.thumbnail.active {
 }
 .thumbnail .caption {
   padding: 9px;
-  color: #2c3e50;
 }
 .alert {
   padding: 15px;
