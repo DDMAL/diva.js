@@ -28,7 +28,7 @@ section {
 
 /* front page */
 .jumbotron {
-    background: url('{{ site.url }}/img/jumbobg.jpg') center;
+    background: url('{{ site.baseurl }}img/jumbobg.jpg') center;
     height: 446px;
     -webkit-box-shadow: 0px 0px 20px 0px rgba(50, 50, 50, 0.2);
     -moz-box-shadow: 0px 0px 20px 0px rgba(50, 50, 50, 0.2);
@@ -116,7 +116,7 @@ section#footer {
     color: #fff;
     padding: 50px 0;
     position: relative;
-    background: url('{{ site.url }}/img/darkgray.png') #454545;
+    background: url('{{ site.baseurl }}img/darkgray.png') #454545;
     margin-bottom: 0;
 }
 
