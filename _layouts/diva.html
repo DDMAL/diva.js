@@ -20,6 +20,7 @@
     <script type="text/javascript">
         $(document).ready(function() {
             $('#diva-wrapper').diva({
+                enableAutoTitle: false,
                 enableAutoHeight: true,
                 fixedHeightGrid: false,
                 iipServerURL: "http://coltrane.music.mcgill.ca/fcgi-bin/iipsrv.fcgi",
@@ -41,7 +42,7 @@
 {% include nav.html %}
 {{ content }}
 {% include footer.html %}
-{% include scripts.html %}
+{% include diva-scripts.html %}
 {% include divasingle.html %}
 </body>
 </html>
