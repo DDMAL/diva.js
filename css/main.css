@@ -30,9 +30,6 @@ section {
 .jumbotron {
     background: url('{{ site.baseurl }}img/jumbobg.jpg') center;
     height: 446px;
-    -webkit-box-shadow: 0px 0px 20px 0px rgba(50, 50, 50, 0.2);
-    -moz-box-shadow: 0px 0px 20px 0px rgba(50, 50, 50, 0.2);
-    box-shadow: 0px 0px 20px 0px rgba(50, 50, 50, 0.2);
 }
 
 .jumbotron h2 {
