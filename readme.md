@@ -13,3 +13,4 @@ TODO:
 - [ ] Footer should fill remainder of body space (not leave light background off end of page)
 - [ ] Navigation links in footer
 - [ ] Jumbotron text readability?
+- [ ] Text ordering on front page in mobile
