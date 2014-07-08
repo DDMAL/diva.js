@@ -7,10 +7,11 @@ jekyll serve -w --baseurl /
 ```
 
 TODO:
-- [ ] Get multiple Try It examples working
-- [ ] Clean up About page
-- [ ] New (final) screenshots on front page
+- [x] Get multiple Try It examples working
+  - [ ] Create more demo configurations on Try It page
+- [x] New (final) screenshots on front page
+- [ ] Text ordering on front page on mobile
+- [ ] Navigation / go-to-top links in footer
+- [ ] Jumbotron text readability/extend to top?
 - [ ] Footer should fill remainder of body space (not leave light background off end of page)
-- [ ] Navigation links in footer
-- [ ] Jumbotron text readability?
-- [ ] Text ordering on front page in mobile
+- [ ] Clean up About/Getting Started page formatting
