@@ -96,7 +96,7 @@ Allows you to highlight regions of a page image
                     var j = descendents.length;
 
                     while (j--) {
-                        if (descendents[j].className === highlightClass) {
+                        if (descendents[j].className.match(new RegExp(highlightClass, "i"))) {
                             var parentObj = descendents[j].parentNode;
                             parentObj.removeChild(descendents[j]);
                         }
