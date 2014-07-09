@@ -91,15 +91,13 @@ Allows you to highlight regions of a page image
                 divaInstance.resetHighlights = function()
                 {
                     var inner = document.getElementById(divaSettings.ID + 'inner');
-                    var descendents = inner.getElementsByTagName('div');
                     var highlightClass = divaSettings.ID + 'highlight';
+                    var descendents = inner.getElementsByClassName(highlightClass);
                     var j = descendents.length;
 
                     while (j--) {
-                        if (descendents[j].className.match(new RegExp(highlightClass, "i"))) {
-                            var parentObj = descendents[j].parentNode;
-                            parentObj.removeChild(descendents[j]);
-                        }
+                        var parentObj = descendents[j].parentNode;
+                        parentObj.removeChild(descendents[j]);
                     }
 
                     divaSettings.parentSelector.data('highlights', {});
