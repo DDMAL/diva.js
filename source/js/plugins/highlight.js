@@ -131,12 +131,12 @@ Allows you to highlight regions of a page image
                     @param regions  An array of regions
                     @param colour   (optional) A colour for the highlighting, specified in RGBA CSS format
                 */
-                divaInstance.highlightOnPages = function(pageIdxs, regions, colour, divClass, callback)
+                divaInstance.highlightOnPages = function(pageIdxs, regions, colour, divClass)
                 {
                     var j = pageIdxs.length;
                     while (j--)
                     {
-                        divaInstance.highlightOnPage(pageIdxs[j], regions, colour, divClass, callback);
+                        divaInstance.highlightOnPage(pageIdxs[j], regions, colour, divClass);
                     }
                 };
 
@@ -148,7 +148,7 @@ Allows you to highlight regions of a page image
                     @param divClass (optional) A class to identify a group of highlighted regions on a specific page by 
                     @param callback (optional) The name of a function to call when the viewport is changed/highlights are refreshed
                 */
-                divaInstance.highlightOnPage = function(pageIdx, regions, colour, divClass, callback)
+                divaInstance.highlightOnPage = function(pageIdx, regions, colour, divClass)
                 {
                     if (typeof colour === 'undefined')
                     {
@@ -177,15 +177,6 @@ Allows you to highlight regions of a page image
                     var currentPage = divaInstance.getCurrentPageIndex();
                     if (pageIdx === currentPage)
                         _highlight(currentPage, null, null);
-
-                    if (typeof callback !== 'undefined')
-                    {
-                        //don't overlap the event if it already exists
-                        if(!diva.Events.isSubscribedTo("HighlightCompleted", callback))
-                        {
-                            diva.Events.subscribe("HighlightCompleted", callback);
-                        }
-                    }
 
                     return true;
                 };
