@@ -28,7 +28,7 @@ window.divaPlugins = [];
     var Diva = function (element, options)
     {
         // These are elements that can be overridden upon instantiation
-        // See https://github.com/DDMAL/diva.js/wiki/Code-documentation for more details
+        // See https://github.com/DDMAL/diva.js/wiki/Settings for more details
         var defaults = {
             adaptivePadding: 0.05,      // The ratio of padding to the page dimension
             arrowScrollAmount: 40,      // The amount (in pixels) to scroll by when using arrow keys
