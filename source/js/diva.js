@@ -44,7 +44,7 @@ window.divaPlugins = [];
             enableGotoPage: true,       // A "go to page" jump box
             enableGridIcon: true,       // A grid view of all the pages
             enableGridControls: 'buttons',  // Specify control of pages per grid row in Grid view. Possible values: 'buttons' (+/-), 'slider'. Any other value disables the controls.
-            enableKeyScroll: true,      // Scrolling using the arrow and page up/down keys
+            enableKeyScroll: true,      // Captures scrolling using the arrow and page up/down keys regardless of page focus. When off, defers to default browser scrolling behavior.
             enableLinkIcon: true,       // Controls the visibility of the link icon
             enableSpaceScroll: false,   // Scrolling down by pressing the space key
             enableToolbar: true,        // Enables the toolbar. Note that disabling this means you have to handle all controls yourself.
@@ -142,6 +142,8 @@ window.divaPlugins = [];
             selector: '',               // Uses the generated ID prefix to easily select elements
             singleClick: false,         // Used for catching ctrl+double-click events in Firefox in Mac OS
             isScrollable: true,         // Used in enable/disableScrollable public methods
+            initialKeyScroll: false,    // Holds the initial state of enableKeyScroll
+            initialSpaceScroll: false,    // Holds the initial state of enableSpaceScroll
             scrollbarWidth: 0,          // Set to the actual scrollbar width in init()
             throbberTimeoutID: -1,      // Holds the ID of the throbber loading timeout
             toolbar: null,              // Holds an object with some toolbar-related functions
@@ -2678,24 +2680,38 @@ window.divaPlugins = [];
             }
         };
  
-        // Re-enable dragging of the document to scroll and zooming by double-clicking
+        // Re-enables document dragging, scrolling (by keyboard if set), and zooming by double-clicking
         this.enableScrollable = function()
         {
             if (!settings.isScrollable)
             {
                 bindMouseEvents();
+                settings.enableKeyScroll = settings.initialKeyScroll;
+                settings.enableSpaceScroll = settings.initialSpaceScroll;
+                $(settings.outerSelector).css('overflow', 'auto');
                 settings.isScrollable = true;
             }
         };
 
-        // Disables dragging of the document to scroll and zooming by double-clicking
+        // Disables document dragging, scrolling (by keyboard if set), and zooming by double-clicking
         this.disableScrollable = function()
         {
             if (settings.isScrollable)
             {
+                // block dragging/double-click zooming
                 $(settings.innerSelector + '.diva-dragger').unbind('mousedown');
                 $(settings.outerSelector).unbind('dblclick');
                 $(settings.outerSelector).unbind('contextmenu');
+
+                // disable all other scrolling actions
+                $(settings.outerSelector).css('overflow', 'hidden');
+
+                // block scrolling keys behavior, respecting initial scroll settings
+                settings.initialKeyScroll = settings.enableKeyScroll;
+                settings.initialSpaceScroll = settings.enableSpaceScroll;
+                settings.enableKeyScroll = false;
+                settings.enableSpaceScroll = false;
+
                 settings.isScrollable = false;
             }
         };
