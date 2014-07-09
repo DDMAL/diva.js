@@ -777,27 +777,6 @@ var diva = (function() {
                         }
                     }
                 }
-            },
-            /**
-             *      Events.isSubscribedTo
-             *      e.g.: var handle = Events.subscribe("PageDidLoad", highlight);
-             *              Events.isSubscribedTo("PageDidLoad", handle); //returns true
-             *
-             *      @class Events
-             *      @method isSubscribedTo
-             *      @param topic {String}
-             *      @param handle {Function}
-             */
-            isSubscribedTo: function(topic, handle)
-            {
-                if(typeof(cache[topic]) === "undefined")
-                {
-                    return false;
-                } 
-                else 
-                {
-                    return (cache[topic].indexOf(handle) >= 0);
-                }
             }
         }
     };

@@ -2468,6 +2468,13 @@ window.divaPlugins = [];
             return isVerticallyInViewport(top, bottom);
         };
 
+        //Public wrapper for isPageVisible
+        //Determines if a page is currently in the viewport
+        this.isPageInViewport = function (pageIndex)
+        {
+            return isPageVisible(pageIndex);
+        };
+
         // Toggle fullscreen mode
         this.toggleFullscreenMode = function ()
         {
