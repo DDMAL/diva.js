@@ -92,10 +92,11 @@ Allows you to highlight regions of a page image
                 {
                     var inner = document.getElementById(divaSettings.ID + 'inner');
                     var descendents = inner.getElementsByTagName('div');
+                    var highlightClass = divaSettings.ID + 'highlight';
                     var j = descendents.length;
 
                     while (j--) {
-                        if (descendents[j].className === 'search-result') {
+                        if (descendents[j].className === highlightClass) {
                             var parentObj = descendents[j].parentNode;
                             parentObj.removeChild(descendents[j]);
                         }
@@ -114,13 +115,17 @@ Allows you to highlight regions of a page image
                     {
                         var pageId = divaInstance.getInstanceId() + 'page-' + pageIdx;
                         var pageObj = document.getElementById(pageId);
-                        var highlights = pageObj.getElementsByClassName('search-result');
+                        var descendents = pageObj.getElementsByTagName('div');
+                        var highlightClass = highlightsObj[pageIdx].divClass;
 
-                        var j = highlights.length;
+                        var j = descendents.length;
+
                         while (j--)
                         {
-                            pageObj.removeChild(highlights[j]);
+                            if (descendents[j].className === highlightClass)
+                                pageObj.removeChild(descendents[j]);
                         }
+
                         delete highlightsObj[pageIdx];
                     }
                 };
@@ -157,11 +162,11 @@ Allows you to highlight regions of a page image
 
                     if (typeof divClass === 'undefined')
                     {
-                        divClass = 'search-result';
+                        divClass = divaSettings.ID + 'highlight';
                     }
                     else 
                     {
-                        divClass = 'search-result ' + divClass;
+                        divClass = divaSettings.ID + 'highlight' + divClass;
                     }
 
                     var maxZoom = divaInstance.getMaxZoomLevel();
