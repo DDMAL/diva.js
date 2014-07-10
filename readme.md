@@ -15,3 +15,7 @@ TODO:
 - [ ] Jumbotron text readability/extend to top?
 - [ ] Footer should fill remainder of body space (not leave light background off end of page)
 - [ ] Clean up About/Getting Started page formatting
+
+##### Performance:
+- [ ] Remove unused Bootstrap CSS (substantial)
+- [ ] Replace Fontawesome icon font with 3 svg files / custom webfont with fewer glyphs
