@@ -1389,15 +1389,10 @@ window.divaPlugins = [];
                 $(settings.parentSelector).width(parentWidth * settings.widthProportion);
             }
 
-            //grab useful data about the parent
-            var parentOffset = $(settings.parentSelector).offset();
-            var parentYOffset = parentOffset.top;
-            var parentXOffset = parentOffset.left;
-
             //reset the offset variables to make them accurate in the case that they've changed
-            var outerOffset = $(settings.outerSelector).offset();
-            settings.viewerYOffset = outerOffset.top - parentYOffset;
-            settings.viewerXOffset = outerOffset.left - parentXOffset;
+            var viewerOffset = $(settings.outerSelector).offset();
+            settings.viewerXOffset = viewerOffset.left;
+            settings.viewerYOffset = viewerOffset.top;
 
             //calculate the new height based off the proportions
             var heightBorderPixels = parseInt($(settings.outerSelector).css('border-top-width')) + parseInt($(settings.outerSelector).css('border-bottom-width'));
