@@ -1397,7 +1397,8 @@ window.divaPlugins = [];
             //calculate the new height based off the proportions
             var heightBorderPixels = parseInt($(settings.outerSelector).css('border-top-width')) + parseInt($(settings.outerSelector).css('border-bottom-width'));
             parentHeight = $(settings.parentSelector).height();
-            var newHeight = parentHeight - settings.viewerYOffset - heightBorderPixels;
+            var parentYOffset = $(settings.parentSelector).offset().top;
+            var newHeight = parentHeight - settings.viewerYOffset + parentYOffset - heightBorderPixels;
 
             //calculate the new width
             var widthBorderPixels = parseInt($(settings.outerSelector).css('border-left-width')) + parseInt($(settings.outerSelector).css('border-right-width'));
