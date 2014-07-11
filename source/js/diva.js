@@ -153,7 +153,7 @@ window.divaPlugins = [];
             verticalOffset: 0,          // See horizontalOffset
             verticalPadding: 0,         // Either the fixed padding or adaptive padding
             widthProportion: 0,         // Stores the original proportion between parentSelector.width and window.width
-            viewerXOffset: 0,           // Distance between left edge of viewer and document left edge (used for double-click zooming)
+            viewerXOffset: 0,           // Distance between left edge of window and viewer left edge (used for double-click zooming)
             viewerYOffset: 0            // Like viewerXOffset but for the top edges
         };
 
