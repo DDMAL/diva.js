@@ -6,7 +6,7 @@ For local development, install [Jekyll](http://jekyllrb.com/), and in the root d
 jekyll serve -w --baseurl /
 ```
 
-TODO:
+TODO: (see [issues](https://github.com/DDMAL/diva.js/issues?labels=Website&page=1&state=open))
 - [x] Get multiple Try It examples working
   - [ ] Create more demo configurations on Try It page
 - [x] New (final) screenshots on front page
