@@ -57,10 +57,6 @@ section#features h2 {
     margin: 0 0 4px 0;
 }
 
-section.feature.first {
-    padding-top: 1em;
-}
-
 .window-shadow {
     -moz-box-shadow:    0px 4px 11px 0px rgba(0,0,0,0.56);
     box-shadow:         0px 4px 11px 0px rgba(0,0,0,0.56);
