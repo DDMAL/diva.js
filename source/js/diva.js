@@ -841,7 +841,7 @@ window.divaPlugins = [];
             verticalOffset = (typeof verticalOffset !== 'undefined') ? verticalOffset : 0;
             horizontalOffset = (typeof horizontalOffset !== 'undefined') ? horizontalOffset: 0;
             var desiredLeft = (settings.maxWidths[settings.zoomLevel] - settings.panelWidth) / 2 + settings.horizontalPadding + horizontalOffset;
- 
+
             // y - vertical offset from the center of the relevant page if y hash parameter is present
             var yParam = parseInt($.getHashParam('y' + settings.hashParamSuffix), 10);
             var pageHeight = settings.heightAbovePages[pageIndex + 1] - settings.heightAbovePages[pageIndex] - settings.verticalPadding;
@@ -1367,7 +1367,7 @@ window.divaPlugins = [];
 
             //if parent is body, base these sizes off the window
             if (settings.divaIsFullWindow)
-            {     
+            {
                 parentWidth = $(window).innerWidth();
                 parentHeight = $(window).innerHeight();
             }
@@ -1619,7 +1619,7 @@ window.divaPlugins = [];
                         $(settings.outerSelector).scrollTop(settings.topScrollSoFar - settings.panelHeight);
                         return false;
                     }
- 
+
                     // Up arrow - scroll up
                     if (settings.enableKeyScroll && event.keyCode === upArrowKey)
                     {
@@ -1640,7 +1640,7 @@ window.divaPlugins = [];
                         $(settings.outerSelector).scrollLeft(settings.leftScrollSoFar - settings.arrowScrollAmount);
                         return false;
                     }
- 
+
                     // Right arrow - scroll right
                     if (settings.enableKeyScroll && event.keyCode === rightArrowKey)
                     {
@@ -2160,7 +2160,7 @@ window.divaPlugins = [];
                         adjustMobileWebkitDims();
                     }
                     else if (settings.divaIsFullWindow)
-                    {     
+                    {
                         //so we shall use window instead
                         settings.widthProportion = $(settings.parentSelector).width() / $(window).innerWidth();
                         // Do not overflow the window in the event that the initial CSS height is greater than the initial window size
@@ -2676,7 +2676,7 @@ window.divaPlugins = [];
                 }
             }
         };
- 
+
         // Re-enables document dragging, scrolling (by keyboard if set), and zooming by double-clicking
         this.enableScrollable = function()
         {
