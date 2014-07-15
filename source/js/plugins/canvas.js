@@ -1,7 +1,7 @@
 /*
 
 Canvas plugin for diva.js
-Adds a little "tools" icon next to each image
+Adds an adjustment icon next to each image
 
 */
 
