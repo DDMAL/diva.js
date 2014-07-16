@@ -712,8 +712,8 @@ var diva = (function() {
     var pub = {
         Events: {
             /**
-             *      Events.publish
-             *      e.g.: Events.publish("PageDidLoad", [pageIndex, filename, pageSelector], this);
+             *      diva.Events.publish
+             *      e.g.: diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector], this);
              *
              *      @class Events
              *      @method publish
@@ -733,8 +733,8 @@ var diva = (function() {
                 }
             },
             /**
-             *      Events.subscribe
-             *      e.g.: Events.subscribe("PageDidLoad", highlight)
+             *      diva.Events.subscribe
+             *      e.g.: diva.Events.subscribe("PageDidLoad", highlight)
              *
              *      @class Events
              *      @method subscribe
@@ -751,14 +751,14 @@ var diva = (function() {
                 return [topic, callback];
             },
             /**
-             *      Events.unsubscribe
+             *      diva.Events.unsubscribe
              *      e.g.: var handle = Events.subscribe("PageDidLoad", highlight);
              *              Events.unsubscribe(handle);
              *
              *      @class Events
              *      @method unsubscribe
              *      @param handle {Array}
-             *      @param completely {Boolean}
+             *      @param completely {Boolean} - Unsubscribe all events for a given topic.
              */
             unsubscribe: function (handle, completely)
             {
