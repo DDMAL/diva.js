@@ -2730,6 +2730,9 @@ window.divaPlugins = [];
 
             // Remove any additional styling on the parent element
             $(settings.parentSelector).removeAttr('style').removeAttr('class');
+
+            // Clear the Events cache
+            diva.Events.unsubscribeAll();
         };
     };
 

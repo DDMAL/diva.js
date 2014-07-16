@@ -777,6 +777,17 @@ var diva = (function() {
                         }
                     }
                 }
+            },
+            /**
+             *      diva.Events.unsubscribeAll
+             *      e.g.: diva.Events.unsubscribeAll();
+             *
+             *      @class Events
+             *      @method unsubscribe
+             */
+            unsubscribeAll: function ()
+            {
+                cache = {};
             }
         }
     };
