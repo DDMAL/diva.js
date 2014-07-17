@@ -2175,11 +2175,6 @@ window.divaPlugins = [];
                         adjustBrowserDims();
                     }
 
-                    // Calculate the viewer x and y offsets
-                    var viewerOffset = $(settings.outerSelector).offset();
-                    settings.viewerXOffset = viewerOffset.left;
-                    settings.viewerYOffset = viewerOffset.top;
-
                     // Set padding
                     if (settings.enableAutoWidth)
                     {
