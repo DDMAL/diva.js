@@ -16,7 +16,10 @@ title: A web-based document collection viewer
                 <p>High-resolution document images never looked so good. Using Diva you can display your images at the largest resolution, meaning your users can see even the smallest detail on your document images.</p>
             </div><!--
          --><div class="col-md-8 col-md-pull-4 vcenter">
-                <img src="{{ site.baseurl }}img/large.jpg" class="img-responsive window-shadow" alt="Integrated" />
+                 <video id="feature-picture" preload="auto" loop class="img-responsive window-shadow">
+                     <source src="{{ site.baseurl }}mov/01-big-picture.mp4" type="video/mp4">
+                     <source src="{{ site.baseurl }}mov/01-big-picture.webm" type="video/webm">
+                 </video>
             </div>
         </div>
     </div>
@@ -30,7 +33,10 @@ title: A web-based document collection viewer
                 <p>Our unique document display system provides nearly “instant-on” viewing for even the largest document images. Diva downloads only the images, or even the portion of the image, that is visible to the user. This minimizes bandwidth consumption while providing a very fast viewing experience.</p>
             </div><!--
          --><div class="col-md-8 vcenter">
-            <img src="{{ site.baseurl }}img/grid.jpg" class="img-responsive window-shadow" alt="Integrated" />
+                 <video id="feature-speed" preload="auto" loop class="img-responsive window-shadow">
+                     <source src="{{ site.baseurl }}mov/02-speed-demon.mp4" type="video/mp4">
+                     <source src="{{ site.baseurl }}mov/02-speed-demon.webm" type="video/webm">
+                 </video>
             </div>
         </div>
     </div>
@@ -44,7 +50,10 @@ title: A web-based document collection viewer
                 <p>By design, Diva integrates easily with existing digital library systems and websites. It requires no plugins, and its only server-side dependency is the IIP Image server system. We've built a full API and plugin system to help integrate and extend Diva to suit your needs.</p>
             </div><!--
          --><div class="col-md-8 col-md-pull-4 vcenter">
-                <img src="{{ site.baseurl }}img/integrated.jpg" class="img-responsive window-shadow" alt="Integrated" />
+                 <video id="feature-others" preload="auto" loop class="img-responsive window-shadow">
+                     <source src="{{ site.baseurl }}mov/03-plays-well.mp4" type="video/mp4">
+                     <source src="{{ site.baseurl }}mov/03-plays-well.webm" type="video/webm">
+                 </video>
             </div>
         </div>
     </div>
@@ -81,3 +90,4 @@ title: A web-based document collection viewer
         </div>
     </div>
 </section>
+<script type="text/javascript" src="{{ site.baseurl }}js/video.js"></script>
