@@ -360,6 +360,7 @@ Adds an adjustment icon next to each image
 
                     canvasError += '</div>';
                     $('#diva-canvas-backdrop').append(canvasError);
+                    hideThrobber();
                 }
 
                 // Only load the map the first time (when there is no callback)
@@ -414,7 +415,7 @@ Adds an adjustment icon next to each image
         var showThrobber = function ()
         {
             // Only show the throbber if it will take a long time
-            if (sliders.zoom.current > 2 || settings.mobileWebkit)
+            if (sliders.zoom.current > 0 || settings.mobileWebkit)
             {
                 $(settings.selector + 'throbber').addClass('canvas-throbber').show();
             }
@@ -735,6 +736,7 @@ Adds an adjustment icon next to each image
                     $('#diva-canvas-wrapper').scrollTop(0).scrollLeft(0);
                     $('#diva-canvas-backdrop').hide();
                     $('#diva-map-viewbox').hide();
+                    hideThrobber();
 
                     // Reset everything
                     resetSliders();
