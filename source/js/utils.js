@@ -115,28 +115,6 @@ Storage.prototype.getObject = function (key) {
     };
 })(jQuery);
 
-/* iPad one finger scroll from http://forrst.com/posts/jQuery_iPad_one_finger_scroll-B30 */
-jQuery.fn.oneFingerScroll = function() {
-    var scrollStartPos = 0;
-    var scrollStartY;
-    var scrollStartX;
-    $(this).bind('touchstart', function(event) {
-        // jQuery clones events, but only with a limited number of properties for perf reasons. Need the original event to get 'touches'
-        var e = event.originalEvent;
-        scrollStartY = $(this).scrollTop() + e.touches[0].pageY;
-        // Need horizontal scrolling too
-        scrollStartX = $(this).scrollLeft() + e.touches[0].pageX;
-        e.preventDefault();
-    });
-    $(this).bind('touchmove', function(event) {
-        var e = event.originalEvent;
-        $(this).scrollTop(scrollStartY- e.touches[0].pageY);
-        $(this).scrollLeft(scrollStartX - e.touches[0].pageX);
-        e.preventDefault();
-    });
-    return this;
-};
-
 /*
  * jQuery dragscrollable Plugin
  * version: 1.0 (25-Jun-2009)
