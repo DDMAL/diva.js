@@ -1592,7 +1592,14 @@ window.divaPlugins = [];
                 });
 
                 // Inertial scrolling
-                $(settings.outerSelector).kinetic();
+                $(settings.outerSelector).kinetic({
+                    triggerHardware: true,
+                    filterTarget: function(target) {
+                        if (target.className === 'diva-canvas-icon' || target.className === 'diva-download-icon')
+                            return false;
+                        return true;
+                    }
+                });
             }
 
             // Only check if either scrollBySpace or scrollByKeys is enabled
@@ -2015,7 +2022,8 @@ window.divaPlugins = [];
                             pageTools.push('<div class="diva-' + plugin.pluginName + '-icon" title="' + titleText + '"></div>');
 
                             // Delegate the click event - pass it the settings
-                            $(settings.outerSelector).delegate('.diva-' + plugin.pluginName + '-icon', 'click', function (event)
+                            var clickEvent = (settings.mobileWebkit) ? 'touchend' : 'click';
+                            $(settings.outerSelector).on(clickEvent, '.diva-' + plugin.pluginName + '-icon', function (event)
                             {
                                 plugin.handleClick.call(this, event, settings);
                             });
