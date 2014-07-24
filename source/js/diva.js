@@ -1442,7 +1442,8 @@ window.divaPlugins = [];
         var bindMouseEvents = function()
         {
             // Set drag scroll on first descendant of class dragger on both selected elements
-            $(settings.outerSelector + ', ' + settings.innerSelector).dragscrollable({dragSelector: '.diva-dragger', acceptPropagatedEvent: true});
+            if (!settings.mobileWebkit)
+                $(settings.outerSelector + ', ' + settings.innerSelector).dragscrollable({dragSelector: '.diva-dragger', acceptPropagatedEvent: true});
 
             // Double-click to zoom
             $(settings.outerSelector).on('dblclick', '.diva-document-page', function (event)
