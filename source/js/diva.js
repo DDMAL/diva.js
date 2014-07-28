@@ -2412,6 +2412,19 @@ window.divaPlugins = [];
             return settings.currentPageIndex + 1;
         };
 
+        // Returns an array of all filenames in the document
+        this.getFilenames = function()
+        {
+            var filenames = [];
+
+            for (var i = 0; i < settings.numPages; i++)
+            {
+                filenames[i] = settings.pages[i].f;
+            }
+
+            return filenames;
+        };
+
         // Returns the current zoom level
         this.getZoomLevel = function ()
         {
