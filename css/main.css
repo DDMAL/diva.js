@@ -11,6 +11,10 @@ section {
     padding: 3em 0;
 }
 
+section.page {
+    padding: 1em;
+}
+
 .navbar-nav > li > a, .navbar-brand, a.navbar-brand:hover {
     color: #000;
 }

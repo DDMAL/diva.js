@@ -4570,8 +4570,6 @@ a.list-group-item.active > .badge,
 .thumbnail a > img {
   margin-left: auto;
   margin-right: auto;
-  border: 1px solid #DFDFDF;
-  padding: 2px;
 }
 a.thumbnail:hover,
 a.thumbnail:focus,
