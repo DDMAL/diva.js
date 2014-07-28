@@ -749,7 +749,7 @@ var diva = (function() {
                     {
                         if (cache[t][i] === handle[1])
                         {
-                            cache[t].splice(cache[t][i], 1);
+                            cache[t].splice(i, 1);
                             if (completely)
                                 delete cache[t];
                         }
