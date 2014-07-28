@@ -91,14 +91,13 @@ Allows you to highlight regions of a page image
                 divaInstance.resetHighlights = function()
                 {
                     var inner = document.getElementById(divaSettings.ID + 'inner');
-                    var descendents = inner.getElementsByTagName('div');
+                    var highlightClass = divaSettings.ID + 'highlight';
+                    var descendents = inner.getElementsByClassName(highlightClass);
                     var j = descendents.length;
 
                     while (j--) {
-                        if (descendents[j].className === 'search-result') {
-                            var parentObj = descendents[j].parentNode;
-                            parentObj.removeChild(descendents[j]);
-                        }
+                        var parentObj = descendents[j].parentNode;
+                        parentObj.removeChild(descendents[j]);
                     }
 
                     divaSettings.parentSelector.data('highlights', {});
@@ -114,13 +113,17 @@ Allows you to highlight regions of a page image
                     {
                         var pageId = divaInstance.getInstanceId() + 'page-' + pageIdx;
                         var pageObj = document.getElementById(pageId);
-                        var highlights = pageObj.getElementsByClassName('search-result');
+                        var descendents = pageObj.getElementsByTagName('div');
+                        var highlightClass = highlightsObj[pageIdx].divClass;
 
-                        var j = highlights.length;
+                        var j = descendents.length;
+
                         while (j--)
                         {
-                            pageObj.removeChild(highlights[j]);
+                            if (descendents[j].className === highlightClass)
+                                pageObj.removeChild(descendents[j]);
                         }
+
                         delete highlightsObj[pageIdx];
                     }
                 };
@@ -131,12 +134,12 @@ Allows you to highlight regions of a page image
                     @param regions  An array of regions
                     @param colour   (optional) A colour for the highlighting, specified in RGBA CSS format
                 */
-                divaInstance.highlightOnPages = function(pageIdxs, regions, colour, divClass, callback)
+                divaInstance.highlightOnPages = function(pageIdxs, regions, colour, divClass)
                 {
                     var j = pageIdxs.length;
                     while (j--)
                     {
-                        divaInstance.highlightOnPage(pageIdxs[j], regions, colour, divClass, callback);
+                        divaInstance.highlightOnPage(pageIdxs[j], regions, colour, divClass);
                     }
                 };
 
@@ -148,7 +151,7 @@ Allows you to highlight regions of a page image
                     @param divClass (optional) A class to identify a group of highlighted regions on a specific page by 
                     @param callback (optional) The name of a function to call when the viewport is changed/highlights are refreshed
                 */
-                divaInstance.highlightOnPage = function(pageIdx, regions, colour, divClass, callback)
+                divaInstance.highlightOnPage = function(pageIdx, regions, colour, divClass)
                 {
                     if (typeof colour === 'undefined')
                     {
@@ -157,11 +160,11 @@ Allows you to highlight regions of a page image
 
                     if (typeof divClass === 'undefined')
                     {
-                        divClass = 'search-result';
+                        divClass = divaSettings.ID + 'highlight';
                     }
                     else 
                     {
-                        divClass = 'search-result ' + divClass;
+                        divClass = divaSettings.ID + 'highlight ' + divClass;
                     }
 
                     var maxZoom = divaInstance.getMaxZoomLevel();
@@ -174,17 +177,9 @@ Allows you to highlight regions of a page image
                     // Since the highlighting won't take place until the viewer is scrolled
                     // to a new page we should explicitly call the _highlight method for visible page.
                     // (only if the current page is the one to be highlighted)
-                    var currentPage = divaInstance.getCurrentPageIndex();
-                    if (pageIdx === currentPage)
-                        _highlight(currentPage, null, null);
-
-                    if (typeof callback !== 'undefined')
+                    if (divaInstance.isPageInViewport(pageIdx))
                     {
-                        //don't overlap the event if it already exists
-                        if(!diva.Events.isSubscribedTo("HighlightCompleted", callback))
-                        {
-                            diva.Events.subscribe("HighlightCompleted", callback);
-                        }
+                        _highlight(pageIdx, null, null);
                     }
 
                     return true;

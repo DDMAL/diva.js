@@ -115,28 +115,6 @@ Storage.prototype.getObject = function (key) {
     };
 })(jQuery);
 
-/* iPad one finger scroll from http://forrst.com/posts/jQuery_iPad_one_finger_scroll-B30 */
-jQuery.fn.oneFingerScroll = function() {
-    var scrollStartPos = 0;
-    var scrollStartY;
-    var scrollStartX;
-    $(this).bind('touchstart', function(event) {
-        // jQuery clones events, but only with a limited number of properties for perf reasons. Need the original event to get 'touches'
-        var e = event.originalEvent;
-        scrollStartY = $(this).scrollTop() + e.touches[0].pageY;
-        // Need horizontal scrolling too
-        scrollStartX = $(this).scrollLeft() + e.touches[0].pageX;
-        e.preventDefault();
-    });
-    $(this).bind('touchmove', function(event) {
-        var e = event.originalEvent;
-        $(this).scrollTop(scrollStartY- e.touches[0].pageY);
-        $(this).scrollLeft(scrollStartX - e.touches[0].pageX);
-        e.preventDefault();
-    });
-    return this;
-};
-
 /*
  * jQuery dragscrollable Plugin
  * version: 1.0 (25-Jun-2009)
@@ -712,8 +690,8 @@ var diva = (function() {
     var pub = {
         Events: {
             /**
-             *      Events.publish
-             *      e.g.: Events.publish("PageDidLoad", [pageIndex, filename, pageSelector], this);
+             *      diva.Events.publish
+             *      e.g.: diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector], this);
              *
              *      @class Events
              *      @method publish
@@ -733,8 +711,8 @@ var diva = (function() {
                 }
             },
             /**
-             *      Events.subscribe
-             *      e.g.: Events.subscribe("PageDidLoad", highlight)
+             *      diva.Events.subscribe
+             *      e.g.: diva.Events.subscribe("PageDidLoad", highlight)
              *
              *      @class Events
              *      @method subscribe
@@ -751,14 +729,14 @@ var diva = (function() {
                 return [topic, callback];
             },
             /**
-             *      Events.unsubscribe
+             *      diva.Events.unsubscribe
              *      e.g.: var handle = Events.subscribe("PageDidLoad", highlight);
              *              Events.unsubscribe(handle);
              *
              *      @class Events
              *      @method unsubscribe
              *      @param handle {Array}
-             *      @param completely {Boolean}
+             *      @param completely {Boolean} - Unsubscribe all events for a given topic.
              */
             unsubscribe: function (handle, completely)
             {
@@ -779,25 +757,15 @@ var diva = (function() {
                 }
             },
             /**
-             *      Events.isSubscribedTo
-             *      e.g.: var handle = Events.subscribe("PageDidLoad", highlight);
-             *              Events.isSubscribedTo("PageDidLoad", handle); //returns true
+             *      diva.Events.unsubscribeAll
+             *      e.g.: diva.Events.unsubscribeAll();
              *
              *      @class Events
-             *      @method isSubscribedTo
-             *      @param topic {String}
-             *      @param handle {Function}
+             *      @method unsubscribe
              */
-            isSubscribedTo: function(topic, handle)
+            unsubscribeAll: function ()
             {
-                if(typeof(cache[topic]) === "undefined")
-                {
-                    return false;
-                } 
-                else 
-                {
-                    return (cache[topic].indexOf(handle) >= 0);
-                }
+                cache = {};
             }
         }
     };

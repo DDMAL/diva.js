@@ -28,7 +28,7 @@ window.divaPlugins = [];
     var Diva = function (element, options)
     {
         // These are elements that can be overridden upon instantiation
-        // See https://github.com/DDMAL/diva.js/wiki/Code-documentation for more details
+        // See https://github.com/DDMAL/diva.js/wiki/Settings for more details
         var defaults = {
             adaptivePadding: 0.05,      // The ratio of padding to the page dimension
             arrowScrollAmount: 40,      // The amount (in pixels) to scroll by when using arrow keys
@@ -44,7 +44,7 @@ window.divaPlugins = [];
             enableGotoPage: true,       // A "go to page" jump box
             enableGridIcon: true,       // A grid view of all the pages
             enableGridControls: 'buttons',  // Specify control of pages per grid row in Grid view. Possible values: 'buttons' (+/-), 'slider'. Any other value disables the controls.
-            enableKeyScroll: true,      // Scrolling using the arrow and page up/down keys
+            enableKeyScroll: true,      // Captures scrolling using the arrow and page up/down keys regardless of page focus. When off, defers to default browser scrolling behavior.
             enableLinkIcon: true,       // Controls the visibility of the link icon
             enableSpaceScroll: false,   // Scrolling down by pressing the space key
             enableToolbar: true,        // Enables the toolbar. Note that disabling this means you have to handle all controls yourself.
@@ -142,6 +142,8 @@ window.divaPlugins = [];
             selector: '',               // Uses the generated ID prefix to easily select elements
             singleClick: false,         // Used for catching ctrl+double-click events in Firefox in Mac OS
             isScrollable: true,         // Used in enable/disableScrollable public methods
+            initialKeyScroll: false,    // Holds the initial state of enableKeyScroll
+            initialSpaceScroll: false,    // Holds the initial state of enableSpaceScroll
             scrollbarWidth: 0,          // Set to the actual scrollbar width in init()
             throbberTimeoutID: -1,      // Holds the ID of the throbber loading timeout
             toolbar: null,              // Holds an object with some toolbar-related functions
@@ -151,7 +153,7 @@ window.divaPlugins = [];
             verticalOffset: 0,          // See horizontalOffset
             verticalPadding: 0,         // Either the fixed padding or adaptive padding
             widthProportion: 0,         // Stores the original proportion between parentSelector.width and window.width
-            viewerXOffset: 0,           // Distance between left edge of viewer and document left edge (used for double-click zooming)
+            viewerXOffset: 0,           // Distance between left edge of window and viewer left edge (used for double-click zooming)
             viewerYOffset: 0            // Like viewerXOffset but for the top edges
         };
 
@@ -839,7 +841,7 @@ window.divaPlugins = [];
             verticalOffset = (typeof verticalOffset !== 'undefined') ? verticalOffset : 0;
             horizontalOffset = (typeof horizontalOffset !== 'undefined') ? horizontalOffset: 0;
             var desiredLeft = (settings.maxWidths[settings.zoomLevel] - settings.panelWidth) / 2 + settings.horizontalPadding + horizontalOffset;
- 
+
             // y - vertical offset from the center of the relevant page if y hash parameter is present
             var yParam = parseInt($.getHashParam('y' + settings.hashParamSuffix), 10);
             var pageHeight = settings.heightAbovePages[pageIndex + 1] - settings.heightAbovePages[pageIndex] - settings.verticalPadding;
@@ -1248,7 +1250,26 @@ window.divaPlugins = [];
             // Set it to true so we have to wait for this one to finish
             settings.scaleWait = true;
 
-            // Has to call handleZoomSlide so that the coordinates are kept
+            //var pageOffset = $(event.srcElement).parent('.diva-document-page').offset();
+            var pageOffset = $(this).offset();
+            var offsetX = event.pageX - pageOffset.left;
+            var offsetY = event.pageY - pageOffset.top;
+
+            ////////////////////////////////
+            console.log('------- zoom -------');
+            console.log(event.pageX);
+            console.log(event.pageY);
+            console.log('');
+
+            // Store the offset information so that it can be used in documentScroll()
+            settings.preZoomOffset = {
+                x: offsetX,
+                y: offsetY,
+                originalX: event.pageX,
+                originalY: event.pageY,
+                i: $(this).attr('data-index')
+            };
+
             handleZoom(newZoomLevel);
         };
 
@@ -1347,6 +1368,8 @@ window.divaPlugins = [];
         // Called in init and when the orientation changes
         var adjustMobileWebkitDims = function ()
         {
+            settings.viewerXOffset = $(settings.outerSelector).offset().left;
+            settings.viewerYOffset = $(settings.outerSelector).offset().top;
             settings.panelHeight = window.innerHeight - settings.viewerYOffset - settings.viewerHeightPadding;
             settings.panelWidth = (settings.enableAutoWidth) ? window.innerWidth - settings.viewerWidthPadding * 2 : window.innerWidth;
 
@@ -1365,7 +1388,7 @@ window.divaPlugins = [];
 
             //if parent is body, base these sizes off the window
             if (settings.divaIsFullWindow)
-            {     
+            {
                 parentWidth = $(window).innerWidth();
                 parentHeight = $(window).innerHeight();
             }
@@ -1387,36 +1410,35 @@ window.divaPlugins = [];
                 $(settings.parentSelector).width(parentWidth * settings.widthProportion);
             }
 
-            //grab useful data about the parent
-            var parentOffset = $(settings.parentSelector).offset();
-            var parentYOffset = parentOffset.top;
-            var parentXOffset = parentOffset.left;
-
             //reset the offset variables to make them accurate in the case that they've changed
-            var outerOffset = $(settings.outerSelector).offset();
-            settings.viewerYOffset = outerOffset.top - parentYOffset;
-            settings.viewerXOffset = outerOffset.left - parentXOffset;
+            var viewerOffset = $(settings.outerSelector).offset();
+            settings.viewerXOffset = viewerOffset.left;
+            settings.viewerYOffset = viewerOffset.top;
 
             //calculate the new height based off the proportions
             var heightBorderPixels = parseInt($(settings.outerSelector).css('border-top-width')) + parseInt($(settings.outerSelector).css('border-bottom-width'));
             parentHeight = $(settings.parentSelector).height();
-            newHeight = parentHeight - settings.viewerYOffset - heightBorderPixels;
+            var parentYOffset = $(settings.parentSelector).offset().top;
+            var newHeight = (settings.enableAutoHeight) ? parentHeight - settings.viewerYOffset + parentYOffset - heightBorderPixels : $(settings.outerSelector).height();
 
             //calculate the new width
             var widthBorderPixels = parseInt($(settings.outerSelector).css('border-left-width')) + parseInt($(settings.outerSelector).css('border-right-width'));
             parentWidth = $(settings.parentSelector).width();
 
+            var newWidth;
             if (settings.enableAutoWidth)
                 newWidth = parentWidth - (settings.viewerWidthPadding * 2) - widthBorderPixels - settings.scrollbarWidth;
             else
-                newWidth = $(settings.outerSelector).width() - settings.scrollbarWidth;
+                newWidth = $(settings.outerSelector).width() - settings.scrollbarWidth - widthBorderPixels;
 
             //if either have changed, reflect that visually
             if (newWidth !== settings.panelWidth || newHeight !== settings.panelHeight)
             {
                 // outer width
-                $(settings.outerSelector).height(newHeight);
-                $(settings.outerSelector).width(newWidth + settings.scrollbarWidth);
+                if (settings.enableAutoHeight)
+                    $(settings.outerSelector).height(newHeight);
+                if (settings.enableAutoWidth)
+                    $(settings.outerSelector).width(newWidth + settings.scrollbarWidth);
                 // inner width
                 settings.panelWidth = newWidth;
                 settings.panelHeight = newHeight;
@@ -1439,7 +1461,8 @@ window.divaPlugins = [];
         var bindMouseEvents = function()
         {
             // Set drag scroll on first descendant of class dragger on both selected elements
-            $(settings.outerSelector + ', ' + settings.innerSelector).dragscrollable({dragSelector: '.diva-dragger', acceptPropagatedEvent: true});
+            if (!settings.mobileWebkit)
+                $(settings.outerSelector + ', ' + settings.innerSelector).dragscrollable({dragSelector: '.diva-dragger', acceptPropagatedEvent: true});
 
             // Double-click to zoom
             $(settings.outerSelector).on('dblclick', '.diva-document-page', function (event)
@@ -1553,8 +1576,14 @@ window.divaPlugins = [];
                     });
                 }
 
+//                $(settings.outerSelector).on('gestureend', '.diva-document-page', function (event)
+//                {
+//                    handleDocumentDoubleClick.call(this, event);
+//                });
+
                 // Allow pinch-zooming
-                $('body').bind('gestureend', function (event)
+//                $('body').bind('gestureend', function (event)
+                $(settings.outerSelector).on('gestureend', '.diva-document-page', function (event)
                 {
                     var e = event.originalEvent;
 
@@ -1570,7 +1599,8 @@ window.divaPlugins = [];
                         }
                         else
                         {
-                            handlePinchZoom(e);
+                            //handlePinchZoom(e);
+                            handlePinchZoom.call(this, e);
                         }
                     }
                     return false;
@@ -1588,13 +1618,19 @@ window.divaPlugins = [];
                 });
 
                 // Inertial scrolling
-                $(settings.outerSelector).kinetic();
+                $(settings.outerSelector).kinetic({
+                    triggerHardware: true,
+                    filterTarget: function(target) {
+                        if (target.className === 'diva-canvas-icon' || target.className === 'diva-download-icon')
+                            return false;
+                        return true;
+                    }
+                });
             }
 
             // Only check if either scrollBySpace or scrollByKeys is enabled
             if (settings.enableSpaceScroll || settings.enableKeyScroll)
             {
-                console.log('scrolley module entered');
                 var upArrowKey = $.ui.keyCode.UP,
                     downArrowKey = $.ui.keyCode.DOWN,
                     leftArrowKey = $.ui.keyCode.LEFT,
@@ -1608,7 +1644,6 @@ window.divaPlugins = [];
                 // Catch the key presses in document
                 $(document).keydown(function (event)
                 {
-                    console.log('keydown block entered');
                     // Space or page down - go to the next page
                     if ((settings.enableSpaceScroll && event.keyCode === spaceKey) || (settings.enableKeyScroll && event.keyCode === pageDownKey))
                     {
@@ -1622,7 +1657,7 @@ window.divaPlugins = [];
                         $(settings.outerSelector).scrollTop(settings.topScrollSoFar - settings.panelHeight);
                         return false;
                     }
- 
+
                     // Up arrow - scroll up
                     if (settings.enableKeyScroll && event.keyCode === upArrowKey)
                     {
@@ -1643,7 +1678,7 @@ window.divaPlugins = [];
                         $(settings.outerSelector).scrollLeft(settings.leftScrollSoFar - settings.arrowScrollAmount);
                         return false;
                     }
- 
+
                     // Right arrow - scroll right
                     if (settings.enableKeyScroll && event.keyCode === rightArrowKey)
                     {
@@ -2013,7 +2048,8 @@ window.divaPlugins = [];
                             pageTools.push('<div class="diva-' + plugin.pluginName + '-icon" title="' + titleText + '"></div>');
 
                             // Delegate the click event - pass it the settings
-                            $(settings.outerSelector).delegate('.diva-' + plugin.pluginName + '-icon', 'click', function (event)
+                            var clickEvent = (settings.mobileWebkit) ? 'touchend' : 'click';
+                            $(settings.outerSelector).on(clickEvent, '.diva-' + plugin.pluginName + '-icon', function (event)
                             {
                                 plugin.handleClick.call(this, event, settings);
                             });
@@ -2163,7 +2199,7 @@ window.divaPlugins = [];
                         adjustMobileWebkitDims();
                     }
                     else if (settings.divaIsFullWindow)
-                    {     
+                    {
                         //so we shall use window instead
                         settings.widthProportion = $(settings.parentSelector).width() / $(window).innerWidth();
                         // Do not overflow the window in the event that the initial CSS height is greater than the initial window size
@@ -2177,11 +2213,6 @@ window.divaPlugins = [];
                         settings.heightProportion = $(settings.parentSelector).height() / $(settings.parentSelector).parent().innerHeight();
                         adjustBrowserDims();
                     }
-
-                    // Calculate the viewer x and y offsets
-                    var viewerOffset = $(settings.outerSelector).offset();
-                    settings.viewerXOffset = viewerOffset.left;
-                    settings.viewerYOffset = viewerOffset.top;
 
                     // Set padding
                     if (settings.enableAutoWidth)
@@ -2407,6 +2438,19 @@ window.divaPlugins = [];
             return settings.currentPageIndex + 1;
         };
 
+        // Returns an array of all filenames in the document
+        this.getFilenames = function()
+        {
+            var filenames = [];
+
+            for (var i = 0; i < settings.numPages; i++)
+            {
+                filenames[i] = settings.pages[i].f;
+            }
+
+            return filenames;
+        };
+
         // Returns the current zoom level
         this.getZoomLevel = function ()
         {
@@ -2468,6 +2512,13 @@ window.divaPlugins = [];
             var bottom = top + height;
 
             return isVerticallyInViewport(top, bottom);
+        };
+
+        //Public wrapper for isPageVisible
+        //Determines if a page is currently in the viewport
+        this.isPageInViewport = function (pageIndex)
+        {
+            return isPageVisible(pageIndex);
         };
 
         // Toggle fullscreen mode
@@ -2672,25 +2723,39 @@ window.divaPlugins = [];
                 }
             }
         };
- 
-        // Re-enable dragging of the document to scroll and zooming by double-clicking
+
+        // Re-enables document dragging, scrolling (by keyboard if set), and zooming by double-clicking
         this.enableScrollable = function()
         {
             if (!settings.isScrollable)
             {
                 bindMouseEvents();
+                settings.enableKeyScroll = settings.initialKeyScroll;
+                settings.enableSpaceScroll = settings.initialSpaceScroll;
+                $(settings.outerSelector).css('overflow', 'auto');
                 settings.isScrollable = true;
             }
         };
 
-        // Disables dragging of the document to scroll and zooming by double-clicking
+        // Disables document dragging, scrolling (by keyboard if set), and zooming by double-clicking
         this.disableScrollable = function()
         {
             if (settings.isScrollable)
             {
+                // block dragging/double-click zooming
                 $(settings.innerSelector + '.diva-dragger').unbind('mousedown');
                 $(settings.outerSelector).unbind('dblclick');
                 $(settings.outerSelector).unbind('contextmenu');
+
+                // disable all other scrolling actions
+                $(settings.outerSelector).css('overflow', 'hidden');
+
+                // block scrolling keys behavior, respecting initial scroll settings
+                settings.initialKeyScroll = settings.enableKeyScroll;
+                settings.initialSpaceScroll = settings.enableSpaceScroll;
+                settings.enableKeyScroll = false;
+                settings.enableSpaceScroll = false;
+
                 settings.isScrollable = false;
             }
         };
@@ -2712,6 +2777,9 @@ window.divaPlugins = [];
 
             // Remove any additional styling on the parent element
             $(settings.parentSelector).removeAttr('style').removeAttr('class');
+
+            // Clear the Events cache
+            diva.Events.unsubscribeAll();
         };
     };
 
