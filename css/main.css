@@ -159,5 +159,18 @@ section#footer p, section#footer nav {
 
 /* try it */
 #diva-wrapper {
-    margin-bottom: 3em;
+    margin-bottom: 1em;
+}
+.diva-goto-form {
+    float: right;
+}
+.diva-page-label {
+    float: right;
+    padding-right: 4px !important;
+}
+.diva-buttons-label {
+    padding: 5px 10px !important;
+}
+.diva-input {
+    width: 38px;
 }
