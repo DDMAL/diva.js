@@ -39,7 +39,7 @@ section.page {
 .jumbotron h2 {
     margin-top: 140px;
     max-width: 66%;
-    text-shadow: 0px 1px 0px rgba(255, 255, 255, 0.3);
+    text-shadow: 0px 0px 12px rgba(255, 255, 255, 1.0);
     color: #333;
     font-size: 40px;
 }
