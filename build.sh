@@ -40,7 +40,7 @@ all ()
 {
     if [ -d "build" ]; then
         echo "Removing old build directory"
-        rm -r build
+        rm -r build/*
     fi
 
     mkdir -p build/demo
