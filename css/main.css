@@ -15,6 +15,10 @@ section.page {
     padding: 1em;
 }
 
+.navbar-brand {
+    padding: 15px 0 0 0;
+}
+
 .navbar-nav > li > a, .navbar-brand, a.navbar-brand:hover {
     color: #000;
 }
@@ -111,7 +115,7 @@ article#about {
 
 /* footer */
 .footnav {
-    margin-bottom: 4em;
+    margin-bottom: 3em;
 }
 section#footer {
     color: #fff;
@@ -128,7 +132,7 @@ section#footer nav {
 
 section#footer ul {
     list-style: none;
-    padding: 0; 
+    padding: 0;
 }
 
 section#footer ul > li {
@@ -153,8 +157,8 @@ section#footer p, section#footer nav {
     text-shadow: 0 1px 2px #222;
 }
 
-.navbar-brand {
-    padding: 15px 0 0 0;
+footer p {
+    margin: 0;
 }
 
 /* try it */
@@ -173,4 +177,12 @@ section#footer p, section#footer nav {
 }
 .diva-input {
     width: 38px;
+}
+
+/* documentation */
+#documentation h3 {
+    margin-bottom: 2em;
+}
+#documentation .btn {
+    margin-top: 2em;
 }
