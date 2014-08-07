@@ -307,7 +307,8 @@ window.divaPlugins = [];
 
                 // @TODO: Replace this with a notification.
                 // Execute the callback functions for any of the enabled plugins
-                for (plugin in settings.plugins) {
+                for (plugin in settings.plugins)
+                {
                     executeCallback(settings.plugins[plugin].onPageLoad, pageIndex, filename, pageSelector);
                 }
             }
@@ -359,17 +360,18 @@ window.divaPlugins = [];
 
                         // this check looks to see if the tile is already loaded, and then if
                         // it isn't, if it should be visible.
-                        if (!isTileLoaded(pageIndex, tileIndex)) {
-                            if (isTileVisible(pageIndex, row, col)) {
+                        if (!isTileLoaded(pageIndex, tileIndex))
+                        {
+                            if (isTileVisible(pageIndex, row, col))
                                 content.push('<div id="' + settings.ID + 'tile-' + pageIndex + '-' + tileIndex + '" class="diva-document-tile" style="display:inline; position: absolute; top: ' + top + 'px; left: ' + left + 'px; background-image: url(\'' + imageURL + '\'); height: ' + tileHeight + 'px; width: ' + tileWidth + 'px;"></div>');
-                            } else {
-                                // The tile does not need to be loaded - not all have been loaded
-                                allTilesLoaded = false;
-                            }
+                            else
+                                allTilesLoaded = false;  // The tile does not need to be loaded - not all have been loaded
                         }
+
                         tileIndex++;
                         col++;
                     }
+
                     row++;
                 }
 
@@ -1594,7 +1596,8 @@ window.divaPlugins = [];
                 // Inertial scrolling
                 $(settings.outerSelector).kinetic({
                     triggerHardware: true,
-                    filterTarget: function(target) {
+                    filterTarget: function(target)
+                    {
                         if (target.className === 'diva-canvas-icon' || target.className === 'diva-download-icon')
                             return false;
                         return true;
@@ -1750,7 +1753,7 @@ window.divaPlugins = [];
             });
 
             // Zoom when zoom buttons clicked
-            var zoomButtonClicked = function(direction)
+            var zoomButtonClicked = function (direction)
             {
                 var i = settings.currentPageIndex;
                 settings.goDirectlyTo = i;
@@ -2053,7 +2056,9 @@ window.divaPlugins = [];
                     hideThrobber();
 
                     // Show a basic error message within the document viewer pane
-                    var requestError = '<div id="' + settings.ID + 'error" class="diva-error"><p><strong>Error</strong></p><p>Invalid objectData. Error code: ' + status + ' ' + error + '</p>';
+                    var requestError = '<div id="' + settings.ID + 'error" class="diva-error">' +
+                            '<p><strong>Error</strong></p>' +
+                            '<p>Invalid objectData. Error code: ' + status + ' ' + error + '</p>';
 
                     // Detect and handle CORS errors
                     var dataHasAbsolutePath = settings.objectData.lastIndexOf('http', 0) === 0;
@@ -2348,9 +2353,7 @@ window.divaPlugins = [];
         this.getNumberOfPages = function ()
         {
             if (!checkLoaded())
-            {
                 return false;
-            }
 
             return settings.numPages;
         };
@@ -2396,7 +2399,7 @@ window.divaPlugins = [];
         };
 
         // Returns an array of all filenames in the document
-        this.getFilenames = function()
+        this.getFilenames = function ()
         {
             var filenames = [];
 
@@ -2424,9 +2427,7 @@ window.divaPlugins = [];
         this.getMaxZoomLevelForPage = function (pageIdx)
         {
             if (!checkLoaded)
-            {
                 return false;
-            }
 
             return settings.pages[pageIdx].m;
         };
@@ -2441,9 +2442,7 @@ window.divaPlugins = [];
         this.setZoomLevel = function (zoomLevel)
         {
             if (settings.inGrid)
-            {
                 toggleGrid();
-            }
 
             return handleZoom(zoomLevel);
         };
@@ -2547,6 +2546,7 @@ window.divaPlugins = [];
         this.gotoPageByName = function (filename)
         {
             var pageIndex = getPageIndex(filename);
+
             if (isPageValid(pageIndex))
             {
                 gotoPage(pageIndex, 0, 0);
@@ -2695,7 +2695,7 @@ window.divaPlugins = [];
         };
 
         // Disables document dragging, scrolling (by keyboard if set), and zooming by double-clicking
-        this.disableScrollable = function()
+        this.disableScrollable = function ()
         {
             if (settings.isScrollable)
             {
