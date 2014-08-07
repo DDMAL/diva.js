@@ -226,37 +226,25 @@ Adds an adjustment icon next to each image
                     {
                         // Only adjust individual colour channels if necessary
                         if (adjustRed && r)
-                        {
                             r += redOffset;
-                        }
 
                         if (adjustGreen && g)
-                        {
                             g += greenOffset;
-                        }
 
                         if (adjustBlue && b)
-                        {
                             b += blueOffset;
-                        }
 
                         // If we need to adjust brightness and/or contrast
                         if (adjustOthers)
                         {
                             if (r)
-                            {
                                 r = r * brightTimesContrast + contrastOffset;
-                            }
 
                             if (g)
-                            {
                                 g = g * brightTimesContrast + contrastOffset;
-                            }
 
                             if (b)
-                            {
                                 b = b * brightTimesContrast + contrastOffset;
-                            }
                         }
 
                         pixelArray[offset] = r;
@@ -377,9 +365,7 @@ Adds an adjustment icon next to each image
 
                 // If the callback function exists, execute it (for zooming)
                 if (typeof callback === 'function')
-                {
                     callback.call(callback);
-                }
             };
         };
 
@@ -404,11 +390,10 @@ Adds an adjustment icon next to each image
             var width = settings.zoomWidthRatio * Math.pow(2, zoomLevel);
 
             if (settings.proxyURL)
-            {
                 return settings.proxyURL + "?f=" + settings.filename + "&w=" + width;
-            }
 
             var imdir = settings.imageDir + "/";
+
             return settings.iipServerURL + "?FIF=" + imdir + settings.filename + '&WID=' + width + '&CVT=JPEG';
         };
 
@@ -416,9 +401,7 @@ Adds an adjustment icon next to each image
         {
             // Only show the throbber if it will take a long time
             if (sliders.zoom.current > 0 || settings.mobileWebkit)
-            {
                 $(settings.selector + 'throbber').addClass('canvas-throbber').show();
-            }
         };
 
         // Hides the loading indicator icon
@@ -477,15 +460,13 @@ Adds an adjustment icon next to each image
 
         var retval =
         {
-            init: function(divaSettings, divaInstance)
+            init: function (divaSettings, divaInstance)
             {
                 // If the browser does not support canvas, do nothing
                 // And, disable this plugin
                 var canvasSupported = !!window.HTMLCanvasElement;
                 if (!canvasSupported)
-                {
                     return false;
-                }
 
                 // Override all the configurable settings defined under canvasPlugin
                 $.extend(settings, defaults, divaSettings.canvasPlugin);
@@ -764,18 +745,14 @@ Adds an adjustment icon next to each image
 
                     // Always update the settings but only redraw if in canvas
                     if (settings.inCanvas)
-                    {
                         updateViewbox();
-                    }
                 });
 
                 // Update the viewbox when the large canvas is scrolled
                 $('#diva-canvas-wrapper').scroll(function ()
                 {
                     if (settings.inCanvas)
-                    {
                         updateViewbox();
-                    }
                 });
 
                 // Handle clicking/dragging of the viewbox (should scroll the large canvas)
@@ -839,9 +816,7 @@ Adds an adjustment icon next to each image
                 // If we're on the iPad, limit the max zoom level to 2
                 // Can't do canvas elements that are > 5 megapixels (issue #112)
                 if (settings.mobileWebkit)
-                {
                     settings.maxZoomLevel = Math.min(settings.maxZoomLevel, settings.mobileWebkitMaxZoom);
-                }
 
                 sliders.zoom.min = settings.minZoomLevel;
                 sliders.zoom.max = settings.maxZoomLevel;
