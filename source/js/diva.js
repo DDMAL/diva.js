@@ -1605,15 +1605,15 @@ window.divaPlugins = [];
             // Only check if either scrollBySpace or scrollByKeys is enabled
             if (settings.enableSpaceScroll || settings.enableKeyScroll)
             {
-                var upArrowKey = $.ui.keyCode.UP,
-                    downArrowKey = $.ui.keyCode.DOWN,
-                    leftArrowKey = $.ui.keyCode.LEFT,
-                    rightArrowKey = $.ui.keyCode.RIGHT,
-                    spaceKey = $.ui.keyCode.SPACE,
-                    pageUpKey = $.ui.keyCode.PAGE_UP,
-                    pageDownKey = $.ui.keyCode.PAGE_DOWN,
-                    homeKey = $.ui.keyCode.HOME,
-                    endKey = $.ui.keyCode.END;
+                var upArrowKey = 38,
+                    downArrowKey = 40,
+                    leftArrowKey = 37,
+                    rightArrowKey = 39,
+                    spaceKey = 32,
+                    pageUpKey = 33,
+                    pageDownKey = 34,
+                    homeKey = 36,
+                    endKey = 35;
 
                 // Catch the key presses in document
                 $(document).keydown(function (event)
@@ -1702,7 +1702,7 @@ window.divaPlugins = [];
             // Prepare the HTML for the various components
             var gridIconHTML = (settings.enableGridIcon) ? '<div class="diva-grid-icon' + (settings.inGrid ? ' diva-in-grid' : '') + '" id="' + settings.ID + 'grid-icon" title="Toggle grid view"></div>' : '';
             var linkIconHTML = (settings.enableLinkIcon) ? '<div class="diva-link-icon" id="' + settings.ID + 'link-icon" style="' + (settings.enableGridIcon ? 'border-left: 0px' : '') + '" title="Link to this page"></div>' : '';
-            var zoomSliderHTML = (settings.enableZoomControls === 'slider') ? '<div id="' + settings.ID + 'zoom-slider"></div>' : '';
+            var zoomSliderHTML = (settings.enableZoomControls === 'slider') ? '<input type="range" id="' + settings.ID + 'zoom-slider" class="zoom-slider" value="' + settings.zoomLevel +'" min="' + settings.minZoomLevel + '" max="' + settings.maxZoomLevel + '">' : '';
             var zoomButtonsHTML = (settings.enableZoomControls === 'buttons') ? '<div id="' + settings.ID + 'zoom-out-button" class="diva-zoom-out-button zoom-button" title="Zoom Out"></div><div id="' + settings.ID + 'zoom-in-button" class="diva-zoom-in-button zoom-button" title="Zoom In"></div>' : '';
             var gridSliderHTML = (settings.enableGridControls === 'slider') ? '<div id="' + settings.ID + 'grid-slider"></div>' : '';
             var gridButtonsHTML = (settings.enableGridControls === 'buttons') ? '<div id="' + settings.ID + 'grid-out-button" class="diva-grid-out-button grid-button" title="Zoom Out"></div><div id="' + settings.ID + 'grid-in-button" class="diva-grid-in-button grid-button" title="Zoom In"></div>' : '';
@@ -1724,36 +1724,29 @@ window.divaPlugins = [];
                 $(settings.parentSelector).prepend('<div id="' + settings.ID + 'tools" class="diva-tools">' + toolbarHTML + '</div>');
 
             // Create the zoom slider
-            $(settings.selector + 'zoom-slider').slider({
-                value: settings.zoomLevel,
-                min: settings.minZoomLevel,
-                max: settings.maxZoomLevel,
-                step: 1,
-                slide: function (event, ui)
-                {
-                    var i = settings.currentPageIndex;
-                    settings.goDirectlyTo = i;
 
-                    // Figure out the horizontal and vertical offsets
-                    // (Try to zoom in on the current center)
-                    var zoomRatio = Math.pow(2, ui.value - settings.zoomLevel);
-                    var innerWidth = settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2;
-                    var centerX = $(settings.outerSelector).scrollLeft() - (innerWidth - settings.panelWidth) / 2;
-                    settings.horizontalOffset = (innerWidth > settings.panelWidth) ? centerX * zoomRatio : 0;
-                    settings.verticalOffset = zoomRatio * ($(settings.outerSelector).scrollTop() - settings.heightAbovePages[i]);
+            $(settings.selector + 'zoom-slider').on('input', function(e)
+            {
+                var intValue = parseInt(this.value, 10);
 
-                    handleZoom(ui.value);
-                },
-                change: function (event, ui)
-                {
-                    if (ui.value !== settings.zoomLevel)
-                        handleZoom(ui.value);
-                },
-                stop: function (event, ui)
-                {
-                    // Lose focus when finished sliding (so that keystrokes are caught by the document)
-                    $('.ui-slider-handle').blur();
-                }
+                var i = settings.currentPageIndex;
+                settings.goDirectlyTo = i;
+
+                // Figure out the horizontal and vertical offsets
+                // (Try to zoom in on the current center)
+                var zoomRatio = Math.pow(2, intValue - settings.zoomLevel);
+                var innerWidth = settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2;
+                var centerX = $(settings.outerSelector).scrollLeft() - (innerWidth - settings.panelWidth) / 2;
+                settings.horizontalOffset = (innerWidth > settings.panelWidth) ? centerX * zoomRatio : 0;
+                settings.verticalOffset = zoomRatio * ($(settings.outerSelector).scrollTop() - settings.heightAbovePages[i]);
+
+                handleZoom(intValue);
+            });
+            $(settings.selector + 'zoom-slider').on('change', function(e)
+            {
+                var intValue = parseInt(this.value, 10);
+                if (intValue !== settings.zoomLevel)
+                    handleZoom(intValue);
             });
 
             // Zoom when zoom buttons clicked
@@ -1951,12 +1944,9 @@ window.divaPlugins = [];
                 updateZoomSlider: function ()
                 {
                     // Update the position of the handle within the slider
-                    if (settings.zoomLevel !== $(settings.selector + 'zoom-slider').slider('value'))
+                    if (settings.zoomLevel !== $(settings.selector + 'zoom-slider').val())
                     {
-                        $(settings.selector + 'zoom-slider').slider(
-                        {
-                            value: settings.zoomLevel
-                        });
+                        $(settings.selector + 'zoom-slider').val(settings.zoomLevel);
                     }
 
                     // Update the slider label
