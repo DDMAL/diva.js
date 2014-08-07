@@ -393,9 +393,7 @@ Adds an adjustment icon next to each image
 
         var updateSliderValue = function ()
         {
-            $('#diva-canvas-slider').slider({
-                value: sliders[sliderMode].current
-            });
+            $('#diva-canvas-slider').val(sliders[sliderMode].current);
         };
 
         // Returns the URL for the image at the specified zoom level
@@ -608,7 +606,7 @@ Adds an adjustment icon next to each image
                                 '<span id="diva-canvas-value">0</span> ' +
                                 '<span id="diva-canvas-reset" class="link">(Reset)</span>' +
                             '</p>' +
-                            '<div id="diva-canvas-slider"></div>' +
+                            '<input type="range" id="diva-canvas-slider"></input>' +
                         '</div>' +
                         '<br />' +
                         '<div class="action-buttons">' +
@@ -649,24 +647,21 @@ Adds an adjustment icon next to each image
                     var newValue = sliderData.current;
                     var newValueString = (sliderData.transform) ? sliderData.transform(newValue) : newValue;
 
-                    $('#diva-canvas-slider').slider({
-                        'min': sliderData.min,
-                        'max': sliderData.max,
-                        'step': sliderData.step
-                    }).slider('value', newValue);
+                    var slider = document.getElementById('diva-canvas-slider');
+                    slider.min = sliderData.min;
+                    slider.max = sliderData.max;
+                    slider.step = sliderData.step;
+                    $('#diva-canvas-slider').val(newValue);
                     $('#diva-canvas-value').html(newValueString);
                 };
 
                 updateSlider('contrast');
 
                 // Create the slider
-                $('#diva-canvas-slider').slider({
-                    slide: function (event, ui)
-                    {
-                        sliders[sliderMode].current = ui.value;
-                        updateSliderLabel();
-                        updateMap();
-                    }
+                $('#diva-canvas-slider').on('input', function(e){
+                    sliders[sliderMode].current = parseFloat(this.value);
+                    updateSliderLabel();
+                    updateMap();
                 });
 
                 // Reset all the sliders to the default value
