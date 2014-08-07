@@ -73,18 +73,18 @@ Usage:
 VALID_INPUT_EXTENSIONS = [".jpg", ".jpeg", ".tif", ".tiff", ".JPG", ".JPEG", ".TIF", ".TIFF", '.png', '.PNG']
 
 class DivaConverter(object):
-    def __init__(self, input_directory, output_directory, data_output_directory, kdu_compress_location="/usr/local/bin/kdu_compress", convert_location="/usr/local/bin/convert", image_type="jpeg"):
+    def __init__(self, input_directory, output_directory, data_output_directory, **kwargs):
         self.input_directory = os.path.abspath(input_directory)
         self.output_directory = os.path.abspath(output_directory)
         self.data_output_directory = os.path.abspath(data_output_directory)
         self.verbose = True
-        self.image_type = image_type
+        self.image_type = kwargs['image_type']
         self.compression = "none"
-        self.convert_location = convert_location
-        self.kdu_compress_location = kdu_compress_location
+        self.convert_location = kwargs['convert_location']
+        self.kdu_compress_location = kwargs['kdu_compress_location']
 
         if not os.path.exists(self.convert_location):
-            print("You do not have the ImageMagick 'convert' executable installed at " + self.convert_location +".")
+            print(("You do not have the ImageMagick 'convert' executable installed at {0}.").format(self.convert_location))
             print("If this path is incorrect, please specify an alternate location using the '-i (location)' command line option for this script.")
             sys.exit(-1)
 
@@ -92,16 +92,12 @@ class DivaConverter(object):
             try:
                 from vipsCC import VImage
             except ImportError as e:
-                if e == "No module named vimagemodule":
-                    print("You have specified TIFF as the output format, but are missing the VImage module. Make sure that VIPS was installed with ImageMagick support. (brew install vips --with-imagemagick on Mac)")
-                    sys.exit(-1)
-                else:
-                    print("You have specified TIFF as the output format, but do not have the VIPS Python library installed.")
-                    sys.exit(-1)
+                print("You have specified TIFF as the output format, but do not have the VIPS Python library installed.")
+                sys.exit(-1)
 
         elif self.image_type == "jpeg":
             if not os.path.exists(self.kdu_compress_location):
-                print("You have specified JP2 as the output format, but do not have the KDU_Compress executable installed at " + self.kdu_compress_location + ".")
+                print(("You have specified JP2 as the output format, but do not have the kdu_compress executable installed at {0}.").format(self.kdu_compress_location))
                 print("If this path is incorrect, please specify an alternate location using the '-k (location)' command line option for this script.")
                 sys.exit(-1)
 
