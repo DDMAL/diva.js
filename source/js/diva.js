@@ -1704,7 +1704,7 @@ window.divaPlugins = [];
             var linkIconHTML = (settings.enableLinkIcon) ? '<div class="diva-link-icon" id="' + settings.ID + 'link-icon" style="' + (settings.enableGridIcon ? 'border-left: 0px' : '') + '" title="Link to this page"></div>' : '';
             var zoomSliderHTML = (settings.enableZoomControls === 'slider') ? '<input type="range" id="' + settings.ID + 'zoom-slider" class="zoom-slider" value="' + settings.zoomLevel +'" min="' + settings.minZoomLevel + '" max="' + settings.maxZoomLevel + '">' : '';
             var zoomButtonsHTML = (settings.enableZoomControls === 'buttons') ? '<div id="' + settings.ID + 'zoom-out-button" class="diva-zoom-out-button zoom-button" title="Zoom Out"></div><div id="' + settings.ID + 'zoom-in-button" class="diva-zoom-in-button zoom-button" title="Zoom In"></div>' : '';
-            var gridSliderHTML = (settings.enableGridControls === 'slider') ? '<div id="' + settings.ID + 'grid-slider"></div>' : '';
+            var gridSliderHTML = (settings.enableGridControls === 'slider') ? '<input type="range" id="' + settings.ID + 'grid-slider" class="grid-slider" value="' + settings.pagesPerRow +'" min="' + settings.minPagesPerRow + '" max="' + settings.maxPagesPerRow + '">' : '';
             var gridButtonsHTML = (settings.enableGridControls === 'buttons') ? '<div id="' + settings.ID + 'grid-out-button" class="diva-grid-out-button grid-button" title="Zoom Out"></div><div id="' + settings.ID + 'grid-in-button" class="diva-grid-in-button grid-button" title="Zoom In"></div>' : '';
             var gotoPageHTML = (settings.enableGotoPage) ? '<form id="' + settings.ID + 'goto-page" class="diva-goto-form"><input type="text" id="' + settings.ID + 'goto-page-input" / class="diva-input"> <input type="submit" value="Go" style="margin-top: 0px;" /></form>' : '';
             var zoomSliderLabelHTML = (settings.enableZoomControls === 'slider') ? '<div id="' + settings.ID + 'zoom-slider-label" class="diva-slider-label">Zoom level: <span id="' + settings.ID + 'zoom-level">' + settings.zoomLevel + '</span></div>' : '';
@@ -1723,8 +1723,7 @@ window.divaPlugins = [];
             else
                 $(settings.parentSelector).prepend('<div id="' + settings.ID + 'tools" class="diva-tools">' + toolbarHTML + '</div>');
 
-            // Create the zoom slider
-
+            // bind zoom slider
             $(settings.selector + 'zoom-slider').on('input', function(e)
             {
                 var intValue = parseInt(this.value, 10);
@@ -1742,6 +1741,7 @@ window.divaPlugins = [];
 
                 handleZoom(intValue);
             });
+
             $(settings.selector + 'zoom-slider').on('change', function(e)
             {
                 var intValue = parseInt(this.value, 10);
@@ -1777,22 +1777,18 @@ window.divaPlugins = [];
                 zoomButtonClicked(1);
             });
 
-            // Create the grid slider
-            $(settings.selector + 'grid-slider').slider(
+            //bind grid slider
+            $(settings.selector + 'grid-slider').on('input', function(e)
             {
-                value: settings.pagesPerRow,
-                min: settings.minPagesPerRow,
-                max: settings.maxPagesPerRow,
-                step: 1,
-                slide: function (event, ui)
-                {
-                    handleGrid(ui.value);
-                },
-                change: function (event, ui)
-                {
-                    if (ui.value !== settings.pagesPerRow)
-                        handleGrid(ui.value);
-                }
+                var intValue = parseInt(this.value, 10);
+                handleGrid(intValue);
+            });
+
+            $(settings.selector + 'grid-slider').on('change', function(e)
+            {
+                var intValue = parseInt(this.value, 10);
+                if (intValue !== settings.zoomLevel)
+                    handleGrid(intValue);
             });
 
             // Bind fullscreen button
@@ -1960,12 +1956,9 @@ window.divaPlugins = [];
                 updateGridSlider: function ()
                 {
                     // Update the position of the handle within the slider
-                    if (settings.pagesPerRow !== $(settings.selector + 'grid-slider').slider('value'))
+                    if (settings.pagesPerRow !== $(settings.selector + 'grid-slider').val())
                     {
-                        $(settings.selector + 'grid-slider').slider(
-                        {
-                            value: settings.pagesPerRow
-                        });
+                        $(settings.selector + 'grid-slider').val(settings.pagesPerRow);
                     }
 
                     // Update the slider label
