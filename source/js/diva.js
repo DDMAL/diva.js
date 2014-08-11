@@ -850,7 +850,7 @@ window.divaPlugins = [];
 
             //calc vertical center and find desired top; padding unnecessary here as it is included in heightAbovePages
             var desiredVerticalCenter = settings.heightAbovePages[pageIndex] + verticalOffset;
-            var desiredTop = desiredCenter - ($(settings.outerSelector).height() / 2);
+            var desiredTop = desiredVerticalCenter - ($(settings.outerSelector).height() / 2);
 
             $(settings.outerSelector).scrollTop(desiredTop);
             $(settings.outerSelector).scrollLeft(desiredLeft);
