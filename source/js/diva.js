@@ -836,20 +836,16 @@ window.divaPlugins = [];
         };
 
         // Helper function for going to a particular page
-        // Vertical offset: from the top of the page (including the top padding)
+        // Vertical offset: from center of screen to top of current page
         // Horizontal offset: from the center of the page; can be negative if to the left
         var gotoPage = function (pageIndex, verticalOffset, horizontalOffset)
         {
-            verticalOffset = (typeof verticalOffset !== 'undefined') ? verticalOffset : 0;
             horizontalOffset = (typeof horizontalOffset !== 'undefined') ? horizontalOffset: 0;
             var desiredLeft = (settings.maxWidths[settings.zoomLevel] - settings.panelWidth) / 2 + settings.horizontalPadding + horizontalOffset;
 
-            // y - vertical offset from the center of the relevant page if y hash parameter is present
-            var yParam = parseInt($.getHashParam('y' + settings.hashParamSuffix), 10);
-            var pageHeight = settings.heightAbovePages[pageIndex + 1] - settings.heightAbovePages[pageIndex] - settings.verticalPadding;
-            var pageTop = settings.heightAbovePages[pageIndex];
-
-            var desiredTop = (isNaN(yParam)) ? pageTop + verticalOffset : pageTop + settings.verticalPadding + (pageHeight / 2) - (settings.panelHeight / 2) + verticalOffset;
+            verticalOffset = (typeof verticalOffset !== 'undefined') ? verticalOffset : 0;
+            var desiredCenter = settings.heightAbovePages[pageIndex] + verticalOffset;
+            var desiredTop = desiredCenter - ($(settings.outerSelector).height() / 2);
 
             $(settings.outerSelector).scrollTop(desiredTop);
             $(settings.outerSelector).scrollLeft(desiredLeft);
@@ -1265,6 +1261,18 @@ window.divaPlugins = [];
             if (newZoomLevel !== newValue)
                 return false;
 
+            var i = settings.currentPageIndex;
+            settings.goDirectlyTo = i;
+
+            // Figure out the horizontal and vertical offsets
+            // (Try to zoom in on the current center)
+            var zoomRatio = Math.pow(2, newZoomLevel - settings.zoomLevel);
+            var innerWidth = settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2;
+            var centerX = $(settings.outerSelector).scrollLeft() - (innerWidth - settings.panelWidth) / 2;
+            settings.horizontalOffset = (innerWidth > settings.panelWidth) ? centerX * zoomRatio : 0;
+
+            settings.verticalOffset = zoomRatio * ($(settings.outerSelector).scrollTop() - settings.heightAbovePages[i] + $(settings.outerSelector).height() / 2);
+
             settings.oldZoomLevel = settings.zoomLevel;
             settings.zoomLevel = newZoomLevel;
 
@@ -1296,11 +1304,7 @@ window.divaPlugins = [];
 
         var getYOffset = function ()
         {
-            // Returns offset specified from the center of the current page
-            var yScroll = document.getElementById(settings.ID + "outer").scrollTop;
-            var pageTop = settings.heightAbovePages[settings.currentPageIndex];
-            var pageHeight = settings.heightAbovePages[settings.currentPageIndex + 1] - settings.heightAbovePages[settings.currentPageIndex] - settings.verticalPadding;
-            return parseInt(yScroll - pageTop - (pageHeight / 2) + (settings.panelHeight / 2) - settings.verticalPadding, 10);
+            return ($(settings.outerSelector).scrollTop() - settings.heightAbovePages[settings.currentPageIndex] + $(settings.outerSelector).height() / 2);
         };
 
         var getXOffset = function ()
@@ -1731,17 +1735,6 @@ window.divaPlugins = [];
             {
                 var intValue = parseInt(this.value, 10);
 
-                var i = settings.currentPageIndex;
-                settings.goDirectlyTo = i;
-
-                // Figure out the horizontal and vertical offsets
-                // (Try to zoom in on the current center)
-                var zoomRatio = Math.pow(2, intValue - settings.zoomLevel);
-                var innerWidth = settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2;
-                var centerX = $(settings.outerSelector).scrollLeft() - (innerWidth - settings.panelWidth) / 2;
-                settings.horizontalOffset = (innerWidth > settings.panelWidth) ? centerX * zoomRatio : 0;
-                settings.verticalOffset = zoomRatio * ($(settings.outerSelector).scrollTop() - settings.heightAbovePages[i]);
-
                 handleZoom(intValue);
             });
 
@@ -1755,17 +1748,6 @@ window.divaPlugins = [];
             // Zoom when zoom buttons clicked
             var zoomButtonClicked = function (direction)
             {
-                var i = settings.currentPageIndex;
-                settings.goDirectlyTo = i;
-
-                // Figure out the horizontal and vertical offsets
-                // (Try to zoom in on the current center)
-                var zoomRatio = Math.pow(2, (settings.zoomLevel - 1) - settings.zoomLevel);
-                var innerWidth = settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2;
-                var centerX = $(settings.outerSelector).scrollLeft() - (innerWidth - settings.panelWidth) / 2;
-                settings.horizontalOffset = (innerWidth > settings.panelWidth) ? centerX * zoomRatio : 0;
-                settings.verticalOffset = zoomRatio * ($(settings.outerSelector).scrollTop() - settings.heightAbovePages[i]);
-
                 handleZoom(settings.zoomLevel + direction);
             };
 
