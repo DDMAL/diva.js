@@ -840,11 +840,16 @@ window.divaPlugins = [];
         // Horizontal offset: from the center of the page; can be negative if to the left
         var gotoPage = function (pageIndex, verticalOffset, horizontalOffset)
         {
+            //convert offsets to 0 if undefined
             horizontalOffset = (typeof horizontalOffset !== 'undefined') ? horizontalOffset: 0;
-            var desiredLeft = (settings.maxWidths[settings.zoomLevel] - settings.panelWidth) / 2 + settings.horizontalPadding + horizontalOffset;
-
             verticalOffset = (typeof verticalOffset !== 'undefined') ? verticalOffset : 0;
-            var desiredCenter = settings.heightAbovePages[pageIndex] + verticalOffset;
+
+            //calc horizontal center and add padding/offset
+            var desiredHorizontalCenter = (settings.maxWidths[settings.zoomLevel] - settings.panelWidth) / 2;
+            var desiredLeft = desiredHorizontalCenter + settings.horizontalPadding + horizontalOffset;
+
+            //calc vertical center and find desired top; padding unnecessary here as it is included in heightAbovePages
+            var desiredVerticalCenter = settings.heightAbovePages[pageIndex] + verticalOffset;
             var desiredTop = desiredCenter - ($(settings.outerSelector).height() / 2);
 
             $(settings.outerSelector).scrollTop(desiredTop);
@@ -1271,6 +1276,10 @@ window.divaPlugins = [];
             var centerX = $(settings.outerSelector).scrollLeft() - (innerWidth - settings.panelWidth) / 2;
             settings.horizontalOffset = (innerWidth > settings.panelWidth) ? centerX * zoomRatio : 0;
 
+            /*
+                vertical offset refers to the distance from the top of the current page that the center of the viewport is.
+                for example: if the viewport is 800 pixels and the active page starts at 100 pixels, verticalOffset will be 300 pixels.
+            */
             settings.verticalOffset = zoomRatio * ($(settings.outerSelector).scrollTop() - settings.heightAbovePages[i] + $(settings.outerSelector).height() / 2);
 
             settings.oldZoomLevel = settings.zoomLevel;
@@ -1300,11 +1309,15 @@ window.divaPlugins = [];
 
             settings.goDirectlyTo = settings.currentPageIndex;
             loadGrid();
+
+            return true;
         };
 
         var getYOffset = function ()
         {
-            return ($(settings.outerSelector).scrollTop() - settings.heightAbovePages[settings.currentPageIndex] + $(settings.outerSelector).height() / 2);
+            var pageTop = document.getElementById(settings.ID + "outer").scrollTop - settings.heightAbovePages[settings.currentPageIndex];
+            var pageTopToCenter = pageTop + ((document.getElementById(settings.ID + "outer").clientHeight + settings.scrollbarWidth) / 2);
+            return parseInt(pageTopToCenter, 10);
         };
 
         var getXOffset = function ()

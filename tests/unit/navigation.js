@@ -47,11 +47,11 @@ asyncTest("Zooming using the slider", function () {
         enableZoomControls: 'slider',
         zoomLevel: 4,
         onReady: function (settings) {
-            $(settings.selector + 'zoom-slider').slider('value', 0);
+            $(settings.selector + 'zoom-slider').val(0);
             equal(this.getZoomLevel(), 0, "Zoom level should now be 0");
             equal($(settings.selector + 'zoom-level').text(), '0', "The slider label should have been updated");
 
-            $(settings.selector + 'zoom-slider').slider('value', 4);
+            $(settings.selector + 'zoom-slider').val(4);
             equal(this.getZoomLevel(), 4, "Zoom level should now be 4");
             equal($(settings.selector + 'zoom-level').text(), '4', "The slider label should have been updated");
             start();
@@ -87,11 +87,11 @@ asyncTest("Changing pages per row in Grid view using slider", function () {
         pagesPerRow: 2,
         onReady: function (settings) {
             this.enterGridView();
-            $(settings.selector + 'grid-slider').slider('value', 8);
+            $(settings.selector + 'grid-slider').val(8);
             equal(this.getState().n, 8, "Pages per row should now be 8");
             equal($(settings.selector + 'pages-per-row').text(), '8', "The grid buttons label should have been updated");
 
-            $(settings.selector + 'grid-slider').slider('value', 2);
+            $(settings.selector + 'grid-slider').val(2);
             equal(this.getState().n, 2, "Pages per row should now be 2");
             equal($(settings.selector + 'pages-per-row').text(), '2', "The grid buttons label should have been updated");
 
@@ -114,10 +114,10 @@ asyncTest("Scrolling and subsequently zooming in Grid view", function () {
                 equal(self.getCurrentPageIndex(), 170, "The current page should be 170 (10050px down, 1000px viewport)");
                 start();
 
-                $(settings.selector + 'grid-slider').slider('value', 8);
+                $(settings.selector + 'grid-slider').val(8);
                 equal(self.getCurrentPageIndex(), 170, "The current page should still be 170");
 
-                $(settings.selector + 'grid-slider').slider('value', 2);
+                $(settings.selector + 'grid-slider').val(2);
                 equal(self.getCurrentPageIndex(), 170, "The current page should still be 170");
             }, 10);
         }

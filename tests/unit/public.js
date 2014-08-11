@@ -222,7 +222,7 @@ asyncTest("getState()", function () {
                 n: 5,
                 p: false,
                 x: 0,
-                y: -245,
+                y: 350,
                 z: 2
             };
 
@@ -260,7 +260,7 @@ asyncTest("setState()", function () {
             // Have to leave fullscreen to test dimension-related things
             this.leaveFullscreenMode();
 
-            equal($(settings.outerSelector).scrollTop(), 8672, "Scroll from top should be 300 more");
+            equal($(settings.outerSelector).scrollTop(), 8322, "Scroll from top should be 300 more");
             equal($(settings.outerSelector).scrollLeft(), 804, "Scroll from left should be 500 more");
 
             state = {
