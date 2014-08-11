@@ -81,6 +81,7 @@ window.divaPlugins = [];
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
             toolbarParentSelector: null, // The toolbar parent selector. If null, it defaults to the primary diva element. Must be a jQuery selector (leading '#')
+            verticallyOriented: true,   // Determines vertical vs. horizontal orientation 
             viewerHeightPadding: 15,    // Vertical padding when resizing the viewer, if enableAutoHeight is set
             viewerWidthPadding: 30,     // Horizontal padding when resizing the viewer, if enableAutoWidth is set
             viewportMargin: 200,        // Pretend tiles +/- 200px away from viewport are in
@@ -97,7 +98,6 @@ window.divaPlugins = [];
             averageHeights: [],         // The average page height for each zoom level
             averageWidths: [],          // The average page width for each zoom level
             currentPageIndex: 0,        // The current page in the viewport (center-most page)
-            dimAfterZoom: 0,            // Used for storing the item dimensions after zooming
             divaIsFullWindow: false,    // Set to true when the parent of diva-wrapper is the body tag. Used for resizing.
             firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
             firstRowLoaded: -1,         // The index of the first row loaded
@@ -115,6 +115,7 @@ window.divaPlugins = [];
             leftScrollSoFar: 0,         // Current scroll from the left edge of the pane
             loaded: false,              // A flag for when everything is loaded and ready to go.
             maxWidths: [],              // The width of the widest page for each zoom level
+            maxHeights: [],             // The width of the widest page for each zoom level
             maxRatio: 0,                // The max height/width ratio (for grid view)
             minHeight: 0,               // Minimum height of the .diva-outer element, as defined in the CSS
             minRatio: 0,                // The minimum height/width ratio for a page
@@ -128,6 +129,7 @@ window.divaPlugins = [];
             outerSelector: '',          // settings.selector + 'outer', for selecting the .diva-outer element
             pages: [],                  // An array containing the data for all the pages
             pageLeftOffsets: [],        // Offset from the left side of the pane to the edge of the page
+            pageTopOffsets: [],         // Offset from the top side of the pane to the edge of the page
             pageTimeouts: [],           // Stack to hold the loadPage timeouts
             pageTools: '',              // The string for page tools
             panelHeight: 0,             // Height of the document viewer pane
@@ -150,8 +152,11 @@ window.divaPlugins = [];
             topScrollSoFar: 0,          // Holds the number of pixels of vertical scroll
             totalHeights: [],           // The total height of all pages (stacked together) for each zoom level
             totalHeight: 0,             // The total height for the current zoom level (including padding)
+            totalWidths: [],            // The total height of all pages (stacked together) for each zoom level
+            totalWidth: 0,              // The total height for the current zoom level (including padding)
             verticalOffset: 0,          // See horizontalOffset
             verticalPadding: 0,         // Either the fixed padding or adaptive padding
+            widthLeftOfPages: [],       // Width to the left of each page at the current zoom level
             widthProportion: 0,         // Stores the original proportion between parentSelector.width and window.width
             viewerXOffset: 0,           // Distance between left edge of window and viewer left edge (used for double-click zooming)
             viewerYOffset: 0            // Like viewerXOffset but for the top edges
@@ -223,8 +228,8 @@ window.divaPlugins = [];
             var rightOfViewport = leftOfViewport + panelWidth + settings.viewportMargin * 2;
 
             var leftVisible = left >= leftOfViewport && left <= rightOfViewport;
-            var rightVisible = right >= leftOfViewport && right <= rightOfViewport;
             var middleVisible = left <= leftOfViewport && right >= rightOfViewport;
+            var rightVisible = right >= leftOfViewport && right <= rightOfViewport;
 
             return (leftVisible || middleVisible || rightVisible);
         };
@@ -272,7 +277,10 @@ window.divaPlugins = [];
             var topOfPage = settings.heightAbovePages[pageIndex];
             var bottomOfPage = topOfPage + getPageData(pageIndex, 'h') + settings.verticalPadding;
 
-            return isVerticallyInViewport(topOfPage, bottomOfPage);
+            var leftOfPage = settings.widthLeftOfPages[pageIndex];
+            var rightOfPage = leftOfPage + getPageData(pageIndex, 'w') + settings.horizontalPadding;
+
+            return (isVerticallyInViewport(topOfPage, bottomOfPage) && isHorizontallyInViewport(leftOfPage, rightOfPage));
         };
 
         // Check if a page has been appended to the DOM
@@ -293,6 +301,7 @@ window.divaPlugins = [];
             var width = getPageData(pageIndex, 'w');
             var height = getPageData(pageIndex, 'h');
             var heightFromTop = settings.heightAbovePages[pageIndex] + settings.verticalPadding;
+            var widthFromLeft = settings.widthLeftOfPages[pageIndex] + settings.horizontalPadding;
             var pageSelector = settings.selector + 'page-' + pageIndex;
             var plugin;
 
@@ -996,32 +1005,43 @@ window.divaPlugins = [];
             }
 
             // Make sure the vertical padding is at least 40, if plugin icons are enabled
-            if (settings.pageTools.length)
-                settings.verticalPadding = Math.max(40, settings.horizontalPadding);
+            if (settings.pageTools.length){
+                if (settings.verticallyOriented)
+                    settings.verticalPadding = Math.max(40, settings.horizontalPadding);
+                else
+                    settings.horizontalPadding = Math.max(40, settings.verticalPadding);
+            }
 
             // Now reset some things that need to be changed after each zoom
             settings.totalHeight = settings.totalHeights[z] + settings.verticalPadding * (settings.numPages + 1);
-            settings.dimAfterZoom = settings.totalHeight;
+            settings.totalWidth = settings.totalWidths[z] + settings.horizontalPadding * (settings.numPages + 1);
 
             // Determine the width of the inner element (based on the max width)
             var maxWidthToSet = settings.maxWidths[z] + settings.horizontalPadding * 2;
+            var maxHeightToSet = settings.maxHeights[z] + settings.verticalPadding * 2;
             var widthToSet = Math.max(maxWidthToSet, settings.panelWidth);
+            var heightToSet = Math.max(maxHeightToSet, settings.panelHeight);
 
             // Needed to set settings.heightAbovePages - initially just the top padding
             var heightSoFar = 0;
+            var widthSoFar = 0;
             var i;
 
             for (i = 0; i < settings.numPages; i++)
             {
                 // First set the height above that page by adding this height to the previous total
                 // A page includes the padding above it
-                settings.heightAbovePages[i] = heightSoFar;
+                settings.heightAbovePages[i] = (settings.verticallyOriented ? heightSoFar : 0);
+                settings.widthLeftOfPages[i] = (settings.verticallyOriented ? 0 : widthSoFar);
+                console.log(heightSoFar, widthSoFar);
 
                 // Has to be done this way otherwise you get the height of the page included too
                 heightSoFar = settings.heightAbovePages[i] + getPageData(i, 'h') + settings.verticalPadding;
+                widthSoFar = settings.widthLeftOfPages[i] + getPageData(i, 'w') + settings.horizontalPadding;
 
                 // Figure out the pageLeftOffset stuff
                 settings.pageLeftOffsets[i] = (widthToSet - getPageData(i, 'w')) / 2;
+                settings.pageTopOffsets[i] = (heightToSet - getPageData(i, 'h')) / 2;
 
                 // Now try to load the page ONLY if the page needs to be loaded
                 // Take scrolling into account later, just try this for now
@@ -1031,7 +1051,7 @@ window.divaPlugins = [];
                     settings.lastPageLoaded = i;
                 }
             }
-
+            
             // If this is not the initial load, execute the zoom callbacks
             if (settings.oldZoomLevel >= 0)
             {
@@ -1049,9 +1069,16 @@ window.divaPlugins = [];
                 executeCallback(settings.onZoom, z);
             }
 
-            // Set the height and width of documentpane (necessary for dragscrollable)
-            $(settings.innerSelector).height(Math.round(settings.totalHeight));
-            $(settings.innerSelector).width(Math.round(widthToSet));
+            if (settings.verticallyOriented)
+            {
+                $(settings.innerSelector).height(Math.round(settings.totalHeight));
+                $(settings.innerSelector).width(Math.round(widthToSet));
+            }
+            else
+            {
+                $(settings.innerSelector).height(Math.round(heightToSet));
+                $(settings.innerSelector).width(Math.round(settings.totalWidth));
+            }
 
             // Scroll to the proper place
             documentScroll();
@@ -2087,9 +2114,11 @@ window.divaPlugins = [];
 
                     // These are arrays, the index corresponding to the zoom level
                     settings.maxWidths = data.dims.max_w;
+                    settings.maxHeights = data.dims.max_h;
                     settings.averageWidths = data.dims.a_wid;
                     settings.averageHeights = data.dims.a_hei;
                     settings.totalHeights = data.dims.t_hei;
+                    settings.totalWidths = data.dims.t_wid;
 
                     // Make sure the set max and min values are valid
                     settings.realMaxZoom = data.max_zoom;
