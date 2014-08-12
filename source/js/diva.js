@@ -309,9 +309,9 @@ window.divaPlugins = [];
             if (!isPageLoaded(pageIndex))
             {
                 if(settings.verticallyOriented)
-                    $(document.getElementById(settings.ID + "inner")).append('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width: ' + width + 'px; height: ' + height + 'px;" class="diva-document-page" title="Page ' + (pageIndex + 1) + '" data-index="' + pageIndex  + '" data-filename="' + filename + '">' + settings.pageTools + '</div>');
+                    $(document.getElementById(settings.ID + "inner")).append('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width: ' + width + 'px; height: ' + height + 'px;" class="diva-document-page diva-page-vertical" title="Page ' + (pageIndex + 1) + '" data-index="' + pageIndex  + '" data-filename="' + filename + '">' + settings.pageTools + '</div>');
                 else
-                    $(document.getElementById(settings.ID + "inner")).append('<div id="' + settings.ID + 'page-' + pageIndex + '" style="left: ' + widthFromLeft + 'px; width: ' + width + 'px; height: ' + height + 'px;" class="diva-document-page" title="Page ' + (pageIndex + 1) + '" data-index="' + pageIndex  + '" data-filename="' + filename + '">' + settings.pageTools + '</div>');
+                    $(document.getElementById(settings.ID + "inner")).append('<div id="' + settings.ID + 'page-' + pageIndex + '" style="left: ' + widthFromLeft + 'px; width: ' + width + 'px; height: ' + height + 'px;" class="diva-document-page diva-page-horizontal" title="Page ' + (pageIndex + 1) + '" data-index="' + pageIndex  + '" data-filename="' + filename + '">' + settings.pageTools + '</div>');
                 
                 // Call the callback function
                 executeCallback(settings.onPageLoad, pageIndex, filename, pageSelector);
@@ -856,13 +856,26 @@ window.divaPlugins = [];
             horizontalOffset = (typeof horizontalOffset !== 'undefined') ? horizontalOffset: 0;
             verticalOffset = (typeof verticalOffset !== 'undefined') ? verticalOffset : 0;
 
-            //calc horizontal center and add padding/offset
-            var desiredHorizontalCenter = (settings.maxWidths[settings.zoomLevel] - settings.panelWidth) / 2;
-            var desiredLeft = desiredHorizontalCenter + settings.horizontalPadding + horizontalOffset;
+            var desiredHorizontalCenter, desiredVerticalCenter, desiredLeft, desiredTop;
 
-            //calc vertical center and find desired top; padding unnecessary here as it is included in heightAbovePages
-            var desiredVerticalCenter = settings.heightAbovePages[pageIndex] + verticalOffset;
-            var desiredTop = desiredVerticalCenter - ($(settings.outerSelector).height() / 2);
+            if(settings.verticallyOriented)
+            {
+                //calc horizontal center and add padding/offset
+                desiredHorizontalCenter = (settings.maxWidths[settings.zoomLevel] - settings.panelWidth) / 2;
+                desiredLeft = desiredHorizontalCenter + settings.horizontalPadding + horizontalOffset;
+
+                //calc vertical center and find desired top; padding unnecessary here as it is included in heightAbovePages
+                desiredVerticalCenter = settings.heightAbovePages[pageIndex] + verticalOffset;
+                desiredTop = desiredVerticalCenter - ($(settings.outerSelector).height() / 2);
+            }
+            else
+            {
+                desiredHorizontalCenter = settings.widthLeftOfPages[pageIndex] + horizontalOffset;
+                desiredLeft = desiredHorizontalCenter - ($(settings.outerSelector).width() / 2);
+
+                desiredVerticalCenter = (settings.maxHeights[settings.zoomLevel] - settings.panelHeight) / 2;
+                desiredTop = desiredVerticalCenter + settings.verticalPadding + horizontalOffset;
+            }
 
             $(settings.outerSelector).scrollTop(desiredTop);
             $(settings.outerSelector).scrollLeft(desiredLeft);
@@ -1036,7 +1049,6 @@ window.divaPlugins = [];
                 // A page includes the padding above it
                 settings.heightAbovePages[i] = (settings.verticallyOriented ? heightSoFar : 0);
                 settings.widthLeftOfPages[i] = (settings.verticallyOriented ? 0 : widthSoFar);
-                console.log(heightSoFar, widthSoFar);
 
                 // Has to be done this way otherwise you get the height of the page included too
                 heightSoFar = settings.heightAbovePages[i] + getPageData(i, 'h') + settings.verticalPadding;
