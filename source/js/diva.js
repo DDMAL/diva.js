@@ -835,8 +835,14 @@ window.divaPlugins = [];
             return false;
         };
 
+        //Helper function for going to the top of a specific page
+        var gotoPageTop = function (pageIndex)
+        {
+            gotoPage(pageIndex, (settings.panelHeight / 2), 0);
+        };
+
         // Helper function for going to a particular page
-        // Vertical offset: from center of screen to top of current page
+        // Vertical offset: from center of diva element to top of current page
         // Horizontal offset: from the center of the page; can be negative if to the left
         var gotoPage = function (pageIndex, verticalOffset, horizontalOffset)
         {
@@ -1826,7 +1832,7 @@ window.divaPlugins = [];
                     if (settings.inGrid)
                         gotoRow(pageIndex);
                     else
-                        gotoPage(pageIndex, 0, 0);
+                        gotoPageTop(pageIndex);
                 }
 
                 // Prevent the default action of reloading the page
@@ -2320,7 +2326,7 @@ window.divaPlugins = [];
             var pageIndex = pageNumber - 1;
             if (isPageValid(pageIndex))
             {
-                gotoPage(pageIndex, 0, 0);
+                gotoPageTop(pageIndex);
                 return true;
             }
             return false;
@@ -2332,7 +2338,7 @@ window.divaPlugins = [];
         {
             if (isPageValid(pageIndex))
             {
-                gotoPage(pageIndex, 0, 0);
+                gotoPageTop(pageIndex);
                 return true;
             }
             return false;
@@ -2544,7 +2550,7 @@ window.divaPlugins = [];
 
             if (isPageValid(pageIndex))
             {
-                gotoPage(pageIndex, 0, 0);
+                gotoPageTop(pageIndex);
                 return true;
             }
 
