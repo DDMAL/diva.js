@@ -135,6 +135,7 @@ window.divaPlugins = [];
             panelHeight: 0,             // Height of the document viewer pane
             panelWidth: 0,              // Width of the document viewer pane
             plugins: [],                // Filled with the enabled plugins from window.divaPlugins
+            previousLeftScroll: 0,      // Used to determine horizontal scroll direction
             previousTopScroll: 0,       // Used to determine vertical scroll direction
             preZoomOffset: null,        // Holds the offset prior to zooming when double-clicking
             realMaxZoom: -1,            // To hold the true max zoom level of the document (needed for calculations)
@@ -251,9 +252,20 @@ window.divaPlugins = [];
         // Check if a tile is near the viewport and thus should be loaded
         var isTileVisible = function (pageIndex, tileRow, tileCol)
         {
-            var tileTop = settings.heightAbovePages[pageIndex] + (tileRow * settings.tileHeight) + settings.verticalPadding;
+            var tileTop, tileLeft;
+
+            if(settings.verticallyOriented)
+            {
+                tileTop = settings.heightAbovePages[pageIndex] + (tileRow * settings.tileHeight) + settings.verticalPadding;
+                tileLeft = settings.pageLeftOffsets[pageIndex] + (tileCol * settings.tileWidth);
+            }
+            else
+            {
+                tileTop = settings.pageTopOffsets[pageIndex] + (tileRow * settings.tileHeight);
+                tileLeft = settings.widthLeftOfPages[pageIndex] + (tileCol * settings.tileWidth) + settings.horizontalPadding;
+            }
+
             var tileBottom = tileTop + settings.tileHeight;
-            var tileLeft = settings.pageLeftOffsets[pageIndex] + (tileCol * settings.tileWidth);
             var tileRight = tileLeft + settings.tileWidth;
 
             return isVerticallyInViewport(tileTop, tileBottom) && isHorizontallyInViewport(tileLeft, tileRight);
@@ -440,7 +452,7 @@ window.divaPlugins = [];
                     }
                     else if (pageAboveViewport(pageIndex))
                     {
-                        //  If the page is below the viewport. try to load the next one
+                        // If the page is below the viewport. try to load the next one
                         attemptPageShow(pageIndex + 1, direction);
                     }
                 }
@@ -505,7 +517,7 @@ window.divaPlugins = [];
         var adjustPages = function (direction)
         {
             var i;
-
+            
             // Direction is negative, so we're scrolling up
             if (direction < 0)
             {
@@ -870,6 +882,7 @@ window.divaPlugins = [];
             }
             else
             {
+                //opposite dimensions as above
                 desiredHorizontalCenter = settings.widthLeftOfPages[pageIndex] + horizontalOffset;
                 desiredLeft = desiredHorizontalCenter - ($(settings.outerSelector).width() / 2);
 
@@ -979,6 +992,7 @@ window.divaPlugins = [];
             settings.firstPageLoaded = 0;
             settings.firstRowLoaded = -1;
             settings.previousTopScroll = 0;
+            settings.previousLeftScroll = 0;
 
             // Clear all the timeouts to prevent undesired pages from loading
             clearTimeout(settings.resizeTimer);
@@ -1576,8 +1590,15 @@ window.divaPlugins = [];
             // Handle the scroll
             $(settings.outerSelector).scroll(function ()
             {
+                //always calculate both to play safe
                 settings.topScrollSoFar = document.getElementById(settings.ID + "outer").scrollTop;
-                var direction = settings.topScrollSoFar - settings.previousTopScroll;
+                var directionTop = settings.topScrollSoFar - settings.previousTopScroll;
+
+                settings.leftScrollSoFar = document.getElementById(settings.ID + "outer").scrollLeft;
+                var directionLeft = settings.leftScrollSoFar - settings.previousLeftScroll;                       
+
+                //give adjustPages the direction we care about - TODO: check for grid view
+                var direction = (settings.verticallyOriented ? directionTop : directionLeft);
 
                 if (settings.inGrid)
                 {
@@ -1590,6 +1611,7 @@ window.divaPlugins = [];
                 }
 
                 settings.previousTopScroll = settings.topScrollSoFar;
+                settings.previousLeftScroll = settings.leftScrollSoFar;
             });
 
             // Check if the user is on a iPhone or iPod touch or iPad
