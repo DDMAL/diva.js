@@ -433,6 +433,25 @@ window.divaPlugins = [];
             return topOfPage > bottomOfViewport;
         };
 
+        // Check if the bottom of a page is above the top of a viewport (scrolling down)
+        // For when you want to keep looping but don't want to load a specific page
+        var pageLeftOfViewport = function (pageIndex)
+        {
+            var rightOfPage = settings.widthLeftOfPages[pageIndex] + getPageData(pageIndex, 'w') + settings.horizontalPadding;
+            var leftOfViewport = settings.leftScrollSoFar;
+
+            return rightOfPage < leftOfViewport;
+        };
+
+        // Check if the top of a page is below the bottom of a viewport (scrolling up)
+        var pageRightOfViewport = function (pageIndex)
+        {
+            var leftOfPage = settings.heightAbovePages[pageIndex];
+            var rightOfViewport = settings.leftScrollSoFar + settings.panelWidth;
+
+            return leftOfPage > rightOfViewport;
+        };
+
         // Called by adjust pages - determine what pages should be visible, and show them
         var attemptPageShow = function (pageIndex, direction)
         {
@@ -450,7 +469,7 @@ window.divaPlugins = [];
                         // Recursively call this function until there's nothing to add
                         attemptPageShow(settings.lastPageLoaded + 1, direction);
                     }
-                    else if (pageAboveViewport(pageIndex))
+                    else if (pageAboveViewport(pageIndex) || pageLeftOfViewport(pageIndex))
                     {
                         // If the page is below the viewport. try to load the next one
                         attemptPageShow(pageIndex + 1, direction);
@@ -473,7 +492,7 @@ window.divaPlugins = [];
                         // Recursively call this function until there's nothing to add
                         attemptPageShow(settings.firstPageLoaded - 1, direction);
                     }
-                    else if (pageBelowViewport(pageIndex))
+                    else if (pageBelowViewport(pageIndex) || pageRightOfViewport(pageIndex))
                     {
                         // Attempt to call this on the next page, do not increment anything
                         attemptPageShow(pageIndex - 1, direction);
@@ -517,24 +536,24 @@ window.divaPlugins = [];
         var adjustPages = function (direction)
         {
             var i;
-            
-            // Direction is negative, so we're scrolling up
+
             if (direction < 0)
             {
+                // Direction is negative, so we're scrolling up/left (doesn't matter for these calls)
                 attemptPageShow(settings.firstPageLoaded, direction);
                 setCurrentPage(-1);
                 attemptPageHide(settings.lastPageLoaded, direction);
             }
             else if (direction > 0)
             {
-                // Direction is positive so we're scrolling down
+                // Direction is positive so we're scrolling down/right (doesn't matter for these calls)
                 attemptPageShow(settings.lastPageLoaded, direction);
                 setCurrentPage(1);
                 attemptPageHide(settings.firstPageLoaded, direction);
             }
             else
             {
-                // Horizontal scroll, check if we need to reveal any tiles
+                // Non-primary scroll, check if we need to reveal any tiles
                 var lpl = settings.lastPageLoaded;
                 for (i = Math.max(settings.firstPageLoaded, 0); i <= lpl; i++)
                 {
@@ -543,20 +562,40 @@ window.divaPlugins = [];
                 }
             }
 
-            executeCallback(settings.onScroll, settings.topScrollSoFar);
-            diva.Events.publish("ViewerDidScroll", [settings.topScrollSoFar]);
+            var scrollSoFar = (settings.verticallyOriented ? settings.topScrollSoFar : settings.leftScrollSoFar);
 
-            // If we're scrolling down
-            if (direction > 0)
+            executeCallback(settings.onScroll, scrollSoFar);
+            diva.Events.publish("ViewerDidScroll", scrollSoFar);
+
+            if (settings.verticallyOriented)
             {
-                executeCallback(settings.onScrollDown, settings.topScrollSoFar);
-                diva.Events.publish("ViewerDidScrollDown", [settings.topScrollSoFar]);
+                if (direction > 0)
+                {
+                    // scrolling forwards
+                    executeCallback(settings.onScrollDown, settings.topScrollSoFar);
+                    diva.Events.publish("ViewerDidScrollDown", [settings.topScrollSoFar]);
+                }
+                else if (direction < 0)
+                {
+                    // scrolling backwards
+                    executeCallback(settings.onScrollUp, settings.topScrollSoFar);
+                    diva.Events.publish("ViewerDidScrollUp", [settings.topScrollSoFar]);
+                }       
             }
-            else if (direction < 0)
+            else
             {
-                // We're scrolling up
-                executeCallback(settings.onScrollUp, settings.topScrollSoFar);
-                diva.Events.publish("ViewerDidScrollUp", [settings.topScrollSoFar]);
+                if (direction > 0)
+                {
+                    // scrolling forwards
+                    executeCallback(settings.onScrollRight, settings.leftScrollSoFar);
+                    diva.Events.publish("ViewerDidScrollRight", [settings.leftScrollSoFar]);
+                }
+                else if (direction < 0)
+                {
+                    // scrolling backwards
+                    executeCallback(settings.onScrollLeft, settings.leftScrollSoFar);
+                    diva.Events.publish("ViewerDidScrollLeft", [settings.leftScrollSoFar]);
+                }     
             }
         };
 
@@ -770,28 +809,48 @@ window.divaPlugins = [];
         // The "direction" is either 1 (downward scroll) or -1 (upward scroll)
         var setCurrentPage = function (direction)
         {
-            var middleOfViewport = settings.topScrollSoFar + (settings.panelHeight / 2);
+            var middleOfViewport = (settings.verticallyOriented ? settings.topScrollSoFar + (settings.panelHeight / 2) : settings.leftScrollSoFar + (settings.panelWidth / 2));
             var currentPage = settings.currentPageIndex;
-            var pageToConsider = settings.currentPageIndex + direction;
+            var pageToConsider = currentPage + direction;
             var changeCurrentPage = false;
             var pageSelector = settings.selector + 'page-' + pageToConsider;
 
-            // When scrolling up:
             if (direction < 0)
             {
+                // When scrolling forwards:
                 // If the previous page > middle of viewport
-                if (pageToConsider >= 0 && (settings.heightAbovePages[pageToConsider] + getPageData(pageToConsider, 'h') + (settings.verticalPadding) >= middleOfViewport))
+                if(settings.verticallyOriented)
                 {
-                    changeCurrentPage = true;
+                    if (pageToConsider >= 0 && (settings.heightAbovePages[pageToConsider] + getPageData(pageToConsider, 'h') + (settings.verticalPadding) >= middleOfViewport))
+                    {
+                        changeCurrentPage = true;
+                    }
+                }
+                else
+                {
+                    if (pageToConsider >= 0 && (settings.widthLeftOfPages[pageToConsider] + getPageData(pageToConsider, 'w') + (settings.horizontalPadding) >= middleOfViewport))
+                    {
+                        changeCurrentPage = true;
+                    }     
                 }
             }
             else if (direction > 0)
             {
-                // When scrolling down:
+                // When scrolling backwards:
                 // If this page < middle of viewport
-                if (settings.heightAbovePages[currentPage] + getPageData(currentPage, 'h') + settings.verticalPadding < middleOfViewport)
+                if(settings.verticallyOriented)
                 {
-                    changeCurrentPage = true;
+                    if (settings.heightAbovePages[currentPage] + getPageData(currentPage, 'h') + settings.verticalPadding < middleOfViewport)
+                    {
+                        changeCurrentPage = true;
+                    }
+                }
+                else
+                {
+                    if (settings.widthLeftOfPages[currentPage] + getPageData(currentPage, 'w') + settings.horizontalPadding < middleOfViewport)
+                    {
+                        changeCurrentPage = true;
+                    }
                 }
             }
 
@@ -1590,15 +1649,19 @@ window.divaPlugins = [];
             // Handle the scroll
             $(settings.outerSelector).scroll(function ()
             {
-                //always calculate both to play safe
-                settings.topScrollSoFar = document.getElementById(settings.ID + "outer").scrollTop;
-                var directionTop = settings.topScrollSoFar - settings.previousTopScroll;
-
-                settings.leftScrollSoFar = document.getElementById(settings.ID + "outer").scrollLeft;
-                var directionLeft = settings.leftScrollSoFar - settings.previousLeftScroll;                       
+                var direction;
+                if(settings.verticallyOriented)
+                {
+                    settings.topScrollSoFar = document.getElementById(settings.ID + "outer").scrollTop;
+                    direction = settings.topScrollSoFar - settings.previousTopScroll;
+                }
+                else
+                {
+                    settings.leftScrollSoFar = document.getElementById(settings.ID + "outer").scrollLeft;
+                    direction = settings.leftScrollSoFar - settings.previousLeftScroll;   
+                }                     
 
                 //give adjustPages the direction we care about - TODO: check for grid view
-                var direction = (settings.verticallyOriented ? directionTop : directionLeft);
 
                 if (settings.inGrid)
                 {
@@ -1607,7 +1670,10 @@ window.divaPlugins = [];
                 else
                 {
                     adjustPages(direction);
-                    settings.leftScrollSoFar = $(this).scrollLeft();
+                    if(settings.verticallyOriented)
+                        settings.leftScrollSoFar = $(this).scrollLeft();
+                    else
+                        settings.topScrollSoFar = $(this).scrollTop(); 
                 }
 
                 settings.previousTopScroll = settings.topScrollSoFar;
