@@ -1797,12 +1797,12 @@ window.divaPlugins = [];
             // Bind the grid buttons
             $(settings.selector + 'grid-out-button').click(function ()
             {
-                handleGrid(settings.pagesPerRow + 1);
+                handleGrid(settings.pagesPerRow - 1);
             });
 
             $(settings.selector + 'grid-in-button').click(function ()
             {
-                handleGrid(settings.pagesPerRow - 1);
+                handleGrid(settings.pagesPerRow + 1);
             });
 
             // Handle clicking of the grid icon
