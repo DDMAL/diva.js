@@ -299,7 +299,7 @@ window.divaPlugins = [];
             // If the page has not been loaded yet, append the div to the DOM
             if (!isPageLoaded(pageIndex))
             {
-                $(settings.innerSelector).append('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width: ' + width + 'px; height: ' + height + 'px;" class="diva-document-page" title="Page ' + (pageIndex + 1) + '" data-index="' + pageIndex  + '" data-filename="' + filename + '">' + settings.pageTools + '</div>');
+                $(document.getElementById(settings.ID + "inner")).append('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width: ' + width + 'px; height: ' + height + 'px;" class="diva-document-page" title="Page ' + (pageIndex + 1) + '" data-index="' + pageIndex  + '" data-filename="' + filename + '">' + settings.pageTools + '</div>');
 
                 // Call the callback function
                 executeCallback(settings.onPageLoad, pageIndex, filename, pageSelector);
@@ -376,7 +376,7 @@ window.divaPlugins = [];
                 }
 
                 settings.allTilesLoaded[pageIndex] = allTilesLoaded;
-                $(settings.selector + 'page-' + pageIndex).append(content.join(''));
+                $(document.getElementById(settings.ID + 'page-' + pageIndex)).append(content.join(''));
 
                 executeCallback(settings.onPageLoaded, pageIndex, filename, pageSelector);
                 diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector]);
@@ -387,7 +387,7 @@ window.divaPlugins = [];
         // Delete a page from the DOM; will occur when a page is scrolled out of the viewport
         var deletePage = function (pageIndex)
         {
-            $(settings.selector + 'page-' + pageIndex).empty().remove();
+            $(document.getElementById(settings.ID + 'page-' + pageIndex)).empty().remove();
         };
 
         // Check if the bottom of a page is above the top of a viewport (scrolling down)
@@ -609,12 +609,12 @@ window.divaPlugins = [];
 
             // Append this row to the DOM
             content.push('</div>');
-            $(settings.innerSelector).append(content.join(''));
+            $(document.getElementById(settings.ID + "inner")).append(content.join(''));
         };
 
         var deleteRow = function (rowIndex)
         {
-            $(settings.selector + 'row-' + rowIndex).empty().remove();
+            $(document.getElementById(settings.ID + 'row-' + rowIndex)).empty().remove();
         };
 
         // Check if the bottom of a row is above the top of the viewport (scrolling down)
