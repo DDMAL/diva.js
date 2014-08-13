@@ -47,11 +47,13 @@ asyncTest("Zooming using the slider", function () {
         enableZoomControls: 'slider',
         zoomLevel: 4,
         onReady: function (settings) {
-            $(settings.selector + 'zoom-slider').val(0);
+            document.getElementById(settings.ID + 'zoom-slider').value = 0;
+            $(settings.selector + 'zoom-slider').change();
             equal(this.getZoomLevel(), 0, "Zoom level should now be 0");
             equal($(settings.selector + 'zoom-level').text(), '0', "The slider label should have been updated");
 
-            $(settings.selector + 'zoom-slider').val(4);
+            document.getElementById(settings.ID + 'zoom-slider').value = 4;
+            $(settings.selector + 'zoom-slider').change();
             equal(this.getZoomLevel(), 4, "Zoom level should now be 4");
             equal($(settings.selector + 'zoom-level').text(), '4', "The slider label should have been updated");
             start();
@@ -88,12 +90,14 @@ asyncTest("Changing pages per row in Grid view using slider", function () {
         onReady: function (settings) {
             this.enterGridView();
             $(settings.selector + 'grid-slider').val(8);
+            $(settings.selector + 'grid-slider').change();
             equal(this.getState().n, 8, "Pages per row should now be 8");
             equal($(settings.selector + 'pages-per-row').text(), '8', "The grid buttons label should have been updated");
 
-            $(settings.selector + 'grid-slider').val(2);
-            equal(this.getState().n, 2, "Pages per row should now be 2");
-            equal($(settings.selector + 'pages-per-row').text(), '2', "The grid buttons label should have been updated");
+            $(settings.selector + 'grid-slider').val(3);
+            $(settings.selector + 'grid-slider').change();
+            equal(this.getState().n, 3, "Pages per row should now be 3");
+            equal($(settings.selector + 'pages-per-row').text(), '3', "The grid buttons label should have been updated");
 
             start();
         }
@@ -133,15 +137,15 @@ asyncTest("Changing pages per row in Grid view using +/- buttons", function () {
             {
                 $(settings.selector + 'grid-out-button').trigger('click');
             }
-            equal(this.getState().n, 8, "Pages per row should now be 8");
-            equal($(settings.selector + 'pages-per-row').text(), '8', "The grid buttons label should have been updated");
+            equal(this.getState().n, 2, "Pages per row should now be 2");
+            equal($(settings.selector + 'pages-per-row').text(), '2', "The grid buttons label should have been updated");
 
             for (i = 0; i < 6; i++)
             {
                 $(settings.selector + 'grid-in-button').trigger('click');
             }
-            equal(this.getState().n, 2, "Pages per row should now be 2");
-            equal($(settings.selector + 'pages-per-row').text(), '2', "The grid buttons label should have been updated");
+            equal(this.getState().n, 8, "Pages per row should now be 8");
+            equal($(settings.selector + 'pages-per-row').text(), '8', "The grid buttons label should have been updated");
 
             start();
         }
