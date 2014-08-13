@@ -446,7 +446,7 @@ window.divaPlugins = [];
         // Check if the top of a page is below the bottom of a viewport (scrolling up)
         var pageRightOfViewport = function (pageIndex)
         {
-            var leftOfPage = settings.heightAbovePages[pageIndex];
+            var leftOfPage = settings.widthLeftOfPages[pageIndex];
             var rightOfViewport = settings.leftScrollSoFar + settings.panelWidth;
 
             return leftOfPage > rightOfViewport;
@@ -507,7 +507,7 @@ window.divaPlugins = [];
             if (direction > 0)
             {
                 // Scrolling down - see if this page needs to be deleted from the DOM
-                if (isPageValid(pageIndex) && pageAboveViewport(pageIndex))
+                if (isPageValid(pageIndex) && (pageAboveViewport(pageIndex) || pageLeftOfViewport(pageIndex)))
                 {
                     // Yes, delete it, reset the first page loaded
                     deletePage(pageIndex);
@@ -520,7 +520,7 @@ window.divaPlugins = [];
             else
             {
                 // Direction must be negative (not 0 - see adjustPages), we're scrolling up
-                if (isPageValid(pageIndex) && pageBelowViewport(pageIndex))
+                if (isPageValid(pageIndex) && (pageBelowViewport(pageIndex) || pageRightOfViewport(pageIndex)))
                 {
                     // Yes, delete it, reset the last page loaded
                     deletePage(pageIndex);
@@ -1389,19 +1389,32 @@ window.divaPlugins = [];
 
             var i = settings.currentPageIndex;
             settings.goDirectlyTo = i;
-
-            // Figure out the horizontal and vertical offsets
-            // (Try to zoom in on the current center)
             var zoomRatio = Math.pow(2, newZoomLevel - settings.zoomLevel);
-            var innerWidth = settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2;
-            var centerX = $(settings.outerSelector).scrollLeft() - (innerWidth - settings.panelWidth) / 2;
-            settings.horizontalOffset = (innerWidth > settings.panelWidth) ? centerX * zoomRatio : 0;
 
-            /*
-                vertical offset refers to the distance from the top of the current page that the center of the viewport is.
-                for example: if the viewport is 800 pixels and the active page starts at 100 pixels, verticalOffset will be 300 pixels.
-            */
-            settings.verticalOffset = zoomRatio * ($(settings.outerSelector).scrollTop() - settings.heightAbovePages[i] + $(settings.outerSelector).height() / 2);
+            if(settings.verticallyOriented)
+            {
+                // Figure out the horizontal and vertical offsets
+                // (Try to zoom in on the current center)
+                var innerWidth = settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2;
+                var centerX = $(settings.outerSelector).scrollLeft() - (innerWidth - settings.panelWidth) / 2;
+                settings.horizontalOffset = (innerWidth > settings.panelWidth) ? centerX * zoomRatio : 0;
+
+                //vertical offset refers to the distance from the top of the current page that the center of the viewport is.
+                //for example: if the viewport is 800 pixels and the active page starts at 100 pixels, verticalOffset will be 300 pixels.
+                settings.verticalOffset = zoomRatio * ($(settings.outerSelector).scrollTop() - settings.heightAbovePages[i] + $(settings.outerSelector).height() / 2);
+            }
+            else
+            {
+                // Figure out the horizontal and vertical offsets
+                // (Try to zoom in on the current center)
+                var innerHeight = settings.maxHeights[settings.zoomLevel] + settings.verticalPadding * 2;
+                var centerY = $(settings.outerSelector).scrollTop() - (innerHeight - settings.panelHeight) / 2;
+                settings.verticalOffset = (innerHeight > settings.panelHeight) ? centerY * zoomRatio : 0;
+
+                //vertical offset refers to the distance from the top of the current page that the center of the viewport is.
+                //for example: if the viewport is 800 pixels and the active page starts at 100 pixels, verticalOffset will be 300 pixels.
+                settings.horizontalOffset = zoomRatio * ($(settings.outerSelector).scrollLeft() - settings.widthLeftOfPages[i] + $(settings.outerSelector).width() / 2);     
+            }
 
             settings.oldZoomLevel = settings.zoomLevel;
             settings.zoomLevel = newZoomLevel;
