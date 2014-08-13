@@ -298,7 +298,7 @@ window.divaPlugins = [];
         // Check if a page has been appended to the DOM
         var isPageLoaded = function (pageIndex)
         {
-            return $(document.getElementById(settings.ID + 'page-' + pageIndex)).length > 0;
+            return !!document.getElementById(settings.ID + 'page-' + pageIndex);
         };
 
         // Appends the page directly into the document body, or loads the relevant tiles
@@ -400,7 +400,7 @@ window.divaPlugins = [];
                 }
 
                 settings.allTilesLoaded[pageIndex] = allTilesLoaded;
-                $(document.getElementById(settings.ID + 'page-' + pageIndex)).append(content.join(''));
+                $(settings.selector + 'page-' + pageIndex).append(content.join(''));
 
                 executeCallback(settings.onPageLoaded, pageIndex, filename, pageSelector);
                 diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector]);
@@ -411,7 +411,7 @@ window.divaPlugins = [];
         // Delete a page from the DOM; will occur when a page is scrolled out of the viewport
         var deletePage = function (pageIndex)
         {
-            $(document.getElementById(settings.ID + 'page-' + pageIndex)).empty().remove();
+            $(settings.selector + 'page-' + pageIndex).empty().remove();
         };
 
         // Check if the bottom of a page is above the top of a viewport (scrolling down)
@@ -672,12 +672,12 @@ window.divaPlugins = [];
 
             // Append this row to the DOM
             content.push('</div>');
-            $(document.getElementById(settings.ID + "inner")).append(content.join(''));
+            $(settings.innerSelector).append(content.join(''));
         };
 
         var deleteRow = function (rowIndex)
         {
-            $(document.getElementById(settings.ID + 'row-' + rowIndex)).empty().remove();
+            $(settings.selector + 'row-' + rowIndex).empty().remove();
         };
 
         // Check if the bottom of a row is above the top of the viewport (scrolling down)
