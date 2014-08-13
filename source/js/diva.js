@@ -2730,7 +2730,7 @@ window.divaPlugins = [];
             // Call the destroy function for all the enabled plugins (if it exists)
             $.each(settings.plugins, function (index, plugin)
             {
-                executeCallback(plugin.destroy);
+                executeCallback(plugin.destroy, settings, self);
             });
 
             // Remove any additional styling on the parent element

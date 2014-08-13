@@ -187,6 +187,10 @@ Allows you to highlight regions of a page image
 
                 return true;
             },
+            destroy: function (divaSettings, divaInstance)
+            {
+                divaSettings.parentSelector.removeData('highlights');
+            },
             pluginName: 'highlight',
             titleText: 'Highlight regions of pages'
         };
