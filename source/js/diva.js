@@ -400,7 +400,7 @@ window.divaPlugins = [];
                 }
 
                 settings.allTilesLoaded[pageIndex] = allTilesLoaded;
-                $(settings.selector + 'page-' + pageIndex).append(content.join(''));
+                $(document.getElementById(settings.ID + 'page-' + pageIndex)).append(content.join(''));
 
                 executeCallback(settings.onPageLoaded, pageIndex, filename, pageSelector);
                 diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector]);
@@ -411,7 +411,7 @@ window.divaPlugins = [];
         // Delete a page from the DOM; will occur when a page is scrolled out of the viewport
         var deletePage = function (pageIndex)
         {
-            $(settings.selector + 'page-' + pageIndex).empty().remove();
+            $(document.getElementById(settings.ID + 'page-' + pageIndex)).empty().remove();
         };
 
         // Check if the bottom of a page is above the top of a viewport (scrolling down)
@@ -684,12 +684,12 @@ window.divaPlugins = [];
 
             // Append this row to the DOM
             content.push('</div>');
-            $(settings.innerSelector).append(content.join(''));
+            $(document.getElementById(settings.ID + "inner")).append(content.join(''));
         };
 
         var deleteRow = function (rowIndex)
         {
-            $(settings.selector + 'row-' + rowIndex).empty().remove();
+            $(document.getElementById(settings.ID + 'row-' + rowIndex)).empty().remove();
         };
 
         // Check if the bottom of a row is above the top of the viewport (scrolling down)
@@ -1848,20 +1848,19 @@ window.divaPlugins = [];
         // Handles all status updating etc (both fullscreen and not)
         var createToolbar = function () {
             // Prepare the HTML for the various components
-            var gridIconHTML = (settings.enableGridIcon) ? '<div class="diva-grid-icon' + (settings.inGrid ? ' diva-in-grid' : '') + '" id="' + settings.ID + 'grid-icon" title="Toggle grid view"></div>' : '';
-            var linkIconHTML = (settings.enableLinkIcon) ? '<div class="diva-link-icon" id="' + settings.ID + 'link-icon" style="' + (settings.enableGridIcon ? 'border-left: 0px' : '') + '" title="Link to this page"></div>' : '';
+            var gridIconHTML = (settings.enableGridIcon) ? '<div class="diva-grid-icon button' + (settings.inGrid ? ' diva-in-grid' : '') + '" id="' + settings.ID + 'grid-icon" title="Toggle grid view"></div>' : '';
+            var linkIconHTML = (settings.enableLinkIcon) ? '<div class="diva-link-icon button" id="' + settings.ID + 'link-icon" style="' + (settings.enableGridIcon ? 'border-left: 0px' : '') + '" title="Link to this page"></div>' : '';
             var zoomSliderHTML = (settings.enableZoomControls === 'slider') ? '<input type="range" id="' + settings.ID + 'zoom-slider" class="zoom-slider" value="' + settings.zoomLevel +'" min="' + settings.minZoomLevel + '" max="' + settings.maxZoomLevel + '">' : '';
-            var zoomButtonsHTML = (settings.enableZoomControls === 'buttons') ? '<div id="' + settings.ID + 'zoom-out-button" class="diva-zoom-out-button zoom-button" title="Zoom Out"></div><div id="' + settings.ID + 'zoom-in-button" class="diva-zoom-in-button zoom-button" title="Zoom In"></div>' : '';
+            var zoomButtonsHTML = (settings.enableZoomControls === 'buttons') ? '<div id="' + settings.ID + 'zoom-out-button" class="diva-zoom-out-button button" title="Zoom Out"></div><div id="' + settings.ID + 'zoom-in-button" class="diva-zoom-in-button button" title="Zoom In"></div>' : '';
             var gridSliderHTML = (settings.enableGridControls === 'slider') ? '<input type="range" id="' + settings.ID + 'grid-slider" class="grid-slider" value="' + settings.pagesPerRow +'" min="' + settings.minPagesPerRow + '" max="' + settings.maxPagesPerRow + '">' : '';
-            var gridButtonsHTML = (settings.enableGridControls === 'buttons') ? '<div id="' + settings.ID + 'grid-out-button" class="diva-grid-out-button grid-button" title="Zoom Out"></div><div id="' + settings.ID + 'grid-in-button" class="diva-grid-in-button grid-button" title="Zoom In"></div>' : '';
+            var gridButtonsHTML = (settings.enableGridControls === 'buttons') ? '<div id="' + settings.ID + 'grid-out-button" class="diva-grid-out-button button" title="Zoom Out"></div><div id="' + settings.ID + 'grid-in-button" class="diva-grid-in-button button" title="Zoom In"></div>' : '';
             var gotoPageHTML = (settings.enableGotoPage) ? '<form id="' + settings.ID + 'goto-page" class="diva-goto-form"><input type="text" id="' + settings.ID + 'goto-page-input" / class="diva-input"> <input type="submit" value="Go" style="margin-top: 0px;" /></form>' : '';
             var zoomSliderLabelHTML = (settings.enableZoomControls === 'slider') ? '<div id="' + settings.ID + 'zoom-slider-label" class="diva-slider-label">Zoom level: <span id="' + settings.ID + 'zoom-level">' + settings.zoomLevel + '</span></div>' : '';
             var zoomButtonsLabelHTML = (settings.enableZoomControls === 'buttons') ? '<div id="' + settings.ID + 'zoom-buttons-label" class="diva-buttons-label">Zoom level: <span id="' + settings.ID + 'zoom-level">' + settings.zoomLevel + '</span></div>' : '';
             var gridSliderLabelHTML = (settings.enableGridControls === 'slider') ? '<div id="' + settings.ID + 'grid-slider-label" class="diva-slider-label">Pages per row: <span id="' + settings.ID + 'pages-per-row">' + settings.pagesPerRow + '</span></div>' : '';
             var gridButtonsLabelHTML = (settings.enableGridControls === 'buttons') ? '<div id="' + settings.ID + 'grid-buttons-label" class="diva-buttons-label">Pages per row: <span id="' + settings.ID + 'pages-per-row">' + settings.pagesPerRow + '</span></div>' : '';
             var pageNumberHTML = '<div class="diva-page-label">Page <span id="' + settings.ID + 'current-page">1</span> of <span id="' + settings.ID + 'num-pages">' + settings.numPages + '</span></div>';
-
-            var fullscreenIconHTML = (settings.enableFullscreen) ? '<div id="' + settings.ID + 'fullscreen" class="diva-fullscreen-icon" title="Toggle fullscreen mode"></div>' : '';
+            var fullscreenIconHTML = (settings.enableFullscreen) ? '<div id="' + settings.ID + 'fullscreen" class="diva-fullscreen-icon button" title="Toggle fullscreen mode"></div>' : '';
 
             var toolbarHTML = '<div id="' + settings.ID + 'tools-left" class="diva-tools-left' + '">' + zoomSliderHTML + zoomButtonsHTML + gridSliderHTML + gridButtonsHTML + zoomSliderLabelHTML + zoomButtonsLabelHTML + gridSliderLabelHTML + gridButtonsLabelHTML + '</div><div id="' + settings.ID + 'tools-right" class="diva-tools-right">' + fullscreenIconHTML + linkIconHTML + gridIconHTML + '<div class="diva-page-nav">' + gotoPageHTML + pageNumberHTML + '</div></div>';
 
@@ -2862,7 +2861,7 @@ window.divaPlugins = [];
             // Call the destroy function for all the enabled plugins (if it exists)
             $.each(settings.plugins, function (index, plugin)
             {
-                executeCallback(plugin.destroy);
+                executeCallback(plugin.destroy, settings, self);
             });
 
             // Remove any additional styling on the parent element

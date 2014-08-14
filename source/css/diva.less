@@ -23,7 +23,6 @@
 
         .diva-zoom-button() {
             .hidden;
-            .button;
             float: left;
         }
         .diva-zoom-out-button {
@@ -59,13 +58,8 @@
         float: right;
         height: 42px;
 
-        .diva-button {
-            .button;
-            float: right;
-        }
-
         .diva-grid-icon {
-            .diva-button;
+            float: right;
             background-image: url("@{iconPath}grid.png");
 
             &.diva-in-grid {
@@ -74,7 +68,7 @@
         }
 
         .diva-link-icon {
-            .diva-button;
+            float: right;
             background-image: url("@{iconPath}link.png");
         }
 
@@ -110,7 +104,7 @@
         top: 0px;
         right: 30px;
         z-index: @fullscreenZIndex + 1;
-        width: 210px;
+        width: 230px;
         height: 73px;
         padding: 15px;
         .frame(@toolsFrame);
@@ -120,7 +114,7 @@
         .diva-buttons-label {
             margin-top: 5px;
             padding: 0;
-            float: none;
+            clear: both;
         }
         .diva-page-nav {
             float: none;
@@ -218,7 +212,6 @@
 }
 
 .diva-fullscreen-icon {
-    .button;
     background-image: url("@{iconPath}fullscreen.png");
     border-left: 0px;
     float: right;

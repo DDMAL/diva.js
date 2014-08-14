@@ -102,7 +102,7 @@ Allows you to highlight regions of a page image
 
                     divaSettings.parentSelector.data('highlights', {});
                 };
-                
+
                 /*
                     Resets the highlights for a single page.
                 */
@@ -148,8 +148,7 @@ Allows you to highlight regions of a page image
                     @param pageIdx  A page index number
                     @param regions  An array of regions. Use {'width':i, 'height':i, 'ulx':i, 'uly': i, 'divID': str} for each region.
                     @param colour   (optional) A colour for the highlighting, specified in RGBA CSS format
-                    @param divClass (optional) A class to identify a group of highlighted regions on a specific page by 
-                    @param callback (optional) The name of a function to call when the viewport is changed/highlights are refreshed
+                    @param divClass (optional) A class to identify a group of highlighted regions on a specific page by
                 */
                 divaInstance.highlightOnPage = function(pageIdx, regions, colour, divClass)
                 {
@@ -162,7 +161,7 @@ Allows you to highlight regions of a page image
                     {
                         divClass = divaSettings.ID + 'highlight';
                     }
-                    else 
+                    else
                     {
                         divClass = divaSettings.ID + 'highlight ' + divClass;
                     }
@@ -186,6 +185,10 @@ Allows you to highlight regions of a page image
                 };
 
                 return true;
+            },
+            destroy: function (divaSettings, divaInstance)
+            {
+                divaSettings.parentSelector.removeData('highlights');
             },
             pluginName: 'highlight',
             titleText: 'Highlight regions of pages'

@@ -892,8 +892,7 @@ Adds an adjustment icon next to each image
                 }
             },
 
-            // Used only for running the unit tests
-            destroy: function()
+            destroy: function(divaSettings, divaInstance)
             {
                 $('#diva-canvas-backdrop').remove();
             }
