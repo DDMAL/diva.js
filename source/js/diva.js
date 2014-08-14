@@ -254,7 +254,7 @@ window.divaPlugins = [];
         {
             var tileTop, tileLeft;
 
-            if(settings.verticallyOriented)
+            if (settings.verticallyOriented)
             {
                 tileTop = settings.heightAbovePages[pageIndex] + (tileRow * settings.tileHeight) + settings.verticalPadding;
                 tileLeft = settings.pageLeftOffsets[pageIndex] + (tileCol * settings.tileWidth);
@@ -320,7 +320,7 @@ window.divaPlugins = [];
             // If the page has not been loaded yet, append the div to the DOM
             if (!isPageLoaded(pageIndex))
             {
-                if(settings.verticallyOriented)
+                if (settings.verticallyOriented)
                     $(document.getElementById(settings.ID + "inner")).append('<div id="' + settings.ID + 'page-' + pageIndex + '" style="top: ' + heightFromTop + 'px; width: ' + width + 'px; height: ' + height + 'px;" class="diva-document-page diva-page-vertical" title="Page ' + (pageIndex + 1) + '" data-index="' + pageIndex  + '" data-filename="' + filename + '">' + settings.pageTools + '</div>');
                 else
                     $(document.getElementById(settings.ID + "inner")).append('<div id="' + settings.ID + 'page-' + pageIndex + '" style="left: ' + widthFromLeft + 'px; width: ' + width + 'px; height: ' + height + 'px;" class="diva-document-page diva-page-horizontal" title="Page ' + (pageIndex + 1) + '" data-index="' + pageIndex  + '" data-filename="' + filename + '">' + settings.pageTools + '</div>');
@@ -831,7 +831,7 @@ window.divaPlugins = [];
             {
                 // When scrolling forwards:
                 // If the previous page > middle of viewport
-                if(settings.verticallyOriented)
+                if (settings.verticallyOriented)
                 {
                     if (pageToConsider >= 0 && (settings.heightAbovePages[pageToConsider] + getPageData(pageToConsider, 'h') + (settings.verticalPadding) >= middleOfViewport))
                     {
@@ -850,7 +850,7 @@ window.divaPlugins = [];
             {
                 // When scrolling backwards:
                 // If this page < middle of viewport
-                if(settings.verticallyOriented)
+                if (settings.verticallyOriented)
                 {
                     if (settings.heightAbovePages[currentPage] + getPageData(currentPage, 'h') + settings.verticalPadding < middleOfViewport)
                     {
@@ -1314,6 +1314,7 @@ window.divaPlugins = [];
         var toggleGrid = function ()
         {
             settings.goDirectlyTo = settings.currentPageIndex;
+
             settings.inGrid = !settings.inGrid;
             handleViewChange();
         };
@@ -1648,7 +1649,7 @@ window.divaPlugins = [];
             $(settings.outerSelector).scroll(function ()
             {
                 var direction;
-                if(settings.verticallyOriented)
+                if (settings.verticallyOriented)
                 {
                     settings.topScrollSoFar = document.getElementById(settings.ID + "outer").scrollTop;
                     direction = settings.topScrollSoFar - settings.previousTopScroll;
@@ -1667,8 +1668,12 @@ window.divaPlugins = [];
                 }
                 else
                 {
+                    var pageIndex = settings.currentPageIndex;
+                    settings.verticalOffset = $(settings.outerSelector).scrollTop() - settings.heightAbovePages[pageIndex] + $(settings.outerSelector).height() / 2;
+                    settings.horizontalOffset = $(settings.outerSelector).scrollLeft() - settings.widthLeftOfPages[pageIndex] + $(settings.outerSelector).width() / 2;   
+
                     adjustPages(direction);
-                    if(settings.verticallyOriented)
+                    if (settings.verticallyOriented)
                         settings.leftScrollSoFar = $(this).scrollLeft();
                     else
                         settings.topScrollSoFar = $(this).scrollTop(); 
