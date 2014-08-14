@@ -17,13 +17,14 @@ Version 3.0 contains many new features and improvements:
 
 ## Overview
 
+[[img/diva-process.png]]
+
 There are three components to a functioning Diva system:
-
 1. The IIP Image Server, a highly optimized image server;
-2. A JavaScript and HTML front-end component used to display the images in a browser;
-3. A `.json` file containing data about the image collection, used by the front-end component to determine the layout of the viewer.
+2. A `.json` file containing measurement data about the image collection, used by the front-end component to determine the layout of the viewer;
+3. A JavaScript and HTML front-end component used to display the images in a browser.
 
-Additionally, your document image files must be processed into either Pyramid TIFF, or JPEG2000 format, in order to be served by IIP.
+Your document image files must be processed into either Pyramid TIFF or JPEG2000 format in order to be served by IIP. We provide [a script](https://github.com/DDMAL/diva.js/wiki/Preparing-Your-Images) to easily do this.
 
 ### Details
 
