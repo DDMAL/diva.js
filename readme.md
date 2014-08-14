@@ -17,6 +17,8 @@ Version 3.0 contains many new features and improvements:
 
 ## Overview
 
+![Diva Process: IIP, JSON, and Javascript](https://raw.githubusercontent.com/wiki/DDMAL/diva.js/img/diva-process.png)
+
 There are three components to a functioning Diva system:
 
 1. The IIP Image Server, a highly optimized image server;
