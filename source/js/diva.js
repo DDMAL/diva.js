@@ -99,6 +99,7 @@ window.divaPlugins = [];
             averageWidths: [],          // The average page width for each zoom level
             currentPageIndex: 0,        // The current page in the viewport (center-most page)
             divaIsFullWindow: false,    // Set to true when the parent of diva-wrapper is the body tag. Used for resizing.
+            doubleClickZoom: false,     // Flag to determine whether handleZoom was called from a double-click
             firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
             firstRowLoaded: -1,         // The index of the first row loaded
             gridPageWidth: 0,           // Holds the max width of each row in grid view. Calculated in loadGrid()
@@ -137,7 +138,6 @@ window.divaPlugins = [];
             plugins: [],                // Filled with the enabled plugins from window.divaPlugins
             previousLeftScroll: 0,      // Used to determine horizontal scroll direction
             previousTopScroll: 0,       // Used to determine vertical scroll direction
-            preZoomOffset: null,        // Holds the offset prior to zooming when double-clicking
             realMaxZoom: -1,            // To hold the true max zoom level of the document (needed for calculations)
             resizeTimer: -1,            // Holds the ID of the timeout used when resizing the window (for clearing)
             rowHeight: 0,               // Holds the max height of each row in grid view. Calculated in loadGrid()
@@ -989,46 +989,12 @@ window.divaPlugins = [];
         // Helper function called by loadDocument to scroll to the desired place
         var documentScroll = function ()
         {
-            // If settings.preZoomOffset is defined, the zoom was trigged by double-clicking
-            // We then zoom in on a specific region
-            if (settings.preZoomOffset)
-            {
-                var clickedPage = settings.preZoomOffset.i;
-                var heightAbovePage = settings.heightAbovePages[clickedPage] + settings.verticalPadding;
-                var pageLeftOffset = settings.pageLeftOffsets[clickedPage];
-                var zoomRatio = Math.pow(2, settings.zoomLevel - settings.oldZoomLevel);
+            // Make sure the value for settings.goDirectlyTo is valid
+            if (!isPageValid(settings.goDirectlyTo))
+                settings.goDirectlyTo = 0;
 
-                var distanceFromViewport = {
-                    x: settings.preZoomOffset.originalX - settings.viewerXOffset,
-                    y: settings.preZoomOffset.originalY - settings.viewerYOffset
-                };
-
-                var newDistanceToEdge = {
-                    x: settings.preZoomOffset.x * zoomRatio,
-                    y: settings.preZoomOffset.y * zoomRatio
-                };
-
-                var newScroll = {
-                    x: newDistanceToEdge.x - distanceFromViewport.x + pageLeftOffset,
-                    y: newDistanceToEdge.y - distanceFromViewport.y + heightAbovePage
-                };
-
-                $(settings.outerSelector).scrollTop(newScroll.y).scrollLeft(newScroll.x);
-
-                settings.preZoomOffset = undefined;
-            }
-            else
-            {
-                // Otherwise, we just scroll to the page saved in settings.goDirectlyTo (must be valid)
-                // Make sure the value for settings.goDirectlyTo is valid
-                if (!isPageValid(settings.goDirectlyTo))
-                    settings.goDirectlyTo = 0;
-
-                // We use the stored y/x offsets (relative to the top of the page and the center, respectively)
-                gotoPage(settings.goDirectlyTo, settings.verticalOffset, settings.horizontalOffset);
-                settings.horizontalOffset = 0;
-                settings.verticalOffset = 0;
-            }
+            // We use the stored y/x offsets (relative to the center of the page, respectively)
+            gotoPage(settings.goDirectlyTo, settings.verticalOffset, settings.horizontalOffset);
         };
 
         // Don't call this when not in grid mode please
@@ -1332,17 +1298,11 @@ window.divaPlugins = [];
         var handleDocumentDoubleClick = function (event)
         {
             var pageOffset = $(this).offset();
-            var offsetX = event.pageX - pageOffset.left;
-            var offsetY = event.pageY - pageOffset.top;
 
-            // Store the offset information so that it can be used in documentScroll()
-            settings.preZoomOffset = {
-                x: offsetX,
-                y: offsetY,
-                originalX: event.pageX,
-                originalY: event.pageY,
-                i: $(this).attr('data-index')
-            };
+            settings.doubleClickZoom = true;
+            settings.horizontalOffset = event.pageX - pageOffset.left;
+            settings.verticalOffset = event.pageY - pageOffset.top;
+            settings.goDirectlyTo = parseInt($(this).attr('data-index'), 10); //page index
 
             // Hold control to zoom out, otherwise, zoom in
             var newZoomLevel = (event.ctrlKey) ? settings.zoomLevel - 1 : settings.zoomLevel + 1;
@@ -1396,14 +1356,23 @@ window.divaPlugins = [];
             if (newZoomLevel !== newValue)
                 return false;
 
-            var i = settings.currentPageIndex;
-            settings.goDirectlyTo = i;
             var zoomRatio = Math.pow(2, newZoomLevel - settings.zoomLevel);
 
             // offsets refer to the distance from the top/left of the current page that the center of the viewport is.
             // for example: if the viewport is 800 pixels and the active page is 600 pixels wide and starts at 100 pixels, verticalOffset will be 300 pixels.
-            settings.verticalOffset = zoomRatio * getYOffset(true);
-            settings.horizontalOffset = zoomRatio * getXOffset(true);   
+            if(settings.doubleClickZoom)
+            {
+                settings.verticalOffset *= zoomRatio;
+                settings.horizontalOffset *= zoomRatio;
+                settings.doubleClickZoom = false;
+            }
+            else
+            {            
+                settings.goDirectlyTo = settings.currentPageIndex;
+                settings.verticalOffset = zoomRatio * getYOffset(true);
+                settings.horizontalOffset = zoomRatio * getXOffset(true);
+            }
+
             settings.leftScrollSoFar = zoomRatio * settings.leftScrollSoFar;
             settings.topScrollSoFar = zoomRatio * settings.topScrollSoFar;
 
