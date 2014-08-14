@@ -976,6 +976,10 @@ window.divaPlugins = [];
             var desiredTop = desiredRow * settings.rowHeight;
             $(settings.outerSelector).scrollTop(desiredTop);
 
+            // Scroll is not triggered automatically by the above line, so isRowVisible/isVerticallyInViewport may not calculate based off the correct value
+            settings.topScrollSoFar = document.getElementById(settings.ID + "outer").scrollTop;
+            settings.leftScrollSoFar = document.getElementById(settings.ID + "outer").scrollLeft;
+
             // Pretend that this is the current page (it probably isn't)
             settings.currentPageIndex = pageIndex;
             var filename = settings.pages[pageIndex].f;
@@ -1654,7 +1658,8 @@ window.divaPlugins = [];
             $(settings.outerSelector).scroll(function ()
             {
                 var direction;
-                if (settings.verticallyOriented)
+                
+                if (settings.verticallyOriented || settings.inGrid)
                 {
                     settings.topScrollSoFar = document.getElementById(settings.ID + "outer").scrollTop;
                     direction = settings.topScrollSoFar - settings.previousTopScroll;
