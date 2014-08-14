@@ -1161,6 +1161,10 @@ window.divaPlugins = [];
 
                 executeCallback(settings.onZoom, z);
             }
+            else
+            {
+                settings.oldZoomLevel = settings.zoomLevel;
+            }
 
             if (settings.verticallyOriented)
             {
@@ -1187,6 +1191,10 @@ window.divaPlugins = [];
 
         var loadGrid = function ()
         {
+            var pageIndex = settings.currentPageIndex;
+            settings.verticalOffset = (settings.verticallyOriented ? (settings.panelHeight / 2) : getPageData(pageIndex, "h") / 2);
+            settings.horizontalOffset = (settings.verticallyOriented ? getPageData(pageIndex, "w") / 2 : (settings.panelWidth / 2));
+            
             clearViewer();
 
             // Make sure the pages per row setting is valid
@@ -1228,17 +1236,14 @@ window.divaPlugins = [];
         // Should only be called after changing settings.inFullscreen
         var handleModeChange = function (changeView)
         {
-            // Save some offsets (required for scrolling properly), if it's not the initial load
+            // Save some offsets (required for maintaining scroll position), if it's not the initial load
             if (settings.oldZoomLevel >= 0)
             {
                 if (!settings.inGrid)
                 {
-                    var pageOffset = $(settings.selector + 'page-' + settings.currentPageIndex).offset();
-                    var topOffset = -(pageOffset.top - settings.verticalPadding - settings.viewerYOffset);
-                    var expectedLeft = (settings.panelWidth - getPageData(settings.currentPageIndex, 'w')) / 2;
-                    var leftOffset = -(pageOffset.left - settings.viewerXOffset - expectedLeft);
-                    settings.verticalOffset = topOffset;
-                    settings.horizontalOffset = leftOffset;
+                    var pageIndex = settings.currentPageIndex;
+                    settings.verticalOffset = $(settings.outerSelector).scrollTop() - settings.heightAbovePages[pageIndex] + $(settings.outerSelector).height() / 2;
+                    settings.horizontalOffset = $(settings.outerSelector).scrollLeft() - settings.widthLeftOfPages[pageIndex] + $(settings.outerSelector).width() / 2;  
                 }
             }
 
@@ -1668,10 +1673,6 @@ window.divaPlugins = [];
                 }
                 else
                 {
-                    var pageIndex = settings.currentPageIndex;
-                    settings.verticalOffset = $(settings.outerSelector).scrollTop() - settings.heightAbovePages[pageIndex] + $(settings.outerSelector).height() / 2;
-                    settings.horizontalOffset = $(settings.outerSelector).scrollLeft() - settings.widthLeftOfPages[pageIndex] + $(settings.outerSelector).width() / 2;   
-
                     adjustPages(direction);
                     if (settings.verticallyOriented)
                         settings.leftScrollSoFar = $(this).scrollLeft();
