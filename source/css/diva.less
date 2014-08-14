@@ -23,7 +23,6 @@
 
         .diva-zoom-button() {
             .hidden;
-            .button;
             float: left;
         }
         .diva-zoom-out-button {
@@ -59,13 +58,8 @@
         float: right;
         height: 42px;
 
-        .diva-button {
-            .button;
-            float: right;
-        }
-
         .diva-grid-icon {
-            .diva-button;
+            float: right;
             background-image: url("@{iconPath}grid.png");
 
             &.diva-in-grid {
@@ -74,7 +68,7 @@
         }
 
         .diva-link-icon {
-            .diva-button;
+            float: right;
             background-image: url("@{iconPath}link.png");
         }
 
@@ -207,7 +201,6 @@
 }
 
 .diva-fullscreen-icon {
-    .button;
     background-image: url("@{iconPath}fullscreen.png");
     border-left: 0px;
     float: right;
