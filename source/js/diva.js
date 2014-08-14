@@ -933,8 +933,8 @@ window.divaPlugins = [];
         //Helper function for going to the top of a specific page
         var gotoPageTop = function (pageIndex)
         {
-            var verticalOffset = (settings.verticallyOriented ? (settings.panelHeight / 2) : getPageData(pageIndex, "h") / 2);
-            var horizontalOffset = (settings.verticallyOriented ? getPageData(pageIndex, "w") / 2 : (settings.panelWidth / 2));
+            var verticalOffset = getYOffset(false);
+            var horizontalOffset = getXOffset(false);
 
             gotoPage(pageIndex, verticalOffset, horizontalOffset);
         };
@@ -1246,8 +1246,8 @@ window.divaPlugins = [];
                 if (!settings.inGrid)
                 {
                     var pageIndex = settings.currentPageIndex;
-                    settings.verticalOffset = $(settings.outerSelector).scrollTop() - settings.heightAbovePages[pageIndex] + $(settings.outerSelector).height() / 2;
-                    settings.horizontalOffset = $(settings.outerSelector).scrollLeft() - settings.widthLeftOfPages[pageIndex] + $(settings.outerSelector).width() / 2;  
+                    settings.verticalOffset = getYOffset(false);
+                    settings.horizontalOffset = getXOffset(false);  
                 }
             }
 
@@ -1402,8 +1402,10 @@ window.divaPlugins = [];
 
             // offsets refer to the distance from the top/left of the current page that the center of the viewport is.
             // for example: if the viewport is 800 pixels and the active page is 600 pixels wide and starts at 100 pixels, verticalOffset will be 300 pixels.
-            settings.verticalOffset = zoomRatio * ($(settings.outerSelector).scrollTop() - settings.heightAbovePages[i] + $(settings.outerSelector).height() / 2);
-            settings.horizontalOffset = zoomRatio * ($(settings.outerSelector).scrollLeft() - settings.widthLeftOfPages[i] + $(settings.outerSelector).width() / 2);   
+            settings.verticalOffset = zoomRatio * getYOffset(true);
+            settings.horizontalOffset = zoomRatio * getXOffset(true);   
+            settings.leftScrollSoFar = zoomRatio * settings.leftScrollSoFar;
+            settings.topScrollSoFar = zoomRatio * settings.topScrollSoFar;
 
             settings.oldZoomLevel = settings.zoomLevel;
             settings.zoomLevel = newZoomLevel;
@@ -1436,19 +1438,38 @@ window.divaPlugins = [];
             return true;
         };
 
-        var getYOffset = function ()
+        var getYOffset = function (centerAligned)
         {
-            var pageTop = document.getElementById(settings.ID + "outer").scrollTop - settings.heightAbovePages[settings.currentPageIndex];
-            var pageTopToCenter = pageTop + ((document.getElementById(settings.ID + "outer").clientHeight + settings.scrollbarWidth) / 2);
-            return parseInt(pageTopToCenter, 10);
+            var offset,
+                pageIndex = settings.currentPageIndex;
+
+            if(centerAligned)
+            {
+                offset = ($(settings.outerSelector).scrollTop() - settings.heightAbovePages[pageIndex] + $(settings.outerSelector).height() / 2);
+            }
+            else
+            {
+                offset = (settings.verticallyOriented ? (settings.panelHeight / 2) : getPageData(pageIndex, "h") / 2);
+            }
+
+            return parseInt(offset, 10);
         };
 
-        var getXOffset = function ()
+        var getXOffset = function (centerAligned)
         {
-            var innerWidth = settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2;
-            var centerX = (innerWidth - settings.panelWidth) / 2;
-            var xoff = document.getElementById(settings.ID + "outer").scrollLeft - centerX;
-            return parseInt(xoff, 10);
+            var offset,
+                pageIndex = settings.currentPageIndex;
+
+            if(centerAligned)
+            {
+                offset = ($(settings.outerSelector).scrollLeft() - settings.widthLeftOfPages[pageIndex] + $(settings.outerSelector).width() / 2);   
+            }
+            else
+            {
+                offset = (settings.verticallyOriented ? getPageData(pageIndex, "w") / 2 : (settings.panelWidth / 2));
+            }
+
+            return parseInt(offset, 10);
         };
 
         var getState = function ()
@@ -1460,8 +1481,8 @@ window.divaPlugins = [];
                 'n': settings.pagesPerRow,
                 'i': (settings.enableFilename) ? settings.pages[settings.currentPageIndex].f : false,
                 'p': (settings.enableFilename) ? false : settings.currentPageIndex + 1,
-                'y': (settings.inGrid) ? false : getYOffset(),
-                'x': (settings.inGrid) ? false : getXOffset()
+                'y': (settings.inGrid) ? false : getYOffset(true),
+                'x': (settings.inGrid) ? false : getXOffset(true)
             };
 
             return state;
@@ -1658,7 +1679,7 @@ window.divaPlugins = [];
             $(settings.outerSelector).scroll(function ()
             {
                 var direction;
-                
+
                 if (settings.verticallyOriented || settings.inGrid)
                 {
                     settings.topScrollSoFar = document.getElementById(settings.ID + "outer").scrollTop;
@@ -1668,10 +1689,9 @@ window.divaPlugins = [];
                 {
                     settings.leftScrollSoFar = document.getElementById(settings.ID + "outer").scrollLeft;
                     direction = settings.leftScrollSoFar - settings.previousLeftScroll;   
-                }                     
+                }                   
 
-                //give adjustPages the direction we care about - TODO: check for grid view
-
+                //give adjustPages the direction we care about
                 if (settings.inGrid)
                 {
                     adjustRows(direction);
