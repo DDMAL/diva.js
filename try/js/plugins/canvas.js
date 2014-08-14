@@ -226,37 +226,25 @@ Adds an adjustment icon next to each image
                     {
                         // Only adjust individual colour channels if necessary
                         if (adjustRed && r)
-                        {
                             r += redOffset;
-                        }
 
                         if (adjustGreen && g)
-                        {
                             g += greenOffset;
-                        }
 
                         if (adjustBlue && b)
-                        {
                             b += blueOffset;
-                        }
 
                         // If we need to adjust brightness and/or contrast
                         if (adjustOthers)
                         {
                             if (r)
-                            {
                                 r = r * brightTimesContrast + contrastOffset;
-                            }
 
                             if (g)
-                            {
                                 g = g * brightTimesContrast + contrastOffset;
-                            }
 
                             if (b)
-                            {
                                 b = b * brightTimesContrast + contrastOffset;
-                            }
                         }
 
                         pixelArray[offset] = r;
@@ -377,9 +365,7 @@ Adds an adjustment icon next to each image
 
                 // If the callback function exists, execute it (for zooming)
                 if (typeof callback === 'function')
-                {
                     callback.call(callback);
-                }
             };
         };
 
@@ -393,9 +379,7 @@ Adds an adjustment icon next to each image
 
         var updateSliderValue = function ()
         {
-            $('#diva-canvas-slider').slider({
-                value: sliders[sliderMode].current
-            });
+            $('#diva-canvas-slider').val(sliders[sliderMode].current);
         };
 
         // Returns the URL for the image at the specified zoom level
@@ -404,11 +388,10 @@ Adds an adjustment icon next to each image
             var width = settings.zoomWidthRatio * Math.pow(2, zoomLevel);
 
             if (settings.proxyURL)
-            {
                 return settings.proxyURL + "?f=" + settings.filename + "&w=" + width;
-            }
 
             var imdir = settings.imageDir + "/";
+
             return settings.iipServerURL + "?FIF=" + imdir + settings.filename + '&WID=' + width + '&CVT=JPEG';
         };
 
@@ -416,9 +399,7 @@ Adds an adjustment icon next to each image
         {
             // Only show the throbber if it will take a long time
             if (sliders.zoom.current > 0 || settings.mobileWebkit)
-            {
                 $(settings.selector + 'throbber').addClass('canvas-throbber').show();
-            }
         };
 
         // Hides the loading indicator icon
@@ -477,15 +458,13 @@ Adds an adjustment icon next to each image
 
         var retval =
         {
-            init: function(divaSettings, divaInstance)
+            init: function (divaSettings, divaInstance)
             {
                 // If the browser does not support canvas, do nothing
                 // And, disable this plugin
                 var canvasSupported = !!window.HTMLCanvasElement;
                 if (!canvasSupported)
-                {
                     return false;
-                }
 
                 // Override all the configurable settings defined under canvasPlugin
                 $.extend(settings, defaults, divaSettings.canvasPlugin);
@@ -608,7 +587,7 @@ Adds an adjustment icon next to each image
                                 '<span id="diva-canvas-value">0</span> ' +
                                 '<span id="diva-canvas-reset" class="link">(Reset)</span>' +
                             '</p>' +
-                            '<div id="diva-canvas-slider"></div>' +
+                            '<input type="range" id="diva-canvas-slider"></input>' +
                         '</div>' +
                         '<br />' +
                         '<div class="action-buttons">' +
@@ -649,24 +628,21 @@ Adds an adjustment icon next to each image
                     var newValue = sliderData.current;
                     var newValueString = (sliderData.transform) ? sliderData.transform(newValue) : newValue;
 
-                    $('#diva-canvas-slider').slider({
-                        'min': sliderData.min,
-                        'max': sliderData.max,
-                        'step': sliderData.step
-                    }).slider('value', newValue);
+                    var slider = document.getElementById('diva-canvas-slider');
+                    slider.min = sliderData.min;
+                    slider.max = sliderData.max;
+                    slider.step = sliderData.step;
+                    $('#diva-canvas-slider').val(newValue);
                     $('#diva-canvas-value').html(newValueString);
                 };
 
                 updateSlider('contrast');
 
                 // Create the slider
-                $('#diva-canvas-slider').slider({
-                    slide: function (event, ui)
-                    {
-                        sliders[sliderMode].current = ui.value;
-                        updateSliderLabel();
-                        updateMap();
-                    }
+                $('#diva-canvas-slider').on('input', function(e){
+                    sliders[sliderMode].current = parseFloat(this.value);
+                    updateSliderLabel();
+                    updateMap();
                 });
 
                 // Reset all the sliders to the default value
@@ -764,18 +740,14 @@ Adds an adjustment icon next to each image
 
                     // Always update the settings but only redraw if in canvas
                     if (settings.inCanvas)
-                    {
                         updateViewbox();
-                    }
                 });
 
                 // Update the viewbox when the large canvas is scrolled
                 $('#diva-canvas-wrapper').scroll(function ()
                 {
                     if (settings.inCanvas)
-                    {
                         updateViewbox();
-                    }
                 });
 
                 // Handle clicking/dragging of the viewbox (should scroll the large canvas)
@@ -839,9 +811,7 @@ Adds an adjustment icon next to each image
                 // If we're on the iPad, limit the max zoom level to 2
                 // Can't do canvas elements that are > 5 megapixels (issue #112)
                 if (settings.mobileWebkit)
-                {
                     settings.maxZoomLevel = Math.min(settings.maxZoomLevel, settings.mobileWebkitMaxZoom);
-                }
 
                 sliders.zoom.min = settings.minZoomLevel;
                 sliders.zoom.max = settings.maxZoomLevel;
@@ -922,8 +892,7 @@ Adds an adjustment icon next to each image
                 }
             },
 
-            // Used only for running the unit tests
-            destroy: function()
+            destroy: function(divaSettings, divaInstance)
             {
                 $('#diva-canvas-backdrop').remove();
             }
