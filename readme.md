@@ -17,9 +17,8 @@ Version 3.0 contains many new features and improvements:
 
 ## Overview
 
-[[img/diva-process.png]]
-
 There are three components to a functioning Diva system:
+
 1. The IIP Image Server, a highly optimized image server;
 2. A `.json` file containing measurement data about the image collection, used by the front-end component to determine the layout of the viewer;
 3. A JavaScript and HTML front-end component used to display the images in a browser.
