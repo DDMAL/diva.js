@@ -895,14 +895,6 @@ Adds an adjustment icon next to each image
             destroy: function(divaSettings, divaInstance)
             {
                 $('#diva-canvas-backdrop').remove();
-
-                // remove locally stored canvas settings
-                for (var i = 0; i < localStorage.length; i++)
-                {
-                    var key = localStorage.key(i);
-                    if (key.lastIndexOf(settings.localStoragePrefix, 0) === 0)
-                        localStorage.removeItem(key);
-                }
             }
         };
 
