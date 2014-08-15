@@ -77,6 +77,10 @@ section#features h2 {
     font-size: 25px;
 }
 
+.ficon h3 {
+    margin-top: 10px;
+}
+
 .vcenter {
     display: inline-block;
     vertical-align: middle;
