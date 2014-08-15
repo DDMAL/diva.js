@@ -927,7 +927,6 @@ window.divaPlugins = [];
         // Horizontal offset: from the center of the page; can be negative if to the left
         var gotoPage = function (pageIndex, verticalOffset, horizontalOffset)
         {
-            console.log(verticalOffset, horizontalOffset);
             //convert offsets to 0 if undefined
             horizontalOffset = (typeof horizontalOffset !== 'undefined') ? horizontalOffset: 0;
             verticalOffset = (typeof verticalOffset !== 'undefined') ? verticalOffset : 0;
@@ -939,9 +938,7 @@ window.divaPlugins = [];
             var desiredLeft = desiredHorizontalCenter - ($(settings.outerSelector).width() / 2);
 
             $(settings.outerSelector).scrollTop(desiredTop);
-            console.log('probably right here');
             $(settings.outerSelector).scrollLeft(desiredLeft);
-            console.log('isnt it?');
 
             // Pretend that this is the current page
             settings.currentPageIndex = pageIndex;
@@ -953,7 +950,6 @@ window.divaPlugins = [];
             // Execute the onJump callback
             executeCallback(settings.onJump, pageIndex);
             diva.Events.publish("ViewerDidJump", [pageIndex]);
-            console.log('end')
         };
 
         // Calculates the desired row, then scrolls there
@@ -1057,7 +1053,19 @@ window.divaPlugins = [];
             var widthToSet = Math.max(maxWidthToSet, settings.panelWidth);
             var heightToSet = Math.max(maxHeightToSet, settings.panelHeight);
 
-            // Needed to set settings.heightAbovePages - initially just the top padding
+            //Set the inner element to said width
+            if (settings.verticallyOriented)
+            {
+                $(settings.innerSelector).height(Math.round(settings.totalHeight));
+                $(settings.innerSelector).width(Math.round(widthToSet));
+            }
+            else
+            {
+                $(settings.innerSelector).height(Math.round(heightToSet));
+                $(settings.innerSelector).width(Math.round(settings.totalWidth));
+            }
+
+            // Set settings.heightAbovePages/widthLeftOfPages to determine where we're going to need to scroll
             var heightSoFar = 0;
             var widthSoFar = 0;
             var i;
@@ -1076,13 +1084,28 @@ window.divaPlugins = [];
                 // Figure out the pageLeftOffset stuff
                 settings.pageLeftOffsets[i] = (widthToSet - getPageData(i, 'w')) / 2;
                 settings.pageTopOffsets[i] = (heightToSet - getPageData(i, 'h')) / 2;
+            }
 
-                // Now try to load the page ONLY if the page needs to be loaded
-                // Take scrolling into account later, just try this for now
+            // Make sure the value for settings.goDirectlyTo is valid
+            if (!isPageValid(settings.goDirectlyTo))
+                settings.goDirectlyTo = 0;
+
+            // Scroll to the proper place using stored y/x offsets (relative to the center of the page)
+            gotoPage(settings.goDirectlyTo, settings.verticalOffset, settings.horizontalOffset);
+
+            // Once the viewport is aligned, we can determine which pages will be visible and load them
+            var pageBlockFound = false;
+            for (i = 0; i < settings.numPages; i++)
+            {
                 if (isPageVisible(i))
                 {
                     loadPage(i);
                     settings.lastPageLoaded = i;
+                    pageBlockFound = true;
+                }
+                else if (pageBlockFound) // There will only be one consecutive block of pages to load; once we find a page that's invisible, we can terminate this loop.
+                {
+                    break;
                 }
             }
 
@@ -1106,24 +1129,6 @@ window.divaPlugins = [];
             {
                 settings.oldZoomLevel = settings.zoomLevel;
             }
-
-            if (settings.verticallyOriented)
-            {
-                $(settings.innerSelector).height(Math.round(settings.totalHeight));
-                $(settings.innerSelector).width(Math.round(widthToSet));
-            }
-            else
-            {
-                $(settings.innerSelector).height(Math.round(heightToSet));
-                $(settings.innerSelector).width(Math.round(settings.totalWidth));
-            }
-
-            // Make sure the value for settings.goDirectlyTo is valid
-            if (!isPageValid(settings.goDirectlyTo))
-                settings.goDirectlyTo = 0;
-
-            // Scroll to the proper place using stored y/x offsets (relative to the center of the page, respectively)
-            gotoPage(settings.goDirectlyTo, settings.verticalOffset, settings.horizontalOffset);
 
             // For the iPad - wait until this request finishes before accepting others
             if (settings.scaleWait)
@@ -1275,7 +1280,6 @@ window.divaPlugins = [];
             var pageOffset = $(this).offset();
 
             settings.doubleClickZoom = true;
-            console.log(settings.panelWidth - event.pageX, settings.panelWidth - event.pageX - settings.horizontalPadding, settings.panelWidth - event.pageX - $(settings.outerSelector).offset().left);
             settings.horizontalOffset = event.pageX - pageOffset.left;
             settings.verticalOffset = event.pageY - pageOffset.top;
             settings.goDirectlyTo = parseInt($(this).attr('data-index'), 10); //page index
