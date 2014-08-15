@@ -104,7 +104,6 @@ window.divaPlugins = [];
             firstRowLoaded: -1,         // The index of the first row loaded
             gridPageWidth: 0,           // Holds the max width of each row in grid view. Calculated in loadGrid()
             hashParamSuffix: '',        // Used when there are multiple document viewers on a page
-            heightAbovePages: [],       // The height above each page at the current zoom level
             heightProportion: 0,        // Stores the original proportion between parentSelector.height and window.height
             horizontalOffset: 0,        // Used in documentScroll for scrolling more precisely
             horizontalPadding: 0,       // Either the fixed padding or adaptive padding
@@ -128,8 +127,8 @@ window.divaPlugins = [];
             orientationChange: false,   // For handling device orientation changes for touch devices
             outerSelector: '',          // settings.selector + 'outer', for selecting the .diva-outer element
             pages: [],                  // An array containing the data for all the pages
-            pageLeftOffsets: [],        // Offset from the left side of the pane to the edge of the page
-            pageTopOffsets: [],         // Offset from the top side of the pane to the edge of the page
+            pageLeftOffsets: [],        // Distance from the left side of each page to the left side of the diva-inner object
+            pageTopOffsets: [],         // Distance from the top side of each page to the top side of the diva-inner object
             pageTimeouts: [],           // Stack to hold the loadPage timeouts
             pageTools: '',              // The string for page tools
             panelHeight: 0,             // Height of the document viewer pane
@@ -155,7 +154,6 @@ window.divaPlugins = [];
             totalWidth: 0,              // The total height for the current zoom level (including padding)
             verticalOffset: 0,          // See horizontalOffset
             verticalPadding: 0,         // Either the fixed padding or adaptive padding
-            widthLeftOfPages: [],       // Width to the left of each page at the current zoom level
             widthProportion: 0,         // Stores the original proportion between parentSelector.width and window.width
             viewerXOffset: 0,           // Distance between left edge of window and viewer left edge (used for double-click zooming)
             viewerYOffset: 0            // Like viewerXOffset but for the top edges
@@ -254,13 +252,13 @@ window.divaPlugins = [];
 
             if (settings.verticallyOriented)
             {
-                tileTop = settings.heightAbovePages[pageIndex] + (tileRow * settings.tileHeight) + settings.verticalPadding;
+                tileTop = settings.pageTopOffsets[pageIndex] + (tileRow * settings.tileHeight) + settings.verticalPadding;
                 tileLeft = settings.pageLeftOffsets[pageIndex] + (tileCol * settings.tileWidth);
             }
             else
             {
                 tileTop = settings.pageTopOffsets[pageIndex] + (tileRow * settings.tileHeight);
-                tileLeft = settings.widthLeftOfPages[pageIndex] + (tileCol * settings.tileWidth) + settings.horizontalPadding;
+                tileLeft = settings.pageLeftOffsets[pageIndex] + (tileCol * settings.tileWidth) + settings.horizontalPadding;
             }
 
             var tileBottom = tileTop + settings.tileHeight;
@@ -284,10 +282,10 @@ window.divaPlugins = [];
         // Check if a page is in or near the viewport and thus should be loaded
         var isPageVisible = function (pageIndex)
         {
-            var topOfPage = settings.heightAbovePages[pageIndex];
+            var topOfPage = settings.pageTopOffsets[pageIndex];
             var bottomOfPage = topOfPage + getPageData(pageIndex, 'h') + settings.verticalPadding;
 
-            var leftOfPage = settings.widthLeftOfPages[pageIndex];
+            var leftOfPage = settings.pageLeftOffsets[pageIndex];
             var rightOfPage = leftOfPage + getPageData(pageIndex, 'w') + settings.horizontalPadding;
 
             return (isVerticallyInViewport(topOfPage, bottomOfPage) && isHorizontallyInViewport(leftOfPage, rightOfPage));
@@ -310,8 +308,8 @@ window.divaPlugins = [];
             var filename = settings.pages[pageIndex].f;
             var width = getPageData(pageIndex, 'w');
             var height = getPageData(pageIndex, 'h');
-            var heightFromTop = settings.heightAbovePages[pageIndex] + settings.verticalPadding;
-            var widthFromLeft = settings.widthLeftOfPages[pageIndex] + settings.horizontalPadding;
+            var heightFromTop = settings.pageTopOffsets[pageIndex] + settings.verticalPadding;
+            var widthFromLeft = settings.pageLeftOffsets[pageIndex] + settings.horizontalPadding;
             var pageSelector = settings.selector + 'page-' + pageIndex;
             var plugin;
 
@@ -416,7 +414,7 @@ window.divaPlugins = [];
         // For when you want to keep looping but don't want to load a specific page
         var pageAboveViewport = function (pageIndex)
         {
-            var bottomOfPage = settings.heightAbovePages[pageIndex] + getPageData(pageIndex, 'h') + settings.verticalPadding;
+            var bottomOfPage = settings.pageTopOffsets[pageIndex] + getPageData(pageIndex, 'h') + settings.verticalPadding;
             var topOfViewport = document.getElementById(settings.ID + "outer").scrollTop;
 
             return bottomOfPage < topOfViewport;
@@ -425,26 +423,26 @@ window.divaPlugins = [];
         // Check if the top of a page is below the bottom of a viewport (scrolling up)
         var pageBelowViewport = function (pageIndex)
         {
-            var topOfPage = settings.heightAbovePages[pageIndex];
+            var topOfPage = settings.pageTopOffsets[pageIndex];
             var bottomOfViewport = document.getElementById(settings.ID + "outer").scrollTop + settings.panelHeight;
 
             return topOfPage > bottomOfViewport;
         };
 
-        // Check if the bottom of a page is above the top of a viewport (scrolling down)
+        // Check if the left side of a page is to the left of a viewport (scrolling right)
         // For when you want to keep looping but don't want to load a specific page
         var pageLeftOfViewport = function (pageIndex)
         {
-            var rightOfPage = settings.widthLeftOfPages[pageIndex] + getPageData(pageIndex, 'w') + settings.horizontalPadding;
+            var rightOfPage = settings.pageLeftOffsets[pageIndex] + getPageData(pageIndex, 'w') + settings.horizontalPadding;
             var leftOfViewport = document.getElementById(settings.ID + "outer").scrollLeft;
 
             return rightOfPage < leftOfViewport;
         };
 
-        // Check if the top of a page is below the bottom of a viewport (scrolling up)
+        // Check if the right side of a page is to the right of a viewport (scrolling left)
         var pageRightOfViewport = function (pageIndex)
         {
-            var leftOfPage = settings.widthLeftOfPages[pageIndex];
+            var leftOfPage = settings.pageLeftOffsets[pageIndex];
             var rightOfViewport = document.getElementById(settings.ID + "outer").scrollLeft + settings.panelWidth;
 
             return leftOfPage > rightOfViewport;
@@ -815,14 +813,14 @@ window.divaPlugins = [];
                 // If the previous page > middle of viewport
                 if (settings.verticallyOriented)
                 {
-                    if (pageToConsider >= 0 && (settings.heightAbovePages[pageToConsider] + getPageData(pageToConsider, 'h') + (settings.verticalPadding) >= middleOfViewport))
+                    if (pageToConsider >= 0 && (settings.pageTopOffsets[pageToConsider] + getPageData(pageToConsider, 'h') + (settings.verticalPadding) >= middleOfViewport))
                     {
                         changeCurrentPage = true;
                     }
                 }
                 else
                 {
-                    if (pageToConsider >= 0 && (settings.widthLeftOfPages[pageToConsider] + getPageData(pageToConsider, 'w') + (settings.horizontalPadding) >= middleOfViewport))
+                    if (pageToConsider >= 0 && (settings.pageLeftOffsets[pageToConsider] + getPageData(pageToConsider, 'w') + (settings.horizontalPadding) >= middleOfViewport))
                     {
                         changeCurrentPage = true;
                     }     
@@ -834,14 +832,14 @@ window.divaPlugins = [];
                 // If this page < middle of viewport
                 if (settings.verticallyOriented)
                 {
-                    if (settings.heightAbovePages[currentPage] + getPageData(currentPage, 'h') + settings.verticalPadding < middleOfViewport)
+                    if (settings.pageTopOffsets[currentPage] + getPageData(currentPage, 'h') + settings.verticalPadding < middleOfViewport)
                     {
                         changeCurrentPage = true;
                     }
                 }
                 else
                 {
-                    if (settings.widthLeftOfPages[currentPage] + getPageData(currentPage, 'w') + settings.horizontalPadding < middleOfViewport)
+                    if (settings.pageLeftOffsets[currentPage] + getPageData(currentPage, 'w') + settings.horizontalPadding < middleOfViewport)
                     {
                         changeCurrentPage = true;
                     }
@@ -931,10 +929,10 @@ window.divaPlugins = [];
             horizontalOffset = (typeof horizontalOffset !== 'undefined') ? horizontalOffset: 0;
             verticalOffset = (typeof verticalOffset !== 'undefined') ? verticalOffset : 0;
 
-            var desiredVerticalCenter = (settings.heightAbovePages[pageIndex] || settings.verticalPadding) + verticalOffset;
+            var desiredVerticalCenter = (settings.pageTopOffsets[pageIndex] || settings.verticalPadding) + verticalOffset;
             var desiredTop = desiredVerticalCenter - ($(settings.outerSelector).height() / 2);
 
-            var desiredHorizontalCenter = (settings.widthLeftOfPages[pageIndex] || settings.horizontalPadding) + horizontalOffset;
+            var desiredHorizontalCenter = (settings.pageLeftOffsets[pageIndex] || settings.horizontalPadding) + horizontalOffset;
             var desiredLeft = desiredHorizontalCenter - ($(settings.outerSelector).width() / 2);
 
             $(settings.outerSelector).scrollTop(desiredTop);
@@ -1065,7 +1063,7 @@ window.divaPlugins = [];
                 $(settings.innerSelector).width(Math.round(settings.totalWidth));
             }
 
-            // Set settings.heightAbovePages/widthLeftOfPages to determine where we're going to need to scroll
+            // Set settings.pageTopOffsets/pageLeftOffsets to determine where we're going to need to scroll
             var heightSoFar = 0;
             var widthSoFar = 0;
             var i;
@@ -1074,16 +1072,12 @@ window.divaPlugins = [];
             {
                 // First set the height above that page by adding this height to the previous total
                 // A page includes the padding above it
-                settings.heightAbovePages[i] = (settings.verticallyOriented ? heightSoFar : (heightToSet - getPageData(i, 'h')) / 2);
-                settings.widthLeftOfPages[i] = (settings.verticallyOriented ? (widthToSet - getPageData(i, 'w')) / 2 : widthSoFar);
+                settings.pageTopOffsets[i] = (settings.verticallyOriented ? heightSoFar : (heightToSet - getPageData(i, 'h')) / 2);
+                settings.pageLeftOffsets[i] = (settings.verticallyOriented ? (widthToSet - getPageData(i, 'w')) / 2 : widthSoFar);
 
                 // Has to be done this way otherwise you get the height of the page included too
-                heightSoFar = settings.heightAbovePages[i] + getPageData(i, 'h') + settings.verticalPadding;
-                widthSoFar = settings.widthLeftOfPages[i] + getPageData(i, 'w') + settings.horizontalPadding;
-
-                // Figure out the pageLeftOffset stuff
-                settings.pageLeftOffsets[i] = (widthToSet - getPageData(i, 'w')) / 2;
-                settings.pageTopOffsets[i] = (heightToSet - getPageData(i, 'h')) / 2;
+                heightSoFar = settings.pageTopOffsets[i] + getPageData(i, 'h') + settings.verticalPadding;
+                widthSoFar = settings.pageLeftOffsets[i] + getPageData(i, 'w') + settings.horizontalPadding;
             }
 
             // Make sure the value for settings.goDirectlyTo is valid
@@ -1391,7 +1385,7 @@ window.divaPlugins = [];
 
             if(centerAligned)
             {
-                offset = ($(settings.outerSelector).scrollTop() - settings.heightAbovePages[pageIndex] + $(settings.outerSelector).height() / 2);
+                offset = ($(settings.outerSelector).scrollTop() - settings.pageTopOffsets[pageIndex] + $(settings.outerSelector).height() / 2);
             }
             else
             {
@@ -1408,7 +1402,7 @@ window.divaPlugins = [];
 
             if(centerAligned)
             {
-                offset = ($(settings.outerSelector).scrollLeft() - settings.widthLeftOfPages[pageIndex] + $(settings.outerSelector).width() / 2);   
+                offset = ($(settings.outerSelector).scrollLeft() - settings.pageLeftOffsets[pageIndex] + $(settings.outerSelector).width() / 2);   
             }
             else
             {
@@ -2574,7 +2568,7 @@ window.divaPlugins = [];
         this.inViewport = function (pageNumber, topOffset, height)
         {
             var pageIndex = pageNumber - 1;
-            var top = settings.heightAbovePages[pageIndex] + topOffset;
+            var top = settings.pageTopOffsets[pageIndex] + topOffset;
             var bottom = top + height;
 
             return isVerticallyInViewport(top, bottom);
