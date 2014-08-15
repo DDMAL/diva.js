@@ -221,7 +221,7 @@ asyncTest("getState()", function () {
                 i: 'bm_001.tif',
                 n: 5,
                 p: false,
-                x: 0,
+                x: 354,
                 y: 350,
                 z: 2
             };
@@ -260,8 +260,8 @@ asyncTest("setState()", function () {
             // Have to leave fullscreen to test dimension-related things
             this.leaveFullscreenMode();
 
-            equal($(settings.outerSelector).scrollTop(), 8322, "Scroll from top should be 300 more");
-            equal($(settings.outerSelector).scrollLeft(), 804, "Scroll from left should be 500 more");
+            equal($(settings.outerSelector).scrollTop(), 8722, "Scroll from top should be 300 more");
+            equal($(settings.outerSelector).scrollLeft(), 796, "Scroll from left should be 500 more");
 
             state = {
                 f: false,

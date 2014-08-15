@@ -2224,6 +2224,7 @@ window.divaPlugins = [];
                     settings.realMaxZoom = data.max_zoom;
                     settings.maxZoomLevel = (settings.maxZoomLevel >= 0 && settings.maxZoomLevel <= data.max_zoom) ? settings.maxZoomLevel : data.max_zoom;
                     settings.minZoomLevel = (settings.minZoomLevel >= 0 && settings.minZoomLevel <= settings.maxZoomLevel) ? settings.minZoomLevel : 0;
+                    settings.zoomLevel = getValidZoomLevel(settings.zoomLevel);
                     settings.minPagesPerRow = Math.max(2, settings.minPagesPerRow);
                     settings.maxPagesPerRow = Math.max(settings.minPagesPerRow, settings.maxPagesPerRow);
 
@@ -2312,6 +2313,10 @@ window.divaPlugins = [];
                         else
                             $(settings.outerSelector).css('margin-left', settings.viewerWidthPadding);
                     }            
+
+                    // Make sure the value for settings.goDirectlyTo is valid
+                    if (!isPageValid(parseInt(settings.goDirectlyTo), 10))
+                        settings.goDirectlyTo = 0;                 
 
                     // y - vertical offset from the top of the relevant page
                     var yParam = parseInt($.getHashParam('y' + settings.hashParamSuffix), 10);
