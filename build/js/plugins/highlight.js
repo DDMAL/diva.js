@@ -36,12 +36,17 @@ Allows you to highlight regions of a page image
                 function _highlight(pageIdx, filename, pageSelector)
                 {
                     var highlightObj = divaSettings.parentSelector.data('highlights');
+
+                    if (typeof highlightObj === 'undefined')
+                        return;
+
                     if (highlightObj.hasOwnProperty(pageIdx))
                     {
                         var pageId = divaInstance.getInstanceId() + 'page-' + pageIdx;
                         var pageObj = document.getElementById(pageId);
                         var regions = highlightObj[pageIdx].regions;
                         var colour = highlightObj[pageIdx].colour;
+                        var divClass = highlightObj[pageIdx].divClass;
 
                         var maxZoom = divaInstance.getMaxZoomLevel();
                         var zoomDifference = maxZoom - divaInstance.getZoomLevel();
@@ -55,19 +60,25 @@ Allows you to highlight regions of a page image
                             box.style.height = _incorporate_zoom(regions[j].height, zoomDifference) + "px";
                             box.style.top = _incorporate_zoom(regions[j].uly, zoomDifference) + "px";
                             box.style.left = _incorporate_zoom(regions[j].ulx, zoomDifference) + "px";
-                            box.style.backgroundColor = colour;
+                            box.style.background = colour;
                             box.style.border = "1px solid #555";
                             box.style.position = "absolute";
-                            box.style.zIndex = 1000;
-                            box.className = "search-result";
+                            box.style.zIndex = 100;
+                            box.className = divClass;
+
+                            if (typeof regions[j].divID !== 'undefined')
+                            {
+                                box.id = regions[j].divID;
+                            }
 
                             pageObj.appendChild(box);
                         }
                     }
+                    diva.Events.publish("HighlightCompleted");
                 }
 
                 // subscribe the highlight method to the page change notification
-                Events.subscribe("PageHasLoaded", _highlight);
+                diva.Events.subscribe("PageWillLoad", _highlight);
 
                 var _incorporate_zoom = function(position, zoomDifference)
                 {
@@ -79,17 +90,19 @@ Allows you to highlight regions of a page image
                 */
                 divaInstance.resetHighlights = function()
                 {
-                    var highlights = document.getElementsByClassName("search-result");
-                    var j = highlights.length;
-                    while (j--)
-                    {
-                        var parentObj = highlights[j].parentNode;
-                        parentObj.removeChild(highlights[j]);
+                    var inner = document.getElementById(divaSettings.ID + 'inner');
+                    var highlightClass = divaSettings.ID + 'highlight';
+                    var descendents = inner.getElementsByClassName(highlightClass);
+                    var j = descendents.length;
+
+                    while (j--) {
+                        var parentObj = descendents[j].parentNode;
+                        parentObj.removeChild(descendents[j]);
                     }
 
                     divaSettings.parentSelector.data('highlights', {});
                 };
-                
+
                 /*
                     Resets the highlights for a single page.
                 */
@@ -100,13 +113,17 @@ Allows you to highlight regions of a page image
                     {
                         var pageId = divaInstance.getInstanceId() + 'page-' + pageIdx;
                         var pageObj = document.getElementById(pageId);
-                        var highlights = pageObj.getElementsByClassName('search-result');
+                        var descendents = pageObj.getElementsByTagName('div');
+                        var highlightClass = highlightsObj[pageIdx].divClass;
 
-                        var j = highlights.length;
+                        var j = descendents.length;
+
                         while (j--)
                         {
-                            pageObj.removeChild(highlights[j]);
+                            if (descendents[j].className === highlightClass)
+                                pageObj.removeChild(descendents[j]);
                         }
+
                         delete highlightsObj[pageIdx];
                     }
                 };
@@ -117,46 +134,61 @@ Allows you to highlight regions of a page image
                     @param regions  An array of regions
                     @param colour   (optional) A colour for the highlighting, specified in RGBA CSS format
                 */
-                divaInstance.highlightOnPages = function(pageIdxs, regions, colour)
+                divaInstance.highlightOnPages = function(pageIdxs, regions, colour, divClass)
                 {
                     var j = pageIdxs.length;
-                    while(j--)
+                    while (j--)
                     {
-                        divaInstance.highlightOnPage(pageIdxs[j], regions, colour);
+                        divaInstance.highlightOnPage(pageIdxs[j], regions, colour, divClass);
                     }
                 };
 
                 /*
-                    Highlights regions on multiple pages.
-                    @param pageIdxs An array of page index numbers
-                    @param regions  An array of regions. Use {'width':i, 'height':i, 'ulx':i, 'uly': i} for each region.
+                    Highlights regions on a page.
+                    @param pageIdx  A page index number
+                    @param regions  An array of regions. Use {'width':i, 'height':i, 'ulx':i, 'uly': i, 'divID': str} for each region.
                     @param colour   (optional) A colour for the highlighting, specified in RGBA CSS format
+                    @param divClass (optional) A class to identify a group of highlighted regions on a specific page by
                 */
-                divaInstance.highlightOnPage = function(pageIdx, regions, colour)
+                divaInstance.highlightOnPage = function(pageIdx, regions, colour, divClass)
                 {
                     if (typeof colour === 'undefined')
                     {
-                        colour = 'rgba(255, 0, 0, 0.5)';
+                        colour = 'rgba(255, 0, 0, 0.2)';
+                    }
+
+                    if (typeof divClass === 'undefined')
+                    {
+                        divClass = divaSettings.ID + 'highlight';
+                    }
+                    else
+                    {
+                        divClass = divaSettings.ID + 'highlight ' + divClass;
                     }
 
                     var maxZoom = divaInstance.getMaxZoomLevel();
                     var highlightsObj = divaSettings.parentSelector.data('highlights');
 
                     highlightsObj[pageIdx] = {
-                        'regions': regions, 'colour': colour
+                        'regions': regions, 'colour': colour, 'divClass': divClass
                     };
 
                     // Since the highlighting won't take place until the viewer is scrolled
-                    // to a new page we should explicitly call the _highlight method for visible page
-                    // (only if the highlighting is for the current page)
-                    var currentPage = divaInstance.getCurrentPageIndex();
-                    if (pageIdx === currentPage)
-                        _highlight(currentPage, null, null);
+                    // to a new page we should explicitly call the _highlight method for visible page.
+                    // (only if the current page is the one to be highlighted)
+                    if (divaInstance.isPageInViewport(pageIdx))
+                    {
+                        _highlight(pageIdx, null, null);
+                    }
 
                     return true;
                 };
 
                 return true;
+            },
+            destroy: function (divaSettings, divaInstance)
+            {
+                divaSettings.parentSelector.removeData('highlights');
             },
             pluginName: 'highlight',
             titleText: 'Highlight regions of pages'
