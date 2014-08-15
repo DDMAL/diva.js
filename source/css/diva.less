@@ -157,7 +157,6 @@
             .diva-page;
             left: 0;
             right: 0;
-            margin: 0 auto;
 
             .diva-page-tools {
                 position: absolute;
@@ -172,6 +171,21 @@
                     cursor: pointer;
                 }
             }
+        }
+
+        .diva-page-vertical {
+            margin: 0 auto;
+            display: inline-block;
+        }
+
+        .diva-page-horizontal {
+            vertical-align: middle;
+            display: inline-block;
+            top: 50%;
+            transform: translate(0, -50%);
+            -webkit-transform: translate(0, -50%);
+            -moz-transform: translate(0, -50%);
+            -ms-transform: translate(0, -50%);
         }
 
         .diva-row {
