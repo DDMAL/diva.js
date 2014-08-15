@@ -1064,8 +1064,8 @@ window.divaPlugins = [];
             }
 
             // Set settings.pageTopOffsets/pageLeftOffsets to determine where we're going to need to scroll
-            var heightSoFar = 0;
-            var widthSoFar = 0;
+            var heightSoFar = settings.horizontalPadding;
+            var widthSoFar = settings.verticalPadding;
             var i;
 
             for (i = 0; i < settings.numPages; i++)
