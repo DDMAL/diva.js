@@ -1385,7 +1385,11 @@ window.divaPlugins = [];
 
             if(centerAligned)
             {
-                offset = ($(settings.outerSelector).scrollTop() - settings.pageTopOffsets[pageIndex] + $(settings.outerSelector).height() / 2);
+                var outerEl = document.getElementById(settings.ID + 'outer');
+                var scrollTop = outerEl.scrollTop;
+                var elementHeight = outerEl.offsetHeight;
+
+                offset = (scrollTop - settings.pageTopOffsets[pageIndex] + elementHeight / 2);
             }
             else
             {
@@ -1402,7 +1406,11 @@ window.divaPlugins = [];
 
             if(centerAligned)
             {
-                offset = ($(settings.outerSelector).scrollLeft() - settings.pageLeftOffsets[pageIndex] + $(settings.outerSelector).width() / 2);   
+                var outerEl = document.getElementById(settings.ID + 'outer');
+                var scrollLeft = outerEl.scrollLeft;
+                var elementWidth = outerEl.offsetWidth;
+
+                offset = (scrollLeft - settings.pageLeftOffsets[pageIndex] + elementWidth);   
             }
             else
             {
