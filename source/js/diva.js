@@ -658,7 +658,7 @@ window.divaPlugins = [];
         // Check if a row (in grid view) is present in the DOM
         var isRowLoaded = function (rowIndex)
         {
-            return $(settings.selector + 'row-' + rowIndex).length > 0;
+            return !!document.getElementById(settings.ID + 'row-' + rowIndex);
         };
 
         var loadRow = function (rowIndex)
