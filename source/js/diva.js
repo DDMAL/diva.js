@@ -1816,53 +1816,45 @@ window.divaPlugins = [];
                         return false;
                     }
 
-                    // Page up - go to the previous page
-                    if (settings.enableKeyScroll && event.keyCode === pageUpKey)
+                    if (settings.enableKeyScroll)
                     {
-                        $(settings.outerSelector).scrollTop(document.getElementById(settings.ID + "outer").scrollTop - settings.panelHeight);
-                        return false;
-                    }
+                        switch (event.keyCode)
+                        {
+                            case pageUpKey:
+                                // Page up - go to the previous page
+                                $(settings.outerSelector).scrollTop(document.getElementById(settings.ID + "outer").scrollTop - settings.panelHeight);
+                                return false;
 
-                    // Up arrow - scroll up
-                    if (settings.enableKeyScroll && event.keyCode === upArrowKey)
-                    {
-                        $(settings.outerSelector).scrollTop(document.getElementById(settings.ID + "outer").scrollTop - settings.arrowScrollAmount);
-                        return false;
-                    }
+                            case upArrowKey:
+                                // Up arrow - scroll up
+                                $(settings.outerSelector).scrollTop(document.getElementById(settings.ID + "outer").scrollTop - settings.arrowScrollAmount);
+                                return false;
 
-                    // Down arrow - scroll down
-                    if (settings.enableKeyScroll && event.keyCode === downArrowKey)
-                    {
-                        $(settings.outerSelector).scrollTop(document.getElementById(settings.ID + "outer").scrollTop + settings.arrowScrollAmount);
-                        return false;
-                    }
+                            case downArrowKey:
+                                // Down arrow - scroll down
+                                $(settings.outerSelector).scrollTop(document.getElementById(settings.ID + "outer").scrollTop + settings.arrowScrollAmount);
+                                return false;
 
-                    // Left arrow - scroll left
-                    if (settings.enableKeyScroll && event.keyCode === leftArrowKey)
-                    {
-                        $(settings.outerSelector).scrollLeft(document.getElementById(settings.ID + "outer").scrollLeft - settings.arrowScrollAmount);
-                        return false;
-                    }
+                            case leftArrowKey:
+                                // Left arrow - scroll left
+                                $(settings.outerSelector).scrollLeft(document.getElementById(settings.ID + "outer").scrollLeft - settings.arrowScrollAmount);
+                                return false;
 
-                    // Right arrow - scroll right
-                    if (settings.enableKeyScroll && event.keyCode === rightArrowKey)
-                    {
-                        $(settings.outerSelector).scrollLeft(document.getElementById(settings.ID + "outer").scrollLeft + settings.arrowScrollAmount);
-                        return false;
-                    }
+                            case rightArrowKey:
+                                // Right arrow - scroll right
+                                $(settings.outerSelector).scrollLeft(document.getElementById(settings.ID + "outer").scrollLeft + settings.arrowScrollAmount);
+                                return false;
 
-                    // Home key - go to the beginning of the document
-                    if (settings.enableKeyScroll && event.keyCode === homeKey)
-                    {
-                        $(settings.outerSelector).scrollTop(0);
-                        return false;
-                    }
+                            case homeKey:
+                                // Home key - go to the beginning of the document
+                                $(settings.outerSelector).scrollTop(0);
+                                return false;
 
-                    // End key - go to the end of the document
-                    if (settings.enableKeyScroll && event.keyCode === endKey)
-                    {
-                        $(settings.outerSelector).scrollTop(settings.totalHeight);
-                        return false;
+                            case endKey:
+                                // End key - go to the end of the document
+                                $(settings.outerSelector).scrollTop(settings.totalHeight);
+                                return false;
+                        }
                     }
                 });
 
