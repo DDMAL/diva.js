@@ -6,16 +6,8 @@ For local development, install [Jekyll](http://jekyllrb.com/), and in the root d
 jekyll serve -w --baseurl /
 ```
 
-TODO: (see [issues](https://github.com/DDMAL/diva.js/issues?labels=Website&page=1&state=open))
-- [x] Get multiple Try It examples working
-  - [ ] Create more demo configurations on Try It page
-- [x] New (final) screenshots on front page
-- [ ] Text ordering on front page on mobile
-- [ ] Navigation / go-to-top links in footer
-- [ ] Jumbotron text readability/extend to top?
-- [ ] Footer should fill remainder of body space (not leave light background off end of page)
-- [ ] Clean up About/Getting Started page formatting
+Using [uncss](https://github.com/giakki/uncss) to remove unused Bootstrap rules using the following command:
 
-##### Performance:
-- [ ] Remove unused Bootstrap CSS (substantial)
-- [ ] Replace Fontawesome icon font with 3 svg files / custom webfont with fewer glyphs
+```
+uncss -s css/bootstrap.css http://ddmal.github.io/diva.js/ http://ddmal.github.io/diva.js/try http://ddmal.github.io/diva.js/download http://ddmal.github.io/diva.js/doc http://ddmal.github.io/diva.js/about http://ddmal.github.io/diva.js/try/single.html http://ddmal.github.io/diva.js/try/highlight.html > minified.css
+```
