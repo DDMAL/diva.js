@@ -1410,7 +1410,7 @@ window.divaPlugins = [];
                 var scrollLeft = outerEl.scrollLeft;
                 var elementWidth = outerEl.offsetWidth;
 
-                offset = (scrollLeft - settings.pageLeftOffsets[pageIndex] + elementWidth);   
+                offset = (scrollLeft - settings.pageLeftOffsets[pageIndex] + elementWidth / 2); 
             }
             else
             {
@@ -1715,13 +1715,7 @@ window.divaPlugins = [];
 
                 // Inertial scrolling
                 $(settings.outerSelector).kinetic({
-                    triggerHardware: true,
-                    filterTarget: function(target)
-                    {
-                        if (target.className === 'diva-canvas-icon' || target.className === 'diva-download-icon')
-                            return false;
-                        return true;
-                    }
+                    triggerHardware: true
                 });
             }
 
