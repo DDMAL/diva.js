@@ -221,7 +221,7 @@ window.divaPlugins = [];
         var isHorizontallyInViewport = function (left, right)
         {
             var panelWidth = settings.panelWidth;
-            var leftOfViewport = document.getElementById(settings.ID + "outer").scrollLeft - settings.viewportMargin;
+            var leftOfViewport = $("#" + settings.ID + "outer").scrollLeft() - settings.viewportMargin;
             var rightOfViewport = leftOfViewport + panelWidth + settings.viewportMargin * 2;
 
             var leftVisible = left >= leftOfViewport && left <= rightOfViewport;
@@ -235,7 +235,7 @@ window.divaPlugins = [];
         var isVerticallyInViewport = function (top, bottom)
         {
             var panelHeight = settings.panelHeight;
-            var topOfViewport = document.getElementById(settings.ID + "outer").scrollTop - settings.viewportMargin;
+            var topOfViewport = $("#" + settings.ID + "outer" ).scrollTop() - settings.viewportMargin;
             var bottomOfViewport = topOfViewport + panelHeight + settings.viewportMargin * 2;
 
             var topVisible = top >= topOfViewport && top <= bottomOfViewport;
@@ -1789,13 +1789,7 @@ window.divaPlugins = [];
 
                 // Inertial scrolling
                 $(settings.outerSelector).kinetic({
-                    triggerHardware: true,
-                    filterTarget: function(target)
-                    {
-                        if (target.className === 'diva-canvas-icon' || target.className === 'diva-download-icon')
-                            return false;
-                        return true;
-                    }
+                    triggerHardware: true
                 });
             }
 
