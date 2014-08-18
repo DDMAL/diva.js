@@ -144,7 +144,7 @@ window.divaPlugins = [];
             singleClick: false,         // Used for catching ctrl+double-click events in Firefox in Mac OS
             isScrollable: true,         // Used in enable/disableScrollable public methods
             initialKeyScroll: false,    // Holds the initial state of enableKeyScroll
-            initialSpaceScroll: false,    // Holds the initial state of enableSpaceScroll
+            initialSpaceScroll: false,  // Holds the initial state of enableSpaceScroll
             scrollbarWidth: 0,          // Set to the actual scrollbar width in init()
             throbberTimeoutID: -1,      // Holds the ID of the throbber loading timeout
             toolbar: null,              // Holds an object with some toolbar-related functions
@@ -1348,6 +1348,18 @@ window.divaPlugins = [];
             handleViewChange();
         };
 
+        //toggles between orientations
+        var toggleOrientation = function ()
+        {
+            settings.verticallyOriented = !settings.verticallyOriented;
+            settings.verticalOffset = getYOffset(false);
+            settings.horizontalOffset = getXOffset(false);
+            settings.goDirectlyTo = settings.currentPageIndex;
+
+            loadDocument();
+            return settings.verticallyOriented;
+        };
+
         // Called after double-click or ctrl+double-click events on pages in document view
         var handleDocumentDoubleClick = function (event)
         {
@@ -1458,33 +1470,35 @@ window.divaPlugins = [];
             return true;
         };
 
-        var getYOffset = function (centerAligned)
+        //if currentPosition is true, it will get your current offset position; if currentPosition is false it will get the offset position for the top of the page.
+        var getYOffset = function (currentPosition)
         {
             var offset,
                 pageIndex = settings.currentPageIndex;
 
-            if(centerAligned)
+            if(currentPosition)
             {                
                 var outerEl = document.getElementById(settings.ID + 'outer');
                 var scrollTop = outerEl.scrollTop;
                 var elementHeight = outerEl.offsetHeight;
  
-                offset = (scrollTop - settings.heightAbovePages[pageIndex] + elementHeight / 2);
+                offset = (scrollTop - settings.pageTopOffsets[pageIndex] + elementHeight / 2);
             }
             else
             {
                 offset = (settings.verticallyOriented ? (settings.panelHeight / 2) : getPageData(pageIndex, "h") / 2);
             }
 
+
             return parseInt(offset, 10);
         };
 
-        var getXOffset = function (centerAligned)
+        var getXOffset = function (currentPosition)
         {
             var offset,
                 pageIndex = settings.currentPageIndex;
 
-            if(centerAligned)
+            if(currentPosition)
             {
                 var outerEl = document.getElementById(settings.ID + 'outer');
                 var scrollLeft = outerEl.scrollLeft;
@@ -2897,6 +2911,12 @@ window.divaPlugins = [];
                 settings.isScrollable = false;
             }
         };
+
+        //Changes between horizontal layout and vertical layout. Returns true if document is now vertically oriented, false otherwise.
+        this.toggleOrientation = function ()
+        {
+            return toggleOrientation();
+        }
 
         // Destroys this instance, tells plugins to do the same (for testing)
         this.destroy = function ()
