@@ -456,6 +456,37 @@ Adds an adjustment icon next to each image
             });
         };
 
+        var bindCanvasKeyEvents = function (event)
+        {
+            var upArrowKey = 38,
+                downArrowKey = 40,
+                leftArrowKey = 37,
+                rightArrowKey = 39;
+
+            switch (event.keyCode)
+            {
+                case upArrowKey:
+                    // Up arrow - scroll up
+                    $('#diva-canvas-wrapper').scrollTop(document.getElementById('diva-canvas-wrapper').scrollTop - settings.arrowScrollAmount);
+                    return false;
+
+                case downArrowKey:
+                    // Down arrow - scroll down
+                    $('#diva-canvas-wrapper').scrollTop(document.getElementById('diva-canvas-wrapper').scrollTop + settings.arrowScrollAmount);
+                    return false;
+
+                case leftArrowKey:
+                    // Left arrow - scroll left
+                    $('#diva-canvas-wrapper').scrollLeft(document.getElementById('diva-canvas-wrapper').scrollLeft - settings.arrowScrollAmount);
+                    return false;
+
+                case rightArrowKey:
+                    // Right arrow - scroll right
+                    $('#diva-canvas-wrapper').scrollLeft(document.getElementById('diva-canvas-wrapper').scrollLeft + settings.arrowScrollAmount);
+                    return false;
+            }
+        };
+
         var retval =
         {
             init: function (divaSettings, divaInstance)
@@ -474,6 +505,7 @@ Adds an adjustment icon next to each image
                 settings.imageDir = divaSettings.imageDir;
                 settings.selector = divaSettings.selector;
                 settings.mobileWebkit = divaSettings.mobileWebkit;
+                settings.arrowScrollAmount = divaSettings.arrowScrollAmount;
 
                 // Set up the settings for the sliders/icons
                 sliders = {
@@ -714,6 +746,10 @@ Adds an adjustment icon next to each image
                     $('#diva-map-viewbox').hide();
                     hideThrobber();
 
+                    // Re-enable scrolling of diva when it is in the background
+                    divaInstance.enableScrollable();
+                    $(document).off('keydown', bindCanvasKeyEvents);
+
                     // Reset everything
                     resetSliders();
                     updateSliderLabel();
@@ -817,7 +853,7 @@ Adds an adjustment icon next to each image
                 sliders.zoom.max = settings.maxZoomLevel;
             },
 
-            handleClick: function(event, divaSettings)
+            handleClick: function(event, divaSettings, divaInstance)
             {
                 // loadCanvas() calls all the other necessary functions to load
                 var page = $(this).parent().parent();
@@ -865,6 +901,11 @@ Adds an adjustment icon next to each image
                 // Prevent scroll in body, and show the canvas backdrop
                 $('body').addClass('overflow-hidden');
                 $('#diva-canvas-backdrop').show();
+
+                // Disable scrolling on main diva instance
+                divaInstance.disableScrollable();
+                // Enable canvas scrolling
+                $(document).keydown(bindCanvasKeyEvents);
 
                 // Set this to true so events can be captured
                 settings.inCanvas = true;
