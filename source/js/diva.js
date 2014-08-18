@@ -1410,7 +1410,7 @@ window.divaPlugins = [];
                 var scrollLeft = outerEl.scrollLeft;
                 var elementWidth = outerEl.offsetWidth;
 
-                offset = (scrollLeft - settings.pageLeftOffsets[pageIndex] + elementWidth);   
+                offset = (scrollLeft - settings.pageLeftOffsets[pageIndex] + elementWidth / 2); 
             }
             else
             {
