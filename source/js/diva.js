@@ -2167,7 +2167,7 @@ window.divaPlugins = [];
                             var clickEvent = (settings.mobileWebkit) ? 'touchend' : 'click';
                             $(settings.outerSelector).on(clickEvent, '.diva-' + plugin.pluginName + '-icon', function (event)
                             {
-                                plugin.handleClick.call(this, event, settings);
+                                plugin.handleClick.call(this, event, settings, self);
                             });
                         }
 
