@@ -1,9 +1,10 @@
-Diva.js
+<p align="center">
+  <a href="http://ddmal.github.io/diva.js">
+    <img width="450" height="208" src="https://github.com/DDMAL/diva.js/wiki/img/diva-logo-sm.png" />
+  </a>
+</p>
+Diva.js [![Build Status](https://travis-ci.org/DDMAL/diva.js.svg?branch=develop)](http://travis-ci.org/DDMAL/diva.js)
 =========================================
-
-[![Build Status](https://travis-ci.org/DDMAL/diva.js.svg?branch=develop)](http://travis-ci.org/DDMAL/diva.js)
-
-## Description
 
 Diva.js (Document Image Viewer with AJAX) is a JavaScript book image viewer designed to present multi-page documents at multiple resolutions.
 
