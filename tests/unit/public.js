@@ -134,9 +134,9 @@ asyncTest("inViewport()", function () {
         viewportMargin: 0,
         onReady: function (settings) {
             // Can only do fairly simple checks
-            ok(this.inViewport(1, 100, 50));
-            ok(!this.inViewport(1, -100, 50));
-            ok(!this.inViewport(40, 100, 50));
+            ok(this.inViewport(1, 100, 200, 100, 150));
+            ok(!this.inViewport(1, 100, -200, 100, 100));
+            ok(!this.inViewport(40, 100, 50, 100, 200));
 
             start();
         }
