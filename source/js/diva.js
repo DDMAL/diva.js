@@ -2910,6 +2910,12 @@ window.divaPlugins = [];
             return toggleOrientation();
         }
 
+        //Returns distance between the northwest corners of diva-inner and current page along primary axis
+        this.distanceBeforePage = function(pageIndex)
+        {
+            return (settings.verticallyOriented ? settings.pageTopOffsets[pageIndex] : settings.pageLeftOffsets[pageIndex]);
+        }
+
         // Destroys this instance, tells plugins to do the same (for testing)
         this.destroy = function ()
         {
