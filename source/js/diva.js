@@ -1602,13 +1602,13 @@ window.divaPlugins = [];
             settings.viewerYOffset = viewerOffset.top;
 
             //calculate the new height based off the proportions
-            var heightBorderPixels = parseInt($(settings.outerSelector).css('border-top-width')) + parseInt($(settings.outerSelector).css('border-bottom-width'));
+            var heightBorderPixels = parseInt($(settings.outerSelector).css('border-top-width'), 10) + parseInt($(settings.outerSelector).css('border-bottom-width'), 10);
             parentHeight = $(settings.parentSelector).height();
             var parentYOffset = $(settings.parentSelector).offset().top;
             var newHeight = (settings.enableAutoHeight) ? parentHeight - settings.viewerYOffset + parentYOffset - heightBorderPixels : $(settings.outerSelector).height();
 
             //calculate the new width
-            var widthBorderPixels = parseInt($(settings.outerSelector).css('border-left-width')) + parseInt($(settings.outerSelector).css('border-right-width'));
+            var widthBorderPixels = parseInt($(settings.outerSelector).css('border-left-width'), 10) + parseInt($(settings.outerSelector).css('border-right-width'), 10);
             parentWidth = $(settings.parentSelector).width();
 
             var newWidth;
@@ -1621,10 +1621,17 @@ window.divaPlugins = [];
             if (newWidth !== settings.panelWidth || newHeight !== settings.panelHeight)
             {
                 // outer width
-                if (settings.enableAutoHeight)
+                if (settings.enableAutoHeight){
+                    var heightDiff = (newHeight - $(settings.outerSelector).height()) / 2;
                     $(settings.outerSelector).height(newHeight);
-                if (settings.enableAutoWidth)
+                    $(settings.outerSelector).scrollTop($(settings.outerSelector).scrollTop() - heightDiff);
+                }
+                if (settings.enableAutoWidth){
+                    var widthDiff = (newWidth + settings.scrollbarWidth - $(settings.outerSelector).width()) / 2;
                     $(settings.outerSelector).width(newWidth + settings.scrollbarWidth);
+                    $(settings.outerSelector).scrollLeft($(settings.outerSelector).scrollLeft() - widthDiff);
+                }
+                
                 // inner width
                 settings.panelWidth = newWidth;
                 settings.panelHeight = newHeight;
@@ -1886,6 +1893,8 @@ window.divaPlugins = [];
                             settings.resizeTimer = setTimeout(function ()
                             {
                                 settings.goDirectlyTo = settings.currentPageIndex;
+                                settings.verticalOffset = getYOffset(true);
+                                settings.horizontalOffset = getXOffset(true);
                                 loadViewer();
                             }, 200);
                         }
