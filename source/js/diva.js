@@ -142,6 +142,7 @@ window.divaPlugins = [];
             scaleWait: false,           // For preventing double-zoom on touch devices (iPad, etc)
             selector: '',               // Uses the generated ID prefix to easily select elements
             singleClick: false,         // Used for catching ctrl+double-click events in Firefox in Mac OS
+            singleTap: false,           // Used for caching double-tap events on mobile browsers
             isScrollable: true,         // Used in enable/disableScrollable public methods
             initialKeyScroll: false,    // Holds the initial state of enableKeyScroll
             initialSpaceScroll: false,  // Holds the initial state of enableSpaceScroll
@@ -1812,6 +1813,32 @@ window.divaPlugins = [];
                 $(settings.outerSelector).kinetic({
                     triggerHardware: true
                 });
+
+                // Double-tap to zoom in
+                $(settings.outerSelector).on('touchend', '.diva-document-page', function (event)
+                {
+                    if (settings.singleTap)
+                    {
+                        // doubletap has occurred
+                        var touchEvent = {
+                            pageX: event.originalEvent.changedTouches[0].clientX,
+                            pageY: event.originalEvent.changedTouches[0].clientY
+                        };
+
+                        handleDocumentDoubleClick.call(this, touchEvent);
+                        settings.singleTap = false;
+                    }
+                    else
+                    {
+                        settings.singleTap = true;
+
+                        // Cancel doubletap after 250 milliseconds
+                        settings.singleTapTimeout = setTimeout(function()
+                        {
+                            settings.singleTap = false;
+                        }, 250);
+                    }
+                });
             }
 
             // Only check if either scrollBySpace or scrollByKeys is enabled
@@ -2655,15 +2682,16 @@ window.divaPlugins = [];
             return this.setZoomLevel(settings.zoomLevel - 1);
         };
 
-        // Uses the isVerticallyInViewport() function, but relative to a page
         // Check if something (e.g. a highlight box on a particular page) is visible
-        this.inViewport = function (pageNumber, topOffset, height)
+        this.inViewport = function (pageNumber, leftOffset, topOffset, width, height)
         {
             var pageIndex = pageNumber - 1;
             var top = settings.pageTopOffsets[pageIndex] + topOffset;
             var bottom = top + height;
+            var left = settings.pageLeftOffsets[pageIndex] + leftOffset;
+            var right = left + width;
 
-            return isVerticallyInViewport(top, bottom);
+            return isVerticallyInViewport(top, bottom) && isHorizontallyInViewport(left, right);
         };
 
         //Public wrapper for isPageVisible
