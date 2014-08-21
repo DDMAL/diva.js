@@ -1408,22 +1408,27 @@ window.divaPlugins = [];
         };
 
         // Handles pinch-zooming for mobile devices
-        var handlePinchZoom = function (event)
+        var handlePinchZoom = function (zoomDelta, event)
         {
             var newZoomLevel = settings.zoomLevel;
 
             // First figure out the new zoom level:
-            if (event.scale > 1 && newZoomLevel < settings.maxZoomLevel)
+            if (zoomDelta > 100 && newZoomLevel < settings.maxZoomLevel)
                 newZoomLevel++;
-            else if (event.scale < 1 && newZoomLevel > settings.minZoomLevel)
+            else if (zoomDelta < -100 && newZoomLevel > settings.minZoomLevel)
                 newZoomLevel--;
             else
                 return;
 
-            // Set it to true so we have to wait for this one to finish
+            // Set scaleWait to true so that we wait for this scale event to finish
             settings.scaleWait = true;
 
-            // Has to call handleZoomSlide so that the coordinates are kept
+            // Store the offset information so that it can be used in loadDocument()
+            var pageOffset = $(this).offset();
+            settings.horizontalOffset = event.pageX - pageOffset.left;
+            settings.verticalOffset = event.pageY - pageOffset.top;
+            settings.goDirectlyTo = parseInt($(this).attr('data-index'), 10); //page index
+
             handleZoom(newZoomLevel);
         };
 
@@ -1440,7 +1445,7 @@ window.divaPlugins = [];
 
             // offsets refer to the distance from the top/left of the current page that the center of the viewport is.
             // for example: if the viewport is 800 pixels and the active page is 600 pixels wide and starts at 100 pixels, verticalOffset will be 300 pixels.
-            if(settings.doubleClickZoom)
+            if (settings.doubleClickZoom)
             {
                 settings.verticalOffset *= zoomRatio;
                 settings.horizontalOffset *= zoomRatio;
@@ -1712,6 +1717,12 @@ window.divaPlugins = [];
 
         };
 
+        // Pythagorean theorem to get the distance between two points (used for calculating finger distance for double-tap and pinch-zoom)
+        var distance = function(x2, x1, y2, y1)
+        {
+            return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+        };
+
         // Binds most of the event handlers (some more in createToolbar)
         var handleEvents = function ()
         {
@@ -1788,29 +1799,6 @@ window.divaPlugins = [];
                     });
                 }
 
-                // Allow pinch-zooming
-                $('body').bind('gestureend', function (event)
-                {
-                    var e = event.originalEvent;
-
-                    if (!settings.scaleWait)
-                    {
-                        // Save the page we're currently on so we scroll there
-                        settings.goDirectlyTo = settings.currentPageIndex;
-
-                        if (settings.inGrid)
-                        {
-                            settings.inGrid = false;
-                            handleViewChange();
-                        }
-                        else
-                        {
-                            handlePinchZoom(e);
-                        }
-                    }
-                    return false;
-                });
-
                 // Listen to orientation change event
                 $(window).bind('orientationchange', function (event)
                 {
@@ -1827,28 +1815,87 @@ window.divaPlugins = [];
                     triggerHardware: true
                 });
 
+                // Bind events for pinch-zooming
+                var start = [],
+                    move = [],
+                    startDistance = 0;
+
+                $(settings.outerSelector).on('touchstart', '.diva-document-page', function(event)
+                {
+                    if (event.originalEvent.touches.length === 2)
+                    {
+                        start = [event.originalEvent.touches[0].clientX,
+                                 event.originalEvent.touches[0].clientY,
+                                 event.originalEvent.touches[1].clientX,
+                                 event.originalEvent.touches[1].clientY];
+
+                        startDistance = distance(start[2], start[0], start[3], start[1]);
+                    }
+                });
+
+                $(settings.outerSelector).on('touchmove', '.diva-document-page', function(event)
+                {
+                    if (event.originalEvent.touches.length === 2)
+                    {
+                        move = [event.originalEvent.touches[0].clientX,
+                                event.originalEvent.touches[0].clientY,
+                                event.originalEvent.touches[1].clientX,
+                                event.originalEvent.touches[1].clientY];
+
+                        var moveDistance = distance(move[2], move[0], move[3], move[1]);
+                        var zoomDelta = moveDistance - startDistance;
+
+                        if (!settings.scaleWait)
+                        {
+                            // Save the page we're currently on so we scroll there
+                            settings.goDirectlyTo = settings.currentPageIndex;
+
+                            if (settings.inGrid)
+                            {
+                                settings.inGrid = false;
+                                handleViewChange();
+                            }
+                            else
+                            {
+                                handlePinchZoom.call(this, zoomDelta, event);
+                            }
+                        }
+                    }
+                });
+
                 // Double-tap to zoom in
+                var firstTapCoordinates = {},
+                    tapDistance = 0;
+
                 $(settings.outerSelector).on('touchend', '.diva-document-page', function (event)
                 {
                     if (settings.singleTap)
                     {
-                        // doubletap has occurred
+                        // Doubletap has occurred
                         var touchEvent = {
                             pageX: event.originalEvent.changedTouches[0].clientX,
                             pageY: event.originalEvent.changedTouches[0].clientY
                         };
 
-                        handleDocumentDoubleClick.call(this, touchEvent);
+                        // If first tap is close to second tap (prevents interference with scale event)
+                        tapDistance = distance(firstTapCoordinates.pageX, touchEvent.pageX, firstTapCoordinates.pageY, touchEvent.pageY);
+                        if (tapDistance < 50)
+                            handleDocumentDoubleClick.call(this, touchEvent);
+
                         settings.singleTap = false;
+                        firstTapCoordinates = {};
                     }
                     else
                     {
                         settings.singleTap = true;
+                        firstTapCoordinates.pageX = event.originalEvent.changedTouches[0].clientX;
+                        firstTapCoordinates.pageY = event.originalEvent.changedTouches[0].clientY;
 
                         // Cancel doubletap after 250 milliseconds
                         settings.singleTapTimeout = setTimeout(function()
                         {
                             settings.singleTap = false;
+                            firstTapCoordinates = {};
                         }, 250);
                     }
                 });
@@ -2958,7 +3005,7 @@ window.divaPlugins = [];
         this.toggleOrientation = function ()
         {
             return toggleOrientation();
-        }
+        };
 
         //Returns distance between the northwest corners of diva-inner and current page
         this.getPageOffset = function(pageIndex)
@@ -2967,7 +3014,7 @@ window.divaPlugins = [];
                 'top': parseInt(settings.pageTopOffsets[pageIndex]),
                 'left': parseInt(settings.pageLeftOffsets[pageIndex])
             };
-        }
+        };
 
         //Returns the page position and size (ulx, uly, h, w properties) of page pageIndex when there are pagesPerRow pages per row
         //TODO: calculate all grid height levels and store them so this can be AtGridLevel(pageIndex, pagesPerRow) ?
@@ -2982,7 +3029,7 @@ window.divaPlugins = [];
                 'height': parseInt(pageHeight, 10),
                 'width': parseInt(pageWidth, 10)
             };
-        }
+        };
 
         // Destroys this instance, tells plugins to do the same (for testing)
         this.destroy = function ()
