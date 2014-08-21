@@ -2979,8 +2979,8 @@ window.divaPlugins = [];
             var pageWidth = (settings.fixedHeightGrid) ? (settings.rowHeight - settings.fixedPadding) * getPageData(pageIndex, 'w') / getPageData(pageIndex, 'h') : settings.gridPageWidth;
 
             return {
-                'h': parseInt(pageHeight, 10),
-                'w': parseInt(pageWidth, 10)
+                'height': parseInt(pageHeight, 10),
+                'width': parseInt(pageWidth, 10)
             };
         }
 
