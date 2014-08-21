@@ -1000,8 +1000,8 @@ window.divaPlugins = [];
         //Helper function for going to the top of a specific page
         var gotoPageTop = function (pageIndex)
         {
-            var verticalOffset = getYOffset(false);
-            var horizontalOffset = getXOffset(false);
+            var verticalOffset = getYOffset(false, pageIndex);
+            var horizontalOffset = getXOffset(false, pageIndex);
 
             gotoPage(pageIndex, verticalOffset, horizontalOffset);
         };
@@ -1015,10 +1015,10 @@ window.divaPlugins = [];
             horizontalOffset = (typeof horizontalOffset !== 'undefined') ? horizontalOffset: 0;
             verticalOffset = (typeof verticalOffset !== 'undefined') ? verticalOffset : 0;
 
-            var desiredVerticalCenter = (settings.pageTopOffsets[pageIndex] || settings.verticalPadding) + verticalOffset;
+            var desiredVerticalCenter = settings.pageTopOffsets[pageIndex] + verticalOffset;
             var desiredTop = desiredVerticalCenter - ($(settings.outerSelector).height() / 2);
 
-            var desiredHorizontalCenter = (settings.pageLeftOffsets[pageIndex] || settings.horizontalPadding) + horizontalOffset;
+            var desiredHorizontalCenter = settings.pageLeftOffsets[pageIndex] + horizontalOffset;
             var desiredLeft = desiredHorizontalCenter - ($(settings.outerSelector).width() / 2);
 
             $(settings.outerSelector).scrollTop(desiredTop);
@@ -1102,31 +1102,6 @@ window.divaPlugins = [];
         {
             clearViewer();
 
-            // Make sure the zoom level we've been given is valid
-            settings.zoomLevel = getValidZoomLevel(settings.zoomLevel);
-            var z = settings.zoomLevel;
-
-            // Calculate the horizontal and vertical inter-page padding
-            if (settings.adaptivePadding > 0)
-            {
-                settings.horizontalPadding = settings.averageWidths[z] * settings.adaptivePadding;
-                settings.verticalPadding = settings.averageHeights[z] * settings.adaptivePadding;
-            }
-            else
-            {
-                // It's less than or equal to 0; use fixedPadding instead
-                settings.horizontalPadding = settings.fixedPadding;
-                settings.verticalPadding = settings.fixedPadding;
-            }
-
-            // Make sure the vertical padding is at least 40, if plugin icons are enabled
-            if (settings.pageTools.length){
-                if (settings.verticallyOriented)
-                    settings.verticalPadding = Math.max(40, settings.horizontalPadding);
-                else
-                    settings.horizontalPadding = Math.max(40, settings.verticalPadding);
-            }
-
             // Now reset some things that need to be changed after each zoom
             settings.totalHeight = settings.totalHeights[z] + settings.verticalPadding * (settings.numPages + 1);
             settings.totalWidth = settings.totalWidths[z] + settings.horizontalPadding * (settings.numPages + 1);
@@ -1151,8 +1126,8 @@ window.divaPlugins = [];
             }
 
             // Set settings.pageTopOffsets/pageLeftOffsets to determine where we're going to need to scroll, reset them in case they were used for grid before
-            var heightSoFar = settings.horizontalPadding;
-            var widthSoFar = settings.verticalPadding;
+            var heightSoFar = 0;
+            var widthSoFar = 0;
             var i;
 
             settings.pageTopOffsets = [];
@@ -1490,10 +1465,10 @@ window.divaPlugins = [];
         };
 
         //if currentPosition is true, it will get your current offset position; if currentPosition is false it will get the offset position for the top of the page.
-        var getYOffset = function (currentPosition)
+        var getYOffset = function (currentPosition, pageIndex)
         {
-            var offset,
-                pageIndex = settings.currentPageIndex;
+            var offset;
+            pageIndex = (typeof(pageIndex) === "undefined" ? settings.currentPageIndex : pageIndex);
 
             if(currentPosition)
             {                
@@ -1512,10 +1487,10 @@ window.divaPlugins = [];
             return parseInt(offset, 10);
         };
 
-        var getXOffset = function (currentPosition)
+        var getXOffset = function (currentPosition, pageIndex)
         {
-            var offset,
-                pageIndex = settings.currentPageIndex;
+            var offset;
+            pageIndex = (typeof(pageIndex) === "undefined" ? settings.currentPageIndex : pageIndex);
 
             if(currentPosition)
             {
@@ -2378,8 +2353,15 @@ window.divaPlugins = [];
                         var iParam = $.getHashParam('i' + settings.hashParamSuffix);
                         var iParamPage = getPageIndex(iParam);
 
-                        if (isPageValid(iParamPage))
+                        if (isPageValid(iParamPage)){
                             settings.goDirectlyTo = iParamPage;
+                            settings.currentPageIndex = iParamPage;
+                        }
+                        else
+                        {
+                            settings.goDirectlyTo = 0;
+                            settings.currentPageIndex = 0;
+                        }
                     }
                     else
                     {
@@ -2387,8 +2369,15 @@ window.divaPlugins = [];
                         // Subtract 1 to get the page index
                         var pParam = parseInt($.getHashParam('p' + settings.hashParamSuffix), 10) - 1;
 
-                        if (isPageValid(pParam))
+                        if (isPageValid(pParam)){
                             settings.goDirectlyTo = pParam;
+                            settings.currentPageIndex = pParam;
+                        }
+                        else
+                        {
+                            settings.goDirectlyTo = 0;
+                            settings.currentPageIndex = 0;
+                        }
                     }
 
                     // Execute the setup hook for each plugin (if defined)
@@ -2460,7 +2449,29 @@ window.divaPlugins = [];
 
                     // Make sure the value for settings.goDirectlyTo is valid
                     if (!isPageValid(parseInt(settings.goDirectlyTo), 10))
-                        settings.goDirectlyTo = 0;                 
+                        settings.goDirectlyTo = 0;      
+
+                    // Calculate the horizontal and vertical inter-page padding
+                    if (settings.adaptivePadding > 0)
+                    {
+                        var z = settings.zoomLevel;
+                        settings.horizontalPadding = parseInt(settings.averageWidths[z] * settings.adaptivePadding, 10);
+                        settings.verticalPadding = parseInt(settings.averageHeights[z] * settings.adaptivePadding, 10);
+                    }
+                    else
+                    {
+                        // It's less than or equal to 0; use fixedPadding instead
+                        settings.horizontalPadding = settings.fixedPadding;
+                        settings.verticalPadding = settings.fixedPadding;
+                    }
+
+                    // Make sure the vertical padding is at least 40, if plugin icons are enabled
+                    if (settings.pageTools.length){
+                        if (settings.verticallyOriented)
+                            settings.verticalPadding = Math.max(40, settings.horizontalPadding);
+                        else
+                            settings.horizontalPadding = Math.max(40, settings.verticalPadding);
+                    }      
 
                     // y - vertical offset from the top of the relevant page
                     var yParam = parseInt($.getHashParam('y' + settings.hashParamSuffix), 10);
