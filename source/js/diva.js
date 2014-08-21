@@ -712,10 +712,15 @@ window.divaPlugins = [];
                 // Center the page if the height is fixed (otherwise, there is no horizontal padding)
                 leftOffset += (settings.fixedHeightGrid) ? (settings.gridPageWidth - pageWidth) / 2 : 0;
                 imageURL = encodeURI(settings.iipServerURL + "?FIF=" + imdir + filename + '&HEI=' + (pageHeight + 2) + '&CVT=JPEG');
+
+                settings.pageTopOffsets[pageIndex] = heightFromTop;
+                settings.pageLeftOffsets[pageIndex] = leftOffset;
+
  
                 // Append the HTML for this page to the string builder array
                 var pageDiv = document.createElement('div');
                 pageDiv.id = settings.ID + 'page-' + pageIndex;
+                var pageSelector = settings.selector + 'page-' + pageIndex;
                 pageDiv.classList.add('diva-page');
                 pageDiv.style.width = pageWidth + 'px';
                 pageDiv.style.height = pageHeight + 'px';
@@ -723,6 +728,8 @@ window.divaPlugins = [];
                 pageDiv.title = "Page " + (pageIndex + 1);
  
                 rowDiv.appendChild(pageDiv);
+                
+                diva.Events.publish("PageWillLoad", [pageIndex, filename, pageSelector]);
 
                 // Add each image to a queue so that images aren't loaded unnecessarily
                 addPageToQueue(rowIndex, pageIndex, imageURL, pageWidth, pageHeight);
@@ -1143,10 +1150,13 @@ window.divaPlugins = [];
                 innerEl.style.width = Math.round(settings.totalWidth) + 'px';
             }
 
-            // Set settings.pageTopOffsets/pageLeftOffsets to determine where we're going to need to scroll
+            // Set settings.pageTopOffsets/pageLeftOffsets to determine where we're going to need to scroll, reset them in case they were used for grid before
             var heightSoFar = settings.horizontalPadding;
             var widthSoFar = settings.verticalPadding;
             var i;
+
+            settings.pageTopOffsets = [];
+            settings.pageLeftOffsets = [];
 
             for (i = 0; i < settings.numPages; i++)
             {
@@ -1241,6 +1251,9 @@ window.divaPlugins = [];
             gridScroll();
 
             var i, rowIndex;
+            settings.pageTopOffsets = [];
+            settings.pageLeftOffsets = [];
+
 
             // Figure out the row each page is in
             var np = settings.numPages;
@@ -2947,10 +2960,28 @@ window.divaPlugins = [];
             return toggleOrientation();
         }
 
-        //Returns distance between the northwest corners of diva-inner and current page along primary axis
-        this.distanceBeforePage = function(pageIndex)
+        //Returns distance between the northwest corners of diva-inner and current page
+        this.getPageOffset = function(pageIndex)
         {
-            return (settings.verticallyOriented ? settings.pageTopOffsets[pageIndex] : settings.pageLeftOffsets[pageIndex]);
+            return {
+                'top': parseInt(settings.pageTopOffsets[pageIndex]),
+                'left': parseInt(settings.pageLeftOffsets[pageIndex])
+            };
+        }
+
+        //Returns the page position and size (ulx, uly, h, w properties) of page pageIndex when there are pagesPerRow pages per row
+        //TODO: calculate all grid height levels and store them so this can be AtGridLevel(pageIndex, pagesPerRow) ?
+        this.getPageDimensionsAtCurrentGridLevel = function(pageIndex)
+        {
+            pageIndex = (isPageValid(pageIndex) ? pageIndex : settings.currentPageIndex);
+
+            var pageHeight = settings.rowHeight - settings.fixedPadding;
+            var pageWidth = (settings.fixedHeightGrid) ? (settings.rowHeight - settings.fixedPadding) * getPageData(pageIndex, 'w') / getPageData(pageIndex, 'h') : settings.gridPageWidth;
+
+            return {
+                'h': parseInt(pageHeight, 10),
+                'w': parseInt(pageWidth, 10)
+            };
         }
 
         // Destroys this instance, tells plugins to do the same (for testing)

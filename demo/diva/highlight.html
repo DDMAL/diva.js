@@ -9,15 +9,13 @@
             <![endif]-->
             <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js" type="text/javascript"></script>
             <script src="/js/diva.min.js" type="text/javascript"></script>
-            <script src="/js/utils.js" type="text/javascript"></script>
-            <script src="/js/plugins/highlight.js" type="text/javascript"></script>
 
             <script type="text/javascript">
                 $(document).ready(function() {
                     $('#diva-wrapper').diva({
                         contained: true,
                         enableAutoHeight: true,
-                        fixedHeightGrid: false,
+                        fixedHeightGrid: true,
                         iipServerURL: "http://coltrane.music.mcgill.ca/fcgi-bin/iipsrv.fcgi",
                         objectData: "/demo/beromunster.json",
                         imageDir: "/mnt/images/beromunster",
@@ -39,7 +37,6 @@
                         */
                         while (j--)
                         {
-                            console.log("Page " + j);
                             var maxZoomLevel = dv.getMaxZoomLevelForPage(j);
                             var pageDims = dv.getPageDimensionsAtZoomLevel(j, maxZoomLevel);
 
