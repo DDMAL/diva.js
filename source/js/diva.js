@@ -1298,7 +1298,7 @@ window.divaPlugins = [];
             // If it has changed, adjust panel size coming out of fullscreen
             if (!settings.inFullscreen)
             {
-                if(settings.mobileWebkit)
+                if (settings.mobileWebkit)
                     adjustMobileWebkitDims();
                 else
                     adjustBrowserDims();
@@ -1427,7 +1427,7 @@ window.divaPlugins = [];
                 settings.doubleClickZoom = false;
             }
             else
-            {            
+            {
                 settings.goDirectlyTo = settings.currentPageIndex;
                 settings.verticalOffset = zoomRatio * getYOffset(true);
                 settings.horizontalOffset = zoomRatio * getXOffset(true);
@@ -1470,8 +1470,8 @@ window.divaPlugins = [];
             var offset;
             pageIndex = (typeof(pageIndex) === "undefined" ? settings.currentPageIndex : pageIndex);
 
-            if(currentPosition)
-            {                
+            if (currentPosition)
+            {
                 var outerEl = document.getElementById(settings.ID + 'outer');
                 var scrollTop = outerEl.scrollTop;
                 var elementHeight = outerEl.offsetHeight;
@@ -1492,13 +1492,13 @@ window.divaPlugins = [];
             var offset;
             pageIndex = (typeof(pageIndex) === "undefined" ? settings.currentPageIndex : pageIndex);
 
-            if(currentPosition)
+            if (currentPosition)
             {
                 var outerEl = document.getElementById(settings.ID + 'outer');
                 var scrollLeft = outerEl.scrollLeft;
                 var elementWidth = outerEl.offsetWidth;
 
-                offset = (scrollLeft - settings.pageLeftOffsets[pageIndex] + elementWidth / 2); 
+                offset = (scrollLeft - settings.pageLeftOffsets[pageIndex] + elementWidth / 2);
             }
             else
             {
@@ -1615,12 +1615,14 @@ window.divaPlugins = [];
             if (newWidth !== settings.panelWidth || newHeight !== settings.panelHeight)
             {
                 // outer width
-                if (settings.enableAutoHeight){
+                if (settings.enableAutoHeight)
+                {
                     var heightDiff = (newHeight - $(settings.outerSelector).height()) / 2;
                     $(settings.outerSelector).height(newHeight);
                     $(settings.outerSelector).scrollTop($(settings.outerSelector).scrollTop() - heightDiff);
                 }
-                if (settings.enableAutoWidth){
+                if (settings.enableAutoWidth)
+                 {
                     var widthDiff = (newWidth + settings.scrollbarWidth - $(settings.outerSelector).width()) / 2;
                     $(settings.outerSelector).width(newWidth + settings.scrollbarWidth);
                     $(settings.outerSelector).scrollLeft($(settings.outerSelector).scrollLeft() - widthDiff);
@@ -1966,7 +1968,8 @@ window.divaPlugins = [];
         };
 
         // Handles all status updating etc (both fullscreen and not)
-        var createToolbar = function () {
+        var createToolbar = function () 
+        {
             // Prepare the HTML for the various components
             var gridIconHTML = (settings.enableGridIcon) ? '<div class="diva-grid-icon button' + (settings.inGrid ? ' diva-in-grid' : '') + '" id="' + settings.ID + 'grid-icon" title="Toggle grid view"></div>' : '';
             var linkIconHTML = (settings.enableLinkIcon) ? '<div class="diva-link-icon button" id="' + settings.ID + 'link-icon" style="' + (settings.enableGridIcon ? 'border-left: 0px' : '') + '" title="Link to this page"></div>' : '';
@@ -2036,7 +2039,8 @@ window.divaPlugins = [];
             });
 
             // Bind fullscreen button
-            $(settings.selector + 'fullscreen').click(function() {
+            $(settings.selector + 'fullscreen').click(function() 
+            {
                 toggleFullscreen();
             });
 
@@ -2353,7 +2357,8 @@ window.divaPlugins = [];
                         var iParam = $.getHashParam('i' + settings.hashParamSuffix);
                         var iParamPage = getPageIndex(iParam);
 
-                        if (isPageValid(iParamPage)){
+                        if (isPageValid(iParamPage))
+                        {
                             settings.goDirectlyTo = iParamPage;
                             settings.currentPageIndex = iParamPage;
                         }
@@ -2369,7 +2374,8 @@ window.divaPlugins = [];
                         // Subtract 1 to get the page index
                         var pParam = parseInt($.getHashParam('p' + settings.hashParamSuffix), 10) - 1;
 
-                        if (isPageValid(pParam)){
+                        if (isPageValid(pParam))
+                        {
                             settings.goDirectlyTo = pParam;
                             settings.currentPageIndex = pParam;
                         }
@@ -2466,7 +2472,8 @@ window.divaPlugins = [];
                     }
 
                     // Make sure the vertical padding is at least 40, if plugin icons are enabled
-                    if (settings.pageTools.length){
+                    if (settings.pageTools.length)
+                    {
                         if (settings.verticallyOriented)
                             settings.verticalPadding = Math.max(40, settings.horizontalPadding);
                         else
@@ -2815,7 +2822,8 @@ window.divaPlugins = [];
         // Returns false if in grid view initially, true otherwise
         this.enterGridView = function ()
         {
-            if (!settings.inGrid) {
+            if (!settings.inGrid) 
+            {
                 toggleGrid();
                 return true;
             }
