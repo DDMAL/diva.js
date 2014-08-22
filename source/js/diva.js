@@ -1859,7 +1859,7 @@ window.divaPlugins = [];
 
                         // If first tap is close to second tap (prevents interference with scale event)
                         tapDistance = distance(firstTapCoordinates.pageX, touchEvent.pageX, firstTapCoordinates.pageY, touchEvent.pageY);
-                        if (tapDistance < 50)
+                        if (tapDistance < 50 && settings.zoomLevel < settings.maxZoomLevel)
                             handleDocumentDoubleClick.call(this, touchEvent);
 
                         settings.singleTap = false;
