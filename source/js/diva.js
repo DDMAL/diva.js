@@ -1843,11 +1843,10 @@ window.divaPlugins = [];
                     }
                 });
 
-                // Double-tap to zoom in
                 var firstTapCoordinates = {},
                     tapDistance = 0;
 
-                $(settings.outerSelector).on('touchend', '.diva-document-page', function (event)
+                var bindDoubleTap = function(event)
                 {
                     if (settings.singleTap)
                     {
@@ -1860,7 +1859,10 @@ window.divaPlugins = [];
                         // If first tap is close to second tap (prevents interference with scale event)
                         tapDistance = distance(firstTapCoordinates.pageX, touchEvent.pageX, firstTapCoordinates.pageY, touchEvent.pageY);
                         if (tapDistance < 50 && settings.zoomLevel < settings.maxZoomLevel)
-                            handleDocumentDoubleClick.call(this, touchEvent);
+                            if (settings.inGrid)
+                                handleGridDoubleClick.call(this, touchEvent);
+                            else
+                                handleDocumentDoubleClick.call(this, touchEvent);
 
                         settings.singleTap = false;
                         firstTapCoordinates = {};
@@ -1878,7 +1880,13 @@ window.divaPlugins = [];
                             firstTapCoordinates = {};
                         }, 250);
                     }
-                });
+                };
+
+                // Document view: Double-tap to zoom in
+                $(settings.outerSelector).on('touchend', '.diva-document-page', bindDoubleTap);
+
+                // Grid view: Double-tap to jump to current page in document view
+                $(settings.outerSelector).on('touchend', '.diva-page', bindDoubleTap);
             }
 
             // Only check if either scrollBySpace or scrollByKeys is enabled
