@@ -1625,7 +1625,7 @@ window.divaPlugins = [];
                     $(settings.outerSelector).scrollTop($(settings.outerSelector).scrollTop() - heightDiff);
                 }
                 if (settings.enableAutoWidth)
-                 {
+                {
                     var widthDiff = (newWidth + settings.scrollbarWidth - $(settings.outerSelector).width()) / 2;
                     $(settings.outerSelector).width(newWidth + settings.scrollbarWidth);
                     $(settings.outerSelector).scrollLeft($(settings.outerSelector).scrollLeft() - widthDiff);
