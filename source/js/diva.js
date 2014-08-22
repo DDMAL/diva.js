@@ -108,13 +108,16 @@ window.divaPlugins = [];
             horizontalOffset: 0,        // Used in documentScroll for scrolling more precisely
             horizontalPadding: 0,       // Either the fixed padding or adaptive padding
             ID: null,                   // The prefix of the IDs of the elements (usually 1-diva-)
+            initialKeyScroll: false,    // Holds the initial state of enableKeyScroll
+            initialSpaceScroll: false,  // Holds the initial state of enableSpaceScroll
             innerSelector: '',          // settings.selector + 'inner', for selecting the .diva-inner element
+            isScrollable: true,         // Used in enable/disableScrollable public methods
             itemTitle: '',              // The title of the document
             lastPageLoaded: -1,         // The ID of the last page loaded (value set later)
             lastRowLoaded: -1,          // The index of the last row loaded
             loaded: false,              // A flag for when everything is loaded and ready to go.
             maxWidths: [],              // The width of the widest page for each zoom level
-            maxHeights: [],             // The width of the widest page for each zoom level
+            maxHeights: [],             // The height of the tallest page for each zoom level
             maxRatio: 0,                // The max height/width ratio (for grid view)
             minHeight: 0,               // Minimum height of the .diva-outer element, as defined in the CSS
             minRatio: 0,                // The minimum height/width ratio for a page
@@ -140,13 +143,10 @@ window.divaPlugins = [];
             resizeTimer: -1,            // Holds the ID of the timeout used when resizing the window (for clearing)
             rowHeight: 0,               // Holds the max height of each row in grid view. Calculated in loadGrid()
             scaleWait: false,           // For preventing double-zoom on touch devices (iPad, etc)
+            scrollbarWidth: 0,          // Set to the actual scrollbar width in init()
             selector: '',               // Uses the generated ID prefix to easily select elements
             singleClick: false,         // Used for catching ctrl+double-click events in Firefox in Mac OS
             singleTap: false,           // Used for caching double-tap events on mobile browsers
-            isScrollable: true,         // Used in enable/disableScrollable public methods
-            initialKeyScroll: false,    // Holds the initial state of enableKeyScroll
-            initialSpaceScroll: false,  // Holds the initial state of enableSpaceScroll
-            scrollbarWidth: 0,          // Set to the actual scrollbar width in init()
             throbberTimeoutID: -1,      // Holds the ID of the throbber loading timeout
             toolbar: null,              // Holds an object with some toolbar-related functions
             totalHeights: [],           // The total height of all pages (stacked together) for each zoom level
