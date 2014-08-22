@@ -1252,14 +1252,23 @@ window.divaPlugins = [];
         // Should only be called after changing settings.inFullscreen
         var handleModeChange = function (changeView)
         {
+            var storedOffsetY = false;
+            var storedOffsetX = false;
             // Save some offsets (required for maintaining scroll position), if it's not the initial load
             if (settings.oldZoomLevel >= 0)
             {
                 if (!settings.inGrid)
                 {
-                    var pageIndex = settings.currentPageIndex;
-                    settings.verticalOffset = getYOffset(true);
-                    settings.horizontalOffset = getXOffset(true);  
+                    if (settings.inFullscreen)
+                    {
+                        settings.verticalOffset = getYOffset(true) + ($(window).height() / 2) - ($(settings.outerSelector).height() / 2 + $(settings.outerSelector).offset().top);
+                        settings.horizontalOffset = getXOffset(true) + ($(window).width() / 2) - ($(settings.outerSelector).width() / 2 + $(settings.outerSelector).offset().left);  
+                    }
+                    else
+                    {
+                        storedOffsetY = getYOffset(true);
+                        storedOffsetX = getXOffset(true);
+                    }
                 }
             }
 
@@ -1269,23 +1278,28 @@ window.divaPlugins = [];
             $(settings.parentSelector).toggleClass('diva-full-width');
 
             // Compensate: mobileWebkit excludes body margin from window.innerWidth calculation
-            var bodyMargin = (settings.mobileWebkit) ? parseInt($('body').css('margin')) : 0;
+            var bodyMargin = (settings.mobileWebkit) ? parseInt($('body').css('margin'), 10) : 0;
 
             // If in fullscreen, set margin to 0; if enableAutoWidth, use viewerWidthPadding
-            var margin = settings.inFullscreen ? '0px'
-                       : settings.enableAutoWidth ? (settings.viewerWidthPadding - bodyMargin).toString() + 'px'
-                       : '';
+            var margin = settings.inFullscreen ? '0px' :
+                       settings.enableAutoWidth ? (settings.viewerWidthPadding - bodyMargin).toString() + 'px' : '';
 
             $(settings.outerSelector).css('margin-left', margin);
 
             // Reset the panel dimensions
-            settings.panelHeight = $(settings.outerSelector).height();
+            settings.panelHeight = $(settings.outerSelector).height(); 
             settings.panelWidth = $(settings.outerSelector).width() - settings.scrollbarWidth;
             $(settings.innerSelector).width(settings.panelWidth);
 
             // Recalculate the viewer offsets
             settings.viewerXOffset = $(settings.outerSelector).offset().left;
             settings.viewerYOffset = $(settings.outerSelector).offset().top;
+
+            if (storedOffsetY !== false)
+            {         
+                settings.verticalOffset = storedOffsetY + ($(settings.outerSelector).height() / 2 + $(settings.outerSelector).offset().top) - ($(window).height() / 2);
+                settings.horizontalOffset = storedOffsetX + ($(settings.outerSelector).width() / 2 + $(settings.outerSelector).offset().left) - ($(window).width() / 2);  
+            }
 
             // Used by setState when we need to change the view and the mode
             if (changeView)
@@ -1298,6 +1312,10 @@ window.divaPlugins = [];
                 loadViewer();
             }
 
+            // Execute callbacks
+            executeCallback(settings.onModeToggle, settings.inFullscreen);
+            diva.Events.publish("ModeDidSwitch", [settings.inFullscreen]);
+
             // If it has changed, adjust panel size coming out of fullscreen
             if (!settings.inFullscreen)
             {
@@ -1306,10 +1324,6 @@ window.divaPlugins = [];
                 else
                     adjustBrowserDims();
             }
-
-            // Execute callbacks
-            executeCallback(settings.onModeToggle, settings.inFullscreen);
-            diva.Events.publish("ModeDidSwitch", [settings.inFullscreen]);
         };
 
         // Handles switching in and out of grid view
