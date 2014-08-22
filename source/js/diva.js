@@ -1102,6 +1102,9 @@ window.divaPlugins = [];
         {
             clearViewer();
 
+            settings.zoomLevel = getValidZoomLevel(settings.zoomLevel);
+            var z = settings.zoomLevel;
+
             // Now reset some things that need to be changed after each zoom
             settings.totalHeight = settings.totalHeights[z] + settings.verticalPadding * (settings.numPages + 1);
             settings.totalWidth = settings.totalWidths[z] + settings.horizontalPadding * (settings.numPages + 1);
@@ -1255,8 +1258,8 @@ window.divaPlugins = [];
                 if (!settings.inGrid)
                 {
                     var pageIndex = settings.currentPageIndex;
-                    settings.verticalOffset = getYOffset(false);
-                    settings.horizontalOffset = getXOffset(false);  
+                    settings.verticalOffset = getYOffset(true);
+                    settings.horizontalOffset = getXOffset(true);  
                 }
             }
 
