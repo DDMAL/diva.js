@@ -116,9 +116,7 @@ window.divaPlugins = [];
             maxWidths: [],              // The width of the widest page for each zoom level
             maxHeights: [],             // The width of the widest page for each zoom level
             maxRatio: 0,                // The max height/width ratio (for grid view)
-            minHeight: 0,               // Minimum height of the .diva-outer element, as defined in the CSS
             minRatio: 0,                // The minimum height/width ratio for a page
-            minWidth: 0,                // Minimum width of the .diva-outer element, as defined in the CSS
             mobileWebkit: false,        // Checks if the user is on a touch device (iPad/iPod/iPhone/Android)
             numPages: 0,                // Number of pages in the array
             numRows: 0,                 // Number of rows
@@ -1261,8 +1259,8 @@ window.divaPlugins = [];
                 {
                     if (settings.inFullscreen)
                     {
-                        settings.verticalOffset = getYOffset(true) + ($(window).height() / 2) - ($(settings.outerSelector).height() / 2 + $(settings.outerSelector).offset().top);
-                        settings.horizontalOffset = getXOffset(true) + ($(window).width() / 2) - ($(settings.outerSelector).width() / 2 + $(settings.outerSelector).offset().left);  
+                        settings.verticalOffset = getYOffset(true) + ($(settings.parentSelector).height() / 2) - ($(settings.outerSelector).height() / 2 + $(settings.outerSelector).offset().top);
+                        settings.horizontalOffset = getXOffset(true) + ($(settings.parentSelector).width() / 2) - ($(settings.outerSelector).width() / 2 + $(settings.outerSelector).offset().left);  
                     }
                     else
                     {
@@ -1295,10 +1293,23 @@ window.divaPlugins = [];
             settings.viewerXOffset = $(settings.outerSelector).offset().left;
             settings.viewerYOffset = $(settings.outerSelector).offset().top;
 
+            // Execute callbacks
+            executeCallback(settings.onModeToggle, settings.inFullscreen);
+            diva.Events.publish("ModeDidSwitch", [settings.inFullscreen]);
+
+            // If it has changed, adjust panel size coming out of fullscreen
+            if (!settings.inFullscreen)
+            {
+                if (settings.mobileWebkit)
+                    adjustMobileWebkitDims();
+                else
+                    adjustBrowserDims(false);
+            }            
+
             if (storedOffsetY !== false)
             {         
-                settings.verticalOffset = storedOffsetY + ($(settings.outerSelector).height() / 2 + $(settings.outerSelector).offset().top) - ($(window).height() / 2);
-                settings.horizontalOffset = storedOffsetX + ($(settings.outerSelector).width() / 2 + $(settings.outerSelector).offset().left) - ($(window).width() / 2);  
+                settings.verticalOffset = storedOffsetY + ($(settings.outerSelector).height() / 2 + $(settings.outerSelector).offset().top) - ($(settings.parentSelector).height() / 2);
+                settings.horizontalOffset = storedOffsetX + ($(settings.outerSelector).width() / 2 + $(settings.outerSelector).offset().left) - ($(settings.parentSelector).width() / 2);  
             }
 
             // Used by setState when we need to change the view and the mode
@@ -1310,19 +1321,6 @@ window.divaPlugins = [];
             else
             {
                 loadViewer();
-            }
-
-            // Execute callbacks
-            executeCallback(settings.onModeToggle, settings.inFullscreen);
-            diva.Events.publish("ModeDidSwitch", [settings.inFullscreen]);
-
-            // If it has changed, adjust panel size coming out of fullscreen
-            if (!settings.inFullscreen)
-            {
-                if (settings.mobileWebkit)
-                    adjustMobileWebkitDims();
-                else
-                    adjustBrowserDims();
             }
         };
 
@@ -1578,10 +1576,11 @@ window.divaPlugins = [];
         };
 
         // Will return true if something has changed, false otherwise
-        var adjustBrowserDims = function ()
+        var adjustBrowserDims = function (forceUpdate)
         {
             var parentHeight;
             var parentWidth;
+            var outerElement = document.getElementById(settings.ID + 'outer');
 
             //if parent is body, base these sizes off the window
             if (settings.divaIsFullWindow)
@@ -1616,20 +1615,27 @@ window.divaPlugins = [];
             var heightBorderPixels = parseInt($(settings.outerSelector).css('border-top-width'), 10) + parseInt($(settings.outerSelector).css('border-bottom-width'), 10);
             parentHeight = $(settings.parentSelector).height();
             var parentYOffset = $(settings.parentSelector).offset().top;
-            var newHeight = (settings.enableAutoHeight) ? parentHeight - settings.viewerYOffset + parentYOffset - heightBorderPixels : $(settings.outerSelector).height();
+            var yScrollbar = (outerElement.scrollHeight > outerElement.scrollWidth ? settings.scrollbarWidth : 0);
+
+            var newHeight;
+            if (settings.enableAutoHeight) 
+                newHeight = parentHeight - settings.viewerYOffset + parentYOffset - heightBorderPixels - yScrollbar;
+            else
+                newHeight = $(settings.outerSelector).height() - heightBorderPixels - yScrollbar;
 
             //calculate the new width
             var widthBorderPixels = parseInt($(settings.outerSelector).css('border-left-width'), 10) + parseInt($(settings.outerSelector).css('border-right-width'), 10);
             parentWidth = $(settings.parentSelector).width();
+            var xScrollbar = (outerElement.scrollWidth > outerElement.clientWidth ? settings.scrollbarWidth : 0);
 
             var newWidth;
             if (settings.enableAutoWidth)
-                newWidth = parentWidth - (settings.viewerWidthPadding * 2) - widthBorderPixels - settings.scrollbarWidth;
+                newWidth = parentWidth - (settings.viewerWidthPadding * 2) - widthBorderPixels - xScrollbar;
             else
-                newWidth = $(settings.outerSelector).width() - settings.scrollbarWidth - widthBorderPixels;
+                newWidth = $(settings.outerSelector).width() - widthBorderPixels - xScrollbar;
 
             //if either have changed, reflect that visually
-            if (newWidth !== settings.panelWidth || newHeight !== settings.panelHeight)
+            if (forceUpdate || newWidth !== settings.panelWidth || newHeight !== settings.panelHeight)
             {
                 // outer width
                 if (settings.enableAutoHeight)
@@ -1639,7 +1645,7 @@ window.divaPlugins = [];
                     $(settings.outerSelector).scrollTop($(settings.outerSelector).scrollTop() - heightDiff);
                 }
                 if (settings.enableAutoWidth)
-                 {
+                {
                     var widthDiff = (newWidth + settings.scrollbarWidth - $(settings.outerSelector).width()) / 2;
                     $(settings.outerSelector).width(newWidth + settings.scrollbarWidth);
                     $(settings.outerSelector).scrollLeft($(settings.outerSelector).scrollLeft() - widthDiff);
@@ -1965,7 +1971,7 @@ window.divaPlugins = [];
                 {
                     $(window).resize(function ()
                     {
-                        var adjustSuccess = (settings.inFullscreen) ? adjustFullscreenDims() : adjustBrowserDims();
+                        var adjustSuccess = (settings.inFullscreen) ? adjustFullscreenDims() : adjustBrowserDims(false);
                         if (adjustSuccess)
                         {
                             // Cancel any previously-set resize timeouts
@@ -2443,18 +2449,18 @@ window.divaPlugins = [];
                     }
                     else if (settings.divaIsFullWindow)
                     {
-                        //so we shall use window instead
+                        // We shall use window
                         settings.widthProportion = $(settings.parentSelector).width() / $(window).innerWidth();
                         // Do not overflow the window in the event that the initial CSS height is greater than the initial window size
                         settings.heightProportion = Math.min(0.9, $(settings.parentSelector).height() / $(window).innerHeight());
-                        adjustBrowserDims();
+                        adjustBrowserDims(true);
                     }
                     else
                     {
-                        //but otherwise, parent is cool
+                        //but otherwise, parent is what we're actually sizing this in proportion to
                         settings.widthProportion = $(settings.parentSelector).width() / $(settings.parentSelector).parent().innerWidth();
                         settings.heightProportion = $(settings.parentSelector).height() / $(settings.parentSelector).parent().innerHeight();
-                        adjustBrowserDims();
+                        adjustBrowserDims(true);
                     }
 
                     // Set padding
@@ -2525,6 +2531,16 @@ window.divaPlugins = [];
                         handleModeChange(false);
                     else
                         loadViewer();
+
+                    //prep dimensions one last time now that pages have loaded
+                    if (settings.mobileWebkit)
+                    {
+                        adjustMobileWebkitDims();
+                    }
+                    else 
+                    {
+                        adjustBrowserDims(true);
+                    }
 
                     // Execute the callback
                     executeCallback(settings.onReady, settings);
@@ -2607,12 +2623,6 @@ window.divaPlugins = [];
 
             settings.inGrid = (settings.inGrid && gridParam !== 'false') || goIntoGrid;
             settings.inFullscreen = (settings.inFullscreen && fullscreenParam !== 'false') || goIntoFullscreen;
-
-            // Store the minimum and maximum height too
-            var outerElem = document.getElementById(settings.ID + 'outer');
- 
-            settings.minHeight = parseInt(outerElem.style.minHeight, 10);
-            settings.minWidth = parseInt(outerElem.style.minWidth, 10);
 
             // Do the initial AJAX request and viewer loading
             setupViewer();
