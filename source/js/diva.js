@@ -1641,13 +1641,13 @@ window.divaPlugins = [];
                 if (settings.enableAutoHeight)
                 {
                     var heightDiff = (newHeight - $(settings.outerSelector).height()) / 2;
-                    $(settings.outerSelector).height(newHeight);
+                    $(settings.outerSelector).height(newHeight + yScrollbar);
                     $(settings.outerSelector).scrollTop($(settings.outerSelector).scrollTop() - heightDiff);
                 }
                 if (settings.enableAutoWidth)
                 {
                     var widthDiff = (newWidth + settings.scrollbarWidth - $(settings.outerSelector).width()) / 2;
-                    $(settings.outerSelector).width(newWidth + settings.scrollbarWidth);
+                    $(settings.outerSelector).width(newWidth + xScrollbar);
                     $(settings.outerSelector).scrollLeft($(settings.outerSelector).scrollLeft() - widthDiff);
                 }
                 
