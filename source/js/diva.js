@@ -108,13 +108,16 @@ window.divaPlugins = [];
             horizontalOffset: 0,        // Used in documentScroll for scrolling more precisely
             horizontalPadding: 0,       // Either the fixed padding or adaptive padding
             ID: null,                   // The prefix of the IDs of the elements (usually 1-diva-)
+            initialKeyScroll: false,    // Holds the initial state of enableKeyScroll
+            initialSpaceScroll: false,  // Holds the initial state of enableSpaceScroll
             innerSelector: '',          // settings.selector + 'inner', for selecting the .diva-inner element
+            isScrollable: true,         // Used in enable/disableScrollable public methods
             itemTitle: '',              // The title of the document
             lastPageLoaded: -1,         // The ID of the last page loaded (value set later)
             lastRowLoaded: -1,          // The index of the last row loaded
             loaded: false,              // A flag for when everything is loaded and ready to go.
             maxWidths: [],              // The width of the widest page for each zoom level
-            maxHeights: [],             // The width of the widest page for each zoom level
+            maxHeights: [],             // The height of the tallest page for each zoom level
             maxRatio: 0,                // The max height/width ratio (for grid view)
             minRatio: 0,                // The minimum height/width ratio for a page
             mobileWebkit: false,        // Checks if the user is on a touch device (iPad/iPod/iPhone/Android)
@@ -138,13 +141,10 @@ window.divaPlugins = [];
             resizeTimer: -1,            // Holds the ID of the timeout used when resizing the window (for clearing)
             rowHeight: 0,               // Holds the max height of each row in grid view. Calculated in loadGrid()
             scaleWait: false,           // For preventing double-zoom on touch devices (iPad, etc)
+            scrollbarWidth: 0,          // Set to the actual scrollbar width in init()
             selector: '',               // Uses the generated ID prefix to easily select elements
             singleClick: false,         // Used for catching ctrl+double-click events in Firefox in Mac OS
             singleTap: false,           // Used for caching double-tap events on mobile browsers
-            isScrollable: true,         // Used in enable/disableScrollable public methods
-            initialKeyScroll: false,    // Holds the initial state of enableKeyScroll
-            initialSpaceScroll: false,  // Holds the initial state of enableSpaceScroll
-            scrollbarWidth: 0,          // Set to the actual scrollbar width in init()
             throbberTimeoutID: -1,      // Holds the ID of the throbber loading timeout
             toolbar: null,              // Holds an object with some toolbar-related functions
             totalHeights: [],           // The total height of all pages (stacked together) for each zoom level
@@ -1863,11 +1863,10 @@ window.divaPlugins = [];
                     }
                 });
 
-                // Double-tap to zoom in
                 var firstTapCoordinates = {},
                     tapDistance = 0;
 
-                $(settings.outerSelector).on('touchend', '.diva-document-page', function (event)
+                var bindDoubleTap = function(event)
                 {
                     if (settings.singleTap)
                     {
@@ -1879,8 +1878,11 @@ window.divaPlugins = [];
 
                         // If first tap is close to second tap (prevents interference with scale event)
                         tapDistance = distance(firstTapCoordinates.pageX, touchEvent.pageX, firstTapCoordinates.pageY, touchEvent.pageY);
-                        if (tapDistance < 50)
-                            handleDocumentDoubleClick.call(this, touchEvent);
+                        if (tapDistance < 50 && settings.zoomLevel < settings.maxZoomLevel)
+                            if (settings.inGrid)
+                                handleGridDoubleClick.call(this, touchEvent);
+                            else
+                                handleDocumentDoubleClick.call(this, touchEvent);
 
                         settings.singleTap = false;
                         firstTapCoordinates = {};
@@ -1898,7 +1900,13 @@ window.divaPlugins = [];
                             firstTapCoordinates = {};
                         }, 250);
                     }
-                });
+                };
+
+                // Document view: Double-tap to zoom in
+                $(settings.outerSelector).on('touchend', '.diva-document-page', bindDoubleTap);
+
+                // Grid view: Double-tap to jump to current page in document view
+                $(settings.outerSelector).on('touchend', '.diva-page', bindDoubleTap);
             }
 
             // Only check if either scrollBySpace or scrollByKeys is enabled

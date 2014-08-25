@@ -84,7 +84,9 @@
     background-position: center;
     .frame(@buttonFrame);
 
-    &:hover {
-        background-color: @buttonHover;
+    @media screen and (min-device-width: 769px) {
+        &:hover {
+            background-color: @buttonHover;
+        }
     }
 }
