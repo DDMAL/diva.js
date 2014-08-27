@@ -1195,8 +1195,8 @@ window.divaPlugins = [];
                 settings.scaleWait = false;
 
             var fileName = settings.pages[settings.currentPageIndex].f;
-            executeCallback(settings.onDocumentLoaded, settings.lastPageLoaded, fileName);
-            diva.Events.publish("DocumentDidLoad", [settings.lastPageLoaded, fileName], self);
+            executeCallback(settings.onDocumentLoaded, settings.currentPageIndex, fileName);
+            diva.Events.publish("DocumentDidLoad", [settings.currentPageIndex, fileName], self);
         };
 
         var loadGrid = function ()
