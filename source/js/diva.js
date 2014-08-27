@@ -37,8 +37,6 @@ window.divaPlugins = [];
             enableAutoHeight: false,    // Automatically adjust height based on the window size
             enableAutoTitle: true,      // Shows the title within a div of id diva-title
             enableAutoWidth: true,      // Automatically adjust width based on the window size
-            enableCanvas: true,         // Used for the canvas plugin
-            enableDownload: true,       // Used for the download plugin
             enableFilename: true,       // Uses filenames and not page numbers for links (i=bm_001.tif, not p=1)
             enableFullscreen: true,     // Enable or disable fullscreen icon (mode still available)
             enableGotoPage: true,       // A "go to page" jump box

@@ -13,12 +13,13 @@
             <script type="text/javascript">
                 $(document).ready(function() {
                     $('#diva-wrapper').diva({
-                        contained: true,
                         enableAutoHeight: true,
                         fixedHeightGrid: true,
                         iipServerURL: "http://coltrane.music.mcgill.ca/fcgi-bin/iipsrv.fcgi",
                         objectData: "/demo/beromunster.json",
                         imageDir: "/mnt/images/beromunster",
+                        enableCanvas: true,
+                        enableDownload: true,
                         enableHighlight: true
                     });
 
