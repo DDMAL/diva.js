@@ -337,7 +337,7 @@ window.divaPlugins = [];
                 innerElement.appendChild(pageElement);
                 // Call the callback function
                 executeCallback(settings.onPageLoad, pageIndex, filename, pageSelector);
-                diva.Events.publish("PageWillLoad", [pageIndex, filename, pageSelector]);
+                diva.Events.publish("PageWillLoad", [pageIndex, filename, pageSelector], self);
 
                 // @TODO: Replace this with a notification.
                 // Execute the callback functions for any of the enabled plugins
@@ -435,7 +435,7 @@ window.divaPlugins = [];
                 settings.allTilesLoaded[pageIndex] = allTilesLoaded;
 
                 executeCallback(settings.onPageLoaded, pageIndex, filename, pageSelector);
-                diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector]);
+                diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector], self);
             };
             settings.pageTimeouts.push(setTimeout(pageLoadFunction(pageIndex), settings.pageLoadTimeout));
         };
@@ -619,19 +619,19 @@ window.divaPlugins = [];
             var scrollSoFar = (settings.verticallyOriented ? document.getElementById(settings.ID + "outer").scrollTop : document.getElementById(settings.ID + "outer").scrollLeft);
 
             executeCallback(settings.onScroll, scrollSoFar);
-            diva.Events.publish("ViewerDidScroll", scrollSoFar);
+            diva.Events.publish("ViewerDidScroll", [scrollSoFar], self);
 
             if (direction > 0)
             {
                 // scrolling forwards
                 executeCallback(settings.onScrollDown, scrollSoFar);
-                diva.Events.publish("ViewerDidScrollDown", [scrollSoFar]);
+                diva.Events.publish("ViewerDidScrollDown", [scrollSoFar], self);
             }
             else if (direction < 0)
             {
                 // scrolling backwards
                 executeCallback(settings.onScrollUp, scrollSoFar);
-                diva.Events.publish("ViewerDidScrollUp", [scrollSoFar]);
+                diva.Events.publish("ViewerDidScrollUp", [scrollSoFar], self);
             }       
         };
 
@@ -723,7 +723,7 @@ window.divaPlugins = [];
  
                 rowDiv.appendChild(pageDiv);
                 
-                diva.Events.publish("PageWillLoad", [pageIndex, filename, pageSelector]);
+                diva.Events.publish("PageWillLoad", [pageIndex, filename, pageSelector], self);
 
                 // Add each image to a queue so that images aren't loaded unnecessarily
                 addPageToQueue(rowIndex, pageIndex, imageURL, pageWidth, pageHeight);
@@ -842,19 +842,19 @@ window.divaPlugins = [];
             var newTopScroll = document.getElementById(settings.ID + "outer").scrollTop;
 
             executeCallback(settings.onScroll, newTopScroll);
-            diva.Events.publish("ViewerDidScroll", [newTopScroll]);
+            diva.Events.publish("ViewerDidScroll", [newTopScroll], self);
 
             // If we're scrolling down
             if (direction > 0)
             {
                 executeCallback(settings.onScrollDown, newTopScroll);
-                diva.Events.publish("ViewerDidScrollDown", [newTopScroll]);
+                diva.Events.publish("ViewerDidScrollDown", [newTopScroll], self);
             }
             else if (direction < 0)
             {
                 // We're scrolling up
                 executeCallback(settings.onScrollUp, newTopScroll);
-                diva.Events.publish("ViewerDidScrollUp", [newTopScroll]);
+                diva.Events.publish("ViewerDidScrollUp", [newTopScroll], self);
             }
         };
 
@@ -942,7 +942,7 @@ window.divaPlugins = [];
                     {
                         var filename = settings.pages[pageToConsider].f;
                         executeCallback(settings.onSetCurrentPage, pageToConsider, filename);
-                        diva.Events.publish("VisiblePageDidChange", [pageToConsider, filename]);
+                        diva.Events.publish("VisiblePageDidChange", [pageToConsider, filename], self);
                     }
                 }
                 return true;
@@ -985,7 +985,7 @@ window.divaPlugins = [];
                     {
                         var pageIndex = settings.currentPageIndex;
                         var filename = settings.pages[pageIndex].f;
-                        diva.Events.publish("VisiblePageDidChange", [pageIndex, filename]);
+                        diva.Events.publish("VisiblePageDidChange", [pageIndex, filename], self);
                     }
                 }
 
@@ -1027,11 +1027,11 @@ window.divaPlugins = [];
             var filename = settings.pages[pageIndex].f;
 
             executeCallback(settings.onSetCurrentPage, pageIndex, filename);
-            diva.Events.publish("VisiblePageDidChange", [pageIndex, filename]);
+            diva.Events.publish("VisiblePageDidChange", [pageIndex, filename], self);
 
             // Execute the onJump callback
             executeCallback(settings.onJump, pageIndex);
-            diva.Events.publish("ViewerDidJump", [pageIndex]);
+            diva.Events.publish("ViewerDidJump", [pageIndex], self);
         };
 
         // Calculates the desired row, then scrolls there
@@ -1044,7 +1044,7 @@ window.divaPlugins = [];
             // Pretend that this is the current page (it probably isn't)
             settings.currentPageIndex = pageIndex;
             var filename = settings.pages[pageIndex].f;
-            diva.Events.publish("VisiblePageDidChange", [pageIndex, filename]);
+            diva.Events.publish("VisiblePageDidChange", [pageIndex, filename], self);
         };
 
         // Don't call this when not in grid mode please
@@ -1175,12 +1175,12 @@ window.divaPlugins = [];
                 if (settings.oldZoomLevel < settings.zoomLevel)
                 {
                     executeCallback(settings.onZoomIn, z);
-                    diva.Events.publish("ViewerDidZoomIn", z);
+                    diva.Events.publish("ViewerDidZoomIn", [z], self);
                 }
                 else
                 {
                     executeCallback(settings.onZoomOut, z);
-                    diva.Events.publish("ViewerDidZoomOut", z);
+                    diva.Events.publish("ViewerDidZoomOut", [z], self);
                 }
 
                 executeCallback(settings.onZoom, z);
@@ -1196,7 +1196,7 @@ window.divaPlugins = [];
 
             var fileName = settings.pages[settings.currentPageIndex].f;
             executeCallback(settings.onDocumentLoaded, settings.lastPageLoaded, fileName);
-            diva.Events.publish("DocumentDidLoad", [settings.lastPageLoaded, fileName]);
+            diva.Events.publish("DocumentDidLoad", [settings.lastPageLoaded, fileName], self);
         };
 
         var loadGrid = function ()
@@ -1295,7 +1295,7 @@ window.divaPlugins = [];
 
             // Execute callbacks
             executeCallback(settings.onModeToggle, settings.inFullscreen);
-            diva.Events.publish("ModeDidSwitch", [settings.inFullscreen]);
+            diva.Events.publish("ModeDidSwitch", [settings.inFullscreen], self);
 
             // If it has changed, adjust panel size coming out of fullscreen
             if (!settings.inFullscreen)
@@ -1332,7 +1332,7 @@ window.divaPlugins = [];
             executeCallback(settings.onViewToggle, settings.inGrid);
 
             // Switch the slider
-            diva.Events.publish("ViewDidSwitch", [settings.inGrid]);
+            diva.Events.publish("ViewDidSwitch", [settings.inGrid], self);
         };
 
         // Called when the fullscreen icon is clicked
@@ -1452,7 +1452,7 @@ window.divaPlugins = [];
             settings.zoomLevel = newZoomLevel;
 
             // Update the slider
-            diva.Events.publish("ZoomLevelDidChange", null);
+            diva.Events.publish("ZoomLevelDidChange", [newZoomLevel], self);
             loadDocument();
 
             return true;
@@ -1470,7 +1470,7 @@ window.divaPlugins = [];
             settings.pagesPerRow = newPagesPerRow;
 
             // Update the slider
-            diva.Events.publish("GridRowNumberDidChange", null);
+            diva.Events.publish("GridRowNumberDidChange", [newPagesPerRow], self);
 
             settings.goDirectlyTo = settings.currentPageIndex;
             loadGrid();
@@ -2547,7 +2547,7 @@ window.divaPlugins = [];
 
                     // Execute the callback
                     executeCallback(settings.onReady, settings);
-                    diva.Events.publish("ViewerDidLoad", [settings]);
+                    diva.Events.publish("ViewerDidLoad", [settings], self);
 
                     // signal that everything should be set up and ready to go.
                     settings.loaded = true;
