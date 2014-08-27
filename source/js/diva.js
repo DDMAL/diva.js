@@ -80,8 +80,6 @@ window.divaPlugins = [];
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
             toolbarParentSelector: options.parentSelector, // The toolbar parent selector. Must be a jQuery selector (leading '#')
             verticallyOriented: true,   // Determines vertical vs. horizontal orientation 
-            viewerHeightPadding: 15,    // Vertical padding when resizing the viewer, if enableAutoHeight is set
-            viewerWidthPadding: 30,     // Horizontal padding when resizing the viewer, if enableAutoWidth is set
             viewportMargin: 200,        // Pretend tiles +/- 200px away from viewport are in
             zoomLevel: 2                // The initial zoom level (used to store the current zoom level)
         };
@@ -1276,12 +1274,6 @@ window.divaPlugins = [];
             // Compensate: mobileWebkit excludes body margin from window.innerWidth calculation
             var bodyMargin = (settings.mobileWebkit) ? parseInt($('body').css('margin'), 10) : 0;
 
-            // If in fullscreen, set margin to 0; if enableAutoWidth, use viewerWidthPadding
-            var margin = settings.inFullscreen ? '0px' :
-                       settings.enableAutoWidth ? (settings.viewerWidthPadding - bodyMargin).toString() + 'px' : '';
-
-            $(settings.outerSelector).css('margin-left', margin);
-
             // Reset the panel dimensions
             settings.panelHeight = $(settings.outerSelector).height(); 
             settings.panelWidth = $(settings.outerSelector).width() - settings.scrollbarWidth;
@@ -1556,8 +1548,8 @@ window.divaPlugins = [];
         // Called in init and when the orientation changes
         var adjustMobileWebkitDims = function ()
         {
-            settings.panelHeight = window.innerHeight - $(settings.outerSelector).offset().top - settings.viewerHeightPadding;
-            settings.panelWidth = (settings.enableAutoWidth) ? window.innerWidth - settings.viewerWidthPadding * 2 : window.innerWidth;
+            settings.panelHeight = window.innerHeight - $(settings.outerSelector).offset().top - $(settings.outerSelector).css('margin-top');
+            settings.panelWidth = (settings.enableAutoWidth) ? window.innerWidth - ($(settings.outerSelector).css('margin-left') + $(settings.outerSelector).css('margin-right')) : window.innerWidth;
 
             if (settings.enableAutoHeight)
                 document.getElementById(settings.ID + "outer").style.height = settings.panelHeight + "px";
@@ -1611,12 +1603,13 @@ window.divaPlugins = [];
 
             //calculate the new width
             var widthBorderPixels = parseInt($(settings.outerSelector).css('border-left-width'), 10) + parseInt($(settings.outerSelector).css('border-right-width'), 10);
+            var widthMarginPixels = parseInt($(settings.outerSelector).css('margin-left'), 10) + parseInt($(settings.outerSelector).css('margin-right'), 10);
             parentWidth = $(settings.parentSelector).width();
             var xScrollbar = (outerElement.scrollWidth > outerElement.clientWidth ? settings.scrollbarWidth : 0);
 
             var newWidth;
             if (settings.enableAutoWidth)
-                newWidth = parentWidth - (settings.viewerWidthPadding * 2) - widthBorderPixels - xScrollbar;
+                newWidth = parentWidth - widthBorderPixels - widthMarginPixels - xScrollbar;
             else
                 newWidth = $(settings.outerSelector).width() - widthBorderPixels - xScrollbar;
 
@@ -2460,10 +2453,8 @@ window.divaPlugins = [];
                         if (settings.mobileWebkit)
                         {
                             var bodyMargin = parseInt($('body').css('margin'));
-                            $(settings.outerSelector).css('margin-left', settings.viewerWidthPadding - bodyMargin);
+                            $(settings.outerSelector).css('margin-left', $(settings.outerSelector).css('margin-left') - bodyMargin);
                         }
-                        else
-                            $(settings.outerSelector).css('margin-left', settings.viewerWidthPadding);
                     }            
 
                     // Make sure the value for settings.goDirectlyTo is valid
