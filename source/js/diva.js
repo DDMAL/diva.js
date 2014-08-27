@@ -149,9 +149,7 @@ window.divaPlugins = [];
             totalWidth: 0,              // The total height for the current zoom level (including padding)
             verticalOffset: 0,          // Distance from the center of the diva element to the left side of the current page
             verticalPadding: 0,         // Either the fixed padding or adaptive padding
-            widthProportion: 0,         // Stores the original proportion between parentSelector.width and window.width
-            viewerXOffset: 0,           // Distance between left edge of window and viewer left edge (used for double-click zooming)
-            viewerYOffset: 0            // Like viewerXOffset but for the top edges
+            widthProportion: 0          // Stores the original proportion between parentSelector.width and window.width
         };
 
         $.extend(settings, globals);
@@ -1289,10 +1287,6 @@ window.divaPlugins = [];
             settings.panelWidth = $(settings.outerSelector).width() - settings.scrollbarWidth;
             $(settings.innerSelector).width(settings.panelWidth);
 
-            // Recalculate the viewer offsets
-            settings.viewerXOffset = $(settings.outerSelector).offset().left;
-            settings.viewerYOffset = $(settings.outerSelector).offset().top;
-
             // Execute callbacks
             executeCallback(settings.onModeToggle, settings.inFullscreen);
             diva.Events.publish("ModeDidSwitch", [settings.inFullscreen], self);
@@ -1385,8 +1379,8 @@ window.divaPlugins = [];
         {
             // Figure out the page that was clicked, scroll to that page
             var sel = document.getElementById(settings.ID + "outer");
-            var centerX = (event.pageX - settings.viewerXOffset) + sel.scrollLeft;
-            var centerY = (event.pageY - settings.viewerYOffset) + sel.scrollTop;
+            var centerX = (event.pageX - sel.getBoundingClientRect().left) + sel.scrollLeft;
+            var centerY = (event.pageY - sel.getBoundingClientRect().top) + sel.scrollTop;
             var rowIndex = Math.floor(centerY / settings.rowHeight);
             var colIndex = Math.floor(centerX / (settings.panelWidth / settings.pagesPerRow));
             var pageIndex = rowIndex * settings.pagesPerRow + colIndex;
@@ -1562,9 +1556,7 @@ window.divaPlugins = [];
         // Called in init and when the orientation changes
         var adjustMobileWebkitDims = function ()
         {
-            settings.viewerXOffset = $(settings.outerSelector).offset().left;
-            settings.viewerYOffset = $(settings.outerSelector).offset().top;
-            settings.panelHeight = window.innerHeight - settings.viewerYOffset - settings.viewerHeightPadding;
+            settings.panelHeight = window.innerHeight - $(settings.outerSelector).offset().top - settings.viewerHeightPadding;
             settings.panelWidth = (settings.enableAutoWidth) ? window.innerWidth - settings.viewerWidthPadding * 2 : window.innerWidth;
 
             if (settings.enableAutoHeight)
@@ -1605,11 +1597,6 @@ window.divaPlugins = [];
                 $(settings.parentSelector).width(parentWidth * settings.widthProportion);
             }
 
-            //reset the offset variables to make them accurate in the case that they've changed
-            var viewerOffset = $(settings.outerSelector).offset();
-            settings.viewerXOffset = viewerOffset.left;
-            settings.viewerYOffset = viewerOffset.top;
-
             //calculate the new height based off the proportions
             var heightBorderPixels = parseInt($(settings.outerSelector).css('border-top-width'), 10) + parseInt($(settings.outerSelector).css('border-bottom-width'), 10);
             parentHeight = $(settings.parentSelector).height();
@@ -1618,7 +1605,7 @@ window.divaPlugins = [];
 
             var newHeight;
             if (settings.enableAutoHeight) 
-                newHeight = parentHeight - settings.viewerYOffset + parentYOffset - heightBorderPixels - yScrollbar;
+                newHeight = parentHeight - $(settings.outerSelector).offset().top + parentYOffset - heightBorderPixels - yScrollbar;
             else
                 newHeight = $(settings.outerSelector).height() - heightBorderPixels - yScrollbar;
 
@@ -2500,10 +2487,7 @@ window.divaPlugins = [];
                     // Make sure the vertical padding is at least 40, if plugin icons are enabled
                     if (settings.pageTools.length)
                     {
-                        if (settings.verticallyOriented)
-                            settings.verticalPadding = Math.max(40, settings.horizontalPadding);
-                        else
-                            settings.horizontalPadding = Math.max(40, settings.verticalPadding);
+                        settings.verticalPadding = Math.max(40, settings.verticalPadding);
                     }      
 
                     // y - vertical offset from the top of the relevant page
