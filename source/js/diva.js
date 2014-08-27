@@ -80,7 +80,7 @@ window.divaPlugins = [];
             throbberTimeout: 100,       // Number of milliseconds to wait before showing throbber
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
-            toolbarParentSelector: null, // The toolbar parent selector. If null, it defaults to the primary diva element. Must be a jQuery selector (leading '#')
+            toolbarParentSelector: options.parentSelector, // The toolbar parent selector. Must be a jQuery selector (leading '#')
             verticallyOriented: true,   // Determines vertical vs. horizontal orientation 
             viewerHeightPadding: 15,    // Vertical padding when resizing the viewer, if enableAutoHeight is set
             viewerWidthPadding: 30,     // Horizontal padding when resizing the viewer, if enableAutoWidth is set
@@ -105,7 +105,7 @@ window.divaPlugins = [];
             gridPageWidth: 0,           // Holds the max width of each row in grid view. Calculated in loadGrid()
             hashParamSuffix: '',        // Used when there are multiple document viewers on a page
             heightProportion: 0,        // Stores the original proportion between parentSelector.height and window.height
-            horizontalOffset: 0,        // Used in documentScroll for scrolling more precisely
+            horizontalOffset: 0,        // Distance from the center of the diva element to the top of the current page
             horizontalPadding: 0,       // Either the fixed padding or adaptive padding
             ID: null,                   // The prefix of the IDs of the elements (usually 1-diva-)
             initialKeyScroll: false,    // Holds the initial state of enableKeyScroll
@@ -123,9 +123,7 @@ window.divaPlugins = [];
             mobileWebkit: false,        // Checks if the user is on a touch device (iPad/iPod/iPhone/Android)
             numPages: 0,                // Number of pages in the array
             numRows: 0,                 // Number of rows
-            oldPagesPerRow: 0,          // Holds the previous number of pages per row after it is changed
             oldZoomLevel: -1,           // Holds the previous zoom level after zooming in or out
-            orientationChange: false,   // For handling device orientation changes for touch devices
             outerSelector: '',          // settings.selector + 'outer', for selecting the .diva-outer element
             pages: [],                  // An array containing the data for all the pages
             pageLeftOffsets: [],        // Distance from the left side of each page to the left side of the diva-inner object
@@ -151,7 +149,7 @@ window.divaPlugins = [];
             totalHeight: 0,             // The total height for the current zoom level (including padding)
             totalWidths: [],            // The total height of all pages (stacked together) for each zoom level
             totalWidth: 0,              // The total height for the current zoom level (including padding)
-            verticalOffset: 0,          // See horizontalOffset
+            verticalOffset: 0,          // Distance from the center of the diva element to the left side of the current page
             verticalPadding: 0,         // Either the fixed padding or adaptive padding
             widthProportion: 0,         // Stores the original proportion between parentSelector.width and window.width
             viewerXOffset: 0,           // Distance between left edge of window and viewer left edge (used for double-click zooming)
@@ -1471,7 +1469,6 @@ window.divaPlugins = [];
             if (newPagesPerRow !== newValue)
                 return false;
 
-            settings.oldPagesPerRow = settings.zoomLevel;
             settings.pagesPerRow = newPagesPerRow;
 
             // Update the slider
@@ -1806,7 +1803,6 @@ window.divaPlugins = [];
                 // Listen to orientation change event
                 $(window).bind('orientationchange', function (event)
                 {
-                    settings.orientationChange = true;
                     adjustMobileWebkitDims();
 
                     // Reload the viewer to account for the resized viewport
@@ -2022,10 +2018,7 @@ window.divaPlugins = [];
 
             var toolbarHTML = '<div id="' + settings.ID + 'tools-left" class="diva-tools-left' + '">' + zoomSliderHTML + zoomButtonsHTML + gridSliderHTML + gridButtonsHTML + zoomSliderLabelHTML + zoomButtonsLabelHTML + gridSliderLabelHTML + gridButtonsLabelHTML + '</div><div id="' + settings.ID + 'tools-right" class="diva-tools-right">' + fullscreenIconHTML + linkIconHTML + gridIconHTML + '<div class="diva-page-nav">' + gotoPageHTML + pageNumberHTML + '</div></div>';
 
-            if (settings.toolbarParentSelector)
-                $(settings.toolbarParentSelector).prepend('<div id="' + settings.ID + 'tools" class="diva-tools">' + toolbarHTML + '</div>');
-            else
-                $(settings.parentSelector).prepend('<div id="' + settings.ID + 'tools" class="diva-tools">' + toolbarHTML + '</div>');
+            $(settings.toolbarParentSelector).prepend('<div id="' + settings.ID + 'tools" class="diva-tools">' + toolbarHTML + '</div>');
 
             // bind zoom slider
             $(settings.selector + 'zoom-slider').on('input', function(e)
