@@ -41,11 +41,23 @@ section.page {
 }
 
 .jumbotron h2 {
-    margin-top: 140px;
-    max-width: 66%;
+    margin-top: 4.5em;
     text-shadow: 0px 0px 12px rgba(255, 255, 255, 1.0);
     color: #333;
-    font-size: 40px;
+    font-size: 28px;
+}
+
+@media (min-width: 768px) {
+    .jumbotron h2 {
+        margin-top: 140px;
+        font-size: 40px;
+    }
+}
+
+@media (min-width: 992px) {
+    .jumbotron h2 {
+        max-width: 66%;
+    }
 }
 
 section.light {
@@ -190,3 +202,4 @@ footer p {
 #documentation .btn {
     margin-top: 2em;
 }
+
