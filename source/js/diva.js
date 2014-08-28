@@ -1242,6 +1242,13 @@ window.divaPlugins = [];
             }
         };
 
+        //Shortcut for closing fullscreen with the escape key
+        var escapeListener = function (e)
+        {
+            if(e.keyCode == 27)
+                toggleFullscreen();
+        };
+
         // Handles switching in and out of fullscreen mode
         // Should only be called after changing settings.inFullscreen
         var handleModeChange = function (changeView)
@@ -1314,6 +1321,11 @@ window.divaPlugins = [];
             {
                 loadViewer();
             }
+
+            if(settings.inFullscreen)
+                $(document).on('keyup', escapeListener);
+            else
+                $(document).off('keyup', escapeListener);
         };
 
         // Handles switching in and out of grid view
@@ -1626,7 +1638,6 @@ window.divaPlugins = [];
             //if either have changed, reflect that visually
             if (forceUpdate || newWidth !== settings.panelWidth || newHeight !== settings.panelHeight)
             {
-                console.log(settings.enableAutoHeight, settings.enableAutoWidth);
                 // outer width
                 if (settings.enableAutoHeight)
                 {
