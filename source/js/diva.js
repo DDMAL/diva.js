@@ -1563,6 +1563,8 @@ window.divaPlugins = [];
         {
             var parentHeight;
             var parentWidth;
+            var xOffset;
+            var yOffset;
             var outerElement = document.getElementById(settings.ID + 'outer');
 
             //if parent is body, base these sizes off the window
@@ -1581,11 +1583,13 @@ window.divaPlugins = [];
             // if autoHeight/autoWidth are on, resize the parent selector proportionally
             if (settings.enableAutoHeight)
             {
+                xOffset = getXOffset(true);
                 $(settings.parentSelector).height(parentHeight * settings.heightProportion);
             }
 
             if (settings.enableAutoWidth)
             {
+                yOffset = getYOffset(true);
                 $(settings.parentSelector).width(parentWidth * settings.widthProportion);
             }
 
@@ -1616,19 +1620,29 @@ window.divaPlugins = [];
             //if either have changed, reflect that visually
             if (forceUpdate || newWidth !== settings.panelWidth || newHeight !== settings.panelHeight)
             {
+                console.log(settings.enableAutoHeight, settings.enableAutoWidth);
                 // outer width
                 if (settings.enableAutoHeight)
                 {
                     var heightDiff = (newHeight - $(settings.outerSelector).height()) / 2;
                     $(settings.outerSelector).height(newHeight + yScrollbar);
-                    $(settings.outerSelector).scrollTop($(settings.outerSelector).scrollTop() - heightDiff);
                 }
+                else
+                {
+                    xOffset = getXOffset(true);
+                }
+
                 if (settings.enableAutoWidth)
                 {
                     var widthDiff = (newWidth + settings.scrollbarWidth - $(settings.outerSelector).width()) / 2;
                     $(settings.outerSelector).width(newWidth + xScrollbar);
-                    $(settings.outerSelector).scrollLeft($(settings.outerSelector).scrollLeft() - widthDiff);
                 }
+                else
+                {
+                    yOffset = getYOffset(true);
+                }
+
+                gotoPage(settings.currentPageIndex, yOffset, xOffset);
                 
                 // inner width
                 settings.panelWidth = newWidth;
