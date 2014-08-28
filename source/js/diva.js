@@ -1274,6 +1274,12 @@ window.divaPlugins = [];
             // Compensate: mobileWebkit excludes body margin from window.innerWidth calculation
             var bodyMargin = (settings.mobileWebkit) ? parseInt($('body').css('margin'), 10) : 0;
 
+            // If in fullscreen, set margin to 0; if enableAutoWidth, use viewerWidthPadding
+            var margin = settings.inFullscreen ? '0px' :
+                       settings.enableAutoWidth ? (settings.viewerWidthPadding - bodyMargin).toString() + 'px' : '';
+
+            $(settings.outerSelector).css('margin-left', margin);
+
             // Reset the panel dimensions
             settings.panelHeight = $(settings.outerSelector).height(); 
             settings.panelWidth = $(settings.outerSelector).width() - settings.scrollbarWidth;
