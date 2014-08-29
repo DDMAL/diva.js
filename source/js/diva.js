@@ -107,6 +107,7 @@ window.divaPlugins = [];
             initialKeyScroll: false,    // Holds the initial state of enableKeyScroll
             initialSpaceScroll: false,  // Holds the initial state of enableSpaceScroll
             innerSelector: '',          // settings.selector + 'inner', for selecting the .diva-inner element
+            isActiveDiva: true,         // In the case that multiple diva panes exist on the same page, this should have events funneled to it.
             isScrollable: true,         // Used in enable/disableScrollable public methods
             itemTitle: '',              // The title of the document
             lastPageLoaded: -1,         // The ID of the last page loaded (value set later)
@@ -1934,6 +1935,9 @@ window.divaPlugins = [];
                 // Catch the key presses in document
                 $(document).keydown(function (event)
                 {
+                    if(!settings.isActiveDiva)
+                        return;
+                    
                     // Space or page down - go to the next page
                     if ((settings.enableSpaceScroll && event.keyCode === spaceKey) || (settings.enableKeyScroll && event.keyCode === pageDownKey))
                     {
@@ -3084,6 +3088,16 @@ window.divaPlugins = [];
                 'height': parseInt(pageHeight, 10),
                 'width': parseInt(pageWidth, 10)
             };
+        };
+
+        this.activate = function ()
+        {
+            settings.isActiveDiva = true;
+        };
+
+        this.deactivate = function ()
+        {
+            settings.isActiveDiva = false;
         };
 
         // Destroys this instance, tells plugins to do the same (for testing)
