@@ -23,14 +23,66 @@ section.page {
     color: #000;
 }
 
-.navbar .fa-bars {
-    font-size: 21px;
+/* navbar hamburger icon */
+.navbar-toggle .icon-bar {
+    display: block;
+    width: 22px;
+    height: 2px;
+    border-radius: 1px;
+    background-color: #000;
+    margin-bottom: 5px;
 }
 
 .navbar-toggle {
-    padding: 0;
-    margin-bottom: 0;
-    margin-top: 18px;
+    margin-top: 23px;
+}
+
+/* navbar collapse (responsive) */
+
+.navbar-collapse.in {
+    overflow-y: auto;
+}
+.fade {
+  opacity: 0;
+  -webkit-transition: opacity 0.15s linear;
+  -o-transition: opacity 0.15s linear;
+  transition: opacity 0.15s linear;
+}
+.fade.in {
+  opacity: 1;
+}
+.collapse {
+  display: none;
+}
+.collapse.in {
+  display: block;
+}
+tr.collapse.in {
+  display: table-row;
+}
+tbody.collapse.in {
+  display: table-row-group;
+}
+.collapsing {
+  position: relative;
+  height: 0;
+  overflow: hidden;
+  -webkit-transition: height 0.35s ease;
+  -o-transition: height 0.35s ease;
+  transition: height 0.35s ease;
+}
+
+@media (max-width: 767px) {
+    .navbar-nav {
+        text-align: center;
+    }
+}
+
+@media (max-width: 767px) {
+    .navbar-collapse {
+        padding-top: 5px;
+        margin-bottom: 5px;
+    }
 }
 
 /* front page */
@@ -90,7 +142,7 @@ section#features h2 {
 }
 
 .ficon h3 {
-    margin-top: 10px;
+    margin-top: -.2em;
 }
 
 .vcenter {
@@ -105,6 +157,18 @@ section#features h2 {
 
 .feature.lastf {
     margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+    section.feature h2 {
+        margin: 0 0 .3em 0;
+    }
+    section.feature {
+        padding: 2em 0 3em 0;
+    }
+    section#features h3 {
+        margin: 0 0 .2em 0;
+    }
 }
 
 /* about */
@@ -129,7 +193,18 @@ article#about {
     background-color: #fff;
 }
 
+@media (max-width: 767px) {
+    .sponsors img {
+        display: block;
+        width: 100% \9;
+        max-width: 100%;
+        height: auto;
+        margin: 0 auto;
+    }
+}
+
 /* footer */
+
 .footnav {
     margin-bottom: 3em;
 }
@@ -175,6 +250,30 @@ section#footer p, section#footer nav {
 
 footer p {
     margin: 0;
+}
+
+#footer li > p {
+    color: #bbb;
+}
+
+@media (min-width: 768px) {
+    #footer li > p {
+        display: none;
+    }
+}
+
+/* responsive collapse */
+@media (max-width: 767px) {
+    #footer li {
+        margin-bottom: .5em;
+    }
+    section#footer ul > li {
+        padding-right: 0;
+        float: none;
+    }
+    section#footer ul {
+        text-align: center;
+    }
 }
 
 /* try it */
