@@ -1567,8 +1567,8 @@ window.divaPlugins = [];
         // Called in init and when the orientation changes
         var adjustMobileWebkitDims = function ()
         {
-            settings.panelHeight = window.innerHeight - $(settings.outerSelector).offset().top - $(settings.outerSelector).css('margin-top');
-            settings.panelWidth = (settings.enableAutoWidth) ? window.innerWidth - ($(settings.outerSelector).css('margin-left') + $(settings.outerSelector).css('margin-right')) : window.innerWidth;
+            settings.panelHeight = window.innerHeight - parseInt($(settings.outerSelector).offset().top) - parseInt($(settings.outerSelector).css('margin-top'));
+            settings.panelWidth = (settings.enableAutoWidth) ? window.innerWidth - (parseInt($(settings.outerSelector).css('margin-left')) + parseInt($(settings.outerSelector).css('margin-right'))) : window.innerWidth;
 
             if (settings.enableAutoHeight)
                 document.getElementById(settings.ID + "outer").style.height = settings.panelHeight + "px";
