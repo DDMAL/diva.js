@@ -49,7 +49,19 @@ Allows you to highlight regions of a page image
                         var divClass = highlightObj[pageIdx].divClass;
 
                         var maxZoom = divaInstance.getMaxZoomLevel();
-                        var zoomDifference = maxZoom - divaInstance.getZoomLevel();
+                        var zoomDifference;
+
+                        if (divaSettings.inGrid)
+                        {
+                            var maxZoomWidth = divaInstance.getPageDimensionsAtZoomLevel(pageIdx, maxZoom).width;
+                            var currentWidth = pageObj.clientWidth;
+                            var widthProportion = maxZoomWidth / currentWidth;
+                            zoomDifference = Math.log(widthProportion) / Math.log(2);
+                        } 
+                        else
+                        {
+                            zoomDifference = maxZoom - divaInstance.getZoomLevel();
+                        }          
 
                         var j = regions.length;
                         while (j--)

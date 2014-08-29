@@ -38,8 +38,10 @@
   background-position: center;
   border: 1px solid #99bbe8;
 }
-.button:hover {
-  background-color: #fdfdfd;
+@media screen and (min-device-width: 769px) {
+  .button:hover {
+    background-color: #fdfdfd;
+  }
 }
 .diva-title {
   text-align: center;
@@ -190,7 +192,6 @@
   position: absolute;
   left: 0;
   right: 0;
-  margin: 0 auto;
 }
 .diva-outer .diva-inner .diva-document-page .diva-page-tools {
   position: absolute;
@@ -204,6 +205,19 @@
   height: 25px;
   width: 25px;
   cursor: pointer;
+}
+.diva-outer .diva-inner .diva-page-vertical {
+  margin: 0 auto;
+  display: inline-block;
+}
+.diva-outer .diva-inner .diva-page-horizontal {
+  vertical-align: middle;
+  display: inline-block;
+  top: 50%;
+  transform: translate(0, -50%);
+  -webkit-transform: translate(0, -50%);
+  -moz-transform: translate(0, -50%);
+  -ms-transform: translate(0, -50%);
 }
 .diva-outer .diva-inner .diva-row {
   position: absolute;
