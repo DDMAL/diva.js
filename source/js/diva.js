@@ -1554,7 +1554,7 @@ window.divaPlugins = [];
             return location.protocol + '//' + location.host + location.pathname + '#' + getURLHash();
         };
 
-        // Will return true if something has changed, false otherwise
+        // updates panelHeight/panelWidth on resize
         var adjustBrowserDims = function ()
         {
             var outerElem = document.getElementById(settings.ID + 'outer');
