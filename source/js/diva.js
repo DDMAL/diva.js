@@ -712,6 +712,8 @@ window.divaPlugins = [];
                 pageDiv.style.width = pageWidth + 'px';
                 pageDiv.style.height = pageHeight + 'px';
                 pageDiv.style.left = leftOffset + 'px';
+                pageDiv.setAttribute('data-index', pageIndex);
+                pageDiv.setAttribute('data-filename', filename);
                 pageDiv.title = "Page " + (pageIndex + 1);
  
                 rowDiv.appendChild(pageDiv);
@@ -1381,14 +1383,13 @@ window.divaPlugins = [];
         // Called after double-clicking on a page in grid view
         var handleGridDoubleClick = function (event)
         {
-            // Figure out the page that was clicked, scroll to that page
-            var sel = document.getElementById(settings.ID + "outer");
-            var centerX = (event.pageX - sel.getBoundingClientRect().left) + sel.scrollLeft;
-            var centerY = (event.pageY - sel.getBoundingClientRect().top) + sel.scrollTop;
-            var rowIndex = Math.floor(centerY / settings.rowHeight);
-            var colIndex = Math.floor(centerX / (settings.panelWidth / settings.pagesPerRow));
-            var pageIndex = rowIndex * settings.pagesPerRow + colIndex;
+            var pageIndex = parseInt($(this).attr('data-index'), 10);
             settings.goDirectlyTo = pageIndex;
+            var pageOffset = $(this).offset();
+            var zoomProportion = getPageData(pageIndex, "w") / $(this).width();
+
+            settings.horizontalOffset = (event.pageX - pageOffset.left) * zoomProportion;
+            settings.verticalOffset = (event.pageY - pageOffset.top) * zoomProportion;
 
             // Leave grid view, jump directly to the desired page
             settings.inGrid = false;
@@ -1610,7 +1611,7 @@ window.divaPlugins = [];
 
             $(settings.outerSelector).on('dblclick', '.diva-row', function (event)
             {
-                handleGridDoubleClick.call(this, event);
+                handleGridDoubleClick.call($(event.target).parent(), event);
             });
 
         };
@@ -1780,7 +1781,7 @@ window.divaPlugins = [];
                         tapDistance = distance(firstTapCoordinates.pageX, touchEvent.pageX, firstTapCoordinates.pageY, touchEvent.pageY);
                         if (tapDistance < 50 && settings.zoomLevel < settings.maxZoomLevel)
                             if (settings.inGrid)
-                                handleGridDoubleClick.call(this, touchEvent);
+                                handleGridDoubleClick.call($(event.target).parent(), touchEvent);
                             else
                                 handleDocumentDoubleClick.call(this, touchEvent);
 
