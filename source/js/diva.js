@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2011-2014 by Wendy Liu, Evan Magoni, Andrew Hankinson, Laurent Pugin
+Copyright (C) 2011-2014 by Wendy Liu, Evan Magoni, Andrew Hankinson, Andrew Horwitz, Laurent Pugin
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -208,9 +208,8 @@ window.divaPlugins = [];
         // Checks if a page or tile is within the viewport horizontally
         var isHorizontallyInViewport = function (left, right)
         {
-            var panelWidth = settings.panelWidth;
             var leftOfViewport = $("#" + settings.ID + "outer").scrollLeft() - settings.viewportMargin;
-            var rightOfViewport = leftOfViewport + panelWidth + settings.viewportMargin * 2;
+            var rightOfViewport = leftOfViewport + settings.panelWidth + settings.viewportMargin * 2;
 
             var leftVisible = left >= leftOfViewport && left <= rightOfViewport;
             var middleVisible = left <= leftOfViewport && right >= rightOfViewport;
@@ -222,9 +221,8 @@ window.divaPlugins = [];
         // Checks if a page or tile is within the viewport vertically
         var isVerticallyInViewport = function (top, bottom)
         {
-            var panelHeight = settings.panelHeight;
             var topOfViewport = $("#" + settings.ID + "outer" ).scrollTop() - settings.viewportMargin;
-            var bottomOfViewport = topOfViewport + panelHeight + settings.viewportMargin * 2;
+            var bottomOfViewport = topOfViewport + settings.panelHeight + settings.viewportMargin * 2;
 
             var topVisible = top >= topOfViewport && top <= bottomOfViewport;
             var middleVisible = top <= topOfViewport && bottom >= bottomOfViewport;
@@ -1252,43 +1250,25 @@ window.divaPlugins = [];
         // Should only be called after changing settings.inFullscreen
         var handleModeChange = function (changeView)
         {
-            var storedOffsetY = false;
-            var storedOffsetX = false;
-            // Save some offsets (required for maintaining scroll position), if it's not the initial load
-            if (settings.oldZoomLevel >= 0)
-            {
-                if (!settings.inGrid)
-                {
-                    if (settings.inFullscreen)
-                    {
-                        settings.verticalOffset = getYOffset(true) + ($(settings.parentSelector).height() / 2) - ($(settings.outerSelector).height() / 2 + $(settings.outerSelector).offset().top);
-                        settings.horizontalOffset = getXOffset(true) + ($(settings.parentSelector).width() / 2) - ($(settings.outerSelector).width() / 2 + $(settings.outerSelector).offset().left);  
-                    }
-                    else
-                    {
-                        storedOffsetY = getYOffset(true);
-                        storedOffsetX = getXOffset(true);
-                    }
-                }
-            }
+            var storedOffsetY = getYOffset(true);
+            var storedOffsetX = getXOffset(true);
+            var outerElem = document.getElementById(settings.ID + "outer");
+
+            settings.panelHeight = outerElem.clientHeight - (outerElem.scrollWidth > outerElem.clientWidth ? settings.scrollbarWidth : 0); 
+            settings.panelWidth = outerElem.clientWidth - (outerElem.scrollHeight > outerElem.clientHeight ? settings.scrollbarWidth : 0); 
+            var storedHeight = settings.panelHeight;
+            var storedWidth = settings.panelWidth;
 
             // Toggle the classes
             $(settings.outerSelector).toggleClass('diva-fullscreen');
             $('body').toggleClass('diva-hide-scrollbar');
             $(settings.parentSelector).toggleClass('diva-full-width');
 
-            // Reset the panel dimensions
-            var outerElem = document.getElementById(settings.ID + "outer");
-            settings.panelHeight = outerElem.clientHeight - (outerElem.scrollWidth > outerElem.clientWidth ? settings.scrollbarWidth : 0); 
-            settings.panelWidth = outerElem.clientWidth - (outerElem.scrollHeight > outerElem.clientHeight ? settings.scrollbarWidth : 0); 
-            //$(settings.innerSelector).width(settings.panelWidth);
-
             // Adjust margin a bit if in mobile
             if(settings.mobileWebkit)
             {
                 var leftMarginComped = parseInt($(settings.outerSelector).css('margin-left'), 10) - parseInt($('body').css('margin-left'), 10);
                 $(settings.outerSelector).css('margin-left', leftMarginComped);
-
             }
 
             // Execute callbacks
@@ -1301,10 +1281,20 @@ window.divaPlugins = [];
                 adjustBrowserDims();
             }            
 
-            if (storedOffsetY !== false)
-            {         
-                settings.verticalOffset = storedOffsetY + ($(settings.outerSelector).height() / 2 + $(settings.outerSelector).offset().top) - ($(settings.parentSelector).height() / 2);
-                settings.horizontalOffset = storedOffsetX + ($(settings.outerSelector).width() / 2 + $(settings.outerSelector).offset().left) - ($(settings.parentSelector).width() / 2);  
+            if (settings.oldZoomLevel >= 0 && !settings.inGrid)
+            {
+                var newHeight = settings.panelHeight;
+                var newWidth = settings.panelWidth;
+                if(settings.inFullscreen)
+                {
+                    settings.verticalOffset = ((newHeight - storedHeight) / 2) + storedOffsetY;
+                    settings.horizontalOffset = ((newWidth - storedWidth) / 2) + storedOffsetX;
+                }
+                else
+                {
+                    settings.verticalOffset = storedOffsetY - ((storedHeight - newHeight) / 2);
+                    settings.verticalOffset = storedOffsetX - ((storedWidth - newWidth) / 2);
+                }
             }
 
             // Used by setState when we need to change the view and the mode
@@ -1559,10 +1549,11 @@ window.divaPlugins = [];
         var adjustBrowserDims = function ()
         {
             var outerElem = document.getElementById(settings.ID + 'outer');
-            settings.horizontalOffset = getXOffset(true);
-            settings.verticalOffset = getYOffset(true);
             settings.panelHeight = outerElem.clientHeight - (outerElem.scrollWidth > outerElem.clientWidth ? settings.scrollbarWidth : 0); 
             settings.panelWidth = outerElem.clientWidth - (outerElem.scrollHeight > outerElem.clientHeight ? settings.scrollbarWidth : 0); 
+
+            settings.horizontalOffset = getXOffset(true);
+            settings.verticalOffset = getYOffset(true);
 
             gotoPage(settings.currentPageIndex, settings.verticalOffset, settings.horizontalOffset);
             return true;
@@ -2291,11 +2282,6 @@ window.divaPlugins = [];
                             settings.goDirectlyTo = iParamPage;
                             settings.currentPageIndex = iParamPage;
                         }
-                        else
-                        {
-                            settings.goDirectlyTo = 0;
-                            settings.currentPageIndex = 0;
-                        }
                     }
                     else
                     {
@@ -2307,11 +2293,6 @@ window.divaPlugins = [];
                         {
                             settings.goDirectlyTo = pParam;
                             settings.currentPageIndex = pParam;
-                        }
-                        else
-                        {
-                            settings.goDirectlyTo = 0;
-                            settings.currentPageIndex = 0;
                         }
                     }
 
@@ -2843,8 +2824,8 @@ window.divaPlugins = [];
             else if (isPageValid(state.p))
                 settings.goDirectlyTo = state.p;
 
-            settings.horizontalOffset = parseInt(state.x, 10);
-            settings.verticalOffset = parseInt(state.y, 10);
+            horizontalOffset = parseInt(state.x, 10);
+            verticalOffset = parseInt(state.y, 10);
 
             // Only change the zoom if state.z is valid
             if (state.z >= settings.minZoomLevel && state.z <= settings.maxZoomLevel)
@@ -2859,9 +2840,14 @@ window.divaPlugins = [];
                 // The parameter determines if we need to change the view as well
                 settings.inFullscreen = state.f;
                 handleModeChange(settings.inGrid !== state.g);
+                settings.horizontalOffset = horizontalOffset;
+                settings.verticalOffset = verticalOffset;
+                gotoPage(pageIndex, settings.verticalOffset, settings.horizontalOffset);
             }
             else
             {
+                settings.horizontalOffset = horizontalOffset;
+                settings.verticalOffset = verticalOffset;
                 // Don't need to change the mode, may need to change view
                 if (settings.inGrid !== state.g)
                 {

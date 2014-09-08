@@ -34,8 +34,8 @@ asyncTest("Scrolling in grid view", function () {
 
             var self = this;
             setTimeout(function () {
-                equal(self.getCurrentPage(), 26, "The page should now be 27 (index of 26)");
-                equal($(settings.selector + 'current-page').text(), '27', "The toolbar should have been updated");
+                equal(self.getCurrentPage(), 24, "The page should now be 25 (index of 24)");
+                equal($(settings.selector + 'current-page').text(), '25', "The toolbar should have been updated");
                 start();
             }, 10);
         }
@@ -115,14 +115,14 @@ asyncTest("Scrolling and subsequently zooming in Grid view", function () {
 
             var self = this;
             setTimeout(function () {
-                equal(self.getCurrentPageIndex(), 170, "The current page should be 170 (10050px down, 1000px viewport)");
+                equal(self.getCurrentPageIndex(), 160, "The current page should be 170 (10050px down, 1000px viewport)");
                 start();
 
                 $(settings.selector + 'grid-slider').val(8);
-                equal(self.getCurrentPageIndex(), 170, "The current page should still be 170");
+                equal(self.getCurrentPageIndex(), 160, "The current page should still be 170");
 
                 $(settings.selector + 'grid-slider').val(2);
-                equal(self.getCurrentPageIndex(), 170, "The current page should still be 170");
+                equal(self.getCurrentPageIndex(), 160, "The current page should still be 170");
             }, 10);
         }
     });

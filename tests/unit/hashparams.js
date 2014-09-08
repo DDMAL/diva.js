@@ -144,14 +144,14 @@ hashParamTest("vertical offset (y) - negative value", "y", "-600", function (set
 
 multipleHashParamTest("vertical offset (y) and page number (p)", {y: 500, p: 50}, function (settings) {
     var topScroll = $(settings.outerSelector).scrollTop();
-    var expectedTopScroll = 52401;
+    var expectedTopScroll = 52922;
     equal(settings.currentPageIndex, 49, "Current page should be 50 (index of 49)");
     equal(topScroll, expectedTopScroll, "Should be heightAbovePages + 500 pixels of scroll from the top + page y-center");
 
     // Check that the horizontal scroll hasn't been weirdly affected
     var leftScroll = $(settings.outerSelector).scrollLeft();
-    var expectedLeftScroll = (settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2 - (settings.panelWidth + settings.scrollbarWidth)) / 2;
-    equal(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should just center it, as usual");
+    var expectedLeftScroll = (settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2 - (settings.panelWidth)) / 2 - settings.scrollbarWidth;
+    equal(leftScroll, parseInt(expectedLeftScroll, 10), "Horizontal scroll should just center it, as usual");
 }, {enableFilename: false, zoomLevel: 2});
 
 /*
@@ -175,7 +175,7 @@ hashParamTest("horizontal offset (x) - negative value", "x", "-100", function (s
 
 multipleHashParamTest("horizontal offset (x) and page number (p)", {x: 100, p: 50}, function (settings) {
     var topScroll = $(settings.outerSelector).scrollTop();
-    var expectedTopScroll = 52251;
+    var expectedTopScroll = 52772;
     equal(topScroll, expectedTopScroll, "vertical scroll should be just to page 50");
 
     var leftScroll = $(settings.outerSelector).scrollLeft();
@@ -186,7 +186,7 @@ multipleHashParamTest("horizontal offset (x) and page number (p)", {x: 100, p: 5
 
 multipleHashParamTest("horizontal offset (x), vertical offset (y), page number (p)", {x: 100, y: 200, p: 50}, function (settings) {
     var topScroll = $(settings.outerSelector).scrollTop();
-    var expectedTopScroll = 52101;
+    var expectedTopScroll = 52622;
     equal(topScroll, expectedTopScroll, "vertical scroll should be to page 50 + 200 + page y-center");
 
     var leftScroll = $(settings.outerSelector).scrollLeft();
