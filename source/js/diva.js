@@ -1692,16 +1692,6 @@ window.divaPlugins = [];
                     });
                 }
 
-                // Listen to orientation change event
-                $(window).bind('orientationchange', function (event)
-                {
-                    adjustBrowserDims();
-
-                    // Reload the viewer to account for the resized viewport
-                    settings.goDirectlyTo = settings.currentPageIndex;
-                    loadViewer();
-                });
-
                 // Inertial scrolling
                 $(settings.outerSelector).kinetic({
                     triggerHardware: true
@@ -1885,6 +1875,23 @@ window.divaPlugins = [];
                             settings.horizontalOffset = getXOffset(true);
                             loadViewer();
                         }, 200);
+                    });
+                }
+                else
+                {
+                    var orientationEvent = "onorientationchange" in window ? "orientationchange" : "resize";
+                    $(window).bind(orientationEvent, function (event)
+                    {
+                        var oldWidth = settings.panelWidth;
+                        var oldHeight = settings.panelHeight;
+                        adjustBrowserDims();
+
+                        settings.horizontalOffset -= (settings.panelWidth - oldWidth) / 2;
+                        settings.verticalOffset -= (settings.panelHeight - oldHeight) / 2;
+
+                        // Reload the viewer to account for the resized viewport
+                        settings.goDirectlyTo = settings.currentPageIndex;
+                        loadViewer();
                     });
                 }
             }
