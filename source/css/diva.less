@@ -14,6 +14,7 @@
             .hidden;
             padding: 8px;
             float: left;
+            clear: left;
         }
 
         .diva-zoom-buttons-label {
@@ -254,15 +255,23 @@
 }
 
 .zoom-slider {
-    position:relative;
-    top:0.6em;
-    display:none;
+    position: relative;
+    top: 0.6em;
+    display: none;
+    float: left;
+    @media (max-width: 480px) {
+        width: 100px;
+    }
 }
 
 .grid-slider {
-    position:relative;
-    top:0.6em;
-    display:none;
+    position: relative;
+    top: 0.6em;
+    display: none;
+    float: left;
+    @media (max-width: 480px) {
+        width: 100px;
+    }
 }
 
 // The loading indicator, shown if the AJAX request is slow

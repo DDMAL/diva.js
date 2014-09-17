@@ -2072,13 +2072,13 @@ window.divaPlugins = [];
                 if (!settings.inFullscreen)
                 {
                     // Leaving fullscreen
-                    $(settings.selector + 'tools-left').after($(settings.selector + 'tools-right'));
+                    //$(settings.selector + 'tools-left').after($(settings.selector + 'tools-right'));
                     $(settings.selector + 'tools-left').removeClass('in-fullscreen');
                 }
                 else
                 {
                     // Entering fullscreen
-                    $(settings.selector + 'tools-right').after($(settings.selector + 'tools-left'));
+                    //$(settings.selector + 'tools-right').after($(settings.selector + 'tools-left'));
                     $(settings.selector + 'tools-left').addClass('in-fullscreen');
                 }
             };
