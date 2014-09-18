@@ -752,3 +752,66 @@ var diva = (function() {
     return pub;
 }());
 
+var multiDiva;
+
+var multiDivaController = function ()
+{
+    var active;
+
+    $(document).on('click', function(e)
+    {
+        updateActive($(e.target));
+    });
+
+    //parameter should already be selected in jQuery
+    var updateActive = function (target)
+    {
+        var nearestOuter;
+
+        //these will find 0 or 1 objects, never more
+        var findOuter = target.find('.diva-outer');
+        var closestOuter = target.closest('.diva-outer');
+
+        if (findOuter.length > 0) //clicked on something that was not either a parent or sibling of diva-outer
+        {
+            nearestOuter = findOuter;
+        }
+        else if (closestOuter.length > 0) //clicked on something that was a child of diva-outer
+        {
+            nearestOuter = closestOuter;
+        }
+        else //clicked on something unrelated
+        {
+            return;
+        }
+
+        //activate this one
+        nearestOuter.parent().data('diva').activate();
+        active = nearestOuter.parent();
+
+        //deactivate all the others
+        var curOuter = $(".diva-outer").length;
+        while (curOuter--)
+        {
+            if ($($(".diva-outer")[curOuter]).attr('id') != nearestOuter.attr('id'))
+                $($(".diva-outer")[curOuter]).parent().data('diva').deactivate();
+        }
+    };
+
+    this.getActive = function()
+    {
+        return active;
+    };
+};
+
+diva.Events.subscribe("ViewerDidLoad", function(settings)
+{
+    if($(".diva-outer").length > 1){
+        //make sure there's only one active diva; deactivate any newer ones
+        this.deactivate();
+
+        //create the controller if it doesn't already exist
+        if(!multiDiva)
+            multiDiva = new multiDivaController();
+    }
+});
