@@ -234,6 +234,8 @@ asyncTest("getState()", function () {
                 for (var key in expected) {
                     equal(actual[key], expected[key], "Checking key '" + key + "'");
                 }
+            } else {
+                expect(0);
             }
 
             start();
