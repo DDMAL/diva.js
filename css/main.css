@@ -179,6 +179,11 @@ section#features h2 {
     }
 }
 
+.citation {
+    margin-top: 3em;
+    color: #ccc;
+}
+
 /* about */
 section.about {
     padding-bottom:0em;
