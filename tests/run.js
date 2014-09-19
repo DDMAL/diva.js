@@ -36,7 +36,8 @@ function waitFor(testFx, onReady, timeOutMillis) {
 }
 
 // If called with arguments, set the testURL to the first argument
-var arg1 = (require('system').args[1]);
+var system = require('system');
+var arg1 = system.args[1];
 if (!arg1)
 {
     var testURL = "tests/index.html";
@@ -51,15 +52,14 @@ else
 var page = require('webpage').create();
 
 // patch to remove get/setState tests from Travis CI build due to off-by-one pixel error when run in Travis
-var isTravisCI = function () {
-    var env = require('system').env;
-    for (var key in env)
-    {
-        if (key === 'TRAVIS')
-            return true;
-    }
-    return false;
-};
+var env = system.env;
+var isTravis = false;
+
+for (var key in env)
+{
+    if (key === 'TRAVIS')
+        isTravis = true;
+}
 
 // Route "console.log()" calls from within the Page context to the main Phantom context (i.e. current "this")
 page.onConsoleMessage = function(msg) {
@@ -75,7 +75,7 @@ page.settings.localToRemoteUrlAccessEnabled = false;
 
 page.open(testURL, function(status){
     // patch to remove get/setState tests from Travis CI build due to off-by-one pixel error when run in Travis
-    if (isTravisCI())
+    if (isTravis)
         page.evaluate(function() { window.isTravis = true; });
     else
         page.evaluate(function() { window.isTravis = false; });
