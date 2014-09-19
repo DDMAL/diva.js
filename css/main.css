@@ -1,6 +1,14 @@
 ---
 ---
 /* global */
+
+/* clearfix */
+.diva-tools:after, .diva-tools-right:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
 body {
     -webkit-font-smoothing: antialiased;
     font-size: 16px;
@@ -292,6 +300,52 @@ footer p {
 }
 .diva-input {
     width: 38px;
+}
+
+/* styles for diva on small mobile devices */
+@media screen and (max-width: 480px) {
+    .diva-outer {
+        height: 400px;
+    }
+
+    .diva-buttons-label {
+        float: none;
+        padding: 0px 0px !important;
+    }
+
+    .diva-tools .diva-tools-left .diva-buttons-label {
+        float: none;
+    }
+
+    .diva-tools .diva-tools-right {
+        float: none;
+    }
+
+    .diva-tools .diva-tools-right .diva-page-nav .diva-goto-form {
+        float: none;
+        padding-top: 0;
+    }
+
+    .diva-tools .diva-tools-right .diva-page-nav .diva-goto-form .diva-input {
+        /* padding-top: inherit; */
+    }
+
+    .diva-goto-form input[type="submit"] {
+        padding:3px .4em;
+    }
+
+    .diva-page-nav {
+        float: right !important;
+        line-height: inherit !important;
+    }
+
+    .diva-page-label {
+        line-height: inherit !important;
+        /* not sure if all of these need to be here */
+        float: left;
+        padding-top: 1px;
+        padding-right: .5em;
+    }
 }
 
 /* documentation */
