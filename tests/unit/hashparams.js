@@ -12,7 +12,7 @@ var multipleHashParamTest = function (testName, hashParams, onReadyCallback, set
         var hashValue;
         var first = true;
         var prefix = '';
-        for (hashParam in hashParams) {
+        for (var hashParam in hashParams) {
             hashValue = hashParams[hashParam];
 
             window.location.hash += prefix + hashParam + suffix + '=' + hashValue;
@@ -37,7 +37,7 @@ var multipleHashParamTest = function (testName, hashParams, onReadyCallback, set
 
         $.tempDiva(allSettings);
     });
-}
+};
 
 var hashParamTest = function (testName, hashParam, hashValue, onReadyCallback, settings) {
     // Has to be done this way because {hashParam: hashValue} does not work
@@ -48,7 +48,8 @@ var hashParamTest = function (testName, hashParam, hashValue, onReadyCallback, s
 
 hashParamTest("grid (g)", "g", "true", function (settings) {
     ok(settings.inGrid, "inGrid setting should be true");
-    ok($(settings.selector + 'grid-slider').is(':visible'), "Grid slider should be visible");
+    ok($(settings.selector + 'grid-out-button').is(':visible'), "Grid buttons (-) should be visible");
+    ok($(settings.selector + 'grid-in-button').is(':visible'), "Grid buttons (+) should be visible");
     ok(!$(settings.selector + 'zoom-slider').is(':visible'), "Zoom slider should not be visible");
     equal($('.diva-document-page').length, 0, "There should be no document pages");
     notEqual($('.diva-row').length, 0, "There should be at least one row");
@@ -56,7 +57,7 @@ hashParamTest("grid (g)", "g", "true", function (settings) {
 
 hashParamTest("fullscreen (f)", "f", "true", function (settings) {
     ok(settings.inFullscreen, "inFullscreen setting should be true");
-    ok($('body').hasClass('diva-hide-scrollbar'), "The body element should have the hide-scrollbar class")
+    ok($('body').hasClass('diva-hide-scrollbar'), "The body element should have the hide-scrollbar class");
 });
 
 multipleHashParamTest("grid (g) and fullscreen (f)", {g: "true", f: "true"}, function (settings) {
@@ -79,7 +80,7 @@ multipleHashParamTest("zoom level (z) and grid (g)", {z: "1", g: "true"}, functi
     // Now let's switch into document view and see if the zoom level is preserved
     $(settings.selector + 'grid-icon').click();
     equal(settings.zoomLevel, 1, "Zoom level setting should still be 1");
-    equal($(settings.selector + 'zoom-slider-label').text(), "Zoom level: 1", "Zoom slider label should show a zoom level of 1");
+    equal($(settings.selector + 'zoom-buttons-label').text(), "Zoom level: 1", "Zoom buttons label should show a zoom level of 1");
 });
 
 multipleHashParamTest("zoom level (z) and fullscreen (f)", {z: "1", f: "true"}, function (settings) {
@@ -87,10 +88,10 @@ multipleHashParamTest("zoom level (z) and fullscreen (f)", {z: "1", f: "true"}, 
     ok(settings.inFullscreen, "Should be in fullscreen initially");
 
     // Check that we're actually in fullscreen mode
-    ok($('body').hasClass('diva-hide-scrollbar'), "The body element should have the hide-scrollbar class")
+    ok($('body').hasClass('diva-hide-scrollbar'), "The body element should have the hide-scrollbar class");
 
     // Check that the zoom level is actually 1
-    equal($(settings.selector + 'zoom-slider-label').text(), "Zoom level: 1", "Zoom slider label should show a zoom level of 1");
+    equal($(settings.selector + 'zoom-buttons-label').text(), "Zoom level: 1", "Zoom buttons label should show a zoom level of 1");
 });
 
 hashParamTest("pagesPerRow (n) - valid value", "n", "3", function (settings) {
@@ -106,7 +107,7 @@ multipleHashParamTest("pagesPerRow (n) and grid (g)", {n: "3", g: "true"}, funct
     ok(settings.inGrid, "Should be in grid initially");
 
     // Check that the pages per row setting is actually 3
-    equal($(settings.selector + 'grid-slider-label').text(), "Pages per row: 3", "Grid slider label should show 3 pages per row");
+    equal($(settings.selector + 'grid-buttons-label').text(), "Pages per row: 3", "Grid buttons label should show 3 pages per row");
     equal($(settings.selector + 'row-0').children().length, 3, "The first row should have 3 pages");
 });
 
@@ -133,7 +134,7 @@ multipleHashParamTest("page number (p), grid (g)", {p: "100", g: "true"}, functi
 
 hashParamTest("vertical offset (y) - positive value", "y", "600", function (settings) {
     var topScroll = $(settings.outerSelector).scrollTop();
-    equal(topScroll, 600, "Should have scrolled 600 vertically");
+    equal(topScroll, 250, "Should have scrolled 250 (600 = top of page - viewport y-center) vertically");
 });
 
 hashParamTest("vertical offset (y) - negative value", "y", "-600", function (settings) {
@@ -143,58 +144,54 @@ hashParamTest("vertical offset (y) - negative value", "y", "-600", function (set
 
 multipleHashParamTest("vertical offset (y) and page number (p)", {y: 500, p: 50}, function (settings) {
     var topScroll = $(settings.outerSelector).scrollTop();
-    var expectedTopScroll = 52751;
+    var expectedTopScroll = 52922;
     equal(settings.currentPageIndex, 49, "Current page should be 50 (index of 49)");
-    equal(topScroll, expectedTopScroll, "Should be heightAbovePages + 500 pixels of scroll from the top");
+    equal(topScroll, expectedTopScroll, "Should be heightAbovePages + 500 pixels of scroll from the top + page y-center");
 
     // Check that the horizontal scroll hasn't been weirdly affected
     var leftScroll = $(settings.outerSelector).scrollLeft();
-    var expectedLeftScroll = (settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2 - settings.panelWidth) / 2;
-    equal(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should just center it, as usual");
+    var expectedLeftScroll = (settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2 - (settings.panelWidth)) / 2 - settings.scrollbarWidth;
+    equal(leftScroll, parseInt(expectedLeftScroll, 10), "Horizontal scroll should just center it, as usual");
 }, {enableFilename: false, zoomLevel: 2});
+
+/*
+var desiredHorizontalCenter = settings.widthLeftOfPages[pageIndex] + horizontalOffset;
+            var desiredLeft = desiredHorizontalCenter - ($(settings.outerSelector).width() / 2);
+            */
 
 hashParamTest("horizontal offset (x) - positive value", "x", "100", function (settings) {
     var leftScroll = $(settings.outerSelector).scrollLeft();
-    var expectedLeftScroll = (settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2 - settings.panelWidth) / 2 + 100;
+    var halfMaxWidth = (settings.maxWidths[settings.zoomLevel] / 2 + settings.horizontalPadding + 100);
+    var expectedLeftScroll = (halfMaxWidth > settings.panelWidth) ? (halfMaxWidth - settings.panelWidth) / 2 : 0;
     equal(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
 });
 
 hashParamTest("horizontal offset (x) - negative value", "x", "-100", function (settings) {
     var leftScroll = $(settings.outerSelector).scrollLeft();
-    var expectedLeftScroll = (settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2 - settings.panelWidth) / 2 - 100;
+    var halfMaxWidth = (settings.maxWidths[settings.zoomLevel] / 2 + settings.horizontalPadding - 100);
+    var expectedLeftScroll = (halfMaxWidth > settings.panelWidth) ? (halfMaxWidth - settings.panelWidth) / 2 : 0;
     equal(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the left");
 });
 
 multipleHashParamTest("horizontal offset (x) and page number (p)", {x: 100, p: 50}, function (settings) {
     var topScroll = $(settings.outerSelector).scrollTop();
-    var expectedTopScroll = 52251;
+    var expectedTopScroll = 52772;
     equal(topScroll, expectedTopScroll, "vertical scroll should be just to page 50");
 
     var leftScroll = $(settings.outerSelector).scrollLeft();
-    var expectedLeftScroll = (settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2 - settings.panelWidth) / 2 + 100;
+    var halfMaxWidth = (settings.maxWidths[settings.zoomLevel] / 2 + settings.horizontalPadding + 100);
+    var expectedLeftScroll = (halfMaxWidth > settings.panelWidth) ? (halfMaxWidth - settings.panelWidth) / 2 : 0;
     equal(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
 }, {enableFilename: false});
 
 multipleHashParamTest("horizontal offset (x), vertical offset (y), page number (p)", {x: 100, y: 200, p: 50}, function (settings) {
     var topScroll = $(settings.outerSelector).scrollTop();
-    var expectedTopScroll = 52451;
-    equal(topScroll, expectedTopScroll, "vertical scroll should be to page 50 + 200");
+    var expectedTopScroll = 52622;
+    equal(topScroll, expectedTopScroll, "vertical scroll should be to page 50 + 200 + page y-center");
 
     var leftScroll = $(settings.outerSelector).scrollLeft();
-    var expectedLeftScroll = (settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2 - settings.panelWidth) / 2 + 100;
+    var halfMaxWidth = (settings.maxWidths[settings.zoomLevel] / 2 + settings.horizontalPadding + 100);
+    var expectedLeftScroll = (halfMaxWidth > settings.panelWidth) ? (halfMaxWidth - settings.panelWidth) / 2 : 0;
     equal(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
 }, {enableFilename: false});
 
-hashParamTest("viewer size (h) - valid value", "h", "450", function (settings) {
-    equal($(settings.outerSelector).height(), 450, "Viewer height should be 450");
-});
-
-hashParamTest("viewer size (w) - valid value", "w", "450", function (settings) {
-    equal($(settings.outerSelector).width(), 450, "Viewer width should be 450");
-    equal($(settings.parentSelector).width(), 450, "Parent element width should also be 450");
-});
-
-multipleHashParamTest("viewer size (h, w) - valid values", {h: "600", w: "500"}, function (settings) {
-    equal($(settings.outerSelector).height(), 600, "Viewer height should be 600");
-    equal($(settings.outerSelector).width(), 500, "Viewer width should be 500");
-});

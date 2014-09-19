@@ -33,11 +33,33 @@ function waitFor(testFx, onReady, timeOutMillis) {
                 }
             }
         }, 100); //< repeat check every 250ms
-};
+}
 
-var testURL = "tests/index.html";
+// If called with arguments, set the testURL to the first argument
+var system = require('system');
+var arg1 = system.args[1];
+if (!arg1)
+{
+    var testURL = "tests/index.html";
+    console.log("Testing using " + testURL);
+}
+else
+{
+    var testURL = arg1;
+    console.log("Testing using " + testURL);
+}
 
 var page = require('webpage').create();
+
+// patch to remove get/setState tests from Travis CI build due to off-by-one pixel error when run in Travis
+var env = system.env;
+var isTravis = false;
+
+for (var key in env)
+{
+    if (key === 'TRAVIS')
+        isTravis = true;
+}
 
 // Route "console.log()" calls from within the Page context to the main Phantom context (i.e. current "this")
 page.onConsoleMessage = function(msg) {
@@ -47,11 +69,17 @@ page.onConsoleMessage = function(msg) {
 page.viewportSize = {
     width: 1000,
     height: 800
-}
+};
 page.settings.webSecurityEnabled = false;
 page.settings.localToRemoteUrlAccessEnabled = false;
 
 page.open(testURL, function(status){
+    // patch to remove get/setState tests from Travis CI build due to off-by-one pixel error when run in Travis
+    if (isTravis)
+        page.evaluate(function() { window.isTravis = true; });
+    else
+        page.evaluate(function() { window.isTravis = false; });
+
     if (status !== "success") {
         console.log("Unable to access network");
         phantom.exit();

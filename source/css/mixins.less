@@ -1,6 +1,5 @@
 /*
  * Inspired by the Twitter bootstrap
- *
  */
 
 .border-radius(@radius) {
@@ -75,4 +74,19 @@
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+}
+
+.button {
+    cursor: pointer;
+    .square(32px);
+    background-color: @buttonBg;
+    background-repeat: no-repeat;
+    background-position: center;
+    .frame(@buttonFrame);
+
+    @media screen and (min-device-width: 769px) {
+        &:hover {
+            background-color: @buttonHover;
+        }
+    }
 }

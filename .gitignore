@@ -2,5 +2,5 @@
 *.pyc
 *dev.html
 todo.md
-
 .DS_Store
+tags

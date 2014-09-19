@@ -1,6 +1,5 @@
 /*
  * Inspired by the Twitter bootstrap
- *
  */
 .hidden {
   display: none;
@@ -30,6 +29,20 @@
   -ms-user-select: none;
   user-select: none;
 }
+.button {
+  cursor: pointer;
+  height: 32px;
+  width: 32px;
+  background-color: #f1f1f1;
+  background-repeat: no-repeat;
+  background-position: center;
+  border: 1px solid #99bbe8;
+}
+@media screen and (min-device-width: 769px) {
+  .button:hover {
+    background-color: #fdfdfd;
+  }
+}
 .diva-title {
   text-align: center;
   font-weight: bold;
@@ -43,80 +56,78 @@
 }
 .diva-tools .diva-tools-left .diva-slider-label {
   display: none;
-  padding: 7px 0px;
-  clear: both;
+  padding: 8px;
+  float: left;
+  clear: left;
 }
-.diva-tools .diva-tools-left.diva-fullscreen-space {
-  margin-left: 40px;
+.diva-tools .diva-tools-left .diva-zoom-buttons-label {
+  display: none;
+  padding: 8px;
+  float: left;
+  clear: left;
+}
+.diva-tools .diva-tools-left .diva-zoom-out-button {
+  display: none;
+  float: left;
+  background-image: url("../img/zoomout.png");
+}
+.diva-tools .diva-tools-left .diva-zoom-in-button {
+  display: none;
+  float: left;
+  background-image: url("../img/zoomin.png");
+  margin-left: -1px;
+}
+.diva-tools .diva-tools-left .diva-grid-out-button {
+  display: none;
+  float: left;
+  background-image: url("../img/zoomout.png");
+}
+.diva-tools .diva-tools-left .diva-grid-in-button {
+  display: none;
+  float: left;
+  background-image: url("../img/zoomin.png");
+  margin-left: -1px;
+}
+.diva-tools .diva-tools-left .diva-buttons-label {
+  display: none;
+  padding: 8px;
+  float: left;
+  clear: left;
 }
 .diva-tools .diva-tools-left.in-fullscreen {
-  float: right;
-  padding-top: 10px;
-  text-align: right;
-  clear: both;
+  float: left;
+  clear: none;
 }
 .diva-tools .diva-tools-right {
   float: right;
   height: 42px;
-  position: relative;
-  left: 2px;
-}
-.diva-tools .diva-tools-right .diva-button {
-  float: right;
-  cursor: pointer;
-  height: 32px;
-  width: 32px;
-  background-color: #f1f1f1;
-  background-repeat: no-repeat;
-  background-position: center;
-  border: 1px solid #99bbe8;
-}
-.diva-tools .diva-tools-right .diva-button:hover {
-  background-color: #fdfdfd;
 }
 .diva-tools .diva-tools-right .diva-grid-icon {
   float: right;
-  cursor: pointer;
-  height: 32px;
-  width: 32px;
-  background-color: #f1f1f1;
-  background-repeat: no-repeat;
-  background-position: center;
-  border: 1px solid #99bbe8;
   background-image: url("../img/grid.png");
-}
-.diva-tools .diva-tools-right .diva-grid-icon:hover {
-  background-color: #fdfdfd;
 }
 .diva-tools .diva-tools-right .diva-grid-icon.diva-in-grid {
   background-image: url("../img/document.png");
 }
 .diva-tools .diva-tools-right .diva-link-icon {
   float: right;
-  cursor: pointer;
-  height: 32px;
-  width: 32px;
-  background-color: #f1f1f1;
-  background-repeat: no-repeat;
-  background-position: center;
-  border: 1px solid #99bbe8;
   background-image: url("../img/link.png");
-}
-.diva-tools .diva-tools-right .diva-link-icon:hover {
-  background-color: #fdfdfd;
 }
 .diva-tools .diva-tools-right .diva-page-nav {
   float: left;
   text-align: right;
   padding-right: 4px;
   white-space: nowrap;
+  line-height: 32px;
 }
 .diva-tools .diva-tools-right .diva-page-nav .diva-page-label {
-  padding-top: 2px;
-  padding-right: 2px;
+  float: left;
+  padding-top: 1px;
+  padding-right: 0.5em;
+  line-height: 32px;
 }
 .diva-tools .diva-tools-right .diva-page-nav .diva-goto-form {
-  text-align: right;
+  float: right;
 }
 .diva-tools .diva-tools-right .diva-page-nav .diva-goto-form .diva-input {
   width: 30px;
@@ -129,13 +140,31 @@
   top: 0px;
   right: 30px;
   z-index: 101;
-  width: 210px;
-  padding: 15px 15px 10px 15px;
+  width: 230px;
+  height: 73px;
+  padding: 15px;
   border: 1px solid #dddddd;
   background: #ffffff;
   -webkit-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
   -moz-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
   box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
+}
+.diva-tools.diva-fullscreen-tools .diva-buttons-label {
+  margin-top: 5px;
+  padding: 0;
+  clear: both;
+}
+.diva-tools.diva-fullscreen-tools .diva-page-nav {
+  float: none;
+  line-height: 1em;
+}
+.diva-tools.diva-fullscreen-tools .diva-page-nav .diva-goto-form {
+  margin-top: 9px;
+}
+.diva-tools.diva-fullscreen-tools .diva-page-nav .diva-page-label {
+  float: none;
+  clear: both;
+  line-height: 1em;
 }
 .diva-outer {
   clear: both;
@@ -150,6 +179,7 @@
 .diva-outer .diva-inner {
   position: relative;
   overflow: hidden;
+  margin: 0 auto;
 }
 .diva-outer .diva-inner .diva-page {
   -webkit-box-shadow: 2px 2px 6px 0 rgba(0, 0, 0, 0.5);
@@ -166,7 +196,6 @@
   position: absolute;
   left: 0;
   right: 0;
-  margin: 0 auto;
 }
 .diva-outer .diva-inner .diva-document-page .diva-page-tools {
   position: absolute;
@@ -180,6 +209,19 @@
   height: 25px;
   width: 25px;
   cursor: pointer;
+}
+.diva-outer .diva-inner .diva-page-vertical {
+  margin: 0 auto;
+  display: inline-block;
+}
+.diva-outer .diva-inner .diva-page-horizontal {
+  vertical-align: middle;
+  display: inline-block;
+  top: 50%;
+  transform: translate(0, -50%);
+  -webkit-transform: translate(0, -50%);
+  -moz-transform: translate(0, -50%);
+  -ms-transform: translate(0, -50%);
 }
 .diva-outer .diva-inner .diva-row {
   position: absolute;
@@ -200,25 +242,13 @@
   position: fixed !important;
   top: 0;
   left: 0;
+  margin: 0;
+  border: 0;
 }
 .diva-fullscreen-icon {
-  position: absolute;
-  z-index: 101;
-  top: 5px;
-  left: 5px;
-  height: 26px;
-  width: 26px;
-  cursor: pointer;
-  background: url("../img/fullscreen.png") no-repeat;
-}
-.diva-fullscreen-icon:hover {
-  background-position: -26px 0;
-}
-.diva-fullscreen-icon.diva-contained {
-  top: 50px;
-}
-.diva-fullscreen-icon.diva-in-fullscreen {
-  position: fixed;
+  background-image: url("../img/fullscreen.png");
+  border-left: 0px;
+  float: right;
 }
 .diva-link-popup {
   background: #ffffff;
@@ -249,45 +279,27 @@
 .diva-relative-position {
   position: relative;
 }
-/*
- * Based on the jQuery UI CSS Framework
- * Pretty different though.
- *
- */
-.ui-slider {
-  display: none;
+.zoom-slider {
   position: relative;
-  border: 1px solid #dddddd;
-  background: #fdfdfd;
-  -webkit-border-radius: 4px;
-  -moz-border-radius: 4px;
-  border-radius: 4px;
-  height: 6px;
-  width: 100px;
-  z-index: 1;
+  top: 0.6em;
+  display: none;
+  float: left;
 }
-.ui-slider .ui-slider-handle {
-  -webkit-border-radius: 5px;
-  -moz-border-radius: 5px;
-  border-radius: 5px;
-  border: 1px solid #cccccc;
-  background: #fdfdfd;
-  outline: none;
-  height: 11px;
-  width: 11px;
-  z-index: 2;
-  cursor: default;
-  position: absolute;
-  top: -3px;
-  margin-left: -2px;
+@media (max-width: 480px) {
+  .zoom-slider {
+    width: 100px;
+  }
 }
-.ui-slider .ui-slider-handle.hover {
-  background: #ecf2fb;
-  border: 1px solid #6f9fdf;
+.grid-slider {
+  position: relative;
+  top: 0.6em;
+  display: none;
+  float: left;
 }
-.ui-slider .ui-slider-handle.active {
-  background: #ffffff;
-  border: 1px solid #99bbe8;
+@media (max-width: 480px) {
+  .grid-slider {
+    width: 100px;
+  }
 }
 .diva-throbber {
   display: none;
@@ -304,6 +316,22 @@
   left: 50%;
   margin-left: -25px;
   margin-top: -25px;
+}
+.diva-error {
+  position: absolute;
+  width: 400px;
+  height: 200px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  -webkit-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
+  -moz-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
+  box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
+  top: 50%;
+  left: 50%;
+  margin-left: -220px;
+  margin-top: -120px;
+  z-index: 120;
+  padding: 0 1em;
 }
 /* Begin canvas plugin */
 .diva-canvas-icon {

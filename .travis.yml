@@ -1,2 +1,24 @@
 language: node_js
-script: phantomjs tests/run.js
+
+env:
+  - TEST_DIVA=source
+  - TEST_DIVA=build
+
+install:
+  - npm install less
+  - wget http://dl.google.com/closure-compiler/compiler-latest.zip
+  - unzip compiler-latest.zip
+  - chmod a+rx compiler.jar
+  - phantomjs --version
+
+before_script: ./build.sh all
+
+script: ./build.sh test
+
+notifications:
+  irc:
+    channels:
+      - "chat.freenode.net#ddmal"
+    on_success: change
+    on_failure: change
+    skip_join: true

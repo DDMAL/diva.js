@@ -1,7 +1,7 @@
 /*
 
 Canvas plugin for diva.js
-Adds a little "tools" icon next to each image
+Adds an adjustment icon next to each image
 
 */
 
@@ -226,37 +226,25 @@ Adds a little "tools" icon next to each image
                     {
                         // Only adjust individual colour channels if necessary
                         if (adjustRed && r)
-                        {
                             r += redOffset;
-                        }
 
                         if (adjustGreen && g)
-                        {
                             g += greenOffset;
-                        }
 
                         if (adjustBlue && b)
-                        {
                             b += blueOffset;
-                        }
 
                         // If we need to adjust brightness and/or contrast
                         if (adjustOthers)
                         {
                             if (r)
-                            {
                                 r = r * brightTimesContrast + contrastOffset;
-                            }
 
                             if (g)
-                            {
                                 g = g * brightTimesContrast + contrastOffset;
-                            }
 
                             if (b)
-                            {
                                 b = b * brightTimesContrast + contrastOffset;
-                            }
                         }
 
                         pixelArray[offset] = r;
@@ -317,6 +305,7 @@ Adds a little "tools" icon next to each image
         {
             image = new Image();
             image.src = imageURL;
+            image.crossOrigin = "Anonymous";
 
             image.onload = function ()
             {
@@ -337,7 +326,30 @@ Adds a little "tools" icon next to each image
                 // Draw the image to the large canvas, and save the pixel array
                 canvas.context = canvas.canvas.getContext('2d');
                 canvas.context.drawImage(image, canvas.cornerX, canvas.cornerY, canvas.width, canvas.height);
-                canvas.data = canvas.context.getImageData(0, 0, canvas.size, canvas.size);
+                try
+                {
+                    canvas.data = canvas.context.getImageData(0, 0, canvas.size, canvas.size);
+                }
+                catch (error)
+                {
+                    var canvasError = '<div id="diva-error" class="diva-error"><p><strong>Error</strong></p><p>' + error.message + '</p>';
+
+                    if (error.name === 'SecurityError')
+                    {
+                        canvasError += '<p>You may need to update your server configuration in order to use the image manipulation tools. ' +
+                        'For help, see the <a href="https://github.com/DDMAL/diva.js/wiki/The-API-and-Plugins#a-note-about-' +
+                        'canvas-and-cross-site-data" target="_blank">canvas cross-site data documentation</a>.</p>' +
+                        '</div>';
+                    }
+                    else
+                    {
+                        throw error;
+                    }
+
+                    canvasError += '</div>';
+                    $('#diva-canvas-backdrop').append(canvasError);
+                    hideThrobber();
+                }
 
                 // Only load the map the first time (when there is no callback)
                 if (callback === undefined) {
@@ -353,9 +365,7 @@ Adds a little "tools" icon next to each image
 
                 // If the callback function exists, execute it (for zooming)
                 if (typeof callback === 'function')
-                {
                     callback.call(callback);
-                }
             };
         };
 
@@ -369,9 +379,7 @@ Adds a little "tools" icon next to each image
 
         var updateSliderValue = function ()
         {
-            $('#diva-canvas-slider').slider({
-                value: sliders[sliderMode].current
-            });
+            $('#diva-canvas-slider').val(sliders[sliderMode].current);
         };
 
         // Returns the URL for the image at the specified zoom level
@@ -380,21 +388,18 @@ Adds a little "tools" icon next to each image
             var width = settings.zoomWidthRatio * Math.pow(2, zoomLevel);
 
             if (settings.proxyURL)
-            {
                 return settings.proxyURL + "?f=" + settings.filename + "&w=" + width;
-            }
 
             var imdir = settings.imageDir + "/";
+
             return settings.iipServerURL + "?FIF=" + imdir + settings.filename + '&WID=' + width + '&CVT=JPEG';
         };
 
         var showThrobber = function ()
         {
             // Only show the throbber if it will take a long time
-            if (sliders.zoom.current > 2 || settings.mobileWebkit)
-            {
+            if (sliders.zoom.current > 0 || settings.mobileWebkit)
                 $(settings.selector + 'throbber').addClass('canvas-throbber').show();
-            }
         };
 
         // Hides the loading indicator icon
@@ -451,17 +456,46 @@ Adds a little "tools" icon next to each image
             });
         };
 
+        var bindCanvasKeyEvents = function (event)
+        {
+            var upArrowKey = 38,
+                downArrowKey = 40,
+                leftArrowKey = 37,
+                rightArrowKey = 39;
+
+            switch (event.keyCode)
+            {
+                case upArrowKey:
+                    // Up arrow - scroll up
+                    $('#diva-canvas-wrapper').scrollTop(document.getElementById('diva-canvas-wrapper').scrollTop - settings.arrowScrollAmount);
+                    return false;
+
+                case downArrowKey:
+                    // Down arrow - scroll down
+                    $('#diva-canvas-wrapper').scrollTop(document.getElementById('diva-canvas-wrapper').scrollTop + settings.arrowScrollAmount);
+                    return false;
+
+                case leftArrowKey:
+                    // Left arrow - scroll left
+                    $('#diva-canvas-wrapper').scrollLeft(document.getElementById('diva-canvas-wrapper').scrollLeft - settings.arrowScrollAmount);
+                    return false;
+
+                case rightArrowKey:
+                    // Right arrow - scroll right
+                    $('#diva-canvas-wrapper').scrollLeft(document.getElementById('diva-canvas-wrapper').scrollLeft + settings.arrowScrollAmount);
+                    return false;
+            }
+        };
+
         var retval =
         {
-            init: function(divaSettings, divaInstance)
+            init: function (divaSettings, divaInstance)
             {
                 // If the browser does not support canvas, do nothing
                 // And, disable this plugin
                 var canvasSupported = !!window.HTMLCanvasElement;
                 if (!canvasSupported)
-                {
                     return false;
-                }
 
                 // Override all the configurable settings defined under canvasPlugin
                 $.extend(settings, defaults, divaSettings.canvasPlugin);
@@ -471,6 +505,7 @@ Adds a little "tools" icon next to each image
                 settings.imageDir = divaSettings.imageDir;
                 settings.selector = divaSettings.selector;
                 settings.mobileWebkit = divaSettings.mobileWebkit;
+                settings.arrowScrollAmount = divaSettings.arrowScrollAmount;
 
                 // Set up the settings for the sliders/icons
                 sliders = {
@@ -584,7 +619,7 @@ Adds a little "tools" icon next to each image
                                 '<span id="diva-canvas-value">0</span> ' +
                                 '<span id="diva-canvas-reset" class="link">(Reset)</span>' +
                             '</p>' +
-                            '<div id="diva-canvas-slider"></div>' +
+                            '<input type="range" id="diva-canvas-slider"></input>' +
                         '</div>' +
                         '<br />' +
                         '<div class="action-buttons">' +
@@ -625,24 +660,21 @@ Adds a little "tools" icon next to each image
                     var newValue = sliderData.current;
                     var newValueString = (sliderData.transform) ? sliderData.transform(newValue) : newValue;
 
-                    $('#diva-canvas-slider').slider({
-                        'min': sliderData.min,
-                        'max': sliderData.max,
-                        'step': sliderData.step
-                    }).slider('value', newValue);
+                    var slider = document.getElementById('diva-canvas-slider');
+                    slider.min = sliderData.min;
+                    slider.max = sliderData.max;
+                    slider.step = sliderData.step;
+                    $('#diva-canvas-slider').val(newValue);
                     $('#diva-canvas-value').html(newValueString);
                 };
 
                 updateSlider('contrast');
 
                 // Create the slider
-                $('#diva-canvas-slider').slider({
-                    slide: function (event, ui)
-                    {
-                        sliders[sliderMode].current = ui.value;
-                        updateSliderLabel();
-                        updateMap();
-                    }
+                $('#diva-canvas-slider').on('input', function(e){
+                    sliders[sliderMode].current = parseFloat(this.value);
+                    updateSliderLabel();
+                    updateMap();
                 });
 
                 // Reset all the sliders to the default value
@@ -712,6 +744,11 @@ Adds a little "tools" icon next to each image
                     $('#diva-canvas-wrapper').scrollTop(0).scrollLeft(0);
                     $('#diva-canvas-backdrop').hide();
                     $('#diva-map-viewbox').hide();
+                    hideThrobber();
+
+                    // Re-enable scrolling of diva when it is in the background
+                    divaInstance.enableScrollable();
+                    $(document).off('keydown', bindCanvasKeyEvents);
 
                     // Reset everything
                     resetSliders();
@@ -720,7 +757,7 @@ Adds a little "tools" icon next to each image
                     $('#diva-canvas-buttons .clicked').removeClass('clicked');
                     updateSlider('contrast');
 
-                    Events.publish("CanvasViewDidHide");
+                    diva.Events.publish("CanvasViewDidHide");
                 });
 
                 // Hide the toolbar when the minimise icon is clicked
@@ -739,18 +776,14 @@ Adds a little "tools" icon next to each image
 
                     // Always update the settings but only redraw if in canvas
                     if (settings.inCanvas)
-                    {
                         updateViewbox();
-                    }
                 });
 
                 // Update the viewbox when the large canvas is scrolled
                 $('#diva-canvas-wrapper').scroll(function ()
                 {
                     if (settings.inCanvas)
-                    {
                         updateViewbox();
-                    }
                 });
 
                 // Handle clicking/dragging of the viewbox (should scroll the large canvas)
@@ -814,15 +847,13 @@ Adds a little "tools" icon next to each image
                 // If we're on the iPad, limit the max zoom level to 2
                 // Can't do canvas elements that are > 5 megapixels (issue #112)
                 if (settings.mobileWebkit)
-                {
                     settings.maxZoomLevel = Math.min(settings.maxZoomLevel, settings.mobileWebkitMaxZoom);
-                }
 
                 sliders.zoom.min = settings.minZoomLevel;
                 sliders.zoom.max = settings.maxZoomLevel;
             },
 
-            handleClick: function(event, divaSettings)
+            handleClick: function(event, divaSettings, divaInstance)
             {
                 // loadCanvas() calls all the other necessary functions to load
                 var page = $(this).parent().parent();
@@ -871,6 +902,11 @@ Adds a little "tools" icon next to each image
                 $('body').addClass('overflow-hidden');
                 $('#diva-canvas-backdrop').show();
 
+                // Disable scrolling on main diva instance
+                divaInstance.disableScrollable();
+                // Enable canvas scrolling
+                $(document).keydown(bindCanvasKeyEvents);
+
                 // Set this to true so events can be captured
                 settings.inCanvas = true;
 
@@ -881,7 +917,7 @@ Adds a little "tools" icon next to each image
 
                 showThrobber();
 
-                Events.publish("CanvasViewDidActivate", [page]);
+                diva.Events.publish("CanvasViewDidActivate", [page]);
 
                 loadCanvas(imageURL);
             },
@@ -897,8 +933,7 @@ Adds a little "tools" icon next to each image
                 }
             },
 
-            // Used only for running the unit tests
-            destroy: function()
+            destroy: function(divaSettings, divaInstance)
             {
                 $('#diva-canvas-backdrop').remove();
             }

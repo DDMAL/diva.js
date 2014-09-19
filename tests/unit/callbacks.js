@@ -16,12 +16,12 @@ asyncTest("onModeToggle", function () {
         onReady: function (settings) {
             ok(!callbackExecuted);
             ok(!inFullscreen);
-            this.enterFullscreen();
+            this.enterFullscreenMode();
             ok(callbackExecuted);
             ok(inFullscreen);
 
             callbackExecuted = false;
-            this.leaveFullscreen();
+            this.leaveFullscreenMode();
             ok(callbackExecuted);
             ok(!inFullscreen);
 
@@ -42,12 +42,12 @@ asyncTest("onViewToggle", function () {
         onReady: function (settings) {
             ok(!callbackExecuted);
             ok(!inGrid);
-            this.enterGrid();
+            this.enterGridView();
             ok(callbackExecuted);
             ok(inGrid);
 
             callbackExecuted = false;
-            this.leaveGrid();
+            this.leaveGridView();
             ok(!inGrid);
             ok(callbackExecuted);
 
@@ -70,7 +70,7 @@ asyncTest("onJump", function () {
             callbackExecuted = false;
 
             ok(!callbackExecuted);
-            this.gotoPage(100);
+            this.gotoPageByNumber(100);
             ok(callbackExecuted);
 
             equal(pageIndexParam, 99);

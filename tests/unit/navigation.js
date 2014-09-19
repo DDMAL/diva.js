@@ -34,8 +34,8 @@ asyncTest("Scrolling in grid view", function () {
 
             var self = this;
             setTimeout(function () {
-                equal(self.getCurrentPage(), 26, "The page should now be 27 (index of 26)");
-                equal($(settings.selector + 'current-page').text(), '27', "The toolbar should have been updated");
+                equal(self.getCurrentPage(), 24, "The page should now be 25 (index of 24)");
+                equal($(settings.selector + 'current-page').text(), '25', "The toolbar should have been updated");
                 start();
             }, 10);
         }
@@ -44,15 +44,109 @@ asyncTest("Scrolling in grid view", function () {
 
 asyncTest("Zooming using the slider", function () {
     $.tempDiva({
+        enableZoomControls: 'slider',
         zoomLevel: 4,
         onReady: function (settings) {
-            $(settings.selector + 'zoom-slider').slider('value', 0);
+            document.getElementById(settings.ID + 'zoom-slider').value = 0;
+            $(settings.selector + 'zoom-slider').change();
             equal(this.getZoomLevel(), 0, "Zoom level should now be 0");
             equal($(settings.selector + 'zoom-level').text(), '0', "The slider label should have been updated");
 
-            $(settings.selector + 'zoom-slider').slider('value', 4);
+            document.getElementById(settings.ID + 'zoom-slider').value = 4;
+            $(settings.selector + 'zoom-slider').change();
             equal(this.getZoomLevel(), 4, "Zoom level should now be 4");
             equal($(settings.selector + 'zoom-level').text(), '4', "The slider label should have been updated");
+            start();
+        }
+    });
+});
+
+asyncTest("Zooming using +/- buttons", function () {
+    $.tempDiva({
+        zoomLevel: 4,
+        onReady: function (settings) {
+            for (var i = 0; i < 4; i++)
+            {
+                $(settings.selector + 'zoom-out-button').trigger('click');
+            }
+            equal(this.getZoomLevel(), 0, "Zoom level should now be 0");
+            equal($(settings.selector + 'zoom-level').text(), '0', "The zoom buttons label should have been updated");
+
+            for (i = 0; i < 4; i++)
+            {
+                $(settings.selector + 'zoom-in-button').trigger('click');
+            }
+            equal(this.getZoomLevel(), 4, "Zoom level should now be 4");
+            equal($(settings.selector + 'zoom-level').text(), '4', "The zoom buttons label should have been updated");
+            start();
+        }
+    });
+});
+
+asyncTest("Changing pages per row in Grid view using slider", function () {
+    $.tempDiva({
+        enableGridControls: 'slider',
+        pagesPerRow: 2,
+        onReady: function (settings) {
+            this.enterGridView();
+            $(settings.selector + 'grid-slider').val(8);
+            $(settings.selector + 'grid-slider').change();
+            equal(this.getState().n, 8, "Pages per row should now be 8");
+            equal($(settings.selector + 'pages-per-row').text(), '8', "The grid buttons label should have been updated");
+
+            $(settings.selector + 'grid-slider').val(3);
+            $(settings.selector + 'grid-slider').change();
+            equal(this.getState().n, 3, "Pages per row should now be 3");
+            equal($(settings.selector + 'pages-per-row').text(), '3', "The grid buttons label should have been updated");
+
+            start();
+        }
+    });
+});
+
+asyncTest("Scrolling and subsequently zooming in Grid view", function () {
+    $.tempDiva({
+        inGrid: true,
+        enableGridControls: 'slider',
+        pagesPerRow: 5,
+        fixedHeightGrid: false,
+        onReady: function (settings) {
+            $(settings.outerSelector).scrollTop(10050);
+
+            var self = this;
+            setTimeout(function () {
+                equal(self.getCurrentPageIndex(), 160, "The current page should be 170 (10050px down, 1000px viewport)");
+                start();
+
+                $(settings.selector + 'grid-slider').val(8);
+                equal(self.getCurrentPageIndex(), 160, "The current page should still be 170");
+
+                $(settings.selector + 'grid-slider').val(2);
+                equal(self.getCurrentPageIndex(), 160, "The current page should still be 170");
+            }, 10);
+        }
+    });
+});
+
+asyncTest("Changing pages per row in Grid view using +/- buttons", function () {
+    $.tempDiva({
+        pagesPerRow: 2,
+        onReady: function (settings) {
+            this.enterGridView();
+            for (var i = 0; i < 6; i++)
+            {
+                $(settings.selector + 'grid-out-button').trigger('click');
+            }
+            equal(this.getState().n, 2, "Pages per row should now be 2");
+            equal($(settings.selector + 'pages-per-row').text(), '2', "The grid buttons label should have been updated");
+
+            for (i = 0; i < 6; i++)
+            {
+                $(settings.selector + 'grid-in-button').trigger('click');
+            }
+            equal(this.getState().n, 8, "Pages per row should now be 8");
+            equal($(settings.selector + 'pages-per-row').text(), '8', "The grid buttons label should have been updated");
+
             start();
         }
     });
@@ -87,8 +181,10 @@ asyncTest("Switching between document and grid view", function () {
             // Click the grid icon, then wait a bit for the event to be triggered
             setTimeout(function () {
                 ok(settings.inGrid, "Should now be in grid");
-                ok($(settings.selector + 'grid-slider').is(':visible'), "Grid slider should be visible");
-                ok(!$(settings.selector + 'zoom-slider').is(':visible'), "Zoom slider should not be visible");
+                ok($(settings.selector + 'grid-out-button').is(':visible'), "Grid buttons should be visible (-)");
+                ok($(settings.selector + 'grid-in-button').is(':visible'), "Grid buttons should be visible (+)");
+                ok(!$(settings.selector + 'zoom-out-buttons').is(':visible'), "Zoom buttons should not be visible (-)");
+                ok(!$(settings.selector + 'zoom-in-buttons').is(':visible'), "Zoom buttons should not be visible (+)");
                 start();
             }, 10);
         }

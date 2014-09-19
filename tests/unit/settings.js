@@ -27,44 +27,6 @@ asyncTest("adaptivePadding disabled, fixedPadding set", function () {
     });
 });
 
-asyncTest("contained true, enableAutoTitle false", function () {
-    $.tempDiva({
-        contained: true,
-        enableAutoTitle: false,
-        onReady: function (settings) {
-            // Check that the fullscreen icon does NOT have the contained class
-            ok(!$(settings.selector + 'fullscreen').hasClass('diva-contained'), "Should not have the contained class");
-
-            // The whole thing should be relatively positioned
-            equal($(settings.parentSelector).css('position'), 'relative', "Container should be relatively positioned");
-
-            // Title should not be present
-            equal($(settings.selector + 'title').length, 0, "Title should not be present");
-
-            // The left tools section should have the fullscreen-space class
-            ok($(settings.selector + 'tools-left').hasClass('diva-fullscreen-space'), "Left tools section should be moved over");
-            start();
-        }
-    });
-});
-
-asyncTest("contained true, enableAutoTitle true", function () {
-    $.tempDiva({
-        contained: true,
-        enableAutoTitle: true,
-        onReady: function (settings) {
-            // Check that it does have the contained class
-            ok($(settings.selector + 'fullscreen').hasClass('diva-contained'), "Should have the contained class");
-
-            // Title SHOULD be present
-            notEqual($(settings.selector + 'title').length, 0, "Title SHOULD be present");
-            start();
-        }
-    });
-});
-
-// divaserveURL can't really be tested - just have to rely on this to work
-
 // enableCanvas and enableDownload are tested in plugins.js
 
 // enableFilename is tested in hashparams.js
@@ -155,46 +117,63 @@ asyncTest("enableLinkIcon false, enableGridIcon true", function () {
     });
 });
 
-asyncTest("enableGridSlider false", function () {
-    $.tempDiva({
-        enableGridSlider: false,
-        onReady: function (settings) {
-            equal($(settings.selector + 'grid-slider').length, 0, "Grid slider should not be present");
-            start();
-        }
-    });
-});
-
-asyncTest("enableGridSlider true", function () {
-    $.tempDiva({
-        enableGridSlider: true,
-        onReady: function (settings) {
-            notEqual($(settings.selector + 'grid-slider').length, 0, "Grid slider should not be present");
-            start();
-        }
-    });
-});
-
 // Skipping the key and space scroll ones, because they're hard to test
 
-asyncTest("enableZoomSlider false", function () {
+// test enableZoom/Grid Slider/Buttons settings
+asyncTest("enableGridControls 'slider'", function() {
     $.tempDiva({
-        enableZoomSlider: false,
-        onReady: function (settings) {
-            equal($(settings.selector + 'zoom-slider').length, 0, "Zoom slider should not be present");
+        enableGridControls: 'slider',
+        onReady: function(settings) {
+            notEqual($(settings.selector + 'grid-slider').length, 0, "Grid slider should be present");
+            notEqual($(settings.selector + 'grid-slider-label').length, 0, "Grid slider label should be present");
+            equal($(settings.selector + 'grid-out-button').length, 0, "Grid buttons should not be present");
+            equal($(settings.selector + 'grid-in-button').length, 0, "Grid buttons should not be present");
+            equal($(settings.selector + 'grid-buttons-label').length, 0, "Grid buttons label should not be present");
             start();
         }
-    });
+    })
 });
 
-asyncTest("enableZoomSlider true", function () {
+asyncTest("enableZoomControls 'slider'", function() {
     $.tempDiva({
-        enableZoomSlider: true,
-        onReady: function (settings) {
-            notEqual($(settings.selector + 'zoom-slider').length, 0, "Zoom slider should not be present");
+        enableZoomControls: 'slider',
+        onReady: function(settings) {
+            notEqual($(settings.selector + 'zoom-slider').length, 0, "Zoom slider should be present");
+            notEqual($(settings.selector + 'zoom-slider-label').length, 0, "Zoom slider label should be present");
+            equal($(settings.selector + 'zoom-out-button').length, 0, "Zoom buttons should not be present");
+            equal($(settings.selector + 'zoom-in-button').length, 0, "Zoom buttons should not be present");
+            equal($(settings.selector + 'zoom-buttons-label').length, 0, "Zoom buttons label should not be present");
             start();
         }
-    });
+    })
+});
+
+asyncTest("enableGridControls 'buttons'", function() {
+    $.tempDiva({
+        enableGridControls: 'buttons',
+        onReady: function(settings) {
+            notEqual($(settings.selector + 'grid-out-button').length, 0, "Grid out button should be present");
+            notEqual($(settings.selector + 'grid-in-button').length, 0, "Grid in button should be present");
+            notEqual($(settings.selector + 'grid-buttons-label').length, 0, "Grid button label should be present");
+            equal($(settings.selector + 'grid-slider').length, 0, "Grid slider should not be present");
+            equal($(settings.selector + 'grid-slider-label').length, 0, "Grid slider label should not be present");
+            start();
+        }
+    })
+});
+
+asyncTest("enableZoomControls 'buttons'", function() {
+    $.tempDiva({
+        enableZoomControls: 'buttons',
+        onReady: function(settings) {
+            notEqual($(settings.selector + 'zoom-out-button').length, 0, "Zoom out button should be present");
+            notEqual($(settings.selector + 'zoom-in-button').length, 0, "Zoom in button should be present");
+            notEqual($(settings.selector + 'zoom-buttons-label').length, 0, "Zoom button label should be present");
+            equal($(settings.selector + 'zoom-slider').length, 0, "Grid slider should not be present");
+            equal($(settings.selector + 'zoom-slider-label').length, 0, "Grid slider label should not be present");
+            start();
+        }
+    })
 });
 
 // fixedPadding tested at the top (along with adaptivePadding)
@@ -203,7 +182,7 @@ asyncTest("fixedHeightGrid false", function () {
     $.tempDiva({
         fixedHeightGrid: false,
         onReady: function (settings) {
-            this.enterGrid();
+            this.enterGridView();
             // Check all the widths are the same, but that the heights are different
             var pages = $('.diva-page');
             var firstPage = $(pages[0]);
@@ -226,7 +205,7 @@ asyncTest("fixedHeightGrid true", function () {
     $.tempDiva({
         fixedHeightGrid: true,
         onReady: function (settings) {
-            this.enterGrid();
+            this.enterGridView();
 
             // Check that all the widths are the same, bu that the heights are different
             var pages = $('.diva-page');
@@ -268,28 +247,6 @@ asyncTest("goDirectlyTo, invalid", function () {
 
 // iipServerURL can't really be tested, just have to rely on this to work
 
-asyncTest("inFullscreen false", function () {
-    $.tempDiva({
-        inFullscreen: false,
-        onReady: function (settings) {
-            ok(!settings.inFullscreen, "inFullscreen setting should still be false");
-            ok(!$(settings.selector + 'fullscreen').hasClass('diva-in-fullscreen'), "Icon should not have the diva-in-fullscreen class");
-            start();
-        }
-    });
-});
-
-asyncTest("inFullscreen true", function () {
-    $.tempDiva({
-        inFullscreen: true,
-        onReady: function (settings) {
-            ok(settings.inFullscreen, "inFullscreen setting should still be true");
-            ok($(settings.selector + 'fullscreen').hasClass('diva-in-fullscreen'), "Icon should have the diva-in-fullscreen class");
-            start();
-        }
-    });
-});
-
 asyncTest("inGrid false", function () {
     $.tempDiva({
         inGrid: false,
@@ -321,7 +278,7 @@ asyncTest("valid max/minPagesPerRow, valid pagesPerRow", function () {
         pagesPerRow: 5,
         onReady: function (settings) {
             // Have to enter the grid first, otherwise pagesPerRow isn't changed
-            this.enterGrid();
+            this.enterGridView();
 
             equal(settings.minPagesPerRow, 3, "minPagesPerRow should be 3");
             equal(settings.maxPagesPerRow, 5, "maxPagesPerRow should be 5");
@@ -337,7 +294,7 @@ asyncTest("invalid max/minPagesPerRow, valid pagesPerRow", function () {
         maxPagesPerRow: 0,
         pagesPerRow: 4,
         onReady: function (settings) {
-            this.enterGrid();
+            this.enterGridView();
 
             equal(settings.minPagesPerRow, 2, "minPagesPerRow is invalid, set to 2");
             equal(settings.maxPagesPerRow, 2, "maxPagesPerRow should be set to min");
