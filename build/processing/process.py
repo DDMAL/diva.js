@@ -30,12 +30,27 @@ import generate_json
 from optparse import OptionParser
 
 """
-This is a python script that will process all the images in a directory and
-try to convert them into the JPEG 2000 image format. You must have the Kakadu
-JPEG 2000 tools installed, most importantly the kdu_compress command.
+This is a python script/module that will process all the images in a directory
+and try to convert them into the JPEG2000 or Pyramid TIFF image formats. You 
+must have the ImageMagick "convert" executable installed to run this script.
+We assume the location of this executable to be "/usr/local/bin/convert" unless
+otherwise specified with the "-i" option/convert_location parameter.
 
-You can download these tools for free at:
+To convert files to JPEG2000, specify the "-t jpeg" option when running this 
+script or set the image_type parameter to "jpeg" when creating a DivaConverter 
+object. This requires the "kdu_compress" executable included with the Kakadu 
+JPEG2000 library; we assume the location of this executable to be 
+"/usr/local/bin/kdu_compress" unless otherwise specified with the "-k" 
+option/kdu_compress_location parameter.
+
+You can download this library for free at:
 http://www.kakadusoftware.com/index.php?option=com_content&task=view&id=26&Itemid=22
+
+To convert files to Pyramid TIFF, specify the "-t tiff" option when running this
+script or set the image_type parameter to "tiff" when creating a DivaConverter 
+object. This requires the "vipsCC" Python module included with an installation 
+of the VIPS image processing suite. If you are installing VIPS using Homebrew 
+on Mac OS X, make sure to run "brew install vips --with-imagemagick".
 
 Dependencies:
     Python (version < 3.0)
@@ -44,37 +59,52 @@ Dependencies:
 
 Usage:
     Either run it with
-        python process_jp2.py [directory]
+        python process.py [input_directory] [output_directory] [data_output_directory]
     or chmod it to executable (chmod +x process.py) and run it with
-        ./process_jp2.py directory
+        ./process.py [input_directory] [output_directory] [data_output_directory]
 
     You can also use this as a Python module:
 
-        import process_jp2
-        c = DivaConverter(input_directory, output_directory)
+        import process
+        c = DivaConverter(input_directory, output_directory, data_output_directory)
         c.convert()
 """
 
-PATH_TO_IMAGEMAGICK = "/usr/local/bin/convert"
-PATH_TO_KDU_COMPRESS = "/usr/local/bin/kdu_compress"
-VALID_EXTENSIONS = [".jpg", ".jpeg", ".tif", ".tiff", ".JPG", ".JPEG", ".TIF", ".TIFF", '.png', '.PNG']
-
+VALID_INPUT_EXTENSIONS = [".jpg", ".jpeg", ".tif", ".tiff", ".JPG", ".JPEG", ".TIF", ".TIFF", '.png', '.PNG']
 
 class DivaConverter(object):
-    def __init__(self, input_directory, output_directory, data_output_directory, image_type="jpeg"):
+    def __init__(self, input_directory, output_directory, data_output_directory, **kwargs):
         self.input_directory = os.path.abspath(input_directory)
         self.output_directory = os.path.abspath(output_directory)
         self.data_output_directory = os.path.abspath(data_output_directory)
         self.verbose = True
-        self.image_type = image_type
+        self.image_type = kwargs['image_type']
         self.compression = "none"
+        self.convert_location = kwargs['convert_location']
+        self.kdu_compress_location = kwargs['kdu_compress_location']
+
+        if not os.path.exists(self.convert_location):
+            print(("You do not have the ImageMagick 'convert' executable installed at {0}.").format(self.convert_location))
+            print("If this path is incorrect, please specify an alternate location using the '-i (location)' command line option for this script.")
+            sys.exit(-1)
 
         if self.image_type == "tiff":
             try:
                 from vipsCC import VImage
-            except ImportError:
+            except ImportError as e:
                 print("You have specified TIFF as the output format, but do not have the VIPS Python library installed.")
                 sys.exit(-1)
+
+        elif self.image_type == "jpeg":
+            if not os.path.exists(self.kdu_compress_location):
+                print(("You have specified JP2 as the output format, but do not have the kdu_compress executable installed at {0}.").format(self.kdu_compress_location))
+                print("If this path is incorrect, please specify an alternate location using the '-k (location)' command line option for this script.")
+                sys.exit(-1)
+
+        else:
+            print("The '-t' option must either be 'tiff' for Pyramid TIFF or 'jpeg' for JPEG2000. Omitting the '-t' option will default to 'jpeg'.")
+            print("Usage: process.py -t tiff input_directory output_directory data_output_directory")
+            sys.exit(-1)
 
     def convert(self):
         if not os.path.isdir(self.output_directory):
@@ -92,11 +122,11 @@ class DivaConverter(object):
             tdir = tempfile.mkdtemp()
 
             input_file = os.path.join(tdir, "{0}.tiff".format(name))
-            output_file = os.path.join(self.output_directory, "{0}.{1}".format(name, self.__image_type))
+            output_file = os.path.join(self.output_directory, "{0}.{1}".format(name, self.image_type))
 
             if self.verbose:
                 print("Using ImageMagick to pre-convert {0} to TIFF".format(image))
-            subprocess.call([PATH_TO_IMAGEMAGICK,
+            subprocess.call([self.convert_location,
                              "-compress", "None",
                              image,
                              input_file])
@@ -126,7 +156,7 @@ class DivaConverter(object):
         return True
 
     def __process_jpeg2000(self, input_file, output_file):
-        subprocess.call([PATH_TO_KDU_COMPRESS,
+        subprocess.call([self.kdu_compress_location,
                         "-i", input_file,
                          "-o", output_file,
                          "Clevels=5",
@@ -152,7 +182,7 @@ class DivaConverter(object):
             return False
         if fname == "Thumbs.db":
             return False
-        if os.path.splitext(fname)[-1].lower() not in VALID_EXTENSIONS:
+        if os.path.splitext(fname)[-1].lower() not in VALID_INPUT_EXTENSIONS:
             return False
         return True
 
@@ -174,7 +204,9 @@ class DivaConverter(object):
 if __name__ == "__main__":
     usage = "%prog [options] input_directory output_directory data_output_directory"
     parser = OptionParser(usage)
-    parser.add_option("-t", "--type", action="store", default="jpeg", help="The type of images this script should produce. Options are 'jpeg' or 'tiff'", dest="type")
+    parser.add_option("-t", "--type", action="store", default="jpeg", help="The type of images this script should produce. Options are 'jpeg' or 'tiff'.", dest="type")
+    parser.add_option("-k", "--kdu-compress-location", action="store", default="/usr/local/bin/kdu_compress", help="The location of the 'kdu_compress' executable provided by the Kakadu JPEG2000 library.", dest="kdu_compress_location")
+    parser.add_option("-i", "--imagemagick-convert-location", action="store", default="/usr/local/bin/convert", help="The location of the 'convert' executable provided by ImageMagick.", dest="convert_location")
     options, args = parser.parse_args()
 
     if len(args) < 3:
@@ -186,6 +218,8 @@ if __name__ == "__main__":
         'input_directory': args[0],
         'output_directory': args[1],
         'data_output_directory': args[2],
+        'kdu_compress_location': options.kdu_compress_location,
+        'convert_location': options.convert_location,
         'image_type': options.type
     }
 

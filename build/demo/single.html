@@ -8,17 +8,29 @@
             <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
             <![endif]-->
             <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js" type="text/javascript"></script>
-            <script src="/js/diva.min.js" type="text/javascript"></script>
-
+            <script src="/js/diva.js" type="text/javascript"></script>
+            <script src="/js/utils.js" type="text/javascript"></script>
+            <style>
+            body, html{
+                height:90%;
+            }
+            #diva-wrapper{
+                height:100%;
+            }
+            .diva-outer{
+                height:100%;
+            }
+            </style>
             <script type="text/javascript">
                 $(document).ready(function() {
                     $('#diva-wrapper').diva({
                         enableAutoHeight: true,
                         fixedHeightGrid: false,
-                        iipServerURL: "http://coltrane.music.mcgill.ca/fcgi-bin/iipsrv.fcgi",
+                        iipServerURL: "http://diva.simssa.ca/fcgi-bin/iipsrv.fcgi",
                         objectData: "/demo/beromunster.json",
-                        imageDir: "/mnt/images/beromunster",
-                        enableHighlight: true
+                        imageDir: "/srv/images/beromunster",
+                        enableCanvas: true,
+                        enableDownload: true
                     });
                 });
             </script>
