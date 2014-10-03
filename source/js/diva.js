@@ -33,7 +33,7 @@ window.divaPlugins = [];
             adaptivePadding: 0.05,      // The ratio of padding to the page dimension
             arrowScrollAmount: 40,      // The amount (in pixels) to scroll by when using arrow keys
             blockMobileMove: true,      // Prevent moving or scrolling the page on mobile devices
-            objectData: '',             // URL to the JSON file that provides the object dimension data - *MANDATORY*
+            objectData: '',             // URL to the JSON file that provides the object dimension data - *REQUIRED*
             enableAutoTitle: true,      // Shows the title within a div of id diva-title
             enableFilename: true,       // Uses filenames and not page numbers for links (i=bm_001.tif, not p=1)
             enableFullscreen: true,     // Enable or disable fullscreen icon (mode still available)
@@ -48,10 +48,11 @@ window.divaPlugins = [];
             fixedPadding: 10,           // Fallback if adaptive padding is set to 0
             fixedHeightGrid: true,      // So each page in grid view has the same height (only widths differ)
             goDirectlyTo: 0,            // Default initial page to show (0-indexed)
-            iipServerURL: '',           // The URL to the IIPImage installation, including the `?FIF=` - *MANDATORY*
+            iiifServerURL: '',          // The URL (including prefix) to the IIIF server - *REQUIRED*, unless using IIPImage
+            iipServerURL: '',           // The URL to the IIPImage installation, including the `?FIF=` - *REQUIRED*, unless using IIIF
             inFullscreen: false,        // Set to true to load fullscreen mode initially
             inGrid: false,              // Set to true to load grid view initially
-            imageDir: '',               // Image directory, either absolute path or relative to IIP's FILESYSTEM_PREFIX - *MANDATORY*
+            imageDir: '',               // Image directory, either absolute path or relative to IIP's FILESYSTEM_PREFIX - *REQUIRED*, unless using IIIF
             maxPagesPerRow: 8,          // Maximum number of pages per row in grid view
             maxZoomLevel: -1,           // Optional; defaults to the max zoom returned in the JSON response
             minPagesPerRow: 2,          // Minimum pages per row in grid view. Recommended default.
@@ -367,7 +368,32 @@ window.divaPlugins = [];
 
                 // Adjust the zoom level based on the max zoom level of the page
                 zoomLevel = settings.zoomLevel + maxZoom - settings.realMaxZoom;
-                baseImageURL = baseURL + zoomLevel + ',';
+
+                //TODO this is unreadable
+                var baseImageURL = (settings.iiifServerURL) ? settings.iiifServerURL + '/' + filename + '/' : baseURL + zoomLevel + ',';
+
+                var regionHeight;
+                var regionWidth;
+
+                //TODO only needed for IIIF (scope issue)
+                var percentageSize;
+                var iiifSuffix = '/0/native.jpg';
+
+                // IIIF
+                if (settings.iiifServerURL)
+                {
+                    // convert to percentage size
+                    // TODO: settings.realMaxZoom!
+                    var zoomDifference = Math.pow (2, maxZoom - zoomLevel);
+                    percentageSize = 100 / zoomDifference;
+
+                    // regionX, regionY, regionWidth, regionHeight
+                    regionHeight = settings.tileHeight * zoomDifference;
+                    regionWidth = settings.tileWidth * zoomDifference;
+                } else {
+                    regionHeight = settings.tileHeight;
+                    regionWidth = settings.tileWidth;
+                }
 
                 // Loop through all the tiles in this page
                 row = 0;
@@ -381,10 +407,12 @@ window.divaPlugins = [];
                         left = col * settings.tileWidth;
 
                         // If the tile is in the last row or column, its dimensions will be different
+                        // TODO nb: currently these are display heights, so they remain  the same. regionHeight/Width are request heights.
                         tileHeight = (row === rows - 1) ? lastHeight : settings.tileHeight;
                         tileWidth = (col === cols - 1) ? lastWidth : settings.tileWidth;
 
-                        imageURL = baseImageURL + tileIndex;
+                        //imageURL = baseImageURL + tileIndex;
+                        imageURL = (settings.iiifServerURL) ? baseImageURL + col * regionWidth + ',' + row * regionHeight + ',' + regionWidth + ',' + regionHeight + '/pct:' + percentageSize + iiifSuffix : baseImageURL + tileIndex;
 
                         // this check looks to see if the tile is already loaded, and then if
                         // it isn't, if it should be visible.
@@ -696,7 +724,9 @@ window.divaPlugins = [];
 
                 // Center the page if the height is fixed (otherwise, there is no horizontal padding)
                 leftOffset += (settings.fixedHeightGrid) ? (settings.gridPageWidth - pageWidth) / 2 : 0;
-                imageURL = encodeURI(settings.iipServerURL + "?FIF=" + imdir + filename + '&HEI=' + (pageHeight + 2) + '&CVT=JPEG');
+                //imageURL = encodeURI(settings.iipServerURL + "?FIF=" + imdir + filename + '&HEI=' + (pageHeight + 2) + '&CVT=JPEG');
+                //TODO grid view iiif
+                imageURL = (settings.iiifServerURL) ? encodeURI(settings.iiifServerURL + '/' + filename + '/full/,' + (pageHeight + 2) + '/0/native.jpg') : encodeURI(settings.iipServerURL + "?FIF=" + imdir + filename + '&HEI=' + (pageHeight + 2) + '&CVT=JPEG');
 
                 settings.pageTopOffsets[pageIndex] = heightFromTop;
                 settings.pageLeftOffsets[pageIndex] = leftOffset;
