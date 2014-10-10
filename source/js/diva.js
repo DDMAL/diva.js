@@ -2457,6 +2457,10 @@ window.divaPlugins = [];
             settings.ID = $.generateId('diva-');
             settings.selector = '#' + settings.ID;
 
+            // If settings.iiifServerURL has a trailing slash, remove it
+            if (settings.iiifServerURL.charAt(settings.iiifServerURL.length - 1) === '/')
+                settings.iiifServerURL = settings.iiifServerURL.slice(0, -1);
+
             // Figure out the hashParamSuffix from the ID
             var divaNumber = parseInt(settings.ID, 10);
 
