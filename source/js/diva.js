@@ -709,13 +709,10 @@ window.divaPlugins = [];
 
                 // Center the page if the height is fixed (otherwise, there is no horizontal padding)
                 leftOffset += (settings.fixedHeightGrid) ? (settings.gridPageWidth - pageWidth) / 2 : 0;
-                //imageURL = encodeURI(settings.iipServerURL + "?FIF=" + imdir + filename + '&HEI=' + (pageHeight + 2) + '&CVT=JPEG');
-                //TODO grid view iiif
-                imageURL = (settings.iiifServerURL) ? encodeURI(settings.iiifServerURL + '/' + filename + '/full/,' + (pageHeight + 2) + '/0/native.jpg') : encodeURI(settings.iipServerURL + "?FIF=" + imdir + filename + '&HEI=' + (pageHeight + 2) + '&CVT=JPEG');
+                imageURL = (settings.iiifServerURL) ? encodeURI(settings.iiifServerURL + '/' + filename + '/full/' + pageWidth + ',' + pageHeight + '/0/native.jpg') : encodeURI(settings.iipServerURL + "?FIF=" + imdir + filename + '&HEI=' + (pageHeight + 2) + '&CVT=JPEG');
 
                 settings.pageTopOffsets[pageIndex] = heightFromTop;
                 settings.pageLeftOffsets[pageIndex] = leftOffset;
-
  
                 // Append the HTML for this page to the string builder array
                 var pageDiv = document.createElement('div');
