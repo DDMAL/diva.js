@@ -364,33 +364,27 @@ window.divaPlugins = [];
                 var lastWidth = width - (cols - 1) * settings.tileWidth;
 
                 // Declare variables used within the loops
-                var row, col, tileHeight, tileWidth, top, left, displayStyle, zoomLevel, imageURL;
+                var row, col, tileHeight, tileWidth, top, left, displayStyle, zoomLevel, imageURL, regionHeight, regionWidth, percentageSize;
 
                 // Adjust the zoom level based on the max zoom level of the page
                 zoomLevel = settings.zoomLevel + maxZoom - settings.realMaxZoom;
 
-                //TODO this is unreadable
                 var baseImageURL = (settings.iiifServerURL) ? settings.iiifServerURL + '/' + filename + '/' : baseURL + zoomLevel + ',';
-
-                var regionHeight;
-                var regionWidth;
-
-                //TODO only needed for IIIF (scope issue)
-                var percentageSize;
                 var iiifSuffix = '/0/native.jpg';
 
                 // IIIF
                 if (settings.iiifServerURL)
                 {
                     // convert to percentage size
-                    // TODO: settings.realMaxZoom!
-                    var zoomDifference = Math.pow (2, maxZoom - zoomLevel);
+                    var zoomDifference = Math.pow(2, maxZoom - zoomLevel);
                     percentageSize = 100 / zoomDifference;
 
                     // regionX, regionY, regionWidth, regionHeight
                     regionHeight = settings.tileHeight * zoomDifference;
                     regionWidth = settings.tileWidth * zoomDifference;
-                } else {
+                }
+                else
+                {
                     regionHeight = settings.tileHeight;
                     regionWidth = settings.tileWidth;
                 }
