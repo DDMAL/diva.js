@@ -401,11 +401,9 @@ window.divaPlugins = [];
                         left = col * settings.tileWidth;
 
                         // If the tile is in the last row or column, its dimensions will be different
-                        // TODO nb: currently these are display heights, so they remain  the same. regionHeight/Width are request heights.
                         tileHeight = (row === rows - 1) ? lastHeight : settings.tileHeight;
                         tileWidth = (col === cols - 1) ? lastWidth : settings.tileWidth;
 
-                        //imageURL = baseImageURL + tileIndex;
                         imageURL = (settings.iiifServerURL) ? baseImageURL + col * regionWidth + ',' + row * regionHeight + ',' + regionWidth + ',' + regionHeight + '/pct:' + percentageSize + iiifSuffix : baseImageURL + tileIndex;
 
                         // this check looks to see if the tile is already loaded, and then if
@@ -414,12 +412,6 @@ window.divaPlugins = [];
                         {
                             if (isTileVisible(pageIndex, row, col))
                             {
-                                /* 
-                                    content.push('<div id="' + settings.ID + 'tile-' + pageIndex + '-' + tileIndex + '" 
-                                    class="diva-document-tile"
-                                    style="display:inline; position: absolute; top: ' + top + 'px; left: ' + left + 'px; 
-                                    background-image: url(\'' + imageURL + '\'); height: ' + tileHeight + 'px; width: ' + tileWidth + 'px;"></div>');
-                                */
                                 var tileElem = document.createElement('div');
                                 tileElem.id = settings.ID + 'tile-' + pageIndex + '-' + tileIndex;
                                 tileElem.classList.add('diva-document-tile');
@@ -431,7 +423,6 @@ window.divaPlugins = [];
                                 tileElem.style.height = tileHeight + "px";
                                 tileElem.style.width = tileWidth + "px";
  
-                                // content.push(tileElem);
                                 pageElement.appendChild(tileElem);
                             }
                             else
