@@ -2935,6 +2935,63 @@ window.divaPlugins = [];
             };
         };
 
+        //Returns the page index at a given pageX/pageY value
+        this.getPageIndexForPageXYValues = function(pageX, pageY)
+        {
+            var outerObj = $("#" + settings.ID + "outer");
+            var outerOffset = outerObj.offset();
+            var outerTop = outerOffset.top;
+            var outerLeft = outerOffset.left;
+            var outerBottom = outerTop + outerObj.outerHeight();
+            var outerRight = outerLeft + outerObj.outerWidth();
+            
+            //because pages extend outside the diva-outer class, we want to exclude those values as the pageX/pageY values aren't actually on them
+            if(pageX < outerLeft || pageX > outerRight)
+                return false;
+
+            if(pageY < outerTop || pageY > outerBottom)
+                return false;
+
+            //navigate through all divs starting with "x-diva-page"
+            var curPageIdx = $("div[id^=" + settings.ID + "page]").length;
+            while(curPageIdx--)
+            {
+                var curPage = $($("div[id^=" + settings.ID + "page]")[curPageIdx]);
+                var pageIndex = curPage.attr('data-index');
+                var curPosition = curPage.position();
+                var curOffset = curPage.offset();
+                var curTop, curLeft;
+
+                if(settings.verticallyOriented)
+                {
+                    curTop = curPosition.top - outerObj.scrollTop() + outerTop;
+                    curLeft = curOffset.left - outerObj.scrollLeft() + outerLeft;           
+                }
+                else
+                {
+                    curTop = curOffset.top - outerObj.scrollTop() + outerTop;
+                    curLeft = curPosition.left - outerObj.scrollLeft() + outerLeft;   
+                }
+
+                var curBottom = curTop + curPage.outerHeight();
+                var curRight = curLeft + curPage.outerWidth();
+                
+                //if this point is outside the horizontal boundaries, continue
+                if(pageX < curLeft || pageX > curRight)
+                    continue
+
+                //same with vertical boundaries
+                if(pageY < curTop || pageY > curBottom)
+                    continue
+
+                //if we made it through the above two, we found the page we're looking for 
+                return pageIndex;
+            }
+
+            //if we made it through that entire while loop, we didn't click on a page
+            return false;
+        }
+
         this.activate = function ()
         {
             settings.isActiveDiva = true;
