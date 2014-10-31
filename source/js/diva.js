@@ -2443,6 +2443,10 @@ window.divaPlugins = [];
             if (settings.iiifServerURL.charAt(settings.iiifServerURL.length - 1) === '/')
                 settings.iiifServerURL = settings.iiifServerURL.slice(0, -1);
 
+            // If both settings.iiifServerURL and settings.iipServeURL are set, display a warning
+            if (settings.iipServerURL && settings.iiifServerURL)
+                console.warn('Both settings.iipServerURL and settings.iiifServerURL are defined. Defaulting to settings.iiifServerURL.');
+
             // Figure out the hashParamSuffix from the ID
             var divaNumber = parseInt(settings.ID, 10);
 
