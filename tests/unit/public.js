@@ -394,3 +394,19 @@ asyncTest("translateToMaxZoomLevel()", function () {
         }
     });
 });
+
+asyncTest("getPageIndexForPageXYValues()", function ()
+{
+    $.tempDiva({
+        onReady: function (settings) {
+            var outerObj = $("#" + settings.ID + "outer");
+            $('.diva-dragger').simulate('drag', { dx: 0, dy: -100000 });
+            outerObj.scroll();
+
+            equal(this.getPageIndexForPageXYValues(500, 2500), 93, "scrolled to a later page, click should register on a page");
+            equal(this.getPageIndexForPageXYValues(10, 10), false, "click should be outside diva-outer and thus return false");
+
+            start();
+        }
+    });
+});
