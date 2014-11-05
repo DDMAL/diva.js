@@ -349,9 +349,9 @@ window.divaPlugins = [];
                     return;
 
                 var imdir = settings.imageDir + "/";
-                // Load some more data and initialise some variables
-                var rows = getPageData(pageIndex, 'r');
-                var cols = getPageData(pageIndex, 'c');
+                var rows = Math.ceil(getPageData(pageIndex, 'h') / settings.tileWidth);
+                var cols = Math.ceil(getPageData(pageIndex, 'w') / settings.tileHeight);
+
                 var maxZoom = settings.pages[pageIndex].m;
                 var baseURL = settings.iipServerURL + "?FIF=" + imdir + filename + '&JTL=';
                 var content = [];
