@@ -57,24 +57,18 @@ attribute, which will replace the "Page 1 of __" counter.
                     divaSettings.pageAliasFunction = function(){return false;};
                 } 
 
-                if (divaSettings.newTotalPages === undefined)
-                {
-                    $(divaSettings.ID + 'num-pages').text(divaSettings.newTotalPages);
-                }
-                
                 /*
                     Main function. Will return the first of these three that 
                         resolves to boolean true:
                     -Explicit alias as defined in pageAliases
                     -Result of pageAliasFunction
-                    -originalPageIndex itself
+                    -originalPageIndex + 1 (to simulate the original mapping)
 
-                    Else the function will return the result of isPageValid, 
-                        which is a safer way of returning false.
+                    Else the function will return false.
                 */
                 divaInstance.getAliasForPageIndex = function(originalPageIndex)
                 {
-                    return divaSettings.pageAliases[originalPageIndex] || divaSettings.pageAliasFunction(originalPageIndex) || originalPageIndex || divaInstance.isPageValid(originalPageIndex);
+                    return divaSettings.pageAliases[originalPageIndex] || divaSettings.pageAliasFunction(originalPageIndex) || originalPageIndex + 1;
                 };
 
                 //Maps the current page index to getAliasForPageIndex
@@ -83,16 +77,41 @@ attribute, which will replace the "Page 1 of __" counter.
                     return divaInstance.getAliasForPageIndex(divaSettings.currentPageIndex);
                 };
 
-                //unsubscribe the default currentPage updater
-                diva.Events.unsubscribe("VisiblePageDidChange", divaSettings.toolbar.updateCurrentPage);
-                        
+                //this function overwrites updateCurrentPage from the main diva file to update page numbers on VisiblePAgeDidChange
                 updateCurrentAliasedPage = function ()
                 {
-                    document.getElementById(divaSettings.ID + 'current-page').textContent = divaInstance.getCurrentAliasedPageIndex();
+                    document.getElementById(this.getSettings().ID + 'current-page').textContent = this.getCurrentAliasedPageIndex();
                 };
+
+                //various changes that need to be made once viewer is loaded
+                initialChanges = function ()
+                {
+                    //changes total pages value in GUI
+                    var tempSettings = this.getSettings();
+                    var newTotalPages = tempSettings.numPages;
+                    if (tempSettings.newTotalPages !== undefined)
+                    {
+                        newTotalPages = tempSettings.newTotalPages;
+                    }
+
+                    else if (tempSettings.totalPageOffset !== undefined)
+                    {
+                        newTotalPages = newTotalPages + tempSettings.totalPageOffset;
+                    }
+
+                    //actually changes values
+                    document.getElementById(this.getSettings().ID + 'num-pages').textContent = newTotalPages;
+                    document.getElementById(this.getSettings().ID + 'current-page').textContent = this.getCurrentAliasedPageIndex();
+                    
+                    //resubscribes our new update function
+                    diva.Events.unsubscribe(["VisiblePageDidChange", tempSettings.toolbar.updateCurrentPage]);
+                    diva.Events.subscribe("VisiblePageDidChange", updateCurrentAliasedPage);
+                };
+
+                diva.Events.subscribe("ViewerDidLoad", initialChanges);
             },
             pluginName: 'pagealias',
-            titleText: 'Re-alias page indexes'
+            titleText: 'Re-aliases page indexes'
         };
         return retval;
     })());
