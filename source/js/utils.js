@@ -725,7 +725,7 @@ var diva = (function() {
 
                 if (cache[t])
                 {
-                    i = cache[t].length;
+                    var i = cache[t].length;
                     while (i--)
                     {
                         if (cache[t][i] === handle[1])
