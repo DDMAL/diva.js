@@ -71,10 +71,47 @@ attribute, which will replace the "Page 1 of __" counter.
                     return divaSettings.pageAliases[originalPageIndex] || divaSettings.pageAliasFunction(originalPageIndex) || originalPageIndex + 1;
                 };
 
+                /*
+                    Returns the first page index found for a given aliased number or false if not found.
+                    This may cause issues if a specific alias is found for multiple page indices; use getPageIndicesForAlias and reimplement functions as necessary if this is the case.
+                */
+                divaInstance.getPageIndexForAlias = function(aliasedNumber)
+                {
+                    for(var idx = 0; idx < divaSettings.numPages; idx++)
+                    {
+                        if(divaInstance.getAliasForPageIndex(idx) == aliasedNumber)
+                        {
+                            return idx;
+                        }
+                    }
+                    return false;
+                };
+
+                //Returns array of page indices for a given aliased number. Returns an empty array if none are found.
+                divaInstance.getPageIndicesForAlias = function(aliasedNumber)
+                {
+                    var indexArr = [];
+                    for(var idx = 0; idx < divaSettings.numPages; idx++)
+                    {
+                        if(divaInstance.getAliasForPageIndex(idx) == aliasedNumber)
+                        {
+                            indexArr.push(idx);
+                        }
+                    }
+                    return indexArr;
+                };
+
+
                 //Maps the current page index to getAliasForPageIndex
                 divaInstance.getCurrentAliasedPageIndex = function()
                 {
                     return divaInstance.getAliasForPageIndex(divaSettings.currentPageIndex);
+                };
+
+                //Wrapper for gotoPageByIndex, keeping the aliased numbers in mind
+                divaInstance.gotoPageByAliasedNumber = function(aliasedNumber, xAnchor, yAnchor)
+                {
+                    return divaInstance.gotoPageByIndex(divaInstance.getPageIndexForAlias(aliasedNumber), xAnchor, yAnchor);
                 };
 
                 //this function overwrites updateCurrentPage from the main diva file to update page numbers on VisiblePAgeDidChange
