@@ -2753,13 +2753,13 @@ window.divaPlugins = [];
 
         // Jump to a page based on its filename
         // Returns true if successful and false if the filename is invalid
-        this.gotoPageByName = function (filename)
+        this.gotoPageByName = function (filename, xAnchor, yAnchor)
         {
             var pageIndex = getPageIndex(filename);
 
             if (isPageValid(pageIndex))
             {
-                gotoPageTop(pageIndex);
+                gotoPage(pageIndex, getYOffset(pageIndex, yAnchor), getXOffset(pageIndex, xAnchor));
                 return true;
             }
 
