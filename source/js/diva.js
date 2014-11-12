@@ -991,8 +991,8 @@ window.divaPlugins = [];
         //Helper function for going to the top of a specific page
         var gotoPageTop = function (pageIndex)
         {
-            var verticalOffset = getYOffset(false, pageIndex);
-            var horizontalOffset = getXOffset(false, pageIndex);
+            var verticalOffset = getYOffset(pageIndex, "bottom");
+            var horizontalOffset = getXOffset(pageIndex, "right");
 
             gotoPage(pageIndex, verticalOffset, horizontalOffset);
         };
@@ -1250,8 +1250,8 @@ window.divaPlugins = [];
         // Should only be called after changing settings.inFullscreen
         var handleModeChange = function (changeView)
         {
-            var storedOffsetY = getYOffset(true);
-            var storedOffsetX = getXOffset(true);
+            var storedOffsetY = getCurrentYOffset();
+            var storedOffsetX = getCurrentXOffset();
             var outerElem = document.getElementById(settings.ID + "outer");
 
             settings.panelHeight = outerElem.clientHeight - (outerElem.scrollWidth > outerElem.clientWidth ? settings.scrollbarWidth : 0); 
@@ -1346,8 +1346,8 @@ window.divaPlugins = [];
         var toggleOrientation = function ()
         {
             settings.verticallyOriented = !settings.verticallyOriented;
-            settings.verticalOffset = getYOffset(false);
-            settings.horizontalOffset = getXOffset(false);
+            settings.verticalOffset = getYOffset();
+            settings.horizontalOffset = getXOffset();
             settings.goDirectlyTo = settings.currentPageIndex;
 
             loadDocument();
@@ -1433,8 +1433,8 @@ window.divaPlugins = [];
             else
             {
                 settings.goDirectlyTo = settings.currentPageIndex;
-                settings.verticalOffset = zoomRatio * getYOffset(true);
-                settings.horizontalOffset = zoomRatio * getXOffset(true);
+                settings.verticalOffset = zoomRatio * getCurrentYOffset();
+                settings.horizontalOffset = zoomRatio * getCurrentXOffset();
             }
 
             settings.oldZoomLevel = settings.zoomLevel;
@@ -1467,45 +1467,67 @@ window.divaPlugins = [];
             return true;
         };
 
-        //if currentPosition is true, it will get your current offset position; if currentPosition is false it will get the offset position for the top of the page.
-        var getYOffset = function (currentPosition, pageIndex)
+        /*
+        Gets the Y-offset for a specific point on a specific page
+        Acceptable values for "anchor":
+            "top" - will anchor top of the page to the top of the diva-outer element
+            "bottom" - top, s/top/bottom
+            "center" (default) - will center the page on the diva element
+        Returned value will be the distance from the center of the diva-outer element to the top of the current page for the specified anchor
+        */
+        var getYOffset = function (pageIndex, anchor)
         {
-            var offset;
             pageIndex = (typeof(pageIndex) === "undefined" ? settings.currentPageIndex : pageIndex);
-            if (currentPosition)
+            
+            if(anchor == "top")
             {
-                var scrollTop = document.getElementById(settings.ID + 'outer').scrollTop;
-                var elementHeight = settings.panelHeight;
- 
-                offset = (scrollTop - settings.pageTopOffsets[pageIndex] + elementHeight / 2);
+                return parseInt(settings.panelHeight / 2, 10);
+            }
+            else if(anchor == "bottom")
+            {
+                return parseInt(getPageData(pageIndex, "h") - settings.panelHeight / 2, 10);
             }
             else
             {
-                offset = (settings.verticallyOriented ? (settings.panelHeight / 2) : getPageData(pageIndex, "h") / 2);
+                return parseInt(getPageData(pageIndex, "h") / 2, 10);
             }
-
-
-            return parseInt(offset, 10);
         };
 
-        var getXOffset = function (currentPosition, pageIndex)
+        //Same as getYOffset with "left" and "right" as acceptable values instead of "top" and "bottom"
+        var getXOffset = function (pageIndex, anchor)
         {
-            var offset;
             pageIndex = (typeof(pageIndex) === "undefined" ? settings.currentPageIndex : pageIndex);
-
-            if (currentPosition)
+            
+            if(anchor == "left")
             {
-                var scrollLeft = document.getElementById(settings.ID + 'outer').scrollLeft;
-                var elementWidth = settings.panelWidth;
-
-                offset = (scrollLeft - settings.pageLeftOffsets[pageIndex] + parseInt(elementWidth / 2, 10));
+                return parseInt(settings.panelWidth / 2, 10);
+            }
+            else if(anchor == "right")
+            {
+                return parseInt(getPageData(pageIndex, "w") - settings.panelWidth / 2, 10);
             }
             else
             {
-                offset = (settings.verticallyOriented ? getPageData(pageIndex, "w") / 2 : (settings.panelWidth / 2));
+                return parseInt(getPageData(pageIndex, "w") / 2, 10);
             }
+        };
 
-            return parseInt(offset, 10);
+        //gets distance from the center of the diva-outer element to the top of the current page
+        var getCurrentYOffset = function()
+        {
+            var scrollTop = document.getElementById(settings.ID + 'outer').scrollTop;
+            var elementHeight = settings.panelHeight;
+
+            return (scrollTop - settings.pageTopOffsets[settings.currentPageIndex] + parseInt(elementHeight / 2, 10));
+        };
+
+        //gets distance from the center of the diva-outer element to the left of the current page
+        var getCurrentXOffset = function()
+        {
+            var scrollLeft = document.getElementById(settings.ID + 'outer').scrollLeft;
+            var elementWidth = settings.panelWidth;
+
+            return (scrollLeft - settings.pageLeftOffsets[settings.currentPageIndex] + parseInt(elementWidth / 2, 10));
         };
 
         var getState = function ()
@@ -1517,8 +1539,8 @@ window.divaPlugins = [];
                 'n': settings.pagesPerRow,
                 'i': (settings.enableFilename) ? settings.pages[settings.currentPageIndex].f : false,
                 'p': (settings.enableFilename) ? false : settings.currentPageIndex + 1,
-                'y': (settings.inGrid) ? false : getYOffset(true),
-                'x': (settings.inGrid) ? false : getXOffset(true)
+                'y': (settings.inGrid) ? false : getCurrentYOffset(),
+                'x': (settings.inGrid) ? false : getCurrentXOffset()
             };
 
             return state;
@@ -1552,8 +1574,8 @@ window.divaPlugins = [];
             settings.panelHeight = outerElem.clientHeight - (outerElem.scrollWidth > outerElem.clientWidth ? settings.scrollbarWidth : 0); 
             settings.panelWidth = outerElem.clientWidth - (outerElem.scrollHeight > outerElem.clientHeight ? settings.scrollbarWidth : 0); 
 
-            settings.horizontalOffset = getXOffset(true);
-            settings.verticalOffset = getYOffset(true);
+            settings.horizontalOffset = getCurrentXOffset();
+            settings.verticalOffset = getCurrentYOffset();
 
             gotoPage(settings.currentPageIndex, settings.verticalOffset, settings.horizontalOffset);
             return true;
@@ -1660,8 +1682,8 @@ window.divaPlugins = [];
                 settings.previousTopScroll = newScrollTop;
                 settings.previousLeftScroll = newScrollLeft;
 
-                settings.horizontalOffset = getXOffset(true);
-                settings.verticalOffset = getYOffset(true);
+                settings.horizontalOffset = getCurrentXOffset();
+                settings.verticalOffset = getCurrentYOffset();
             };
 
             $(settings.outerSelector).scroll(scrollFunction);
@@ -1871,8 +1893,8 @@ window.divaPlugins = [];
                         settings.resizeTimer = setTimeout(function ()
                         {
                             settings.goDirectlyTo = settings.currentPageIndex;
-                            settings.verticalOffset = getYOffset(true);
-                            settings.horizontalOffset = getXOffset(true);
+                            settings.verticalOffset = getCurrentYOffset();
+                            settings.horizontalOffset = getCurrentXOffset();
                             loadViewer();
                         }, 200);
                     });
@@ -2372,7 +2394,7 @@ window.divaPlugins = [];
                     }
                     else
                     {
-                        settings.verticalOffset = getYOffset(false);
+                        settings.verticalOffset = getYOffset(settings.currentPageIndex, "top");
                     }
 
                     // x - horizontal offset from the center of the page
@@ -2384,7 +2406,7 @@ window.divaPlugins = [];
                     }
                     else
                     {
-                        settings.horizontalOffset = getXOffset(false);
+                        settings.horizontalOffset = getXOffset(settings.currentPageIndex, "center");
                     }        
 
                     if (settings.inFullscreen)
