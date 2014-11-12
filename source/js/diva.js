@@ -991,8 +991,8 @@ window.divaPlugins = [];
         //Helper function for going to the top of a specific page
         var gotoPageTop = function (pageIndex)
         {
-            var verticalOffset = getYOffset(pageIndex, "bottom");
-            var horizontalOffset = getXOffset(pageIndex, "right");
+            var verticalOffset = getYOffset(pageIndex, "top");
+            var horizontalOffset = getXOffset(pageIndex, "center");
 
             gotoPage(pageIndex, verticalOffset, horizontalOffset);
         };
@@ -1916,6 +1916,7 @@ window.divaPlugins = [];
                         loadViewer();
                     });
                 }
+                diva.Events.subscribe('UpdatePanelSize', adjustBrowserDims);
             }
         };
 
