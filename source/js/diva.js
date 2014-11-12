@@ -2523,25 +2523,29 @@ window.divaPlugins = [];
         };
 
         // Go to a particular page by its page number (with indexing starting at 1)
+            //xAnchor may either be "left", "right", or default "center"; the (xAnchor) side of the page will be anchored to the (xAnchor) side of the diva-outer element
+            //yAnchor may either be "top", "bottom", or default "center"; same process as xAnchor.
         // returns True if the page number passed is valid; false if it is not.
-        this.gotoPageByNumber = function (pageNumber)
+        this.gotoPageByNumber = function (pageNumber, xAnchor, yAnchor)
         {
             var pageIndex = pageNumber - 1;
             if (isPageValid(pageIndex))
             {
-                gotoPageTop(pageIndex);
+                gotoPage(pageIndex, getYOffset(pageIndex, yAnchor), getXOffset(pageIndex, xAnchor));
                 return true;
             }
             return false;
         };
 
         // Go to a particular page (with indexing starting at 0)
+            //xAnchor may either be "left", "right", or default "center"; the (xAnchor) side of the page will be anchored to the (xAnchor) side of the diva-outer element
+            //yAnchor may either be "top", "bottom", or default "center"; same process as xAnchor.
         // returns True if the page index is valid; false if it is not.
-        this.gotoPageByIndex = function (pageIndex)
+        this.gotoPageByIndex = function (pageIndex, xAnchor, yAnchor)
         {
             if (isPageValid(pageIndex))
             {
-                gotoPageTop(pageIndex);
+                gotoPage(pageIndex, getYOffset(pageIndex, yAnchor), getXOffset(pageIndex, xAnchor));
                 return true;
             }
             return false;
