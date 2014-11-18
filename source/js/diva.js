@@ -1278,7 +1278,7 @@ window.divaPlugins = [];
             // If it has changed, adjust panel size coming out of fullscreen
             if (!settings.inFullscreen)
             {
-                adjustBrowserDims();
+                updatePanelSize();
             }            
 
             if (settings.oldZoomLevel >= 0 && !settings.inGrid)
@@ -1479,11 +1479,11 @@ window.divaPlugins = [];
         {
             pageIndex = (typeof(pageIndex) === "undefined" ? settings.currentPageIndex : pageIndex);
             
-            if(anchor == "top")
+            if (anchor == "top")
             {
                 return parseInt(settings.panelHeight / 2, 10);
             }
-            else if(anchor == "bottom")
+            else if (anchor == "bottom")
             {
                 return parseInt(getPageData(pageIndex, "h") - settings.panelHeight / 2, 10);
             }
@@ -1498,11 +1498,11 @@ window.divaPlugins = [];
         {
             pageIndex = (typeof(pageIndex) === "undefined" ? settings.currentPageIndex : pageIndex);
             
-            if(anchor == "left")
+            if (anchor == "left")
             {
                 return parseInt(settings.panelWidth / 2, 10);
             }
-            else if(anchor == "right")
+            else if (anchor == "right")
             {
                 return parseInt(getPageData(pageIndex, "w") - settings.panelWidth / 2, 10);
             }
@@ -1568,7 +1568,7 @@ window.divaPlugins = [];
         };
 
         // updates panelHeight/panelWidth on resize
-        var adjustBrowserDims = function ()
+        var updatePanelSize = function ()
         {
             var outerElem = document.getElementById(settings.ID + 'outer');
             settings.panelHeight = outerElem.clientHeight - (outerElem.scrollWidth > outerElem.clientWidth ? settings.scrollbarWidth : 0); 
@@ -1829,7 +1829,7 @@ window.divaPlugins = [];
                 // Catch the key presses in document
                 $(document).keydown(function (event)
                 {
-                    if(!settings.isActiveDiva)
+                    if (!settings.isActiveDiva)
                         return;
                     
                     // Space or page down - go to the next page
@@ -1886,7 +1886,7 @@ window.divaPlugins = [];
                 {
                     $(window).resize(function ()
                     {
-                        adjustBrowserDims();
+                        updatePanelSize();
                         // Cancel any previously-set resize timeouts
                         clearTimeout(settings.resizeTimer);
 
@@ -1906,7 +1906,7 @@ window.divaPlugins = [];
                     {
                         var oldWidth = settings.panelWidth;
                         var oldHeight = settings.panelHeight;
-                        adjustBrowserDims();
+                        updatePanelSize();
 
                         settings.horizontalOffset -= (settings.panelWidth - oldWidth) / 2;
                         settings.verticalOffset -= (settings.panelHeight - oldHeight) / 2;
@@ -1916,7 +1916,7 @@ window.divaPlugins = [];
                         loadViewer();
                     });
                 }
-                diva.Events.subscribe('UpdatePanelSize', adjustBrowserDims);
+                diva.Events.subscribe('PanelSizeDidChange', updatePanelSize);
             }
         };
 
@@ -2360,7 +2360,7 @@ window.divaPlugins = [];
                     }
 
                     // Adjust the document panel dimensions
-                    adjustBrowserDims();     
+                    updatePanelSize();     
 
                     // Make sure the value for settings.goDirectlyTo is valid
                     if (!isPageValid(parseInt(settings.goDirectlyTo), 10))
@@ -2416,7 +2416,7 @@ window.divaPlugins = [];
                         loadViewer();
 
                     //prep dimensions one last time now that pages have loaded
-                    adjustBrowserDims();
+                    updatePanelSize();
 
                     // Execute the callback
                     executeCallback(settings.onReady, settings);
@@ -2973,15 +2973,15 @@ window.divaPlugins = [];
             var outerRight = outerLeft + outerObj.outerWidth();
             
             //because pages extend outside the diva-outer class, we want to exclude those values as the pageX/pageY values aren't actually on them
-            if(pageX < outerLeft || pageX > outerRight)
+            if (pageX < outerLeft || pageX > outerRight)
                 return false;
 
-            if(pageY < outerTop || pageY > outerBottom)
+            if (pageY < outerTop || pageY > outerBottom)
                 return false;
 
             //navigate through all divs starting with "x-diva-page"
             var curPageIdx = $("div[id^=" + settings.ID + "page]").length;
-            while(curPageIdx--)
+            while (curPageIdx--)
             {
                 var curPage = $($("div[id^=" + settings.ID + "page]")[curPageIdx]);
                 var pageIndex = curPage.attr('data-index');
@@ -2989,7 +2989,7 @@ window.divaPlugins = [];
                 var curOffset = curPage.offset();
                 var curTop, curLeft;
 
-                if(settings.verticallyOriented)
+                if (settings.verticallyOriented)
                 {
                     curTop = curPosition.top - outerObj.scrollTop() + outerTop;
                     curLeft = curOffset.left - outerObj.scrollLeft() + outerLeft;           
@@ -3004,11 +3004,11 @@ window.divaPlugins = [];
                 var curRight = curLeft + curPage.outerWidth();
                 
                 //if this point is outside the horizontal boundaries, continue
-                if(pageX < curLeft || pageX > curRight)
+                if (pageX < curLeft || pageX > curRight)
                     continue
 
                 //same with vertical boundaries
-                if(pageY < curTop || pageY > curBottom)
+                if (pageY < curTop || pageY > curBottom)
                     continue
 
                 //if we made it through the above two, we found the page we're looking for 
