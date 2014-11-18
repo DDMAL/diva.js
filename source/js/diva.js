@@ -1479,7 +1479,7 @@ window.divaPlugins = [];
         {
             pageIndex = (typeof(pageIndex) === "undefined" ? settings.currentPageIndex : pageIndex);
             
-            if (anchor == "center")
+            if (anchor == "center" || anchor == "centre") //how you can tell an American coded this
             {
                 return parseInt(getPageData(pageIndex, "h") / 2, 10);
             }
@@ -1497,7 +1497,7 @@ window.divaPlugins = [];
         var getXOffset = function (pageIndex, anchor)
         {
             pageIndex = (typeof(pageIndex) === "undefined" ? settings.currentPageIndex : pageIndex);
-            
+
             if (anchor == "left")
             {
                 return parseInt(settings.panelWidth / 2, 10);

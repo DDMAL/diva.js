@@ -188,10 +188,39 @@ asyncTest("gotoPageByName()", function () {
     $.tempDiva({
         onReady: function (settings) {
             equal(settings.currentPageIndex, 0, "Initial page number should be 1");
-            ok(this.gotoPageByName('bm_002.tif'), "It should find the page index for bm_002.tif");
-            equal(settings.currentPageIndex, 1, "Now the page number should be 2");
             ok(!this.gotoPageByName('bm_000.tif'), "It should not find anything for bm_000.tif");
+            ok(this.gotoPageByName('bm_002.tif', "right", "center"), "It should find the page index for bm_002.tif");
+            equal(settings.currentPageIndex, 1, "Now the page number should be 2");
             start();
+            
+            /*
+                so this is confusing. this tests the internal getX/YOffset anchor points.
+                1) gotoPageByName above is called with "right" and "top" anchors, two non-default values
+                2) the last line in this function subscribes the scroll motion to centerRightChecker 
+                3) centerRightChecker checks center right, then scrolls to bottom left and calls bottom left
+                4) bottomLeftChecker checks bottom left and de-subscribes all
+            */
+            function bottomLeftChecker(a)
+            {
+                var pageSelector = "#" + this.getSettings().ID + "page-1";
+                equal($(pageSelector).offset().top, 1914, "Testing bottom anchor point on gotoPageByName.");
+                equal($(pageSelector).offset().left, 20, "Testing left anchor point on gotoPageByName.");
+
+                diva.Events.unsubscribe(["ViewerDidScroll", bottomLeftChecker]);
+            }
+
+            function centerRightChecker(a)
+            {
+                var pageSelector = "#" + this.getSettings().ID + "page-1";
+                equal($(pageSelector).offset().top, 2107, "Testing center anchor point on gotoPageByName.");
+                equal($(pageSelector).offset().left, 307, "Testing right anchor point on gotoPageByName.");
+
+                diva.Events.unsubscribe(["ViewerDidScroll", centerRightChecker]);
+                ok(this.gotoPageByName('bm_002.tif', "left", "bottom"), "Going to the same page; offset should change as position is being changed");
+                diva.Events.subscribe("ViewerDidScroll", bottomLeftChecker);
+            }
+
+            diva.Events.subscribe("ViewerDidScroll", centerRightChecker);
         }
     });
 });
