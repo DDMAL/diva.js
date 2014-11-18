@@ -1470,18 +1470,18 @@ window.divaPlugins = [];
         /*
         Gets the Y-offset for a specific point on a specific page
         Acceptable values for "anchor":
-            "top" - will anchor top of the page to the top of the diva-outer element
+            "top" (default) - will anchor top of the page to the top of the diva-outer element
             "bottom" - top, s/top/bottom
-            "center" (default) - will center the page on the diva element
+            "center" - will center the page on the diva element
         Returned value will be the distance from the center of the diva-outer element to the top of the current page for the specified anchor
         */
         var getYOffset = function (pageIndex, anchor)
         {
             pageIndex = (typeof(pageIndex) === "undefined" ? settings.currentPageIndex : pageIndex);
             
-            if (anchor == "top")
+            if (anchor == "center")
             {
-                return parseInt(settings.panelHeight / 2, 10);
+                return parseInt(getPageData(pageIndex, "h") / 2, 10);
             }
             else if (anchor == "bottom")
             {
@@ -1489,7 +1489,7 @@ window.divaPlugins = [];
             }
             else
             {
-                return parseInt(getPageData(pageIndex, "h") / 2, 10);
+                return parseInt(settings.panelHeight / 2, 10);
             }
         };
 
