@@ -3056,10 +3056,10 @@ window.divaPlugins = [];
     {
         return this.each(function ()
         {
-            var element = $(this);
+            var element = this;
 
             // Return early if this element already has a plugin instance
-            if (element.data('diva'))
+            if ($(element).data('diva'))
                 return;
 
             // Save the reference to the container element
@@ -3067,7 +3067,7 @@ window.divaPlugins = [];
 
             // Otherwise, instantiate the document viewer
             var diva = new Diva(this, options);
-            element.data('diva', diva);
+            $(element).data('diva', diva);
         });
     };
 
