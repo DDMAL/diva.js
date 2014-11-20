@@ -76,7 +76,7 @@ window.divaPlugins = [];
             throbberTimeout: 100,       // Number of milliseconds to wait before showing throbber
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
-            toolbarParentObject: options.parentObject, // The toolbar parent selector. Must be a jQuery selector (leading '#')
+            toolbarParentObject: options.parentObject, // The toolbar parent object.
             verticallyOriented: true,   // Determines vertical vs. horizontal orientation 
             viewportMargin: 200,        // Pretend tiles +/- 200px away from viewport are in
             zoomLevel: 2                // The initial zoom level (used to store the current zoom level)
@@ -103,7 +103,7 @@ window.divaPlugins = [];
             ID: null,                   // The prefix of the IDs of the elements (usually 1-diva-)
             initialKeyScroll: false,    // Holds the initial state of enableKeyScroll
             initialSpaceScroll: false,  // Holds the initial state of enableSpaceScroll
-            innerObject: '',          // settings.selector + 'inner', for selecting the .diva-inner element
+            innerObject: '',            // $(settings.ID + 'inner'), for selecting the .diva-inner element
             isActiveDiva: true,         // In the case that multiple diva panes exist on the same page, this should have events funneled to it.
             isScrollable: true,         // Used in enable/disableScrollable public methods
             itemTitle: '',              // The title of the document
@@ -118,7 +118,7 @@ window.divaPlugins = [];
             numPages: 0,                // Number of pages in the array
             numRows: 0,                 // Number of rows
             oldZoomLevel: -1,           // Holds the previous zoom level after zooming in or out
-            outerObject: '',          // settings.selector + 'outer', for selecting the .diva-outer element
+            outerObject: '',            // $(settings.ID + 'outer'), for selecting the .diva-outer element
             pages: [],                  // An array containing the data for all the pages
             pageLeftOffsets: [],        // Distance from the left side of each page to the left side of the diva-inner object
             pageTopOffsets: [],         // Distance from the top side of each page to the top side of the diva-inner object
@@ -144,7 +144,7 @@ window.divaPlugins = [];
             totalWidths: [],            // The total height of all pages (stacked together) for each zoom level
             totalWidth: 0,              // The total height for the current zoom level (including padding)
             verticalOffset: 0,          // Distance from the center of the diva element to the left side of the current page
-            verticalPadding: 0         // Either the fixed padding or adaptive padding
+            verticalPadding: 0          // Either the fixed padding or adaptive padding
         };
 
         $.extend(settings, globals);
