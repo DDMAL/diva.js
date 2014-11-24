@@ -67,8 +67,6 @@ asyncTest("get/setZoomLevel(), zoomIn() and zoomOut()", function () {
             ok(this.setZoomLevel(2), "Setting zoom level to 2 should be fine");
             equal(this.getZoomLevel(), 2, "Zoom level should now be 2");
             start();
-
-            console.log("4");
         }
     });
 });
@@ -85,8 +83,6 @@ asyncTest("enable/disableScrollable()", function () {
             $(settings.selector + 'page-0').trigger(event);
             equal(settings.zoomLevel, 3, "Should be able to zoom by double click, zoom level should now be 3");
 
-            console.log("1");
-
             // should be able to scroll by dragging
             var initScroll = settings.outerObject.scrollTop();
             // simulate drag downwards
@@ -96,9 +92,6 @@ asyncTest("enable/disableScrollable()", function () {
             ok(finalScroll > initScroll, "Should have scrolled down before disableScrollable()");
 
             this.disableScrollable();
-
-
-            console.log("2");
 
             // should not be able to zoom by double click
             event = $.Event("dblclick");
@@ -115,9 +108,6 @@ asyncTest("enable/disableScrollable()", function () {
             ok(finalScroll === initScroll, "Should not have scrolled down after disableScrollable()");
 
             this.enableScrollable();
-
-
-            console.log("3");
 
             // should be able to zoom by double click
             event = $.Event("dblclick");
