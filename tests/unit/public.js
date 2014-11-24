@@ -67,6 +67,8 @@ asyncTest("get/setZoomLevel(), zoomIn() and zoomOut()", function () {
             ok(this.setZoomLevel(2), "Setting zoom level to 2 should be fine");
             equal(this.getZoomLevel(), 2, "Zoom level should now be 2");
             start();
+
+            console.log("4");
         }
     });
 });
@@ -83,15 +85,20 @@ asyncTest("enable/disableScrollable()", function () {
             $(settings.selector + 'page-0').trigger(event);
             equal(settings.zoomLevel, 3, "Should be able to zoom by double click, zoom level should now be 3");
 
+            console.log("1");
+
             // should be able to scroll by dragging
-            var initScroll = $(settings.outerSelector).scrollTop();
+            var initScroll = settings.outerObject.scrollTop();
             // simulate drag downwards
             $('.diva-dragger').simulate('drag', { dx: 0, dy: -500 });
-            var finalScroll = $(settings.outerSelector).scrollTop();
+            var finalScroll = settings.outerObject.scrollTop();
 
             ok(finalScroll > initScroll, "Should have scrolled down before disableScrollable()");
 
             this.disableScrollable();
+
+
+            console.log("2");
 
             // should not be able to zoom by double click
             event = $.Event("dblclick");
@@ -102,12 +109,15 @@ asyncTest("enable/disableScrollable()", function () {
 
             // should not be able to drag
             // store previous scroll in initScroll
-            initScroll = $(settings.outerSelector).scrollTop();
+            initScroll = settings.outerObject.scrollTop();
             $('.diva-dragger').simulate('drag', { dx: 0, dy: -500 });
-            finalScroll = $(settings.outerSelector).scrollTop();
+            finalScroll = settings.outerObject.scrollTop();
             ok(finalScroll === initScroll, "Should not have scrolled down after disableScrollable()");
 
             this.enableScrollable();
+
+
+            console.log("3");
 
             // should be able to zoom by double click
             event = $.Event("dblclick");
@@ -117,10 +127,10 @@ asyncTest("enable/disableScrollable()", function () {
             equal(settings.zoomLevel, 4, "Should be able to zoom by double click after enableScrollable(), zoom level should now be 4");
 
             // should be able to scroll by dragging
-            initScroll = $(settings.outerSelector).scrollTop();
+            initScroll = settings.outerObject.scrollTop();
             // simulate drag downwards
             $('.diva-dragger').simulate('drag', { dx: 0, dy: -500 });
-            finalScroll = $(settings.outerSelector).scrollTop();
+            finalScroll = settings.outerObject.scrollTop();
 
             ok(finalScroll > initScroll, "Should have scrolled down after enableScrollable()");
 
@@ -301,8 +311,8 @@ asyncTest("setState()", function () {
             // patch to remove tests from Travis CI build due to off-by-one pixel error when run in Travis
             if (!window.isTravis)
             {
-                equal($(settings.outerSelector).scrollTop(), 8782, "Scroll from top should be default top for bm_005 after leaving fullscreen");
-                equal($(settings.outerSelector).scrollLeft(), 627, "Scroll from left should be 500 more");
+                equal(settings.outerObject.scrollTop(), 8782, "Scroll from top should be default top for bm_005 after leaving fullscreen");
+                equal(settings.outerObject.scrollLeft(), 627, "Scroll from left should be 500 more");
             }
 
             state = {

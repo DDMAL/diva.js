@@ -133,63 +133,63 @@ multipleHashParamTest("page number (p), grid (g)", {p: "100", g: "true"}, functi
 }, {enableFilename: false});
 
 hashParamTest("vertical offset (y) - positive value", "y", "600", function (settings) {
-    var topScroll = $(settings.outerSelector).scrollTop();
+    var topScroll = settings.outerObject.scrollTop();
     equal(topScroll, 250, "Should have scrolled 250 (600 = top of page - viewport y-center) vertically");
 });
 
 hashParamTest("vertical offset (y) - negative value", "y", "-600", function (settings) {
-    var topScroll = $(settings.outerSelector).scrollTop();
+    var topScroll = settings.outerObject.scrollTop();
     equal(topScroll, 0, "Should not have scrolled negatively because, well, you can't");
 });
 
 multipleHashParamTest("vertical offset (y) and page number (p)", {y: 500, p: 50}, function (settings) {
-    var topScroll = $(settings.outerSelector).scrollTop();
+    var topScroll = settings.outerObject.scrollTop();
     var expectedTopScroll = 52922;
     equal(settings.currentPageIndex, 49, "Current page should be 50 (index of 49)");
     equal(topScroll, expectedTopScroll, "Should be heightAbovePages + 500 pixels of scroll from the top + page y-center");
 
     // Check that the horizontal scroll hasn't been weirdly affected
-    var leftScroll = $(settings.outerSelector).scrollLeft();
+    var leftScroll = settings.outerObject.scrollLeft();
     var expectedLeftScroll = (settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2 - (settings.panelWidth)) / 2 - settings.scrollbarWidth;
     equal(leftScroll, parseInt(expectedLeftScroll, 10), "Horizontal scroll should just center it, as usual");
 }, {enableFilename: false, zoomLevel: 2});
 
 /*
 var desiredHorizontalCenter = settings.widthLeftOfPages[pageIndex] + horizontalOffset;
-            var desiredLeft = desiredHorizontalCenter - ($(settings.outerSelector).width() / 2);
+            var desiredLeft = desiredHorizontalCenter - (settings.outerObject.width() / 2);
             */
 
 hashParamTest("horizontal offset (x) - positive value", "x", "100", function (settings) {
-    var leftScroll = $(settings.outerSelector).scrollLeft();
+    var leftScroll = settings.outerObject.scrollLeft();
     var halfMaxWidth = (settings.maxWidths[settings.zoomLevel] / 2 + settings.horizontalPadding + 100);
     var expectedLeftScroll = (halfMaxWidth > settings.panelWidth) ? (halfMaxWidth - settings.panelWidth) / 2 : 0;
     equal(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
 });
 
 hashParamTest("horizontal offset (x) - negative value", "x", "-100", function (settings) {
-    var leftScroll = $(settings.outerSelector).scrollLeft();
+    var leftScroll = settings.outerObject.scrollLeft();
     var halfMaxWidth = (settings.maxWidths[settings.zoomLevel] / 2 + settings.horizontalPadding - 100);
     var expectedLeftScroll = (halfMaxWidth > settings.panelWidth) ? (halfMaxWidth - settings.panelWidth) / 2 : 0;
     equal(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the left");
 });
 
 multipleHashParamTest("horizontal offset (x) and page number (p)", {x: 100, p: 50}, function (settings) {
-    var topScroll = $(settings.outerSelector).scrollTop();
+    var topScroll = settings.outerObject.scrollTop();
     var expectedTopScroll = 52772;
     equal(topScroll, expectedTopScroll, "vertical scroll should be just to page 50");
 
-    var leftScroll = $(settings.outerSelector).scrollLeft();
+    var leftScroll = settings.outerObject.scrollLeft();
     var halfMaxWidth = (settings.maxWidths[settings.zoomLevel] / 2 + settings.horizontalPadding + 100);
     var expectedLeftScroll = (halfMaxWidth > settings.panelWidth) ? (halfMaxWidth - settings.panelWidth) / 2 : 0;
     equal(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
 }, {enableFilename: false});
 
 multipleHashParamTest("horizontal offset (x), vertical offset (y), page number (p)", {x: 100, y: 200, p: 50}, function (settings) {
-    var topScroll = $(settings.outerSelector).scrollTop();
+    var topScroll = settings.outerObject.scrollTop();
     var expectedTopScroll = 52622;
     equal(topScroll, expectedTopScroll, "vertical scroll should be to page 50 + 200 + page y-center");
 
-    var leftScroll = $(settings.outerSelector).scrollLeft();
+    var leftScroll = settings.outerObject.scrollLeft();
     var halfMaxWidth = (settings.maxWidths[settings.zoomLevel] / 2 + settings.horizontalPadding + 100);
     var expectedLeftScroll = (halfMaxWidth > settings.panelWidth) ? (halfMaxWidth - settings.panelWidth) / 2 : 0;
     equal(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
