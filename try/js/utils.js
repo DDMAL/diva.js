@@ -717,14 +717,15 @@ var diva = (function() {
              *      @method unsubscribe
              *      @param handle {Array}
              *      @param completely {Boolean} - Unsubscribe all events for a given topic.
+             *      @return success {Boolean}
              */
             unsubscribe: function (handle, completely)
             {
-                var t = handle[0],
-                    i = cache[t].length;
+                var t = handle[0];
 
                 if (cache[t])
                 {
+                    var i = cache[t].length;
                     while (i--)
                     {
                         if (cache[t][i] === handle[1])
@@ -732,9 +733,11 @@ var diva = (function() {
                             cache[t].splice(i, 1);
                             if (completely)
                                 delete cache[t];
+                            return true;
                         }
                     }
                 }
+                return false;
             },
             /**
              *      diva.Events.unsubscribeAll
