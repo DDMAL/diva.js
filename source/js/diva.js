@@ -1479,11 +1479,11 @@ window.divaPlugins = [];
         {
             pageIndex = (typeof(pageIndex) === "undefined" ? settings.currentPageIndex : pageIndex);
             
-            if (anchor == "center" || anchor == "centre") //how you can tell an American coded this
+            if (anchor === "center" || anchor === "centre") //how you can tell an American coded this
             {
                 return parseInt(getPageData(pageIndex, "h") / 2, 10);
             }
-            else if (anchor == "bottom")
+            else if (anchor === "bottom")
             {
                 return parseInt(getPageData(pageIndex, "h") - settings.panelHeight / 2, 10);
             }
@@ -1498,11 +1498,11 @@ window.divaPlugins = [];
         {
             pageIndex = (typeof(pageIndex) === "undefined" ? settings.currentPageIndex : pageIndex);
 
-            if (anchor == "left")
+            if (anchor === "left")
             {
                 return parseInt(settings.panelWidth / 2, 10);
             }
-            else if (anchor == "right")
+            else if (anchor === "right")
             {
                 return parseInt(getPageData(pageIndex, "w") - settings.panelWidth / 2, 10);
             }
