@@ -13,7 +13,7 @@ Allows you to highlight regions of a page image
             init: function(divaSettings, divaInstance)
             {
                 // initialize an empty highlights object.
-                divaSettings.parentSelector.data('highlights', {});
+                divaSettings.parentObject.data('highlights', {});
 
                 /*
                     When a new page is loaded, this method will be called with the
@@ -35,7 +35,7 @@ Allows you to highlight regions of a page image
                 */
                 function _highlight(pageIdx, filename, pageSelector)
                 {
-                    var highlightObj = divaSettings.parentSelector.data('highlights');
+                    var highlightObj = divaSettings.parentObject.data('highlights');
 
                     if (typeof highlightObj === 'undefined')
                         return;
@@ -112,7 +112,7 @@ Allows you to highlight regions of a page image
                         parentObj.removeChild(descendents[j]);
                     }
 
-                    divaSettings.parentSelector.data('highlights', {});
+                    divaSettings.parentObject.data('highlights', {});
                 };
 
                 /*
@@ -120,7 +120,7 @@ Allows you to highlight regions of a page image
                 */
                 divaInstance.removeHighlightsOnPage = function(pageIdx)
                 {
-                    var highlightsObj = divaSettings.parentSelector.data('highlights');
+                    var highlightsObj = divaSettings.parentObject.data('highlights');
                     if (highlightsObj.hasOwnProperty(pageIdx))
                     {
                         var pageId = divaInstance.getInstanceId() + 'page-' + pageIdx;
@@ -179,7 +179,7 @@ Allows you to highlight regions of a page image
                     }
 
                     var maxZoom = divaInstance.getMaxZoomLevel();
-                    var highlightsObj = divaSettings.parentSelector.data('highlights');
+                    var highlightsObj = divaSettings.parentObject.data('highlights');
 
                     highlightsObj[pageIdx] = {
                         'regions': regions, 'colour': colour, 'divClass': divClass
@@ -200,7 +200,7 @@ Allows you to highlight regions of a page image
             },
             destroy: function (divaSettings, divaInstance)
             {
-                divaSettings.parentSelector.removeData('highlights');
+                divaSettings.parentObject.removeData('highlights');
             },
             pluginName: 'highlight',
             titleText: 'Highlight regions of pages'

@@ -115,7 +115,7 @@ asyncTest("onScroll(|Up|Down)", function () {
             downScroll = false;
             upScroll = false;
 
-            $(settings.outerSelector).scrollTop(100);
+            settings.outerObject.scrollTop(100);
 
             // Wait a few milliseconds for the event to be triggered
             setTimeout(function () {
@@ -125,7 +125,7 @@ asyncTest("onScroll(|Up|Down)", function () {
 
                 equal(scrollAmount, 100, "scroll amount");
 
-                $(settings.outerSelector).scrollTop(50);
+                settings.outerObject.scrollTop(50);
 
                 setTimeout(function () {
                     ok(!downScroll, "Did not scroll down");

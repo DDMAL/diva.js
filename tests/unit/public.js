@@ -84,10 +84,10 @@ asyncTest("enable/disableScrollable()", function () {
             equal(settings.zoomLevel, 3, "Should be able to zoom by double click, zoom level should now be 3");
 
             // should be able to scroll by dragging
-            var initScroll = $(settings.outerSelector).scrollTop();
+            var initScroll = settings.outerObject.scrollTop();
             // simulate drag downwards
             $('.diva-dragger').simulate('drag', { dx: 0, dy: -500 });
-            var finalScroll = $(settings.outerSelector).scrollTop();
+            var finalScroll = settings.outerObject.scrollTop();
 
             ok(finalScroll > initScroll, "Should have scrolled down before disableScrollable()");
 
@@ -102,9 +102,9 @@ asyncTest("enable/disableScrollable()", function () {
 
             // should not be able to drag
             // store previous scroll in initScroll
-            initScroll = $(settings.outerSelector).scrollTop();
+            initScroll = settings.outerObject.scrollTop();
             $('.diva-dragger').simulate('drag', { dx: 0, dy: -500 });
-            finalScroll = $(settings.outerSelector).scrollTop();
+            finalScroll = settings.outerObject.scrollTop();
             ok(finalScroll === initScroll, "Should not have scrolled down after disableScrollable()");
 
             this.enableScrollable();
@@ -117,10 +117,10 @@ asyncTest("enable/disableScrollable()", function () {
             equal(settings.zoomLevel, 4, "Should be able to zoom by double click after enableScrollable(), zoom level should now be 4");
 
             // should be able to scroll by dragging
-            initScroll = $(settings.outerSelector).scrollTop();
+            initScroll = settings.outerObject.scrollTop();
             // simulate drag downwards
             $('.diva-dragger').simulate('drag', { dx: 0, dy: -500 });
-            finalScroll = $(settings.outerSelector).scrollTop();
+            finalScroll = settings.outerObject.scrollTop();
 
             ok(finalScroll > initScroll, "Should have scrolled down after enableScrollable()");
 
@@ -188,10 +188,42 @@ asyncTest("gotoPageByName()", function () {
     $.tempDiva({
         onReady: function (settings) {
             equal(settings.currentPageIndex, 0, "Initial page number should be 1");
-            ok(this.gotoPageByName('bm_002.tif'), "It should find the page index for bm_002.tif");
-            equal(settings.currentPageIndex, 1, "Now the page number should be 2");
             ok(!this.gotoPageByName('bm_000.tif'), "It should not find anything for bm_000.tif");
+            ok(this.gotoPageByName('bm_002.tif', "right", "center"), "It should find the page index for bm_002.tif");
+            equal(settings.currentPageIndex, 1, "Now the page number should be 2");
             start();
+            
+            /*
+                so this is confusing. this tests the internal getX/YOffset anchor points.
+                1) gotoPageByName above is called with "right" and "top" anchors, two non-default values
+                2) the last line in this function subscribes the scroll motion to centerRightChecker 
+                3) centerRightChecker checks center right, then scrolls to bottom left and calls bottom left
+                4) bottomLeftChecker checks bottom left and de-subscribes all
+            */
+            function bottomLeftChecker(a)
+            {
+                var pageSelector = "#" + this.getSettings().ID + "page-1";
+                equal($(pageSelector).offset().top, 1914, "Testing bottom anchor point on gotoPageByName.");
+                equal($(pageSelector).offset().left, 20, "Testing left anchor point on gotoPageByName.");
+
+                diva.Events.unsubscribe(["ViewerDidScroll", bottomLeftChecker]);
+            }
+
+            function centerRightChecker(a)
+            {
+                var pageSelector = "#" + this.getSettings().ID + "page-1";
+                equal($(pageSelector).offset().top, 2107, "Testing center anchor point on gotoPageByName.");
+                equal($(pageSelector).offset().left, 307, "Testing right anchor point on gotoPageByName.");
+
+                diva.Events.unsubscribe(["ViewerDidScroll", centerRightChecker]);
+                ok(this.gotoPageByName('bm_002.tif', "left", "bottom"), "Going to the same page; offset should change as position is being changed");
+                diva.Events.subscribe("ViewerDidScroll", bottomLeftChecker);
+            }
+
+            if (!window.isTravis)
+            {
+                diva.Events.subscribe("ViewerDidScroll", centerRightChecker);
+            }
         }
     });
 });
@@ -269,8 +301,8 @@ asyncTest("setState()", function () {
             // patch to remove tests from Travis CI build due to off-by-one pixel error when run in Travis
             if (!window.isTravis)
             {
-                equal($(settings.outerSelector).scrollTop(), 8782, "Scroll from top should be default top for bm_005 after leaving fullscreen");
-                equal($(settings.outerSelector).scrollLeft(), 627, "Scroll from left should be 500 more");
+                equal(settings.outerObject.scrollTop(), 8782, "Scroll from top should be default top for bm_005 after leaving fullscreen");
+                equal(settings.outerObject.scrollLeft(), 627, "Scroll from left should be 500 more");
             }
 
             state = {
@@ -390,6 +422,36 @@ asyncTest("translateToMaxZoomLevel()", function () {
             equal(this.translateToMaxZoomLevel(boxOnThisPage.width), 492);
             equal(this.translateToMaxZoomLevel(boxOnThisPage.height), 528);
 
+            start();
+        }
+    });
+});
+
+asyncTest("getPageIndexForPageXYValues()", function ()
+{
+    $.tempDiva({
+        onReady: function (settings) {
+            var outerObj = $("#" + settings.ID + "outer");
+            $('.diva-dragger').simulate('drag', { dx: 0, dy: -100000 });
+            outerObj.scroll();
+
+            /*
+            This corresponds to the other display issues with Travis: 
+                for some reason, we can't trace why Travis displays PhantomJS stuff differently
+                and so we need to skip some tests that inexplicably fail in Travis but work
+                fine from command line. We can't trace why the diva-outer object is in a different
+                place there, thus we can't predict where a valid click will be.
+            */
+            if (!window.isTravis)
+            {
+                equal(this.getPageIndexForPageXYValues(500, 2500), 93, "scrolled to a later page, click should register on a page");
+                equal(this.getPageIndexForPageXYValues(10, 10), false, "click should be outside diva-outer and thus return false");
+            }
+            else
+            {
+                expect(0);
+            }
+            
             start();
         }
     });

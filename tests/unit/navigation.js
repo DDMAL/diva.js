@@ -11,7 +11,7 @@ asyncTest("Scrolling in document view", function () {
         adaptivePadding: 0,
         fixedPadding: 40,
         onReady: function (settings) {
-            $(settings.outerSelector).scrollTop(10000);
+            settings.outerObject.scrollTop(10000);
             var self = this;
 
             // Set the timeout because we have to wait for the event handler
@@ -30,7 +30,7 @@ asyncTest("Scrolling in grid view", function () {
         pagesPerRow: 2,
         fixedHeightGrid: false,
         onReady: function (settings) {
-            $(settings.outerSelector).scrollTop(10000);
+            settings.outerObject.scrollTop(10000);
 
             var self = this;
             setTimeout(function () {
@@ -111,7 +111,7 @@ asyncTest("Scrolling and subsequently zooming in Grid view", function () {
         pagesPerRow: 5,
         fixedHeightGrid: false,
         onReady: function (settings) {
-            $(settings.outerSelector).scrollTop(10050);
+            settings.outerObject.scrollTop(10050);
 
             var self = this;
             setTimeout(function () {
