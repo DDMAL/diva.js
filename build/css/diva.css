@@ -251,20 +251,18 @@
   float: right;
 }
 .diva-link-popup {
+  font-size: 10pt;
   background: #ffffff;
   border: 1px solid #dddddd;
-  height: 28px;
-  width: 230px;
   position: absolute;
-  padding: 5px;
+  padding: .6em;
   z-index: 101;
   -webkit-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
   -moz-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
   box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
 }
 .diva-link-popup input {
-  width: 226px;
-  margin-top: 5px;
+  width: 15em;
 }
 .diva-link-popup input:focus {
   outline: none;
