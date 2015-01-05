@@ -1836,7 +1836,7 @@ window.divaPlugins = [];
                         return;
                     
                     // Space or page down - go to the next page
-                    if ((settings.enableSpaceScroll && event.keyCode === spaceKey) || (settings.enableKeyScroll && event.keyCode === pageDownKey))
+                    if ((settings.enableSpaceScroll && event.keyCode === spaceKey && !event.shiftKey) || (settings.enableKeyScroll && event.keyCode === pageDownKey))
                     {
                         settings.outerObject.scrollTop(document.getElementById(settings.ID + "outer").scrollTop + settings.panelHeight);
                         return false;

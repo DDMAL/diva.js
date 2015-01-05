@@ -77,6 +77,11 @@ Notes for Andrew:
                     clearInterval(divaSettings.autoScrollInterval);
                 };
 
+                divaInstance.toggleScrolling = function()
+                {
+                    divaSettings.currentlyAutoScrolling ? divaInstance.stopScrolling() : divaInstance.startScrolling();
+                };
+
                 divaInstance.changeRefresh = function(newRefresh)
                 {
                     autoScrollRefresh = newRefresh;
@@ -94,6 +99,7 @@ Notes for Andrew:
                     pixelsPerScroll = scrollSpeed / (1000 / autoScrollRefresh);  
                     
                     //should be minimum of one otherwise it won't change the actual value
+                    //user can change autoscrollrefresh or scrollspeed; this will be called automatically by both changes
                     if(pixelsPerScroll < 1)
                     {
                         autoScrollRefresh = autoScrollRefresh * (1 / pixelsPerScroll);
@@ -138,6 +144,13 @@ Notes for Andrew:
                 
                 divaInstance.changeScrollSpeed((divaSettings.scrollSpeed || 10));
 
+                $(window).on('keyup', function(e)
+                {
+                    if(e.shiftKey && e.keyCode == 32)
+                    {
+                        divaInstance.toggleScrolling();
+                    }
+                });
             },
             pluginName: 'autoscroll',
             titleText: 'Automatically scrolls page along primary axis'
