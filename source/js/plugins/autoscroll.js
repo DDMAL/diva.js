@@ -13,7 +13,6 @@ Relevant settings:
     -autoScrollRefresh: ms between scrolling actions
 
 Notes for Andrew:
-    -spacebar to turn scroll on/off?
     -add counter to toolbar
     -add "slow", "medium", "fast" options for scroll speed
 */
@@ -99,7 +98,7 @@ Notes for Andrew:
                     pixelsPerScroll = scrollSpeed / (1000 / autoScrollRefresh);  
                     
                     //should be minimum of one otherwise it won't change the actual value
-                    //user can change autoscrollrefresh or scrollspeed; this will be called automatically by both changes
+                    //user can change autoscrollrefresh or scrollspeed; this may overwrite autoScrollRefresh
                     if(pixelsPerScroll < 1)
                     {
                         autoScrollRefresh = autoScrollRefresh * (1 / pixelsPerScroll);
@@ -150,6 +149,11 @@ Notes for Andrew:
                     {
                         divaInstance.toggleScrolling();
                     }
+                });
+                
+                diva.Events.subscribe('ViewerDidLoad', function(s)
+                {
+                    $("#" + divaSettings.ID + "page-nav").before("<div id='" + divaSettings.ID + "autoscroll-icon' class='button diva-autoscroll-icon' title='Expand autoscroll options'></div>");
                 });
             },
             pluginName: 'autoscroll',

@@ -1941,7 +1941,7 @@ window.divaPlugins = [];
             var pageNumberHTML = '<div class="diva-page-label">Page <span id="' + settings.ID + 'current-page">1</span> of <span id="' + settings.ID + 'num-pages">' + settings.numPages + '</span></div>';
             var fullscreenIconHTML = (settings.enableFullscreen) ? '<div id="' + settings.ID + 'fullscreen" class="diva-fullscreen-icon button" title="Toggle fullscreen mode"></div>' : '';
 
-            var toolbarHTML = '<div id="' + settings.ID + 'tools-left" class="diva-tools-left' + '">' + zoomSliderHTML + zoomButtonsHTML + gridSliderHTML + gridButtonsHTML + zoomSliderLabelHTML + zoomButtonsLabelHTML + gridSliderLabelHTML + gridButtonsLabelHTML + '</div><div id="' + settings.ID + 'tools-right" class="diva-tools-right">' + fullscreenIconHTML + linkIconHTML + gridIconHTML + '<div class="diva-page-nav">' + gotoPageHTML + pageNumberHTML + '</div></div>';
+            var toolbarHTML = '<div id="' + settings.ID + 'tools-left" class="diva-tools-left' + '">' + zoomSliderHTML + zoomButtonsHTML + gridSliderHTML + gridButtonsHTML + zoomSliderLabelHTML + zoomButtonsLabelHTML + gridSliderLabelHTML + gridButtonsLabelHTML + '</div><div id="' + settings.ID + 'tools-right" class="diva-tools-right">' + fullscreenIconHTML + linkIconHTML + gridIconHTML + '<div id="' + settings.ID + 'page-nav" class="diva-page-nav">' + gotoPageHTML + pageNumberHTML + '</div></div>';
 
             settings.toolbarParentObject.prepend('<div id="' + settings.ID + 'tools" class="diva-tools">' + toolbarHTML + '</div>');
 
