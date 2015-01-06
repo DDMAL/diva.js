@@ -17,6 +17,11 @@ Notes for Andrew:
     -add "slow", "medium", "fast" options for scroll speed
 */
 
+function log10(x)
+{
+    return Math.log(x) / Math.log(10);
+}
+
 (function ($)
 {
     window.divaPlugins.push((function()
@@ -29,6 +34,7 @@ Notes for Andrew:
                 var pixelsPerScroll;
                 var disableManualScroll;
                 var autoScrollRefresh;
+                var defaultAutoRefresh;
                 var scrollSpeed;
 
                 divaInstance.startScrolling = function()
@@ -39,12 +45,19 @@ Notes for Andrew:
                         return;
                     }
 
+                    $("#" + divaSettings.ID + "autoscroll-toggle").text("Turn off");
                     if(disableManualScroll)
                     {
                         divaInstance.disableScrollable();
                     }
 
                     divaSettings.currentlyAutoScrolling = true;
+                    divaInstance.restartScrollingInterval();
+                };
+
+                divaInstance.restartScrollingInterval = function()
+                {
+                    clearInterval(divaSettings.autoScrollInterval);
                     if(divaSettings.horizontallyOriented)
                     {
                         divaSettings.autoScrollInterval = setInterval(function(){
@@ -67,6 +80,7 @@ Notes for Andrew:
                         return;
                     }
 
+                    $("#" + divaSettings.ID + "autoscroll-toggle").text("Turn on");
                     if(disableManualScroll)
                     {
                         divaInstance.enableScrollable();
@@ -90,11 +104,18 @@ Notes for Andrew:
                 divaInstance.changeScrollSpeed = function(newSpeed)
                 {
                     scrollSpeed = newSpeed;
-                    updatePixelsPerScroll();      
+                    updatePixelsPerScroll();   
+
+                    $("#" + divaSettings.ID + "autoscroll-pps").val(log10(scrollSpeed));  
+                    if(divaSettings.currentlyAutoScrolling)
+                    {
+                        divaInstance.restartScrollingInterval();
+                    }
                 };
 
                 var updatePixelsPerScroll = function()
                 {
+                    autoScrollRefresh = defaultAutoRefresh;
                     pixelsPerScroll = scrollSpeed / (1000 / autoScrollRefresh);  
                     
                     //should be minimum of one otherwise it won't change the actual value
@@ -140,6 +161,7 @@ Notes for Andrew:
                 disableManualScroll = divaSettings.disableManualScroll || false;
                 disableScrollEvents = divaSettings.disableScrollEvents || false;
                 autoScrollRefresh = divaSettings.autoScrollRefresh || 50;
+                defaultAutoRefresh = autoScrollRefresh;
                 
                 divaInstance.changeScrollSpeed((divaSettings.scrollSpeed || 10));
 
@@ -153,7 +175,46 @@ Notes for Andrew:
                 
                 diva.Events.subscribe('ViewerDidLoad', function(s)
                 {
+                    var autoscrollPrefsString = 
+                    "<div id='" + divaSettings.ID + "autoscroll-prefs' class='diva-autoscroll-prefs'>" +
+                        "<b>Autoscrolling options:</b><br>" +
+                        "<span class='diva-autoscroll-prefs-text'>Pixels per second:</span>" +
+                        "<input type='range' id='" + divaSettings.ID + "autoscroll-pps' class='diva-autoscroll-pps diva-autoscroll-prefs-input' value='" + log10(scrollSpeed) + "' min='0' max='3' step='0.1'><br>" +
+                        "<span class='diva-autoscroll-prefs-text'>Allow manual scroll:</span>" +
+                        "<input type='checkbox' id='" + divaSettings.ID + "autoscroll-manual' class='diva-autoscroll-manual diva-autoscroll-prefs-input' checked='checked'><br>" +
+                        "<button id='" + divaSettings.ID + "autoscroll-toggle' class='diva-autoscroll-prefs-toggle diva-autoscroll-prefs-input'> Turn on </button>" + 
+                    "</div>";
                     $("#" + divaSettings.ID + "page-nav").before("<div id='" + divaSettings.ID + "autoscroll-icon' class='button diva-autoscroll-icon' title='Expand autoscroll options'></div>");
+                    $("body").prepend(autoscrollPrefsString);
+                    
+                    $("#" + divaSettings.ID + "autoscroll-pps").on('change', function(e)
+                    {
+                        divaInstance.changeScrollSpeed(Math.pow(10, e.target.value));
+                    });
+
+                    $("#" + divaSettings.ID + "autoscroll-manual").on('change', function(e)
+                    {
+                        e.target.checked ? divaInstance.enableManualScroll() : divaInstance.disableManualScroll();
+                    });
+
+                    $("#" + divaSettings.ID + "autoscroll-toggle").on('click', divaInstance.toggleScrolling);
+
+                    $("#" + divaSettings.ID + "autoscroll-icon").on('click', function(e)
+                    {
+                        var jqObj = $("#" + divaSettings.ID + "autoscroll-prefs");
+                        if(jqObj.css('display') == 'none')
+                        {
+                            jqObj.css({
+                                'display': 'block',
+                                'right': $(window).width() - (divaSettings.outerObject.offset().left + divaSettings.outerObject.outerWidth()) + divaSettings.scrollbarWidth
+                            });
+                            jqObj.offset({'top': divaSettings.outerObject.offset().top});
+                        }
+                        else
+                        {
+                            jqObj.css('display', 'none');
+                        }
+                    });
                 });
             },
             pluginName: 'autoscroll',
