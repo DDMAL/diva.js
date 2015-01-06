@@ -3,18 +3,19 @@ Diva.JS autoscroll plugin
 Author: Andrew Horwitz
 
 Lets Diva scroll in the primary direction (as determined by 
-settings.horizontallyOriented) automatically at a given/changeable rate.
+settings.verticallyOriented) automatically at a given/changeable rate.
 
 Relevant settings:
     -scrollSpeed: pixels per second (defaults to 10)
     -disableManualScroll: disables manual scroll while automatic scroll is on (defaults to false)
-    -disableScrollEvents: automatic scroll will not trigger scrolling events (defaults to false)
     -currentlyAutoScrolling: whether or not autoscroll is currently on
     -autoScrollRefresh: ms between scrolling actions
+    -disableAutoscrollPrefs: disables the autoscroll preferences panel
 
-Notes for Andrew:
-    -add counter to toolbar
-    -add "slow", "medium", "fast" options for scroll speed
+Relevant methods:
+    -startScrolling, stopScrolling, toggleScrolling
+    -changeRefresh, changeScrollSpeed (setters for respective options)
+    -disableManualScroll, enableManualScroll
 */
 
 function log10(x)
@@ -52,22 +53,22 @@ function log10(x)
                     }
 
                     divaSettings.currentlyAutoScrolling = true;
-                    divaInstance.restartScrollingInterval();
+                    restartScrollingInterval();
                 };
 
-                divaInstance.restartScrollingInterval = function()
+                restartScrollingInterval = function()
                 {
                     clearInterval(divaSettings.autoScrollInterval);
-                    if(divaSettings.horizontallyOriented)
+                    if(divaSettings.verticallyOriented)
                     {
                         divaSettings.autoScrollInterval = setInterval(function(){
-                            divaSettings.outerObject.scrollLeft(divaSettings.outerObject.scrollLeft() + pixelsPerScroll);
+                            divaSettings.outerObject.scrollTop(divaSettings.outerObject.scrollTop() + pixelsPerScroll);
                         }, autoScrollRefresh);
                     }
                     else
                     {
                         divaSettings.autoScrollInterval = setInterval(function(){
-                            divaSettings.outerObject.scrollTop(divaSettings.outerObject.scrollTop() + pixelsPerScroll);
+                            divaSettings.outerObject.scrollLeft(divaSettings.outerObject.scrollLeft() + pixelsPerScroll);
                         }, autoScrollRefresh);
                     }
                 };
@@ -109,7 +110,7 @@ function log10(x)
                     $("#" + divaSettings.ID + "autoscroll-pps").val(log10(scrollSpeed));  
                     if(divaSettings.currentlyAutoScrolling)
                     {
-                        divaInstance.restartScrollingInterval();
+                        restartScrollingInterval();
                     }
                 };
 
@@ -145,21 +146,10 @@ function log10(x)
                     }
                 };
 
-                divaInstance.disableScrollEvents = function()
-                {
-                    disableScrollEvents = true;
-                };
-
-                divaInstance.enableScrollEvents = function()
-                {
-                    disableScrollEvents = false;
-                };
-
                 divaSettings.currentlyAutoScrolling = false;
                 divaSettings.autoScrollInterval = "";
 
                 disableManualScroll = divaSettings.disableManualScroll || false;
-                disableScrollEvents = divaSettings.disableScrollEvents || false;
                 autoScrollRefresh = divaSettings.autoScrollRefresh || 50;
                 defaultAutoRefresh = autoScrollRefresh;
                 
@@ -173,49 +163,52 @@ function log10(x)
                     }
                 });
                 
-                diva.Events.subscribe('ViewerDidLoad', function(s)
+                if(!divaSettings.disableAutoscrollPrefs)
                 {
-                    var autoscrollPrefsString = 
-                    "<div id='" + divaSettings.ID + "autoscroll-prefs' class='diva-autoscroll-prefs'>" +
-                        "<b>Autoscrolling options:</b><br>" +
-                        "<span class='diva-autoscroll-prefs-text'>Pixels per second:</span>" +
-                        "<input type='range' id='" + divaSettings.ID + "autoscroll-pps' class='diva-autoscroll-pps diva-autoscroll-prefs-input' value='" + log10(scrollSpeed) + "' min='0' max='3' step='0.1'><br>" +
-                        "<span class='diva-autoscroll-prefs-text'>Allow manual scroll:</span>" +
-                        "<input type='checkbox' id='" + divaSettings.ID + "autoscroll-manual' class='diva-autoscroll-manual diva-autoscroll-prefs-input' checked='checked'><br>" +
-                        "<button id='" + divaSettings.ID + "autoscroll-toggle' class='diva-autoscroll-prefs-toggle diva-autoscroll-prefs-input'> Turn on </button>" + 
-                    "</div>";
-                    $("#" + divaSettings.ID + "page-nav").before("<div id='" + divaSettings.ID + "autoscroll-icon' class='button diva-autoscroll-icon' title='Expand autoscroll options'></div>");
-                    $("body").prepend(autoscrollPrefsString);
-                    
-                    $("#" + divaSettings.ID + "autoscroll-pps").on('change', function(e)
+                    diva.Events.subscribe('ViewerDidLoad', function(s)
                     {
-                        divaInstance.changeScrollSpeed(Math.pow(10, e.target.value));
-                    });
-
-                    $("#" + divaSettings.ID + "autoscroll-manual").on('change', function(e)
-                    {
-                        e.target.checked ? divaInstance.enableManualScroll() : divaInstance.disableManualScroll();
-                    });
-
-                    $("#" + divaSettings.ID + "autoscroll-toggle").on('click', divaInstance.toggleScrolling);
-
-                    $("#" + divaSettings.ID + "autoscroll-icon").on('click', function(e)
-                    {
-                        var jqObj = $("#" + divaSettings.ID + "autoscroll-prefs");
-                        if(jqObj.css('display') == 'none')
+                        var autoscrollPrefsString = 
+                        "<div id='" + divaSettings.ID + "autoscroll-prefs' class='diva-autoscroll-prefs diva-popup'>" +
+                            "<b>Autoscrolling options:</b><br>" +
+                            "<span class='diva-autoscroll-prefs-text'>Pixels per second:</span>" +
+                            "<input type='range' id='" + divaSettings.ID + "autoscroll-pps' class='diva-autoscroll-pps diva-autoscroll-prefs-input' value='" + log10(scrollSpeed) + "' min='0' max='3' step='0.1'><br>" +
+                            "<span class='diva-autoscroll-prefs-text'>Allow manual scroll:</span>" +
+                            "<input type='checkbox' id='" + divaSettings.ID + "autoscroll-manual' class='diva-autoscroll-manual diva-autoscroll-prefs-input' checked='checked'><br>" +
+                            "<button id='" + divaSettings.ID + "autoscroll-toggle' class='diva-autoscroll-prefs-toggle diva-autoscroll-prefs-input'> Turn on </button>" + 
+                        "</div>";
+                        $("#" + divaSettings.ID + "page-nav").before("<div id='" + divaSettings.ID + "autoscroll-icon' class='button diva-autoscroll-icon' title='Expand autoscroll options'></div>");
+                        $("body").prepend(autoscrollPrefsString);
+                        
+                        $("#" + divaSettings.ID + "autoscroll-pps").on('change', function(e)
                         {
-                            jqObj.css({
-                                'display': 'block',
-                                'right': $(window).width() - (divaSettings.outerObject.offset().left + divaSettings.outerObject.outerWidth()) + divaSettings.scrollbarWidth
-                            });
-                            jqObj.offset({'top': divaSettings.outerObject.offset().top});
-                        }
-                        else
+                            divaInstance.changeScrollSpeed(Math.pow(10, e.target.value));
+                        });
+
+                        $("#" + divaSettings.ID + "autoscroll-manual").on('change', function(e)
                         {
-                            jqObj.css('display', 'none');
-                        }
+                            e.target.checked ? divaInstance.enableManualScroll() : divaInstance.disableManualScroll();
+                        });
+
+                        $("#" + divaSettings.ID + "autoscroll-toggle").on('click', divaInstance.toggleScrolling);
+
+                        $("#" + divaSettings.ID + "autoscroll-icon").on('click', function(e)
+                        {
+                            var jqObj = $("#" + divaSettings.ID + "autoscroll-prefs");
+                            if(jqObj.css('display') == 'none')
+                            {
+                                jqObj.css({
+                                    'display': 'block',
+                                    'right': $(window).width() - (divaSettings.outerObject.offset().left + divaSettings.outerObject.outerWidth()) + divaSettings.scrollbarWidth
+                                });
+                                jqObj.offset({'top': divaSettings.outerObject.offset().top});
+                            }
+                            else
+                            {
+                                jqObj.css('display', 'none');
+                            }
+                        });
                     });
-                });
+                }
             },
             pluginName: 'autoscroll',
             titleText: 'Automatically scrolls page along primary axis'

@@ -1831,15 +1831,19 @@ window.divaPlugins = [];
 
                 // Catch the key presses in document
                 $(document).keydown(function (event)
-                {
+                {   
                     if (!settings.isActiveDiva)
                         return;
                     
                     // Space or page down - go to the next page
-                    if ((settings.enableSpaceScroll && event.keyCode === spaceKey && !event.shiftKey) || (settings.enableKeyScroll && event.keyCode === pageDownKey))
+                    if ((settings.enableSpaceScroll && !event.shiftKey && event.keyCode === spaceKey) || (settings.enableKeyScroll && event.keyCode === pageDownKey))
                     {
                         settings.outerObject.scrollTop(document.getElementById(settings.ID + "outer").scrollTop + settings.panelHeight);
                         return false;
+                    }
+                    else if (!settings.enableSpaceScroll && event.keyCode === spaceKey)
+                    {
+                        event.preventDefault();
                     }
 
                     if (settings.enableKeyScroll)
@@ -1880,8 +1884,12 @@ window.divaPlugins = [];
                                 // End key - go to the end of the document
                                 settings.outerObject.scrollTop(settings.totalHeight);
                                 return false;
+
+                            default:
+                                return;
                         }
                     }
+                    return;
                 });
 
                 // Handle window resizing events
