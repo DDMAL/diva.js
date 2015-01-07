@@ -200,7 +200,7 @@ function log10(x)
                                     'display': 'block',
                                     'right': $(window).width() - (divaSettings.outerObject.offset().left + divaSettings.outerObject.outerWidth()) + divaSettings.scrollbarWidth
                                 });
-                                jqObj.offset({'top': divaSettings.outerObject.offset().top});
+                                jqObj.offset({'top': divaSettings.outerObject.offset().top + 1});
                             }
                             else
                             {

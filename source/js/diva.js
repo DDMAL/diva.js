@@ -2047,7 +2047,7 @@ window.divaPlugins = [];
             // Handle the creation of the link popup box
             $(settings.selector + 'link-icon').click(function ()
             {
-                $('body').prepend('<div id="' + settings.ID + 'link-popup" class="diva-link-popup"><input id="' + settings.ID + 'link-popup-input" class="diva-input" type="text" value="' + getCurrentURL() + '"/></div>');
+                $('body').prepend('<div id="' + settings.ID + 'link-popup" class="diva-popup diva-link-popup"><input id="' + settings.ID + 'link-popup-input" class="diva-input" type="text" value="' + getCurrentURL() + '"/></div>');
 
                 if (settings.inFullscreen)
                 {
@@ -2177,6 +2177,10 @@ window.divaPlugins = [];
                 {
                     // Update the buttons label
                     document.getElementById(settings.ID + 'pages-per-row').textContent = settings.pagesPerRow;
+                },
+                closePopups: function ()
+                {
+                    $(".diva-popup").css('display', 'none');
                 },
                 switchView: switchView,
                 switchMode: switchMode
@@ -2354,6 +2358,7 @@ window.divaPlugins = [];
                         diva.Events.subscribe("ZoomLevelDidChange", settings.toolbar.updateZoomButtons);
                         diva.Events.subscribe("GridRowNumberDidChange", settings.toolbar.updateGridSlider);
                         diva.Events.subscribe("ZoomLevelDidChange", settings.toolbar.updateGridButtons);
+                        diva.Events.subscribe("ClosePopups", settings.toolbar.closePopups);
                     }
 
                     $(settings.selector + 'current label').text(settings.numPages);
