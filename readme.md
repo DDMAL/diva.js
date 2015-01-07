@@ -55,7 +55,7 @@ $('#diva-wrapper').diva({
  * `objectData`: The URL (absolute or relative) to the document's `.json` file
  * `imageDir`: Either the absolute path to your images on your server, OR the path relative to your IIP installation's [`FILESYSTEM_PREFIX`](http://iipimage.sourceforge.net/documentation/server/) configuration option.
 
- The `#diva-wrapper` selector points to a `div` element where you want the scrollable page images to appear.
+The `#diva-wrapper` selector points to a `div` element where you want the scrollable page images to appear.
 
 Since IIP will be serving the images you should not place your images in directory accessible by your web server. In other words, if your web server uses `/srv/www` as its root directory you do not need to place your images there -- they can reside in any directory on your server as long as it they can be read by the IIP instance.
 
