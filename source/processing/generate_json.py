@@ -87,6 +87,19 @@ class GenerateJson(object):
             for j in xrange(lowest_max_zoom + 1):
                 h = self.__incorporate_zoom(im['mx_h'], lowest_max_zoom - j)
                 w = self.__incorporate_zoom(im['mx_w'], lowest_max_zoom - j)
+                # if the dimensions of the original image are an exact multiple of 256
+                # we need to check whether the remainder will be less than 1 pixel. If so
+                # we round down; otherwise, we round up.
+                if w % 256 < 1:
+                    c = int(math.floor(w / 256.))
+                else:
+                    c = int(math.ceil(w / 256.))
+
+                if h % 256 < 1:
+                    c = int(math.floor(w / 256.))
+                else:
+                    r = int(math.ceil(h / 256.))
+
                 c = int(math.ceil(w / 256.))
                 r = int(math.ceil(h / 256.))
                 page_data.append({
