@@ -103,8 +103,8 @@ class GenerateJson(object):
                 page_data.append({
                     'c': c,
                     'r': r,
-                    'h': math.ceil(h),
-                    'w': math.ceil(w)
+                    'h': math.floor(h),
+                    'w': math.floor(w)
                 })
 
                 t_wid[j] = t_wid[j] + w
