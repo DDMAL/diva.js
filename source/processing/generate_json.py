@@ -96,17 +96,15 @@ class GenerateJson(object):
                     c = int(math.ceil(w / 256.))
 
                 if h % 256 < 1:
-                    c = int(math.floor(w / 256.))
+                    r = int(math.floor(h / 256.))
                 else:
                     r = int(math.ceil(h / 256.))
 
-                c = int(math.ceil(w / 256.))
-                r = int(math.ceil(h / 256.))
                 page_data.append({
                     'c': c,
                     'r': r,
-                    'h': h,
-                    'w': w
+                    'h': math.ceil(h),
+                    'w': math.ceil(w)
                 })
 
                 t_wid[j] = t_wid[j] + w
