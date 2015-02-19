@@ -14,6 +14,7 @@ less ()
     # Creates a minified version called diva.min.css in build/css
     #     and a non-minified version called diva.css.
     # See build/css/readme.md for more information.
+    echo "Compiling CSS."
     mkdir -p build/css
     lessc source/css/imports.less > build/css/diva.css
     lessc source/css/imports.less > build/css/diva.min.css -x
@@ -26,7 +27,7 @@ minify ()
     #     all the relevant Javascript (except for jQuery, which must
     #     be included separately).
     # See build/js/readme.md for more information.
-    echo "Using Closure path:" $CLOSURE_COMPILER_PATH
+    echo "Compiling JS using Closure path:" $CLOSURE_COMPILER_PATH
 
     source_files=( "utils.js" "diva.js" "plugins/*" )
 

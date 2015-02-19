@@ -1831,15 +1831,19 @@ window.divaPlugins = [];
 
                 // Catch the key presses in document
                 $(document).keydown(function (event)
-                {
+                {   
                     if (!settings.isActiveDiva)
                         return;
                     
                     // Space or page down - go to the next page
-                    if ((settings.enableSpaceScroll && event.keyCode === spaceKey) || (settings.enableKeyScroll && event.keyCode === pageDownKey))
+                    if ((settings.enableSpaceScroll && !event.shiftKey && event.keyCode === spaceKey) || (settings.enableKeyScroll && event.keyCode === pageDownKey))
                     {
                         settings.outerObject.scrollTop(document.getElementById(settings.ID + "outer").scrollTop + settings.panelHeight);
                         return false;
+                    }
+                    else if (!settings.enableSpaceScroll && event.keyCode === spaceKey)
+                    {
+                        event.preventDefault();
                     }
 
                     if (settings.enableKeyScroll)
@@ -1880,8 +1884,12 @@ window.divaPlugins = [];
                                 // End key - go to the end of the document
                                 settings.outerObject.scrollTop(settings.totalHeight);
                                 return false;
+
+                            default:
+                                return;
                         }
                     }
+                    return;
                 });
 
                 // Handle window resizing events
@@ -1941,7 +1949,7 @@ window.divaPlugins = [];
             var pageNumberHTML = '<div class="diva-page-label">Page <span id="' + settings.ID + 'current-page">1</span> of <span id="' + settings.ID + 'num-pages">' + settings.numPages + '</span></div>';
             var fullscreenIconHTML = (settings.enableFullscreen) ? '<div id="' + settings.ID + 'fullscreen" class="diva-fullscreen-icon button" title="Toggle fullscreen mode"></div>' : '';
 
-            var toolbarHTML = '<div id="' + settings.ID + 'tools-left" class="diva-tools-left' + '">' + zoomSliderHTML + zoomButtonsHTML + gridSliderHTML + gridButtonsHTML + zoomSliderLabelHTML + zoomButtonsLabelHTML + gridSliderLabelHTML + gridButtonsLabelHTML + '</div><div id="' + settings.ID + 'tools-right" class="diva-tools-right">' + fullscreenIconHTML + linkIconHTML + gridIconHTML + '<div class="diva-page-nav">' + gotoPageHTML + pageNumberHTML + '</div></div>';
+            var toolbarHTML = '<div id="' + settings.ID + 'tools-left" class="diva-tools-left' + '">' + zoomSliderHTML + zoomButtonsHTML + gridSliderHTML + gridButtonsHTML + zoomSliderLabelHTML + zoomButtonsLabelHTML + gridSliderLabelHTML + gridButtonsLabelHTML + '</div><div id="' + settings.ID + 'tools-right" class="diva-tools-right">' + fullscreenIconHTML + linkIconHTML + gridIconHTML + '<div id="' + settings.ID + 'page-nav" class="diva-page-nav">' + gotoPageHTML + pageNumberHTML + '</div></div>';
 
             settings.toolbarParentObject.prepend('<div id="' + settings.ID + 'tools" class="diva-tools">' + toolbarHTML + '</div>');
 
@@ -2039,7 +2047,7 @@ window.divaPlugins = [];
             // Handle the creation of the link popup box
             $(settings.selector + 'link-icon').click(function ()
             {
-                $('body').prepend('<div id="' + settings.ID + 'link-popup" class="diva-link-popup"><input id="' + settings.ID + 'link-popup-input" class="diva-input" type="text" value="' + getCurrentURL() + '"/></div>');
+                $('body').prepend('<div id="' + settings.ID + 'link-popup" class="diva-popup diva-link-popup"><input id="' + settings.ID + 'link-popup-input" class="diva-input" type="text" value="' + getCurrentURL() + '"/></div>');
 
                 if (settings.inFullscreen)
                 {
@@ -2169,6 +2177,10 @@ window.divaPlugins = [];
                 {
                     // Update the buttons label
                     document.getElementById(settings.ID + 'pages-per-row').textContent = settings.pagesPerRow;
+                },
+                closePopups: function ()
+                {
+                    $(".diva-popup").css('display', 'none');
                 },
                 switchView: switchView,
                 switchMode: switchMode
@@ -2346,6 +2358,7 @@ window.divaPlugins = [];
                         diva.Events.subscribe("ZoomLevelDidChange", settings.toolbar.updateZoomButtons);
                         diva.Events.subscribe("GridRowNumberDidChange", settings.toolbar.updateGridSlider);
                         diva.Events.subscribe("ZoomLevelDidChange", settings.toolbar.updateGridButtons);
+                        diva.Events.subscribe("ClosePopups", settings.toolbar.closePopups);
                     }
 
                     $(settings.selector + 'current label').text(settings.numPages);
