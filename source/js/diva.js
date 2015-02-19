@@ -3045,7 +3045,13 @@ window.divaPlugins = [];
 
             //if we made it through that entire while loop, we didn't click on a page
             return false;
-        }
+        };
+
+        //Pretty self-explanatory.
+        this.isVerticallyOriented = function()
+        {
+            return settings.verticallyOriented;
+        };
 
         this.activate = function ()
         {
