@@ -2700,6 +2700,13 @@ window.divaPlugins = [];
             return isPageVisible(pageIndex);
         };
 
+        //Public wrapper for isPageLoaded
+        //Determines if a page is currently in the DOM
+        this.isPageInDOM = function (pageIndex)
+        {
+            return isPageLoaded(pageIndex);
+        };
+
         // Toggle fullscreen mode
         this.toggleFullscreenMode = function ()
         {
