@@ -151,7 +151,7 @@ Allows you to highlight regions of a page image
                     var j = pageIdxs.length;
                     while (j--)
                     {
-                        divaInstance.highlightOnPage(pageIdxs[j], regions, colour, divClass);
+                        divaInstance.highlightOnPage(pageIdxs[j], regions[j], colour, divClass);
                     }
                 };
 
@@ -185,10 +185,9 @@ Allows you to highlight regions of a page image
                         'regions': regions, 'colour': colour, 'divClass': divClass
                     };
 
-                    // Since the highlighting won't take place until the viewer is scrolled
-                    // to a new page we should explicitly call the _highlight method for visible page.
-                    // (only if the current page is the one to be highlighted)
-                    if (divaInstance.isPageInViewport(pageIdx))
+                     
+                    //Highlights are created on load; create them for all loaded pages now
+                    if (divaInstance.isPageInDOM(pageIdx))
                     {
                         _highlight(pageIdx, null, null);
                     }

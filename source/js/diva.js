@@ -2700,6 +2700,13 @@ window.divaPlugins = [];
             return isPageVisible(pageIndex);
         };
 
+        //Public wrapper for isPageLoaded
+        //Determines if a page is currently in the DOM
+        this.isPageInDOM = function (pageIndex)
+        {
+            return isPageLoaded(pageIndex);
+        };
+
         // Toggle fullscreen mode
         this.toggleFullscreenMode = function ()
         {
@@ -2953,13 +2960,19 @@ window.divaPlugins = [];
             return toggleOrientation();
         };
 
-        //Returns distance between the northwest corners of diva-inner and current page
+        //Returns distance between the northwest corners of diva-inner and page index
         this.getPageOffset = function(pageIndex)
         {
             return {
                 'top': parseInt(settings.pageTopOffsets[pageIndex]),
                 'left': parseInt(settings.pageLeftOffsets[pageIndex])
             };
+        };
+
+        //shortcut to getPageOffset for current page
+        this.getCurrentPageOffset = function()
+        {
+            return this.getPageOffset(settings.currentPageIndex);
         };
 
         //Returns the page position and size (ulx, uly, h, w properties) of page pageIndex when there are pagesPerRow pages per row
@@ -3032,7 +3045,13 @@ window.divaPlugins = [];
 
             //if we made it through that entire while loop, we didn't click on a page
             return false;
-        }
+        };
+
+        //Pretty self-explanatory.
+        this.isVerticallyOriented = function()
+        {
+            return settings.verticallyOriented;
+        };
 
         this.activate = function ()
         {
