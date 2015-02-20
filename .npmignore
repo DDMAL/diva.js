@@ -1,0 +1,7 @@
+**/.*
+node_modules
+bower_components
+develop
+diva_env
+legacy
+.gitignore

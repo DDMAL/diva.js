@@ -34,7 +34,7 @@ The IIP Image Server is required by Diva to serve image data. IIP creates the im
 
 Diva relies on a JavaScript Object Notation (JSON) file that contains data about your document. This JSON file is automatically generated when you use the image conversion scripts that we distribute with Diva. These files can be served using a regular web server. _(If you used previous versions of Diva, we had a dedicated `divaserve` script to do this. This dependency has been removed in version 3.0)_.
 
-Download the [latest release](https://github.com/DDMAL/diva.js/releases) of Diva. In the `build` directory you can find a pre-compiled version of Diva. The `css`, `js` and `img` directories contain the files necessary to use Diva. You will also find a number of demos and some helper scripts for processing your image files.
+Download the [latest release](https://github.com/DDMAL/diva.js/releases) of Diva. In the `diva.js` directory (or `build` if you have the source code) you can find a pre-compiled version of Diva. The `css`, `js` and `img` directories contain the files necessary to use Diva. You will also find a number of demos and some helper scripts for processing your image files.
 
 There are two image formats supported by IIP: Pyramid TIFF and, with the inclusion of the Kakadu libraries, JPEG2000. These formats support multiple file resolutions and image tiling. 
 
@@ -74,10 +74,10 @@ To fix this you must ensure that the Diva HTML page, and the location pointed to
 
 ### Running the Demos
 
-Running the demos works best using a web server. The easiest is to use Python to start a small web server in the 'build' directory:
+Running the demos works best using a web server. The easiest is to use Python to start a small web server in the `diva.js` directory (or `build` if you have the source code):
 
 ```
-$> cd diva.js/build
+$> cd diva-v3.0.0/diva.js/ # (or cd diva.js/build)
 $> python -m SimpleHTTPServer
 Serving HTTP on 0.0.0.0 port 8000 ...
 ```
