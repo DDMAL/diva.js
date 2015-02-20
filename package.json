@@ -1,0 +1,36 @@
+{
+  "name": "diva.js",
+  "version": "3.1.0",
+  "description": "Diva.js (Document Image Viewer with AJAX) is a JavaScript book image viewer designed to present multi-page documents at multiple resolutions.",
+  "main": "build/js/diva.min.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "./build.sh test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DDMAL/diva.js.git"
+  },
+  "keywords": [
+    "images",
+    "iip",
+    "documents",
+    "libraries",
+    "archives"
+  ],
+  "dependencies": {
+    "jquery": "~2.1.1"
+  },
+  "devDependencies": {
+    "phantomjs": "~1.9.15",
+    "less": "~2.4.0"
+  },
+  "author": "Andrew Hankinson",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/DDMAL/diva.js/issues"
+  },
+  "homepage": "https://github.com/DDMAL/diva.js"
+}
