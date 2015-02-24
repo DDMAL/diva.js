@@ -2140,7 +2140,7 @@ window.divaPlugins = [];
             {
                 updateCurrentPage: function ()
                 {
-                    document.getElementById(settings.ID + 'current-page').textContent = settings.currentPageIndex + 1;
+                    document.getElementById(settings.ID + 'current-page').textContent = parseInt(settings.currentPageIndex, 10) + 1;
                 },
                 setNumPages: function (newNumber)
                 {
@@ -2589,7 +2589,7 @@ window.divaPlugins = [];
             if (zoomLevel > settings.maxZoomLevel)
                 zoomLevel = settings.maxZoomLevel;
 
-            var pg = settings.pages[pageIdx];
+            var pg = settings.pages[parseInt(pageIdx, 10)];
             var pgAtZoom = pg.d[parseInt(zoomLevel, 10)];
             return {'width': pgAtZoom.w, 'height': pgAtZoom.h};
         };
@@ -2702,7 +2702,7 @@ window.divaPlugins = [];
 
         //Public wrapper for isPageLoaded
         //Determines if a page is currently in the DOM
-        this.isPageInDOM = function (pageIndex)
+        this.isPageLoaded = function (pageIndex)
         {
             return isPageLoaded(pageIndex);
         };

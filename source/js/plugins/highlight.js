@@ -14,6 +14,7 @@ Allows you to highlight regions of a page image
             {
                 // initialize an empty highlights object.
                 divaSettings.parentObject.data('highlights', {});
+                var currentHighlight, currentHighlightPage;
 
                 /*
                     When a new page is loaded, this method will be called with the
@@ -84,13 +85,45 @@ Allows you to highlight regions of a page image
                             }
 
                             pageObj.appendChild(box);
+                            
+                            if (box.id === currentHighlight) updateCurrentHighlight();
                         }
                     }
-                    diva.Events.publish("HighlightCompleted");
+
+                    diva.Events.publish("HighlightCompleted", [pageIdx], self);
                 }
 
+                var updateCurrentHighlight = function()
+                {
+                    var classString = "diva-selected-highlight";
+                    var classElem = document.getElementsByClassName(classString);
+                    var idx = classElem.length;
+                    if (idx > 0) 
+                    {
+                        while (idx--)
+                        {
+                            box = classElem[idx];
+                            if(box.id != currentHighlight)
+                            {
+                                box.className = box.className.replace(' '+classString, '');
+                                box.style.border = "1px solid #555";  
+                            }
+                        }
+                    }
+
+                    if (divaInstance.isPageLoaded(currentHighlightPage))
+                    {
+                        box = document.getElementById(currentHighlight);
+                        if (box !== null)
+                        {
+                            box.className = box.className + " " + classString;
+                            box.style.border = "2px solid #000";
+                        }
+                    }
+                };
+
                 // subscribe the highlight method to the page change notification
-                diva.Events.subscribe("PageWillLoad", _highlight);
+                diva.Events.subscribe("PageDidLoad", _highlight);
 
                 var _incorporate_zoom = function(position, zoomDifference)
                 {
@@ -187,7 +220,7 @@ Allows you to highlight regions of a page image
 
                      
                     //Highlights are created on load; create them for all loaded pages now
-                    if (divaInstance.isPageInDOM(pageIdx))
+                    if (divaInstance.isPageLoaded(pageIdx))
                     {
                         _highlight(pageIdx, null, null);
                     }
@@ -195,13 +228,12 @@ Allows you to highlight regions of a page image
                     return true;
                 };
 
-                                /*
+                /*
                     Jumps to a highlight somewhere in the document.
                     @param divID The ID of the div to jump to. This ID must be attached to the div using .highlightOnPage(s) as the highlight may not be appended to the DOM.
                 */
                 divaInstance.gotoHighlight = function(divID)
                 {
-                    var page;
                     var thisDiv;
                     var centerYOfDiv;
                     var centerXOfDiv;
@@ -212,16 +244,14 @@ Allows you to highlight regions of a page image
                     //see if it exists in the DOM already first
                     if (document.getElementById(divID) !== null)
                     {
-                        page = parseInt(document.getElementById(divID).parentNode.getAttribute('data-index'), 10);
+                        var page = parseInt(document.getElementById(divID).parentNode.getAttribute('data-index'), 10);
                         
                         var numDivs = highlightsObj[page].regions.length;
                         while (numDivs--)
                         {
                             if (highlightsObj[page].regions[numDivs].divID == divID)
                             {
-                                thisDiv = highlightsObj[page].regions[numDivs];
-                                centerYOfDiv = parseFloat(thisDiv.uly) + parseFloat(thisDiv.height) / 2;
-                                centerXOfDiv = parseFloat(thisDiv.ulx) + parseFloat(thisDiv.width) / 2;
+                                gotoDiv(page, highlightsObj[page].regions[numDivs]);
                                 
                                 highlightFound = true;
                                 break;
@@ -241,11 +271,8 @@ Allows you to highlight regions of a page image
                             {
                                 if (regionArr[arrIndex].divID == divID)
                                 {
-                                    page = pageArr[pageIdx];
-                                    thisDiv = regionArr[arrIndex];
-                                    centerYOfDiv = parseFloat(thisDiv.uly) + parseFloat(thisDiv.height) / 2;
-                                    centerXOfDiv = parseFloat(thisDiv.ulx) + parseFloat(thisDiv.width) / 2;
-                                
+                                    gotoDiv(pageArr[pageIdx], regionArr[arrIndex]);
+
                                     highlightFound = true;
                                     break;
                                 }
@@ -260,7 +287,14 @@ Allows you to highlight regions of a page image
                         console.warn("Diva just tried to find a highlight that doesn't exist.");
                         return false;
                     }
+                    else return true;
+                };
 
+                var gotoDiv = function(page, thisDiv)
+                {
+                    var centerYOfDiv = parseFloat(thisDiv.uly) + parseFloat(thisDiv.height) / 2;
+                    var centerXOfDiv = parseFloat(thisDiv.ulx) + parseFloat(thisDiv.width) / 2;
+                                
                     var outerObject = divaInstance.getSettings().outerObject;
 
                     var desiredY = divaInstance.translateFromMaxZoomLevel(centerYOfDiv);
@@ -273,9 +307,121 @@ Allows you to highlight regions of a page image
                     outerObject.scrollTop(currentTop);
                     outerObject.scrollLeft(currentLeft);
 
-                    divaSettings.currentHighlight = divID;
+                    currentHighlight = thisDiv.divID;
+                    currentHighlightPage = page;
 
-                    return true;
+                    updateCurrentHighlight();
+                };
+
+                /*
+                    Jumps to the next highlight along the primary axis of the document.
+                */
+                divaInstance.gotoNextHighlight = function()
+                {
+                    var getDivCenter = function(thisDiv)
+                    {
+                        if (divaSettings.verticallyOriented) return divaInstance.translateFromMaxZoomLevel(parseFloat(thisDiv.uly) + parseFloat(thisDiv.height) / 2);
+                        else return divaInstance.translateFromMaxZoomLevel(parseFloat(thisDiv.ulx) + parseFloat(thisDiv.width) / 2);
+                    };
+
+                    var centerOfTargetDiv;
+                    var highlightsObj = divaSettings.parentObject.data('highlights');
+
+                    //if we have a current div
+                    if(currentHighlight)
+                    {
+                        var highlightFound = false;
+                        var centerOfCurrentDiv;
+                        var regionArr = highlightsObj[currentHighlightPage].regions;
+                        var arrIndex = regionArr.length;
+
+                        //find the center of the current div
+                        while(arrIndex--)
+                        {
+                            if (regionArr[arrIndex].divID == currentHighlight)
+                            {
+                                thisDiv = regionArr[arrIndex];
+                                centerOfCurrentDiv = getDivCenter(thisDiv);     
+                                break;
+                            }
+                        }
+
+                        //reinitialize the idx
+                        arrIndex = regionArr.length;
+                        var pageDims = divaInstance.getPageDimensionsAtZoomLevel(currentHighlightPage, divaInstance.getZoomLevel());
+                        centerOfTargetDiv = (divaSettings.verticallyOriented) ? pageDims.height : pageDims.width;
+                        var targetDiv, centerOfDiv;
+
+                        while(arrIndex--)
+                        {
+                            thisDiv = regionArr[arrIndex];
+                            centerOfDiv = getDivCenter(thisDiv);
+                            if (centerOfDiv > centerOfCurrentDiv && centerOfDiv < centerOfTargetDiv)
+                            {
+                                highlightFound = true; 
+                                centerOfTargetDiv = centerOfDiv;
+                                targetDiv = thisDiv;
+                            }
+                        }
+
+                        //if a highlight was found on the current page that was bigger; this can get overwritten but we're still good
+                        if (highlightFound) return gotoDiv(currentHighlightPage, targetDiv);
+
+                        //else find the minimum div on the next page with highlights and loop around if necessary
+                        var pageArr = Object.keys(highlightsObj);
+                        var pageIdx = 0;
+                        var targetPage;
+
+                        var minimumPage;
+                        var curIdx;
+
+                        while (pageIdx < pageArr.length)
+                        {
+                            curPage = pageArr[pageIdx];
+                            if (curPage < minimumPage) minimumPage = curPage;
+                            else if (curPage > currentHighlightPage) {
+                                targetPage = curPage;
+                                break;
+                            }
+
+                            pageIdx++;
+                        }
+
+                        //if we broke the while loop automatically, we need the minimum page
+                        if(!(pageIdx < pageArr.length)) targetPage = minimumPage;
+
+                        //reset regionArr and centerOfTargetDiv for the new page we're testing
+                        regionArr = highlightsObj[targetPage].regions;
+                        arrIndex = regionArr.length;
+                        pageDims = divaInstance.getPageDimensionsAtZoomLevel(targetPage, divaInstance.getZoomLevel());
+                        centerOfTargetDiv = (divaSettings.verticallyOriented) ? pageDims.height : pageDims.width;
+                        
+                        var thisDiv;
+
+                        //find the minimum this time
+                        while(arrIndex--)
+                        {
+                            thisDiv = regionArr[arrIndex];
+                            centerOfDiv = getDivCenter(thisDiv);
+                            if (centerOfDiv < centerOfTargetDiv)
+                            {
+                                highlightFound = true; 
+                                centerOfTargetDiv = centerOfDiv;
+                                targetDiv = thisDiv;
+                            }
+                        }
+
+                        //we've found it this time, as there'll be a region in the new regionArr to be the minimum
+                        return gotoDiv(targetPage, targetDiv);
+                    }
+                };
+
+                /*
+                    Jumps to the previous highlight along the primary axis of the document.
+                */
+                divaInstance.gotoPreviousHighlight = function()
+                {
+
                 };
 
                 return true;
