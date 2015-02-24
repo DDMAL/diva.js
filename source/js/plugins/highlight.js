@@ -326,14 +326,18 @@ Allows you to highlight regions of a page image
 
                     var centerOfTargetDiv;
                     var highlightsObj = divaSettings.parentObject.data('highlights');
+                    var highlightFound = false;
+                    var centerOfCurrentDiv;
+                    var currentPage;
+                    var regionArr, arrIndex;
+
 
                     //if we have a current div
-                    if(currentHighlight)
+                    if(currentHighlight && currentHighlightPage)
                     {
-                        var highlightFound = false;
-                        var centerOfCurrentDiv;
-                        var regionArr = highlightsObj[currentHighlightPage].regions;
-                        var arrIndex = regionArr.length;
+                        currentPage = currentHighlightPage;
+                        regionArr = highlightsObj[currentPage].regions;
+                        arrIndex = regionArr.length;
 
                         //find the center of the current div
                         while(arrIndex--)
@@ -346,9 +350,11 @@ Allows you to highlight regions of a page image
                             }
                         }
 
-                        //reinitialize the idx
+                        //if we do have a current highlight, try to find the next one in the same page
+
+                        //reinitialize the index in case regionArr is out of order
                         arrIndex = regionArr.length;
-                        var pageDims = divaInstance.getPageDimensionsAtZoomLevel(currentHighlightPage, divaInstance.getZoomLevel());
+                        var pageDims = divaInstance.getPageDimensionsAtZoomLevel(currentPage, divaInstance.getZoomLevel());
                         centerOfTargetDiv = (divaSettings.verticallyOriented) ? pageDims.height : pageDims.width;
                         var targetDiv, centerOfDiv;
 
@@ -365,55 +371,62 @@ Allows you to highlight regions of a page image
                         }
 
                         //if a highlight was found on the current page that was bigger; this can get overwritten but we're still good
-                        if (highlightFound) return gotoDiv(currentHighlightPage, targetDiv);
-
-                        //else find the minimum div on the next page with highlights and loop around if necessary
-                        var pageArr = Object.keys(highlightsObj);
-                        var pageIdx = 0;
-                        var targetPage;
-
-                        var minimumPage;
-                        var curIdx;
-
-                        while (pageIdx < pageArr.length)
-                        {
-                            curPage = pageArr[pageIdx];
-                            if (curPage < minimumPage) minimumPage = curPage;
-                            else if (curPage > currentHighlightPage) {
-                                targetPage = curPage;
-                                break;
-                            }
-
-                            pageIdx++;
-                        }
-
-                        //if we broke the while loop automatically, we need the minimum page
-                        if(!(pageIdx < pageArr.length)) targetPage = minimumPage;
-
-                        //reset regionArr and centerOfTargetDiv for the new page we're testing
-                        regionArr = highlightsObj[targetPage].regions;
-                        arrIndex = regionArr.length;
-                        pageDims = divaInstance.getPageDimensionsAtZoomLevel(targetPage, divaInstance.getZoomLevel());
-                        centerOfTargetDiv = (divaSettings.verticallyOriented) ? pageDims.height : pageDims.width;
-                        
-                        var thisDiv;
-
-                        //find the minimum this time
-                        while(arrIndex--)
-                        {
-                            thisDiv = regionArr[arrIndex];
-                            centerOfDiv = getDivCenter(thisDiv);
-                            if (centerOfDiv < centerOfTargetDiv)
-                            {
-                                highlightFound = true; 
-                                centerOfTargetDiv = centerOfDiv;
-                                targetDiv = thisDiv;
-                            }
-                        }
-
-                        //we've found it this time, as there'll be a region in the new regionArr to be the minimum
-                        return gotoDiv(targetPage, targetDiv);
+                        if (highlightFound) return gotoDiv(currentPage, targetDiv);
+                        //if it wasn't found, continue on...
                     }
+                    //otherwise just pretend we're starting at the northwest corner of diva-inner
+                    else
+                    {
+                        currentPage = 0;
+                        centerOfCurrentDiv = 0;
+                    }
+
+                    //find the minimum div on the next page with highlights and loop around if necessary
+                    var pageArr = Object.keys(highlightsObj);
+                    var pageIdx = 0;
+                    var targetPage;
+
+                    var minimumPage;
+                    var curIdx;
+
+                    while (pageIdx < pageArr.length)
+                    {
+                        curPage = pageArr[pageIdx];
+                        if (curPage < minimumPage) minimumPage = curPage;
+                        else if (curPage > currentPage) {
+                            targetPage = curPage;
+                            break;
+                        }
+
+                        pageIdx++;
+                    }
+
+                    //if we broke the while loop automatically, we need the minimum page
+                    if(!(pageIdx < pageArr.length)) targetPage = minimumPage;
+
+                    //reset regionArr and centerOfTargetDiv for the new page we're testing
+                    regionArr = highlightsObj[targetPage].regions;
+                    arrIndex = regionArr.length;
+                    pageDims = divaInstance.getPageDimensionsAtZoomLevel(targetPage, divaInstance.getZoomLevel());
+                    centerOfTargetDiv = (divaSettings.verticallyOriented) ? pageDims.height : pageDims.width;
+                    
+                    var thisDiv;
+
+                    //find the minimum this time
+                    while(arrIndex--)
+                    {
+                        thisDiv = regionArr[arrIndex];
+                        centerOfDiv = getDivCenter(thisDiv);
+                        if (centerOfDiv < centerOfTargetDiv)
+                        {
+                            highlightFound = true; 
+                            centerOfTargetDiv = centerOfDiv;
+                            targetDiv = thisDiv;
+                        }
+                    }
+
+                    //we've found it this time, as there'll be a region in the new regionArr to be the minimum
+                    return gotoDiv(targetPage, targetDiv);
                 };
 
                 /*
