@@ -230,17 +230,19 @@ Allows you to highlight regions of a page image
                     }
                     else
                     {
-                        for (var pageIdx in highlightsObj)
+                        var pageArr = Object.keys(highlightsObj);
+                        var pageIdx = pageArr.length;
+                        while(pageIdx--)
                         {
-                            var pageArr = highlightsObj[pageIdx].regions;
-                            var arrIndex = pageArr.length;
+                            var regionArr = highlightsObj[pageArr[pageIdx]].regions;
+                            var arrIndex = regionArr.length;
 
                             while(arrIndex--)
                             {
-                                if (pageArr[arrIndex].divID == divID)
+                                if (regionArr[arrIndex].divID == divID)
                                 {
-                                    page = pageIdx;
-                                    thisDiv = pageArr[arrIndex];
+                                    page = pageArr[pageIdx];
+                                    thisDiv = regionArr[arrIndex];
                                     centerYOfDiv = parseFloat(thisDiv.uly) + parseFloat(thisDiv.height) / 2;
                                     centerXOfDiv = parseFloat(thisDiv.ulx) + parseFloat(thisDiv.width) / 2;
                                 
