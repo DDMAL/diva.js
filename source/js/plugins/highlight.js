@@ -195,6 +195,87 @@ Allows you to highlight regions of a page image
                     return true;
                 };
 
+                                /*
+                    Jumps to a highlight somewhere in the document.
+                    @param divID The ID of the div to jump to. This ID must be attached to the div using .highlightOnPage(s) as the highlight may not be appended to the DOM.
+                */
+                divaInstance.gotoHighlight = function(divID)
+                {
+                    var page;
+                    var thisDiv;
+                    var centerYOfDiv;
+                    var centerXOfDiv;
+
+                    var highlightsObj = divaSettings.parentObject.data('highlights');
+                    var highlightFound = false; //used to break both loops
+                    
+                    //see if it exists in the DOM already first
+                    if (document.getElementById(divID) !== null)
+                    {
+                        page = parseInt(document.getElementById(divID).parentNode.getAttribute('data-index'), 10);
+                        
+                        var numDivs = highlightsObj[page].regions.length;
+                        while (numDivs--)
+                        {
+                            if (highlightsObj[page].regions[numDivs].divID == divID)
+                            {
+                                thisDiv = highlightsObj[page].regions[numDivs];
+                                centerYOfDiv = parseFloat(thisDiv.uly) + parseFloat(thisDiv.height) / 2;
+                                centerXOfDiv = parseFloat(thisDiv.ulx) + parseFloat(thisDiv.width) / 2;
+                                
+                                highlightFound = true;
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for (var pageIdx in highlightsObj)
+                        {
+                            var pageArr = highlightsObj[pageIdx].regions;
+                            var arrIndex = pageArr.length;
+
+                            while(arrIndex--)
+                            {
+                                if (pageArr[arrIndex].divID == divID)
+                                {
+                                    page = pageIdx;
+                                    thisDiv = pageArr[arrIndex];
+                                    centerYOfDiv = parseFloat(thisDiv.uly) + parseFloat(thisDiv.height) / 2;
+                                    centerXOfDiv = parseFloat(thisDiv.ulx) + parseFloat(thisDiv.width) / 2;
+                                
+                                    highlightFound = true;
+                                    break;
+                                }
+                            }
+
+                            if (highlightFound) break;
+                        }
+                    }
+
+                    if (!highlightFound)
+                    {
+                        console.warn("Diva just tried to find a highlight that doesn't exist.");
+                        return false;
+                    }
+
+                    var outerObject = divaInstance.getSettings().outerObject;
+
+                    var desiredY = divaInstance.translateFromMaxZoomLevel(centerYOfDiv);
+                    var desiredX = divaInstance.translateFromMaxZoomLevel(centerXOfDiv);
+                    
+                    divaInstance.gotoPageByIndex(page);
+                    var currentTop = outerObject.scrollTop() + desiredY - (outerObject.height() / 2) + divaSettings.verticalPadding;
+                    var currentLeft = outerObject.scrollLeft() + desiredX - (outerObject.width() / 2) + divaSettings.horizontalPadding;
+
+                    outerObject.scrollTop(currentTop);
+                    outerObject.scrollLeft(currentLeft);
+
+                    divaSettings.currentHighlight = divID;
+
+                    return true;
+                };
+
                 return true;
             },
             destroy: function (divaSettings, divaInstance)
