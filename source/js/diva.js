@@ -2999,7 +2999,7 @@ window.divaPlugins = [];
             var outerLeft = outerOffset.left;
             var outerBottom = outerTop + outerObj.outerHeight();
             var outerRight = outerLeft + outerObj.outerWidth();
-            
+
             //because pages extend outside the diva-outer class, we want to exclude those values as the pageX/pageY values aren't actually on them
             if (pageX < outerLeft || pageX > outerRight)
                 return false;
@@ -3008,10 +3008,10 @@ window.divaPlugins = [];
                 return false;
 
             //navigate through all divs starting with "x-diva-page"
-            var curPageIdx = $("div[id^=" + settings.ID + "page]").length;
+            var curPageIdx = $(".diva-document-page").length;
             while (curPageIdx--)
             {
-                var curPage = $($("div[id^=" + settings.ID + "page]")[curPageIdx]);
+                var curPage = $($(".diva-document-page")[curPageIdx]);
                 var pageIndex = curPage.attr('data-index');
                 var curPosition = curPage.position();
                 var curOffset = curPage.offset();
@@ -3020,17 +3020,17 @@ window.divaPlugins = [];
                 if (settings.verticallyOriented)
                 {
                     curTop = curPosition.top - outerObj.scrollTop() + outerTop;
-                    curLeft = curOffset.left - outerObj.scrollLeft() + outerLeft;           
+                    curLeft = curOffset.left;          
                 }
                 else
                 {
-                    curTop = curOffset.top - outerObj.scrollTop() + outerTop;
+                    curTop = curOffset.top;
                     curLeft = curPosition.left - outerObj.scrollLeft() + outerLeft;   
                 }
 
                 var curBottom = curTop + curPage.outerHeight();
                 var curRight = curLeft + curPage.outerWidth();
-                
+
                 //if this point is outside the horizontal boundaries, continue
                 if (pageX < curLeft || pageX > curRight)
                     continue
