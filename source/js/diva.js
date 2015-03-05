@@ -428,7 +428,7 @@ window.divaPlugins = [];
                 executeCallback(settings.onPageLoaded, pageIndex, filename, pageSelector);
                 diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector], self);
             };
-            settings.pageTimeouts.push(setTimeout(pageLoadFunction(pageIndex), settings.pageLoadTimeout));
+            settings.pageTimeouts.push(setTimeout(pageLoadFunction, settings.pageLoadTimeout, pageIndex));
         };
 
         // Delete a page from the DOM; will occur when a page is scrolled out of the viewport
@@ -867,7 +867,7 @@ window.divaPlugins = [];
             }; 
 
             settings.pageTimeouts.push(
-                window.setTimeout(loadFunction(rowIndex, pageIndex, imageURL, pageWidth, pageHeight), settings.rowLoadTimeout));
+                window.setTimeout(loadFunction, settings.rowLoadTimeout, rowIndex, pageIndex, imageURL, pageWidth, pageHeight));
         };
 
         // Determines and sets the "current page" (settings.currentPageIndex); called within adjustPages
