@@ -1250,15 +1250,6 @@ window.divaPlugins = [];
         // Should only be called after changing settings.inFullscreen
         var handleModeChange = function (changeView)
         {
-            var storedOffsetY = getCurrentYOffset();
-            var storedOffsetX = getCurrentXOffset();
-            var outerElem = document.getElementById(settings.ID + "outer");
-
-            settings.panelHeight = outerElem.clientHeight - (outerElem.scrollWidth > outerElem.clientWidth ? settings.scrollbarWidth : 0); 
-            settings.panelWidth = outerElem.clientWidth - (outerElem.scrollHeight > outerElem.clientHeight ? settings.scrollbarWidth : 0); 
-            var storedHeight = settings.panelHeight;
-            var storedWidth = settings.panelWidth;
-
             // Toggle the classes
             settings.outerObject.toggleClass('diva-fullscreen');
             $('body').toggleClass('diva-hide-scrollbar');
@@ -1271,33 +1262,32 @@ window.divaPlugins = [];
                 settings.outerObject.css('margin-left', leftMarginComped);
             }
 
-            // Execute callbacks
-            executeCallback(settings.onModeToggle, settings.inFullscreen);
-            diva.Events.publish("ModeDidSwitch", [settings.inFullscreen], self);
+            // Adjust Diva's internal panel size, keeping the old values
+            var storedHeight = settings.panelHeight;
+            var storedWidth = settings.panelWidth;
+            updatePanelSize();        
 
-            // If it has changed, adjust panel size coming out of fullscreen
-            if (!settings.inFullscreen)
-            {
-                updatePanelSize();
-            }            
-
+            // If this isn't the original load...
             if (settings.oldZoomLevel >= 0 && !settings.inGrid)
             {
+                //get the updated panel size
                 var newHeight = settings.panelHeight;
                 var newWidth = settings.panelWidth;
+
+                //and re-center the new panel on the same point
                 if(settings.inFullscreen)
                 {
-                    settings.verticalOffset = ((newHeight - storedHeight) / 2) + storedOffsetY;
-                    settings.horizontalOffset = ((newWidth - storedWidth) / 2) + storedOffsetX;
+                    settings.verticalOffset -= ((newHeight - storedHeight) / 2);
+                    settings.horizontalOffset -= ((newWidth - storedWidth) / 2);
                 }
                 else
                 {
-                    settings.verticalOffset = storedOffsetY - ((storedHeight - newHeight) / 2);
-                    settings.verticalOffset = storedOffsetX - ((storedWidth - newWidth) / 2);
+                    settings.verticalOffset += ((storedHeight - newHeight) / 2);
+                    settings.horizontalOffset += ((storedWidth - newWidth) / 2);
                 }
             }
 
-            // Used by setState when we need to change the view and the mode
+            // If setState changes both view and mode, trigger that here
             if (changeView)
             {
                 settings.inGrid = !settings.inGrid;
@@ -1308,10 +1298,15 @@ window.divaPlugins = [];
                 loadViewer();
             }
 
+            //turn on/off escape key listener
             if(settings.inFullscreen)
                 $(document).on('keyup', escapeListener);
             else
                 $(document).off('keyup', escapeListener);
+
+            // Execute callbacks
+            executeCallback(settings.onModeToggle, settings.inFullscreen);
+            diva.Events.publish("ModeDidSwitch", [settings.inFullscreen], self);
         };
 
         // Handles switching in and out of grid view
