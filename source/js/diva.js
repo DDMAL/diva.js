@@ -1689,6 +1689,79 @@ window.divaPlugins = [];
 
             settings.outerObject.scroll(scrollFunction);
 
+            var upArrowKey = 38,
+                downArrowKey = 40,
+                leftArrowKey = 37,
+                rightArrowKey = 39,
+                spaceKey = 32,
+                pageUpKey = 33,
+                pageDownKey = 34,
+                homeKey = 36,
+                endKey = 35;
+
+            // Catch the key presses in document
+            $(document).keydown(function (event)
+            {   
+                if (!settings.isActiveDiva)
+                    return true;
+                
+                // Space or page down - go to the next page
+                if ((settings.enableSpaceScroll && !event.shiftKey && event.keyCode === spaceKey) || (settings.enableKeyScroll && event.keyCode === pageDownKey))
+                {
+                    settings.outerObject.scrollTop(document.getElementById(settings.ID + "outer").scrollTop + settings.panelHeight);
+                    return false;
+                }
+                else if (!settings.enableSpaceScroll && event.keyCode === spaceKey)
+                {
+                    event.preventDefault();
+                }
+
+                if (settings.enableKeyScroll)
+                {
+                    switch (event.keyCode)
+                    {
+                        case pageUpKey:
+                            // Page up - go to the previous page
+                            settings.outerObject.scrollTop(document.getElementById(settings.ID + "outer").scrollTop - settings.panelHeight);
+                            return false;
+
+                        case upArrowKey:
+                            // Up arrow - scroll up
+                            settings.outerObject.scrollTop(document.getElementById(settings.ID + "outer").scrollTop - settings.arrowScrollAmount);
+                            return false;
+
+                        case downArrowKey:
+                            // Down arrow - scroll down
+                            settings.outerObject.scrollTop(document.getElementById(settings.ID + "outer").scrollTop + settings.arrowScrollAmount);
+                            return false;
+
+                        case leftArrowKey:
+                            // Left arrow - scroll left
+                            settings.outerObject.scrollLeft(document.getElementById(settings.ID + "outer").scrollLeft - settings.arrowScrollAmount);
+                            return false;
+
+                        case rightArrowKey:
+                            // Right arrow - scroll right
+                            settings.outerObject.scrollLeft(document.getElementById(settings.ID + "outer").scrollLeft + settings.arrowScrollAmount);
+                            return false;
+
+                        case homeKey:
+                            // Home key - go to the beginning of the document
+                            settings.outerObject.scrollTop(0);
+                            return false;
+
+                        case endKey:
+                            // End key - go to the end of the document
+                            settings.outerObject.scrollTop(settings.totalHeight);
+                            return false;
+
+                        default:
+                            return true;
+                    }
+                }
+                return true;
+            });
+
             // Check if the user is on a iPhone or iPod touch or iPad
             if (settings.mobileWebkit)
             {
@@ -1812,121 +1885,43 @@ window.divaPlugins = [];
 
                 // Grid view: Double-tap to jump to current page in document view
                 settings.outerObject.on('touchend', '.diva-page', bindDoubleTap);
-            }
-
-            // Only check if either scrollBySpace or scrollByKeys is enabled
-            if (settings.enableSpaceScroll || settings.enableKeyScroll)
-            {
-                var upArrowKey = 38,
-                    downArrowKey = 40,
-                    leftArrowKey = 37,
-                    rightArrowKey = 39,
-                    spaceKey = 32,
-                    pageUpKey = 33,
-                    pageDownKey = 34,
-                    homeKey = 36,
-                    endKey = 35;
-
-                // Catch the key presses in document
-                $(document).keydown(function (event)
-                {   
-                    if (!settings.isActiveDiva)
-                        return;
-                    
-                    // Space or page down - go to the next page
-                    if ((settings.enableSpaceScroll && !event.shiftKey && event.keyCode === spaceKey) || (settings.enableKeyScroll && event.keyCode === pageDownKey))
-                    {
-                        settings.outerObject.scrollTop(document.getElementById(settings.ID + "outer").scrollTop + settings.panelHeight);
-                        return false;
-                    }
-                    else if (!settings.enableSpaceScroll && event.keyCode === spaceKey)
-                    {
-                        event.preventDefault();
-                    }
-
-                    if (settings.enableKeyScroll)
-                    {
-                        switch (event.keyCode)
-                        {
-                            case pageUpKey:
-                                // Page up - go to the previous page
-                                settings.outerObject.scrollTop(document.getElementById(settings.ID + "outer").scrollTop - settings.panelHeight);
-                                return false;
-
-                            case upArrowKey:
-                                // Up arrow - scroll up
-                                settings.outerObject.scrollTop(document.getElementById(settings.ID + "outer").scrollTop - settings.arrowScrollAmount);
-                                return false;
-
-                            case downArrowKey:
-                                // Down arrow - scroll down
-                                settings.outerObject.scrollTop(document.getElementById(settings.ID + "outer").scrollTop + settings.arrowScrollAmount);
-                                return false;
-
-                            case leftArrowKey:
-                                // Left arrow - scroll left
-                                settings.outerObject.scrollLeft(document.getElementById(settings.ID + "outer").scrollLeft - settings.arrowScrollAmount);
-                                return false;
-
-                            case rightArrowKey:
-                                // Right arrow - scroll right
-                                settings.outerObject.scrollLeft(document.getElementById(settings.ID + "outer").scrollLeft + settings.arrowScrollAmount);
-                                return false;
-
-                            case homeKey:
-                                // Home key - go to the beginning of the document
-                                settings.outerObject.scrollTop(0);
-                                return false;
-
-                            case endKey:
-                                // End key - go to the end of the document
-                                settings.outerObject.scrollTop(settings.totalHeight);
-                                return false;
-
-                            default:
-                                return;
-                        }
-                    }
-                    return;
-                });
 
                 // Handle window resizing events
-                if (!settings.mobileWebkit)
+                var orientationEvent = "onorientationchange" in window ? "orientationchange" : "resize";
+                $(window).bind(orientationEvent, function (event)
                 {
-                    $(window).resize(function ()
-                    {
-                        updatePanelSize();
-                        // Cancel any previously-set resize timeouts
-                        clearTimeout(settings.resizeTimer);
+                    var oldWidth = settings.panelWidth;
+                    var oldHeight = settings.panelHeight;
+                    updatePanelSize();
 
-                        settings.resizeTimer = setTimeout(function ()
-                        {
-                            settings.goDirectlyTo = settings.currentPageIndex;
-                            settings.verticalOffset = getCurrentYOffset();
-                            settings.horizontalOffset = getCurrentXOffset();
-                            loadViewer();
-                        }, 200);
-                    });
-                }
-                else
-                {
-                    var orientationEvent = "onorientationchange" in window ? "orientationchange" : "resize";
-                    $(window).bind(orientationEvent, function (event)
-                    {
-                        var oldWidth = settings.panelWidth;
-                        var oldHeight = settings.panelHeight;
-                        updatePanelSize();
+                    settings.horizontalOffset -= (settings.panelWidth - oldWidth) / 2;
+                    settings.verticalOffset -= (settings.panelHeight - oldHeight) / 2;
 
-                        settings.horizontalOffset -= (settings.panelWidth - oldWidth) / 2;
-                        settings.verticalOffset -= (settings.panelHeight - oldHeight) / 2;
-
-                        // Reload the viewer to account for the resized viewport
-                        settings.goDirectlyTo = settings.currentPageIndex;
-                        loadViewer();
-                    });
-                }
-                diva.Events.subscribe('PanelSizeDidChange', updatePanelSize);
+                    // Reload the viewer to account for the resized viewport
+                    settings.goDirectlyTo = settings.currentPageIndex;
+                    loadViewer();
+                });
             }
+            // Handle window resizing events
+            else 
+            {
+                $(window).resize(function ()
+                {
+                    updatePanelSize();
+                    // Cancel any previously-set resize timeouts
+                    clearTimeout(settings.resizeTimer);
+
+                    settings.resizeTimer = setTimeout(function ()
+                    {
+                        settings.goDirectlyTo = settings.currentPageIndex;
+                        settings.verticalOffset = getCurrentYOffset();
+                        settings.horizontalOffset = getCurrentXOffset();
+                        loadViewer();
+                    }, 200);
+                });
+            }
+            diva.Events.subscribe('PanelSizeDidChange', updatePanelSize);
+
         };
 
         // Handles all status updating etc (both fullscreen and not)
