@@ -1016,11 +1016,14 @@ window.divaPlugins = [];
             settings.outerObject.scrollLeft(desiredLeft);
 
             // Pretend that this is the current page
-            settings.currentPageIndex = pageIndex;
-            var filename = settings.pages[pageIndex].f;
+            if(pageIndex !== settings.currentPageIndex)
+            {
+                settings.currentPageIndex = pageIndex;
+                var filename = settings.pages[pageIndex].f;
 
-            executeCallback(settings.onSetCurrentPage, pageIndex, filename);
-            diva.Events.publish("VisiblePageDidChange", [pageIndex, filename], self);
+                executeCallback(settings.onSetCurrentPage, pageIndex, filename);
+                diva.Events.publish("VisiblePageDidChange", [pageIndex, filename], self);
+            }
 
             // Execute the onJump callback
             executeCallback(settings.onJump, pageIndex);
