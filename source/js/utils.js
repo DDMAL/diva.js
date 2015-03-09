@@ -755,18 +755,18 @@ var diva = (function() {
     return pub;
 }());
 
-var multiDiva;
-
-var multiDivaController = function ()
+//Used to keep track of whether Diva was last clicked or which Diva was last clicked when there are multiple
+var activeDivaController = function ()
 {
     var active;
 
+    //global click listener
     $(document).on('click', function(e)
     {
         updateActive($(e.target));
     });
 
-    //parameter should already be selected in jQuery
+    //parameter should already be a jQuery selector
     var updateActive = function (target)
     {
         var nearestOuter;
@@ -774,47 +774,49 @@ var multiDivaController = function ()
         //these will find 0 or 1 objects, never more
         var findOuter = target.find('.diva-outer');
         var closestOuter = target.closest('.diva-outer');
+        var curOuter, idx, outers;
 
-        if (findOuter.length > 0) //clicked on something that was not either a parent or sibling of diva-outer
+        //clicked on something that was not either a parent or sibling of a diva-outer
+        if (findOuter.length > 0) 
         {
             nearestOuter = findOuter;
         }
-        else if (closestOuter.length > 0) //clicked on something that was a child of diva-outer
+        //clicked on something that was a child of a diva-outer
+        else if (closestOuter.length > 0)
         {
             nearestOuter = closestOuter;
         }
-        else //clicked on something unrelated
+        //clicked on something that was not in any Diva tree
+        else 
         {
+            //deactivate everything and return
+            outers = document.getElementsByClassName('diva-outer');
+            for(idx = 0; idx < outers.length; idx++)
+            {
+                $(outers[idx].parentElement).data('diva').deactivate();
+            }
             return;
         }
 
-        //activate this one
+        //if we found one, activate it...
         nearestOuter.parent().data('diva').activate();
         active = nearestOuter.parent();
 
-        //deactivate all the others
-        var curOuter = $(".diva-outer").length;
-        while (curOuter--)
+        //...and deactivate all the others
+        outers = document.getElementsByClassName('diva-outer');
+        for(idx = 0; idx < outers.length; idx++)
         {
-            if ($($(".diva-outer")[curOuter]).attr('id') != nearestOuter.attr('id'))
-                $($(".diva-outer")[curOuter]).parent().data('diva').deactivate();
+            //getAttribute to attr - comparing DOM element to jQuery element
+            if (outers[idx].getAttribute('id') != nearestOuter.attr('id'))
+                $(outers[idx].parentElement).data('diva').deactivate();
         }
     };
 
+    //public accessor in case. Will return a jQuery selector.
     this.getActive = function()
     {
         return active;
     };
 };
 
-diva.Events.subscribe("ViewerDidLoad", function(settings)
-{
-    if($(".diva-outer").length > 1){
-        //make sure there's only one active diva; deactivate any newer ones
-        this.deactivate();
-
-        //create the controller if it doesn't already exist
-        if(!multiDiva)
-            multiDiva = new multiDivaController();
-    }
-});
+var activeDiva = new activeDivaController();
