@@ -208,7 +208,7 @@ window.divaPlugins = [];
         // Checks if a page or tile is within the viewport horizontally
         var isHorizontallyInViewport = function (left, right)
         {
-            var leftOfViewport = $("#" + settings.ID + "outer").scrollLeft() - settings.viewportMargin;
+            var leftOfViewport = settings.outerObject.scrollLeft() - settings.viewportMargin;
             var rightOfViewport = leftOfViewport + settings.panelWidth + settings.viewportMargin * 2;
 
             var leftVisible = left >= leftOfViewport && left <= rightOfViewport;
@@ -221,7 +221,8 @@ window.divaPlugins = [];
         // Checks if a page or tile is within the viewport vertically
         var isVerticallyInViewport = function (top, bottom)
         {
-            var topOfViewport = $("#" + settings.ID + "outer" ).scrollTop() - settings.viewportMargin;
+            //topOfViewport may need to have settings.innerObject.offset().top subtracted from it?
+            var topOfViewport = settings.outerObject.scrollTop() - settings.viewportMargin;
             var bottomOfViewport = topOfViewport + settings.panelHeight + settings.viewportMargin * 2;
 
             var topVisible = top >= topOfViewport && top <= bottomOfViewport;
@@ -343,8 +344,8 @@ window.divaPlugins = [];
             {
                 var pageElement = document.getElementById(settings.ID + 'page-' + pageIndex);
 
-                // If the page is no longer in the viewport, don't load any tiles
-                if (!isPageVisible(pageIndex))
+                // If the page is no longer in the viewport or loaded, don't load any tiles
+                if (pageElement === null || !isPageVisible(pageIndex))
                     return;
 
                 var imdir = settings.imageDir + "/";
