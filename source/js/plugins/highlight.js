@@ -32,7 +32,7 @@ Allows you to highlight regions of a page image
 
                     @param pageIdx       The page index of the page that is to be highlighted
                     @param filename      The image filename of the page
-                    @param pageSelector  The 
+                    @param pageSelector  The selector for the page (unused here)
                 */
                 function _highlight(pageIdx, filename, pageSelector)
                 {
@@ -90,7 +90,7 @@ Allows you to highlight regions of a page image
                         }
                     }
 
-                    diva.Events.publish("HighlightCompleted", [pageIdx], self);
+                    diva.Events.publish("HighlightCompleted", [pageIdx, filename, pageSelector]);
                 }
 
                 var updateCurrentHighlight = function()
