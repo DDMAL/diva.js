@@ -85,10 +85,10 @@ Allows you to highlight regions of a page image
                             }
 
                             pageObj.appendChild(box);
-                            
-                            if (regions[j].divID === currentHighlight) updateCurrentHighlight();
                         }
                     }
+
+                    updateCurrentHighlight();
 
                     diva.Events.publish("HighlightCompleted", [pageIdx, filename, pageSelector]);
                 }
@@ -335,6 +335,9 @@ Allows you to highlight regions of a page image
                     var currentPage;
                     var regionArr, arrIndex;
 
+                    var thisDiv;
+                    var compFunction;
+
 
                     //if currentHighlight already exists
                     if(currentHighlight && currentHighlightPage)
@@ -361,16 +364,32 @@ Allows you to highlight regions of a page image
                         var pageDims = divaInstance.getPageDimensionsAtZoomLevel(currentPage, divaInstance.getZoomLevel());
                         
                         //initialize the center of the div to the maximum possible value
-                        centerOfTargetDiv = (divaSettings.verticallyOriented) ? pageDims.height : pageDims.width;
+                        if(forward) centerOfTargetDiv = (divaSettings.verticallyOriented) ? pageDims.height : pageDims.width;
+                        else centerOfTargetDiv = 0;
+
                         var targetDiv, centerOfDiv;
-                        var thisDiv;
-                        
+
+                        if(forward)
+                        {
+                            compFunction = function(thisC, curC, targetC)
+                            {
+                                return (thisC > curC && thisC < targetC);
+                            };
+                        }
+                        else
+                        {
+                            compFunction = function(thisC, curC, targetC)
+                            {
+                                return (thisC < curC && thisC > targetC);
+                            };
+                        }
+
                         while(arrIndex--)
                         {
                             thisDiv = regionArr[arrIndex];
                             centerOfDiv = getDivCenter(thisDiv);
                             //if this div is farther along the main axis but closer than the current closest
-                            if (centerOfDiv > centerOfCurrentDiv && centerOfDiv < centerOfTargetDiv)
+                            if (compFunction(centerOfDiv, centerOfCurrentDiv, centerOfTargetDiv))
                             {
                                 //update targetDiv
                                 highlightFound = true; 
@@ -392,45 +411,55 @@ Allows you to highlight regions of a page image
                     }
 
                     //find the minimum div on the next page with highlights and loop around if necessary
-                    var pageArr = Object.keys(highlightsObj);
-                    var pageIdx = 0;
-                    var targetPage;
-                    var targetFound = false;
-
-                    var minimumPage;
-                    var curIdx;
 
                     //find the next page in the pageArr; this will be in order
-                    while (pageIdx < pageArr.length)
-                    {
-                        curPage = pageArr[pageIdx];
-                        if (curPage < minimumPage) minimumPage = curPage;
-                        else if (curPage > currentPage) {
-                            targetFound = true;
-                            targetPage = curPage;
-                            break;
-                        }
+                    var pageArr = Object.keys(highlightsObj);
+                    var curIdx = pageArr.indexOf(currentPage);
+                    var targetPage;
 
-                        pageIdx++;
+                    if(forward)
+                    {
+                        //default to first page, move to next if possible
+                        if(curIdx == pageArr.length - 1) targetPage = pageArr[0];
+                        else targetPage = pageArr[curIdx + 1];
                     }
 
-                    //if we didn't break out of that loop, we couldn't find and thus need the minimum page
-                    if(!targetFound) targetPage = minimumPage;
+                    else
+                    {
+                        //default to last page, move to previous if possible
+                        if(curIdx === 0) targetPage = pageArr[pageArr.length - 1];
+                        else targetPage = pageArr[curIdx - 1];
+                    }
 
                     //reset regionArr and centerOfTargetDiv for the new page we're testing
                     regionArr = highlightsObj[targetPage].regions;
                     arrIndex = regionArr.length;
                     pageDims = divaInstance.getPageDimensionsAtZoomLevel(targetPage, divaInstance.getMaxZoomLevel());
-                    centerOfTargetDiv = (divaSettings.verticallyOriented) ? pageDims.height : pageDims.width;
                     
-                    var thisDiv;
-
+                    if(forward) centerOfTargetDiv = (divaSettings.verticallyOriented) ? pageDims.height : pageDims.width;
+                    else centerOfTargetDiv = 0;
+                    
                     //find the minimum this time
+                    if(forward)
+                    {
+                        compFunction = function(thisC, targetC)
+                        {
+                            return (thisC < targetC);
+                        };
+                    }
+                    else
+                    {
+                        compFunction = function(thisC, targetC)
+                        {
+                            return (thisC > targetC);
+                        };
+                    }
+
                     while(arrIndex--)
                     {
                         thisDiv = regionArr[arrIndex];
                         centerOfDiv = getDivCenter(thisDiv);
-                        if (centerOfDiv < centerOfTargetDiv)
+                        if (compFunction(centerOfDiv, centerOfTargetDiv))
                         {
                             highlightFound = true; 
                             centerOfTargetDiv = centerOfDiv;
