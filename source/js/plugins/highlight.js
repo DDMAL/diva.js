@@ -81,12 +81,12 @@ Allows you to highlight regions of a page image
 
                             if (typeof regions[j].divID !== 'undefined')
                             {
-                                box.id = regions[j].divID;
+                                box.setAttribute('data-highlight-id', regions[j].divID);
                             }
 
                             pageObj.appendChild(box);
                             
-                            if (box.id === currentHighlight) updateCurrentHighlight();
+                            if (regions[j].divID === currentHighlight) updateCurrentHighlight();
                         }
                     }
 
@@ -97,25 +97,23 @@ Allows you to highlight regions of a page image
                 {
                     var classString = "diva-selected-highlight";
                     var classElem = document.getElementsByClassName(classString);
-                    var idx = classElem.length;
-                    if (idx > 0) 
+                    var idx;
+                    for(idx = 0; idx < classElem.length; idx++)
                     {
-                        while (idx--)
+                        box = classElem[idx];
+                        if(box.id != currentHighlight)
                         {
-                            box = classElem[idx];
-                            if(box.id != currentHighlight)
-                            {
-                                box.className = box.className.replace(' '+classString, '');
-                                box.style.border = "1px solid #555";  
-                            }
+                            box.className = box.className.replace(' '+classString, '');
+                            box.style.border = "1px solid #555";  
                         }
                     }
 
                     if (divaInstance.isPageLoaded(currentHighlightPage))
                     {
-                        box = document.getElementById(currentHighlight);
-                        if (box !== null)
+                        boxes = document.querySelectorAll("*[data-highlight-id=" + currentHighlight + "]");
+                        for(idx = 0; idx < boxes.length; idx++)
                         {
+                            box = boxes[idx];
                             box.className = box.className + " " + classString;
                             box.style.border = "2px solid #000";
                         }
