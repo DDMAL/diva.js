@@ -388,6 +388,10 @@ Allows you to highlight regions of a page image
                         {
                             thisDiv = regionArr[arrIndex];
                             centerOfDiv = getDivCenter(thisDiv);
+
+                            //skip if the data-highlight-id is the same
+                            if (thisDiv.divID == currentHighlight) continue;
+
                             //if this div is farther along the main axis but closer than the current closest
                             if (compFunction(centerOfDiv, centerOfCurrentDiv, centerOfTargetDiv))
                             {
