@@ -256,10 +256,7 @@ Allows you to highlight regions of a page image
                         {
                             if (highlightsObj[page].regions[numDivs].divID == divID)
                             {
-                                gotoDiv(page, highlightsObj[page].regions[numDivs]);
-                                
-                                highlightFound = true;
-                                break;
+                                return gotoDiv(page, highlightsObj[page].regions[numDivs]);
                             }
                         }
                     }
@@ -276,23 +273,14 @@ Allows you to highlight regions of a page image
                             {
                                 if (regionArr[arrIndex].divID == divID)
                                 {
-                                    gotoDiv(pageArr[pageIdx], regionArr[arrIndex]);
-
-                                    highlightFound = true;
-                                    break;
+                                    return gotoDiv(pageArr[pageIdx], regionArr[arrIndex]);
                                 }
                             }
-
-                            if (highlightFound) break;
                         }
                     }
 
-                    if (!highlightFound)
-                    {
-                        console.warn("Diva just tried to find a highlight that doesn't exist.");
-                        return false;
-                    }
-                    else return true;
+                    console.warn("Diva just tried to find a highlight that doesn't exist.");
+                    return false;
                 };
 
                 /**
@@ -322,6 +310,7 @@ Allows you to highlight regions of a page image
 
                     //selects the highlight
                     updateCurrentHighlight();
+                    return currentHighlight;
                 };
 
                 var getDivCenter = function(thisDiv)
