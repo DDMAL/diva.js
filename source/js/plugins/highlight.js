@@ -94,9 +94,7 @@ Allows you to highlight regions of a page image
                             pageObj.appendChild(box);
                         }
                     }
-
                     updateCurrentHighlight();
-
                     diva.Events.publish("HighlightCompleted", [pageIdx, filename, pageSelector]);
                 }
 
