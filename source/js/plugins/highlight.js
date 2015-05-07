@@ -43,6 +43,13 @@ Allows you to highlight regions of a page image
 
                     if (highlightObj.hasOwnProperty(pageIdx))
                     {
+                        //first, make sure no highlights already exist on the page
+                        var pageHighlights = document.getElementById(divaSettings.ID + "page-" + pageIdx).getElementsByClassName(divaSettings.ID + "highlight");
+                        while(pageHighlights[0])
+                        {
+                            pageHighlights[0].parentNode.removeChild(pageHighlights[0]);
+                        }
+
                         var pageId = divaInstance.getInstanceId() + 'page-' + pageIdx;
                         var pageObj = document.getElementById(pageId);
                         var regions = highlightObj[pageIdx].regions;
@@ -95,7 +102,7 @@ Allows you to highlight regions of a page image
 
                 var updateCurrentHighlight = function()
                 {
-                    var classString = "diva-selected-highlight";
+                    var classString = divaSettings.ID + "selected-highlight";
                     var classElem = document.getElementsByClassName(classString);
                     var idx;
                     for(idx = 0; idx < classElem.length; idx++)
