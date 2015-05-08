@@ -364,7 +364,7 @@ window.divaPlugins = [];
                 var lastWidth = width - (cols - 1) * settings.tileWidth;
 
                 // Declare variables used within the loops
-                var row, col, tileHeight, tileWidth, top, left, displayStyle, zoomLevel, imageURL, regionHeight, regionWidth, percentageSize;
+                var row, col, tileHeight, tileWidth, top, left, displayStyle, zoomLevel, imageURL, regionHeight, regionWidth;
 
                 // Adjust the zoom level based on the max zoom level of the page
                 zoomLevel = settings.zoomLevel + maxZoom - settings.realMaxZoom;
@@ -375,11 +375,8 @@ window.divaPlugins = [];
                 // IIIF
                 if (settings.iiifServerURL)
                 {
-                    // convert to percentage size
-                    var zoomDifference = Math.pow(2, maxZoom - zoomLevel);
-                    percentageSize = 100 / zoomDifference;
-
                     // regionX, regionY, regionWidth, regionHeight
+                    var zoomDifference = Math.pow(2, maxZoom - zoomLevel);
                     regionHeight = settings.tileHeight * zoomDifference;
                     regionWidth = settings.tileWidth * zoomDifference;
                 }
@@ -404,7 +401,7 @@ window.divaPlugins = [];
                         tileHeight = (row === rows - 1) ? lastHeight : settings.tileHeight;
                         tileWidth = (col === cols - 1) ? lastWidth : settings.tileWidth;
 
-                        imageURL = (settings.iiifServerURL) ? baseImageURL + col * regionWidth + ',' + row * regionHeight + ',' + regionWidth + ',' + regionHeight + '/pct:' + percentageSize + iiifSuffix : baseImageURL + tileIndex;
+                        imageURL = (settings.iiifServerURL) ? baseImageURL + col * regionWidth + ',' + row * regionHeight + ',' + regionWidth + ',' + regionHeight + '/' + tileWidth + ',' + tileHeight + iiifSuffix : baseImageURL + tileIndex;
 
                         // this check looks to see if the tile is already loaded, and then if
                         // it isn't, if it should be visible.
