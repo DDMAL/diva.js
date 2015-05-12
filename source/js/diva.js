@@ -48,7 +48,7 @@ window.divaPlugins = [];
             fixedPadding: 10,           // Fallback if adaptive padding is set to 0
             fixedHeightGrid: true,      // So each page in grid view has the same height (only widths differ)
             goDirectlyTo: 0,            // Default initial page to show (0-indexed)
-            iiifServerURL: '',          // The URL (including prefix) to the IIIF server - *REQUIRED*, unless using IIPImage
+            iiifServerURL: '',          // The URL (including prefix) to the IIIF server - *REQUIRED*, unless using IIPImage native syntax
             iipServerURL: '',           // The URL to the IIPImage installation, including the `?FIF=` - *REQUIRED*, unless using IIIF
             inFullscreen: false,        // Set to true to load fullscreen mode initially
             inGrid: false,              // Set to true to load grid view initially
