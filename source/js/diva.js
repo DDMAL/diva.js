@@ -401,7 +401,8 @@ window.divaPlugins = [];
                         tileHeight = (row === rows - 1) ? lastHeight : settings.tileHeight;
                         tileWidth = (col === cols - 1) ? lastWidth : settings.tileWidth;
 
-                        imageURL = (settings.iiifServerURL) ? baseImageURL + col * regionWidth + ',' + row * regionHeight + ',' + regionWidth + ',' + regionHeight + '/' + tileWidth + ',' + tileHeight + iiifSuffix : baseImageURL + tileIndex;
+                        imageURL = (settings.iiifServerURL) ? baseImageURL + col * regionWidth + ',' + row * regionHeight + ',' + (tileWidth * zoomDifference) + ',' + (tileHeight * zoomDifference) + '/' + tileWidth + ',' + tileHeight + iiifSuffix
+                                                            : baseImageURL + tileIndex;
 
                         // this check looks to see if the tile is already loaded, and then if
                         // it isn't, if it should be visible.
