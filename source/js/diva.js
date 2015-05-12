@@ -375,13 +375,14 @@ window.divaPlugins = [];
                 while (row < rows)
                 {
                     col = 0;
+                    // If the tile is in the last row or column, its dimensions will be different
+                    tileHeight = (row === rows - 1) ? lastHeight : settings.tileHeight;
+
                     while (col < cols)
                     {
                         top = row * settings.tileHeight;
                         left = col * settings.tileWidth;
 
-                        // If the tile is in the last row or column, its dimensions will be different
-                        tileHeight = (row === rows - 1) ? lastHeight : settings.tileHeight;
                         tileWidth = (col === cols - 1) ? lastWidth : settings.tileWidth;
 
                         imageURL = baseImageURL + tileIndex;
