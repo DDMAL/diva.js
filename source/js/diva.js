@@ -344,7 +344,7 @@ window.divaPlugins = [];
                 var pageElement = document.getElementById(settings.ID + 'page-' + pageIndex);
 
                 // If the page is no longer in the viewport, don't load any tiles
-                if (!isPageVisible(pageIndex))
+                if (!isPageLoaded(pageIndex))
                     return;
 
                 var imdir = settings.imageDir + "/";
@@ -857,7 +857,7 @@ window.divaPlugins = [];
         {
             var loadFunction = function (rowIndex, pageIndex, imageURL, pageWidth, pageHeight)
             {
-                if (isRowVisible(rowIndex))
+                if (isRowLoaded(rowIndex))
                 {
                     var imgEl = document.createElement('img');
                     imgEl.src = imageURL;
