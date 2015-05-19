@@ -61,7 +61,7 @@ for (var key in env)
         isTravis = true;
 }
 
-if (!isTravis) isTravis = navigator.appVersion.indexOf("Linux") != -1);
+if (!isTravis) isTravis = navigator.appVersion.indexOf("Linux") != -1;
 
 // Route "console.log()" calls from within the Page context to the main Phantom context (i.e. current "this")
 page.onConsoleMessage = function(msg) {
