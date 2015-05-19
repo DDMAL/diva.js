@@ -40,14 +40,14 @@ function log10(x)
 
                 divaInstance.startScrolling = function()
                 {
-                    if(divaSettings.currentlyAutoScrolling)
+                    if (divaSettings.currentlyAutoScrolling)
                     {
-                        console.warn("Diva is already autoscrolling!");
+                        console.warn("You are trying to start autoscrolling, but it is already scrolling.");
                         return;
                     }
 
                     $("#" + divaSettings.ID + "autoscroll-toggle").text("Turn off");
-                    if(disableManualScroll)
+                    if (disableManualScroll)
                     {
                         divaInstance.disableScrollable();
                     }
@@ -59,7 +59,7 @@ function log10(x)
                 restartScrollingInterval = function()
                 {
                     clearInterval(divaSettings.autoScrollInterval);
-                    if(divaSettings.verticallyOriented)
+                    if (divaSettings.verticallyOriented)
                     {
                         divaSettings.autoScrollInterval = setInterval(function(){
                             divaSettings.outerObject.scrollTop(divaSettings.outerObject.scrollTop() + pixelsPerScroll);
@@ -75,14 +75,14 @@ function log10(x)
 
                 divaInstance.stopScrolling = function()
                 {
-                    if(!divaSettings.currentlyAutoScrolling)
+                    if (!divaSettings.currentlyAutoScrolling)
                     {
-                        console.warn("Diva isn't autoscrolling!");
+                        console.warn("You are trying to stop autoscrolling, but it is not currently active.");
                         return;
                     }
 
                     $("#" + divaSettings.ID + "autoscroll-toggle").text("Turn on");
-                    if(disableManualScroll)
+                    if (disableManualScroll)
                     {
                         divaInstance.enableScrollable();
                     }
@@ -108,7 +108,7 @@ function log10(x)
                     updatePixelsPerScroll();   
 
                     $("#" + divaSettings.ID + "autoscroll-pps").val(log10(scrollSpeed));  
-                    if(divaSettings.currentlyAutoScrolling)
+                    if (divaSettings.currentlyAutoScrolling)
                     {
                         restartScrollingInterval();
                     }
@@ -121,7 +121,7 @@ function log10(x)
                     
                     //should be minimum of one otherwise it won't change the actual value
                     //user can change autoscrollrefresh or scrollspeed; this may overwrite autoScrollRefresh
-                    if(pixelsPerScroll < 1)
+                    if (pixelsPerScroll < 1)
                     {
                         autoScrollRefresh = autoScrollRefresh * (1 / pixelsPerScroll);
                         pixelsPerScroll = scrollSpeed / (1000 / autoScrollRefresh); 
@@ -131,7 +131,7 @@ function log10(x)
                 divaInstance.disableManualScroll = function()
                 {
                     disableManualScroll = true;
-                    if(divaSettings.currentlyAutoScrolling)
+                    if (divaSettings.currentlyAutoScrolling)
                     {
                         divaInstance.disableScrollable();
                     }
@@ -140,7 +140,7 @@ function log10(x)
                 divaInstance.enableManualScroll = function()
                 {
                     disableManualScroll = false;
-                    if(divaSettings.currentlyAutoScrolling)
+                    if (divaSettings.currentlyAutoScrolling)
                     {
                         divaInstance.enableScrollable();
                     }
@@ -157,13 +157,13 @@ function log10(x)
 
                 $(window).on('keyup', function(e)
                 {
-                    if(e.shiftKey && e.keyCode == 32)
+                    if (e.shiftKey && e.keyCode == 32)
                     {
                         divaInstance.toggleScrolling();
                     }
                 });
                 
-                if(!divaSettings.disableAutoscrollPrefs)
+                if (!divaSettings.disableAutoscrollPrefs)
                 {
                     diva.Events.subscribe('ViewerDidLoad', function(s)
                     {
@@ -194,7 +194,7 @@ function log10(x)
                         $("#" + divaSettings.ID + "autoscroll-icon").on('click', function(e)
                         {
                             var jqObj = $("#" + divaSettings.ID + "autoscroll-prefs");
-                            if(jqObj.css('display') == 'none')
+                            if (jqObj.css('display') == 'none')
                             {
                                 jqObj.css({
                                     'display': 'block',
