@@ -96,6 +96,8 @@ class DivaConverter(object):
                 sys.exit(-1)
 
         elif self.image_type == "jpeg":
+            # JPEG2000 uses the .JP2 extension
+            self.image_type = "jp2"
             if not os.path.exists(self.kdu_compress_location):
                 print(("You have specified JP2 as the output format, but do not have the kdu_compress executable installed at {0}.").format(self.kdu_compress_location))
                 print("If this path is incorrect, please specify an alternate location using the '-k (location)' command line option for this script.")

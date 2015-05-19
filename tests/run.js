@@ -51,7 +51,7 @@ else
 
 var page = require('webpage').create();
 
-// patch to remove get/setState tests from Travis CI build due to off-by-one pixel error when run in Travis
+// patch to remove get/setState tests from Travis CI/Ubuntu builds due to off-by-one pixel error when run in Linux
 var env = system.env;
 var isTravis = false;
 
@@ -60,6 +60,8 @@ for (var key in env)
     if (key === 'TRAVIS')
         isTravis = true;
 }
+
+if (!isTravis) isTravis = navigator.appVersion.indexOf("Linux") != -1;
 
 // Route "console.log()" calls from within the Page context to the main Phantom context (i.e. current "this")
 page.onConsoleMessage = function(msg) {
