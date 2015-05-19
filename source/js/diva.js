@@ -40,6 +40,7 @@ window.divaPlugins = [];
             enableGotoPage: true,       // A "go to page" jump box
             enableGridIcon: true,       // A grid view of all the pages
             enableGridControls: 'buttons',  // Specify control of pages per grid row in Grid view. Possible values: 'buttons' (+/-), 'slider'. Any other value disables the controls.
+            enableImageTitles: true,    // Adds "Page {n}" title to page images if ture
             enableKeyScroll: true,      // Captures scrolling using the arrow and page up/down keys regardless of page focus. When off, defers to default browser scrolling behavior.
             enableLinkIcon: true,       // Controls the visibility of the link icon
             enableSpaceScroll: false,   // Scrolling down by pressing the space key
@@ -309,7 +310,7 @@ window.divaPlugins = [];
                 pageElement.classList.add('diva-document-page');
                 pageElement.setAttribute('data-index', pageIndex);
                 pageElement.setAttribute('data-filename', filename);
-                pageElement.title = "Page " + (pageIndex + 1);
+                if (settings.enableImageTitles) pageElement.title = "Page " + (pageIndex + 1);
                 pageElement.innerHTML = settings.pageTools;
                 pageElement.style.width = width + 'px';
                 pageElement.style.height = height + 'px';
@@ -713,7 +714,7 @@ window.divaPlugins = [];
                 pageDiv.style.left = leftOffset + 'px';
                 pageDiv.setAttribute('data-index', pageIndex);
                 pageDiv.setAttribute('data-filename', filename);
-                pageDiv.title = "Page " + (pageIndex + 1);
+                if (settings.enableImageTitles) pageDiv.title = "Page " + (pageIndex + 1);
 
                 rowDiv.appendChild(pageDiv);
 
