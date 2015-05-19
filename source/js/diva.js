@@ -879,7 +879,7 @@ window.divaPlugins = [];
             var currentPage = settings.currentPageIndex;
             var pageToConsider = currentPage + direction;
 
-            if(!isPageValid(pageToConsider))
+            if (!isPageValid(pageToConsider))
                 return false;
 
             var middleOfViewport = (settings.verticallyOriented ? document.getElementById(settings.ID + "outer").scrollTop + (settings.panelHeight / 2) : document.getElementById(settings.ID + "outer").scrollLeft + (settings.panelWidth / 2));
@@ -1018,7 +1018,7 @@ window.divaPlugins = [];
             settings.outerObject.scrollLeft(desiredLeft);
 
             // Pretend that this is the current page
-            if(pageIndex !== settings.currentPageIndex)
+            if (pageIndex !== settings.currentPageIndex)
             {
                 settings.currentPageIndex = pageIndex;
                 var filename = settings.pages[pageIndex].f;
@@ -1247,7 +1247,7 @@ window.divaPlugins = [];
         //Shortcut for closing fullscreen with the escape key
         var escapeListener = function (e)
         {
-            if(e.keyCode == 27)
+            if (e.keyCode == 27)
                 toggleFullscreen();
         };
 
@@ -1261,7 +1261,7 @@ window.divaPlugins = [];
             settings.parentObject.toggleClass('diva-full-width');
 
             // Adjust margin a bit if in mobile
-            if(settings.mobileWebkit)
+            if (settings.mobileWebkit)
             {
                 var leftMarginComped = parseInt(settings.outerObject.css('margin-left'), 10) - parseInt($('body').css('margin-left'), 10);
                 settings.outerObject.css('margin-left', leftMarginComped);
@@ -1280,7 +1280,7 @@ window.divaPlugins = [];
                 var newWidth = settings.panelWidth;
 
                 //and re-center the new panel on the same point
-                if(settings.inFullscreen)
+                if (settings.inFullscreen)
                 {
                     settings.verticalOffset -= ((newHeight - storedHeight) / 2);
                     settings.horizontalOffset -= ((newWidth - storedWidth) / 2);
@@ -1304,7 +1304,7 @@ window.divaPlugins = [];
             }
 
             //turn on/off escape key listener
-            if(settings.inFullscreen)
+            if (settings.inFullscreen)
                 $(document).on('keyup', escapeListener);
             else
                 $(document).off('keyup', escapeListener);
