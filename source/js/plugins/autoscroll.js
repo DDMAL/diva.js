@@ -18,11 +18,6 @@ Relevant methods:
     -disableManualScroll, enableManualScroll
 */
 
-function log10(x)
-{
-    return Math.log(x) / Math.log(10);
-}
-
 (function ($)
 {
     window.divaPlugins.push((function()
@@ -37,6 +32,11 @@ function log10(x)
                 var autoScrollRefresh;
                 var defaultAutoRefresh;
                 var scrollSpeed;
+
+                function log10(x)
+                {
+                    return Math.log(x) / Math.log(10);
+                }
 
                 divaInstance.startScrolling = function()
                 {
@@ -157,7 +157,7 @@ function log10(x)
 
                 $(window).on('keyup', function(e)
                 {
-                    if (e.shiftKey && e.keyCode == 32)
+                    if (e.shiftKey && e.keyCode === 32)
                     {
                         divaInstance.toggleScrolling();
                     }
@@ -194,7 +194,7 @@ function log10(x)
                         $("#" + divaSettings.ID + "autoscroll-icon").on('click', function(e)
                         {
                             var jqObj = $("#" + divaSettings.ID + "autoscroll-prefs");
-                            if (jqObj.css('display') == 'none')
+                            if (jqObj.css('display') === 'none')
                             {
                                 jqObj.css({
                                     'display': 'block',

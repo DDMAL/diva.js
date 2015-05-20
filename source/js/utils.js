@@ -791,6 +791,7 @@ var activeDivaController = function ()
         {
             //deactivate everything and return
             outers = document.getElementsByClassName('diva-outer');
+            
             for(idx = 0; idx < outers.length; idx++)
             {
                 $(outers[idx].parentElement).data('diva').deactivate();
