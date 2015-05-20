@@ -89,6 +89,7 @@ class DivaConverter(object):
             sys.exit(-1)
 
         if self.image_type == "tiff":
+            self.extension = "tiff"
             try:
                 from vipsCC import VImage
             except ImportError as e:
@@ -96,8 +97,7 @@ class DivaConverter(object):
                 sys.exit(-1)
 
         elif self.image_type == "jpeg":
-            # JPEG2000 uses the .JP2 extension
-            self.image_type = "jp2"
+            self.extension = "jp2"
             if not os.path.exists(self.kdu_compress_location):
                 print(("You have specified JP2 as the output format, but do not have the kdu_compress executable installed at {0}.").format(self.kdu_compress_location))
                 print("If this path is incorrect, please specify an alternate location using the '-k (location)' command line option for this script.")
@@ -124,7 +124,7 @@ class DivaConverter(object):
             tdir = tempfile.mkdtemp()
 
             input_file = os.path.join(tdir, "{0}.tiff".format(name))
-            output_file = os.path.join(self.output_directory, "{0}.{1}".format(name, self.image_type))
+            output_file = os.path.join(self.output_directory, "{0}.{1}".format(name, self.extension))
 
             if self.verbose:
                 print("Using ImageMagick to pre-convert {0} to TIFF".format(image))
