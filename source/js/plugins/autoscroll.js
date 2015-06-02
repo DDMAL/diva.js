@@ -2,7 +2,7 @@
 Diva.JS autoscroll plugin
 Author: Andrew Horwitz
 
-Lets Diva scroll in the primary direction (as determined by 
+Lets Diva scroll in the primary direction (as determined by
 settings.verticallyOriented) automatically at a given/changeable rate.
 
 Relevant settings:
@@ -105,9 +105,9 @@ Relevant methods:
                 divaInstance.changeScrollSpeed = function(newSpeed)
                 {
                     scrollSpeed = newSpeed;
-                    updatePixelsPerScroll();   
+                    updatePixelsPerScroll();
 
-                    $("#" + divaSettings.ID + "autoscroll-pps").val(log10(scrollSpeed));  
+                    $("#" + divaSettings.ID + "autoscroll-pps").val(log10(scrollSpeed));
                     if (divaSettings.currentlyAutoScrolling)
                     {
                         restartScrollingInterval();
@@ -117,14 +117,14 @@ Relevant methods:
                 var updatePixelsPerScroll = function()
                 {
                     autoScrollRefresh = defaultAutoRefresh;
-                    pixelsPerScroll = scrollSpeed / (1000 / autoScrollRefresh);  
-                    
+                    pixelsPerScroll = scrollSpeed / (1000 / autoScrollRefresh);
+
                     //should be minimum of one otherwise it won't change the actual value
                     //user can change autoscrollrefresh or scrollspeed; this may overwrite autoScrollRefresh
                     if (pixelsPerScroll < 1)
                     {
                         autoScrollRefresh = autoScrollRefresh * (1 / pixelsPerScroll);
-                        pixelsPerScroll = scrollSpeed / (1000 / autoScrollRefresh); 
+                        pixelsPerScroll = scrollSpeed / (1000 / autoScrollRefresh);
                     }
                 };
 
@@ -152,7 +152,7 @@ Relevant methods:
                 disableManualScroll = divaSettings.disableManualScroll || false;
                 autoScrollRefresh = divaSettings.autoScrollRefresh || 50;
                 defaultAutoRefresh = autoScrollRefresh;
-                
+
                 divaInstance.changeScrollSpeed((divaSettings.scrollSpeed || 10));
 
                 $(window).on('keyup', function(e)
@@ -162,23 +162,23 @@ Relevant methods:
                         divaInstance.toggleScrolling();
                     }
                 });
-                
+
                 if (!divaSettings.disableAutoscrollPrefs)
                 {
                     diva.Events.subscribe('ViewerDidLoad', function(s)
                     {
-                        var autoscrollPrefsString = 
+                        var autoscrollPrefsString =
                         "<div id='" + divaSettings.ID + "autoscroll-prefs' class='diva-autoscroll-prefs diva-popup'>" +
                             "<b>Autoscrolling options:</b><br>" +
                             "<span class='diva-autoscroll-prefs-text'>Speed:</span>" +
                             "<input type='range' id='" + divaSettings.ID + "autoscroll-pps' class='diva-autoscroll-pps diva-autoscroll-prefs-input' value='" + log10(scrollSpeed) + "' min='0' max='3' step='0.1'><br>" +
                             "<span class='diva-autoscroll-prefs-text'>Allow manual scroll:</span>" +
                             "<input type='checkbox' id='" + divaSettings.ID + "autoscroll-manual' class='diva-autoscroll-manual diva-autoscroll-prefs-input' checked='checked'><br>" +
-                            "<button id='" + divaSettings.ID + "autoscroll-toggle' class='diva-autoscroll-prefs-toggle diva-autoscroll-prefs-input'> Turn on </button>" + 
+                            "<button id='" + divaSettings.ID + "autoscroll-toggle' class='diva-autoscroll-prefs-toggle diva-autoscroll-prefs-input'> Turn on </button>" +
                         "</div>";
                         $("#" + divaSettings.ID + "page-nav").before("<div id='" + divaSettings.ID + "autoscroll-icon' class='button diva-autoscroll-icon' title='Expand autoscroll options'></div>");
                         $("body").prepend(autoscrollPrefsString);
-                        
+
                         $("#" + divaSettings.ID + "autoscroll-pps").on('change', function(e)
                         {
                             divaInstance.changeScrollSpeed(Math.pow(10, e.target.value));
