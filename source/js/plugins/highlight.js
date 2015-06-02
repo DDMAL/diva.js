@@ -57,11 +57,11 @@ Allows you to highlight regions of a page image
                             var currentWidth = pageObj.clientWidth;
                             var widthProportion = maxZoomWidth / currentWidth;
                             zoomDifference = Math.log(widthProportion) / Math.log(2);
-                        } 
+                        }
                         else
                         {
                             zoomDifference = maxZoom - divaInstance.getZoomLevel();
-                        }          
+                        }
 
                         var j = regions.length;
                         while (j--)
@@ -185,7 +185,7 @@ Allows you to highlight regions of a page image
                         'regions': regions, 'colour': colour, 'divClass': divClass
                     };
 
-                     
+
                     //Highlights are created on load; create them for all loaded pages now
                     if (divaInstance.isPageInDOM(pageIdx))
                     {
@@ -208,12 +208,12 @@ Allows you to highlight regions of a page image
 
                     var highlightsObj = divaSettings.parentObject.data('highlights');
                     var highlightFound = false; //used to break both loops
-                    
+
                     //see if it exists in the DOM already first
                     if (document.getElementById(divID) !== null)
                     {
                         page = parseInt(document.getElementById(divID).parentNode.getAttribute('data-index'), 10);
-                        
+
                         var numDivs = highlightsObj[page].regions.length;
                         while (numDivs--)
                         {
@@ -222,7 +222,7 @@ Allows you to highlight regions of a page image
                                 thisDiv = highlightsObj[page].regions[numDivs];
                                 centerYOfDiv = parseFloat(thisDiv.uly) + parseFloat(thisDiv.height) / 2;
                                 centerXOfDiv = parseFloat(thisDiv.ulx) + parseFloat(thisDiv.width) / 2;
-                                
+
                                 highlightFound = true;
                                 break;
                             }
@@ -232,12 +232,12 @@ Allows you to highlight regions of a page image
                     {
                         var pageArr = Object.keys(highlightsObj);
                         var pageIdx = pageArr.length;
-                        while(pageIdx--)
+                        while (pageIdx--)
                         {
                             var regionArr = highlightsObj[pageArr[pageIdx]].regions;
                             var arrIndex = regionArr.length;
 
-                            while(arrIndex--)
+                            while (arrIndex--)
                             {
                                 if (regionArr[arrIndex].divID === divID)
                                 {
@@ -245,7 +245,7 @@ Allows you to highlight regions of a page image
                                     thisDiv = regionArr[arrIndex];
                                     centerYOfDiv = parseFloat(thisDiv.uly) + parseFloat(thisDiv.height) / 2;
                                     centerXOfDiv = parseFloat(thisDiv.ulx) + parseFloat(thisDiv.width) / 2;
-                                
+
                                     highlightFound = true;
                                     break;
                                 }
@@ -265,7 +265,7 @@ Allows you to highlight regions of a page image
 
                     var desiredY = divaInstance.translateFromMaxZoomLevel(centerYOfDiv);
                     var desiredX = divaInstance.translateFromMaxZoomLevel(centerXOfDiv);
-                    
+
                     divaInstance.gotoPageByIndex(page);
                     var currentTop = outerObject.scrollTop() + desiredY - (outerObject.height() / 2) + divaSettings.verticalPadding;
                     var currentLeft = outerObject.scrollLeft() + desiredX - (outerObject.width() / 2) + divaSettings.horizontalPadding;
