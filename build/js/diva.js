@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2011-2014 by Wendy Liu, Evan Magoni, Andrew Hankinson, Andrew Horwitz, Laurent Pugin
+Copyright (C) 2011-2015 by Wendy Liu, Evan Magoni, Andrew Hankinson, Andrew Horwitz, Laurent Pugin
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -2039,8 +2039,9 @@ window.divaPlugins = [];
                 return false;
             });
 
+            var linkIcon = $(settings.selector + 'link-icon');
             // Handle the creation of the link popup box
-            $(settings.selector + 'link-icon').click(function ()
+            linkIcon.click(function ()
             {
                 $('body').prepend('<div id="' + settings.ID + 'link-popup" class="diva-popup diva-link-popup"><input id="' + settings.ID + 'link-popup-input" class="diva-input" type="text" value="' + getCurrentURL() + '"/></div>');
 
@@ -2051,10 +2052,8 @@ window.divaPlugins = [];
                 else
                 {
                     // Calculate the left and top offsets
-                    // Compensate for border, popup width
-                    var leftOffset = settings.outerObject.offset().left + settings.panelWidth;
-                    leftOffset += settings.scrollbarWidth - 240 - 1;
-                    var topOffset = settings.outerObject.offset().top + 1;
+                    var leftOffset = linkIcon.offset().left - 222 + linkIcon.outerWidth();
+                    var topOffset = linkIcon.offset().top + linkIcon.outerHeight() - 1;
 
                     $(settings.selector + 'link-popup').removeClass('in-fullscreen').css(
                     {
@@ -2175,7 +2174,7 @@ window.divaPlugins = [];
                 },
                 closePopups: function ()
                 {
-                    $(".diva-popup").css('display', 'none');
+                    $('.diva-popup').css('display', 'none');
                 },
                 switchView: switchView,
                 switchMode: switchMode
@@ -2353,7 +2352,6 @@ window.divaPlugins = [];
                         diva.Events.subscribe("ZoomLevelDidChange", settings.toolbar.updateZoomButtons);
                         diva.Events.subscribe("GridRowNumberDidChange", settings.toolbar.updateGridSlider);
                         diva.Events.subscribe("ZoomLevelDidChange", settings.toolbar.updateGridButtons);
-                        diva.Events.subscribe("ClosePopups", settings.toolbar.closePopups);
                     }
 
                     $(settings.selector + 'current label').text(settings.numPages);
@@ -2708,6 +2706,12 @@ window.divaPlugins = [];
             toggleFullscreen();
         };
 
+        // Close toolbar popups
+        this.closePopups = function ()
+        {
+            settings.toolbar.closePopups();
+        };
+
         // Enter fullscreen mode if currently not in fullscreen mode
         // Returns false if in fullscreen mode initially, true otherwise
         // This function will work even if enableFullscreen is set to false
@@ -3017,11 +3021,11 @@ window.divaPlugins = [];
 
                 //if this point is outside the horizontal boundaries of the page, continue
                 if (pageX < curOffset.left || pageX > curOffset.right)
-                    continue
+                    continue;
 
                 //same with vertical boundaries
                 if (pageY < curOffset.top || pageY > curOffset.bottom)
-                    continue
+                    continue;
 
                 //if we made it through the above two, we found the page we're looking for
                 return curPage.getAttribute('data-index');
