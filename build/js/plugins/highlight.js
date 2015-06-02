@@ -31,7 +31,7 @@ Allows you to highlight regions of a page image
 
                     @param pageIdx       The page index of the page that is to be highlighted
                     @param filename      The image filename of the page
-                    @param pageSelector  The 
+                    @param pageSelector  The selector for the page (unused here)
                 */
                 function _highlight(pageIdx, filename, pageSelector)
                 {
@@ -86,7 +86,7 @@ Allows you to highlight regions of a page image
                             pageObj.appendChild(box);
                         }
                     }
-                    diva.Events.publish("HighlightCompleted");
+                    diva.Events.publish("HighlightCompleted", [pageIdx, filename, pageSelector]);
                 }
 
                 // subscribe the highlight method to the page change notification
@@ -151,7 +151,7 @@ Allows you to highlight regions of a page image
                     var j = pageIdxs.length;
                     while (j--)
                     {
-                        divaInstance.highlightOnPage(pageIdxs[j], regions, colour, divClass);
+                        divaInstance.highlightOnPage(pageIdxs[j], regions[j], colour, divClass);
                     }
                 };
 
@@ -185,13 +185,95 @@ Allows you to highlight regions of a page image
                         'regions': regions, 'colour': colour, 'divClass': divClass
                     };
 
-                    // Since the highlighting won't take place until the viewer is scrolled
-                    // to a new page we should explicitly call the _highlight method for visible page.
-                    // (only if the current page is the one to be highlighted)
-                    if (divaInstance.isPageInViewport(pageIdx))
+                     
+                    //Highlights are created on load; create them for all loaded pages now
+                    if (divaInstance.isPageInDOM(pageIdx))
                     {
                         _highlight(pageIdx, null, null);
                     }
+
+                    return true;
+                };
+
+                                /*
+                    Jumps to a highlight somewhere in the document.
+                    @param divID The ID of the div to jump to. This ID must be attached to the div using .highlightOnPage(s) as the highlight may not be appended to the DOM.
+                */
+                divaInstance.gotoHighlight = function(divID)
+                {
+                    var page;
+                    var thisDiv;
+                    var centerYOfDiv;
+                    var centerXOfDiv;
+
+                    var highlightsObj = divaSettings.parentObject.data('highlights');
+                    var highlightFound = false; //used to break both loops
+                    
+                    //see if it exists in the DOM already first
+                    if (document.getElementById(divID) !== null)
+                    {
+                        page = parseInt(document.getElementById(divID).parentNode.getAttribute('data-index'), 10);
+                        
+                        var numDivs = highlightsObj[page].regions.length;
+                        while (numDivs--)
+                        {
+                            if (highlightsObj[page].regions[numDivs].divID == divID)
+                            {
+                                thisDiv = highlightsObj[page].regions[numDivs];
+                                centerYOfDiv = parseFloat(thisDiv.uly) + parseFloat(thisDiv.height) / 2;
+                                centerXOfDiv = parseFloat(thisDiv.ulx) + parseFloat(thisDiv.width) / 2;
+                                
+                                highlightFound = true;
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        var pageArr = Object.keys(highlightsObj);
+                        var pageIdx = pageArr.length;
+                        while(pageIdx--)
+                        {
+                            var regionArr = highlightsObj[pageArr[pageIdx]].regions;
+                            var arrIndex = regionArr.length;
+
+                            while(arrIndex--)
+                            {
+                                if (regionArr[arrIndex].divID == divID)
+                                {
+                                    page = pageArr[pageIdx];
+                                    thisDiv = regionArr[arrIndex];
+                                    centerYOfDiv = parseFloat(thisDiv.uly) + parseFloat(thisDiv.height) / 2;
+                                    centerXOfDiv = parseFloat(thisDiv.ulx) + parseFloat(thisDiv.width) / 2;
+                                
+                                    highlightFound = true;
+                                    break;
+                                }
+                            }
+
+                            if (highlightFound) break;
+                        }
+                    }
+
+                    if (!highlightFound)
+                    {
+                        console.warn("Diva just tried to find a highlight that doesn't exist.");
+                        return false;
+                    }
+
+                    var outerObject = divaInstance.getSettings().outerObject;
+
+                    var desiredY = divaInstance.translateFromMaxZoomLevel(centerYOfDiv);
+                    var desiredX = divaInstance.translateFromMaxZoomLevel(centerXOfDiv);
+                    
+                    divaInstance.gotoPageByIndex(page);
+                    var currentTop = outerObject.scrollTop() + desiredY - (outerObject.height() / 2) + divaSettings.verticalPadding;
+                    var currentLeft = outerObject.scrollLeft() + desiredX - (outerObject.width() / 2) + divaSettings.horizontalPadding;
+
+                    outerObject.scrollTop(currentTop);
+                    outerObject.scrollLeft(currentLeft);
+
+                    divaSettings.currentHighlight = divID;
 
                     return true;
                 };
