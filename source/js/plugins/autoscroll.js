@@ -170,7 +170,7 @@ Relevant methods:
                         var autoscrollPrefsString = 
                         "<div id='" + divaSettings.ID + "autoscroll-prefs' class='diva-autoscroll-prefs diva-popup'>" +
                             "<b>Autoscrolling options:</b><br>" +
-                            "<span class='diva-autoscroll-prefs-text'>Pixels per second:</span>" +
+                            "<span class='diva-autoscroll-prefs-text'>Speed:</span>" +
                             "<input type='range' id='" + divaSettings.ID + "autoscroll-pps' class='diva-autoscroll-pps diva-autoscroll-prefs-input' value='" + log10(scrollSpeed) + "' min='0' max='3' step='0.1'><br>" +
                             "<span class='diva-autoscroll-prefs-text'>Allow manual scroll:</span>" +
                             "<input type='checkbox' id='" + divaSettings.ID + "autoscroll-manual' class='diva-autoscroll-manual diva-autoscroll-prefs-input' checked='checked'><br>" +
