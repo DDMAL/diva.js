@@ -2174,7 +2174,7 @@ window.divaPlugins = [];
                 },
                 closePopups: function ()
                 {
-                    $(".diva-popup").css('display', 'none');
+                    $('.diva-popup').css('display', 'none');
                 },
                 switchView: switchView,
                 switchMode: switchMode
@@ -2352,7 +2352,6 @@ window.divaPlugins = [];
                         diva.Events.subscribe("ZoomLevelDidChange", settings.toolbar.updateZoomButtons);
                         diva.Events.subscribe("GridRowNumberDidChange", settings.toolbar.updateGridSlider);
                         diva.Events.subscribe("ZoomLevelDidChange", settings.toolbar.updateGridButtons);
-                        diva.Events.subscribe("ClosePopups", settings.toolbar.closePopups);
                     }
 
                     $(settings.selector + 'current label').text(settings.numPages);
@@ -2705,6 +2704,12 @@ window.divaPlugins = [];
         this.toggleFullscreenMode = function ()
         {
             toggleFullscreen();
+        };
+
+        // Close toolbar popups
+        this.closePopups = function ()
+        {
+            settings.toolbar.closePopups();
         };
 
         // Enter fullscreen mode if currently not in fullscreen mode
