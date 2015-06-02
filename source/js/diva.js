@@ -3016,11 +3016,11 @@ window.divaPlugins = [];
 
                 //if this point is outside the horizontal boundaries of the page, continue
                 if (pageX < curOffset.left || pageX > curOffset.right)
-                    continue
+                    continue;
 
                 //same with vertical boundaries
                 if (pageY < curOffset.top || pageY > curOffset.bottom)
-                    continue
+                    continue;
 
                 //if we made it through the above two, we found the page we're looking for
                 return curPage.getAttribute('data-index');
