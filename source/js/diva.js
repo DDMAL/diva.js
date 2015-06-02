@@ -2039,8 +2039,9 @@ window.divaPlugins = [];
                 return false;
             });
 
+            var linkIcon = $(settings.selector + 'link-icon');
             // Handle the creation of the link popup box
-            $(settings.selector + 'link-icon').click(function ()
+            linkIcon.click(function ()
             {
                 $('body').prepend('<div id="' + settings.ID + 'link-popup" class="diva-popup diva-link-popup"><input id="' + settings.ID + 'link-popup-input" class="diva-input" type="text" value="' + getCurrentURL() + '"/></div>');
 
@@ -2051,10 +2052,8 @@ window.divaPlugins = [];
                 else
                 {
                     // Calculate the left and top offsets
-                    // Compensate for border, popup width
-                    var leftOffset = settings.outerObject.offset().left + settings.panelWidth;
-                    leftOffset += settings.scrollbarWidth - 240 - 1;
-                    var topOffset = settings.outerObject.offset().top + 1;
+                    var leftOffset = linkIcon.offset().left - 222 + linkIcon.outerWidth();
+                    var topOffset = linkIcon.offset().top + linkIcon.outerHeight() - 1;
 
                     $(settings.selector + 'link-popup').removeClass('in-fullscreen').css(
                     {
