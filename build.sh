@@ -1,11 +1,52 @@
 #!/bin/bash
 
-# Path to the Closure Compiler .jar file
+usage()
+{
+    echo "Flags:"
+    echo "  -h             Show this message"
+    echo "  -r (version)   Specify release version"
+    echo "  -c (closure)   Specify closure compiler location"
+    echo " "
+    echo "Build options:"
+    echo "  all            Builds CSS and Javascript, copies source to build directory"
+    echo "  less           Compiles CSS from the LESS source"
+    echo "  minify         Builds Javascript source"
+    echo "  test           Runs unit tests with PhantomJS"
+    echo "  release        Builds release package"
+
+    exit 1
+}
+
+# Default path to the Closure Compiler
 CLOSURE_COMPILER_PATH="/usr/local/bin/closure-compiler"
+
+RELEASE=
+
+SKIP=0
+
+while getopts "hr:c:" OPT; do
+    case $OPT in
+        h) 
+            usage;;
+        r)
+            RELEASE=$OPTARG
+            SKIP=$(($SKIP + 2));;
+        c) 
+            CLOSURE_COMPILER_PATH=$OPTARG
+            SKIP=$(($SKIP + 2));;
+    esac
+done
+
+args=("$@")
+TYPE=${args[$SKIP]}
 
 # If running in Travis CI, use local compiler.jar
 if [ "$TRAVIS" = "true" ]; then
     CLOSURE_COMPILER_PATH="java -jar ../../compiler.jar"
+elif [ ! -f $CLOSURE_COMPILER_PATH ]; then
+    echo "Closure Compiler not found at:" $CLOSURE_COMPILER_PATH
+    echo "Please specify using -c flag."
+    exit 1
 fi
 
 less ()
@@ -14,6 +55,7 @@ less ()
     # Creates a minified version called diva.min.css in build/css
     #     and a non-minified version called diva.css.
     # See build/css/readme.md for more information.
+    echo "Compiling CSS."
     mkdir -p build/css
     lessc source/css/imports.less > build/css/diva.css
     lessc source/css/imports.less > build/css/diva.min.css -x
@@ -26,20 +68,20 @@ minify ()
     #     all the relevant Javascript (except for jQuery, which must
     #     be included separately).
     # See build/js/readme.md for more information.
-    echo "Using Closure path:" $CLOSURE_COMPILER_PATH
+    echo "Compiling JS."
 
     source_files=( "utils.js" "diva.js" "plugins/*" )
 
     mkdir -p build/js
     cd source/js && eval $CLOSURE_COMPILER_PATH" --js "${source_files[@]:0}" --js_output_file ../../build/js/diva.min.js"
     cd ../../
-    cp -R source/js/ build/js/
+    cp -R source/js/* build/js/
 }
 
 all ()
 {
     if [ -d "build" ]; then
-        echo "Removing old build directory"
+        echo "Removing old build directory."
         rm -r build/*
     fi
 
@@ -70,7 +112,7 @@ release()
     # Creates a zip file containing just the files we need for the release.
     VERSION=$1
     if [ -z "$1"]; then
-        echo "Syntax: ./build.sh release VERSION"
+        echo "Syntax: ./build.sh -r VERSION release"
         exit 1
     fi
 
@@ -103,19 +145,12 @@ release()
     zip -r $release_dir".zip" $release_dir
 }
 
-case "$1" in
+case $TYPE in
     "less" ) less;;
     "minify" ) minify;;
     "test" ) test;;
     "all" ) all;;
-    "release" ) release $2;;
-    * )
-        echo "Build options:"
-        echo "  all              - Builds CSS and Javascript, copies source to build directory"
-        echo "  less             - Compiles CSS from the LESS source"
-        echo "  minify           - Builds Javascript source"
-        echo "  test             - Runs unit tests with PhantomJS"
-        echo "  release VERSION  - Builds release package"
-    ;;
+    "release" ) release $RELEASE;;
+    * ) usage;;
 esac
 

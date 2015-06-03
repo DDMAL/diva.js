@@ -104,7 +104,6 @@
         top: 0px;
         right: 30px;
         z-index: @fullscreenZIndex + 1;
-        width: 230px;
         height: 73px;
         padding: 15px;
         .frame(@toolsFrame);
@@ -221,17 +220,20 @@
     float: right;
 }
 
-.diva-link-popup {
-    font-size: 10pt;
+.diva-popup {
     background: @linkBg;
-    .frame(@linkFrame);
-    position: absolute;
+    .frame(@buttonFrame);
     padding: .6em;
     z-index: @fullscreenZIndex + 1;
+    position: absolute;
     .pretty-shadow;
+}
+
+.diva-link-popup {
+    font-size: 10pt;
 
     input {
-        width: 15em;
+        width: 18em;
         &:focus {
             outline: none;
         }
