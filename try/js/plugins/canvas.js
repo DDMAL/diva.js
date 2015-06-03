@@ -304,8 +304,7 @@ Adds an adjustment icon next to each image
         var loadCanvas = function (imageURL, callback)
         {
             image = new Image();
-            image.src = imageURL;
-            image.crossOrigin = "Anonymous";
+            image.crossOrigin = "anonymous";
 
             image.onload = function ()
             {
@@ -367,6 +366,14 @@ Adds an adjustment icon next to each image
                 if (typeof callback === 'function')
                     callback.call(callback);
             };
+
+            image.src = imageURL;
+
+            // make sure the load event fires for cached images too
+            if ( image.complete || image.complete === undefined ) {
+                image.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
+                image.src = imageURL;
+            }
         };
 
         var updateSliderLabel = function ()
