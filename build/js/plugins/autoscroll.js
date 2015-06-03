@@ -165,6 +165,30 @@ Relevant methods:
 
                 if (!divaSettings.disableAutoscrollPrefs)
                 {
+                    var setPosition = function(isFullscreen)
+                    {
+                        if (divaSettings.inFullscreen)
+                        {
+                            var fullscreenTools = $(divaSettings.selector + 'tools');
+                            var toolsMargin = fullscreenTools.css('right');
+                            settings.jqObj.css({
+                                'right': toolsMargin,
+                                'margin-right': 0,
+                                'top': fullscreenTools.offset().top + fullscreenTools.outerHeight() + 15
+                            });
+                        }
+                        else
+                        {
+                            settings.jqObj.css({
+                                'right': $(window).width() - (divaSettings.outerObject.offset().left + divaSettings.outerObject.outerWidth()) + divaSettings.scrollbarWidth,
+                                'margin-right': '.6em'
+                            });
+                            settings.jqObj.offset({'top': divaSettings.outerObject.offset().top + 1});
+                        }
+                    }
+
+                    diva.Events.subscribe('ModeDidSwitch', setPosition);
+
                     diva.Events.subscribe('ViewerDidLoad', function(s)
                     {
                         var autoscrollPrefsString =
@@ -193,18 +217,18 @@ Relevant methods:
 
                         $("#" + divaSettings.ID + "autoscroll-icon").on('click', function(e)
                         {
-                            var jqObj = $("#" + divaSettings.ID + "autoscroll-prefs");
-                            if (jqObj.css('display') === 'none')
+                            settings.jqObj = $("#" + divaSettings.ID + "autoscroll-prefs");
+
+                            if (settings.jqObj.css('display') === 'none')
                             {
-                                jqObj.css({
-                                    'display': 'block',
-                                    'right': $(window).width() - (divaSettings.outerObject.offset().left + divaSettings.outerObject.outerWidth()) + divaSettings.scrollbarWidth
-                                });
-                                jqObj.offset({'top': divaSettings.outerObject.offset().top + 1});
+                                settings.jqObj.css({'display': 'block'});
+
+                                setPosition(divaSettings.inFullscreen);
+
                             }
                             else
                             {
-                                jqObj.css('display', 'none');
+                                settings.jqObj.css('display', 'none');
                             }
                         });
                     });

@@ -137,7 +137,6 @@
   top: 0px;
   right: 30px;
   z-index: 101;
-  width: 230px;
   height: 73px;
   padding: 15px;
   border: 1px solid #dddddd;
@@ -576,5 +575,5 @@
   margin-left: .6em;
 }
 .diva-autoscroll-pps {
-  width: 5em;
+  width: 9em;
 }
