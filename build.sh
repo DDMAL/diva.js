@@ -50,7 +50,7 @@ all ()
     minify
     cp demo/index.html build/
     cp demo/diva/* build/demo
-    cp demo/beromunster.json build/demo/
+    cp demo/*.json build/demo/
     cp readme.md build/
 }
 
