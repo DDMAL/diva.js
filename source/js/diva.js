@@ -2315,8 +2315,8 @@ window.divaPlugins = [];
                 for (j = 0; j < lowestMaxZoom + 1; j++)
                 {
                     // calculate current page zoom data
-                    widthAtCurrentZoomLevel = incorporateZoom(images[i].mx_w, lowestMaxZoom - j);
-                    heightAtCurrentZoomLevel = incorporateZoom(images[i].mx_h, lowestMaxZoom - j);
+                    widthAtCurrentZoomLevel = Math.floor(incorporateZoom(images[i].mx_w, lowestMaxZoom - j));
+                    heightAtCurrentZoomLevel = Math.floor(incorporateZoom(images[i].mx_h, lowestMaxZoom - j));
                     //@TODO performance: can we use index rather than push here?
                     currentPageZoomData.push({
                         h: heightAtCurrentZoomLevel,
