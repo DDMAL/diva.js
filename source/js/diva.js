@@ -2257,27 +2257,40 @@ window.divaPlugins = [];
             var height;
             var url;
             var maxZoom;
+            var label;
+            var resource;
             var filename;
 
-            var prefixLength = iiifURL.length;
+            var title = manifest.label;
 
             for (var i = 0; i < canvases.length; i++)
             {
                 width = canvases[i].width; //canvas width (@TODO should it be image width if there is one?)
                 height = canvases[i].height; //canvas height (@TODO ")
-                var resource = canvases[i].images[0].resource;
-                url = resource['@id']; //image url for primary canvas resource
+                resource = canvases[i].images[0].resource;
+
+                //@TODO check for resource.service['@id'], if not present fall back to resource['@id'] and chop off string after identifier
+                // url = resource['@id']; //image url for primary canvas resource.
+                url = resource.service['@id']; //this URL excludes parameters so that we can easily append our own later. issue: not required in manifest by api?
+
+                //append trailing / from url if it's not there
+                if (url.slice(-1) !== '/')
+                {
+                    url = url + '/';
+                }
 
                 maxZoom = getMaxZoomLevel(width, height);
 
                 // get filenames from service block (@TODO should this be changed to 'identifiers?')
-                filename = resource.service['@id'].substring(prefixLength + 1);
+                // get label from canvas block ('filename' is legacy)
+                label = canvases[i].label;
 
-                im = {
+                var im = {
                     'mx_w': width,
                     'mx_h': height,
                     'mx_z': maxZoom,
-                    'fn': filename
+                    'fn': label,
+                    'url': url
                 };
 
                 images[i] = im;
@@ -2339,7 +2352,8 @@ window.divaPlugins = [];
                 pages[i] = {
                     d: currentPageZoomData,
                     m: images[i].mx_z,
-                    f: images[i].fn
+                    f: images[i].fn,
+                    url: images[i].url
                 }
             }
 
