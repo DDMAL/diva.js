@@ -369,7 +369,6 @@ window.divaPlugins = [];
                 // Adjust the zoom level based on the max zoom level of the page
                 zoomLevel = settings.zoomLevel + maxZoom - settings.realMaxZoom;
 
-                var iiifSuffix = '/0/native.jpg';
                 var baseImageURL = (settings.isIIIF) ? settings.pages[pageIndex].url : baseURL + zoomLevel + ',';
 
                 if (settings.isIIIF)
@@ -378,6 +377,8 @@ window.divaPlugins = [];
                     var zoomDifference = Math.pow(2, maxZoom - zoomLevel);
                     regionHeight = settings.tileHeight * zoomDifference;
                     regionWidth = settings.tileWidth * zoomDifference;
+
+                    var iiifSuffix = '/0/native.jpg';
                 }
                 else
                 {
