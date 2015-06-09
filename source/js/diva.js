@@ -48,7 +48,6 @@ window.divaPlugins = [];
             fixedPadding: 10,           // Fallback if adaptive padding is set to 0
             fixedHeightGrid: true,      // So each page in grid view has the same height (only widths differ)
             goDirectlyTo: 0,            // Default initial page to show (0-indexed)
-            iiifServerURL: '',          // The URL (including prefix) to the IIIF Image server - *REQUIRED*, unless using IIPImage native syntax
             iipServerURL: '',           // The URL to the IIPImage installation, including the `?FIF=` - *REQUIRED*, unless using IIIF
             inFullscreen: false,        // Set to true to load fullscreen mode initially
             inGrid: false,              // Set to true to load grid view initially
@@ -107,6 +106,7 @@ window.divaPlugins = [];
             innerSelector: '',          // settings.selector + 'inner', for selecting the .diva-inner element
             isActiveDiva: true,         // In the case that multiple diva panes exist on the same page, this should have events funneled to it.
             isScrollable: true,         // Used in enable/disableScrollable public methods
+            isIIIF: false,              // Specifies whether objectData is in Diva native or IIIF Manifest format
             itemTitle: '',              // The title of the document
             lastPageLoaded: -1,         // The ID of the last page loaded (value set later)
             lastRowLoaded: -1,          // The index of the last row loaded
@@ -369,11 +369,10 @@ window.divaPlugins = [];
                 // Adjust the zoom level based on the max zoom level of the page
                 zoomLevel = settings.zoomLevel + maxZoom - settings.realMaxZoom;
 
-                var baseImageURL = (settings.iiifServerURL) ? settings.iiifServerURL + '/' + filename + '/' : baseURL + zoomLevel + ',';
                 var iiifSuffix = '/0/native.jpg';
+                var baseImageURL = (settings.isIIIF) ? settings.pages[pageIndex].url : baseURL + zoomLevel + ',';
 
-                // IIIF
-                if (settings.iiifServerURL)
+                if (settings.isIIIF)
                 {
                     // regionX, regionY, regionWidth, regionHeight
                     var zoomDifference = Math.pow(2, maxZoom - zoomLevel);
@@ -401,8 +400,8 @@ window.divaPlugins = [];
                         tileHeight = (row === rows - 1) ? lastHeight : settings.tileHeight;
                         tileWidth = (col === cols - 1) ? lastWidth : settings.tileWidth;
 
-                        imageURL = (settings.iiifServerURL) ? baseImageURL + col * regionWidth + ',' + row * regionHeight + ',' + (tileWidth * zoomDifference) + ',' + (tileHeight * zoomDifference) + '/' + tileWidth + ',' + tileHeight + iiifSuffix
-                                                            : baseImageURL + tileIndex;
+                        imageURL = (settings.isIIIF) ? baseImageURL + col * regionWidth + ',' + row * regionHeight + ',' + (tileWidth * zoomDifference) + ',' + (tileHeight * zoomDifference) + '/' + tileWidth + ',' + iiifSuffix
+                    : baseImageURL + tileIndex;
 
                         // this check looks to see if the tile is already loaded, and then if
                         // it isn't, if it should be visible.
@@ -707,7 +706,7 @@ window.divaPlugins = [];
 
                 // Center the page if the height is fixed (otherwise, there is no horizontal padding)
                 leftOffset += (settings.fixedHeightGrid) ? (settings.gridPageWidth - pageWidth) / 2 : 0;
-                imageURL = (settings.iiifServerURL) ? encodeURI(settings.iiifServerURL + '/' + filename + '/full/' + pageWidth + ',' + pageHeight + '/0/native.jpg') : encodeURI(settings.iipServerURL + "?FIF=" + imdir + filename + '&HEI=' + (pageHeight + 2) + '&CVT=JPEG');
+                imageURL = (settings.isIIIF) ? encodeURI(settings.pages[pageIndex].url + 'full/' + pageWidth + ',/0/native.jpg') : encodeURI(settings.iipServerURL + "?FIF=" + imdir + filename + '&HEI=' + (pageHeight + 2) + '&CVT=JPEG');
 
                 settings.pageTopOffsets[pageIndex] = heightFromTop;
                 settings.pageLeftOffsets[pageIndex] = leftOffset;
@@ -2223,10 +2222,9 @@ window.divaPlugins = [];
          * (This is a client-side re-implementation of generate_json.py)
          *
          * @param {Object} manifest - an object that represents a valid IIIF manifest
-         * @param {String} iiifURL - the IIIF Image API URL prefix for the images (everything before the image's unique identifier)
          * @returns {Object} divaServiceBlock - the data needed by Diva to show a view of a single document
          */
-        var parseManifest = function (manifest, iiifURL) {
+        var parseManifest = function (manifest) {
 
             var incorporateZoom = function (imageDimension, zoomDifference)
             {
@@ -2425,9 +2423,14 @@ window.divaPlugins = [];
 
                     // parse IIIF manifest if it is an IIIF manifest
                     if (responseData.hasOwnProperty('@context') && responseData['@context'].indexOf('iiif') !== -1)
-                        data = parseManifest(responseData, settings.iiifServerURL);
+                    {
+                        settings.isIIIF = true;
+                        data = parseManifest(responseData);
+                    }
                     else
+                    {
                         data = responseData;
+                    }
 
                     hideThrobber();
 
@@ -2602,14 +2605,6 @@ window.divaPlugins = [];
             // Generate an ID that can be used as a prefix for all the other IDs
             settings.ID = $.generateId('diva-');
             settings.selector = '#' + settings.ID;
-
-            // If settings.iiifServerURL has a trailing slash, remove it
-            if (settings.iiifServerURL.charAt(settings.iiifServerURL.length - 1) === '/')
-                settings.iiifServerURL = settings.iiifServerURL.slice(0, -1);
-
-            // If both settings.iiifServerURL and settings.iipServeURL are set, display a warning
-            if (settings.iipServerURL && settings.iiifServerURL)
-                console.warn('Both settings.iipServerURL and settings.iiifServerURL are defined. Defaulting to settings.iiifServerURL.');
 
             // Figure out the hashParamSuffix from the ID
             var divaNumber = parseInt(settings.ID, 10);
