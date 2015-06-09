@@ -2421,8 +2421,9 @@ window.divaPlugins = [];
                 {
                     var data;
 
-                    // parse IIIF manifest if it is an IIIF manifest
-                    if (responseData.hasOwnProperty('@context') && responseData['@context'].indexOf('iiif') !== -1)
+                    // parse IIIF manifest if it is an IIIF manifest. TODO improve IIIF detection method
+                    if (responseData.hasOwnProperty('@context') && (responseData['@context'].indexOf('iiif') !== -1
+                        || responseData['@context'].indexOf('shared-canvas') !== -1))
                     {
                         settings.isIIIF = true;
                         data = parseManifest(responseData);
