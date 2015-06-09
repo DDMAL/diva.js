@@ -48,7 +48,6 @@ window.divaPlugins = [];
             fixedPadding: 10,           // Fallback if adaptive padding is set to 0
             fixedHeightGrid: true,      // So each page in grid view has the same height (only widths differ)
             goDirectlyTo: 0,            // Default initial page to show (0-indexed)
-            iiifServerURL: '',          // The URL (including prefix) to the IIIF Image server - *REQUIRED*, unless using IIPImage native syntax
             iipServerURL: '',           // The URL to the IIPImage installation, including the `?FIF=` - *REQUIRED*, unless using IIIF
             inFullscreen: false,        // Set to true to load fullscreen mode initially
             inGrid: false,              // Set to true to load grid view initially
@@ -107,6 +106,7 @@ window.divaPlugins = [];
             innerSelector: '',          // settings.selector + 'inner', for selecting the .diva-inner element
             isActiveDiva: true,         // In the case that multiple diva panes exist on the same page, this should have events funneled to it.
             isScrollable: true,         // Used in enable/disableScrollable public methods
+            isIIIF: false,              // Specifies whether objectData is in Diva native or IIIF Manifest format
             itemTitle: '',              // The title of the document
             lastPageLoaded: -1,         // The ID of the last page loaded (value set later)
             lastRowLoaded: -1,          // The index of the last row loaded
@@ -369,16 +369,16 @@ window.divaPlugins = [];
                 // Adjust the zoom level based on the max zoom level of the page
                 zoomLevel = settings.zoomLevel + maxZoom - settings.realMaxZoom;
 
-                var baseImageURL = (settings.iiifServerURL) ? settings.iiifServerURL + '/' + filename + '/' : baseURL + zoomLevel + ',';
-                var iiifSuffix = '/0/native.jpg';
+                var baseImageURL = (settings.isIIIF) ? settings.pages[pageIndex].url : baseURL + zoomLevel + ',';
 
-                // IIIF
-                if (settings.iiifServerURL)
+                if (settings.isIIIF)
                 {
                     // regionX, regionY, regionWidth, regionHeight
                     var zoomDifference = Math.pow(2, maxZoom - zoomLevel);
                     regionHeight = settings.tileHeight * zoomDifference;
                     regionWidth = settings.tileWidth * zoomDifference;
+
+                    var iiifSuffix = '/0/native.jpg';
                 }
                 else
                 {
@@ -401,8 +401,8 @@ window.divaPlugins = [];
                         tileHeight = (row === rows - 1) ? lastHeight : settings.tileHeight;
                         tileWidth = (col === cols - 1) ? lastWidth : settings.tileWidth;
 
-                        imageURL = (settings.iiifServerURL) ? baseImageURL + col * regionWidth + ',' + row * regionHeight + ',' + (tileWidth * zoomDifference) + ',' + (tileHeight * zoomDifference) + '/' + tileWidth + ',' + tileHeight + iiifSuffix
-                                                            : baseImageURL + tileIndex;
+                        imageURL = (settings.isIIIF) ? baseImageURL + col * regionWidth + ',' + row * regionHeight + ',' + (tileWidth * zoomDifference) + ',' + (tileHeight * zoomDifference) + '/' + tileWidth + ',' + iiifSuffix
+                    : baseImageURL + tileIndex;
 
                         // this check looks to see if the tile is already loaded, and then if
                         // it isn't, if it should be visible.
@@ -707,7 +707,7 @@ window.divaPlugins = [];
 
                 // Center the page if the height is fixed (otherwise, there is no horizontal padding)
                 leftOffset += (settings.fixedHeightGrid) ? (settings.gridPageWidth - pageWidth) / 2 : 0;
-                imageURL = (settings.iiifServerURL) ? encodeURI(settings.iiifServerURL + '/' + filename + '/full/' + pageWidth + ',' + pageHeight + '/0/native.jpg') : encodeURI(settings.iipServerURL + "?FIF=" + imdir + filename + '&HEI=' + (pageHeight + 2) + '&CVT=JPEG');
+                imageURL = (settings.isIIIF) ? encodeURI(settings.pages[pageIndex].url + 'full/' + pageWidth + ',/0/native.jpg') : encodeURI(settings.iipServerURL + "?FIF=" + imdir + filename + '&HEI=' + (pageHeight + 2) + '&CVT=JPEG');
 
                 settings.pageTopOffsets[pageIndex] = heightFromTop;
                 settings.pageLeftOffsets[pageIndex] = leftOffset;
@@ -2223,28 +2223,29 @@ window.divaPlugins = [];
          * (This is a client-side re-implementation of generate_json.py)
          *
          * @param {Object} manifest - an object that represents a valid IIIF manifest
-         * @param {String} iiifURL - the IIIF Image API URL prefix for the images (everything before the image's unique identifier)
          * @returns {Object} divaServiceBlock - the data needed by Diva to show a view of a single document
          */
-        var parseManifest = function (manifest, iiifURL) {
+        var parseManifest = function (manifest) {
 
-            incorporateZoom = function (imageDimension, zoomDifference)
+            var incorporateZoom = function (imageDimension, zoomDifference)
             {
                 return imageDimension / (Math.pow(2, zoomDifference));
-            }
+            };
 
-            getMaxZoomLevel = function (width, height)
+            var getMaxZoomLevel = function (width, height)
             {
                 var largestDimension = Math.max(width, height);
                 return Math.ceil(Math.log((largestDimension + 1) / (256 + 1)) / Math.log(2));
-            }
+            };
 
-            initializeArrayWithValue = function (array, value)
+            var initializeArrayWithValue = function (array, value)
             {
                 var i = array.length;
                 while (i--)
+                {
                     array[i] = value;
-            }
+                }
+            };
 
             //@TODO choose a sequence intelligently
             var canvases = manifest.sequences[0].canvases;
@@ -2256,28 +2257,42 @@ window.divaPlugins = [];
             var height;
             var url;
             var maxZoom;
+            var label;
+            var resource;
             var filename;
 
-            var prefixLength = iiifURL.length;
+            var title = manifest.label;
 
             for (var i = 0; i < canvases.length; i++)
             {
                 width = canvases[i].width; //canvas width (@TODO should it be image width if there is one?)
                 height = canvases[i].height; //canvas height (@TODO ")
-                var resource = canvases[i].images[0].resource;
-                url = resource['@id']; //image url for primary canvas resource
+                resource = canvases[i].images[0].resource;
+
+                //@TODO check for resource.service['@id'], if not present fall back to resource['@id'] and chop off string after identifier
+                // url = resource['@id']; //image url for primary canvas resource.
+                url = resource.service['@id']; //this URL excludes parameters so that we can easily append our own later. issue: not required in manifest by api?
+
+                //append trailing / from url if it's not there
+                if (url.slice(-1) !== '/')
+                {
+                    url = url + '/';
+                }
 
                 maxZoom = getMaxZoomLevel(width, height);
 
                 // get filenames from service block (@TODO should this be changed to 'identifiers?')
-                filename = resource.service['@id'].substring(prefixLength + 1);
+                // filename = resource.service['@id'].substring(prefixLength + 1);
+                // get label from canvas block ('filename' is legacy)
+                label = canvases[i].label;
 
-                im = {
+                var im = {
                     'mx_w': width,
                     'mx_h': height,
                     'mx_z': maxZoom,
-                    'fn': filename
-                }
+                    'fn': label,
+                    'url': url
+                };
 
                 images[i] = im;
                 zoomLevels[i] = maxZoom;
@@ -2312,7 +2327,7 @@ window.divaPlugins = [];
                 currentPageZoomData = [];
 
                 // construct 'd' key. for each zoom level:
-                for (j = 0; j < lowestMaxZoom + 1; j++)
+                for (var j = 0; j < lowestMaxZoom + 1; j++)
                 {
                     // calculate current page zoom data
                     widthAtCurrentZoomLevel = Math.floor(incorporateZoom(images[i].mx_w, lowestMaxZoom - j));
@@ -2330,7 +2345,7 @@ window.divaPlugins = [];
                     maxHeights[j] = Math.max(heightAtCurrentZoomLevel, maxHeights[j]);
 
                     // calculate max/min ratios
-                    ratio = images[i].mx_h / images[i].mx_w;
+                    var ratio = images[i].mx_h / images[i].mx_w;
                     maxRatio = Math.max(ratio, maxRatio);
                     minRatio = Math.min(ratio, minRatio);
                 }
@@ -2338,7 +2353,8 @@ window.divaPlugins = [];
                 pages[i] = {
                     d: currentPageZoomData,
                     m: images[i].mx_z,
-                    f: images[i].fn
+                    f: images[i].fn,
+                    url: images[i].url
                 }
             }
 
@@ -2364,14 +2380,14 @@ window.divaPlugins = [];
             };
 
             var divaServiceBlock = {
-                item_title: 'item_title', //@TODO manifest/sequence label?
+                item_title: title,
                 dims: dims,
                 max_zoom: lowestMaxZoom,
                 pgs: pages
             };
 
             return divaServiceBlock;
-        }
+        };
 
         var setupViewer = function ()
         {
@@ -2421,11 +2437,17 @@ window.divaPlugins = [];
                 {
                     var data;
 
-                    // parse IIIF manifest if it is an IIIF manifest
-                    if (responseData.hasOwnProperty('@context') && responseData['@context'].indexOf('iiif') !== -1)
-                        data = parseManifest(responseData, settings.iiifServerURL);
+                    // parse IIIF manifest if it is an IIIF manifest. TODO improve IIIF detection method
+                    if (responseData.hasOwnProperty('@context') && (responseData['@context'].indexOf('iiif') !== -1
+                        || responseData['@context'].indexOf('shared-canvas') !== -1))
+                    {
+                        settings.isIIIF = true;
+                        data = parseManifest(responseData);
+                    }
                     else
+                    {
                         data = responseData;
+                    }
 
                     hideThrobber();
 
@@ -2600,14 +2622,6 @@ window.divaPlugins = [];
             // Generate an ID that can be used as a prefix for all the other IDs
             settings.ID = $.generateId('diva-');
             settings.selector = '#' + settings.ID;
-
-            // If settings.iiifServerURL has a trailing slash, remove it
-            if (settings.iiifServerURL.charAt(settings.iiifServerURL.length - 1) === '/')
-                settings.iiifServerURL = settings.iiifServerURL.slice(0, -1);
-
-            // If both settings.iiifServerURL and settings.iipServeURL are set, display a warning
-            if (settings.iipServerURL && settings.iiifServerURL)
-                console.warn('Both settings.iipServerURL and settings.iiifServerURL are defined. Defaulting to settings.iiifServerURL.');
 
             // Figure out the hashParamSuffix from the ID
             var divaNumber = parseInt(settings.ID, 10);
