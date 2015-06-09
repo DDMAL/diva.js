@@ -2312,7 +2312,7 @@ window.divaPlugins = [];
                 currentPageZoomData = [];
 
                 // construct 'd' key. for each zoom level:
-                for (j = 0; j < lowestMaxZoom + 1; j++)
+                for (var j = 0; j < lowestMaxZoom + 1; j++)
                 {
                     // calculate current page zoom data
                     widthAtCurrentZoomLevel = Math.floor(incorporateZoom(images[i].mx_w, lowestMaxZoom - j));
