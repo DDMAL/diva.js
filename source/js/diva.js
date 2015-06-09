@@ -2364,7 +2364,7 @@ window.divaPlugins = [];
             };
 
             var divaServiceBlock = {
-                item_title: 'item_title', //@TODO manifest/sequence label?
+                item_title: title,
                 dims: dims,
                 max_zoom: lowestMaxZoom,
                 pgs: pages
