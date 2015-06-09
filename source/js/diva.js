@@ -2243,7 +2243,9 @@ window.divaPlugins = [];
             {
                 var i = array.length;
                 while (i--)
+                {
                     array[i] = value;
+                }
             };
 
             //@TODO choose a sequence intelligently
@@ -2277,7 +2279,7 @@ window.divaPlugins = [];
                     'mx_h': height,
                     'mx_z': maxZoom,
                     'fn': filename
-                }
+                };
 
                 images[i] = im;
                 zoomLevels[i] = maxZoom;
@@ -2371,7 +2373,7 @@ window.divaPlugins = [];
             };
 
             return divaServiceBlock;
-        }
+        };
 
         var setupViewer = function ()
         {
