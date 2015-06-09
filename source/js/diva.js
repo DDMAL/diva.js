@@ -2332,7 +2332,7 @@ window.divaPlugins = [];
                     maxHeights[j] = Math.max(heightAtCurrentZoomLevel, maxHeights[j]);
 
                     // calculate max/min ratios
-                    ratio = images[i].mx_h / images[i].mx_w;
+                    var ratio = images[i].mx_h / images[i].mx_w;
                     maxRatio = Math.max(ratio, maxRatio);
                     minRatio = Math.min(ratio, minRatio);
                 }
