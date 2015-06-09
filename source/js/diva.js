@@ -2228,23 +2228,23 @@ window.divaPlugins = [];
          */
         var parseManifest = function (manifest, iiifURL) {
 
-            incorporateZoom = function (imageDimension, zoomDifference)
+            var incorporateZoom = function (imageDimension, zoomDifference)
             {
                 return imageDimension / (Math.pow(2, zoomDifference));
-            }
+            };
 
-            getMaxZoomLevel = function (width, height)
+            var getMaxZoomLevel = function (width, height)
             {
                 var largestDimension = Math.max(width, height);
                 return Math.ceil(Math.log((largestDimension + 1) / (256 + 1)) / Math.log(2));
-            }
+            };
 
-            initializeArrayWithValue = function (array, value)
+            var initializeArrayWithValue = function (array, value)
             {
                 var i = array.length;
                 while (i--)
                     array[i] = value;
-            }
+            };
 
             //@TODO choose a sequence intelligently
             var canvases = manifest.sequences[0].canvases;
