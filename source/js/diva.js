@@ -2330,11 +2330,10 @@ window.divaPlugins = [];
                     // calculate current page zoom data
                     widthAtCurrentZoomLevel = Math.floor(incorporateZoom(images[i].mx_w, lowestMaxZoom - j));
                     heightAtCurrentZoomLevel = Math.floor(incorporateZoom(images[i].mx_h, lowestMaxZoom - j));
-                    //@TODO performance: can we use index rather than push here?
-                    currentPageZoomData.push({
+                    currentPageZoomData[j] = {
                         h: heightAtCurrentZoomLevel,
                         w: widthAtCurrentZoomLevel
-                    });
+                    };
 
                     // add width of image at current zoom level to total widths/heights
                     totalWidths[j] += widthAtCurrentZoomLevel;
