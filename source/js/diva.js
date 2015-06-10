@@ -2263,7 +2263,7 @@ window.divaPlugins = [];
 
             var title = manifest.label;
 
-            for (var i = 0; i < canvases.length; i++)
+            for (var i = 0, numCanvases = canvases.length; i < numCanvases; i++)
             {
                 width = canvases[i].width; //canvas width (@TODO should it be image width if there is one?)
                 height = canvases[i].height; //canvas height (@TODO ")
@@ -2303,7 +2303,6 @@ window.divaPlugins = [];
             var maxRatio = 0;
             var minRatio = 100; // initialize high so we can get the minimum later
 
-            // dimensions calculations @TODO rename to plurals for arrays with multiple zoom levels
             var totalWidths = new Array(lowestMaxZoom + 1);
             var totalHeights = new Array(lowestMaxZoom + 1);
             var maxWidths = new Array(lowestMaxZoom + 1);
@@ -2321,7 +2320,7 @@ window.divaPlugins = [];
             var heightAtCurrentZoomLevel;
 
             // for each page image:
-            for (var i = 0; i < images.length; i++)
+            for (var i = 0, numImages = images.length; i < numImages; i++)
             {
                 currentPageZoomData = [];
 
