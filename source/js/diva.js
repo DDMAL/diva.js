@@ -2386,6 +2386,137 @@ window.divaPlugins = [];
             return divaServiceBlock;
         };
 
+        var ajaxError = function(jqxhr, status, error)
+        {
+            hideThrobber();
+
+            // Show a basic error message within the document viewer pane
+            var requestError = '<div id="' + settings.ID + 'error" class="diva-error">' +
+                '<p><strong>Error</strong></p>' +
+                '<p>Invalid objectData. Error code: ' + status + ' ' + error + '</p>';
+
+            // Detect and handle CORS errors
+            var dataHasAbsolutePath = settings.objectData.lastIndexOf('http', 0) === 0;
+
+            if (dataHasAbsolutePath && error === '')
+            {
+                var jsonHost = settings.objectData.replace(/https?:\/\//i, "").split(/[/?#]/)[0];
+                if (location.hostname !== jsonHost)
+                {
+                    requestError += '<p>Attempted to access cross-origin data without CORS.</p>' +
+                        '<p>You may need to update your server configuration to support CORS. ' +
+                        'For help, see the <a href="https://github.com/DDMAL/diva.js/wiki/' +
+                        'Installation#a-note-about-cross-site-requests" target="_blank">' +
+                        'cross-site request documentation.</a></p>';
+                }
+            }
+
+            requestError += '</div>';
+            $(settings.outerSelector).append(requestError);
+        };
+
+        var parseObjectData = function(responseData)
+        {
+            var data;
+
+            // parse IIIF manifest if it is an IIIF manifest. TODO improve IIIF detection method
+            if (responseData.hasOwnProperty('@context') && (responseData['@context'].indexOf('iiif') !== -1
+                || responseData['@context'].indexOf('shared-canvas') !== -1))
+            {
+                settings.isIIIF = true;
+                data = parseManifest(responseData);
+            }
+            else
+            {
+                data = responseData;
+            }
+
+            hideThrobber();
+
+            // Save all the data we need
+            settings.pages = data.pgs;
+            debugger;
+            settings.maxRatio = data.dims.max_ratio;
+            settings.minRatio = data.dims.min_ratio;
+            settings.itemTitle = data.item_title;
+            settings.numPages = data.pgs.length;
+
+            // These are arrays, the index corresponding to the zoom level
+            settings.maxWidths = data.dims.max_w;
+            settings.maxHeights = data.dims.max_h;
+            settings.averageWidths = data.dims.a_wid;
+            settings.averageHeights = data.dims.a_hei;
+            settings.totalHeights = data.dims.t_hei;
+            settings.totalWidths = data.dims.t_wid;
+
+            // Make sure the set max and min values are valid
+            settings.realMaxZoom = data.max_zoom;
+            settings.maxZoomLevel = (settings.maxZoomLevel >= 0 && settings.maxZoomLevel <= data.max_zoom) ? settings.maxZoomLevel : data.max_zoom;
+            settings.minZoomLevel = (settings.minZoomLevel >= 0 && settings.minZoomLevel <= settings.maxZoomLevel) ? settings.minZoomLevel : 0;
+            settings.zoomLevel = getValidZoomLevel(settings.zoomLevel);
+            settings.minPagesPerRow = Math.max(2, settings.minPagesPerRow);
+            settings.maxPagesPerRow = Math.max(settings.minPagesPerRow, settings.maxPagesPerRow);
+
+            // Check that the desired page is in range
+            if (settings.enableFilename)
+            {
+                var iParam = $.getHashParam('i' + settings.hashParamSuffix);
+                var iParamPage = getPageIndex(iParam);
+
+                if (isPageValid(iParamPage))
+                {
+                    settings.goDirectlyTo = iParamPage;
+                    settings.currentPageIndex = iParamPage;
+                }
+            }
+            else
+            {
+                // Not using the i parameter, check the p parameter
+                // Subtract 1 to get the page index
+                var pParam = parseInt($.getHashParam('p' + settings.hashParamSuffix), 10) - 1;
+
+                if (isPageValid(pParam))
+                {
+                    settings.goDirectlyTo = pParam;
+                    settings.currentPageIndex = pParam;
+                }
+            }
+
+            $(settings.selector + 'current label').text(settings.numPages);
+
+            if (settings.enableAutoTitle)
+            {
+                if ($(settings.selector + 'title').length)
+                    $(settings.selector + 'title').html(settings.itemTitle);
+                else
+                    $(settings.parentSelector).prepend('<div id="' + settings.ID + 'title" class="diva-title">' + settings.itemTitle + '</div>');
+            }
+
+            // Make sure the value for settings.goDirectlyTo is valid
+            if (!isPageValid(parseInt(settings.goDirectlyTo), 10))
+                settings.goDirectlyTo = 0;
+
+            // Calculate the horizontal and vertical inter-page padding
+            if (settings.adaptivePadding > 0)
+            {
+                var z = settings.zoomLevel;
+                settings.horizontalPadding = parseInt(settings.averageWidths[z] * settings.adaptivePadding, 10);
+                settings.verticalPadding = parseInt(settings.averageHeights[z] * settings.adaptivePadding, 10);
+            }
+            else
+            {
+                // It's less than or equal to 0; use fixedPadding instead
+                settings.horizontalPadding = settings.fixedPadding;
+                settings.verticalPadding = settings.fixedPadding;
+            }
+
+            // Make sure the vertical padding is at least 40, if plugin icons are enabled
+            if (settings.pageTools.length)
+            {
+                settings.verticalPadding = Math.max(40, settings.verticalPadding);
+            }
+        };
+
         var setupViewer = function ()
         {
             // Create the throbber element
@@ -2402,99 +2533,11 @@ window.divaPlugins = [];
                 url: settings.objectData,
                 cache: true,
                 dataType: 'json',
-                error: function (jqxhr, status, error)
-                {
-                    hideThrobber();
-
-                    // Show a basic error message within the document viewer pane
-                    var requestError = '<div id="' + settings.ID + 'error" class="diva-error">' +
-                            '<p><strong>Error</strong></p>' +
-                            '<p>Invalid objectData. Error code: ' + status + ' ' + error + '</p>';
-
-                    // Detect and handle CORS errors
-                    var dataHasAbsolutePath = settings.objectData.lastIndexOf('http', 0) === 0;
-
-                    if (dataHasAbsolutePath && error === '')
-                    {
-                        var jsonHost = settings.objectData.replace(/https?:\/\//i, "").split(/[/?#]/)[0];
-                        if (location.hostname !== jsonHost)
-                        {
-                            requestError += '<p>Attempted to access cross-origin data without CORS.</p>' +
-                                '<p>You may need to update your server configuration to support CORS. ' +
-                                'For help, see the <a href="https://github.com/DDMAL/diva.js/wiki/' +
-                                'Installation#a-note-about-cross-site-requests" target="_blank">' +
-                                'cross-site request documentation.</a></p>';
-                        }
-                    }
-
-                    requestError += '</div>';
-                    $(settings.outerSelector).append(requestError);
-                },
+                error: ajaxError,
                 success: function (responseData, status, jqxhr)
                 {
-                    var data;
-
-                    // parse IIIF manifest if it is an IIIF manifest. TODO improve IIIF detection method
-                    if (responseData.hasOwnProperty('@context') && (responseData['@context'].indexOf('iiif') !== -1
-                        || responseData['@context'].indexOf('shared-canvas') !== -1))
-                    {
-                        settings.isIIIF = true;
-                        data = parseManifest(responseData);
-                    }
-                    else
-                    {
-                        data = responseData;
-                    }
-
-                    hideThrobber();
-
-                    // Save all the data we need
-                    settings.pages = data.pgs;
-                    settings.maxRatio = data.dims.max_ratio;
-                    settings.minRatio = data.dims.min_ratio;
-                    settings.itemTitle = data.item_title;
-                    settings.numPages = data.pgs.length;
-
-                    // These are arrays, the index corresponding to the zoom level
-                    settings.maxWidths = data.dims.max_w;
-                    settings.maxHeights = data.dims.max_h;
-                    settings.averageWidths = data.dims.a_wid;
-                    settings.averageHeights = data.dims.a_hei;
-                    settings.totalHeights = data.dims.t_hei;
-                    settings.totalWidths = data.dims.t_wid;
-
-                    // Make sure the set max and min values are valid
-                    settings.realMaxZoom = data.max_zoom;
-                    settings.maxZoomLevel = (settings.maxZoomLevel >= 0 && settings.maxZoomLevel <= data.max_zoom) ? settings.maxZoomLevel : data.max_zoom;
-                    settings.minZoomLevel = (settings.minZoomLevel >= 0 && settings.minZoomLevel <= settings.maxZoomLevel) ? settings.minZoomLevel : 0;
-                    settings.zoomLevel = getValidZoomLevel(settings.zoomLevel);
-                    settings.minPagesPerRow = Math.max(2, settings.minPagesPerRow);
-                    settings.maxPagesPerRow = Math.max(settings.minPagesPerRow, settings.maxPagesPerRow);
-
-                    // Check that the desired page is in range
-                    if (settings.enableFilename)
-                    {
-                        var iParam = $.getHashParam('i' + settings.hashParamSuffix);
-                        var iParamPage = getPageIndex(iParam);
-
-                        if (isPageValid(iParamPage))
-                        {
-                            settings.goDirectlyTo = iParamPage;
-                            settings.currentPageIndex = iParamPage;
-                        }
-                    }
-                    else
-                    {
-                        // Not using the i parameter, check the p parameter
-                        // Subtract 1 to get the page index
-                        var pParam = parseInt($.getHashParam('p' + settings.hashParamSuffix), 10) - 1;
-
-                        if (isPageValid(pParam))
-                        {
-                            settings.goDirectlyTo = pParam;
-                            settings.currentPageIndex = pParam;
-                        }
-                    }
+                    // store object data in settings
+                    parseObjectData(responseData);
 
                     // Execute the setup hook for each plugin (if defined)
                     $.each(settings.plugins, function (index, plugin)
@@ -2515,13 +2558,6 @@ window.divaPlugins = [];
                         diva.Events.subscribe("ZoomLevelDidChange", settings.toolbar.updateGridButtons);
                     }
 
-                    $(settings.selector + 'current label').text(settings.numPages);
-
-                    if (settings.enableAutoTitle)
-                    {
-                        $(settings.parentSelector).prepend('<div id="' + settings.ID + 'title" class="diva-title">' + settings.itemTitle + '</div>');
-                    }
-
                     //if the parent is the body and there are no siblings, we don't want to use this to base size off, we want window instead
                     if ($(settings.parentSelector).parent()[0] === document.body)
                     {
@@ -2531,30 +2567,6 @@ window.divaPlugins = [];
 
                     // Adjust the document panel dimensions
                     adjustBrowserDims();
-
-                    // Make sure the value for settings.goDirectlyTo is valid
-                    if (!isPageValid(parseInt(settings.goDirectlyTo), 10))
-                        settings.goDirectlyTo = 0;
-
-                    // Calculate the horizontal and vertical inter-page padding
-                    if (settings.adaptivePadding > 0)
-                    {
-                        var z = settings.zoomLevel;
-                        settings.horizontalPadding = parseInt(settings.averageWidths[z] * settings.adaptivePadding, 10);
-                        settings.verticalPadding = parseInt(settings.averageHeights[z] * settings.adaptivePadding, 10);
-                    }
-                    else
-                    {
-                        // It's less than or equal to 0; use fixedPadding instead
-                        settings.horizontalPadding = settings.fixedPadding;
-                        settings.verticalPadding = settings.fixedPadding;
-                    }
-
-                    // Make sure the vertical padding is at least 40, if plugin icons are enabled
-                    if (settings.pageTools.length)
-                    {
-                        settings.verticalPadding = Math.max(40, settings.verticalPadding);
-                    }
 
                     // y - vertical offset from the top of the relevant page
                     var yParam = parseInt($.getHashParam('y' + settings.hashParamSuffix), 10);
@@ -3126,6 +3138,29 @@ window.divaPlugins = [];
                 'height': parseInt(pageHeight, 10),
                 'width': parseInt(pageWidth, 10)
             };
+        };
+
+        this.changeObject = function(objectData)
+        {
+            //TODO eliminate unnecessary function calls
+
+            clearViewer();
+            settings.loaded = false;
+            settings.objectData = objectData;
+
+            $.ajax({
+                url: settings.objectData,
+                cache: true,
+                dataType: 'json',
+                error: ajaxError,
+                success: function (responseData, status, jqxhr)
+                {
+                    parseObjectData(responseData);
+                    loadViewer();
+                    adjustBrowserDims();
+                    settings.loaded = true;
+                }
+            });
         };
 
         this.activate = function ()
