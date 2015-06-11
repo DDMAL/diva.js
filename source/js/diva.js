@@ -681,7 +681,7 @@ window.divaPlugins = [];
             innerElem.appendChild(rowDiv);
 
             // Declare variables used in the loop
-            var i, pageIndex, filename, realWidth, realHeight, pageWidth, pageHeight, leftOffset, imageURL;
+            var i, pageIndex, filename, realWidth, realHeight, pageWidth, pageHeight, leftOffset, imageURL, version, quality, iiifSuffix;
             var imdir = settings.imageDir + "/";
 
             // Load each page within that row
@@ -702,13 +702,17 @@ window.divaPlugins = [];
                 pageHeight = (settings.fixedHeightGrid) ? settings.rowHeight - settings.fixedPadding : pageWidth / realWidth * realHeight;
                 leftOffset = parseInt(i * (settings.fixedPadding + settings.gridPageWidth) + settings.fixedPadding, 10);
 
+                version = settings.pages[pageIndex].api;
+                quality = (version >= 2.0) ? 'default' : 'native';
+                iiifSuffix = ',/0/' + quality + '.jpg';
+
                 // Make sure they're all integers for nice, round numbers
                 pageWidth = parseInt(pageWidth, 10);
                 pageHeight = parseInt(pageHeight, 10);
 
                 // Center the page if the height is fixed (otherwise, there is no horizontal padding)
                 leftOffset += (settings.fixedHeightGrid) ? (settings.gridPageWidth - pageWidth) / 2 : 0;
-                imageURL = (settings.isIIIF) ? encodeURI(settings.pages[pageIndex].url + 'full/' + pageWidth + ',/0/native.jpg') : encodeURI(settings.iipServerURL + "?FIF=" + imdir + filename + '&HEI=' + (pageHeight + 2) + '&CVT=JPEG');
+                imageURL = (settings.isIIIF) ? encodeURI(settings.pages[pageIndex].url + 'full/' + pageWidth + iiifSuffix) : encodeURI(settings.iipServerURL + "?FIF=" + imdir + filename + '&HEI=' + (pageHeight + 2) + '&CVT=JPEG');
 
                 settings.pageTopOffsets[pageIndex] = heightFromTop;
                 settings.pageLeftOffsets[pageIndex] = leftOffset;
