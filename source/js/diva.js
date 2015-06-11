@@ -2499,7 +2499,7 @@ window.divaPlugins = [];
                 }
             }
 
-            $(settings.selector + 'current label').text(settings.numPages);
+            diva.Events.publish('NumberOfPagesDidChange', [settings.numPages], this);
 
             if (settings.enableAutoTitle)
             {
@@ -2573,6 +2573,7 @@ window.divaPlugins = [];
                         diva.Events.subscribe("ZoomLevelDidChange", settings.toolbar.updateZoomButtons);
                         diva.Events.subscribe("GridRowNumberDidChange", settings.toolbar.updateGridSlider);
                         diva.Events.subscribe("ZoomLevelDidChange", settings.toolbar.updateGridButtons);
+                        diva.Events.subscribe("NumberOfPagesDidChange", settings.toolbar.setNumPages);
                     }
 
                     //if the parent is the body and there are no siblings, we don't want to use this to base size off, we want window instead
