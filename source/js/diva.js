@@ -3142,10 +3142,8 @@ window.divaPlugins = [];
 
         this.changeObject = function(objectData)
         {
-            //TODO eliminate unnecessary function calls
-
-            clearViewer();
             settings.loaded = false;
+            clearViewer();
             settings.objectData = objectData;
 
             $.ajax({
@@ -3157,7 +3155,6 @@ window.divaPlugins = [];
                 {
                     parseObjectData(responseData);
                     loadViewer();
-                    adjustBrowserDims();
                     settings.loaded = true;
                 }
             });
