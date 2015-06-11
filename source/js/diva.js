@@ -354,10 +354,8 @@ window.divaPlugins = [];
 
                 var maxZoom = settings.pages[pageIndex].m;
                 var baseURL = settings.iipServerURL + "?FIF=" + imdir + filename + '&JTL=';
-                var content = [];
                 var allTilesLoaded = true;
                 var tileIndex = 0;
-                var i;
 
                 // Calculate the width and height of outer tiles (non-standard dimensions)
                 var lastHeight = height - (rows - 1) * settings.tileHeight;
@@ -378,7 +376,10 @@ window.divaPlugins = [];
                     regionHeight = settings.tileHeight * zoomDifference;
                     regionWidth = settings.tileWidth * zoomDifference;
 
-                    var iiifSuffix = '/0/native.jpg';
+                    // if iiif 1.1, 'native'. if iiif 2.0, 'default'
+                    var version = settings.pages[pageIndex].api;
+                    var quality = (version >= 2.0) ? 'default' : 'native';
+                    var iiifSuffix = '/0/' + quality + '.jpg';
                 }
                 else
                 {
@@ -2258,8 +2259,9 @@ window.divaPlugins = [];
             var url;
             var maxZoom;
             var label;
+            var context;
             var resource;
-            var filename;
+            var imageAPIVersion;
 
             var title = manifest.label;
 
@@ -2285,15 +2287,29 @@ window.divaPlugins = [];
                 // get label from canvas block ('filename' is legacy)
                 label = canvases[i].label;
 
-                var im = {
+                var context = resource.service['@context'];
+                if (context === 'http://iiif.io/api/image/2/context.json')
+                {
+                    imageAPIVersion = 2.0;
+                }
+                else if (context === 'http://library.stanford.edu/iiif/image-api/1.1/context.json')
+                {
+                    imageAPIVersion = 1.1;
+                }
+                else
+                {
+                    imageAPIVersion = 1.0;
+                }
+
+                images[i] = {
                     'mx_w': width,
                     'mx_h': height,
                     'mx_z': maxZoom,
                     'fn': label,
-                    'url': url
+                    'url': url,
+                    'api': imageAPIVersion
                 };
 
-                images[i] = im;
                 zoomLevels[i] = maxZoom;
             }
 
@@ -2351,7 +2367,8 @@ window.divaPlugins = [];
                     d: currentPageZoomData,
                     m: images[i].mx_z,
                     f: images[i].fn,
-                    url: images[i].url
+                    url: images[i].url,
+                    api: images[i].api
                 }
             }
 
@@ -2375,6 +2392,7 @@ window.divaPlugins = [];
                 't_hei': totalHeights,
                 't_wid': totalWidths
             };
+
 
             var divaServiceBlock = {
                 item_title: title,
