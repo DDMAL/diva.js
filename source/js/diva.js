@@ -2435,7 +2435,6 @@ window.divaPlugins = [];
 
             // Save all the data we need
             settings.pages = data.pgs;
-            debugger;
             settings.maxRatio = data.dims.max_ratio;
             settings.minRatio = data.dims.min_ratio;
             settings.itemTitle = data.item_title;
