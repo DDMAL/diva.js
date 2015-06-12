@@ -3166,6 +3166,11 @@ window.divaPlugins = [];
         {
             settings.loaded = false;
             clearViewer();
+            settings.throbberTimeoutID = setTimeout(function ()
+            {
+                $(settings.selector + 'throbber').show();
+            }, settings.throbberTimeout);
+
             settings.objectData = objectData;
 
             $.ajax({
@@ -3176,6 +3181,7 @@ window.divaPlugins = [];
                 success: function (responseData, status, jqxhr)
                 {
                     parseObjectData(responseData);
+                    hideThrobber();
                     loadViewer();
                     settings.loaded = true;
                 }
