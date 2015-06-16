@@ -2996,7 +2996,7 @@ window.divaPlugins = [];
         this.getPageIndexForPageXYValues = function(pageX, pageY)
         {
             //get the four edges of the outer element
-            var outerObj = document.getElementById(settings.ID + "outer")
+            var outerObj = document.getElementById(settings.ID + "outer");
             var outerOffset = outerObj.getBoundingClientRect();
             var outerTop = outerOffset.top;
             var outerLeft = outerOffset.left;
