@@ -24,8 +24,23 @@
     "jquery": "~2.1.1"
   },
   "devDependencies": {
+    "connect": "^3.3.5",
+    "connect-livereload": "^0.5.3",
+    "del": "^1.2.0",
+    "gulp": "^3.9.0",
+    "gulp-concat": "^2.5.2",
+    "gulp-jshint": "^1.11.0",
+    "gulp-less": "^3.0.3",
+    "gulp-livereload": "^3.8.0",
+    "gulp-load-plugins": "^1.0.0-rc.1",
+    "gulp-sourcemaps": "^1.5.2",
+    "gulp-uglify": "^1.2.0",
+    "jshint-stylish": "^2.0.0",
+    "less": "~2.4.0",
     "phantomjs": "~1.9.15",
-    "less": "~2.4.0"
+    "serve-index": "^1.7.0",
+    "serve-static": "^1.9.3",
+    "yargs": "^3.11.0"
   },
   "author": "Andrew Hankinson",
   "license": "MIT",
