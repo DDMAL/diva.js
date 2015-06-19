@@ -93,7 +93,10 @@ Relevant methods:
 
                 divaInstance.toggleScrolling = function()
                 {
-                    divaSettings.currentlyAutoScrolling ? divaInstance.stopScrolling() : divaInstance.startScrolling();
+                    if (divaSettings.currentlyAutoScrolling)
+                        divaInstance.stopScrolling();
+                    else
+                        divaInstance.startScrolling();
                 };
 
                 divaInstance.changeRefresh = function(newRefresh)
@@ -185,7 +188,7 @@ Relevant methods:
                             });
                             settings.jqObj.offset({'top': divaSettings.outerObject.offset().top + 1});
                         }
-                    }
+                    };
 
                     diva.Events.subscribe('ModeDidSwitch', setPosition);
 
@@ -210,7 +213,10 @@ Relevant methods:
 
                         $("#" + divaSettings.ID + "autoscroll-manual").on('change', function(e)
                         {
-                            e.target.checked ? divaInstance.enableManualScroll() : divaInstance.disableManualScroll();
+                            if (e.target.checked)
+                                divaInstance.enableManualScroll();
+                            else
+                                divaInstance.disableManualScroll();
                         });
 
                         $("#" + divaSettings.ID + "autoscroll-toggle").on('click', divaInstance.toggleScrolling);
