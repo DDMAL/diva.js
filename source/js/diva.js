@@ -2323,7 +2323,7 @@ window.divaPlugins = [];
                 // get label from canvas block ('filename' is legacy)
                 label = canvases[i].label;
 
-                var context = resource.service['@context'];
+                context = resource.service['@context'];
                 if (context === 'http://iiif.io/api/image/2/context.json')
                 {
                     imageAPIVersion = 2.0;
