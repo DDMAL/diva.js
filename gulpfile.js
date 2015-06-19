@@ -7,6 +7,7 @@ var sourcemaps = require('gulp-sourcemaps');
 var less = require('gulp-less');
 var uglify = require('gulp-uglify');
 var concat = require('gulp-concat');
+var rename = require('gulp-rename');
 
 gulp.task('develop:jshint', function()
 {
@@ -36,7 +37,14 @@ gulp.task('develop:styles', function()
         .pipe(sourcemaps.init())
         .pipe(less())
         .pipe(sourcemaps.write('./'))
-        .pipe(gulp.dest('build/css'))
+        .pipe(gulp.dest('build/css'));
+
+    gulp.src('source/css/diva.less')
+        .pipe(rename({suffix: '.min'}))
+        .pipe(sourcemaps.init())
+        .pipe(less({compress: true}))
+        .pipe(sourcemaps.write('./'))
+        .pipe(gulp.dest('build/css'));
 });
 
 gulp.task('develop:server', function()
