@@ -57,8 +57,8 @@ less ()
     # See build/css/readme.md for more information.
     echo "Compiling CSS."
     mkdir -p build/css
-    lessc source/css/imports.less > build/css/diva.css
-    lessc source/css/imports.less > build/css/diva.min.css -x
+    lessc source/css/diva.less > build/css/diva.css
+    lessc source/css/diva.less > build/css/diva.min.css -x
 }
 
 minify ()
@@ -111,7 +111,7 @@ release()
 {
     # Creates a zip file containing just the files we need for the release.
     VERSION=$1
-    if [ -z "$1"]; then
+    if [ -z "$1" ]; then
         echo "Syntax: ./build.sh -r VERSION release"
         exit 1
     fi
