@@ -2466,7 +2466,7 @@ window.divaPlugins = [];
             }
 
             requestError += '</div>';
-            $(settings.outerSelector).append(requestError);
+            outerObject.append(requestError);
         };
 
         var parseObjectData = function(responseData)
@@ -2542,7 +2542,7 @@ window.divaPlugins = [];
                 if ($(settings.selector + 'title').length)
                     $(settings.selector + 'title').html(settings.itemTitle);
                 else
-                    $(settings.parentSelector).prepend('<div id="' + settings.ID + 'title" class="diva-title">' + settings.itemTitle + '</div>');
+                    settings.parentObject.prepend('<div id="' + settings.ID + 'title" class="diva-title">' + settings.itemTitle + '</div>');
             }
 
             // Make sure the value for settings.goDirectlyTo is valid
