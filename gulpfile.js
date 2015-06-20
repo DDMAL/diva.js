@@ -68,13 +68,15 @@ gulp.task('develop:server', function()
 gulp.task('develop:clean', function()
 {
     var del = require('del');
-    del(['build/'], function() {});
+    del(['build/'], function() {
+        console.log('Cleaning build directory');
+    });
 });
 
-gulp.task('develop:build', function()
+gulp.task('develop:build', ['develop:styles', 'develop:compile'], function()
 {
     gulp.src('source/js/**/*.js')
-        .pipe(gulp.dest('build/js/'));
+        .pipe(gulp.dest('build/js'));
 
     gulp.src('source/img/**/*')
         .pipe(gulp.dest('build/img'));
@@ -85,9 +87,18 @@ gulp.task('develop:build', function()
     gulp.src('demo/**/*')
         .pipe(gulp.dest('build/demo'));
 
-    gulp.start('develop:styles');
-    gulp.start('develop:compile');
-})
+    gulp.src('AUTHORS')
+        .pipe(gulp.dest('build'));
+
+    gulp.src('LICENSE')
+        .pipe(gulp.dest('build'));
+
+    gulp.src('readme.md')
+        .pipe(gulp.dest('build'));
+
+    // gulp.start('develop:styles');
+    // gulp.start('develop:compile');
+});
 
 gulp.task('develop', ['develop:build', 'develop:server'], function()
 {
@@ -104,7 +115,53 @@ gulp.task('develop', ['develop:build', 'develop:server'], function()
 
 gulp.task('release', ['develop:build'], function()
 {
+    var fs = require('fs');
+    var del = require('del');
+    var archiver = require('archiver');
+    var argv = require('yargs')
+                .usage('Usage: gulp release -v [num]')
+                .demand(['v'])
+                .alias('v', 'version')
+                .argv;
 
+    var release_name = 'diva-v' + argv.v;
+
+    /// tar.gz creation
+    var tgz_out = fs.createWriteStream(__dirname + '/' + release_name + '.tar.gz');
+    var tgz_archive = archiver('tar', {
+        gzip: true,
+        gzipOptions: {
+            level: 9
+        }
+    });
+    tgz_archive.on('close', function()
+    {
+        console.log(tgz_archive.pointer() + ' total bytes');
+        console.log('Finished writing tar.gz archive');
+    });
+    tgz_archive.on('error', function()
+    {
+        console.log('There was a problem creating the tar.gz archive.');
+    });
+    tgz_archive.pipe(tgz_out);
+    tgz_archive.directory('build/', release_name)
+               .finalize();
+
+    /// zipfile creation
+    var zip_out = fs.createWriteStream(__dirname + '/' + release_name + '.zip');
+    var zip_archive = archiver('zip');
+    zip_archive.on('close', function()
+    {
+        console.log(zip_archive.pointer() + ' total bytes');
+        console.log('Finished writing zip archive');
+    });
+    zip_archive.on('error', function()
+    {
+        console.log('There was a problem creating the zip archive.');
+    });
+    zip_archive.pipe(zip_out);
+    zip_archive.directory('build/', release_name)
+               .finalize();
 });
 
 gulp.task('default', function()
