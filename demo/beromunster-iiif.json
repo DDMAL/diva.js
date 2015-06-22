@@ -2,7 +2,7 @@
   "@context": "http://iiif.io/api/presentation/2/context.json",
   "@id": "http://dev-diva.simssa.ca/iiif/srv/images/beromunster/manifest.json",
   "@type": "sc:Manifest",
-  "label": "manifestlabel",
+  "label": "Beromunster",
   "viewingHint": "continuous",
   "sequences": [
     {
