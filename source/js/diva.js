@@ -2466,7 +2466,7 @@ window.divaPlugins = [];
             }
 
             requestError += '</div>';
-            outerObject.append(requestError);
+            settings.outerObject.append(requestError);
         };
 
         var parseObjectData = function(responseData)
