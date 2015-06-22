@@ -82,7 +82,10 @@ gulp.task('develop:build', function()
     gulp.src('source/processing/*.py')
         .pipe(gulp.dest('build/processing'));
 
-    gulp.src('demo/**/*')
+    gulp.src('demo/*')
+        .pipe(gulp.dest('build/demo'));
+
+    gulp.src('demo/diva/*')
         .pipe(gulp.dest('build/demo'));
 
     gulp.start('develop:styles');
