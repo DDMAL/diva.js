@@ -282,7 +282,7 @@ Allows you to highlight regions of a page image based off of annotations in a II
                 {
                     //loop through the manifest and find annotations
                     var canvases = manifest.sequences[0].canvases;
-                    var annotations = [];
+                    var annotatedCanvases = {};
                     var annotationsList = [];
 
                     var deferreds = [];
@@ -331,46 +331,51 @@ Allows you to highlight regions of a page image based off of annotations in a II
 
                             var currentCanvasIndex = response[2].canvasIndex;
 
+                            annotatedCanvases[currentCanvasIndex] = [];
+
                             //loop over the annotations in the response
                             for (var j = 0; j < numAnnotations; j++)
                             {
-                                //store the canvas index
-                                annotationsList[j].canvasIndex = currentCanvasIndex;
-                                annotations.push(annotationsList[j]);
+                                annotatedCanvases[currentCanvasIndex].push(annotationsList[j]);
                             }
                         }
 
                         //convert annotations in annotations object to diva highlight objects
-                        for (i = 0; i < annotations.length; i++)
+                        //loop over canvases
+                        for (var canvasIndex in annotatedCanvases)
                         {
-                            annotation = annotations[i];
+                            if (annotatedCanvases.hasOwnProperty(canvasIndex))
+                            {
+                                regions = [];
+                                var currentCanvasIndex = parseInt(canvasIndex, 10);
+                                var canvasAnnotations = annotatedCanvases[currentCanvasIndex];
+                                numAnnotations = canvasAnnotations.length;
 
-                            // get page #
-                            var canvasIndex = annotation.canvasIndex;
+                                //loop over annotations in a single canvas
+                                for (j = 0; j < numAnnotations; j++)
+                                {
+                                    var currentAnnotation = canvasAnnotations[j];
+                                    // get text content
+                                    var text = currentAnnotation.resource.chars;
 
-                            // get text content
-                            var text = annotation.resource.chars;
+                                    // get x,y,w,h (slice string from '#xywh=' to end)
+                                    var onString = currentAnnotation.on;
+                                    var coordString = onString.slice(onString.indexOf('#xywh=') + 6);
+                                    var coordinates = coordString.split(',');
 
-                            // get x,y,w,h (slice string from '#xywh=' to end)
-                            var onString = annotation.on;
-                            var coordString = onString.slice(onString.indexOf('#xywh=') + 6);
-                            var coordinates = coordString.split(',');
+                                    var region = {
+                                        ulx: parseInt(coordinates[0], 10),
+                                        uly: parseInt(coordinates[1], 10),
+                                        width: parseInt(coordinates[2], 10),
+                                        height: parseInt(coordinates[3], 10)
+                                    };
 
-                            var region = {
-                                ulx: parseInt(coordinates[0], 10),
-                                uly: parseInt(coordinates[1], 10),
-                                width: parseInt(coordinates[2], 10),
-                                height: parseInt(coordinates[3], 10)
-                            };
+                                    regions.push(region);
+                                }
 
-                            //var regions = [region];
-                            regions.push(region);
+                                divaInstance.highlightOnPage(currentCanvasIndex, regions);
+                            }
                         }
-
-                        //TODO page should not be hardcoded
-                        //divaInstance.highlightOnPage(canvasIndex, regions);
-                        divaInstance.highlightOnPage(14, regions);
-
                     }).fail(function(){
                         console.log('ajax error');
                     });
