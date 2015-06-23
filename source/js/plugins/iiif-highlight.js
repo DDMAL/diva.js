@@ -344,10 +344,10 @@ Allows you to highlight regions of a page image based off of annotations in a II
                             var coordinates = coordString.split(',');
 
                             var region = {
-                                ulx: coordinates[0],
-                                uly: coordinates[1],
-                                width: coordinates[3],
-                                height: coordinates[4]
+                                ulx: parseInt(coordinates[0], 10),
+                                uly: parseInt(coordinates[1], 10),
+                                width: parseInt(coordinates[2], 10),
+                                height: parseInt(coordinates[3], 10)
                             };
 
                             var regions = [region];
