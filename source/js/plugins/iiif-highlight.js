@@ -285,6 +285,10 @@ Allows you to highlight regions of a page image based off of annotations in a II
                     var annotations = [];
 
                     var deferreds = [];
+                    var requestIndex = 0;
+
+                    var response;
+                    var annotation;
 
                     for (var i = 0, numCanvases = canvases.length; i < numCanvases; i++)
                     {
@@ -304,6 +308,9 @@ Allows you to highlight regions of a page image based off of annotations in a II
                                             dataType: 'json'
                                         })
                                     );
+                                    // save the index of the canvas that this annotation appears on
+                                    deferreds[requestIndex].canvasIndex = i;
+                                    requestIndex++;
                                 }
                             }
                         }
@@ -312,26 +319,43 @@ Allows you to highlight regions of a page image based off of annotations in a II
                     //execute a callback when all queued requests are complete
                     $.when.apply($, deferreds).then(function(){
                         //append the contents of the responses to an annotations object
-                        for (var i = 0; i < arguments.length; i++)
+                        for (i = 0; i < arguments.length; i++)
                         {
-                            var response = arguments[i];
-                            var annotation = response[0];
+                            response = arguments[i];
+                            annotation = response[0];
+                            annotation.canvasIndex = response[2].canvasIndex;
                             annotations.push(annotation);
                         }
 
-                        console.log(annotations);
-
                         //convert annotations in annotations object to diva highlight objects
-                        for (var i = 0; i < annotations.length; i++)
+                        for (i = 0; i < annotations.length; i++)
                         {
-                            // get page
-                            // get x, y
-                            // convert w, h to lrx, lry
-                        }
+                            annotation = annotations[i];
 
-                        //set the highlight object on the diva instance
+                            // get page #
+                            var canvasIndex = annotation.canvasIndex;
+
+                            // get text content
+                            var text = annotation.resource.chars;
+
+                            // get x,y,w,h (slice string from '#xywh=' to end)
+                            var onString = annotation.on;
+                            var coordString = onString.slice(onString.indexOf('#xywh=') + 6);
+                            var coordinates = coordString.split(',');
+
+                            var region = {
+                                ulx: coordinates[0],
+                                uly: coordinates[1],
+                                width: coordinates[3],
+                                height: coordinates[4]
+                            };
+
+                            var regions = [region];
+
+                            divaInstance.highlightOnPage(canvasIndex, regions);
+                        }
                     }).fail(function(){
-                        console.log('ajax error')
+                        console.log('ajax error');
                     });
                 };
 
