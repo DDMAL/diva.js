@@ -78,6 +78,11 @@ Allows you to highlight regions of a page image based off of annotations in a II
                             box.style.zIndex = 100;
                             box.className = divClass;
 
+                            if (typeof regions[j].name !== 'undefined')
+                            {
+                                box.setAttribute('data-name', regions[j].name);
+                            }
+
                             if (typeof regions[j].divID !== 'undefined')
                             {
                                 box.id = regions[j].divID;
@@ -166,7 +171,7 @@ Allows you to highlight regions of a page image based off of annotations in a II
                 {
                     if (typeof colour === 'undefined')
                     {
-                        colour = 'rgba(255, 0, 0, 0.2)';
+                        colour = 'rgba(255, 0, 0, 0.1)';
                     }
 
                     if (typeof divClass === 'undefined')
@@ -291,6 +296,9 @@ Allows you to highlight regions of a page image based off of annotations in a II
                     var response;
                     var annotation;
 
+                    var numAnnotations;
+                    var currentCanvasIndex;
+
                     var regions = [];
 
                     for (var i = 0, numCanvases = canvases.length; i < numCanvases; i++)
@@ -320,16 +328,17 @@ Allows you to highlight regions of a page image based off of annotations in a II
                     }
 
                     //execute a callback when all queued requests are complete
-                    $.when.apply($, deferreds).then(function(){
+                    $.when.apply($, deferreds).then(function()
+                    {
                         //append the contents of the responses to an annotations object
                         //loop over the set of responses (annotation lists, 1 per canvas)
                         for (i = 0; i < arguments.length; i++)
                         {
                             response = arguments[i];
                             annotationsList = response[0];
-                            var numAnnotations = annotationsList.length;
+                            numAnnotations = annotationsList.length;
 
-                            var currentCanvasIndex = response[2].canvasIndex;
+                            currentCanvasIndex = response[2].canvasIndex;
 
                             annotatedCanvases[currentCanvasIndex] = [];
 
@@ -347,14 +356,14 @@ Allows you to highlight regions of a page image based off of annotations in a II
                             if (annotatedCanvases.hasOwnProperty(canvasIndex))
                             {
                                 regions = [];
-                                var currentCanvasIndex = parseInt(canvasIndex, 10);
+                                currentCanvasIndex = parseInt(canvasIndex, 10);
                                 var canvasAnnotations = annotatedCanvases[currentCanvasIndex];
                                 numAnnotations = canvasAnnotations.length;
 
                                 //loop over annotations in a single canvas
-                                for (j = 0; j < numAnnotations; j++)
+                                for (var k = 0; k < numAnnotations; k++)
                                 {
-                                    var currentAnnotation = canvasAnnotations[j];
+                                    var currentAnnotation = canvasAnnotations[k];
                                     // get text content
                                     var text = currentAnnotation.resource.chars;
 
@@ -367,7 +376,8 @@ Allows you to highlight regions of a page image based off of annotations in a II
                                         ulx: parseInt(coordinates[0], 10),
                                         uly: parseInt(coordinates[1], 10),
                                         width: parseInt(coordinates[2], 10),
-                                        height: parseInt(coordinates[3], 10)
+                                        height: parseInt(coordinates[3], 10),
+                                        name: text
                                     };
 
                                     regions.push(region);
@@ -383,6 +393,37 @@ Allows you to highlight regions of a page image based off of annotations in a II
 
                 //subscribe to ManifestDidLoad event, get the manifest
                 diva.Events.subscribe('ManifestDidLoad', parseHighlights);
+
+                var activeOverlays = [];
+
+                //on mouseover, show the annotation text
+                divaSettings.innerObject.on('mouseenter', '.' + divaSettings.ID + 'highlight', function(e)
+                {
+                    var annotationElement = e.target;
+                    var name = annotationElement.dataset.name;
+                    var textOverlay = document.createElement('div');
+
+                    textOverlay.style.top = (annotationElement.offsetTop + annotationElement.offsetHeight - 1) + 'px';
+                    textOverlay.style.left = annotationElement.style.left;
+                    textOverlay.style.background = '#fff';
+                    textOverlay.style.border = '1px solid #555';
+                    textOverlay.style.position = 'absolute';
+                    textOverlay.style.zIndex = 101;
+                    textOverlay.className = 'annotation-overlay';
+                    textOverlay.textContent = name;
+
+                    annotationElement.parentNode.appendChild(textOverlay);
+                    activeOverlays.push(textOverlay);
+                });
+
+                divaSettings.innerObject.on('mouseleave', '.' + divaSettings.ID + 'highlight', function(e)
+                {
+                    while (activeOverlays.length)
+                    {
+                        var textOverlay = activeOverlays.pop();
+                        textOverlay.parentNode.removeChild(textOverlay);
+                    }
+                });
 
                 return true;
             },
