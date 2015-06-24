@@ -108,7 +108,7 @@ gulp.task('develop', ['develop:build', 'develop:server'], function()
     $.livereload.listen();
 
     gulp.watch([
-        'build/js/diva.min.js',
+        'js/**/*.js',
         'build/css/diva.css'
     ]).on('change', $.livereload.changed);
 
