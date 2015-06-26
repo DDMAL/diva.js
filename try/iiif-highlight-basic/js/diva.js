@@ -2375,7 +2375,7 @@ window.divaPlugins = [];
             var heightAtCurrentZoomLevel;
 
             // for each page image:
-            for (i = 0, numImages = images.length; i < numImages; i++)
+            for (var i = 0, numImages = images.length; i < numImages; i++)
             {
                 currentPageZoomData = [];
 
@@ -2408,14 +2408,14 @@ window.divaPlugins = [];
                     f: images[i].fn,
                     url: images[i].url,
                     api: images[i].api
-                };
+                }
             }
 
             var averageWidths = [];
             var averageHeights = [];
 
             // for each zoom level, calculate average of heights/widths
-            for (i = 0; i < lowestMaxZoom + 1; i++)
+            for (var i = 0; i < lowestMaxZoom + 1; i++)
             {
                 averageWidths.push(totalWidths[i] / images.length);
                 averageHeights.push(totalHeights[i] / images.length);
