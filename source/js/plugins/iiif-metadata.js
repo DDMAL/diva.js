@@ -1,13 +1,14 @@
-/*
-IIIF Metadata plugin for diva.js
-Displays object metadata from a IIIF manifest
-*/
 
+// IIIF Metadata plugin for diva.js
+// Displays object metadata from a IIIF manifest
 (function ($)
 {
     window.divaPlugins.push((function()
     {
-        var settings = {};
+        var settings = {
+            metadataModal: ''
+        };
+
         var retval =
         {
             init: function(divaSettings, divaInstance)
@@ -69,7 +70,8 @@ Displays object metadata from a IIIF manifest
                         return elements;
                     };
 
-                    var metadataElement = '<div id="#metadata">';
+                    var metadataElement = '<div id="' + divaSettings.ID + 'metadata" class="diva-modal">';
+                    metadataElement += showMetadataFromLabelNames(['label']);
 
                     if (manifest.hasOwnProperty('metadata'))
                     {
@@ -90,7 +92,6 @@ Displays object metadata from a IIIF manifest
                     }
 
                     metadataElement += showMetadataFromLabelNames([
-                        'label',
                         'description',
                         'within',
                         'see_also',
@@ -102,15 +103,19 @@ Displays object metadata from a IIIF manifest
                     metadataElement += '</div>';
 
                     divaSettings.parentObject.prepend(metadataElement);
+                    $(divaSettings.selector + 'metadata').hide();
                 };
 
                 //subscribe to ManifestDidLoad event, get the manifest
                 diva.Events.subscribe('ManifestDidLoad', _displayMetadata);
 
-                //TODO on click, show metadata modal
-                //divaSettings.innerObject.on('click', '.' + divaSettings.ID + 'highlight', function(e)
-                //{
-                //});
+                divaSettings.parentObject.prepend('<div style="text-align: center; clear: both"><a href="#" id="' + divaSettings.ID + 'metadata-link" class="diva-metadata-link">Details</a></div>');
+                // $(divaSettings.selector + 'title').append('<div><a href="#" id="' + divaSettings.ID + 'metadata-link" class="diva-metadata-link">Details</a></div>');
+
+                $(divaSettings.selector + 'metadata-link').on('click', function(e)
+                {
+                    $(divaSettings.selector + 'metadata').fadeToggle('fast');
+                });
 
                 return true;
             },
