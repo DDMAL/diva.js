@@ -30,12 +30,14 @@ class ParseMEIAnnotations(object):
         page_data = []
 
         for i, neume in enumerate(neumes):
-            # in our data files, neumes and zones correspond 1-1 (in order)
+            # in our data files, neumes and zones correspond 1-1 (in order), which speeds things up
             zone = zones[i]
 
             if neume.attrib['facs'] != zone.attrib['{http://www.w3.org/XML/1998/namespace}id']:
                 print 'neume/zone mismatch: facs ' + neume.attrib['facs'] + ' != zone id ' + zone.attrib['id']
-                exit(1)
+                for j, z in zones:
+                    if z.attrib['{http://www.w3.org/XML/1998/namespace}id'] == neume.attrib['facs']:
+                        zone = z
 
             anno_id = i + 1
 
