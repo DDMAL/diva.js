@@ -233,7 +233,7 @@ Allows you to highlight regions of a page image
 
                 /*
                     Jumps to a highlight somewhere in the document.
-                    @param divID The ID of the div to jump to. This ID must be attached to the div using .highlightOnPage(s) as the highlight may not be appended to the DOM.
+                    @param divID The ID of the div to jump to. This ID must be attached to the div using .highlightOnPage(s) as the highlight may not be currently appended to the DOM.
                 */
                 divaInstance.gotoHighlight = function(divID)
                 {
@@ -294,6 +294,7 @@ Allows you to highlight regions of a page image
                     var desiredX = divaInstance.translateFromMaxZoomLevel(centerXOfDiv);
                     
                     //navigates to the page
+                    page = parseInt(page);
                     divaInstance.gotoPageByIndex(page);
                     var outerObject = divaInstance.getSettings().outerObject;
                     var currentTop = outerObject.scrollTop() + desiredY - (outerObject.height() / 2) + divaSettings.verticalPadding;
@@ -305,6 +306,8 @@ Allows you to highlight regions of a page image
 
                     currentHighlight = thisDiv.divID;
                     currentHighlightPage = page;
+
+                    diva.Events.publish("SelectedHighlightChanged", [currentHighlight, currentHighlightPage]);
 
                     //selects the highlight
                     updateCurrentHighlight();
@@ -328,7 +331,9 @@ Allows you to highlight regions of a page image
                     var centerOfCurrentDiv;
                     var currentPage;
                     var regionArr, arrIndex;
-
+                    var pageDims;
+                    var centerOfDiv, targetDiv;
+                    
                     var thisDiv;
                     var compFunction;
 
@@ -355,13 +360,11 @@ Allows you to highlight regions of a page image
 
                         //reinitialize the index in case regionArr is out of order
                         arrIndex = regionArr.length;
-                        var pageDims = divaInstance.getPageDimensionsAtZoomLevel(currentPage, divaInstance.getZoomLevel());
+                        pageDims = divaInstance.getPageDimensionsAtZoomLevel(currentPage, divaInstance.getZoomLevel());
                         
                         //initialize the center of the div to the maximum possible value
                         if(forward) centerOfTargetDiv = (divaSettings.verticallyOriented) ? pageDims.height : pageDims.width;
                         else centerOfTargetDiv = 0;
-
-                        var targetDiv, centerOfDiv;
 
                         if(forward)
                         {

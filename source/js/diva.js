@@ -2536,7 +2536,7 @@ window.divaPlugins = [];
         // returns True if the page number passed is valid; false if it is not.
         this.gotoPageByNumber = function (pageNumber, xAnchor, yAnchor)
         {
-            var pageIndex = pageNumber - 1;
+            var pageIndex = parseInt(pageNumber) - 1;
             if (isPageValid(pageIndex))
             {
                 gotoPage(pageIndex, getYOffset(pageIndex, yAnchor), getXOffset(pageIndex, xAnchor));
@@ -2551,6 +2551,7 @@ window.divaPlugins = [];
         // returns True if the page index is valid; false if it is not.
         this.gotoPageByIndex = function (pageIndex, xAnchor, yAnchor)
         {
+            pageIndex = parseInt(pageIndex);
             if (isPageValid(pageIndex))
             {
                 gotoPage(pageIndex, getYOffset(pageIndex, yAnchor), getXOffset(pageIndex, xAnchor));
