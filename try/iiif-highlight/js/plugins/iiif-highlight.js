@@ -334,7 +334,7 @@ Allows you to highlight regions of a page image based off of annotations in a II
                         //loop over the set of responses (annotation lists, 1 per canvas)
                         for (i = 0; i < arguments.length; i++)
                         {
-                            response = arguments[i];
+                            response = arguments;
                             annotationsList = response[0];
                             numAnnotations = annotationsList.length;
 
