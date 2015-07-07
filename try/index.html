@@ -16,11 +16,11 @@ layout: default
         </div>
         <div class="col-md-4 col-sm-12">
             <div class="thumbnail">
-                <a href="{{ site.baseurl }}try/iiif-highlight/"><img src="{{ site.baseurl }}img/highlightthumb.jpg" alt="Try Diva.js's Highlighting" /></a>
+                <a href="{{ site.baseurl }}try/highlight.html"><img src="{{ site.baseurl }}img/highlightthumb.jpg" alt="Try Diva.js's Highlighting" /></a>
                 <div class="caption">
-                    <h4>IIIF Integration</h4>
-                    <p>This is a simple demonstration of a feature currently in beta: <a href="http://iiif.io">IIIF API</a> Integration. Images are loaded via the IIIF Image API from the <a href="http://e-codices.unifr.ch">Virtual Manuscript Library of Switzerland</a>. A IIIF manifest located on our own servers contains an annotation list in which is embedded our own optical music recognition data. Metadata about the document (embedded in the manifest) is also displayed.</p>
-                    <p><a href="{{ site.baseurl }}try/iiif-highlight/" class="btn btn-primary" role="button">Launch IIIF Integration</a></p>
+                    <h4>Highlight</h4>
+                    <p>This is a demonstration of Diva.js's highlighting feature. An example use case is highlighting relevant regions on a page in response to search queries, as seen on the Cantus demo. See the <a href="https://github.com/DDMAL/diva.js/wiki/The-API-and-Plugins#using-the-highlight-plugin">documentation on using the highlight plugin.</a></p>
+                    <p><a href="{{ site.baseurl }}try/highlight.html" class="btn btn-primary" role="button">Launch Highlight</a></p>
                 </div>
             </div>
         </div>
@@ -31,6 +31,30 @@ layout: default
                     <h4>Cantus Ultimus</h4>
                     <p>The Cantus Ultimus project consists of Diva.js integrated into a larger web application. The application uses Diva to allow the user to easily navigate and search several manuscripts. When the user searches, the results are highlighted using Diva.js's built-in highlight plugin. The app also displays relevant metadata to the right of the viewer by hooking into Diva.js's <a href="https://github.com/DDMAL/diva.js/wiki/Events-System">Events system</a> in order to dynamically update results based on the viewer's current location.</p>
                     <p><a href="http://cantus.simssa.ca/manuscript/134" class="btn btn-primary" role="button">Launch Cantus</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <h3>Feature Previews</h3>
+    <hr class="underline">
+    <div class="row">
+        <div class="col-md-4 col-sm-12">
+            <div class="thumbnail">
+                <a href="{{ site.baseurl }}try/iiif-support/"><img src="{{ site.baseurl }}img/iiif-support-thumb.jpg" alt="Try Diva.js IIIF Integration" /></a>
+                <div class="caption">
+                    <h4>IIIF Integration</h4>
+                    <p>This is a simple demonstration of a feature currently in beta: <a href="http://iiif.io">IIIF API</a> support. Use the dropdown menu to display image collections from multiple image repositories.</p>
+                    <p><a href="{{ site.baseurl }}try/iiif-support/" class="btn btn-primary" role="button">Launch IIIF Integration</a></p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 col-sm-12">
+            <div class="thumbnail">
+                <a href="{{ site.baseurl }}try/iiif-highlight/"><img src="{{ site.baseurl }}img/iiif-annotation-thumb.jpg" alt="Try Diva.js's IIIF Annotation Support" /></a>
+                <div class="caption">
+                    <h4>IIIF Annotations</h4>
+                    <p>Images are loaded via the IIIF Image API from the <a href="http://e-codices.unifr.ch">Virtual Manuscript Library of Switzerland</a>. A IIIF manifest located on our own servers contains an annotation list in which is embedded our own optical music recognition data. Metadata about the document (embedded in the manifest) is also displayed.</p>
+                    <p><a href="{{ site.baseurl }}try/iiif-highlight/" class="btn btn-primary" role="button">Launch IIIF Annotations</a></p>
                 </div>
             </div>
         </div>

@@ -307,6 +307,9 @@ footer p {
 .diva-input {
     width: 38px;
 }
+hr.underline {
+    margin-top: 0;
+}
 
 /* styles for diva on small mobile devices */
 @media screen and (max-width: 480px) {
