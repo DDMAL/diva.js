@@ -91,8 +91,11 @@ Allows you to highlight regions of a page image based off of annotations in a II
                             pageObj.appendChild(box);
                         }
                     }
+
                     diva.Events.publish("HighlightCompleted", [pageIdx, filename, pageSelector]);
                 }
+
+                settings.highlightedPages = [];
 
                 // subscribe the highlight method to the page change notification
                 diva.Events.subscribe("PageWillLoad", _highlight);
@@ -283,116 +286,88 @@ Allows you to highlight regions of a page image based off of annotations in a II
                     return true;
                 };
 
-                var parseHighlights = function(manifest)
+                var showAnnotations = function(canvasIndex)
                 {
-                    //loop through the manifest and find annotations
-                    var canvases = manifest.sequences[0].canvases;
-                    var annotatedCanvases = {};
-                    var annotationsList = [];
-
-                    var deferreds = [];
-                    var requestIndex = 0;
-
-                    var response;
-                    var annotation;
-
-                    var numAnnotations;
-                    var currentCanvasIndex;
-
-                    var regions = [];
-
-                    for (var i = 0, numCanvases = canvases.length; i < numCanvases; i++)
+                    return function(data, status, jqXHR)
                     {
-                        if (canvases[i].hasOwnProperty('otherContent'))
-                        {
-                            var otherContent = canvases[i].otherContent;
+                        var canvasAnnotations = data;
+                        var numAnnotations = data.length;
 
-                            for (var j = 0; j < otherContent.length; j++)
+                        //convert annotations in annotations object to diva highlight objects
+                        var regions = [];
+
+                        //loop over annotations in a single canvas
+                        for (var k = 0; k < numAnnotations; k++)
+                        {
+                            var currentAnnotation = canvasAnnotations[k];
+                            // get text content
+                            var text = currentAnnotation.resource.chars;
+
+                            // get x,y,w,h (slice string from '#xywh=' to end)
+                            var onString = currentAnnotation.on;
+                            var coordString = onString.slice(onString.indexOf('#xywh=') + 6);
+                            var coordinates = coordString.split(',');
+
+                            var region = {
+                                ulx: parseInt(coordinates[0], 10),
+                                uly: parseInt(coordinates[1], 10),
+                                width: parseInt(coordinates[2], 10),
+                                height: parseInt(coordinates[3], 10),
+                                name: text
+                            };
+
+                            regions.push(region);
+                        }
+
+                        divaInstance.highlightOnPage(canvasIndex, regions);
+                        //flag this page's annotations as having been retrieved
+                        settings.highlightedPages.push(canvasIndex);
+                    };
+                };
+
+                var getAnnotationsList = function(pageIndex)
+                {
+                    //if page has annotationList
+                    var canvases = settings.manifest.sequences[0].canvases;
+
+                    if (canvases[pageIndex].hasOwnProperty('otherContent'))
+                    {
+                        var otherContent = canvases[pageIndex].otherContent;
+
+                        for (var j = 0; j < otherContent.length; j++)
+                        {
+                            if (otherContent[j]['@type'] === 'sc:AnnotationList')
                             {
-                                if (otherContent[j]['@type'] === 'sc:AnnotationList')
-                                {
-                                    // canvas has annotations. queue a request to get the annotations:
-                                    deferreds.push(
-                                        $.ajax({
-                                            url: otherContent[j]['@id'],
-                                            cache: true,
-                                            dataType: 'json'
-                                        })
-                                    );
-                                    // save the index of the canvas that this annotation appears on
-                                    deferreds[requestIndex].canvasIndex = i;
-                                    requestIndex++;
-                                }
+                                // canvas has annotations. get the annotations:
+                                $.ajax({
+                                    url: otherContent[j]['@id'],
+                                    cache: true,
+                                    dataType: 'json',
+                                    success: showAnnotations(pageIndex)
+                                });
                             }
                         }
                     }
-
-                    //execute a callback when all queued requests are complete
-                    $.when.apply($, deferreds).then(function()
-                    {
-                        //append the contents of the responses to an annotations object
-                        //loop over the set of responses (annotation lists, 1 per canvas)
-                        for (i = 0; i < arguments.length; i++)
-                        {
-                            response = arguments[i];
-                            annotationsList = response[0];
-                            numAnnotations = annotationsList.length;
-
-                            currentCanvasIndex = response[2].canvasIndex;
-
-                            annotatedCanvases[currentCanvasIndex] = [];
-
-                            //loop over the annotations in the response
-                            for (var j = 0; j < numAnnotations; j++)
-                            {
-                                annotatedCanvases[currentCanvasIndex].push(annotationsList[j]);
-                            }
-                        }
-
-                        //convert annotations in annotations object to diva highlight objects
-                        //loop over canvases
-                        for (var canvasIndex in annotatedCanvases)
-                        {
-                            if (annotatedCanvases.hasOwnProperty(canvasIndex))
-                            {
-                                regions = [];
-                                currentCanvasIndex = parseInt(canvasIndex, 10);
-                                var canvasAnnotations = annotatedCanvases[currentCanvasIndex];
-                                numAnnotations = canvasAnnotations.length;
-
-                                //loop over annotations in a single canvas
-                                for (var k = 0; k < numAnnotations; k++)
-                                {
-                                    var currentAnnotation = canvasAnnotations[k];
-                                    // get text content
-                                    var text = currentAnnotation.resource.chars;
-
-                                    // get x,y,w,h (slice string from '#xywh=' to end)
-                                    var onString = currentAnnotation.on;
-                                    var coordString = onString.slice(onString.indexOf('#xywh=') + 6);
-                                    var coordinates = coordString.split(',');
-
-                                    var region = {
-                                        ulx: parseInt(coordinates[0], 10),
-                                        uly: parseInt(coordinates[1], 10),
-                                        width: parseInt(coordinates[2], 10),
-                                        height: parseInt(coordinates[3], 10),
-                                        name: text
-                                    };
-
-                                    regions.push(region);
-                                }
-
-                                divaInstance.highlightOnPage(currentCanvasIndex, regions);
-                            }
-                        }
-                    }).fail(function(){
-                        console.log('ajax error');
-                    });
                 };
 
-                //subscribe to ManifestDidLoad event, get the manifest
-                diva.Events.subscribe('ManifestDidLoad', parseHighlights);
+                var setManifest = function(manifest)
+                {
+                    settings.manifest = manifest;
+                };
+
+                diva.Events.subscribe('ManifestDidLoad', setManifest);
+
+                diva.Events.subscribe('PageWillLoad', function(pageIndex)
+                {
+                    //if highlights for this page have already been checked/loaded, return
+                    for (var i = 0; i < settings.highlightedPages.length; i++)
+                    {
+                        if (settings.highlightedPages[i] === pageIndex)
+                            return;
+                    }
+
+                    getAnnotationsList(pageIndex, settings.manifest);
+                });
 
                 var activeOverlays = [];
 
