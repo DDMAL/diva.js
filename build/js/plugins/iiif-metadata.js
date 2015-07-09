@@ -1,8 +1,6 @@
 
 // IIIF Metadata plugin for diva.js
 // Displays object metadata from a IIIF manifest
-
-
 (function ($)
 {
     window.divaPlugins.push((function()
@@ -105,8 +103,6 @@
                     metadataElement += '</div>';
 
                     divaSettings.parentObject.prepend(metadataElement);
-                    //settings.metadataModal = $(divaSettings.selector + 'metadata');
-                    //settings.metadataModal.hide();0
                     $(divaSettings.selector + 'metadata').hide();
                 };
 
