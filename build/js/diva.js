@@ -2284,6 +2284,9 @@ window.divaPlugins = [];
                 }
             };
 
+            // trigger ManifestDidLoad event
+            diva.Events.publish('ManifestDidLoad', [manifest], this);
+
             //@TODO choose a sequence intelligently
             var canvases = manifest.sequences[0].canvases;
 
@@ -2466,7 +2469,7 @@ window.divaPlugins = [];
             }
 
             requestError += '</div>';
-            outerObject.append(requestError);
+            settings.outerObject.append(requestError);
         };
 
         var parseObjectData = function(responseData)

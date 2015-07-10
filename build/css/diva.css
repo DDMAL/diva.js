@@ -331,6 +331,20 @@
   z-index: 120;
   padding: 0 1em;
 }
+.diva-modal {
+  position: absolute;
+  width: 32em;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  -webkit-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
+  -moz-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
+  box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 120;
+  padding: 2em 2.2em;
+}
 /* Begin canvas plugin */
 .diva-canvas-icon {
   background: url('../img/plugins/canvas.png') no-repeat;
@@ -579,5 +593,21 @@
 .diva-autoscroll-pps {
   width: 9em;
 }
+/* Begin iiif-highlight plugin */
+.annotation-overlay {
+  padding: 1px;
+}
+/* End iiif-highlight plugin */
+/* Begin iiif-metadata plugin */
+.metadata-label {
+  font-weight: bold;
+}
+.diva-metadata-link {
+  font-size: 1em;
+  line-height: 1.8em;
+  position: relative;
+  top: -0.7em;
+}
+/* End iiif-metadata plugin */
 
 /*# sourceMappingURL=diva.css.map */
