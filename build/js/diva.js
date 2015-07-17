@@ -210,7 +210,7 @@ window.divaPlugins = [];
         // Checks if a page or tile is within the viewport horizontally
         var isHorizontallyInViewport = function (left, right)
         {
-            var leftOfViewport = $("#" + settings.ID + "outer").scrollLeft() - settings.viewportMargin;
+            var leftOfViewport = settings.outerObject.scrollLeft() - settings.viewportMargin;
             var rightOfViewport = leftOfViewport + settings.panelWidth + settings.viewportMargin * 2;
 
             var leftVisible = left >= leftOfViewport && left <= rightOfViewport;
@@ -223,7 +223,8 @@ window.divaPlugins = [];
         // Checks if a page or tile is within the viewport vertically
         var isVerticallyInViewport = function (top, bottom)
         {
-            var topOfViewport = $("#" + settings.ID + "outer" ).scrollTop() - settings.viewportMargin;
+            //topOfViewport may need to have settings.innerObject.offset().top subtracted from it?
+            var topOfViewport = settings.outerObject.scrollTop() - settings.viewportMargin;
             var bottomOfViewport = topOfViewport + settings.panelHeight + settings.viewportMargin * 2;
 
             var topVisible = top >= topOfViewport && top <= bottomOfViewport;
@@ -345,8 +346,8 @@ window.divaPlugins = [];
             {
                 var pageElement = document.getElementById(settings.ID + 'page-' + pageIndex);
 
-                // If the page is no longer in the viewport, don't load any tiles
-                if (!isPageLoaded(pageIndex))
+                // If the page is no longer in the viewport or loaded, don't load any tiles
+                if (pageElement === null || !isPageVisible(pageIndex))
                     return;
 
                 var imdir = settings.imageDir + "/";
@@ -873,7 +874,7 @@ window.divaPlugins = [];
         {
             var loadFunction = function (rowIndex, pageIndex, imageURL, pageWidth, pageHeight)
             {
-                if (isRowLoaded(rowIndex))
+                if (isPageLoaded(pageIndex))
                 {
                     var imgEl = document.createElement('img');
                     imgEl.src = imageURL;
@@ -882,7 +883,6 @@ window.divaPlugins = [];
                     document.getElementById(settings.ID + 'page-' + pageIndex).appendChild(imgEl);
                 }
             };
-
             settings.pageTimeouts.push(
                 window.setTimeout(loadFunction, settings.rowLoadTimeout, rowIndex, pageIndex, imageURL, pageWidth, pageHeight));
         };
@@ -2149,7 +2149,7 @@ window.divaPlugins = [];
             {
                 updateCurrentPage: function ()
                 {
-                    document.getElementById(settings.ID + 'current-page').textContent = settings.currentPageIndex + 1;
+                    document.getElementById(settings.ID + 'current-page').textContent = parseInt(settings.currentPageIndex, 10) + 1;
                 },
                 setNumPages: function (newNumber)
                 {
@@ -2765,7 +2765,7 @@ window.divaPlugins = [];
         // returns True if the page number passed is valid; false if it is not.
         this.gotoPageByNumber = function (pageNumber, xAnchor, yAnchor)
         {
-            var pageIndex = pageNumber - 1;
+            var pageIndex = parseInt(pageNumber, 10) - 1;
             if (isPageValid(pageIndex))
             {
                 gotoPage(pageIndex, getYOffset(pageIndex, yAnchor), getXOffset(pageIndex, xAnchor));
@@ -2780,6 +2780,7 @@ window.divaPlugins = [];
         // returns True if the page index is valid; false if it is not.
         this.gotoPageByIndex = function (pageIndex, xAnchor, yAnchor)
         {
+            pageIndex = parseInt(pageIndex, 10);
             if (isPageValid(pageIndex))
             {
                 gotoPage(pageIndex, getYOffset(pageIndex, yAnchor), getXOffset(pageIndex, xAnchor));
@@ -2812,7 +2813,7 @@ window.divaPlugins = [];
             if (zoomLevel > settings.maxZoomLevel)
                 zoomLevel = settings.maxZoomLevel;
 
-            var pg = settings.pages[pageIdx];
+            var pg = settings.pages[parseInt(pageIdx, 10)];
             var pgAtZoom = pg.d[parseInt(zoomLevel, 10)];
             return {'width': pgAtZoom.w, 'height': pgAtZoom.h};
         };
@@ -2925,7 +2926,7 @@ window.divaPlugins = [];
 
         //Public wrapper for isPageLoaded
         //Determines if a page is currently in the DOM
-        this.isPageInDOM = function (pageIndex)
+        this.isPageLoaded = function (pageIndex)
         {
             return isPageLoaded(pageIndex);
         };
