@@ -87,13 +87,9 @@ class GenerateJson(object):
             for j in xrange(lowest_max_zoom + 1):
                 h = self.__incorporate_zoom(im['mx_h'], lowest_max_zoom - j)
                 w = self.__incorporate_zoom(im['mx_w'], lowest_max_zoom - j)
-                c = int(math.ceil(w / 256.))
-                r = int(math.ceil(h / 256.))
                 page_data.append({
-                    'c': c,
-                    'r': r,
-                    'h': h,
-                    'w': w
+                    'h': math.floor(h),
+                    'w': math.floor(w)
                 })
 
                 t_wid[j] = t_wid[j] + w

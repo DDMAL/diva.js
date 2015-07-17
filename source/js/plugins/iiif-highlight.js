@@ -1,6 +1,6 @@
 /*
-Highlight plugin for diva.js
-Allows you to highlight regions of a page image
+IIIF Highlight plugin for diva.js
+Allows you to highlight regions of a page image based off of annotations in a IIIF Manifest
 */
 
 (function ($)
@@ -78,6 +78,11 @@ Allows you to highlight regions of a page image
                             box.style.zIndex = 100;
                             box.className = divClass;
 
+                            if (typeof regions[j].name !== 'undefined')
+                            {
+                                box.setAttribute('data-name', regions[j].name);
+                            }
+
                             if (typeof regions[j].divID !== 'undefined')
                             {
                                 box.id = regions[j].divID;
@@ -86,8 +91,11 @@ Allows you to highlight regions of a page image
                             pageObj.appendChild(box);
                         }
                     }
+
                     diva.Events.publish("HighlightCompleted", [pageIdx, filename, pageSelector]);
                 }
+
+                settings.highlightedPages = [];
 
                 // subscribe the highlight method to the page change notification
                 diva.Events.subscribe("PageWillLoad", _highlight);
@@ -166,7 +174,7 @@ Allows you to highlight regions of a page image
                 {
                     if (typeof colour === 'undefined')
                     {
-                        colour = 'rgba(255, 0, 0, 0.2)';
+                        colour = 'rgba(255, 0, 0, 0.1)';
                     }
 
                     if (typeof divClass === 'undefined')
@@ -278,13 +286,127 @@ Allows you to highlight regions of a page image
                     return true;
                 };
 
+                var showAnnotations = function(canvasIndex)
+                {
+                    return function(data, status, jqXHR)
+                    {
+                        var canvasAnnotations = data;
+                        var numAnnotations = data.length;
+
+                        //convert annotations in annotations object to diva highlight objects
+                        var regions = [];
+
+                        //loop over annotations in a single canvas
+                        for (var k = 0; k < numAnnotations; k++)
+                        {
+                            var currentAnnotation = canvasAnnotations[k];
+                            // get text content
+                            var text = currentAnnotation.resource.chars;
+
+                            // get x,y,w,h (slice string from '#xywh=' to end)
+                            var onString = currentAnnotation.on;
+                            var coordString = onString.slice(onString.indexOf('#xywh=') + 6);
+                            var coordinates = coordString.split(',');
+
+                            var region = {
+                                ulx: parseInt(coordinates[0], 10),
+                                uly: parseInt(coordinates[1], 10),
+                                width: parseInt(coordinates[2], 10),
+                                height: parseInt(coordinates[3], 10),
+                                name: text
+                            };
+
+                            regions.push(region);
+                        }
+
+                        divaInstance.highlightOnPage(canvasIndex, regions);
+                        //flag this page's annotations as having been retrieved
+                        settings.highlightedPages.push(canvasIndex);
+                    };
+                };
+
+                var getAnnotationsList = function(pageIndex)
+                {
+                    //if page has annotationList
+                    var canvases = settings.manifest.sequences[0].canvases;
+
+                    if (canvases[pageIndex].hasOwnProperty('otherContent'))
+                    {
+                        var otherContent = canvases[pageIndex].otherContent;
+
+                        for (var j = 0; j < otherContent.length; j++)
+                        {
+                            if (otherContent[j]['@type'] === 'sc:AnnotationList')
+                            {
+                                // canvas has annotations. get the annotations:
+                                $.ajax({
+                                    url: otherContent[j]['@id'],
+                                    cache: true,
+                                    dataType: 'json',
+                                    success: showAnnotations(pageIndex)
+                                });
+                            }
+                        }
+                    }
+                };
+
+                var setManifest = function(manifest)
+                {
+                    settings.manifest = manifest;
+                };
+
+                diva.Events.subscribe('ManifestDidLoad', setManifest);
+
+                diva.Events.subscribe('PageWillLoad', function(pageIndex)
+                {
+                    //if highlights for this page have already been checked/loaded, return
+                    for (var i = 0; i < settings.highlightedPages.length; i++)
+                    {
+                        if (settings.highlightedPages[i] === pageIndex)
+                            return;
+                    }
+
+                    getAnnotationsList(pageIndex, settings.manifest);
+                });
+
+                var activeOverlays = [];
+
+                //on mouseover, show the annotation text
+                divaSettings.innerObject.on('mouseenter', '.' + divaSettings.ID + 'highlight', function(e)
+                {
+                    var annotationElement = e.target;
+                    var name = annotationElement.dataset.name;
+                    var textOverlay = document.createElement('div');
+
+                    textOverlay.style.top = (annotationElement.offsetTop + annotationElement.offsetHeight - 1) + 'px';
+                    textOverlay.style.left = annotationElement.style.left;
+                    textOverlay.style.background = '#fff';
+                    textOverlay.style.border = '1px solid #555';
+                    textOverlay.style.position = 'absolute';
+                    textOverlay.style.zIndex = 101;
+                    textOverlay.className = 'annotation-overlay';
+                    textOverlay.textContent = name;
+
+                    annotationElement.parentNode.appendChild(textOverlay);
+                    activeOverlays.push(textOverlay);
+                });
+
+                divaSettings.innerObject.on('mouseleave', '.' + divaSettings.ID + 'highlight', function(e)
+                {
+                    while (activeOverlays.length)
+                    {
+                        var textOverlay = activeOverlays.pop();
+                        textOverlay.parentNode.removeChild(textOverlay);
+                    }
+                });
+
                 return true;
             },
             destroy: function (divaSettings, divaInstance)
             {
                 divaSettings.parentObject.removeData('highlights');
             },
-            pluginName: 'highlight',
+            pluginName: 'IIIFHighlight',
             titleText: 'Highlight regions of pages'
         };
         return retval;

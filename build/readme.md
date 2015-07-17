@@ -3,7 +3,7 @@
     <img width="382" height="191" src="https://github.com/DDMAL/diva.js/wiki/img/diva-logo-sm.png" />
   </a>
 </p>
-Diva.js [![Build Status](https://travis-ci.org/DDMAL/diva.js.svg?branch=develop)](http://travis-ci.org/DDMAL/diva.js)
+Diva.js [![Build Status](https://travis-ci.org/DDMAL/diva.js.svg?branch=develop)](http://travis-ci.org/DDMAL/diva.js) [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/DDMAL/diva.js?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 =========================================
 
 Diva.js (Document Image Viewer with AJAX) is a JavaScript book image viewer designed to present multi-page documents at multiple resolutions.
@@ -34,7 +34,7 @@ The IIP Image Server is required by Diva to serve image data. IIP creates the im
 
 Diva relies on a JavaScript Object Notation (JSON) file that contains data about your document. This JSON file is automatically generated when you use the image conversion scripts that we distribute with Diva. These files can be served using a regular web server. _(If you used previous versions of Diva, we had a dedicated `divaserve` script to do this. This dependency has been removed in version 3.0)_.
 
-Download the [latest release](https://github.com/DDMAL/diva.js/releases) of Diva. In the `build` directory you can find a pre-compiled version of Diva. The `css`, `js` and `img` directories contain the files necessary to use Diva. You will also find a number of demos and some helper scripts for processing your image files.
+Download the [latest release](https://github.com/DDMAL/diva.js/releases) of Diva. In the `diva.js` directory (or `build` if you have the source code) you can find a pre-compiled version of Diva. The `css`, `js` and `img` directories contain the files necessary to use Diva. You will also find a number of demos and some helper scripts for processing your image files.
 
 There are two image formats supported by IIP: Pyramid TIFF and, with the inclusion of the Kakadu libraries, JPEG2000. These formats support multiple file resolutions and image tiling. 
 
@@ -51,10 +51,11 @@ $('#diva-wrapper').diva({
 });
 ```
 
- * `#diva-wrapper`: A selector pointing to a `div` element where you want the scrollable page images to appear;
  * `iipServerURL`: The URL to your IIP installation. In most cases this should point to the iipsrv.fcgi file;
  * `objectData`: The URL (absolute or relative) to the document's `.json` file
  * `imageDir`: Either the absolute path to your images on your server, OR the path relative to your IIP installation's [`FILESYSTEM_PREFIX`](http://iipimage.sourceforge.net/documentation/server/) configuration option.
+
+The `#diva-wrapper` selector points to a `div` element where you want the scrollable page images to appear.
 
 Since IIP will be serving the images you should not place your images in directory accessible by your web server. In other words, if your web server uses `/srv/www` as its root directory you do not need to place your images there -- they can reside in any directory on your server as long as it they can be read by the IIP instance.
 
@@ -73,10 +74,10 @@ To fix this you must ensure that the Diva HTML page, and the location pointed to
 
 ### Running the Demos
 
-Running the demos works best using a web server. The easiest is to use Python to start a small web server in the 'build' directory:
+Running the demos works best using a web server. The easiest is to use Python to start a small web server in the `diva.js` directory (or `build` if you have the source code):
 
 ```
-$> cd diva.js/build
+$> cd diva-v3.0.0/diva.js/ # (or cd diva.js/build)
 $> python -m SimpleHTTPServer
 Serving HTTP on 0.0.0.0 port 8000 ...
 ```

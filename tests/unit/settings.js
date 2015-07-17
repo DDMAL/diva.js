@@ -20,7 +20,7 @@ asyncTest("adaptivePadding disabled, fixedPadding set", function () {
         adaptivePadding: 0,
         fixedPadding: 11,
         onReady: function (settings) {
-            equal(settings.verticalPadding, 40, "Vertical padding should be 40 (the minimum)");
+            equal(settings.verticalPadding, 40, "Vertical padding should be 40 (the minimum with plugins enabled)");
             equal(settings.horizontalPadding, 11, "Horizontal padding should be 11 (fixedPadding)");
             start();
         }

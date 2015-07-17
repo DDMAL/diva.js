@@ -24,13 +24,9 @@
             <script type="text/javascript">
                 $(document).ready(function() {
                     $('#diva-wrapper').diva({
-                        enableAutoHeight: true,
                         fixedHeightGrid: false,
-                        iipServerURL: "http://diva.simssa.ca/fcgi-bin/iipsrv.fcgi",
-                        objectData: "/demo/beromunster.json",
-                        imageDir: "/srv/images/beromunster",
-                        enableCanvas: true,
-                        enableDownload: true
+                        iiifServerURL: "http://dev-diva.simssa.ca/iiif/srv/images/beromunster/",
+                        objectData: "/demo/beromunster-iiif.json"
                     });
                 });
             </script>

@@ -774,7 +774,9 @@ var activeDivaController = function ()
         //these will find 0 or 1 objects, never more
         var findOuter = target.find('.diva-outer');
         var closestOuter = target.closest('.diva-outer');
-        var curOuter, idx, outers;
+        var outers = document.getElementsByClassName('diva-outer');
+        var outerLen = outers.length;
+        var idx;
 
         //clicked on something that was not either a parent or sibling of a diva-outer
         if (findOuter.length > 0) 
@@ -789,9 +791,8 @@ var activeDivaController = function ()
         //clicked on something that was not in any Diva tree
         else 
         {
-            //deactivate everything and return
-            outers = document.getElementsByClassName('diva-outer');
-            for(idx = 0; idx < outers.length; idx++)
+            //deactivate everything and return            
+            for (idx = 0; idx < outerLen; idx++)
             {
                 $(outers[idx].parentElement).data('diva').deactivate();
             }
@@ -804,7 +805,7 @@ var activeDivaController = function ()
 
         //...and deactivate all the others
         outers = document.getElementsByClassName('diva-outer');
-        for(idx = 0; idx < outers.length; idx++)
+        for(idx = 0; idx < outerLen; idx++)
         {
             //getAttribute to attr - comparing DOM element to jQuery element
             if (outers[idx].getAttribute('id') != nearestOuter.attr('id'))

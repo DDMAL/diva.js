@@ -46,7 +46,9 @@
 .diva-title {
   text-align: center;
   font-weight: bold;
-  font-size: 2.0em;
+  font-size: 1.3em;
+  max-width: 50em;
+  margin: 0 auto;
 }
 .diva-tools {
   margin-top: 15px;
@@ -58,13 +60,11 @@
   display: none;
   padding: 8px;
   float: left;
-  clear: left;
 }
 .diva-tools .diva-tools-left .diva-zoom-buttons-label {
   display: none;
   padding: 8px;
   float: left;
-  clear: left;
 }
 .diva-tools .diva-tools-left .diva-zoom-out-button {
   display: none;
@@ -92,7 +92,6 @@
   display: none;
   padding: 8px;
   float: left;
-  clear: left;
 }
 .diva-tools .diva-tools-left.in-fullscreen {
   float: left;
@@ -140,7 +139,6 @@
   top: 0px;
   right: 30px;
   z-index: 101;
-  width: 230px;
   height: 73px;
   padding: 15px;
   border: 1px solid #dddddd;
@@ -250,19 +248,21 @@
   border-left: 0px;
   float: right;
 }
-.diva-link-popup {
-  font-size: 10pt;
+.diva-popup {
   background: #ffffff;
-  border: 1px solid #dddddd;
-  position: absolute;
+  border: 1px solid #99bbe8;
   padding: .6em;
   z-index: 101;
+  position: absolute;
   -webkit-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
   -moz-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
   box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
 }
+.diva-link-popup {
+  font-size: 10pt;
+}
 .diva-link-popup input {
-  width: 15em;
+  width: 18em;
 }
 .diva-link-popup input:focus {
   outline: none;
@@ -330,6 +330,20 @@
   margin-top: -120px;
   z-index: 120;
   padding: 0 1em;
+}
+.diva-modal {
+  position: absolute;
+  width: 32em;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  -webkit-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
+  -moz-box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
+  box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.5);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 120;
+  padding: 2em 2.2em;
 }
 /* Begin canvas plugin */
 .diva-canvas-icon {
@@ -559,3 +573,41 @@
   background-position: -25px center;
 }
 /* End download plugin */
+/* Begin autoscroll plugin */
+.diva-autoscroll-icon {
+  float: right;
+  border-right: none;
+  background-image: url("../img/plugins/play.png");
+}
+.diva-autoscroll-prefs {
+  display: none;
+  margin-right: .6em;
+}
+.diva-autoscroll-prefs-text {
+  float: left;
+}
+.diva-autoscroll-prefs-input {
+  float: right;
+  margin-left: .6em;
+}
+.diva-autoscroll-pps {
+  width: 9em;
+}
+/* Begin iiif-highlight plugin */
+.annotation-overlay {
+  padding: 1px;
+}
+/* End iiif-highlight plugin */
+/* Begin iiif-metadata plugin */
+.metadata-label {
+  font-weight: bold;
+}
+.diva-metadata-link {
+  font-size: 1em;
+  line-height: 1.8em;
+  position: relative;
+  top: -0.7em;
+}
+/* End iiif-metadata plugin */
+
+/*# sourceMappingURL=diva.css.map */
