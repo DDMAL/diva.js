@@ -203,7 +203,7 @@ asyncTest("gotoPageByName()", function () {
             function bottomLeftChecker(a)
             {
                 var pageSelector = "#" + this.getSettings().ID + "page-1";
-                equal($(pageSelector).offset().top, 1914, "Testing bottom anchor point on gotoPageByName.");
+                equal($(pageSelector).offset().top, 1888, "Testing bottom anchor point on gotoPageByName.");
                 equal($(pageSelector).offset().left, 20, "Testing left anchor point on gotoPageByName.");
 
                 diva.Events.unsubscribe(["ViewerDidScroll", bottomLeftChecker]);
@@ -212,7 +212,7 @@ asyncTest("gotoPageByName()", function () {
             function centerRightChecker(a)
             {
                 var pageSelector = "#" + this.getSettings().ID + "page-1";
-                equal($(pageSelector).offset().top, 2107, "Testing center anchor point on gotoPageByName.");
+                equal($(pageSelector).offset().top, 2081, "Testing center anchor point on gotoPageByName.");
                 equal($(pageSelector).offset().left, 307, "Testing right anchor point on gotoPageByName.");
 
                 diva.Events.unsubscribe(["ViewerDidScroll", centerRightChecker]);
@@ -301,7 +301,7 @@ asyncTest("setState()", function () {
             // patch to remove tests from Travis CI build due to off-by-one pixel error when run in Travis
             if (!window.isTravis)
             {
-                equal(settings.outerObject.scrollTop(), 8782, "Scroll from top should be default top for bm_005 after leaving fullscreen");
+                equal(settings.outerObject.scrollTop(), 8591, "Scroll from top should be default top for bm_005 after leaving fullscreen");
                 equal(settings.outerObject.scrollLeft(), 627, "Scroll from left should be 500 more");
             }
 
@@ -444,7 +444,7 @@ asyncTest("getPageIndexForPageXYValues()", function ()
             */
             if (!window.isTravis)
             {
-                equal(this.getPageIndexForPageXYValues(500, 2500), 93, "scrolled to a later page, click should register on a page");
+                equal(this.getPageIndexForPageXYValues(500, 5000), 93, "scrolled to a later page, click should register on a page");
                 equal(this.getPageIndexForPageXYValues(10, 10), false, "click should be outside diva-outer and thus return false");
             }
             else
