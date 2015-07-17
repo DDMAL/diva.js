@@ -294,7 +294,7 @@ Allows you to highlight regions of a page image
                     var desiredX = divaInstance.translateFromMaxZoomLevel(centerXOfDiv);
                     
                     //navigates to the page
-                    page = parseInt(page);
+                    page = parseInt(page, 10);
                     divaInstance.gotoPageByIndex(page);
                     var outerObject = divaInstance.getSettings().outerObject;
                     var currentTop = outerObject.scrollTop() + desiredY - (outerObject.height() / 2) + divaSettings.verticalPadding;
