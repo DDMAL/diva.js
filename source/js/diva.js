@@ -857,7 +857,7 @@ window.divaPlugins = [];
         {
             var loadFunction = function (rowIndex, pageIndex, imageURL, pageWidth, pageHeight)
             {
-                if (isRowVisible(rowIndex))
+                if (isPageLoaded(pageIndex))
                 {
                     var imgEl = document.createElement('img');
                     imgEl.src = imageURL;
@@ -866,7 +866,6 @@ window.divaPlugins = [];
                     document.getElementById(settings.ID + 'page-' + pageIndex).appendChild(imgEl);
                 }
             }; 
-
             settings.pageTimeouts.push(
                 window.setTimeout(loadFunction, settings.rowLoadTimeout, rowIndex, pageIndex, imageURL, pageWidth, pageHeight));
         };
