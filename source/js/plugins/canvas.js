@@ -393,13 +393,22 @@ Adds an adjustment icon next to each image
         var getImageURL = function (zoomLevel)
         {
             var width = settings.zoomWidthRatio * Math.pow(2, zoomLevel);
-
-            if (settings.proxyURL)
-                return settings.proxyURL + "?f=" + settings.filename + "&w=" + width;
-
             var imdir = settings.imageDir + "/";
+            var pageIndex = settings.selectedPageIndex;
 
-            return settings.iipServerURL + "?FIF=" + imdir + settings.filename + '&WID=' + width + '&CVT=JPEG';
+            var imageURL;
+
+            if (settings.isIIIF)
+            {
+                var quality = (settings.pages[pageIndex].api > 1.1) ? 'default' : 'native';
+                imageURL = encodeURI(settings.pages[pageIndex].url + 'full/' + width + ',/0/' + quality + '.jpg');
+            }
+            else
+            {
+                imageURL = settings.iipServerURL + "?FIF=" + imdir + settings.filename + '&WID=' + width + '&CVT=JPEG';
+            }
+
+            return imageURL;
         };
 
         var showThrobber = function ()
@@ -732,7 +741,7 @@ Adds an adjustment icon next to each image
                                 updateCanvas();
                                 hideThrobber();
 
-                                // Save modifications to localSetttings (also done in updateZoom callback)
+                                // Save modifications to localSettings (also done in updateZoom callback)
                                 saveSettings();
                             }
                         }, settings.throbberTimeout);
@@ -865,12 +874,17 @@ Adds an adjustment icon next to each image
                 // loadCanvas() calls all the other necessary functions to load
                 var page = $(this).parent().parent();
                 var filename = $(page).attr('data-filename');
+                var selectedPageIndex = $(page).attr('data-index');
                 var width = $(page).width() - 1;
                 var zoomLevel = divaSettings.zoomLevel;
                 var slider;
 
                 settings.zoomWidthRatio = width / Math.pow(2, zoomLevel);
                 settings.pluginIcon = $(this);
+
+                settings.pages = divaSettings.pages;
+                settings.isIIIF = divaSettings.isIIIF;
+                settings.selectedPageIndex = selectedPageIndex;
 
                 // Limit the max zoom level if we're on the iPad
                 if (settings.mobileWebkit) {
