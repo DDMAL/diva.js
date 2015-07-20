@@ -195,7 +195,7 @@ Allows you to highlight regions of a page image based off of annotations in a II
 
 
                     //Highlights are created on load; create them for all loaded pages now
-                    if (divaInstance.isPageInDOM(pageIdx))
+                    if (divaInstance.isPageLoaded(pageIdx))
                     {
                         _highlight(pageIdx, null, null);
                     }
