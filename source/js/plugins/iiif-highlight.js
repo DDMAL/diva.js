@@ -363,7 +363,9 @@ Allows you to highlight regions of a page image based off of annotations in a II
                     for (var i = 0; i < settings.highlightedPages.length; i++)
                     {
                         if (settings.highlightedPages[i] === pageIndex)
+                        {
                             return;
+                        }
                     }
 
                     getAnnotationsList(pageIndex, settings.manifest);
