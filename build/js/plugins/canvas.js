@@ -400,7 +400,6 @@ Adds an adjustment icon next to each image
 
             if (settings.isIIIF)
             {
-                //how to get values from divaSettings? cache into settings once pages array is initialized? on click?
                 var quality = (settings.pages[pageIndex].api > 1.1) ? 'default' : 'native';
                 imageURL = encodeURI(settings.pages[pageIndex].url + 'full/' + width + ',/0/' + quality + '.jpg');
             }
