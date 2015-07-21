@@ -178,9 +178,16 @@ Allows you to highlight regions of a page image based off of annotations in a II
                     {
                         pageIdx = parseInt(pages[i].getAttribute('data-index'), 10);
 
-                        if (divaInstance.isPageLoaded(pageIdx))
+                        var highlightsObj = divaSettings.parentObject.data('highlights');
+
+                        if (!highlightsObj.hasOwnProperty(pageIdx))
                         {
+                            //highlights object is empty, check if it has annotations
                             getAnnotationsList(pageIdx);
+                        }
+                        else
+                        {
+                            //draw the existing highlights
                             _highlight(pageIdx, null, null);
                         }
                     }
