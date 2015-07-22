@@ -118,6 +118,7 @@ gulp.task('develop', ['develop:build', 'develop:server'], function()
 
 gulp.task('release', ['develop:build'], function()
 {
+    var spawn = require('child_process').spawn;
     var fs = require('fs');
     var del = require('del');
     var archiver = require('archiver');
@@ -128,6 +129,15 @@ gulp.task('release', ['develop:build'], function()
                 .argv;
 
     var release_name = 'diva-v' + argv.v;
+
+    // Bump the package.json version
+    var npm = spawn('npm', ['version', '--no-git-tag-version', argv.v], {stdio: 'inherit'});
+
+    npm.on('close', function (code)
+    {
+        if (code !== 0)
+            console.error('npm exited with code ' + code);
+    });
 
     /// tar.gz creation
     var tgz_out = fs.createWriteStream(__dirname + '/' + release_name + '.tar.gz');
