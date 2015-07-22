@@ -37,7 +37,7 @@ Allows you to highlight regions of a page image based off of annotations in a II
                 {
                     var highlightObj = divaSettings.parentObject.data('highlights');
 
-                    if (typeof highlightObj === 'undefined')
+                    if (typeof highlightObj === 'undefined' || !settings.highlightsVisible)
                         return;
 
                     if (highlightObj.hasOwnProperty(pageIdx))
@@ -148,6 +148,51 @@ Allows you to highlight regions of a page image based off of annotations in a II
                     }
                 };
 
+                divaInstance.hideHighlights = function()
+                {
+                    settings.highlightsVisible = false;
+
+                    var highlightClass = divaSettings.ID + 'highlight';
+
+                    var inner = document.getElementById(divaSettings.ID + 'inner');
+                    var highlights = inner.getElementsByClassName(highlightClass);
+
+                    var j = highlights.length;
+
+                    while (j--) {
+                        var parentObj = highlights[j].parentNode;
+                        parentObj.removeChild(highlights[j]);
+                    }
+                };
+
+                divaInstance.showHighlights = function()
+                {
+                    settings.highlightsVisible = true;
+
+                    var inner = document.getElementById(divaSettings.ID + 'inner');
+                    var pages = inner.getElementsByClassName('diva-document-page');
+
+                    var pageIdx;
+
+                    for (var i = 0; i < pages.length; i++)
+                    {
+                        pageIdx = parseInt(pages[i].getAttribute('data-index'), 10);
+
+                        var highlightsObj = divaSettings.parentObject.data('highlights');
+
+                        if (!highlightsObj.hasOwnProperty(pageIdx))
+                        {
+                            //highlights object is empty, check if it has annotations
+                            getAnnotationsList(pageIdx);
+                        }
+                        else
+                        {
+                            //draw the existing highlights
+                            _highlight(pageIdx, null, null);
+                        }
+                    }
+                };
+
                 /*
                     Highlights regions on multiple pages.
                     @param pageIdxs An array of page index numbers
@@ -192,7 +237,6 @@ Allows you to highlight regions of a page image based off of annotations in a II
                     highlightsObj[pageIdx] = {
                         'regions': regions, 'colour': colour, 'divClass': divClass
                     };
-
 
                     //Highlights are created on load; create them for all loaded pages now
                     if (divaInstance.isPageLoaded(pageIdx))
@@ -359,6 +403,11 @@ Allows you to highlight regions of a page image based off of annotations in a II
 
                 diva.Events.subscribe('PageWillLoad', function(pageIndex)
                 {
+                    if (!settings.highlightsVisible)
+                    {
+                        return;
+                    }
+
                     //if highlights for this page have already been checked/loaded, return
                     for (var i = 0; i < settings.highlightedPages.length; i++)
                     {
@@ -401,6 +450,31 @@ Allows you to highlight regions of a page image based off of annotations in a II
                         textOverlay.parentNode.removeChild(textOverlay);
                     }
                 });
+
+                diva.Events.subscribe('ViewerDidLoad', function(){
+                    //button to toggle annotations
+                    $('#' + divaSettings.ID + 'page-nav').before('<div id="' + divaSettings.ID + 'annotations-icon" class="button diva-annotations-icon" title="Turn annotations on or off"></div>');
+
+                    $(divaSettings.selector + 'annotations-icon').addClass('annotations-icon-active');
+
+                    $('#' + divaSettings.ID + 'annotations-icon').on('click', function(e)
+                    {
+                        //toggle visibility of annotations
+                        if (settings.highlightsVisible)
+                        {
+                            divaInstance.hideHighlights();
+                            $(divaSettings.selector + 'annotations-icon').removeClass('annotations-icon-active');
+                        }
+                        else
+                        {
+                            divaInstance.showHighlights();
+                            $(divaSettings.selector + 'annotations-icon').addClass('annotations-icon-active');
+                        }
+                    });
+                });
+
+                //enable annotations by default
+                settings.highlightsVisible = true;
 
                 return true;
             },

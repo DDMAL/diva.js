@@ -597,6 +597,15 @@
 .annotation-overlay {
   padding: 1px;
 }
+.diva-annotations-icon {
+  float: right;
+  border-right: none;
+  background-image: url("../img/plugins/annotation.png");
+  background-position-x: 0;
+}
+.annotations-icon-active {
+  background-position-x: -32px;
+}
 /* End iiif-highlight plugin */
 /* Begin iiif-metadata plugin */
 .metadata-label {
