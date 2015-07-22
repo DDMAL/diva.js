@@ -1,6 +1,6 @@
 {
   "name": "diva.js",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "Diva.js (Document Image Viewer with AJAX) is a JavaScript book image viewer designed to present multi-page documents at multiple resolutions.",
   "main": "build/js/diva.min.js",
   "directories": {
