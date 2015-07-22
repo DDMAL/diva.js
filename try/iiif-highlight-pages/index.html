@@ -1,0 +1,56 @@
+<!doctype html>
+    <html lang="en">
+        <head>
+            <meta charset="utf-8" />
+            <title>Diva.js Demo Page</title>
+            <link rel="stylesheet" href="css/diva.min.css" />
+            <!--[if IE]>
+            <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+            <![endif]-->
+            <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js" type="text/javascript"></script>
+            <script src="js/diva.js" type="text/javascript"></script>
+            <script src="js/utils.js" type="text/javascript"></script>
+            <script src="js/plugins/iiif-highlight.js" type="text/javascript"></script>
+            <script src="js/plugins/iiif-metadata.js" type="text/javascript"></script>
+            <style>
+            body, html{
+                height:90%;
+                font-family: sans-serif;
+            }
+            #diva-wrapper{
+                height:100%;
+            }
+            .diva-outer{
+                height:100%;
+            }
+            #menu {
+                margin: 0 auto;
+                font-size: 1.5em;
+            }
+            .annotation-overlay {
+                font-size: 0.9em;
+            }
+            .metadata-row {
+                margin-bottom: 0.4em;
+            }
+            .diva-modal {
+                padding: 1em 1.3em 0.5em 1.3em;
+            }
+            </style>
+            <script type="text/javascript">
+                $(document).ready(function() {
+                    $('#diva-wrapper').diva({
+                        enableImageTitles: false,
+                        fixedHeightGrid: true,
+                        objectData: 'stgallen_390_annotated.json',
+                        enableIIIFHighlight: true,
+                        enableIIIFMetadata: true,
+                        goDirectlyTo: 14
+                    });
+                });
+            </script>
+        </head>
+        <body>
+            <div id="diva-wrapper"></div>
+        </body>
+    </html>
