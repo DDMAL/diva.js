@@ -322,7 +322,16 @@ window.divaPlugins = [];
                 if (settings.verticallyOriented)
                 {
                     pageElement.style.top = heightFromTop + 'px';
-                    pageElement.classList.add('diva-page-vertical');
+
+                    if (settings.inBookLayout)
+                    {
+                        pageElement.style.left = widthFromLeft + 'px';
+                        pageElement.classList.add('diva-page-book');
+                    }
+                    else
+                    {
+                        pageElement.classList.add('diva-page-vertical');
+                    }
                 }
                 else
                 {
