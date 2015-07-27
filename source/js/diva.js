@@ -51,6 +51,7 @@ window.divaPlugins = [];
             goDirectlyTo: 0,            // Default initial page to show (0-indexed)
             iipServerURL: '',           // The URL to the IIPImage installation, including the `?FIF=` - *REQUIRED*, unless using IIIF
             inFullscreen: false,        // Set to true to load fullscreen mode initially
+            inBookLayout: false,       // Set to true to view the document with facing pages in document mode
             inGrid: false,              // Set to true to load grid view initially
             imageDir: '',               // Image directory, either absolute path or relative to IIP's FILESYSTEM_PREFIX - *REQUIRED*, unless using IIIF
             maxPagesPerRow: 8,          // Maximum number of pages per row in grid view
@@ -95,6 +96,7 @@ window.divaPlugins = [];
             currentPageIndex: 0,        // The current page in the viewport (center-most page)
             divaIsFullWindow: false,    // Set to true when the parent of diva-wrapper is the body tag. Used for resizing.
             doubleClickZoom: false,     // Flag to determine whether handleZoom was called from a double-click
+            documentPaged: false,       // Set to true when the object has a viewingHint of 'paged' in its manifest
             firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
             firstRowLoaded: -1,         // The index of the first row loaded
             gridPageWidth: 0,           // Holds the max width of each row in grid view. Calculated in loadGrid()
@@ -1121,8 +1123,8 @@ window.divaPlugins = [];
             settings.totalWidth = settings.totalWidths[z] + settings.horizontalPadding * (settings.numPages + 1);
 
             // Determine the width of the inner element (based on the max width)
-            var maxWidthToSet = settings.maxWidths[z] + settings.horizontalPadding * 2;
-            var maxHeightToSet = settings.maxHeights[z] + settings.verticalPadding * 2;
+            var maxWidthToSet = (settings.inBookLayout) ? settings.maxWidths[z] * 2 + settings.horizontalPadding * 2 : settings.maxWidths[z] + settings.horizontalPadding * 2;
+            var maxHeightToSet = settings.maxHeights[z] / 2 + settings.verticalPadding * 2;
             var widthToSet = Math.max(maxWidthToSet, settings.panelWidth);
             var heightToSet = Math.max(maxHeightToSet, settings.panelHeight);
 
@@ -1149,14 +1151,37 @@ window.divaPlugins = [];
 
             for (i = 0; i < settings.numPages; i++)
             {
-                // First set the height above that page by adding this height to the previous total
-                // A page includes the padding above it
-                settings.pageTopOffsets[i] = parseInt(settings.verticallyOriented ? heightSoFar : (heightToSet - getPageData(i, 'h')) / 2, 10);
-                settings.pageLeftOffsets[i] = parseInt(settings.verticallyOriented ? (widthToSet - getPageData(i, 'w')) / 2 : widthSoFar, 10);
+                if (settings.inBookLayout)
+                {
+                    //set the height above that page counting only every other page and excluding non-paged canvases
+                    //height of this 'row' = max(height of the pages in this row)
 
-                // Has to be done this way otherwise you get the height of the page included too
-                heightSoFar = settings.pageTopOffsets[i] + getPageData(i, 'h') + settings.verticalPadding;
-                widthSoFar = settings.pageLeftOffsets[i] + getPageData(i, 'w') + settings.horizontalPadding;
+                    settings.pageTopOffsets[i] = heightSoFar;
+
+                    if (i % 2)
+                    {
+                        settings.pageLeftOffsets[i] = (widthToSet / 2) - (getPageData(i, 'w'));
+
+                        //increment the height only when we are on an odd page
+                        var pageHeight = (isPageValid(i + 1)) ? Math.max(getPageData(i, 'h'), getPageData(i + 1, 'h')) : getPageData(i, 'h');
+                        heightSoFar = settings.pageTopOffsets[i] + pageHeight;
+                    }
+                    else
+                    {
+                        settings.pageLeftOffsets[i] = (widthToSet / 2);
+                    }
+                }
+                else
+                {
+                    // First set the height above that page by adding this height to the previous total
+                    // A page includes the padding above it
+                    settings.pageTopOffsets[i] = parseInt(settings.verticallyOriented ? heightSoFar : (heightToSet - getPageData(i, 'h')) / 2, 10);
+                    settings.pageLeftOffsets[i] = parseInt(settings.verticallyOriented ? (widthToSet - getPageData(i, 'w')) / 2 : widthSoFar, 10);
+
+                    // Has to be done this way otherwise you get the height of the page included too
+                    heightSoFar = settings.pageTopOffsets[i] + getPageData(i, 'h') + settings.verticalPadding;
+                    widthSoFar = settings.pageLeftOffsets[i] + getPageData(i, 'w') + settings.horizontalPadding;
+                }
             }
 
             // Make sure the value for settings.goDirectlyTo is valid
@@ -1242,7 +1267,6 @@ window.divaPlugins = [];
             var i, rowIndex;
             settings.pageTopOffsets = [];
             settings.pageLeftOffsets = [];
-
 
             // Figure out the row each page is in
             var np = settings.numPages;
@@ -2326,6 +2350,9 @@ window.divaPlugins = [];
                 // get label from canvas block ('filename' is legacy)
                 label = canvases[i].label;
 
+                // indicate whether canvas has viewingHint of non-paged
+                var paged = canvases[i].viewingHint !== 'non-paged';
+
                 context = resource.service['@context'];
                 if (context === 'http://iiif.io/api/image/2/context.json')
                 {
@@ -2346,7 +2373,8 @@ window.divaPlugins = [];
                     'mx_z': maxZoom,
                     'fn': label,
                     'url': url,
-                    'api': imageAPIVersion
+                    'api': imageAPIVersion,
+                    'paged': paged
                 };
 
                 zoomLevels[i] = maxZoom;
@@ -2362,11 +2390,14 @@ window.divaPlugins = [];
             var totalHeights = new Array(lowestMaxZoom + 1);
             var maxWidths = new Array(lowestMaxZoom + 1);
             var maxHeights = new Array(lowestMaxZoom + 1);
+            // separate calculation for paged/book view
+            var totalHeightsPaged = new Array(lowestMaxZoom + 1);
 
             initializeArrayWithValue(totalWidths, 0);
             initializeArrayWithValue(totalHeights, 0);
             initializeArrayWithValue(maxWidths, 0);
             initializeArrayWithValue(maxHeights, 0);
+            initializeArrayWithValue(totalHeightsPaged, 0);
 
             var pages = [];
             var currentPageZoomData; // dimensions per zoomlevel
@@ -2407,7 +2438,8 @@ window.divaPlugins = [];
                     m: images[i].mx_z,
                     f: images[i].fn,
                     url: images[i].url,
-                    api: images[i].api
+                    api: images[i].api,
+                    paged: images[i].paged
                 }
             }
 
