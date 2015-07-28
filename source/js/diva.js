@@ -611,14 +611,16 @@ window.divaPlugins = [];
             if (direction < 0)
             {
                 // Direction is negative, so we're scrolling up/left (doesn't matter for these calls)
-                attemptPageShow(settings.firstPageLoaded, direction);
+                // Attempt showing pages in ascending order starting from the last visible page in the viewport
+                attemptPageShow(settings.lastPageLoaded, direction);
                 setCurrentPage(-1);
                 attemptPageHide(settings.lastPageLoaded, direction);
             }
             else if (direction > 0)
             {
                 // Direction is positive so we're scrolling down/right (doesn't matter for these calls)
-                attemptPageShow(settings.lastPageLoaded, direction);
+                // Attempt showing pages in descending order starting from the first visible page in the viewport
+                attemptPageShow(settings.firstPageLoaded, direction);
                 setCurrentPage(1);
                 attemptPageHide(settings.firstPageLoaded, direction);
             }
