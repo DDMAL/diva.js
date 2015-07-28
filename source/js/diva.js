@@ -1175,7 +1175,7 @@ window.divaPlugins = [];
                     {
                         settings.pageLeftOffsets[i] = (widthToSet / 2);
 
-                        //increment the height only when we are on an odd page
+                        //increment the height only when we are on an even page index
                         var pageHeight = (isPageValid(i + 1)) ? Math.max(getPageData(i, 'h'), getPageData(i + 1, 'h')) : getPageData(i, 'h');
                         heightSoFar = settings.pageTopOffsets[i] + pageHeight + settings.verticalPadding;
                     }
