@@ -3301,7 +3301,7 @@ window.divaPlugins = [];
                 return false;
 
             //navigate through all diva page objects
-            var pages = document.getElementsByClassName("diva-document-page");
+            var pages = document.getElementsByClassName('diva-page');
             var curPageIdx = pages.length;
             while (curPageIdx--)
             {
