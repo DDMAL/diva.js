@@ -326,7 +326,14 @@ window.divaPlugins = [];
                     if (settings.inBookLayout)
                     {
                         pageElement.style.left = widthFromLeft + 'px';
-                        pageElement.classList.add('diva-page-book');
+                        if (pageIndex % 2)
+                        {
+                            pageElement.classList.add('diva-page-book-left');
+                        }
+                        else
+                        {
+                            pageElement.classList.add('diva-page-book');
+                        }
                     }
                     else
                     {
