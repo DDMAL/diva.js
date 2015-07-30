@@ -2322,8 +2322,11 @@ window.divaPlugins = [];
             // trigger ManifestDidLoad event
             diva.Events.publish('ManifestDidLoad', [manifest], this);
 
+            var sequence = manifest.sequences[0];
+            settings.documentPaged = manifest.viewingHint === 'paged' || sequence.viewingHint === 'paged';
+
             //@TODO choose a sequence intelligently
-            var canvases = manifest.sequences[0].canvases;
+            var canvases = sequence.canvases;
 
             var zoomLevels = new Array(canvases.length);
             var images = new Array(canvases.length);
@@ -2779,6 +2782,12 @@ window.divaPlugins = [];
 
             settings.inGrid = (settings.inGrid && gridParam !== 'false') || goIntoGrid;
             settings.inFullscreen = (settings.inFullscreen && fullscreenParam !== 'false') || goIntoFullscreen;
+
+            // If we detect a viewingHint of 'paged' in the manifest or sequence, enable book view by default
+            if (settings.documentPaged)
+            {
+                settings.inBookLayout = true;
+            }
 
             // Do the initial AJAX request and viewer loading
             setupViewer();
