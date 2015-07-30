@@ -737,7 +737,7 @@ window.divaPlugins = [];
                 var pageDiv = document.createElement('div');
                 pageDiv.id = settings.ID + 'page-' + pageIndex;
                 var pageSelector = settings.selector + 'page-' + pageIndex;
-                pageDiv.classList.add('diva-page');
+                pageDiv.classList.add('diva-page', 'diva-grid-page');
                 pageDiv.style.width = pageWidth + 'px';
                 pageDiv.style.height = pageHeight + 'px';
                 pageDiv.style.left = leftOffset + 'px';
