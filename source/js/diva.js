@@ -311,7 +311,7 @@ window.divaPlugins = [];
 
                 var pageElement = document.createElement('div');
                 pageElement.id = settings.ID + 'page-' + pageIndex;
-                pageElement.classList.add('diva-document-page');
+                pageElement.classList.add('diva-page', 'diva-document-page');
                 pageElement.setAttribute('data-index', pageIndex);
                 pageElement.setAttribute('data-filename', filename);
                 if (settings.enableImageTitles) pageElement.title = "Page " + (pageIndex + 1);
