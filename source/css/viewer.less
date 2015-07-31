@@ -60,13 +60,31 @@
         float: right;
         height: 42px;
 
-        .diva-grid-icon {
-            float: right;
-            background-image: url("@{iconPath}grid.png");
+        .diva-document-icon {
+            background-image: url("@{iconPath}document.png");
+        }
 
-            &.diva-in-grid {
-                background-image: url("@{iconPath}document.png");
-            }
+        .diva-grid-icon {
+            background-image: url("@{iconPath}grid.png");
+        }
+
+        .diva-book-icon {
+            background-image: url("@{iconPath}book.png");
+        }
+
+        .diva-view-menu {
+            float: right;
+        }
+
+        .diva-view-options {
+            position: relative;
+            z-index: 1;
+            display: none;
+            .box-shadow(1px 1px 4px 0 rgba(0,0,0,0.1));
+        }
+
+        .diva-view-options > div {
+            margin-top: -1px;
         }
 
         .diva-link-icon {
