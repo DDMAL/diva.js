@@ -1151,8 +1151,7 @@ window.divaPlugins = [];
 
             if (settings.verticallyOriented)
             {
-                //TODO set height for vertical orientation here. openings: is the total height just / 2 ?
-                innerEl.style.height = settings.inBookLayout ? (Math.round(settings.totalHeight) / 2) + 'px' : Math.round(settings.totalHeight) + 'px';
+                innerEl.style.height = Math.round(settings.totalHeight) + 'px';
                 innerEl.style.width = Math.round(widthToSet) + 'px';
             }
             else
@@ -1161,6 +1160,7 @@ window.divaPlugins = [];
                 innerEl.style.width = Math.round(settings.totalWidth) + 'px';
             }
 
+            //TODO break out into function
             // Set settings.pageTopOffsets/pageLeftOffsets to determine where we're going to need to scroll, reset them in case they were used for grid before
             var heightSoFar = 0;
             var widthSoFar = 0;
@@ -1169,31 +1169,50 @@ window.divaPlugins = [];
             settings.pageTopOffsets = [];
             settings.pageLeftOffsets = [];
 
-            for (i = 0; i < settings.numPages; i++)
+            if (settings.inBookLayout)
             {
-                if (settings.inBookLayout)
+                if (settings.verticallyOriented)
                 {
-                    //set the height above that page counting only every other page and excluding non-paged canvases
-                    //height of this 'row' = max(height of the pages in this row)
-
-                    settings.pageTopOffsets[i] = heightSoFar;
-
-                    if (i % 2)
+                    for (i = 0; i < settings.numPages; i++)
                     {
-                        //page on the left TODO add a center margin?
-                        settings.pageLeftOffsets[i] = (widthToSet / 2) - getPageData(i, 'w') - settings.horizontalPadding;
-                    }
-                    else
-                    {
-                        //page on the right TODO subtract a center margin?
-                        settings.pageLeftOffsets[i] = (widthToSet / 2) - settings.horizontalPadding;
+                        //set the height above that page counting only every other page and excluding non-paged canvases
+                        //height of this 'row' = max(height of the pages in this row)
 
-                        //increment the height only when we are on an even page index
-                        var pageHeight = (isPageValid(i - 1)) ? Math.max(getPageData(i, 'h'), getPageData(i - 1, 'h')) : getPageData(i, 'h');
-                        heightSoFar = settings.pageTopOffsets[i] + pageHeight + settings.verticalPadding;
+                        settings.pageTopOffsets[i] = heightSoFar;
+
+                        if (i % 2)
+                        {
+                            //page on the left
+                            settings.pageLeftOffsets[i] = (widthToSet / 2) - getPageData(i, 'w') - settings.horizontalPadding;
+                        }
+                        else
+                        {
+                            //page on the right
+                            settings.pageLeftOffsets[i] = (widthToSet / 2) - settings.horizontalPadding;
+
+                            //increment the height only when we are on an even page index
+                            var pageHeight = (isPageValid(i - 1)) ? Math.max(getPageData(i, 'h'), getPageData(i - 1, 'h')) : getPageData(i, 'h');
+                            heightSoFar = settings.pageTopOffsets[i] + pageHeight + settings.verticalPadding;
+                        }
                     }
                 }
                 else
+                {
+                    // book, horizontally oriented
+                    for (i = 0; i < settings.numPages; i++)
+                    {
+                        settings.pageTopOffsets[i] = parseInt((heightToSet - getPageData(i, 'h')) / 2, 10);
+                        settings.pageLeftOffsets[i] = widthSoFar;
+
+                        var pageWidth = getPageData(i, 'w');
+                        var padding = (i % 2) ? 0 : settings.horizontalPadding;
+                        widthSoFar = settings.pageLeftOffsets[i] + pageWidth + padding;
+                    }
+                }
+            }
+            else
+            {
+                for (i = 0; i < settings.numPages; i++)
                 {
                     // First set the height above that page by adding this height to the previous total
                     // A page includes the padding above it
@@ -1203,6 +1222,23 @@ window.divaPlugins = [];
                     // Has to be done this way otherwise you get the height of the page included too
                     heightSoFar = settings.pageTopOffsets[i] + getPageData(i, 'h') + settings.verticalPadding;
                     widthSoFar = settings.pageLeftOffsets[i] + getPageData(i, 'w') + settings.horizontalPadding;
+                }
+            }
+
+            // In book view, calculate the total height/width based on the last opening's height/width and offset
+            var lastPageIndex = settings.numPages - 1;
+
+            if (settings.inBookLayout)
+            {
+                if (settings.verticallyOriented)
+                {
+                    // Last opening height is the max height of the last two pages if they are an opening, else the height of the last page since it's on its own on the left
+                    var lastOpeningHeight = (lastPageIndex % 2) ? getPageData(lastPageIndex, 'h') : Math.max(getPageData(lastPageIndex, 'h'), getPageData(lastPageIndex - 1, 'h'));
+                    innerEl.style.height = settings.pageTopOffsets[lastPageIndex] + lastOpeningHeight + (settings.verticalPadding * 2) + 'px';
+                }
+                else
+                {
+                    innerEl.style.width = settings.pageLeftOffsets[lastPageIndex] + (settings.horizontalPadding * 2) + 'px';
                 }
             }
 
@@ -1384,6 +1420,7 @@ window.divaPlugins = [];
 
             // Switch the slider
             diva.Events.publish("ViewDidSwitch", [settings.inGrid], self);
+            return true;
         };
 
         // Called when the fullscreen icon is clicked
@@ -1415,9 +1452,13 @@ window.divaPlugins = [];
                     settings.inGrid = true;
                     settings.inBookLayout = false;
                     break;
+
+                default:
+                    return false;
+                    break;
             }
 
-            handleViewChange();
+            return handleViewChange();
         };
 
         //toggles between orientations
@@ -3051,7 +3092,11 @@ window.divaPlugins = [];
         this.setZoomLevel = function (zoomLevel)
         {
             if (settings.inGrid)
-                changeView();
+            {
+                settings.goDirectlyTo = settings.currentPageIndex;
+                settings.inGrid = false;
+                handleViewChange();
+            }
 
             return handleZoom(zoomLevel);
         };
@@ -3133,10 +3178,10 @@ window.divaPlugins = [];
             return false;
         };
 
-        // Toggle grid view
-        this.toggleGridView = function ()
+        // Change views. Takes 'document', 'book', or 'grid' to specify which view to switch into
+        this.changeView = function(destinationView)
         {
-            changeView();
+            return changeView(destinationView);
         };
 
         // Enter grid view if currently not in grid view
@@ -3145,7 +3190,7 @@ window.divaPlugins = [];
         {
             if (!settings.inGrid)
             {
-                changeView();
+                changeView('grid');
                 return true;
             }
 
@@ -3158,7 +3203,9 @@ window.divaPlugins = [];
         {
             if (settings.inGrid)
             {
-                changeView();
+                settings.goDirectlyTo = settings.currentPageIndex;
+                settings.inGrid = false;
+                handleViewChange();
                 return true;
             }
 
