@@ -1141,13 +1141,14 @@ window.divaPlugins = [];
             settings.totalWidth = settings.totalWidths[z] + settings.horizontalPadding * (settings.numPages + 1);
 
             // Determine the width of the inner element (based on the max width)
-            var maxWidthToSet = (settings.inBookLayout) ? settings.maxWidths[z] * 2 + settings.horizontalPadding * 2 : settings.maxWidths[z] + settings.horizontalPadding * 2;
-            var maxHeightToSet = settings.maxHeights[z] / 2 + settings.verticalPadding * 2;
+            var maxWidthToSet = (settings.inBookLayout) ? (settings.maxWidths[z] + settings.horizontalPadding) * 2 : settings.maxWidths[z] + settings.horizontalPadding * 2;
+            var maxHeightToSet = settings.maxHeights[z] + settings.verticalPadding * 2;
             var widthToSet = Math.max(maxWidthToSet, settings.panelWidth);
             var heightToSet = Math.max(maxHeightToSet, settings.panelHeight);
 
             //Set the inner element to said width
             var innerEl = document.getElementById(settings.ID + 'inner');
+
             if (settings.verticallyOriented)
             {
                 innerEl.style.height = Math.round(settings.totalHeight) + 'px';
