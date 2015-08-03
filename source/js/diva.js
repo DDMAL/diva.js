@@ -1128,6 +1128,73 @@ window.divaPlugins = [];
                 loadDocument();
         };
 
+        var calculatePageOffsets = function(widthToSet, heightToSet)
+        {
+            // Set settings.pageTopOffsets/pageLeftOffsets to determine where we're going to need to scroll, reset them in case they were used for grid before
+            var heightSoFar = 0;
+            var widthSoFar = 0;
+            var i;
+
+            settings.pageTopOffsets = [];
+            settings.pageLeftOffsets = [];
+
+            if (settings.inBookLayout)
+            {
+                if (settings.verticallyOriented)
+                {
+                    for (i = 0; i < settings.numPages; i++)
+                    {
+                        //set the height above that page counting only every other page and excluding non-paged canvases
+                        //height of this 'row' = max(height of the pages in this row)
+
+                        settings.pageTopOffsets[i] = heightSoFar;
+
+                        if (i % 2)
+                        {
+                            //page on the left
+                            settings.pageLeftOffsets[i] = (widthToSet / 2) - getPageData(i, 'w') - settings.horizontalPadding;
+                        }
+                        else
+                        {
+                            //page on the right
+                            settings.pageLeftOffsets[i] = (widthToSet / 2) - settings.horizontalPadding;
+
+                            //increment the height only when we are on an even page index
+                            var pageHeight = (isPageValid(i - 1)) ? Math.max(getPageData(i, 'h'), getPageData(i - 1, 'h')) : getPageData(i, 'h');
+                            heightSoFar = settings.pageTopOffsets[i] + pageHeight + settings.verticalPadding;
+                        }
+                    }
+                }
+                else
+                {
+                    // book, horizontally oriented
+                    for (i = 0; i < settings.numPages; i++)
+                    {
+                        settings.pageTopOffsets[i] = parseInt((heightToSet - getPageData(i, 'h')) / 2, 10);
+                        settings.pageLeftOffsets[i] = widthSoFar;
+
+                        var pageWidth = getPageData(i, 'w');
+                        var padding = (i % 2) ? 0 : settings.horizontalPadding;
+                        widthSoFar = settings.pageLeftOffsets[i] + pageWidth + padding;
+                    }
+                }
+            }
+            else
+            {
+                for (i = 0; i < settings.numPages; i++)
+                {
+                    // First set the height above that page by adding this height to the previous total
+                    // A page includes the padding above it
+                    settings.pageTopOffsets[i] = parseInt(settings.verticallyOriented ? heightSoFar : (heightToSet - getPageData(i, 'h')) / 2, 10);
+                    settings.pageLeftOffsets[i] = parseInt(settings.verticallyOriented ? (widthToSet - getPageData(i, 'w')) / 2 : widthSoFar, 10);
+
+                    // Has to be done this way otherwise you get the height of the page included too
+                    heightSoFar = settings.pageTopOffsets[i] + getPageData(i, 'h') + settings.verticalPadding;
+                    widthSoFar = settings.pageLeftOffsets[i] + getPageData(i, 'w') + settings.horizontalPadding;
+                }
+            }
+        };
+
         // Called every time we need to load document view (after zooming, fullscreen, etc)
         var loadDocument = function ()
         {
@@ -1160,58 +1227,24 @@ window.divaPlugins = [];
                 innerEl.style.width = Math.round(settings.totalWidth) + 'px';
             }
 
-            // Set settings.pageTopOffsets/pageLeftOffsets to determine where we're going to need to scroll, reset them in case they were used for grid before
-            var heightSoFar = 0;
-            var widthSoFar = 0;
-            var i;
+            // Calculate page layout (settings.pageTopOffsets, settings.pageLeftOffsets)
+            calculatePageOffsets(widthToSet, heightToSet);
 
-            settings.pageTopOffsets = [];
-            settings.pageLeftOffsets = [];
+            // In book view, determine the total height/width based on the last opening's height/width and offset
+            var lastPageIndex = settings.numPages - 1;
 
-            for (i = 0; i < settings.numPages; i++)
+            if (settings.inBookLayout)
             {
-                if (settings.inBookLayout)
+                if (settings.verticallyOriented)
                 {
-                    //set the height above that page counting only every other page and excluding non-paged canvases
-                    //height of this 'row' = max(height of the pages in this row)
-
-                    settings.pageTopOffsets[i] = heightSoFar;
-
-                    if (i % 2)
-                    {
-                        //page on the left
-                        settings.pageLeftOffsets[i] = (widthToSet / 2) - getPageData(i, 'w') - settings.horizontalPadding;
-                    }
-                    else
-                    {
-                        //page on the right
-                        settings.pageLeftOffsets[i] = (widthToSet / 2) - settings.horizontalPadding;
-
-                        //increment the height only when we are on an even page index
-                        var pageHeight = (isPageValid(i - 1)) ? Math.max(getPageData(i, 'h'), getPageData(i - 1, 'h')) : getPageData(i, 'h');
-                        heightSoFar = settings.pageTopOffsets[i] + pageHeight + settings.verticalPadding;
-                    }
+                    // Last opening height is the max height of the last two pages if they are an opening, else the height of the last page since it's on its own on the left
+                    var lastOpeningHeight = (lastPageIndex % 2) ? getPageData(lastPageIndex, 'h') : Math.max(getPageData(lastPageIndex, 'h'), getPageData(lastPageIndex - 1, 'h'));
+                    innerEl.style.height = settings.pageTopOffsets[lastPageIndex] + lastOpeningHeight + (settings.verticalPadding * 2) + 'px';
                 }
                 else
                 {
-                    // First set the height above that page by adding this height to the previous total
-                    // A page includes the padding above it
-                    settings.pageTopOffsets[i] = parseInt(settings.verticallyOriented ? heightSoFar : (heightToSet - getPageData(i, 'h')) / 2, 10);
-                    settings.pageLeftOffsets[i] = parseInt(settings.verticallyOriented ? (widthToSet - getPageData(i, 'w')) / 2 : widthSoFar, 10);
-
-                    // Has to be done this way otherwise you get the height of the page included too
-                    heightSoFar = settings.pageTopOffsets[i] + getPageData(i, 'h') + settings.verticalPadding;
-                    widthSoFar = settings.pageLeftOffsets[i] + getPageData(i, 'w') + settings.horizontalPadding;
+                    innerEl.style.width = settings.pageLeftOffsets[lastPageIndex] + getPageData(lastPageIndex, 'w') + (settings.horizontalPadding * 2) + 'px';
                 }
-            }
-
-            // In book view, calculate the total height based on the last opening's height and offset
-            if (settings.inBookLayout && settings.verticallyOriented)
-            {
-                // Last opening height is the max height of the last two pages if they are an opening, else the height of the last page since it's on its own on the left
-                var lastPageIndex = settings.pageTopOffsets.length - 1;
-                var lastOpeningHeight = (lastPageIndex % 2) ? getPageData(lastPageIndex, 'h') : Math.max(getPageData(lastPageIndex, 'h'), getPageData(lastPageIndex - 1, 'h'));
-                innerEl.style.height = settings.pageTopOffsets[lastPageIndex] + lastOpeningHeight + (settings.verticalPadding * 2) + 'px';
             }
 
             // Make sure the value for settings.goDirectlyTo is valid
