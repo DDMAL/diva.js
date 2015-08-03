@@ -1178,10 +1178,12 @@ window.divaPlugins = [];
 
                     if (i % 2)
                     {
+                        //page on the left
                         settings.pageLeftOffsets[i] = (widthToSet / 2) - getPageData(i, 'w') - settings.horizontalPadding;
                     }
                     else
                     {
+                        //page on the right
                         settings.pageLeftOffsets[i] = (widthToSet / 2) - settings.horizontalPadding;
 
                         //increment the height only when we are on an even page index
