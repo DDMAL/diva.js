@@ -1427,7 +1427,6 @@ window.divaPlugins = [];
 
                 default:
                     return false;
-                    break;
             }
 
             return handleViewChange();
