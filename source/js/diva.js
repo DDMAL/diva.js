@@ -1204,6 +1204,15 @@ window.divaPlugins = [];
                 }
             }
 
+            // In book view, calculate the total height based on the last opening's height and offset
+            if (settings.inBookLayout && settings.verticallyOriented)
+            {
+                // Last opening height is the max height of the last two pages if they are an opening, else the height of the last page since it's on its own on the left
+                var lastPageIndex = settings.pageTopOffsets.length - 1;
+                var lastOpeningHeight = (lastPageIndex % 2) ? getPageData(lastPageIndex, 'h') : Math.max(getPageData(lastPageIndex, 'h'), getPageData(lastPageIndex - 1, 'h'));
+                innerEl.style.height = settings.pageTopOffsets[lastPageIndex] + lastOpeningHeight + (settings.verticalPadding * 2) + 'px';
+            }
+
             // Make sure the value for settings.goDirectlyTo is valid
             if (!isPageValid(settings.goDirectlyTo))
                 settings.goDirectlyTo = 0;
