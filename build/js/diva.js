@@ -533,13 +533,14 @@ window.divaPlugins = [];
         // Called by adjust pages - determine what pages should be visible, and show them
         var attemptPageShow = function (pageIndex, direction)
         {
+            console.log('attemptPageShow', pageIndex, direction);
             if (direction > 0)
             {
                 // Direction is positive - we're scrolling down
                 if (isPageValid(pageIndex))
                 {
                     // If the page should be visible, then yes, add it
-                    if (isPageVisible(pageIndex))
+                    if (isPageVisible(pageIndex) || isPageVisible(pageIndex + 1))
                     {
                         loadPage(pageIndex);
                         settings.lastPageLoaded = pageIndex;
@@ -611,9 +612,15 @@ window.divaPlugins = [];
         };
 
         // Handles showing and hiding pages when the user scrolls
-        var adjustPages = function (direction)
+        var adjustPages = function (direction, secondaryDirection)
         {
             var i;
+
+            // optional secondaryDirection used for sideways scrolling in book layout
+            if (typeof secondaryDirection === 'undefined')
+            {
+                secondaryDirection = 0;
+            }
 
             if (direction < 0)
             {
@@ -633,6 +640,16 @@ window.divaPlugins = [];
             }
             else
             {
+                //TODO if book, call setCurrentPage here. need to supply L/R direction
+                if (secondaryDirection < 0)
+                {
+                    setCurrentPage(-1);
+                }
+                else if (secondaryDirection > 0)
+                {
+                    setCurrentPage(1);
+                }
+
                 // Non-primary scroll, check if we need to reveal any tiles
                 var lpl = settings.lastPageLoaded;
                 for (i = Math.max(settings.firstPageLoaded, 0); i <= lpl; i++)
@@ -1128,39 +1145,8 @@ window.divaPlugins = [];
                 loadDocument();
         };
 
-        // Called every time we need to load document view (after zooming, fullscreen, etc)
-        var loadDocument = function ()
+        var calculatePageOffsets = function(widthToSet, heightToSet)
         {
-            clearViewer();
-
-            settings.zoomLevel = getValidZoomLevel(settings.zoomLevel);
-            var z = settings.zoomLevel;
-
-            // Now reset some things that need to be changed after each zoom
-            settings.totalHeight = settings.totalHeights[z] + settings.verticalPadding * (settings.numPages + 1);
-            settings.totalWidth = settings.totalWidths[z] + settings.horizontalPadding * (settings.numPages + 1);
-
-            // Determine the width of the inner element (based on the max width)
-            var maxWidthToSet = (settings.inBookLayout) ? (settings.maxWidths[z] + settings.horizontalPadding) * 2 : settings.maxWidths[z] + settings.horizontalPadding * 2;
-            var maxHeightToSet = settings.maxHeights[z] + settings.verticalPadding * 2;
-            var widthToSet = Math.max(maxWidthToSet, settings.panelWidth);
-            var heightToSet = Math.max(maxHeightToSet, settings.panelHeight);
-
-            //Set the inner element to said width
-            var innerEl = document.getElementById(settings.ID + 'inner');
-
-            if (settings.verticallyOriented)
-            {
-                innerEl.style.height = Math.round(settings.totalHeight) + 'px';
-                innerEl.style.width = Math.round(widthToSet) + 'px';
-            }
-            else
-            {
-                innerEl.style.height = Math.round(heightToSet) + 'px';
-                innerEl.style.width = Math.round(settings.totalWidth) + 'px';
-            }
-
-            //TODO break out into function
             // Set settings.pageTopOffsets/pageLeftOffsets to determine where we're going to need to scroll, reset them in case they were used for grid before
             var heightSoFar = 0;
             var widthSoFar = 0;
@@ -1224,8 +1210,44 @@ window.divaPlugins = [];
                     widthSoFar = settings.pageLeftOffsets[i] + getPageData(i, 'w') + settings.horizontalPadding;
                 }
             }
+        };
 
-            // In book view, calculate the total height/width based on the last opening's height/width and offset
+        // Called every time we need to load document view (after zooming, fullscreen, etc)
+        var loadDocument = function ()
+        {
+            clearViewer();
+
+            settings.zoomLevel = getValidZoomLevel(settings.zoomLevel);
+            var z = settings.zoomLevel;
+
+            // Now reset some things that need to be changed after each zoom
+            settings.totalHeight = settings.totalHeights[z] + settings.verticalPadding * (settings.numPages + 1);
+            settings.totalWidth = settings.totalWidths[z] + settings.horizontalPadding * (settings.numPages + 1);
+
+            // Determine the width of the inner element (based on the max width)
+            var maxWidthToSet = (settings.inBookLayout) ? (settings.maxWidths[z] + settings.horizontalPadding) * 2 : settings.maxWidths[z] + settings.horizontalPadding * 2;
+            var maxHeightToSet = settings.maxHeights[z] + settings.verticalPadding * 2;
+            var widthToSet = Math.max(maxWidthToSet, settings.panelWidth);
+            var heightToSet = Math.max(maxHeightToSet, settings.panelHeight);
+
+            //Set the inner element to said width
+            var innerEl = document.getElementById(settings.ID + 'inner');
+
+            if (settings.verticallyOriented)
+            {
+                innerEl.style.height = Math.round(settings.totalHeight) + 'px';
+                innerEl.style.width = Math.round(widthToSet) + 'px';
+            }
+            else
+            {
+                innerEl.style.height = Math.round(heightToSet) + 'px';
+                innerEl.style.width = Math.round(settings.totalWidth) + 'px';
+            }
+
+            // Calculate page layout (settings.pageTopOffsets, settings.pageLeftOffsets)
+            calculatePageOffsets(widthToSet, heightToSet);
+
+            // In book view, determine the total height/width based on the last opening's height/width and offset
             var lastPageIndex = settings.numPages - 1;
 
             if (settings.inBookLayout)
@@ -1238,7 +1260,7 @@ window.divaPlugins = [];
                 }
                 else
                 {
-                    innerEl.style.width = settings.pageLeftOffsets[lastPageIndex] + (settings.horizontalPadding * 2) + 'px';
+                    innerEl.style.width = settings.pageLeftOffsets[lastPageIndex] + getPageData(lastPageIndex, 'w') + (settings.horizontalPadding * 2) + 'px';
                 }
             }
 
@@ -1251,7 +1273,7 @@ window.divaPlugins = [];
 
             // Once the viewport is aligned, we can determine which pages will be visible and load them
             var pageBlockFound = false;
-            for (i = 0; i < settings.numPages; i++)
+            for (var i = 0; i < settings.numPages; i++)
             {
                 if (isPageVisible(i))
                 {
@@ -1455,7 +1477,6 @@ window.divaPlugins = [];
 
                 default:
                     return false;
-                    break;
             }
 
             return handleViewChange();
@@ -1651,9 +1672,24 @@ window.divaPlugins = [];
 
         var getState = function ()
         {
+            var view;
+
+            if (settings.inGrid)
+            {
+                view = 'g';
+            }
+            else if (settings.inBookLayout)
+            {
+                view = 'b';
+            }
+            else
+            {
+                view = 'd';
+            }
+
             var state = {
                 'f': settings.inFullscreen,
-                'g': settings.inGrid,
+                'v': view,
                 'z': settings.zoomLevel,
                 'n': settings.pagesPerRow,
                 'i': (settings.enableFilename) ? settings.pages[settings.currentPageIndex].f : false,
@@ -1787,6 +1823,7 @@ window.divaPlugins = [];
             var scrollFunction = function ()
             {
                 var direction;
+                var secondaryDirection;
                 var newScrollTop = document.getElementById(settings.ID + "outer").scrollTop;
                 var newScrollLeft = document.getElementById(settings.ID + "outer").scrollLeft;
 
@@ -1795,9 +1832,14 @@ window.divaPlugins = [];
                 else
                     direction = newScrollLeft - settings.previousLeftScroll;
 
+                if (settings.inBookLayout)
+                    secondaryDirection = newScrollLeft - settings.previousLeftScroll;
+
                 //give adjustPages the direction we care about
                 if (settings.inGrid)
                     adjustRows(direction);
+                else if (settings.inBookLayout && settings.verticallyOriented)
+                    adjustPages(direction, secondaryDirection);
                 else
                     adjustPages(direction);
 
@@ -2571,8 +2613,10 @@ window.divaPlugins = [];
             var widthAtCurrentZoomLevel;
             var heightAtCurrentZoomLevel;
 
+            var numImages = images.length;
+
             // for each page image:
-            for (var i = 0, numImages = images.length; i < numImages; i++)
+            for (i = 0; i < numImages; i++)
             {
                 currentPageZoomData = [];
 
@@ -2606,14 +2650,14 @@ window.divaPlugins = [];
                     url: images[i].url,
                     api: images[i].api,
                     paged: images[i].paged
-                }
+                };
             }
 
             var averageWidths = [];
             var averageHeights = [];
 
             // for each zoom level, calculate average of heights/widths
-            for (var i = 0; i < lowestMaxZoom + 1; i++)
+            for (i = 0; i < lowestMaxZoom + 1; i++)
             {
                 averageWidths.push(totalWidths[i] / images.length);
                 averageHeights.push(totalHeights[i] / images.length);
@@ -3319,8 +3363,8 @@ window.divaPlugins = [];
             else if (isPageValid(state.p))
                 settings.goDirectlyTo = state.p;
 
-            horizontalOffset = parseInt(state.x, 10);
-            verticalOffset = parseInt(state.y, 10);
+            var horizontalOffset = parseInt(state.x, 10);
+            var verticalOffset = parseInt(state.y, 10);
 
             // Only change the zoom if state.z is valid
             if (state.z >= settings.minZoomLevel && state.z <= settings.maxZoomLevel)
@@ -3343,10 +3387,31 @@ window.divaPlugins = [];
             {
                 settings.horizontalOffset = horizontalOffset;
                 settings.verticalOffset = verticalOffset;
+
                 // Don't need to change the mode, may need to change view
-                if (settings.inGrid !== state.g)
+                // If the current view is not equal to that in state, switch view
+                if ((state.v === 'g' && !settings.inGrid) || (state.v === 'd' && settings.inGrid) ||(state.v ==='b' && !settings.inBookLayout))
                 {
-                    settings.inGrid = state.g;
+                    var view = state.v;
+
+                    switch (view)
+                    {
+                        case 'd':
+                            settings.inGrid = false;
+                            settings.inBookLayout = false;
+                            break;
+
+                        case 'b':
+                            settings.inGrid = false;
+                            settings.inBookLayout = true;
+                            break;
+
+                        case 'g':
+                            settings.inGrid = true;
+                            settings.inBookLayout = false;
+                            break;
+                    }
+
                     handleViewChange();
                 }
                 else
