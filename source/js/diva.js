@@ -547,6 +547,14 @@ window.divaPlugins = [];
                         // Recursively call this function until there's nothing to add
                         attemptPageShow(settings.lastPageLoaded + 1, direction);
                     }
+                    else if (isPageVisible(pageIndex + 1))
+                    {
+                        loadPage(pageIndex + 1);
+                        settings.lastPageLoaded = pageIndex + 1;
+
+                        // Recursively call this function until there's nothing to add
+                        attemptPageShow(settings.lastPageLoaded + 1, direction);
+                    }
                     else if (pageBeforeViewport(pageIndex))
                     {
                         // If the page is below the viewport. try to load the next one
@@ -569,6 +577,14 @@ window.divaPlugins = [];
 
                         // Recursively call this function until there's nothing to add
                         attemptPageShow(settings.firstPageLoaded - 1, direction);
+                    }
+                    else if (isPageVisible(pageIndex - 1))
+                    {
+                        loadPage(pageIndex - 1);
+                        settings.lastPageLoaded = pageIndex - 1;
+
+                        // Recursively call this function until there's nothing to add
+                        attemptPageShow(settings.lastPageLoaded - 1, direction);
                     }
                     else if (pageAfterViewport(pageIndex))
                     {
