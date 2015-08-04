@@ -1671,9 +1671,24 @@ window.divaPlugins = [];
 
         var getState = function ()
         {
+            var view;
+
+            if (settings.inGrid)
+            {
+                view = 'g';
+            }
+            else if (settings.inBookLayout)
+            {
+                view = 'b';
+            }
+            else
+            {
+                view = 'd';
+            }
+
             var state = {
                 'f': settings.inFullscreen,
-                'g': settings.inGrid,
+                'v': view,
                 'z': settings.zoomLevel,
                 'n': settings.pagesPerRow,
                 'i': (settings.enableFilename) ? settings.pages[settings.currentPageIndex].f : false,
@@ -3363,10 +3378,31 @@ window.divaPlugins = [];
             {
                 settings.horizontalOffset = horizontalOffset;
                 settings.verticalOffset = verticalOffset;
+
                 // Don't need to change the mode, may need to change view
-                if (settings.inGrid !== state.g)
+                // If the current view is not equal to that in state, switch view
+                if ((state.v === 'g' && !settings.inGrid) || (state.v === 'd' && settings.inGrid) ||(state.v ==='b' && !settings.inBookLayout))
                 {
-                    settings.inGrid = state.g;
+                    var view = state.v;
+
+                    switch (view)
+                    {
+                        case 'd':
+                            settings.inGrid = false;
+                            settings.inBookLayout = false;
+                            break;
+
+                        case 'b':
+                            settings.inGrid = false;
+                            settings.inBookLayout = true;
+                            break;
+
+                        case 'g':
+                            settings.inGrid = true;
+                            settings.inBookLayout = false;
+                            break;
+                    }
+
                     handleViewChange();
                 }
                 else
