@@ -1256,7 +1256,7 @@ window.divaPlugins = [];
 
             // Once the viewport is aligned, we can determine which pages will be visible and load them
             var pageBlockFound = false;
-            for (i = 0; i < settings.numPages; i++)
+            for (var i = 0; i < settings.numPages; i++)
             {
                 if (isPageVisible(i))
                 {
@@ -3323,8 +3323,8 @@ window.divaPlugins = [];
             else if (isPageValid(state.p))
                 settings.goDirectlyTo = state.p;
 
-            horizontalOffset = parseInt(state.x, 10);
-            verticalOffset = parseInt(state.y, 10);
+            var horizontalOffset = parseInt(state.x, 10);
+            var verticalOffset = parseInt(state.y, 10);
 
             // Only change the zoom if state.z is valid
             if (state.z >= settings.minZoomLevel && state.z <= settings.maxZoomLevel)
