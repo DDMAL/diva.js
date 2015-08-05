@@ -533,11 +533,11 @@ window.divaPlugins = [];
         // Called by adjust pages - determine what pages should be visible, and show them
         var attemptPageShow = function (pageIndex, direction)
         {
-            if (direction > 0)
+            if (isPageValid(pageIndex))
             {
-                // Direction is positive - we're scrolling down
-                if (isPageValid(pageIndex))
+                if (direction > 0)
                 {
+                    // Direction is positive - we're scrolling down
                     // If the page should be visible, then yes, add it
                     if (isPageVisible(pageIndex))
                     {
@@ -547,7 +547,7 @@ window.divaPlugins = [];
                         // Recursively call this function until there's nothing to add
                         attemptPageShow(settings.lastPageLoaded + 1, direction);
                     }
-                    else if (isPageVisible(pageIndex + 1))
+                    else if (isPageValid(pageIndex + 1) && isPageVisible(pageIndex + 1))
                     {
                         loadPage(pageIndex + 1);
                         settings.lastPageLoaded = pageIndex + 1;
@@ -561,12 +561,9 @@ window.divaPlugins = [];
                         attemptPageShow(pageIndex + 1, direction);
                     }
                 }
-            }
-            else
-            {
-                // Direction is negative - we're scrolling up
-                if (isPageValid(pageIndex))
+                else
                 {
+                    // Direction is negative - we're scrolling up
                     // If it's near the viewport, yes, add it
                     if (isPageVisible(pageIndex))
                     {
@@ -578,7 +575,7 @@ window.divaPlugins = [];
                         // Recursively call this function until there's nothing to add
                         attemptPageShow(settings.firstPageLoaded - 1, direction);
                     }
-                    else if (isPageVisible(pageIndex - 1))
+                    else if (isPageValid(pageIndex - 1) && isPageVisible(pageIndex - 1))
                     {
                         loadPage(pageIndex - 1);
                         settings.firstPageLoaded = pageIndex - 1;
