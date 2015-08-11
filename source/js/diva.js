@@ -931,6 +931,7 @@ window.divaPlugins = [];
                 return false;
 
             var middleOfViewport = (settings.verticallyOriented ? document.getElementById(settings.ID + "outer").scrollTop + (settings.panelHeight / 2) : document.getElementById(settings.ID + "outer").scrollLeft + (settings.panelWidth / 2));
+            var verticalMiddleOfViewport = document.getElementById(settings.ID + "outer").scrollLeft + (settings.panelWidth / 2);
             var changeCurrentPage = false;
             var pageSelector = settings.selector + 'page-' + pageToConsider;
 
@@ -969,6 +970,24 @@ window.divaPlugins = [];
                     if (settings.pageLeftOffsets[currentPage] + getPageData(currentPage, 'w') + settings.horizontalPadding < middleOfViewport)
                     {
                         changeCurrentPage = true;
+                    }
+                }
+            }
+
+            if (settings.inBookLayout && settings.verticallyOriented)
+            {
+                var nextPage = currentPage + 1;
+
+                // if the current page + 1 is on the right (even) and the left of it is left of center
+                if (isPageValid(nextPage) && nextPage % 2 === 0 && settings.pageLeftOffsets[nextPage] < verticalMiddleOfViewport)
+                {
+                    if (nextPage !== settings.currentPageIndex)
+                    {
+                        settings.currentPageIndex = nextPage;
+                        var filename = settings.pages[nextPage].f;
+                        executeCallback(settings.onSetCurrentPage, nextPage, filename);
+                        diva.Events.publish("VisiblePageDidChange", [nextPage, filename], self);
+                        console.log(nextPage + 1);
                     }
                 }
             }
