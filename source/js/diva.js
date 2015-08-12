@@ -2822,6 +2822,12 @@ window.divaPlugins = [];
             {
                 settings.verticalPadding = Math.max(40, settings.verticalPadding);
             }
+
+            // If we detect a viewingHint of 'paged' in the manifest or sequence, enable book view by default
+            if (settings.documentPaged)
+            {
+                settings.inBookLayout = true;
+            }
         };
 
         var setupViewer = function ()
@@ -2987,12 +2993,6 @@ window.divaPlugins = [];
 
             settings.inGrid = (settings.inGrid && gridParam !== 'false') || goIntoGrid;
             settings.inFullscreen = (settings.inFullscreen && fullscreenParam !== 'false') || goIntoFullscreen;
-
-            // If we detect a viewingHint of 'paged' in the manifest or sequence, enable book view by default
-            if (settings.documentPaged)
-            {
-                settings.inBookLayout = true;
-            }
 
             // Do the initial AJAX request and viewer loading
             setupViewer();
