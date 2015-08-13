@@ -53,6 +53,7 @@
   "service": "http://www.e-codices.unifr.ch/en/search/",
   "see_also": "http://www.e-codices.unifr.ch/en/list/one/csg/0390",
   "within": "http://www.e-codices.unifr.ch/en/list/csg",
+  "viewingHint": "paged",
   "sequences": [
     {
       "@id": "http://www.e-codices.unifr.ch/metadata/iiif/csg-0390/sequence/Sequence-1324.json",
