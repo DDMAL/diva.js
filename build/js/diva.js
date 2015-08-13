@@ -533,17 +533,24 @@ window.divaPlugins = [];
         // Called by adjust pages - determine what pages should be visible, and show them
         var attemptPageShow = function (pageIndex, direction)
         {
-            console.log('attemptPageShow', pageIndex, direction);
-            if (direction > 0)
+            if (isPageValid(pageIndex))
             {
-                // Direction is positive - we're scrolling down
-                if (isPageValid(pageIndex))
+                if (direction > 0)
                 {
+                    // Direction is positive - we're scrolling down
                     // If the page should be visible, then yes, add it
-                    if (isPageVisible(pageIndex) || isPageVisible(pageIndex + 1))
+                    if (isPageVisible(pageIndex))
                     {
                         loadPage(pageIndex);
                         settings.lastPageLoaded = pageIndex;
+
+                        // Recursively call this function until there's nothing to add
+                        attemptPageShow(settings.lastPageLoaded + 1, direction);
+                    }
+                    else if (isPageValid(pageIndex + 1) && isPageVisible(pageIndex + 1))
+                    {
+                        loadPage(pageIndex + 1);
+                        settings.lastPageLoaded = pageIndex + 1;
 
                         // Recursively call this function until there's nothing to add
                         attemptPageShow(settings.lastPageLoaded + 1, direction);
@@ -554,12 +561,9 @@ window.divaPlugins = [];
                         attemptPageShow(pageIndex + 1, direction);
                     }
                 }
-            }
-            else
-            {
-                // Direction is negative - we're scrolling up
-                if (isPageValid(pageIndex))
+                else
                 {
+                    // Direction is negative - we're scrolling up
                     // If it's near the viewport, yes, add it
                     if (isPageVisible(pageIndex))
                     {
@@ -567,6 +571,14 @@ window.divaPlugins = [];
 
                         // Reset the first page loaded to this one
                         settings.firstPageLoaded = pageIndex;
+
+                        // Recursively call this function until there's nothing to add
+                        attemptPageShow(settings.firstPageLoaded - 1, direction);
+                    }
+                    else if (isPageValid(pageIndex - 1) && isPageVisible(pageIndex - 1))
+                    {
+                        loadPage(pageIndex - 1);
+                        settings.firstPageLoaded = pageIndex - 1;
 
                         // Recursively call this function until there's nothing to add
                         attemptPageShow(settings.firstPageLoaded - 1, direction);
@@ -612,15 +624,9 @@ window.divaPlugins = [];
         };
 
         // Handles showing and hiding pages when the user scrolls
-        var adjustPages = function (direction, secondaryDirection)
+        var adjustPages = function (direction)
         {
             var i;
-
-            // optional secondaryDirection used for sideways scrolling in book layout
-            if (typeof secondaryDirection === 'undefined')
-            {
-                secondaryDirection = 0;
-            }
 
             if (direction < 0)
             {
@@ -640,16 +646,6 @@ window.divaPlugins = [];
             }
             else
             {
-                //TODO if book, call setCurrentPage here. need to supply L/R direction
-                if (secondaryDirection < 0)
-                {
-                    setCurrentPage(-1);
-                }
-                else if (secondaryDirection > 0)
-                {
-                    setCurrentPage(1);
-                }
-
                 // Non-primary scroll, check if we need to reveal any tiles
                 var lpl = settings.lastPageLoaded;
                 for (i = Math.max(settings.firstPageLoaded, 0); i <= lpl; i++)
@@ -935,6 +931,7 @@ window.divaPlugins = [];
                 return false;
 
             var middleOfViewport = (settings.verticallyOriented ? document.getElementById(settings.ID + "outer").scrollTop + (settings.panelHeight / 2) : document.getElementById(settings.ID + "outer").scrollLeft + (settings.panelWidth / 2));
+            var verticalMiddleOfViewport = document.getElementById(settings.ID + "outer").scrollLeft + (settings.panelWidth / 2);
             var changeCurrentPage = false;
             var pageSelector = settings.selector + 'page-' + pageToConsider;
 
@@ -973,6 +970,26 @@ window.divaPlugins = [];
                     if (settings.pageLeftOffsets[currentPage] + getPageData(currentPage, 'w') + settings.horizontalPadding < middleOfViewport)
                     {
                         changeCurrentPage = true;
+                    }
+                }
+            }
+
+            //TODO page not updated when scrolling left unless also upwards scroll
+            if (settings.inBookLayout && settings.verticallyOriented)
+            {
+                var nextPage = currentPage + 1;
+
+                // if the current page + 1 is on the right (even) and the left of it is left of center
+                if (isPageValid(nextPage) && nextPage % 2 === 0 && settings.pageLeftOffsets[nextPage] < verticalMiddleOfViewport)
+                {
+                    if (nextPage !== settings.currentPageIndex)
+                    {
+                        //TODO fires wildly
+                        settings.currentPageIndex = nextPage;
+                        var filename = settings.pages[nextPage].f;
+                        executeCallback(settings.onSetCurrentPage, nextPage, filename);
+                        diva.Events.publish("VisiblePageDidChange", [nextPage, filename], self);
+                        console.log(nextPage + 1);
                     }
                 }
             }
@@ -1823,7 +1840,6 @@ window.divaPlugins = [];
             var scrollFunction = function ()
             {
                 var direction;
-                var secondaryDirection;
                 var newScrollTop = document.getElementById(settings.ID + "outer").scrollTop;
                 var newScrollLeft = document.getElementById(settings.ID + "outer").scrollLeft;
 
@@ -1832,14 +1848,9 @@ window.divaPlugins = [];
                 else
                     direction = newScrollLeft - settings.previousLeftScroll;
 
-                if (settings.inBookLayout)
-                    secondaryDirection = newScrollLeft - settings.previousLeftScroll;
-
                 //give adjustPages the direction we care about
                 if (settings.inGrid)
                     adjustRows(direction);
-                else if (settings.inBookLayout && settings.verticallyOriented)
-                    adjustPages(direction, secondaryDirection);
                 else
                     adjustPages(direction);
 
@@ -2813,6 +2824,36 @@ window.divaPlugins = [];
             {
                 settings.verticalPadding = Math.max(40, settings.verticalPadding);
             }
+
+            // If we detect a viewingHint of 'paged' in the manifest or sequence, enable book view by default
+            //TODO unless view hash parameter is something other than 'b'
+            if (settings.documentPaged)
+            {
+                settings.inBookLayout = true;
+            }
+        };
+
+        var switchViewState = function(stateObj)
+        {
+            var view = stateObj;
+
+            switch (view)
+            {
+                case 'd':
+                    settings.inGrid = false;
+                    settings.inBookLayout = false;
+                    break;
+
+                case 'b':
+                    settings.inGrid = false;
+                    settings.inBookLayout = true;
+                    break;
+
+                case 'g':
+                    settings.inGrid = true;
+                    settings.inBookLayout = false;
+                    break;
+            }
         };
 
         var setupViewer = function ()
@@ -2971,19 +3012,13 @@ window.divaPlugins = [];
 
             // If the "fullscreen" hash param is true, go to fullscreen initially
             // If the grid hash param is true, go to grid view initially
-            var gridParam = $.getHashParam('g' + settings.hashParamSuffix);
-            var goIntoGrid = gridParam === 'true';
             var fullscreenParam = $.getHashParam('f' + settings.hashParamSuffix);
             var goIntoFullscreen = fullscreenParam === 'true';
 
-            settings.inGrid = (settings.inGrid && gridParam !== 'false') || goIntoGrid;
-            settings.inFullscreen = (settings.inFullscreen && fullscreenParam !== 'false') || goIntoFullscreen;
+            var viewParam = $.getHashParam('v' + settings.hashParamSuffix);
+            switchViewState(viewParam);
 
-            // If we detect a viewingHint of 'paged' in the manifest or sequence, enable book view by default
-            if (settings.documentPaged)
-            {
-                settings.inBookLayout = true;
-            }
+            settings.inFullscreen = (settings.inFullscreen && fullscreenParam !== 'false') || goIntoFullscreen;
 
             // Do the initial AJAX request and viewer loading
             setupViewer();
@@ -3374,11 +3409,17 @@ window.divaPlugins = [];
             if (state.n >= settings.minPagesPerRow && state.n <= settings.maxPagesPerRow)
                 settings.pagesPerRow = state.n;
 
+            // Change settings to match v (view) hash parameter
+
             if (settings.inFullscreen !== state.f)
             {
+                //TODO handleModeChange switches inGrid again
+                switchViewState(state.v);
                 // The parameter determines if we need to change the view as well
                 settings.inFullscreen = state.f;
-                handleModeChange(settings.inGrid !== state.g);
+                //handleModeChange(settings.inGrid !== (state.v === 'g'));
+                //TODO trying this to not switch inGrid again
+                handleModeChange(false);
                 settings.horizontalOffset = horizontalOffset;
                 settings.verticalOffset = verticalOffset;
                 gotoPage(pageIndex, settings.verticalOffset, settings.horizontalOffset);
@@ -3390,28 +3431,12 @@ window.divaPlugins = [];
 
                 // Don't need to change the mode, may need to change view
                 // If the current view is not equal to that in state, switch view
-                if ((state.v === 'g' && !settings.inGrid) || (state.v === 'd' && settings.inGrid) ||(state.v ==='b' && !settings.inBookLayout))
+                //TODO changing the settings above this block makes this block not trigger
+                if ((state.v === 'g' && (!settings.inGrid || settings.inBookLayout)) ||
+                    (state.v === 'd' && (settings.inGrid || settings.inBookLayout)) ||
+                    (state.v === 'b' && !settings.inBookLayout))
                 {
-                    var view = state.v;
-
-                    switch (view)
-                    {
-                        case 'd':
-                            settings.inGrid = false;
-                            settings.inBookLayout = false;
-                            break;
-
-                        case 'b':
-                            settings.inGrid = false;
-                            settings.inBookLayout = true;
-                            break;
-
-                        case 'g':
-                            settings.inGrid = true;
-                            settings.inBookLayout = false;
-                            break;
-                    }
-
+                    switchViewState(state.v);
                     handleViewChange();
                 }
                 else
