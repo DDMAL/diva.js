@@ -2492,6 +2492,29 @@ window.divaPlugins = [];
             $(settings.selector + 'throbber').hide();
         };
 
+        var switchViewState = function(stateObj)
+        {
+            var view = stateObj;
+
+            switch (view)
+            {
+                case 'd':
+                    settings.inGrid = false;
+                    settings.inBookLayout = false;
+                    break;
+
+                case 'b':
+                    settings.inGrid = false;
+                    settings.inBookLayout = true;
+                    break;
+
+                case 'g':
+                    settings.inGrid = true;
+                    settings.inBookLayout = false;
+                    break;
+            }
+        };
+
         /**
          * Parses a IIIF Presentation API Manifest and converts it into a Diva.js-format object
          * (See https://github.com/DDMAL/diva.js/wiki/Development-notes#data-received-through-ajax-request)
@@ -2828,6 +2851,10 @@ window.divaPlugins = [];
             {
                 settings.inBookLayout = true;
             }
+
+            // Update view settings (settings.inGrid, settings.inBookLayout) to match 'v' parameter
+            var viewParam = $.getHashParam('v' + settings.hashParamSuffix);
+            switchViewState(viewParam);
         };
 
         var setupViewer = function ()
@@ -2985,13 +3012,9 @@ window.divaPlugins = [];
             }
 
             // If the "fullscreen" hash param is true, go to fullscreen initially
-            // If the grid hash param is true, go to grid view initially
-            var gridParam = $.getHashParam('g' + settings.hashParamSuffix);
-            var goIntoGrid = gridParam === 'true';
             var fullscreenParam = $.getHashParam('f' + settings.hashParamSuffix);
             var goIntoFullscreen = fullscreenParam === 'true';
 
-            settings.inGrid = (settings.inGrid && gridParam !== 'false') || goIntoGrid;
             settings.inFullscreen = (settings.inFullscreen && fullscreenParam !== 'false') || goIntoFullscreen;
 
             // Do the initial AJAX request and viewer loading
@@ -3383,11 +3406,14 @@ window.divaPlugins = [];
             if (state.n >= settings.minPagesPerRow && state.n <= settings.maxPagesPerRow)
                 settings.pagesPerRow = state.n;
 
+            // Change settings to match v (view) hash parameter
+
             if (settings.inFullscreen !== state.f)
             {
+                switchViewState(state.v);
                 // The parameter determines if we need to change the view as well
                 settings.inFullscreen = state.f;
-                handleModeChange(settings.inGrid !== state.g);
+                handleModeChange(false);
                 settings.horizontalOffset = horizontalOffset;
                 settings.verticalOffset = verticalOffset;
                 gotoPage(pageIndex, settings.verticalOffset, settings.horizontalOffset);
@@ -3399,28 +3425,11 @@ window.divaPlugins = [];
 
                 // Don't need to change the mode, may need to change view
                 // If the current view is not equal to that in state, switch view
-                if ((state.v === 'g' && !settings.inGrid) || (state.v === 'd' && settings.inGrid) ||(state.v ==='b' && !settings.inBookLayout))
+                if ((state.v === 'g' && (!settings.inGrid || settings.inBookLayout)) ||
+                    (state.v === 'd' && (settings.inGrid || settings.inBookLayout)) ||
+                    (state.v === 'b' && !settings.inBookLayout))
                 {
-                    var view = state.v;
-
-                    switch (view)
-                    {
-                        case 'd':
-                            settings.inGrid = false;
-                            settings.inBookLayout = false;
-                            break;
-
-                        case 'b':
-                            settings.inGrid = false;
-                            settings.inBookLayout = true;
-                            break;
-
-                        case 'g':
-                            settings.inGrid = true;
-                            settings.inBookLayout = false;
-                            break;
-                    }
-
+                    switchViewState(state.v);
                     handleViewChange();
                 }
                 else
