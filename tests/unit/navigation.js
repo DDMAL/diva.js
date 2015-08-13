@@ -42,6 +42,39 @@ asyncTest("Scrolling in grid view", function () {
     });
 });
 
+asyncTest("Scrolling down in book view", function() {
+    $.tempDiva({
+        objectData: '../demo/beromunster-iiif.json',
+        onReady: function(settings) {
+            settings.outerObject.scrollTop(10000);
+
+            var self = this;
+            setTimeout(function () {
+                equal(self.getCurrentPage(), 18, "The page should now be 19 (index of 18)");
+                equal($(settings.selector + 'current-page').text(), '19', "The toolbar should have been updated");
+                start();
+            }, 10);
+        }
+    });
+});
+
+asyncTest("Scrolling left in book view", function() {
+    $.tempDiva({
+        objectData: '../demo/beromunster-iiif.json',
+        onReady: function(settings) {
+            settings.outerObject.scrollTop(10000);
+            settings.outerObject.scrollLeft(0);
+
+            var self = this;
+            setTimeout(function () {
+                equal(self.getCurrentPage(), 17, "The page should now be 18 (index of 17)");
+                equal($(settings.selector + 'current-page').text(), '18', "The toolbar should have been updated");
+                start();
+            }, 10);
+        }
+    });
+});
+
 asyncTest("Zooming using the slider", function () {
     $.tempDiva({
         enableZoomControls: 'slider',
@@ -203,6 +236,31 @@ asyncTest("Switching between regular and fullscreen mode", function () {
                 ok($('body').hasClass('diva-hide-scrollbar'), "Body should have the hide-scrollbar class");
                 start();
             }, 10);
+        }
+    });
+});
+
+asyncTest("Jumping to page in Book view", function () {
+    $.tempDiva({
+        inBookLayout: true,
+        onReady: function (settings) {
+            this.gotoPageByIndex(5);
+
+            ok(settings.inBookLayout, "Should be in book layout");
+            equal($(settings.selector + 'current-page').text(), '6', "Toolbar should indicate page 6");
+
+            var dv = this;
+
+            setTimeout(function() {
+                ok($(settings.selector + 'page-5').length, "The element for page 6 (index 5) should be in the DOM");
+
+                dv.gotoPageByIndex(6);
+                equal($(settings.selector + 'current-page').text(), '7', "Toolbar should indicate page 7");
+                ok($(settings.selector + 'page-6').length, "The element for page 7 (index 6) should be in the DOM");
+
+                start();
+            }, 10);
+
         }
     });
 });

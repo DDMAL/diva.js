@@ -73,11 +73,12 @@ asyncTest("enableGotoPage true", function () {
     });
 });
 
+//TODO view icon tests
+
 asyncTest("enableGridIcon false, enableLinkIcon true", function () {
     $.tempDiva({
         enableGridIcon: false,
         onReady: function (settings) {
-            equal($(settings.selector + 'grid-icon').length, 0, "Grid icon should not be present");
 
             // Check that the link icon is there
             notEqual($(settings.selector + 'link-icon').length, 0, "Link icon should be present");
@@ -247,12 +248,38 @@ asyncTest("goDirectlyTo, invalid", function () {
 
 // iipServerURL can't really be tested, just have to rely on this to work
 
+asyncTest("inBookLayout true", function () {
+    $.tempDiva({
+        inBookLayout: true,
+        onReady: function (settings) {
+            ok(settings.inBookLayout, 'inBookLayout should remain true after initialization');
+            ok(settings.pageLeftOffsets[1] < settings.pageLeftOffsets[2], 'Page 1 should be to the left of page 2');
+            ok(settings.pageLeftOffsets[2] > settings.pageLeftOffsets[3], 'Page 2 should be to the right of page 3');
+            start();
+        }
+    });
+});
+
+asyncTest("documentPaged", function() {
+    $.tempDiva({
+        objectData: '../demo/beromunster-iiif.json',
+        onReady: function(settings) {
+            ok(settings.documentPaged, 'settings.documentPaged should be true when manifest has viewingHint: paged');
+            ok(settings.inBookLayout, 'settings.inBookLayout should be true when documentPaged is true');
+
+            console.log(settings.numPages);
+
+            start();
+        }
+    });
+});
+
 asyncTest("inGrid false", function () {
     $.tempDiva({
         inGrid: false,
         onReady: function (settings) {
             ok(!settings.inGrid, "inGrid setting should still be false");
-            ok(!$(settings.selector + 'grid-icon').hasClass('diva-in-grid'), "Icon should not have the in-grid class");
+            equal($(settings.selector + 'view-menu').children()[0].classList[0], 'diva-document-icon', "Current toolbar view icon should be the document icon");
             start();
         }
     });
@@ -263,7 +290,7 @@ asyncTest("inGrid true", function () {
         inGrid: true,
         onReady: function (settings) {
             ok(settings.inGrid, "inGrid setting should be preserved");
-            ok($(settings.selector + 'grid-icon').hasClass('diva-in-grid'), "Icon should have the in-grid class");
+            equal($(settings.selector + 'view-menu').children()[0].classList[0], 'diva-grid-icon', "Current toolbar view icon should be the grid icon");
             start();
         }
     });

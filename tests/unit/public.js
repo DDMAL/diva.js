@@ -163,12 +163,11 @@ asyncTest("toggleFullscreenMode(), enterFullscreen(), leaveFullscreen()", functi
     });
 });
 
-
-asyncTest("toggleGridView(), enterGridView(), leaveGridView()", function () {
+asyncTest("enterGridView(), leaveGridView()", function () {
     $.tempDiva({
         onReady: function (settings) {
             ok(!settings.inGrid, "Should not be in grid initially");
-            this.toggleGridView();
+            this.enterGridView();
             ok(settings.inGrid, "Should now be in grid");
             ok(!this.enterGridView(), "Should not be possible to enter grid");
             ok(settings.inGrid, "Should still be in grid");
@@ -177,8 +176,6 @@ asyncTest("toggleGridView(), enterGridView(), leaveGridView()", function () {
             ok(!this.leaveGridView(), "Should not be possible to exit grid");
             ok(!settings.inGrid, "Still not in grid");
             ok(this.enterGridView(), "Should be possible to enter grid");
-            this.toggleGridView();
-            ok(!settings.inGrid, "Should now be out of grid");
             start();
         }
     });
@@ -192,7 +189,7 @@ asyncTest("gotoPageByName()", function () {
             ok(this.gotoPageByName('bm_002.tif', "right", "center"), "It should find the page index for bm_002.tif");
             equal(settings.currentPageIndex, 1, "Now the page number should be 2");
             start();
-            
+
             /*
                 so this is confusing. this tests the internal getX/YOffset anchor points.
                 1) gotoPageByName above is called with "right" and "top" anchors, two non-default values
@@ -249,7 +246,7 @@ asyncTest("getState()", function () {
         onReady: function (settings) {
             var expected = {
                 f: false,
-                g: false,
+                v: 'd',
                 i: 'bm_001.tif',
                 n: 5,
                 p: false,
@@ -280,7 +277,7 @@ asyncTest("setState()", function () {
         onReady: function (settings) {
             var state = {
                 f: true,
-                g: false,
+                v: 'd',
                 i: "bm_005.tif",
                 n: 3,
                 p: false,
@@ -290,7 +287,8 @@ asyncTest("setState()", function () {
             };
             this.setState(state);
             ok(settings.inFullscreen, "Should now be in fullscreen");
-            ok(!settings.inGrid, "Should not be in grid");
+            ok(!settings.inGrid, "Should not be in grid view");
+            ok(!settings.inBookLayout, "Should not be in book view");
             equal(settings.currentPageIndex, 4, "Current page should be 5 (index of 4)");
             equal(settings.pagesPerRow, 3, "Pages per row should be 3");
             equal(settings.zoomLevel, 3, "Zoom level should be 3");
@@ -307,7 +305,7 @@ asyncTest("setState()", function () {
 
             state = {
                 f: false,
-                g: true,
+                v: 'g',
                 i: "bm_500.tif",
                 n: 4,
                 p: true,
@@ -333,7 +331,7 @@ asyncTest("translateFromMaxZoomLevel()", function () {
         onReady: function (settings) {
             var state = {
                 f: true,
-                g: false,
+                v: 'd',
                 i: "bm_005.tif",
                 n: 3,
                 p: false,
@@ -355,7 +353,7 @@ asyncTest("translateFromMaxZoomLevel()", function () {
             // reset the state to a different zoom level
             state = {
                 f: true,
-                g: false,
+                v: 'd',
                 i: "bm_005.tif",
                 n: 3,
                 p: false,
@@ -381,7 +379,7 @@ asyncTest("translateToMaxZoomLevel()", function () {
         onReady: function (settings) {
             var state = {
                 f: true,
-                g: false,
+                v: 'd',
                 i: "bm_005.tif",
                 n: 3,
                 p: false,
@@ -403,7 +401,7 @@ asyncTest("translateToMaxZoomLevel()", function () {
             // reset the state to a different zoom level
             state = {
                 f: true,
-                g: false,
+                v: 'd',
                 i: "bm_005.tif",
                 n: 3,
                 p: false,
