@@ -1647,6 +1647,147 @@ window.divaPlugins = [];
 
         };
 
+        // Bind touch and orientation change events
+        var bindMobileEvents = function()
+        {
+            // Prevent resizing (below from http://matt.might.net/articles/how-to-native-iphone-ipad-apps-in-javascript/)
+            var toAppend = [];
+            toAppend.push('<meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1" />');
+
+            // Eliminate URL and button bars if added to home screen
+            toAppend.push('<meta name="apple-mobile-web-app-capable" content="yes" />');
+
+            // Choose how to handle the phone status bar
+            toAppend.push('<meta name="apple-mobile-web-app-status-bar-style" content="black" />');
+            $('head').append(toAppend.join('\n'));
+
+            // Block the user from moving the window only if it's not integrated
+            if (settings.blockMobileMove)
+            {
+                $('body').bind('touchmove', function (event)
+                {
+                    var e = event.originalEvent;
+                    e.preventDefault();
+
+                    return false;
+                });
+            }
+
+            // Inertial scrolling
+            settings.outerObject.kinetic({
+                triggerHardware: true
+            });
+
+            // Bind events for pinch-zooming
+            var start = [],
+                move = [],
+                startDistance = 0;
+
+            settings.outerObject.on('touchstart', '.diva-document-page', function(event)
+            {
+                if (event.originalEvent.touches.length === 2)
+                {
+                    start = [event.originalEvent.touches[0].clientX,
+                             event.originalEvent.touches[0].clientY,
+                             event.originalEvent.touches[1].clientX,
+                             event.originalEvent.touches[1].clientY];
+
+                    startDistance = distance(start[2], start[0], start[3], start[1]);
+                }
+            });
+
+            settings.outerObject.on('touchmove', '.diva-document-page', function(event)
+            {
+                if (event.originalEvent.touches.length === 2)
+                {
+                    move = [event.originalEvent.touches[0].clientX,
+                            event.originalEvent.touches[0].clientY,
+                            event.originalEvent.touches[1].clientX,
+                            event.originalEvent.touches[1].clientY];
+
+                    var moveDistance = distance(move[2], move[0], move[3], move[1]);
+                    var zoomDelta = moveDistance - startDistance;
+
+                    if (!settings.scaleWait)
+                    {
+                        // Save the page we're currently on so we scroll there
+                        settings.goDirectlyTo = settings.currentPageIndex;
+
+                        if (settings.inGrid)
+                        {
+                            settings.inGrid = false;
+                            handleViewChange();
+                        }
+                        else
+                        {
+                            handlePinchZoom.call(this, zoomDelta, event);
+                        }
+                    }
+                }
+            });
+
+            var firstTapCoordinates = {},
+                tapDistance = 0;
+
+            var bindDoubleTap = function(event)
+            {
+                if (settings.singleTap)
+                {
+                    // Doubletap has occurred
+                    var touchEvent = {
+                        pageX: event.originalEvent.changedTouches[0].clientX,
+                        pageY: event.originalEvent.changedTouches[0].clientY
+                    };
+
+                    // If first tap is close to second tap (prevents interference with scale event)
+                    tapDistance = distance(firstTapCoordinates.pageX, touchEvent.pageX, firstTapCoordinates.pageY, touchEvent.pageY);
+                    if (tapDistance < 50 && settings.zoomLevel < settings.maxZoomLevel)
+                        if (settings.inGrid)
+                            handleGridDoubleClick.call($(event.target).parent(), touchEvent);
+                        else
+                            handleDocumentDoubleClick.call(this, touchEvent);
+
+                    settings.singleTap = false;
+                    firstTapCoordinates = {};
+                }
+                else
+                {
+                    settings.singleTap = true;
+                    firstTapCoordinates.pageX = event.originalEvent.changedTouches[0].clientX;
+                    firstTapCoordinates.pageY = event.originalEvent.changedTouches[0].clientY;
+
+                    // Cancel doubletap after 250 milliseconds
+                    settings.singleTapTimeout = setTimeout(function()
+                    {
+                        settings.singleTap = false;
+                        firstTapCoordinates = {};
+                    }, 250);
+                }
+            };
+
+            // Document view: Double-tap to zoom in
+            settings.outerObject.on('touchend', '.diva-document-page', bindDoubleTap);
+
+            // Grid view: Double-tap to jump to current page in document view
+            settings.outerObject.on('touchend', '.diva-page', bindDoubleTap);
+
+            // Handle window resizing events
+            var orientationEvent = "onorientationchange" in window ? "orientationchange" : "resize";
+            $(window).bind(orientationEvent, function (event)
+            {
+                var oldWidth = settings.panelWidth;
+                var oldHeight = settings.panelHeight;
+                updatePanelSize();
+
+                settings.horizontalOffset -= (settings.panelWidth - oldWidth) / 2;
+                settings.verticalOffset -= (settings.panelHeight - oldHeight) / 2;
+
+                // Reload the viewer to account for the resized viewport
+                settings.goDirectlyTo = settings.currentPageIndex;
+                loadViewer();
+            });
+        };
+
         // Pythagorean theorem to get the distance between two points (used for calculating finger distance for double-tap and pinch-zoom)
         var distance = function(x2, x1, y2, y1)
         {
@@ -1782,142 +1923,7 @@ window.divaPlugins = [];
             // Check if the user is on a iPhone or iPod touch or iPad
             if (settings.mobileWebkit)
             {
-                // Prevent resizing (below from http://matt.might.net/articles/how-to-native-iphone-ipad-apps-in-javascript/)
-                var toAppend = [];
-                toAppend.push('<meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1" />');
-
-                // Eliminate URL and button bars if added to home screen
-                toAppend.push('<meta name="apple-mobile-web-app-capable" content="yes" />');
-
-                // Choose how to handle the phone status bar
-                toAppend.push('<meta name="apple-mobile-web-app-status-bar-style" content="black" />');
-                $('head').append(toAppend.join('\n'));
-
-                // Block the user from moving the window only if it's not integrated
-                if (settings.blockMobileMove)
-                {
-                    $('body').bind('touchmove', function (event)
-                    {
-                        var e = event.originalEvent;
-                        e.preventDefault();
-
-                        return false;
-                    });
-                }
-
-                // Inertial scrolling
-                settings.outerObject.kinetic({
-                    triggerHardware: true
-                });
-
-                // Bind events for pinch-zooming
-                var start = [],
-                    move = [],
-                    startDistance = 0;
-
-                settings.outerObject.on('touchstart', '.diva-document-page', function(event)
-                {
-                    if (event.originalEvent.touches.length === 2)
-                    {
-                        start = [event.originalEvent.touches[0].clientX,
-                                 event.originalEvent.touches[0].clientY,
-                                 event.originalEvent.touches[1].clientX,
-                                 event.originalEvent.touches[1].clientY];
-
-                        startDistance = distance(start[2], start[0], start[3], start[1]);
-                    }
-                });
-
-                settings.outerObject.on('touchmove', '.diva-document-page', function(event)
-                {
-                    if (event.originalEvent.touches.length === 2)
-                    {
-                        move = [event.originalEvent.touches[0].clientX,
-                                event.originalEvent.touches[0].clientY,
-                                event.originalEvent.touches[1].clientX,
-                                event.originalEvent.touches[1].clientY];
-
-                        var moveDistance = distance(move[2], move[0], move[3], move[1]);
-                        var zoomDelta = moveDistance - startDistance;
-
-                        if (!settings.scaleWait)
-                        {
-                            // Save the page we're currently on so we scroll there
-                            settings.goDirectlyTo = settings.currentPageIndex;
-
-                            if (settings.inGrid)
-                            {
-                                settings.inGrid = false;
-                                handleViewChange();
-                            }
-                            else
-                            {
-                                handlePinchZoom.call(this, zoomDelta, event);
-                            }
-                        }
-                    }
-                });
-
-                var firstTapCoordinates = {},
-                    tapDistance = 0;
-
-                var bindDoubleTap = function(event)
-                {
-                    if (settings.singleTap)
-                    {
-                        // Doubletap has occurred
-                        var touchEvent = {
-                            pageX: event.originalEvent.changedTouches[0].clientX,
-                            pageY: event.originalEvent.changedTouches[0].clientY
-                        };
-
-                        // If first tap is close to second tap (prevents interference with scale event)
-                        tapDistance = distance(firstTapCoordinates.pageX, touchEvent.pageX, firstTapCoordinates.pageY, touchEvent.pageY);
-                        if (tapDistance < 50 && settings.zoomLevel < settings.maxZoomLevel)
-                            if (settings.inGrid)
-                                handleGridDoubleClick.call($(event.target).parent(), touchEvent);
-                            else
-                                handleDocumentDoubleClick.call(this, touchEvent);
-
-                        settings.singleTap = false;
-                        firstTapCoordinates = {};
-                    }
-                    else
-                    {
-                        settings.singleTap = true;
-                        firstTapCoordinates.pageX = event.originalEvent.changedTouches[0].clientX;
-                        firstTapCoordinates.pageY = event.originalEvent.changedTouches[0].clientY;
-
-                        // Cancel doubletap after 250 milliseconds
-                        settings.singleTapTimeout = setTimeout(function()
-                        {
-                            settings.singleTap = false;
-                            firstTapCoordinates = {};
-                        }, 250);
-                    }
-                };
-
-                // Document view: Double-tap to zoom in
-                settings.outerObject.on('touchend', '.diva-document-page', bindDoubleTap);
-
-                // Grid view: Double-tap to jump to current page in document view
-                settings.outerObject.on('touchend', '.diva-page', bindDoubleTap);
-
-                // Handle window resizing events
-                var orientationEvent = "onorientationchange" in window ? "orientationchange" : "resize";
-                $(window).bind(orientationEvent, function (event)
-                {
-                    var oldWidth = settings.panelWidth;
-                    var oldHeight = settings.panelHeight;
-                    updatePanelSize();
-
-                    settings.horizontalOffset -= (settings.panelWidth - oldWidth) / 2;
-                    settings.verticalOffset -= (settings.panelHeight - oldHeight) / 2;
-
-                    // Reload the viewer to account for the resized viewport
-                    settings.goDirectlyTo = settings.currentPageIndex;
-                    loadViewer();
-                });
+                bindMobileEvents();
             }
             // Handle window resizing events
             else
@@ -1937,8 +1943,8 @@ window.divaPlugins = [];
                     }, 200);
                 });
             }
-            diva.Events.subscribe('PanelSizeDidChange', updatePanelSize);
 
+            diva.Events.subscribe('PanelSizeDidChange', updatePanelSize);
         };
 
         // Handles all status updating etc (both fullscreen and not)
