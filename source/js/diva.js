@@ -364,7 +364,7 @@ window.divaPlugins = [];
                 var lastWidth = width - (cols - 1) * settings.tileWidth;
 
                 // Declare variables used within the loops
-                var row, col, tileHeight, tileWidth, top, left, displayStyle, zoomLevel, imageURL, regionHeight, regionWidth;
+                var row, col, tileHeight, tileWidth, top, left, zoomLevel, imageURL, regionHeight, regionWidth, xOffset, yOffset, zoomDifference;
 
                 // Adjust the zoom level based on the max zoom level of the page
                 zoomLevel = settings.zoomLevel + maxZoom - settings.realMaxZoom;
@@ -374,7 +374,7 @@ window.divaPlugins = [];
                 if (settings.isIIIF)
                 {
                     // regionX, regionY, regionWidth, regionHeight
-                    var zoomDifference = Math.pow(2, maxZoom - zoomLevel);
+                    zoomDifference = Math.pow(2, maxZoom - zoomLevel);
                     regionHeight = settings.tileHeight * zoomDifference;
                     regionWidth = settings.tileWidth * zoomDifference;
 
@@ -382,6 +382,18 @@ window.divaPlugins = [];
                     var version = settings.pages[pageIndex].api;
                     var quality = (version >= 2.0) ? 'default' : 'native';
                     var iiifSuffix = '/0/' + quality + '.jpg';
+
+                    // only show segment defined in canvas.resource.@id in manifest
+                    if (settings.pages[pageIndex].hasOwnProperty('xoffset'))
+                    {
+                        xOffset = settings.pages[pageIndex].xoffset;
+                        yOffset = settings.pages[pageIndex].yoffset;
+                    }
+                    else
+                    {
+                        xOffset = 0;
+                        yOffset = 0;
+                    }
                 }
                 else
                 {
@@ -405,8 +417,9 @@ window.divaPlugins = [];
 
                         tileWidth = (col === cols - 1) ? lastWidth : settings.tileWidth;
 
-                        imageURL = (settings.isIIIF) ? baseImageURL + col * regionWidth + ',' + row * regionHeight + ',' + (tileWidth * zoomDifference) + ',' + (tileHeight * zoomDifference) + '/' + tileWidth + ',' + iiifSuffix
-                    : baseImageURL + tileIndex;
+                        imageURL = (settings.isIIIF) ? baseImageURL + (col * regionWidth + xOffset) + ',' +
+                            (row * regionHeight + yOffset) + ',' + (tileWidth * zoomDifference) + ',' +
+                            (tileHeight * zoomDifference) + '/' + tileWidth + ',' + iiifSuffix : baseImageURL + tileIndex;
 
                         // this check looks to see if the tile is already loaded, and then if
                         // it isn't, if it should be visible.
@@ -2261,6 +2274,65 @@ window.divaPlugins = [];
         };
 
         /**
+         * Takes in a resource block from a canvas and outputs the following information associated with that resource:
+         * - Image URL
+         * - Image region to be displayed
+         *
+         * @param {Object} resource - an object representing the resource block of a canvas section in a IIIF manifest
+         * @returns {Object} imageInfo - an object containing image URL and region
+         */
+        var parseImageInfo = function (resource)
+        {
+            var url = resource['@id'];
+            var fragmentRegex = /#xywh=([0-9]+,[0-9]+,[0-9]+,[0-9]+)/;
+            var xywh = '';
+            var stripURL = true;
+
+            if (/\/([0-9]+,[0-9]+,[0-9]+,[0-9]+)\//.test(url))
+            {
+                // if resource in image API format, extract region x,y,w,h from URL (after 4th slash from last)
+                // matches coordinates in URLs of the form http://www.example.org/iiif/book1-page1/40,50,1200,1800/full/0/default.jpg
+                var urlArray = url.split('/');
+                xywh = urlArray[urlArray.length - 4];
+            }
+            else if (fragmentRegex.test(url))
+            {
+                // matches coordinates of the style http://www.example.org/iiif/book1/canvas/p1#xywh=50,50,320,240
+                var result = fragmentRegex.exec(url);
+                xywh = result[1];
+            }
+            else if (resource.service && resource.service['@id'])
+            {
+                // assume canvas size based on image size
+                url = resource.service['@id'];
+                // this URL excludes region parameters so we don't need to remove them
+                stripURL = false;
+            }
+
+            if (stripURL)
+            {
+                // extract URL up to identifier (we eliminate the last 5 parameters: /region/size/rotation/quality.format)
+                url = url.split('/').slice(0, -4).join('/');
+            }
+
+            var imageInfo = {
+                url: url
+            };
+
+            if (xywh.length)
+            {
+                // parse into separate components
+                var dimensions = xywh.split(',');
+                imageInfo.x = parseInt(dimensions[0], 10);
+                imageInfo.y = parseInt(dimensions[1], 10);
+                imageInfo.w = parseInt(dimensions[2], 10);
+                imageInfo.h = parseInt(dimensions[3], 10);
+            }
+
+            return imageInfo;
+        };
+
+        /**
          * Parses a IIIF Presentation API Manifest and converts it into a Diva.js-format object
          * (See https://github.com/DDMAL/diva.js/wiki/Development-notes#data-received-through-ajax-request)
          * (This is a client-side re-implementation of generate_json.py)
@@ -2268,7 +2340,8 @@ window.divaPlugins = [];
          * @param {Object} manifest - an object that represents a valid IIIF manifest
          * @returns {Object} divaServiceBlock - the data needed by Diva to show a view of a single document
          */
-        var parseManifest = function (manifest) {
+        var parseManifest = function (manifest)
+        {
 
             var incorporateZoom = function (imageDimension, zoomDifference)
             {
@@ -2302,6 +2375,7 @@ window.divaPlugins = [];
             var width;
             var height;
             var url;
+            var info;
             var maxZoom;
             var label;
             var context;
@@ -2312,13 +2386,12 @@ window.divaPlugins = [];
 
             for (var i = 0, numCanvases = canvases.length; i < numCanvases; i++)
             {
-                width = canvases[i].width; //canvas width (@TODO should it be image width if there is one?)
-                height = canvases[i].height; //canvas height (@TODO ")
                 resource = canvases[i].images[0].resource;
+                width = resource.width || canvases[i].width;
+                height = resource.height || canvases[i].height;
 
-                //@TODO check for resource.service['@id'], if not present fall back to resource['@id'] and chop off string after identifier
-                // url = resource['@id']; //image url for primary canvas resource.
-                url = resource.service['@id']; //this URL excludes parameters so that we can easily append our own later. issue: not required in manifest by api?
+                info = parseImageInfo(resource);
+                url = info.url;
 
                 //append trailing / from url if it's not there
                 if (url.slice(-1) !== '/')
@@ -2354,6 +2427,12 @@ window.divaPlugins = [];
                     'url': url,
                     'api': imageAPIVersion
                 };
+
+                if (info.hasOwnProperty('x'))
+                {
+                    images[i].xoffset = info.x;
+                    images[i].yoffset = info.y;
+                }
 
                 zoomLevels[i] = maxZoom;
             }
@@ -2414,6 +2493,12 @@ window.divaPlugins = [];
                     f: images[i].fn,
                     url: images[i].url,
                     api: images[i].api
+                };
+
+                if (images[i].hasOwnProperty('xoffset'))
+                {
+                    pages[i].xoffset = images[i].xoffset;
+                    pages[i].yoffset = images[i].yoffset;
                 }
             }
 
