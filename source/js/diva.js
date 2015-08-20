@@ -1663,17 +1663,6 @@ window.divaPlugins = [];
         // Bind touch and orientation change events
         var bindMobileEvents = function()
         {
-            // Prevent resizing (below from http://matt.might.net/articles/how-to-native-iphone-ipad-apps-in-javascript/)
-            var toAppend = [];
-            toAppend.push('<meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1" />');
-
-            // Eliminate URL and button bars if added to home screen
-            toAppend.push('<meta name="apple-mobile-web-app-capable" content="yes" />');
-
-            // Choose how to handle the phone status bar
-            toAppend.push('<meta name="apple-mobile-web-app-status-bar-style" content="black" />');
-            $('head').append(toAppend.join('\n'));
-
             // Block the user from moving the window only if it's not integrated
             if (settings.blockMobileMove)
             {
