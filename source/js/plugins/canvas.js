@@ -26,7 +26,6 @@ Adds an adjustment icon next to each image
             contrastStep: 0.05,
             localStoragePrefix: 'canvas-',
             mobileWebkitMaxZoom: 2,
-            onInit: null,
             rgbMax: 50,
             rgbMin: -50,
             throbberFadeSpeed: 200,
@@ -835,12 +834,9 @@ Adds an adjustment icon next to each image
                     });
                 }
 
-                // Execute the onInit callback function, if defined
-                if (typeof settings.onInit === 'function')
-                {
-                    // The context is the diva instance
-                    settings.onInit.call(this, settings);
-                }
+                diva.Events.subscribe('ObjectDidLoad', this.setupHook);
+                diva.Events.subscribe('ViewerDidTerminate', this.destroy);
+                diva.Events.subscribe('PageDidLoad', this.onPageLoad);
 
                 return true;
             },
@@ -938,7 +934,7 @@ Adds an adjustment icon next to each image
 
                 showThrobber();
 
-                diva.Events.publish("CanvasViewDidActivate", [page]);
+                diva.Events.publish('CanvasViewDidActivate', [page]);
 
                 loadCanvas(imageURL);
             },

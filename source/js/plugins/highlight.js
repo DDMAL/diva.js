@@ -488,6 +488,8 @@ Allows you to highlight regions of a page image
                     return findAdjacentHighlight(false);
                 };
 
+                diva.Events.subscribe('ViewerDidTerminate', this.destroy);
+
                 return true;
             },
             destroy: function (divaSettings, divaInstance)

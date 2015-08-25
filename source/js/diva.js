@@ -57,20 +57,6 @@ window.divaPlugins = [];
             maxZoomLevel: -1,           // Optional; defaults to the max zoom returned in the JSON response
             minPagesPerRow: 2,          // Minimum pages per row in grid view. Recommended default.
             minZoomLevel: 0,            // Defaults to 0 (the minimum zoom)
-            onDocumentLoaded: null,     // Callback function for when the document is fully loaded (Callbacks are deprecated, use Events)
-            onModeToggle: null,         // Callback for toggling fullscreen mode
-            onViewToggle: null,         // Callback for switching between grid and document view
-            onJump: null,               // Callback function for jumping to a specific page (using the gotoPage feature)
-            onPageLoad: null,           // Callback function for loading pages
-            onPageLoaded: null,         // Callback function for after the page has been loaded
-            onReady: null,              // Callback function for initial load
-            onScroll: null,             // Callback function for scrolling
-            onScrollDown: null,         // Callback function for scrolling down, only
-            onScrollUp: null,           // Callback function for scrolling up only
-            onSetCurrentPage: null,     // Callback function for when the current page is set
-            onZoom: null,               // Callback function for zooming in general
-            onZoomIn: null,             // Callback function for zooming in only
-            onZoomOut: null,            // Callback function for zooming out only
             pageLoadTimeout: 200,       // Number of milliseconds to wait before loading pages
             pagesPerRow: 5,             // The default number of pages per row in grid view
             rowLoadTimeout: 50,         // Number of milliseconds to wait before loading a row
@@ -151,39 +137,7 @@ window.divaPlugins = [];
 
         $.extend(settings, globals);
 
-        // Executes a callback function with the diva instance set as the context
-        // Can take an unlimited number to arguments to pass to the callback function
         var self = this;
-
-        var executeCallback = (function (callback)
-        {
-            var firstRun = true;
-            return function(callback)
-            {
-                var args, i, length;
-
-                if (typeof callback === "function")
-                {
-                    args = [];
-                    for (i = 1, length = arguments.length; i < length; i++)
-                    {
-                        args.push(arguments[i]);
-                    }
-
-                    if (firstRun)
-                    {
-                        console.warn("The use of callback functions is deprecated. Use diva.Events.subscribe(\"Event\", function) instead.");
-                        firstRun = false;
-                    }
-
-                    callback.apply(self, args);
-
-                    return true;
-                }
-
-                return false;
-            };
-        })();
 
         var getPageData = function (pageIndex, attribute)
         {
@@ -329,16 +283,7 @@ window.divaPlugins = [];
                 }
 
                 innerElement.appendChild(pageElement);
-                // Call the callback function
-                executeCallback(settings.onPageLoad, pageIndex, filename, pageSelector);
                 diva.Events.publish("PageWillLoad", [pageIndex, filename, pageSelector], self);
-
-                // @TODO: Replace this with a notification.
-                // Execute the callback functions for any of the enabled plugins
-                for (plugin in settings.plugins)
-                {
-                    executeCallback(settings.plugins[plugin].onPageLoad, pageIndex, filename, pageSelector);
-                }
             }
 
             // There are still tiles to load, so try to load those (after a delay)
@@ -453,7 +398,6 @@ window.divaPlugins = [];
 
                 settings.allTilesLoaded[pageIndex] = allTilesLoaded;
 
-                executeCallback(settings.onPageLoaded, pageIndex, filename, pageSelector);
                 diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector], self);
             };
             settings.pageTimeouts.push(setTimeout(pageLoadFunction, settings.pageLoadTimeout, pageIndex));
@@ -637,19 +581,16 @@ window.divaPlugins = [];
 
             var scrollSoFar = (settings.verticallyOriented ? document.getElementById(settings.ID + "outer").scrollTop : document.getElementById(settings.ID + "outer").scrollLeft);
 
-            executeCallback(settings.onScroll, scrollSoFar);
             diva.Events.publish("ViewerDidScroll", [scrollSoFar], self);
 
             if (direction > 0)
             {
                 // scrolling forwards
-                executeCallback(settings.onScrollDown, scrollSoFar);
                 diva.Events.publish("ViewerDidScrollDown", [scrollSoFar], self);
             }
             else if (direction < 0)
             {
                 // scrolling backwards
-                executeCallback(settings.onScrollUp, scrollSoFar);
                 diva.Events.publish("ViewerDidScrollUp", [scrollSoFar], self);
             }
         };
@@ -683,7 +624,6 @@ window.divaPlugins = [];
 
             // Load some data for this and initialise some variables
             var heightFromTop = (settings.rowHeight * rowIndex) + settings.fixedPadding;
-            var content = [];
             var innerElem = document.getElementById(settings.ID + "inner");
 
             // Create the row div
@@ -865,19 +805,16 @@ window.divaPlugins = [];
 
             var newTopScroll = document.getElementById(settings.ID + "outer").scrollTop;
 
-            executeCallback(settings.onScroll, newTopScroll);
             diva.Events.publish("ViewerDidScroll", [newTopScroll], self);
 
             // If we're scrolling down
             if (direction > 0)
             {
-                executeCallback(settings.onScrollDown, newTopScroll);
                 diva.Events.publish("ViewerDidScrollDown", [newTopScroll], self);
             }
             else if (direction < 0)
             {
                 // We're scrolling up
-                executeCallback(settings.onScrollUp, newTopScroll);
                 diva.Events.publish("ViewerDidScrollUp", [newTopScroll], self);
             }
         };
@@ -964,7 +901,6 @@ window.divaPlugins = [];
                     if (!setCurrentPage(direction))
                     {
                         var filename = settings.pages[pageToConsider].f;
-                        executeCallback(settings.onSetCurrentPage, pageToConsider, filename);
                         diva.Events.publish("VisiblePageDidChange", [pageToConsider, filename], self);
                     }
                 }
@@ -1051,12 +987,9 @@ window.divaPlugins = [];
                 settings.currentPageIndex = pageIndex;
                 var filename = settings.pages[pageIndex].f;
 
-                executeCallback(settings.onSetCurrentPage, pageIndex, filename);
                 diva.Events.publish("VisiblePageDidChange", [pageIndex, filename], self);
             }
 
-            // Execute the onJump callback
-            executeCallback(settings.onJump, pageIndex);
             diva.Events.publish("ViewerDidJump", [pageIndex], self);
         };
 
@@ -1195,21 +1128,19 @@ window.divaPlugins = [];
                 }
             }
 
-            // If this is not the initial load, execute the zoom callbacks
+            // If this is not the initial load, trigger the zoom events
             if (settings.oldZoomLevel >= 0)
             {
                 if (settings.oldZoomLevel < settings.zoomLevel)
                 {
-                    executeCallback(settings.onZoomIn, z);
                     diva.Events.publish("ViewerDidZoomIn", [z], self);
                 }
                 else
                 {
-                    executeCallback(settings.onZoomOut, z);
                     diva.Events.publish("ViewerDidZoomOut", [z], self);
                 }
 
-                executeCallback(settings.onZoom, z);
+                diva.Events.publish("ViewerDidZoom", [z], self);
             }
             else
             {
@@ -1221,7 +1152,6 @@ window.divaPlugins = [];
                 settings.scaleWait = false;
 
             var fileName = settings.pages[settings.currentPageIndex].f;
-            executeCallback(settings.onDocumentLoaded, settings.currentPageIndex, fileName);
             diva.Events.publish("DocumentDidLoad", [settings.currentPageIndex, fileName], self);
         };
 
@@ -1337,9 +1267,7 @@ window.divaPlugins = [];
             else
                 $(document).off('keyup', escapeListener);
 
-            // Execute callbacks
-            executeCallback(settings.onModeToggle, settings.inFullscreen);
-            diva.Events.publish("ModeDidSwitch", [settings.inFullscreen], self);
+           diva.Events.publish("ModeDidSwitch", [settings.inFullscreen], self);
         };
 
         // Handles switching in and out of grid view
@@ -1347,7 +1275,6 @@ window.divaPlugins = [];
         var handleViewChange = function ()
         {
             loadViewer();
-            executeCallback(settings.onViewToggle, settings.inGrid);
 
             // Switch the slider
             diva.Events.publish("ViewDidSwitch", [settings.inGrid], self);
@@ -2686,24 +2613,21 @@ window.divaPlugins = [];
                     // store object data in settings
                     parseObjectData(responseData);
 
-                    // Execute the setup hook for each plugin (if defined)
-                    $.each(settings.plugins, function (index, plugin)
-                    {
-                        executeCallback(plugin.setupHook, settings);
-                    });
+                    // Plugin setup hooks should be bound to the ObjectDidLoad event
+                    diva.Events.publish('ObjectDidLoad', [settings], self);
 
                     // Create the toolbar and display the title + total number of pages
                     if (settings.enableToolbar)
                     {
                         settings.toolbar = createToolbar();
-                        diva.Events.subscribe("VisiblePageDidChange", settings.toolbar.updateCurrentPage);
-                        diva.Events.subscribe("ModeDidSwitch", settings.toolbar.switchMode);
-                        diva.Events.subscribe("ViewDidSwitch", settings.toolbar.switchView);
-                        diva.Events.subscribe("ZoomLevelDidChange", settings.toolbar.updateZoomSlider);
-                        diva.Events.subscribe("ZoomLevelDidChange", settings.toolbar.updateZoomButtons);
-                        diva.Events.subscribe("GridRowNumberDidChange", settings.toolbar.updateGridSlider);
-                        diva.Events.subscribe("ZoomLevelDidChange", settings.toolbar.updateGridButtons);
-                        diva.Events.subscribe("NumberOfPagesDidChange", settings.toolbar.setNumPages);
+                        diva.Events.subscribe('VisiblePageDidChange', settings.toolbar.updateCurrentPage);
+                        diva.Events.subscribe('ModeDidSwitch', settings.toolbar.switchMode);
+                        diva.Events.subscribe('ViewDidSwitch', settings.toolbar.switchView);
+                        diva.Events.subscribe('ZoomLevelDidChange', settings.toolbar.updateZoomSlider);
+                        diva.Events.subscribe('ZoomLevelDidChange', settings.toolbar.updateZoomButtons);
+                        diva.Events.subscribe('GridRowNumberDidChange', settings.toolbar.updateGridSlider);
+                        diva.Events.subscribe('ZoomLevelDidChange', settings.toolbar.updateGridButtons);
+                        diva.Events.subscribe('NumberOfPagesDidChange', settings.toolbar.setNumPages);
                     }
 
                     //if the parent is the body and there are no siblings, we don't want to use this to base size off, we want window instead
@@ -2748,8 +2672,6 @@ window.divaPlugins = [];
                     //prep dimensions one last time now that pages have loaded
                     updatePanelSize();
 
-                    // Execute the callback
-                    executeCallback(settings.onReady, settings);
                     diva.Events.publish("ViewerDidLoad", [settings], self);
 
                     // signal that everything should be set up and ready to go.
@@ -2878,13 +2800,6 @@ window.divaPlugins = [];
                 return true;
             }
             return false;
-        };
-
-        // Returns the page index (with indexing starting at 0)
-        this.getCurrentPage = function ()
-        {
-            console.warn("The call to getCurrentPage is deprecated. Use getCurrentPageIndex instead.");
-            return settings.currentPageIndex;
         };
 
         this.getNumberOfPages = function ()
@@ -3408,11 +3323,7 @@ window.divaPlugins = [];
             // Empty the parent container and remove any diva-related data
             settings.parentObject.empty().removeData('diva');
 
-            // Call the destroy function for all the enabled plugins (if it exists)
-            $.each(settings.plugins, function (index, plugin)
-            {
-                executeCallback(plugin.destroy, settings, self);
-            });
+            diva.Events.publish('ViewerDidTerminate', settings, self);
 
             // Remove any additional styling on the parent element
             settings.parentObject.removeAttr('style').removeAttr('class');
