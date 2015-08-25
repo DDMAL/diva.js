@@ -3323,7 +3323,7 @@ window.divaPlugins = [];
             // Empty the parent container and remove any diva-related data
             settings.parentObject.empty().removeData('diva');
 
-            diva.Events.publish('ViewerDidTerminate', settings, self);
+            diva.Events.publish('ViewerDidTerminate', [settings], self);
 
             // Remove any additional styling on the parent element
             settings.parentObject.removeAttr('style').removeAttr('class');
