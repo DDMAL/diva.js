@@ -2,7 +2,7 @@
 Test coverage: pretty much complete
 */
 
-module("Hash params");
+QUnit.module("Hash params", { beforeEach: clearTempDiva });
 
 var multipleHashParamTest = function (testName, hashParams, onReadyCallback, settings) {
     asyncTest(testName, function () {
@@ -13,29 +13,27 @@ var multipleHashParamTest = function (testName, hashParams, onReadyCallback, set
         var first = true;
         var prefix = '';
         for (var hashParam in hashParams) {
-            hashValue = hashParams[hashParam];
+            if (hashParams.hasOwnProperty(hashParam))
+            {
+                hashValue = hashParams[hashParam];
 
-            window.location.hash += prefix + hashParam + suffix + '=' + hashValue;
+                window.location.hash += prefix + hashParam + suffix + '=' + hashValue;
 
-            if (first) {
-                prefix = '&';
-                first = false;
+                if (first) {
+                    prefix = '&';
+                    first = false;
+                }
             }
         }
 
-        var allSettings = {
-            onReady: function (settings) {
-                onReadyCallback.call(this, settings);
-                window.location.hash = previousHash;
-                start();
-            }
-        };
+        diva.Events.subscribe('ViewerDidLoad', function(settings)
+        {
+            onReadyCallback.call(this, settings);
+            window.location.hash = previousHash;
+            start();
+        });
 
-        if (settings) {
-            $.extend(allSettings, settings);
-        }
-
-        $.tempDiva(allSettings);
+        $.tempDiva(settings);
     });
 };
 

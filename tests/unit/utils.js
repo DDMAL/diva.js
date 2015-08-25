@@ -3,7 +3,7 @@ Test coverage: pretty much complete
 Can't really (or don't need to) test any of the others
 */
 
-module("Utility methods");
+QUnit.module("Utility methods", { beforeEach: clearTempDiva });
 
 test("getHashParam()", function () {
     // First try it with no hash params - should return false

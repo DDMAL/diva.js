@@ -82,6 +82,16 @@ page.open(testURL, function(status){
     else
         page.evaluate(function() { window.isTravis = false; });
 
+    var clearTempDiva = function()
+    {
+        // First, empty it in case something else has been using it
+        var dv = $('#diva-temp').data('diva');
+        if (dv)
+        {
+            dv.destroy();
+        }
+    };
+
     if (status !== "success") {
         console.log("Unable to access network");
         phantom.exit();
@@ -108,7 +118,7 @@ page.open(testURL, function(status){
 
                 if (numFailed > 0) {
                     // First find out which ones failed, and print those
-                    tests= $('#qunit-tests > li.fail');
+                    tests = $('#qunit-tests > li.fail');
 
                     $.each(tests, function(index, test) {
                         var moduleName = $(test).find('.module-name').text();

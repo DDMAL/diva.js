@@ -11,14 +11,21 @@
         settings.enableCanvas = settings.enableCanvas || true;
         settings.enableDownload = settings.enableDownload || true;
 
-        // First, empty it in case something else has been using it
-        var dv = $('#diva-temp').data('diva');
-        if (dv) {
-            dv.destroy();
-        }
         return $('#diva-temp').diva(settings).data('diva');
     };
 })(jQuery);
+
+var clearTempDiva = function()
+{
+        // First, empty it in case something else has been using it
+        var dv = $('#diva-temp').data('diva');
+        if (dv)
+        {
+            dv.destroy();
+        }
+
+        diva.Events.unsubscribeAll();
+};
 
  /*!
  * jQuery Simulate v0.0.1 - simulate browser mouse and keyboard events
