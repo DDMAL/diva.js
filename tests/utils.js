@@ -3,6 +3,7 @@
 (function () {
     // Allows you to clone, create a document viewer on, then remove an element
     $.tempDiva = function (settings) {
+        settings = settings || {};
         // If the divaserveURL, imageDir, iconPath and iipServerURL settings aren't defined, define them
         settings.imageDir = settings.imageDir || "/srv/images/beromunster";
         settings.iipServerURL = settings.iipServerURL || "http://diva.simssa.ca/fcgi-bin/iipsrv.fcgi";
