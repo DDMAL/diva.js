@@ -24,8 +24,6 @@ var clearTempDiva = function()
         {
             dv.destroy();
         }
-
-        diva.Events.unsubscribeAll();
 };
 
  /*!
