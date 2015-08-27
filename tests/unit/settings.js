@@ -18,7 +18,8 @@ QUnit.test("adaptivePadding enabled", function (assert) {
 });
 
 asyncTest("adaptivePadding disabled, fixedPadding set", function () {
-    diva.Events.subscribe('ViewerDidLoad', function(settings) {
+    diva.Events.subscribe('ViewerDidLoad', function(settings)
+    {
         equal(settings.verticalPadding, 40, "Vertical padding should be 40 (the minimum with plugins enabled)");
         equal(settings.horizontalPadding, 11, "Horizontal padding should be 11 (fixedPadding)");
         start();
