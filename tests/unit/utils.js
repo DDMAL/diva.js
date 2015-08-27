@@ -12,6 +12,7 @@ test("getHashParam()", function () {
     // Now set the current URL to something
     var baseUrl = window.location.href;
     window.location.hash = '#p=149&z=2'
+    window.location.hash = '#p=149&z=2';
     var nonexistentParam = $.getHashParam('lol');
     var firstParam = $.getHashParam('p');
     var secondParam = $.getHashParam('z');
