@@ -57,20 +57,6 @@ window.divaPlugins = [];
             maxZoomLevel: -1,           // Optional; defaults to the max zoom returned in the JSON response
             minPagesPerRow: 2,          // Minimum pages per row in grid view. Recommended default.
             minZoomLevel: 0,            // Defaults to 0 (the minimum zoom)
-            onDocumentLoaded: null,     // Callback function for when the document is fully loaded (Callbacks are deprecated, use Events)
-            onModeToggle: null,         // Callback for toggling fullscreen mode
-            onViewToggle: null,         // Callback for switching between grid and document view
-            onJump: null,               // Callback function for jumping to a specific page (using the gotoPage feature)
-            onPageLoad: null,           // Callback function for loading pages
-            onPageLoaded: null,         // Callback function for after the page has been loaded
-            onReady: null,              // Callback function for initial load
-            onScroll: null,             // Callback function for scrolling
-            onScrollDown: null,         // Callback function for scrolling down, only
-            onScrollUp: null,           // Callback function for scrolling up only
-            onSetCurrentPage: null,     // Callback function for when the current page is set
-            onZoom: null,               // Callback function for zooming in general
-            onZoomIn: null,             // Callback function for zooming in only
-            onZoomOut: null,            // Callback function for zooming out only
             pageLoadTimeout: 200,       // Number of milliseconds to wait before loading pages
             pagesPerRow: 5,             // The default number of pages per row in grid view
             rowLoadTimeout: 50,         // Number of milliseconds to wait before loading a row
@@ -151,39 +137,7 @@ window.divaPlugins = [];
 
         $.extend(settings, globals);
 
-        // Executes a callback function with the diva instance set as the context
-        // Can take an unlimited number to arguments to pass to the callback function
         var self = this;
-
-        var executeCallback = (function (callback)
-        {
-            var firstRun = true;
-            return function(callback)
-            {
-                var args, i, length;
-
-                if (typeof callback === "function")
-                {
-                    args = [];
-                    for (i = 1, length = arguments.length; i < length; i++)
-                    {
-                        args.push(arguments[i]);
-                    }
-
-                    if (firstRun)
-                    {
-                        console.warn("The use of callback functions is deprecated. Use diva.Events.subscribe(\"Event\", function) instead.");
-                        firstRun = false;
-                    }
-
-                    callback.apply(self, args);
-
-                    return true;
-                }
-
-                return false;
-            };
-        })();
 
         var getPageData = function (pageIndex, attribute)
         {
@@ -329,16 +283,7 @@ window.divaPlugins = [];
                 }
 
                 innerElement.appendChild(pageElement);
-                // Call the callback function
-                executeCallback(settings.onPageLoad, pageIndex, filename, pageSelector);
                 diva.Events.publish("PageWillLoad", [pageIndex, filename, pageSelector], self);
-
-                // @TODO: Replace this with a notification.
-                // Execute the callback functions for any of the enabled plugins
-                for (plugin in settings.plugins)
-                {
-                    executeCallback(settings.plugins[plugin].onPageLoad, pageIndex, filename, pageSelector);
-                }
             }
 
             // There are still tiles to load, so try to load those (after a delay)
@@ -364,7 +309,7 @@ window.divaPlugins = [];
                 var lastWidth = width - (cols - 1) * settings.tileWidth;
 
                 // Declare variables used within the loops
-                var row, col, tileHeight, tileWidth, top, left, displayStyle, zoomLevel, imageURL, regionHeight, regionWidth;
+                var row, col, tileHeight, tileWidth, top, left, zoomLevel, imageURL, regionHeight, regionWidth, xOffset, yOffset, zoomDifference;
 
                 // Adjust the zoom level based on the max zoom level of the page
                 zoomLevel = settings.zoomLevel + maxZoom - settings.realMaxZoom;
@@ -374,7 +319,7 @@ window.divaPlugins = [];
                 if (settings.isIIIF)
                 {
                     // regionX, regionY, regionWidth, regionHeight
-                    var zoomDifference = Math.pow(2, maxZoom - zoomLevel);
+                    zoomDifference = Math.pow(2, maxZoom - zoomLevel);
                     regionHeight = settings.tileHeight * zoomDifference;
                     regionWidth = settings.tileWidth * zoomDifference;
 
@@ -382,6 +327,18 @@ window.divaPlugins = [];
                     var version = settings.pages[pageIndex].api;
                     var quality = (version >= 2.0) ? 'default' : 'native';
                     var iiifSuffix = '/0/' + quality + '.jpg';
+
+                    // only show segment defined in canvas.resource.@id in manifest
+                    if (settings.pages[pageIndex].hasOwnProperty('xoffset'))
+                    {
+                        xOffset = settings.pages[pageIndex].xoffset;
+                        yOffset = settings.pages[pageIndex].yoffset;
+                    }
+                    else
+                    {
+                        xOffset = 0;
+                        yOffset = 0;
+                    }
                 }
                 else
                 {
@@ -405,8 +362,9 @@ window.divaPlugins = [];
 
                         tileWidth = (col === cols - 1) ? lastWidth : settings.tileWidth;
 
-                        imageURL = (settings.isIIIF) ? baseImageURL + col * regionWidth + ',' + row * regionHeight + ',' + (tileWidth * zoomDifference) + ',' + (tileHeight * zoomDifference) + '/' + tileWidth + ',' + iiifSuffix
-                    : baseImageURL + tileIndex;
+                        imageURL = (settings.isIIIF) ? baseImageURL + (col * regionWidth + xOffset) + ',' +
+                            (row * regionHeight + yOffset) + ',' + (tileWidth * zoomDifference) + ',' +
+                            (tileHeight * zoomDifference) + '/' + tileWidth + ',' + iiifSuffix : baseImageURL + tileIndex;
 
                         // this check looks to see if the tile is already loaded, and then if
                         // it isn't, if it should be visible.
@@ -440,7 +398,6 @@ window.divaPlugins = [];
 
                 settings.allTilesLoaded[pageIndex] = allTilesLoaded;
 
-                executeCallback(settings.onPageLoaded, pageIndex, filename, pageSelector);
                 diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector], self);
             };
             settings.pageTimeouts.push(setTimeout(pageLoadFunction, settings.pageLoadTimeout, pageIndex));
@@ -624,19 +581,16 @@ window.divaPlugins = [];
 
             var scrollSoFar = (settings.verticallyOriented ? document.getElementById(settings.ID + "outer").scrollTop : document.getElementById(settings.ID + "outer").scrollLeft);
 
-            executeCallback(settings.onScroll, scrollSoFar);
             diva.Events.publish("ViewerDidScroll", [scrollSoFar], self);
 
             if (direction > 0)
             {
                 // scrolling forwards
-                executeCallback(settings.onScrollDown, scrollSoFar);
                 diva.Events.publish("ViewerDidScrollDown", [scrollSoFar], self);
             }
             else if (direction < 0)
             {
                 // scrolling backwards
-                executeCallback(settings.onScrollUp, scrollSoFar);
                 diva.Events.publish("ViewerDidScrollUp", [scrollSoFar], self);
             }
         };
@@ -670,7 +624,6 @@ window.divaPlugins = [];
 
             // Load some data for this and initialise some variables
             var heightFromTop = (settings.rowHeight * rowIndex) + settings.fixedPadding;
-            var content = [];
             var innerElem = document.getElementById(settings.ID + "inner");
 
             // Create the row div
@@ -852,19 +805,16 @@ window.divaPlugins = [];
 
             var newTopScroll = document.getElementById(settings.ID + "outer").scrollTop;
 
-            executeCallback(settings.onScroll, newTopScroll);
             diva.Events.publish("ViewerDidScroll", [newTopScroll], self);
 
             // If we're scrolling down
             if (direction > 0)
             {
-                executeCallback(settings.onScrollDown, newTopScroll);
                 diva.Events.publish("ViewerDidScrollDown", [newTopScroll], self);
             }
             else if (direction < 0)
             {
                 // We're scrolling up
-                executeCallback(settings.onScrollUp, newTopScroll);
                 diva.Events.publish("ViewerDidScrollUp", [newTopScroll], self);
             }
         };
@@ -951,7 +901,6 @@ window.divaPlugins = [];
                     if (!setCurrentPage(direction))
                     {
                         var filename = settings.pages[pageToConsider].f;
-                        executeCallback(settings.onSetCurrentPage, pageToConsider, filename);
                         diva.Events.publish("VisiblePageDidChange", [pageToConsider, filename], self);
                     }
                 }
@@ -1038,12 +987,9 @@ window.divaPlugins = [];
                 settings.currentPageIndex = pageIndex;
                 var filename = settings.pages[pageIndex].f;
 
-                executeCallback(settings.onSetCurrentPage, pageIndex, filename);
                 diva.Events.publish("VisiblePageDidChange", [pageIndex, filename], self);
             }
 
-            // Execute the onJump callback
-            executeCallback(settings.onJump, pageIndex);
             diva.Events.publish("ViewerDidJump", [pageIndex], self);
         };
 
@@ -1182,21 +1128,19 @@ window.divaPlugins = [];
                 }
             }
 
-            // If this is not the initial load, execute the zoom callbacks
+            // If this is not the initial load, trigger the zoom events
             if (settings.oldZoomLevel >= 0)
             {
                 if (settings.oldZoomLevel < settings.zoomLevel)
                 {
-                    executeCallback(settings.onZoomIn, z);
                     diva.Events.publish("ViewerDidZoomIn", [z], self);
                 }
                 else
                 {
-                    executeCallback(settings.onZoomOut, z);
                     diva.Events.publish("ViewerDidZoomOut", [z], self);
                 }
 
-                executeCallback(settings.onZoom, z);
+                diva.Events.publish("ViewerDidZoom", [z], self);
             }
             else
             {
@@ -1208,7 +1152,6 @@ window.divaPlugins = [];
                 settings.scaleWait = false;
 
             var fileName = settings.pages[settings.currentPageIndex].f;
-            executeCallback(settings.onDocumentLoaded, settings.currentPageIndex, fileName);
             diva.Events.publish("DocumentDidLoad", [settings.currentPageIndex, fileName], self);
         };
 
@@ -1324,9 +1267,7 @@ window.divaPlugins = [];
             else
                 $(document).off('keyup', escapeListener);
 
-            // Execute callbacks
-            executeCallback(settings.onModeToggle, settings.inFullscreen);
-            diva.Events.publish("ModeDidSwitch", [settings.inFullscreen], self);
+           diva.Events.publish("ModeDidSwitch", [settings.inFullscreen], self);
         };
 
         // Handles switching in and out of grid view
@@ -1334,7 +1275,6 @@ window.divaPlugins = [];
         var handleViewChange = function ()
         {
             loadViewer();
-            executeCallback(settings.onViewToggle, settings.inGrid);
 
             // Switch the slider
             diva.Events.publish("ViewDidSwitch", [settings.inGrid], self);
@@ -1647,6 +1587,147 @@ window.divaPlugins = [];
 
         };
 
+        // Bind touch and orientation change events
+        var bindMobileEvents = function()
+        {
+            // Prevent resizing (below from http://matt.might.net/articles/how-to-native-iphone-ipad-apps-in-javascript/)
+            var toAppend = [];
+            toAppend.push('<meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1" />');
+
+            // Eliminate URL and button bars if added to home screen
+            toAppend.push('<meta name="apple-mobile-web-app-capable" content="yes" />');
+
+            // Choose how to handle the phone status bar
+            toAppend.push('<meta name="apple-mobile-web-app-status-bar-style" content="black" />');
+            $('head').append(toAppend.join('\n'));
+
+            // Block the user from moving the window only if it's not integrated
+            if (settings.blockMobileMove)
+            {
+                $('body').bind('touchmove', function (event)
+                {
+                    var e = event.originalEvent;
+                    e.preventDefault();
+
+                    return false;
+                });
+            }
+
+            // Inertial scrolling
+            settings.outerObject.kinetic({
+                triggerHardware: true
+            });
+
+            // Bind events for pinch-zooming
+            var start = [],
+                move = [],
+                startDistance = 0;
+
+            settings.outerObject.on('touchstart', '.diva-document-page', function(event)
+            {
+                if (event.originalEvent.touches.length === 2)
+                {
+                    start = [event.originalEvent.touches[0].clientX,
+                             event.originalEvent.touches[0].clientY,
+                             event.originalEvent.touches[1].clientX,
+                             event.originalEvent.touches[1].clientY];
+
+                    startDistance = distance(start[2], start[0], start[3], start[1]);
+                }
+            });
+
+            settings.outerObject.on('touchmove', '.diva-document-page', function(event)
+            {
+                if (event.originalEvent.touches.length === 2)
+                {
+                    move = [event.originalEvent.touches[0].clientX,
+                            event.originalEvent.touches[0].clientY,
+                            event.originalEvent.touches[1].clientX,
+                            event.originalEvent.touches[1].clientY];
+
+                    var moveDistance = distance(move[2], move[0], move[3], move[1]);
+                    var zoomDelta = moveDistance - startDistance;
+
+                    if (!settings.scaleWait)
+                    {
+                        // Save the page we're currently on so we scroll there
+                        settings.goDirectlyTo = settings.currentPageIndex;
+
+                        if (settings.inGrid)
+                        {
+                            settings.inGrid = false;
+                            handleViewChange();
+                        }
+                        else
+                        {
+                            handlePinchZoom.call(this, zoomDelta, event);
+                        }
+                    }
+                }
+            });
+
+            var firstTapCoordinates = {},
+                tapDistance = 0;
+
+            var bindDoubleTap = function(event)
+            {
+                if (settings.singleTap)
+                {
+                    // Doubletap has occurred
+                    var touchEvent = {
+                        pageX: event.originalEvent.changedTouches[0].clientX,
+                        pageY: event.originalEvent.changedTouches[0].clientY
+                    };
+
+                    // If first tap is close to second tap (prevents interference with scale event)
+                    tapDistance = distance(firstTapCoordinates.pageX, touchEvent.pageX, firstTapCoordinates.pageY, touchEvent.pageY);
+                    if (tapDistance < 50 && settings.zoomLevel < settings.maxZoomLevel)
+                        if (settings.inGrid)
+                            handleGridDoubleClick.call($(event.target).parent(), touchEvent);
+                        else
+                            handleDocumentDoubleClick.call(this, touchEvent);
+
+                    settings.singleTap = false;
+                    firstTapCoordinates = {};
+                }
+                else
+                {
+                    settings.singleTap = true;
+                    firstTapCoordinates.pageX = event.originalEvent.changedTouches[0].clientX;
+                    firstTapCoordinates.pageY = event.originalEvent.changedTouches[0].clientY;
+
+                    // Cancel doubletap after 250 milliseconds
+                    settings.singleTapTimeout = setTimeout(function()
+                    {
+                        settings.singleTap = false;
+                        firstTapCoordinates = {};
+                    }, 250);
+                }
+            };
+
+            // Document view: Double-tap to zoom in
+            settings.outerObject.on('touchend', '.diva-document-page', bindDoubleTap);
+
+            // Grid view: Double-tap to jump to current page in document view
+            settings.outerObject.on('touchend', '.diva-page', bindDoubleTap);
+
+            // Handle window resizing events
+            var orientationEvent = "onorientationchange" in window ? "orientationchange" : "resize";
+            $(window).bind(orientationEvent, function (event)
+            {
+                var oldWidth = settings.panelWidth;
+                var oldHeight = settings.panelHeight;
+                updatePanelSize();
+
+                settings.horizontalOffset -= (settings.panelWidth - oldWidth) / 2;
+                settings.verticalOffset -= (settings.panelHeight - oldHeight) / 2;
+
+                // Reload the viewer to account for the resized viewport
+                settings.goDirectlyTo = settings.currentPageIndex;
+                loadViewer();
+            });
+        };
+
         // Pythagorean theorem to get the distance between two points (used for calculating finger distance for double-tap and pinch-zoom)
         var distance = function(x2, x1, y2, y1)
         {
@@ -1782,142 +1863,7 @@ window.divaPlugins = [];
             // Check if the user is on a iPhone or iPod touch or iPad
             if (settings.mobileWebkit)
             {
-                // Prevent resizing (below from http://matt.might.net/articles/how-to-native-iphone-ipad-apps-in-javascript/)
-                var toAppend = [];
-                toAppend.push('<meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1" />');
-
-                // Eliminate URL and button bars if added to home screen
-                toAppend.push('<meta name="apple-mobile-web-app-capable" content="yes" />');
-
-                // Choose how to handle the phone status bar
-                toAppend.push('<meta name="apple-mobile-web-app-status-bar-style" content="black" />');
-                $('head').append(toAppend.join('\n'));
-
-                // Block the user from moving the window only if it's not integrated
-                if (settings.blockMobileMove)
-                {
-                    $('body').bind('touchmove', function (event)
-                    {
-                        var e = event.originalEvent;
-                        e.preventDefault();
-
-                        return false;
-                    });
-                }
-
-                // Inertial scrolling
-                settings.outerObject.kinetic({
-                    triggerHardware: true
-                });
-
-                // Bind events for pinch-zooming
-                var start = [],
-                    move = [],
-                    startDistance = 0;
-
-                settings.outerObject.on('touchstart', '.diva-document-page', function(event)
-                {
-                    if (event.originalEvent.touches.length === 2)
-                    {
-                        start = [event.originalEvent.touches[0].clientX,
-                                 event.originalEvent.touches[0].clientY,
-                                 event.originalEvent.touches[1].clientX,
-                                 event.originalEvent.touches[1].clientY];
-
-                        startDistance = distance(start[2], start[0], start[3], start[1]);
-                    }
-                });
-
-                settings.outerObject.on('touchmove', '.diva-document-page', function(event)
-                {
-                    if (event.originalEvent.touches.length === 2)
-                    {
-                        move = [event.originalEvent.touches[0].clientX,
-                                event.originalEvent.touches[0].clientY,
-                                event.originalEvent.touches[1].clientX,
-                                event.originalEvent.touches[1].clientY];
-
-                        var moveDistance = distance(move[2], move[0], move[3], move[1]);
-                        var zoomDelta = moveDistance - startDistance;
-
-                        if (!settings.scaleWait)
-                        {
-                            // Save the page we're currently on so we scroll there
-                            settings.goDirectlyTo = settings.currentPageIndex;
-
-                            if (settings.inGrid)
-                            {
-                                settings.inGrid = false;
-                                handleViewChange();
-                            }
-                            else
-                            {
-                                handlePinchZoom.call(this, zoomDelta, event);
-                            }
-                        }
-                    }
-                });
-
-                var firstTapCoordinates = {},
-                    tapDistance = 0;
-
-                var bindDoubleTap = function(event)
-                {
-                    if (settings.singleTap)
-                    {
-                        // Doubletap has occurred
-                        var touchEvent = {
-                            pageX: event.originalEvent.changedTouches[0].clientX,
-                            pageY: event.originalEvent.changedTouches[0].clientY
-                        };
-
-                        // If first tap is close to second tap (prevents interference with scale event)
-                        tapDistance = distance(firstTapCoordinates.pageX, touchEvent.pageX, firstTapCoordinates.pageY, touchEvent.pageY);
-                        if (tapDistance < 50 && settings.zoomLevel < settings.maxZoomLevel)
-                            if (settings.inGrid)
-                                handleGridDoubleClick.call($(event.target).parent(), touchEvent);
-                            else
-                                handleDocumentDoubleClick.call(this, touchEvent);
-
-                        settings.singleTap = false;
-                        firstTapCoordinates = {};
-                    }
-                    else
-                    {
-                        settings.singleTap = true;
-                        firstTapCoordinates.pageX = event.originalEvent.changedTouches[0].clientX;
-                        firstTapCoordinates.pageY = event.originalEvent.changedTouches[0].clientY;
-
-                        // Cancel doubletap after 250 milliseconds
-                        settings.singleTapTimeout = setTimeout(function()
-                        {
-                            settings.singleTap = false;
-                            firstTapCoordinates = {};
-                        }, 250);
-                    }
-                };
-
-                // Document view: Double-tap to zoom in
-                settings.outerObject.on('touchend', '.diva-document-page', bindDoubleTap);
-
-                // Grid view: Double-tap to jump to current page in document view
-                settings.outerObject.on('touchend', '.diva-page', bindDoubleTap);
-
-                // Handle window resizing events
-                var orientationEvent = "onorientationchange" in window ? "orientationchange" : "resize";
-                $(window).bind(orientationEvent, function (event)
-                {
-                    var oldWidth = settings.panelWidth;
-                    var oldHeight = settings.panelHeight;
-                    updatePanelSize();
-
-                    settings.horizontalOffset -= (settings.panelWidth - oldWidth) / 2;
-                    settings.verticalOffset -= (settings.panelHeight - oldHeight) / 2;
-
-                    // Reload the viewer to account for the resized viewport
-                    settings.goDirectlyTo = settings.currentPageIndex;
-                    loadViewer();
-                });
+                bindMobileEvents();
             }
             // Handle window resizing events
             else
@@ -1937,8 +1883,8 @@ window.divaPlugins = [];
                     }, 200);
                 });
             }
-            diva.Events.subscribe('PanelSizeDidChange', updatePanelSize);
 
+            diva.Events.subscribe('PanelSizeDidChange', updatePanelSize);
         };
 
         // Handles all status updating etc (both fullscreen and not)
@@ -2255,6 +2201,65 @@ window.divaPlugins = [];
         };
 
         /**
+         * Takes in a resource block from a canvas and outputs the following information associated with that resource:
+         * - Image URL
+         * - Image region to be displayed
+         *
+         * @param {Object} resource - an object representing the resource block of a canvas section in a IIIF manifest
+         * @returns {Object} imageInfo - an object containing image URL and region
+         */
+        var parseImageInfo = function (resource)
+        {
+            var url = resource['@id'];
+            var fragmentRegex = /#xywh=([0-9]+,[0-9]+,[0-9]+,[0-9]+)/;
+            var xywh = '';
+            var stripURL = true;
+
+            if (/\/([0-9]+,[0-9]+,[0-9]+,[0-9]+)\//.test(url))
+            {
+                // if resource in image API format, extract region x,y,w,h from URL (after 4th slash from last)
+                // matches coordinates in URLs of the form http://www.example.org/iiif/book1-page1/40,50,1200,1800/full/0/default.jpg
+                var urlArray = url.split('/');
+                xywh = urlArray[urlArray.length - 4];
+            }
+            else if (fragmentRegex.test(url))
+            {
+                // matches coordinates of the style http://www.example.org/iiif/book1/canvas/p1#xywh=50,50,320,240
+                var result = fragmentRegex.exec(url);
+                xywh = result[1];
+            }
+            else if (resource.service && resource.service['@id'])
+            {
+                // assume canvas size based on image size
+                url = resource.service['@id'];
+                // this URL excludes region parameters so we don't need to remove them
+                stripURL = false;
+            }
+
+            if (stripURL)
+            {
+                // extract URL up to identifier (we eliminate the last 5 parameters: /region/size/rotation/quality.format)
+                url = url.split('/').slice(0, -4).join('/');
+            }
+
+            var imageInfo = {
+                url: url
+            };
+
+            if (xywh.length)
+            {
+                // parse into separate components
+                var dimensions = xywh.split(',');
+                imageInfo.x = parseInt(dimensions[0], 10);
+                imageInfo.y = parseInt(dimensions[1], 10);
+                imageInfo.w = parseInt(dimensions[2], 10);
+                imageInfo.h = parseInt(dimensions[3], 10);
+            }
+
+            return imageInfo;
+        };
+
+        /**
          * Parses a IIIF Presentation API Manifest and converts it into a Diva.js-format object
          * (See https://github.com/DDMAL/diva.js/wiki/Development-notes#data-received-through-ajax-request)
          * (This is a client-side re-implementation of generate_json.py)
@@ -2262,7 +2267,8 @@ window.divaPlugins = [];
          * @param {Object} manifest - an object that represents a valid IIIF manifest
          * @returns {Object} divaServiceBlock - the data needed by Diva to show a view of a single document
          */
-        var parseManifest = function (manifest) {
+        var parseManifest = function (manifest)
+        {
 
             var incorporateZoom = function (imageDimension, zoomDifference)
             {
@@ -2296,6 +2302,7 @@ window.divaPlugins = [];
             var width;
             var height;
             var url;
+            var info;
             var maxZoom;
             var label;
             var context;
@@ -2306,13 +2313,12 @@ window.divaPlugins = [];
 
             for (var i = 0, numCanvases = canvases.length; i < numCanvases; i++)
             {
-                width = canvases[i].width; //canvas width (@TODO should it be image width if there is one?)
-                height = canvases[i].height; //canvas height (@TODO ")
                 resource = canvases[i].images[0].resource;
+                width = resource.width || canvases[i].width;
+                height = resource.height || canvases[i].height;
 
-                //@TODO check for resource.service['@id'], if not present fall back to resource['@id'] and chop off string after identifier
-                // url = resource['@id']; //image url for primary canvas resource.
-                url = resource.service['@id']; //this URL excludes parameters so that we can easily append our own later. issue: not required in manifest by api?
+                info = parseImageInfo(resource);
+                url = info.url;
 
                 //append trailing / from url if it's not there
                 if (url.slice(-1) !== '/')
@@ -2348,6 +2354,12 @@ window.divaPlugins = [];
                     'url': url,
                     'api': imageAPIVersion
                 };
+
+                if (info.hasOwnProperty('x'))
+                {
+                    images[i].xoffset = info.x;
+                    images[i].yoffset = info.y;
+                }
 
                 zoomLevels[i] = maxZoom;
             }
@@ -2408,6 +2420,12 @@ window.divaPlugins = [];
                     f: images[i].fn,
                     url: images[i].url,
                     api: images[i].api
+                };
+
+                if (images[i].hasOwnProperty('xoffset'))
+                {
+                    pages[i].xoffset = images[i].xoffset;
+                    pages[i].yoffset = images[i].yoffset;
                 }
             }
 
@@ -2595,24 +2613,21 @@ window.divaPlugins = [];
                     // store object data in settings
                     parseObjectData(responseData);
 
-                    // Execute the setup hook for each plugin (if defined)
-                    $.each(settings.plugins, function (index, plugin)
-                    {
-                        executeCallback(plugin.setupHook, settings);
-                    });
+                    // Plugin setup hooks should be bound to the ObjectDidLoad event
+                    diva.Events.publish('ObjectDidLoad', [settings], self);
 
                     // Create the toolbar and display the title + total number of pages
                     if (settings.enableToolbar)
                     {
                         settings.toolbar = createToolbar();
-                        diva.Events.subscribe("VisiblePageDidChange", settings.toolbar.updateCurrentPage);
-                        diva.Events.subscribe("ModeDidSwitch", settings.toolbar.switchMode);
-                        diva.Events.subscribe("ViewDidSwitch", settings.toolbar.switchView);
-                        diva.Events.subscribe("ZoomLevelDidChange", settings.toolbar.updateZoomSlider);
-                        diva.Events.subscribe("ZoomLevelDidChange", settings.toolbar.updateZoomButtons);
-                        diva.Events.subscribe("GridRowNumberDidChange", settings.toolbar.updateGridSlider);
-                        diva.Events.subscribe("ZoomLevelDidChange", settings.toolbar.updateGridButtons);
-                        diva.Events.subscribe("NumberOfPagesDidChange", settings.toolbar.setNumPages);
+                        diva.Events.subscribe('VisiblePageDidChange', settings.toolbar.updateCurrentPage);
+                        diva.Events.subscribe('ModeDidSwitch', settings.toolbar.switchMode);
+                        diva.Events.subscribe('ViewDidSwitch', settings.toolbar.switchView);
+                        diva.Events.subscribe('ZoomLevelDidChange', settings.toolbar.updateZoomSlider);
+                        diva.Events.subscribe('ZoomLevelDidChange', settings.toolbar.updateZoomButtons);
+                        diva.Events.subscribe('GridRowNumberDidChange', settings.toolbar.updateGridSlider);
+                        diva.Events.subscribe('ZoomLevelDidChange', settings.toolbar.updateGridButtons);
+                        diva.Events.subscribe('NumberOfPagesDidChange', settings.toolbar.setNumPages);
                     }
 
                     //if the parent is the body and there are no siblings, we don't want to use this to base size off, we want window instead
@@ -2657,8 +2672,6 @@ window.divaPlugins = [];
                     //prep dimensions one last time now that pages have loaded
                     updatePanelSize();
 
-                    // Execute the callback
-                    executeCallback(settings.onReady, settings);
                     diva.Events.publish("ViewerDidLoad", [settings], self);
 
                     // signal that everything should be set up and ready to go.
@@ -2787,13 +2800,6 @@ window.divaPlugins = [];
                 return true;
             }
             return false;
-        };
-
-        // Returns the page index (with indexing starting at 0)
-        this.getCurrentPage = function ()
-        {
-            console.warn("The call to getCurrentPage is deprecated. Use getCurrentPageIndex instead.");
-            return settings.currentPageIndex;
         };
 
         this.getNumberOfPages = function ()
@@ -3317,11 +3323,7 @@ window.divaPlugins = [];
             // Empty the parent container and remove any diva-related data
             settings.parentObject.empty().removeData('diva');
 
-            // Call the destroy function for all the enabled plugins (if it exists)
-            $.each(settings.plugins, function (index, plugin)
-            {
-                executeCallback(plugin.destroy, settings, self);
-            });
+            diva.Events.publish('ViewerDidTerminate', [settings], self);
 
             // Remove any additional styling on the parent element
             settings.parentObject.removeAttr('style').removeAttr('class');
