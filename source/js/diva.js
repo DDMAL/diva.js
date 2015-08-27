@@ -51,6 +51,7 @@ window.divaPlugins = [];
             goDirectlyTo: 0,            // Default initial page to show (0-indexed)
             iipServerURL: '',           // The URL to the IIPImage installation, including the `?FIF=` - *REQUIRED*, unless using IIIF
             inFullscreen: false,        // Set to true to load fullscreen mode initially
+            inBookLayout: false,       // Set to true to view the document with facing pages in document mode
             inGrid: false,              // Set to true to load grid view initially
             imageDir: '',               // Image directory, either absolute path or relative to IIP's FILESYSTEM_PREFIX - *REQUIRED*, unless using IIIF
             maxPagesPerRow: 8,          // Maximum number of pages per row in grid view
@@ -81,6 +82,7 @@ window.divaPlugins = [];
             currentPageIndex: 0,        // The current page in the viewport (center-most page)
             divaIsFullWindow: false,    // Set to true when the parent of diva-wrapper is the body tag. Used for resizing.
             doubleClickZoom: false,     // Flag to determine whether handleZoom was called from a double-click
+            documentPaged: false,       // Set to true when the object has a viewingHint of 'paged' in its manifest
             firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
             firstRowLoaded: -1,         // The index of the first row loaded
             gridPageWidth: 0,           // Holds the max width of each row in grid view. Calculated in loadGrid()
@@ -263,7 +265,7 @@ window.divaPlugins = [];
 
                 var pageElement = document.createElement('div');
                 pageElement.id = settings.ID + 'page-' + pageIndex;
-                pageElement.classList.add('diva-document-page');
+                pageElement.classList.add('diva-page', 'diva-document-page');
                 pageElement.setAttribute('data-index', pageIndex);
                 pageElement.setAttribute('data-filename', filename);
                 if (settings.enableImageTitles) pageElement.title = "Page " + (pageIndex + 1);
@@ -274,7 +276,23 @@ window.divaPlugins = [];
                 if (settings.verticallyOriented)
                 {
                     pageElement.style.top = heightFromTop + 'px';
-                    pageElement.classList.add('diva-page-vertical');
+
+                    if (settings.inBookLayout)
+                    {
+                        pageElement.style.left = widthFromLeft + 'px';
+                        if (pageIndex % 2)
+                        {
+                            pageElement.classList.add('diva-page-book-left');
+                        }
+                        else
+                        {
+                            pageElement.classList.add('diva-page-book');
+                        }
+                    }
+                    else
+                    {
+                        pageElement.classList.add('diva-page-vertical');
+                    }
                 }
                 else
                 {
@@ -472,16 +490,24 @@ window.divaPlugins = [];
         // Called by adjust pages - determine what pages should be visible, and show them
         var attemptPageShow = function (pageIndex, direction)
         {
-            if (direction > 0)
+            if (isPageValid(pageIndex))
             {
-                // Direction is positive - we're scrolling down
-                if (isPageValid(pageIndex))
+                if (direction > 0)
                 {
+                    // Direction is positive - we're scrolling down
                     // If the page should be visible, then yes, add it
                     if (isPageVisible(pageIndex))
                     {
                         loadPage(pageIndex);
                         settings.lastPageLoaded = pageIndex;
+
+                        // Recursively call this function until there's nothing to add
+                        attemptPageShow(settings.lastPageLoaded + 1, direction);
+                    }
+                    else if (isPageValid(pageIndex + 1) && isPageVisible(pageIndex + 1))
+                    {
+                        loadPage(pageIndex + 1);
+                        settings.lastPageLoaded = pageIndex + 1;
 
                         // Recursively call this function until there's nothing to add
                         attemptPageShow(settings.lastPageLoaded + 1, direction);
@@ -492,12 +518,9 @@ window.divaPlugins = [];
                         attemptPageShow(pageIndex + 1, direction);
                     }
                 }
-            }
-            else
-            {
-                // Direction is negative - we're scrolling up
-                if (isPageValid(pageIndex))
+                else
                 {
+                    // Direction is negative - we're scrolling up
                     // If it's near the viewport, yes, add it
                     if (isPageVisible(pageIndex))
                     {
@@ -505,6 +528,14 @@ window.divaPlugins = [];
 
                         // Reset the first page loaded to this one
                         settings.firstPageLoaded = pageIndex;
+
+                        // Recursively call this function until there's nothing to add
+                        attemptPageShow(settings.firstPageLoaded - 1, direction);
+                    }
+                    else if (isPageValid(pageIndex - 1) && isPageVisible(pageIndex - 1))
+                    {
+                        loadPage(pageIndex - 1);
+                        settings.firstPageLoaded = pageIndex - 1;
 
                         // Recursively call this function until there's nothing to add
                         attemptPageShow(settings.firstPageLoaded - 1, direction);
@@ -557,14 +588,16 @@ window.divaPlugins = [];
             if (direction < 0)
             {
                 // Direction is negative, so we're scrolling up/left (doesn't matter for these calls)
-                attemptPageShow(settings.firstPageLoaded, direction);
+                // Attempt showing pages in ascending order starting from the last visible page in the viewport
+                attemptPageShow(settings.lastPageLoaded, direction);
                 setCurrentPage(-1);
                 attemptPageHide(settings.lastPageLoaded, direction);
             }
             else if (direction > 0)
             {
                 // Direction is positive so we're scrolling down/right (doesn't matter for these calls)
-                attemptPageShow(settings.lastPageLoaded, direction);
+                // Attempt showing pages in descending order starting from the first visible page in the viewport
+                attemptPageShow(settings.firstPageLoaded, direction);
                 setCurrentPage(1);
                 attemptPageHide(settings.firstPageLoaded, direction);
             }
@@ -677,7 +710,7 @@ window.divaPlugins = [];
                 var pageDiv = document.createElement('div');
                 pageDiv.id = settings.ID + 'page-' + pageIndex;
                 var pageSelector = settings.selector + 'page-' + pageIndex;
-                pageDiv.classList.add('diva-page');
+                pageDiv.classList.add('diva-page', 'diva-grid-page');
                 pageDiv.style.width = pageWidth + 'px';
                 pageDiv.style.height = pageHeight + 'px';
                 pageDiv.style.left = leftOffset + 'px';
@@ -848,6 +881,7 @@ window.divaPlugins = [];
                 return false;
 
             var middleOfViewport = (settings.verticallyOriented ? document.getElementById(settings.ID + "outer").scrollTop + (settings.panelHeight / 2) : document.getElementById(settings.ID + "outer").scrollLeft + (settings.panelWidth / 2));
+            var verticalMiddleOfViewport = document.getElementById(settings.ID + "outer").scrollLeft + (settings.panelWidth / 2);
             var changeCurrentPage = false;
             var pageSelector = settings.selector + 'page-' + pageToConsider;
 
@@ -886,6 +920,24 @@ window.divaPlugins = [];
                     if (settings.pageLeftOffsets[currentPage] + getPageData(currentPage, 'w') + settings.horizontalPadding < middleOfViewport)
                     {
                         changeCurrentPage = true;
+                    }
+                }
+            }
+
+            if (settings.inBookLayout && settings.verticallyOriented)
+            {
+                var nextPage = currentPage + 1;
+
+                // if the current page + 1 is on the right (even) and the left of it is left of center
+                if (isPageValid(nextPage) && nextPage % 2 === 0 && settings.pageLeftOffsets[nextPage] < verticalMiddleOfViewport)
+                {
+                    if (nextPage !== settings.currentPageIndex)
+                    {
+                        settings.currentPageIndex = nextPage;
+                        var filename = settings.pages[nextPage].f;
+                        executeCallback(settings.onSetCurrentPage, nextPage, filename);
+                        diva.Events.publish("VisiblePageDidChange", [nextPage, filename], self);
+                        console.log(nextPage + 1);
                     }
                 }
             }
@@ -1054,6 +1106,73 @@ window.divaPlugins = [];
                 loadDocument();
         };
 
+        var calculatePageOffsets = function(widthToSet, heightToSet)
+        {
+            // Set settings.pageTopOffsets/pageLeftOffsets to determine where we're going to need to scroll, reset them in case they were used for grid before
+            var heightSoFar = 0;
+            var widthSoFar = 0;
+            var i;
+
+            settings.pageTopOffsets = [];
+            settings.pageLeftOffsets = [];
+
+            if (settings.inBookLayout)
+            {
+                if (settings.verticallyOriented)
+                {
+                    for (i = 0; i < settings.numPages; i++)
+                    {
+                        //set the height above that page counting only every other page and excluding non-paged canvases
+                        //height of this 'row' = max(height of the pages in this row)
+
+                        settings.pageTopOffsets[i] = heightSoFar;
+
+                        if (i % 2)
+                        {
+                            //page on the left
+                            settings.pageLeftOffsets[i] = (widthToSet / 2) - getPageData(i, 'w') - settings.horizontalPadding;
+                        }
+                        else
+                        {
+                            //page on the right
+                            settings.pageLeftOffsets[i] = (widthToSet / 2) - settings.horizontalPadding;
+
+                            //increment the height only when we are on an even page index
+                            var pageHeight = (isPageValid(i - 1)) ? Math.max(getPageData(i, 'h'), getPageData(i - 1, 'h')) : getPageData(i, 'h');
+                            heightSoFar = settings.pageTopOffsets[i] + pageHeight + settings.verticalPadding;
+                        }
+                    }
+                }
+                else
+                {
+                    // book, horizontally oriented
+                    for (i = 0; i < settings.numPages; i++)
+                    {
+                        settings.pageTopOffsets[i] = parseInt((heightToSet - getPageData(i, 'h')) / 2, 10);
+                        settings.pageLeftOffsets[i] = widthSoFar;
+
+                        var pageWidth = getPageData(i, 'w');
+                        var padding = (i % 2) ? 0 : settings.horizontalPadding;
+                        widthSoFar = settings.pageLeftOffsets[i] + pageWidth + padding;
+                    }
+                }
+            }
+            else
+            {
+                for (i = 0; i < settings.numPages; i++)
+                {
+                    // First set the height above that page by adding this height to the previous total
+                    // A page includes the padding above it
+                    settings.pageTopOffsets[i] = parseInt(settings.verticallyOriented ? heightSoFar : (heightToSet - getPageData(i, 'h')) / 2, 10);
+                    settings.pageLeftOffsets[i] = parseInt(settings.verticallyOriented ? (widthToSet - getPageData(i, 'w')) / 2 : widthSoFar, 10);
+
+                    // Has to be done this way otherwise you get the height of the page included too
+                    heightSoFar = settings.pageTopOffsets[i] + getPageData(i, 'h') + settings.verticalPadding;
+                    widthSoFar = settings.pageLeftOffsets[i] + getPageData(i, 'w') + settings.horizontalPadding;
+                }
+            }
+        };
+
         // Called every time we need to load document view (after zooming, fullscreen, etc)
         var loadDocument = function ()
         {
@@ -1067,13 +1186,14 @@ window.divaPlugins = [];
             settings.totalWidth = settings.totalWidths[z] + settings.horizontalPadding * (settings.numPages + 1);
 
             // Determine the width of the inner element (based on the max width)
-            var maxWidthToSet = settings.maxWidths[z] + settings.horizontalPadding * 2;
+            var maxWidthToSet = (settings.inBookLayout) ? (settings.maxWidths[z] + settings.horizontalPadding) * 2 : settings.maxWidths[z] + settings.horizontalPadding * 2;
             var maxHeightToSet = settings.maxHeights[z] + settings.verticalPadding * 2;
             var widthToSet = Math.max(maxWidthToSet, settings.panelWidth);
             var heightToSet = Math.max(maxHeightToSet, settings.panelHeight);
 
             //Set the inner element to said width
             var innerEl = document.getElementById(settings.ID + 'inner');
+
             if (settings.verticallyOriented)
             {
                 innerEl.style.height = Math.round(settings.totalHeight) + 'px';
@@ -1085,24 +1205,24 @@ window.divaPlugins = [];
                 innerEl.style.width = Math.round(settings.totalWidth) + 'px';
             }
 
-            // Set settings.pageTopOffsets/pageLeftOffsets to determine where we're going to need to scroll, reset them in case they were used for grid before
-            var heightSoFar = 0;
-            var widthSoFar = 0;
-            var i;
+            // Calculate page layout (settings.pageTopOffsets, settings.pageLeftOffsets)
+            calculatePageOffsets(widthToSet, heightToSet);
 
-            settings.pageTopOffsets = [];
-            settings.pageLeftOffsets = [];
+            // In book view, determine the total height/width based on the last opening's height/width and offset
+            var lastPageIndex = settings.numPages - 1;
 
-            for (i = 0; i < settings.numPages; i++)
+            if (settings.inBookLayout)
             {
-                // First set the height above that page by adding this height to the previous total
-                // A page includes the padding above it
-                settings.pageTopOffsets[i] = parseInt(settings.verticallyOriented ? heightSoFar : (heightToSet - getPageData(i, 'h')) / 2, 10);
-                settings.pageLeftOffsets[i] = parseInt(settings.verticallyOriented ? (widthToSet - getPageData(i, 'w')) / 2 : widthSoFar, 10);
-
-                // Has to be done this way otherwise you get the height of the page included too
-                heightSoFar = settings.pageTopOffsets[i] + getPageData(i, 'h') + settings.verticalPadding;
-                widthSoFar = settings.pageLeftOffsets[i] + getPageData(i, 'w') + settings.horizontalPadding;
+                if (settings.verticallyOriented)
+                {
+                    // Last opening height is the max height of the last two pages if they are an opening, else the height of the last page since it's on its own on the left
+                    var lastOpeningHeight = (lastPageIndex % 2) ? getPageData(lastPageIndex, 'h') : Math.max(getPageData(lastPageIndex, 'h'), getPageData(lastPageIndex - 1, 'h'));
+                    innerEl.style.height = settings.pageTopOffsets[lastPageIndex] + lastOpeningHeight + (settings.verticalPadding * 2) + 'px';
+                }
+                else
+                {
+                    innerEl.style.width = settings.pageLeftOffsets[lastPageIndex] + getPageData(lastPageIndex, 'w') + (settings.horizontalPadding * 2) + 'px';
+                }
             }
 
             // Make sure the value for settings.goDirectlyTo is valid
@@ -1114,7 +1234,7 @@ window.divaPlugins = [];
 
             // Once the viewport is aligned, we can determine which pages will be visible and load them
             var pageBlockFound = false;
-            for (i = 0; i < settings.numPages; i++)
+            for (var i = 0; i < settings.numPages; i++)
             {
                 if (isPageVisible(i))
                 {
@@ -1185,7 +1305,6 @@ window.divaPlugins = [];
             var i, rowIndex;
             settings.pageTopOffsets = [];
             settings.pageLeftOffsets = [];
-
 
             // Figure out the row each page is in
             var np = settings.numPages;
@@ -1278,6 +1397,7 @@ window.divaPlugins = [];
 
             // Switch the slider
             diva.Events.publish("ViewDidSwitch", [settings.inGrid], self);
+            return true;
         };
 
         // Called when the fullscreen icon is clicked
@@ -1288,13 +1408,33 @@ window.divaPlugins = [];
             handleModeChange(false);
         };
 
-        // Called when the grid icon is clicked
-        var toggleGrid = function ()
+        // Called when the change view icon is clicked
+        var changeView = function (destinationView)
         {
             settings.goDirectlyTo = settings.currentPageIndex;
 
-            settings.inGrid = !settings.inGrid;
-            handleViewChange();
+            switch (destinationView)
+            {
+                case 'document':
+                    settings.inGrid = false;
+                    settings.inBookLayout = false;
+                    break;
+
+                case 'book':
+                    settings.inGrid = false;
+                    settings.inBookLayout = true;
+                    break;
+
+                case 'grid':
+                    settings.inGrid = true;
+                    settings.inBookLayout = false;
+                    break;
+
+                default:
+                    return false;
+            }
+
+            return handleViewChange();
         };
 
         //toggles between orientations
@@ -1487,9 +1627,24 @@ window.divaPlugins = [];
 
         var getState = function ()
         {
+            var view;
+
+            if (settings.inGrid)
+            {
+                view = 'g';
+            }
+            else if (settings.inBookLayout)
+            {
+                view = 'b';
+            }
+            else
+            {
+                view = 'd';
+            }
+
             var state = {
                 'f': settings.inFullscreen,
-                'g': settings.inGrid,
+                'v': view,
                 'z': settings.zoomLevel,
                 'n': settings.pagesPerRow,
                 'i': (settings.enableFilename) ? settings.pages[settings.currentPageIndex].f : false,
@@ -1876,27 +2031,76 @@ window.divaPlugins = [];
             diva.Events.subscribe('PanelSizeDidChange', updatePanelSize);
         };
 
+        var updateViewMenu = function()
+        {
+            var viewOptions = '';
+            var documentIcon = '<div class="diva-document-icon diva-button" id="' + settings.ID + 'document-icon" title="Document View"></div>';
+            var bookIcon = '<div class="diva-book-icon diva-button" id="' + settings.ID + 'book-icon" title="Book View"></div>';
+            var gridIcon = '<div class="diva-grid-icon diva-button" id="' + settings.ID + 'grid-icon" title="Grid View"></div>';
+
+            var viewIcon = document.getElementById(settings.ID + 'view-icon');
+            var viewIconClasses = ' diva-view-icon diva-button';
+
+            // display the icon of the mode we're currently in (?)
+            if (settings.inGrid)
+            {
+                viewIcon.className = 'diva-grid-icon' + viewIconClasses;
+            }
+            else
+            {
+                if (settings.inBookLayout)
+                {
+                    viewIcon.className = 'diva-book-icon' + viewIconClasses;
+                }
+                else
+                {
+                    viewIcon.className = 'diva-document-icon' + viewIconClasses;
+                }
+            }
+
+            // then display document, book, and grid buttons in that order, excluding the current view
+            for (var i = 0; i < 1; i++)
+            {
+                if (settings.inGrid || settings.inBookLayout)
+                    viewOptions += documentIcon;
+
+                if (!settings.inBookLayout)
+                    viewOptions += bookIcon;
+
+                if (!settings.inGrid)
+                    viewOptions += gridIcon;
+            }
+
+            document.getElementById(settings.ID + 'view-options').innerHTML = viewOptions;
+        };
+
         // Handles all status updating etc (both fullscreen and not)
         var createToolbar = function ()
         {
             // Prepare the HTML for the various components
-            var gridIconHTML = (settings.enableGridIcon) ? '<div class="diva-grid-icon button' + (settings.inGrid ? ' diva-in-grid' : '') + '" id="' + settings.ID + 'grid-icon" title="Toggle grid view"></div>' : '';
-            var linkIconHTML = (settings.enableLinkIcon) ? '<div class="diva-link-icon button" id="' + settings.ID + 'link-icon" style="' + (settings.enableGridIcon ? 'border-left: 0px' : '') + '" title="Link to this page"></div>' : '';
+
+            var viewMenuHTML = '<div id="' + settings.ID + 'view-menu" class="diva-view-menu"><div class="diva-view-icon diva-button" id="' + settings.ID + 'view-icon" title="Change view"></div><div id="' + settings.ID  + 'view-options" class="diva-view-options"></div></div>';
+            var linkIconHTML = (settings.enableLinkIcon) ? '<div class="diva-link-icon diva-button" id="' + settings.ID + 'link-icon" style="' + (settings.enableGridIcon ? 'border-left: 0px' : '') + '" title="Link to this page"></div>' : '';
             var zoomSliderHTML = (settings.enableZoomControls === 'slider') ? '<input type="range" id="' + settings.ID + 'zoom-slider" class="zoom-slider" value="' + settings.zoomLevel +'" min="' + settings.minZoomLevel + '" max="' + settings.maxZoomLevel + '">' : '';
-            var zoomButtonsHTML = (settings.enableZoomControls === 'buttons') ? '<div id="' + settings.ID + 'zoom-out-button" class="diva-zoom-out-button button" title="Zoom Out"></div><div id="' + settings.ID + 'zoom-in-button" class="diva-zoom-in-button button" title="Zoom In"></div>' : '';
+            var zoomButtonsHTML = (settings.enableZoomControls === 'buttons') ? '<div id="' + settings.ID + 'zoom-out-button" class="diva-zoom-out-button diva-button" title="Zoom Out"></div><div id="' + settings.ID + 'zoom-in-button" class="diva-zoom-in-button diva-button" title="Zoom In"></div>' : '';
             var gridSliderHTML = (settings.enableGridControls === 'slider') ? '<input type="range" id="' + settings.ID + 'grid-slider" class="grid-slider" value="' + settings.pagesPerRow +'" min="' + settings.minPagesPerRow + '" max="' + settings.maxPagesPerRow + '">' : '';
-            var gridButtonsHTML = (settings.enableGridControls === 'buttons') ? '<div id="' + settings.ID + 'grid-out-button" class="diva-grid-out-button button" title="Zoom Out"></div><div id="' + settings.ID + 'grid-in-button" class="diva-grid-in-button button" title="Zoom In"></div>' : '';
+            var gridButtonsHTML = (settings.enableGridControls === 'buttons') ? '<div id="' + settings.ID + 'grid-out-button" class="diva-grid-out-button diva-button" title="Zoom Out"></div><div id="' + settings.ID + 'grid-in-button" class="diva-grid-in-button diva-button" title="Zoom In"></div>' : '';
             var gotoPageHTML = (settings.enableGotoPage) ? '<form id="' + settings.ID + 'goto-page" class="diva-goto-form"><input type="text" id="' + settings.ID + 'goto-page-input" / class="diva-input"> <input type="submit" value="Go" style="margin-top: 0px;" /></form>' : '';
             var zoomSliderLabelHTML = (settings.enableZoomControls === 'slider') ? '<div id="' + settings.ID + 'zoom-slider-label" class="diva-slider-label">Zoom level: <span id="' + settings.ID + 'zoom-level">' + settings.zoomLevel + '</span></div>' : '';
             var zoomButtonsLabelHTML = (settings.enableZoomControls === 'buttons') ? '<div id="' + settings.ID + 'zoom-buttons-label" class="diva-buttons-label">Zoom level: <span id="' + settings.ID + 'zoom-level">' + settings.zoomLevel + '</span></div>' : '';
             var gridSliderLabelHTML = (settings.enableGridControls === 'slider') ? '<div id="' + settings.ID + 'grid-slider-label" class="diva-slider-label">Pages per row: <span id="' + settings.ID + 'pages-per-row">' + settings.pagesPerRow + '</span></div>' : '';
             var gridButtonsLabelHTML = (settings.enableGridControls === 'buttons') ? '<div id="' + settings.ID + 'grid-buttons-label" class="diva-buttons-label">Pages per row: <span id="' + settings.ID + 'pages-per-row">' + settings.pagesPerRow + '</span></div>' : '';
             var pageNumberHTML = '<div class="diva-page-label">Page <span id="' + settings.ID + 'current-page">1</span> of <span id="' + settings.ID + 'num-pages">' + settings.numPages + '</span></div>';
-            var fullscreenIconHTML = (settings.enableFullscreen) ? '<div id="' + settings.ID + 'fullscreen" class="diva-fullscreen-icon button" title="Toggle fullscreen mode"></div>' : '';
+            var fullscreenIconHTML = (settings.enableFullscreen) ? '<div id="' + settings.ID + 'fullscreen" class="diva-fullscreen-icon diva-button" title="Toggle fullscreen mode"></div>' : '';
 
-            var toolbarHTML = '<div id="' + settings.ID + 'tools-left" class="diva-tools-left' + '">' + zoomSliderHTML + zoomButtonsHTML + gridSliderHTML + gridButtonsHTML + zoomSliderLabelHTML + zoomButtonsLabelHTML + gridSliderLabelHTML + gridButtonsLabelHTML + '</div><div id="' + settings.ID + 'tools-right" class="diva-tools-right">' + fullscreenIconHTML + linkIconHTML + gridIconHTML + '<div id="' + settings.ID + 'page-nav" class="diva-page-nav">' + gotoPageHTML + pageNumberHTML + '</div></div>';
+            var toolbarHTML = '<div id="' + settings.ID + 'tools-left" class="diva-tools-left' + '">' + zoomSliderHTML + zoomButtonsHTML + gridSliderHTML + gridButtonsHTML + zoomSliderLabelHTML + zoomButtonsLabelHTML + gridSliderLabelHTML + gridButtonsLabelHTML + '</div><div id="' + settings.ID + 'tools-right" class="diva-tools-right">' + fullscreenIconHTML + linkIconHTML + viewMenuHTML + '<div id="' + settings.ID + 'page-nav" class="diva-page-nav">' + gotoPageHTML + pageNumberHTML + '</div></div>';
 
             settings.toolbarParentObject.prepend('<div id="' + settings.ID + 'tools" class="diva-tools">' + toolbarHTML + '</div>');
+
+            // bind view menu
+            diva.Events.subscribe('ViewDidSwitch', updateViewMenu);
+
+            updateViewMenu();
 
             // bind zoom slider
             $(settings.selector + 'zoom-slider').on('input', function(e)
@@ -1961,10 +2165,48 @@ window.divaPlugins = [];
                 handleGrid(settings.pagesPerRow + 1);
             });
 
-            // Handle clicking of the grid icon
-            $(settings.selector + 'grid-icon').click(function ()
+            // Handle clicking of the view icon
+            $(settings.selector + 'view-icon').click(function ()
             {
-                toggleGrid();
+                //show view menu
+                $(settings.selector + 'view-options').toggle();
+            });
+
+            $(settings.selector + 'view-options').on('click', '.diva-button', function(event)
+            {
+                // change to the selected view
+                var iconClass = event.target.classList[0];
+                var selectedView;
+
+                if (iconClass === 'diva-document-icon')
+                {
+                    selectedView = 'document';
+                }
+                else if (iconClass === 'diva-book-icon')
+                {
+                    selectedView = 'book';
+                }
+                else if (iconClass === 'diva-grid-icon')
+                {
+                    selectedView = 'grid';
+                }
+
+                diva.Events.publish('UserDidChooseView', [selectedView]);
+
+                //hide view menu
+                $(settings.selector + 'view-options').hide();
+            });
+
+            diva.Events.subscribe('UserDidChooseView', changeView);
+
+            $(document).mouseup(function (event)
+            {
+                var container = $(settings.selector + 'view-options');
+
+                if (!container.is(event.target) && container.has(event.target).length === 0 && event.target.id !== settings.ID + 'view-icon')
+                {
+                    container.hide();
+                }
             });
 
             // Handle going to a specific page using the input box
@@ -2061,9 +2303,8 @@ window.divaPlugins = [];
                 }
             };
 
-            var switchView = function ()
+            var switchView = function (destinationView)
             {
-                // Switch from grid to document view etc
                 $(settings.selector + currentSlider + '-slider').hide();
                 $(settings.selector + currentSlider + '-out-button').hide();
                 $(settings.selector + currentSlider + '-in-button').hide();
@@ -2075,9 +2316,6 @@ window.divaPlugins = [];
                 $(settings.selector + currentSlider + '-in-button').show();
                 $(settings.selector + currentSlider + '-slider-label').show();
                 $(settings.selector + currentSlider + '-buttons-label').show();
-
-                // Also change the image for the grid icon
-                $(settings.selector + 'grid-icon').toggleClass('diva-in-grid');
             };
 
             var toolbar =
@@ -2189,6 +2427,29 @@ window.divaPlugins = [];
             $(settings.selector + 'throbber').hide();
         };
 
+        var switchViewState = function(stateObj)
+        {
+            var view = stateObj;
+
+            switch (view)
+            {
+                case 'd':
+                    settings.inGrid = false;
+                    settings.inBookLayout = false;
+                    break;
+
+                case 'b':
+                    settings.inGrid = false;
+                    settings.inBookLayout = true;
+                    break;
+
+                case 'g':
+                    settings.inGrid = true;
+                    settings.inBookLayout = false;
+                    break;
+            }
+        };
+
         /**
          * Takes in a resource block from a canvas and outputs the following information associated with that resource:
          * - Image URL
@@ -2282,8 +2543,11 @@ window.divaPlugins = [];
             // trigger ManifestDidLoad event
             diva.Events.publish('ManifestDidLoad', [manifest], this);
 
+            var sequence = manifest.sequences[0];
+            settings.documentPaged = manifest.viewingHint === 'paged' || sequence.viewingHint === 'paged';
+
             //@TODO choose a sequence intelligently
-            var canvases = manifest.sequences[0].canvases;
+            var canvases = sequence.canvases;
 
             var zoomLevels = new Array(canvases.length);
             var images = new Array(canvases.length);
@@ -2321,6 +2585,9 @@ window.divaPlugins = [];
                 // get label from canvas block ('filename' is legacy)
                 label = canvases[i].label;
 
+                // indicate whether canvas has viewingHint of non-paged
+                var paged = canvases[i].viewingHint !== 'non-paged';
+
                 context = resource.service['@context'];
                 if (context === 'http://iiif.io/api/image/2/context.json')
                 {
@@ -2341,7 +2608,8 @@ window.divaPlugins = [];
                     'mx_z': maxZoom,
                     'fn': label,
                     'url': url,
-                    'api': imageAPIVersion
+                    'api': imageAPIVersion,
+                    'paged': paged
                 };
 
                 if (info.hasOwnProperty('x'))
@@ -2363,11 +2631,14 @@ window.divaPlugins = [];
             var totalHeights = new Array(lowestMaxZoom + 1);
             var maxWidths = new Array(lowestMaxZoom + 1);
             var maxHeights = new Array(lowestMaxZoom + 1);
+            // separate calculation for paged/book view
+            var totalHeightsPaged = new Array(lowestMaxZoom + 1);
 
             initializeArrayWithValue(totalWidths, 0);
             initializeArrayWithValue(totalHeights, 0);
             initializeArrayWithValue(maxWidths, 0);
             initializeArrayWithValue(maxHeights, 0);
+            initializeArrayWithValue(totalHeightsPaged, 0);
 
             var pages = [];
             var currentPageZoomData; // dimensions per zoomlevel
@@ -2375,8 +2646,10 @@ window.divaPlugins = [];
             var widthAtCurrentZoomLevel;
             var heightAtCurrentZoomLevel;
 
+            var numImages = images.length;
+
             // for each page image:
-            for (var i = 0, numImages = images.length; i < numImages; i++)
+            for (i = 0; i < numImages; i++)
             {
                 currentPageZoomData = [];
 
@@ -2408,7 +2681,8 @@ window.divaPlugins = [];
                     m: images[i].mx_z,
                     f: images[i].fn,
                     url: images[i].url,
-                    api: images[i].api
+                    api: images[i].api,
+                    paged: images[i].paged
                 };
 
                 if (images[i].hasOwnProperty('xoffset'))
@@ -2422,7 +2696,7 @@ window.divaPlugins = [];
             var averageHeights = [];
 
             // for each zoom level, calculate average of heights/widths
-            for (var i = 0; i < lowestMaxZoom + 1; i++)
+            for (i = 0; i < lowestMaxZoom + 1; i++)
             {
                 averageWidths.push(totalWidths[i] / images.length);
                 averageHeights.push(totalHeights[i] / images.length);
@@ -2484,8 +2758,8 @@ window.divaPlugins = [];
             var data;
 
             // parse IIIF manifest if it is an IIIF manifest. TODO improve IIIF detection method
-            if (responseData.hasOwnProperty('@context') && (responseData['@context'].indexOf('iiif') !== -1
-                || responseData['@context'].indexOf('shared-canvas') !== -1))
+            if (responseData.hasOwnProperty('@context') && (responseData['@context'].indexOf('iiif') !== -1 ||
+                responseData['@context'].indexOf('shared-canvas') !== -1))
             {
                 settings.isIIIF = true;
                 data = parseManifest(responseData);
@@ -2578,6 +2852,16 @@ window.divaPlugins = [];
             {
                 settings.verticalPadding = Math.max(40, settings.verticalPadding);
             }
+
+            // If we detect a viewingHint of 'paged' in the manifest or sequence, enable book view by default
+            if (settings.documentPaged)
+            {
+                settings.inBookLayout = true;
+            }
+
+            // Update view settings (settings.inGrid, settings.inBookLayout) to match 'v' parameter
+            var viewParam = $.getHashParam('v' + settings.hashParamSuffix);
+            switchViewState(viewParam);
         };
 
         var setupViewer = function ()
@@ -2730,13 +3014,9 @@ window.divaPlugins = [];
             }
 
             // If the "fullscreen" hash param is true, go to fullscreen initially
-            // If the grid hash param is true, go to grid view initially
-            var gridParam = $.getHashParam('g' + settings.hashParamSuffix);
-            var goIntoGrid = gridParam === 'true';
             var fullscreenParam = $.getHashParam('f' + settings.hashParamSuffix);
             var goIntoFullscreen = fullscreenParam === 'true';
 
-            settings.inGrid = (settings.inGrid && gridParam !== 'false') || goIntoGrid;
             settings.inFullscreen = (settings.inFullscreen && fullscreenParam !== 'false') || goIntoFullscreen;
 
             // Do the initial AJAX request and viewer loading
@@ -2883,7 +3163,11 @@ window.divaPlugins = [];
         this.setZoomLevel = function (zoomLevel)
         {
             if (settings.inGrid)
-                toggleGrid();
+            {
+                settings.goDirectlyTo = settings.currentPageIndex;
+                settings.inGrid = false;
+                handleViewChange();
+            }
 
             return handleZoom(zoomLevel);
         };
@@ -2965,10 +3249,10 @@ window.divaPlugins = [];
             return false;
         };
 
-        // Toggle grid view
-        this.toggleGridView = function ()
+        // Change views. Takes 'document', 'book', or 'grid' to specify which view to switch into
+        this.changeView = function(destinationView)
         {
-            toggleGrid();
+            return changeView(destinationView);
         };
 
         // Enter grid view if currently not in grid view
@@ -2977,7 +3261,7 @@ window.divaPlugins = [];
         {
             if (!settings.inGrid)
             {
-                toggleGrid();
+                changeView('grid');
                 return true;
             }
 
@@ -2990,7 +3274,9 @@ window.divaPlugins = [];
         {
             if (settings.inGrid)
             {
-                toggleGrid();
+                settings.goDirectlyTo = settings.currentPageIndex;
+                settings.inGrid = false;
+                handleViewChange();
                 return true;
             }
 
@@ -3104,8 +3390,8 @@ window.divaPlugins = [];
             else if (isPageValid(state.p))
                 settings.goDirectlyTo = state.p;
 
-            horizontalOffset = parseInt(state.x, 10);
-            verticalOffset = parseInt(state.y, 10);
+            var horizontalOffset = parseInt(state.x, 10);
+            var verticalOffset = parseInt(state.y, 10);
 
             // Only change the zoom if state.z is valid
             if (state.z >= settings.minZoomLevel && state.z <= settings.maxZoomLevel)
@@ -3115,11 +3401,14 @@ window.divaPlugins = [];
             if (state.n >= settings.minPagesPerRow && state.n <= settings.maxPagesPerRow)
                 settings.pagesPerRow = state.n;
 
+            // Change settings to match v (view) hash parameter
+
             if (settings.inFullscreen !== state.f)
             {
+                switchViewState(state.v);
                 // The parameter determines if we need to change the view as well
                 settings.inFullscreen = state.f;
-                handleModeChange(settings.inGrid !== state.g);
+                handleModeChange(false);
                 settings.horizontalOffset = horizontalOffset;
                 settings.verticalOffset = verticalOffset;
                 gotoPage(pageIndex, settings.verticalOffset, settings.horizontalOffset);
@@ -3128,10 +3417,14 @@ window.divaPlugins = [];
             {
                 settings.horizontalOffset = horizontalOffset;
                 settings.verticalOffset = verticalOffset;
+
                 // Don't need to change the mode, may need to change view
-                if (settings.inGrid !== state.g)
+                // If the current view is not equal to that in state, switch view
+                if ((state.v === 'g' && (!settings.inGrid || settings.inBookLayout)) ||
+                    (state.v === 'd' && (settings.inGrid || settings.inBookLayout)) ||
+                    (state.v === 'b' && !settings.inBookLayout))
                 {
-                    settings.inGrid = state.g;
+                    switchViewState(state.v);
                     handleViewChange();
                 }
                 else
@@ -3237,7 +3530,7 @@ window.divaPlugins = [];
                 return false;
 
             //navigate through all diva page objects
-            var pages = document.getElementsByClassName("diva-document-page");
+            var pages = document.getElementsByClassName('diva-page');
             var curPageIdx = pages.length;
             while (curPageIdx--)
             {

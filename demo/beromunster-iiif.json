@@ -3,7 +3,7 @@
   "@id": "http://dev-diva.simssa.ca/iiif/srv/images/beromunster/manifest.json",
   "@type": "sc:Manifest",
   "label": "Beromunster",
-  "viewingHint": "continuous",
+  "viewingHint": "paged",
   "sequences": [
     {
       "@type": "sc:Sequence",

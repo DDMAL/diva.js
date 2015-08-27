@@ -453,7 +453,7 @@ Allows you to highlight regions of a page image based off of annotations in a II
 
                 diva.Events.subscribe('ViewerDidLoad', function(){
                     //button to toggle annotations
-                    $('#' + divaSettings.ID + 'page-nav').before('<div id="' + divaSettings.ID + 'annotations-icon" class="button diva-annotations-icon" title="Turn annotations on or off"></div>');
+                    $('#' + divaSettings.ID + 'page-nav').before('<div id="' + divaSettings.ID + 'annotations-icon" class="diva-button diva-annotations-icon" title="Turn annotations on or off"></div>');
 
                     $(divaSettings.selector + 'annotations-icon').addClass('annotations-icon-active');
 
