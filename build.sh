@@ -100,10 +100,10 @@ test ()
 {
     if [ "$TEST_DIVA" = "source" ]; then
         echo "Testing source"
-        phantomjs tests/runner.js tests/source.html
+        phantomjs tests/runner.js tests/source.html 10
     else
         echo "Testing build"
-        phantomjs tests/runner.js
+        phantomjs tests/runner.js tests/index.html 10
     fi
 }
 
