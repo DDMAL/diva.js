@@ -8,6 +8,7 @@ var less = require('gulp-less');
 var uglify = require('gulp-uglify');
 var concat = require('gulp-concat');
 var rename = require('gulp-rename');
+var qunit = require('./tests/gulp-qunit.js');
 
 gulp.task('develop:jshint', function()
 {
@@ -177,7 +178,18 @@ gulp.task('release', ['develop:build'], function()
                .finalize();
 });
 
-gulp.task('default', function()
+gulp.task('test', ['develop:build'], function ()
+{
+    var testsPath = (process.env.TEST_DIVA === 'source') ? './tests/source.html' : './tests/index.html';
+
+    return gulp.src(testsPath)
+        .pipe(qunit({
+            'timeout': 10,
+            'testRunner': 'runner-json.js'
+        }));
+});
+
+gulp.task('default', ['develop:build'], function()
 {
     gulp.start('develop:build');
 });
