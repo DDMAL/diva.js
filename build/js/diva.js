@@ -924,7 +924,6 @@ window.divaPlugins = [];
                 }
             }
 
-            //TODO page not updated when scrolling left unless also upwards scroll
             if (settings.inBookLayout && settings.verticallyOriented)
             {
                 var nextPage = currentPage + 1;
@@ -934,10 +933,8 @@ window.divaPlugins = [];
                 {
                     if (nextPage !== settings.currentPageIndex)
                     {
-                        //TODO fires wildly
                         settings.currentPageIndex = nextPage;
                         var filename = settings.pages[nextPage].f;
-                        executeCallback(settings.onSetCurrentPage, nextPage, filename);
                         diva.Events.publish("VisiblePageDidChange", [nextPage, filename], self);
                         console.log(nextPage + 1);
                     }
@@ -2429,6 +2426,29 @@ window.divaPlugins = [];
             $(settings.selector + 'throbber').hide();
         };
 
+        var switchViewState = function(stateObj)
+        {
+            var view = stateObj;
+
+            switch (view)
+            {
+                case 'd':
+                    settings.inGrid = false;
+                    settings.inBookLayout = false;
+                    break;
+
+                case 'b':
+                    settings.inGrid = false;
+                    settings.inBookLayout = true;
+                    break;
+
+                case 'g':
+                    settings.inGrid = true;
+                    settings.inBookLayout = false;
+                    break;
+            }
+        };
+
         /**
          * Takes in a resource block from a canvas and outputs the following information associated with that resource:
          * - Image URL
@@ -2737,8 +2757,8 @@ window.divaPlugins = [];
             var data;
 
             // parse IIIF manifest if it is an IIIF manifest. TODO improve IIIF detection method
-            if (responseData.hasOwnProperty('@context') && (responseData['@context'].indexOf('iiif') !== -1
-                || responseData['@context'].indexOf('shared-canvas') !== -1))
+            if (responseData.hasOwnProperty('@context') && (responseData['@context'].indexOf('iiif') !== -1 ||
+                responseData['@context'].indexOf('shared-canvas') !== -1))
             {
                 settings.isIIIF = true;
                 data = parseManifest(responseData);
@@ -2833,34 +2853,14 @@ window.divaPlugins = [];
             }
 
             // If we detect a viewingHint of 'paged' in the manifest or sequence, enable book view by default
-            //TODO unless view hash parameter is something other than 'b'
             if (settings.documentPaged)
             {
                 settings.inBookLayout = true;
             }
-        };
 
-        var switchViewState = function(stateObj)
-        {
-            var view = stateObj;
-
-            switch (view)
-            {
-                case 'd':
-                    settings.inGrid = false;
-                    settings.inBookLayout = false;
-                    break;
-
-                case 'b':
-                    settings.inGrid = false;
-                    settings.inBookLayout = true;
-                    break;
-
-                case 'g':
-                    settings.inGrid = true;
-                    settings.inBookLayout = false;
-                    break;
-            }
+            // Update view settings (settings.inGrid, settings.inBookLayout) to match 'v' parameter
+            var viewParam = $.getHashParam('v' + settings.hashParamSuffix);
+            switchViewState(viewParam);
         };
 
         var setupViewer = function ()
@@ -3013,12 +3013,8 @@ window.divaPlugins = [];
             }
 
             // If the "fullscreen" hash param is true, go to fullscreen initially
-            // If the grid hash param is true, go to grid view initially
             var fullscreenParam = $.getHashParam('f' + settings.hashParamSuffix);
             var goIntoFullscreen = fullscreenParam === 'true';
-
-            var viewParam = $.getHashParam('v' + settings.hashParamSuffix);
-            switchViewState(viewParam);
 
             settings.inFullscreen = (settings.inFullscreen && fullscreenParam !== 'false') || goIntoFullscreen;
 
@@ -3408,12 +3404,9 @@ window.divaPlugins = [];
 
             if (settings.inFullscreen !== state.f)
             {
-                //TODO handleModeChange switches inGrid again
                 switchViewState(state.v);
                 // The parameter determines if we need to change the view as well
                 settings.inFullscreen = state.f;
-                //handleModeChange(settings.inGrid !== (state.v === 'g'));
-                //TODO trying this to not switch inGrid again
                 handleModeChange(false);
                 settings.horizontalOffset = horizontalOffset;
                 settings.verticalOffset = verticalOffset;
@@ -3426,7 +3419,6 @@ window.divaPlugins = [];
 
                 // Don't need to change the mode, may need to change view
                 // If the current view is not equal to that in state, switch view
-                //TODO changing the settings above this block makes this block not trigger
                 if ((state.v === 'g' && (!settings.inGrid || settings.inBookLayout)) ||
                     (state.v === 'd' && (settings.inGrid || settings.inBookLayout)) ||
                     (state.v === 'b' && !settings.inBookLayout))
