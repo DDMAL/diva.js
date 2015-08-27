@@ -935,7 +935,6 @@ window.divaPlugins = [];
                     {
                         settings.currentPageIndex = nextPage;
                         var filename = settings.pages[nextPage].f;
-                        executeCallback(settings.onSetCurrentPage, nextPage, filename);
                         diva.Events.publish("VisiblePageDidChange", [nextPage, filename], self);
                         console.log(nextPage + 1);
                     }
