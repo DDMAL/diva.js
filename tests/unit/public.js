@@ -172,12 +172,11 @@ asyncTest("toggleFullscreenMode(), enterFullscreen(), leaveFullscreen()", functi
     $.tempDiva({});
 });
 
-
-asyncTest("toggleGridView(), enterGridView(), leaveGridView()", function () {
+asyncTest("enterGridView(), leaveGridView()", function () {
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
             ok(!settings.inGrid, "Should not be in grid initially");
-            this.toggleGridView();
+            this.enterGridView();
             ok(settings.inGrid, "Should now be in grid");
             ok(!this.enterGridView(), "Should not be possible to enter grid");
             ok(settings.inGrid, "Should still be in grid");
@@ -186,8 +185,6 @@ asyncTest("toggleGridView(), enterGridView(), leaveGridView()", function () {
             ok(!this.leaveGridView(), "Should not be possible to exit grid");
             ok(!settings.inGrid, "Still not in grid");
             ok(this.enterGridView(), "Should be possible to enter grid");
-            this.toggleGridView();
-            ok(!settings.inGrid, "Should now be out of grid");
             start();
     });
 
@@ -261,7 +258,7 @@ asyncTest("getState()", function () {
     {
         var expected = {
             f: false,
-            g: false,
+            v: 'd',
             i: 'bm_001.tif',
             n: 5,
             p: false,
@@ -293,7 +290,7 @@ asyncTest("setState()", function () {
     {
         var state = {
             f: true,
-            g: false,
+            v: 'd',
             i: "bm_005.tif",
             n: 3,
             p: false,
@@ -304,6 +301,7 @@ asyncTest("setState()", function () {
         this.setState(state);
         ok(settings.inFullscreen, "Should now be in fullscreen");
         ok(!settings.inGrid, "Should not be in grid");
+        ok(!settings.inBookLayout, "Should not be in book view");
         equal(settings.currentPageIndex, 4, "Current page should be 5 (index of 4)");
         equal(settings.pagesPerRow, 3, "Pages per row should be 3");
         equal(settings.zoomLevel, 3, "Zoom level should be 3");
@@ -318,16 +316,16 @@ asyncTest("setState()", function () {
             equal(settings.outerObject.scrollLeft(), 627, "Scroll from left should be 500 more");
         }
 
-        state = {
-            f: false,
-            g: true,
-            i: "bm_500.tif",
-            n: 4,
-            p: true,
-            x: 100,
-            y: 200,
-            z: 4
-        };
+            state = {
+                f: false,
+                v: 'g',
+                i: "bm_500.tif",
+                n: 4,
+                p: true,
+                x: 100,
+                y: 200,
+                z: 4
+            };
 
         this.setState(state);
         ok(!settings.inFullscreen, "Should not be in fullscreen");
@@ -347,7 +345,7 @@ asyncTest("translateFromMaxZoomLevel()", function () {
     {
         var state = {
             f: true,
-            g: false,
+            v: 'd',
             i: "bm_005.tif",
             n: 3,
             p: false,
@@ -366,18 +364,18 @@ asyncTest("translateFromMaxZoomLevel()", function () {
         equal(this.translateFromMaxZoomLevel(1234), boxOnMaxPage.width);
         equal(this.translateFromMaxZoomLevel(1324), boxOnMaxPage.height);
 
-        // reset the state to a different zoom level
-        state = {
-            f: true,
-            g: false,
-            i: "bm_005.tif",
-            n: 3,
-            p: false,
-            x: 500,
-            y: 300,
-            z: 2
-        };
-        this.setState(state);
+            // reset the state to a different zoom level
+            state = {
+                f: true,
+                v: 'd',
+                i: "bm_005.tif",
+                n: 3,
+                p: false,
+                x: 500,
+                y: 300,
+                z: 2
+            };
+            this.setState(state);
 
         // check that the box translation has changed accordingly.
         equal(this.translateFromMaxZoomLevel(boxOnMaxPage.x), 25);
@@ -396,7 +394,7 @@ asyncTest("translateToMaxZoomLevel()", function () {
     {
         var state = {
             f: true,
-            g: false,
+            v: 'd',
             i: "bm_005.tif",
             n: 3,
             p: false,
@@ -415,18 +413,18 @@ asyncTest("translateToMaxZoomLevel()", function () {
         equal(this.translateToMaxZoomLevel(123), boxOnThisPage.width);
         equal(this.translateToMaxZoomLevel(132), boxOnThisPage.height);
 
-        // reset the state to a different zoom level
-        state = {
-            f: true,
-            g: false,
-            i: "bm_005.tif",
-            n: 3,
-            p: false,
-            x: 500,
-            y: 300,
-            z: 2
-        };
-        this.setState(state);
+            // reset the state to a different zoom level
+            state = {
+                f: true,
+                v: 'd',
+                i: "bm_005.tif",
+                n: 3,
+                p: false,
+                x: 500,
+                y: 300,
+                z: 2
+            };
+            this.setState(state);
 
         // console.log(this.translateToMaxZoomLevel(boxOnThisPage.x));
         // check that the box translation has changed accordingly. This assumes that
