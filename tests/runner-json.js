@@ -95,16 +95,16 @@
     };
 
     page.open(url, function (status) {
-        // patch to remove get/setState tests from Travis CI build due to off-by-one pixel error when run in Travis
-        if (isTravis)
-            page.evaluate(function() { window.isTravis = true; });
-        else
-            page.evaluate(function() { window.isTravis = false; });
-
         if (status !== 'success') {
             console.error('Unable to access network: ' + status);
             exit(1);
         } else {
+            // patch to remove get/setState tests from Travis CI build due to off-by-one pixel error when run in Travis
+            if (isTravis)
+                page.evaluate(function() { window.isTravis = true; });
+            else
+                page.evaluate(function() { window.isTravis = false; });
+
             // Cannot do this verification with the 'DOMContentLoaded' handler because it
             // will be too late to attach it if a page does not have any script tags.
             var qunitMissing = page.evaluate(function () {
