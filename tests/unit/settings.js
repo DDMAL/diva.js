@@ -50,7 +50,6 @@ asyncTest("enableFullscreen false", function () {
 });
 
 asyncTest("enableFullscreen true", function () {
-    //diva.Events.unsubscribeAll();
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         // Make sure the fullscreen icon is there
@@ -284,28 +283,30 @@ asyncTest("goDirectlyTo, invalid", function () {
 // iipServerURL can't really be tested, just have to rely on this to work
 
 asyncTest("inBookLayout true", function () {
+    diva.Events.subscribe('ViewerDidLoad', function(settings)
+    {
+        ok(settings.inBookLayout, 'inBookLayout should remain true after initialization');
+        ok(settings.pageLeftOffsets[1] < settings.pageLeftOffsets[2], 'Page 1 should be to the left of page 2');
+        ok(settings.pageLeftOffsets[2] > settings.pageLeftOffsets[3], 'Page 2 should be to the right of page 3');
+        start();
+    });
+
     $.tempDiva({
-        inBookLayout: true,
-        onReady: function (settings) {
-            ok(settings.inBookLayout, 'inBookLayout should remain true after initialization');
-            ok(settings.pageLeftOffsets[1] < settings.pageLeftOffsets[2], 'Page 1 should be to the left of page 2');
-            ok(settings.pageLeftOffsets[2] > settings.pageLeftOffsets[3], 'Page 2 should be to the right of page 3');
-            start();
-        }
+        inBookLayout: true
     });
 });
 
 asyncTest("documentPaged", function() {
+    diva.Events.subscribe('ViewerDidLoad', function(settings)
+    {
+        ok(settings.documentPaged, 'settings.documentPaged should be true when manifest has viewingHint: paged');
+        ok(settings.inBookLayout, 'settings.inBookLayout should be true when documentPaged is true');
+
+        start();
+    });
+
     $.tempDiva({
-        objectData: '../demo/beromunster-iiif.json',
-        onReady: function(settings) {
-            ok(settings.documentPaged, 'settings.documentPaged should be true when manifest has viewingHint: paged');
-            ok(settings.inBookLayout, 'settings.inBookLayout should be true when documentPaged is true');
-
-            console.log(settings.numPages);
-
-            start();
-        }
+        objectData: '../demo/beromunster-iiif.json'
     });
 });
 
@@ -439,16 +440,11 @@ asyncTest("max/minZoomLevel, invalid/valid values, invalid zoomLevel", function 
     });
 });
 
-// All the on_____ settings are callback functions that are tested in callbacks.js
-// Except onReady - we can only assume that it works.
-
 // pageLoadTimeout is a bit weird to test, but the code is simple so it should be fine
 
 // pagesPerRow is tested above, along with max/minPagesPerRow
 
 // rowLoadTimeout is in the same boat as pageLoadTimeout
-
-// tileFadeSpeed is also difficult, so let's skip it
 
 // No real point testing tileHeight/Width as we don't have images of different tile sizes
 
