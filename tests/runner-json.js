@@ -123,6 +123,32 @@
             // Set a timeout on the test running, otherwise tests with async problems will hang forever
             setTimeout(function () {
                 console.error('The specified timeout of ' + timeout + ' seconds has expired. Aborting...');
+
+                var stalledTest = page.evaluate(function() {
+                    var status;
+                    var error = '';
+                    var runningTest = $('.running');
+
+                    if (runningTest.length) {
+                        var testName = runningTest[0].children[0].innerText;
+                        if ($('.running li.fail .test-message').length)
+                        {
+                            error = '\nError: ' + $('.running li.fail .test-message')[0].innerHTML;
+                        }
+                        status = 'Stalled test - ' + testName + error;
+                    }
+                    else {
+                        status = '';
+                    }
+
+                    return status;
+                });
+
+                if (stalledTest.length)
+                {
+                    console.log(stalledTest);
+                }
+
                 exit(1);
             }, timeout * 1000);
 
