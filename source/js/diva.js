@@ -1848,8 +1848,6 @@ window.divaPlugins = [];
             };
 
             // Document view: Double-tap to zoom in
-            settings.outerObject.on('touchend', '.diva-document-page', bindDoubleTap);
-
             // Grid view: Double-tap to jump to current page in document view
             settings.outerObject.on('touchend', '.diva-page', bindDoubleTap);
 
