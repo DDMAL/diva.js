@@ -2948,7 +2948,7 @@ window.divaPlugins = [];
                     else if (settings.goDirectlyTo === 0 && settings.inBookLayout)
                     {
                         // if in book layout, center the first opening
-                        settings.horizontalOffset = 0;
+                        settings.horizontalOffset = 0 + settings.horizontalPadding;
                     }
                     else
                     {
