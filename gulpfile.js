@@ -178,7 +178,7 @@ gulp.task('release', ['develop:build'], function()
                .finalize();
 });
 
-gulp.task('test', ['develop:build'], function ()
+gulp.task('develop:test', ['develop:build'], function ()
 {
     var testsPath = (process.env.TEST_DIVA === 'source') ? './tests/source.html' : './tests/index.html';
 
