@@ -2930,6 +2930,11 @@ window.divaPlugins = [];
                     {
                         settings.horizontalOffset = xParam;
                     }
+                    else if (settings.goDirectlyTo === 0 && settings.inBookLayout)
+                    {
+                        // if in book layout, center the first opening
+                        settings.horizontalOffset = 0;
+                    }
                     else
                     {
                         settings.horizontalOffset = getXOffset(settings.currentPageIndex, "center");
