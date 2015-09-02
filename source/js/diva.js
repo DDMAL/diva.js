@@ -286,6 +286,23 @@ window.divaPlugins = [];
                         }
                         else
                         {
+                            if (pageIndex === 0)
+                            {
+                                // create a placeholder div for the left side of the first opening
+                                var placeholderElement = document.createElement('div');
+                                placeholderElement.id = settings.ID + 'page-placeholder';
+                                placeholderElement.classList.add('diva-page', 'diva-document-page');
+                                placeholderElement.style.width = width + 'px';
+                                placeholderElement.style.height = height + 'px';
+                                placeholderElement.style.left = 0 - width + 'px';
+                                placeholderElement.style.border = '1px solid #ccc';
+                                placeholderElement.style.background = '#fdfdfd';
+                                placeholderElement.style.mozBoxSizing = 'border-box';
+                                placeholderElement.style.webkitBoxSizing = 'border-box';
+                                placeholderElement.style.boxSizing = 'border-box';
+                                // append the placeholder element to page as first child
+                                pageElement.appendChild(placeholderElement);
+                            }
                             pageElement.classList.add('diva-page-book');
                         }
                     }
