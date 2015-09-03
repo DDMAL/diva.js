@@ -5233,7 +5233,8 @@
               },
               "on": "http://dev-diva.simssa.ca/iiif/srv/images/beromunster/canvas/bm_201.json"
             }
-          ]
+          ],
+          "viewingHint": "non-paged"
         },
         {
           "@id": "http://dev-diva.simssa.ca/iiif/srv/images/beromunster/canvas/bm_202.json",
