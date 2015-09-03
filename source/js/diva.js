@@ -245,8 +245,8 @@ window.divaPlugins = [];
         // Appends the page directly into the document body, or loads the relevant tiles
         var loadPage = function (pageIndex)
         {
-            // If the page and all of its tiles have been loaded, exit
-            if (isPageLoaded(pageIndex) && settings.allTilesLoaded[pageIndex])
+            // If the page and all of its tiles have been loaded, or if we are in book layout and the canvas is non-paged, exit
+            if ((isPageLoaded(pageIndex) && settings.allTilesLoaded[pageIndex]) || (settings.inBookLayout && settings.documentPaged && !settings.pages[pageIndex].paged))
                 return;
 
             // Load some data for this page
@@ -1133,6 +1133,8 @@ window.divaPlugins = [];
 
             if (settings.inBookLayout)
             {
+                var isLeft = false;
+
                 if (settings.verticallyOriented)
                 {
                     for (i = 0; i < settings.numPages; i++)
@@ -1142,7 +1144,7 @@ window.divaPlugins = [];
 
                         settings.pageTopOffsets[i] = heightSoFar;
 
-                        if (i % 2)
+                        if (isLeft)
                         {
                             //page on the left
                             settings.pageLeftOffsets[i] = (widthToSet / 2) - getPageData(i, 'w') - settings.horizontalPadding;
@@ -1152,10 +1154,17 @@ window.divaPlugins = [];
                             //page on the right
                             settings.pageLeftOffsets[i] = (widthToSet / 2) - settings.horizontalPadding;
 
-                            //increment the height only when we are on an even page index
-                            var pageHeight = (isPageValid(i - 1)) ? Math.max(getPageData(i, 'h'), getPageData(i - 1, 'h')) : getPageData(i, 'h');
-                            heightSoFar = settings.pageTopOffsets[i] + pageHeight + settings.verticalPadding;
+                            //increment the height
+                            if (!settings.documentPaged || settings.pages[i].paged)
+                            {
+                                var pageHeight = (isPageValid(i - 1)) ? Math.max(getPageData(i, 'h'), getPageData(i - 1, 'h')) : getPageData(i, 'h');
+                                heightSoFar = settings.pageTopOffsets[i] + pageHeight + settings.verticalPadding;
+                            }
                         }
+
+                        //don't include non-paged canvases in layout calculation
+                        if (!settings.documentPaged || settings.pages[i].paged)
+                            isLeft = !isLeft;
                     }
                 }
                 else
@@ -1167,8 +1176,11 @@ window.divaPlugins = [];
                         settings.pageLeftOffsets[i] = widthSoFar;
 
                         var pageWidth = getPageData(i, 'w');
-                        var padding = (i % 2) ? 0 : settings.horizontalPadding;
+                        var padding = (isLeft) ? 0 : settings.horizontalPadding;
                         widthSoFar = settings.pageLeftOffsets[i] + pageWidth + padding;
+
+                        if (!settings.documentPaged || settings.pages[i].paged)
+                            isLeft = !isLeft;
                     }
                 }
             }
