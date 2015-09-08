@@ -3,7 +3,7 @@ Test coverage: pretty much complete
 Can't really (or don't need to) test any of the others
 */
 
-module("Utility methods");
+QUnit.module("Utility methods", { beforeEach: clearTempDiva });
 
 test("getHashParam()", function () {
     // First try it with no hash params - should return false
@@ -11,7 +11,7 @@ test("getHashParam()", function () {
 
     // Now set the current URL to something
     var baseUrl = window.location.href;
-    window.location.hash = '#p=149&z=2'
+    window.location.hash = '#p=149&z=2';
     var nonexistentParam = $.getHashParam('lol');
     var firstParam = $.getHashParam('p');
     var secondParam = $.getHashParam('z');

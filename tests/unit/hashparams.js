@@ -2,7 +2,7 @@
 Test coverage: pretty much complete
 */
 
-module("Hash params");
+QUnit.module("Hash params", { beforeEach: clearTempDiva });
 
 var multipleHashParamTest = function (testName, hashParams, onReadyCallback, settings) {
     asyncTest(testName, function () {
@@ -13,29 +13,27 @@ var multipleHashParamTest = function (testName, hashParams, onReadyCallback, set
         var first = true;
         var prefix = '';
         for (var hashParam in hashParams) {
-            hashValue = hashParams[hashParam];
+            if (hashParams.hasOwnProperty(hashParam))
+            {
+                hashValue = hashParams[hashParam];
 
-            window.location.hash += prefix + hashParam + suffix + '=' + hashValue;
+                window.location.hash += prefix + hashParam + suffix + '=' + hashValue;
 
-            if (first) {
-                prefix = '&';
-                first = false;
+                if (first) {
+                    prefix = '&';
+                    first = false;
+                }
             }
         }
 
-        var allSettings = {
-            onReady: function (settings) {
-                onReadyCallback.call(this, settings);
-                window.location.hash = previousHash;
-                start();
-            }
-        };
+        diva.Events.subscribe('ViewerDidLoad', function(settings)
+        {
+            onReadyCallback.call(this, settings);
+            window.location.hash = previousHash;
+            start();
+        });
 
-        if (settings) {
-            $.extend(allSettings, settings);
-        }
-
-        $.tempDiva(allSettings);
+        $.tempDiva(settings);
     });
 };
 
@@ -46,8 +44,9 @@ var hashParamTest = function (testName, hashParam, hashValue, onReadyCallback, s
     multipleHashParamTest(testName, hashParams, onReadyCallback, settings);
 };
 
-hashParamTest("grid (g)", "g", "true", function (settings) {
+hashParamTest("grid view (v)", "v", "g", function (settings) {
     ok(settings.inGrid, "inGrid setting should be true");
+    equal($(settings.selector + 'view-menu').children()[0].classList[0], 'diva-grid-icon', "Current toolbar view icon should be the grid icon");
     ok($(settings.selector + 'grid-out-button').is(':visible'), "Grid buttons (-) should be visible");
     ok($(settings.selector + 'grid-in-button').is(':visible'), "Grid buttons (+) should be visible");
     ok(!$(settings.selector + 'zoom-slider').is(':visible'), "Zoom slider should not be visible");
@@ -55,12 +54,18 @@ hashParamTest("grid (g)", "g", "true", function (settings) {
     notEqual($('.diva-row').length, 0, "There should be at least one row");
 });
 
+hashParamTest("book view (v)", "v", "b", function(settings) {
+    ok(settings.inBookLayout, "inBookLayout setting should be true");
+    equal($(settings.selector + 'view-menu').children()[0].classList[0], 'diva-book-icon', "Current toolbar view icon should be the book icon");
+    ok($('.diva-page-book').length, 'There should be some book pages');
+});
+
 hashParamTest("fullscreen (f)", "f", "true", function (settings) {
     ok(settings.inFullscreen, "inFullscreen setting should be true");
     ok($('body').hasClass('diva-hide-scrollbar'), "The body element should have the hide-scrollbar class");
 });
 
-multipleHashParamTest("grid (g) and fullscreen (f)", {g: "true", f: "true"}, function (settings) {
+multipleHashParamTest("view (v) = 'g' and fullscreen (f)", {v: "g", f: "true"}, function (settings) {
     ok(settings.inFullscreen, "inFullscreen setting should be true");
     ok(settings.inGrid, "inGrid setting should be true");
 });
@@ -73,7 +78,7 @@ hashParamTest("zoom level (z) - invalid value", "z", "5", function (settings) {
     equal(settings.zoomLevel, 0, "Initial zoom was invalid but >= 0, should be set to the min (0)");
 });
 
-multipleHashParamTest("zoom level (z) and grid (g)", {z: "1", g: "true"}, function (settings) {
+multipleHashParamTest("zoom level (z) and view (v) = 'g' ", {z: "1", v: "g"}, function (settings) {
     equal(settings.zoomLevel, 1, "Initial zoom level should be 1");
     ok(settings.inGrid, "Should be in grid initially");
 
@@ -102,7 +107,7 @@ hashParamTest("pagesPerRow (n) - invalid value", "n", "1", function (settings) {
     equal(settings.pagesPerRow, 5, "Pages per row should just be the default");
 });
 
-multipleHashParamTest("pagesPerRow (n) and grid (g)", {n: "3", g: "true"}, function (settings) {
+multipleHashParamTest("pagesPerRow (n) and view (v) = 'g'", {n: "3", v: "g"}, function (settings) {
     equal(settings.pagesPerRow, 3, "Pages per row should be 3 initially");
     ok(settings.inGrid, "Should be in grid initially");
 
@@ -127,7 +132,7 @@ hashParamTest("page number (p) - invalid value", "p", "600", function (settings)
     equal(settings.currentPageIndex, 0, "The initial page should just be the first page");
 }, {enableFilename: false});
 
-multipleHashParamTest("page number (p), grid (g)", {p: "100", g: "true"}, function (settings) {
+multipleHashParamTest("page number (p), view = 'g'", {p: "100", v: "g"}, function (settings) {
     equal(settings.currentPageIndex, 99, "The initial page should be 100 (index of 99)");
     ok(settings.inGrid, "Should be in grid");
 }, {enableFilename: false});
