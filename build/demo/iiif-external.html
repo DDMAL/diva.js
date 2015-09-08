@@ -28,7 +28,9 @@
                 $(document).ready(function() {
                     $('#diva-wrapper').diva({
                         fixedHeightGrid: true,
-                        objectData: 'http://oculus-dev.harvardx.harvard.edu/manifests/drs:5981093'
+                        objectData: 'http://oculus-dev.harvardx.harvard.edu/manifests/drs:5981093',
+                        enableImageTitles: false,
+                        enableIIIFMetadata: true
                     });
 
                     var selectObject = $('#object-select');
