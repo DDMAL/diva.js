@@ -76,65 +76,6 @@ asyncTest("get/setZoomLevel(), zoomIn() and zoomOut()", function () {
     });
 });
 
-asyncTest("enable/disableScrollable()", function () {
-    diva.Events.subscribe('ViewerDidLoad', function(settings)
-    {
-        this.setZoomLevel(2);
-
-        // should be able to zoom by double click
-        var event = $.Event("dblclick");
-        event.pageX = 1000;
-        event.pageY = 500;
-        $(settings.selector + 'page-0').trigger(event);
-        equal(settings.zoomLevel, 3, "Should be able to zoom by double click, zoom level should now be 3");
-
-        // should be able to scroll by dragging
-        var initScroll = settings.outerObject.scrollTop();
-        // simulate drag downwards
-        $('.diva-dragger').simulate('drag', { dx: 0, dy: -500 });
-        var finalScroll = settings.outerObject.scrollTop();
-
-        ok(finalScroll > initScroll, "Should have scrolled down before disableScrollable()");
-
-        this.disableScrollable();
-
-        // should not be able to zoom by double click
-        event = $.Event("dblclick");
-        event.pageX = 1000;
-        event.pageY = 500;
-        $(settings.selector + 'page-0').trigger(event);
-        equal(settings.zoomLevel, 3, "Should not be able to zoom by double click after disableScrollable(), zoom level should still be 3");
-
-        // should not be able to drag
-        // store previous scroll in initScroll
-        initScroll = settings.outerObject.scrollTop();
-        $('.diva-dragger').simulate('drag', { dx: 0, dy: -500 });
-        finalScroll = settings.outerObject.scrollTop();
-        ok(finalScroll === initScroll, "Should not have scrolled down after disableScrollable()");
-
-        this.enableScrollable();
-
-        // should be able to zoom by double click
-        event = $.Event("dblclick");
-        event.pageX = 1000;
-        event.pageY = 500;
-        $(settings.selector + 'page-0').trigger(event);
-        equal(settings.zoomLevel, 4, "Should be able to zoom by double click after enableScrollable(), zoom level should now be 4");
-
-        // should be able to scroll by dragging
-        initScroll = settings.outerObject.scrollTop();
-        // simulate drag downwards
-        $('.diva-dragger').simulate('drag', { dx: 0, dy: -500 });
-        finalScroll = settings.outerObject.scrollTop();
-
-        ok(finalScroll > initScroll, "Should have scrolled down after enableScrollable()");
-
-        start();
-    });
-
-    $.tempDiva({});
-});
-
 asyncTest("inViewport()", function () {
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {

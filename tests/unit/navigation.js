@@ -65,26 +65,6 @@ asyncTest("Scrolling down in book view", function() {
     });
 });
 
-asyncTest("Scrolling left in book view", function() {
-    diva.Events.subscribe('ViewerDidLoad', function(settings)
-    {
-        settings.outerObject.scrollTop(10000);
-        settings.outerObject.scrollLeft(0);
-
-        var self = this;
-        setTimeout(function ()
-        {
-            equal(self.getCurrentPageIndex(), 17, "The page should now be 18 (index of 17)");
-            equal($(settings.selector + 'current-page').text(), '18', "The toolbar should have been updated");
-            start();
-        }, 10);
-    });
-
-    $.tempDiva({
-        objectData: '../demo/beromunster-iiif.json'
-    });
-});
-
 asyncTest("Zooming using the slider", function () {
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
@@ -202,28 +182,6 @@ asyncTest("Changing pages per row in Grid view using +/- buttons", function () {
 
     $.tempDiva({
         pagesPerRow: 2
-    });
-});
-
-asyncTest("Zooming by double-clicking", function () {
-    diva.Events.subscribe('ViewerDidLoad', function(settings)
-    {
-        var event = $.Event("dblclick");
-        event.pageX = 1000;
-        event.pageY = 500;
-        setTimeout(function () {
-            $(settings.selector + 'page-100').trigger(event);
-            setTimeout(function () {
-                equal(settings.zoomLevel, 2, "Zoom level should now be 2");
-                equal(settings.currentPageIndex, 100, "Should still be on page 100");
-                start();
-            }, 10);
-        }, 10);
-    });
-
-    $.tempDiva({
-        zoomLevel: 1,
-        goDirectlyTo: 100
     });
 });
 
