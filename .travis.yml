@@ -8,9 +8,6 @@ env:
 install:
   - npm install -g gulp
   - npm install
-  - wget http://dl.google.com/closure-compiler/compiler-latest.zip
-  - unzip compiler-latest.zip
-  - chmod a+rx compiler.jar
   - phantomjs --version
 
 before_script: gulp develop:build
