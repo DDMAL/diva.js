@@ -64,18 +64,6 @@ The `#diva-wrapper` selector points to a `div` element within which the document
 
 See [Installation](https://github.com/DDMAL/diva.js/wiki/Installation) for full instructions.
 
-#### Cross-site Requests
-
-You may receive an error that looks something like this:
-
-```
-XMLHttpRequest cannot load http://example.com/demo/imagefiles.json. No 'Access-Control-Allow-Origin' header is present on the requested resource. Origin 'http://localhost:8000' is therefore not allowed access.
-```
-
-This is a security precaution that all browsers use to prevent cross-site request forgeries. If you receive this message it is because your `objectData` parameter and the server used to serve the Diva page are not at the same server address.
-
-To fix this you must ensure that the Diva HTML page, and the location pointed to by the `objectData` page are being served by the same server, or you must create an exception using the `Access-Control-Allow-Origin` header on your server to explicitly white-list the `objectData` location.
-
 ### Running the Demos
 
 Running the demos works best using a web server. The easiest is to use Python to start a small web server in the `diva.js` directory (or `build` if you have the source code):
@@ -100,6 +88,19 @@ gulp develop:test     // Runs the unit tests and outputs a report to the console
 ```
 
 See [Installation](https://github.com/DDMAL/diva.js/wiki/Installation) for more information.
+
+### Cross-site Requests
+
+You may receive an error that looks something like this:
+
+```
+XMLHttpRequest cannot load http://example.com/demo/imagefiles.json. No 'Access-Control-Allow-Origin' header is present on the requested resource. Origin 'http://localhost:8000' is therefore not allowed access.
+```
+
+This is a security precaution that all browsers use to prevent cross-site request forgeries. If you receive this message it is because your `objectData` parameter and the server used to serve the Diva page are not at the same server address.
+
+To fix this you must ensure that the Diva HTML page, and the location pointed to by the `objectData` page are being served by the same server, or you must create an exception using the `Access-Control-Allow-Origin` header on your server to explicitly white-list the `objectData` location.
+
 
 ### Getting help
 
