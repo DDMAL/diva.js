@@ -25,13 +25,12 @@
             height: 30px;
         }
     </style>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
-    <script src="{{ site.baseurl }}try/js/diva.min.js" type="text/javascript"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script src="{{ site.baseurl }}try/js/diva.min.js"></script>
     <script type="text/javascript">
         $(document).ready(function() {
             $('#diva-wrapper').diva({
                 fixedHeightGrid: false,
-                iiifServerURL: "http://diva.simssa.ca/iiif/srv/images/beromunster/",
                 objectData: "{{ site.baseurl }}try/demo/beromunster-iiif.json",
                 enableCanvas: true,
                 enableDownload: true
