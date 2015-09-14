@@ -103,10 +103,13 @@ Allows you to highlight regions of a page image
                     var classString = divaSettings.ID + "selected-highlight";
                     var classElem = document.getElementsByClassName(classString);
                     var idx;
-                    for(idx = 0; idx < classElem.length; idx++)
+                    var box;
+                    var boxes;
+
+                    for (idx = 0; idx < classElem.length; idx++)
                     {
                         box = classElem[idx];
-                        if(box.id != currentHighlight)
+                        if (box.id !== currentHighlight)
                         {
                             box.className = box.className.replace(' '+classString, '');
                             box.style.border = "1px solid #555";  
@@ -387,7 +390,7 @@ Allows you to highlight regions of a page image
                             centerOfDiv = getDivCenter(thisDiv);
 
                             //skip if the data-highlight-id is the same
-                            if (thisDiv.divID == currentHighlight) continue;
+                            if (thisDiv.divID === currentHighlight) continue;
 
                             //if this div is farther along the main axis but closer than the current closest
                             if (compFunction(centerOfDiv, centerOfCurrentDiv, centerOfTargetDiv))
