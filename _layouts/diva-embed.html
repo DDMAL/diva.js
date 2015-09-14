@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="{{ site.baseurl }}css/bootstrap.min.css">
 
     <!-- diva.js includes -->
-    <link rel="stylesheet" href="{{ site.baseurl }}try/css/diva.min.css" />
+    <link rel="stylesheet" href="{{ site.baseurl }}try/css/diva.embed.min.css" />
     <link rel="stylesheet" href="{{ site.baseurl }}css/main.css">
     <style type="text/css">
         .diva-fullscreen-tools {
@@ -21,20 +21,38 @@
             height: 110px !important;
         }
 
+        .diva-title {
+            font-size: 1em;
+            max-width: 36em;
+        }
+
         #diva-canvas-buttons div {
             width: 30px;
             height: 30px;
+        }
+
+        .diva-outer {
+            position: absolute;
+            top: 130px;
+            left: 15px;
+            right: 15px;
+            bottom: 15px;
+        }
+
+        html, body {
+            overflow: hidden;
         }
 
         body {
             margin: 0 15px;
         }
 
-        /*body, #diva-wrapper, {*/
+        /*html, body, #diva-wrapper {*/
             /*height: 100%;*/
         /*}*/
+
         /*.diva-outer {*/
-            /*height: 50%;*/
+            /*height: 70%;*/
         /*}*/
 
         .diva-tools .diva-tools-right .diva-page-nav {
@@ -61,7 +79,7 @@
         {
             $('#diva-wrapper').diva({
                 fixedHeightGrid: true,
-                objectData: 'http://oculus-dev.harvardx.harvard.edu/manifests/drs:5981093',
+                objectData: 'https://oculus-dev.harvardx.harvard.edu/manifests/drs:5981093',
                 enableIIIFMetadata: true,
                 enableCanvas: true,
                 enableDownload: true
