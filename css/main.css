@@ -365,3 +365,18 @@ hr.underline {
     margin-top: 2em;
 }
 
+/* front page banner */
+section.banner {
+    padding: 0.5em 0;
+    text-align: center;
+    background: rgb(215, 231, 255);
+}
+section.banner a:link, section.banner a:visited {
+    color: #404954;
+}
+
+section.banner h3 {
+    margin: 0.7em 0;
+    text-shadow: 0px 1px 0px rgba(255, 255, 255, 0.6);
+}
+
