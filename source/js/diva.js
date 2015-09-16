@@ -1454,7 +1454,6 @@ window.divaPlugins = [];
 
                 case 'grid':
                     settings.inGrid = true;
-                    settings.inBookLayout = false;
                     break;
 
                 default:
@@ -1472,7 +1471,16 @@ window.divaPlugins = [];
             settings.horizontalOffset = getXOffset();
             settings.goDirectlyTo = settings.currentPageIndex;
 
-            loadDocument();
+            //if in grid, switch out of grid
+            if (settings.inGrid)
+            {
+                settings.inGrid = false;
+                handleViewChange();
+            }
+            else
+            {
+                loadDocument();
+            }
             return settings.verticallyOriented;
         };
 
