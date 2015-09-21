@@ -80,7 +80,6 @@ window.divaPlugins = [];
             averageHeights: [],         // The average page height for each zoom level
             averageWidths: [],          // The average page width for each zoom level
             currentPageIndex: 0,        // The current page in the viewport (center-most page)
-            divaIsFullWindow: false,    // Set to true when the parent of diva-wrapper is the body tag. Used for resizing.
             doubleClickZoom: false,     // Flag to determine whether handleZoom was called from a double-click
             documentPaged: false,       // Set to true when the object has a viewingHint of 'paged' in its manifest
             firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
@@ -2921,13 +2920,6 @@ window.divaPlugins = [];
 
                     // Plugin setup hooks should be bound to the ObjectDidLoad event
                     diva.Events.publish('ObjectDidLoad', [settings], self);
-
-                    //if the parent is the body and there are no siblings, we don't want to use this to base size off, we want window instead
-                    if (settings.parentObject.parent()[0] === document.body)
-                    {
-                        if (!settings.parentObject.siblings().not('#diva-canvas-backdrop')[0])
-                            settings.divaIsFullWindow = true;
-                    }
 
                     // Adjust the document panel dimensions
                     updatePanelSize();
