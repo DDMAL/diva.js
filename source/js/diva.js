@@ -2922,20 +2922,6 @@ window.divaPlugins = [];
                     // Plugin setup hooks should be bound to the ObjectDidLoad event
                     diva.Events.publish('ObjectDidLoad', [settings], self);
 
-                    // Create the toolbar and display the title + total number of pages
-                    if (settings.enableToolbar)
-                    {
-                        settings.toolbar = createToolbar();
-                        diva.Events.subscribe('VisiblePageDidChange', settings.toolbar.updateCurrentPage);
-                        diva.Events.subscribe('ModeDidSwitch', settings.toolbar.switchMode);
-                        diva.Events.subscribe('ViewDidSwitch', settings.toolbar.switchView);
-                        diva.Events.subscribe('ZoomLevelDidChange', settings.toolbar.updateZoomSlider);
-                        diva.Events.subscribe('ZoomLevelDidChange', settings.toolbar.updateZoomButtons);
-                        diva.Events.subscribe('GridRowNumberDidChange', settings.toolbar.updateGridSlider);
-                        diva.Events.subscribe('ZoomLevelDidChange', settings.toolbar.updateGridButtons);
-                        diva.Events.subscribe('NumberOfPagesDidChange', settings.toolbar.setNumPages);
-                    }
-
                     //if the parent is the body and there are no siblings, we don't want to use this to base size off, we want window instead
                     if (settings.parentObject.parent()[0] === document.body)
                     {
@@ -3027,6 +3013,20 @@ window.divaPlugins = [];
             settings.outerObject = $(settings.selector + 'outer');
             settings.outerObject.append('<div id="' + settings.ID + 'inner" class="diva-inner diva-dragger"></div>');
             settings.innerObject = $(settings.selector + 'inner');
+
+            // Create the toolbar and display the title + total number of pages
+            if (settings.enableToolbar)
+            {
+                settings.toolbar = createToolbar();
+                diva.Events.subscribe('VisiblePageDidChange', settings.toolbar.updateCurrentPage);
+                diva.Events.subscribe('ModeDidSwitch', settings.toolbar.switchMode);
+                diva.Events.subscribe('ViewDidSwitch', settings.toolbar.switchView);
+                diva.Events.subscribe('ZoomLevelDidChange', settings.toolbar.updateZoomSlider);
+                diva.Events.subscribe('ZoomLevelDidChange', settings.toolbar.updateZoomButtons);
+                diva.Events.subscribe('GridRowNumberDidChange', settings.toolbar.updateGridSlider);
+                diva.Events.subscribe('ZoomLevelDidChange', settings.toolbar.updateGridButtons);
+                diva.Events.subscribe('NumberOfPagesDidChange', settings.toolbar.setNumPages);
+            }
 
             // First, n - check if it's in range
             var nParam = parseInt($.getHashParam('n' + settings.hashParamSuffix), 10);
