@@ -1708,7 +1708,7 @@ window.divaPlugins = [];
         // Returns the URL to the current state of the document viewer (so it should be an exact replica)
         var getCurrentURL = function ()
         {
-            return location.protocol + '//' + location.host + location.pathname + '#' + getURLHash();
+            return location.protocol + '//' + location.host + location.pathname + location.search + '#' + getURLHash();
         };
 
         // updates panelHeight/panelWidth on resize
