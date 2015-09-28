@@ -2063,49 +2063,6 @@ window.divaPlugins = [];
             diva.Events.subscribe('PanelSizeDidChange', updatePanelSize);
         };
 
-        var updateViewMenu = function()
-        {
-            var viewOptions = '';
-            var documentIcon = '<div class="diva-document-icon diva-button" id="' + settings.ID + 'document-icon" title="Document View"></div>';
-            var bookIcon = '<div class="diva-book-icon diva-button" id="' + settings.ID + 'book-icon" title="Book View"></div>';
-            var gridIcon = '<div class="diva-grid-icon diva-button" id="' + settings.ID + 'grid-icon" title="Grid View"></div>';
-
-            var viewIcon = document.getElementById(settings.ID + 'view-icon');
-            var viewIconClasses = ' diva-view-icon diva-button';
-
-            // display the icon of the mode we're currently in (?)
-            if (settings.inGrid)
-            {
-                viewIcon.className = 'diva-grid-icon' + viewIconClasses;
-            }
-            else
-            {
-                if (settings.inBookLayout)
-                {
-                    viewIcon.className = 'diva-book-icon' + viewIconClasses;
-                }
-                else
-                {
-                    viewIcon.className = 'diva-document-icon' + viewIconClasses;
-                }
-            }
-
-            // then display document, book, and grid buttons in that order, excluding the current view
-            for (var i = 0; i < 1; i++)
-            {
-                if (settings.inGrid || settings.inBookLayout)
-                    viewOptions += documentIcon;
-
-                if (!settings.inBookLayout)
-                    viewOptions += bookIcon;
-
-                if (!settings.inGrid)
-                    viewOptions += gridIcon;
-            }
-
-            document.getElementById(settings.ID + 'view-options').innerHTML = viewOptions;
-        };
-
         // Handles all status updating etc (both fullscreen and not)
         var createToolbar = function ()
         {
@@ -2129,10 +2086,50 @@ window.divaPlugins = [];
 
             settings.toolbarParentObject.prepend('<div id="' + settings.ID + 'tools" class="diva-tools">' + toolbarHTML + '</div>');
 
-            // bind view menu
-            diva.Events.subscribe('ViewDidSwitch', updateViewMenu);
+            var displayViewMenu = function()
+            {
+                var viewOptions = '';
+                var documentIcon = '<div class="diva-document-icon diva-button" id="' + settings.ID + 'document-icon" title="Document View"></div>';
+                var bookIcon = '<div class="diva-book-icon diva-button" id="' + settings.ID + 'book-icon" title="Book View"></div>';
+                var gridIcon = '<div class="diva-grid-icon diva-button" id="' + settings.ID + 'grid-icon" title="Grid View"></div>';
 
-            updateViewMenu();
+                var viewIcon = document.getElementById(settings.ID + 'view-icon');
+                var viewIconClasses = ' diva-view-icon diva-button';
+
+                // display the icon of the mode we're currently in (?)
+                if (settings.inGrid)
+                {
+                    viewIcon.className = 'diva-grid-icon' + viewIconClasses;
+                }
+                else
+                {
+                    if (settings.inBookLayout)
+                    {
+                        viewIcon.className = 'diva-book-icon' + viewIconClasses;
+                    }
+                    else
+                    {
+                        viewIcon.className = 'diva-document-icon' + viewIconClasses;
+                    }
+                }
+
+                // then display document, book, and grid buttons in that order, excluding the current view
+                for (var i = 0; i < 1; i++)
+                {
+                    if (settings.inGrid || settings.inBookLayout)
+                        viewOptions += documentIcon;
+
+                    if (settings.inGrid || !settings.inBookLayout)
+                        viewOptions += bookIcon;
+
+                    if (!settings.inGrid)
+                        viewOptions += gridIcon;
+                }
+
+                document.getElementById(settings.ID + 'view-options').innerHTML = viewOptions;
+            };
+
+            // bind view menu
 
             // bind zoom slider
             $(settings.selector + 'zoom-slider').on('input', function(e)
@@ -2316,40 +2313,6 @@ window.divaPlugins = [];
             $(settings.selector + currentSlider + '-slider-label').show();
             $(settings.selector + currentSlider + '-buttons-label').show();
 
-            var switchMode = function ()
-            {
-                // Switch from fullscreen to not
-                $(settings.selector + 'tools').toggleClass('diva-fullscreen-tools');
-
-                if (!settings.inFullscreen)
-                {
-                    // Leaving fullscreen
-                    //$(settings.selector + 'tools-left').after($(settings.selector + 'tools-right'));
-                    $(settings.selector + 'tools-left').removeClass('in-fullscreen');
-                }
-                else
-                {
-                    // Entering fullscreen
-                    //$(settings.selector + 'tools-right').after($(settings.selector + 'tools-left'));
-                    $(settings.selector + 'tools-left').addClass('in-fullscreen');
-                }
-            };
-
-            var switchView = function (destinationView)
-            {
-                $(settings.selector + currentSlider + '-slider').hide();
-                $(settings.selector + currentSlider + '-out-button').hide();
-                $(settings.selector + currentSlider + '-in-button').hide();
-                $(settings.selector + currentSlider + '-slider-label').hide();
-                $(settings.selector + currentSlider + '-buttons-label').hide();
-                currentSlider = (settings.inGrid) ? 'grid' : 'zoom';
-                $(settings.selector + currentSlider + '-slider').show();
-                $(settings.selector + currentSlider + '-out-button').show();
-                $(settings.selector + currentSlider + '-in-button').show();
-                $(settings.selector + currentSlider + '-slider-label').show();
-                $(settings.selector + currentSlider + '-buttons-label').show();
-            };
-
             var toolbar =
             {
                 updateCurrentPage: function ()
@@ -2396,8 +2359,36 @@ window.divaPlugins = [];
                 {
                     $('.diva-popup').css('display', 'none');
                 },
-                switchView: switchView,
-                switchMode: switchMode
+                switchView: function (destinationView)
+                {
+                    $(settings.selector + currentSlider + '-slider').hide();
+                    $(settings.selector + currentSlider + '-out-button').hide();
+                    $(settings.selector + currentSlider + '-in-button').hide();
+                    $(settings.selector + currentSlider + '-slider-label').hide();
+                    $(settings.selector + currentSlider + '-buttons-label').hide();
+                    currentSlider = (settings.inGrid) ? 'grid' : 'zoom';
+                    $(settings.selector + currentSlider + '-slider').show();
+                    $(settings.selector + currentSlider + '-out-button').show();
+                    $(settings.selector + currentSlider + '-in-button').show();
+                    $(settings.selector + currentSlider + '-slider-label').show();
+                    $(settings.selector + currentSlider + '-buttons-label').show();
+                },
+                switchMode: function ()
+                {
+                    if (!settings.inFullscreen)
+                    {
+                        // Leaving fullscreen
+                        $(settings.selector + 'tools-left').removeClass('in-fullscreen');
+                        $(settings.selector + 'tools').removeClass('diva-fullscreen-tools');
+                    }
+                    else
+                    {
+                        // Entering fullscreen
+                        $(settings.selector + 'tools-left').addClass('in-fullscreen');
+                        $(settings.selector + 'tools').addClass('diva-fullscreen-tools');
+                    }
+                },
+                displayViewMenu: displayViewMenu
             };
 
             return toolbar;
@@ -3006,20 +2997,6 @@ window.divaPlugins = [];
             settings.outerObject.append('<div id="' + settings.ID + 'inner" class="diva-inner diva-dragger"></div>');
             settings.innerObject = $(settings.selector + 'inner');
 
-            // Create the toolbar and display the title + total number of pages
-            if (settings.enableToolbar)
-            {
-                settings.toolbar = createToolbar();
-                diva.Events.subscribe('VisiblePageDidChange', settings.toolbar.updateCurrentPage);
-                diva.Events.subscribe('ModeDidSwitch', settings.toolbar.switchMode);
-                diva.Events.subscribe('ViewDidSwitch', settings.toolbar.switchView);
-                diva.Events.subscribe('ZoomLevelDidChange', settings.toolbar.updateZoomSlider);
-                diva.Events.subscribe('ZoomLevelDidChange', settings.toolbar.updateZoomButtons);
-                diva.Events.subscribe('GridRowNumberDidChange', settings.toolbar.updateGridSlider);
-                diva.Events.subscribe('ZoomLevelDidChange', settings.toolbar.updateGridButtons);
-                diva.Events.subscribe('NumberOfPagesDidChange', settings.toolbar.setNumPages);
-            }
-
             // First, n - check if it's in range
             var nParam = parseInt($.getHashParam('n' + settings.hashParamSuffix), 10);
 
@@ -3041,6 +3018,41 @@ window.divaPlugins = [];
                 {
                     settings.zoomLevel = zParam;
                 }
+            }
+
+            // Create the toolbar and display the title + total number of pages
+            if (settings.enableToolbar)
+            {
+                settings.toolbar = createToolbar();
+                diva.Events.subscribe('VisiblePageDidChange', settings.toolbar.updateCurrentPage);
+                diva.Events.subscribe('ModeDidSwitch', settings.toolbar.switchMode);
+                diva.Events.subscribe('ViewDidSwitch', settings.toolbar.switchView);
+                diva.Events.subscribe('ViewDidSwitch', settings.toolbar.displayViewMenu);
+                diva.Events.subscribe('ZoomLevelDidChange', settings.toolbar.updateZoomSlider);
+                diva.Events.subscribe('ZoomLevelDidChange', settings.toolbar.updateZoomButtons);
+                diva.Events.subscribe('ZoomLevelDidChange', settings.toolbar.updateGridButtons);
+                diva.Events.subscribe('GridRowNumberDidChange', settings.toolbar.updateGridSlider);
+                diva.Events.subscribe('NumberOfPagesDidChange', settings.toolbar.setNumPages);
+
+                // update toolbar items that depend on data from the objectData AJAX request once it has loaded
+                diva.Events.subscribe('ObjectDidLoad', settings.toolbar.displayViewMenu);
+                diva.Events.subscribe('ObjectDidLoad', settings.toolbar.switchView);
+                diva.Events.subscribe('ObjectDidLoad', function()
+                {
+                    settings.toolbar.setNumPages(settings.numPages);
+                });
+
+                // update toolbar items that depend on the final layout of the viewer
+                diva.Events.subscribe('ViewerDidLoad', settings.toolbar.switchMode);
+                diva.Events.subscribe('ViewerDidLoad', function()
+                {
+                    settings.toolbar.updateCurrentPage(settings.currentPageIndex);
+                });
+
+                diva.Events.subscribe('ViewerDidLoad', function()
+                {
+                    settings.toolbar.updateZoomButtons(settings.zoomLevel);
+                });
             }
 
             // If the "fullscreen" hash param is true, go to fullscreen initially
