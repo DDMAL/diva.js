@@ -2101,16 +2101,13 @@ window.divaPlugins = [];
                 {
                     viewIcon.className = 'diva-grid-icon' + viewIconClasses;
                 }
+                else if (settings.inBookLayout)
+                {
+                    viewIcon.className = 'diva-book-icon' + viewIconClasses;
+                }
                 else
                 {
-                    if (settings.inBookLayout)
-                    {
-                        viewIcon.className = 'diva-book-icon' + viewIconClasses;
-                    }
-                    else
-                    {
-                        viewIcon.className = 'diva-document-icon' + viewIconClasses;
-                    }
+                    viewIcon.className = 'diva-document-icon' + viewIconClasses;
                 }
 
                 // then display document, book, and grid buttons in that order, excluding the current view
