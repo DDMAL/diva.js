@@ -2114,17 +2114,14 @@ window.divaPlugins = [];
                 }
 
                 // then display document, book, and grid buttons in that order, excluding the current view
-                for (var i = 0; i < 1; i++)
-                {
-                    if (settings.inGrid || settings.inBookLayout)
-                        viewOptions += documentIcon;
+                if (settings.inGrid || settings.inBookLayout)
+                    viewOptions += documentIcon;
 
-                    if (settings.inGrid || !settings.inBookLayout)
-                        viewOptions += bookIcon;
+                if (settings.inGrid || !settings.inBookLayout)
+                    viewOptions += bookIcon;
 
-                    if (!settings.inGrid)
-                        viewOptions += gridIcon;
-                }
+                if (!settings.inGrid)
+                    viewOptions += gridIcon;
 
                 document.getElementById(settings.ID + 'view-options').innerHTML = viewOptions;
             };
