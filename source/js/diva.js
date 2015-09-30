@@ -1992,6 +1992,10 @@ window.divaPlugins = [];
 
                 if (settings.enableKeyScroll)
                 {
+                    // Don't steal keyboard shortcuts (metaKey = command [OS X], super [Win/Linux])
+                    if (event.shiftKey || event.ctrlKey || event.metaKey)
+                        return true;
+
                     switch (event.keyCode)
                     {
                         case pageUpKey:
