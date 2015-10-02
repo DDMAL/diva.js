@@ -29,26 +29,25 @@
 }
 
 .plugin-icon(@plugin) {
-    background: url('@{iconPath}plugins/@{plugin}.png') no-repeat;
-    background-position: left center;
+    background: data-uri('@{iconPath}plugins/@{plugin}.png') no-repeat;
+
     &:hover {
-        background-position: -25px center;
+        background: data-uri('@{iconPath}plugins/@{plugin}-hover.png') no-repeat;
     }
 }
 
 .grab {
-    cursor: url("@{iconPath}openhand.cur"), pointer;
+    cursor: data-uri("@{iconPath}openhand.cur"), pointer;
 }
 
 .grabbing {
-    cursor: url("@{iconPath}closedhand.cur"), move !important;
+    cursor: data-uri("@{iconPath}closedhand.cur"), move !important;
 }
 
 .loading {
-    background: url("@{iconPath}loading.gif") no-repeat center;
+    background: data-uri("@{iconPath}loading.gif") no-repeat center;
 }
 
-// Pretty translucent shadow
 .pretty-shadow(@distance: 4px) {
     .box-shadow(2px 2px @distance 0 rgba(0, 0, 0, 0.5));
 }

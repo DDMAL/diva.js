@@ -79,9 +79,6 @@ gulp.task('develop:build', ['develop:styles', 'develop:compile'], function()
     gulp.src('source/js/**/*.js')
         .pipe(gulp.dest('build/js'));
 
-    gulp.src('source/img/**/*')
-        .pipe(gulp.dest('build/img'));
-
     gulp.src('source/processing/*.py')
         .pipe(gulp.dest('build/processing'));
 
