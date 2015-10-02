@@ -2218,7 +2218,7 @@ window.divaPlugins = [];
                     selectedView = 'grid';
                 }
 
-                diva.Events.publish('UserDidChooseView', [selectedView]);
+                diva.Events.publish('UserDidChooseView', [selectedView], self);
 
                 //hide view menu
                 $(settings.selector + 'view-options').hide();
