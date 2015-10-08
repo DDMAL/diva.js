@@ -689,6 +689,22 @@ var diva = (function() {
                     while (i--)
                         thisTopic[i].apply( scope || this, args || []);
                 }
+
+                // if publish is called within a Diva instance with the scope arg
+                if (typeof scope !== 'undefined' && typeof scope.getInstanceId !== 'undefined')
+                {
+                    // get publisher instance ID from scope arg, compare, and execute if match
+                    var instanceID = scope.getInstanceID();
+
+                    if (cache[instanceID] && cache[instanceID][topic])
+                    {
+                        var thisInstanceTopic = cache[instanceID][topic],
+                            j = thisInstanceTopic.length;
+
+                        while (j--)
+                            thisInstanceTopic[i].apply( scope || this, args || []);
+                    }
+                }
             },
             /**
              *      diva.Events.subscribe
@@ -698,14 +714,32 @@ var diva = (function() {
              *      @method subscribe
              *      @param topic {String}
              *      @param callback {Function}
+             *      @param instance {Object} Optional - Diva instance; if provided, callback only fires for events
+             *                                          published from that instance.
              *      @return Event handler {Array}
              */
-            subscribe: function (topic, callback)
+            subscribe: function (topic, callback, instance)
             {
-                if (!cache[topic])
-                    cache[topic] = [];
+                if (typeof instance !== 'undefined')
+                {
+                    var instanceID = instance.getInstanceId();
 
-                cache[topic].push(callback);
+                    if (!cache[instanceID])
+                        cache[instanceID] = {};
+
+                    if (!cache[instanceID][topic])
+                        cache[instanceID][topic] = [];
+
+                    cache[instanceID][topic].push(callback);
+                }
+                else
+                {
+                    if (!cache[topic])
+                        cache[topic] = [];
+
+                    cache[topic].push(callback);
+                }
+
                 return [topic, callback];
             },
             /**
@@ -719,8 +753,9 @@ var diva = (function() {
              *      @param completely {Boolean} - Unsubscribe all events for a given topic.
              *      @return success {Boolean}
              */
-            unsubscribe: function (handle, completely)
+            unsubscribe: function (handle, completely, instance)
             {
+                //TODO unsubscribe from instance events if instance provided
                 var t = handle[0];
 
                 if (cache[t])
