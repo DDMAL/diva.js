@@ -683,26 +683,30 @@ var diva = (function() {
             {
                 if (cache[topic])
                 {
-                    var thisTopic = cache[topic],
-                        i = thisTopic.length;
+                    var thisTopic = cache[topic];
 
-                    while (i--)
-                        thisTopic[i].apply( scope || this, args || []);
-                }
-
-                // if publish is called within a Diva instance with the scope arg
-                if (typeof scope !== 'undefined' && typeof scope.getInstanceId !== 'undefined')
-                {
-                    // get publisher instance ID from scope arg, compare, and execute if match
-                    var instanceID = scope.getInstanceID();
-
-                    if (cache[instanceID] && cache[instanceID][topic])
+                    if (typeof thisTopic.global !== 'undefined')
                     {
-                        var thisInstanceTopic = cache[instanceID][topic],
-                            j = thisInstanceTopic.length;
+                        var thisTopicGlobal = thisTopic.global;
+                        var i = thisTopicGlobal.length;
 
-                        while (j--)
-                            thisInstanceTopic[i].apply( scope || this, args || []);
+                        while (i--)
+                            thisTopicGlobal[i].apply(scope || this, args || []);
+                    }
+
+                    if (scope && typeof scope.getInstanceId !== 'undefined')
+                    {
+                        // get publisher instance ID from scope arg, compare, and execute if match
+                        var instanceID = scope.getInstanceId();
+
+                        if (cache[topic][instanceID])
+                        {
+                            var thisTopicInstance = cache[topic][instanceID];
+                            var j = thisTopicInstance.length;
+
+                            while (j--)
+                                thisTopicInstance[j].apply(scope || this, args || []);
+                        }
                     }
                 }
             },
@@ -720,27 +724,27 @@ var diva = (function() {
              */
             subscribe: function (topic, callback, instance)
             {
-                if (typeof instance !== 'undefined')
+                if (!cache[topic])
+                    cache[topic] = {};
+
+                if (typeof instance === 'string')
                 {
-                    var instanceID = instance.getInstanceId();
+                    if (!cache[topic][instance])
+                        cache[topic][instance] = [];
 
-                    if (!cache[instanceID])
-                        cache[instanceID] = {};
-
-                    if (!cache[instanceID][topic])
-                        cache[instanceID][topic] = [];
-
-                    cache[instanceID][topic].push(callback);
+                    cache[topic][instance].push(callback);
                 }
                 else
                 {
-                    if (!cache[topic])
-                        cache[topic] = [];
+                    if (!cache[topic].global)
+                        cache[topic].global = [];
 
-                    cache[topic].push(callback);
+                    cache[topic].global.push(callback);
                 }
 
-                return [topic, callback];
+                var handle = instance ? [topic, callback, instance] : [topic, callback];
+
+                return handle;
             },
             /**
              *      diva.Events.unsubscribe
@@ -753,21 +757,27 @@ var diva = (function() {
              *      @param completely {Boolean} - Unsubscribe all events for a given topic.
              *      @return success {Boolean}
              */
-            unsubscribe: function (handle, completely, instance)
+            unsubscribe: function (handle, completely)
             {
-                //TODO unsubscribe from instance events if instance provided
                 var t = handle[0];
 
                 if (cache[t])
                 {
-                    var i = cache[t].length;
+                    var topicArray;
+
+                    if (handle.length === 3 && typeof cache[t][handle[2]] !== 'undefined')
+                        topicArray = cache[t][instance];
+                    else
+                        topicArray = cache[t].global;
+
+                    var i = topicArray.length;
                     while (i--)
                     {
-                        if (cache[t][i] === handle[1])
+                        if (topicArray[i] === handle[1])
                         {
-                            cache[t].splice(i, 1);
+                            topicArray.splice(i, 1);
                             if (completely)
-                                delete cache[t];
+                                delete topicArray;
                             return true;
                         }
                     }
@@ -779,10 +789,23 @@ var diva = (function() {
              *      e.g.: diva.Events.unsubscribeAll();
              *
              *      @class Events
+             *      @param {String} Optional - instance ID to remove subscribers from or 'global' (if omitted,
+             *                                 subscribers in all scopes removed)
              *      @method unsubscribe
              */
-            unsubscribeAll: function ()
+            unsubscribeAll: function (scope)
             {
+                if (scope)
+                {
+                    var topics = Object.keys(cache);
+                    var i = topics.length;
+                    while (i--)
+                    {
+                        if (cache[topic][scope] !== 'undefined')
+                            delete cache[topic][scope];
+                    }
+                }
+
                 cache = {};
             }
         }
