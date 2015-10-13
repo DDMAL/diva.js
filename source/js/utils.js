@@ -677,7 +677,10 @@ var diva = (function() {
              *      @method publish
              *      @param topic {String}
              *      @param args     {Array}
-             *      @param scope {Object} Optional
+             *      @param scope {Object} Optional - Subscribed functions will be executed with the supplied object as `this`.
+             *          It is necessary to supply this argument with the self variable when within a Diva instance.
+             *          The scope argument is matched with the instance ID of subscribers to determine whether they
+             *              should be executed. (See instanceID argument of subscribe.)
              */
             publish: function (topic, args, scope)
             {
@@ -691,7 +694,9 @@ var diva = (function() {
                         var i = thisTopicGlobal.length;
 
                         while (i--)
+                        {
                             thisTopicGlobal[i].apply(scope || this, args || []);
+                        }
                     }
 
                     if (scope && typeof scope.getInstanceId !== 'undefined')
@@ -705,44 +710,52 @@ var diva = (function() {
                             var j = thisTopicInstance.length;
 
                             while (j--)
+                            {
                                 thisTopicInstance[j].apply(scope || this, args || []);
+                            }
                         }
                     }
                 }
             },
             /**
              *      diva.Events.subscribe
-             *      e.g.: diva.Events.subscribe("PageDidLoad", highlight)
+             *      e.g.: diva.Events.subscribe("PageDidLoad", highlight, settings.ID)
              *
              *      @class Events
              *      @method subscribe
              *      @param topic {String}
              *      @param callback {Function}
-             *      @param instance {Object} Optional - Diva instance; if provided, callback only fires for events
-             *                                          published from that instance.
+             *      @param instanceID {String} Optional - String representing the ID of a Diva instance; if provided,
+             *                                            callback only fires for events published from that instance.
              *      @return Event handler {Array}
              */
-            subscribe: function (topic, callback, instance)
+            subscribe: function (topic, callback, instanceID)
             {
                 if (!cache[topic])
-                    cache[topic] = {};
-
-                if (typeof instance === 'string')
                 {
-                    if (!cache[topic][instance])
-                        cache[topic][instance] = [];
+                    cache[topic] = {};
+                }
 
-                    cache[topic][instance].push(callback);
+                if (typeof instanceID === 'string')
+                {
+                    if (!cache[topic][instanceID])
+                    {
+                        cache[topic][instanceID] = [];
+                    }
+
+                    cache[topic][instanceID].push(callback);
                 }
                 else
                 {
                     if (!cache[topic].global)
+                    {
                         cache[topic].global = [];
+                    }
 
                     cache[topic].global.push(callback);
                 }
 
-                var handle = instance ? [topic, callback, instance] : [topic, callback];
+                var handle = instanceID ? [topic, callback, instanceID] : [topic, callback];
 
                 return handle;
             },
