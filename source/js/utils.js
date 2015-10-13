@@ -676,8 +676,8 @@ var diva = (function() {
              *      @class Events
              *      @method publish
              *      @param topic {String}
-             *      @param args     {Array}
-             *      @param scope {Object} Optional - Subscribed functions will be executed with the supplied object as `this`.
+             *      @param args  {Array}
+             *      @param scope {Object=} Optional - Subscribed functions will be executed with the supplied object as `this`.
              *          It is necessary to supply this argument with the self variable when within a Diva instance.
              *          The scope argument is matched with the instance ID of subscribers to determine whether they
              *              should be executed. (See instanceID argument of subscribe.)
@@ -725,7 +725,7 @@ var diva = (function() {
              *      @method subscribe
              *      @param topic {String}
              *      @param callback {Function}
-             *      @param instanceID {String} Optional - String representing the ID of a Diva instance; if provided,
+             *      @param instanceID {String=} Optional - String representing the ID of a Diva instance; if provided,
              *                                            callback only fires for events published from that instance.
              *      @return Event handler {Array}
              */
@@ -767,7 +767,7 @@ var diva = (function() {
              *      @class Events
              *      @method unsubscribe
              *      @param handle {Array}
-             *      @param completely {Boolean} - Unsubscribe all events for a given topic.
+             *      @param completely {Boolean=} - Unsubscribe all events for a given topic.
              *      @return success {Boolean}
              */
             unsubscribe: function (handle, completely)
@@ -813,7 +813,7 @@ var diva = (function() {
              *      e.g.: diva.Events.unsubscribeAll('global');
              *
              *      @class Events
-             *      @param {String} Optional - instance ID to remove subscribers from or 'global' (if omitted,
+             *      @param {String=} Optional - instance ID to remove subscribers from or 'global' (if omitted,
              *                                 subscribers in all scopes removed)
              *      @method unsubscribe
              */
