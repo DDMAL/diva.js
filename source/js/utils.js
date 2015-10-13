@@ -766,50 +766,70 @@ var diva = (function() {
                     var topicArray;
 
                     if (handle.length === 3 && typeof cache[t][handle[2]] !== 'undefined')
-                        topicArray = cache[t][instance];
+                    {
+                        var instanceID = handle[2];
+                        topicArray = cache[t][instanceID];
+                    }
                     else
+                    {
                         topicArray = cache[t].global;
+                    }
 
                     var i = topicArray.length;
+
                     while (i--)
                     {
                         if (topicArray[i] === handle[1])
                         {
                             topicArray.splice(i, 1);
+
                             if (completely)
+                            {
                                 delete topicArray;
+                            }
+
                             return true;
                         }
                     }
                 }
+
                 return false;
             },
             /**
              *      diva.Events.unsubscribeAll
-             *      e.g.: diva.Events.unsubscribeAll();
+             *      e.g.: diva.Events.unsubscribeAll('global');
              *
              *      @class Events
              *      @param {String} Optional - instance ID to remove subscribers from or 'global' (if omitted,
              *                                 subscribers in all scopes removed)
              *      @method unsubscribe
              */
-            unsubscribeAll: function (scope)
+            unsubscribeAll: function (instanceID)
             {
-                if (scope)
+                if (instanceID)
                 {
                     var topics = Object.keys(cache);
                     var i = topics.length;
+                    var topic;
+
                     while (i--)
                     {
-                        if (cache[topic][scope] !== 'undefined')
-                            delete cache[topic][scope];
+                        topic = topics[i];
+
+                        if (cache[topic][instanceID] !== 'undefined')
+                        {
+                            delete cache[topic][instanceID];
+                        }
                     }
                 }
-
-                cache = {};
+                else
+                {
+                    cache = {};
+                }
             }
         }
     };
+
     return pub;
 }());
 
