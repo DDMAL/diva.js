@@ -141,11 +141,11 @@ attribute, which will replace the "Page 1 of __" counter.
                     document.getElementById(this.getSettings().ID + 'current-page').textContent = this.getCurrentAliasedPageIndex();
                     
                     //resubscribes our new update function
-                    diva.Events.unsubscribe(["VisiblePageDidChange", tempSettings.toolbar.updateCurrentPage]);
-                    diva.Events.subscribe("VisiblePageDidChange", updateCurrentAliasedPage);
+                    diva.Events.unsubscribe(["VisiblePageDidChange", tempSettings.toolbar.updateCurrentPage, divaSettings.ID]);
+                    diva.Events.subscribe("VisiblePageDidChange", updateCurrentAliasedPage, divaSettings.ID);
                 };
 
-                diva.Events.subscribe("ViewerDidLoad", initialChanges);
+                diva.Events.subscribe("ViewerDidLoad", initialChanges, divaSettings.ID);
             },
             pluginName: 'pagealias',
             titleText: 'Re-aliases page indexes'
