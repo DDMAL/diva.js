@@ -2064,7 +2064,7 @@ window.divaPlugins = [];
                 });
             }
 
-            diva.Events.subscribe('PanelSizeDidChange', updatePanelSize);
+            diva.Events.subscribe('PanelSizeDidChange', updatePanelSize, settings.ID);
         };
 
         // Handles all status updating etc (both fullscreen and not)
@@ -2224,7 +2224,7 @@ window.divaPlugins = [];
                 $(settings.selector + 'view-options').hide();
             });
 
-            diva.Events.subscribe('UserDidChooseView', changeView);
+            diva.Events.subscribe('UserDidChooseView', changeView, settings.ID);
 
             $(document).mouseup(function (event)
             {
@@ -3022,35 +3022,35 @@ window.divaPlugins = [];
             if (settings.enableToolbar)
             {
                 settings.toolbar = createToolbar();
-                diva.Events.subscribe('VisiblePageDidChange', settings.toolbar.updateCurrentPage);
-                diva.Events.subscribe('ModeDidSwitch', settings.toolbar.switchMode);
-                diva.Events.subscribe('ViewDidSwitch', settings.toolbar.switchView);
-                diva.Events.subscribe('ViewDidSwitch', settings.toolbar.displayViewMenu);
-                diva.Events.subscribe('ZoomLevelDidChange', settings.toolbar.updateZoomSlider);
-                diva.Events.subscribe('ZoomLevelDidChange', settings.toolbar.updateZoomButtons);
-                diva.Events.subscribe('ZoomLevelDidChange', settings.toolbar.updateGridButtons);
-                diva.Events.subscribe('GridRowNumberDidChange', settings.toolbar.updateGridSlider);
-                diva.Events.subscribe('NumberOfPagesDidChange', settings.toolbar.setNumPages);
+                diva.Events.subscribe('VisiblePageDidChange', settings.toolbar.updateCurrentPage, settings.ID);
+                diva.Events.subscribe('ModeDidSwitch', settings.toolbar.switchMode, settings.ID);
+                diva.Events.subscribe('ViewDidSwitch', settings.toolbar.switchView, settings.ID);
+                diva.Events.subscribe('ViewDidSwitch', settings.toolbar.displayViewMenu, settings.ID);
+                diva.Events.subscribe('ZoomLevelDidChange', settings.toolbar.updateZoomSlider, settings.ID);
+                diva.Events.subscribe('ZoomLevelDidChange', settings.toolbar.updateZoomButtons, settings.ID);
+                diva.Events.subscribe('ZoomLevelDidChange', settings.toolbar.updateGridButtons, settings.ID);
+                diva.Events.subscribe('GridRowNumberDidChange', settings.toolbar.updateGridSlider, settings.ID);
+                diva.Events.subscribe('NumberOfPagesDidChange', settings.toolbar.setNumPages, settings.ID);
 
                 // update toolbar items that depend on data from the objectData AJAX request once it has loaded
-                diva.Events.subscribe('ObjectDidLoad', settings.toolbar.displayViewMenu);
-                diva.Events.subscribe('ObjectDidLoad', settings.toolbar.switchView);
+                diva.Events.subscribe('ObjectDidLoad', settings.toolbar.displayViewMenu, settings.ID);
+                diva.Events.subscribe('ObjectDidLoad', settings.toolbar.switchView, settings.ID);
                 diva.Events.subscribe('ObjectDidLoad', function()
                 {
                     settings.toolbar.setNumPages(settings.numPages);
-                });
+                }, settings.ID);
 
                 // update toolbar items that depend on the final layout of the viewer
-                diva.Events.subscribe('ViewerDidLoad', settings.toolbar.switchMode);
+                diva.Events.subscribe('ViewerDidLoad', settings.toolbar.switchMode, settings.ID);
                 diva.Events.subscribe('ViewerDidLoad', function()
                 {
                     settings.toolbar.updateCurrentPage(settings.currentPageIndex);
-                });
+                }, settings.ID);
 
                 diva.Events.subscribe('ViewerDidLoad', function()
                 {
                     settings.toolbar.updateZoomButtons(settings.zoomLevel);
-                });
+                }, settings.ID);
             }
 
             // If the "fullscreen" hash param is true, go to fullscreen initially
@@ -3651,7 +3651,7 @@ window.divaPlugins = [];
             settings.parentObject.removeAttr('style').removeAttr('class');
 
             // Clear the Events cache
-            diva.Events.unsubscribeAll();
+            diva.Events.unsubscribeAll(settings.ID);
         };
     };
 

@@ -676,37 +676,88 @@ var diva = (function() {
              *      @class Events
              *      @method publish
              *      @param topic {String}
-             *      @param args     {Array}
-             *      @param scope {Object} Optional
+             *      @param args  {Array}
+             *      @param scope {Object=} Optional - Subscribed functions will be executed with the supplied object as `this`.
+             *          It is necessary to supply this argument with the self variable when within a Diva instance.
+             *          The scope argument is matched with the instance ID of subscribers to determine whether they
+             *              should be executed. (See instanceID argument of subscribe.)
              */
             publish: function (topic, args, scope)
             {
                 if (cache[topic])
                 {
-                    var thisTopic = cache[topic],
-                        i = thisTopic.length;
+                    var thisTopic = cache[topic];
 
-                    while (i--)
-                        thisTopic[i].apply( scope || this, args || []);
+                    if (typeof thisTopic.global !== 'undefined')
+                    {
+                        var thisTopicGlobal = thisTopic.global;
+                        var i = thisTopicGlobal.length;
+
+                        while (i--)
+                        {
+                            thisTopicGlobal[i].apply(scope || this, args || []);
+                        }
+                    }
+
+                    if (scope && typeof scope.getInstanceId !== 'undefined')
+                    {
+                        // get publisher instance ID from scope arg, compare, and execute if match
+                        var instanceID = scope.getInstanceId();
+
+                        if (cache[topic][instanceID])
+                        {
+                            var thisTopicInstance = cache[topic][instanceID];
+                            var j = thisTopicInstance.length;
+
+                            while (j--)
+                            {
+                                thisTopicInstance[j].apply(scope || this, args || []);
+                            }
+                        }
+                    }
                 }
             },
             /**
              *      diva.Events.subscribe
-             *      e.g.: diva.Events.subscribe("PageDidLoad", highlight)
+             *      e.g.: diva.Events.subscribe("PageDidLoad", highlight, settings.ID)
              *
              *      @class Events
              *      @method subscribe
              *      @param topic {String}
              *      @param callback {Function}
+             *      @param instanceID {String=} Optional - String representing the ID of a Diva instance; if provided,
+             *                                            callback only fires for events published from that instance.
              *      @return Event handler {Array}
              */
-            subscribe: function (topic, callback)
+            subscribe: function (topic, callback, instanceID)
             {
                 if (!cache[topic])
-                    cache[topic] = [];
+                {
+                    cache[topic] = {};
+                }
 
-                cache[topic].push(callback);
-                return [topic, callback];
+                if (typeof instanceID === 'string')
+                {
+                    if (!cache[topic][instanceID])
+                    {
+                        cache[topic][instanceID] = [];
+                    }
+
+                    cache[topic][instanceID].push(callback);
+                }
+                else
+                {
+                    if (!cache[topic].global)
+                    {
+                        cache[topic].global = [];
+                    }
+
+                    cache[topic].global.push(callback);
+                }
+
+                var handle = instanceID ? [topic, callback, instanceID] : [topic, callback];
+
+                return handle;
             },
             /**
              *      diva.Events.unsubscribe
@@ -716,7 +767,7 @@ var diva = (function() {
              *      @class Events
              *      @method unsubscribe
              *      @param handle {Array}
-             *      @param completely {Boolean} - Unsubscribe all events for a given topic.
+             *      @param completely {Boolean=} - Unsubscribe all events for a given topic.
              *      @return success {Boolean}
              */
             unsubscribe: function (handle, completely)
@@ -725,33 +776,73 @@ var diva = (function() {
 
                 if (cache[t])
                 {
-                    var i = cache[t].length;
+                    var topicArray;
+
+                    if (handle.length === 3 && typeof cache[t][handle[2]] !== 'undefined')
+                    {
+                        var instanceID = handle[2];
+                        topicArray = cache[t][instanceID];
+                    }
+                    else
+                    {
+                        topicArray = cache[t].global;
+                    }
+
+                    var i = topicArray.length;
+
                     while (i--)
                     {
-                        if (cache[t][i] === handle[1])
+                        if (topicArray[i] === handle[1])
                         {
-                            cache[t].splice(i, 1);
+                            topicArray.splice(i, 1);
+
                             if (completely)
-                                delete cache[t];
+                            {
+                                delete topicArray;
+                            }
+
                             return true;
                         }
                     }
                 }
+
                 return false;
             },
             /**
              *      diva.Events.unsubscribeAll
-             *      e.g.: diva.Events.unsubscribeAll();
+             *      e.g.: diva.Events.unsubscribeAll('global');
              *
              *      @class Events
+             *      @param {String=} Optional - instance ID to remove subscribers from or 'global' (if omitted,
+             *                                 subscribers in all scopes removed)
              *      @method unsubscribe
              */
-            unsubscribeAll: function ()
+            unsubscribeAll: function (instanceID)
             {
-                cache = {};
+                if (instanceID)
+                {
+                    var topics = Object.keys(cache);
+                    var i = topics.length;
+                    var topic;
+
+                    while (i--)
+                    {
+                        topic = topics[i];
+
+                        if (cache[topic][instanceID] !== 'undefined')
+                        {
+                            delete cache[topic][instanceID];
+                        }
+                    }
+                }
+                else
+                {
+                    cache = {};
+                }
             }
         }
     };
+
     return pub;
 }());
 
