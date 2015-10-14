@@ -241,6 +241,121 @@ window.divaPlugins = [];
             return !!document.getElementById(settings.ID + 'page-' + pageIndex);
         };
 
+        // There are still tiles to load, so try to load those (after a delay)
+        var loadTiles = function (pageIndex, filename, width, height, pageSelector)
+        {
+            var pageElement = document.getElementById(settings.ID + 'page-' + pageIndex);
+
+            // If the page is no longer in the viewport or loaded, don't load any tiles
+            if (pageElement === null || !isPageVisible(pageIndex))
+                return;
+
+            var imdir = settings.imageDir + "/";
+            var rows = Math.ceil(getPageData(pageIndex, 'h') / settings.tileWidth);
+            var cols = Math.ceil(getPageData(pageIndex, 'w') / settings.tileHeight);
+
+            var maxZoom = settings.pages[pageIndex].m;
+            var baseURL = settings.iipServerURL + "?FIF=" + imdir + filename + '&JTL=';
+            var allTilesLoaded = true;
+            var tileIndex = 0;
+
+            // Calculate the width and height of outer tiles (non-standard dimensions)
+            var lastHeight = height - (rows - 1) * settings.tileHeight;
+            var lastWidth = width - (cols - 1) * settings.tileWidth;
+
+            // Declare variables used within the loops
+            var row, col, tileHeight, tileWidth, top, left, zoomLevel, imageURL, regionHeight, regionWidth, xOffset, yOffset, zoomDifference;
+
+            // Adjust the zoom level based on the max zoom level of the page
+            zoomLevel = settings.zoomLevel + maxZoom - settings.realMaxZoom;
+
+            var baseImageURL = (settings.isIIIF) ? settings.pages[pageIndex].url : baseURL + zoomLevel + ',';
+
+            if (settings.isIIIF)
+            {
+                // regionX, regionY, regionWidth, regionHeight
+                zoomDifference = Math.pow(2, maxZoom - zoomLevel);
+                regionHeight = settings.tileHeight * zoomDifference;
+                regionWidth = settings.tileWidth * zoomDifference;
+
+                // if iiif 1.1, 'native'. if iiif 2.0, 'default'
+                var version = settings.pages[pageIndex].api;
+                var quality = (version >= 2.0) ? 'default' : 'native';
+                var iiifSuffix = '/0/' + quality + '.jpg';
+
+                // only show segment defined in canvas.resource.@id in manifest
+                if (settings.pages[pageIndex].hasOwnProperty('xoffset'))
+                {
+                    xOffset = settings.pages[pageIndex].xoffset;
+                    yOffset = settings.pages[pageIndex].yoffset;
+                }
+                else
+                {
+                    xOffset = 0;
+                    yOffset = 0;
+                }
+            }
+            else
+            {
+                regionHeight = settings.tileHeight;
+                regionWidth = settings.tileWidth;
+            }
+
+            // Loop through all the tiles in this page
+            row = 0;
+
+            while (row < rows)
+            {
+                col = 0;
+                // If the tile is in the last row or column, its dimensions will be different
+                tileHeight = (row === rows - 1) ? lastHeight : settings.tileHeight;
+
+                while (col < cols)
+                {
+                    top = row * settings.tileHeight;
+                    left = col * settings.tileWidth;
+
+                    tileWidth = (col === cols - 1) ? lastWidth : settings.tileWidth;
+
+                    imageURL = (settings.isIIIF) ? baseImageURL + (col * regionWidth + xOffset) + ',' +
+                    (row * regionHeight + yOffset) + ',' + (tileWidth * zoomDifference) + ',' +
+                    (tileHeight * zoomDifference) + '/' + tileWidth + ',' + iiifSuffix : baseImageURL + tileIndex;
+
+                    // this check looks to see if the tile is already loaded, and then if
+                    // it isn't, if it should be visible.
+                    if (!isTileLoaded(pageIndex, tileIndex))
+                    {
+                        if (isTileVisible(pageIndex, row, col))
+                        {
+                            var tileElem = document.createElement('div');
+                            tileElem.id = settings.ID + 'tile-' + pageIndex + '-' + tileIndex;
+                            tileElem.classList.add('diva-document-tile');
+                            tileElem.style.display = 'inline';
+                            tileElem.style.position = 'absolute';
+                            tileElem.style.top = top + 'px';
+                            tileElem.style.left = left + 'px';
+                            tileElem.style.backgroundImage = "url('" + imageURL + "')";
+                            tileElem.style.height = tileHeight + "px";
+                            tileElem.style.width = tileWidth + "px";
+
+                            pageElement.appendChild(tileElem);
+                        }
+                        else
+                            allTilesLoaded = false;  // The tile does not need to be loaded - not all have been loaded
+                    }
+
+                    tileIndex++;
+                    col++;
+                }
+
+                row++;
+            }
+
+            settings.allTilesLoaded[pageIndex] = allTilesLoaded;
+
+            diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector], self);
+        };
+
         // Appends the page directly into the document body, or loads the relevant tiles
         var loadPage = function (pageIndex)
         {
@@ -320,121 +435,7 @@ window.divaPlugins = [];
                 diva.Events.publish("PageWillLoad", [pageIndex, filename, pageSelector], self);
             }
 
-            // There are still tiles to load, so try to load those (after a delay)
-            var pageLoadFunction = function (pageIndex)
-            {
-                var pageElement = document.getElementById(settings.ID + 'page-' + pageIndex);
-
-                // If the page is no longer in the viewport or loaded, don't load any tiles
-                if (pageElement === null || !isPageVisible(pageIndex))
-                    return;
-
-                var imdir = settings.imageDir + "/";
-                var rows = Math.ceil(getPageData(pageIndex, 'h') / settings.tileWidth);
-                var cols = Math.ceil(getPageData(pageIndex, 'w') / settings.tileHeight);
-
-                var maxZoom = settings.pages[pageIndex].m;
-                var baseURL = settings.iipServerURL + "?FIF=" + imdir + filename + '&JTL=';
-                var allTilesLoaded = true;
-                var tileIndex = 0;
-
-                // Calculate the width and height of outer tiles (non-standard dimensions)
-                var lastHeight = height - (rows - 1) * settings.tileHeight;
-                var lastWidth = width - (cols - 1) * settings.tileWidth;
-
-                // Declare variables used within the loops
-                var row, col, tileHeight, tileWidth, top, left, zoomLevel, imageURL, regionHeight, regionWidth, xOffset, yOffset, zoomDifference;
-
-                // Adjust the zoom level based on the max zoom level of the page
-                zoomLevel = settings.zoomLevel + maxZoom - settings.realMaxZoom;
-
-                var baseImageURL = (settings.isIIIF) ? settings.pages[pageIndex].url : baseURL + zoomLevel + ',';
-
-                if (settings.isIIIF)
-                {
-                    // regionX, regionY, regionWidth, regionHeight
-                    zoomDifference = Math.pow(2, maxZoom - zoomLevel);
-                    regionHeight = settings.tileHeight * zoomDifference;
-                    regionWidth = settings.tileWidth * zoomDifference;
-
-                    // if iiif 1.1, 'native'. if iiif 2.0, 'default'
-                    var version = settings.pages[pageIndex].api;
-                    var quality = (version >= 2.0) ? 'default' : 'native';
-                    var iiifSuffix = '/0/' + quality + '.jpg';
-
-                    // only show segment defined in canvas.resource.@id in manifest
-                    if (settings.pages[pageIndex].hasOwnProperty('xoffset'))
-                    {
-                        xOffset = settings.pages[pageIndex].xoffset;
-                        yOffset = settings.pages[pageIndex].yoffset;
-                    }
-                    else
-                    {
-                        xOffset = 0;
-                        yOffset = 0;
-                    }
-                }
-                else
-                {
-                    regionHeight = settings.tileHeight;
-                    regionWidth = settings.tileWidth;
-                }
-
-                // Loop through all the tiles in this page
-                row = 0;
-
-                while (row < rows)
-                {
-                    col = 0;
-                    // If the tile is in the last row or column, its dimensions will be different
-                    tileHeight = (row === rows - 1) ? lastHeight : settings.tileHeight;
-
-                    while (col < cols)
-                    {
-                        top = row * settings.tileHeight;
-                        left = col * settings.tileWidth;
-
-                        tileWidth = (col === cols - 1) ? lastWidth : settings.tileWidth;
-
-                        imageURL = (settings.isIIIF) ? baseImageURL + (col * regionWidth + xOffset) + ',' +
-                            (row * regionHeight + yOffset) + ',' + (tileWidth * zoomDifference) + ',' +
-                            (tileHeight * zoomDifference) + '/' + tileWidth + ',' + iiifSuffix : baseImageURL + tileIndex;
-
-                        // this check looks to see if the tile is already loaded, and then if
-                        // it isn't, if it should be visible.
-                        if (!isTileLoaded(pageIndex, tileIndex))
-                        {
-                            if (isTileVisible(pageIndex, row, col))
-                            {
-                                var tileElem = document.createElement('div');
-                                tileElem.id = settings.ID + 'tile-' + pageIndex + '-' + tileIndex;
-                                tileElem.classList.add('diva-document-tile');
-                                tileElem.style.display = 'inline';
-                                tileElem.style.position = 'absolute';
-                                tileElem.style.top = top + 'px';
-                                tileElem.style.left = left + 'px';
-                                tileElem.style.backgroundImage = "url('" + imageURL + "')";
-                                tileElem.style.height = tileHeight + "px";
-                                tileElem.style.width = tileWidth + "px";
-
-                                pageElement.appendChild(tileElem);
-                            }
-                            else
-                                allTilesLoaded = false;  // The tile does not need to be loaded - not all have been loaded
-                        }
-
-                        tileIndex++;
-                        col++;
-                    }
-
-                    row++;
-                }
-
-                settings.allTilesLoaded[pageIndex] = allTilesLoaded;
-
-                diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector], self);
-            };
-            settings.pageTimeouts.push(setTimeout(pageLoadFunction, settings.pageLoadTimeout, pageIndex));
+            settings.pageTimeouts.push(setTimeout(loadTiles, settings.pageLoadTimeout, pageIndex, filename, width, height));
         };
 
         // Delete a page from the DOM; will occur when a page is scrolled out of the viewport
