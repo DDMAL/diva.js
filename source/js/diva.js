@@ -250,6 +250,22 @@ window.divaPlugins = [];
             if (pageElement === null || !isPageVisible(pageIndex))
                 return;
 
+            var canvasElement = document.getElementById(settings.ID + 'canvas-' + pageIndex);
+            // TODO in which cases would context not be present?
+            var context;
+            if (canvasElement.getContext)
+            {
+                context = canvasElement.getContext('2d');
+            }
+
+            function createDrawTileFunction(currentTile, left, top)
+            {
+                return function()
+                {
+                    context.drawImage(currentTile, left, top);
+                }
+            }
+
             var imdir = settings.imageDir + "/";
             var rows = Math.ceil(getPageData(pageIndex, 'h') / settings.tileWidth);
             var cols = Math.ceil(getPageData(pageIndex, 'w') / settings.tileHeight);
@@ -264,7 +280,7 @@ window.divaPlugins = [];
             var lastWidth = width - (cols - 1) * settings.tileWidth;
 
             // Declare variables used within the loops
-            var row, col, tileHeight, tileWidth, top, left, zoomLevel, imageURL, regionHeight, regionWidth, xOffset, yOffset, zoomDifference;
+            var row, col, tileHeight, tileWidth, currentTile, top, left, zoomLevel, imageURL, regionHeight, regionWidth, xOffset, yOffset, zoomDifference;
 
             // Adjust the zoom level based on the max zoom level of the page
             zoomLevel = settings.zoomLevel + maxZoom - settings.realMaxZoom;
@@ -323,22 +339,17 @@ window.divaPlugins = [];
 
                     // this check looks to see if the tile is already loaded, and then if
                     // it isn't, if it should be visible.
+                    //TODO isTileLoaded
                     if (!isTileLoaded(pageIndex, tileIndex))
                     {
                         if (isTileVisible(pageIndex, row, col))
                         {
-                            var tileElem = document.createElement('div');
-                            tileElem.id = settings.ID + 'tile-' + pageIndex + '-' + tileIndex;
-                            tileElem.classList.add('diva-document-tile');
-                            tileElem.style.display = 'inline';
-                            tileElem.style.position = 'absolute';
-                            tileElem.style.top = top + 'px';
-                            tileElem.style.left = left + 'px';
-                            tileElem.style.backgroundImage = "url('" + imageURL + "')";
-                            tileElem.style.height = tileHeight + "px";
-                            tileElem.style.width = tileWidth + "px";
+                            // TODO check context?
+                            currentTile = new Image();
+                            currentTile.crossOrigin = "anonymous";
 
-                            pageElement.appendChild(tileElem);
+                            currentTile.onload = createDrawTileFunction(currentTile, left, top);
+                            currentTile.src = imageURL;
                         }
                         else
                             allTilesLoaded = false;  // The tile does not need to be loaded - not all have been loaded
@@ -382,10 +393,21 @@ window.divaPlugins = [];
                 pageElement.classList.add('diva-page', 'diva-document-page');
                 pageElement.setAttribute('data-index', pageIndex);
                 pageElement.setAttribute('data-filename', filename);
-                if (settings.enableImageTitles) pageElement.title = "Page " + (pageIndex + 1);
-                pageElement.innerHTML = settings.pageTools;
                 pageElement.style.width = width + 'px';
                 pageElement.style.height = height + 'px';
+                if (settings.enableImageTitles) pageElement.title = "Page " + (pageIndex + 1);
+                // Append page tools
+                pageElement.innerHTML = settings.pageTools;
+
+                // Append canvas element
+                var canvasElement = document.createElement('canvas');
+                canvasElement.style.width = width + 'px';
+                canvasElement.style.height = height + 'px';
+                //TODO set width/height here or on context? rounding?
+                canvasElement.width = width;
+                canvasElement.height = height;
+                canvasElement.id = settings.ID + 'canvas-' + pageIndex;
+                pageElement.appendChild(canvasElement);
 
                 if (settings.verticallyOriented)
                 {
