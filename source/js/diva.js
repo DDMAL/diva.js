@@ -251,17 +251,21 @@ window.divaPlugins = [];
                 return;
 
             var canvasElement = document.getElementById(settings.ID + 'canvas-' + pageIndex);
-            // TODO in which cases would context not be present?
             var context;
-            if (canvasElement.getContext)
-            {
+
+            try {
                 context = canvasElement.getContext('2d');
             }
+            catch (error) {
+                console.warn('Your browser lacks support for the <canvas> element. Please upgrade your browser. Error: ' + error);
+                return false;
+            }
 
-            function createDrawTileFunction(currentTile, left, top)
+            function getDrawTileFunction(pageIndex, tileIndex, currentTile, left, top)
             {
                 return function()
                 {
+                    settings.loadedTiles[pageIndex].push(tileIndex);
                     context.drawImage(currentTile, left, top);
                 }
             }
