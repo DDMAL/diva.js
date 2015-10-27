@@ -99,6 +99,7 @@ window.divaPlugins = [];
             lastPageLoaded: -1,         // The ID of the last page loaded (value set later)
             lastRowLoaded: -1,          // The index of the last row loaded
             loaded: false,              // A flag for when everything is loaded and ready to go.
+            loadedTiles: [],        // Keeps track of which tiles have been loaded already
             maxWidths: [],              // The width of the widest page for each zoom level
             maxHeights: [],             // The height of the tallest page for each zoom level
             maxRatio: 0,                // The max height/width ratio (for grid view)
@@ -211,10 +212,20 @@ window.divaPlugins = [];
             return isVerticallyInViewport(tileTop, tileBottom) && isHorizontallyInViewport(tileLeft, tileRight);
         };
 
-        // Check if a tile has been appended to the DOM
-        var isTileLoaded = function (pageIndex, tileIndex)
+        // Check if a tile has been loaded (note: performance-sensitive function)
+        var isTileLoaded = function (pageIndex, tileIndex, context, left, top)
         {
-            return !!document.getElementById(settings.ID + 'tile-' + pageIndex + '-' + tileIndex);
+            var i = settings.loadedTiles.length;
+
+            while (i--)
+            {
+                if (settings.loadedTiles[pageIndex][i] === tileIndex)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         };
 
         // Check if a page index is valid
@@ -343,8 +354,7 @@ window.divaPlugins = [];
 
                     // this check looks to see if the tile is already loaded, and then if
                     // it isn't, if it should be visible.
-                    //TODO isTileLoaded
-                    if (!isTileLoaded(pageIndex, tileIndex))
+                    if (!isTileLoaded(pageIndex, tileIndex, context, left, top))
                     {
                         if (isTileVisible(pageIndex, row, col))
                         {
@@ -352,7 +362,7 @@ window.divaPlugins = [];
                             currentTile = new Image();
                             currentTile.crossOrigin = "anonymous";
 
-                            currentTile.onload = createDrawTileFunction(currentTile, left, top);
+                            currentTile.onload = getDrawTileFunction(pageIndex, tileIndex, currentTile, left, top);
                             currentTile.src = imageURL;
                         }
                         else
@@ -467,7 +477,6 @@ window.divaPlugins = [];
         // Delete a page from the DOM; will occur when a page is scrolled out of the viewport
         var deletePage = function (pageIndex)
         {
-            // $(document.getElementById(settings.ID + 'page-' + pageIndex)).empty().remove();
             var theNode = document.getElementById(settings.ID + 'page-' + pageIndex);
 
             if (theNode === null)
@@ -477,6 +486,10 @@ window.divaPlugins = [];
             {
                 theNode.removeChild(theNode.firstChild);
             }
+
+            //delete loaded tiles
+            settings.loadedTiles[pageIndex] = [];
+
             theNode.parentNode.removeChild(theNode);
         };
 
@@ -1230,6 +1243,8 @@ window.divaPlugins = [];
         var loadDocument = function ()
         {
             clearViewer();
+
+            diva.Events.publish('DocumentWillLoad', [settings], self);
 
             settings.zoomLevel = getValidZoomLevel(settings.zoomLevel);
             var z = settings.zoomLevel;
@@ -2801,6 +2816,16 @@ window.divaPlugins = [];
             settings.outerObject.append(requestError);
         };
 
+        var resetTilesLoaded = function()
+        {
+            var i = settings.numPages;
+
+            while (i--)
+            {
+                settings.loadedTiles[i] = [];
+            }
+        };
+
         var parseObjectData = function(responseData)
         {
             var data;
@@ -2841,6 +2866,8 @@ window.divaPlugins = [];
             settings.zoomLevel = getValidZoomLevel(settings.zoomLevel);
             settings.minPagesPerRow = Math.max(2, settings.minPagesPerRow);
             settings.maxPagesPerRow = Math.max(settings.minPagesPerRow, settings.maxPagesPerRow);
+
+            diva.Events.subscribe('DocumentWillLoad', resetTilesLoaded, settings.ID);
 
             // Check that the desired page is in range
             if (settings.enableFilename)
