@@ -268,7 +268,7 @@ window.divaPlugins = [];
                 context = canvasElement.getContext('2d');
             }
             catch (error) {
-                console.warn('Your browser lacks support for the <canvas> element. Please upgrade your browser. Error: ' + error);
+                showError('Your browser lacks support for the <pre><canvas></pre> element. Please upgrade your browser. Error: ' + error);
                 return false;
             }
 
@@ -2787,14 +2787,42 @@ window.divaPlugins = [];
             return divaServiceBlock;
         };
 
+        var showError = function(messageText)
+        {
+            var errorModal = '<div id="' + settings.ID + 'error" class="diva-error">' +
+                '<button id="' + settings.ID + 'error-close" class="diva-error-close" aria-label="Close dialog"></button>' +
+                '<p><strong>Error</strong></p><p>' + messageText + '</p></div>';
+
+            var errorElement = document.createElement('div');
+            errorElement.id = settings.ID + 'error';
+            errorElement.setAttribute('class', 'diva-error');
+
+            var closeButton = document.createElement('button');
+            closeButton.id = settings.ID + 'error-close';
+            closeButton.setAttribute('class', 'diva-error-close');
+            closeButton.setAttribute('aria-label', 'Close Dialog');
+
+            var message = document.createElement('p');
+            message.innerHTML = '<strong>Error</strong></p><p>' + messageText + '</p>';
+
+            errorElement.appendChild(closeButton);
+            errorElement.appendChild(message);
+
+            settings.outerObject.append(errorElement);
+
+            //bind dialog close button
+            $(settings.selector + 'error-close').on('click', function()
+            {
+                errorElement.remove();
+            });
+        };
+
         var ajaxError = function(jqxhr, status, error)
         {
-            hideThrobber();
-
             // Show a basic error message within the document viewer pane
-            var requestError = '<div id="' + settings.ID + 'error" class="diva-error">' +
-                '<p><strong>Error</strong></p>' +
-                '<p>Invalid objectData. Error code: ' + status + ' ' + error + '</p>';
+
+            hideThrobber();
+            var errorMessageText = 'Invalid objectData setting. Error code: ' + jqxhr.status + ' ' + error;
 
             // Detect and handle CORS errors
             var dataHasAbsolutePath = settings.objectData.lastIndexOf('http', 0) === 0;
@@ -2802,9 +2830,10 @@ window.divaPlugins = [];
             if (dataHasAbsolutePath && error === '')
             {
                 var jsonHost = settings.objectData.replace(/https?:\/\//i, "").split(/[/?#]/)[0];
+
                 if (location.hostname !== jsonHost)
                 {
-                    requestError += '<p>Attempted to access cross-origin data without CORS.</p>' +
+                    errorMessageText += '<p>Attempted to access cross-origin data without CORS.</p>' +
                         '<p>You may need to update your server configuration to support CORS. ' +
                         'For help, see the <a href="https://github.com/DDMAL/diva.js/wiki/' +
                         'Installation#a-note-about-cross-site-requests" target="_blank">' +
@@ -2812,8 +2841,7 @@ window.divaPlugins = [];
                 }
             }
 
-            requestError += '</div>';
-            settings.outerObject.append(requestError);
+            showError(errorMessageText);
         };
 
         var resetTilesLoaded = function()
