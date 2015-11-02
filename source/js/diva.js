@@ -390,8 +390,8 @@ window.divaPlugins = [];
 
             // Load some data for this page
             var filename = settings.pages[pageIndex].f;
-            var width = getPageData(pageIndex, 'w');
-            var height = getPageData(pageIndex, 'h');
+            var width = Math.floor(getPageData(pageIndex, 'w'));
+            var height = Math.floor(getPageData(pageIndex, 'h'));
             var heightFromTop = settings.pageTopOffsets[pageIndex] + settings.verticalPadding;
             var widthFromLeft = settings.pageLeftOffsets[pageIndex] + settings.horizontalPadding;
             var pageSelector = settings.selector + 'page-' + pageIndex;
