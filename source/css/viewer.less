@@ -332,6 +332,21 @@
     padding: 0 1em;
 }
 
+.diva-error-close {
+    width: 18px;
+    height: 18px;
+    border: none;
+    background: #fff data-uri("@{iconPath}close.png");
+    position: absolute;
+    top: 1em;
+    right: 1em;
+
+    &:hover {
+        background-image: data-uri("@{iconPath}close-hover.png");
+        cursor: hand;
+    }
+}
+
 .diva-modal {
     position: absolute;
     width: 32em;
