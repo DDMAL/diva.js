@@ -1777,6 +1777,35 @@ window.divaPlugins = [];
 
         };
 
+        var onMobileResize = function()
+        {
+            var oldWidth = settings.panelWidth;
+            var oldHeight = settings.panelHeight;
+            updatePanelSize();
+
+            settings.horizontalOffset -= (settings.panelWidth - oldWidth) / 2;
+            settings.verticalOffset -= (settings.panelHeight - oldHeight) / 2;
+
+            // Reload the viewer to account for the resized viewport
+            settings.goDirectlyTo = settings.currentPageIndex;
+            loadViewer();
+        };
+
+        var onResize = function()
+        {
+            updatePanelSize();
+            // Cancel any previously-set resize timeouts
+            clearTimeout(settings.resizeTimer);
+
+            settings.resizeTimer = setTimeout(function ()
+            {
+                settings.goDirectlyTo = settings.currentPageIndex;
+                settings.verticalOffset = getCurrentYOffset();
+                settings.horizontalOffset = getCurrentXOffset();
+                loadViewer();
+            }, 200);
+        };
+
         // Bind touch and orientation change events
         var bindMobileEvents = function()
         {
@@ -1889,20 +1918,13 @@ window.divaPlugins = [];
             settings.outerObject.on('touchend', '.diva-page', bindDoubleTap);
 
             // Handle window resizing events
-            var orientationEvent = "onorientationchange" in window ? "orientationchange" : "resize";
-            $(window).bind(orientationEvent, function (event)
+            var orientationEvent = 'onorientationchange' in window ? 'orientationchange' : 'resize';
+            window.addEventListener(orientationEvent, onMobileResize, false);
+
+            diva.Events.subscribe('ViewerDidTerminate', function()
             {
-                var oldWidth = settings.panelWidth;
-                var oldHeight = settings.panelHeight;
-                updatePanelSize();
-
-                settings.horizontalOffset -= (settings.panelWidth - oldWidth) / 2;
-                settings.verticalOffset -= (settings.panelHeight - oldHeight) / 2;
-
-                // Reload the viewer to account for the resized viewport
-                settings.goDirectlyTo = settings.currentPageIndex;
-                loadViewer();
-            });
+                window.removeEventListener(orientationEvent, onMobileResize, false);
+            }, settings.ID);
         };
 
         // Pythagorean theorem to get the distance between two points (used for calculating finger distance for double-tap and pinch-zoom)
@@ -2049,20 +2071,12 @@ window.divaPlugins = [];
             // Handle window resizing events
             else
             {
-                $(window).resize(function ()
-                {
-                    updatePanelSize();
-                    // Cancel any previously-set resize timeouts
-                    clearTimeout(settings.resizeTimer);
+                window.addEventListener('resize', onResize, false);
 
-                    settings.resizeTimer = setTimeout(function ()
-                    {
-                        settings.goDirectlyTo = settings.currentPageIndex;
-                        settings.verticalOffset = getCurrentYOffset();
-                        settings.horizontalOffset = getCurrentXOffset();
-                        loadViewer();
-                    }, 200);
-                });
+                diva.Events.subscribe('ViewerDidTerminate', function()
+                {
+                    window.removeEventListener('resize', onResize, false);
+                }, settings.ID);
             }
 
             diva.Events.subscribe('PanelSizeDidChange', updatePanelSize, settings.ID);
