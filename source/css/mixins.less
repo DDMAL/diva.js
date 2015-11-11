@@ -25,7 +25,7 @@
 
 // Shortcut for a 1px solid border
 .frame(@colour) {
-    border: 1px solid @colour;
+    border: @borderSize solid @colour;
 }
 
 .plugin-icon(@plugin) {
@@ -72,8 +72,9 @@
 }
 
 .diva-button {
+    display: inline-block;
     cursor: pointer;
-    .square(32px);
+    .square(@buttonSize);
     background-color: @buttonBg;
     background-repeat: no-repeat;
     background-position: center;

@@ -1,3 +1,5 @@
+@buttonHeight: @buttonSize + (2 * @borderSize);
+
 .diva-title {
     text-align: center;
     font-weight: bold;
@@ -6,148 +8,132 @@
     margin: 0 auto;
 }
 
-.diva-tools {
-    margin-top: 15px;
+.diva-label {
+    margin: 0 @toolbarGroupMargin;
+    line-height: 34px;
+    vertical-align: top;
+    white-space: nowrap;
+}
 
-    .diva-tools-left {
-        float: left;
+.diva-tools-left {
+    float: left;
+    .prevent-selection;
+}
 
-        .diva-slider-label {
-            .hidden;
-            padding: 8px;
-            float: left;
-        }
-
-        .diva-zoom-buttons-label {
-            .hidden;
-            .diva-slider-label;
-        }
-
-        .diva-zoom-button() {
-            .hidden;
-            float: left;
-        }
-        .diva-zoom-out-button {
-            .diva-zoom-button;
-            background-image: data-uri("@{iconPath}zoomout.png");
-        }
-
-        .diva-zoom-in-button {
-            .diva-zoom-button;
-            background-image: data-uri("@{iconPath}zoomin.png");
-            margin-left: -1px;
-        }
-
-        .diva-grid-out-button {
-            .diva-zoom-out-button;
-        }
-
-        .diva-grid-in-button {
-            .diva-zoom-in-button;
-        }
-
-        .diva-buttons-label {
-            .diva-slider-label;
-        }
-
-        &.in-fullscreen {
-            float: left;
-            clear: none;
-        }
+    .diva-zoom-label, .diva-grid-label {
+        .hidden;
     }
 
-    .diva-tools-right {
-        float: right;
-        height: 42px;
+    .diva-zoom-out-button, .diva-grid-out-button {
+        .hidden;
+        background-image: data-uri("@{iconPath}zoomout.png");
+    }
 
-        .diva-document-icon {
-            background-image: data-uri("@{iconPath}document.png");
+    .diva-zoom-in-button, .diva-grid-in-button {
+        .hidden;
+        background-image: data-uri("@{iconPath}zoomin.png");
+        margin-left: -1px;
+    }
+
+.diva-tools-right {
+    float: right;
+
+    .diva-button {
+        margin-left: -1px;
+        .prevent-selection;
+    }
+}
+
+    .diva-page-nav {
+        white-space: nowrap;
+        margin-right: @toolbarGroupMargin;
+    }
+
+        .diva-page-nav form {
+            display: inline-block;
+            vertical-align: top;
+            line-height: @buttonHeight;
         }
 
-        .diva-grid-icon {
-            background-image: data-uri("@{iconPath}grid.png");
-        }
+            .diva-input {
+                width: 3em;
+                margin-right: 4px;
+            }
 
-        .diva-book-icon {
-            background-image: data-uri("@{iconPath}book.png");
-        }
+    .diva-fullscreen-icon {
+        background-image: data-uri("@{iconPath}fullscreen.png");
+    }
 
-        .diva-view-menu {
-            float: right;
-        }
+    .diva-view-menu {
+        display: inline-block;
+        position: relative;
+    }
 
         .diva-view-options {
-            position: relative;
+            position: absolute;
+            top: @buttonHeight;
             z-index: 1;
             display: none;
             .box-shadow(1px 1px 4px 0 rgba(0,0,0,0.1));
         }
 
-        .diva-view-options > div {
-            margin-top: -1px;
-        }
-
-        .diva-link-icon {
-            float: right;
-            background-image: data-uri("@{iconPath}link.png");
-        }
-
-        .diva-page-nav {
-            float: left;
-            text-align: right;
-            padding-right: 4px;
-            white-space: nowrap;
-            line-height: 32px;
-
-            .diva-page-label {
-                float: left;
-                padding-top: 1px;
-                padding-right: 0.5em;
-                line-height: 32px;
+            .diva-view-options span {
+                margin-top: -1px;
+                display: block;
             }
 
-            .diva-goto-form {
-                float: right;
-
-                .diva-input {
-                    width: 30px;
-                    outline: none;
-                    margin: 0px;
-                    padding-top: 0px;
-                }
+            .diva-document-icon {
+                background-image: data-uri("@{iconPath}document.png");
             }
-        }
+
+            .diva-grid-icon {
+                background-image: data-uri("@{iconPath}grid.png");
+            }
+
+            .diva-book-icon {
+                background-image: data-uri("@{iconPath}book.png");
+            }
+
+    .diva-link-icon {
+        background-image: data-uri("@{iconPath}link.png");
     }
 
-    &.diva-fullscreen-tools {
-        position: fixed;
-        top: 0px;
-        right: 30px;
-        z-index: @fullscreenZIndex + 1;
-        height: 73px;
-        padding: 15px;
-        .frame(@toolsFrame);
-        background: @toolsBg;
-        .pretty-shadow;
+    .diva-page-label {
+        display: inline-block;
+    }
 
-        .diva-buttons-label {
-            margin-top: 5px;
-            padding: 0;
-            clear: both;
-        }
-        .diva-page-nav {
-            float: none;
-            line-height: 1em;
+.diva-fullscreen-tools {
+    position: fixed;
+    top: 15px;
+    right: 30px;
+    z-index: @fullscreenZIndex + 1;
+    padding: 15px;
+    .frame(@toolsFrame);
+    background: @toolsBg;
+    .pretty-shadow;
 
-            .diva-goto-form {
-                margin-top: 9px;
-            }
+    .diva-tools-right {
+        margin-left: 2em;
+    }
 
-            .diva-page-label {
-                float: none;
-                clear: both;
-                line-height: 1em;
-            }
+    .diva-label, .diva-page-label {
+        margin: 0;
+    }
+
+    /* prevent variable number of digits in labels from resizing .diva-fullscreen-tools */
+    .diva-zoom-label, .diva-grid-label, .diva-page-label {
+        width: 6em;
+    }
+
+    .diva-page-label {
+        display: block;
+    }
+
+    .diva-page-nav {
+        margin-right: 0;
+
+        form {
+            line-height: 1;
         }
     }
 }
@@ -161,11 +147,13 @@
     min-width: 200px;
     height: 700px;
     overflow: auto;
+}
 
     .diva-inner {
         position: relative;
         overflow: hidden;
         margin: 0 auto;
+    }
 
         .diva-page {
             .box-shadow(7px 7px 6px -6px rgba(0,0,0,0.3));
@@ -176,72 +164,64 @@
         .diva-document-page {
             left: 0;
             right: 0;
-
-            .diva-page-tools {
-                position: absolute;
-                top: -@pluginIconSize;
-                left: 0px;
-                height: @pluginIconSize;
-                z-index: 3;
-
-                div {
-                    display: inline-block;
-                    .square(@pluginIconSize);
-                    cursor: pointer;
-                }
-            }
         }
 
-        /* shadow only on bottom to prevent spilling onto righthand pages */
-        .diva-page-book-left {
-            .box-shadow(0px 7px 6px -6px rgba(0,0,0,0.3));
-        }
+.diva-page-tools {
+    position: absolute;
+    top: -@pluginIconSize;
+    left: 0;
+    height: @pluginIconSize;
+    z-index: 3;
 
-        .diva-page-vertical {
-            margin: 0 auto;
-            display: inline-block;
-        }
-
-        .diva-page-horizontal {
-            vertical-align: middle;
-            display: inline-block;
-            top: 50%;
-            transform: translate(0, -50%);
-            -webkit-transform: translate(0, -50%);
-            -moz-transform: translate(0, -50%);
-            -ms-transform: translate(0, -50%);
-        }
-
-        .diva-row {
-            position: absolute;
-            width: 100%;
-        }
-
-        &.diva-grab {
-            .grab;
-        }
-
-        &.diva-grabbing {
-            .grabbing;
-        }
-    }
-
-    &.diva-fullscreen {
-        .full-width;
-        .full-height;
-        z-index: @fullscreenZIndex;
-        position: fixed !important;
-        top: 0;
-        left: 0;
-        margin: 0;
-        border: 0;
+    div {
+        display: inline-block;
+        .square(@pluginIconSize);
+        cursor: pointer;
     }
 }
 
-.diva-fullscreen-icon {
-    background-image: data-uri("@{iconPath}fullscreen.png");
-    border-left: 0px;
-    float: right;
+/* shadow only on bottom to prevent spilling onto righthand pages */
+.diva-page-book-left {
+    .box-shadow(0px 7px 6px -6px rgba(0,0,0,0.3));
+}
+
+.diva-page-vertical {
+    margin: 0 auto;
+    display: inline-block;
+}
+
+.diva-page-horizontal {
+    vertical-align: middle;
+    display: inline-block;
+    top: 50%;
+    transform: translate(0, -50%);
+    -webkit-transform: translate(0, -50%);
+    -moz-transform: translate(0, -50%);
+    -ms-transform: translate(0, -50%);
+}
+
+.diva-row {
+    position: absolute;
+    width: 100%;
+}
+
+.diva-grab {
+    .grab;
+}
+
+.diva-grabbing {
+    .grabbing;
+}
+
+.diva-fullscreen {
+    .full-width;
+    .full-height;
+    z-index: @fullscreenZIndex;
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    margin: 0;
+    border: 0;
 }
 
 .diva-popup {
@@ -269,13 +249,9 @@
     }
 }
 
+// Used for body in fullscreen mode
 .diva-hide-scrollbar {
     overflow: hidden !important;
-}
-
-// Used for the container element if its position is static and settings.contained
-.diva-relative-position {
-    position: relative;
 }
 
 .zoom-slider {
