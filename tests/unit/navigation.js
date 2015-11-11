@@ -251,7 +251,7 @@ asyncTest("Switching between regular and fullscreen mode", function () {
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         ok(!settings.inFullscreen, "Not in fullscreen initially");
-        $(settings.selector + 'fullscreen').click();
+        $(settings.selector + 'fullscreen-icon').click();
 
         // Click the fullscreen icon, then wait for a bit for the event to be triggered
         setTimeout(function () {
