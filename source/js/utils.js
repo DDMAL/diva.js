@@ -654,7 +654,7 @@ $.fn.dragscrollable = function( options ){
         return this;
     };
 
-}(window.jQuery || window.Zepto));
+}(jQuery));
 
 /**
 *      Events. Pub/Sub system for Loosely Coupled logic.
