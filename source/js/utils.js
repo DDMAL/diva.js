@@ -846,6 +846,9 @@ var diva = (function() {
     return pub;
 }());
 
+// Expose the Diva variable globally
+window.diva = diva;
+
 //Used to keep track of whether Diva was last clicked or which Diva was last clicked when there are multiple
 var activeDivaController = (function ($)
 {
