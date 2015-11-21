@@ -846,8 +846,12 @@ var diva = (function() {
     return pub;
 }());
 
-// Expose the Diva variable globally
+// Expose the Diva variable globally (needed for plugins, possibly even in CommonJS environments)
 window.diva = diva;
+
+// Expose diva as the export in CommonJS environments
+if (typeof module === 'object' && module.exports)
+    module.exports = diva;
 
 //Used to keep track of whether Diva was last clicked or which Diva was last clicked when there are multiple
 var activeDivaController = (function ($)
