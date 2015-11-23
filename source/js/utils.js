@@ -654,7 +654,7 @@ $.fn.dragscrollable = function( options ){
         return this;
     };
 
-}(window.jQuery || window.Zepto));
+}(jQuery));
 
 /**
 *      Events. Pub/Sub system for Loosely Coupled logic.
@@ -846,69 +846,79 @@ var diva = (function() {
     return pub;
 }());
 
+// Expose the Diva variable globally (needed for plugins, possibly even in CommonJS environments)
+window.diva = diva;
+
+// Expose diva as the export in CommonJS environments
+if (typeof module === 'object' && module.exports)
+    module.exports = diva;
+
 //Used to keep track of whether Diva was last clicked or which Diva was last clicked when there are multiple
-var activeDivaController = function ()
+var activeDivaController = (function ($)
 {
-    var active;
-
-    //global click listener
-    $(document).on('click', function(e)
+    return function ()
     {
-        updateActive($(e.target));
-    });
+        var active;
 
-    //parameter should already be a jQuery selector
-    var updateActive = function (target)
-    {
-        var nearestOuter;
+        //global click listener
+        $(document).on('click', function(e)
+        {
+            updateActive($(e.target));
+        });
 
-        //these will find 0 or 1 objects, never more
-        var findOuter = target.find('.diva-outer');
-        var closestOuter = target.closest('.diva-outer');
-        var outers = document.getElementsByClassName('diva-outer');
-        var outerLen = outers.length;
-        var idx;
+        //parameter should already be a jQuery selector
+        var updateActive = function (target)
+        {
+            var nearestOuter;
 
-        //clicked on something that was not either a parent or sibling of a diva-outer
-        if (findOuter.length > 0) 
-        {
-            nearestOuter = findOuter;
-        }
-        //clicked on something that was a child of a diva-outer
-        else if (closestOuter.length > 0)
-        {
-            nearestOuter = closestOuter;
-        }
-        //clicked on something that was not in any Diva tree
-        else 
-        {
-            //deactivate everything and return            
-            for (idx = 0; idx < outerLen; idx++)
+            //these will find 0 or 1 objects, never more
+            var findOuter = target.find('.diva-outer');
+            var closestOuter = target.closest('.diva-outer');
+            var outers = document.getElementsByClassName('diva-outer');
+            var outerLen = outers.length;
+            var idx;
+
+            //clicked on something that was not either a parent or sibling of a diva-outer
+            if (findOuter.length > 0)
             {
-                $(outers[idx].parentElement).data('diva').deactivate();
+                nearestOuter = findOuter;
             }
-            return;
-        }
+            //clicked on something that was a child of a diva-outer
+            else if (closestOuter.length > 0)
+            {
+                nearestOuter = closestOuter;
+            }
+            //clicked on something that was not in any Diva tree
+            else
+            {
+                //deactivate everything and return
+                for (idx = 0; idx < outerLen; idx++)
+                {
+                    $(outers[idx].parentElement).data('diva').deactivate();
+                }
+                return;
+            }
 
-        //if we found one, activate it...
-        nearestOuter.parent().data('diva').activate();
-        active = nearestOuter.parent();
+            //if we found one, activate it...
+            nearestOuter.parent().data('diva').activate();
+            active = nearestOuter.parent();
 
-        //...and deactivate all the others
-        outers = document.getElementsByClassName('diva-outer');
-        for(idx = 0; idx < outerLen; idx++)
+            //...and deactivate all the others
+            outers = document.getElementsByClassName('diva-outer');
+            for(idx = 0; idx < outerLen; idx++)
+            {
+                //getAttribute to attr - comparing DOM element to jQuery element
+                if (outers[idx].getAttribute('id') != nearestOuter.attr('id'))
+                    $(outers[idx].parentElement).data('diva').deactivate();
+            }
+        };
+
+        //public accessor in case. Will return a jQuery selector.
+        this.getActive = function()
         {
-            //getAttribute to attr - comparing DOM element to jQuery element
-            if (outers[idx].getAttribute('id') != nearestOuter.attr('id'))
-                $(outers[idx].parentElement).data('diva').deactivate();
-        }
+            return active;
+        };
     };
-
-    //public accessor in case. Will return a jQuery selector.
-    this.getActive = function()
-    {
-        return active;
-    };
-};
+})(jQuery);
 
 var activeDiva = new activeDivaController();

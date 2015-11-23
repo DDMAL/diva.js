@@ -6,6 +6,10 @@
   "directories": {
     "test": "tests"
   },
+  "jspm": {
+    "files": ["build"],
+    "ignore": ["gulpfile.js"]
+  },
   "scripts": {
     "test": "gulp develop:test"
   },
