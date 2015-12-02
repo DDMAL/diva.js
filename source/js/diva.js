@@ -1295,7 +1295,9 @@ window.divaPlugins = [];
 
             // Make sure the value for settings.goDirectlyTo is valid
             if (!isPageValid(settings.goDirectlyTo))
+            {
                 settings.goDirectlyTo = 0;
+            }
 
             // Scroll to the proper place using stored y/x offsets (relative to the center of the page)
             gotoPage(settings.goDirectlyTo, settings.verticalOffset, settings.horizontalOffset);
@@ -1307,6 +1309,7 @@ window.divaPlugins = [];
                 if (isPageVisible(i))
                 {
                     loadPage(i);
+
                     settings.lastPageLoaded = i;
                     pageBlockFound = true;
                 }
@@ -1528,17 +1531,37 @@ window.divaPlugins = [];
         // Called after double-click or ctrl+double-click events on pages in document view
         var handleDocumentDoubleClick = function (event)
         {
-            var pageOffset = $(this).offset();
-
-            settings.doubleClickZoom = true;
-            settings.horizontalOffset = event.pageX - pageOffset.left;
-            settings.verticalOffset = event.pageY - pageOffset.top;
-            settings.goDirectlyTo = parseInt($(this).attr('data-index'), 10); //page index
-
             // Hold control to zoom out, otherwise, zoom in
             var newZoomLevel = (event.ctrlKey) ? settings.zoomLevel - 1 : settings.zoomLevel + 1;
+            var zoomRatio = Math.pow(2, newZoomLevel - settings.zoomLevel);
 
-            handleZoom(newZoomLevel);
+            var pageOffset = this.getBoundingClientRect();
+            var outerPosition = document.getElementById(settings.ID + 'outer').getBoundingClientRect();
+
+            settings.doubleClickZoom = true;
+
+            // when double-click zooming, the part of the page under the cursor is the scale origin
+            // calculate distance from cursor coordinates to center of viewport
+            var clickXToCenter = event.pageX - (outerPosition.left + (settings.panelWidth / 2));
+            var clickYToCenter = event.pageY - (outerPosition.top + (settings.panelHeight / 2));
+
+            // calculate horizontal/verticalOffset: distance from viewport center to page upper left corner
+            // (these offsets are multiplied by zoomRatio in handleZoom to determine the coordinates at the new zoom level)
+            settings.horizontalOffset = (event.pageX - pageOffset.left) - (clickXToCenter / zoomRatio);
+            settings.verticalOffset = (event.pageY - pageOffset.top) - (clickYToCenter / zoomRatio);
+
+            // compensate for interpage padding
+            //TODO still a few pixels unaccounted for
+            settings.verticalOffset += (settings.verticallyOriented) ? settings.verticalPadding / zoomRatio : 0;
+            settings.horizontalOffset += (settings.verticallyOriented) ? 0 : settings.horizontalPadding / zoomRatio;
+
+            // calculate click coordinates for smooth zoom transition: distance from edge of inner to cursor
+            var dblClickX = event.pageX + settings.outerObject.scrollLeft() - outerPosition.left;
+            var dblClickY = event.pageY + settings.outerObject.scrollTop() - outerPosition.top;
+
+            settings.goDirectlyTo = parseInt($(this).attr('data-index'), 10); //page index
+
+            handleZoom(newZoomLevel, dblClickX, dblClickY);
         };
 
         // Called after double-clicking on a page in grid view
@@ -1583,9 +1606,11 @@ window.divaPlugins = [];
         };
 
         // Called to handle any zoom level
-        var handleZoom = function (newValue)
+        var handleZoom = function (newValue, dblClickX, dblClickY)
         {
             var newZoomLevel = getValidZoomLevel(newValue);
+            var originX = dblClickX || 0;
+            var originY = dblClickY || 0;
 
             // If the zoom level provided is invalid, return false
             if (newZoomLevel !== newValue)
@@ -1593,27 +1618,45 @@ window.divaPlugins = [];
 
             var zoomRatio = Math.pow(2, newZoomLevel - settings.zoomLevel);
 
-            // offsets refer to the distance from the top/left of the current page that the center of the viewport is.
+            // verticalOffset and horizontalOffset refer to the distance from the top/left of the current page that the center (or clicked coordinates) of the viewport is.
             // for example: if the viewport is 800 pixels and the active page is 600 pixels wide and starts at 100 pixels, verticalOffset will be 300 pixels.
             if (settings.doubleClickZoom)
             {
                 settings.verticalOffset *= zoomRatio;
                 settings.horizontalOffset *= zoomRatio;
+
                 settings.doubleClickZoom = false;
             }
             else
             {
                 settings.goDirectlyTo = settings.currentPageIndex;
+                // for goToPage
                 settings.verticalOffset = zoomRatio * getCurrentYOffset();
                 settings.horizontalOffset = zoomRatio * getCurrentXOffset();
+
+                // for smooth zoom origin
+                var scrollTop = document.getElementById(settings.ID + 'outer').scrollTop;
+                var elementHeight = settings.panelHeight;
+                originY = scrollTop + parseInt(elementHeight / 2, 10);
+
+                var scrollLeft = document.getElementById(settings.ID + 'outer').scrollLeft;
+                var elementWidth = settings.panelWidth;
+                originX = scrollLeft + parseInt(elementWidth / 2, 10);
             }
 
             settings.oldZoomLevel = settings.zoomLevel;
             settings.zoomLevel = newZoomLevel;
 
+            // transform-origin xOffset is from left of inner div, yOffset from top of inner div
+            var originString = originX + 'px ' + originY + 'px';
+            settings.innerObject.css('transform-origin', originString);
+
+            // Transition to new zoom level
+            settings.innerObject.css('transition', 'transform .6s ease-out');
+            settings.innerObject.css('transform', 'scale(' + zoomRatio + ')');
+
             // Update the slider
             diva.Events.publish("ZoomLevelDidChange", [newZoomLevel], self);
-            loadDocument();
 
             return true;
         };
@@ -2107,6 +2150,13 @@ window.divaPlugins = [];
             }
 
             diva.Events.subscribe('PanelSizeDidChange', updatePanelSize, settings.ID);
+
+            // WIP: on load, replace inner div with new zoom level data
+            var inner = document.getElementById(settings.ID + 'inner');
+            inner.addEventListener('webkitTransitionEnd', function(e)
+            {
+                loadDocument();
+            }, false);
         };
 
         // Handles all status updating etc (both fullscreen and not)
