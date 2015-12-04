@@ -240,8 +240,30 @@ window.divaPlugins = [];
             return isVerticallyInViewport(tileTop, tileBottom) && isHorizontallyInViewport(tileLeft, tileRight);
         };
 
+        // Check if a tile is near the specified viewport and thus should be loaded (performance-sensitive)
+        var isTileVisibleInBounds = function (pageIndex, tileRow, tileCol, viewport)
+        {
+            var tileTop, tileLeft;
+
+            if (settings.verticallyOriented)
+            {
+                tileTop = settings.pageTopOffsets[pageIndex] + (tileRow * settings.tileHeight) + settings.verticalPadding;
+                tileLeft = settings.pageLeftOffsets[pageIndex] + (tileCol * settings.tileWidth);
+            }
+            else
+            {
+                tileTop = settings.pageTopOffsets[pageIndex] + (tileRow * settings.tileHeight);
+                tileLeft = settings.pageLeftOffsets[pageIndex] + (tileCol * settings.tileWidth) + settings.horizontalPadding;
+            }
+
+            var tileBottom = tileTop + settings.tileHeight;
+            var tileRight = tileLeft + settings.tileWidth;
+
+            return isVerticallyInViewportBounds(tileTop, tileBottom, viewport.top, viewport.bottom) && isHorizontallyInViewportBounds(tileLeft, tileRight, viewport.left, viewport.right);
+        };
+
         // Check if a tile has been loaded (note: performance-sensitive function)
-        var isTileLoaded = function (pageIndex, tileIndex, context, left, top)
+        var isTileLoaded = function (pageIndex, tileIndex)
         {
             var i = settings.loadedTiles.length;
 
