@@ -314,16 +314,9 @@ window.divaPlugins = [];
             return !!document.getElementById(settings.ID + 'page-' + pageIndex);
         };
 
-        // There are still tiles to load, so try to load those (after a delay)
-        var loadTiles = function (pageIndex, filename, width, height, pageSelector)
+        // Loads page tiles into the supplied canvas.
+        var loadTiles = function(pageIndex, filename, width, height, canvasElement, viewport)
         {
-            var pageElement = document.getElementById(settings.ID + 'page-' + pageIndex);
-
-            // If the page is no longer in the viewport or loaded, don't load any tiles
-            if (pageElement === null || !isPageVisible(pageIndex))
-                return;
-
-            var canvasElement = document.getElementById(settings.ID + 'canvas-' + pageIndex);
             var context;
 
             try {
@@ -334,13 +327,25 @@ window.divaPlugins = [];
                 return false;
             }
 
+            // if there is no viewport argument default to the current viewport
+            //TODO test if caching viewport position here breaks behavior (viewport position changes with scroll position)
+            if (typeof viewport === 'undefined')
+            {
+                viewport = {
+                    left: settings.outerObject.scrollLeft(),
+                    top: settings.outerObject.scrollTop(),
+                    right: settings.outerObject.scrollLeft() + settings.panelWidth,
+                    bottom: settings.outerObject.scrollTop() + settings.panelHeight
+                }
+            }
+
             function getDrawTileFunction(pageIndex, tileIndex, currentTile, left, top)
             {
                 return function()
                 {
                     settings.loadedTiles[pageIndex].push(tileIndex);
                     context.drawImage(currentTile, left, top);
-                }
+                };
             }
 
             var imdir = settings.imageDir + "/";
@@ -358,6 +363,15 @@ window.divaPlugins = [];
 
             // Declare variables used within the loops
             var row, col, tileHeight, tileWidth, currentTile, top, left, zoomLevel, imageURL, regionHeight, regionWidth, xOffset, yOffset, zoomDifference;
+
+            //resize canvas context to new zoom level if necessary before drawing tiles
+            // if context width is wrong, set it to h and w.
+            //TODO make this not janky, prevent blanking
+            if (canvasElement.width !== Math.floor(getPageData(pageIndex, 'w')))
+            {
+                canvasElement.width = Math.floor(getPageData(pageIndex, 'w'));
+                canvasElement.height = Math.floor(getPageData(pageIndex, 'h'));
+            }
 
             // Adjust the zoom level based on the max zoom level of the page
             zoomLevel = settings.zoomLevel + maxZoom - settings.realMaxZoom;
@@ -418,9 +432,8 @@ window.divaPlugins = [];
                     // it isn't, if it should be visible.
                     if (!isTileLoaded(pageIndex, tileIndex, context, left, top))
                     {
-                        if (isTileVisible(pageIndex, row, col))
+                        if (isTileVisibleInBounds(pageIndex, row, col, viewport))
                         {
-                            // TODO check context?
                             currentTile = new Image();
                             currentTile.crossOrigin = "anonymous";
 
@@ -439,16 +452,32 @@ window.divaPlugins = [];
             }
 
             settings.allTilesLoaded[pageIndex] = allTilesLoaded;
+        };
+
+        // There are still tiles to load, so try to load those (after the delay specified in loadPage)
+        var loadPageTiles = function (pageIndex, filename, width, height, pageSelector)
+        {
+            var pageElement = document.getElementById(settings.ID + 'page-' + pageIndex);
+
+            // If the page is no longer in the viewport or loaded, don't load any tiles
+            if (pageElement === null || !isPageVisible(pageIndex))
+                return;
+
+            var canvasElement = document.getElementById(settings.ID + 'canvas-' + pageIndex);
+
+            loadTiles(pageIndex, filename, width, height, canvasElement);
 
             diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector], self);
         };
 
         // Appends the page directly into the document body, or loads the relevant tiles
-        var loadPage = function (pageIndex)
+        var loadPage = function (pageIndex, isPreloaded)
         {
             // If the page and all of its tiles have been loaded, or if we are in book layout and the canvas is non-paged, exit
             if ((isPageLoaded(pageIndex) && settings.allTilesLoaded[pageIndex]) || (settings.inBookLayout && settings.documentPaged && !settings.pages[pageIndex].paged))
                 return;
+
+            var isPreloaded = typeof settings.pagePreloadCanvases[pageIndex] !== 'undefined';
 
             // Load some data for this page
             var filename = settings.pages[pageIndex].f;
