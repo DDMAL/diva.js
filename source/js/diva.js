@@ -562,7 +562,43 @@ window.divaPlugins = [];
                 diva.Events.publish("PageWillLoad", [pageIndex, filename, pageSelector], self);
             }
 
-            settings.pageTimeouts.push(setTimeout(loadTiles, settings.pageLoadTimeout, pageIndex, filename, width, height));
+            if (!isPreloaded)
+            {
+                settings.pageTimeouts.push(setTimeout(loadPageTiles, settings.pageLoadTimeout, pageIndex, filename, width, height));
+            }
+        };
+
+        var preloadPage = function(pageIndex, viewport)
+        {
+            // Exit if we've already started preloading this page
+            if (typeof settings.pagePreloadCanvases[pageIndex] !== 'undefined')
+                return;
+
+            var filename = settings.pages[pageIndex].f;
+            var width = Math.floor(getPageData(pageIndex, 'w'));
+            var height = Math.floor(getPageData(pageIndex, 'h'));
+            var pageSelector = settings.selector + 'page-' + pageIndex;
+
+            // new off-screen canvas
+            var pageCanvas = document.createElement('canvas');
+            pageCanvas.width = width;
+            pageCanvas.height = height;
+
+            // if corresponding page is in the DOM already, copy existing image from previous zoom level, scaled, to canvas
+            var oldCanvas = document.getElementById(settings.ID + 'canvas-' + pageIndex);
+
+            if (oldCanvas)
+            {
+                var newCanvasContext = pageCanvas.getContext('2d');
+                newCanvasContext.drawImage(oldCanvas, 0, 0, width, height);
+            }
+
+            //load visible page tiles into canvas
+            loadTiles(pageIndex, filename, width, height, pageCanvas, viewport);
+
+            diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector], self);
+
+            return pageCanvas;
         };
 
         // Delete a page from the DOM; will occur when a page is scrolled out of the viewport
