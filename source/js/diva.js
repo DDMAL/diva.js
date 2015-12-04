@@ -471,7 +471,7 @@ window.divaPlugins = [];
         };
 
         // Appends the page directly into the document body, or loads the relevant tiles
-        var loadPage = function (pageIndex, isPreloaded)
+        var loadPage = function (pageIndex)
         {
             // If the page and all of its tiles have been loaded, or if we are in book layout and the canvas is non-paged, exit
             if ((isPageLoaded(pageIndex) && settings.allTilesLoaded[pageIndex]) || (settings.inBookLayout && settings.documentPaged && !settings.pages[pageIndex].paged))
@@ -504,14 +504,27 @@ window.divaPlugins = [];
                 // Append page tools
                 pageElement.innerHTML = settings.pageTools;
 
+                var canvasElement;
+
                 // Append canvas element
-                var canvasElement = document.createElement('canvas');
+                if (isPreloaded)
+                {
+                    canvasElement = settings.pagePreloadCanvases[pageIndex];
+
+                    settings.pagePreloadCanvases[pageIndex] = undefined;
+                }
+                else
+                {
+                    canvasElement = document.createElement('canvas');
+                    canvasElement.width = width;
+                    canvasElement.height = height;
+                }
+
                 canvasElement.style.width = width + 'px';
                 canvasElement.style.height = height + 'px';
                 //TODO set width/height here or on context? rounding?
-                canvasElement.width = width;
-                canvasElement.height = height;
                 canvasElement.id = settings.ID + 'canvas-' + pageIndex;
+                canvasElement.setAttribute('class', 'diva-canvas');
                 pageElement.appendChild(canvasElement);
 
                 if (settings.verticallyOriented)
@@ -1457,6 +1470,7 @@ window.divaPlugins = [];
             // Once the viewport is aligned, we can determine which pages will be visible and load them
             //TODO append preloaded page canvases instead of loading them
             var pageBlockFound = false;
+
             for (var i = 0; i < settings.numPages; i++)
             {
                 if (isPageVisible(i))
