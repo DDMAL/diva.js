@@ -111,6 +111,7 @@ window.divaPlugins = [];
             outerObject: '',            // $(settings.ID + 'outer'), for selecting the .diva-outer element
             pages: [],                  // An array containing the data for all the pages
             pageLeftOffsets: [],        // Distance from the left side of each page to the left side of the diva-inner object
+            pagePreloadCanvases: [],    // Stack to hold canvases of pages preloading during zoom
             pageTopOffsets: [],         // Distance from the top side of each page to the top side of the diva-inner object
             pageTimeouts: [],           // Stack to hold the loadPage timeouts
             pageTools: '',              // The string for page tools
