@@ -1748,7 +1748,7 @@ window.divaPlugins = [];
                 if (isPageInViewportBounds(i, viewport))
                 {
                     // it will be visible, start loading it at the new zoom level into an offscreen canvas
-                    preloadPage(i, viewport);
+                    settings.pagePreloadCanvases[i] = preloadPage(i, viewport);
 
                     settings.lastPageLoaded = i;
                     pageBlockFound = true;
