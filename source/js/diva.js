@@ -2030,7 +2030,10 @@ window.divaPlugins = [];
             // Double-click to zoom
             settings.outerObject.on('dblclick', '.diva-document-page', function (event)
             {
-                handleDocumentDoubleClick.call(this, event);
+                if (!event.ctrlKey)
+                {
+                    handleDocumentDoubleClick.call(this, event);
+                }
             });
 
             // Handle the control key for macs (in conjunction with double-clicking)
