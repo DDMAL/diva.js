@@ -2366,10 +2366,7 @@ window.divaPlugins = [];
 
             // WIP: on load, replace inner div with new zoom level data
             var inner = document.getElementById(settings.ID + 'inner');
-            inner.addEventListener('webkitTransitionEnd', function(e)
-            {
-                loadDocument();
-            }, false);
+            inner.addEventListener('transitionend', loadDocument, false);
         };
 
         // Handles all status updating etc (both fullscreen and not)
