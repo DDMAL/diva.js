@@ -1860,7 +1860,7 @@ window.divaPlugins = [];
             settings.innerObject.css('transform-origin', originString);
 
             // Transition to new zoom level
-            settings.innerObject.css('transition', 'transform .6s ease-out');
+            settings.innerObject.css('transition', 'transform .3s cubic-bezier(0.000, 0.990, 1.000, 0.995)');
             settings.innerObject.css('transform', 'scale(' + zoomRatio + ')');
 
             preloadPages();
