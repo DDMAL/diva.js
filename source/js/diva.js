@@ -1835,8 +1835,11 @@ window.divaPlugins = [];
             else
             {
                 settings.goDirectlyTo = settings.currentPageIndex;
+
+                var verticalPaddingOffset = (zoomRatio > 1) ? 0 - settings.verticalPadding : settings.verticalPadding / 2;
+
                 // for goToPage
-                settings.verticalOffset = zoomRatio * getCurrentYOffset();
+                settings.verticalOffset = (zoomRatio * getCurrentYOffset()) + verticalPaddingOffset;
                 settings.horizontalOffset = zoomRatio * getCurrentXOffset();
 
                 // for smooth zoom origin
