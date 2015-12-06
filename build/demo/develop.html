@@ -24,72 +24,6 @@
             }
             </style>
             <script type="text/javascript">
-                /*
-                 add this code
-                 run console.log( canvas );
-                 see the canvas
-                 if the canvas is running a webgl context, it'll need the preserveDrawingBuffer flag set to true
-                 */
-
-                ( function() {
-
-                    var _oldConsole = console.log;
-
-                    // Code from https://github.com/adriancooney/console.image
-
-                    function getBox(width, height) {
-                        return {
-                            string: "+",
-                            style: "font-size: 1px; padding: " + Math.floor(height/2) + "px " + Math.floor(width/2) + "px; line-height: " + height + "px;"
-                        }
-                    }
-
-                    function logImage(url, scale) {
-                        scale = scale || 1;
-                        var img = new Image();
-
-                        img.onload = function() {
-                            var dim = getBox(this.width * scale, this.height * scale);
-                            console.log("%c" + dim.string, dim.style + "background: url(" + url + "); background-size: " + (this.width * scale) + "px " + (this.height * scale) + "px; color: transparent;");
-                        };
-
-                        img.src = url;
-
-
-                    };
-
-                    console.log = function() {
-
-                        var special = false;
-
-                        [].forEach.call( arguments, function( a ) {
-                            if( a instanceof HTMLCanvasElement ) special = true;;
-                        } );
-
-                        if( special ) {
-
-                            [].forEach.call( arguments, function( a ) {
-
-                                _oldConsole.apply( console, [ a ] );
-
-                                if( a instanceof HTMLCanvasElement ) {
-
-                                    logImage( a.toDataURL() );
-
-                                }
-
-                            } );
-
-                        } else {
-
-                            _oldConsole.apply( console, arguments );
-
-                        }
-
-                    }
-
-                } )();
-
                 $(document).ready(function() {
                     $('#diva-wrapper').diva({
                         enableAutoHeight: true,
@@ -97,8 +31,8 @@
                         iipServerURL: "http://diva.simssa.ca/fcgi-bin/iipsrv.fcgi",
                         objectData: "/demo/beromunster.json",
                         imageDir: "/srv/images/beromunster",
-                        enableCanvas: true,
-                        enableDownload: true
+                        enableCanvas: false,
+                        enableDownload: false
                     });
                 });
             </script>

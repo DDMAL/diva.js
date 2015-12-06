@@ -12,22 +12,13 @@
             <style>
             body, html{
                 height:90%;
-                /*margin: 0;*/
-                /*padding: 0;*/
             }
-
             #diva-wrapper{
                 height:100%;
             }
-
             .diva-outer{
                 height:100%;
-                /*margin:0;*/
             }
-
-            /*.diva-tools, .diva-title {*/
-                /*display: none;*/
-            /*}*/
             </style>
             <script type="text/javascript">
                 $(document).ready(function() {
@@ -37,8 +28,8 @@
                         iipServerURL: "http://diva.simssa.ca/fcgi-bin/iipsrv.fcgi",
                         objectData: "/demo/beromunster.json",
                         imageDir: "/srv/images/beromunster",
-                        enableCanvas: false,
-                        enableDownload: false
+                        enableCanvas: true,
+                        enableDownload: true
                     });
                 });
             </script>

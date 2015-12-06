@@ -288,6 +288,9 @@
 .diva-hide-scrollbar {
   overflow: hidden !important;
 }
+.diva-relative-position {
+  position: relative;
+}
 .zoom-slider {
   position: relative;
   top: 0.6em;

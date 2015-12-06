@@ -191,7 +191,6 @@ window.divaPlugins = [];
             return (topVisible || middleVisible || bottomVisible);
         };
 
-        //TODO performance - cache as many settings as possible in the enclosing scope (loops) in which these functions are called
         // Checks if a page or tile is within the viewport horizontally
         var isHorizontallyInViewportBounds = function (left, right, viewportLeft, viewportRight)
         {
@@ -219,7 +218,7 @@ window.divaPlugins = [];
             return (topVisible || middleVisible || bottomVisible);
         };
 
-        // Check if a tile is near the viewport and thus should be loaded (performance-sensitive)
+        // Check if a tile is near the viewport and thus should be loaded
         var isTileVisible = function (pageIndex, tileRow, tileCol)
         {
             var tileTop, tileLeft;
@@ -472,7 +471,7 @@ window.divaPlugins = [];
         };
 
         // Appends the page directly into the document body, or loads the relevant tiles
-        var loadPage = function (pageIndex, isPreloaded)
+        var loadPage = function (pageIndex)
         {
             // If the page and all of its tiles have been loaded, or if we are in book layout and the canvas is non-paged, exit
             if ((isPageLoaded(pageIndex) && settings.allTilesLoaded[pageIndex]) || (settings.inBookLayout && settings.documentPaged && !settings.pages[pageIndex].paged))
@@ -1469,6 +1468,7 @@ window.divaPlugins = [];
             gotoPage(settings.goDirectlyTo, settings.verticalOffset, settings.horizontalOffset);
 
             // Once the viewport is aligned, we can determine which pages will be visible and load them
+            //TODO append preloaded page canvases instead of loading them
             var pageBlockFound = false;
 
             for (var i = 0; i < settings.numPages; i++)
@@ -1835,8 +1835,11 @@ window.divaPlugins = [];
             else
             {
                 settings.goDirectlyTo = settings.currentPageIndex;
+
+                var verticalPaddingOffset = (zoomRatio > 1) ? 0 - settings.verticalPadding : settings.verticalPadding / 2;
+
                 // for goToPage
-                settings.verticalOffset = zoomRatio * getCurrentYOffset();
+                settings.verticalOffset = (zoomRatio * getCurrentYOffset()) + verticalPaddingOffset;
                 settings.horizontalOffset = zoomRatio * getCurrentXOffset();
 
                 // for smooth zoom origin
@@ -1857,7 +1860,7 @@ window.divaPlugins = [];
             settings.innerObject.css('transform-origin', originString);
 
             // Transition to new zoom level
-            settings.innerObject.css('transition', 'transform .6s ease-out');
+            settings.innerObject.css('transition', 'transform .2s ease-out');
             settings.innerObject.css('transform', 'scale(' + zoomRatio + ')');
 
             preloadPages();
@@ -2030,7 +2033,10 @@ window.divaPlugins = [];
             // Double-click to zoom
             settings.outerObject.on('dblclick', '.diva-document-page', function (event)
             {
-                handleDocumentDoubleClick.call(this, event);
+                if (!event.ctrlKey)
+                {
+                    handleDocumentDoubleClick.call(this, event);
+                }
             });
 
             // Handle the control key for macs (in conjunction with double-clicking)
@@ -2359,12 +2365,8 @@ window.divaPlugins = [];
             diva.Events.subscribe('PanelSizeDidChange', updatePanelSize, settings.ID);
 
             // WIP: on load, replace inner div with new zoom level data
-            // TODO fallback for browsers that don't support CSS transitions/transforms
             var inner = document.getElementById(settings.ID + 'inner');
-            inner.addEventListener('webkitTransitionEnd', function(e)
-            {
-                loadDocument();
-            }, false);
+            inner.addEventListener('transitionend', loadDocument, false);
         };
 
         // Handles all status updating etc (both fullscreen and not)
