@@ -1287,6 +1287,7 @@ window.divaPlugins = [];
             // Post-zoom: clear scaling
             settings.innerObject.css('transition', '');
             settings.innerObject.css('transform', '');
+            settings.innerObject.css('pointer-events', '');
             settings.innerObject.css('transform-origin', '');
 
             settings.allTilesLoaded = [];
@@ -1860,7 +1861,8 @@ window.divaPlugins = [];
             settings.innerObject.css('transform-origin', originString);
 
             // Transition to new zoom level
-            settings.innerObject.css('transition', 'transform .2s ease-out');
+            settings.innerObject.css('transition', 'transform .3s cubic-bezier(0.000, 0.990, 1.000, 0.995)');
+            settings.innerObject.css('pointer-events', 'none');
             settings.innerObject.css('transform', 'scale(' + zoomRatio + ')');
 
             preloadPages();
@@ -2452,16 +2454,28 @@ window.divaPlugins = [];
                 handleZoom(settings.zoomLevel + direction);
             };
 
-            // Bind the click event to zoom buttons
-            $(settings.selector + 'zoom-out-button').click(function ()
-            {
-                zoomButtonClicked(-1);
-            });
+            function debounce(fun, mil){
+                var timer;
+                return function(){
+                    clearTimeout(timer);
+                    timer = setTimeout(function(){
+                        fun();
+                    }, mil);
+                };
+            }
 
-            $(settings.selector + 'zoom-in-button').click(function ()
-            {
-                zoomButtonClicked(1);
-            });
+            // Bind the click event to zoom buttons
+            $(settings.selector + 'zoom-out-button').click(
+                debounce(function() {
+                    zoomButtonClicked(-1);
+                }, 300)
+            );
+
+            $(settings.selector + 'zoom-in-button').click(
+                debounce(function() {
+                    zoomButtonClicked(1);
+                }, 300)
+            );
 
             //bind grid slider
             $(settings.selector + 'grid-slider').on('input', function(e)
