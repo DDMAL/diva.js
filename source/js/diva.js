@@ -1700,7 +1700,7 @@ window.divaPlugins = [];
             for (param in hashParams)
             {
                 if (hashParams[param] !== false)
-                    hashStringBuilder.push(param + settings.hashParamSuffix + '=' + hashParams[param]);
+                    hashStringBuilder.push(param + settings.hashParamSuffix + '=' + encodeURIComponent(hashParams[param]));
             }
 
             return hashStringBuilder.join('&');

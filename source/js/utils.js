@@ -70,10 +70,10 @@ Storage.prototype.getObject = function (key) {
                 // Either to the next ampersand or to the end of the string
                 var endIndex = hash.indexOf('&', startIndex);
                 if (endIndex > startIndex) {
-                    return hash.substring(startIndex, endIndex);
+                    return decodeURIComponent(hash.substring(startIndex, endIndex));
                 } else if (endIndex < 0) {
                     // This means this hash param is the last one
-                    return hash.substring(startIndex);
+                    return decodeURIComponent(hash.substring(startIndex));
                 }
                 // If the key doesn't have a value I think
                 return '';
