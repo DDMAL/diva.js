@@ -70,10 +70,10 @@ Storage.prototype.getObject = function (key) {
                 // Either to the next ampersand or to the end of the string
                 var endIndex = hash.indexOf('&', startIndex);
                 if (endIndex > startIndex) {
-                    return hash.substring(startIndex, endIndex);
+                    return decodeURIComponent(hash.substring(startIndex, endIndex));
                 } else if (endIndex < 0) {
                     // This means this hash param is the last one
-                    return hash.substring(startIndex);
+                    return decodeURIComponent(hash.substring(startIndex));
                 }
                 // If the key doesn't have a value I think
                 return '';
@@ -654,7 +654,7 @@ $.fn.dragscrollable = function( options ){
         return this;
     };
 
-}(window.jQuery || window.Zepto));
+}(jQuery));
 
 /**
 *      Events. Pub/Sub system for Loosely Coupled logic.
@@ -676,37 +676,88 @@ var diva = (function() {
              *      @class Events
              *      @method publish
              *      @param topic {String}
-             *      @param args     {Array}
-             *      @param scope {Object} Optional
+             *      @param args  {Array}
+             *      @param scope {Object=} Optional - Subscribed functions will be executed with the supplied object as `this`.
+             *          It is necessary to supply this argument with the self variable when within a Diva instance.
+             *          The scope argument is matched with the instance ID of subscribers to determine whether they
+             *              should be executed. (See instanceID argument of subscribe.)
              */
             publish: function (topic, args, scope)
             {
                 if (cache[topic])
                 {
-                    var thisTopic = cache[topic],
-                        i = thisTopic.length;
+                    var thisTopic = cache[topic];
 
-                    while (i--)
-                        thisTopic[i].apply( scope || this, args || []);
+                    if (typeof thisTopic.global !== 'undefined')
+                    {
+                        var thisTopicGlobal = thisTopic.global;
+                        var i = thisTopicGlobal.length;
+
+                        while (i--)
+                        {
+                            thisTopicGlobal[i].apply(scope || this, args || []);
+                        }
+                    }
+
+                    if (scope && typeof scope.getInstanceId !== 'undefined')
+                    {
+                        // get publisher instance ID from scope arg, compare, and execute if match
+                        var instanceID = scope.getInstanceId();
+
+                        if (cache[topic][instanceID])
+                        {
+                            var thisTopicInstance = cache[topic][instanceID];
+                            var j = thisTopicInstance.length;
+
+                            while (j--)
+                            {
+                                thisTopicInstance[j].apply(scope || this, args || []);
+                            }
+                        }
+                    }
                 }
             },
             /**
              *      diva.Events.subscribe
-             *      e.g.: diva.Events.subscribe("PageDidLoad", highlight)
+             *      e.g.: diva.Events.subscribe("PageDidLoad", highlight, settings.ID)
              *
              *      @class Events
              *      @method subscribe
              *      @param topic {String}
              *      @param callback {Function}
+             *      @param instanceID {String=} Optional - String representing the ID of a Diva instance; if provided,
+             *                                            callback only fires for events published from that instance.
              *      @return Event handler {Array}
              */
-            subscribe: function (topic, callback)
+            subscribe: function (topic, callback, instanceID)
             {
                 if (!cache[topic])
-                    cache[topic] = [];
+                {
+                    cache[topic] = {};
+                }
 
-                cache[topic].push(callback);
-                return [topic, callback];
+                if (typeof instanceID === 'string')
+                {
+                    if (!cache[topic][instanceID])
+                    {
+                        cache[topic][instanceID] = [];
+                    }
+
+                    cache[topic][instanceID].push(callback);
+                }
+                else
+                {
+                    if (!cache[topic].global)
+                    {
+                        cache[topic].global = [];
+                    }
+
+                    cache[topic].global.push(callback);
+                }
+
+                var handle = instanceID ? [topic, callback, instanceID] : [topic, callback];
+
+                return handle;
             },
             /**
              *      diva.Events.unsubscribe
@@ -716,7 +767,7 @@ var diva = (function() {
              *      @class Events
              *      @method unsubscribe
              *      @param handle {Array}
-             *      @param completely {Boolean} - Unsubscribe all events for a given topic.
+             *      @param completely {Boolean=} - Unsubscribe all events for a given topic.
              *      @return success {Boolean}
              */
             unsubscribe: function (handle, completely)
@@ -725,99 +776,149 @@ var diva = (function() {
 
                 if (cache[t])
                 {
-                    var i = cache[t].length;
+                    var topicArray;
+
+                    if (handle.length === 3 && typeof cache[t][handle[2]] !== 'undefined')
+                    {
+                        var instanceID = handle[2];
+                        topicArray = cache[t][instanceID];
+                    }
+                    else
+                    {
+                        topicArray = cache[t].global;
+                    }
+
+                    var i = topicArray.length;
+
                     while (i--)
                     {
-                        if (cache[t][i] === handle[1])
+                        if (topicArray[i] === handle[1])
                         {
-                            cache[t].splice(i, 1);
+                            topicArray.splice(i, 1);
+
                             if (completely)
-                                delete cache[t];
+                            {
+                                delete topicArray;
+                            }
+
                             return true;
                         }
                     }
                 }
+
                 return false;
             },
             /**
              *      diva.Events.unsubscribeAll
-             *      e.g.: diva.Events.unsubscribeAll();
+             *      e.g.: diva.Events.unsubscribeAll('global');
              *
              *      @class Events
+             *      @param {String=} Optional - instance ID to remove subscribers from or 'global' (if omitted,
+             *                                 subscribers in all scopes removed)
              *      @method unsubscribe
              */
-            unsubscribeAll: function ()
+            unsubscribeAll: function (instanceID)
             {
-                cache = {};
+                if (instanceID)
+                {
+                    var topics = Object.keys(cache);
+                    var i = topics.length;
+                    var topic;
+
+                    while (i--)
+                    {
+                        topic = topics[i];
+
+                        if (cache[topic][instanceID] !== 'undefined')
+                        {
+                            delete cache[topic][instanceID];
+                        }
+                    }
+                }
+                else
+                {
+                    cache = {};
+                }
             }
         }
     };
+
     return pub;
 }());
 
+// Expose the Diva variable globally (needed for plugins, possibly even in CommonJS environments)
+window.diva = diva;
+
+// Expose diva as the export in CommonJS environments
+if (typeof module === 'object' && module.exports)
+    module.exports = diva;
+
 //Used to keep track of whether Diva was last clicked or which Diva was last clicked when there are multiple
-var activeDivaController = function ()
+var activeDivaController = (function ($)
 {
-    var active;
-
-    //global click listener
-    $(document).on('click', function(e)
+    return function ()
     {
-        updateActive($(e.target));
-    });
+        var active;
 
-    //parameter should already be a jQuery selector
-    var updateActive = function (target)
-    {
-        var nearestOuter;
+        //global click listener
+        $(document).on('click', function(e)
+        {
+            updateActive($(e.target));
+        });
 
-        //these will find 0 or 1 objects, never more
-        var findOuter = target.find('.diva-outer');
-        var closestOuter = target.closest('.diva-outer');
-        var outers = document.getElementsByClassName('diva-outer');
-        var outerLen = outers.length;
-        var idx;
+        //parameter should already be a jQuery selector
+        var updateActive = function (target)
+        {
+            var nearestOuter;
 
-        //clicked on something that was not either a parent or sibling of a diva-outer
-        if (findOuter.length > 0) 
-        {
-            nearestOuter = findOuter;
-        }
-        //clicked on something that was a child of a diva-outer
-        else if (closestOuter.length > 0)
-        {
-            nearestOuter = closestOuter;
-        }
-        //clicked on something that was not in any Diva tree
-        else 
-        {
-            //deactivate everything and return            
-            for (idx = 0; idx < outerLen; idx++)
+            //these will find 0 or 1 objects, never more
+            var findOuter = target.find('.diva-outer');
+            var closestOuter = target.closest('.diva-outer');
+            var outers = document.getElementsByClassName('diva-outer');
+            var outerLen = outers.length;
+            var idx;
+
+            //clicked on something that was not either a parent or sibling of a diva-outer
+            if (findOuter.length > 0)
             {
-                $(outers[idx].parentElement).data('diva').deactivate();
+                nearestOuter = findOuter;
             }
-            return;
-        }
+            //clicked on something that was a child of a diva-outer
+            else if (closestOuter.length > 0)
+            {
+                nearestOuter = closestOuter;
+            }
+            //clicked on something that was not in any Diva tree
+            else
+            {
+                //deactivate everything and return
+                for (idx = 0; idx < outerLen; idx++)
+                {
+                    $(outers[idx].parentElement).data('diva').deactivate();
+                }
+                return;
+            }
 
-        //if we found one, activate it...
-        nearestOuter.parent().data('diva').activate();
-        active = nearestOuter.parent();
+            //if we found one, activate it...
+            nearestOuter.parent().data('diva').activate();
+            active = nearestOuter.parent();
 
-        //...and deactivate all the others
-        outers = document.getElementsByClassName('diva-outer');
-        for(idx = 0; idx < outerLen; idx++)
+            //...and deactivate all the others
+            outers = document.getElementsByClassName('diva-outer');
+            for(idx = 0; idx < outerLen; idx++)
+            {
+                //getAttribute to attr - comparing DOM element to jQuery element
+                if (outers[idx].getAttribute('id') != nearestOuter.attr('id'))
+                    $(outers[idx].parentElement).data('diva').deactivate();
+            }
+        };
+
+        //public accessor in case. Will return a jQuery selector.
+        this.getActive = function()
         {
-            //getAttribute to attr - comparing DOM element to jQuery element
-            if (outers[idx].getAttribute('id') != nearestOuter.attr('id'))
-                $(outers[idx].parentElement).data('diva').deactivate();
-        }
+            return active;
+        };
     };
-
-    //public accessor in case. Will return a jQuery selector.
-    this.getActive = function()
-    {
-        return active;
-    };
-};
+})(jQuery);
 
 var activeDiva = new activeDivaController();
