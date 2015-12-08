@@ -294,7 +294,12 @@ footer p {
 #diva-wrapper {
     margin-bottom: 1em;
 }
+
 .diva-goto-form {
+    line-height: 25px !important;
+}
+
+/* .diva-goto-form {
     float: right;
 }
 .diva-page-label {
@@ -309,7 +314,7 @@ footer p {
 }
 hr.underline {
     margin-top: 0;
-}
+} */
 
 /* styles for diva on small mobile devices */
 @media screen and (max-width: 480px) {
