@@ -834,9 +834,9 @@ Adds an adjustment icon next to each image
                     });
                 }
 
-                diva.Events.subscribe('ObjectDidLoad', this.setupHook, divaSettings.ID);
-                diva.Events.subscribe('ViewerDidTerminate', this.destroy, divaSettings.ID);
-                diva.Events.subscribe('PageDidLoad', this.onPageLoad, divaSettings.ID);
+                diva.Events.subscribe('ObjectDidLoad', this.setupHook);
+                diva.Events.subscribe('ViewerDidTerminate', this.destroy);
+                diva.Events.subscribe('PageDidLoad', this.onPageLoad);
 
                 return true;
             },

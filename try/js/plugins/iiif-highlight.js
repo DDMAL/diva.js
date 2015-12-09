@@ -98,7 +98,7 @@ Allows you to highlight regions of a page image based off of annotations in a II
                 settings.highlightedPages = [];
 
                 // subscribe the highlight method to the page change notification
-                diva.Events.subscribe("PageWillLoad", _highlight, divaSettings.ID);
+                diva.Events.subscribe("PageWillLoad", _highlight);
 
                 var _incorporate_zoom = function(position, zoomDifference)
                 {
@@ -399,7 +399,7 @@ Allows you to highlight regions of a page image based off of annotations in a II
                     settings.manifest = manifest;
                 };
 
-                diva.Events.subscribe('ManifestDidLoad', setManifest, divaSettings.ID);
+                diva.Events.subscribe('ManifestDidLoad', setManifest);
 
                 diva.Events.subscribe('PageWillLoad', function(pageIndex)
                 {
@@ -418,7 +418,7 @@ Allows you to highlight regions of a page image based off of annotations in a II
                     }
 
                     getAnnotationsList(pageIndex, settings.manifest);
-                }, divaSettings.ID);
+                });
 
                 var activeOverlays = [];
 
@@ -471,7 +471,7 @@ Allows you to highlight regions of a page image based off of annotations in a II
                             $(divaSettings.selector + 'annotations-icon').addClass('annotations-icon-active');
                         }
                     });
-                }, divaSettings.ID);
+                });
 
                 //enable annotations by default
                 settings.highlightsVisible = true;
