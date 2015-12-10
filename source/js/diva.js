@@ -1411,6 +1411,10 @@ window.divaPlugins = [];
         // Called every time we need to load document view (after zooming, fullscreen, etc)
         var loadDocument = function ()
         {
+            // re-attach scroll event to outer div (necessary if we just zoomed)
+            settings.outerObject.off('scroll');
+            settings.outerObject.scroll(scrollFunction);
+
             clearViewer();
 
             diva.Events.publish('DocumentWillLoad', [settings], self);
@@ -1870,6 +1874,9 @@ window.divaPlugins = [];
             // Update the slider
             diva.Events.publish("ZoomLevelDidChange", [newZoomLevel], self);
 
+            // While zooming, don't update scroll offsets
+            settings.outerObject.off('scroll');
+
             return true;
         };
 
@@ -2210,6 +2217,31 @@ window.divaPlugins = [];
             return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
         };
 
+        // Handle the scroll
+        var scrollFunction = function ()
+        {
+            var direction;
+            var newScrollTop = document.getElementById(settings.ID + "outer").scrollTop;
+            var newScrollLeft = document.getElementById(settings.ID + "outer").scrollLeft;
+
+            if (settings.verticallyOriented || settings.inGrid)
+                direction = newScrollTop - settings.previousTopScroll;
+            else
+                direction = newScrollLeft - settings.previousLeftScroll;
+
+            //give adjustPages the direction we care about
+            if (settings.inGrid)
+                adjustRows(direction);
+            else
+                adjustPages(direction);
+
+            settings.previousTopScroll = newScrollTop;
+            settings.previousLeftScroll = newScrollLeft;
+
+            settings.horizontalOffset = getCurrentXOffset();
+            settings.verticalOffset = getCurrentYOffset();
+        };
+
         // Binds most of the event handlers (some more in createToolbar)
         var handleEvents = function ()
         {
@@ -2235,31 +2267,6 @@ window.divaPlugins = [];
             });
 
             bindMouseEvents();
-
-            // Handle the scroll
-            var scrollFunction = function ()
-            {
-                var direction;
-                var newScrollTop = document.getElementById(settings.ID + "outer").scrollTop;
-                var newScrollLeft = document.getElementById(settings.ID + "outer").scrollLeft;
-
-                if (settings.verticallyOriented || settings.inGrid)
-                    direction = newScrollTop - settings.previousTopScroll;
-                else
-                    direction = newScrollLeft - settings.previousLeftScroll;
-
-                //give adjustPages the direction we care about
-                if (settings.inGrid)
-                    adjustRows(direction);
-                else
-                    adjustPages(direction);
-
-                settings.previousTopScroll = newScrollTop;
-                settings.previousLeftScroll = newScrollLeft;
-
-                settings.horizontalOffset = getCurrentXOffset();
-                settings.verticalOffset = getCurrentYOffset();
-            };
 
             settings.outerObject.scroll(scrollFunction);
 
