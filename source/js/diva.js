@@ -328,7 +328,6 @@ window.divaPlugins = [];
             }
 
             // if there is no viewport argument default to the current viewport
-            //TODO test if caching viewport position here breaks behavior (viewport position changes with scroll position)
             if (typeof viewport === 'undefined')
             {
                 viewport = {
@@ -1473,7 +1472,6 @@ window.divaPlugins = [];
             gotoPage(settings.goDirectlyTo, settings.verticalOffset, settings.horizontalOffset);
 
             // Once the viewport is aligned, we can determine which pages will be visible and load them
-            //TODO append preloaded page canvases instead of loading them
             var pageBlockFound = false;
 
             for (var i = 0; i < settings.numPages; i++)
