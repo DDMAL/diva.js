@@ -547,6 +547,7 @@ window.divaPlugins = [];
                                 placeholderElement.classList.add('diva-page', 'diva-document-page');
                                 placeholderElement.style.width = width + 'px';
                                 placeholderElement.style.height = height + 'px';
+                                placeholderElement.style.top = 0;
                                 placeholderElement.style.left = 0 - width + 'px';
                                 placeholderElement.style.border = '1px solid #ccc';
                                 placeholderElement.style.background = '#fdfdfd';
