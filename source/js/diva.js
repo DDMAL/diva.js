@@ -2373,9 +2373,43 @@ window.divaPlugins = [];
 
             diva.Events.subscribe('PanelSizeDidChange', updatePanelSize, settings.ID);
 
-            // WIP: on load, replace inner div with new zoom level data
-            var inner = document.getElementById(settings.ID + 'inner');
-            inner.addEventListener('transitionend', loadDocument, false);
+            // Detect supported transition end event, bind loadDocument to end of zoom transition
+            // http://stackoverflow.com/a/9090128
+            var getTransitionEndEventName = function()
+            {
+                var i;
+                var undefined;
+                var el = document.createElement('div');
+                var transitions = {
+                    'transition': 'transitionend',
+                    'OTransition': 'otransitionend',
+                    'MozTransition': 'transitionend',
+                    'WebkitTransition': 'webkitTransitionEnd'
+                };
+
+                for (i in transitions)
+                {
+                    if (transitions.hasOwnProperty(i) && el.style[i] !== undefined)
+                    {
+                        return transitions[i];
+                    }
+                }
+
+                return false;
+            };
+
+            var transitionEnd = getTransitionEndEventName();
+
+            if (transitionEnd)
+            {
+                var inner = document.getElementById(settings.ID + 'inner');
+                inner.addEventListener(transitionEnd, loadDocument, false);
+            }
+            else
+            {
+                // Fallback for browsers without CSS transitions support
+                diva.Events.subscribe("ZoomLevelDidChange", loadDocument, settings.ID);
+            }
         };
 
         // Handles all status updating etc (both fullscreen and not)
