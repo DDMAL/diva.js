@@ -335,7 +335,7 @@ window.divaPlugins = [];
                     top: settings.outerObject.scrollTop(),
                     right: settings.outerObject.scrollLeft() + settings.panelWidth,
                     bottom: settings.outerObject.scrollTop() + settings.panelHeight
-                }
+                };
             }
 
             function getDrawTileFunction(pageIndex, tileIndex, currentTile, left, top)
