@@ -1405,7 +1405,7 @@ window.divaPlugins = [];
             return {
                 widthToSet: widthToSet,
                 heightToSet: heightToSet
-            }
+            };
         };
 
         // Called every time we need to load document view (after zooming, fullscreen, etc)
