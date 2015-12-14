@@ -777,28 +777,20 @@ var diva = (function() {
                 if (cache[t])
                 {
                     var topicArray;
+                    var instanceID = (handle.length === 3 && typeof cache[t][handle[2]] !== 'undefined') ? handle[2] : 'global';
 
-                    if (handle.length === 3 && typeof cache[t][handle[2]] !== 'undefined')
-                    {
-                        var instanceID = handle[2];
-                        topicArray = cache[t][instanceID];
-                    }
-                    else
-                    {
-                        topicArray = cache[t].global;
-                    }
-
+                    topicArray = cache[t][instanceID];
                     var i = topicArray.length;
 
                     while (i--)
                     {
                         if (topicArray[i] === handle[1])
                         {
-                            topicArray.splice(i, 1);
+                            cache[t][instanceID].splice(i, 1);
 
                             if (completely)
                             {
-                                delete topicArray;
+                                delete cache[t][instanceID];
                             }
 
                             return true;
