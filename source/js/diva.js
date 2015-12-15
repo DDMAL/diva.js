@@ -165,34 +165,7 @@ window.divaPlugins = [];
         };
 
         // Checks if a page or tile is within the viewport horizontally
-        var isHorizontallyInViewport = function (left, right)
-        {
-            var leftOfViewport = settings.outerObject.scrollLeft() - settings.viewportMargin;
-            var rightOfViewport = leftOfViewport + settings.panelWidth + settings.viewportMargin * 2;
-
-            var leftVisible = left >= leftOfViewport && left <= rightOfViewport;
-            var middleVisible = left <= leftOfViewport && right >= rightOfViewport;
-            var rightVisible = right >= leftOfViewport && right <= rightOfViewport;
-
-            return (leftVisible || middleVisible || rightVisible);
-        };
-
-        // Checks if a page or tile is within the viewport vertically
-        var isVerticallyInViewport = function (top, bottom)
-        {
-            //topOfViewport may need to have settings.innerObject.offset().top subtracted from it?
-            var topOfViewport = settings.outerObject.scrollTop() - settings.viewportMargin;
-            var bottomOfViewport = topOfViewport + settings.panelHeight + settings.viewportMargin * 2;
-
-            var topVisible = top >= topOfViewport && top <= bottomOfViewport;
-            var middleVisible = top <= topOfViewport && bottom >= bottomOfViewport;
-            var bottomVisible = bottom >= topOfViewport && bottom <= bottomOfViewport;
-
-            return (topVisible || middleVisible || bottomVisible);
-        };
-
-        // Checks if a page or tile is within the viewport horizontally
-        var isHorizontallyInViewportBounds = function (left, right, viewportLeft, viewportRight)
+        var isHorizontallyInViewport = function (left, right, viewportLeft, viewportRight)
         {
             var leftOfViewport = viewportLeft - settings.viewportMargin;
             var rightOfViewport = viewportRight + settings.viewportMargin * 2;
@@ -205,7 +178,7 @@ window.divaPlugins = [];
         };
 
         // Checks if a page or tile is within the viewport vertically
-        var isVerticallyInViewportBounds = function (top, bottom, viewportTop, viewportBottom)
+        var isVerticallyInViewport = function (top, bottom, viewportTop, viewportBottom)
         {
             //topOfViewport may need to have settings.innerObject.offset().top subtracted from it?
             var topOfViewport = viewportTop - settings.viewportMargin;
@@ -237,7 +210,12 @@ window.divaPlugins = [];
             var tileBottom = tileTop + settings.tileHeight;
             var tileRight = tileLeft + settings.tileWidth;
 
-            return isVerticallyInViewport(tileTop, tileBottom) && isHorizontallyInViewport(tileLeft, tileRight);
+            var viewportTop = settings.outerObject.scrollTop();
+            var viewportLeft = settings.outerObject.scrollLeft();
+            var viewportRight = viewportLeft + settings.panelWidth;
+            var viewportBottom = viewportTop + settings.panelHeight;
+
+            return isVerticallyInViewport(tileTop, tileBottom, viewportTop, viewportBottom) && isHorizontallyInViewport(tileLeft, tileRight, viewportLeft, viewportRight);
         };
 
         // Check if a tile is near the specified viewport and thus should be loaded (performance-sensitive)
@@ -259,7 +237,7 @@ window.divaPlugins = [];
             var tileBottom = tileTop + settings.tileHeight;
             var tileRight = tileLeft + settings.tileWidth;
 
-            return isVerticallyInViewportBounds(tileTop, tileBottom, viewport.top, viewport.bottom) && isHorizontallyInViewportBounds(tileLeft, tileRight, viewport.left, viewport.right);
+            return isVerticallyInViewport(tileTop, tileBottom, viewport.top, viewport.bottom) && isHorizontallyInViewport(tileLeft, tileRight, viewport.left, viewport.right);
         };
 
         // Check if a tile has been loaded (note: performance-sensitive function)
@@ -293,7 +271,13 @@ window.divaPlugins = [];
             var leftOfPage = settings.pageLeftOffsets[pageIndex];
             var rightOfPage = leftOfPage + getPageData(pageIndex, 'w') + settings.horizontalPadding;
 
-            return (isVerticallyInViewport(topOfPage, bottomOfPage) && isHorizontallyInViewport(leftOfPage, rightOfPage));
+            var viewportTop = settings.outerObject.scrollTop();
+            var viewportBottom = viewportTop + settings.panelHeight;
+
+            var viewportLeft = settings.outerObject.scrollLeft();
+            var viewportRight = viewportLeft + settings.panelWidth;
+
+            return isVerticallyInViewport(topOfPage, bottomOfPage, viewportTop, viewportBottom) && isHorizontallyInViewport(leftOfPage, rightOfPage, viewportLeft, viewportRight);
         };
 
         // Check if a page is in or near the viewport and thus should be loaded
@@ -305,7 +289,7 @@ window.divaPlugins = [];
             var leftOfPage = settings.pageLeftOffsets[pageIndex];
             var rightOfPage = leftOfPage + getPageData(pageIndex, 'w') + settings.horizontalPadding;
 
-            return (isVerticallyInViewportBounds(topOfPage, bottomOfPage, viewport.top, viewport.bottom) && isHorizontallyInViewportBounds(leftOfPage, rightOfPage, viewport.left, viewport.right));
+            return (isVerticallyInViewport(topOfPage, bottomOfPage, viewport.top, viewport.bottom) && isHorizontallyInViewport(leftOfPage, rightOfPage, viewport.left, viewport.right));
         };
 
         // Check if a page has been appended to the DOM
@@ -836,7 +820,10 @@ window.divaPlugins = [];
             var topOfRow = settings.rowHeight * rowIndex;
             var bottomOfRow = topOfRow + settings.rowHeight + settings.fixedPadding;
 
-            return isVerticallyInViewport(topOfRow, bottomOfRow);
+            var viewportTop = settings.outerObject.scrollTop();
+            var viewportBottom = viewportTop + settings.panelHeight;
+
+            return isVerticallyInViewport(topOfRow, bottomOfRow, viewportTop, viewportBottom);
         };
 
         // Check if a row (in grid view) is present in the DOM
@@ -3631,7 +3618,12 @@ window.divaPlugins = [];
             var left = settings.pageLeftOffsets[pageIndex] + leftOffset;
             var right = left + width;
 
-            return isVerticallyInViewport(top, bottom) && isHorizontallyInViewport(left, right);
+            var viewportTop = settings.outerObject.scrollTop();
+            var viewportBottom = viewportTop + settings.panelHeight;
+            var viewportLeft = settings.outerObject.scrollLeft();
+            var viewportRight = viewportLeft + settings.panelWidth;
+
+            return isVerticallyInViewport(top, bottom, viewportTop, viewportBottom) && isHorizontallyInViewport(left, right, viewportLeft, viewportRight);
         };
 
         //Public wrapper for isPageVisible
