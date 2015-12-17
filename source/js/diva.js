@@ -193,8 +193,8 @@ window.divaPlugins = [];
             return (topVisible || middleVisible || bottomVisible);
         };
 
-        // Check if a tile is near the viewport and thus should be loaded
-        var isTileVisible = function (pageIndex, tileRow, tileCol)
+        // Check if a tile is near the specified viewport and thus should be loaded (performance-sensitive)
+        var isTileVisible = function (pageIndex, tileRow, tileCol, viewportTop, viewportLeft, viewportRight, viewportBottom)
         {
             var tileTop, tileLeft;
 
@@ -211,35 +211,8 @@ window.divaPlugins = [];
 
             var tileBottom = tileTop + settings.tileHeight;
             var tileRight = tileLeft + settings.tileWidth;
-
-            var viewportTop = settings.outerObject.scrollTop();
-            var viewportLeft = settings.outerObject.scrollLeft();
-            var viewportRight = viewportLeft + settings.panelWidth;
-            var viewportBottom = viewportTop + settings.panelHeight;
 
             return isVerticallyInViewport(tileTop, tileBottom, viewportTop, viewportBottom) && isHorizontallyInViewport(tileLeft, tileRight, viewportLeft, viewportRight);
-        };
-
-        // Check if a tile is near the specified viewport and thus should be loaded (performance-sensitive)
-        var isTileVisibleInBounds = function (pageIndex, tileRow, tileCol, viewport)
-        {
-            var tileTop, tileLeft;
-
-            if (settings.verticallyOriented)
-            {
-                tileTop = settings.pageTopOffsets[pageIndex] + (tileRow * settings.tileHeight) + settings.verticalPadding;
-                tileLeft = settings.pageLeftOffsets[pageIndex] + (tileCol * settings.tileWidth);
-            }
-            else
-            {
-                tileTop = settings.pageTopOffsets[pageIndex] + (tileRow * settings.tileHeight);
-                tileLeft = settings.pageLeftOffsets[pageIndex] + (tileCol * settings.tileWidth) + settings.horizontalPadding;
-            }
-
-            var tileBottom = tileTop + settings.tileHeight;
-            var tileRight = tileLeft + settings.tileWidth;
-
-            return isVerticallyInViewport(tileTop, tileBottom, viewport.top, viewport.bottom) && isHorizontallyInViewport(tileLeft, tileRight, viewport.left, viewport.right);
         };
 
         // Check if a tile has been loaded (note: performance-sensitive function)
@@ -301,7 +274,7 @@ window.divaPlugins = [];
         };
 
         // Loads page tiles into the supplied canvas.
-        var loadTiles = function(pageIndex, filename, width, height, canvasElement, viewport)
+        var loadTiles = function(pageIndex, filename, width, height, canvasElement, viewportTop, viewportLeft, viewportRight, viewportBottom)
         {
             var context;
 
@@ -311,17 +284,6 @@ window.divaPlugins = [];
             catch (error) {
                 showError('Your browser lacks support for the <pre><canvas></pre> element. Please upgrade your browser. Error: ' + error);
                 return false;
-            }
-
-            // if there is no viewport argument default to the current viewport
-            if (typeof viewport === 'undefined')
-            {
-                viewport = {
-                    left: settings.outerObject.scrollLeft(),
-                    top: settings.outerObject.scrollTop(),
-                    right: settings.outerObject.scrollLeft() + settings.panelWidth,
-                    bottom: settings.outerObject.scrollTop() + settings.panelHeight
-                };
             }
 
             function getDrawTileFunction(pageIndex, tileIndex, currentTile, left, top)
@@ -417,7 +379,7 @@ window.divaPlugins = [];
                     // it isn't, if it should be visible.
                     if (!isTileLoaded(pageIndex, tileIndex, context, left, top))
                     {
-                        if (isTileVisibleInBounds(pageIndex, row, col, viewport))
+                        if (isTileVisible(pageIndex, row, col, viewportTop, viewportLeft, viewportRight, viewportBottom))
                         {
                             currentTile = new Image();
                             currentTile.crossOrigin = "anonymous";
@@ -450,7 +412,14 @@ window.divaPlugins = [];
 
             var canvasElement = document.getElementById(settings.ID + 'canvas-' + pageIndex);
 
-            loadTiles(pageIndex, filename, width, height, canvasElement);
+            var outer = document.getElementById(settings.outerElement);
+            var viewportTop = outer.scrollTop;
+            var viewportBottom = viewportTop + settings.panelHeight;
+
+            var viewportLeft = outer.scrollLeft;
+            var viewportRight = viewportLeft + settings.panelWidth;
+
+            loadTiles(pageIndex, filename, width, height, canvasElement, viewportTop, viewportLeft, viewportRight, viewportBottom);
 
             diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector], self);
         };
@@ -767,6 +736,13 @@ window.divaPlugins = [];
         {
             var i;
 
+            // Cache scroll state
+            var outerElement = document.getElementById(settings.outerElement);
+            var viewportTop = outerElement.scrollTop;
+            var viewportLeft = outerElement.scrollLeft;
+            var viewportRight = viewportLeft + settings.panelWidth;
+            var viewportBottom = viewportTop + settings.panelHeight;
+
             if (direction < 0)
             {
                 // Direction is negative, so we're scrolling up/left (doesn't matter for these calls)
@@ -1008,6 +984,10 @@ window.divaPlugins = [];
 
         var adjustRows = function (direction)
         {
+            // Cache scroll state
+            var viewportTop = document.getElementById(settings.outerElement).scrollTop;
+            var viewportBottom = viewportTop + settings.panelHeight;
+
             if (direction < 0)
             {
                 attemptRowShow(settings.firstRowLoaded, -1);
