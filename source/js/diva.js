@@ -91,7 +91,8 @@ window.divaPlugins = [];
             ID: null,                   // The prefix of the IDs of the elements (usually 1-diva-)
             initialKeyScroll: false,    // Holds the initial state of enableKeyScroll
             initialSpaceScroll: false,  // Holds the initial state of enableSpaceScroll
-            innerObject: '',            // $(settings.ID + 'inner'), for selecting the .diva-inner element
+            innerObject: {},            // $(settings.ID + 'inner'), for selecting the .diva-inner element
+            innerElement: '',           // A reference to the native .diva-outer DOM object
             isActiveDiva: true,         // In the case that multiple diva panes exist on the same page, this should have events funneled to it.
             isScrollable: true,         // Used in enable/disableScrollable public methods
             isIIIF: false,              // Specifies whether objectData is in Diva native or IIIF Manifest format
@@ -108,7 +109,8 @@ window.divaPlugins = [];
             numPages: 0,                // Number of pages in the array
             numRows: 0,                 // Number of rows
             oldZoomLevel: -1,           // Holds the previous zoom level after zooming in or out
-            outerObject: '',            // $(settings.ID + 'outer'), for selecting the .diva-outer element
+            outerObject: {},            // $(settings.ID + 'outer'), for selecting the .diva-outer element
+            outerElement: '',           // A reference to the native .diva-outer DOM object
             pages: [],                  // An array containing the data for all the pages
             pageLeftOffsets: [],        // Distance from the left side of each page to the left side of the diva-inner object
             pagePreloadCanvases: [],    // Stack to hold canvases of pages preloading during zoom
@@ -3377,8 +3379,10 @@ window.divaPlugins = [];
             // Create the inner and outer panels
             settings.parentObject.append('<div id="' + settings.ID + 'outer" class="diva-outer"></div>');
             settings.outerObject = $(settings.selector + 'outer');
+            settings.outerElement = settings.ID + 'outer';
             settings.outerObject.append('<div id="' + settings.ID + 'inner" class="diva-inner diva-dragger"></div>');
             settings.innerObject = $(settings.selector + 'inner');
+            settings.innerElement = settings.ID + 'inner';
 
             // First, n - check if it's in range
             var nParam = parseInt($.getHashParam('n' + settings.hashParamSuffix), 10);
