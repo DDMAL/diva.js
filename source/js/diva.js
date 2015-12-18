@@ -1749,11 +1749,10 @@ window.divaPlugins = [];
             //        i) if page coords fall within visible coords, add to visible page block
             var pageBlockFound = false;
 
-            var outerElement = document.getElementById(settings.outerElement);
-            var viewportTop = outerElement.scrollTop;
-            var viewportBottom = viewportTop + settings.panelHeight;
-            var viewportLeft = outerElement.scrollLeft;
-            var viewportRight = viewportLeft + settings.panelWidth;
+            var viewportTop = viewportRectangle.top;
+            var viewportLeft = viewportRectangle.left;
+            var viewportRight = viewportRectangle.left + settings.panelWidth;
+            var viewportBottom = viewportRectangle.top + settings.panelHeight;
 
             for (var i = 0; i < settings.numPages; i++)
             {
