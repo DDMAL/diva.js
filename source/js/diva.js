@@ -1504,13 +1504,16 @@ window.divaPlugins = [];
             settings.pageTopOffsets = [];
             settings.pageLeftOffsets = [];
 
+            var viewportTop = document.getElementById(settings.outerElement).scrollTop;
+            var viewportBottom = viewportTop + settings.panelHeight;
+
             // Figure out the row each page is in
             var np = settings.numPages;
             for (i = 0; i < np; i += settings.pagesPerRow)
             {
                 rowIndex = Math.floor(i / settings.pagesPerRow);
 
-                if (isRowVisible(rowIndex))
+                if (isRowVisible(rowIndex, viewportTop, viewportBottom))
                 {
                     settings.firstRowLoaded = (settings.firstRowLoaded < 0) ? rowIndex : settings.firstRowLoaded;
                     loadRow(rowIndex);
