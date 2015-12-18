@@ -1777,8 +1777,8 @@ window.divaPlugins = [];
         var handleZoom = function (newValue, dblClickX, dblClickY)
         {
             var newZoomLevel = getValidZoomLevel(newValue);
-            var originX = dblClickX || 0;
-            var originY = dblClickY || 0;
+            var originX;
+            var originY;
 
             // If the zoom level provided is invalid, return false
             if (newZoomLevel !== newValue)
@@ -1794,6 +1794,9 @@ window.divaPlugins = [];
                 settings.horizontalOffset *= zoomRatio;
 
                 settings.doubleClickZoom = false;
+
+                originX = dblClickX;
+                originY = dblClickY;
             }
             else
             {
