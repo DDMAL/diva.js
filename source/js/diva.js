@@ -261,10 +261,12 @@ window.divaPlugins = [];
         {
             var context;
 
-            try {
+            if (canvasElement.getContext && canvasElement.getContext('2d'))
+            {
                 context = canvasElement.getContext('2d');
             }
-            catch (error) {
+            else
+            {
                 showError('Your browser lacks support for the <pre><canvas></pre> element. Please upgrade your browser. Error: ' + error);
                 return false;
             }
