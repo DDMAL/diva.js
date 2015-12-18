@@ -240,7 +240,6 @@ window.divaPlugins = [];
         // Check if a page is in or near the viewport and thus should be loaded
         var isPageVisible = function (pageIndex, viewportTop, viewportLeft, viewportRight, viewportBottom)
         {
-
             var topOfPage = settings.pageTopOffsets[pageIndex];
             var bottomOfPage = topOfPage + getPageData(pageIndex, 'h') + settings.verticalPadding;
 
