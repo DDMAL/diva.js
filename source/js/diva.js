@@ -1234,14 +1234,19 @@ window.divaPlugins = [];
         var clearViewer = function ()
         {
             // Post-zoom: clear scaling
-            settings.innerObject.css('transition', '');
-            settings.innerObject.css('transform', '');
-            settings.innerObject.css('pointer-events', '');
-            settings.innerObject.css('transform-origin', '');
+            var innerElement = document.getElementById(settings.innerElement);
+            innerElement.style.transition = '';
+            innerElement.style.transform = '';
+            innerElement.style.transformOrigin = '';
 
             settings.allTilesLoaded = [];
-            settings.outerObject.scrollTop(0);
-            settings.innerObject.empty();
+            document.getElementById(settings.outerElement).scrollTop = 0;
+
+            while (innerElement.firstChild)
+            {
+                innerElement.removeChild(innerElement.firstChild);
+            }
+
             settings.firstPageLoaded = 0;
             settings.firstRowLoaded = -1;
             settings.previousTopScroll = 0;
