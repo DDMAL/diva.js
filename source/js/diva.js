@@ -27,6 +27,8 @@ window.divaPlugins = [];
 {
     var Diva = function (element, options)
     {
+        var parentObject = $(element);
+
         // These are elements that can be overridden upon instantiation
         // See https://github.com/DDMAL/diva.js/wiki/Settings for more details
         var defaults = {
@@ -64,7 +66,7 @@ window.divaPlugins = [];
             throbberTimeout: 100,       // Number of milliseconds to wait before showing throbber
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
-            toolbarParentObject: options.parentObject, // The toolbar parent object.
+            toolbarParentObject: parentObject, // The toolbar parent object.
             verticallyOriented: true,   // Determines vertical vs. horizontal orientation
             viewportMargin: 200,        // Pretend tiles +/- 200px away from viewport are in
             zoomLevel: 2                // The initial zoom level (used to store the current zoom level)
@@ -115,6 +117,7 @@ window.divaPlugins = [];
             pageTools: '',              // The string for page tools
             panelHeight: 0,             // Height of the document viewer pane
             panelWidth: 0,              // Width of the document viewer pane
+            parentObject: parentObject, // JQuery object referencing the parent element
             plugins: [],                // Filled with the enabled plugins from window.divaPlugins
             previousLeftScroll: 0,      // Used to determine horizontal scroll direction
             previousTopScroll: 0,       // Used to determine vertical scroll direction
@@ -3862,16 +3865,15 @@ window.divaPlugins = [];
     {
         return this.each(function ()
         {
-            // Save the reference to the container element
-            options.parentObject = $(this);
+            var divaParent = $(this);
 
             // Return early if this element already has a plugin instance
-            if (options.parentObject.data('diva'))
+            if (divaParent.data('diva'))
                 return;
 
             // Otherwise, instantiate the document viewer
             var diva = new Diva(this, options);
-            options.parentObject.data('diva', diva);
+            divaParent.data('diva', diva);
         });
     };
 
