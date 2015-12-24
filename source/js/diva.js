@@ -1246,7 +1246,8 @@ window.divaPlugins = [];
                 if (settings.verticallyOriented)
                 {
                     // Last opening height is the max height of the last two pages if they are an opening, else the height of the last page since it's on its own on the left
-                    var lastOpeningHeight = (lastPageIndex % 2) ? getPageData(lastPageIndex, 'h') : Math.max(getPageData(lastPageIndex, 'h'), getPageData(lastPageIndex - 1, 'h'));
+                    // If the last page is page 0, then it's on its own on the right
+                    var lastOpeningHeight = (lastPageIndex % 2 || lastPageIndex === 0) ? getPageData(lastPageIndex, 'h') : Math.max(getPageData(lastPageIndex, 'h'), getPageData(lastPageIndex - 1, 'h'));
                     innerEl.style.height = settings.pageTopOffsets[lastPageIndex] + lastOpeningHeight + (settings.verticalPadding * 2) + 'px';
                 }
                 else
