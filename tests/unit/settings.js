@@ -434,6 +434,58 @@ asyncTest("max/minZoomLevel, invalid/valid values, invalid zoomLevel", function 
     });
 });
 
+asyncTest("object for objectData", function ()
+{
+    diva.Events.subscribe('ViewerDidLoad', function(settings)
+    {
+        equal(settings.itemTitle, "First page of Beromunster", "Should process an object for objectData like a normal manifest");
+        start();
+    });
+
+    $.tempDiva({
+        objectData: {
+          "@context": "http://iiif.io/api/presentation/2/context.json",
+          "@id": "http://dev-diva.simssa.ca/iiif/srv/images/beromunster/manifest.json",
+          "@type": "sc:Manifest",
+          "label": "First page of Beromunster",
+          "viewingHint": "paged",
+          "sequences": [
+            {
+              "@type": "sc:Sequence",
+              "canvases": [
+                {
+                  "@id": "http://dev-diva.simssa.ca/iiif/srv/images/beromunster/canvas/bm_001.json",
+                  "@type": "sc:Canvas",
+                  "label": "Bm 001",
+                  "height": 4445,
+                  "width": 2846,
+                  "images": [
+                    {
+                      "@type": "oa:Annotation",
+                      "motivation": "sc:painting",
+                      "resource": {
+                        "@id": "http://dev-diva.simssa.ca/iiif/srv/images/beromunster/bm_001.tif/full/full/0/default.jpg",
+                        "@type": "dctypes:Image",
+                        "format": "image/jpeg",
+                        "height": 4445,
+                        "width": 2846,
+                        "service": {
+                          "@context": "http://iiif.io/api/image/2/context.json",
+                          "@id": "http://dev-diva.simssa.ca/iiif/srv/images/beromunster/bm_001.tif",
+                          "profile": "http://iiif.io/api/image/2/level2.json"
+                        }
+                      },
+                      "on": "http://dev-diva.simssa.ca/iiif/srv/images/beromunster/canvas/bm_001.json"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+    });
+});
+
 // pageLoadTimeout is a bit weird to test, but the code is simple so it should be fine
 
 // pagesPerRow is tested above, along with max/minPagesPerRow
