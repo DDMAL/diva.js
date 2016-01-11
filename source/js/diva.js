@@ -1997,7 +1997,7 @@ window.divaPlugins = [];
                 endKey = 35;
 
             // Catch the key presses in document
-            $(document).keydown(function (event)
+            $(document).on('keydown.diva', function (event)
             {
                 if (!settings.isActiveDiva)
                     return true;
@@ -2062,6 +2062,11 @@ window.divaPlugins = [];
                 }
                 return true;
             });
+
+            diva.Events.subscribe('ViewerDidTerminate', function()
+            {
+                $(document).off('keydown.diva');
+            }, settings.ID);
 
             // Check if the user is on a iPhone or iPod touch or iPad
             if (settings.mobileWebkit)
