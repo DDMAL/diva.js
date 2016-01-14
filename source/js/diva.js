@@ -97,6 +97,7 @@ window.divaPlugins = [];
             isScrollable: true,         // Used in enable/disableScrollable public methods
             isIIIF: false,              // Specifies whether objectData is in Diva native or IIIF Manifest format
             itemTitle: '',              // The title of the document
+            isZooming: false,           // Flag to keep track of whether zooming is still in progress, for handleZoom
             lastPageLoaded: -1,         // The ID of the last page loaded (value set later)
             lastRowLoaded: -1,          // The index of the last row loaded
             loaded: false,              // A flag for when everything is loaded and ready to go.
@@ -1780,6 +1781,8 @@ window.divaPlugins = [];
         // Called to handle any zoom level
         var handleZoom = function (newValue, dblClickX, dblClickY)
         {
+            var innerElement = document.getElementById(settings.innerElement);
+
             var newZoomLevel = getValidZoomLevel(newValue);
             var originX;
             var originY;
@@ -1832,6 +1835,9 @@ window.divaPlugins = [];
             // Transition to new zoom level
             innerElement.style.transition = 'transform .3s cubic-bezier(0.000, 0.990, 1.000, 0.995)';
             innerElement.style.transform = 'scale(' + zoomRatio + ')';
+
+            // Set flag to indicate zooming is in progress until loadDocument is called
+            settings.isZooming = true;
 
             preloadPages();
 
@@ -2366,17 +2372,24 @@ window.divaPlugins = [];
                 return false;
             };
 
+            var onZoomEnd = function()
+            {
+                settings.isZooming = false;
+
+                loadDocument();
+            };
+
             var transitionEnd = getTransitionEndEventName();
 
             if (transitionEnd)
             {
-                var inner = document.getElementById(settings.ID + 'inner');
-                inner.addEventListener(transitionEnd, loadDocument, false);
+                var inner = document.getElementById(settings.innerElement);
+                inner.addEventListener(transitionEnd, onZoomEnd, false);
             }
             else
             {
                 // Fallback for browsers without CSS transitions support
-                diva.Events.subscribe("ZoomLevelDidChange", loadDocument, settings.ID);
+                diva.Events.subscribe("ZoomLevelDidChange", onZoomEnd, settings.ID);
             }
         };
 
