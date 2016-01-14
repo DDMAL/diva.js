@@ -2463,28 +2463,16 @@ window.divaPlugins = [];
                 handleZoom(settings.zoomLevel + direction);
             };
 
-            function debounce(fun, mil){
-                var timer;
-                return function(){
-                    clearTimeout(timer);
-                    timer = setTimeout(function(){
-                        fun();
-                    }, mil);
-                };
-            }
-
             // Bind the click event to zoom buttons
-            $(settings.selector + 'zoom-out-button').click(
-                debounce(function() {
-                    zoomButtonClicked(-1);
-                }, 300)
-            );
+            $(settings.selector + 'zoom-out-button').click(function()
+            {
+                zoomButtonClicked(-1);
+            });
 
-            $(settings.selector + 'zoom-in-button').click(
-                debounce(function() {
-                    zoomButtonClicked(1);
-                }, 300)
-            );
+            $(settings.selector + 'zoom-in-button').click(function()
+            {
+                zoomButtonClicked(1);
+            });
 
             //bind grid slider
             $(settings.selector + 'grid-slider').on('input', function(e)
