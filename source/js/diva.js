@@ -1804,33 +1804,53 @@ window.divaPlugins = [];
 
                 originX = dblClickX;
                 originY = dblClickY;
+                innerElement.style.transformOrigin = originX + 'px ' + originY + 'px';
             }
             else
             {
-                settings.goDirectlyTo = settings.currentPageIndex;
+                // If already currently zooming, maintain origin position
+                if (settings.isZooming)
+                {
+                    settings.verticalOffset *= zoomRatio;
+                    settings.horizontalOffset *= zoomRatio;
+                }
+                else
+                {
+                    settings.goDirectlyTo = settings.currentPageIndex;
 
-                var verticalPaddingOffset = (zoomRatio > 1) ? 0 - settings.verticalPadding : settings.verticalPadding / 2;
+                    // Vertical offset: valid for document and book view
+                    var verticalPaddingOffset = (zoomRatio > 1) ? 0 - settings.verticalPadding : settings.verticalPadding * zoomRatio;
+                    var horizontalPaddingOffset;
 
-                // for goToPage
-                settings.verticalOffset = (zoomRatio * getCurrentYOffset()) + verticalPaddingOffset;
-                settings.horizontalOffset = zoomRatio * getCurrentXOffset();
+                    if (settings.inBookLayout)
+                    {
+                        horizontalPaddingOffset = (zoomRatio > 1) ? 0 - settings.horizontalPadding : settings.horizontalPadding * zoomRatio;
+                    }
+                    else
+                    {
+                        horizontalPaddingOffset = 0;
+                    }
 
-                // for smooth zoom origin
-                var scrollTop = document.getElementById(settings.outerElement).scrollTop;
-                var elementHeight = settings.panelHeight;
-                originY = scrollTop + parseInt(elementHeight / 2, 10);
+                    // Calculate new offsets for loadDocument
+                    settings.verticalOffset = (zoomRatio * getCurrentYOffset()) + verticalPaddingOffset;
+                    settings.horizontalOffset = (zoomRatio * getCurrentXOffset()) + horizontalPaddingOffset;
 
-                var scrollLeft = document.getElementById(settings.outerElement).scrollLeft;
-                var elementWidth = settings.panelWidth;
-                originX = scrollLeft + parseInt(elementWidth / 2, 10);
+                    // Calculate new zoom transition origin coordinates (originX measured from left of inner div, originY measured from top of inner div)
+                    var scrollTop = document.getElementById(settings.outerElement).scrollTop;
+                    var elementHeight = settings.panelHeight;
+                    originY = scrollTop + parseInt(elementHeight / 2, 10);
+
+                    var scrollLeft = document.getElementById(settings.outerElement).scrollLeft;
+                    var elementWidth = settings.panelWidth;
+                    originX = scrollLeft + parseInt(elementWidth / 2, 10);
+
+                    innerElement.style.transformOrigin = originX + 'px ' + originY + 'px';
+                }
             }
 
             settings.oldZoomLevel = settings.zoomLevel;
             settings.zoomLevel = newZoomLevel;
 
-            // transform-origin xOffset is from left of inner div, yOffset from top of inner div
-            var originProperty = originX + 'px ' + originY + 'px';
-            innerElement.style.transformOrigin = originProperty;
 
             // Transition to new zoom level
             innerElement.style.transition = 'transform .3s cubic-bezier(0.000, 0.990, 1.000, 0.995)';
