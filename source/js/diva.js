@@ -1727,11 +1727,8 @@ window.divaPlugins = [];
         var bindMouseEvents = function()
         {
             // Set drag scroll on first descendant of class dragger on both selected elements
-            if (!settings.mobileWebkit)
-            {
-                settings.outerObject.dragscrollable({dragSelector: '.diva-dragger', acceptPropagatedEvent: true});
-                settings.innerObject.dragscrollable({dragSelector: '.diva-dragger', acceptPropagatedEvent: true});
-            }
+            settings.outerObject.dragscrollable({dragSelector: '.diva-dragger', acceptPropagatedEvent: true});
+            settings.innerObject.dragscrollable({dragSelector: '.diva-dragger', acceptPropagatedEvent: true});
 
             // Double-click to zoom
             settings.outerObject.on('dblclick', '.diva-document-page', function (event)
@@ -1774,20 +1771,6 @@ window.divaPlugins = [];
 
         };
 
-        var onMobileResize = function()
-        {
-            var oldWidth = settings.panelWidth;
-            var oldHeight = settings.panelHeight;
-            updatePanelSize();
-
-            settings.horizontalOffset -= (settings.panelWidth - oldWidth) / 2;
-            settings.verticalOffset -= (settings.panelHeight - oldHeight) / 2;
-
-            // Reload the viewer to account for the resized viewport
-            settings.goDirectlyTo = settings.currentPageIndex;
-            loadViewer();
-        };
-
         var onResize = function()
         {
             updatePanelSize();
@@ -1804,7 +1787,7 @@ window.divaPlugins = [];
         };
 
         // Bind touch and orientation change events
-        var bindMobileEvents = function()
+        var bindTouchEvents = function()
         {
             // Block the user from moving the window only if it's not integrated
             if (settings.blockMobileMove)
@@ -1818,7 +1801,7 @@ window.divaPlugins = [];
                 });
             }
 
-            // Inertial scrolling
+            // Touch events for swiping in the viewport to scroll pages
             settings.outerObject.kinetic({
                 triggerHardware: true
             });
@@ -1830,6 +1813,9 @@ window.divaPlugins = [];
 
             settings.outerObject.on('touchstart', '.diva-document-page', function(event)
             {
+                // Prevent mouse event from firing
+                event.preventDefault();
+
                 if (event.originalEvent.touches.length === 2)
                 {
                     start = [event.originalEvent.touches[0].clientX,
@@ -1843,6 +1829,9 @@ window.divaPlugins = [];
 
             settings.outerObject.on('touchmove', '.diva-document-page', function(event)
             {
+                // Prevent mouse event from firing
+                event.preventDefault();
+
                 if (event.originalEvent.touches.length === 2)
                 {
                     move = [event.originalEvent.touches[0].clientX,
@@ -1874,8 +1863,11 @@ window.divaPlugins = [];
             var firstTapCoordinates = {},
                 tapDistance = 0;
 
-            var bindDoubleTap = function(event)
+            var onDoubleTap = function(event)
             {
+                // Prevent mouse event from firing
+                event.preventDefault();
+
                 if (settings.singleTap)
                 {
                     // Doubletap has occurred
@@ -1912,16 +1904,8 @@ window.divaPlugins = [];
 
             // Document view: Double-tap to zoom in
             // Grid view: Double-tap to jump to current page in document view
-            settings.outerObject.on('touchend', '.diva-page', bindDoubleTap);
+            settings.outerObject.on('touchend', '.diva-page', onDoubleTap);
 
-            // Handle window resizing events
-            var orientationEvent = 'onorientationchange' in window ? 'orientationchange' : 'resize';
-            window.addEventListener(orientationEvent, onMobileResize, false);
-
-            diva.Events.subscribe('ViewerDidTerminate', function()
-            {
-                window.removeEventListener(orientationEvent, onMobileResize, false);
-            }, settings.ID);
         };
 
         // Pythagorean theorem to get the distance between two points (used for calculating finger distance for double-tap and pinch-zoom)
@@ -2065,19 +2049,24 @@ window.divaPlugins = [];
                 $(document).off('keydown.diva');
             }, settings.ID);
 
-            // Check if the user is on a iPhone or iPod touch or iPad
-            if (settings.mobileWebkit)
-            {
-                bindMobileEvents();
-            }
+            bindTouchEvents();
+
             // Handle window resizing events
-            else
+            window.addEventListener('resize', onResize, false);
+
+            diva.Events.subscribe('ViewerDidTerminate', function()
             {
-                window.addEventListener('resize', onResize, false);
+                window.removeEventListener('resize', onResize, false);
+            }, settings.ID);
+
+            // Handle orientation change separately
+            if ('onorientationchange' in window)
+            {
+                window.addEventListener('orientationchange', onResize, false);
 
                 diva.Events.subscribe('ViewerDidTerminate', function()
                 {
-                    window.removeEventListener('resize', onResize, false);
+                    window.removeEventListener('orientationchange', onResize, false);
                 }, settings.ID);
             }
 
@@ -2628,9 +2617,18 @@ window.divaPlugins = [];
                             pageTools.push('<div class="diva-' + plugin.pluginName + '-icon" title="' + titleText + '"></div>');
 
                             // Delegate the click event - pass it the settings
-                            var clickEvent = (settings.mobileWebkit) ? 'touchend' : 'click';
-                            settings.outerObject.on(clickEvent, '.diva-' + plugin.pluginName + '-icon', function (event)
+                            var pluginButtonElement = '.diva-' + plugin.pluginName + '-icon';
+
+                            settings.outerObject.on('click', pluginButtonElement, function (event)
                             {
+                                plugin.handleClick.call(this, event, settings, self);
+                            });
+
+                            settings.outerObject.on('touchend', pluginButtonElement, function (event)
+                            {
+                                // Prevent firing of emulated mouse events
+                                event.preventDefault();
+
                                 plugin.handleClick.call(this, event, settings, self);
                             });
                         }

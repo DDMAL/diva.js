@@ -779,6 +779,55 @@ $.fn.dragscrollable = function( options ){
 
 }(jQuery));
 
+// jQuery.kinetic core modifications for diva.js (compatible with jQuery.kinetic 2.2.1)
+// use jQuery.kinetic for touch handlers only since we are using dragscrollable for mouse handlers
+//    - (kinetic provides inertial scrolling [ease into stopped state on release] for touch events and dragscrollable
+//      allows non-inertial scrolling which we like for mice)
+
+(function($)
+{
+    $.Kinetic.prototype._attachListeners = function()
+    {
+        // attach only touch listeners
+        var $this = this.$el;
+        var settings = this.settings;
+
+        if ($.support.touch)
+        {
+            $this
+                .bind('touchstart', settings.events.touchStart)
+                .bind('touchend', settings.events.inputEnd)
+                .bind('touchmove', settings.events.touchMove);
+        }
+
+        $this
+            .click(settings.events.inputClick)
+            .scroll(settings.events.scroll)
+            .bind('selectstart', settings.events.selectStart)
+            .bind('dragstart', settings.events.dragStart);
+    };
+
+    $.Kinetic.prototype._detachListeners = function()
+    {
+        // detach only touch listeners
+        var $this = this.$el;
+        var settings = this.settings;
+
+        if ($.support.touch)
+        {
+            $this
+                .unbind('touchstart', settings.events.touchStart)
+                .unbind('touchend', settings.events.inputEnd)
+                .unbind('touchmove', settings.events.touchMove);
+        }
+
+        $this
+            .unbind('click', settings.events.inputClick)
+            .unbind('scroll', settings.events.scroll)
+            .unbind('selectstart', settings.events.selectStart)
+            .unbind('dragstart', settings.events.dragStart);
+    };
+})(jQuery);
 
 /**
 *      Events. Pub/Sub system for Loosely Coupled logic.
