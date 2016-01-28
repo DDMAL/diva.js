@@ -1368,13 +1368,6 @@ window.divaPlugins = [];
             $('body').toggleClass('diva-hide-scrollbar');
             settings.parentObject.toggleClass('diva-full-width');
 
-            // Adjust margin a bit if in mobile
-            if (settings.mobileWebkit)
-            {
-                var leftMarginComped = parseInt(settings.outerObject.css('margin-left'), 10) - parseInt($('body').css('margin-left'), 10);
-                settings.outerObject.css('margin-left', leftMarginComped);
-            }
-
             // Adjust Diva's internal panel size, keeping the old values
             var storedHeight = settings.panelHeight;
             var storedWidth = settings.panelWidth;
