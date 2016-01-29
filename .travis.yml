@@ -8,9 +8,6 @@ env:
 install:
   - npm install -g gulp
   - npm install
-  - phantomjs --version
-
-before_script: gulp develop:build
 
 script: gulp develop:test
 
