@@ -208,11 +208,13 @@ asyncTest("Changing pages per row in Grid view using +/- buttons", function () {
 asyncTest("Zooming by double-clicking", function () {
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        var event = $.Event("dblclick");
-        event.pageX = 1000;
-        event.pageY = 500;
+        var testEvent = $.Event("dblclick");
+        testEvent.pageX = 500;
+        testEvent.pageY = 100;
+        testEvent.target = settings.outerObject.find('.diva-document-page')[0];
+
         setTimeout(function () {
-            $(settings.selector + 'page-100').trigger(event);
+            settings.outerObject.trigger(testEvent);
             setTimeout(function () {
                 equal(settings.zoomLevel, 2, "Zoom level should now be 2");
                 equal(settings.currentPageIndex, 100, "Should still be on page 100");
