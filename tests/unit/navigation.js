@@ -46,9 +46,10 @@ asyncTest("Scrolling in grid view", function () {
     });
 });
 
-asyncTest("Scrolling down in book view", function() {
+asyncTest("Scrolling in book view", function() {
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
+        settings.outerObject.scrollLeft(200);
         settings.outerObject.scrollTop(10000);
 
         var self = this;
@@ -56,26 +57,6 @@ asyncTest("Scrolling down in book view", function() {
         setTimeout(function () {
             equal(self.getCurrentPageIndex(), 18, "The page should now be 19 (index of 18)");
             equal($(settings.selector + 'current-page').text(), '19', "The toolbar should have been updated");
-            start();
-        }, 10);
-    });
-
-    $.tempDiva({
-        objectData: '../demo/beromunster-iiif.json'
-    });
-});
-
-asyncTest("Scrolling left in book view", function() {
-    diva.Events.subscribe('ViewerDidLoad', function(settings)
-    {
-        settings.outerObject.scrollTop(10000);
-        settings.outerObject.scrollLeft(0);
-
-        var self = this;
-        setTimeout(function ()
-        {
-            equal(self.getCurrentPageIndex(), 17, "The page should now be 18 (index of 17)");
-            equal($(settings.selector + 'current-page').text(), '18', "The toolbar should have been updated");
             start();
         }, 10);
     });
