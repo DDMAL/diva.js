@@ -4,18 +4,18 @@
 @grey:                  #DDD;
 @lightGrey:             #F1F1F1;
 @lighterGrey:           #FDFDFD;
-@lightBlue:             #99BBE8;
+@primaryBorder:         #AAA;
 
-// Location to the images
+// Location of icon images (these are inlined using data-uri())
 @iconPath:              "../img/";
 
 // Customising the colour scheme
 @viewerBg:              @lightGrey;
-@viewerFrame:           @lightBlue;
+@viewerFrame:           @primaryBorder;
 @toolsBg:               @white;
 @toolsFrame:            @grey;
 @buttonBg:              @lightGrey;
-@buttonFrame:           @lightBlue;
+@buttonFrame:           @primaryBorder;
 @buttonHover:           @lighterGrey;
 @linkBg:                @white;
 @linkFrame:             @grey;
@@ -23,10 +23,10 @@
 @sliderFrame:           @grey;
 @handleBg:              @lighterGrey;
 @handleFrame:           @mediumGrey;
-@handleHoverBg:         lighten(@lightBlue, 20%);
-@handleHoverFrame:      darken(@lightBlue, 10%);
-@handleActiveBg:        lighten(@lightBlue, 25%);
-@handleActiveFrame:     @lightBlue;
+@handleHoverBg:         lighten(@primaryBorder, 20%);
+@handleHoverFrame:      darken(@primaryBorder, 10%);
+@handleActiveBg:        lighten(@primaryBorder, 25%);
+@handleActiveFrame:     @primaryBorder;
 
 // z-index information
 @fullscreenZIndex:      100;
@@ -36,3 +36,7 @@
 @fullscreenIconSize:    26px;
 @throbberWidth:         50px;
 @throbberHeight:        50px;
+@toolbarGroupMargin:    0.7em;
+
+@buttonSize: 32px;
+@borderSize: 1px;

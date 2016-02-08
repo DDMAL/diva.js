@@ -70,10 +70,10 @@ Storage.prototype.getObject = function (key) {
                 // Either to the next ampersand or to the end of the string
                 var endIndex = hash.indexOf('&', startIndex);
                 if (endIndex > startIndex) {
-                    return hash.substring(startIndex, endIndex);
+                    return decodeURIComponent(hash.substring(startIndex, endIndex));
                 } else if (endIndex < 0) {
                     // This means this hash param is the last one
-                    return hash.substring(startIndex);
+                    return decodeURIComponent(hash.substring(startIndex));
                 }
                 // If the key doesn't have a value I think
                 return '';
@@ -240,56 +240,33 @@ $.fn.dragscrollable = function( options ){
 
 })( jQuery ); // confine scope
 
-/*!
-    jQuery.kinetic v1.8.2
-    Dave Taylor http://the-taylors.org/jquery.kinetic
+/**
+ jQuery.kinetic v2.2.1
+ Dave Taylor http://davetayls.me
 
-    The MIT License (MIT)
-    Copyright (c) <2011> <Dave Taylor http://the-taylors.org>
-*/
-/*global define,require */
-(function($){
+ @license The MIT License (MIT)
+ @preserve Copyright (c) 2012 Dave Taylor http://davetayls.me
+ */
+(function ($){
     'use strict';
 
-    var DEFAULT_SETTINGS = {
-            cursor: 'move',
-            decelerate: true,
-            triggerHardware: false,
-            y: true,
-            x: true,
-            slowdown: 0.9,
-            maxvelocity: 40,
-            throttleFPS: 60,
-            movingClass: {
-                up: 'kinetic-moving-up',
-                down: 'kinetic-moving-down',
-                left: 'kinetic-moving-left',
-                right: 'kinetic-moving-right'
-            },
-            deceleratingClass: {
-                up: 'kinetic-decelerating-up',
-                down: 'kinetic-decelerating-down',
-                left: 'kinetic-decelerating-left',
-                right: 'kinetic-decelerating-right'
-            }
-        },
-        SETTINGS_KEY = 'kinetic-settings',
-        ACTIVE_CLASS = 'kinetic-active';
+    var ACTIVE_CLASS = 'kinetic-active';
+
     /**
      * Provides requestAnimationFrame in a cross browser way.
      * http://paulirish.com/2011/requestanimationframe-for-smart-animating/
      */
-    if ( !window.requestAnimationFrame ) {
+    if (!window.requestAnimationFrame){
 
-        window.requestAnimationFrame = ( function() {
+        window.requestAnimationFrame = ( function (){
 
             return window.webkitRequestAnimationFrame ||
-            window.mozRequestAnimationFrame ||
-            window.oRequestAnimationFrame ||
-            window.msRequestAnimationFrame ||
-            function( /* function FrameRequestCallback */ callback, /* DOMElement Element */ element ) {
-                window.setTimeout( callback, 1000 / 60 );
-            };
+                window.mozRequestAnimationFrame ||
+                window.oRequestAnimationFrame ||
+                window.msRequestAnimationFrame ||
+                function (/* function FrameRequestCallback */ callback, /* DOMElement Element */ element){
+                    window.setTimeout(callback, 1000 / 60);
+                };
 
         }());
 
@@ -298,31 +275,336 @@ $.fn.dragscrollable = function( options ){
     // add touch checker to jQuery.support
     $.support = $.support || {};
     $.extend($.support, {
-        touch: "ontouchend" in document
+        touch: 'ontouchend' in document
     });
-    var selectStart = function() { return false; };
 
-    var decelerateVelocity = function(velocity, slowdown) {
-        return Math.floor(Math.abs(velocity)) === 0 ? 0 // is velocity less than 1?
-               : velocity * slowdown; // reduce slowdown
+
+    // KINETIC CLASS DEFINITION
+    // ======================
+
+    var Kinetic = function (element, settings) {
+        this.settings = settings;
+        this.el       = element;
+        this.$el      = $(element);
+
+        this._initElements();
+
+        return this;
     };
 
-    var capVelocity = function(velocity, max) {
+    Kinetic.DATA_KEY = 'kinetic';
+    Kinetic.DEFAULTS = {
+        cursor: 'move',
+        decelerate: true,
+        triggerHardware: false,
+        threshold: 0,
+        y: true,
+        x: true,
+        slowdown: 0.9,
+        maxvelocity: 40,
+        throttleFPS: 60,
+        invert: false,
+        movingClass: {
+            up: 'kinetic-moving-up',
+            down: 'kinetic-moving-down',
+            left: 'kinetic-moving-left',
+            right: 'kinetic-moving-right'
+        },
+        deceleratingClass: {
+            up: 'kinetic-decelerating-up',
+            down: 'kinetic-decelerating-down',
+            left: 'kinetic-decelerating-left',
+            right: 'kinetic-decelerating-right'
+        }
+    };
+
+
+    // Public functions
+
+    Kinetic.prototype.start = function (options){
+        this.settings = $.extend(this.settings, options);
+        this.velocity = options.velocity || this.velocity;
+        this.velocityY = options.velocityY || this.velocityY;
+        this.settings.decelerate = false;
+        this._move();
+    };
+
+    Kinetic.prototype.end = function (){
+        this.settings.decelerate = true;
+    };
+
+    Kinetic.prototype.stop = function (){
+        this.velocity = 0;
+        this.velocityY = 0;
+        this.settings.decelerate = true;
+        if ($.isFunction(this.settings.stopped)){
+            this.settings.stopped.call(this);
+        }
+    };
+
+    Kinetic.prototype.detach = function (){
+        this._detachListeners();
+        this.$el
+            .removeClass(ACTIVE_CLASS)
+            .css('cursor', '');
+    };
+
+    Kinetic.prototype.attach = function (){
+        if (this.$el.hasClass(ACTIVE_CLASS)) {
+            return;
+        }
+        this._attachListeners(this.$el);
+        this.$el
+            .addClass(ACTIVE_CLASS)
+            .css('cursor', this.settings.cursor);
+    };
+
+
+    // Internal functions
+
+    Kinetic.prototype._initElements = function (){
+        this.$el.addClass(ACTIVE_CLASS);
+
+        $.extend(this, {
+            xpos: null,
+            prevXPos: false,
+            ypos: null,
+            prevYPos: false,
+            mouseDown: false,
+            throttleTimeout: 1000 / this.settings.throttleFPS,
+            lastMove: null,
+            elementFocused: null
+        });
+
+        this.velocity = 0;
+        this.velocityY = 0;
+
+        // make sure we reset everything when mouse up
+        $(document)
+            .mouseup($.proxy(this._resetMouse, this))
+            .click($.proxy(this._resetMouse, this));
+
+        this._initEvents();
+
+        this.$el.css('cursor', this.settings.cursor);
+
+        if (this.settings.triggerHardware){
+            this.$el.css({
+                '-webkit-transform': 'translate3d(0,0,0)',
+                '-webkit-perspective': '1000',
+                '-webkit-backface-visibility': 'hidden'
+            });
+        }
+    };
+
+    Kinetic.prototype._initEvents = function(){
+        var self = this;
+        this.settings.events = {
+            touchStart: function (e){
+                var touch;
+                if (self._useTarget(e.target, e)){
+                    touch = e.originalEvent.touches[0];
+                    self.threshold = self._threshold(e.target, e);
+                    self._start(touch.clientX, touch.clientY);
+                    e.stopPropagation();
+                }
+            },
+            touchMove: function (e){
+                var touch;
+                if (self.mouseDown){
+                    touch = e.originalEvent.touches[0];
+                    self._inputmove(touch.clientX, touch.clientY);
+                    if (e.preventDefault){
+                        e.preventDefault();
+                    }
+                }
+            },
+            inputDown: function (e){
+                if (self._useTarget(e.target, e)){
+                    self.threshold = self._threshold(e.target, e);
+                    self._start(e.clientX, e.clientY);
+                    self.elementFocused = e.target;
+                    if (e.target.nodeName === 'IMG'){
+                        e.preventDefault();
+                    }
+                    e.stopPropagation();
+                }
+            },
+            inputEnd: function (e){
+                if (self._useTarget(e.target, e)){
+                    self._end();
+                    self.elementFocused = null;
+                    if (e.preventDefault){
+                        e.preventDefault();
+                    }
+                }
+            },
+            inputMove: function (e){
+                if (self.mouseDown){
+                    self._inputmove(e.clientX, e.clientY);
+                    if (e.preventDefault){
+                        e.preventDefault();
+                    }
+                }
+            },
+            scroll: function (e){
+                if ($.isFunction(self.settings.moved)){
+                    self.settings.moved.call(self, self.settings);
+                }
+                if (e.preventDefault){
+                    e.preventDefault();
+                }
+            },
+            inputClick: function (e){
+                if (Math.abs(self.velocity) > 0){
+                    e.preventDefault();
+                    return false;
+                }
+            },
+            // prevent drag and drop images in ie
+            dragStart: function (e){
+                if (self._useTarget(e.target, e) && self.elementFocused){
+                    return false;
+                }
+            },
+            // prevent selection when dragging
+            selectStart: function (e){
+                if ($.isFunction(self.settings.selectStart)){
+                    return self.settings.selectStart.apply(self, arguments);
+                } else if (self._useTarget(e.target, e)) {
+                    return false;
+                }
+            }
+        };
+
+        this._attachListeners(this.$el, this.settings);
+
+    };
+
+    Kinetic.prototype._inputmove = function (clientX, clientY){
+        var $this = this.$el;
+        var el = this.el;
+
+        if (!this.lastMove || new Date() > new Date(this.lastMove.getTime() + this.throttleTimeout)){
+            this.lastMove = new Date();
+
+            if (this.mouseDown && (this.xpos || this.ypos)){
+                var movedX = (clientX - this.xpos);
+                var movedY = (clientY - this.ypos);
+                if (this.settings.invert) {
+                    movedX *= -1;
+                    movedY *= -1;
+                }
+                if(this.threshold > 0){
+                    var moved = Math.sqrt(movedX * movedX + movedY * movedY);
+                    if(this.threshold > moved){
+                        return;
+                    } else {
+                        this.threshold = 0;
+                    }
+                }
+                if (this.elementFocused){
+                    $(this.elementFocused).blur();
+                    this.elementFocused = null;
+                    $this.focus();
+                }
+
+                this.settings.decelerate = false;
+                this.velocity = this.velocityY = 0;
+
+                var scrollLeft = this.scrollLeft();
+                var scrollTop = this.scrollTop();
+
+                this.scrollLeft(this.settings.x ? scrollLeft - movedX : scrollLeft);
+                this.scrollTop(this.settings.y ? scrollTop - movedY : scrollTop);
+
+                this.prevXPos = this.xpos;
+                this.prevYPos = this.ypos;
+                this.xpos = clientX;
+                this.ypos = clientY;
+
+                this._calculateVelocities();
+                this._setMoveClasses(this.settings.movingClass);
+
+                if ($.isFunction(this.settings.moved)){
+                    this.settings.moved.call(this, this.settings);
+                }
+            }
+        }
+    };
+
+    Kinetic.prototype._calculateVelocities = function (){
+        this.velocity = this._capVelocity(this.prevXPos - this.xpos, this.settings.maxvelocity);
+        this.velocityY = this._capVelocity(this.prevYPos - this.ypos, this.settings.maxvelocity);
+        if (this.settings.invert) {
+            this.velocity *= -1;
+            this.velocityY *= -1;
+        }
+    };
+
+    Kinetic.prototype._end = function (){
+        if (this.xpos && this.prevXPos && this.settings.decelerate === false){
+            this.settings.decelerate = true;
+            this._calculateVelocities();
+            this.xpos = this.prevXPos = this.mouseDown = false;
+            this._move();
+        }
+    };
+
+    Kinetic.prototype._useTarget = function (target, event){
+        if ($.isFunction(this.settings.filterTarget)){
+            return this.settings.filterTarget.call(this, target, event) !== false;
+        }
+        return true;
+    };
+
+    Kinetic.prototype._threshold = function (target, event){
+        if ($.isFunction(this.settings.threshold)){
+            return this.settings.threshold.call(this, target, event);
+        }
+        return this.settings.threshold;
+    };
+
+    Kinetic.prototype._start = function (clientX, clientY){
+        this.mouseDown = true;
+        this.velocity = this.prevXPos = 0;
+        this.velocityY = this.prevYPos = 0;
+        this.xpos = clientX;
+        this.ypos = clientY;
+    };
+
+    Kinetic.prototype._resetMouse = function (){
+        this.xpos = false;
+        this.ypos = false;
+        this.mouseDown = false;
+    };
+
+    Kinetic.prototype._decelerateVelocity = function (velocity, slowdown){
+        return Math.floor(Math.abs(velocity)) === 0 ? 0 // is velocity less than 1?
+            : velocity * slowdown; // reduce slowdown
+    };
+
+    Kinetic.prototype._capVelocity = function (velocity, max){
         var newVelocity = velocity;
-        if (velocity > 0) {
-            if (velocity > max) {
+        if (velocity > 0){
+            if (velocity > max){
                 newVelocity = max;
             }
         } else {
-            if (velocity < (0 - max)) {
+            if (velocity < (0 - max)){
                 newVelocity = (0 - max);
             }
         }
         return newVelocity;
     };
 
-    var setMoveClasses = function(settings, classes) {
-        this.removeClass(settings.movingClass.up)
+    Kinetic.prototype._setMoveClasses = function (classes){
+        // FIXME: consider if we want to apply PL #44, this should not remove
+        // classes we have not defined on the element!
+        var settings = this.settings;
+        var $this = this.$el;
+
+        $this.removeClass(settings.movingClass.up)
             .removeClass(settings.movingClass.down)
             .removeClass(settings.movingClass.left)
             .removeClass(settings.movingClass.right)
@@ -331,330 +613,221 @@ $.fn.dragscrollable = function( options ){
             .removeClass(settings.deceleratingClass.left)
             .removeClass(settings.deceleratingClass.right);
 
-        if (settings.velocity > 0) {
-            this.addClass(classes.right);
+        if (this.velocity > 0){
+            $this.addClass(classes.right);
         }
-        if (settings.velocity < 0) {
-            this.addClass(classes.left);
+        if (this.velocity < 0){
+            $this.addClass(classes.left);
         }
-        if (settings.velocityY > 0) {
-            this.addClass(classes.down);
+        if (this.velocityY > 0){
+            $this.addClass(classes.down);
         }
-        if (settings.velocityY < 0) {
-            this.addClass(classes.up);
+        if (this.velocityY < 0){
+            $this.addClass(classes.up);
         }
 
     };
 
-    var stop = function($scroller, settings) {
-        settings.velocity = 0;
-        settings.velocityY = 0;
-        settings.decelerate = true;
-        if (typeof settings.stopped === 'function') {
-            settings.stopped.call($scroller, settings);
-        }
-    };
 
-    /** do the actual kinetic movement */
-    var move = function($scroller, settings) {
+    // do the actual kinetic movement
+    Kinetic.prototype._move = function (){
+        var $scroller = this._getScroller();
         var scroller = $scroller[0];
+        var self = this;
+        var settings = self.settings;
+
         // set scrollLeft
         if (settings.x && scroller.scrollWidth > 0){
-            scroller.scrollLeft = settings.scrollLeft = scroller.scrollLeft + settings.velocity;
-            if (Math.abs(settings.velocity) > 0) {
-                settings.velocity = settings.decelerate ?
-                    decelerateVelocity(settings.velocity, settings.slowdown) : settings.velocity;
+            this.scrollLeft(this.scrollLeft() + this.velocity);
+            if (Math.abs(this.velocity) > 0){
+                this.velocity = settings.decelerate ?
+                    self._decelerateVelocity(this.velocity, settings.slowdown) : this.velocity;
             }
         } else {
-            settings.velocity = 0;
+            this.velocity = 0;
         }
 
         // set scrollTop
         if (settings.y && scroller.scrollHeight > 0){
-            scroller.scrollTop = settings.scrollTop = scroller.scrollTop + settings.velocityY;
-            if (Math.abs(settings.velocityY) > 0) {
-                settings.velocityY = settings.decelerate ?
-                    decelerateVelocity(settings.velocityY, settings.slowdown) : settings.velocityY;
+            this.scrollTop(this.scrollTop() + this.velocityY);
+            if (Math.abs(this.velocityY) > 0){
+                this.velocityY = settings.decelerate ?
+                    self._decelerateVelocity(this.velocityY, settings.slowdown) : this.velocityY;
             }
         } else {
-            settings.velocityY = 0;
+            this.velocityY = 0;
         }
 
-        setMoveClasses.call($scroller, settings, settings.deceleratingClass);
+        self._setMoveClasses(settings.deceleratingClass);
 
-        if (typeof settings.moved === 'function') {
-            settings.moved.call($scroller, settings);
+        if ($.isFunction(settings.moved)){
+            settings.moved.call(this, settings);
         }
 
-        if (Math.abs(settings.velocity) > 0 || Math.abs(settings.velocityY) > 0) {
-            // tick for next movement
-            window.requestAnimationFrame(function(){ move($scroller, settings); });
+        if (Math.abs(this.velocity) > 0 || Math.abs(this.velocityY) > 0){
+            if (!this.moving) {
+                this.moving = true;
+                // tick for next movement
+                window.requestAnimationFrame(function (){
+                    self.moving = false;
+                    self._move();
+                });
+            }
         } else {
-            stop($scroller, settings);
+            self.stop();
         }
     };
 
-    var callOption = function(method, options) {
-        var methodFn = $.kinetic.callMethods[method],
-            args = Array.prototype.slice.call(arguments)
-        ;
-        if (methodFn) {
-            this.each(function(){
-                var opts = args.slice(1), settings = $(this).data(SETTINGS_KEY);
-                opts.unshift(settings);
-                methodFn.apply(this, opts);
-            });
+    // get current scroller to apply positioning to
+    Kinetic.prototype._getScroller = function(){
+        var $scroller = this.$el;
+        if (this.$el.is('body') || this.$el.is('html')){
+            $scroller = $(window);
+        }
+        return $scroller;
+    };
+
+    // set the scroll position
+    Kinetic.prototype.scrollLeft = function(left){
+        var $scroller = this._getScroller();
+        if (typeof left === 'number'){
+            $scroller.scrollLeft(left);
+            this.settings.scrollLeft = left;
+        } else {
+            return $scroller.scrollLeft();
+        }
+    };
+    Kinetic.prototype.scrollTop = function(top){
+        var $scroller = this._getScroller();
+        if (typeof top === 'number'){
+            $scroller.scrollTop(top);
+            this.settings.scrollTop = top;
+        } else {
+            return $scroller.scrollTop();
         }
     };
 
-    var attachListeners = function($this, settings) {
-        var element = $this[0];
-        if ($.support.touch) {
-            $this.bind('touchstart', settings.events.touchStart)
-                .bind('touchend', settings.events.inputEnd)
-                .bind('touchmove', settings.events.touchMove)
-            ;
-        } else {
+    Kinetic.prototype._attachListeners = function (){
+        var $this = this.$el;
+        var settings = this.settings;
+
+        if ($.support.touch){
             $this
-                .mousedown(settings.events.inputDown)
-                .mouseup(settings.events.inputEnd)
-                .mousemove(settings.events.inputMove)
-            ;
+                .bind('touchstart', settings.events.touchStart)
+                .bind('touchend', settings.events.inputEnd)
+                .bind('touchmove', settings.events.touchMove);
         }
+
+        $this
+            .mousedown(settings.events.inputDown)
+            .mouseup(settings.events.inputEnd)
+            .mousemove(settings.events.inputMove);
+
         $this
             .click(settings.events.inputClick)
             .scroll(settings.events.scroll)
-            .bind("selectstart", selectStart) // prevent selection when dragging
+            .bind('selectstart', settings.events.selectStart)
             .bind('dragstart', settings.events.dragStart);
     };
-    var detachListeners = function($this, settings) {
-        var element = $this[0];
-        if ($.support.touch) {
-            $this.unbind('touchstart', settings.events.touchStart)
+
+    Kinetic.prototype._detachListeners = function (){
+        var $this = this.$el;
+        var settings = this.settings;
+        if ($.support.touch){
+            $this
+                .unbind('touchstart', settings.events.touchStart)
                 .unbind('touchend', settings.events.inputEnd)
                 .unbind('touchmove', settings.events.touchMove);
-        } else {
-            $this
+        }
+
+        $this
             .unbind('mousedown', settings.events.inputDown)
             .unbind('mouseup', settings.events.inputEnd)
-            .unbind('mousemove', settings.events.inputMove)
-            .unbind('scroll', settings.events.scroll);
-        }
-        $this.unbind('click', settings.events.inputClick)
-        .unbind("selectstart", selectStart); // prevent selection when dragging
-        $this.unbind('dragstart', settings.events.dragStart);
+            .unbind('mousemove', settings.events.inputMove);
+
+        $this
+            .unbind('click', settings.events.inputClick)
+            .unbind('scroll', settings.events.scroll)
+            .unbind('selectstart', settings.events.selectStart)
+            .unbind('dragstart', settings.events.dragStart);
     };
 
-    var initElements = function(options) {
-        this
-        .addClass(ACTIVE_CLASS)
-        .each(function(){
 
-            var self = this,
-                $this = $(this);
+    // EXPOSE KINETIC CONSTRUCTOR
+    // ==========================
+    $.Kinetic = Kinetic;
 
-            if ($this.data(SETTINGS_KEY)){
-                return;
+    // KINETIC PLUGIN DEFINITION
+    // =======================
+
+    $.fn.kinetic = function (option, callOptions) {
+        return this.each(function () {
+            var $this    = $(this);
+            var instance = $this.data(Kinetic.DATA_KEY);
+            var options  = $.extend({}, Kinetic.DEFAULTS, $this.data(), typeof option === 'object' && option);
+
+            if (!instance) {
+                $this.data(Kinetic.DATA_KEY, (instance = new Kinetic(this, options)));
             }
 
-            var settings = $.extend({}, DEFAULT_SETTINGS, options),
-                xpos,
-                prevXPos = false,
-                ypos,
-                prevYPos = false,
-                mouseDown = false,
-                scrollLeft,
-                scrollTop,
-                throttleTimeout = 1000 / settings.throttleFPS,
-                lastMove,
-                elementFocused
-            ;
-
-            settings.velocity = 0;
-            settings.velocityY = 0;
-
-            // make sure we reset everything when mouse up
-            var resetMouse = function() {
-                xpos = false;
-                ypos = false;
-                mouseDown = false;
-            };
-            $(document).mouseup(resetMouse).click(resetMouse);
-
-            var calculateVelocities = function() {
-                settings.velocity    = capVelocity(prevXPos - xpos, settings.maxvelocity);
-                settings.velocityY   = capVelocity(prevYPos - ypos, settings.maxvelocity);
-            };
-            var useTarget = function(target) {
-                if ($.isFunction(settings.filterTarget)) {
-                    return settings.filterTarget.call(self, target) !== false;
-                }
-                return true;
-            };
-            var start = function(clientX, clientY) {
-                mouseDown = true;
-                settings.velocity = prevXPos = 0;
-                settings.velocityY = prevYPos = 0;
-                xpos = clientX;
-                ypos = clientY;
-            };
-            var end = function() {
-                if (xpos && prevXPos && settings.decelerate === false) {
-                    settings.decelerate = true;
-                    calculateVelocities();
-                    xpos = prevXPos = mouseDown = false;
-                    move($this, settings);
-                }
-            };
-            var inputmove = function(clientX, clientY) {
-                if (!lastMove || new Date() > new Date(lastMove.getTime() + throttleTimeout)) {
-                    lastMove = new Date();
-
-                    if (mouseDown && (xpos || ypos)) {
-                        if (elementFocused) {
-                            $(elementFocused).blur();
-                            elementFocused = null;
-                            $this.focus();
-                        }
-                        settings.decelerate = false;
-                        settings.velocity   = settings.velocityY  = 0;
-                        $this[0].scrollLeft = settings.scrollLeft = settings.x ? $this[0].scrollLeft - (clientX - xpos) : $this[0].scrollLeft;
-                        $this[0].scrollTop  = settings.scrollTop  = settings.y ? $this[0].scrollTop - (clientY - ypos)  : $this[0].scrollTop;
-                        prevXPos = xpos;
-                        prevYPos = ypos;
-                        xpos = clientX;
-                        ypos = clientY;
-
-                        calculateVelocities();
-                        setMoveClasses.call($this, settings, settings.movingClass);
-
-                        if (typeof settings.moved === 'function') {
-                            settings.moved.call($this, settings);
-                        }
-                    }
-                }
-            };
-
-            // Events
-            settings.events = {
-                touchStart: function(e){
-                    var touch;
-                    if (useTarget(e.target)) {
-                        touch = e.originalEvent.touches[0];
-                        start(touch.clientX, touch.clientY);
-                        e.stopPropagation();
-                    }
-                },
-                touchMove: function(e){
-                    var touch;
-                    if (mouseDown) {
-                        touch = e.originalEvent.touches[0];
-                        inputmove(touch.clientX, touch.clientY);
-                        if (e.preventDefault) {e.preventDefault();}
-                    }
-                },
-                inputDown: function(e){
-                    if (useTarget(e.target)) {
-                        start(e.clientX, e.clientY);
-                        elementFocused = e.target;
-                        if (e.target.nodeName === 'IMG'){
-                            e.preventDefault();
-                        }
-                        e.stopPropagation();
-                    }
-                },
-                inputEnd: function(e){
-                    end();
-                    elementFocused = null;
-                    if (e.preventDefault) {e.preventDefault();}
-                },
-                inputMove: function(e) {
-                    if (mouseDown){
-                        inputmove(e.clientX, e.clientY);
-                        if (e.preventDefault) {e.preventDefault();}
-                    }
-                },
-                scroll: function(e) {
-                    if (typeof settings.moved === 'function') {
-                        settings.moved.call($this, settings);
-                    }
-                    if (e.preventDefault) {e.preventDefault();}
-                },
-                inputClick: function(e){
-                    if (Math.abs(settings.velocity) > 0) {
-                        e.preventDefault();
-                        return false;
-                    }
-                },
-                // prevent drag and drop images in ie
-                dragStart: function(e) {
-                    if (elementFocused) {
-                        return false;
-                    }
-                }
-            };
-
-            attachListeners($this, settings);
-            $this.data(SETTINGS_KEY, settings)
-                .css("cursor", settings.cursor);
-
-            if (settings.triggerHardware) {
-                $this.css({
-                    '-webkit-transform': 'translate3d(0,0,0)',
-                    '-webkit-perspective': '1000',
-                    '-webkit-backface-visibility': 'hidden'
-                });
+            if (typeof option === 'string') {
+                instance[option](callOptions);
             }
+
         });
     };
 
-    $.kinetic = {
-        settingsKey: SETTINGS_KEY,
-        callMethods: {
-            start: function(settings, options){
-                var $this = $(this);
-                settings = $.extend(settings, options);
-                if (settings) {
-                    settings.decelerate = false;
-                    move($this, settings);
-                }
-            },
-            end: function(settings, options){
-                var $this = $(this);
-                if (settings) {
-                    settings.decelerate = true;
-                }
-            },
-            stop: function(settings, options){
-                var $this = $(this);
-                stop($this, settings);
-            },
-            detach: function(settings, options) {
-                var $this = $(this);
-                detachListeners($this, settings);
-                $this
-                .removeClass(ACTIVE_CLASS)
-                .css("cursor", "");
-            },
-            attach: function(settings, options) {
-                var $this = $(this);
-                attachListeners($this, settings);
-                $this
-                .addClass(ACTIVE_CLASS)
-                .css("cursor", "move");
-            }
+}(jQuery));
+
+// jQuery.kinetic core modifications for diva.js (compatible with jQuery.kinetic 2.2.1)
+// use jQuery.kinetic for touch handlers only since we are using dragscrollable for mouse handlers
+//    - (kinetic provides inertial scrolling [ease into stopped state on release] for touch events and dragscrollable
+//      allows non-inertial scrolling which we like for mice)
+
+(function($)
+{
+    $.Kinetic.prototype._attachListeners = function()
+    {
+        // attach only touch listeners
+        var $this = this.$el;
+        var settings = this.settings;
+
+        if ($.support.touch)
+        {
+            $this
+                .bind('touchstart', settings.events.touchStart)
+                .bind('touchend', settings.events.inputEnd)
+                .bind('touchmove', settings.events.touchMove);
         }
-    };
-    $.fn.kinetic = function(options) {
-        if (typeof options === 'string') {
-            callOption.apply(this, arguments);
-        } else {
-            initElements.call(this, options);
-        }
-        return this;
+
+        $this
+            .click(settings.events.inputClick)
+            .scroll(settings.events.scroll)
+            .bind('selectstart', settings.events.selectStart)
+            .bind('dragstart', settings.events.dragStart);
     };
 
-}(window.jQuery || window.Zepto));
+    $.Kinetic.prototype._detachListeners = function()
+    {
+        // detach only touch listeners
+        var $this = this.$el;
+        var settings = this.settings;
+
+        if ($.support.touch)
+        {
+            $this
+                .unbind('touchstart', settings.events.touchStart)
+                .unbind('touchend', settings.events.inputEnd)
+                .unbind('touchmove', settings.events.touchMove);
+        }
+
+        $this
+            .unbind('click', settings.events.inputClick)
+            .unbind('scroll', settings.events.scroll)
+            .unbind('selectstart', settings.events.selectStart)
+            .unbind('dragstart', settings.events.dragStart);
+    };
+})(jQuery);
 
 /**
 *      Events. Pub/Sub system for Loosely Coupled logic.
@@ -676,37 +849,88 @@ var diva = (function() {
              *      @class Events
              *      @method publish
              *      @param topic {String}
-             *      @param args     {Array}
-             *      @param scope {Object} Optional
+             *      @param args  {Array}
+             *      @param scope {Object=} Optional - Subscribed functions will be executed with the supplied object as `this`.
+             *          It is necessary to supply this argument with the self variable when within a Diva instance.
+             *          The scope argument is matched with the instance ID of subscribers to determine whether they
+             *              should be executed. (See instanceID argument of subscribe.)
              */
             publish: function (topic, args, scope)
             {
                 if (cache[topic])
                 {
-                    var thisTopic = cache[topic],
-                        i = thisTopic.length;
+                    var thisTopic = cache[topic];
 
-                    while (i--)
-                        thisTopic[i].apply( scope || this, args || []);
+                    if (typeof thisTopic.global !== 'undefined')
+                    {
+                        var thisTopicGlobal = thisTopic.global;
+                        var i = thisTopicGlobal.length;
+
+                        while (i--)
+                        {
+                            thisTopicGlobal[i].apply(scope || this, args || []);
+                        }
+                    }
+
+                    if (scope && typeof scope.getInstanceId !== 'undefined')
+                    {
+                        // get publisher instance ID from scope arg, compare, and execute if match
+                        var instanceID = scope.getInstanceId();
+
+                        if (cache[topic][instanceID])
+                        {
+                            var thisTopicInstance = cache[topic][instanceID];
+                            var j = thisTopicInstance.length;
+
+                            while (j--)
+                            {
+                                thisTopicInstance[j].apply(scope || this, args || []);
+                            }
+                        }
+                    }
                 }
             },
             /**
              *      diva.Events.subscribe
-             *      e.g.: diva.Events.subscribe("PageDidLoad", highlight)
+             *      e.g.: diva.Events.subscribe("PageDidLoad", highlight, settings.ID)
              *
              *      @class Events
              *      @method subscribe
              *      @param topic {String}
              *      @param callback {Function}
+             *      @param instanceID {String=} Optional - String representing the ID of a Diva instance; if provided,
+             *                                            callback only fires for events published from that instance.
              *      @return Event handler {Array}
              */
-            subscribe: function (topic, callback)
+            subscribe: function (topic, callback, instanceID)
             {
                 if (!cache[topic])
-                    cache[topic] = [];
+                {
+                    cache[topic] = {};
+                }
 
-                cache[topic].push(callback);
-                return [topic, callback];
+                if (typeof instanceID === 'string')
+                {
+                    if (!cache[topic][instanceID])
+                    {
+                        cache[topic][instanceID] = [];
+                    }
+
+                    cache[topic][instanceID].push(callback);
+                }
+                else
+                {
+                    if (!cache[topic].global)
+                    {
+                        cache[topic].global = [];
+                    }
+
+                    cache[topic].global.push(callback);
+                }
+
+                var handle = instanceID ? [topic, callback, instanceID] : [topic, callback];
+
+                return handle;
             },
             /**
              *      diva.Events.unsubscribe
@@ -716,7 +940,7 @@ var diva = (function() {
              *      @class Events
              *      @method unsubscribe
              *      @param handle {Array}
-             *      @param completely {Boolean} - Unsubscribe all events for a given topic.
+             *      @param completely {Boolean=} - Unsubscribe all events for a given topic.
              *      @return success {Boolean}
              */
             unsubscribe: function (handle, completely)
@@ -725,99 +949,141 @@ var diva = (function() {
 
                 if (cache[t])
                 {
-                    var i = cache[t].length;
+                    var topicArray;
+                    var instanceID = (handle.length === 3 && typeof cache[t][handle[2]] !== 'undefined') ? handle[2] : 'global';
+
+                    topicArray = cache[t][instanceID];
+                    var i = topicArray.length;
+
                     while (i--)
                     {
-                        if (cache[t][i] === handle[1])
+                        if (topicArray[i] === handle[1])
                         {
-                            cache[t].splice(i, 1);
+                            cache[t][instanceID].splice(i, 1);
+
                             if (completely)
-                                delete cache[t];
+                            {
+                                delete cache[t][instanceID];
+                            }
+
                             return true;
                         }
                     }
                 }
+
                 return false;
             },
             /**
              *      diva.Events.unsubscribeAll
-             *      e.g.: diva.Events.unsubscribeAll();
+             *      e.g.: diva.Events.unsubscribeAll('global');
              *
              *      @class Events
+             *      @param {String=} Optional - instance ID to remove subscribers from or 'global' (if omitted,
+             *                                 subscribers in all scopes removed)
              *      @method unsubscribe
              */
-            unsubscribeAll: function ()
+            unsubscribeAll: function (instanceID)
             {
-                cache = {};
+                if (instanceID)
+                {
+                    var topics = Object.keys(cache);
+                    var i = topics.length;
+                    var topic;
+
+                    while (i--)
+                    {
+                        topic = topics[i];
+
+                        if (cache[topic][instanceID] !== 'undefined')
+                        {
+                            delete cache[topic][instanceID];
+                        }
+                    }
+                }
+                else
+                {
+                    cache = {};
+                }
             }
         }
     };
+
     return pub;
 }());
 
+// Expose the Diva variable globally (needed for plugins, possibly even in CommonJS environments)
+window.diva = diva;
+
+// Expose diva as the export in CommonJS environments
+if (typeof module === 'object' && module.exports)
+    module.exports = diva;
+
 //Used to keep track of whether Diva was last clicked or which Diva was last clicked when there are multiple
-var activeDivaController = function ()
+var activeDivaController = (function ($)
 {
-    var active;
-
-    //global click listener
-    $(document).on('click', function(e)
+    return function ()
     {
-        updateActive($(e.target));
-    });
+        var active;
 
-    //parameter should already be a jQuery selector
-    var updateActive = function (target)
-    {
-        var nearestOuter;
+        //global click listener
+        $(document).on('click', function(e)
+        {
+            updateActive($(e.target));
+        });
 
-        //these will find 0 or 1 objects, never more
-        var findOuter = target.find('.diva-outer');
-        var closestOuter = target.closest('.diva-outer');
-        var outers = document.getElementsByClassName('diva-outer');
-        var outerLen = outers.length;
-        var idx;
+        //parameter should already be a jQuery selector
+        var updateActive = function (target)
+        {
+            var nearestOuter;
 
-        //clicked on something that was not either a parent or sibling of a diva-outer
-        if (findOuter.length > 0) 
-        {
-            nearestOuter = findOuter;
-        }
-        //clicked on something that was a child of a diva-outer
-        else if (closestOuter.length > 0)
-        {
-            nearestOuter = closestOuter;
-        }
-        //clicked on something that was not in any Diva tree
-        else 
-        {
-            //deactivate everything and return            
-            for (idx = 0; idx < outerLen; idx++)
+            //these will find 0 or 1 objects, never more
+            var findOuter = target.find('.diva-outer');
+            var closestOuter = target.closest('.diva-outer');
+            var outers = document.getElementsByClassName('diva-outer');
+            var outerLen = outers.length;
+            var idx;
+
+            //clicked on something that was not either a parent or sibling of a diva-outer
+            if (findOuter.length > 0)
             {
-                $(outers[idx].parentElement).data('diva').deactivate();
+                nearestOuter = findOuter;
             }
-            return;
-        }
+            //clicked on something that was a child of a diva-outer
+            else if (closestOuter.length > 0)
+            {
+                nearestOuter = closestOuter;
+            }
+            //clicked on something that was not in any Diva tree
+            else
+            {
+                //deactivate everything and return
+                for (idx = 0; idx < outerLen; idx++)
+                {
+                    $(outers[idx].parentElement).data('diva').deactivate();
+                }
+                return;
+            }
 
-        //if we found one, activate it...
-        nearestOuter.parent().data('diva').activate();
-        active = nearestOuter.parent();
+            //if we found one, activate it...
+            nearestOuter.parent().data('diva').activate();
+            active = nearestOuter.parent();
 
-        //...and deactivate all the others
-        outers = document.getElementsByClassName('diva-outer');
-        for(idx = 0; idx < outerLen; idx++)
+            //...and deactivate all the others
+            outers = document.getElementsByClassName('diva-outer');
+            for(idx = 0; idx < outerLen; idx++)
+            {
+                //getAttribute to attr - comparing DOM element to jQuery element
+                if (outers[idx].getAttribute('id') != nearestOuter.attr('id'))
+                    $(outers[idx].parentElement).data('diva').deactivate();
+            }
+        };
+
+        //public accessor in case. Will return a jQuery selector.
+        this.getActive = function()
         {
-            //getAttribute to attr - comparing DOM element to jQuery element
-            if (outers[idx].getAttribute('id') != nearestOuter.attr('id'))
-                $(outers[idx].parentElement).data('diva').deactivate();
-        }
+            return active;
+        };
     };
-
-    //public accessor in case. Will return a jQuery selector.
-    this.getActive = function()
-    {
-        return active;
-    };
-};
+})(jQuery);
 
 var activeDiva = new activeDivaController();

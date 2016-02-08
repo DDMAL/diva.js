@@ -17,6 +17,9 @@
 
 var clearTempDiva = function()
 {
+        // Clear globally subscribed events (i.e. test callbacks)
+        diva.Events.unsubscribeAll();
+
         // First, empty it in case something else has been using it
         var dv = $('#diva-temp').data('diva');
         if (dv)

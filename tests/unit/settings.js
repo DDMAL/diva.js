@@ -53,7 +53,7 @@ asyncTest("enableFullscreen true", function () {
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         // Make sure the fullscreen icon is there
-        notEqual($(settings.selector + 'fullscreen').length, 0, "Fullscreen icon should be present");
+        notEqual($(settings.selector + 'fullscreen-icon').length, 0, "Fullscreen icon should be present");
         start();
     });
 
@@ -108,10 +108,7 @@ asyncTest("enableGridIcon true, enableLinkIcon true", function () {
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         notEqual($(settings.selector + 'grid-icon').length, 0, "Grid icon should be present");
-
-        // The left border should not be there for the link icon
-        equal($(settings.selector + 'link-icon').css('border-left-width'), '0px', "Link icon should not have a left border");
-
+        notEqual($(settings.selector + 'link-icon').length, 0, "Link icon should be present");
         start();
     });
 
@@ -143,10 +140,9 @@ asyncTest("enableGridControls 'slider'", function() {
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         notEqual($(settings.selector + 'grid-slider').length, 0, "Grid slider should be present");
-        notEqual($(settings.selector + 'grid-slider-label').length, 0, "Grid slider label should be present");
+        notEqual($(settings.selector + 'grid-label').length, 0, "Grid label should be present");
         equal($(settings.selector + 'grid-out-button').length, 0, "Grid buttons should not be present");
         equal($(settings.selector + 'grid-in-button').length, 0, "Grid buttons should not be present");
-        equal($(settings.selector + 'grid-buttons-label').length, 0, "Grid buttons label should not be present");
         start();
     });
 
@@ -159,10 +155,10 @@ asyncTest("enableZoomControls 'slider'", function() {
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         notEqual($(settings.selector + 'zoom-slider').length, 0, "Zoom slider should be present");
-        notEqual($(settings.selector + 'zoom-slider-label').length, 0, "Zoom slider label should be present");
+        notEqual($(settings.selector + 'zoom-label').length, 0, "Zoom label should be present");
         equal($(settings.selector + 'zoom-out-button').length, 0, "Zoom buttons should not be present");
         equal($(settings.selector + 'zoom-in-button').length, 0, "Zoom buttons should not be present");
-        equal($(settings.selector + 'zoom-buttons-label').length, 0, "Zoom buttons label should not be present");
+        notEqual($(settings.selector + 'grid-label').length, 0, "Grid label should be present");
         start();
     });
 
@@ -176,9 +172,8 @@ asyncTest("enableGridControls 'buttons'", function() {
     {
         notEqual($(settings.selector + 'grid-out-button').length, 0, "Grid out button should be present");
         notEqual($(settings.selector + 'grid-in-button').length, 0, "Grid in button should be present");
-        notEqual($(settings.selector + 'grid-buttons-label').length, 0, "Grid button label should be present");
+        notEqual($(settings.selector + 'grid-label').length, 0, "Grid label should be present");
         equal($(settings.selector + 'grid-slider').length, 0, "Grid slider should not be present");
-        equal($(settings.selector + 'grid-slider-label').length, 0, "Grid slider label should not be present");
         start();
     });
 
@@ -192,9 +187,8 @@ asyncTest("enableZoomControls 'buttons'", function() {
     {
             notEqual($(settings.selector + 'zoom-out-button').length, 0, "Zoom out button should be present");
             notEqual($(settings.selector + 'zoom-in-button').length, 0, "Zoom in button should be present");
-            notEqual($(settings.selector + 'zoom-buttons-label').length, 0, "Zoom button label should be present");
+            notEqual($(settings.selector + 'zoom-label').length, 0, "Zoom label should be present");
             equal($(settings.selector + 'zoom-slider').length, 0, "Grid slider should not be present");
-            equal($(settings.selector + 'zoom-slider-label').length, 0, "Grid slider label should not be present");
             start();
     });
 
@@ -437,6 +431,58 @@ asyncTest("max/minZoomLevel, invalid/valid values, invalid zoomLevel", function 
         minZoomLevel: 2,
         maxZoomLevel: -2,
         zoomLevel: -2
+    });
+});
+
+asyncTest("object for objectData", function ()
+{
+    diva.Events.subscribe('ViewerDidLoad', function(settings)
+    {
+        equal(settings.itemTitle, "First page of Beromunster", "Should process an object for objectData like a normal manifest");
+        start();
+    });
+
+    $.tempDiva({
+        objectData: {
+          "@context": "http://iiif.io/api/presentation/2/context.json",
+          "@id": "http://dev-diva.simssa.ca/iiif/srv/images/beromunster/manifest.json",
+          "@type": "sc:Manifest",
+          "label": "First page of Beromunster",
+          "viewingHint": "paged",
+          "sequences": [
+            {
+              "@type": "sc:Sequence",
+              "canvases": [
+                {
+                  "@id": "http://dev-diva.simssa.ca/iiif/srv/images/beromunster/canvas/bm_001.json",
+                  "@type": "sc:Canvas",
+                  "label": "Bm 001",
+                  "height": 4445,
+                  "width": 2846,
+                  "images": [
+                    {
+                      "@type": "oa:Annotation",
+                      "motivation": "sc:painting",
+                      "resource": {
+                        "@id": "http://dev-diva.simssa.ca/iiif/srv/images/beromunster/bm_001.tif/full/full/0/default.jpg",
+                        "@type": "dctypes:Image",
+                        "format": "image/jpeg",
+                        "height": 4445,
+                        "width": 2846,
+                        "service": {
+                          "@context": "http://iiif.io/api/image/2/context.json",
+                          "@id": "http://dev-diva.simssa.ca/iiif/srv/images/beromunster/bm_001.tif",
+                          "profile": "http://iiif.io/api/image/2/level2.json"
+                        }
+                      },
+                      "on": "http://dev-diva.simssa.ca/iiif/srv/images/beromunster/canvas/bm_001.json"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
     });
 });
 

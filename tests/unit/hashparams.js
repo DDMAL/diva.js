@@ -85,7 +85,7 @@ multipleHashParamTest("zoom level (z) and view (v) = 'g' ", {z: "1", v: "g"}, fu
     // Now let's switch into document view and see if the zoom level is preserved
     $(settings.selector + 'grid-icon').click();
     equal(settings.zoomLevel, 1, "Zoom level setting should still be 1");
-    equal($(settings.selector + 'zoom-buttons-label').text(), "Zoom level: 1", "Zoom buttons label should show a zoom level of 1");
+    equal($(settings.selector + 'zoom-label').text(), "Zoom level: 1", "Zoom buttons label should show a zoom level of 1");
 });
 
 multipleHashParamTest("zoom level (z) and fullscreen (f)", {z: "1", f: "true"}, function (settings) {
@@ -96,7 +96,7 @@ multipleHashParamTest("zoom level (z) and fullscreen (f)", {z: "1", f: "true"}, 
     ok($('body').hasClass('diva-hide-scrollbar'), "The body element should have the hide-scrollbar class");
 
     // Check that the zoom level is actually 1
-    equal($(settings.selector + 'zoom-buttons-label').text(), "Zoom level: 1", "Zoom buttons label should show a zoom level of 1");
+    equal($(settings.selector + 'zoom-label').text(), "Zoom level: 1", "Zoom buttons label should show a zoom level of 1");
 });
 
 hashParamTest("pagesPerRow (n) - valid value", "n", "3", function (settings) {
@@ -112,7 +112,7 @@ multipleHashParamTest("pagesPerRow (n) and view (v) = 'g'", {n: "3", v: "g"}, fu
     ok(settings.inGrid, "Should be in grid initially");
 
     // Check that the pages per row setting is actually 3
-    equal($(settings.selector + 'grid-buttons-label').text(), "Pages per row: 3", "Grid buttons label should show 3 pages per row");
+    equal($(settings.selector + 'grid-label').text(), "Pages per row: 3", "Grid buttons label should show 3 pages per row");
     equal($(settings.selector + 'row-0').children().length, 3, "The first row should have 3 pages");
 });
 

@@ -115,13 +115,13 @@ attribute, which will replace the "Page 1 of __" counter.
                 };
 
                 //this function overwrites updateCurrentPage from the main diva file to update page numbers on VisiblePAgeDidChange
-                updateCurrentAliasedPage = function ()
+                var updateCurrentAliasedPage = function ()
                 {
                     document.getElementById(this.getSettings().ID + 'current-page').textContent = this.getCurrentAliasedPageIndex();
                 };
 
                 //various changes that need to be made once viewer is loaded
-                initialChanges = function ()
+                var initialChanges = function ()
                 {
                     //changes total pages value in GUI
                     var tempSettings = this.getSettings();
@@ -141,11 +141,11 @@ attribute, which will replace the "Page 1 of __" counter.
                     document.getElementById(this.getSettings().ID + 'current-page').textContent = this.getCurrentAliasedPageIndex();
                     
                     //resubscribes our new update function
-                    diva.Events.unsubscribe(["VisiblePageDidChange", tempSettings.toolbar.updateCurrentPage]);
-                    diva.Events.subscribe("VisiblePageDidChange", updateCurrentAliasedPage);
+                    diva.Events.unsubscribe(["VisiblePageDidChange", tempSettings.toolbar.updateCurrentPage, divaSettings.ID]);
+                    diva.Events.subscribe("VisiblePageDidChange", updateCurrentAliasedPage, divaSettings.ID);
                 };
 
-                diva.Events.subscribe("ViewerDidLoad", initialChanges);
+                diva.Events.subscribe("ViewerDidLoad", initialChanges, divaSettings.ID);
             },
             pluginName: 'pagealias',
             titleText: 'Re-aliases page indexes'

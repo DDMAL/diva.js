@@ -190,7 +190,7 @@ Relevant methods:
                         }
                     };
 
-                    diva.Events.subscribe('ModeDidSwitch', setPosition);
+                    diva.Events.subscribe('ModeDidSwitch', setPosition, divaSettings.ID);
 
                     diva.Events.subscribe('ViewerDidLoad', function(s)
                     {
@@ -237,7 +237,7 @@ Relevant methods:
                                 settings.jqObj.css('display', 'none');
                             }
                         });
-                    });
+                    }, divaSettings.ID);
                 }
             },
             pluginName: 'autoscroll',

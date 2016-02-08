@@ -46,9 +46,10 @@ asyncTest("Scrolling in grid view", function () {
     });
 });
 
-asyncTest("Scrolling down in book view", function() {
+asyncTest("Scrolling in book view", function() {
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
+        settings.outerObject.scrollLeft(200);
         settings.outerObject.scrollTop(10000);
 
         var self = this;
@@ -185,6 +186,31 @@ asyncTest("Changing pages per row in Grid view using +/- buttons", function () {
     });
 });
 
+asyncTest("Zooming by double-clicking", function () {
+    diva.Events.subscribe('ViewerDidLoad', function(settings)
+    {
+        var wrapperOffset = $('#diva-temp').offset();
+        var testEvent = $.Event("dblclick");
+        testEvent.pageX = 500;
+        testEvent.pageY = 350 + wrapperOffset.top;
+        testEvent.target = settings.outerObject.find('.diva-document-page')[0];
+
+        setTimeout(function () {
+            settings.outerObject.trigger(testEvent);
+            setTimeout(function () {
+                equal(settings.zoomLevel, 2, "Zoom level should now be 2");
+                equal(settings.currentPageIndex, 100, "Should still be on page 100");
+                start();
+            }, 10);
+        }, 10);
+    });
+
+    $.tempDiva({
+        zoomLevel: 1,
+        goDirectlyTo: 100
+    });
+});
+
 asyncTest("Switching between document and grid view", function () {
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
@@ -209,7 +235,7 @@ asyncTest("Switching between regular and fullscreen mode", function () {
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         ok(!settings.inFullscreen, "Not in fullscreen initially");
-        $(settings.selector + 'fullscreen').click();
+        $(settings.selector + 'fullscreen-icon').click();
 
         // Click the fullscreen icon, then wait for a bit for the event to be triggered
         setTimeout(function () {

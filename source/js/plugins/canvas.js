@@ -823,20 +823,17 @@ Adds an adjustment icon next to each image
                     $(this).removeClass('grabbing');
                 });
 
-                if (settings.mobileWebkit)
-                {
-                    $('#diva-canvas-wrapper').kinetic();
-                }
-                else
-                {
-                    $('#diva-canvas-wrapper').dragscrollable({
-                        acceptPropagatedEvent: true
-                    });
-                }
+                // touch events
+                $('#diva-canvas-wrapper').kinetic();
 
-                diva.Events.subscribe('ObjectDidLoad', this.setupHook);
-                diva.Events.subscribe('ViewerDidTerminate', this.destroy);
-                diva.Events.subscribe('PageDidLoad', this.onPageLoad);
+                // mouse events
+                $('#diva-canvas-wrapper').dragscrollable({
+                    acceptPropagatedEvent: true
+                });
+
+                diva.Events.subscribe('ObjectDidLoad', this.setupHook, divaSettings.ID);
+                diva.Events.subscribe('ViewerDidTerminate', this.destroy, divaSettings.ID);
+                diva.Events.subscribe('PageDidLoad', this.onPageLoad, divaSettings.ID);
 
                 return true;
             },

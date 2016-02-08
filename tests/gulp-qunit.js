@@ -33,7 +33,7 @@ var path = require('path'),
     gutil = require('gulp-util'),
     chalk = require('chalk'),
     through = require('through2'),
-    phantomjs = require('phantomjs'),
+    phantomjs = require('phantomjs-prebuilt'),
     binPath = phantomjs.path;
 
 module.exports = function (params) {

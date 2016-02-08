@@ -20,7 +20,13 @@ gulp.task('develop:jshint', function()
 
 gulp.task('develop:compile', function()
 {
-    return gulp.src(['source/js/utils.js', 'source/js/diva.js', 'source/js/plugins/*.js'])
+    return gulp.src([
+        'source/js/diva.prefix',
+        'source/js/utils.js',
+        'source/js/diva.js',
+        'source/js/plugins/*.js',
+        'source/js/diva.suffix'
+    ])
                .pipe(sourcemaps.init())
                .pipe(concat('diva.min.js'))
                .pipe(uglify())
@@ -78,9 +84,6 @@ gulp.task('develop:build', ['develop:styles', 'develop:compile'], function()
 {
     gulp.src('source/js/**/*.js')
         .pipe(gulp.dest('build/js'));
-
-    gulp.src('source/img/**/*')
-        .pipe(gulp.dest('build/img'));
 
     gulp.src('source/processing/*.py')
         .pipe(gulp.dest('build/processing'));

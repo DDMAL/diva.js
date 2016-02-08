@@ -19,14 +19,15 @@
 @canvasButtonHoverBg:   @lighterGrey;
 @canvasPaneBg:          @grey;
 @canvasPreviewBg:       @black;
-@canvasViewboxFrame:    @lightBlue;
+@canvasViewboxFrame:    @primaryBorder;
 
 .diva-canvas-icon {
     .plugin-icon("canvas");
+
     &.new {
-        background-position: -50px center;
+        background: data-uri('@{iconPath}plugins/canvas/canvas-enter-stored.png') no-repeat;
         &:hover {
-            background-position: -75px center;
+            background: data-uri('@{iconPath}plugins/canvas/canvas-enter-stored-hover.png') no-repeat;
         }
     }
 }
@@ -87,7 +88,6 @@
         z-index: @canvasZIndex + 4;
         display: inline-block;
         margin-right: 5px;
-        background-image: url("@{iconPath}actions.png");
     }
     span {
         vertical-align: top;
@@ -102,68 +102,70 @@
 }
 
 #diva-canvas-close {
+    background-image: data-uri("@{iconPath}plugins/canvas/canvas-close.png");
+
     &:hover {
-        background-position: -20px 0;
+        background-image: data-uri("@{iconPath}plugins/canvas/canvas-close-hover.png");
     }
 }
 
 #diva-canvas-minimise {
-    background-position: -40px 0;
+    background-image: data-uri("@{iconPath}plugins/canvas/canvas-minimise.png");
 
     &:hover {
-        background-position: -60px 0;
+        background-image: data-uri("@{iconPath}plugins/canvas/canvas-minimise-hover.png");
     }
 }
 
 #diva-canvas-buttons {
     div {
         cursor: pointer;
-        background-image: url("@{iconPath}plugins/canvas-buttons.png");
         background-repeat: no-repeat;
         width: 20px;
         height: 20px;
         padding: 5px;
         display: inline-block;
+        background-position: center center;
 
         &.clicked {
             background-color: @canvasPaneBg;
         }
     }
 
-    .button (@x) {
-        background-position: (5px - @x * 30px) 5px;
+    .button (@adjustmentName) {
+        background-image: data-uri("@{iconPath}plugins/canvas/canvas-adj-@{adjustmentName}.png");
 
         &:hover, &.clicked {
-            background-position: (5px - @x * 30px) -25px;
+            background-image: data-uri("@{iconPath}plugins/canvas/canvas-adj-@{adjustmentName}-hover.png");
         }
     }
 
     .contrast {
-        .button(0);
+        .button("contrast");
     }
 
     .brightness {
-        .button(1);
+        .button("brightness");
     }
 
     .rotation {
-        .button(2);
+        .button("rotation");
     }
 
     .zoom {
-        .button(3);
+        .button("zoom");
     }
 
     .red {
-        .button(4);
+        .button("red");
     }
 
     .green {
-        .button(5);
+        .button("green");
     }
 
     .blue {
-        .button(6);
+        .button("blue");
     }
 }
 
