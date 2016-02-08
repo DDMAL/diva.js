@@ -107,7 +107,7 @@
                 };
 
                 //subscribe to ManifestDidLoad event, get the manifest
-                diva.Events.subscribe('ManifestDidLoad', _displayMetadata);
+                diva.Events.subscribe('ManifestDidLoad', _displayMetadata, divaSettings.ID);
 
                 divaSettings.parentObject.prepend('<div style="text-align: center; clear: both"><a href="#" id="' + divaSettings.ID + 'metadata-link" class="diva-metadata-link">Details</a></div>');
                 // $(divaSettings.selector + 'title').append('<div><a href="#" id="' + divaSettings.ID + 'metadata-link" class="diva-metadata-link">Details</a></div>');
