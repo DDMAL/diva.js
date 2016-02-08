@@ -273,6 +273,7 @@ window.divaPlugins = [];
             zoomLevel = settings.zoomLevel + maxZoom - settings.realMaxZoom;
 
             var baseImageURL = (settings.isIIIF) ? settings.pages[pageIndex].url : baseURL + zoomLevel + ',';
+            var version, quality, iiifSuffix;
 
             if (settings.isIIIF)
             {
@@ -282,9 +283,9 @@ window.divaPlugins = [];
                 regionWidth = settings.tileWidth * zoomDifference;
 
                 // if iiif 1.1, 'native'. if iiif 2.0, 'default'
-                var version = settings.pages[pageIndex].api;
-                var quality = (version >= 2.0) ? 'default' : 'native';
-                var iiifSuffix = '/0/' + quality + '.jpg';
+                version = settings.pages[pageIndex].api;
+                quality = (version >= 2.0) ? 'default' : 'native';
+                iiifSuffix = '/0/' + quality + '.jpg';
 
                 // only show segment defined in canvas.resource.@id in manifest
                 if (settings.pages[pageIndex].hasOwnProperty('xoffset'))
@@ -2596,6 +2597,7 @@ window.divaPlugins = [];
                 {
                     var toolsRightElement = document.getElementById(settings.ID + 'tools-right');
                     var pageNavElement = document.getElementById(settings.ID + 'page-nav');
+                    var display;
 
                     if (!settings.inFullscreen)
                     {
@@ -2608,7 +2610,7 @@ window.divaPlugins = [];
 
                         // display-inline visible labels
                         currentSlider = (settings.inGrid) ? 'grid' : 'zoom';
-                        var display = (settings.inFullscreen) ? 'block' : 'inline-block';
+                        display = (settings.inFullscreen) ? 'block' : 'inline-block';
                         $(settings.selector + currentSlider + '-label').css('display', display);
                     }
                     else
@@ -2622,7 +2624,7 @@ window.divaPlugins = [];
 
                         // display-block visible labels
                         currentSlider = (settings.inGrid) ? 'grid' : 'zoom';
-                        var display = (settings.inFullscreen) ? 'block' : 'inline-block';
+                        display = (settings.inFullscreen) ? 'block' : 'inline-block';
                         $(settings.selector + currentSlider + '-label').css('display', display);
                     }
                 },
