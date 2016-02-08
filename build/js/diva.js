@@ -273,6 +273,7 @@ window.divaPlugins = [];
             zoomLevel = settings.zoomLevel + maxZoom - settings.realMaxZoom;
 
             var baseImageURL = (settings.isIIIF) ? settings.pages[pageIndex].url : baseURL + zoomLevel + ',';
+            var version, quality, iiifSuffix;
 
             if (settings.isIIIF)
             {
@@ -282,9 +283,9 @@ window.divaPlugins = [];
                 regionWidth = settings.tileWidth * zoomDifference;
 
                 // if iiif 1.1, 'native'. if iiif 2.0, 'default'
-                var version = settings.pages[pageIndex].api;
-                var quality = (version >= 2.0) ? 'default' : 'native';
-                var iiifSuffix = '/0/' + quality + '.jpg';
+                version = settings.pages[pageIndex].api;
+                quality = (version >= 2.0) ? 'default' : 'native';
+                iiifSuffix = '/0/' + quality + '.jpg';
 
                 // only show segment defined in canvas.resource.@id in manifest
                 if (settings.pages[pageIndex].hasOwnProperty('xoffset'))
@@ -623,6 +624,11 @@ window.divaPlugins = [];
             }
             else
             {
+                if (settings.inBookLayout)
+                {
+                    setCurrentPage(0);
+                }
+
                 // Non-primary scroll, check if we need to reveal any tiles
                 var lpl = settings.lastPageLoaded;
                 for (i = Math.max(settings.firstPageLoaded, 0); i <= lpl; i++)
@@ -890,6 +896,28 @@ window.divaPlugins = [];
                 window.setTimeout(loadFunction, settings.rowLoadTimeout, rowIndex, pageIndex, imageURL, pageWidth, pageHeight));
         };
 
+        // Clamp pages to those with 'viewingHint: paged' === true (applicable only when document viewingHint === 'paged', see IIIF Presentation API 2.0)
+        // Traverses pages in the specified direction looking for the closest visible page
+        var getClosestVisiblePage = function(pageIndex, direction)
+        {
+            var totalPages = settings.numPages;
+
+            if (settings.documentPaged && settings.inBookLayout)
+            {
+                while (pageIndex > 0 && pageIndex < totalPages)
+                {
+                    if (settings.pages[pageIndex].paged)
+                    {
+                        return pageIndex;
+                    }
+
+                    pageIndex += direction;
+                }
+            }
+
+            return pageIndex;
+        };
+
         // Determines and sets the "current page" (settings.currentPageIndex); called within adjustPages
         // The "direction" is either 1 (downward scroll) or -1 (upward scroll)
         var setCurrentPage = function (direction)
@@ -897,13 +925,14 @@ window.divaPlugins = [];
             var currentPage = settings.currentPageIndex;
             var pageToConsider = currentPage + direction;
 
+            pageToConsider = getClosestVisiblePage(pageToConsider, direction);
+
             if (!isPageValid(pageToConsider))
                 return false;
 
             var middleOfViewport = (settings.verticallyOriented ? document.getElementById(settings.ID + "outer").scrollTop + (settings.panelHeight / 2) : document.getElementById(settings.ID + "outer").scrollLeft + (settings.panelWidth / 2));
             var verticalMiddleOfViewport = document.getElementById(settings.ID + "outer").scrollLeft + (settings.panelWidth / 2);
             var changeCurrentPage = false;
-            var pageSelector = settings.selector + 'page-' + pageToConsider;
 
             if (direction < 0)
             {
@@ -946,17 +975,29 @@ window.divaPlugins = [];
 
             if (settings.inBookLayout && settings.verticallyOriented)
             {
-                var nextPage = currentPage + 1;
+                // if the viewer is scrolled to the rightmost side, switch the current page to that on the right. if less, choose the page on the left.
+                var isScrolledToRight = verticalMiddleOfViewport > settings.maxWidths[settings.zoomLevel];
+                var bookDirection = (isScrolledToRight) ? 1 : -1;
+                var bookPageToConsider = currentPage + bookDirection;
+                var isValidPagePosition;
 
-                // if the current page + 1 is on the right (even) and the left of it is left of center
-                if (isPageValid(nextPage) && nextPage % 2 === 0 && settings.pageLeftOffsets[nextPage] < verticalMiddleOfViewport)
+                bookPageToConsider = getClosestVisiblePage(bookPageToConsider, bookDirection);
+
+                if (isScrolledToRight)
                 {
-                    if (nextPage !== settings.currentPageIndex)
-                    {
-                        settings.currentPageIndex = nextPage;
-                        var filename = settings.pages[nextPage].f;
-                        diva.Events.publish("VisiblePageDidChange", [nextPage, filename], self);
-                    }
+                    // the viewer is scrolled to the rightmost page, switch to next page if it's on the right
+                    isValidPagePosition = settings.pageLeftOffsets[bookPageToConsider] >= (settings.maxWidths[settings.zoomLevel] / 2);
+                }
+                else
+                {
+                    // the viewer is scrolled to the leftmost page, switch to previous page if it's on the left
+                    isValidPagePosition = settings.pageLeftOffsets[bookPageToConsider] < (settings.maxWidths[settings.zoomLevel] / 2);
+                }
+
+                if (isValidPagePosition && bookPageToConsider !== settings.currentPageIndex)
+                {
+                    settings.currentPageIndex = bookPageToConsider;
+                    diva.Events.publish("VisiblePageDidChange", [bookPageToConsider, settings.pages[bookPageToConsider].f], self);
                 }
             }
 
@@ -1948,9 +1989,13 @@ window.divaPlugins = [];
                 var newScrollLeft = document.getElementById(settings.ID + "outer").scrollLeft;
 
                 if (settings.verticallyOriented || settings.inGrid)
+                {
                     direction = newScrollTop - settings.previousTopScroll;
+                }
                 else
+                {
                     direction = newScrollLeft - settings.previousLeftScroll;
+                }
 
                 //give adjustPages the direction we care about
                 if (settings.inGrid)
@@ -2552,6 +2597,7 @@ window.divaPlugins = [];
                 {
                     var toolsRightElement = document.getElementById(settings.ID + 'tools-right');
                     var pageNavElement = document.getElementById(settings.ID + 'page-nav');
+                    var display;
 
                     if (!settings.inFullscreen)
                     {
@@ -2564,7 +2610,7 @@ window.divaPlugins = [];
 
                         // display-inline visible labels
                         currentSlider = (settings.inGrid) ? 'grid' : 'zoom';
-                        var display = (settings.inFullscreen) ? 'block' : 'inline-block';
+                        display = (settings.inFullscreen) ? 'block' : 'inline-block';
                         $(settings.selector + currentSlider + '-label').css('display', display);
                     }
                     else
@@ -2578,7 +2624,7 @@ window.divaPlugins = [];
 
                         // display-block visible labels
                         currentSlider = (settings.inGrid) ? 'grid' : 'zoom';
-                        var display = (settings.inFullscreen) ? 'block' : 'inline-block';
+                        display = (settings.inFullscreen) ? 'block' : 'inline-block';
                         $(settings.selector + currentSlider + '-label').css('display', display);
                     }
                 },
@@ -2767,7 +2813,7 @@ window.divaPlugins = [];
             };
 
             // trigger ManifestDidLoad event
-            diva.Events.publish('ManifestDidLoad', [manifest], this);
+            diva.Events.publish('ManifestDidLoad', [manifest], self);
 
             var sequence = manifest.sequences[0];
             settings.documentPaged = manifest.viewingHint === 'paged' || sequence.viewingHint === 'paged';
@@ -3099,7 +3145,7 @@ window.divaPlugins = [];
                 }
             }
 
-            diva.Events.publish('NumberOfPagesDidChange', [settings.numPages], this);
+            diva.Events.publish('NumberOfPagesDidChange', [settings.numPages], self);
 
             if (settings.enableAutoTitle)
             {

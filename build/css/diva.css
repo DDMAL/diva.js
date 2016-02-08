@@ -576,8 +576,6 @@
 /* End download plugin */
 /* Begin autoscroll plugin */
 .diva-autoscroll-icon {
-  float: right;
-  border-right: none;
   background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAASCAYAAABSO15qAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAGhJREFUeNpiYGBgKABigf///zOQg0EARH4A4gZyDIIZ8B/JoAJKDIDhB0CcQIkBRBtEyABkgxwoMQCGD6AbRKoBGAYxQgXIBRuZGKgAKPIC3QLxArnRSHZCIjspk52ZKMrOFBUoAAEGAKnq593MQAZtAAAAAElFTkSuQmCC");
 }
 .diva-autoscroll-prefs {
@@ -614,8 +612,6 @@
 .diva-metadata-link {
   font-size: 1em;
   line-height: 1.8em;
-  position: relative;
-  top: -0.7em;
 }
 /* End iiif-metadata plugin */
 
