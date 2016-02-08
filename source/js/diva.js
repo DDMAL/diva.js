@@ -2813,7 +2813,7 @@ window.divaPlugins = [];
             };
 
             // trigger ManifestDidLoad event
-            diva.Events.publish('ManifestDidLoad', [manifest], this);
+            diva.Events.publish('ManifestDidLoad', [manifest], self);
 
             var sequence = manifest.sequences[0];
             settings.documentPaged = manifest.viewingHint === 'paged' || sequence.viewingHint === 'paged';
@@ -3145,7 +3145,7 @@ window.divaPlugins = [];
                 }
             }
 
-            diva.Events.publish('NumberOfPagesDidChange', [settings.numPages], this);
+            diva.Events.publish('NumberOfPagesDidChange', [settings.numPages], self);
 
             if (settings.enableAutoTitle)
             {
