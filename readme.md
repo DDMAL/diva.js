@@ -77,9 +77,10 @@ You may then load the demos in your web browser by visiting `http://localhost:80
 
 ## Building from source
 
-If you wish to install from source, you can check out the code from [our GitHub repository](http://github.com/DDMAL/diva.js) or `npm install diva.js`. Once you've obtained the code, change to the project directory and run `npm install` to fetch development dependencies.
+If you wish to install from source, first you must install [node](https://nodejs.org/en/) and npm. Then, check out the code from [our GitHub repository](http://github.com/DDMAL/diva.js) or `npm install diva.js`. Once you've obtained the code, change to the project directory and run `npm install -g gulp` then `npm install` to fetch all development dependencies.
 
 The full installation gives you access to the un-minified JavaScript source, the plugins, the documentation, and our unit-tests. We use [gulp](http://gulpjs.com/) as our build system and for other development tasks.
+
 
 ```
 gulp develop          // Runs a webserver at localhost:9001 and automatically builds and reloads upon changes
