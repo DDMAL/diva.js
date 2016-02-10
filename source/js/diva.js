@@ -2061,9 +2061,9 @@ window.divaPlugins = [];
                             settings.singleClick = false;
                         }, 500);
                     }
-
-                    return false;
                 }
+
+                return false;
             });
 
             settings.outerObject.on('dblclick', '.diva-row', function (event)
