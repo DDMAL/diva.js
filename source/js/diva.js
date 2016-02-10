@@ -80,6 +80,7 @@ window.divaPlugins = [];
             averageHeights: [],         // The average page height for each zoom level
             averageWidths: [],          // The average page width for each zoom level
             currentPageIndex: 0,        // The current page in the viewport (center-most page)
+            unclampedVerticalPadding: 0, // Used to keep track of initial padding size before enforcing the minimum size needed to accommodate plugin icons
             doubleClickZoom: false,     // Flag to determine whether handleZoom was called from a double-click
             documentPaged: false,       // Set to true when the object has a viewingHint of 'paged' in its manifest
             firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
@@ -1796,8 +1797,11 @@ window.divaPlugins = [];
             var zoomRatio = Math.pow(2, newZoomLevel - settings.zoomLevel);
 
             // Scale padding with zoom
-            settings.verticalPadding *= zoomRatio;
+            settings.unclampedVerticalPadding *= zoomRatio;
             settings.horizontalPadding *= zoomRatio;
+
+            // Make sure the vertical padding is at least 40, if plugin icons are enabled
+            settings.verticalPadding = (settings.pageTools.length) ? Math.max(settings.unclampedVerticalPadding, 40) : settings.unclampedVerticalPadding;
 
             // verticalOffset and horizontalOffset refer to the distance from the top/left of the current page that the center (or clicked coordinates) of the viewport is.
             // for example: if the viewport is 800 pixels and the active page is 600 pixels wide and starts at 100 pixels, verticalOffset will be 300 pixels.
@@ -3248,6 +3252,8 @@ window.divaPlugins = [];
                 settings.horizontalPadding = settings.fixedPadding;
                 settings.verticalPadding = settings.fixedPadding;
             }
+
+            settings.unclampedVerticalPadding = settings.verticalPadding;
 
             // Make sure the vertical padding is at least 40, if plugin icons are enabled
             if (settings.pageTools.length)
