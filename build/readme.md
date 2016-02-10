@@ -3,7 +3,7 @@
     <img width="382" height="191" src="https://github.com/DDMAL/diva.js/wiki/img/diva-logo-sm.png" />
   </a>
 </p>
-Diva.js [![Build Status](https://travis-ci.org/DDMAL/diva.js.svg?branch=develop)](http://travis-ci.org/DDMAL/diva.js) [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/DDMAL/diva.js?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+Diva.js [![Build Status](https://travis-ci.org/DDMAL/diva.js.svg?branch=master)](http://travis-ci.org/DDMAL/diva.js) [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/DDMAL/diva.js?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 =========================================
 
 Diva.js (Document Image Viewer with AJAX) is a JavaScript book image viewer designed to present multi-page documents at multiple resolutions.
@@ -77,7 +77,7 @@ You may then load the demos in your web browser by visiting `http://localhost:80
 
 ## Building from source
 
-If you wish to install from source, you can check out the code from [our GitHub repository](http://github.com/DDMAL/diva.js) or `npm install diva.js`. Once you've obtained the code, change to the project directory and run `npm install` to fetch development dependencies.
+If you wish to install from source, first you must install [node](https://nodejs.org/en/) and npm. Then, check out the code from [our GitHub repository](http://github.com/DDMAL/diva.js) or `npm install diva.js`. Once you've obtained the code, change to the project directory and run `npm install -g gulp` then `npm install` to fetch all development dependencies.
 
 The full installation gives you access to the un-minified JavaScript source, the plugins, the documentation, and our unit-tests. We use [gulp](http://gulpjs.com/) as our build system and for other development tasks.
 
@@ -87,7 +87,13 @@ gulp develop:build    // Compiles the Javascript and LESS source and places it i
 gulp develop:test     // Runs the unit tests and outputs a report to the console
 ```
 
+Run `gulp develop` and navigate to [http://localhost:9001/demo](http://localhost:9001/demo) in your web browser to see the demo.
+
 See [Installation](https://github.com/DDMAL/diva.js/wiki/Installation) for more information.
+
+## Getting help
+
+Help for diva.js is available through this repository's [wiki](https://github.com/DDMAL/diva.js/wiki), in the form of code documentation, installation instructions and usage tips.
 
 ### Cross-site Requests
 
@@ -100,11 +106,6 @@ XMLHttpRequest cannot load http://example.com/demo/imagefiles.json. No 'Access-C
 This is a security precaution that all browsers use to prevent cross-site request forgeries. If you receive this message it is because your `objectData` parameter and the server used to serve the Diva page are not at the same server address.
 
 To fix this you must ensure that the Diva HTML page, and the location pointed to by the `objectData` page are being served by the same server, or you must create an exception using the `Access-Control-Allow-Origin` header on your server to explicitly white-list the `objectData` location.
-
-
-### Getting help
-
-Help for diva.js is available through this repository's [wiki](https://github.com/DDMAL/diva.js/wiki), in the form of code documentation, installation instructions and usage tips.
 
 Let Us Know
 -----------

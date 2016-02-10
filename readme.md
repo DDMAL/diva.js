@@ -40,18 +40,29 @@ There are two image formats supported by IIP: Pyramid TIFF and, with the inclusi
 
 ## Installing
 
-Download the [latest release](https://github.com/DDMAL/diva.js/releases) of Diva. In the `diva.js` directory (or `build` if you have the source code) you can find a pre-compiled version of Diva. The `css`, `js` and `img` directories contain the files necessary to use Diva. You will also find a number of demos and some helper scripts for processing your image files.
+### From a CDN (hosted)
 
-The most basic Diva viewer is instantiated with three (IIP) or one (IIIF) required parameter(s):
+Downloading the Diva.js release package provides access to image processing scripts and demos of possible configurations. If you don't need these you can skip downloading and simply paste the following tags into the `<head>` of any webpage to include all the  files necessary to use Diva.js.
 
-```javascript
+	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/diva.js/4.1.0/css/diva.min.css" />
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+	<script src="//cdnjs.cloudflare.com/ajax/libs/diva.js/4.1.0/js/diva.min.js"></script>
 
-$('#diva-wrapper').diva({
-    iipServerURL: "http://www.example.com/fcgi-bin/iipsrv.fcgi",
-    objectData: "http://www.example.com/beromunster.json",
-    imageDir: "/mnt/images/beromunster"
-});
-```
+### Locally (release package)
+
+Download the [latest release](https://github.com/DDMAL/diva.js/releases) of Diva. In the `diva.js` directory (or `build` if you have the source code) you can find a pre-compiled version. The `css` and `js` directories contain the files necessary to use Diva. Simply include [jQuery 2.x](https://jquery.com/), `css/diva.min.css` and `js/diva.min.js` in the `<head>` of your webpage, as shown in the HTML source of the demo pages. You will also find some helper scripts for processing your image files.
+
+### Basic setup
+
+After including the necessary files, the most basic Diva viewer is instantiated with three (IIP) or one (IIIF) required parameter(s):
+
+	<script>
+		$('#diva-wrapper').diva({
+		    iipServerURL: "http://www.example.com/fcgi-bin/iipsrv.fcgi",
+		    objectData: "http://www.example.com/beromunster.json",
+		    imageDir: "/mnt/images/beromunster"
+	});
+	</script>
 
 Required for IIP and IIIF:
  * `objectData`: The URL (absolute or relative) to the document's `.json` file, or a IIIF Manifest
@@ -77,7 +88,7 @@ You may then load the demos in your web browser by visiting `http://localhost:80
 
 ## Building from source
 
-If you wish to install from source, you can check out the code from [our GitHub repository](http://github.com/DDMAL/diva.js) or `npm install diva.js`. Once you've obtained the code, change to the project directory and run `npm install` to fetch development dependencies.
+If you wish to install from source, first you must install [node.js and npm](https://nodejs.org/en/). Then, check out the code from [our GitHub repository](http://github.com/DDMAL/diva.js) or run `npm install diva.js`. Once you've obtained the code, change to the project directory and run `npm install -g gulp` then `npm install` to fetch all development dependencies.
 
 The full installation gives you access to the un-minified JavaScript source, the plugins, the documentation, and our unit-tests. We use [gulp](http://gulpjs.com/) as our build system and for other development tasks.
 
@@ -87,9 +98,15 @@ gulp develop:build    // Compiles the Javascript and LESS source and places it i
 gulp develop:test     // Runs the unit tests and outputs a report to the console
 ```
 
+Run `gulp develop` and navigate to [http://localhost:9001/demo](http://localhost:9001/demo) in your web browser to see the demo.
+
 See [Installation](https://github.com/DDMAL/diva.js/wiki/Installation) for more information.
 
-### Cross-site Requests
+## Getting help
+
+Help for Diva.js is available through this repository's [wiki](https://github.com/DDMAL/diva.js/wiki), in the form of code documentation, installation instructions and usage tips.
+
+## Cross-site Requests
 
 You may receive an error that looks something like this:
 
@@ -100,11 +117,6 @@ XMLHttpRequest cannot load http://example.com/demo/imagefiles.json. No 'Access-C
 This is a security precaution that all browsers use to prevent cross-site request forgeries. If you receive this message it is because your `objectData` parameter and the server used to serve the Diva page are not at the same server address.
 
 To fix this you must ensure that the Diva HTML page, and the location pointed to by the `objectData` page are being served by the same server, or you must create an exception using the `Access-Control-Allow-Origin` header on your server to explicitly white-list the `objectData` location.
-
-
-### Getting help
-
-Help for diva.js is available through this repository's [wiki](https://github.com/DDMAL/diva.js/wiki), in the form of code documentation, installation instructions and usage tips.
 
 Let Us Know
 -----------
