@@ -3235,10 +3235,10 @@ window.divaPlugins = [];
             if (!isPageValid(parseInt(settings.goDirectlyTo), 10))
                 settings.goDirectlyTo = 0;
 
-            // Calculate the horizontal and vertical inter-page padding
+            // Calculate the horizontal and vertical inter-page padding based on the dimensions of the average zoom level
             if (settings.adaptivePadding > 0)
             {
-                var z = settings.zoomLevel;
+                var z = Math.floor((settings.minZoomLevel + settings.maxZoomLevel) / 2);
                 settings.horizontalPadding = parseInt(settings.averageWidths[z] * settings.adaptivePadding, 10);
                 settings.verticalPadding = parseInt(settings.averageHeights[z] * settings.adaptivePadding, 10);
             }
