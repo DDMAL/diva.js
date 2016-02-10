@@ -1782,6 +1782,8 @@ window.divaPlugins = [];
         var handleZoom = function (newValue, dblClickX, dblClickY)
         {
             var innerElement = document.getElementById(settings.innerElement);
+            var outerElement = document.getElementById(settings.outerElement);
+
 
             var newZoomLevel = getValidZoomLevel(newValue);
             var originX;
@@ -1792,6 +1794,10 @@ window.divaPlugins = [];
                 return false;
 
             var zoomRatio = Math.pow(2, newZoomLevel - settings.zoomLevel);
+
+            // Scale padding with zoom
+            settings.verticalPadding *= zoomRatio;
+            settings.horizontalPadding *= zoomRatio;
 
             // verticalOffset and horizontalOffset refer to the distance from the top/left of the current page that the center (or clicked coordinates) of the viewport is.
             // for example: if the viewport is 800 pixels and the active page is 600 pixels wide and starts at 100 pixels, verticalOffset will be 300 pixels.
@@ -1818,29 +1824,16 @@ window.divaPlugins = [];
                 {
                     settings.goDirectlyTo = settings.currentPageIndex;
 
-                    // Vertical offset: valid for document and book view
-                    var verticalPaddingOffset = (zoomRatio > 1) ? 0 - settings.verticalPadding : settings.verticalPadding * zoomRatio;
-                    var horizontalPaddingOffset;
-
-                    if (settings.inBookLayout)
-                    {
-                        horizontalPaddingOffset = (zoomRatio > 1) ? 0 - settings.horizontalPadding : settings.horizontalPadding * zoomRatio;
-                    }
-                    else
-                    {
-                        horizontalPaddingOffset = 0;
-                    }
-
                     // Calculate new offsets for loadDocument
-                    settings.verticalOffset = (zoomRatio * getCurrentYOffset()) + verticalPaddingOffset;
-                    settings.horizontalOffset = (zoomRatio * getCurrentXOffset()) + horizontalPaddingOffset;
+                    settings.verticalOffset = zoomRatio * getCurrentYOffset();
+                    settings.horizontalOffset = zoomRatio * getCurrentXOffset();
 
                     // Calculate new zoom transition origin coordinates (originX measured from left of inner div, originY measured from top of inner div)
-                    var scrollTop = document.getElementById(settings.outerElement).scrollTop;
+                    var scrollTop = outerElement.scrollTop;
                     var elementHeight = settings.panelHeight;
                     originY = scrollTop + parseInt(elementHeight / 2, 10);
 
-                    var scrollLeft = document.getElementById(settings.outerElement).scrollLeft;
+                    var scrollLeft = outerElement.scrollLeft;
                     var elementWidth = settings.panelWidth;
                     originX = scrollLeft + parseInt(elementWidth / 2, 10);
 
