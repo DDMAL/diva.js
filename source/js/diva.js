@@ -1690,8 +1690,9 @@ window.divaPlugins = [];
 
             // compensate for interpage padding
             //TODO still a few pixels unaccounted for
-            settings.verticalOffset += (settings.verticallyOriented) ? settings.verticalPadding / zoomRatio : 0;
-            settings.horizontalOffset += (settings.verticallyOriented && !settings.inBookLayout) ? 0 : settings.horizontalPadding / zoomRatio;
+            //settings.verticalOffset += (settings.verticallyOriented) ? settings.verticalPadding / zoomRatio : 0;
+            settings.verticalOffset += (settings.verticallyOriented) ? settings.verticalPadding : 0;
+            settings.horizontalOffset += (settings.verticallyOriented && !settings.inBookLayout) ? 0 : settings.horizontalPadding;
 
             // calculate click coordinates for smooth zoom transition: distance from edge of inner to cursor
             var dblClickX = event.pageX + outerElement.scrollLeft  - outerPosition.left;
