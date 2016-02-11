@@ -524,8 +524,8 @@ window.divaPlugins = [];
 
         var preloadPage = function(pageIndex, viewportTop, viewportLeft, viewportRight, viewportBottom)
         {
-            // Exit if we've already started preloading this page
-            if (typeof settings.pagePreloadCanvases[pageIndex] !== 'undefined')
+            // Exit if we've already started preloading this page and we're not still zooming
+            if (typeof settings.pagePreloadCanvases[pageIndex] !== 'undefined' && !settings.isZooming)
                 return;
 
             var filename = settings.pages[pageIndex].f;
