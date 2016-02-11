@@ -124,9 +124,11 @@ window.divaPlugins = [];
             plugins: [],                // Filled with the enabled plugins from window.divaPlugins
             previousLeftScroll: 0,      // Used to determine horizontal scroll direction
             previousTopScroll: 0,       // Used to determine vertical scroll direction
+            previousZoomLevelCanvases: [],  // Array to hold canvases of pages visible at previous zoom level (for page image persistence across zooms)
             realMaxZoom: -1,            // To hold the true max zoom level of the document (needed for calculations)
             resizeTimer: -1,            // Holds the ID of the timeout used when resizing the window (for clearing)
             rowHeight: 0,               // Holds the max height of each row in grid view. Calculated in loadGrid()
+            previousZoomRatio: 1,             // Used to keep track of the previous zoom ratio for scale transforming diva-inner
             scaleWait: false,           // For preventing double-zoom on touch devices (iPad, etc)
             scrollbarWidth: 0,          // Set to the actual scrollbar width in init()
             selector: '',               // Uses the generated ID prefix to easily select elements
@@ -531,21 +533,20 @@ window.divaPlugins = [];
             var height = Math.floor(getPageData(pageIndex, 'h'));
             var pageSelector = settings.selector + 'page-' + pageIndex;
 
-            // new off-screen canvas
+            // New off-screen canvas
             var pageCanvas = document.createElement('canvas');
             pageCanvas.width = width;
             pageCanvas.height = height;
 
-            // if corresponding page is in the DOM already, copy existing image from previous zoom level, scaled, to canvas
-            var oldCanvas = document.getElementById(settings.ID + 'canvas-' + pageIndex);
-
-            if (oldCanvas)
+            // If corresponding page is in previousZoomLevelCanvases, copy existing image from previous zoom level, scaled, to canvas
+            if (settings.previousZoomLevelCanvases[pageIndex])
             {
+                var oldCanvas = settings.previousZoomLevelCanvases[pageIndex];
                 var newCanvasContext = pageCanvas.getContext('2d');
                 newCanvasContext.drawImage(oldCanvas, 0, 0, width, height);
             }
 
-            //load visible page tiles into canvas
+            // Load visible page tiles into canvas
             loadTiles(pageIndex, filename, width, height, pageCanvas, viewportTop, viewportLeft, viewportRight, viewportBottom);
 
             diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector], self);
@@ -1846,6 +1847,30 @@ window.divaPlugins = [];
                 }
             }
 
+            // Before the first zoom, save currently visible canvases in previousZoomLevelCanvases so preloadPages can start drawing overtop the existing page data
+            if (!settings.isZooming)
+            {
+                var pageBlockFound = false;
+
+                var viewportTop = outerElement.scrollTop;
+                var viewportBottom = viewportTop + settings.panelHeight;
+                var viewportLeft = outerElement.scrollLeft;
+                var viewportRight = viewportLeft + settings.panelWidth;
+
+                for (var pageIndex = 0; pageIndex < settings.numPages; pageIndex++)
+                {
+                    if (isPageVisible(pageIndex, viewportTop, viewportLeft, viewportRight, viewportBottom))
+                    {
+                        settings.previousZoomLevelCanvases[pageIndex] = document.getElementById(settings.ID + 'canvas-' + pageIndex);
+                        pageBlockFound = true;
+                    }
+                    else if (pageBlockFound)
+                    {
+                        break;
+                    }
+                }
+            }
+
             settings.oldZoomLevel = settings.zoomLevel;
             settings.zoomLevel = newZoomLevel;
 
@@ -2393,6 +2418,11 @@ window.divaPlugins = [];
             var onZoomEnd = function()
             {
                 settings.isZooming = false;
+
+                settings.previousZoomRatio = 1;
+
+                // Clear the array of canvases at previous zoom level
+                settings.previousZoomLevelCanvases = [];
 
                 loadDocument();
             };
