@@ -1770,8 +1770,6 @@ window.divaPlugins = [];
                 {
                     // it will be visible, start loading it at the new zoom level into an offscreen canvas
                     settings.pagePreloadCanvases[i] = preloadPage(i, viewportTop, viewportLeft, viewportRight, viewportBottom);
-
-                    settings.lastPageLoaded = i;
                     pageBlockFound = true;
                 }
                 else if (pageBlockFound) // There will only be one consecutive block of pages to load; once we find a page that's invisible, we can terminate this loop.
