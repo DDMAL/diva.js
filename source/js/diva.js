@@ -1785,7 +1785,6 @@ window.divaPlugins = [];
             var innerElement = document.getElementById(settings.innerElement);
             var outerElement = document.getElementById(settings.outerElement);
 
-
             var newZoomLevel = getValidZoomLevel(newValue);
             var originX;
             var originY;
@@ -1886,15 +1885,16 @@ window.divaPlugins = [];
             // Transition to new zoom level
             innerElement.style.transform = 'scale(' + zoomRatio + ')';
 
-            // Set flag to indicate zooming is in progress until loadDocument is called
+            // Set flag to indicate zooming is in progress until loadDocument is called by transitionend
             settings.isZooming = true;
 
+            // Starts preloading pages for the new zoom level
             preloadPages();
 
             // Update the slider
             diva.Events.publish("ZoomLevelDidChange", [newZoomLevel], self);
 
-            // While zooming, don't update scroll offsets
+            // While zooming, don't update scroll offsets based on the scaled version of diva-inner
             settings.outerObject.off('scroll');
 
             return true;
