@@ -1872,6 +1872,9 @@ window.divaPlugins = [];
             settings.oldZoomLevel = settings.zoomLevel;
             settings.zoomLevel = newZoomLevel;
 
+            // If still zooming, zoomRatio needs to be multiplied by the previous zoomRatio and is reset on transitionend
+            zoomRatio *= settings.previousZoomRatio;
+            settings.previousZoomRatio = zoomRatio;
 
             // Transition to new zoom level
             innerElement.style.transition = 'transform .3s cubic-bezier(0.000, 0.990, 1.000, 0.995)';
