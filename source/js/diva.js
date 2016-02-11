@@ -1869,15 +1869,21 @@ window.divaPlugins = [];
                 }
             }
 
+            // Update the zoom level
             settings.oldZoomLevel = settings.zoomLevel;
             settings.zoomLevel = newZoomLevel;
+
+            // If first zoom, set transition parameters TODO css class
+            if (!settings.isZooming)
+            {
+                innerElement.style.transition = 'transform .3s cubic-bezier(0.000, 0.990, 1.000, 0.995)';
+            }
 
             // If still zooming, zoomRatio needs to be multiplied by the previous zoomRatio and is reset on transitionend
             zoomRatio *= settings.previousZoomRatio;
             settings.previousZoomRatio = zoomRatio;
 
             // Transition to new zoom level
-            innerElement.style.transition = 'transform .3s cubic-bezier(0.000, 0.990, 1.000, 0.995)';
             innerElement.style.transform = 'scale(' + zoomRatio + ')';
 
             // Set flag to indicate zooming is in progress until loadDocument is called
