@@ -304,7 +304,6 @@ window.divaPlugins = [];
 
             //resize canvas context to new zoom level if necessary before drawing tiles
             // if context width is wrong, set it to h and w.
-            //TODO make this not janky, prevent blanking
             if (canvasElement.width !== Math.floor(getPageData(pageIndex, 'w')))
             {
                 canvasElement.width = Math.floor(getPageData(pageIndex, 'w'));
@@ -466,7 +465,6 @@ window.divaPlugins = [];
 
                 canvasElement.style.width = width + 'px';
                 canvasElement.style.height = height + 'px';
-                //TODO set width/height here or on context? rounding?
                 canvasElement.id = settings.ID + 'canvas-' + pageIndex;
                 canvasElement.setAttribute('class', 'diva-canvas');
                 pageElement.appendChild(canvasElement);
