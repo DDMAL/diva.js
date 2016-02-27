@@ -56,7 +56,7 @@ Relevant methods:
                     restartScrollingInterval();
                 };
 
-                restartScrollingInterval = function()
+                var restartScrollingInterval = function()
                 {
                     clearInterval(divaSettings.autoScrollInterval);
                     if (divaSettings.verticallyOriented)

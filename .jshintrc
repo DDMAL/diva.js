@@ -1,0 +1,12 @@
+{
+    "eqeqeq": true,
+    "eqnull": true,
+    "expr": true,
+    "latedef": "nofunc",
+    "onevar": true,
+    "noarg": true,
+    "node": true,
+    "trailing": true,
+    "undef": true,
+    "unused": true
+}

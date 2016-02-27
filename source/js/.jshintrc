@@ -1,0 +1,14 @@
+{
+    "extends": "../../.jshintrc",
+
+    "browser": true,
+    "jquery": true,
+
+    "globals": {
+        "diva": true,
+        "Storage": false
+    },
+
+    "unused": false,
+    "eqeqeq": false
+}

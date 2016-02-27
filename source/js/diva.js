@@ -2458,7 +2458,6 @@ window.divaPlugins = [];
             var getTransitionEndEventName = function()
             {
                 var i;
-                var undefined;
                 var el = document.createElement('div');
                 var transitions = {
                     'transition': 'transitionend',
