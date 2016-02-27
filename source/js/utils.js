@@ -1,13 +1,3 @@
-// Some simple utility methods for web storage (e.g., localStorage)
-Storage.prototype.setObject = function (key, value) {
-    this.setItem(key, JSON.stringify(value));
-};
-
-Storage.prototype.getObject = function (key) {
-    var value = this.getItem(key);
-    return value && JSON.parse(value);
-};
-
 // from http://forrst.com/posts/jQuery_element_ID_generator-RoM
 (function ($) {
     var counter = 1;

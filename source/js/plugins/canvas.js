@@ -444,7 +444,7 @@ Adds an adjustment icon next to each image
             if (changed)
             {
                 settings.pluginIcon.addClass('new');
-                localStorage.setObject(storageKey, sliderSettings);
+                storeObject(storageKey, sliderSettings);
             }
             else
             {
@@ -500,6 +500,17 @@ Adds an adjustment icon next to each image
                     $('#diva-canvas-wrapper').scrollLeft(document.getElementById('diva-canvas-wrapper').scrollLeft + settings.arrowScrollAmount);
                     return false;
             }
+        };
+
+        // Serialize an object to JSON and save it in localStorage
+        var storeObject = function (key, value) {
+            localStorage.setItem(key, JSON.stringify(value));
+        };
+
+        // Load and deserialize a localStorage object
+        var loadStoredObject = function (key) {
+            var value = localStorage.getItem(key);
+            return value && JSON.parse(value);
         };
 
         var retval =
@@ -889,7 +900,7 @@ Adds an adjustment icon next to each image
                 sliders.zoom.current = zoomLevel;
 
                 // Find the settings stored in localStorage, if they exist
-                var sliderSettings = localStorage.getObject(settings.localStoragePrefix + settings.filename);
+                var sliderSettings = loadStoredObject(settings.localStoragePrefix + settings.filename);
                 if (sliderSettings)
                 {
                     for (slider in sliderSettings)
