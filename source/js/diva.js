@@ -20,6 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+/* globals elt, setDOMAttributes */
+
 window.divaPlugins = [];
 
 // this pattern was taken from http://www.virgentech.com/blog/2009/10/building-object-oriented-jquery-plugin.html
@@ -436,14 +438,19 @@ window.divaPlugins = [];
             {
                 var innerElement = document.getElementById(settings.innerElement);
 
-                var pageElement = document.createElement('div');
-                pageElement.id = settings.ID + 'page-' + pageIndex;
-                pageElement.classList.add('diva-page', 'diva-document-page');
-                pageElement.setAttribute('data-index', pageIndex);
-                pageElement.setAttribute('data-filename', filename);
-                pageElement.style.width = width + 'px';
-                pageElement.style.height = height + 'px';
+                var pageElement = elt('div', {
+                    id: settings.ID + 'page-' + pageIndex,
+                    class: 'diva-page diva-document-page',
+                    style: {
+                        width: width + 'px',
+                        height: height + 'px'
+                    },
+                    'data-index': pageIndex,
+                    'data-filename': filename
+                });
+
                 if (settings.enableImageTitles) pageElement.title = "Page " + (pageIndex + 1);
+
                 // Append page tools
                 pageElement.innerHTML = settings.pageTools;
 
@@ -458,15 +465,22 @@ window.divaPlugins = [];
                 }
                 else
                 {
-                    canvasElement = document.createElement('canvas');
-                    canvasElement.width = width;
-                    canvasElement.height = height;
+                    canvasElement = elt('canvas', {
+                        width: width,
+                        height: height
+                    });
                 }
 
-                canvasElement.style.width = width + 'px';
-                canvasElement.style.height = height + 'px';
-                canvasElement.id = settings.ID + 'canvas-' + pageIndex;
-                canvasElement.setAttribute('class', 'diva-canvas');
+                // FIXME(wabain): Why is this declared after the fact?
+                setDOMAttributes(canvasElement, {
+                    id: settings.ID + 'canvas-' + pageIndex,
+                    class: 'diva-canvas',
+                    style: {
+                        width: width + 'px',
+                        height: height + 'px'
+                    }
+                });
+
                 pageElement.appendChild(canvasElement);
 
                 if (settings.verticallyOriented)
@@ -485,18 +499,22 @@ window.divaPlugins = [];
                             if (pageIndex === 0)
                             {
                                 // create a placeholder div for the left side of the first opening
-                                var placeholderElement = document.createElement('div');
-                                placeholderElement.id = settings.ID + 'page-placeholder';
-                                placeholderElement.classList.add('diva-page', 'diva-document-page');
-                                placeholderElement.style.width = width + 'px';
-                                placeholderElement.style.height = height + 'px';
-                                placeholderElement.style.top = 0;
-                                placeholderElement.style.left = 0 - width + 'px';
-                                placeholderElement.style.border = '1px solid #ccc';
-                                placeholderElement.style.background = '#fdfdfd';
-                                placeholderElement.style.mozBoxSizing = 'border-box';
-                                placeholderElement.style.webkitBoxSizing = 'border-box';
-                                placeholderElement.style.boxSizing = 'border-box';
+                                var placeholderElement = elt('div', {
+                                    id: settings.ID + 'page-placeholder',
+                                    class: 'diva-page diva-document-page',
+                                    style: {
+                                        width: width + 'px',
+                                        height: height + 'px',
+                                        top: 0,
+                                        left: 0 - width + 'px',
+                                        border: '1px solid #ccc',
+                                        background: '#fdfdfd',
+                                        mozBoxSizing: 'border-box',
+                                        webkitBoxSizing: 'border-box',
+                                        boxSizing: 'border-box'
+                                    }
+                                });
+
                                 // append the placeholder element to page as first child
                                 pageElement.appendChild(placeholderElement);
                             }
@@ -536,9 +554,10 @@ window.divaPlugins = [];
             var pageSelector = settings.selector + 'page-' + pageIndex;
 
             // New off-screen canvas
-            var pageCanvas = document.createElement('canvas');
-            pageCanvas.width = width;
-            pageCanvas.height = height;
+            var pageCanvas = elt('canvas', {
+                width: width,
+                height: height
+            });
 
             // If corresponding page is in previousZoomLevelCanvases, copy existing image from previous zoom level, scaled, to canvas
             if (settings.previousZoomLevelCanvases[pageIndex])
@@ -810,13 +829,15 @@ window.divaPlugins = [];
             var innerElem = document.getElementById(settings.ID + "inner");
 
             // Create the row div
-            var rowDiv = document.createElement('div');
-            rowDiv.id = settings.ID + 'row-' + rowIndex;
-            rowDiv.classList.add('diva-row');
-            rowDiv.style.height = settings.rowHeight + 'px';
-            rowDiv.style.top = heightFromTop + 'px';
+            var rowDiv = elt('div', {
+                id: settings.ID + 'row-' + rowIndex,
+                class: 'diva-row',
+                style: {
+                    height: settings.rowHeight + 'px',
+                    top: heightFromTop + 'px'
+                }
+            });
 
-            // Create the opening tag for the row div
             innerElem.appendChild(rowDiv);
 
             // Declare variables used in the loop
@@ -856,20 +877,23 @@ window.divaPlugins = [];
                 settings.pageTopOffsets[pageIndex] = heightFromTop;
                 settings.pageLeftOffsets[pageIndex] = leftOffset;
 
-                // Append the HTML for this page to the string builder array
-                var pageDiv = document.createElement('div');
-                pageDiv.id = settings.ID + 'page-' + pageIndex;
-                var pageSelector = settings.selector + 'page-' + pageIndex;
-                pageDiv.classList.add('diva-page', 'diva-grid-page');
-                pageDiv.style.width = pageWidth + 'px';
-                pageDiv.style.height = pageHeight + 'px';
-                pageDiv.style.left = leftOffset + 'px';
-                pageDiv.setAttribute('data-index', pageIndex);
-                pageDiv.setAttribute('data-filename', filename);
+                var pageDiv = elt('div', {
+                    id: settings.ID + 'page-' + pageIndex,
+                    class: 'diva-page diva-grid-page',
+                    style: {
+                        width: pageWidth + 'px',
+                        height: pageHeight + 'px',
+                        left: leftOffset + 'px'
+                    },
+                    'data-index': pageIndex,
+                    'data-filename': filename
+                });
+
                 if (settings.enableImageTitles) pageDiv.title = "Page " + (pageIndex + 1);
 
                 rowDiv.appendChild(pageDiv);
 
+                var pageSelector = settings.selector + 'page-' + pageIndex;
                 diva.Events.publish("PageWillLoad", [pageIndex, filename, pageSelector], self);
 
                 // Add each image to a queue so that images aren't loaded unnecessarily
@@ -1013,10 +1037,14 @@ window.divaPlugins = [];
             {
                 if (isPageLoaded(pageIndex))
                 {
-                    var imgEl = document.createElement('img');
-                    imgEl.src = imageURL;
-                    imgEl.style.width = pageWidth + 'px';
-                    imgEl.style.height = pageHeight + 'px';
+                    var imgEl = elt('img', {
+                        src: imageURL,
+                        style: {
+                            width: pageWidth + 'px',
+                            height: pageHeight + 'px'
+                        }
+                    });
+
                     document.getElementById(settings.ID + 'page-' + pageIndex).appendChild(imgEl);
                 }
             };
@@ -2506,84 +2534,69 @@ window.divaPlugins = [];
         // Creates a toolbar button
         var createButtonElement = function(name, label)
         {
-            var element = document.createElement('span');
-            element.id = settings.ID + name;
-            element.setAttribute('class', 'diva-' + name + ' diva-button');
-            element.title = label;
-
-            return element;
+            return elt('span', {
+                id: settings.ID + name,
+                class: 'diva-' + name + ' diva-button',
+                title: label
+            });
         };
 
         var createViewMenuElement = function()
         {
-            var viewMenuContainer = document.createElement('div');
-            viewMenuContainer.id = settings.ID + 'view-menu';
-            viewMenuContainer.className = 'diva-view-menu';
-
-            var viewMenuButton = createButtonElement('view-icon', 'Change view');
-            viewMenuContainer.appendChild(viewMenuButton);
-
-            var viewOptionsMenu = document.createElement('div');
-            viewOptionsMenu.id = settings.ID + 'view-options';
-            viewOptionsMenu.className = 'diva-view-options';
-            viewMenuContainer.appendChild(viewOptionsMenu);
-
-            return viewMenuContainer;
+            return elt('div', {
+                id: settings.ID + 'view-menu',
+                class: 'diva-view-menu'
+            },
+            [
+                createButtonElement('view-icon', 'Change view'),
+                elt('div', {
+                    id: settings.ID + 'view-options',
+                    className: 'diva-view-options'
+                })
+            ]);
         };
 
         var createSliderElement = function(name, value, min, max)
         {
-            var sliderElement = document.createElement('input');
-
-            sliderElement.id = settings.ID + name;
-            sliderElement.className = name;
-            sliderElement.setAttribute('type', 'range');
-            sliderElement.setAttribute('value', value);
-            sliderElement.setAttribute('min', min);
-            sliderElement.setAttribute('max', max);
-
-            return sliderElement;
+            return elt('input', {
+                id: settings.ID + name,
+                class: name,
+                type: 'range',
+                value: value,
+                min: min,
+                max: max
+            });
         };
 
         var createLabel = function(name, id, label, innerName, innerValue)
         {
-            var labelContainerElement = document.createElement('div');
-            labelContainerElement.id = settings.ID + id;
-            labelContainerElement.className = name + ' diva-label';
-
-            var zoomLabelNode = document.createTextNode(label);
-            labelContainerElement.appendChild(zoomLabelNode);
-
-            var innerValueElement = document.createElement('span');
-            innerValueElement.id = settings.ID + innerName;
-            var initialInnerValue = document.createTextNode(innerValue);
-            innerValueElement.appendChild(initialInnerValue);
-            labelContainerElement.appendChild(innerValueElement);
-
-            return labelContainerElement;
+            return elt('div', {
+                id: settings.ID + id,
+                class: name + ' diva-label'
+            },
+            [
+                label,
+                elt('span', {
+                    id: settings.ID + innerName
+                }, [innerValue])
+            ]);
         };
 
         var createPageLabel = function(name)
         {
-            var labelContainerElement = document.createElement('span');
-            labelContainerElement.className = name + ' diva-label';
-
-            var labelPrefixNode = document.createTextNode('Page ');
-
-            var currentPageElement = document.createElement('span');
-            currentPageElement.id = settings.ID + 'current-page';
-
-            var labelMiddleNode = document.createTextNode(' of ');
-
-            var numPagesElement = document.createElement('span');
-            numPagesElement.id = settings.ID + 'num-pages';
-
-            labelContainerElement.appendChild(labelPrefixNode);
-            labelContainerElement.appendChild(currentPageElement);
-            labelContainerElement.appendChild(labelMiddleNode);
-            labelContainerElement.appendChild(numPagesElement);
-
-            return labelContainerElement;
+            return elt('span', {
+                class: name + ' diva-label'
+            },
+            [
+                'Page ',
+                elt('span', {
+                    id: settings.ID + 'current-page'
+                }),
+                ' of ',
+                elt('span', {
+                    id: settings.ID + 'num-pages'
+                })
+            ]);
         };
 
         // Handles all status updating etc (both fullscreen and not)
@@ -2656,22 +2669,21 @@ window.divaPlugins = [];
             // Go to page form
             if (settings.enableGotoPage)
             {
-                var gotoForm = document.createElement('form');
-                gotoForm.id = settings.ID + 'goto-page';
-                gotoForm.className = 'diva-goto-form';
-
-                //input
-                var pageField = document.createElement('input');
-                pageField.id = settings.ID + 'goto-page-input';
-                pageField.className = 'diva-input';
-                pageField.setAttribute('type', 'text');
-                gotoForm.appendChild(pageField);
-
-                //submit button
-                var pageSubmit = document.createElement('input');
-                pageSubmit.setAttribute('type', 'submit');
-                pageSubmit.setAttribute('value', 'Go');
-                gotoForm.appendChild(pageSubmit);
+                var gotoForm = elt('form', {
+                    id: settings.ID + 'goto-page',
+                    class: 'diva-goto-form'
+                },
+                [
+                    elt('input', {
+                        id: settings.ID + 'goto-page-input',
+                        class: 'diva-input',
+                        type: 'text'
+                    }),
+                    elt('input', {
+                        type: 'submit',
+                        value: 'Go'
+                    })
+                ]);
 
                 pageNavElement.appendChild(gotoForm);
             }
@@ -3383,24 +3395,24 @@ window.divaPlugins = [];
 
         var showError = function(messageText)
         {
-            var errorModal = '<div id="' + settings.ID + 'error" class="diva-error">' +
-                '<button id="' + settings.ID + 'error-close" class="diva-error-close" aria-label="Close dialog"></button>' +
-                '<p><strong>Error</strong></p><p>' + messageText + '</p></div>';
+            var textDiv = elt('div');
+            textDiv.innerHTML = messageText;
 
-            var errorElement = document.createElement('div');
-            errorElement.id = settings.ID + 'error';
-            errorElement.setAttribute('class', 'diva-error');
-
-            var closeButton = document.createElement('button');
-            closeButton.id = settings.ID + 'error-close';
-            closeButton.setAttribute('class', 'diva-error-close');
-            closeButton.setAttribute('aria-label', 'Close Dialog');
-
-            var message = document.createElement('p');
-            message.innerHTML = '<strong>Error</strong></p><p>' + messageText + '</p>';
-
-            errorElement.appendChild(closeButton);
-            errorElement.appendChild(message);
+            var errorElement = elt('div', {
+                id: settings.ID + 'error',
+                class: 'diva-error'
+            },
+            [
+                elt('button', {
+                    id: settings.ID + 'error-close',
+                    class: 'diva-error-close',
+                    'aria-label': 'Close dialog'
+                }),
+                elt('p', null, [
+                    elt('strong', null, ['Error'])
+                ]),
+                textDiv
+            ]);
 
             settings.outerObject.append(errorElement);
 

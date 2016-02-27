@@ -1087,3 +1087,84 @@ var activeDivaController = (function ($)
 })(jQuery);
 
 var activeDiva = new activeDivaController();
+
+/**
+ * Convenience function to create a DOM element, set attributes on it, and
+ * append children. The attributes are as described for setDOMAttributes.
+ * Children can either be a DOM node or a string, which is converted to
+ * a text node.
+ *
+ * Inspired by the ProseMirror helper of the same name.
+ */
+function elt(tag, attributes, children)
+{
+    var el = document.createElement(tag);
+
+    if (attributes != null)
+        setDOMAttributes(el, attributes);
+
+    if (children != null)
+        appendChildren(el, children);
+
+    return el;
+}
+
+/**
+ * Set attributes of a DOM element. The `style` property is special-cased to
+ * accept either a string or an object whose own attributes are assigned to
+ * el.style.
+ */
+function setDOMAttributes(el, attributes)
+{
+    for (var prop in attributes)
+    {
+        if (!attributes.hasOwnProperty(prop))
+            continue;
+
+        if (prop === 'style')
+        {
+            setStyle(el, attributes.style);
+        }
+        else
+        {
+            el.setAttribute(prop, attributes[prop]);
+        }
+    }
+}
+
+function setStyle(el, style)
+{
+    if (!style)
+        return;
+
+    if (typeof style !== 'object')
+    {
+        el.style.cssText = style;
+        return;
+    }
+
+    for (var cssProp in style)
+    {
+        if (!style.hasOwnProperty(cssProp))
+            continue;
+
+        el.style[cssProp] = style[cssProp];
+    }
+}
+
+function appendChildren(el, children)
+{
+    var childCount = children.length;
+
+    for (var i = 0; i < childCount; i++)
+    {
+        var child = children[i];
+
+        if (!(child instanceof window.Node))
+            child = document.createTextNode(child);
+
+        // We could use a document fragment for this instead of appending directly to the element,
+        // but since the primary use case here is creating new elements that seems like overkill
+        el.appendChild(child);
+    }
+}
