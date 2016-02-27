@@ -225,11 +225,11 @@ window.divaPlugins = [];
         // Check if a tile has been loaded (note: performance-sensitive function)
         var isTileLoaded = function (pageIndex, tileIndex)
         {
-            var i = settings.loadedTiles.length;
+            var tiles = settings.loadedTiles[pageIndex];
 
-            while (i--)
+            for (var i = tiles.length; i >= 0; i--)
             {
-                if (settings.loadedTiles[pageIndex][i] === tileIndex)
+                if (tiles[i] === tileIndex)
                 {
                     return true;
                 }
