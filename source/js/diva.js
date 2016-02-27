@@ -273,7 +273,7 @@ window.divaPlugins = [];
             }
             else
             {
-                showError('Your browser lacks support for the <pre><canvas></pre> element. Please upgrade your browser. Error: ' + error);
+                showError('Your browser lacks support for the <pre>canvas</pre> element. Please upgrade your browser.');
                 return false;
             }
 
