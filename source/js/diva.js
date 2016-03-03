@@ -1300,6 +1300,11 @@ window.divaPlugins = [];
             // Clear all the timeouts to prevent undesired pages from loading
             clearTimeout(settings.resizeTimer);
 
+            clearPageTimeouts();
+        };
+
+        var clearPageTimeouts = function ()
+        {
             while (settings.pageTimeouts.length)
             {
                 clearTimeout(settings.pageTimeouts.pop());
@@ -2440,6 +2445,9 @@ window.divaPlugins = [];
             }
 
             diva.Events.subscribe('PanelSizeDidChange', updatePanelSize, settings.ID);
+
+            // Clear page timeouts when the viewer is destroyed
+            diva.Events.subscribe('ViewerDidTerminate', clearPageTimeouts, settings.ID);
 
             // Detect supported transition end event, bind loadDocument to end of zoom transition
             // http://stackoverflow.com/a/9090128
