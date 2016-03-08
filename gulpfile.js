@@ -11,6 +11,8 @@ var rename = require('gulp-rename');
 
 var karma = require('karma');
 
+var Promise = require('bluebird');
+
 gulp.task('develop:jshint', function()
 {
     return gulp.src(['source/js/**/*.js'])
@@ -123,10 +125,8 @@ gulp.task('develop', ['develop:build', 'develop:server'], function()
 
 gulp.task('release', ['develop:build'], function()
 {
-    var spawn = require('child_process').spawn;
-    var fs = require('fs');
-    var del = require('del');
     var archiver = require('archiver');
+
     var argv = require('yargs')
                 .usage('Usage: gulp release -v [num]')
                 .demand(['v'])
@@ -135,51 +135,20 @@ gulp.task('release', ['develop:build'], function()
 
     var release_name = 'diva-v' + argv.v;
 
-    // Bump the package.json version
-    var npm = spawn('npm', ['version', '--no-git-tag-version', argv.v], {stdio: 'inherit'});
-
-    npm.on('close', function (code)
-    {
-        if (code !== 0)
-            console.error('npm exited with code ' + code);
-    });
-
-    /// tar.gz creation
-    var tgz_out = fs.createWriteStream(__dirname + '/' + release_name + '.tar.gz');
     var tgz_archive = archiver('tar', {
         gzip: true,
         gzipOptions: {
             level: 9
         }
     });
-    tgz_archive.on('close', function()
-    {
-        console.log(tgz_archive.pointer() + ' total bytes');
-        console.log('Finished writing tar.gz archive');
-    });
-    tgz_archive.on('error', function()
-    {
-        console.log('There was a problem creating the tar.gz archive.');
-    });
-    tgz_archive.pipe(tgz_out);
-    tgz_archive.directory('build/', release_name)
-               .finalize();
 
-    /// zipfile creation
-    var zip_out = fs.createWriteStream(__dirname + '/' + release_name + '.zip');
     var zip_archive = archiver('zip');
-    zip_archive.on('close', function()
-    {
-        console.log(zip_archive.pointer() + ' total bytes');
-        console.log('Finished writing zip archive');
-    });
-    zip_archive.on('error', function()
-    {
-        console.log('There was a problem creating the zip archive.');
-    });
-    zip_archive.pipe(zip_out);
-    zip_archive.directory('build/', release_name)
-               .finalize();
+
+    return Promise.all([
+        writeArchive(release_name + '.tar.gz', release_name, tgz_archive),
+        writeArchive(release_name + '.zip',    release_name, zip_archive),
+        setVersionForNpm(argv.v)
+    ]);
 });
 
 gulp.task('develop:test', ['develop:build'], function (done)
@@ -194,3 +163,64 @@ gulp.task('default', ['develop:build'], function()
 {
     gulp.start('develop:build');
 });
+
+function writeArchive(filename, releaseName, archive)
+{
+    var fs = require('fs');
+
+    var out = fs.createWriteStream(__dirname + '/' + filename);
+    var format = archive._format;
+
+    var promise = new Promise(function (resolve, reject)
+    {
+        archive.on('close', function()
+        {
+            console.log(archive.pointer() + ' total bytes');
+            console.log('Finished writing ' + format + ' archive');
+
+            resolve();
+        });
+
+        archive.on('error', function(err)
+        {
+            console.error('There was a problem creating the ' + format + ' archive: ' + err);
+
+            reject(err);
+        });
+    });
+
+    archive.pipe(out);
+    archive.directory('build/', releaseName)
+        .finalize();
+
+    return promise;
+}
+
+function setVersionForNpm(version)
+{
+    var spawn = require('child_process').spawn;
+
+    return new Promise(function (resolve, reject)
+    {
+        var npm = spawn('npm', ['version', '--no-git-tag-version', version], {stdio: 'inherit'});
+
+        npm.on('error', function (err)
+        {
+            console.error('failed to call npm version: ' + err);
+            reject(err);
+        });
+
+        npm.on('exit', function (code)
+        {
+            if (code === 0)
+            {
+                resolve();
+            }
+            else
+            {
+                console.error('npm exited with code ' + code);
+                reject();
+            }
+        });
+    });
+}
