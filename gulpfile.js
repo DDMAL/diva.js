@@ -3,6 +3,7 @@
 
 var gulp = require('gulp');
 var $ = require('gulp-load-plugins')();
+var merge = require('merge-stream');
 var sourcemaps = require('gulp-sourcemaps');
 var less = require('gulp-less');
 var uglify = require('gulp-uglify');
@@ -43,18 +44,20 @@ gulp.task('develop:compile', function()
 
 gulp.task('develop:styles', function()
 {
-    gulp.src('source/css/diva.less')
+    var unminimized = gulp.src('source/css/diva.less')
         .pipe(sourcemaps.init())
         .pipe(less())
         .pipe(sourcemaps.write('./'))
         .pipe(gulp.dest('build/css'));
 
-    gulp.src('source/css/diva.less')
+    var minimized = gulp.src('source/css/diva.less')
         .pipe(rename({suffix: '.min'}))
         .pipe(sourcemaps.init())
         .pipe(less({compress: true}))
         .pipe(sourcemaps.write('./'))
         .pipe(gulp.dest('build/css'));
+
+    return merge(minimized, unminimized);
 });
 
 gulp.task('develop:server', function()
@@ -75,36 +78,31 @@ gulp.task('develop:server', function()
         });
 });
 
-gulp.task('develop:clean', function()
+gulp.task('develop:clean', function(done)
 {
     var del = require('del');
+
     del(['build/'], function() {
         console.log('Cleaning build directory');
+        done();
     });
 });
 
 gulp.task('develop:build', ['develop:styles', 'develop:compile'], function()
 {
-    gulp.src('source/js/**/*.js')
+    var js = gulp.src('source/js/**/*.js')
         .pipe(gulp.dest('build/js'));
 
-    gulp.src('source/processing/*.py')
+    var processing = gulp.src('source/processing/*.py')
         .pipe(gulp.dest('build/processing'));
 
-    gulp.src('demo/*')
+    var demo = gulp.src(['demo/*', 'demo/diva/*'])
         .pipe(gulp.dest('build/demo'));
 
-    gulp.src('demo/diva/*')
-        .pipe(gulp.dest('build/demo'));
-
-    gulp.src('AUTHORS')
+    var meta = gulp.src(['AUTHORS', 'LICENSE', 'readme.md'])
         .pipe(gulp.dest('build'));
 
-    gulp.src('LICENSE')
-        .pipe(gulp.dest('build'));
-
-    gulp.src('readme.md')
-        .pipe(gulp.dest('build'));
+    return merge(js, processing, demo, meta);
 });
 
 gulp.task('develop', ['develop:build', 'develop:server'], function()
