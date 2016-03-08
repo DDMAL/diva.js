@@ -9,7 +9,9 @@ install:
   - npm install -g gulp
   - npm install
 
-script: gulp develop:test
+script:
+  - gulp develop:jshint
+  - gulp develop:test
 
 notifications:
 webhooks:
