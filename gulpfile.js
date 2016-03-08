@@ -105,9 +105,6 @@ gulp.task('develop:build', ['develop:styles', 'develop:compile'], function()
 
     gulp.src('readme.md')
         .pipe(gulp.dest('build'));
-
-    // gulp.start('develop:styles');
-    // gulp.start('develop:compile');
 });
 
 gulp.task('develop', ['develop:build', 'develop:server'], function()
@@ -159,10 +156,7 @@ gulp.task('develop:test', ['develop:build'], function (done)
     }, done).start();
 });
 
-gulp.task('default', ['develop:build'], function()
-{
-    gulp.start('develop:build');
-});
+gulp.task('default', ['develop:build']);
 
 function writeArchive(filename, releaseName, archive)
 {
