@@ -3,7 +3,7 @@ Test coverage: pretty much complete
 Can't really (or don't need to) test any of the others
 */
 
-QUnit.module("Utility methods", { beforeEach: clearTempDiva });
+QUnit.module("Utility methods");
 
 test("getHashParam()", function (assert)
 {
