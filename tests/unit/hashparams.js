@@ -30,7 +30,7 @@ var testHashParams = function (testName, hashParams, onReadyCallback, config) {
 
         diva.Events.subscribe('ViewerDidLoad', function(settings)
         {
-            onReadyCallback.call(this, settings);
+            onReadyCallback.call(this, settings, assert);
             window.location.hash = previousHash;
             done();
         });
@@ -39,119 +39,119 @@ var testHashParams = function (testName, hashParams, onReadyCallback, config) {
     });
 };
 
-testHashParams("grid view (v)", {v: "g"}, function (settings) {
-    ok(settings.inGrid, "inGrid setting should be true");
-    equal($(settings.selector + 'view-menu').children()[0].classList[0], 'diva-grid-icon', "Current toolbar view icon should be the grid icon");
-    ok($(settings.selector + 'grid-out-button').is(':visible'), "Grid buttons (-) should be visible");
-    ok($(settings.selector + 'grid-in-button').is(':visible'), "Grid buttons (+) should be visible");
-    ok(!$(settings.selector + 'zoom-slider').is(':visible'), "Zoom slider should not be visible");
-    equal($('.diva-document-page').length, 0, "There should be no document pages");
-    notEqual($('.diva-row').length, 0, "There should be at least one row");
+testHashParams("grid view (v)", {v: "g"}, function (settings, assert) {
+    assert.ok(settings.inGrid, "inGrid setting should be true");
+    assert.strictEqual($(settings.selector + 'view-menu').children()[0].classList[0], 'diva-grid-icon', "Current toolbar view icon should be the grid icon");
+    assert.ok($(settings.selector + 'grid-out-button').is(':visible'), "Grid buttons (-) should be visible");
+    assert.ok($(settings.selector + 'grid-in-button').is(':visible'), "Grid buttons (+) should be visible");
+    assert.ok(!$(settings.selector + 'zoom-slider').is(':visible'), "Zoom slider should not be visible");
+    assert.strictEqual($('.diva-document-page').length, 0, "There should be no document pages");
+    assert.notStrictEqual($('.diva-row').length, 0, "There should be at least one row");
 });
 
-testHashParams("book view (v)", {v: "b"}, function(settings) {
-    ok(settings.inBookLayout, "inBookLayout setting should be true");
-    equal($(settings.selector + 'view-menu').children()[0].classList[0], 'diva-book-icon', "Current toolbar view icon should be the book icon");
-    ok($('.diva-page-book').length, 'There should be some book pages');
+testHashParams("book view (v)", {v: "b"}, function (settings, assert) {
+    assert.ok(settings.inBookLayout, "inBookLayout setting should be true");
+    assert.strictEqual($(settings.selector + 'view-menu').children()[0].classList[0], 'diva-book-icon', "Current toolbar view icon should be the book icon");
+    assert.ok($('.diva-page-book').length, 'There should be some book pages');
 });
 
-testHashParams("fullscreen (f)", {f: "true"}, function (settings) {
-    ok(settings.inFullscreen, "inFullscreen setting should be true");
-    ok($('body').hasClass('diva-hide-scrollbar'), "The body element should have the hide-scrollbar class");
+testHashParams("fullscreen (f)", {f: "true"}, function (settings, assert) {
+    assert.ok(settings.inFullscreen, "inFullscreen setting should be true");
+    assert.ok($('body').hasClass('diva-hide-scrollbar'), "The body element should have the hide-scrollbar class");
 });
 
-testHashParams("view (v) = 'g' and fullscreen (f)", {v: "g", f: "true"}, function (settings) {
-    ok(settings.inFullscreen, "inFullscreen setting should be true");
-    ok(settings.inGrid, "inGrid setting should be true");
+testHashParams("view (v) = 'g' and fullscreen (f)", {v: "g", f: "true"}, function (settings, assert) {
+    assert.ok(settings.inFullscreen, "inFullscreen setting should be true");
+    assert.ok(settings.inGrid, "inGrid setting should be true");
 });
 
-testHashParams("zoom level (z) - valid value", {z: "3"}, function (settings) {
-    equal(settings.zoomLevel, 3, "Initial zoom level should be 3");
+testHashParams("zoom level (z) - valid value", {z: "3"}, function (settings, assert) {
+    assert.strictEqual(settings.zoomLevel, 3, "Initial zoom level should be 3");
 });
 
-testHashParams("zoom level (z) - invalid value", {z: "5"}, function (settings) {
-    equal(settings.zoomLevel, 0, "Initial zoom was invalid but >= 0, should be set to the min (0)");
+testHashParams("zoom level (z) - invalid value", {z: "5"}, function (settings, assert) {
+    assert.strictEqual(settings.zoomLevel, 0, "Initial zoom was invalid but >= 0, should be set to the min (0)");
 });
 
-testHashParams("zoom level (z) and view (v) = 'g' ", {z: "1", v: "g"}, function (settings) {
-    equal(settings.zoomLevel, 1, "Initial zoom level should be 1");
-    ok(settings.inGrid, "Should be in grid initially");
+testHashParams("zoom level (z) and view (v) = 'g' ", {z: "1", v: "g"}, function (settings, assert) {
+    assert.strictEqual(settings.zoomLevel, 1, "Initial zoom level should be 1");
+    assert.ok(settings.inGrid, "Should be in grid initially");
 
     // Now let's switch into document view and see if the zoom level is preserved
     $(settings.selector + 'grid-icon').click();
-    equal(settings.zoomLevel, 1, "Zoom level setting should still be 1");
-    equal($(settings.selector + 'zoom-label').text(), "Zoom level: 1", "Zoom buttons label should show a zoom level of 1");
+    assert.strictEqual(settings.zoomLevel, 1, "Zoom level setting should still be 1");
+    assert.strictEqual($(settings.selector + 'zoom-label').text(), "Zoom level: 1", "Zoom buttons label should show a zoom level of 1");
 });
 
-testHashParams("zoom level (z) and fullscreen (f)", {z: "1", f: "true"}, function (settings) {
-    equal(settings.zoomLevel, 1, "Initial zoom level should be 1");
-    ok(settings.inFullscreen, "Should be in fullscreen initially");
+testHashParams("zoom level (z) and fullscreen (f)", {z: "1", f: "true"}, function (settings, assert) {
+    assert.strictEqual(settings.zoomLevel, 1, "Initial zoom level should be 1");
+    assert.ok(settings.inFullscreen, "Should be in fullscreen initially");
 
     // Check that we're actually in fullscreen mode
-    ok($('body').hasClass('diva-hide-scrollbar'), "The body element should have the hide-scrollbar class");
+    assert.ok($('body').hasClass('diva-hide-scrollbar'), "The body element should have the hide-scrollbar class");
 
     // Check that the zoom level is actually 1
-    equal($(settings.selector + 'zoom-label').text(), "Zoom level: 1", "Zoom buttons label should show a zoom level of 1");
+    assert.strictEqual($(settings.selector + 'zoom-label').text(), "Zoom level: 1", "Zoom buttons label should show a zoom level of 1");
 });
 
-testHashParams("pagesPerRow (n) - valid value", {n: "3"}, function (settings) {
-    equal(settings.pagesPerRow, 3, "Pages per row should be 3 initially");
+testHashParams("pagesPerRow (n) - valid value", {n: "3"}, function (settings, assert) {
+    assert.strictEqual(settings.pagesPerRow, 3, "Pages per row should be 3 initially");
 });
 
-testHashParams("pagesPerRow (n) - invalid value", {n: "1"}, function (settings) {
-    equal(settings.pagesPerRow, 5, "Pages per row should just be the default");
+testHashParams("pagesPerRow (n) - invalid value", {n: "1"}, function (settings, assert) {
+    assert.strictEqual(settings.pagesPerRow, 5, "Pages per row should just be the default");
 });
 
-testHashParams("pagesPerRow (n) and view (v) = 'g'", {n: "3", v: "g"}, function (settings) {
-    equal(settings.pagesPerRow, 3, "Pages per row should be 3 initially");
-    ok(settings.inGrid, "Should be in grid initially");
+testHashParams("pagesPerRow (n) and view (v) = 'g'", {n: "3", v: "g"}, function (settings, assert) {
+    assert.strictEqual(settings.pagesPerRow, 3, "Pages per row should be 3 initially");
+    assert.ok(settings.inGrid, "Should be in grid initially");
 
     // Check that the pages per row setting is actually 3
-    equal($(settings.selector + 'grid-label').text(), "Pages per row: 3", "Grid buttons label should show 3 pages per row");
-    equal($(settings.selector + 'row-0').children().length, 3, "The first row should have 3 pages");
+    assert.strictEqual($(settings.selector + 'grid-label').text(), "Pages per row: 3", "Grid buttons label should show 3 pages per row");
+    assert.strictEqual($(settings.selector + 'row-0').children().length, 3, "The first row should have 3 pages");
 });
 
-testHashParams("page filename (i) - valid value", {i: "bm_005.tif"}, function (settings) {
-    equal(settings.currentPageIndex, 4, "The initial page should be page 5 (index of 4)");
+testHashParams("page filename (i) - valid value", {i: "bm_005.tif"}, function (settings, assert) {
+    assert.strictEqual(settings.currentPageIndex, 4, "The initial page should be page 5 (index of 4)");
 }, {enableFilename: true});
 
-testHashParams("page filename (i) - invalid value", {i: "bm_000.tif"}, function (settings) {
-    equal(settings.currentPageIndex, 0, "The initial page should just be the first page");
+testHashParams("page filename (i) - invalid value", {i: "bm_000.tif"}, function (settings, assert) {
+    assert.strictEqual(settings.currentPageIndex, 0, "The initial page should just be the first page");
 }, {enableFilename: true});
 
-testHashParams("page number (p) - valid value", {p: "5"}, function (settings) {
-    equal(settings.currentPageIndex, 4, "The initial page should be page 5 (index of 4)");
+testHashParams("page number (p) - valid value", {p: "5"}, function (settings, assert) {
+    assert.strictEqual(settings.currentPageIndex, 4, "The initial page should be page 5 (index of 4)");
 }, {enableFilename: false});
 
-testHashParams("page number (p) - invalid value", {p: "600"}, function (settings) {
-    equal(settings.currentPageIndex, 0, "The initial page should just be the first page");
+testHashParams("page number (p) - invalid value", {p: "600"}, function (settings, assert) {
+    assert.strictEqual(settings.currentPageIndex, 0, "The initial page should just be the first page");
 }, {enableFilename: false});
 
-testHashParams("page number (p), view = 'g'", {p: "100", v: "g"}, function (settings) {
-    equal(settings.currentPageIndex, 99, "The initial page should be 100 (index of 99)");
-    ok(settings.inGrid, "Should be in grid");
+testHashParams("page number (p), view = 'g'", {p: "100", v: "g"}, function (settings, assert) {
+    assert.strictEqual(settings.currentPageIndex, 99, "The initial page should be 100 (index of 99)");
+    assert.ok(settings.inGrid, "Should be in grid");
 }, {enableFilename: false});
 
-testHashParams("vertical offset (y) - positive value", {y: "600"}, function (settings) {
+testHashParams("vertical offset (y) - positive value", {y: "600"}, function (settings, assert) {
     var topScroll = settings.outerObject.scrollTop();
-    equal(topScroll, 250, "Should have scrolled 250 (600 = top of page - viewport y-center) vertically");
+    assert.strictEqual(topScroll, 250, "Should have scrolled 250 (600 = top of page - viewport y-center) vertically");
 });
 
-testHashParams("vertical offset (y) - negative value", {y: "-600"}, function (settings) {
+testHashParams("vertical offset (y) - negative value", {y: "-600"}, function (settings, assert) {
     var topScroll = settings.outerObject.scrollTop();
-    equal(topScroll, 0, "Should not have scrolled negatively because, well, you can't");
+    assert.strictEqual(topScroll, 0, "Should not have scrolled negatively because, well, you can't");
 });
 
-testHashParams("vertical offset (y) and page number (p)", {y: 500, p: 50}, function (settings) {
+testHashParams("vertical offset (y) and page number (p)", {y: 500, p: 50}, function (settings, assert) {
     var topScroll = settings.outerObject.scrollTop();
     var expectedTopScroll = 52922;
-    equal(settings.currentPageIndex, 49, "Current page should be 50 (index of 49)");
-    equal(topScroll, expectedTopScroll, "Should be heightAbovePages + 500 pixels of scroll from the top + page y-center");
+    assert.strictEqual(settings.currentPageIndex, 49, "Current page should be 50 (index of 49)");
+    assert.strictEqual(topScroll, expectedTopScroll, "Should be heightAbovePages + 500 pixels of scroll from the top + page y-center");
 
     // Check that the horizontal scroll hasn't been weirdly affected
     var leftScroll = settings.outerObject.scrollLeft();
     var expectedLeftScroll = (settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2 - (settings.panelWidth)) / 2 - settings.scrollbarWidth;
-    equal(leftScroll, parseInt(expectedLeftScroll, 10), "Horizontal scroll should just center it, as usual");
+    assert.strictEqual(leftScroll, parseInt(expectedLeftScroll, 10), "Horizontal scroll should just center it, as usual");
 }, {enableFilename: false, zoomLevel: 2});
 
 /*
@@ -159,39 +159,39 @@ var desiredHorizontalCenter = settings.widthLeftOfPages[pageIndex] + horizontalO
             var desiredLeft = desiredHorizontalCenter - (settings.outerObject.width() / 2);
             */
 
-testHashParams("horizontal offset (x) - positive value", {x: "100"}, function (settings) {
+testHashParams("horizontal offset (x) - positive value", {x: "100"}, function (settings, assert) {
     var leftScroll = settings.outerObject.scrollLeft();
     var halfMaxWidth = (settings.maxWidths[settings.zoomLevel] / 2 + settings.horizontalPadding + 100);
     var expectedLeftScroll = (halfMaxWidth > settings.panelWidth) ? (halfMaxWidth - settings.panelWidth) / 2 : 0;
-    equal(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
+    assert.strictEqual(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
 });
 
-testHashParams("horizontal offset (x) - negative value", {x: "-100"}, function (settings) {
+testHashParams("horizontal offset (x) - negative value", {x: "-100"}, function (settings, assert) {
     var leftScroll = settings.outerObject.scrollLeft();
     var halfMaxWidth = (settings.maxWidths[settings.zoomLevel] / 2 + settings.horizontalPadding - 100);
     var expectedLeftScroll = (halfMaxWidth > settings.panelWidth) ? (halfMaxWidth - settings.panelWidth) / 2 : 0;
-    equal(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the left");
+    assert.strictEqual(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the left");
 });
 
-testHashParams("horizontal offset (x) and page number (p)", {x: 100, p: 50}, function (settings) {
+testHashParams("horizontal offset (x) and page number (p)", {x: 100, p: 50}, function (settings, assert) {
     var topScroll = settings.outerObject.scrollTop();
     var expectedTopScroll = 52772;
-    equal(topScroll, expectedTopScroll, "vertical scroll should be just to page 50");
+    assert.strictEqual(topScroll, expectedTopScroll, "vertical scroll should be just to page 50");
 
     var leftScroll = settings.outerObject.scrollLeft();
     var halfMaxWidth = (settings.maxWidths[settings.zoomLevel] / 2 + settings.horizontalPadding + 100);
     var expectedLeftScroll = (halfMaxWidth > settings.panelWidth) ? (halfMaxWidth - settings.panelWidth) / 2 : 0;
-    equal(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
+    assert.strictEqual(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
 }, {enableFilename: false});
 
-testHashParams("horizontal offset (x), vertical offset (y), page number (p)", {x: 100, y: 200, p: 50}, function (settings) {
+testHashParams("horizontal offset (x), vertical offset (y), page number (p)", {x: 100, y: 200, p: 50}, function (settings, assert) {
     var topScroll = settings.outerObject.scrollTop();
     var expectedTopScroll = 52622;
-    equal(topScroll, expectedTopScroll, "vertical scroll should be to page 50 + 200 + page y-center");
+    assert.strictEqual(topScroll, expectedTopScroll, "vertical scroll should be to page 50 + 200 + page y-center");
 
     var leftScroll = settings.outerObject.scrollLeft();
     var halfMaxWidth = (settings.maxWidths[settings.zoomLevel] / 2 + settings.horizontalPadding + 100);
     var expectedLeftScroll = (halfMaxWidth > settings.panelWidth) ? (halfMaxWidth - settings.panelWidth) / 2 : 0;
-    equal(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
+    assert.strictEqual(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
 }, {enableFilename: false});
 

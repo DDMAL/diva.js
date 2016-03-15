@@ -9,8 +9,8 @@ QUnit.test("adaptivePadding enabled", function (assert)
     var done = assert.async();
 
     diva.Events.subscribe('ViewerDidLoad', function(settings) {
-        assert.notEqual(settings.verticalPadding, 10, "Adaptive padding should be used, overrides vertical/horizontal");
-        assert.notEqual(settings.horizontalPadding, 10, "Horizontal padding should be overridden by adaptive");
+        assert.notStrictEqual(settings.verticalPadding, 10, "Adaptive padding should be used, overrides vertical/horizontal");
+        assert.notStrictEqual(settings.horizontalPadding, 10, "Horizontal padding should be overridden by adaptive");
         done();
     });
 
@@ -25,8 +25,8 @@ QUnit.test("adaptivePadding disabled, fixedPadding set", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        equal(settings.verticalPadding, 40, "Vertical padding should be 40 (the minimum with plugins enabled)");
-        equal(settings.horizontalPadding, 11, "Horizontal padding should be 11 (fixedPadding)");
+        assert.strictEqual(settings.verticalPadding, 40, "Vertical padding should be 40 (the minimum with plugins enabled)");
+        assert.strictEqual(settings.horizontalPadding, 11, "Horizontal padding should be 11 (fixedPadding)");
         done();
     });
 
@@ -48,7 +48,7 @@ QUnit.test("enableFullscreen false", function (assert)
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         // Make sure the fullscreen icon is not there
-        equal($(settings.selector + 'fullscreen').length, 0, "Fullscreen icon should not be present");
+        assert.strictEqual($(settings.selector + 'fullscreen').length, 0, "Fullscreen icon should not be present");
         done();
     });
 
@@ -64,7 +64,7 @@ QUnit.test("enableFullscreen true", function (assert)
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         // Make sure the fullscreen icon is there
-        notEqual($(settings.selector + 'fullscreen-icon').length, 0, "Fullscreen icon should be present");
+        assert.notStrictEqual($(settings.selector + 'fullscreen-icon').length, 0, "Fullscreen icon should be present");
         done();
     });
 
@@ -79,7 +79,7 @@ QUnit.test("enableGotoPage false", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        equal($(settings.selector + 'goto-page').length, 0, "Go-to-page box should not be present");
+        assert.strictEqual($(settings.selector + 'goto-page').length, 0, "Go-to-page box should not be present");
         done();
     });
 
@@ -94,7 +94,7 @@ QUnit.test("enableGotoPage true", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        notEqual($(settings.selector + 'goto-page').length, 0, "Go-to-page box should be present");
+        assert.notStrictEqual($(settings.selector + 'goto-page').length, 0, "Go-to-page box should be present");
         done();
     });
 
@@ -112,9 +112,9 @@ QUnit.test("enableGridIcon false, enableLinkIcon true", function (assert)
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
             // Check that the link icon is there
-            notEqual($(settings.selector + 'link-icon').length, 0, "Link icon should be present");
+            assert.notStrictEqual($(settings.selector + 'link-icon').length, 0, "Link icon should be present");
             // But the left border should be there for the link icon
-            notEqual($(settings.selector + 'link-icon').css('border-left-width'), '0px', "Link icon should have a left border");
+            assert.notStrictEqual($(settings.selector + 'link-icon').css('border-left-width'), '0px', "Link icon should have a left border");
 
             done();
     });
@@ -130,8 +130,8 @@ QUnit.test("enableGridIcon true, enableLinkIcon true", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        notEqual($(settings.selector + 'grid-icon').length, 0, "Grid icon should be present");
-        notEqual($(settings.selector + 'link-icon').length, 0, "Link icon should be present");
+        assert.notStrictEqual($(settings.selector + 'grid-icon').length, 0, "Grid icon should be present");
+        assert.notStrictEqual($(settings.selector + 'link-icon').length, 0, "Link icon should be present");
         done();
     });
 
@@ -146,10 +146,10 @@ QUnit.test("enableLinkIcon false, enableGridIcon true", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        equal($(settings.selector + 'link-icon').length, 0, "Link icon should not be present");
+        assert.strictEqual($(settings.selector + 'link-icon').length, 0, "Link icon should not be present");
 
         // The grid icon should look normal
-        notEqual($(settings.selector + 'grid-icon').css('border-right-width'), '0px', "Link icon should have a right border");
+        assert.notStrictEqual($(settings.selector + 'grid-icon').css('border-right-width'), '0px', "Link icon should have a right border");
         done();
     });
 
@@ -168,10 +168,10 @@ QUnit.test("enableGridControls 'slider'", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        notEqual($(settings.selector + 'grid-slider').length, 0, "Grid slider should be present");
-        notEqual($(settings.selector + 'grid-label').length, 0, "Grid label should be present");
-        equal($(settings.selector + 'grid-out-button').length, 0, "Grid buttons should not be present");
-        equal($(settings.selector + 'grid-in-button').length, 0, "Grid buttons should not be present");
+        assert.notStrictEqual($(settings.selector + 'grid-slider').length, 0, "Grid slider should be present");
+        assert.notStrictEqual($(settings.selector + 'grid-label').length, 0, "Grid label should be present");
+        assert.strictEqual($(settings.selector + 'grid-out-button').length, 0, "Grid buttons should not be present");
+        assert.strictEqual($(settings.selector + 'grid-in-button').length, 0, "Grid buttons should not be present");
         done();
     });
 
@@ -186,11 +186,11 @@ QUnit.test("enableZoomControls 'slider'", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        notEqual($(settings.selector + 'zoom-slider').length, 0, "Zoom slider should be present");
-        notEqual($(settings.selector + 'zoom-label').length, 0, "Zoom label should be present");
-        equal($(settings.selector + 'zoom-out-button').length, 0, "Zoom buttons should not be present");
-        equal($(settings.selector + 'zoom-in-button').length, 0, "Zoom buttons should not be present");
-        notEqual($(settings.selector + 'grid-label').length, 0, "Grid label should be present");
+        assert.notStrictEqual($(settings.selector + 'zoom-slider').length, 0, "Zoom slider should be present");
+        assert.notStrictEqual($(settings.selector + 'zoom-label').length, 0, "Zoom label should be present");
+        assert.strictEqual($(settings.selector + 'zoom-out-button').length, 0, "Zoom buttons should not be present");
+        assert.strictEqual($(settings.selector + 'zoom-in-button').length, 0, "Zoom buttons should not be present");
+        assert.notStrictEqual($(settings.selector + 'grid-label').length, 0, "Grid label should be present");
         done();
     });
 
@@ -205,10 +205,10 @@ QUnit.test("enableGridControls 'buttons'", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        notEqual($(settings.selector + 'grid-out-button').length, 0, "Grid out button should be present");
-        notEqual($(settings.selector + 'grid-in-button').length, 0, "Grid in button should be present");
-        notEqual($(settings.selector + 'grid-label').length, 0, "Grid label should be present");
-        equal($(settings.selector + 'grid-slider').length, 0, "Grid slider should not be present");
+        assert.notStrictEqual($(settings.selector + 'grid-out-button').length, 0, "Grid out button should be present");
+        assert.notStrictEqual($(settings.selector + 'grid-in-button').length, 0, "Grid in button should be present");
+        assert.notStrictEqual($(settings.selector + 'grid-label').length, 0, "Grid label should be present");
+        assert.strictEqual($(settings.selector + 'grid-slider').length, 0, "Grid slider should not be present");
         done();
     });
 
@@ -223,10 +223,10 @@ QUnit.test("enableZoomControls 'buttons'", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-            notEqual($(settings.selector + 'zoom-out-button').length, 0, "Zoom out button should be present");
-            notEqual($(settings.selector + 'zoom-in-button').length, 0, "Zoom in button should be present");
-            notEqual($(settings.selector + 'zoom-label').length, 0, "Zoom label should be present");
-            equal($(settings.selector + 'zoom-slider').length, 0, "Grid slider should not be present");
+            assert.notStrictEqual($(settings.selector + 'zoom-out-button').length, 0, "Zoom out button should be present");
+            assert.notStrictEqual($(settings.selector + 'zoom-in-button').length, 0, "Zoom in button should be present");
+            assert.notStrictEqual($(settings.selector + 'zoom-label').length, 0, "Zoom label should be present");
+            assert.strictEqual($(settings.selector + 'zoom-slider').length, 0, "Grid slider should not be present");
             done();
     });
 
@@ -254,8 +254,8 @@ QUnit.test("fixedHeightGrid false", function (assert)
             sameHeights = sameHeights && (thisPage.height() == firstPage.height());
         }
 
-        ok(sameWidths, "All page widths should be equal");
-        ok(!sameHeights, "All page heights should NOT be equal");
+        assert.ok(sameWidths, "All page widths should be equal");
+        assert.ok(!sameHeights, "All page heights should NOT be equal");
 
         done();
     });
@@ -283,8 +283,8 @@ QUnit.test("fixedHeightGrid true", function (assert)
             sameHeights = sameHeights && (thisPage.height() == firstPage.height());
         }
 
-        ok(!sameWidths, "All page widths should NOT be equal");
-        ok(sameHeights, "All page heights should be equal");
+        assert.ok(!sameWidths, "All page widths should NOT be equal");
+        assert.ok(sameHeights, "All page heights should be equal");
 
         done();
     });
@@ -300,7 +300,7 @@ QUnit.test("goDirectlyTo, valid", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        equal(settings.currentPageIndex, 10, "The initial page index should be 10");
+        assert.strictEqual(settings.currentPageIndex, 10, "The initial page index should be 10");
         done();
     });
 
@@ -315,7 +315,7 @@ QUnit.test("goDirectlyTo, invalid", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        equal(settings.currentPageIndex, 0, "The initial page index should be 0 (the fallback)");
+        assert.strictEqual(settings.currentPageIndex, 0, "The initial page index should be 0 (the fallback)");
         done();
     });
 
@@ -332,9 +332,9 @@ QUnit.test("inBookLayout true", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        ok(settings.inBookLayout, 'inBookLayout should remain true after initialization');
-        ok(settings.pageLeftOffsets[1] < settings.pageLeftOffsets[2], 'Page 1 should be to the left of page 2');
-        ok(settings.pageLeftOffsets[2] > settings.pageLeftOffsets[3], 'Page 2 should be to the right of page 3');
+        assert.ok(settings.inBookLayout, 'inBookLayout should remain true after initialization');
+        assert.ok(settings.pageLeftOffsets[1] < settings.pageLeftOffsets[2], 'Page 1 should be to the left of page 2');
+        assert.ok(settings.pageLeftOffsets[2] > settings.pageLeftOffsets[3], 'Page 2 should be to the right of page 3');
         done();
     });
 
@@ -349,8 +349,8 @@ QUnit.test("documentPaged", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        ok(settings.documentPaged, 'settings.documentPaged should be true when manifest has viewingHint: paged');
-        ok(settings.inBookLayout, 'settings.inBookLayout should be true when documentPaged is true');
+        assert.ok(settings.documentPaged, 'settings.documentPaged should be true when manifest has viewingHint: paged');
+        assert.ok(settings.inBookLayout, 'settings.inBookLayout should be true when documentPaged is true');
 
         done();
     });
@@ -366,8 +366,8 @@ QUnit.test("inGrid false", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        ok(!settings.inGrid, "inGrid setting should still be false");
-        equal($(settings.selector + 'view-menu').children()[0].classList[0], 'diva-document-icon', "Current toolbar view icon should be the document icon");
+        assert.ok(!settings.inGrid, "inGrid setting should still be false");
+        assert.strictEqual($(settings.selector + 'view-menu').children()[0].classList[0], 'diva-document-icon', "Current toolbar view icon should be the document icon");
         done();
     });
 
@@ -382,8 +382,8 @@ QUnit.test("inGrid true", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        ok(settings.inGrid, "inGrid setting should be preserved");
-        equal($(settings.selector + 'view-menu').children()[0].classList[0], 'diva-grid-icon', "Current toolbar view icon should be the grid icon");
+        assert.ok(settings.inGrid, "inGrid setting should be preserved");
+        assert.strictEqual($(settings.selector + 'view-menu').children()[0].classList[0], 'diva-grid-icon', "Current toolbar view icon should be the grid icon");
         done();
     });
 
@@ -403,9 +403,9 @@ QUnit.test("valid max/minPagesPerRow, valid pagesPerRow", function (assert)
         // Have to enter the grid first, otherwise pagesPerRow isn't changed
         this.enterGridView();
 
-        equal(settings.minPagesPerRow, 3, "minPagesPerRow should be 3");
-        equal(settings.maxPagesPerRow, 5, "maxPagesPerRow should be 5");
-        equal(settings.pagesPerRow, 5, "pagesPerRow is valid");
+        assert.strictEqual(settings.minPagesPerRow, 3, "minPagesPerRow should be 3");
+        assert.strictEqual(settings.maxPagesPerRow, 5, "maxPagesPerRow should be 5");
+        assert.strictEqual(settings.pagesPerRow, 5, "pagesPerRow is valid");
         done();
     });
 
@@ -424,9 +424,9 @@ QUnit.test("invalid max/minPagesPerRow, valid pagesPerRow", function (assert)
     {
         this.enterGridView();
 
-        equal(settings.minPagesPerRow, 2, "minPagesPerRow is invalid, set to 2");
-        equal(settings.maxPagesPerRow, 2, "maxPagesPerRow should be set to min");
-        equal(settings.pagesPerRow, 2, "invalid pages per row should be set to min");
+        assert.strictEqual(settings.minPagesPerRow, 2, "minPagesPerRow is invalid, set to 2");
+        assert.strictEqual(settings.maxPagesPerRow, 2, "maxPagesPerRow should be set to min");
+        assert.strictEqual(settings.pagesPerRow, 2, "invalid pages per row should be set to min");
         done();
     });
 
@@ -443,8 +443,8 @@ QUnit.test("max/minZoomLevel, invalid values", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        equal(settings.minZoomLevel, 0, "minZoomLevel should be set to 0");
-        equal(settings.maxZoomLevel, 4, "maxZoomLevel should be set to 4");
+        assert.strictEqual(settings.minZoomLevel, 0, "minZoomLevel should be set to 0");
+        assert.strictEqual(settings.maxZoomLevel, 4, "maxZoomLevel should be set to 4");
         done();
     });
 
@@ -460,9 +460,9 @@ QUnit.test("max/minZoomLevel, valid values, valid zoomLevel", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        equal(settings.minZoomLevel, 1, "minZoomLevel should be set to 1");
-        equal(settings.maxZoomLevel, 3, "maxZoomLevel should be set to 3");
-        equal(settings.zoomLevel, 2, "zoomLevel should be 2");
+        assert.strictEqual(settings.minZoomLevel, 1, "minZoomLevel should be set to 1");
+        assert.strictEqual(settings.maxZoomLevel, 3, "maxZoomLevel should be set to 3");
+        assert.strictEqual(settings.zoomLevel, 2, "zoomLevel should be 2");
         done();
     });
 
@@ -479,7 +479,7 @@ QUnit.test("max/minZoomLevel, valid values, invalid zoomLevel", function (assert
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        equal(settings.zoomLevel, 1, "Zoom level should be the minZoomLevel (1)");
+        assert.strictEqual(settings.zoomLevel, 1, "Zoom level should be the minZoomLevel (1)");
         done();
     });
 
@@ -496,9 +496,9 @@ QUnit.test("max/minZoomLevel, invalid/valid values, invalid zoomLevel", function
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        equal(settings.minZoomLevel, 2, "minZoomLevel should be set to 2 (valid)");
-        equal(settings.maxZoomLevel, 4, "maxZoomLevel should be set to 4 (invalid)");
-        equal(settings.zoomLevel, 2, "zoomLevel should be 2 (the minimum)");
+        assert.strictEqual(settings.minZoomLevel, 2, "minZoomLevel should be set to 2 (valid)");
+        assert.strictEqual(settings.maxZoomLevel, 4, "maxZoomLevel should be set to 4 (invalid)");
+        assert.strictEqual(settings.zoomLevel, 2, "zoomLevel should be 2 (the minimum)");
         done();
     });
 
@@ -515,7 +515,7 @@ QUnit.test("object for objectData", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        equal(settings.itemTitle, "First page of Beromunster", "Should process an object for objectData like a normal manifest");
+        assert.strictEqual(settings.itemTitle, "First page of Beromunster", "Should process an object for objectData like a normal manifest");
         done();
     });
 
@@ -579,8 +579,8 @@ QUnit.test("viewportMargin, value of 0", function (assert)
     {
         setTimeout(function ()
         {
-            notEqual($(settings.selector + 'page-0').length, 0, "The first page should be present");
-            equal($(settings.selector + 'page-1').length, 0, "The second page should not be present");
+            assert.notStrictEqual($(settings.selector + 'page-0').length, 0, "The first page should be present");
+            assert.strictEqual($(settings.selector + 'page-1').length, 0, "The second page should not be present");
             done();
         }, 100);
     });
@@ -598,8 +598,8 @@ QUnit.test("viewportMargin, value of 1000", function (assert)
     {
         // The second page should be visible after a timeout
         setTimeout(function () {
-            notEqual($(settings.selector + 'page-0').length, 0, "The first page should be present");
-            notEqual($(settings.selector + 'page-1').length, 0, "The second page should be present");
+            assert.notStrictEqual($(settings.selector + 'page-0').length, 0, "The first page should be present");
+            assert.notStrictEqual($(settings.selector + 'page-1').length, 0, "The second page should be present");
             done();
         }, 100);
     });
