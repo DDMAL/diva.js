@@ -4,7 +4,7 @@ Test coverage: pretty much complete
 
 QUnit.module("Hash params", { beforeEach: clearTempDiva });
 
-var multipleHashParamTest = function (testName, hashParams, onReadyCallback, settings) {
+var testHashParams = function (testName, hashParams, onReadyCallback, config) {
     asyncTest(testName, function () {
         var previousHash = window.location.hash;
         var suffix = parseInt($.generateId(), 10) + 1;
@@ -33,18 +33,11 @@ var multipleHashParamTest = function (testName, hashParams, onReadyCallback, set
             start();
         });
 
-        $.tempDiva(settings);
+        $.tempDiva(config);
     });
 };
 
-var hashParamTest = function (testName, hashParam, hashValue, onReadyCallback, settings) {
-    // Has to be done this way because {hashParam: hashValue} does not work
-    var hashParams = {};
-    hashParams[hashParam] = hashValue;
-    multipleHashParamTest(testName, hashParams, onReadyCallback, settings);
-};
-
-hashParamTest("grid view (v)", "v", "g", function (settings) {
+testHashParams("grid view (v)", {v: "g"}, function (settings) {
     ok(settings.inGrid, "inGrid setting should be true");
     equal($(settings.selector + 'view-menu').children()[0].classList[0], 'diva-grid-icon', "Current toolbar view icon should be the grid icon");
     ok($(settings.selector + 'grid-out-button').is(':visible'), "Grid buttons (-) should be visible");
@@ -54,31 +47,31 @@ hashParamTest("grid view (v)", "v", "g", function (settings) {
     notEqual($('.diva-row').length, 0, "There should be at least one row");
 });
 
-hashParamTest("book view (v)", "v", "b", function(settings) {
+testHashParams("book view (v)", {v: "b"}, function(settings) {
     ok(settings.inBookLayout, "inBookLayout setting should be true");
     equal($(settings.selector + 'view-menu').children()[0].classList[0], 'diva-book-icon', "Current toolbar view icon should be the book icon");
     ok($('.diva-page-book').length, 'There should be some book pages');
 });
 
-hashParamTest("fullscreen (f)", "f", "true", function (settings) {
+testHashParams("fullscreen (f)", {f: "true"}, function (settings) {
     ok(settings.inFullscreen, "inFullscreen setting should be true");
     ok($('body').hasClass('diva-hide-scrollbar'), "The body element should have the hide-scrollbar class");
 });
 
-multipleHashParamTest("view (v) = 'g' and fullscreen (f)", {v: "g", f: "true"}, function (settings) {
+testHashParams("view (v) = 'g' and fullscreen (f)", {v: "g", f: "true"}, function (settings) {
     ok(settings.inFullscreen, "inFullscreen setting should be true");
     ok(settings.inGrid, "inGrid setting should be true");
 });
 
-hashParamTest("zoom level (z) - valid value", "z", "3", function (settings) {
+testHashParams("zoom level (z) - valid value", {z: "3"}, function (settings) {
     equal(settings.zoomLevel, 3, "Initial zoom level should be 3");
 });
 
-hashParamTest("zoom level (z) - invalid value", "z", "5", function (settings) {
+testHashParams("zoom level (z) - invalid value", {z: "5"}, function (settings) {
     equal(settings.zoomLevel, 0, "Initial zoom was invalid but >= 0, should be set to the min (0)");
 });
 
-multipleHashParamTest("zoom level (z) and view (v) = 'g' ", {z: "1", v: "g"}, function (settings) {
+testHashParams("zoom level (z) and view (v) = 'g' ", {z: "1", v: "g"}, function (settings) {
     equal(settings.zoomLevel, 1, "Initial zoom level should be 1");
     ok(settings.inGrid, "Should be in grid initially");
 
@@ -88,7 +81,7 @@ multipleHashParamTest("zoom level (z) and view (v) = 'g' ", {z: "1", v: "g"}, fu
     equal($(settings.selector + 'zoom-label').text(), "Zoom level: 1", "Zoom buttons label should show a zoom level of 1");
 });
 
-multipleHashParamTest("zoom level (z) and fullscreen (f)", {z: "1", f: "true"}, function (settings) {
+testHashParams("zoom level (z) and fullscreen (f)", {z: "1", f: "true"}, function (settings) {
     equal(settings.zoomLevel, 1, "Initial zoom level should be 1");
     ok(settings.inFullscreen, "Should be in fullscreen initially");
 
@@ -99,15 +92,15 @@ multipleHashParamTest("zoom level (z) and fullscreen (f)", {z: "1", f: "true"}, 
     equal($(settings.selector + 'zoom-label').text(), "Zoom level: 1", "Zoom buttons label should show a zoom level of 1");
 });
 
-hashParamTest("pagesPerRow (n) - valid value", "n", "3", function (settings) {
+testHashParams("pagesPerRow (n) - valid value", {n: "3"}, function (settings) {
     equal(settings.pagesPerRow, 3, "Pages per row should be 3 initially");
 });
 
-hashParamTest("pagesPerRow (n) - invalid value", "n", "1", function (settings) {
+testHashParams("pagesPerRow (n) - invalid value", {n: "1"}, function (settings) {
     equal(settings.pagesPerRow, 5, "Pages per row should just be the default");
 });
 
-multipleHashParamTest("pagesPerRow (n) and view (v) = 'g'", {n: "3", v: "g"}, function (settings) {
+testHashParams("pagesPerRow (n) and view (v) = 'g'", {n: "3", v: "g"}, function (settings) {
     equal(settings.pagesPerRow, 3, "Pages per row should be 3 initially");
     ok(settings.inGrid, "Should be in grid initially");
 
@@ -116,38 +109,38 @@ multipleHashParamTest("pagesPerRow (n) and view (v) = 'g'", {n: "3", v: "g"}, fu
     equal($(settings.selector + 'row-0').children().length, 3, "The first row should have 3 pages");
 });
 
-hashParamTest("page filename (i) - valid value", "i", "bm_005.tif", function (settings) {
+testHashParams("page filename (i) - valid value", {i: "bm_005.tif"}, function (settings) {
     equal(settings.currentPageIndex, 4, "The initial page should be page 5 (index of 4)");
 }, {enableFilename: true});
 
-hashParamTest("page filename (i) - invalid value", "i", "bm_000.tif", function (settings) {
+testHashParams("page filename (i) - invalid value", {i: "bm_000.tif"}, function (settings) {
     equal(settings.currentPageIndex, 0, "The initial page should just be the first page");
 }, {enableFilename: true});
 
-hashParamTest("page number (p) - valid value", "p", "5", function (settings) {
+testHashParams("page number (p) - valid value", {p: "5"}, function (settings) {
     equal(settings.currentPageIndex, 4, "The initial page should be page 5 (index of 4)");
 }, {enableFilename: false});
 
-hashParamTest("page number (p) - invalid value", "p", "600", function (settings) {
+testHashParams("page number (p) - invalid value", {p: "600"}, function (settings) {
     equal(settings.currentPageIndex, 0, "The initial page should just be the first page");
 }, {enableFilename: false});
 
-multipleHashParamTest("page number (p), view = 'g'", {p: "100", v: "g"}, function (settings) {
+testHashParams("page number (p), view = 'g'", {p: "100", v: "g"}, function (settings) {
     equal(settings.currentPageIndex, 99, "The initial page should be 100 (index of 99)");
     ok(settings.inGrid, "Should be in grid");
 }, {enableFilename: false});
 
-hashParamTest("vertical offset (y) - positive value", "y", "600", function (settings) {
+testHashParams("vertical offset (y) - positive value", {y: "600"}, function (settings) {
     var topScroll = settings.outerObject.scrollTop();
     equal(topScroll, 250, "Should have scrolled 250 (600 = top of page - viewport y-center) vertically");
 });
 
-hashParamTest("vertical offset (y) - negative value", "y", "-600", function (settings) {
+testHashParams("vertical offset (y) - negative value", {y: "-600"}, function (settings) {
     var topScroll = settings.outerObject.scrollTop();
     equal(topScroll, 0, "Should not have scrolled negatively because, well, you can't");
 });
 
-multipleHashParamTest("vertical offset (y) and page number (p)", {y: 500, p: 50}, function (settings) {
+testHashParams("vertical offset (y) and page number (p)", {y: 500, p: 50}, function (settings) {
     var topScroll = settings.outerObject.scrollTop();
     var expectedTopScroll = 52922;
     equal(settings.currentPageIndex, 49, "Current page should be 50 (index of 49)");
@@ -164,21 +157,21 @@ var desiredHorizontalCenter = settings.widthLeftOfPages[pageIndex] + horizontalO
             var desiredLeft = desiredHorizontalCenter - (settings.outerObject.width() / 2);
             */
 
-hashParamTest("horizontal offset (x) - positive value", "x", "100", function (settings) {
+testHashParams("horizontal offset (x) - positive value", {x: "100"}, function (settings) {
     var leftScroll = settings.outerObject.scrollLeft();
     var halfMaxWidth = (settings.maxWidths[settings.zoomLevel] / 2 + settings.horizontalPadding + 100);
     var expectedLeftScroll = (halfMaxWidth > settings.panelWidth) ? (halfMaxWidth - settings.panelWidth) / 2 : 0;
     equal(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
 });
 
-hashParamTest("horizontal offset (x) - negative value", "x", "-100", function (settings) {
+testHashParams("horizontal offset (x) - negative value", {x: "-100"}, function (settings) {
     var leftScroll = settings.outerObject.scrollLeft();
     var halfMaxWidth = (settings.maxWidths[settings.zoomLevel] / 2 + settings.horizontalPadding - 100);
     var expectedLeftScroll = (halfMaxWidth > settings.panelWidth) ? (halfMaxWidth - settings.panelWidth) / 2 : 0;
     equal(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the left");
 });
 
-multipleHashParamTest("horizontal offset (x) and page number (p)", {x: 100, p: 50}, function (settings) {
+testHashParams("horizontal offset (x) and page number (p)", {x: 100, p: 50}, function (settings) {
     var topScroll = settings.outerObject.scrollTop();
     var expectedTopScroll = 52772;
     equal(topScroll, expectedTopScroll, "vertical scroll should be just to page 50");
@@ -189,7 +182,7 @@ multipleHashParamTest("horizontal offset (x) and page number (p)", {x: 100, p: 5
     equal(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
 }, {enableFilename: false});
 
-multipleHashParamTest("horizontal offset (x), vertical offset (y), page number (p)", {x: 100, y: 200, p: 50}, function (settings) {
+testHashParams("horizontal offset (x), vertical offset (y), page number (p)", {x: 100, y: 200, p: 50}, function (settings) {
     var topScroll = settings.outerObject.scrollTop();
     var expectedTopScroll = 52622;
     equal(topScroll, expectedTopScroll, "vertical scroll should be to page 50 + 200 + page y-center");
