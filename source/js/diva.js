@@ -2446,8 +2446,12 @@ window.divaPlugins = [];
 
             diva.Events.subscribe('PanelSizeDidChange', updatePanelSize, settings.ID);
 
-            // Clear page timeouts when the viewer is destroyed
-            diva.Events.subscribe('ViewerDidTerminate', clearPageTimeouts, settings.ID);
+            // Clear page and resize timeouts when the viewer is destroyed
+            diva.Events.subscribe('ViewerDidTerminate', function ()
+            {
+                clearPageTimeouts();
+                clearTimeout(settings.resizeTimer);
+            }, settings.ID);
 
             // Detect supported transition end event, bind loadDocument to end of zoom transition
             // http://stackoverflow.com/a/9090128
