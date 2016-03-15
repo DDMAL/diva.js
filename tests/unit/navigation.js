@@ -273,29 +273,3 @@ asyncTest("Jumping to page in Book view", function () {
         inBookLayout: true
     });
 });
-
-asyncTest("Jumping to page in Book view", function () {
-    diva.Events.subscribe('ViewerDidLoad', function(settings)
-    {
-        this.gotoPageByIndex(5);
-
-        ok(settings.inBookLayout, "Should be in book layout");
-        equal($(settings.selector + 'current-page').text(), '6', "Toolbar should indicate page 6");
-
-        var dv = this;
-
-        setTimeout(function() {
-            ok($(settings.selector + 'page-5').length, "The element for page 6 (index 5) should be in the DOM");
-
-            dv.gotoPageByIndex(6);
-            equal($(settings.selector + 'current-page').text(), '7', "Toolbar should indicate page 7");
-            ok($(settings.selector + 'page-6').length, "The element for page 7 (index 6) should be in the DOM");
-
-            start();
-        }, 10);
-    });
-
-    $.tempDiva({
-        inBookLayout: true
-    });
-});
