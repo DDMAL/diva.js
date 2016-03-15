@@ -4,3 +4,5 @@
 todo.md
 .DS_Store
 tags
+
+/node_modules/
