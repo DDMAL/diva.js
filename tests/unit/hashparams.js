@@ -5,7 +5,9 @@ Test coverage: pretty much complete
 QUnit.module("Hash params", { beforeEach: clearTempDiva });
 
 var testHashParams = function (testName, hashParams, onReadyCallback, config) {
-    asyncTest(testName, function () {
+    QUnit.test(testName, function (assert) {
+        var done = assert.async();
+
         var previousHash = window.location.hash;
         var suffix = parseInt($.generateId(), 10) + 1;
 
@@ -30,7 +32,7 @@ var testHashParams = function (testName, hashParams, onReadyCallback, config) {
         {
             onReadyCallback.call(this, settings);
             window.location.hash = previousHash;
-            start();
+            done();
         });
 
         $.tempDiva(config);

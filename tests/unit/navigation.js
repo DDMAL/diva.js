@@ -7,7 +7,7 @@ QUnit.module("Navigation", { beforeEach: clearTempDiva });
 
 // FIXME: This test pattern is pretty iffy. There should be more robust ways to do this than
 // with a timeout, and the toolbar and page index are kind of separate concerns.
-var assertPageIs = function (index, divaInst)
+var assertPageIs = function (index, divaInst, done)
 {
     setTimeout(function () {
         var rendered = (index + 1) + '';
@@ -18,7 +18,7 @@ var assertPageIs = function (index, divaInst)
         var actualRendered = $(divaInst.getSettings().selector + 'current-page').text();
         equal(actualRendered, rendered, "The toolbar should have been updated");
 
-        start();
+        done();
     }, 10);
 };
 
@@ -31,11 +31,14 @@ var assertZoomIs = function (level, divaInst, controlName)
     equal(renderedLevel, level + '', "The " + controlName + " label should have been updated");
 };
 
-asyncTest("Scrolling in document view", function () {
+QUnit.test("Scrolling in document view", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         settings.outerObject.scrollTop(10000);
-        assertPageIs(34, this);
+        assertPageIs(34, this, done);
     });
 
     $.tempDiva({
@@ -45,11 +48,14 @@ asyncTest("Scrolling in document view", function () {
     });
 });
 
-asyncTest("Scrolling in grid view", function () {
+QUnit.test("Scrolling in grid view", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         settings.outerObject.scrollTop(10000);
-        assertPageIs(24, this);
+        assertPageIs(24, this, done);
     });
 
     $.tempDiva({
@@ -59,12 +65,15 @@ asyncTest("Scrolling in grid view", function () {
     });
 });
 
-asyncTest("Scrolling in book view", function() {
+QUnit.test("Scrolling in book view", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         settings.outerObject.scrollLeft(200);
         settings.outerObject.scrollTop(10000);
-        assertPageIs(18, this);
+        assertPageIs(18, this, done);
     });
 
     $.tempDiva({
@@ -72,7 +81,9 @@ asyncTest("Scrolling in book view", function() {
     });
 });
 
-asyncTest("Zooming using the slider", function () {
+QUnit.test("Zooming using the slider", function (assert) {
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         var slider = $(settings.selector + 'zoom-slider');
@@ -87,7 +98,7 @@ asyncTest("Zooming using the slider", function () {
 
         assertZoomIs(4, this, 'slider');
 
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -96,7 +107,10 @@ asyncTest("Zooming using the slider", function () {
     });
 });
 
-asyncTest("Zooming using +/- buttons", function () {
+QUnit.test("Zooming using +/- buttons", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         for (var i = 0; i < 4; i++)
@@ -113,7 +127,7 @@ asyncTest("Zooming using +/- buttons", function () {
 
         assertZoomIs(4, this, 'zoom buttons');
 
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -121,7 +135,10 @@ asyncTest("Zooming using +/- buttons", function () {
     });
 });
 
-asyncTest("Changing pages per row in Grid view using slider", function () {
+QUnit.test("Changing pages per row in Grid view using slider", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         this.enterGridView();
@@ -135,7 +152,7 @@ asyncTest("Changing pages per row in Grid view using slider", function () {
         equal(this.getState().n, 3, "Pages per row should now be 3");
         equal($(settings.selector + 'pages-per-row').text(), '3', "The grid buttons label should have been updated");
 
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -144,7 +161,10 @@ asyncTest("Changing pages per row in Grid view using slider", function () {
     });
 });
 
-asyncTest("Scrolling and subsequently zooming in Grid view", function () {
+QUnit.test("Scrolling and subsequently zooming in Grid view", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         settings.outerObject.scrollTop(10050);
@@ -152,13 +172,14 @@ asyncTest("Scrolling and subsequently zooming in Grid view", function () {
         var self = this;
         setTimeout(function () {
             equal(self.getCurrentPageIndex(), 160, "The current page should be 170 (10050px down, 1000px viewport)");
-            start();
 
             $(settings.selector + 'grid-slider').val(8);
             equal(self.getCurrentPageIndex(), 160, "The current page should still be 170");
 
             $(settings.selector + 'grid-slider').val(2);
             equal(self.getCurrentPageIndex(), 160, "The current page should still be 170");
+
+            done();
         }, 10);
     });
 
@@ -170,7 +191,10 @@ asyncTest("Scrolling and subsequently zooming in Grid view", function () {
     });
 });
 
-asyncTest("Changing pages per row in Grid view using +/- buttons", function () {
+QUnit.test("Changing pages per row in Grid view using +/- buttons", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         this.enterGridView();
@@ -188,7 +212,7 @@ asyncTest("Changing pages per row in Grid view using +/- buttons", function () {
         equal(this.getState().n, 8, "Pages per row should now be 8");
         equal($(settings.selector + 'pages-per-row').text(), '8', "The grid buttons label should have been updated");
 
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -196,7 +220,10 @@ asyncTest("Changing pages per row in Grid view using +/- buttons", function () {
     });
 });
 
-asyncTest("Zooming by double-clicking", function () {
+QUnit.test("Zooming by double-clicking", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         var wrapperOffset = $('#diva-temp').offset();
@@ -210,7 +237,7 @@ asyncTest("Zooming by double-clicking", function () {
             setTimeout(function () {
                 equal(settings.zoomLevel, 2, "Zoom level should now be 2");
                 equal(settings.currentPageIndex, 100, "Should still be on page 100");
-                start();
+                done();
             }, 10);
         }, 10);
     });
@@ -221,7 +248,10 @@ asyncTest("Zooming by double-clicking", function () {
     });
 });
 
-asyncTest("Switching between document and grid view", function () {
+QUnit.test("Switching between document and grid view", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         ok(!settings.inGrid, "Not in grid initially");
@@ -234,14 +264,17 @@ asyncTest("Switching between document and grid view", function () {
             ok($(settings.selector + 'grid-in-button').is(':visible'), "Grid buttons should be visible (+)");
             ok(!$(settings.selector + 'zoom-out-buttons').is(':visible'), "Zoom buttons should not be visible (-)");
             ok(!$(settings.selector + 'zoom-in-buttons').is(':visible'), "Zoom buttons should not be visible (+)");
-            start();
+            done();
         }, 10);
     });
 
     $.tempDiva({});
 });
 
-asyncTest("Switching between regular and fullscreen mode", function () {
+QUnit.test("Switching between regular and fullscreen mode", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         ok(!settings.inFullscreen, "Not in fullscreen initially");
@@ -251,14 +284,18 @@ asyncTest("Switching between regular and fullscreen mode", function () {
         setTimeout(function () {
             ok(settings.inFullscreen, "Should now be in fullscreen");
             ok($('body').hasClass('diva-hide-scrollbar'), "Body should have the hide-scrollbar class");
-            start();
+
+            done();
         }, 10);
     });
 
     $.tempDiva({});
 });
 
-asyncTest("Jumping to page in Book view", function () {
+QUnit.test("Jumping to page in Book view", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         this.gotoPageByIndex(5);
@@ -275,7 +312,7 @@ asyncTest("Jumping to page in Book view", function () {
             equal($(settings.selector + 'current-page').text(), '7', "Toolbar should indicate page 7");
             ok($(settings.selector + 'page-6').length, "The element for page 7 (index 6) should be in the DOM");
 
-            start();
+            done();
         }, 10);
     });
 

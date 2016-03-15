@@ -4,8 +4,10 @@ Test coverage: pretty much complete
 
 QUnit.module("Settings", { beforeEach: clearTempDiva });
 
-QUnit.test("adaptivePadding enabled", function (assert) {
+QUnit.test("adaptivePadding enabled", function (assert)
+{
     var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings) {
         assert.notEqual(settings.verticalPadding, 10, "Adaptive padding should be used, overrides vertical/horizontal");
         assert.notEqual(settings.horizontalPadding, 10, "Horizontal padding should be overridden by adaptive");
@@ -17,12 +19,15 @@ QUnit.test("adaptivePadding enabled", function (assert) {
     });
 });
 
-asyncTest("adaptivePadding disabled, fixedPadding set", function () {
+QUnit.test("adaptivePadding disabled, fixedPadding set", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         equal(settings.verticalPadding, 40, "Vertical padding should be 40 (the minimum with plugins enabled)");
         equal(settings.horizontalPadding, 11, "Horizontal padding should be 11 (fixedPadding)");
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -36,12 +41,15 @@ asyncTest("adaptivePadding disabled, fixedPadding set", function () {
 
 // enableFilename is tested in hashparams.js
 
-asyncTest("enableFullscreen false", function () {
+QUnit.test("enableFullscreen false", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         // Make sure the fullscreen icon is not there
         equal($(settings.selector + 'fullscreen').length, 0, "Fullscreen icon should not be present");
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -49,12 +57,15 @@ asyncTest("enableFullscreen false", function () {
     });
 });
 
-asyncTest("enableFullscreen true", function () {
+QUnit.test("enableFullscreen true", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         // Make sure the fullscreen icon is there
         notEqual($(settings.selector + 'fullscreen-icon').length, 0, "Fullscreen icon should be present");
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -62,11 +73,14 @@ asyncTest("enableFullscreen true", function () {
     });
 });
 
-asyncTest("enableGotoPage false", function () {
+QUnit.test("enableGotoPage false", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         equal($(settings.selector + 'goto-page').length, 0, "Go-to-page box should not be present");
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -74,11 +88,14 @@ asyncTest("enableGotoPage false", function () {
     });
 });
 
-asyncTest("enableGotoPage true", function () {
+QUnit.test("enableGotoPage true", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         notEqual($(settings.selector + 'goto-page').length, 0, "Go-to-page box should be present");
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -88,7 +105,10 @@ asyncTest("enableGotoPage true", function () {
 
 //TODO view icon tests
 
-asyncTest("enableGridIcon false, enableLinkIcon true", function () {
+QUnit.test("enableGridIcon false, enableLinkIcon true", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
             // Check that the link icon is there
@@ -96,7 +116,7 @@ asyncTest("enableGridIcon false, enableLinkIcon true", function () {
             // But the left border should be there for the link icon
             notEqual($(settings.selector + 'link-icon').css('border-left-width'), '0px', "Link icon should have a left border");
 
-            start();
+            done();
     });
 
     $.tempDiva({
@@ -104,12 +124,15 @@ asyncTest("enableGridIcon false, enableLinkIcon true", function () {
     });
 });
 
-asyncTest("enableGridIcon true, enableLinkIcon true", function () {
+QUnit.test("enableGridIcon true, enableLinkIcon true", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         notEqual($(settings.selector + 'grid-icon').length, 0, "Grid icon should be present");
         notEqual($(settings.selector + 'link-icon').length, 0, "Link icon should be present");
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -117,14 +140,17 @@ asyncTest("enableGridIcon true, enableLinkIcon true", function () {
     });
 });
 
-asyncTest("enableLinkIcon false, enableGridIcon true", function () {
+QUnit.test("enableLinkIcon false, enableGridIcon true", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         equal($(settings.selector + 'link-icon').length, 0, "Link icon should not be present");
 
         // The grid icon should look normal
         notEqual($(settings.selector + 'grid-icon').css('border-right-width'), '0px', "Link icon should have a right border");
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -136,14 +162,17 @@ asyncTest("enableLinkIcon false, enableGridIcon true", function () {
 // Skipping the key and space scroll ones, because they're hard to test
 
 // test enableZoom/Grid Slider/Buttons settings
-asyncTest("enableGridControls 'slider'", function() {
+QUnit.test("enableGridControls 'slider'", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         notEqual($(settings.selector + 'grid-slider').length, 0, "Grid slider should be present");
         notEqual($(settings.selector + 'grid-label').length, 0, "Grid label should be present");
         equal($(settings.selector + 'grid-out-button').length, 0, "Grid buttons should not be present");
         equal($(settings.selector + 'grid-in-button').length, 0, "Grid buttons should not be present");
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -151,7 +180,10 @@ asyncTest("enableGridControls 'slider'", function() {
     });
 });
 
-asyncTest("enableZoomControls 'slider'", function() {
+QUnit.test("enableZoomControls 'slider'", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         notEqual($(settings.selector + 'zoom-slider').length, 0, "Zoom slider should be present");
@@ -159,7 +191,7 @@ asyncTest("enableZoomControls 'slider'", function() {
         equal($(settings.selector + 'zoom-out-button').length, 0, "Zoom buttons should not be present");
         equal($(settings.selector + 'zoom-in-button').length, 0, "Zoom buttons should not be present");
         notEqual($(settings.selector + 'grid-label').length, 0, "Grid label should be present");
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -167,14 +199,17 @@ asyncTest("enableZoomControls 'slider'", function() {
     });
 });
 
-asyncTest("enableGridControls 'buttons'", function() {
+QUnit.test("enableGridControls 'buttons'", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         notEqual($(settings.selector + 'grid-out-button').length, 0, "Grid out button should be present");
         notEqual($(settings.selector + 'grid-in-button').length, 0, "Grid in button should be present");
         notEqual($(settings.selector + 'grid-label').length, 0, "Grid label should be present");
         equal($(settings.selector + 'grid-slider').length, 0, "Grid slider should not be present");
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -182,14 +217,17 @@ asyncTest("enableGridControls 'buttons'", function() {
     });
 });
 
-asyncTest("enableZoomControls 'buttons'", function() {
+QUnit.test("enableZoomControls 'buttons'", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
             notEqual($(settings.selector + 'zoom-out-button').length, 0, "Zoom out button should be present");
             notEqual($(settings.selector + 'zoom-in-button').length, 0, "Zoom in button should be present");
             notEqual($(settings.selector + 'zoom-label').length, 0, "Zoom label should be present");
             equal($(settings.selector + 'zoom-slider').length, 0, "Grid slider should not be present");
-            start();
+            done();
     });
 
     $.tempDiva({
@@ -199,7 +237,10 @@ asyncTest("enableZoomControls 'buttons'", function() {
 
 // fixedPadding tested at the top (along with adaptivePadding)
 
-asyncTest("fixedHeightGrid false", function () {
+QUnit.test("fixedHeightGrid false", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         this.enterGridView();
@@ -216,7 +257,7 @@ asyncTest("fixedHeightGrid false", function () {
         ok(sameWidths, "All page widths should be equal");
         ok(!sameHeights, "All page heights should NOT be equal");
 
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -224,7 +265,10 @@ asyncTest("fixedHeightGrid false", function () {
     });
 });
 
-asyncTest("fixedHeightGrid true", function () {
+QUnit.test("fixedHeightGrid true", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         this.enterGridView();
@@ -242,7 +286,7 @@ asyncTest("fixedHeightGrid true", function () {
         ok(!sameWidths, "All page widths should NOT be equal");
         ok(sameHeights, "All page heights should be equal");
 
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -250,11 +294,14 @@ asyncTest("fixedHeightGrid true", function () {
     });
 });
 
-asyncTest("goDirectlyTo, valid", function () {
+QUnit.test("goDirectlyTo, valid", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         equal(settings.currentPageIndex, 10, "The initial page index should be 10");
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -262,11 +309,14 @@ asyncTest("goDirectlyTo, valid", function () {
     });
 });
 
-asyncTest("goDirectlyTo, invalid", function () {
+QUnit.test("goDirectlyTo, invalid", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         equal(settings.currentPageIndex, 0, "The initial page index should be 0 (the fallback)");
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -276,13 +326,16 @@ asyncTest("goDirectlyTo, invalid", function () {
 
 // iipServerURL can't really be tested, just have to rely on this to work
 
-asyncTest("inBookLayout true", function () {
+QUnit.test("inBookLayout true", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         ok(settings.inBookLayout, 'inBookLayout should remain true after initialization');
         ok(settings.pageLeftOffsets[1] < settings.pageLeftOffsets[2], 'Page 1 should be to the left of page 2');
         ok(settings.pageLeftOffsets[2] > settings.pageLeftOffsets[3], 'Page 2 should be to the right of page 3');
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -290,13 +343,16 @@ asyncTest("inBookLayout true", function () {
     });
 });
 
-asyncTest("documentPaged", function() {
+QUnit.test("documentPaged", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         ok(settings.documentPaged, 'settings.documentPaged should be true when manifest has viewingHint: paged');
         ok(settings.inBookLayout, 'settings.inBookLayout should be true when documentPaged is true');
 
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -304,12 +360,15 @@ asyncTest("documentPaged", function() {
     });
 });
 
-asyncTest("inGrid false", function () {
+QUnit.test("inGrid false", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         ok(!settings.inGrid, "inGrid setting should still be false");
         equal($(settings.selector + 'view-menu').children()[0].classList[0], 'diva-document-icon', "Current toolbar view icon should be the document icon");
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -317,12 +376,15 @@ asyncTest("inGrid false", function () {
     });
 });
 
-asyncTest("inGrid true", function () {
+QUnit.test("inGrid true", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         ok(settings.inGrid, "inGrid setting should be preserved");
         equal($(settings.selector + 'view-menu').children()[0].classList[0], 'diva-grid-icon', "Current toolbar view icon should be the grid icon");
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -332,7 +394,9 @@ asyncTest("inGrid true", function () {
 
 // imageDir cannot really be tested either
 
-asyncTest("valid max/minPagesPerRow, valid pagesPerRow", function () {
+QUnit.test("valid max/minPagesPerRow, valid pagesPerRow", function (assert)
+{
+    var done = assert.async();
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
@@ -342,7 +406,7 @@ asyncTest("valid max/minPagesPerRow, valid pagesPerRow", function () {
         equal(settings.minPagesPerRow, 3, "minPagesPerRow should be 3");
         equal(settings.maxPagesPerRow, 5, "maxPagesPerRow should be 5");
         equal(settings.pagesPerRow, 5, "pagesPerRow is valid");
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -352,7 +416,10 @@ asyncTest("valid max/minPagesPerRow, valid pagesPerRow", function () {
     });
 });
 
-asyncTest("invalid max/minPagesPerRow, valid pagesPerRow", function () {
+QUnit.test("invalid max/minPagesPerRow, valid pagesPerRow", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         this.enterGridView();
@@ -360,7 +427,7 @@ asyncTest("invalid max/minPagesPerRow, valid pagesPerRow", function () {
         equal(settings.minPagesPerRow, 2, "minPagesPerRow is invalid, set to 2");
         equal(settings.maxPagesPerRow, 2, "maxPagesPerRow should be set to min");
         equal(settings.pagesPerRow, 2, "invalid pages per row should be set to min");
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -370,13 +437,15 @@ asyncTest("invalid max/minPagesPerRow, valid pagesPerRow", function () {
     });
 });
 
-asyncTest("max/minZoomLevel, invalid values", function () {
+QUnit.test("max/minZoomLevel, invalid values", function (assert)
+{
+    var done = assert.async();
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         equal(settings.minZoomLevel, 0, "minZoomLevel should be set to 0");
         equal(settings.maxZoomLevel, 4, "maxZoomLevel should be set to 4");
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -385,14 +454,16 @@ asyncTest("max/minZoomLevel, invalid values", function () {
     });
 });
 
-asyncTest("max/minZoomLevel, valid values, valid zoomLevel", function () {
+QUnit.test("max/minZoomLevel, valid values, valid zoomLevel", function (assert)
+{
+    var done = assert.async();
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         equal(settings.minZoomLevel, 1, "minZoomLevel should be set to 1");
         equal(settings.maxZoomLevel, 3, "maxZoomLevel should be set to 3");
         equal(settings.zoomLevel, 2, "zoomLevel should be 2");
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -402,12 +473,14 @@ asyncTest("max/minZoomLevel, valid values, valid zoomLevel", function () {
     });
 });
 
-asyncTest("max/minZoomLevel, valid values, invalid zoomLevel", function () {
+QUnit.test("max/minZoomLevel, valid values, invalid zoomLevel", function (assert)
+{
+    var done = assert.async();
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         equal(settings.zoomLevel, 1, "Zoom level should be the minZoomLevel (1)");
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -417,14 +490,16 @@ asyncTest("max/minZoomLevel, valid values, invalid zoomLevel", function () {
     });
 });
 
-asyncTest("max/minZoomLevel, invalid/valid values, invalid zoomLevel", function () {
+QUnit.test("max/minZoomLevel, invalid/valid values, invalid zoomLevel", function (assert)
+{
+    var done = assert.async();
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         equal(settings.minZoomLevel, 2, "minZoomLevel should be set to 2 (valid)");
         equal(settings.maxZoomLevel, 4, "maxZoomLevel should be set to 4 (invalid)");
         equal(settings.zoomLevel, 2, "zoomLevel should be 2 (the minimum)");
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -434,12 +509,14 @@ asyncTest("max/minZoomLevel, invalid/valid values, invalid zoomLevel", function 
     });
 });
 
-asyncTest("object for objectData", function ()
+QUnit.test("object for objectData", function (assert)
 {
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         equal(settings.itemTitle, "First page of Beromunster", "Should process an object for objectData like a normal manifest");
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -494,14 +571,17 @@ asyncTest("object for objectData", function ()
 
 // No real point testing tileHeight/Width as we don't have images of different tile sizes
 
-asyncTest("viewportMargin, value of 0", function () {
+QUnit.test("viewportMargin, value of 0", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         setTimeout(function ()
         {
             notEqual($(settings.selector + 'page-0').length, 0, "The first page should be present");
             equal($(settings.selector + 'page-1').length, 0, "The second page should not be present");
-            start();
+            done();
         }, 100);
     });
 
@@ -510,14 +590,17 @@ asyncTest("viewportMargin, value of 0", function () {
     });
 });
 
-asyncTest("viewportMargin, value of 1000", function () {
+QUnit.test("viewportMargin, value of 1000", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         // The second page should be visible after a timeout
         setTimeout(function () {
             notEqual($(settings.selector + 'page-0').length, 0, "The first page should be present");
             notEqual($(settings.selector + 'page-1').length, 0, "The second page should be present");
-            start();
+            done();
         }, 100);
     });
 

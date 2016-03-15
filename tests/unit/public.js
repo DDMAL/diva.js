@@ -4,17 +4,23 @@ Test coverage: pretty much complete
 
 QUnit.module("Public functions", { beforeEach: clearTempDiva });
 
-asyncTest("getItemTitle()", function () {
+QUnit.test("getItemTitle()", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         equal(this.getItemTitle(), "Beromunster", "The title should be Beromunster");
-        start();
+        done();
     });
 
     $.tempDiva({});
 });
 
-asyncTest("gotoPageByNumber() and getCurrentPage()", function () {
+QUnit.test("gotoPageByNumber() and getCurrentPage()", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         equal(this.getCurrentPageIndex(), 0, "Initial page should be 0");
@@ -23,13 +29,16 @@ asyncTest("gotoPageByNumber() and getCurrentPage()", function () {
 
         // Reset it to the first page
         this.gotoPageByNumber(0);
-        start();
+        done();
     });
 
     $.tempDiva({});
 });
 
-asyncTest("getCurrentPageIndex()", function () {
+QUnit.test("getCurrentPageIndex()", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         equal(this.getCurrentPageIndex(), 0, "Initial page should be 0");
@@ -39,13 +48,16 @@ asyncTest("getCurrentPageIndex()", function () {
         // Reset it to the first page
         this.gotoPageByIndex(0);
         equal(this.getCurrentPageIndex(), 0, "The page index should now be 0");
-        start();
+        done();
     });
 
     $.tempDiva({});
 });
 
-asyncTest("get/setZoomLevel(), zoomIn() and zoomOut()", function () {
+QUnit.test("get/setZoomLevel(), zoomIn() and zoomOut()", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         equal(this.getZoomLevel(), 2, "Initial zoom level should be 2");
@@ -66,7 +78,7 @@ asyncTest("get/setZoomLevel(), zoomIn() and zoomOut()", function () {
 
         ok(this.setZoomLevel(2), "Setting zoom level to 2 should be fine");
         equal(this.getZoomLevel(), 2, "Zoom level should now be 2");
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -76,7 +88,10 @@ asyncTest("get/setZoomLevel(), zoomIn() and zoomOut()", function () {
     });
 });
 
-asyncTest("enable/disableScrollable()", function () {
+QUnit.test("enable/disableScrollable()", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         this.setZoomLevel(2);
@@ -129,13 +144,16 @@ asyncTest("enable/disableScrollable()", function () {
 
         ok(finalScroll > initScroll, "Should have scrolled down after enableScrollable()");
 
-        start();
+        done();
     });
 
     $.tempDiva({});
 });
 
-asyncTest("inViewport()", function () {
+QUnit.test("inViewport()", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         // Can only do fairly simple checks
@@ -143,7 +161,7 @@ asyncTest("inViewport()", function () {
         ok(!this.inViewport(1, 100, -200, 100, 100));
         ok(!this.inViewport(40, 100, 50, 100, 200));
 
-        start();
+        done();
     });
 
     $.tempDiva({
@@ -151,7 +169,10 @@ asyncTest("inViewport()", function () {
     });
 });
 
-asyncTest("toggleFullscreenMode(), enterFullscreen(), leaveFullscreen()", function () {
+QUnit.test("toggleFullscreenMode(), enterFullscreen(), leaveFullscreen()", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         ok(!settings.inFullscreen, "Should not be in fullscreen initially");
@@ -166,13 +187,16 @@ asyncTest("toggleFullscreenMode(), enterFullscreen(), leaveFullscreen()", functi
         ok(this.enterFullscreenMode(), "Should be possible to enter fullscreen");
         this.toggleFullscreenMode();
         ok(!settings.inFullscreen, "Should now be out of fullscreen");
-        start();
+        done();
     });
 
     $.tempDiva({});
 });
 
-asyncTest("enterGridView(), leaveGridView()", function () {
+QUnit.test("enterGridView(), leaveGridView()", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
             ok(!settings.inGrid, "Should not be in grid initially");
@@ -185,20 +209,23 @@ asyncTest("enterGridView(), leaveGridView()", function () {
             ok(!this.leaveGridView(), "Should not be possible to exit grid");
             ok(!settings.inGrid, "Still not in grid");
             ok(this.enterGridView(), "Should be possible to enter grid");
-            start();
+            done();
     });
 
     $.tempDiva({});
 });
 
-asyncTest("gotoPageByName()", function () {
+QUnit.test("gotoPageByName()", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         equal(settings.currentPageIndex, 0, "Initial page number should be 1");
         ok(!this.gotoPageByName('bm_000.tif'), "It should not find anything for bm_000.tif");
         ok(this.gotoPageByName('bm_002.tif', "right", "center"), "It should find the page index for bm_002.tif");
         equal(settings.currentPageIndex, 1, "Now the page number should be 2");
-        start();
+        done();
 
         /*
          so this is confusing. this tests the internal getX/YOffset anchor points.
@@ -236,13 +263,16 @@ asyncTest("gotoPageByName()", function () {
     $.tempDiva({});
 });
 
-asyncTest("getPageIndex()", function () {
+QUnit.test("getPageIndex()", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         equal(this.getPageIndex('bm_002.tif'), 1, "Valid filename");
         equal(this.getPageIndex('bm_lol.tif'), -1, "Invalid filename");
 
-        start();
+        done();
     });
 
     $.tempDiva({});
@@ -253,7 +283,10 @@ asyncTest("getPageIndex()", function () {
 // Can't really test getURLHash easily either
 // Since it relies on getState, we can test the public version of that instead
 
-asyncTest("getState()", function () {
+QUnit.test("getState()", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         var expected = {
@@ -279,13 +312,16 @@ asyncTest("getState()", function () {
             expect(0);
         }
 
-        start();
+        done();
     });
 
     $.tempDiva({});
 });
 
-asyncTest("setState()", function () {
+QUnit.test("setState()", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         var state = {
@@ -334,13 +370,16 @@ asyncTest("setState()", function () {
         equal(settings.pagesPerRow, 4, "Pages per row should be 4");
         equal(settings.zoomLevel, 4, "Zoom level should be 4");
 
-        start();
+        done();
     });
 
     $.tempDiva({});
 });
 
-asyncTest("translateFromMaxZoomLevel()", function () {
+QUnit.test("translateFromMaxZoomLevel()", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         var state = {
@@ -383,13 +422,16 @@ asyncTest("translateFromMaxZoomLevel()", function () {
         equal(this.translateFromMaxZoomLevel(boxOnMaxPage.width), 308.5);
         equal(this.translateFromMaxZoomLevel(boxOnMaxPage.height), 331);
 
-        start();
+        done();
     });
 
     $.tempDiva({});
 });
 
-asyncTest("translateToMaxZoomLevel()", function () {
+QUnit.test("translateToMaxZoomLevel()", function (assert)
+{
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         var state = {
@@ -435,14 +477,16 @@ asyncTest("translateToMaxZoomLevel()", function () {
         equal(this.translateToMaxZoomLevel(boxOnThisPage.width), 492);
         equal(this.translateToMaxZoomLevel(boxOnThisPage.height), 528);
 
-        start();
+        done();
     });
 
     $.tempDiva({});
 });
 
-asyncTest("getPageIndexForPageXYValues()", function ()
+QUnit.test("getPageIndexForPageXYValues()", function (assert)
 {
+    var done = assert.async();
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         var outerObj = $("#" + settings.ID + "outer");
@@ -466,7 +510,7 @@ asyncTest("getPageIndexForPageXYValues()", function ()
             expect(0);
         }
 
-        start();
+        done();
     });
 
     $.tempDiva({});
