@@ -5,18 +5,37 @@ Could also test key navigation, but it's pretty difficult and doesn't seem worth
 
 QUnit.module("Navigation", { beforeEach: clearTempDiva });
 
+// FIXME: This test pattern is pretty iffy. There should be more robust ways to do this than
+// with a timeout, and the toolbar and page index are kind of separate concerns.
+var assertPageIs = function (index, divaInst)
+{
+    setTimeout(function () {
+        var rendered = (index + 1) + '';
+
+        var actualIndex = divaInst.getCurrentPageIndex();
+        equal(actualIndex, index, "The page should now be " + rendered + " (index of " + index + ")");
+
+        var actualRendered = $(divaInst.getSettings().selector + 'current-page').text();
+        equal(actualRendered, rendered, "The toolbar should have been updated");
+
+        start();
+    }, 10);
+};
+
+var assertZoomIs = function (level, divaInst, controlName)
+{
+    var actualLevel = divaInst.getZoomLevel();
+    var renderedLevel = $(divaInst.getSettings().selector + 'zoom-level').text();
+
+    equal(actualLevel, level, "Zoom level should now be " + level);
+    equal(renderedLevel, level + '', "The " + controlName + " label should have been updated");
+};
+
 asyncTest("Scrolling in document view", function () {
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         settings.outerObject.scrollTop(10000);
-        var self = this;
-
-        // Set the timeout because we have to wait for the event handler
-        setTimeout(function () {
-            equal(self.getCurrentPageIndex(), 34, "The page should now be 35 (index of 34)");
-            equal($(settings.selector + 'current-page').text(), '35', "The toolbar should have been updated");
-            start();
-        }, 10);
+        assertPageIs(34, this);
     });
 
     $.tempDiva({
@@ -30,13 +49,7 @@ asyncTest("Scrolling in grid view", function () {
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         settings.outerObject.scrollTop(10000);
-
-        var self = this;
-        setTimeout(function () {
-            equal(self.getCurrentPageIndex(), 24, "The page should now be 25 (index of 24)");
-            equal($(settings.selector + 'current-page').text(), '25', "The toolbar should have been updated");
-            start();
-        }, 10);
+        assertPageIs(24, this);
     });
 
     $.tempDiva({
@@ -51,14 +64,7 @@ asyncTest("Scrolling in book view", function() {
     {
         settings.outerObject.scrollLeft(200);
         settings.outerObject.scrollTop(10000);
-
-        var self = this;
-
-        setTimeout(function () {
-            equal(self.getCurrentPageIndex(), 18, "The page should now be 19 (index of 18)");
-            equal($(settings.selector + 'current-page').text(), '19', "The toolbar should have been updated");
-            start();
-        }, 10);
+        assertPageIs(18, this);
     });
 
     $.tempDiva({
@@ -69,15 +75,18 @@ asyncTest("Scrolling in book view", function() {
 asyncTest("Zooming using the slider", function () {
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        document.getElementById(settings.ID + 'zoom-slider').value = 0;
-        $(settings.selector + 'zoom-slider').change();
-        equal(this.getZoomLevel(), 0, "Zoom level should now be 0");
-        equal($(settings.selector + 'zoom-level').text(), '0', "The slider label should have been updated");
+        var slider = $(settings.selector + 'zoom-slider');
 
-        document.getElementById(settings.ID + 'zoom-slider').value = 4;
-        $(settings.selector + 'zoom-slider').change();
-        equal(this.getZoomLevel(), 4, "Zoom level should now be 4");
-        equal($(settings.selector + 'zoom-level').text(), '4', "The slider label should have been updated");
+        slider.val(0);
+        slider.change();
+
+        assertZoomIs(0, this, 'slider');
+
+        slider.val(4);
+        slider.change();
+
+        assertZoomIs(4, this, 'slider');
+
         start();
     });
 
@@ -94,15 +103,16 @@ asyncTest("Zooming using +/- buttons", function () {
         {
             $(settings.selector + 'zoom-out-button').trigger('click');
         }
-        equal(this.getZoomLevel(), 0, "Zoom level should now be 0");
-        equal($(settings.selector + 'zoom-level').text(), '0', "The zoom buttons label should have been updated");
+
+        assertZoomIs(0, this, 'zoom buttons');
 
         for (i = 0; i < 4; i++)
         {
             $(settings.selector + 'zoom-in-button').trigger('click');
         }
-        equal(this.getZoomLevel(), 4, "Zoom level should now be 4");
-        equal($(settings.selector + 'zoom-level').text(), '4', "The zoom buttons label should have been updated");
+
+        assertZoomIs(4, this, 'zoom buttons');
+
         start();
     });
 
