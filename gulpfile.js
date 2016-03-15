@@ -8,7 +8,8 @@ var less = require('gulp-less');
 var uglify = require('gulp-uglify');
 var concat = require('gulp-concat');
 var rename = require('gulp-rename');
-var qunit = require('./tests/gulp-qunit.js');
+
+var karma = require('karma');
 
 gulp.task('develop:jshint', function()
 {
@@ -181,15 +182,12 @@ gulp.task('release', ['develop:build'], function()
                .finalize();
 });
 
-gulp.task('develop:test', ['develop:build'], function ()
+gulp.task('develop:test', ['develop:build'], function (done)
 {
-    var testsPath = (process.env.TEST_DIVA === 'source') ? './tests/source.html' : './tests/index.html';
-
-    return gulp.src(testsPath)
-        .pipe(qunit({
-            'timeout': 10,
-            'testRunner': 'runner-json.js'
-        }));
+    new karma.Server({
+        configFile: __dirname + '/karma.conf.js',
+        singleRun: true
+    }, done).start();
 });
 
 gulp.task('default', ['develop:build'], function()
