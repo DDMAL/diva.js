@@ -3,6 +3,28 @@
 (function () {
     // Allows you to clone, create a document viewer on, then remove an element
     $.tempDiva = function (settings) {
+        var wrapper = $('#diva-temp');
+
+        // Attach the wrapper to the DOM on first instantiation
+        if (wrapper.length === 0)
+        {
+            // The tests were developed for a viewport width of 1000px,
+            // so we set the parent element to have a width of 1000px minus
+            // standard body padding
+            var width = 1000 - (8 * 2);
+
+            var wrapperHtml = (
+                '<div style="width: ' + width + 'px; height: 800px;">' +
+                    '<div id="diva-temp"></div>' +
+                '</div>'
+            );
+
+            var parent = $(wrapperHtml);
+            parent.appendTo(document.body);
+
+            wrapper = parent.find('#diva-temp');
+        }
+
         settings = settings || {};
         // If the divaserveURL, imageDir, iconPath and iipServerURL settings aren't defined, define them
         settings.imageDir = settings.imageDir || "/srv/images/beromunster";
@@ -11,7 +33,7 @@
         settings.enableCanvas = settings.enableCanvas || true;
         settings.enableDownload = settings.enableDownload || true;
 
-        return $('#diva-temp').diva(settings).data('diva');
+        return wrapper.diva(settings).data('diva');
     };
 })(jQuery);
 
