@@ -5,7 +5,7 @@ Can't really (or don't need to) test any of the others
 
 QUnit.module("Utility methods");
 
-test("getHashParam()", function (assert)
+QUnit.test("getHashParam()", function (assert)
 {
     // First try it with no hash params - should return false
     assert.ok(!$.getHashParam('anything'), "No hash params, should return false");
@@ -36,7 +36,7 @@ test("getHashParam()", function (assert)
     window.location.hash = '';
 });
 
-test("updateHashParam()", function (assert)
+QUnit.test("updateHashParam()", function (assert)
 {
     window.location.hash = '';
     // First try it with no hash params in the URL
