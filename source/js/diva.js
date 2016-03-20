@@ -1615,7 +1615,7 @@ window.divaPlugins = [];
 
         // Handles switching in and out of fullscreen mode
         // Should only be called after changing settings.inFullscreen
-        var handleModeChange = function (changeView)
+        var handleModeChange = function ()
         {
             // Toggle the classes
             settings.outerObject.toggleClass('diva-fullscreen');
@@ -1647,16 +1647,7 @@ window.divaPlugins = [];
                 }
             }
 
-            // If setState changes both view and mode, trigger that here
-            if (changeView)
-            {
-                settings.inGrid = !settings.inGrid;
-                handleViewChange();
-            }
-            else
-            {
-                loadViewer();
-            }
+            loadViewer();
 
             //turn on/off escape key listener
             if (settings.inFullscreen)
@@ -1683,7 +1674,7 @@ window.divaPlugins = [];
         {
             settings.goDirectlyTo = settings.currentPageIndex;
             settings.inFullscreen = !settings.inFullscreen;
-            handleModeChange(false);
+            handleModeChange();
         };
 
         // Called when the change view icon is clicked
@@ -3503,7 +3494,7 @@ window.divaPlugins = [];
             }
 
             if (settings.inFullscreen)
-                handleModeChange(false);
+                handleModeChange();
             else
                 loadViewer();
 
@@ -4158,7 +4149,7 @@ window.divaPlugins = [];
                 switchViewState(state.v);
                 // The parameter determines if we need to change the view as well
                 settings.inFullscreen = state.f;
-                handleModeChange(false);
+                handleModeChange();
                 settings.horizontalOffset = horizontalOffset;
                 settings.verticalOffset = verticalOffset;
                 gotoPage(pageIndex, settings.verticalOffset, settings.horizontalOffset);
