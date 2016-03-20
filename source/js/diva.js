@@ -538,7 +538,7 @@ window.divaPlugins = [];
 
             if (!isPreloaded)
             {
-                settings.pageTimeouts.push(setTimeout(loadPageTiles, settings.pageLoadTimeout, pageIndex, filename, width, height));
+                setPageTimeout(loadPageTiles, settings.pageLoadTimeout, [pageIndex, filename, width, height]);
             }
         };
 
@@ -1033,6 +1033,7 @@ window.divaPlugins = [];
         // Used to delay loading of page images in grid view to prevent unnecessary loads
         var addPageToQueue = function (rowIndex, pageIndex, imageURL, pageWidth, pageHeight)
         {
+            // FIXME: why define this inline?
             var loadFunction = function (rowIndex, pageIndex, imageURL, pageWidth, pageHeight)
             {
                 if (isPageLoaded(pageIndex))
@@ -1048,8 +1049,8 @@ window.divaPlugins = [];
                     document.getElementById(settings.ID + 'page-' + pageIndex).appendChild(imgEl);
                 }
             };
-            settings.pageTimeouts.push(
-                window.setTimeout(loadFunction, settings.rowLoadTimeout, rowIndex, pageIndex, imageURL, pageWidth, pageHeight));
+
+            setPageTimeout(loadFunction, settings.rowLoadTimeout, [rowIndex, pageIndex, imageURL, pageWidth, pageHeight]);
         };
 
         // Clamp pages to those with 'viewingHint: paged' === true (applicable only when document viewingHint === 'paged', see IIIF Presentation API 2.0)
@@ -1329,6 +1330,22 @@ window.divaPlugins = [];
             clearTimeout(settings.resizeTimer);
 
             clearPageTimeouts();
+        };
+
+        var setPageTimeout = function (callback, waitMs, args)
+        {
+            var timeoutId = setTimeout(function ()
+            {
+                callback.apply(null, args);
+
+                // Remove the timeout ID from the list
+                var idIndex = settings.pageTimeouts.indexOf(timeoutId);
+
+                if (idIndex >= 0)
+                    settings.pageTimeouts.splice(idIndex, 1);
+            }, waitMs);
+
+            settings.pageTimeouts.push(timeoutId);
         };
 
         var clearPageTimeouts = function ()
