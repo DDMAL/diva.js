@@ -3435,7 +3435,7 @@ window.divaPlugins = [];
         var resetTilesLoaded = function()
         {
             // re-initialize array to avoid sparseness if number of pages changes
-            settings.loadedTiles = [];
+            settings.loadedTiles = new Array(settings.numPages);
             var i = settings.numPages;
 
             while (i--)
