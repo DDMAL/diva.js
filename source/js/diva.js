@@ -2535,7 +2535,7 @@ window.divaPlugins = [];
                 createButtonElement('view-icon', 'Change view'),
                 elt('div', {
                     id: settings.ID + 'view-options',
-                    className: 'diva-view-options'
+                    class: 'diva-view-options'
                 })
             ]);
         };
