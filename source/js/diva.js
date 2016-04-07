@@ -85,7 +85,6 @@ window.divaPlugins = [];
             averageWidths: [],          // The average page width for each zoom level
             currentPageIndex: 0,        // The current page in the viewport (center-most page)
             unclampedVerticalPadding: 0, // Used to keep track of initial padding size before enforcing the minimum size needed to accommodate plugin icons
-            doubleClickZoom: false,     // Flag to determine whether handleZoom was called from a double-click
             documentPaged: false,       // Set to true when the object has a viewingHint of 'paged' in its manifest
             firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
             firstRowLoaded: -1,         // The index of the first row loaded
@@ -1769,7 +1768,10 @@ window.divaPlugins = [];
 
             settings.goDirectlyTo = parseInt($(this).attr('data-index'), 10); //page index
 
-            handleZoom(newZoomLevel, dblClickX, dblClickY);
+            handleZoom(newZoomLevel, {
+                x: dblClickX,
+                y: dblClickY
+            });
         };
 
         // Called after double-clicking on a page in grid view
@@ -1845,7 +1847,7 @@ window.divaPlugins = [];
         };
 
         // Called to handle any zoom level
-        var handleZoom = function (newValue, dblClickX, dblClickY)
+        var handleZoom = function (newValue, dblClickCoords)
         {
             var newZoomLevel = getValidZoomLevel(newValue);
             var originX;
@@ -1866,15 +1868,13 @@ window.divaPlugins = [];
 
             // verticalOffset and horizontalOffset refer to the distance from the top/left of the current page that the center (or clicked coordinates) of the viewport is.
             // for example: if the viewport is 800 pixels and the active page is 600 pixels wide and starts at 100 pixels, verticalOffset will be 300 pixels.
-            if (settings.doubleClickZoom)
+            if (dblClickCoords)
             {
                 settings.verticalOffset *= zoomRatio;
                 settings.horizontalOffset *= zoomRatio;
 
-                settings.doubleClickZoom = false;
-
-                originX = dblClickX;
-                originY = dblClickY;
+                originX = dblClickCoords.x;
+                originY = dblClickCoords.y;
                 settings.innerElement.style.transformOrigin = originX + 'px ' + originY + 'px';
             }
             else
