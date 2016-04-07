@@ -152,6 +152,19 @@ window.divaPlugins = [];
 
         var self = this;
 
+        var elemAttrs = function (ident, base)
+        {
+            var attrs = {
+                id: settings.ID + ident,
+                class: 'diva-' + ident
+            };
+
+            if (base)
+                return $.extend(attrs, base);
+            else
+                return attrs;
+        };
+
         var getPageData = function (pageIndex, attribute)
         {
             return settings.pages[pageIndex].d[settings.zoomLevel][attribute];
@@ -289,7 +302,7 @@ window.divaPlugins = [];
             }
             else
             {
-                showError('Your browser lacks support for the <pre>canvas</pre> element. Please upgrade your browser.');
+                showError(['Your browser lacks support for the ', elt('pre', null, ['canvas']), ' element. Please upgrade your browser.']);
                 return false;
             }
 
@@ -2527,16 +2540,9 @@ window.divaPlugins = [];
 
         var createViewMenuElement = function()
         {
-            return elt('div', {
-                id: settings.ID + 'view-menu',
-                class: 'diva-view-menu'
-            },
-            [
+            return elt('div', elemAttrs('view-menu'), [
                 createButtonElement('view-icon', 'Change view'),
-                elt('div', {
-                    id: settings.ID + 'view-options',
-                    class: 'diva-view-options'
-                })
+                elt('div', elemAttrs('view-options'))
             ]);
         };
 
@@ -2876,7 +2882,19 @@ window.divaPlugins = [];
             // Handle the creation of the link popup box
             linkIcon.click(function ()
             {
-                $('body').prepend('<div id="' + settings.ID + 'link-popup" class="diva-popup diva-link-popup"><input id="' + settings.ID + 'link-popup-input" class="diva-input" type="text" value="' + getCurrentURL() + '"/></div>');
+                $('body').prepend(
+                    elt('div', {
+                        id: settings.ID + 'link-popup',
+                        class: 'diva-popup diva-link-popup'
+                    }, [
+                        elt('input', {
+                            id: settings.ID + 'link-popup-input',
+                            class: 'diva-input',
+                            type: 'text',
+                            value: getCurrentURL()
+                        })
+                    ])
+                );
 
                 if (settings.inFullscreen)
                 {
@@ -3375,25 +3393,14 @@ window.divaPlugins = [];
             return divaServiceBlock;
         };
 
-        var showError = function(messageText)
+        var showError = function(message)
         {
-            var textDiv = elt('div');
-            textDiv.innerHTML = messageText;
-
-            var errorElement = elt('div', {
-                id: settings.ID + 'error',
-                class: 'diva-error'
-            },
-            [
-                elt('button', {
-                    id: settings.ID + 'error-close',
-                    class: 'diva-error-close',
-                    'aria-label': 'Close dialog'
-                }),
+            var errorElement = elt('div', elemAttrs('error'), [
+                elt('button', elemAttrs('error-close', {'aria-label': 'Close dialog'})),
                 elt('p', null, [
                     elt('strong', null, ['Error'])
                 ]),
-                textDiv
+                elt('div', null, message)
             ]);
 
             settings.outerObject.append(errorElement);
@@ -3408,9 +3415,10 @@ window.divaPlugins = [];
         var ajaxError = function(jqxhr, status, error)
         {
             // Show a basic error message within the document viewer pane
+            // FIXME: Make this more end-user friendly. What about 404's etc?
 
             hideThrobber();
-            var errorMessageText = 'Invalid objectData setting. Error code: ' + jqxhr.status + ' ' + error;
+            var errorMessage = ['Invalid objectData setting. Error code: ' + jqxhr.status + ' ' + error];
 
             // Detect and handle CORS errors
             var dataHasAbsolutePath = settings.objectData.lastIndexOf('http', 0) === 0;
@@ -3421,15 +3429,20 @@ window.divaPlugins = [];
 
                 if (location.hostname !== jsonHost)
                 {
-                    errorMessageText += '<p>Attempted to access cross-origin data without CORS.</p>' +
-                        '<p>You may need to update your server configuration to support CORS. ' +
-                        'For help, see the <a href="https://github.com/DDMAL/diva.js/wiki/' +
-                        'Installation#a-note-about-cross-site-requests" target="_blank">' +
-                        'cross-site request documentation.</a></p>';
+                    errorMessage.push(
+                        elt('p', null, ['Attempted to access cross-origin data without CORS.']),
+                        elt('p', null, [
+                            'You may need to update your server configuration to support CORS. For help, see the ',
+                            elt('a', {
+                                href: 'https://github.com/DDMAL/diva.js/wiki/Installation#a-note-about-cross-site-requests',
+                                target: '_blank'
+                            }, ['cross-site request documentation.'])
+                        ])
+                    );
                 }
             }
 
-            showError(errorMessageText);
+            showError(errorMessage);
         };
 
         var resetTilesLoaded = function()
@@ -3573,7 +3586,7 @@ window.divaPlugins = [];
                 if ($(settings.selector + 'title').length)
                     $(settings.selector + 'title').html(settings.itemTitle);
                 else
-                    settings.parentObject.prepend('<div id="' + settings.ID + 'title" class="diva-title">' + settings.itemTitle + '</div>');
+                    settings.parentObject.prepend(elt('div', elemAttrs('title'), [settings.itemTitle]));
             }
 
             // Make sure the value for settings.goDirectlyTo is valid
@@ -3673,15 +3686,15 @@ window.divaPlugins = [];
             }
 
             // Create the inner and outer panels
-            settings.parentObject.append('<div id="' + settings.ID + 'outer" class="diva-outer"></div>');
+            settings.parentObject.append(elt('div', elemAttrs('outer')));
             settings.outerObject = $(settings.selector + 'outer');
             settings.outerElement = settings.outerObject[0];
-            settings.outerObject.append('<div id="' + settings.ID + 'inner" class="diva-inner diva-dragger"></div>');
+            settings.outerObject.append(elt('div', elemAttrs('inner', { class: 'diva-inner diva-dragger' })));
             settings.innerObject = $(settings.selector + 'inner');
             settings.innerElement = settings.innerObject[0];
 
             // Create the throbber element
-            settings.outerObject.append('<div id="' + settings.ID + 'throbber" class="diva-throbber"></div>');
+            settings.outerObject.append(elt('div', elemAttrs('throbber')));
 
             // First, n - check if it's in range
             var nParam = parseInt($.getHashParam('n' + settings.hashParamSuffix), 10);
