@@ -97,7 +97,7 @@ window.divaPlugins = [];
             initialKeyScroll: false,    // Holds the initial state of enableKeyScroll
             initialSpaceScroll: false,  // Holds the initial state of enableSpaceScroll
             innerObject: {},            // $(settings.ID + 'inner'), for selecting the .diva-inner element
-            innerElement: '',           // A reference to the native .diva-outer DOM object
+            innerElement: null,         // The native .diva-outer DOM object
             isActiveDiva: true,         // In the case that multiple diva panes exist on the same page, this should have events funneled to it.
             isScrollable: true,         // Used in enable/disableScrollable public methods
             isIIIF: false,              // Specifies whether objectData is in Diva native or IIIF Manifest format
@@ -116,7 +116,7 @@ window.divaPlugins = [];
             numRows: 0,                 // Number of rows
             oldZoomLevel: -1,           // Holds the previous zoom level after zooming in or out
             outerObject: {},            // $(settings.ID + 'outer'), for selecting the .diva-outer element
-            outerElement: '',           // A reference to the native .diva-outer DOM object
+            outerElement: null,         // The native .diva-outer DOM object
             pages: [],                  // An array containing the data for all the pages
             pageLeftOffsets: [],        // Distance from the left side of each page to the left side of the diva-inner object
             pagePreloadCanvases: [],    // Stack to hold canvases of pages preloading during zoom
@@ -398,10 +398,9 @@ window.divaPlugins = [];
         var loadPageTiles = function (pageIndex, filename, width, height, pageSelector)
         {
             var pageElement = document.getElementById(settings.ID + 'page-' + pageIndex);
-            var outer = document.getElementById(settings.outerElement);
-            var viewportTop = outer.scrollTop;
+            var viewportTop = settings.outerElement.scrollTop;
             var viewportBottom = viewportTop + settings.panelHeight;
-            var viewportLeft = outer.scrollLeft;
+            var viewportLeft = settings.outerElement.scrollLeft;
             var viewportRight = viewportLeft + settings.panelWidth;
 
             // If the page is no longer in the viewport or loaded, don't load any tiles
@@ -436,8 +435,6 @@ window.divaPlugins = [];
             // If the page has not been loaded yet, append the div to the DOM
             if (!isPageLoaded(pageIndex))
             {
-                var innerElement = document.getElementById(settings.innerElement);
-
                 var pageElement = elt('div', {
                     id: settings.ID + 'page-' + pageIndex,
                     class: 'diva-page diva-document-page',
@@ -532,7 +529,7 @@ window.divaPlugins = [];
                     pageElement.classList.add('diva-page-horizontal');
                 }
 
-                innerElement.appendChild(pageElement);
+                settings.innerElement.appendChild(pageElement);
                 diva.Events.publish("PageWillLoad", [pageIndex, filename, pageSelector], self);
             }
 
@@ -599,7 +596,7 @@ window.divaPlugins = [];
         var pageAboveViewport = function (pageIndex)
         {
             var bottomOfPage = settings.pageTopOffsets[pageIndex] + getPageData(pageIndex, 'h') + settings.verticalPadding;
-            var topOfViewport = document.getElementById(settings.outerElement).scrollTop;
+            var topOfViewport = settings.outerElement.scrollTop;
 
             return bottomOfPage < topOfViewport;
         };
@@ -608,7 +605,7 @@ window.divaPlugins = [];
         var pageBelowViewport = function (pageIndex)
         {
             var topOfPage = settings.pageTopOffsets[pageIndex];
-            var bottomOfViewport = document.getElementById(settings.outerElement).scrollTop + settings.panelHeight;
+            var bottomOfViewport = settings.outerElement.scrollTop + settings.panelHeight;
 
             return topOfPage > bottomOfViewport;
         };
@@ -618,7 +615,7 @@ window.divaPlugins = [];
         var pageLeftOfViewport = function (pageIndex)
         {
             var rightOfPage = settings.pageLeftOffsets[pageIndex] + getPageData(pageIndex, 'w') + settings.horizontalPadding;
-            var leftOfViewport = document.getElementById(settings.outerElement).scrollLeft;
+            var leftOfViewport = settings.outerElement.scrollLeft;
 
             return rightOfPage < leftOfViewport;
         };
@@ -627,7 +624,7 @@ window.divaPlugins = [];
         var pageRightOfViewport = function (pageIndex)
         {
             var leftOfPage = settings.pageLeftOffsets[pageIndex];
-            var rightOfViewport = document.getElementById(settings.outerElement).scrollLeft + settings.panelWidth;
+            var rightOfViewport = settings.outerElement.scrollLeft + settings.panelWidth;
 
             return leftOfPage > rightOfViewport;
         };
@@ -743,9 +740,8 @@ window.divaPlugins = [];
             var i;
 
             // Cache scroll state
-            var outerElement = document.getElementById(settings.outerElement);
-            var viewportTop = outerElement.scrollTop;
-            var viewportLeft = outerElement.scrollLeft;
+            var viewportTop = settings.outerElement.scrollTop;
+            var viewportLeft = settings.outerElement.scrollLeft;
             var viewportRight = viewportLeft + settings.panelWidth;
             var viewportBottom = viewportTop + settings.panelHeight;
 
@@ -781,7 +777,7 @@ window.divaPlugins = [];
                 }
             }
 
-            var scrollSoFar = (settings.verticallyOriented ? outerElement.scrollTop : outerElement.scrollLeft);
+            var scrollSoFar = (settings.verticallyOriented ? viewportTop : viewportLeft);
 
             diva.Events.publish("ViewerDidScroll", [scrollSoFar], self);
 
@@ -918,7 +914,7 @@ window.divaPlugins = [];
         var rowAboveViewport = function (rowIndex)
         {
             var bottomOfRow = settings.rowHeight * (rowIndex + 1);
-            var topOfViewport = document.getElementById(settings.outerElement).scrollTop;
+            var topOfViewport = settings.outerElement.scrollTop;
 
             return (bottomOfRow < topOfViewport);
         };
@@ -927,7 +923,7 @@ window.divaPlugins = [];
         var rowBelowViewport = function (rowIndex)
         {
             var topOfRow = settings.rowHeight * rowIndex;
-            var bottomOfViewport = document.getElementById(settings.outerElement).scrollTop + settings.panelHeight;
+            var bottomOfViewport = settings.outerElement.scrollTop + settings.panelHeight;
 
             return (topOfRow > bottomOfViewport);
         };
@@ -998,7 +994,7 @@ window.divaPlugins = [];
         var adjustRows = function (direction)
         {
             // Cache scroll state
-            var viewportTop = document.getElementById(settings.outerElement).scrollTop;
+            var viewportTop = settings.outerElement.scrollTop;
             var viewportBottom = viewportTop + settings.panelHeight;
 
             if (direction < 0)
@@ -1014,7 +1010,7 @@ window.divaPlugins = [];
                 attemptRowHide(settings.firstRowLoaded, 1);
             }
 
-            var newTopScroll = document.getElementById(settings.outerElement).scrollTop;
+            var newTopScroll = settings.outerElement.scrollTop;
 
             diva.Events.publish("ViewerDidScroll", [newTopScroll], self);
 
@@ -1081,7 +1077,7 @@ window.divaPlugins = [];
         {
             var currentPage = settings.currentPageIndex;
             var pageToConsider = currentPage + direction;
-            var outerElement = document.getElementById(settings.outerElement);
+            var outerElement = settings.outerElement;
 
             pageToConsider = getClosestVisiblePage(pageToConsider, direction);
 
@@ -1184,7 +1180,7 @@ window.divaPlugins = [];
         {
             var currentRow = Math.floor(settings.currentPageIndex / settings.pagesPerRow);
             var rowToConsider = currentRow + parseInt(direction, 10);
-            var topScroll = document.getElementById(settings.outerElement).scrollTop;
+            var topScroll = settings.outerElement.scrollTop;
             var middleOfViewport = topScroll + (settings.panelHeight / 2);
             var changeCurrentRow = false;
 
@@ -1257,9 +1253,8 @@ window.divaPlugins = [];
         {
             var desiredScroll = calculateDesiredScroll(pageIndex, verticalOffset, horizontalOffset);
 
-            var outerElement = document.getElementById(settings.outerElement);
-            outerElement.scrollTop = desiredScroll.top;
-            outerElement.scrollLeft = desiredScroll.left;
+            settings.outerElement.scrollTop = desiredScroll.top;
+            settings.outerElement.scrollLeft = desiredScroll.left;
 
             // Pretend that this is the current page
             if (pageIndex !== settings.currentPageIndex)
@@ -1277,7 +1272,7 @@ window.divaPlugins = [];
         var gotoRow = function (pageIndex)
         {
             var desiredRow = Math.floor(pageIndex / settings.pagesPerRow);
-            document.getElementById(settings.outerElement).scrollTop = desiredRow * settings.rowHeight;
+            settings.outerElement.scrollTop = desiredRow * settings.rowHeight;
 
             // Pretend that this is the current page (it probably isn't)
             settings.currentPageIndex = pageIndex;
@@ -1308,17 +1303,16 @@ window.divaPlugins = [];
         var clearViewer = function ()
         {
             // Post-zoom: clear scaling
-            var innerElement = document.getElementById(settings.innerElement);
-            innerElement.style.transition = '';
-            innerElement.style.transform = '';
-            innerElement.style.transformOrigin = '';
+            settings.innerElement.style.transition = '';
+            settings.innerElement.style.transform = '';
+            settings.innerElement.style.transformOrigin = '';
 
             settings.allTilesLoaded = [];
-            document.getElementById(settings.outerElement).scrollTop = 0;
+            settings.outerElement.scrollTop = 0;
 
-            while (innerElement.firstChild)
+            while (settings.innerElement.firstChild)
             {
-                innerElement.removeChild(innerElement.firstChild);
+                settings.innerElement.removeChild(settings.innerElement.firstChild);
             }
 
             settings.firstPageLoaded = 0;
@@ -1481,18 +1475,15 @@ window.divaPlugins = [];
             // Calculate page layout (settings.pageTopOffsets, settings.pageLeftOffsets)
             calculatePageOffsets(documentDimensions.widthToSet, documentDimensions.heightToSet);
 
-            //Set the inner element to said width
-            var innerEl = document.getElementById(settings.innerElement);
-
             if (settings.verticallyOriented)
             {
-                innerEl.style.height = Math.round(settings.totalHeight) + 'px';
-                innerEl.style.width = Math.round(documentDimensions.widthToSet) + 'px';
+                settings.innerElement.style.height = Math.round(settings.totalHeight) + 'px';
+                settings.innerElement.style.width = Math.round(documentDimensions.widthToSet) + 'px';
             }
             else
             {
-                innerEl.style.height = Math.round(documentDimensions.heightToSet) + 'px';
-                innerEl.style.width = Math.round(settings.totalWidth) + 'px';
+                settings.innerElement.style.height = Math.round(documentDimensions.heightToSet) + 'px';
+                settings.innerElement.style.width = Math.round(settings.totalWidth) + 'px';
             }
 
             // In book view, determine the total height/width based on the last opening's height/width and offset
@@ -1505,11 +1496,11 @@ window.divaPlugins = [];
                     // Last opening height is the max height of the last two pages if they are an opening, else the height of the last page since it's on its own on the left
                     // If the last page is page 0, then it's on its own on the right
                     var lastOpeningHeight = (lastPageIndex % 2 || lastPageIndex === 0) ? getPageData(lastPageIndex, 'h') : Math.max(getPageData(lastPageIndex, 'h'), getPageData(lastPageIndex - 1, 'h'));
-                    innerEl.style.height = settings.pageTopOffsets[lastPageIndex] + lastOpeningHeight + (settings.verticalPadding * 2) + 'px';
+                    settings.innerElement.style.height = settings.pageTopOffsets[lastPageIndex] + lastOpeningHeight + (settings.verticalPadding * 2) + 'px';
                 }
                 else
                 {
-                    innerEl.style.width = settings.pageLeftOffsets[lastPageIndex] + getPageData(lastPageIndex, 'w') + (settings.horizontalPadding * 2) + 'px';
+                    settings.innerElement.style.width = settings.pageLeftOffsets[lastPageIndex] + getPageData(lastPageIndex, 'w') + (settings.horizontalPadding * 2) + 'px';
                 }
             }
 
@@ -1525,11 +1516,10 @@ window.divaPlugins = [];
             // Once the viewport is aligned, we can determine which pages will be visible and load them
             var pageBlockFound = false;
 
-            var outer = document.getElementById(settings.outerElement);
-            var viewportTop = outer.scrollTop;
+            var viewportTop = settings.outerElement.scrollTop;
             var viewportBottom = viewportTop + settings.panelHeight;
 
-            var viewportLeft = outer.scrollLeft;
+            var viewportLeft = settings.outerElement.scrollLeft;
             var viewportRight = viewportLeft + settings.panelWidth;
 
             for (var i = 0; i < settings.numPages; i++)
@@ -1594,9 +1584,8 @@ window.divaPlugins = [];
             settings.numRows = Math.ceil(settings.numPages / settings.pagesPerRow);
             settings.totalHeight = settings.numRows * settings.rowHeight + settings.fixedPadding;
 
-            var innerEl = document.getElementById(settings.innerElement);
-            innerEl.style.height = Math.round(settings.totalHeight) + 'px';
-            innerEl.style.width = Math.round(settings.panelWidth) + 'px';
+            settings.innerElement.style.height = Math.round(settings.totalHeight) + 'px';
+            settings.innerElement.style.width = Math.round(settings.panelWidth) + 'px';
 
             // First scroll directly to the row containing the current page
             gridScroll();
@@ -1605,7 +1594,7 @@ window.divaPlugins = [];
             settings.pageTopOffsets = [];
             settings.pageLeftOffsets = [];
 
-            var viewportTop = document.getElementById(settings.outerElement).scrollTop;
+            var viewportTop = settings.outerElement.scrollTop;
             var viewportBottom = viewportTop + settings.panelHeight;
 
             // Figure out the row each page is in
@@ -1751,8 +1740,7 @@ window.divaPlugins = [];
             var zoomRatio = Math.pow(2, newZoomLevel - settings.zoomLevel);
 
             var pageOffset = this.getBoundingClientRect();
-            var outerElement = document.getElementById(settings.outerElement);
-            var outerPosition = outerElement.getBoundingClientRect();
+            var outerPosition = settings.outerElement.getBoundingClientRect();
 
             settings.doubleClickZoom = true;
 
@@ -1773,8 +1761,8 @@ window.divaPlugins = [];
             settings.horizontalOffset += (settings.verticallyOriented && !settings.inBookLayout) ? 0 : settings.horizontalPadding;
 
             // calculate click coordinates for smooth zoom transition: distance from edge of inner to cursor
-            var dblClickX = event.pageX + outerElement.scrollLeft  - outerPosition.left;
-            var dblClickY = event.pageY + outerElement.scrollTop - outerPosition.top;
+            var dblClickX = event.pageX + settings.outerElement.scrollLeft  - outerPosition.left;
+            var dblClickY = event.pageY + settings.outerElement.scrollTop - outerPosition.top;
 
             settings.goDirectlyTo = parseInt($(this).attr('data-index'), 10); //page index
 
@@ -1859,9 +1847,6 @@ window.divaPlugins = [];
         // Called to handle any zoom level
         var handleZoom = function (newValue, dblClickX, dblClickY)
         {
-            var innerElement = document.getElementById(settings.innerElement);
-            var outerElement = document.getElementById(settings.outerElement);
-
             var newZoomLevel = getValidZoomLevel(newValue);
             var originX;
             var originY;
@@ -1890,7 +1875,7 @@ window.divaPlugins = [];
 
                 originX = dblClickX;
                 originY = dblClickY;
-                innerElement.style.transformOrigin = originX + 'px ' + originY + 'px';
+                settings.innerElement.style.transformOrigin = originX + 'px ' + originY + 'px';
             }
             else
             {
@@ -1909,15 +1894,15 @@ window.divaPlugins = [];
                     settings.horizontalOffset = zoomRatio * getCurrentXOffset();
 
                     // Calculate new zoom transition origin coordinates (originX measured from left of inner div, originY measured from top of inner div)
-                    var scrollTop = outerElement.scrollTop;
+                    var scrollTop = settings.outerElement.scrollTop;
                     var elementHeight = settings.panelHeight;
                     originY = scrollTop + parseInt(elementHeight / 2, 10);
 
-                    var scrollLeft = outerElement.scrollLeft;
+                    var scrollLeft = settings.outerElement.scrollLeft;
                     var elementWidth = settings.panelWidth;
                     originX = scrollLeft + parseInt(elementWidth / 2, 10);
 
-                    innerElement.style.transformOrigin = originX + 'px ' + originY + 'px';
+                    settings.innerElement.style.transformOrigin = originX + 'px ' + originY + 'px';
                 }
             }
 
@@ -1926,9 +1911,9 @@ window.divaPlugins = [];
             {
                 var pageBlockFound = false;
 
-                var viewportTop = outerElement.scrollTop;
+                var viewportTop = settings.outerElement.scrollTop;
                 var viewportBottom = viewportTop + settings.panelHeight;
-                var viewportLeft = outerElement.scrollLeft;
+                var viewportLeft = settings.outerElement.scrollLeft;
                 var viewportRight = viewportLeft + settings.panelWidth;
 
                 for (var pageIndex = 0; pageIndex < settings.numPages; pageIndex++)
@@ -1952,7 +1937,7 @@ window.divaPlugins = [];
             // If first zoom, set transition parameters TODO css class
             if (!settings.isZooming)
             {
-                innerElement.style.transition = 'transform .3s cubic-bezier(0.000, 0.990, 1.000, 0.995)';
+                settings.innerElement.style.transition = 'transform .3s cubic-bezier(0.000, 0.990, 1.000, 0.995)';
             }
 
             // If still zooming, zoomRatio needs to be multiplied by the previous zoomRatio and is reset on transitionend
@@ -1960,7 +1945,7 @@ window.divaPlugins = [];
             settings.previousZoomRatio = zoomRatio;
 
             // Transition to new zoom level
-            innerElement.style.transform = 'scale(' + zoomRatio + ')';
+            settings.innerElement.style.transform = 'scale(' + zoomRatio + ')';
 
             // Set flag to indicate zooming is in progress until loadDocument is called by transitionend
             settings.isZooming = true;
@@ -2045,7 +2030,7 @@ window.divaPlugins = [];
         //gets distance from the center of the diva-outer element to the top of the current page
         var getCurrentYOffset = function()
         {
-            var scrollTop = document.getElementById(settings.outerElement).scrollTop;
+            var scrollTop = settings.outerElement.scrollTop;
             var elementHeight = settings.panelHeight;
 
             return (scrollTop - settings.pageTopOffsets[settings.currentPageIndex] + parseInt(elementHeight / 2, 10));
@@ -2054,7 +2039,7 @@ window.divaPlugins = [];
         //gets distance from the center of the diva-outer element to the left of the current page
         var getCurrentXOffset = function()
         {
-            var scrollLeft = document.getElementById(settings.outerElement).scrollLeft;
+            var scrollLeft = settings.outerElement.scrollLeft;
             var elementWidth = settings.panelWidth;
 
             return (scrollLeft - settings.pageLeftOffsets[settings.currentPageIndex] + parseInt(elementWidth / 2, 10));
@@ -2115,7 +2100,7 @@ window.divaPlugins = [];
         // updates panelHeight/panelWidth on resize
         var updatePanelSize = function ()
         {
-            var outerElem = document.getElementById(settings.outerElement);
+            var outerElem = settings.outerElement;
             settings.panelHeight = outerElem.clientHeight - (outerElem.scrollWidth > outerElem.clientWidth ? settings.scrollbarWidth : 0);
             settings.panelWidth = outerElem.clientWidth - (outerElem.scrollHeight > outerElem.clientHeight ? settings.scrollbarWidth : 0);
 
@@ -2325,9 +2310,8 @@ window.divaPlugins = [];
         {
             var direction;
 
-            var outerElement = document.getElementById(settings.outerElement);
-            var newScrollTop = outerElement.scrollTop;
-            var newScrollLeft = outerElement.scrollLeft;
+            var newScrollTop = settings.outerElement.scrollTop;
+            var newScrollLeft = settings.outerElement.scrollLeft;
 
             if (settings.verticallyOriented || settings.inGrid)
                 direction = newScrollTop - settings.previousTopScroll;
@@ -2388,15 +2372,13 @@ window.divaPlugins = [];
             // Catch the key presses in document
             $(document).on('keydown.diva', function (event)
             {
-                var outerElement = document.getElementById(settings.ID + 'outer');
-
                 if (!settings.isActiveDiva)
                     return true;
 
                 // Space or page down - go to the next page
                 if ((settings.enableSpaceScroll && !event.shiftKey && event.keyCode === spaceKey) || (settings.enableKeyScroll && event.keyCode === pageDownKey))
                 {
-                    outerElement.scrollTop += settings.panelHeight;
+                    settings.outerElement.scrollTop += settings.panelHeight;
                     return false;
                 }
                 else if (!settings.enableSpaceScroll && event.keyCode === spaceKey)
@@ -2414,37 +2396,37 @@ window.divaPlugins = [];
                     {
                         case pageUpKey:
                             // Page up - go to the previous page
-                            outerElement.scrollTop -= settings.panelHeight;
+                            settings.outerElement.scrollTop -= settings.panelHeight;
                             return false;
 
                         case upArrowKey:
                             // Up arrow - scroll up
-                            outerElement.scrollTop -= settings.arrowScrollAmount;
+                            settings.outerElement.scrollTop -= settings.arrowScrollAmount;
                             return false;
 
                         case downArrowKey:
                             // Down arrow - scroll down
-                            outerElement.scrollTop += settings.arrowScrollAmount;
+                            settings.outerElement.scrollTop += settings.arrowScrollAmount;
                             return false;
 
                         case leftArrowKey:
                             // Left arrow - scroll left
-                            outerElement.scrollLeft -= settings.arrowScrollAmount;
+                            settings.outerElement.scrollLeft -= settings.arrowScrollAmount;
                             return false;
 
                         case rightArrowKey:
                             // Right arrow - scroll right
-                            outerElement.scrollLeft += settings.arrowScrollAmount;
+                            settings.outerElement.scrollLeft += settings.arrowScrollAmount;
                             return false;
 
                         case homeKey:
                             // Home key - go to the beginning of the document
-                            outerElement.scrollTop = 0;
+                            settings.outerElement.scrollTop = 0;
                             return false;
 
                         case endKey:
                             // End key - go to the end of the document
-                            outerElement.scrollTop = settings.totalHeight;
+                            settings.outerElement.scrollTop = settings.totalHeight;
                             return false;
 
                         default:
@@ -2529,8 +2511,7 @@ window.divaPlugins = [];
 
             if (transitionEnd)
             {
-                var inner = document.getElementById(settings.innerElement);
-                inner.addEventListener(transitionEnd, onZoomEnd, false);
+                settings.innerElement.addEventListener(transitionEnd, onZoomEnd, false);
             }
             else
             {
@@ -3699,10 +3680,10 @@ window.divaPlugins = [];
             // Create the inner and outer panels
             settings.parentObject.append('<div id="' + settings.ID + 'outer" class="diva-outer"></div>');
             settings.outerObject = $(settings.selector + 'outer');
-            settings.outerElement = settings.ID + 'outer';
+            settings.outerElement = settings.outerObject[0];
             settings.outerObject.append('<div id="' + settings.ID + 'inner" class="diva-inner diva-dragger"></div>');
             settings.innerObject = $(settings.selector + 'inner');
-            settings.innerElement = settings.ID + 'inner';
+            settings.innerElement = settings.innerObject[0];
 
             // Create the throbber element
             settings.outerObject.append('<div id="' + settings.ID + 'throbber" class="diva-throbber"></div>');
@@ -3942,11 +3923,10 @@ window.divaPlugins = [];
             var bottom = top + height;
             var left = settings.pageLeftOffsets[pageIndex] + leftOffset;
             var right = left + width;
-            var outerElement = document.getElementById(settings.outerElement);
 
-            var viewportTop = outerElement.scrollTop;
+            var viewportTop = settings.outerElement.scrollTop;
             var viewportBottom = viewportTop + settings.panelHeight;
-            var viewportLeft = outerElement.scrollLeft;
+            var viewportLeft = settings.outerElement.scrollLeft;
             var viewportRight = viewportLeft + settings.panelWidth;
 
             return isVerticallyInViewport(top, bottom, viewportTop, viewportBottom) && isHorizontallyInViewport(left, right, viewportLeft, viewportRight);
@@ -4199,7 +4179,7 @@ window.divaPlugins = [];
                 bindMouseEvents();
                 settings.enableKeyScroll = settings.initialKeyScroll;
                 settings.enableSpaceScroll = settings.initialSpaceScroll;
-                document.getElementById(settings.outerElement).style.overflow = 'auto';
+                settings.outerElement.style.overflow = 'auto';
                 settings.isScrollable = true;
             }
         };
@@ -4216,7 +4196,7 @@ window.divaPlugins = [];
                 settings.outerObject.unbind('contextmenu');
 
                 // disable all other scrolling actions
-                document.getElementById(settings.outerElement).style.overflow = 'hidden';
+                settings.outerElement.style.overflow = 'hidden';
 
                 // block scrolling keys behavior, respecting initial scroll settings
                 settings.initialKeyScroll = settings.enableKeyScroll;
@@ -4271,8 +4251,7 @@ window.divaPlugins = [];
         this.getPageIndexForPageXYValues = function(pageX, pageY)
         {
             //get the four edges of the outer element
-            var outerObj = document.getElementById(settings.outerElement);
-            var outerOffset = outerObj.getBoundingClientRect();
+            var outerOffset = settings.outerElement.getBoundingClientRect();
             var outerTop = outerOffset.top;
             var outerLeft = outerOffset.left;
             var outerBottom = outerOffset.bottom;
