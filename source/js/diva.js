@@ -175,6 +175,21 @@ window.divaPlugins = [];
             return -1;
         };
 
+        var getViewport = function ()
+        {
+            var top = settings.outerElement.scrollTop;
+            var bottom = top + settings.panelHeight;
+            var left = settings.outerElement.scrollLeft;
+            var right = left + settings.panelWidth;
+
+            return {
+                top: top,
+                bottom: bottom,
+                left: left,
+                right: right
+            };
+        };
+
         // Checks if a page or tile is within the viewport horizontally
         var isHorizontallyInViewport = function (left, right, viewportLeft, viewportRight)
         {
@@ -203,7 +218,7 @@ window.divaPlugins = [];
         };
 
         // Check if a tile is near the specified viewport and thus should be loaded (performance-sensitive)
-        var isTileVisible = function (pageIndex, tileRow, tileCol, viewportTop, viewportLeft, viewportRight, viewportBottom)
+        var isTileVisible = function (pageIndex, tileRow, tileCol, viewport)
         {
             var tileTop, tileLeft;
 
@@ -221,7 +236,7 @@ window.divaPlugins = [];
             var tileBottom = tileTop + settings.tileHeight;
             var tileRight = tileLeft + settings.tileWidth;
 
-            return isVerticallyInViewport(tileTop, tileBottom, viewportTop, viewportBottom) && isHorizontallyInViewport(tileLeft, tileRight, viewportLeft, viewportRight);
+            return isVerticallyInViewport(tileTop, tileBottom, viewport.top, viewport.bottom) && isHorizontallyInViewport(tileLeft, tileRight, viewport.left, viewport.right);
         };
 
         // Check if a tile has been loaded (note: performance-sensitive function)
@@ -247,7 +262,7 @@ window.divaPlugins = [];
         };
 
         // Check if a page is in or near the viewport and thus should be loaded
-        var isPageVisible = function (pageIndex, viewportTop, viewportLeft, viewportRight, viewportBottom)
+        var isPageVisible = function (pageIndex, viewport)
         {
             var topOfPage = settings.pageTopOffsets[pageIndex];
             var bottomOfPage = topOfPage + getPageData(pageIndex, 'h') + settings.verticalPadding;
@@ -255,7 +270,7 @@ window.divaPlugins = [];
             var leftOfPage = settings.pageLeftOffsets[pageIndex];
             var rightOfPage = leftOfPage + getPageData(pageIndex, 'w') + settings.horizontalPadding;
 
-            return isVerticallyInViewport(topOfPage, bottomOfPage, viewportTop, viewportBottom) && isHorizontallyInViewport(leftOfPage, rightOfPage, viewportLeft, viewportRight);
+            return isVerticallyInViewport(topOfPage, bottomOfPage, viewport.top, viewport.bottom) && isHorizontallyInViewport(leftOfPage, rightOfPage, viewport.left, viewport.right);
         };
 
         // Check if a page has been appended to the DOM
@@ -265,7 +280,7 @@ window.divaPlugins = [];
         };
 
         // Loads page tiles into the supplied canvas.
-        var loadTiles = function(pageIndex, filename, width, height, canvasElement, viewportTop, viewportLeft, viewportRight, viewportBottom)
+        var loadTiles = function(pageIndex, filename, width, height, canvasElement, viewport)
         {
             var context;
 
@@ -372,7 +387,7 @@ window.divaPlugins = [];
                     // it isn't, if it should be visible.
                     if (!isTileLoaded(pageIndex, tileIndex, context, left, top))
                     {
-                        if (isTileVisible(pageIndex, row, col, viewportTop, viewportLeft, viewportRight, viewportBottom))
+                        if (isTileVisible(pageIndex, row, col, viewport))
                         {
                             currentTile = new Image();
                             currentTile.crossOrigin = "anonymous";
@@ -398,18 +413,15 @@ window.divaPlugins = [];
         var loadPageTiles = function (pageIndex, filename, width, height, pageSelector)
         {
             var pageElement = document.getElementById(settings.ID + 'page-' + pageIndex);
-            var viewportTop = settings.outerElement.scrollTop;
-            var viewportBottom = viewportTop + settings.panelHeight;
-            var viewportLeft = settings.outerElement.scrollLeft;
-            var viewportRight = viewportLeft + settings.panelWidth;
+            var viewport = getViewport();
 
             // If the page is no longer in the viewport or loaded, don't load any tiles
-            if (pageElement === null || !isPageVisible(pageIndex, viewportTop, viewportLeft, viewportRight, viewportBottom))
+            if (pageElement === null || !isPageVisible(pageIndex, viewport))
                 return;
 
             var canvasElement = document.getElementById(settings.ID + 'canvas-' + pageIndex);
 
-            loadTiles(pageIndex, filename, width, height, canvasElement, viewportTop, viewportLeft, viewportRight, viewportBottom);
+            loadTiles(pageIndex, filename, width, height, canvasElement, viewport);
 
             diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector], self);
         };
@@ -539,7 +551,7 @@ window.divaPlugins = [];
             }
         };
 
-        var preloadPage = function(pageIndex, viewportTop, viewportLeft, viewportRight, viewportBottom)
+        var preloadPage = function(pageIndex, viewport)
         {
             // Exit if we've already started preloading this page and we're not still zooming
             if (typeof settings.pagePreloadCanvases[pageIndex] !== 'undefined' && !settings.isZooming)
@@ -565,7 +577,7 @@ window.divaPlugins = [];
             }
 
             // Load visible page tiles into canvas
-            loadTiles(pageIndex, filename, width, height, pageCanvas, viewportTop, viewportLeft, viewportRight, viewportBottom);
+            loadTiles(pageIndex, filename, width, height, pageCanvas, viewport);
 
             diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector], self);
 
@@ -642,7 +654,7 @@ window.divaPlugins = [];
         };
 
         // Called by adjust pages - determine what pages should be visible, and show them
-        var attemptPageShow = function (pageIndex, direction, viewportTop, viewportLeft, viewportRight, viewportBottom)
+        var attemptPageShow = function (pageIndex, direction, viewport)
         {
             if (isPageValid(pageIndex))
             {
@@ -650,33 +662,33 @@ window.divaPlugins = [];
                 {
                     // Direction is positive - we're scrolling down
                     // If the page should be visible, then yes, add it
-                    if (isPageVisible(pageIndex, viewportTop, viewportLeft, viewportRight, viewportBottom))
+                    if (isPageVisible(pageIndex, viewport))
                     {
                         loadPage(pageIndex);
                         settings.lastPageLoaded = pageIndex;
 
                         // Recursively call this function until there's nothing to add
-                        attemptPageShow(settings.lastPageLoaded + 1, direction, viewportTop, viewportLeft, viewportRight, viewportBottom);
+                        attemptPageShow(settings.lastPageLoaded + 1, direction, viewport);
                     }
-                    else if (isPageValid(pageIndex + 1) && isPageVisible(pageIndex + 1, viewportTop, viewportLeft, viewportRight, viewportBottom))
+                    else if (isPageValid(pageIndex + 1) && isPageVisible(pageIndex + 1, viewport))
                     {
                         loadPage(pageIndex + 1);
                         settings.lastPageLoaded = pageIndex + 1;
 
                         // Recursively call this function until there's nothing to add
-                        attemptPageShow(settings.lastPageLoaded + 1, direction, viewportTop, viewportLeft, viewportRight, viewportBottom);
+                        attemptPageShow(settings.lastPageLoaded + 1, direction, viewport);
                     }
                     else if (pageBeforeViewport(pageIndex))
                     {
                         // If the page is below the viewport. try to load the next one
-                        attemptPageShow(pageIndex + 1, direction, viewportTop, viewportLeft, viewportRight, viewportBottom);
+                        attemptPageShow(pageIndex + 1, direction, viewport);
                     }
                 }
                 else
                 {
                     // Direction is negative - we're scrolling up
                     // If it's near the viewport, yes, add it
-                    if (isPageVisible(pageIndex, viewportTop, viewportLeft, viewportRight, viewportBottom))
+                    if (isPageVisible(pageIndex, viewport))
                     {
                         loadPage(pageIndex);
 
@@ -684,20 +696,20 @@ window.divaPlugins = [];
                         settings.firstPageLoaded = pageIndex;
 
                         // Recursively call this function until there's nothing to add
-                        attemptPageShow(settings.firstPageLoaded - 1, direction, viewportTop, viewportLeft, viewportRight, viewportBottom);
+                        attemptPageShow(settings.firstPageLoaded - 1, direction, viewport);
                     }
-                    else if (isPageValid(pageIndex - 1) && isPageVisible(pageIndex - 1, viewportTop, viewportLeft, viewportRight, viewportBottom))
+                    else if (isPageValid(pageIndex - 1) && isPageVisible(pageIndex - 1, viewport))
                     {
                         loadPage(pageIndex - 1);
                         settings.firstPageLoaded = pageIndex - 1;
 
                         // Recursively call this function until there's nothing to add
-                        attemptPageShow(settings.firstPageLoaded - 1, direction, viewportTop, viewportLeft, viewportRight, viewportBottom);
+                        attemptPageShow(settings.firstPageLoaded - 1, direction, viewport);
                     }
                     else if (pageAfterViewport(pageIndex))
                     {
                         // Attempt to call this on the next page, do not increment anything
-                        attemptPageShow(pageIndex - 1, direction, viewportTop, viewportLeft, viewportRight, viewportBottom);
+                        attemptPageShow(pageIndex - 1, direction, viewport);
                     }
                 }
             }
@@ -740,16 +752,13 @@ window.divaPlugins = [];
             var i;
 
             // Cache scroll state
-            var viewportTop = settings.outerElement.scrollTop;
-            var viewportLeft = settings.outerElement.scrollLeft;
-            var viewportRight = viewportLeft + settings.panelWidth;
-            var viewportBottom = viewportTop + settings.panelHeight;
+            var viewport = getViewport();
 
             if (direction < 0)
             {
                 // Direction is negative, so we're scrolling up/left (doesn't matter for these calls)
                 // Attempt showing pages in ascending order starting from the last visible page in the viewport
-                attemptPageShow(settings.lastPageLoaded, direction, viewportTop, viewportLeft, viewportRight, viewportBottom);
+                attemptPageShow(settings.lastPageLoaded, direction, viewport);
                 setCurrentPage(-1);
                 attemptPageHide(settings.lastPageLoaded, direction);
             }
@@ -757,7 +766,7 @@ window.divaPlugins = [];
             {
                 // Direction is positive so we're scrolling down/right (doesn't matter for these calls)
                 // Attempt showing pages in descending order starting from the first visible page in the viewport
-                attemptPageShow(settings.firstPageLoaded, direction, viewportTop, viewportLeft, viewportRight, viewportBottom);
+                attemptPageShow(settings.firstPageLoaded, direction, viewport);
                 setCurrentPage(1);
                 attemptPageHide(settings.firstPageLoaded, direction);
             }
@@ -772,12 +781,12 @@ window.divaPlugins = [];
                 var lpl = settings.lastPageLoaded;
                 for (i = Math.max(settings.firstPageLoaded, 0); i <= lpl; i++)
                 {
-                    if (isPageVisible(i, viewportTop, viewportLeft, viewportRight, viewportBottom))
+                    if (isPageVisible(i, viewport))
                         loadPage(i);
                 }
             }
 
-            var scrollSoFar = (settings.verticallyOriented ? viewportTop : viewportLeft);
+            var scrollSoFar = (settings.verticallyOriented ? viewport.top : viewport.left);
 
             diva.Events.publish("ViewerDidScroll", [scrollSoFar], self);
 
@@ -1516,15 +1525,9 @@ window.divaPlugins = [];
             // Once the viewport is aligned, we can determine which pages will be visible and load them
             var pageBlockFound = false;
 
-            var viewportTop = settings.outerElement.scrollTop;
-            var viewportBottom = viewportTop + settings.panelHeight;
-
-            var viewportLeft = settings.outerElement.scrollLeft;
-            var viewportRight = viewportLeft + settings.panelWidth;
-
             for (var i = 0; i < settings.numPages; i++)
             {
-                if (isPageVisible(i, viewportTop, viewportLeft, viewportRight, viewportBottom))
+                if (isPageVisible(i, getViewport()))
                 {
                     loadPage(i);
 
@@ -1824,17 +1827,14 @@ window.divaPlugins = [];
             //        i) if page coords fall within visible coords, add to visible page block
             var pageBlockFound = false;
 
-            var viewportTop = viewportRectangle.top;
-            var viewportLeft = viewportRectangle.left;
-            var viewportRight = viewportRectangle.left + settings.panelWidth;
-            var viewportBottom = viewportRectangle.top + settings.panelHeight;
+            var viewport = getViewport();
 
             for (var i = 0; i < settings.numPages; i++)
             {
-                if (isPageVisible(i, viewportTop, viewportLeft, viewportRight, viewportBottom))
+                if (isPageVisible(i, viewport))
                 {
                     // it will be visible, start loading it at the new zoom level into an offscreen canvas
-                    settings.pagePreloadCanvases[i] = preloadPage(i, viewportTop, viewportLeft, viewportRight, viewportBottom);
+                    settings.pagePreloadCanvases[i] = preloadPage(i, viewport);
                     pageBlockFound = true;
                 }
                 else if (pageBlockFound) // There will only be one consecutive block of pages to load; once we find a page that's invisible, we can terminate this loop.
@@ -1911,14 +1911,9 @@ window.divaPlugins = [];
             {
                 var pageBlockFound = false;
 
-                var viewportTop = settings.outerElement.scrollTop;
-                var viewportBottom = viewportTop + settings.panelHeight;
-                var viewportLeft = settings.outerElement.scrollLeft;
-                var viewportRight = viewportLeft + settings.panelWidth;
-
                 for (var pageIndex = 0; pageIndex < settings.numPages; pageIndex++)
                 {
-                    if (isPageVisible(pageIndex, viewportTop, viewportLeft, viewportRight, viewportBottom))
+                    if (isPageVisible(pageIndex, getViewport()))
                     {
                         settings.previousZoomLevelCanvases[pageIndex] = document.getElementById(settings.ID + 'canvas-' + pageIndex);
                         pageBlockFound = true;
@@ -3924,12 +3919,9 @@ window.divaPlugins = [];
             var left = settings.pageLeftOffsets[pageIndex] + leftOffset;
             var right = left + width;
 
-            var viewportTop = settings.outerElement.scrollTop;
-            var viewportBottom = viewportTop + settings.panelHeight;
-            var viewportLeft = settings.outerElement.scrollLeft;
-            var viewportRight = viewportLeft + settings.panelWidth;
+            var viewport = getViewport();
 
-            return isVerticallyInViewport(top, bottom, viewportTop, viewportBottom) && isHorizontallyInViewport(left, right, viewportLeft, viewportRight);
+            return isVerticallyInViewport(top, bottom, viewport.top, viewport.bottom) && isHorizontallyInViewport(left, right, viewport.left, viewport.right);
         };
 
         //Public wrapper for isPageVisible
