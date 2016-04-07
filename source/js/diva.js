@@ -3208,13 +3208,17 @@ window.divaPlugins = [];
                 return Math.ceil(Math.log((largestDimension + 1) / (256 + 1)) / Math.log(2));
             };
 
-            var initializeArrayWithValue = function (array, value)
+            var createArrayWithValue = function (length, value)
             {
-                var i = array.length;
+                var array = new Array(length);
+                var i = length;
+
                 while (i--)
                 {
                     array[i] = value;
                 }
+
+                return array;
             };
 
             // trigger ManifestDidLoad event
@@ -3304,18 +3308,12 @@ window.divaPlugins = [];
             var maxRatio = 0;
             var minRatio = 100; // initialize high so we can get the minimum later
 
-            var totalWidths = new Array(lowestMaxZoom + 1);
-            var totalHeights = new Array(lowestMaxZoom + 1);
-            var maxWidths = new Array(lowestMaxZoom + 1);
-            var maxHeights = new Array(lowestMaxZoom + 1);
+            var totalWidths = createArrayWithValue(lowestMaxZoom + 1, 0);
+            var totalHeights = createArrayWithValue(lowestMaxZoom + 1, 0);
+            var maxWidths = createArrayWithValue(lowestMaxZoom + 1, 0);
+            var maxHeights = createArrayWithValue(lowestMaxZoom + 1, 0);
             // separate calculation for paged/book view
-            var totalHeightsPaged = new Array(lowestMaxZoom + 1);
-
-            initializeArrayWithValue(totalWidths, 0);
-            initializeArrayWithValue(totalHeights, 0);
-            initializeArrayWithValue(maxWidths, 0);
-            initializeArrayWithValue(maxHeights, 0);
-            initializeArrayWithValue(totalHeightsPaged, 0);
+            var totalHeightsPaged = createArrayWithValue(lowestMaxZoom + 1, 0);
 
             var pages = [];
             var currentPageZoomData; // dimensions per zoomlevel
