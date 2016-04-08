@@ -3,13 +3,17 @@ module.exports = function(config)
     // Default port plus three; hopefully, this will help prevent collisions
     var KARMA_PORT = 9879;
 
-    var srcFiles;
+    var srcFiles, reporters, preprocessors;
 
     if (process.env.TEST_DIVA === 'build')
     {
         srcFiles = [
             'build/js/diva.min.js'
         ];
+
+        // Don't run coverage on the minified build
+        reporters = ['mocha'];
+        preprocessors = {};
     }
     else
     {
@@ -21,11 +25,34 @@ module.exports = function(config)
             'source/js/plugins/canvas.js',
             'source/js/plugins/download.js'
         ];
+
+        // Run coverage
+        reporters = ['mocha', 'coverage'];
+        preprocessors = {
+            'source/**/*.js': ['coverage']
+        };
     }
+
+    var files = [
+        {pattern: 'demo/**/*.json', included: false, served: true},
+        'node_modules/jquery/dist/jquery.js',
+        'node_modules/jquery-simulate/jquery.simulate.js',
+        'build/css/diva.min.css',
+        {pattern: 'build/css/diva.min.css.map', included: false, served: true}
+    ].concat(srcFiles).concat([
+        'tests/utils.js',
+        'tests/unit/**/*.js'
+    ]);
 
     config.set({
         frameworks: ['qunit'],
-        reporters: ['mocha'],
+        reporters: reporters,
+        preprocessors: preprocessors,
+
+        coverageReporter: {
+            type: 'html',
+            dir: 'coverage/'
+        },
 
         browsers: ['PhantomJS'],
 
@@ -34,16 +61,6 @@ module.exports = function(config)
             '/demo/': 'http://localhost:' + KARMA_PORT + '/base/demo/'
         },
 
-        files: [
-            {pattern: 'demo/**/*.json', included: false, served: true},
-            'node_modules/jquery/dist/jquery.js',
-            'node_modules/jquery-simulate/jquery.simulate.js',
-            'build/css/diva.min.css',
-            {pattern: 'build/css/diva.min.css.map', included: false, served: true}
-        ].concat(srcFiles)
-        .concat([
-            'tests/utils.js',
-            'tests/unit/**/*.js'
-        ])
+        files: files
     });
 };

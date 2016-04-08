@@ -48,6 +48,7 @@
     "jquery-simulate": "jquery/jquery-simulate#v1.0.1",
     "jshint-stylish": "^2.0.0",
     "karma": "^0.13.22",
+    "karma-coverage": "^0.5.5",
     "karma-mocha-reporter": "^2.0.0",
     "karma-phantomjs-launcher": "^1.0.0",
     "karma-qunit": "^0.1.9",
