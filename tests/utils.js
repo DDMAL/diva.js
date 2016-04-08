@@ -30,8 +30,11 @@
         settings.imageDir = settings.imageDir || "/srv/images/beromunster";
         settings.iipServerURL = settings.iipServerURL || "http://diva.simssa.ca/fcgi-bin/iipsrv.fcgi";
         settings.objectData = settings.objectData || "../demo/beromunster.json";
-        settings.enableCanvas = settings.enableCanvas || true;
-        settings.enableDownload = settings.enableDownload || true;
+
+        // These are always enabled. I don't think that was really intentional
+        // initially, but it's required now to keep existing tests from breaking.
+        settings.enableCanvas = true;
+        settings.enableDownload = true;
 
         return wrapper.diva(settings).data('diva');
     };
