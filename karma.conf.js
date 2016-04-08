@@ -37,6 +37,7 @@ module.exports = function(config)
         files: [
             {pattern: 'demo/**/*.json', included: false, served: true},
             'node_modules/jquery/dist/jquery.js',
+            'node_modules/jquery-simulate/jquery.simulate.js',
             'build/css/diva.min.css',
             {pattern: 'build/css/diva.min.css.map', included: false, served: true}
         ].concat(srcFiles)
