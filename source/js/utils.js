@@ -1080,23 +1080,52 @@ var activeDiva = new activeDivaController();
 
 /**
  * Convenience function to create a DOM element, set attributes on it, and
- * append children. The attributes are as described for setDOMAttributes.
- * Children can either be a DOM node or a string, which is converted to
- * a text node.
+ * append children. All arguments which are not of primitive type, are not
+ * arrays, and are not DOM nodes are treated as attribute hashes and are
+ * handled as described for setDOMAttributes. Children can either be a DOM
+ * node or a primitive value, which is converted to a text node. Arrays are
+ * handled recursively. Null and undefined values are ignored.
  *
  * Inspired by the ProseMirror helper of the same name.
  */
-function elt(tag, attributes, children)
+function elt(tag)
 {
     var el = document.createElement(tag);
+    var args = Array.prototype.slice.call(arguments, 1);
 
-    if (attributes != null)
-        setDOMAttributes(el, attributes);
-
-    if (children != null)
-        appendChildren(el, children);
+    while (args.length)
+    {
+        var arg = args.shift();
+        handleEltConstructorArg(el, arg);
+    }
 
     return el;
+}
+
+function handleEltConstructorArg(el, arg)
+{
+    if (arg == null)
+        return;
+
+    if (typeof arg !== 'object' && typeof arg !== 'function')
+    {
+        // Coerce to string
+        el.appendChild(document.createTextNode(arg));
+    }
+    else if (arg instanceof window.Node)
+    {
+        el.appendChild(arg);
+    }
+    else if (arg instanceof Array)
+    {
+        var childCount = arg.length;
+        for (var i = 0; i < childCount; i++)
+            handleEltConstructorArg(el, arg[i]);
+    }
+    else
+    {
+        setDOMAttributes(el, arg);
+    }
 }
 
 /**
@@ -1139,22 +1168,5 @@ function setStyle(el, style)
             continue;
 
         el.style[cssProp] = style[cssProp];
-    }
-}
-
-function appendChildren(el, children)
-{
-    var childCount = children.length;
-
-    for (var i = 0; i < childCount; i++)
-    {
-        var child = children[i];
-
-        if (!(child instanceof window.Node))
-            child = document.createTextNode(child);
-
-        // We could use a document fragment for this instead of appending directly to the element,
-        // but since the primary use case here is creating new elements that seems like overkill
-        el.appendChild(child);
     }
 }

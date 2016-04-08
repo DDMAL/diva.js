@@ -302,7 +302,7 @@ window.divaPlugins = [];
             }
             else
             {
-                showError(['Your browser lacks support for the ', elt('pre', null, ['canvas']), ' element. Please upgrade your browser.']);
+                showError(['Your browser lacks support for the ', elt('pre', 'canvas'), ' element. Please upgrade your browser.']);
                 return false;
             }
 
@@ -2568,7 +2568,7 @@ window.divaPlugins = [];
                 label,
                 elt('span', {
                     id: settings.ID + innerName
-                }, [innerValue])
+                }, innerValue)
             ]);
         };
 
@@ -3397,10 +3397,10 @@ window.divaPlugins = [];
         {
             var errorElement = elt('div', elemAttrs('error'), [
                 elt('button', elemAttrs('error-close', {'aria-label': 'Close dialog'})),
-                elt('p', null, [
-                    elt('strong', null, ['Error'])
-                ]),
-                elt('div', null, message)
+                elt('p',
+                    elt('strong', 'Error')
+                ),
+                elt('div', message)
             ]);
 
             settings.outerObject.append(errorElement);
@@ -3430,14 +3430,14 @@ window.divaPlugins = [];
                 if (location.hostname !== jsonHost)
                 {
                     errorMessage.push(
-                        elt('p', null, ['Attempted to access cross-origin data without CORS.']),
-                        elt('p', null, [
+                        elt('p', 'Attempted to access cross-origin data without CORS.'),
+                        elt('p',
                             'You may need to update your server configuration to support CORS. For help, see the ',
                             elt('a', {
                                 href: 'https://github.com/DDMAL/diva.js/wiki/Installation#a-note-about-cross-site-requests',
                                 target: '_blank'
-                            }, ['cross-site request documentation.'])
-                        ])
+                            }, 'cross-site request documentation.')
+                        )
                     );
                 }
             }
