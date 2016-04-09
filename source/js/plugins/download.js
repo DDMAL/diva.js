@@ -26,8 +26,8 @@ Allows you to download images served by IIPImage or IIIF compatible image server
 
                 if (divaSettings.isIIIF)
                 {
-                    var quality = (divaSettings.pages[pageIndex].api > 1.1) ? 'default' : 'native';
-                    image = encodeURI(divaSettings.pages[pageIndex].url + 'full/' + width + ',/0/' + quality + '.jpg');
+                    var quality = (divaSettings.manifest.pages[pageIndex].api > 1.1) ? 'default' : 'native';
+                    image = encodeURI(divaSettings.manifest.pages[pageIndex].url + 'full/' + width + ',/0/' + quality + '.jpg');
                 }
                 else
                 {

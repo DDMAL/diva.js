@@ -150,21 +150,21 @@ testHashParams("vertical offset (y) and page number (p)", {y: 500, p: 50}, funct
 
     // Check that the horizontal scroll hasn't been weirdly affected
     var leftScroll = settings.outerObject.scrollLeft();
-    var expectedInnerWidth = settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2;
+    var expectedInnerWidth = settings.manifest.getMaxWidth(settings.zoomLevel) + settings.horizontalPadding * 2;
     var expectedLeftScroll = parseInt((expectedInnerWidth - settings.panelWidth) / 2, 10);
     assert.strictEqual(leftScroll, expectedLeftScroll, "Horizontal scroll should just center it");
 }, {enableFilename: false, zoomLevel: 2});
 
 testHashParams("horizontal offset (x) - positive value", {x: "100"}, function (settings, assert) {
     var leftScroll = settings.outerObject.scrollLeft();
-    var halfMaxWidth = (settings.maxWidths[settings.zoomLevel] / 2 + settings.horizontalPadding + 100);
+    var halfMaxWidth = (settings.manifest.getMaxWidth(settings.zoomLevel) / 2 + settings.horizontalPadding + 100);
     var expectedLeftScroll = (halfMaxWidth > settings.panelWidth) ? (halfMaxWidth - settings.panelWidth) / 2 : 0;
     assert.strictEqual(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
 });
 
 testHashParams("horizontal offset (x) - negative value", {x: "-100"}, function (settings, assert) {
     var leftScroll = settings.outerObject.scrollLeft();
-    var halfMaxWidth = (settings.maxWidths[settings.zoomLevel] / 2 + settings.horizontalPadding - 100);
+    var halfMaxWidth = (settings.manifest.getMaxWidth(settings.zoomLevel) / 2 + settings.horizontalPadding - 100);
     var expectedLeftScroll = (halfMaxWidth > settings.panelWidth) ? (halfMaxWidth - settings.panelWidth) / 2 : 0;
     assert.strictEqual(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the left");
 });
@@ -175,7 +175,7 @@ testHashParams("horizontal offset (x) and page number (p)", {x: 100, p: 50}, fun
     assert.strictEqual(topScroll, expectedTopScroll, "vertical scroll should be just to page 50");
 
     var leftScroll = settings.outerObject.scrollLeft();
-    var halfMaxWidth = (settings.maxWidths[settings.zoomLevel] / 2 + settings.horizontalPadding + 100);
+    var halfMaxWidth = (settings.manifest.getMaxWidth(settings.zoomLevel) / 2 + settings.horizontalPadding + 100);
     var expectedLeftScroll = (halfMaxWidth > settings.panelWidth) ? (halfMaxWidth - settings.panelWidth) / 2 : 0;
     assert.strictEqual(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
 }, {enableFilename: false});
@@ -186,7 +186,7 @@ testHashParams("horizontal offset (x), vertical offset (y), page number (p)", {x
     assert.strictEqual(topScroll, expectedTopScroll, "vertical scroll should be to page 50 + 200 + page y-center");
 
     var leftScroll = settings.outerObject.scrollLeft();
-    var halfMaxWidth = (settings.maxWidths[settings.zoomLevel] / 2 + settings.horizontalPadding + 100);
+    var halfMaxWidth = (settings.manifest.getMaxWidth(settings.zoomLevel) / 2 + settings.horizontalPadding + 100);
     var expectedLeftScroll = (halfMaxWidth > settings.panelWidth) ? (halfMaxWidth - settings.panelWidth) / 2 : 0;
     assert.strictEqual(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
 }, {enableFilename: false});

@@ -399,8 +399,8 @@ Adds an adjustment icon next to each image
 
             if (settings.isIIIF)
             {
-                var quality = (settings.pages[pageIndex].api > 1.1) ? 'default' : 'native';
-                imageURL = encodeURI(settings.pages[pageIndex].url + 'full/' + width + ',/0/' + quality + '.jpg');
+                var quality = (settings.manifest.pages[pageIndex].api > 1.1) ? 'default' : 'native';
+                imageURL = encodeURI(settings.manifest.pages[pageIndex].url + 'full/' + width + ',/0/' + quality + '.jpg');
             }
             else
             {
@@ -886,7 +886,7 @@ Adds an adjustment icon next to each image
                 settings.zoomWidthRatio = width / Math.pow(2, zoomLevel);
                 settings.pluginIcon = $(this);
 
-                settings.pages = divaSettings.pages;
+                settings.manifest = divaSettings.manifest;
                 settings.isIIIF = divaSettings.isIIIF;
                 settings.selectedPageIndex = selectedPageIndex;
 

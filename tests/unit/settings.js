@@ -515,7 +515,7 @@ QUnit.test("object for objectData", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        assert.strictEqual(settings.itemTitle, "First page of Beromunster", "Should process an object for objectData like a normal manifest");
+        assert.strictEqual(this.getItemTitle(), "First page of Beromunster", "Should process an object for objectData like a normal manifest");
         done();
     });
 
