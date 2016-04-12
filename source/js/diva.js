@@ -843,7 +843,6 @@ window.divaPlugins = [];
 
             // Load some data for this and initialise some variables
             var heightFromTop = (settings.rowHeight * rowIndex) + settings.fixedPadding;
-            var innerElem = document.getElementById(settings.ID + "inner");
 
             // Create the row div
             var rowDiv = elt('div', {
@@ -855,7 +854,7 @@ window.divaPlugins = [];
                 }
             });
 
-            innerElem.appendChild(rowDiv);
+            settings.innerElement.appendChild(rowDiv);
 
             // Declare variables used in the loop
             var i, pageIndex, filename, realWidth, realHeight, pageWidth, pageHeight, leftOffset, imageURL, version, quality, iiifSuffix;
