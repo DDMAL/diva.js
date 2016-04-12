@@ -81,6 +81,34 @@ QUnit.test("Scrolling in book view", function (assert)
     });
 });
 
+QUnit.skip('Page positioning on zoom', function (assert)
+{
+    var done = assert.async();
+    var state;
+
+    var dv = $.tempDiva({});
+
+    var loadSig = diva.Events.subscribe('ViewerDidLoad', function ()
+    {
+        diva.Events.unsubscribe(loadSig);
+
+        state = dv.getState();
+
+        dv.zoomOut();
+    });
+
+    diva.Events.subscribe('ViewerDidZoomOut', function ()
+    {
+        dv.zoomIn();
+    });
+
+    diva.Events.subscribe('ViewerDidZoomIn', function ()
+    {
+        assert.propEqual(dv.getState(), state, 'foo');
+        done();
+    });
+});
+
 QUnit.test("Zooming using the slider", function (assert) {
     var done = assert.async();
 
