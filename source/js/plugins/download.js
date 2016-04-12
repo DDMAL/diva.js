@@ -12,6 +12,7 @@ Allows you to download images served by IIPImage or IIIF compatible image server
         {
             init: function(divaSettings, divaInstance)
             {
+                settings.divaInstance = divaInstance;
                 return true;
             },
             pluginName: 'download',
@@ -19,20 +20,10 @@ Allows you to download images served by IIPImage or IIIF compatible image server
             handleClick: function(event, divaSettings)
             {
                 var pageDiv = $(this).parent().parent();
-                var filename = $(pageDiv).attr('data-filename');
                 var pageIndex = $(pageDiv).attr('data-index');
                 var width = $(pageDiv).width() - 1;
-                var image;
+                var image = settings.divaInstance.getPageImageURL(pageIndex, { width: width });
 
-                if (divaSettings.isIIIF)
-                {
-                    var quality = (divaSettings.manifest.pages[pageIndex].api > 1.1) ? 'default' : 'native';
-                    image = encodeURI(divaSettings.manifest.pages[pageIndex].url + 'full/' + width + ',/0/' + quality + '.jpg');
-                }
-                else
-                {
-                    image = divaSettings.iipServerURL + "?FIF=" + divaSettings.imageDir + '/' + filename + '&WID=' + width + '&CVT=JPEG';
-                }
                 window.open(image);
             }
         };

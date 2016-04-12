@@ -392,22 +392,8 @@ Adds an adjustment icon next to each image
         var getImageURL = function (zoomLevel)
         {
             var width = settings.zoomWidthRatio * Math.pow(2, zoomLevel);
-            var imdir = settings.imageDir + "/";
-            var pageIndex = settings.selectedPageIndex;
 
-            var imageURL;
-
-            if (settings.isIIIF)
-            {
-                var quality = (settings.manifest.pages[pageIndex].api > 1.1) ? 'default' : 'native';
-                imageURL = encodeURI(settings.manifest.pages[pageIndex].url + 'full/' + width + ',/0/' + quality + '.jpg');
-            }
-            else
-            {
-                imageURL = settings.iipServerURL + "?FIF=" + imdir + settings.filename + '&WID=' + width + '&CVT=JPEG';
-            }
-
-            return imageURL;
+            return settings.divaInstance.getPageImageURL(settings.selectedPageIndex, { width: width });
         };
 
         var showThrobber = function ()
@@ -526,6 +512,7 @@ Adds an adjustment icon next to each image
                 // Override all the configurable settings defined under canvasPlugin
                 $.extend(settings, defaults, divaSettings.canvasPlugin);
 
+                settings.divaInstance = divaInstance;
                 settings.inCanvas = false;
                 settings.iipServerURL = divaSettings.iipServerURL;
                 settings.imageDir = divaSettings.imageDir;

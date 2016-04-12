@@ -177,6 +177,44 @@ window.divaPlugins = [];
             return -1;
         };
 
+        /**
+         * Returns a URL for the image of the given page. The optional size
+         * parameter supports setting the image width or height (default is
+         * full-sized).
+         */
+        var getPageImageURL = function (pageIndex, size)
+        {
+            var page = settings.manifest.pages[pageIndex];
+            var dimens;
+
+            if (settings.isIIIF)
+            {
+                if (!size || (size.width == null && size.height == null))
+                    dimens = 'full';
+                else
+                    dimens = (size.width == null ? '' : size.width) + ',' + (size.height == null ? '' : size.height);
+
+                var quality = (page.api > 1.1) ? 'default' : 'native';
+                return encodeURI(page.url + 'full/' + dimens + '/0/' + quality + '.jpg');
+            }
+            else
+            {
+                // Without width or height specified, IIPImage defaults to full-size
+                dimens = '';
+
+                if (size)
+                {
+                    if (size.width != null)
+                        dimens += '&WID=' + size.width;
+
+                    if (size.height != null)
+                        dimens += '&HEI=' + size.height;
+                }
+
+                return settings.iipServerURL + "?FIF=" + settings.imageDir + '/' + page.f + dimens + '&CVT=JPEG';
+            }
+        };
+
         var getViewport = function ()
         {
             var top = settings.outerElement.scrollTop;
@@ -878,7 +916,7 @@ window.divaPlugins = [];
 
                 // Center the page if the height is fixed (otherwise, there is no horizontal padding)
                 leftOffset += (settings.fixedHeightGrid) ? (settings.gridPageWidth - pageWidth) / 2 : 0;
-                imageURL = (settings.isIIIF) ? encodeURI(settings.manifest.pages[pageIndex].url + 'full/' + pageWidth + iiifSuffix) : encodeURI(settings.iipServerURL + "?FIF=" + imdir + filename + '&HEI=' + (pageHeight + 2) + '&CVT=JPEG');
+                imageURL = getPageImageURL(pageIndex, { width: pageWidth });
 
                 settings.pageTopOffsets[pageIndex] = heightFromTop;
                 settings.pageLeftOffsets[pageIndex] = leftOffset;
@@ -4056,6 +4094,13 @@ window.divaPlugins = [];
             //if we made it through that entire while loop, we didn't click on a page
             return false;
         };
+
+        /**
+         * Returns a URL for the image of the given page. The optional size
+         * parameter supports setting the image width or height (default is
+         * full-sized).
+         */
+        this.getPageImageURL = getPageImageURL;
 
         //Pretty self-explanatory.
         this.isVerticallyOriented = function()
