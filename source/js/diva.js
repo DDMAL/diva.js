@@ -1461,10 +1461,14 @@ window.divaPlugins = [];
 
         var calculateDocumentDimensions = function(zoomLevel)
         {
-            var maxWidthToSet = (settings.inBookLayout) ? (settings.maxWidths[zoomLevel] + settings.horizontalPadding) * 2 : settings.maxWidths[zoomLevel] + settings.horizontalPadding * 2;
-            var maxHeightToSet = settings.maxHeights[zoomLevel] + settings.verticalPadding * 2;
-            var widthToSet = Math.max(maxWidthToSet, settings.panelWidth);
-            var heightToSet = Math.max(maxHeightToSet, settings.panelHeight);
+            var widthToSet;
+
+            if (settings.inBookLayout)
+                widthToSet = (settings.maxWidths[zoomLevel] + settings.horizontalPadding) * 2;
+            else
+                widthToSet = settings.maxWidths[zoomLevel] + settings.horizontalPadding * 2;
+
+            var heightToSet = settings.maxWidths[zoomLevel] + settings.verticalPadding * 2;
 
             return {
                 widthToSet: widthToSet,
@@ -1498,18 +1502,25 @@ window.divaPlugins = [];
 
             if (settings.verticallyOriented)
             {
-                settings.innerElement.style.height = Math.round(settings.totalHeight) + 'px';
-                settings.innerElement.style.width = Math.round(documentDimensions.widthToSet) + 'px';
+                setDocumentSize({
+                    height: Math.round(settings.totalHeight) + 'px',
+                    width: Math.round(documentDimensions.widthToSet) + 'px',
+                    minWidth: settings.panelWidth + 'px'
+                });
             }
             else
             {
-                settings.innerElement.style.height = Math.round(documentDimensions.heightToSet) + 'px';
-                settings.innerElement.style.width = Math.round(settings.totalWidth) + 'px';
+                setDocumentSize({
+                    height: Math.round(documentDimensions.heightToSet) + 'px',
+                    minHeight: settings.panelHeight + 'px',
+                    width: Math.round(settings.totalWidth) + 'px'
+                });
             }
 
             // In book view, determine the total height/width based on the last opening's height/width and offset
             var lastPageIndex = settings.numPages - 1;
 
+            // FIXME: This block should be folded into the preceding one so that dimensions are only calculated once
             if (settings.inBookLayout)
             {
                 if (settings.verticallyOriented)
@@ -1599,8 +1610,9 @@ window.divaPlugins = [];
             settings.numRows = Math.ceil(settings.numPages / settings.pagesPerRow);
             settings.totalHeight = settings.numRows * settings.rowHeight + settings.fixedPadding;
 
-            settings.innerElement.style.height = Math.round(settings.totalHeight) + 'px';
-            settings.innerElement.style.width = Math.round(settings.panelWidth) + 'px';
+            setDocumentSize({
+                height: Math.round(settings.totalHeight) + 'px'
+            });
 
             // First scroll directly to the row containing the current page
             gridScroll();
@@ -1625,6 +1637,21 @@ window.divaPlugins = [];
                     settings.lastRowLoaded = rowIndex;
                 }
             }
+        };
+
+        var setDocumentSize = function (dimensions)
+        {
+            // Ensure values are reset if not specified
+            dimensions = $.extend({
+                width: null,
+                minWidth: null,
+                height: null,
+                minHeight: null
+            }, dimensions);
+
+            setDOMAttributes(settings.innerElement, {
+                style: dimensions
+            });
         };
 
         //Shortcut for closing fullscreen with the escape key
@@ -2109,8 +2136,8 @@ window.divaPlugins = [];
         var updatePanelSize = function ()
         {
             var outerElem = settings.outerElement;
-            settings.panelHeight = outerElem.clientHeight - (outerElem.scrollWidth > outerElem.clientWidth ? settings.scrollbarWidth : 0);
-            settings.panelWidth = outerElem.clientWidth - (outerElem.scrollHeight > outerElem.clientHeight ? settings.scrollbarWidth : 0);
+            settings.panelHeight = outerElem.clientHeight;
+            settings.panelWidth = outerElem.clientWidth;
 
             settings.horizontalOffset = getCurrentXOffset();
             settings.verticalOffset = getCurrentYOffset();
@@ -3468,6 +3495,9 @@ window.divaPlugins = [];
             // Adjust the document panel dimensions
             updatePanelSize();
 
+            var anchoredVertically = false;
+            var anchoredHorizontally = false;
+
             // y - vertical offset from the top of the relevant page
             var yParam = parseInt($.getHashParam('y' + settings.hashParamSuffix), 10);
 
@@ -3477,6 +3507,7 @@ window.divaPlugins = [];
             }
             else
             {
+                anchoredVertically = true;
                 settings.verticalOffset = getYOffset(settings.currentPageIndex, "top");
             }
 
@@ -3494,6 +3525,7 @@ window.divaPlugins = [];
             }
             else
             {
+                anchoredHorizontally = true;
                 settings.horizontalOffset = getXOffset(settings.currentPageIndex, "center");
             }
 
@@ -3504,6 +3536,25 @@ window.divaPlugins = [];
 
             //prep dimensions one last time now that pages have loaded
             updatePanelSize();
+
+            // FIXME: This is a hack to ensure that the outerElement scrollbars are taken into account
+            if (settings.verticallyOriented)
+                settings.innerElement.style.minWidth = settings.panelWidth + 'px';
+            else
+                settings.innerElement.style.minHeight = settings.panelHeight + 'px';
+
+            // FIXME: If the page was supposed to be positioned relative to the viewport we need to
+            // recalculate it to take into account the scrollbars
+            if (anchoredVertically || anchoredHorizontally)
+            {
+                if (anchoredVertically)
+                    settings.verticalOffset = getYOffset(settings.currentPageIndex, "top");
+
+                if (anchoredHorizontally)
+                    settings.horizontalOffset = getXOffset(settings.currentPageIndex, "center");
+
+                gotoPage(settings.currentPageIndex, settings.verticalOffset, settings.horizontalOffset);
+            }
 
             diva.Events.publish("ViewerDidLoad", [settings], self);
 

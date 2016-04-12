@@ -150,14 +150,10 @@ testHashParams("vertical offset (y) and page number (p)", {y: 500, p: 50}, funct
 
     // Check that the horizontal scroll hasn't been weirdly affected
     var leftScroll = settings.outerObject.scrollLeft();
-    var expectedLeftScroll = (settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2 - (settings.panelWidth)) / 2 - settings.scrollbarWidth;
-    assert.strictEqual(leftScroll, parseInt(expectedLeftScroll, 10), "Horizontal scroll should just center it, as usual");
+    var expectedInnerWidth = settings.maxWidths[settings.zoomLevel] + settings.horizontalPadding * 2;
+    var expectedLeftScroll = parseInt((expectedInnerWidth - settings.panelWidth) / 2, 10);
+    assert.strictEqual(leftScroll, expectedLeftScroll, "Horizontal scroll should just center it");
 }, {enableFilename: false, zoomLevel: 2});
-
-/*
-var desiredHorizontalCenter = settings.widthLeftOfPages[pageIndex] + horizontalOffset;
-            var desiredLeft = desiredHorizontalCenter - (settings.outerObject.width() / 2);
-            */
 
 testHashParams("horizontal offset (x) - positive value", {x: "100"}, function (settings, assert) {
     var leftScroll = settings.outerObject.scrollLeft();
