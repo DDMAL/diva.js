@@ -3434,7 +3434,7 @@ window.divaPlugins = [];
             //bind dialog close button
             $(settings.selector + 'error-close').on('click', function()
             {
-                errorElement.remove();
+                errorElement.parentNode.removeChild(errorElement);
             });
         };
 
