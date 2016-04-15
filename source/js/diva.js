@@ -1785,13 +1785,11 @@ window.divaPlugins = [];
             calculatePageOffsets(documentDimensions.widthToSet, documentDimensions.heightToSet);
 
             //    b. determine diva-inner's visible rectangle
-            var viewportRectangle = calculateDesiredScroll(settings.currentPageIndex, settings.verticalOffset, settings.horizontalOffset);
+            var viewport = getViewport();
 
             //    c. for all pages (see loadDocument)
             //        i) if page coords fall within visible coords, add to visible page block
             var pageBlockFound = false;
-
-            var viewport = getViewport();
 
             for (var i = 0; i < settings.numPages; i++)
             {
