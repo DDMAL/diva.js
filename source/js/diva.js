@@ -177,121 +177,6 @@ window.divaPlugins = [];
             return -1;
         };
 
-        /**
-         * Returns a URL for the image of the given page. The optional size
-         * parameter supports setting the image width or height (default is
-         * full-sized).
-         */
-        var getPageImageURL = function (pageIndex, size)
-        {
-            var page = settings.manifest.pages[pageIndex];
-            var dimens;
-
-            if (settings.isIIIF)
-            {
-                if (!size || (size.width == null && size.height == null))
-                    dimens = 'full';
-                else
-                    dimens = (size.width == null ? '' : size.width) + ',' + (size.height == null ? '' : size.height);
-
-                var quality = (page.api > 1.1) ? 'default' : 'native';
-                return encodeURI(page.url + 'full/' + dimens + '/0/' + quality + '.jpg');
-            }
-            else
-            {
-                // Without width or height specified, IIPImage defaults to full-size
-                dimens = '';
-
-                if (size)
-                {
-                    if (size.width != null)
-                        dimens += '&WID=' + size.width;
-
-                    if (size.height != null)
-                        dimens += '&HEI=' + size.height;
-                }
-
-                return settings.iipServerURL + "?FIF=" + settings.imageDir + '/' + page.f + dimens + '&CVT=JPEG';
-            }
-        };
-
-        /**
-         * Return an array of tile objects for the specified page and zoom level
-         */
-        var getPageImageTiles = function (pageIndex, zoomLevel)
-        {
-            var page = settings.manifest.pages[pageIndex];
-
-            var rows = Math.ceil(page.d[zoomLevel].h / settings.tileHeight);
-            var cols = Math.ceil(page.d[zoomLevel].w / settings.tileWidth);
-
-            var generateTileURL;
-
-            if (settings.isIIIF)
-            {
-                generateTileURL = function (row, col)
-                {
-                    var height, width;
-
-                    if (row === rows - 1)
-                        height = page.d[zoomLevel].h - (rows - 1) * settings.tileHeight;
-                    else
-                        height = settings.tileHeight;
-
-                    if (col === cols - 1)
-                        width = page.d[zoomLevel].w - (cols - 1) * settings.tileWidth;
-                    else
-                        width = settings.tileWidth;
-
-                    var zoomDifference = Math.pow(2, settings.manifest.maxZoom - zoomLevel);
-
-                    var x = col * settings.tileWidth * zoomDifference;
-                    var y = row * settings.tileHeight * zoomDifference;
-
-                    if (page.hasOwnProperty('xoffset'))
-                    {
-                        x += page.xoffset;
-                        y += page.yoffset;
-                    }
-
-                    var region = [x, y, width * zoomDifference, height * zoomDifference].join(',');
-
-                    var quality = (page.api > 1.1) ? 'default' : 'native';
-
-                    return encodeURI(page.url + region + '/' + width + ',' + height + '/0/' + quality + '.jpg');
-                };
-            }
-            else
-            {
-                generateTileURL = function (row, col)
-                {
-                    var requestedZoomLevel = zoomLevel + page.m - settings.manifest.maxZoom;
-                    var index = (row * cols) + col;
-                    var jtl = requestedZoomLevel + ',' + index;
-
-                    return encodeURI(settings.iipServerURL + "?FIF=" + settings.imageDir + '/' + page.f + '&JTL=' + jtl + '&CVT=JPEG');
-                };
-            }
-
-            var tiles = [];
-
-            var row, col;
-
-            for (row = 0; row < rows; row++)
-            {
-                for (col = 0; col < cols; col++)
-                {
-                    tiles.push({
-                        top: row * settings.tileHeight,
-                        left: col * settings.tileWidth,
-                        url: generateTileURL(row, col)
-                    });
-                }
-            }
-
-            return tiles;
-        };
-
         var getViewport = function ()
         {
             var top = settings.outerElement.scrollTop;
@@ -431,7 +316,12 @@ window.divaPlugins = [];
 
             var allTilesLoaded = true;
 
-            getPageImageTiles(pageIndex, settings.zoomLevel).forEach(function (tile, tileIndex)
+            var tileDimens = {
+                height: settings.tileHeight,
+                width: settings.tileWidth
+            };
+
+            settings.manifest.getPageImageTiles(pageIndex, settings.zoomLevel, tileDimens).forEach(function (tile, tileIndex)
             {
                 // this check looks to see if the tile is already loaded, and then if
                 // it isn't, if it should be visible.
@@ -921,7 +811,7 @@ window.divaPlugins = [];
 
                 // Center the page if the height is fixed (otherwise, there is no horizontal padding)
                 leftOffset += (settings.fixedHeightGrid) ? (settings.gridPageWidth - pageWidth) / 2 : 0;
-                imageURL = getPageImageURL(pageIndex, { width: pageWidth });
+                imageURL = settings.manifest.getPageImageURL(pageIndex, { width: pageWidth });
 
                 settings.pageTopOffsets[pageIndex] = heightFromTop;
                 settings.pageLeftOffsets[pageIndex] = leftOffset;
@@ -3324,8 +3214,6 @@ window.divaPlugins = [];
 
         var parseObjectData = function(responseData)
         {
-            var data;
-
             // parse IIIF manifest if it is an IIIF manifest. TODO improve IIIF detection method
             if (responseData.hasOwnProperty('@context') && (responseData['@context'].indexOf('iiif') !== -1 ||
                 responseData['@context'].indexOf('shared-canvas') !== -1))
@@ -3336,23 +3224,28 @@ window.divaPlugins = [];
                 // FIXME: Why is this triggered before the manifest is parsed?
                 diva.Events.publish('ManifestDidLoad', [responseData], self);
 
-                data = parseManifest(responseData);
+                settings.manifest = ImageManifest.fromIIIF(responseData);
             }
             else
             {
-                data = responseData;
+                settings.manifest = ImageManifest.fromLegacyManifest(responseData, {
+                    iipServerURL: settings.iipServerURL,
+                    imageDir: settings.imageDir
+                });
             }
 
             hideThrobber();
 
-            settings.manifest = new ImageManifest(data);
-
             // Convenience value
-            settings.numPages = data.pgs.length;
+            settings.numPages = settings.manifest.pages.length;
 
             // Make sure the set max and min values are valid
-            settings.maxZoomLevel = (settings.maxZoomLevel >= 0 && settings.maxZoomLevel <= data.max_zoom) ? settings.maxZoomLevel : data.max_zoom;
-            settings.minZoomLevel = (settings.minZoomLevel >= 0 && settings.minZoomLevel <= settings.maxZoomLevel) ? settings.minZoomLevel : 0;
+            if (settings.maxZoomLevel < 0 || settings.maxZoomLevel > settings.manifest.maxZoom)
+                settings.maxZoomLevel = settings.manifest.maxZoom;
+
+            if (settings.minZoomLevel < 0 || settings.minZoomLevel > settings.maxZoomLevel)
+                settings.minZoomLevel = 0;
+
             settings.zoomLevel = getValidZoomLevel(settings.zoomLevel);
             settings.minPagesPerRow = Math.max(2, settings.minPagesPerRow);
             settings.maxPagesPerRow = Math.max(settings.minPagesPerRow, settings.maxPagesPerRow);
@@ -4100,11 +3993,14 @@ window.divaPlugins = [];
         };
 
         /**
-         * Returns a URL for the image of the given page. The optional size
-         * parameter supports setting the image width or height (default is
-         * full-sized).
+         * Returns a URL for the image of the page at the given index. The
+         * optional size parameter supports setting the image width or height
+         * (default is full-sized).
          */
-        this.getPageImageURL = getPageImageURL;
+        this.getPageImageURL = function (pageIndex, size)
+        {
+            return settings.manifest.getPageImageURL(pageIndex, size);
+        };
 
         //Pretty self-explanatory.
         this.isVerticallyOriented = function()
@@ -4195,7 +4091,7 @@ window.divaPlugins = [];
         });
     };
 
-    function ImageManifest(data)
+    function ImageManifest(data, urlAdapter)
     {
         // Save all the data we need
         this.pages = data.pgs;
@@ -4214,7 +4110,68 @@ window.divaPlugins = [];
         this._averageHeights = data.dims.a_hei;
         this._totalHeights = data.dims.t_hei;
         this._totalWidths = data.dims.t_wid;
+
+        this._urlAdapter = urlAdapter;
     }
+
+    ImageManifest.fromIIIF = function (iiifManifest)
+    {
+        var data = parseIIIFManifest(iiifManifest);
+        return new ImageManifest(data, new IIIFSourceAdapter());
+    };
+
+    ImageManifest.fromLegacyManifest = function (data, config)
+    {
+        return new ImageManifest(data, new LegacyManifestSourceAdapter(config));
+    };
+
+    /**
+     * Returns a URL for the image of the given page. The optional size
+     * parameter supports setting the image width or height (default is
+     * full-sized).
+     */
+    ImageManifest.prototype.getPageImageURL = function (pageIndex, size)
+    {
+        return this._urlAdapter.getPageImageURL(this, pageIndex, size);
+    };
+
+    /**
+     * Return an array of tile objects for the specified page and zoom level
+     */
+    ImageManifest.prototype.getPageImageTiles = function (pageIndex, zoomLevel, tileDimensions)
+    {
+        var page = this.pages[pageIndex];
+
+        var rows = Math.ceil(page.d[zoomLevel].h / tileDimensions.height);
+        var cols = Math.ceil(page.d[zoomLevel].w / tileDimensions.width);
+
+        var tiles = [];
+
+        var row, col, url;
+
+        for (row = 0; row < rows; row++)
+        {
+            for (col = 0; col < cols; col++)
+            {
+                url = this._urlAdapter.getTileImageURL(this, pageIndex, {
+                    row: row,
+                    col: col,
+                    rowCount: rows,
+                    colCount: cols,
+                    zoomLevel: zoomLevel,
+                    tileDimensions: tileDimensions
+                });
+
+                tiles.push({
+                    top: row * tileDimensions.height,
+                    left: col * tileDimensions.width,
+                    url: url
+                });
+            }
+        }
+
+        return tiles;
+    };
 
     ImageManifest.prototype.getMaxWidth = zoomedPropertyGetter('_maxWidths');
     ImageManifest.prototype.getMaxHeight = zoomedPropertyGetter('_maxHeights');
@@ -4231,6 +4188,94 @@ window.divaPlugins = [];
         };
     }
 
+    function IIIFSourceAdapter()
+    {
+        // No-op
+    }
+
+    IIIFSourceAdapter.prototype.getPageImageURL = function (manifest, pageIndex, size)
+    {
+        var dimens;
+
+        if (!size || (size.width == null && size.height == null))
+            dimens = 'full';
+        else
+            dimens = (size.width == null ? '' : size.width) + ',' + (size.height == null ? '' : size.height);
+
+        var page = manifest.pages[pageIndex];
+        var quality = (page.api > 1.1) ? 'default' : 'native';
+
+        return encodeURI(page.url + 'full/' + dimens + '/0/' + quality + '.jpg');
+    };
+
+    IIIFSourceAdapter.prototype.getTileImageURL = function (manifest, pageIndex, params)
+    {
+        var page = manifest.pages[pageIndex];
+
+        var height, width;
+
+        if (params.row === params.rowCount - 1)
+            height = page.d[params.zoomLevel].h - (params.rowCount - 1) * params.tileDimensions.height;
+        else
+            height = params.tileDimensions.height;
+
+        if (params.col === params.colCount - 1)
+            width = page.d[params.zoomLevel].w - (params.colCount - 1) * params.tileDimensions.width;
+        else
+            width = params.tileDimensions.width;
+
+        var zoomDifference = Math.pow(2, manifest.maxZoom - params.zoomLevel);
+
+        var x = params.col * params.tileDimensions.width * zoomDifference;
+        var y = params.row * params.tileDimensions.height * zoomDifference;
+
+        if (page.hasOwnProperty('xoffset'))
+        {
+            x += page.xoffset;
+            y += page.yoffset;
+        }
+
+        var region = [x, y, width * zoomDifference, height * zoomDifference].join(',');
+
+        var quality = (page.api > 1.1) ? 'default' : 'native';
+
+        return encodeURI(page.url + region + '/' + width + ',' + height + '/0/' + quality + '.jpg');
+    };
+
+    function LegacyManifestSourceAdapter(config)
+    {
+        this._config = config;
+    }
+
+    LegacyManifestSourceAdapter.prototype.getPageImageURL = function (manifest, pageIndex, size)
+    {
+        // Without width or height specified, IIPImage defaults to full-size
+        var dimens = '';
+
+        if (size)
+        {
+            if (size.width != null)
+                dimens += '&WID=' + size.width;
+
+            if (size.height != null)
+                dimens += '&HEI=' + size.height;
+        }
+
+        var filename = manifest.pages[pageIndex].f;
+
+        return this._config.iipServerURL + "?FIF=" + this._config.imageDir + '/' + filename + dimens + '&CVT=JPEG';
+    };
+
+    LegacyManifestSourceAdapter.prototype.getTileImageURL = function (manifest, pageIndex, params)
+    {
+        var page = manifest.pages[pageIndex];
+        var requestedZoomLevel = params.zoomLevel + page.m - manifest.maxZoom;
+        var index = (params.row * params.colCount) + params.col;
+        var jtl = requestedZoomLevel + ',' + index;
+
+        return encodeURI(this._config.iipServerURL + "?FIF=" + this._config.imageDir + '/' + page.f + '&JTL=' + jtl + '&CVT=JPEG');
+    };
+
     /**
      * Parses a IIIF Presentation API Manifest and converts it into a Diva.js-format object
      * (See https://github.com/DDMAL/diva.js/wiki/Development-notes#data-received-through-ajax-request)
@@ -4239,7 +4284,7 @@ window.divaPlugins = [];
      * @param {Object} manifest - an object that represents a valid IIIF manifest
      * @returns {Object} divaServiceBlock - the data needed by Diva to show a view of a single document
      */
-    var parseManifest = function (manifest)
+    var parseIIIFManifest = function (manifest)
     {
 
         var incorporateZoom = function (imageDimension, zoomDifference)
