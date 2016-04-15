@@ -102,6 +102,7 @@ window.divaPlugins = [];
             lastPageLoaded: -1,         // The ID of the last page loaded (value set later)
             lastRowLoaded: -1,          // The index of the last row loaded
             loaded: false,              // A flag for when everything is loaded and ready to go.
+            // FIXME: Should this be a map?
             loadedTiles: [],            // Keeps track of which tiles have been loaded already
             mobileWebkit: false,        // Checks if the user is on a touch device (iPad/iPod/iPhone/Android)
             numPages: 0,                // Number of pages in the array
@@ -215,6 +216,83 @@ window.divaPlugins = [];
             }
         };
 
+        /**
+         * Return an array of tile objects for the specified page and zoom level
+         */
+        var getPageImageTiles = function (pageIndex, zoomLevel)
+        {
+            var page = settings.manifest.pages[pageIndex];
+
+            var rows = Math.ceil(page.d[zoomLevel].h / settings.tileHeight);
+            var cols = Math.ceil(page.d[zoomLevel].w / settings.tileWidth);
+
+            var generateTileURL;
+
+            if (settings.isIIIF)
+            {
+                generateTileURL = function (row, col)
+                {
+                    var height, width;
+
+                    if (row === rows - 1)
+                        height = page.d[zoomLevel].h - (rows - 1) * settings.tileHeight;
+                    else
+                        height = settings.tileHeight;
+
+                    if (col === cols - 1)
+                        width = page.d[zoomLevel].w - (cols - 1) * settings.tileWidth;
+                    else
+                        width = settings.tileWidth;
+
+                    var zoomDifference = Math.pow(2, settings.manifest.maxZoom - zoomLevel);
+
+                    var x = col * settings.tileWidth * zoomDifference;
+                    var y = row * settings.tileHeight * zoomDifference;
+
+                    if (page.hasOwnProperty('xoffset'))
+                    {
+                        x += page.xoffset;
+                        y += page.yoffset;
+                    }
+
+                    var region = [x, y, width * zoomDifference, height * zoomDifference].join(',');
+
+                    var quality = (page.api > 1.1) ? 'default' : 'native';
+
+                    return encodeURI(page.url + region + '/' + width + ',' + height + '/0/' + quality + '.jpg');
+                };
+            }
+            else
+            {
+                generateTileURL = function (row, col)
+                {
+                    var requestedZoomLevel = zoomLevel + page.m - settings.manifest.maxZoom;
+                    var index = (row * cols) + col;
+                    var jtl = requestedZoomLevel + ',' + index;
+
+                    return encodeURI(settings.iipServerURL + "?FIF=" + settings.imageDir + '/' + page.f + '&JTL=' + jtl + '&CVT=JPEG');
+                };
+            }
+
+            var tiles = [];
+
+            var row, col;
+
+            for (row = 0; row < rows; row++)
+            {
+                for (col = 0; col < cols; col++)
+                {
+                    tiles.push({
+                        top: row * settings.tileHeight,
+                        left: col * settings.tileWidth,
+                        url: generateTileURL(row, col)
+                    });
+                }
+            }
+
+            return tiles;
+        };
+
         var getViewport = function ()
         {
             var top = settings.outerElement.scrollTop;
@@ -258,23 +336,24 @@ window.divaPlugins = [];
         };
 
         // Check if a tile is near the specified viewport and thus should be loaded (performance-sensitive)
-        var isTileVisible = function (pageIndex, tileRow, tileCol, viewport)
+        var isTileVisible = function (pageIndex, tile, viewport)
         {
-            var tileTop, tileLeft;
+            // Viewport-relative coordinates
+            var tileTop, tileBottom, tileLeft, tileRight;
 
             if (settings.verticallyOriented)
             {
-                tileTop = settings.pageTopOffsets[pageIndex] + (tileRow * settings.tileHeight) + settings.verticalPadding;
-                tileLeft = settings.pageLeftOffsets[pageIndex] + (tileCol * settings.tileWidth);
+                tileTop = settings.pageTopOffsets[pageIndex] + tile.top + settings.verticalPadding;
+                tileLeft = settings.pageLeftOffsets[pageIndex] + tile.left;
             }
             else
             {
-                tileTop = settings.pageTopOffsets[pageIndex] + (tileRow * settings.tileHeight);
-                tileLeft = settings.pageLeftOffsets[pageIndex] + (tileCol * settings.tileWidth) + settings.horizontalPadding;
+                tileTop = settings.pageTopOffsets[pageIndex] + tile.top;
+                tileLeft = settings.pageLeftOffsets[pageIndex] + tile.left + settings.horizontalPadding;
             }
 
-            var tileBottom = tileTop + settings.tileHeight;
-            var tileRight = tileLeft + settings.tileWidth;
+            tileBottom = tileTop + settings.tileHeight;
+            tileRight = tileLeft + settings.tileWidth;
 
             return isVerticallyInViewport(tileTop, tileBottom, viewport.top, viewport.bottom) && isHorizontallyInViewport(tileLeft, tileRight, viewport.left, viewport.right);
         };
@@ -343,22 +422,6 @@ window.divaPlugins = [];
                 };
             }
 
-            var imdir = settings.imageDir + "/";
-            var rows = Math.ceil(getPageData(pageIndex, 'h') / settings.tileWidth);
-            var cols = Math.ceil(getPageData(pageIndex, 'w') / settings.tileHeight);
-
-            var maxZoom = settings.manifest.pages[pageIndex].m;
-            var baseURL = settings.iipServerURL + "?FIF=" + imdir + filename + '&JTL=';
-            var allTilesLoaded = true;
-            var tileIndex = 0;
-
-            // Calculate the width and height of outer tiles (non-standard dimensions)
-            var lastHeight = height - (rows - 1) * settings.tileHeight;
-            var lastWidth = width - (cols - 1) * settings.tileWidth;
-
-            // Declare variables used within the loops
-            var row, col, tileHeight, tileWidth, currentTile, top, left, zoomLevel, imageURL, regionHeight, regionWidth, xOffset, yOffset, zoomDifference;
-
             //resize canvas context to new zoom level if necessary before drawing tiles
             // if context width is wrong, set it to h and w.
             if (canvasElement.width !== Math.floor(getPageData(pageIndex, 'w')))
@@ -367,84 +430,27 @@ window.divaPlugins = [];
                 canvasElement.height = Math.floor(getPageData(pageIndex, 'h'));
             }
 
-            // Adjust the zoom level based on the max zoom level of the page
-            zoomLevel = settings.zoomLevel + maxZoom - settings.manifest.maxZoom;
+            var allTilesLoaded = true;
 
-            var baseImageURL = (settings.isIIIF) ? settings.manifest.pages[pageIndex].url : baseURL + zoomLevel + ',';
-            var version, quality, iiifSuffix;
-
-            if (settings.isIIIF)
+            getPageImageTiles(pageIndex, settings.zoomLevel).forEach(function (tile, tileIndex)
             {
-                // regionX, regionY, regionWidth, regionHeight
-                zoomDifference = Math.pow(2, maxZoom - zoomLevel);
-                regionHeight = settings.tileHeight * zoomDifference;
-                regionWidth = settings.tileWidth * zoomDifference;
+                // this check looks to see if the tile is already loaded, and then if
+                // it isn't, if it should be visible.
+                if (isTileLoaded(pageIndex, tileIndex, context, tile.left, tile.top))
+                    return;
 
-                // if iiif 1.1, 'native'. if iiif 2.0, 'default'
-                version = settings.manifest.pages[pageIndex].api;
-                quality = (version >= 2.0) ? 'default' : 'native';
-                iiifSuffix = '/0/' + quality + '.jpg';
-
-                // only show segment defined in canvas.resource.@id in manifest
-                if (settings.manifest.pages[pageIndex].hasOwnProperty('xoffset'))
+                if (!isTileVisible(pageIndex, tile, viewport))
                 {
-                    xOffset = settings.manifest.pages[pageIndex].xoffset;
-                    yOffset = settings.manifest.pages[pageIndex].yoffset;
-                }
-                else
-                {
-                    xOffset = 0;
-                    yOffset = 0;
-                }
-            }
-            else
-            {
-                regionHeight = settings.tileHeight;
-                regionWidth = settings.tileWidth;
-            }
-
-            // Loop through all the tiles in this page
-            row = 0;
-
-            while (row < rows)
-            {
-                col = 0;
-                // If the tile is in the last row or column, its dimensions will be different
-                tileHeight = (row === rows - 1) ? lastHeight : settings.tileHeight;
-
-                while (col < cols)
-                {
-                    top = row * settings.tileHeight;
-                    left = col * settings.tileWidth;
-
-                    tileWidth = (col === cols - 1) ? lastWidth : settings.tileWidth;
-
-                    imageURL = (settings.isIIIF) ? baseImageURL + (col * regionWidth + xOffset) + ',' +
-                    (row * regionHeight + yOffset) + ',' + (tileWidth * zoomDifference) + ',' +
-                    (tileHeight * zoomDifference) + '/' + tileWidth + ',' + iiifSuffix : baseImageURL + tileIndex;
-
-                    // this check looks to see if the tile is already loaded, and then if
-                    // it isn't, if it should be visible.
-                    if (!isTileLoaded(pageIndex, tileIndex, context, left, top))
-                    {
-                        if (isTileVisible(pageIndex, row, col, viewport))
-                        {
-                            currentTile = new Image();
-                            currentTile.crossOrigin = "anonymous";
-
-                            currentTile.onload = getDrawTileFunction(pageIndex, tileIndex, currentTile, left, top);
-                            currentTile.src = imageURL;
-                        }
-                        else
-                            allTilesLoaded = false;  // The tile does not need to be loaded - not all have been loaded
-                    }
-
-                    tileIndex++;
-                    col++;
+                    allTilesLoaded = false;
+                    return;
                 }
 
-                row++;
-            }
+                var tileImage = new Image();
+                tileImage.crossOrigin = "anonymous";
+
+                tileImage.onload = getDrawTileFunction(pageIndex, tileIndex, tileImage, tile.left, tile.top);
+                tileImage.src = tile.url;
+            });
 
             settings.allTilesLoaded[pageIndex] = allTilesLoaded;
         };
