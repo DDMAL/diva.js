@@ -1467,7 +1467,7 @@ window.divaPlugins = [];
             else
                 widthToSet = settings.maxWidths[zoomLevel] + settings.horizontalPadding * 2;
 
-            var heightToSet = settings.maxWidths[zoomLevel] + settings.verticalPadding * 2;
+            var heightToSet = settings.maxHeights[zoomLevel] + settings.verticalPadding * 2;
 
             return {
                 widthToSet: widthToSet,
