@@ -343,14 +343,14 @@ QUnit.test("inBookLayout true", function (assert)
     });
 });
 
-QUnit.test("documentPaged", function (assert)
+QUnit.test("manifest.paged triggers inBookLayout", function (assert)
 {
     var done = assert.async();
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        assert.ok(settings.documentPaged, 'settings.documentPaged should be true when manifest has viewingHint: paged');
-        assert.ok(settings.inBookLayout, 'settings.inBookLayout should be true when documentPaged is true');
+        assert.ok(settings.manifest.paged, 'settings.manifest.paged should be true when manifest has viewingHint: paged');
+        assert.ok(settings.inBookLayout, 'settings.inBookLayout should be true when manifest.paged is true');
 
         done();
     });

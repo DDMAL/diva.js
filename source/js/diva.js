@@ -83,7 +83,6 @@ window.divaPlugins = [];
             allTilesLoaded: [],         // A boolean for each page, indicating if all tiles have been loaded
             currentPageIndex: 0,        // The current page in the viewport (center-most page)
             unclampedVerticalPadding: 0, // Used to keep track of initial padding size before enforcing the minimum size needed to accommodate plugin icons
-            documentPaged: false,       // Set to true when the object has a viewingHint of 'paged' in its manifest
             firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
             firstRowLoaded: -1,         // The index of the first row loaded
             gridPageWidth: 0,           // Holds the max width of each row in grid view. Calculated in loadGrid()
@@ -476,7 +475,7 @@ window.divaPlugins = [];
         var loadPage = function (pageIndex)
         {
             // If the page and all of its tiles have been loaded, or if we are in book layout and the canvas is non-paged, exit
-            if ((isPageLoaded(pageIndex) && settings.allTilesLoaded[pageIndex]) || (settings.inBookLayout && settings.documentPaged && !settings.manifest.pages[pageIndex].paged))
+            if ((isPageLoaded(pageIndex) && settings.allTilesLoaded[pageIndex]) || (settings.inBookLayout && settings.manifest.paged && !settings.manifest.pages[pageIndex].paged))
                 return;
 
             var isPreloaded = typeof settings.pagePreloadCanvases[pageIndex] !== 'undefined';
@@ -1109,7 +1108,7 @@ window.divaPlugins = [];
         {
             var totalPages = settings.numPages;
 
-            if (settings.documentPaged && settings.inBookLayout)
+            if (settings.manifest.paged && settings.inBookLayout)
             {
                 while (pageIndex > 0 && pageIndex < totalPages)
                 {
@@ -1447,7 +1446,7 @@ window.divaPlugins = [];
                             settings.pageLeftOffsets[i] = (widthToSet / 2) - settings.horizontalPadding;
 
                             //increment the height
-                            if (!settings.documentPaged || settings.manifest.pages[i].paged)
+                            if (!settings.manifest.paged || settings.manifest.pages[i].paged)
                             {
                                 var pageHeight = (isPageValid(i - 1)) ? Math.max(getPageData(i, 'h'), getPageData(i - 1, 'h')) : getPageData(i, 'h');
                                 heightSoFar = settings.pageTopOffsets[i] + pageHeight + settings.verticalPadding;
@@ -1455,7 +1454,7 @@ window.divaPlugins = [];
                         }
 
                         //don't include non-paged canvases in layout calculation
-                        if (!settings.documentPaged || settings.manifest.pages[i].paged)
+                        if (!settings.manifest.paged || settings.manifest.pages[i].paged)
                             isLeft = !isLeft;
                     }
                 }
@@ -1471,7 +1470,7 @@ window.divaPlugins = [];
                         var padding = (isLeft) ? 0 : settings.horizontalPadding;
                         widthSoFar = settings.pageLeftOffsets[i] + pageWidth + padding;
 
-                        if (!settings.documentPaged || settings.manifest.pages[i].paged)
+                        if (!settings.manifest.paged || settings.manifest.pages[i].paged)
                             isLeft = !isLeft;
                     }
                 }
@@ -3338,7 +3337,6 @@ window.divaPlugins = [];
                 diva.Events.publish('ManifestDidLoad', [responseData], self);
 
                 data = parseManifest(responseData);
-                settings.documentPaged = data.paged;
             }
             else
             {
@@ -3423,7 +3421,7 @@ window.divaPlugins = [];
             }
 
             // If we detect a viewingHint of 'paged' in the manifest or sequence, enable book view by default
-            if (settings.documentPaged)
+            if (settings.manifest.paged)
             {
                 settings.inBookLayout = true;
             }
@@ -4205,6 +4203,9 @@ window.divaPlugins = [];
         this.maxRatio = data.dims.max_ratio;
         this.minRatio = data.dims.min_ratio;
         this.itemTitle = data.item_title;
+
+        // Only given for IIIF manifests
+        this.paged = !!data.paged;
 
         // These are arrays, the index corresponding to the zoom level
         this._maxWidths = data.dims.max_w;
