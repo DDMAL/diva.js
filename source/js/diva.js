@@ -1693,39 +1693,26 @@ window.divaPlugins = [];
         {
             // Hold control to zoom out, otherwise, zoom in
             var newZoomLevel = (event.ctrlKey) ? settings.zoomLevel - 1 : settings.zoomLevel + 1;
-            var zoomRatio = Math.pow(2, newZoomLevel - settings.zoomLevel);
-
-            var pageOffset = this.getBoundingClientRect();
-            var outerPosition = settings.outerElement.getBoundingClientRect();
-
             settings.doubleClickZoom = true;
 
-            // when double-click zooming, the part of the page under the cursor is the scale origin
-            // calculate distance from cursor coordinates to center of viewport
-            var clickXToCenter = event.pageX - (outerPosition.left + (settings.panelWidth / 2));
-            var clickYToCenter = event.pageY - (outerPosition.top + (settings.panelHeight / 2));
+            var outerPosition = settings.outerElement.getBoundingClientRect();
+            var pagePosition = this.getBoundingClientRect();
 
-            // calculate horizontal/verticalOffset: distance from viewport center to page upper left corner
-            // (these offsets are multiplied by zoomRatio in handleZoom to determine the coordinates at the new zoom level)
-            settings.horizontalOffset = (event.pageX - pageOffset.left) - (clickXToCenter / zoomRatio);
-            settings.verticalOffset = (event.pageY - pageOffset.top) - (clickYToCenter / zoomRatio);
+            // This argument format is awkward and redundant, but it's easiest to
+            // compute all these values at once here
+            var focalPoint = {
+                pageIndex: parseInt(this.getAttribute('data-index'), 10),
+                viewportRelative: {
+                    x: event.pageX - outerPosition.left,
+                    y: event.pageY - outerPosition.top
+                },
+                pageRelative: {
+                    x: event.pageX - pagePosition.left,
+                    y: event.pageY - pagePosition.top
+                }
+            };
 
-            // compensate for interpage padding
-            //TODO still a few pixels unaccounted for
-            //settings.verticalOffset += (settings.verticallyOriented) ? settings.verticalPadding / zoomRatio : 0;
-            settings.verticalOffset += (settings.verticallyOriented) ? settings.verticalPadding : 0;
-            settings.horizontalOffset += (settings.verticallyOriented && !settings.inBookLayout) ? 0 : settings.horizontalPadding;
-
-            // calculate click coordinates for smooth zoom transition: distance from edge of inner to cursor
-            var dblClickX = event.pageX + settings.outerElement.scrollLeft  - outerPosition.left;
-            var dblClickY = event.pageY + settings.outerElement.scrollTop - outerPosition.top;
-
-            settings.goDirectlyTo = parseInt($(this).attr('data-index'), 10); //page index
-
-            handleZoom(newZoomLevel, {
-                x: dblClickX,
-                y: dblClickY
-            });
+            handleZoom(newZoomLevel, focalPoint);
         };
 
         // Called after double-clicking on a page in grid view
@@ -1799,7 +1786,7 @@ window.divaPlugins = [];
         };
 
         // Called to handle any zoom level
-        var handleZoom = function (newValue, dblClickCoords)
+        var handleZoom = function (newValue, focalPoint)
         {
             var newZoomLevel = getValidZoomLevel(newValue);
             var originX;
@@ -1820,13 +1807,27 @@ window.divaPlugins = [];
 
             // verticalOffset and horizontalOffset refer to the distance from the top/left of the current page that the center (or clicked coordinates) of the viewport is.
             // for example: if the viewport is 800 pixels and the active page is 600 pixels wide and starts at 100 pixels, verticalOffset will be 300 pixels.
-            if (dblClickCoords)
+            if (focalPoint)
             {
-                settings.verticalOffset *= zoomRatio;
-                settings.horizontalOffset *= zoomRatio;
+                settings.goDirectlyTo = focalPoint.pageIndex;
 
-                originX = dblClickCoords.x;
-                originY = dblClickCoords.y;
+                // calculate distance from cursor coordinates to center of viewport
+                var focalXToCenter = focalPoint.viewportRelative.x - (settings.panelWidth / 2);
+                var focalYToCenter = focalPoint.viewportRelative.y - (settings.panelHeight / 2);
+
+                // calculate horizontal/verticalOffset: distance from viewport center to page upper left corner
+                settings.horizontalOffset = (focalPoint.pageRelative.x * zoomRatio) - focalXToCenter;
+                settings.verticalOffset = (focalPoint.pageRelative.y * zoomRatio) - focalYToCenter;
+
+                // compensate for interpage padding
+                //TODO still a few pixels unaccounted for
+                settings.verticalOffset += (settings.verticallyOriented) ? settings.verticalPadding : 0;
+                settings.horizontalOffset += (settings.verticallyOriented && !settings.inBookLayout) ? 0 : settings.horizontalPadding;
+
+                // Set up the origin for the transform
+                originX = focalPoint.viewportRelative.x + settings.outerElement.scrollLeft;
+                originY = focalPoint.viewportRelative.y + settings.outerElement.scrollTop;
+
                 settings.innerElement.style.transformOrigin = originX + 'px ' + originY + 'px';
             }
             else
