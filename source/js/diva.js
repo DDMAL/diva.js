@@ -1305,10 +1305,17 @@ window.divaPlugins = [];
             if (hasChangedOption(options, 'zoomLevel'))
                 settings.zoomLevel = options.zoomLevel;
 
-            // Set the pages per row. (Validation happens in inGrid.) No event fired unless this is done via the toolbar.
-            // FIXME: Should that be the case?
+            // Set the pages per row if valid and fire an event
             if (hasChangedOption(options, 'pagesPerRow'))
-                settings.pagesPerRow = options.pagesPerRow;
+            {
+                var newPagesPerRow = getValidPagesPerRow(options.pagesPerRow);
+
+                if (newPagesPerRow !== settings.pagesPerRow)
+                {
+                    settings.pagesPerRow = newPagesPerRow;
+                    queuedEvents.push(["GridRowNumberDidChange", [newPagesPerRow]]);
+                }
+            }
 
             // Update verticallyOriented (no event fired)
             if (hasChangedOption(options, 'verticallyOriented'))
@@ -1623,6 +1630,7 @@ window.divaPlugins = [];
             clearViewer();
 
             // Make sure the pages per row setting is valid
+            // FIXME(wabain): reloadViewer also makes this check. It should be consolidated.
             settings.pagesPerRow = getValidPagesPerRow(settings.pagesPerRow);
 
             var horizontalPadding = settings.fixedPadding * (settings.pagesPerRow + 1);
