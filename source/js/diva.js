@@ -1301,6 +1301,15 @@ window.divaPlugins = [];
         {
             var queuedEvents = [];
 
+            // Set the zoom level if it's valid (event fired in loadDocument)
+            if (hasChangedOption(options, 'zoomLevel') && options.zoomLevel >= settings.minZoomLevel && options.zoomLevel <= settings.maxZoomLevel)
+                settings.zoomLevel = options.zoomLevel;
+
+            // Set the pages per row if it's valid. No event fired unless this is done via the toolbar.
+            // FIXME: Should that be the case?
+            if (hasChangedOption(options, 'pagesPerRow') && options.pagesPerRow >= settings.minPagesPerRow && options.pagesPerRow <= settings.maxPagesPerRow)
+                settings.pagesPerRow = options.pagesPerRow;
+
             // Update verticallyOriented (no event fired)
             if (hasChangedOption(options, 'verticallyOriented'))
                 settings.verticallyOriented = options.verticallyOriented;
@@ -3853,8 +3862,11 @@ window.divaPlugins = [];
         // Align this diva instance with a state object (as returned by getState)
         this.setState = function (state)
         {
-            var options = getViewState(state.v);
-            options.inFullscreen = state.f;
+            var options = $.extend(getViewState(state.v), {
+                inFullscreen: state.f,
+                zoomLevel: state.z,
+                pagesPerRow: state.n
+            });
 
             // Only change specify the page if state.i or state.p is valid
             var pageIndex = getPageIndex(state.i);
@@ -3878,14 +3890,6 @@ window.divaPlugins = [];
                     verticalOffset: verticalOffset
                 };
             }
-
-            // Only change the zoom if state.z is valid
-            if (state.z >= settings.minZoomLevel && state.z <= settings.maxZoomLevel)
-                settings.zoomLevel = state.z;
-
-            // Only change the pages per row setting if state.n is valid
-            if (state.n >= settings.minPagesPerRow && state.n <= settings.maxPagesPerRow)
-                settings.pagesPerRow = state.n;
 
             reloadViewer(options);
         };
