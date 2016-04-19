@@ -1584,13 +1584,18 @@ window.divaPlugins = [];
         };
 
         // Handles switching in and out of fullscreen mode
-        // Should only be called after changing settings.inFullscreen
-        var handleModeChange = function ()
+        var handleModeChange = function (options)
         {
+            if (settings.inFullscreen === options.inFullscreen && !options.force)
+                return;
+
+            settings.inFullscreen = options.inFullscreen;
+
             // Toggle the classes
-            settings.outerObject.toggleClass('diva-fullscreen');
-            $('body').toggleClass('diva-hide-scrollbar');
-            settings.parentObject.toggleClass('diva-full-width');
+            var changeClass = settings.inFullscreen ? 'addClass' : 'removeClass';
+            settings.outerObject[changeClass]('diva-fullscreen');
+            $('body')[changeClass]('diva-hide-scrollbar');
+            settings.parentObject[changeClass]('diva-full-width');
 
             // Adjust Diva's internal panel size, keeping the old values
             var storedHeight = settings.panelHeight;
@@ -1635,8 +1640,7 @@ window.divaPlugins = [];
         var toggleFullscreen = function ()
         {
             settings.goDirectlyTo = settings.currentPageIndex;
-            settings.inFullscreen = !settings.inFullscreen;
-            handleModeChange();
+            handleModeChange({ inFullscreen: !settings.inFullscreen });
         };
 
         // Called when the change view icon is clicked
@@ -3152,8 +3156,9 @@ window.divaPlugins = [];
                 settings.horizontalOffset = getXOffset(settings.currentPageIndex, "center");
             }
 
+            // FIXME: Where is this initially set? There are probably clearer ways to handle the control flow.
             if (settings.inFullscreen)
-                handleModeChange();
+                handleModeChange({ inFullscreen: settings.inFullscreen, force: true });
             else
                 loadViewer();
 
@@ -3819,8 +3824,7 @@ window.divaPlugins = [];
             {
                 switchViewState(state.v);
                 // The parameter determines if we need to change the view as well
-                settings.inFullscreen = state.f;
-                handleModeChange();
+                handleModeChange({ inFullscreen: state.f });
                 settings.horizontalOffset = horizontalOffset;
                 settings.verticalOffset = verticalOffset;
                 gotoPage(pageIndex, settings.verticalOffset, settings.horizontalOffset);
