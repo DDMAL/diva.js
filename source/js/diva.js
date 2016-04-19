@@ -1301,13 +1301,13 @@ window.divaPlugins = [];
         {
             var queuedEvents = [];
 
-            // Set the zoom level if it's valid (event fired in loadDocument)
-            if (hasChangedOption(options, 'zoomLevel') && options.zoomLevel >= settings.minZoomLevel && options.zoomLevel <= settings.maxZoomLevel)
+            // Set the zoom level (validation and events are handled in loadDocument)
+            if (hasChangedOption(options, 'zoomLevel'))
                 settings.zoomLevel = options.zoomLevel;
 
-            // Set the pages per row if it's valid. No event fired unless this is done via the toolbar.
+            // Set the pages per row. (Validation happens in inGrid.) No event fired unless this is done via the toolbar.
             // FIXME: Should that be the case?
-            if (hasChangedOption(options, 'pagesPerRow') && options.pagesPerRow >= settings.minPagesPerRow && options.pagesPerRow <= settings.maxPagesPerRow)
+            if (hasChangedOption(options, 'pagesPerRow'))
                 settings.pagesPerRow = options.pagesPerRow;
 
             // Update verticallyOriented (no event fired)
