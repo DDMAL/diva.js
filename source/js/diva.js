@@ -3867,8 +3867,8 @@ window.divaPlugins = [];
 
             if (!isPageValid(pageIndex))
             {
-                if (isPageValid(state.p))
-                    pageIndex = state.p;
+                if (isPageValid(state.p - 1))
+                    pageIndex = state.p - 1;
                 else
                     pageIndex = null;
             }
