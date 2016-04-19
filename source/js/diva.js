@@ -1605,16 +1605,8 @@ window.divaPlugins = [];
                 var newWidth = settings.panelWidth;
 
                 //and re-center the new panel on the same point
-                if (settings.inFullscreen)
-                {
-                    settings.verticalOffset -= ((newHeight - storedHeight) / 2);
-                    settings.horizontalOffset -= ((newWidth - storedWidth) / 2);
-                }
-                else
-                {
-                    settings.verticalOffset += ((storedHeight - newHeight) / 2);
-                    settings.horizontalOffset += ((storedWidth - newWidth) / 2);
-                }
+                settings.verticalOffset += ((storedHeight - newHeight) / 2);
+                settings.horizontalOffset += ((storedWidth - newWidth) / 2);
             }
 
             loadViewer();
