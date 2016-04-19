@@ -1301,6 +1301,23 @@ window.divaPlugins = [];
         {
             var queuedEvents = [];
 
+            // Update verticallyOriented (no event fired)
+            if (hasChangedOption(options, 'verticallyOriented'))
+                settings.verticallyOriented = options.verticallyOriented;
+
+            // Update page position (no event fired here)
+            if ('position' in options)
+            {
+                settings.goDirectlyTo = options.position.pageIndex;
+                settings.verticalOffset = options.position.verticalOffset;
+                settings.horizontalOffset = options.position.horizontalOffset;
+            }
+            else
+            {
+                // Otherwise the default is to remain on the current page
+                settings.goDirectlyTo = settings.currentPageIndex;
+            }
+
             if (hasChangedOption(options, 'inGrid') || hasChangedOption(options, 'inBookLayout'))
             {
                 if ('inGrid' in options)
@@ -1312,7 +1329,7 @@ window.divaPlugins = [];
                 queuedEvents.push(["ViewDidSwitch", [settings.inGrid]]);
             }
 
-            // Note: prepareModeChange() depends on inGrid (for now)
+            // Note: prepareModeChange() depends on inGrid and the vertical/horizontalOffset (for now)
             if (hasChangedOption(options, 'inFullscreen'))
             {
                 settings.inFullscreen = options.inFullscreen;
@@ -1664,15 +1681,14 @@ window.divaPlugins = [];
         // Called when the fullscreen icon is clicked
         var toggleFullscreen = function ()
         {
-            settings.goDirectlyTo = settings.currentPageIndex;
-            reloadViewer({ inFullscreen: !settings.inFullscreen });
+            reloadViewer({
+                inFullscreen: !settings.inFullscreen
+            });
         };
 
         // Called when the change view icon is clicked
         var changeView = function (destinationView)
         {
-            settings.goDirectlyTo = settings.currentPageIndex;
-
             switch (destinationView)
             {
                 case 'document':
@@ -1700,15 +1716,20 @@ window.divaPlugins = [];
         //toggles between orientations
         var toggleOrientation = function ()
         {
-            settings.verticallyOriented = !settings.verticallyOriented;
-            settings.verticalOffset = getYOffset();
-            settings.horizontalOffset = getXOffset();
-            settings.goDirectlyTo = settings.currentPageIndex;
+            var verticallyOriented = !settings.verticallyOriented;
 
             //if in grid, switch out of grid
-            reloadViewer({ inGrid: false });
+            reloadViewer({
+                inGrid: false,
+                verticallyOriented: verticallyOriented,
+                position: {
+                    pageIndex: settings.currentPageIndex,
+                    verticalOffset: getYOffset(),
+                    horizontalOffset: getXOffset()
+                }
+            });
 
-            return settings.verticallyOriented;
+            return verticallyOriented;
         };
 
         // Called after double-click or ctrl+double-click events on pages in document view
@@ -1747,15 +1768,18 @@ window.divaPlugins = [];
         var handleGridDoubleClick = function (event)
         {
             var pageIndex = parseInt($(this).attr('data-index'), 10);
-            settings.goDirectlyTo = pageIndex;
             var pageOffset = $(this).offset();
             var zoomProportion = getPageData(pageIndex, "w") / $(this).width();
 
-            settings.horizontalOffset = (event.pageX - pageOffset.left) * zoomProportion;
-            settings.verticalOffset = (event.pageY - pageOffset.top) * zoomProportion;
-
             // Leave grid view, jump directly to the desired page
-            reloadViewer({ inGrid: false });
+            reloadViewer({
+                inGrid: false,
+                position: {
+                    pageIndex: pageIndex,
+                    horizontalOffset: (event.pageX - pageOffset.left) * zoomProportion,
+                    verticalOffset: (event.pageY - pageOffset.top) * zoomProportion
+                }
+            });
         };
 
         // Handles pinch-zooming for mobile devices
@@ -2187,12 +2211,11 @@ window.divaPlugins = [];
 
                     if (!settings.scaleWait)
                     {
-                        // Save the page we're currently on so we scroll there
-                        settings.goDirectlyTo = settings.currentPageIndex;
-
                         if (settings.inGrid)
                         {
-                            reloadViewer({ inGrid: false });
+                            reloadViewer({
+                                inGrid: false
+                            });
                         }
                         else
                         {
@@ -3154,7 +3177,10 @@ window.divaPlugins = [];
             // Adjust the document panel dimensions
             updatePanelSize();
 
+            var verticalOffset;
             var anchoredVertically = false;
+
+            var horizontalOffset;
             var anchoredHorizontally = false;
 
             // y - vertical offset from the top of the relevant page
@@ -3162,12 +3188,12 @@ window.divaPlugins = [];
 
             if (!isNaN(yParam))
             {
-                settings.verticalOffset = yParam;
+                verticalOffset = yParam;
             }
             else
             {
                 anchoredVertically = true;
-                settings.verticalOffset = getYOffset(settings.currentPageIndex, "top");
+                verticalOffset = getYOffset(settings.currentPageIndex, "top");
             }
 
             // x - horizontal offset from the center of the page
@@ -3175,24 +3201,31 @@ window.divaPlugins = [];
 
             if (!isNaN(xParam))
             {
-                settings.horizontalOffset = xParam;
+                horizontalOffset = xParam;
             }
             else if (settings.goDirectlyTo === 0 && settings.inBookLayout && settings.verticallyOriented)
             {
                 // if in book layout, center the first opening
-                settings.horizontalOffset = 0 + settings.horizontalPadding;
+                horizontalOffset = 0 + settings.horizontalPadding;
             }
             else
             {
                 anchoredHorizontally = true;
-                settings.horizontalOffset = getXOffset(settings.currentPageIndex, "center");
+                horizontalOffset = getXOffset(settings.currentPageIndex, "center");
             }
 
             // If the "fullscreen" hash param is true, go to fullscreen initially
             var fullscreenParam = $.getHashParam('f' + settings.hashParamSuffix);
 
             reloadViewer({
-                inFullscreen: (settings.inFullscreen && fullscreenParam !== 'false') || fullscreenParam === 'true'
+                inFullscreen: (settings.inFullscreen && fullscreenParam !== 'false') || fullscreenParam === 'true',
+                position: {
+                    // Value validated in parseObjectData
+                    // TODO: Move the check somewhere more sensible
+                    pageIndex: settings.goDirectlyTo,
+                    verticalOffset: verticalOffset,
+                    horizontalOffset: horizontalOffset
+                }
             });
 
             //prep dimensions one last time now that pages have loaded
@@ -3606,8 +3639,9 @@ window.divaPlugins = [];
         {
             if (settings.inGrid)
             {
-                settings.goDirectlyTo = settings.currentPageIndex;
-                reloadViewer({ inGrid: false });
+                reloadViewer({
+                    inGrid: false
+                });
             }
 
             return handleZoom(zoomLevel);
@@ -3717,7 +3751,6 @@ window.divaPlugins = [];
         {
             if (settings.inGrid)
             {
-                settings.goDirectlyTo = settings.currentPageIndex;
                 reloadViewer({ inGrid: false });
                 return true;
             }
@@ -3822,18 +3855,31 @@ window.divaPlugins = [];
         // Align this diva instance with a state object (as returned by getState)
         this.setState = function (state)
         {
-            var pageIndex;
+            var options = getViewState(state.v);
+            options.inFullscreen = state.f;
 
-            // Only change settings.goDirectlyTo if state.i or state.p is valid
-            pageIndex = getPageIndex(state.i);
+            // Only change specify the page if state.i or state.p is valid
+            var pageIndex = getPageIndex(state.i);
 
-            if (isPageValid(pageIndex))
-                settings.goDirectlyTo = pageIndex;
-            else if (isPageValid(state.p))
-                settings.goDirectlyTo = state.p;
+            if (!isPageValid(pageIndex))
+            {
+                if (isPageValid(state.p))
+                    pageIndex = state.p;
+                else
+                    pageIndex = null;
+            }
 
-            var horizontalOffset = parseInt(state.x, 10);
-            var verticalOffset = parseInt(state.y, 10);
+            if (pageIndex !== null)
+            {
+                var horizontalOffset = parseInt(state.x, 10);
+                var verticalOffset = parseInt(state.y, 10);
+
+                options.position = {
+                    pageIndex: pageIndex,
+                    horizontalOffset: horizontalOffset,
+                    verticalOffset: verticalOffset
+                };
+            }
 
             // Only change the zoom if state.z is valid
             if (state.z >= settings.minZoomLevel && state.z <= settings.maxZoomLevel)
@@ -3842,12 +3888,6 @@ window.divaPlugins = [];
             // Only change the pages per row setting if state.n is valid
             if (state.n >= settings.minPagesPerRow && state.n <= settings.maxPagesPerRow)
                 settings.pagesPerRow = state.n;
-
-            settings.horizontalOffset = horizontalOffset;
-            settings.verticalOffset = verticalOffset;
-
-            var options = getViewState(state.v);
-            options.inFullscreen = state.f;
 
             reloadViewer(options);
         };
