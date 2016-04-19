@@ -3426,15 +3426,15 @@ window.divaPlugins = [];
             }
 
             // Create the inner and outer panels
-            settings.parentObject.append(elt('div', elemAttrs('outer')));
-            settings.outerObject = $(settings.selector + 'outer');
-            settings.outerElement = settings.outerObject[0];
-            settings.outerObject.append(elt('div', elemAttrs('inner', { class: 'diva-inner diva-dragger' })));
-            settings.innerObject = $(settings.selector + 'inner');
-            settings.innerElement = settings.innerObject[0];
+            settings.innerElement = elt('div', elemAttrs('inner', { class: 'diva-inner diva-dragger' }));
+            settings.outerElement = elt('div', elemAttrs('outer'),
+                settings.innerElement,
+                elt('div', elemAttrs('throbber')));
 
-            // Create the throbber element
-            settings.outerObject.append(elt('div', elemAttrs('throbber')));
+            settings.innerObject = $(settings.innerElement);
+            settings.outerObject = $(settings.outerElement);
+
+            settings.parentObject.append(settings.outerElement);
 
             // First, n - check if it's in range
             var nParam = parseInt($.getHashParam('n' + settings.hashParamSuffix), 10);
