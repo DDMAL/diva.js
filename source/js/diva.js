@@ -1404,15 +1404,6 @@ window.divaPlugins = [];
                 toggleFullscreen();
         };
 
-        // Called when we don't necessarily know which view to go into
-        var loadViewer = function ()
-        {
-            if (settings.inGrid)
-                loadGrid();
-            else
-                loadDocument();
-        };
-
         var calculatePageOffsets = function(widthToSet, heightToSet)
         {
             // Set settings.pageTopOffsets/pageLeftOffsets to determine where we're going to need to scroll, reset them in case they were used for grid before
@@ -2153,10 +2144,13 @@ window.divaPlugins = [];
 
             settings.resizeTimer = setTimeout(function ()
             {
-                settings.goDirectlyTo = settings.currentPageIndex;
-                settings.verticalOffset = getCurrentYOffset();
-                settings.horizontalOffset = getCurrentXOffset();
-                loadViewer();
+                reloadViewer({
+                    position: {
+                        pageIndex: settings.currentPageIndex,
+                        verticalOffset: getCurrentYOffset(),
+                        horizontalOffset: getCurrentXOffset()
+                    }
+                });
             }, 200);
         };
 
@@ -4039,7 +4033,7 @@ window.divaPlugins = [];
                 setTimeout(function ()
                 {
                     parseObjectData(objectData);
-                    loadViewer();
+                    reloadViewer({});
                     settings.loaded = true;
                 });
 
@@ -4060,7 +4054,7 @@ window.divaPlugins = [];
                 {
                     parseObjectData(responseData);
                     hideThrobber();
-                    loadViewer();
+                    reloadViewer({});
                     settings.loaded = true;
                 }
             });
