@@ -1698,6 +1698,11 @@ window.divaPlugins = [];
             var outerPosition = settings.outerElement.getBoundingClientRect();
             var pagePosition = this.getBoundingClientRect();
 
+            // compensate for interpage padding
+            // FIXME: Still a few pixels unaccounted for. This really needs to be accounted for with post-zoom values.
+            var verticalPadding = (settings.verticallyOriented) ? settings.verticalPadding : 0;
+            var horizontalPadding = (settings.verticallyOriented && !settings.inBookLayout) ? 0 : settings.horizontalPadding;
+
             // This argument format is awkward and redundant, but it's easiest to
             // compute all these values at once here
             var focalPoint = {
@@ -1707,8 +1712,8 @@ window.divaPlugins = [];
                     y: event.pageY - outerPosition.top
                 },
                 pageRelative: {
-                    x: event.pageX - pagePosition.left,
-                    y: event.pageY - pagePosition.top
+                    x: event.pageX - pagePosition.left + horizontalPadding,
+                    y: event.pageY - pagePosition.top + verticalPadding
                 }
             };
 
@@ -1796,6 +1801,22 @@ window.divaPlugins = [];
             if (newZoomLevel !== newValue)
                 return false;
 
+            // If no focal point was given, zoom on the center of the viewport
+            if (focalPoint == null)
+            {
+                focalPoint = {
+                    pageIndex: settings.currentPageIndex,
+                    viewportRelative: {
+                        x: settings.panelWidth / 2,
+                        y: settings.panelHeight / 2
+                    },
+                    pageRelative: {
+                        x: settings.horizontalOffset,
+                        y: settings.verticalOffset
+                    }
+                };
+            }
+
             var zoomRatio = Math.pow(2, newZoomLevel - settings.zoomLevel);
 
             // Scale padding with zoom
@@ -1805,59 +1826,20 @@ window.divaPlugins = [];
             // Make sure the vertical padding is at least 40, if plugin icons are enabled
             settings.verticalPadding = (settings.pageTools.length) ? Math.max(settings.unclampedVerticalPadding, 40) : settings.unclampedVerticalPadding;
 
-            // verticalOffset and horizontalOffset refer to the distance from the top/left of the current page that the center (or clicked coordinates) of the viewport is.
-            // for example: if the viewport is 800 pixels and the active page is 600 pixels wide and starts at 100 pixels, verticalOffset will be 300 pixels.
-            if (focalPoint)
-            {
-                settings.goDirectlyTo = focalPoint.pageIndex;
+            settings.goDirectlyTo = focalPoint.pageIndex;
 
-                // calculate distance from cursor coordinates to center of viewport
-                var focalXToCenter = focalPoint.viewportRelative.x - (settings.panelWidth / 2);
-                var focalYToCenter = focalPoint.viewportRelative.y - (settings.panelHeight / 2);
+            // calculate distance from cursor coordinates to center of viewport
+            var focalXToCenter = focalPoint.viewportRelative.x - (settings.panelWidth / 2);
+            var focalYToCenter = focalPoint.viewportRelative.y - (settings.panelHeight / 2);
 
-                // calculate horizontal/verticalOffset: distance from viewport center to page upper left corner
-                settings.horizontalOffset = (focalPoint.pageRelative.x * zoomRatio) - focalXToCenter;
-                settings.verticalOffset = (focalPoint.pageRelative.y * zoomRatio) - focalYToCenter;
+            // calculate horizontal/verticalOffset: distance from viewport center to page upper left corner
+            settings.horizontalOffset = (focalPoint.pageRelative.x * zoomRatio) - focalXToCenter;
+            settings.verticalOffset = (focalPoint.pageRelative.y * zoomRatio) - focalYToCenter;
 
-                // compensate for interpage padding
-                //TODO still a few pixels unaccounted for
-                settings.verticalOffset += (settings.verticallyOriented) ? settings.verticalPadding : 0;
-                settings.horizontalOffset += (settings.verticallyOriented && !settings.inBookLayout) ? 0 : settings.horizontalPadding;
-
-                // Set up the origin for the transform
-                originX = focalPoint.viewportRelative.x + settings.outerElement.scrollLeft;
-                originY = focalPoint.viewportRelative.y + settings.outerElement.scrollTop;
-
-                settings.innerElement.style.transformOrigin = originX + 'px ' + originY + 'px';
-            }
-            else
-            {
-                // If already currently zooming, maintain origin position
-                if (settings.isZooming)
-                {
-                    settings.verticalOffset *= zoomRatio;
-                    settings.horizontalOffset *= zoomRatio;
-                }
-                else
-                {
-                    settings.goDirectlyTo = settings.currentPageIndex;
-
-                    // Calculate new offsets for loadDocument
-                    settings.verticalOffset = zoomRatio * getCurrentYOffset();
-                    settings.horizontalOffset = zoomRatio * getCurrentXOffset();
-
-                    // Calculate new zoom transition origin coordinates (originX measured from left of inner div, originY measured from top of inner div)
-                    var scrollTop = settings.outerElement.scrollTop;
-                    var elementHeight = settings.panelHeight;
-                    originY = scrollTop + parseInt(elementHeight / 2, 10);
-
-                    var scrollLeft = settings.outerElement.scrollLeft;
-                    var elementWidth = settings.panelWidth;
-                    originX = scrollLeft + parseInt(elementWidth / 2, 10);
-
-                    settings.innerElement.style.transformOrigin = originX + 'px ' + originY + 'px';
-                }
-            }
+            // Set up the origin for the transform
+            originX = focalPoint.viewportRelative.x + settings.outerElement.scrollLeft;
+            originY = focalPoint.viewportRelative.y + settings.outerElement.scrollTop;
+            settings.innerElement.style.transformOrigin = originX + 'px ' + originY + 'px';
 
             // Before the first zoom, save currently visible canvases in previousZoomLevelCanvases so preloadPages can start drawing overtop the existing page data
             if (!settings.isZooming)
