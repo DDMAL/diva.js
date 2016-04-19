@@ -1293,6 +1293,91 @@ window.divaPlugins = [];
             }
         };
 
+        /**
+         * Update settings to match the specified options. Load the viewer,
+         * fire appropriate events for changed options.
+         */
+        var reloadViewer = function (options)
+        {
+            var queuedEvents = [];
+
+            if (hasChangedOption(options, 'inGrid') || hasChangedOption(options, 'inBookLayout'))
+            {
+                if ('inGrid' in options)
+                    settings.inGrid = options.inGrid;
+
+                if ('inBookLayout' in options)
+                    settings.inBookLayout = options.inBookLayout;
+
+                queuedEvents.push(["ViewDidSwitch", [settings.inGrid]]);
+            }
+
+            // Note: prepareModeChange() depends on inGrid (for now)
+            if (hasChangedOption(options, 'inFullscreen'))
+            {
+                settings.inFullscreen = options.inFullscreen;
+                prepareModeChange(settings.inFullscreen);
+                queuedEvents.push(["ModeDidSwitch", [settings.inFullscreen]]);
+            }
+
+            if (settings.inGrid)
+                loadGrid();
+            else
+                loadDocument();
+
+            queuedEvents.forEach(function (args)
+            {
+                diva.Events.publish.apply(diva.Events, args.concat([self]));
+            });
+
+            return true;
+        };
+
+        var hasChangedOption = function (options, key)
+        {
+            return key in options && options[key] !== settings[key];
+        };
+
+        // Handles switching in and out of fullscreen mode
+        var prepareModeChange = function (inFullscreen)
+        {
+            // Toggle the classes
+            var changeClass = inFullscreen ? 'addClass' : 'removeClass';
+            settings.outerObject[changeClass]('diva-fullscreen');
+            $('body')[changeClass]('diva-hide-scrollbar');
+            settings.parentObject[changeClass]('diva-full-width');
+
+            // Adjust Diva's internal panel size, keeping the old values
+            var storedHeight = settings.panelHeight;
+            var storedWidth = settings.panelWidth;
+            updatePanelSize();
+
+            // If this isn't the original load...
+            if (settings.oldZoomLevel >= 0 && !settings.inGrid)
+            {
+                //get the updated panel size
+                var newHeight = settings.panelHeight;
+                var newWidth = settings.panelWidth;
+
+                //and re-center the new panel on the same point
+                settings.verticalOffset += ((storedHeight - newHeight) / 2);
+                settings.horizontalOffset += ((storedWidth - newWidth) / 2);
+            }
+
+            //turn on/off escape key listener
+            if (inFullscreen)
+                $(document).on('keyup', escapeListener);
+            else
+                $(document).off('keyup', escapeListener);
+        };
+
+        //Shortcut for closing fullscreen with the escape key
+        var escapeListener = function (e)
+        {
+            if (e.keyCode == 27)
+                toggleFullscreen();
+        };
+
         // Called when we don't necessarily know which view to go into
         var loadViewer = function ()
         {
@@ -1576,71 +1661,11 @@ window.divaPlugins = [];
             });
         };
 
-        //Shortcut for closing fullscreen with the escape key
-        var escapeListener = function (e)
-        {
-            if (e.keyCode == 27)
-                toggleFullscreen();
-        };
-
-        // Handles switching in and out of fullscreen mode
-        var handleModeChange = function (options)
-        {
-            if (settings.inFullscreen === options.inFullscreen && !options.force)
-                return;
-
-            settings.inFullscreen = options.inFullscreen;
-
-            // Toggle the classes
-            var changeClass = settings.inFullscreen ? 'addClass' : 'removeClass';
-            settings.outerObject[changeClass]('diva-fullscreen');
-            $('body')[changeClass]('diva-hide-scrollbar');
-            settings.parentObject[changeClass]('diva-full-width');
-
-            // Adjust Diva's internal panel size, keeping the old values
-            var storedHeight = settings.panelHeight;
-            var storedWidth = settings.panelWidth;
-            updatePanelSize();
-
-            // If this isn't the original load...
-            if (settings.oldZoomLevel >= 0 && !settings.inGrid)
-            {
-                //get the updated panel size
-                var newHeight = settings.panelHeight;
-                var newWidth = settings.panelWidth;
-
-                //and re-center the new panel on the same point
-                settings.verticalOffset += ((storedHeight - newHeight) / 2);
-                settings.horizontalOffset += ((storedWidth - newWidth) / 2);
-            }
-
-            loadViewer();
-
-            //turn on/off escape key listener
-            if (settings.inFullscreen)
-                $(document).on('keyup', escapeListener);
-            else
-                $(document).off('keyup', escapeListener);
-
-           diva.Events.publish("ModeDidSwitch", [settings.inFullscreen], self);
-        };
-
-        // Handles switching in and out of grid view
-        // Should only be called after changing settings.inGrid
-        var handleViewChange = function ()
-        {
-            loadViewer();
-
-            // Switch the slider
-            diva.Events.publish("ViewDidSwitch", [settings.inGrid], self);
-            return true;
-        };
-
         // Called when the fullscreen icon is clicked
         var toggleFullscreen = function ()
         {
             settings.goDirectlyTo = settings.currentPageIndex;
-            handleModeChange({ inFullscreen: !settings.inFullscreen });
+            reloadViewer({ inFullscreen: !settings.inFullscreen });
         };
 
         // Called when the change view icon is clicked
@@ -1651,24 +1676,25 @@ window.divaPlugins = [];
             switch (destinationView)
             {
                 case 'document':
-                    settings.inGrid = false;
-                    settings.inBookLayout = false;
-                    break;
+                    return reloadViewer({
+                        inGrid: false,
+                        inBookLayout: false
+                    });
 
                 case 'book':
-                    settings.inGrid = false;
-                    settings.inBookLayout = true;
-                    break;
+                    return reloadViewer({
+                        inGrid: false,
+                        inBookLayout: true
+                    });
 
                 case 'grid':
-                    settings.inGrid = true;
-                    break;
+                    return reloadViewer({
+                        inGrid: true
+                    });
 
                 default:
                     return false;
             }
-
-            return handleViewChange();
         };
 
         //toggles between orientations
@@ -1680,15 +1706,8 @@ window.divaPlugins = [];
             settings.goDirectlyTo = settings.currentPageIndex;
 
             //if in grid, switch out of grid
-            if (settings.inGrid)
-            {
-                settings.inGrid = false;
-                handleViewChange();
-            }
-            else
-            {
-                loadDocument();
-            }
+            reloadViewer({ inGrid: false });
+
             return settings.verticallyOriented;
         };
 
@@ -1736,8 +1755,7 @@ window.divaPlugins = [];
             settings.verticalOffset = (event.pageY - pageOffset.top) * zoomProportion;
 
             // Leave grid view, jump directly to the desired page
-            settings.inGrid = false;
-            handleViewChange();
+            reloadViewer({ inGrid: false });
         };
 
         // Handles pinch-zooming for mobile devices
@@ -2174,8 +2192,7 @@ window.divaPlugins = [];
 
                         if (settings.inGrid)
                         {
-                            settings.inGrid = false;
-                            handleViewChange();
+                            reloadViewer({ inGrid: false });
                         }
                         else
                         {
@@ -3024,26 +3041,41 @@ window.divaPlugins = [];
             $(settings.selector + 'throbber').hide();
         };
 
-        var switchViewState = function(stateObj)
+        var switchViewState = function (view)
         {
-            var view = stateObj;
+            var viewState = getViewState(view);
 
+            if (viewState)
+            {
+                settings.inGrid = viewState.inGrid;
+                settings.inBookLayout = viewState.inBookLayout;
+            }
+        };
+
+        var getViewState = function(view)
+        {
             switch (view)
             {
                 case 'd':
-                    settings.inGrid = false;
-                    settings.inBookLayout = false;
-                    break;
+                    return {
+                        inGrid: false,
+                        inBookLayout: false
+                    };
 
                 case 'b':
-                    settings.inGrid = false;
-                    settings.inBookLayout = true;
-                    break;
+                    return {
+                        inGrid: false,
+                        inBookLayout: true
+                    };
 
                 case 'g':
-                    settings.inGrid = true;
-                    settings.inBookLayout = false;
-                    break;
+                    return {
+                        inGrid: true,
+                        inBookLayout: false
+                    };
+
+                default:
+                    return null;
             }
         };
 
@@ -3156,11 +3188,12 @@ window.divaPlugins = [];
                 settings.horizontalOffset = getXOffset(settings.currentPageIndex, "center");
             }
 
-            // FIXME: Where is this initially set? There are probably clearer ways to handle the control flow.
-            if (settings.inFullscreen)
-                handleModeChange({ inFullscreen: settings.inFullscreen, force: true });
-            else
-                loadViewer();
+            // If the "fullscreen" hash param is true, go to fullscreen initially
+            var fullscreenParam = $.getHashParam('f' + settings.hashParamSuffix);
+
+            reloadViewer({
+                inFullscreen: (settings.inFullscreen && fullscreenParam !== 'false') || fullscreenParam === 'true'
+            });
 
             //prep dimensions one last time now that pages have loaded
             updatePanelSize();
@@ -3428,12 +3461,6 @@ window.divaPlugins = [];
                 }, settings.ID);
             }
 
-            // If the "fullscreen" hash param is true, go to fullscreen initially
-            var fullscreenParam = $.getHashParam('f' + settings.hashParamSuffix);
-            var goIntoFullscreen = fullscreenParam === 'true';
-
-            settings.inFullscreen = (settings.inFullscreen && fullscreenParam !== 'false') || goIntoFullscreen;
-
             // Do the initial AJAX request and viewer loading
             setupViewer();
 
@@ -3580,8 +3607,7 @@ window.divaPlugins = [];
             if (settings.inGrid)
             {
                 settings.goDirectlyTo = settings.currentPageIndex;
-                settings.inGrid = false;
-                handleViewChange();
+                reloadViewer({ inGrid: false });
             }
 
             return handleZoom(zoomLevel);
@@ -3692,8 +3718,7 @@ window.divaPlugins = [];
             if (settings.inGrid)
             {
                 settings.goDirectlyTo = settings.currentPageIndex;
-                settings.inGrid = false;
-                handleViewChange();
+                reloadViewer({ inGrid: false });
                 return true;
             }
 
@@ -3818,37 +3843,13 @@ window.divaPlugins = [];
             if (state.n >= settings.minPagesPerRow && state.n <= settings.maxPagesPerRow)
                 settings.pagesPerRow = state.n;
 
-            // Change settings to match v (view) hash parameter
+            settings.horizontalOffset = horizontalOffset;
+            settings.verticalOffset = verticalOffset;
 
-            if (settings.inFullscreen !== state.f)
-            {
-                switchViewState(state.v);
-                // The parameter determines if we need to change the view as well
-                handleModeChange({ inFullscreen: state.f });
-                settings.horizontalOffset = horizontalOffset;
-                settings.verticalOffset = verticalOffset;
-                gotoPage(pageIndex, settings.verticalOffset, settings.horizontalOffset);
-            }
-            else
-            {
-                settings.horizontalOffset = horizontalOffset;
-                settings.verticalOffset = verticalOffset;
+            var options = getViewState(state.v);
+            options.inFullscreen = state.f;
 
-                // Don't need to change the mode, may need to change view
-                // If the current view is not equal to that in state, switch view
-                if ((state.v === 'g' && (!settings.inGrid || settings.inBookLayout)) ||
-                    (state.v === 'd' && (settings.inGrid || settings.inBookLayout)) ||
-                    (state.v === 'b' && !settings.inBookLayout))
-                {
-                    switchViewState(state.v);
-                    handleViewChange();
-                }
-                else
-                {
-                    // Reload the viewer, just in case
-                    loadViewer();
-                }
-            }
+            reloadViewer(options);
         };
 
         // Re-enables document dragging, scrolling (by keyboard if set), and zooming by double-clicking
