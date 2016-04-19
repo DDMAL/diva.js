@@ -1737,8 +1737,6 @@ window.divaPlugins = [];
         {
             // Hold control to zoom out, otherwise, zoom in
             var newZoomLevel = (event.ctrlKey) ? settings.zoomLevel - 1 : settings.zoomLevel + 1;
-            settings.doubleClickZoom = true;
-
             var outerPosition = settings.outerElement.getBoundingClientRect();
             var pagePosition = this.getBoundingClientRect();
 
