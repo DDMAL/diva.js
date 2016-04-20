@@ -1301,9 +1301,18 @@ window.divaPlugins = [];
         {
             var queuedEvents = [];
 
-            // Set the zoom level (validation and events are handled in loadDocument)
+            // Set the zoom level if valid and fire a ZoomLevelDidChange event
             if (hasChangedOption(options, 'zoomLevel'))
-                settings.zoomLevel = options.zoomLevel;
+            {
+                var newZoomLevel = getValidZoomLevel(options.zoomLevel);
+
+                if (newZoomLevel !== settings.zoomLevel)
+                {
+                    settings.oldZoomLevel = settings.zoomLevel;
+                    settings.zoomLevel = newZoomLevel;
+                    queuedEvents.push(["ZoomLevelDidChange", [newZoomLevel]]);
+                }
+            }
 
             // Set the pages per row if valid and fire an event
             if (hasChangedOption(options, 'pagesPerRow'))
@@ -1518,6 +1527,7 @@ window.divaPlugins = [];
 
             diva.Events.publish('DocumentWillLoad', [settings], self);
 
+            // FIXME(wabain): reloadViewer also makes this check. It should be consolidated.
             settings.zoomLevel = getValidZoomLevel(settings.zoomLevel);
             var z = settings.zoomLevel;
 
