@@ -3056,11 +3056,6 @@ window.divaPlugins = [];
                     var toolsRightElement = document.getElementById(settings.ID + 'tools-right');
                     var pageNavElement = document.getElementById(settings.ID + 'page-nav');
 
-                    // toggle block/inline-block for labels
-                    var display = (settings.inFullscreen) ? 'block' : 'inline-block';
-                    $(settings.selector + 'grid-label').css('display', display);
-                    $(settings.selector + 'zoom-label').css('display', display);
-
                     if (!settings.inFullscreen)
                     {
                         // Leaving fullscreen
