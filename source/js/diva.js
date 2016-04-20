@@ -2596,10 +2596,10 @@ window.divaPlugins = [];
             ]);
         };
 
-        var createPageLabel = function(name)
+        var createPageLabel = function()
         {
             return elt('span', {
-                class: name + ' diva-label'
+                class: 'diva-page-label diva-label'
             },
             [
                 'Page ',
@@ -2616,42 +2616,36 @@ window.divaPlugins = [];
         // Handles all status updating etc (both fullscreen and not)
         var createToolbar = function ()
         {
-            // Assemble the toolbar components
-            var toolbarNode = document.createElement('div');
-            toolbarNode.id = settings.ID + 'tools';
-            toolbarNode.className = 'diva-tools';
-
-            var divaToolsLeftElement = document.createElement('div');
-            divaToolsLeftElement.id = settings.ID + 'tools-left';
-            divaToolsLeftElement.className = 'diva-tools-left';
-
-            var divaToolsRightElement = document.createElement('div');
-            divaToolsRightElement.id = settings.ID + 'tools-right';
-            divaToolsRightElement.className = 'diva-tools-right';
+            var leftTools = [];
+            var rightTools = [];
 
             // Toolbar Left
             // Zoom slider/buttons
             if (settings.enableZoomControls === 'slider')
             {
                 var zoomControls = createSliderElement('zoom-slider', settings.zoomLevel, settings.minZoomLevel, settings.maxZoomLevel);
-                divaToolsLeftElement.appendChild(zoomControls);
+                leftTools.push(zoomControls);
             }
             else if (settings.enableZoomControls === 'buttons')
             {
-                divaToolsLeftElement.appendChild(createButtonElement('zoom-out-button', 'Zoom Out'));
-                divaToolsLeftElement.appendChild(createButtonElement('zoom-in-button', 'Zoom In'));
+                leftTools.push(
+                    createButtonElement('zoom-out-button', 'Zoom Out'),
+                    createButtonElement('zoom-in-button', 'Zoom In')
+                );
             }
 
             // Grid slider/buttons
             if (settings.enableGridControls === 'slider')
             {
                 var gridControls = createSliderElement('grid-slider', settings.pagesPerRow, settings.minPagesPerRow, settings.maxPagesPerRow);
-                divaToolsLeftElement.appendChild(gridControls);
+                leftTools.push(gridControls);
             }
             else if (settings.enableGridControls === 'buttons')
             {
-                divaToolsLeftElement.appendChild(createButtonElement('grid-out-button', 'Zoom Out'));
-                divaToolsLeftElement.appendChild(createButtonElement('grid-in-button', 'Zoom In'));
+                leftTools.push(
+                    createButtonElement('grid-out-button', 'Zoom Out'),
+                    createButtonElement('grid-in-button', 'Zoom In')
+                );
             }
 
             //TODO policy re unspecified enableXControls?
@@ -2659,35 +2653,29 @@ window.divaPlugins = [];
             if (settings.enableZoomControls === 'slider' || settings.enableZoomControls === 'buttons')
             {
                 var zoomLabel = createLabel('diva-zoom-label', 'zoom-label', 'Zoom level: ', 'zoom-level', settings.zoomLevel);
-                divaToolsLeftElement.appendChild(zoomLabel);
+                leftTools.push(zoomLabel);
             }
 
             // Grid slider/buttons label
             if (settings.enableGridControls === 'slider' || settings.enableGridControls === 'buttons')
             {
                 var gridLabel = createLabel('diva-grid-label', 'grid-label', 'Pages per row: ', 'pages-per-row', settings.pagesPerRow);
-                divaToolsLeftElement.appendChild(gridLabel);
+                leftTools.push(gridLabel);
             }
 
             // Toolbar right
 
             // Page Navigation (Go to page form and 'Page x of y label')
-            var pageNavElement = document.createElement('span');
-            pageNavElement.id = settings.ID + 'page-nav';
-            pageNavElement.className = 'diva-page-nav';
-
-            // 'Page x of y' label
-            var pageLabel = createPageLabel('diva-page-label');
-            pageNavElement.appendChild(pageLabel);
 
             // Go to page form
+            var gotoForm = null;
+
             if (settings.enableGotoPage)
             {
-                var gotoForm = elt('form', {
+                gotoForm = elt('form', {
                     id: settings.ID + 'goto-page',
                     class: 'diva-goto-form'
                 },
-                [
                     elt('input', {
                         id: settings.ID + 'goto-page-input',
                         class: 'diva-input',
@@ -2697,35 +2685,37 @@ window.divaPlugins = [];
                         type: 'submit',
                         value: 'Go'
                     })
-                ]);
-
-                pageNavElement.appendChild(gotoForm);
+                );
             }
 
-            divaToolsRightElement.appendChild(pageNavElement);
+            rightTools.push(
+                elt('span', elemAttrs('page-nav'),
+                    createPageLabel(), // 'Page x of y' label
+                    gotoForm
+                )
+            );
 
             // View menu
-            var viewMenu = createViewMenuElement();
-            divaToolsRightElement.appendChild(viewMenu);
+            rightTools.push(createViewMenuElement());
 
             // Link icon
             if (settings.enableLinkIcon)
             {
-                var linkButton = createButtonElement('link-icon', 'Link to this page');
-                divaToolsRightElement.appendChild(linkButton);
+                rightTools.push(createButtonElement('link-icon', 'Link to this page'));
             }
 
             // Fullscreen icon
             if (settings.enableFullscreen)
             {
-                var fullscreenButton = createButtonElement('fullscreen-icon', 'Toggle fullscreen mode');
-                divaToolsRightElement.appendChild(fullscreenButton);
+                rightTools.push(createButtonElement('fullscreen-icon', 'Toggle fullscreen mode'));
             }
 
-            toolbarNode.appendChild(divaToolsLeftElement);
-            toolbarNode.appendChild(divaToolsRightElement);
-
-            settings.toolbarParentObject.prepend(toolbarNode);
+            settings.toolbarParentObject.prepend(
+                elt('div', elemAttrs('tools'),
+                    elt('div', elemAttrs('tools-left'), leftTools),
+                    elt('div', elemAttrs('tools-right'), rightTools)
+                )
+            );
 
             var displayViewMenu = function()
             {
