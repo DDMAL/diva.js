@@ -3037,43 +3037,50 @@ window.divaPlugins = [];
                 });
             };
 
-            settings.toolbarParentObject.prepend(
-                elt('div', elemAttrs('tools'),
-                    elt('div', elemAttrs('tools-left'), instantiateTools(leftTools)),
-                    elt('div', elemAttrs('tools-right'), instantiateTools(rightTools))
-                )
+            var tools = elt('div', elemAttrs('tools'),
+                elt('div', elemAttrs('tools-left'), instantiateTools(leftTools)),
+                elt('div', elemAttrs('tools-right'), instantiateTools(rightTools))
             );
 
-            diva.Events.subscribe('UserDidChooseView', changeView, settings.ID);
+            settings.toolbarParentObject.prepend(tools);
+
+            // Handle entry to and exit from fullscreen mode
+            var switchMode = function ()
+            {
+                var toolsRightElement = document.getElementById(settings.ID + 'tools-right');
+                var pageNavElement = document.getElementById(settings.ID + 'page-nav');
+
+                if (!settings.inFullscreen)
+                {
+                    // Leaving fullscreen
+                    $(tools).removeClass('diva-fullscreen-tools');
+
+                    //move ID-page-nav to beginning of tools right
+                    toolsRightElement.removeChild(pageNavElement);
+                    toolsRightElement.insertBefore(pageNavElement, toolsRightElement.firstChild);
+                }
+                else
+                {
+                    // Entering fullscreen
+                    $(tools).addClass('diva-fullscreen-tools');
+
+                    //move ID-page-nav to end of tools right
+                    toolsRightElement.removeChild(pageNavElement);
+                    toolsRightElement.appendChild(pageNavElement);
+                }
+            };
+
+            subscribe('ModeDidSwitch', switchMode);
+            subscribe('ViewerDidLoad', switchMode);
+
+            // Handle view choices set from the view menu
+            subscribe('UserDidChooseView', changeView);
 
             var toolbar = {
+                element: tools,
                 closePopups: function ()
                 {
                     $('.diva-popup').css('display', 'none');
-                },
-                switchMode: function ()
-                {
-                    var toolsRightElement = document.getElementById(settings.ID + 'tools-right');
-                    var pageNavElement = document.getElementById(settings.ID + 'page-nav');
-
-                    if (!settings.inFullscreen)
-                    {
-                        // Leaving fullscreen
-                        $(settings.selector + 'tools').removeClass('diva-fullscreen-tools');
-
-                        //move ID-page-nav to beginning of tools right
-                        toolsRightElement.removeChild(pageNavElement);
-                        toolsRightElement.insertBefore(pageNavElement, toolsRightElement.firstChild);
-                    }
-                    else
-                    {
-                        // Entering fullscreen
-                        $(settings.selector + 'tools').addClass('diva-fullscreen-tools');
-
-                        //move ID-page-nav to end of tools right
-                        toolsRightElement.removeChild(pageNavElement);
-                        toolsRightElement.appendChild(pageNavElement);
-                    }
                 }
             };
 
@@ -3522,9 +3529,6 @@ window.divaPlugins = [];
             if (settings.enableToolbar)
             {
                 settings.toolbar = createToolbar();
-
-                diva.Events.subscribe('ModeDidSwitch', settings.toolbar.switchMode, settings.ID);
-                diva.Events.subscribe('ViewerDidLoad', settings.toolbar.switchMode, settings.ID);
             }
 
             // Do the initial AJAX request and viewer loading
