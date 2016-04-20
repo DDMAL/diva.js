@@ -416,7 +416,7 @@ QUnit.test("valid max/minPagesPerRow, valid pagesPerRow", function (assert)
     });
 });
 
-QUnit.test("invalid max/minPagesPerRow, valid pagesPerRow", function (assert)
+QUnit.test("invalid max/minPagesPerRow, invalid pagesPerRow", function (assert)
 {
     var done = assert.async();
 
