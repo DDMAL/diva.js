@@ -2559,49 +2559,27 @@ window.divaPlugins = [];
         };
 
         // Creates a toolbar button
-        var createButtonElement = function(name, label)
+        var createButtonElement = function(name, label, callback)
         {
-            return elt('span', {
+            var button = elt('span', {
                 id: settings.ID + name,
                 class: 'diva-' + name + ' diva-button',
                 title: label
             });
+
+            if (callback)
+                button.addEventListener('click', callback, false);
+
+            return button;
         };
 
         var createViewMenu = function()
         {
-            var changeViewButton = createButtonElement('view-icon', 'Change view');
             var viewOptionsList = elt('div', elemAttrs('view-options'));
 
-            $(changeViewButton).on('click', function ()
+            var changeViewButton = createButtonElement('view-icon', 'Change view', function ()
             {
                 $(viewOptionsList).toggle();
-            });
-
-            $(viewOptionsList).on('click', '.diva-button', function(event)
-            {
-                // change to the selected view
-                var iconClass = event.target.classList[0];
-                var selectedView;
-
-                if (iconClass === 'diva-document-icon')
-                {
-                    selectedView = 'document';
-                }
-                else if (iconClass === 'diva-book-icon')
-                {
-                    selectedView = 'book';
-                }
-                else if (iconClass === 'diva-grid-icon')
-                {
-                    selectedView = 'grid';
-                }
-
-                // FIXME: Why is this indirection needed?
-                diva.Events.publish('UserDidChooseView', [selectedView], self);
-
-                //hide view menu
-                $(viewOptionsList).hide();
             });
 
             $(document).mouseup(function (event)
@@ -2613,6 +2591,15 @@ window.divaPlugins = [];
                     container.hide();
                 }
             });
+
+            var selectView = function (view)
+            {
+                // FIXME: Why is this indirection needed?
+                diva.Events.publish('UserDidChooseView', [view], self);
+
+                //hide view menu
+                $(viewOptionsList).hide();
+            };
 
             var updateViewMenu = function()
             {
@@ -2636,13 +2623,13 @@ window.divaPlugins = [];
 
                 // then display document, book, and grid buttons in that order, excluding the current view
                 if (settings.inGrid || settings.inBookLayout)
-                    viewOptions.appendChild(createButtonElement('document-icon', 'Document View'));
+                    viewOptions.appendChild(createButtonElement('document-icon', 'Document View', selectView.bind(null, 'document')));
 
                 if (settings.inGrid || !settings.inBookLayout)
-                    viewOptions.appendChild(createButtonElement('book-icon', 'Book View'));
+                    viewOptions.appendChild(createButtonElement('book-icon', 'Book View', selectView.bind(null, 'book')));
 
                 if (!settings.inGrid)
-                    viewOptions.appendChild(createButtonElement('grid-icon', 'Grid View'));
+                    viewOptions.appendChild(createButtonElement('grid-icon', 'Grid View', selectView.bind(null, 'grid')));
 
                 // remove old menu
                 while (viewOptionsList.firstChild)
@@ -2807,25 +2794,17 @@ window.divaPlugins = [];
                 leftTools.push(
                     function ()
                     {
-                        var elem = createButtonElement('zoom-out-button', 'Zoom Out');
-
-                        $(elem).on('click', function ()
+                        return createButtonElement('zoom-out-button', 'Zoom Out', function ()
                         {
                             handleZoom(settings.zoomLevel - 1);
                         });
-
-                        return elem;
                     },
                     function ()
                     {
-                        var elem = createButtonElement('zoom-in-button', 'Zoom In');
-
-                        $(elem).on('click', function ()
+                        return createButtonElement('zoom-in-button', 'Zoom In', function ()
                         {
                             handleZoom(settings.zoomLevel + 1);
                         });
-
-                        return elem;
                     }
                 );
             }
@@ -2866,25 +2845,17 @@ window.divaPlugins = [];
                 leftTools.push(
                     function ()
                     {
-                        var elem = createButtonElement('grid-out-button', 'Zoom Out');
-
-                        $(elem).on('click', function ()
+                        return createButtonElement('grid-out-button', 'Zoom Out', function ()
                         {
                             handleGrid(settings.pagesPerRow - 1);
                         });
-
-                        return elem;
                     },
                     function ()
                     {
-                        var elem = createButtonElement('grid-in-button', 'Zoom In');
-
-                        $(elem).on('click', function ()
+                        return createButtonElement('grid-in-button', 'Zoom In', function ()
                         {
                             handleGrid(settings.pagesPerRow + 1);
                         });
-
-                        return elem;
                     }
                 );
             }
@@ -3015,14 +2986,10 @@ window.divaPlugins = [];
             {
                 rightTools.push(function ()
                 {
-                    var elem = createButtonElement('fullscreen-icon', 'Toggle fullscreen mode');
-
-                    $(elem).on('click', function ()
+                    return createButtonElement('fullscreen-icon', 'Toggle fullscreen mode', function ()
                     {
                         toggleFullscreen();
                     });
-
-                    return elem;
                 });
             }
 
