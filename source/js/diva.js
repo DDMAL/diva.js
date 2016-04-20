@@ -1527,7 +1527,9 @@ window.divaPlugins = [];
 
             diva.Events.publish('DocumentWillLoad', [settings], self);
 
-            // FIXME(wabain): reloadViewer also makes this check. It should be consolidated.
+            // FIXME(wabain): reloadViewer also makes this check, so this is
+            // just needed to validate the initial setting. That should be
+            // validated on being set.
             settings.zoomLevel = getValidZoomLevel(settings.zoomLevel);
             var z = settings.zoomLevel;
 
@@ -1963,15 +1965,10 @@ window.divaPlugins = [];
             if (newPagesPerRow !== newValue)
                 return false;
 
-            settings.pagesPerRow = newPagesPerRow;
-
-            // Update the slider
-            diva.Events.publish("GridRowNumberDidChange", [newPagesPerRow], self);
-
-            settings.goDirectlyTo = settings.currentPageIndex;
-            loadGrid();
-
-            return true;
+            return reloadViewer({
+                inGrid: true,
+                pagesPerRow: newPagesPerRow
+            });
         };
 
         /*
