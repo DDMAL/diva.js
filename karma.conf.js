@@ -58,6 +58,7 @@ module.exports = function(config)
 
         port: KARMA_PORT,
         proxies: {
+            // Needed to load the test manifests
             '/demo/': 'http://localhost:' + KARMA_PORT + '/base/demo/'
         },
 
