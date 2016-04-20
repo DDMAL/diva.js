@@ -2552,6 +2552,12 @@ window.divaPlugins = [];
             }
         };
 
+        /** Convenience function to subscribe to a Diva event */
+        var subscribe = function (event, callback)
+        {
+            diva.Events.subscribe(event, callback, settings.ID);
+        };
+
         // Creates a toolbar button
         var createButtonElement = function(name, label)
         {
@@ -2562,12 +2568,99 @@ window.divaPlugins = [];
             });
         };
 
-        var createViewMenuElement = function()
+        var createViewMenu = function()
         {
-            return elt('div', elemAttrs('view-menu'), [
-                createButtonElement('view-icon', 'Change view'),
-                elt('div', elemAttrs('view-options'))
-            ]);
+            var changeViewButton = createButtonElement('view-icon', 'Change view');
+            var viewOptionsList = elt('div', elemAttrs('view-options'));
+
+            $(changeViewButton).on('click', function ()
+            {
+                $(viewOptionsList).toggle();
+            });
+
+            $(viewOptionsList).on('click', '.diva-button', function(event)
+            {
+                // change to the selected view
+                var iconClass = event.target.classList[0];
+                var selectedView;
+
+                if (iconClass === 'diva-document-icon')
+                {
+                    selectedView = 'document';
+                }
+                else if (iconClass === 'diva-book-icon')
+                {
+                    selectedView = 'book';
+                }
+                else if (iconClass === 'diva-grid-icon')
+                {
+                    selectedView = 'grid';
+                }
+
+                // FIXME: Why is this indirection needed?
+                diva.Events.publish('UserDidChooseView', [selectedView], self);
+
+                //hide view menu
+                $(viewOptionsList).hide();
+            });
+
+            $(document).mouseup(function (event)
+            {
+                var container = $(viewOptionsList);
+
+                if (!container.is(event.target) && container.has(event.target).length === 0 && event.target.id !== settings.ID + 'view-icon')
+                {
+                    container.hide();
+                }
+            });
+
+            var updateViewMenu = function()
+            {
+                var viewIconClasses = ' diva-view-icon diva-button';
+
+                // display the icon of the mode we're currently in (?)
+                if (settings.inGrid)
+                {
+                    changeViewButton.className = 'diva-grid-icon' + viewIconClasses;
+                }
+                else if (settings.inBookLayout)
+                {
+                    changeViewButton.className = 'diva-book-icon' + viewIconClasses;
+                }
+                else
+                {
+                    changeViewButton.className = 'diva-document-icon' + viewIconClasses;
+                }
+
+                var viewOptions = document.createDocumentFragment();
+
+                // then display document, book, and grid buttons in that order, excluding the current view
+                if (settings.inGrid || settings.inBookLayout)
+                    viewOptions.appendChild(createButtonElement('document-icon', 'Document View'));
+
+                if (settings.inGrid || !settings.inBookLayout)
+                    viewOptions.appendChild(createButtonElement('book-icon', 'Book View'));
+
+                if (!settings.inGrid)
+                    viewOptions.appendChild(createButtonElement('grid-icon', 'Grid View'));
+
+                // remove old menu
+                while (viewOptionsList.firstChild)
+                {
+                    viewOptionsList.removeChild(viewOptionsList.firstChild);
+                }
+
+                // insert new menu
+                viewOptionsList.appendChild(viewOptions);
+            };
+
+            subscribe('ViewDidSwitch', updateViewMenu);
+            subscribe('ObjectDidLoad', updateViewMenu);
+
+            return elt('div', elemAttrs('view-menu'),
+                changeViewButton,
+                viewOptionsList
+            );
         };
 
         var createSliderElement = function(name, value, min, max)
@@ -2596,21 +2689,77 @@ window.divaPlugins = [];
             ]);
         };
 
+        var createGotoPageForm = function ()
+        {
+            var gotoPageInput = elt('input', {
+                id: settings.ID + 'goto-page-input',
+                class: 'diva-input',
+                type: 'text'
+            });
+
+            var gotoForm = elt('form', {
+                id: settings.ID + 'goto-page',
+                class: 'diva-goto-form'
+            },
+                gotoPageInput,
+                elt('input', {
+                    type: 'submit',
+                    value: 'Go'
+                })
+            );
+
+            $(gotoForm).on('submit', function ()
+            {
+                var desiredPage = parseInt(gotoPageInput.value, 10);
+                var pageIndex = desiredPage - 1;
+
+                if (!isPageValid(pageIndex))
+                    alert("Invalid page number");
+                else if (settings.inGrid)
+                    gotoRow(pageIndex);
+                else
+                    gotoPageTop(pageIndex);
+
+                // Prevent the default action of reloading the page
+                return false;
+            });
+
+            return gotoForm;
+        };
+
         var createPageLabel = function()
         {
+            // Current page
+            var currentPage = elt('span', {
+                id: settings.ID + 'current-page'
+            });
+
+            var updateCurrentPage = function ()
+            {
+                currentPage.textContent = parseInt(settings.currentPageIndex, 10) + 1;
+            };
+
+            subscribe('VisiblePageDidChange', updateCurrentPage);
+            subscribe('ViewerDidLoad', updateCurrentPage);
+
+            // Number of pages
+            var numPages = elt('span', {
+                id: settings.ID + 'num-pages'
+            });
+
+            var updateNumPages = function ()
+            {
+                numPages.textContent = settings.numPages;
+            };
+
+            subscribe('NumberOfPagesDidChange', updateNumPages);
+            subscribe('ObjectDidLoad', updateNumPages);
+
             return elt('span', {
                 class: 'diva-page-label diva-label'
             },
-            [
-                'Page ',
-                elt('span', {
-                    id: settings.ID + 'current-page'
-                }),
-                ' of ',
-                elt('span', {
-                    id: settings.ID + 'num-pages'
-                })
-            ]);
+                'Page ', currentPage, ' of ', numPages
+            );
         };
 
         // Handles all status updating etc (both fullscreen and not)
@@ -2623,28 +2772,120 @@ window.divaPlugins = [];
             // Zoom slider/buttons
             if (settings.enableZoomControls === 'slider')
             {
-                var zoomControls = createSliderElement('zoom-slider', settings.zoomLevel, settings.minZoomLevel, settings.maxZoomLevel);
-                leftTools.push(zoomControls);
+                leftTools.push(function ()
+                {
+                    var elem = createSliderElement('zoom-slider', settings.zoomLevel, settings.minZoomLevel, settings.maxZoomLevel);
+                    var $elem = $(elem);
+
+                    $elem.on('input', function(e)
+                    {
+                        var intValue = parseInt(this.value, 10);
+                        handleZoom(intValue);
+                    });
+
+                    $elem.on('change', function (e)
+                    {
+                        var intValue = parseInt(this.value, 10);
+                        if (intValue !== settings.zoomLevel)
+                            handleZoom(intValue);
+                    });
+
+                    var updateSlider = function ()
+                    {
+                        if (settings.zoomLevel !== $elem.val())
+                            $elem.val(settings.zoomLevel);
+                    };
+
+                    subscribe('ZoomLevelDidChange', updateSlider);
+                    subscribe('ViewerDidLoad', updateSlider);
+
+                    return elem;
+                });
             }
             else if (settings.enableZoomControls === 'buttons')
             {
                 leftTools.push(
-                    createButtonElement('zoom-out-button', 'Zoom Out'),
-                    createButtonElement('zoom-in-button', 'Zoom In')
+                    function ()
+                    {
+                        var elem = createButtonElement('zoom-out-button', 'Zoom Out');
+
+                        $(elem).on('click', function ()
+                        {
+                            handleZoom(settings.zoomLevel - 1);
+                        });
+
+                        return elem;
+                    },
+                    function ()
+                    {
+                        var elem = createButtonElement('zoom-in-button', 'Zoom In');
+
+                        $(elem).on('click', function ()
+                        {
+                            handleZoom(settings.zoomLevel + 1);
+                        });
+
+                        return elem;
+                    }
                 );
             }
 
             // Grid slider/buttons
             if (settings.enableGridControls === 'slider')
             {
-                var gridControls = createSliderElement('grid-slider', settings.pagesPerRow, settings.minPagesPerRow, settings.maxPagesPerRow);
-                leftTools.push(gridControls);
+                leftTools.push(function ()
+                {
+                    var elem = createSliderElement('grid-slider', settings.pagesPerRow, settings.minPagesPerRow, settings.maxPagesPerRow);
+                    var $elem = $(elem);
+
+                    $elem.on('input', function(e)
+                    {
+                        var intValue = parseInt(elem.value, 10);
+                        handleGrid(intValue);
+                    });
+
+                    $elem.on('change', function (e)
+                    {
+                        var intValue = parseInt(elem.value, 10);
+                        if (intValue !== settings.pagesPerRow)
+                            handleGrid(intValue);
+                    });
+
+                    subscribe('GridRowNumberDidChange', function ()
+                    {
+                        // Update the position of the handle within the slider
+                        if (settings.pagesPerRow !== $elem.val())
+                            $elem.val(settings.pagesPerRow);
+                    });
+
+                    return elem;
+                });
             }
             else if (settings.enableGridControls === 'buttons')
             {
                 leftTools.push(
-                    createButtonElement('grid-out-button', 'Zoom Out'),
-                    createButtonElement('grid-in-button', 'Zoom In')
+                    function ()
+                    {
+                        var elem = createButtonElement('grid-out-button', 'Zoom Out');
+
+                        $(elem).on('click', function ()
+                        {
+                            handleGrid(settings.pagesPerRow - 1);
+                        });
+
+                        return elem;
+                    },
+                    function ()
+                    {
+                        var elem = createButtonElement('grid-in-button', 'Zoom In');
+
+                        $(elem).on('click', function ()
+                        {
+                            handleGrid(settings.pagesPerRow + 1);
+                        });
+
+                        return elem;
+                    }
                 );
             }
 
@@ -2652,302 +2893,155 @@ window.divaPlugins = [];
             // Zoom slider/buttons label
             if (settings.enableZoomControls === 'slider' || settings.enableZoomControls === 'buttons')
             {
-                var zoomLabel = createLabel('diva-zoom-label', 'zoom-label', 'Zoom level: ', 'zoom-level', settings.zoomLevel);
-                leftTools.push(zoomLabel);
+                leftTools.push(function ()
+                {
+                    var elem = createLabel('diva-zoom-label', 'zoom-label', 'Zoom level: ', 'zoom-level', settings.zoomLevel);
+                    var textSpan = $(elem).find(settings.selector + 'zoom-level')[0];
+
+                    var updateText = function ()
+                    {
+                        textSpan.textContent = settings.zoomLevel;
+                    };
+
+                    subscribe('ZoomLevelDidChange', updateText);
+                    subscribe('ViewerDidLoad', updateText);
+
+                    return elem;
+                });
             }
 
             // Grid slider/buttons label
             if (settings.enableGridControls === 'slider' || settings.enableGridControls === 'buttons')
             {
-                var gridLabel = createLabel('diva-grid-label', 'grid-label', 'Pages per row: ', 'pages-per-row', settings.pagesPerRow);
-                leftTools.push(gridLabel);
+                leftTools.push(function ()
+                {
+                    var elem = createLabel('diva-grid-label', 'grid-label', 'Pages per row: ', 'pages-per-row', settings.pagesPerRow);
+                    var textSpan = $(elem).find(settings.selector + 'pages-per-row')[0];
+
+                    subscribe('GridRowNumberDidChange', function ()
+                    {
+                        textSpan.textContent = settings.pagesPerRow;
+                    });
+
+                    return elem;
+                });
             }
 
             // Toolbar right
 
             // Page Navigation (Go to page form and 'Page x of y label')
-
-            // Go to page form
-            var gotoForm = null;
-
-            if (settings.enableGotoPage)
+            rightTools.push(function ()
             {
-                gotoForm = elt('form', {
-                    id: settings.ID + 'goto-page',
-                    class: 'diva-goto-form'
-                },
-                    elt('input', {
-                        id: settings.ID + 'goto-page-input',
-                        class: 'diva-input',
-                        type: 'text'
-                    }),
-                    elt('input', {
-                        type: 'submit',
-                        value: 'Go'
-                    })
-                );
-            }
+                // Go to page form
+                var gotoForm = settings.enableGotoPage ? createGotoPageForm() : null;
 
-            rightTools.push(
-                elt('span', elemAttrs('page-nav'),
+                return elt('span', elemAttrs('page-nav'),
                     createPageLabel(), // 'Page x of y' label
                     gotoForm
-                )
-            );
+                );
+            });
 
             // View menu
-            rightTools.push(createViewMenuElement());
+            rightTools.push(createViewMenu);
 
             // Link icon
             if (settings.enableLinkIcon)
             {
-                rightTools.push(createButtonElement('link-icon', 'Link to this page'));
+                rightTools.push(function ()
+                {
+                    var elem = createButtonElement('link-icon', 'Link to this page');
+                    var linkIcon = $(elem);
+
+                    linkIcon.on('click', function ()
+                    {
+                        $('body').prepend(
+                            elt('div', {
+                                id: settings.ID + 'link-popup',
+                                class: 'diva-popup diva-link-popup'
+                            }, [
+                                elt('input', {
+                                    id: settings.ID + 'link-popup-input',
+                                    class: 'diva-input',
+                                    type: 'text',
+                                    value: getCurrentURL()
+                                })
+                            ])
+                        );
+
+                        if (settings.inFullscreen)
+                        {
+                            $(settings.selector + 'link-popup').addClass('in-fullscreen');
+                        }
+                        else
+                        {
+                            // Calculate the left and top offsets
+                            var leftOffset = linkIcon.offset().left - 222 + linkIcon.outerWidth();
+                            var topOffset = linkIcon.offset().top + linkIcon.outerHeight() - 1;
+
+                            $(settings.selector + 'link-popup').css({
+                                'top': topOffset + 'px',
+                                'left': leftOffset + 'px'
+                            });
+                        }
+
+                        // Catch onmouseup events outside of this div
+                        $('body').mouseup(function (event)
+                        {
+                            var targetID = event.target.id;
+
+                            if (targetID !== settings.ID + 'link-popup' && targetID !== settings.ID + 'link-popup-input')
+                                $(settings.selector + 'link-popup').remove();
+                        });
+
+                        // Also delete it upon scroll and page up/down key events
+                        settings.outerObject.scroll(function ()
+                        {
+                            $(settings.selector + 'link-popup').remove();
+                        });
+                        $(settings.selector + 'link-popup input').click(function ()
+                        {
+                            $(this).focus().select();
+                        });
+
+                        return false;
+                    });
+
+                    return elem;
+                });
             }
 
             // Fullscreen icon
             if (settings.enableFullscreen)
             {
-                rightTools.push(createButtonElement('fullscreen-icon', 'Toggle fullscreen mode'));
+                rightTools.push(function ()
+                {
+                    var elem = createButtonElement('fullscreen-icon', 'Toggle fullscreen mode');
+
+                    $(elem).on('click', function ()
+                    {
+                        toggleFullscreen();
+                    });
+
+                    return elem;
+                });
             }
+
+            var instantiateTools = function (tools)
+            {
+                return tools.map(function (creator)
+                {
+                    return creator();
+                });
+            };
 
             settings.toolbarParentObject.prepend(
                 elt('div', elemAttrs('tools'),
-                    elt('div', elemAttrs('tools-left'), leftTools),
-                    elt('div', elemAttrs('tools-right'), rightTools)
+                    elt('div', elemAttrs('tools-left'), instantiateTools(leftTools)),
+                    elt('div', elemAttrs('tools-right'), instantiateTools(rightTools))
                 )
             );
 
-            var displayViewMenu = function()
-            {
-                var viewOptions = document.createDocumentFragment();
-                var documentIcon = createButtonElement('document-icon', 'Document View');
-                var bookIcon = createButtonElement('book-icon', 'Book View');
-                var gridIcon = createButtonElement('grid-icon', 'Grid View');
-
-                var viewIcon = document.getElementById(settings.ID + 'view-icon');
-                var viewIconClasses = ' diva-view-icon diva-button';
-
-                // display the icon of the mode we're currently in (?)
-                if (settings.inGrid)
-                {
-                    viewIcon.className = 'diva-grid-icon' + viewIconClasses;
-                }
-                else if (settings.inBookLayout)
-                {
-                    viewIcon.className = 'diva-book-icon' + viewIconClasses;
-                }
-                else
-                {
-                    viewIcon.className = 'diva-document-icon' + viewIconClasses;
-                }
-
-                // then display document, book, and grid buttons in that order, excluding the current view
-                if (settings.inGrid || settings.inBookLayout)
-                    viewOptions.appendChild(documentIcon);
-
-                if (settings.inGrid || !settings.inBookLayout)
-                    viewOptions.appendChild(bookIcon);
-
-                if (!settings.inGrid)
-                    viewOptions.appendChild(gridIcon);
-
-                var viewOptionsElement = document.getElementById(settings.ID + 'view-options');
-
-                // remove old menu
-                while (viewOptionsElement.firstChild)
-                {
-                    viewOptionsElement.removeChild(viewOptionsElement.firstChild);
-                }
-
-                // insert new menu
-                viewOptionsElement.appendChild(viewOptions);
-            };
-
-            // bind zoom slider
-            $(settings.selector + 'zoom-slider').on('input', function(e)
-            {
-                var intValue = parseInt(this.value, 10);
-
-                handleZoom(intValue);
-            });
-
-            $(settings.selector + 'zoom-slider').on('change', function(e)
-            {
-                var intValue = parseInt(this.value, 10);
-                if (intValue !== settings.zoomLevel)
-                    handleZoom(intValue);
-            });
-
-            // Zoom when zoom buttons clicked
-            var zoomButtonClicked = function (direction)
-            {
-                handleZoom(settings.zoomLevel + direction);
-            };
-
-            // Bind the click event to zoom buttons
-            $(settings.selector + 'zoom-out-button').click(function()
-            {
-                zoomButtonClicked(-1);
-            });
-
-            $(settings.selector + 'zoom-in-button').click(function()
-            {
-                zoomButtonClicked(1);
-            });
-
-            //bind grid slider
-            $(settings.selector + 'grid-slider').on('input', function(e)
-            {
-                var intValue = parseInt(this.value, 10);
-                handleGrid(intValue);
-            });
-
-            $(settings.selector + 'grid-slider').on('change', function(e)
-            {
-                var intValue = parseInt(this.value, 10);
-                if (intValue !== settings.zoomLevel)
-                    handleGrid(intValue);
-            });
-
-            // Bind fullscreen button
-            $(settings.selector + 'fullscreen-icon').click(function()
-            {
-                toggleFullscreen();
-            });
-
-            // Bind the grid buttons
-            $(settings.selector + 'grid-out-button').click(function ()
-            {
-                handleGrid(settings.pagesPerRow - 1);
-            });
-
-            $(settings.selector + 'grid-in-button').click(function ()
-            {
-                handleGrid(settings.pagesPerRow + 1);
-            });
-
-            // Handle clicking of the view icon
-            $(settings.selector + 'view-icon').click(function ()
-            {
-                //show view menu
-                $(settings.selector + 'view-options').toggle();
-            });
-
-            $(settings.selector + 'view-options').on('click', '.diva-button', function(event)
-            {
-                // change to the selected view
-                var iconClass = event.target.classList[0];
-                var selectedView;
-
-                if (iconClass === 'diva-document-icon')
-                {
-                    selectedView = 'document';
-                }
-                else if (iconClass === 'diva-book-icon')
-                {
-                    selectedView = 'book';
-                }
-                else if (iconClass === 'diva-grid-icon')
-                {
-                    selectedView = 'grid';
-                }
-
-                diva.Events.publish('UserDidChooseView', [selectedView], self);
-
-                //hide view menu
-                $(settings.selector + 'view-options').hide();
-            });
-
             diva.Events.subscribe('UserDidChooseView', changeView, settings.ID);
-
-            $(document).mouseup(function (event)
-            {
-                var container = $(settings.selector + 'view-options');
-
-                if (!container.is(event.target) && container.has(event.target).length === 0 && event.target.id !== settings.ID + 'view-icon')
-                {
-                    container.hide();
-                }
-            });
-
-            // Handle going to a specific page using the input box
-            $(settings.selector + 'goto-page').submit(function ()
-            {
-                var desiredPage = parseInt($(settings.selector + 'goto-page-input').val(), 10);
-                var pageIndex = desiredPage - 1;
-
-                if (!isPageValid(pageIndex))
-                {
-                    alert("Invalid page number");
-                }
-                else
-                {
-                    if (settings.inGrid)
-                        gotoRow(pageIndex);
-                    else
-                        gotoPageTop(pageIndex);
-                }
-
-                // Prevent the default action of reloading the page
-                return false;
-            });
-
-            var linkIcon = $(settings.selector + 'link-icon');
-            // Handle the creation of the link popup box
-            linkIcon.click(function ()
-            {
-                $('body').prepend(
-                    elt('div', {
-                        id: settings.ID + 'link-popup',
-                        class: 'diva-popup diva-link-popup'
-                    }, [
-                        elt('input', {
-                            id: settings.ID + 'link-popup-input',
-                            class: 'diva-input',
-                            type: 'text',
-                            value: getCurrentURL()
-                        })
-                    ])
-                );
-
-                if (settings.inFullscreen)
-                {
-                    $(settings.selector + 'link-popup').addClass('in-fullscreen');
-                }
-                else
-                {
-                    // Calculate the left and top offsets
-                    var leftOffset = linkIcon.offset().left - 222 + linkIcon.outerWidth();
-                    var topOffset = linkIcon.offset().top + linkIcon.outerHeight() - 1;
-
-                    $(settings.selector + 'link-popup').removeClass('in-fullscreen').css(
-                    {
-                        'top': topOffset + 'px',
-                        'left': leftOffset + 'px'
-                    });
-                }
-
-                // Catch onmouseup events outside of this div
-                $('body').mouseup(function (event)
-                {
-                    var targetID = event.target.id;
-
-                    if (targetID !== settings.ID + 'link-popup' && targetID !== settings.ID + 'link-popup-input')
-                        $(settings.selector + 'link-popup').remove();
-                });
-
-                // Also delete it upon scroll and page up/down key events
-                settings.outerObject.scroll(function ()
-                {
-                    $(settings.selector + 'link-popup').remove();
-                });
-                $(settings.selector + 'link-popup input').click(function ()
-                {
-                    $(this).focus().select();
-                });
-
-                return false;
-            });
 
             // Show the relevant slider (or buttons, depending on settings)
             var currentSlider = (settings.inGrid) ? 'grid' : 'zoom';
@@ -2957,38 +3051,7 @@ window.divaPlugins = [];
             var display = (settings.inFullscreen) ? 'block' : 'inline-block';
             $(settings.selector + currentSlider + '-label').css('display', display);
 
-            var toolbar =
-            {
-                updateCurrentPage: function ()
-                {
-                    document.getElementById(settings.ID + 'current-page').textContent = parseInt(settings.currentPageIndex, 10) + 1;
-                },
-                setNumPages: function (newNumber)
-                {
-                    document.getElementById(settings.ID + 'num-pages').textContent = newNumber;
-                },
-                updateZoomLabel: function ()
-                {
-                    // Update the position of the handle within the slider
-                    if (settings.enableZoomControls === 'slider' && settings.zoomLevel !== $(settings.selector + 'zoom-slider').val())
-                    {
-                        $(settings.selector + 'zoom-slider').val(settings.zoomLevel);
-                    }
-
-                    // Update the slider label
-                    document.getElementById(settings.ID + 'zoom-level').textContent = settings.zoomLevel.toString();
-                },
-                updateGridLabel: function ()
-                {
-                    // Update the position of the handle within the slider
-                    if (settings.enableGridControls === 'slider' && settings.pagesPerRow !== $(settings.selector + 'grid-slider').val())
-                    {
-                        $(settings.selector + 'grid-slider').val(settings.pagesPerRow);
-                    }
-
-                    // Update the slider label
-                    document.getElementById(settings.ID + 'pages-per-row').textContent = settings.pagesPerRow;
-                },
+            var toolbar = {
                 closePopups: function ()
                 {
                     $('.diva-popup').css('display', 'none');
@@ -3040,8 +3103,7 @@ window.divaPlugins = [];
                         display = (settings.inFullscreen) ? 'block' : 'inline-block';
                         $(settings.selector + currentSlider + '-label').css('display', display);
                     }
-                },
-                displayViewMenu: displayViewMenu
+                }
             };
 
             return toolbar;
@@ -3489,33 +3551,14 @@ window.divaPlugins = [];
             if (settings.enableToolbar)
             {
                 settings.toolbar = createToolbar();
-                diva.Events.subscribe('VisiblePageDidChange', settings.toolbar.updateCurrentPage, settings.ID);
                 diva.Events.subscribe('ModeDidSwitch', settings.toolbar.switchMode, settings.ID);
                 diva.Events.subscribe('ViewDidSwitch', settings.toolbar.switchView, settings.ID);
-                diva.Events.subscribe('ViewDidSwitch', settings.toolbar.displayViewMenu, settings.ID);
-                diva.Events.subscribe('ZoomLevelDidChange', settings.toolbar.updateZoomLabel, settings.ID);
-                diva.Events.subscribe('GridRowNumberDidChange', settings.toolbar.updateGridLabel, settings.ID);
-                diva.Events.subscribe('NumberOfPagesDidChange', settings.toolbar.setNumPages, settings.ID);
 
                 // update toolbar items that depend on data from the objectData AJAX request once it has loaded
-                diva.Events.subscribe('ObjectDidLoad', settings.toolbar.displayViewMenu, settings.ID);
                 diva.Events.subscribe('ObjectDidLoad', settings.toolbar.switchView, settings.ID);
-                diva.Events.subscribe('ObjectDidLoad', function()
-                {
-                    settings.toolbar.setNumPages(settings.numPages);
-                }, settings.ID);
 
                 // update toolbar items that depend on the final layout of the viewer
                 diva.Events.subscribe('ViewerDidLoad', settings.toolbar.switchMode, settings.ID);
-                diva.Events.subscribe('ViewerDidLoad', function()
-                {
-                    settings.toolbar.updateCurrentPage(settings.currentPageIndex);
-                }, settings.ID);
-
-                diva.Events.subscribe('ViewerDidLoad', function()
-                {
-                    settings.toolbar.updateZoomLabel(settings.zoomLevel);
-                }, settings.ID);
             }
 
             // Do the initial AJAX request and viewer loading
