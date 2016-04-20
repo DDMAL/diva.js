@@ -2921,6 +2921,89 @@ window.divaPlugins = [];
             );
         };
 
+        var createToolbarButtonGroup = function ()
+        {
+            var buttons = [createViewMenu()];
+
+            if (settings.enableLinkIcon)
+                buttons.push(createLinkIcon());
+
+            if (settings.enableFullscreen)
+                buttons.push(createFullscreenButton());
+
+            return elt('span', elemAttrs('toolbar-button-group'), buttons);
+        };
+
+        var createLinkIcon = function ()
+        {
+            var elem = createButtonElement('link-icon', 'Link to this page');
+            var linkIcon = $(elem);
+
+            linkIcon.on('click', function ()
+            {
+                $('body').prepend(
+                    elt('div', {
+                        id: settings.ID + 'link-popup',
+                        class: 'diva-popup diva-link-popup'
+                    }, [
+                        elt('input', {
+                            id: settings.ID + 'link-popup-input',
+                            class: 'diva-input',
+                            type: 'text',
+                            value: getCurrentURL()
+                        })
+                    ])
+                );
+
+                if (settings.inFullscreen)
+                {
+                    $(settings.selector + 'link-popup').addClass('in-fullscreen');
+                }
+                else
+                {
+                    // Calculate the left and top offsets
+                    var leftOffset = linkIcon.offset().left - 222 + linkIcon.outerWidth();
+                    var topOffset = linkIcon.offset().top + linkIcon.outerHeight() - 1;
+
+                    $(settings.selector + 'link-popup').css({
+                        'top': topOffset + 'px',
+                        'left': leftOffset + 'px'
+                    });
+                }
+
+                // Catch onmouseup events outside of this div
+                $('body').mouseup(function (event)
+                {
+                    var targetID = event.target.id;
+
+                    if (targetID !== settings.ID + 'link-popup' && targetID !== settings.ID + 'link-popup-input')
+                        $(settings.selector + 'link-popup').remove();
+                });
+
+                // Also delete it upon scroll and page up/down key events
+                settings.outerObject.scroll(function ()
+                {
+                    $(settings.selector + 'link-popup').remove();
+                });
+                $(settings.selector + 'link-popup input').click(function ()
+                {
+                    $(this).focus().select();
+                });
+
+                return false;
+            });
+
+            return elem;
+        };
+
+        var createFullscreenButton = function ()
+        {
+            return createButtonElement('fullscreen-icon', 'Toggle fullscreen mode', function ()
+            {
+                toggleFullscreen();
+            });
+        };
+
         // Handles all status updating etc (both fullscreen and not)
         var createToolbar = function ()
         {
@@ -2944,86 +3027,7 @@ window.divaPlugins = [];
                 );
             });
 
-            // View menu
-            rightTools.push(createViewMenu);
-
-            // Link icon
-            if (settings.enableLinkIcon)
-            {
-                rightTools.push(function ()
-                {
-                    var elem = createButtonElement('link-icon', 'Link to this page');
-                    var linkIcon = $(elem);
-
-                    linkIcon.on('click', function ()
-                    {
-                        $('body').prepend(
-                            elt('div', {
-                                id: settings.ID + 'link-popup',
-                                class: 'diva-popup diva-link-popup'
-                            }, [
-                                elt('input', {
-                                    id: settings.ID + 'link-popup-input',
-                                    class: 'diva-input',
-                                    type: 'text',
-                                    value: getCurrentURL()
-                                })
-                            ])
-                        );
-
-                        if (settings.inFullscreen)
-                        {
-                            $(settings.selector + 'link-popup').addClass('in-fullscreen');
-                        }
-                        else
-                        {
-                            // Calculate the left and top offsets
-                            var leftOffset = linkIcon.offset().left - 222 + linkIcon.outerWidth();
-                            var topOffset = linkIcon.offset().top + linkIcon.outerHeight() - 1;
-
-                            $(settings.selector + 'link-popup').css({
-                                'top': topOffset + 'px',
-                                'left': leftOffset + 'px'
-                            });
-                        }
-
-                        // Catch onmouseup events outside of this div
-                        $('body').mouseup(function (event)
-                        {
-                            var targetID = event.target.id;
-
-                            if (targetID !== settings.ID + 'link-popup' && targetID !== settings.ID + 'link-popup-input')
-                                $(settings.selector + 'link-popup').remove();
-                        });
-
-                        // Also delete it upon scroll and page up/down key events
-                        settings.outerObject.scroll(function ()
-                        {
-                            $(settings.selector + 'link-popup').remove();
-                        });
-                        $(settings.selector + 'link-popup input').click(function ()
-                        {
-                            $(this).focus().select();
-                        });
-
-                        return false;
-                    });
-
-                    return elem;
-                });
-            }
-
-            // Fullscreen icon
-            if (settings.enableFullscreen)
-            {
-                rightTools.push(function ()
-                {
-                    return createButtonElement('fullscreen-icon', 'Toggle fullscreen mode', function ()
-                    {
-                        toggleFullscreen();
-                    });
-                });
-            }
+            rightTools.push(createToolbarButtonGroup);
 
             var instantiateTools = function (tools)
             {
