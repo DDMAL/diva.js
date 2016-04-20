@@ -60,21 +60,25 @@ gulp.task('develop:styles', function()
     return merge(minimized, unminimized);
 });
 
-gulp.task('develop:server', function()
+gulp.task('develop:server', function(done)
 {
     var serveStatic = require('serve-static');
     var serveIndex = require('serve-index');
 
     var app = require('connect')()
-                .use(require('connect-livereload')({port:35729}))
-                .use(serveStatic('build'))
-                .use(serveIndex('build'));
+        .use(require('connect-livereload')({port:35729}))
+        .use(serveStatic('build'))
+        .use(serveIndex('build'))
+        .use('/diva', serveStatic('.'))
+        .use('/diva', serveIndex('.'));
 
-    require('http').createServer(app)
+    require('http')
+        .createServer(app)
         .listen(9001)
         .on('listening', function()
         {
             console.log('Started a web server on http://localhost:9001');
+            done();
         });
 });
 
