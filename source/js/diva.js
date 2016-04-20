@@ -2573,6 +2573,178 @@ window.divaPlugins = [];
             return button;
         };
 
+        // Higher-level function for creators of zoom and grid controls
+        var getResolutionControlCreator = function (config)
+        {
+            return function ()
+            {
+                var controls;
+
+                switch (settings[config.controllerSetting])
+                {
+                    case 'slider':
+                        controls = config.createSlider();
+                        break;
+
+                    case 'buttons':
+                        controls = config.createButtons();
+                        break;
+
+                    default:
+                        // Don't display anything
+                        return null;
+                }
+
+                var wrapper = elt('span',
+                    controls,
+                    config.createLabel()
+                );
+
+                var updateWrapper = function ()
+                {
+                    if (settings.inGrid === config.showInGrid)
+                        wrapper.style.display = 'inline';
+                    else
+                        wrapper.style.display = 'none';
+                };
+
+                subscribe('ViewDidSwitch', updateWrapper);
+                subscribe('ObjectDidLoad', updateWrapper);
+
+                // Set initial value
+                updateWrapper();
+
+                return wrapper;
+            };
+        };
+
+        // Zoom controls
+        var createZoomControls = getResolutionControlCreator({
+            controllerSetting: 'enableZoomControls',
+            showInGrid: false,
+
+            createSlider: function ()
+            {
+                var elem = createSliderElement('zoom-slider', settings.zoomLevel, settings.minZoomLevel, settings.maxZoomLevel);
+                var $elem = $(elem);
+
+                $elem.on('input', function(e)
+                {
+                    var intValue = parseInt(this.value, 10);
+                    handleZoom(intValue);
+                });
+
+                $elem.on('change', function (e)
+                {
+                    var intValue = parseInt(this.value, 10);
+                    if (intValue !== settings.zoomLevel)
+                        handleZoom(intValue);
+                });
+
+                var updateSlider = function ()
+                {
+                    if (settings.zoomLevel !== $elem.val())
+                        $elem.val(settings.zoomLevel);
+                };
+
+                subscribe('ZoomLevelDidChange', updateSlider);
+                subscribe('ViewerDidLoad', updateSlider);
+
+                return elem;
+            },
+
+            createButtons: function ()
+            {
+                return elt('span',
+                    createButtonElement('zoom-out-button', 'Zoom Out', function ()
+                    {
+                        handleZoom(settings.zoomLevel - 1);
+                    }),
+                    createButtonElement('zoom-in-button', 'Zoom In', function ()
+                    {
+                        handleZoom(settings.zoomLevel + 1);
+                    })
+                );
+            },
+
+            createLabel: function ()
+            {
+                var elem = createLabel('diva-zoom-label', 'zoom-label', 'Zoom level: ', 'zoom-level', settings.zoomLevel);
+                var textSpan = $(elem).find(settings.selector + 'zoom-level')[0];
+
+                var updateText = function ()
+                {
+                    textSpan.textContent = settings.zoomLevel;
+                };
+
+                subscribe('ZoomLevelDidChange', updateText);
+                subscribe('ViewerDidLoad', updateText);
+
+                return elem;
+            }
+        });
+
+        // Grid controls
+        var createGridControls = getResolutionControlCreator({
+            controllerSetting: 'enableGridControls',
+            showInGrid: true,
+
+            createSlider: function ()
+            {
+                var elem = createSliderElement('grid-slider', settings.pagesPerRow, settings.minPagesPerRow, settings.maxPagesPerRow);
+                var $elem = $(elem);
+
+                $elem.on('input', function(e)
+                {
+                    var intValue = parseInt(elem.value, 10);
+                    handleGrid(intValue);
+                });
+
+                $elem.on('change', function (e)
+                {
+                    var intValue = parseInt(elem.value, 10);
+                    if (intValue !== settings.pagesPerRow)
+                        handleGrid(intValue);
+                });
+
+                subscribe('GridRowNumberDidChange', function ()
+                {
+                    // Update the position of the handle within the slider
+                    if (settings.pagesPerRow !== $elem.val())
+                        $elem.val(settings.pagesPerRow);
+                });
+
+                return elem;
+            },
+
+            createButtons: function ()
+            {
+                return elt('span',
+                    createButtonElement('grid-out-button', 'Zoom Out', function ()
+                    {
+                        handleGrid(settings.pagesPerRow - 1);
+                    }),
+                    createButtonElement('grid-in-button', 'Zoom In', function ()
+                    {
+                        handleGrid(settings.pagesPerRow + 1);
+                    })
+                );
+            },
+
+            createLabel: function ()
+            {
+                var elem = createLabel('diva-grid-label', 'grid-label', 'Pages per row: ', 'pages-per-row', settings.pagesPerRow);
+                var textSpan = $(elem).find(settings.selector + 'pages-per-row')[0];
+
+                subscribe('GridRowNumberDidChange', function ()
+                {
+                    textSpan.textContent = settings.pagesPerRow;
+                });
+
+                return elem;
+            }
+        });
+
         var createViewMenu = function()
         {
             var viewOptionsList = elt('div', elemAttrs('view-options'));
@@ -2756,147 +2928,7 @@ window.divaPlugins = [];
             var rightTools = [];
 
             // Toolbar Left
-            // Zoom slider/buttons
-            if (settings.enableZoomControls === 'slider')
-            {
-                leftTools.push(function ()
-                {
-                    var elem = createSliderElement('zoom-slider', settings.zoomLevel, settings.minZoomLevel, settings.maxZoomLevel);
-                    var $elem = $(elem);
-
-                    $elem.on('input', function(e)
-                    {
-                        var intValue = parseInt(this.value, 10);
-                        handleZoom(intValue);
-                    });
-
-                    $elem.on('change', function (e)
-                    {
-                        var intValue = parseInt(this.value, 10);
-                        if (intValue !== settings.zoomLevel)
-                            handleZoom(intValue);
-                    });
-
-                    var updateSlider = function ()
-                    {
-                        if (settings.zoomLevel !== $elem.val())
-                            $elem.val(settings.zoomLevel);
-                    };
-
-                    subscribe('ZoomLevelDidChange', updateSlider);
-                    subscribe('ViewerDidLoad', updateSlider);
-
-                    return elem;
-                });
-            }
-            else if (settings.enableZoomControls === 'buttons')
-            {
-                leftTools.push(
-                    function ()
-                    {
-                        return createButtonElement('zoom-out-button', 'Zoom Out', function ()
-                        {
-                            handleZoom(settings.zoomLevel - 1);
-                        });
-                    },
-                    function ()
-                    {
-                        return createButtonElement('zoom-in-button', 'Zoom In', function ()
-                        {
-                            handleZoom(settings.zoomLevel + 1);
-                        });
-                    }
-                );
-            }
-
-            // Grid slider/buttons
-            if (settings.enableGridControls === 'slider')
-            {
-                leftTools.push(function ()
-                {
-                    var elem = createSliderElement('grid-slider', settings.pagesPerRow, settings.minPagesPerRow, settings.maxPagesPerRow);
-                    var $elem = $(elem);
-
-                    $elem.on('input', function(e)
-                    {
-                        var intValue = parseInt(elem.value, 10);
-                        handleGrid(intValue);
-                    });
-
-                    $elem.on('change', function (e)
-                    {
-                        var intValue = parseInt(elem.value, 10);
-                        if (intValue !== settings.pagesPerRow)
-                            handleGrid(intValue);
-                    });
-
-                    subscribe('GridRowNumberDidChange', function ()
-                    {
-                        // Update the position of the handle within the slider
-                        if (settings.pagesPerRow !== $elem.val())
-                            $elem.val(settings.pagesPerRow);
-                    });
-
-                    return elem;
-                });
-            }
-            else if (settings.enableGridControls === 'buttons')
-            {
-                leftTools.push(
-                    function ()
-                    {
-                        return createButtonElement('grid-out-button', 'Zoom Out', function ()
-                        {
-                            handleGrid(settings.pagesPerRow - 1);
-                        });
-                    },
-                    function ()
-                    {
-                        return createButtonElement('grid-in-button', 'Zoom In', function ()
-                        {
-                            handleGrid(settings.pagesPerRow + 1);
-                        });
-                    }
-                );
-            }
-
-            //TODO policy re unspecified enableXControls?
-            // Zoom slider/buttons label
-            if (settings.enableZoomControls === 'slider' || settings.enableZoomControls === 'buttons')
-            {
-                leftTools.push(function ()
-                {
-                    var elem = createLabel('diva-zoom-label', 'zoom-label', 'Zoom level: ', 'zoom-level', settings.zoomLevel);
-                    var textSpan = $(elem).find(settings.selector + 'zoom-level')[0];
-
-                    var updateText = function ()
-                    {
-                        textSpan.textContent = settings.zoomLevel;
-                    };
-
-                    subscribe('ZoomLevelDidChange', updateText);
-                    subscribe('ViewerDidLoad', updateText);
-
-                    return elem;
-                });
-            }
-
-            // Grid slider/buttons label
-            if (settings.enableGridControls === 'slider' || settings.enableGridControls === 'buttons')
-            {
-                leftTools.push(function ()
-                {
-                    var elem = createLabel('diva-grid-label', 'grid-label', 'Pages per row: ', 'pages-per-row', settings.pagesPerRow);
-                    var textSpan = $(elem).find(settings.selector + 'pages-per-row')[0];
-
-                    subscribe('GridRowNumberDidChange', function ()
-                    {
-                        textSpan.textContent = settings.pagesPerRow;
-                    });
-
-                    return elem;
-                });
-            }
+            leftTools.push(createZoomControls, createGridControls);
 
             // Toolbar right
 
@@ -3010,37 +3042,20 @@ window.divaPlugins = [];
 
             diva.Events.subscribe('UserDidChooseView', changeView, settings.ID);
 
-            // Show the relevant slider (or buttons, depending on settings)
-            var currentSlider = (settings.inGrid) ? 'grid' : 'zoom';
-            $(settings.selector + currentSlider + '-slider').css('display', 'inline-block');
-            $(settings.selector + currentSlider + '-out-button').css('display', 'inline-block');
-            $(settings.selector + currentSlider + '-in-button').css('display', 'inline-block');
-            var display = (settings.inFullscreen) ? 'block' : 'inline-block';
-            $(settings.selector + currentSlider + '-label').css('display', display);
-
             var toolbar = {
                 closePopups: function ()
                 {
                     $('.diva-popup').css('display', 'none');
                 },
-                switchView: function (destinationView)
-                {
-                    $(settings.selector + currentSlider + '-slider').hide();
-                    $(settings.selector + currentSlider + '-out-button').hide();
-                    $(settings.selector + currentSlider + '-in-button').hide();
-                    $(settings.selector + currentSlider + '-label').hide();
-                    currentSlider = (settings.inGrid) ? 'grid' : 'zoom';
-                    $(settings.selector + currentSlider + '-slider').css('display', 'inline-block');
-                    $(settings.selector + currentSlider + '-out-button').css('display', 'inline-block');
-                    $(settings.selector + currentSlider + '-in-button').css('display', 'inline-block');
-                    var display = (settings.inFullscreen) ? 'block' : 'inline-block';
-                    $(settings.selector + currentSlider + '-label').css('display', display);
-                },
                 switchMode: function ()
                 {
                     var toolsRightElement = document.getElementById(settings.ID + 'tools-right');
                     var pageNavElement = document.getElementById(settings.ID + 'page-nav');
-                    var display;
+
+                    // toggle block/inline-block for labels
+                    var display = (settings.inFullscreen) ? 'block' : 'inline-block';
+                    $(settings.selector + 'grid-label').css('display', display);
+                    $(settings.selector + 'zoom-label').css('display', display);
 
                     if (!settings.inFullscreen)
                     {
@@ -3050,11 +3065,6 @@ window.divaPlugins = [];
                         //move ID-page-nav to beginning of tools right
                         toolsRightElement.removeChild(pageNavElement);
                         toolsRightElement.insertBefore(pageNavElement, toolsRightElement.firstChild);
-
-                        // display-inline visible labels
-                        currentSlider = (settings.inGrid) ? 'grid' : 'zoom';
-                        display = (settings.inFullscreen) ? 'block' : 'inline-block';
-                        $(settings.selector + currentSlider + '-label').css('display', display);
                     }
                     else
                     {
@@ -3064,11 +3074,6 @@ window.divaPlugins = [];
                         //move ID-page-nav to end of tools right
                         toolsRightElement.removeChild(pageNavElement);
                         toolsRightElement.appendChild(pageNavElement);
-
-                        // display-block visible labels
-                        currentSlider = (settings.inGrid) ? 'grid' : 'zoom';
-                        display = (settings.inFullscreen) ? 'block' : 'inline-block';
-                        $(settings.selector + currentSlider + '-label').css('display', display);
                     }
                 }
             };
@@ -3518,13 +3523,8 @@ window.divaPlugins = [];
             if (settings.enableToolbar)
             {
                 settings.toolbar = createToolbar();
+
                 diva.Events.subscribe('ModeDidSwitch', settings.toolbar.switchMode, settings.ID);
-                diva.Events.subscribe('ViewDidSwitch', settings.toolbar.switchView, settings.ID);
-
-                // update toolbar items that depend on data from the objectData AJAX request once it has loaded
-                diva.Events.subscribe('ObjectDidLoad', settings.toolbar.switchView, settings.ID);
-
-                // update toolbar items that depend on the final layout of the viewer
                 diva.Events.subscribe('ViewerDidLoad', settings.toolbar.switchMode, settings.ID);
             }
 

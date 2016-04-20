@@ -20,17 +20,11 @@
     .prevent-selection;
 }
 
-    .diva-zoom-label, .diva-grid-label {
-        .hidden;
-    }
-
     .diva-zoom-out-button, .diva-grid-out-button {
-        .hidden;
         background-image: data-uri("@{iconPath}zoomout.png");
     }
 
     .diva-zoom-in-button, .diva-grid-in-button {
-        .hidden;
         background-image: data-uri("@{iconPath}zoomin.png");
         margin-left: -1px;
     }
@@ -257,7 +251,6 @@
 .diva-slider {
     position: relative;
     top: 0.6em;
-    display: none;
     float: left;
     @media (max-width: 480px) {
         width: 100px;
