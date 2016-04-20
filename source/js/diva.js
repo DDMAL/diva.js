@@ -2654,7 +2654,7 @@ window.divaPlugins = [];
         {
             return elt('input', {
                 id: settings.ID + name,
-                class: name,
+                class: 'diva-' + name + ' diva-slider',
                 type: 'range',
                 value: value,
                 min: min,
