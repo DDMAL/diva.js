@@ -2068,6 +2068,45 @@ window.divaPlugins = [];
             return state;
         };
 
+        var getLoadOptionsForState = function (state)
+        {
+            var options = ('v' in state) ? getViewState(state.v) : {};
+
+            if ('f' in state)
+                options.inFullscreen = state.f;
+
+            if ('z' in state)
+                options.zoomLevel = state.z;
+
+            if ('n' in state)
+                options.pagesPerRow = state.n;
+
+            // Only change specify the page if state.i or state.p is valid
+            var pageIndex = getPageIndex(state.i);
+
+            if (!isPageValid(pageIndex))
+            {
+                if (isPageValid(state.p - 1))
+                    pageIndex = state.p - 1;
+                else
+                    pageIndex = null;
+            }
+
+            if (pageIndex !== null)
+            {
+                var horizontalOffset = parseInt(state.x, 10);
+                var verticalOffset = parseInt(state.y, 10);
+
+                options.position = {
+                    pageIndex: pageIndex,
+                    horizontalOffset: horizontalOffset,
+                    verticalOffset: verticalOffset
+                };
+            }
+
+            return options;
+        };
+
         var getURLHash = function ()
         {
             var hashParams = getState();
@@ -3196,56 +3235,51 @@ window.divaPlugins = [];
             // Adjust the document panel dimensions
             updatePanelSize();
 
-            var verticalOffset;
-            var anchoredVertically = false;
+            var hashState = getHashParamState();
+            var loadOptions = getLoadOptionsForState(hashState);
 
-            var horizontalOffset;
+            var position, needsXCoord, needsYCoord;
+
+            var anchoredVertically = false;
             var anchoredHorizontally = false;
 
-            // y - vertical offset from the top of the relevant page
-            var yParam = parseInt($.getHashParam('y' + settings.hashParamSuffix), 10);
-
-            if (!isNaN(yParam))
+            if (loadOptions.position == null)
             {
-                verticalOffset = yParam;
+                position = loadOptions.position = {
+                    pageIndex: settings.goDirectlyTo
+                };
+
+                needsXCoord = needsYCoord = true;
             }
             else
+            {
+                position = loadOptions.position;
+                needsXCoord = isNaN(position.horizontalOffset);
+                needsYCoord = isNaN(position.verticalOffset);
+            }
+
+            // Set default values for the horizontal and vertical offsets
+            if (needsXCoord)
+            {
+                if (position.pageIndex === 0 && settings.inBookLayout && settings.verticallyOriented)
+                {
+                    // if in book layout, center the first opening by default
+                    position.horizontalOffset = 0 + settings.horizontalPadding;
+                }
+                else
+                {
+                    anchoredHorizontally = true;
+                    position.horizontalOffset = getXOffset(settings.currentPageIndex, "center");
+                }
+            }
+
+            if (needsYCoord)
             {
                 anchoredVertically = true;
-                verticalOffset = getYOffset(settings.currentPageIndex, "top");
+                position.verticalOffset = getYOffset(settings.currentPageIndex, "top");
             }
 
-            // x - horizontal offset from the center of the page
-            var xParam = parseInt($.getHashParam('x' + settings.hashParamSuffix), 10);
-
-            if (!isNaN(xParam))
-            {
-                horizontalOffset = xParam;
-            }
-            else if (settings.goDirectlyTo === 0 && settings.inBookLayout && settings.verticallyOriented)
-            {
-                // if in book layout, center the first opening
-                horizontalOffset = 0 + settings.horizontalPadding;
-            }
-            else
-            {
-                anchoredHorizontally = true;
-                horizontalOffset = getXOffset(settings.currentPageIndex, "center");
-            }
-
-            // If the "fullscreen" hash param is true, go to fullscreen initially
-            var fullscreenParam = $.getHashParam('f' + settings.hashParamSuffix);
-
-            reloadViewer({
-                inFullscreen: (settings.inFullscreen && fullscreenParam !== 'false') || fullscreenParam === 'true',
-                position: {
-                    // Value validated in parseObjectData
-                    // TODO: Move the check somewhere more sensible
-                    pageIndex: settings.goDirectlyTo,
-                    verticalOffset: verticalOffset,
-                    horizontalOffset: horizontalOffset
-                }
-            });
+            reloadViewer(loadOptions);
 
             //prep dimensions one last time now that pages have loaded
             updatePanelSize();
@@ -3315,31 +3349,6 @@ window.divaPlugins = [];
 
             diva.Events.subscribe('DocumentWillLoad', resetTilesLoaded, settings.ID);
 
-            // Check that the desired page is in range
-            if (settings.enableFilename)
-            {
-                var iParam = $.getHashParam('i' + settings.hashParamSuffix);
-                var iParamPage = getPageIndex(iParam);
-
-                if (isPageValid(iParamPage))
-                {
-                    settings.goDirectlyTo = iParamPage;
-                    settings.currentPageIndex = iParamPage;
-                }
-            }
-            else
-            {
-                // Not using the i parameter, check the p parameter
-                // Subtract 1 to get the page index
-                var pParam = parseInt($.getHashParam('p' + settings.hashParamSuffix), 10) - 1;
-
-                if (isPageValid(pParam))
-                {
-                    settings.goDirectlyTo = pParam;
-                    settings.currentPageIndex = pParam;
-                }
-            }
-
             diva.Events.publish('NumberOfPagesDidChange', [settings.numPages], self);
 
             if (settings.enableAutoTitle)
@@ -3381,10 +3390,39 @@ window.divaPlugins = [];
             {
                 settings.inBookLayout = true;
             }
+        };
 
-            // Update view settings (settings.inGrid, settings.inBookLayout) to match 'v' parameter
-            var viewParam = $.getHashParam('v' + settings.hashParamSuffix);
-            switchViewState(viewParam);
+        /** Parse the hash parameters into the format used by getState and setState */
+        var getHashParamState = function ()
+        {
+            var state = {};
+
+            ['f', 'v', 'z', 'n', 'i', 'p', 'y', 'x'].forEach(function (param)
+            {
+                var value = $.getHashParam(param + settings.hashParamSuffix);
+
+                // `false` is returned if the value is missing
+                if (value !== false)
+                    state[param] = value;
+            });
+
+            // Do some awkward special-casing, since this format is kind of weird.
+
+            // For inFullscreen (f), true and false strings should be interpreted
+            // as booleans.
+            if (state.f === 'true')
+                state.f = true;
+            else if (state.f === 'false')
+                state.f = false;
+
+            // Convert numerical values to integers, if provided
+            ['z', 'n', 'p', 'x', 'y'].forEach(function (param)
+            {
+                if (param in state)
+                    state[param] = parseInt(state[param], 10);
+            });
+
+            return state;
         };
 
         var setupViewer = function ()
@@ -3456,29 +3494,6 @@ window.divaPlugins = [];
             settings.outerObject = $(settings.outerElement);
 
             settings.parentObject.append(settings.outerElement);
-
-            // First, n - check if it's in range
-            var nParam = parseInt($.getHashParam('n' + settings.hashParamSuffix), 10);
-
-            if (nParam >= settings.minPagesPerRow && nParam <= settings.maxPagesPerRow)
-            {
-                settings.pagesPerRow = nParam;
-            }
-
-            // Now z - check that it's in range
-            var zParam = $.getHashParam('z' + settings.hashParamSuffix);
-
-            if (zParam !== '')
-            {
-                // If it's empty, we don't want to change the default zoom level
-                zParam = parseInt(zParam, 10);
-
-                // Can't check if it exceeds the max zoom level or not because that data is not available yet ...
-                if (zParam >= settings.minZoomLevel)
-                {
-                    settings.zoomLevel = zParam;
-                }
-            }
 
             // Create the toolbar and display the title + total number of pages
             if (settings.enableToolbar)
@@ -3817,6 +3832,12 @@ window.divaPlugins = [];
             return getState();
         };
 
+        // Align this diva instance with a state object (as returned by getState)
+        this.setState = function (state)
+        {
+            reloadViewer(getLoadOptionsForState(state));
+        };
+
         // Get the instance selector for this instance, since it's auto-generated.
         this.getInstanceSelector = function ()
         {
@@ -3869,41 +3890,6 @@ window.divaPlugins = [];
                 return position;
 
             return position * Math.pow(2, zoomDifference);
-        };
-
-        // Align this diva instance with a state object (as returned by getState)
-        this.setState = function (state)
-        {
-            var options = $.extend(getViewState(state.v), {
-                inFullscreen: state.f,
-                zoomLevel: state.z,
-                pagesPerRow: state.n
-            });
-
-            // Only change specify the page if state.i or state.p is valid
-            var pageIndex = getPageIndex(state.i);
-
-            if (!isPageValid(pageIndex))
-            {
-                if (isPageValid(state.p - 1))
-                    pageIndex = state.p - 1;
-                else
-                    pageIndex = null;
-            }
-
-            if (pageIndex !== null)
-            {
-                var horizontalOffset = parseInt(state.x, 10);
-                var verticalOffset = parseInt(state.y, 10);
-
-                options.position = {
-                    pageIndex: pageIndex,
-                    horizontalOffset: horizontalOffset,
-                    verticalOffset: verticalOffset
-                };
-            }
-
-            reloadViewer(options);
         };
 
         // Re-enables document dragging, scrolling (by keyboard if set), and zooming by double-clicking
