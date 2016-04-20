@@ -15,7 +15,8 @@
     ]
   },
   "scripts": {
-    "test": "gulp develop:test"
+    "test": "gulp develop:test",
+    "trigger-tests": "karma run"
   },
   "repository": {
     "type": "git",

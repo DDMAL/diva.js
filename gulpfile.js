@@ -105,7 +105,7 @@ gulp.task('develop:build', ['develop:styles', 'develop:compile'], function()
     return merge(js, processing, demo, meta);
 });
 
-gulp.task('develop', ['develop:build', 'develop:server'], function()
+gulp.task('develop', ['develop:build', 'develop:server', 'develop:testServer'], function()
 {
     $.livereload.listen();
 
@@ -144,6 +144,23 @@ gulp.task('release', ['develop:build'], function()
         writeArchive(release_name + '.zip',    release_name, zip_archive),
         setVersionForNpm(argv.v)
     ]);
+});
+
+// Start a background Karma server
+gulp.task('develop:testServer', function (done)
+{
+    var server = new karma.Server({
+        configFile: __dirname + '/karma.conf.js',
+        singleRun: false,
+        autoWatch: false,
+        logLevel: 'OFF' // disable logging in the server process
+    });
+
+    server.start();
+
+    console.log('Karma server started. Run `npm run trigger-tests` to run the test suite.');
+
+    done();
 });
 
 gulp.task('develop:test', ['develop:build'], function (done)
