@@ -33,7 +33,7 @@ window.divaPlugins = [];
 
         // These are elements that can be overridden upon instantiation
         // See https://github.com/DDMAL/diva.js/wiki/Settings for more details
-        var defaults = {
+        var settings = {
             adaptivePadding: 0.05,      // The ratio of padding to the page dimension
             arrowScrollAmount: 40,      // The amount (in pixels) to scroll by when using arrow keys
             blockMobileMove: false,     // Prevent moving or scrolling the page on mobile devices
@@ -74,12 +74,12 @@ window.divaPlugins = [];
             zoomLevel: 2                // The initial zoom level (used to store the current zoom level)
         };
 
-        // Apply the defaults, or override them with passed-in options.
-        var settings = $.extend({}, defaults, options);
+        // Override the defaults with passed-in options
+        $.extend(settings, options);
 
         // Things that cannot be changed because of the way they are used by the script
         // Many of these are declared with arbitrary values that are changed later on
-        var globals = {
+        $.extend(settings, {
             allTilesLoaded: [],         // A boolean for each page, indicating if all tiles have been loaded
             currentPageIndex: 0,        // The current page in the viewport (center-most page)
             unclampedVerticalPadding: 0, // Used to keep track of initial padding size before enforcing the minimum size needed to accommodate plugin icons
@@ -136,11 +136,14 @@ window.divaPlugins = [];
             totalWidth: 0,              // The total height for the current zoom level (including padding)
             verticalOffset: 0,          // Distance from the center of the diva element to the left side of the current page
             verticalPadding: 0          // Either the fixed padding or adaptive padding
-        };
-
-        $.extend(settings, globals);
+        });
 
         var self = this;
+
+        var isValidSetting = function (key, value)
+        {
+            return DivaSettingsValidator.isValid(key, value, settings);
+        };
 
         var elemAttrs = function (ident, base)
         {
@@ -1237,11 +1240,6 @@ window.divaPlugins = [];
             return (zoomLevel >= settings.minZoomLevel && zoomLevel <= settings.maxZoomLevel) ? zoomLevel : settings.minZoomLevel;
         };
 
-        var getValidPagesPerRow = function (pagesPerRow)
-        {
-            return (pagesPerRow >= settings.minPagesPerRow && pagesPerRow <= settings.maxPagesPerRow) ? pagesPerRow : settings.maxPagesPerRow;
-        };
-
         // Reset some settings and empty the viewport
         var clearViewer = function ()
         {
@@ -1301,29 +1299,21 @@ window.divaPlugins = [];
         {
             var queuedEvents = [];
 
+            var options = DivaSettingsValidator.getValidatedOptions(settings, options);
+
             // Set the zoom level if valid and fire a ZoomLevelDidChange event
             if (hasChangedOption(options, 'zoomLevel'))
             {
-                var newZoomLevel = getValidZoomLevel(options.zoomLevel);
-
-                if (newZoomLevel !== settings.zoomLevel)
-                {
-                    settings.oldZoomLevel = settings.zoomLevel;
-                    settings.zoomLevel = newZoomLevel;
-                    queuedEvents.push(["ZoomLevelDidChange", [newZoomLevel]]);
-                }
+                settings.oldZoomLevel = settings.zoomLevel;
+                settings.zoomLevel = options.zoomLevel;
+                queuedEvents.push(["ZoomLevelDidChange", [options.zoomLevel]]);
             }
 
             // Set the pages per row if valid and fire an event
             if (hasChangedOption(options, 'pagesPerRow'))
             {
-                var newPagesPerRow = getValidPagesPerRow(options.pagesPerRow);
-
-                if (newPagesPerRow !== settings.pagesPerRow)
-                {
-                    settings.pagesPerRow = newPagesPerRow;
-                    queuedEvents.push(["GridRowNumberDidChange", [newPagesPerRow]]);
-                }
+                settings.pagesPerRow = options.pagesPerRow;
+                queuedEvents.push(["GridRowNumberDidChange", [options.pagesPerRow]]);
             }
 
             // Update verticallyOriented (no event fired)
@@ -1531,10 +1521,6 @@ window.divaPlugins = [];
 
             diva.Events.publish('DocumentWillLoad', [settings], self);
 
-            // FIXME(wabain): reloadViewer also makes this check, so this is
-            // just needed to validate the initial setting. That should be
-            // validated on being set.
-            settings.zoomLevel = getValidZoomLevel(settings.zoomLevel);
             var z = settings.zoomLevel;
 
             //TODO skip this if we just zoomed (happens in preloadPages)
@@ -1644,10 +1630,6 @@ window.divaPlugins = [];
             settings.horizontalOffset = (settings.verticallyOriented ? getPageData(pageIndex, "w") / 2 : (settings.panelWidth / 2));
 
             clearViewer();
-
-            // Make sure the pages per row setting is valid
-            // FIXME(wabain): reloadViewer also makes this check. It should be consolidated.
-            settings.pagesPerRow = getValidPagesPerRow(settings.pagesPerRow);
 
             var horizontalPadding = settings.fixedPadding * (settings.pagesPerRow + 1);
             var pageWidth = (settings.panelWidth - horizontalPadding) / settings.pagesPerRow;
@@ -1959,15 +1941,12 @@ window.divaPlugins = [];
         // Called to handle changing the pages per row slider
         var handleGrid = function (newValue)
         {
-            var newPagesPerRow = getValidPagesPerRow(newValue);
-
-            // If the value provided is invalid, return false
-            if (newPagesPerRow !== newValue)
+            if (!isValidSetting('pagesPerRow', newValue))
                 return false;
 
             return reloadViewer({
                 inGrid: true,
-                pagesPerRow: newPagesPerRow
+                pagesPerRow: newValue
             });
         };
 
@@ -3364,16 +3343,7 @@ window.divaPlugins = [];
             // Convenience value
             settings.numPages = settings.manifest.pages.length;
 
-            // Make sure the set max and min values are valid
-            if (settings.maxZoomLevel < 0 || settings.maxZoomLevel > settings.manifest.maxZoom)
-                settings.maxZoomLevel = settings.manifest.maxZoom;
-
-            if (settings.minZoomLevel < 0 || settings.minZoomLevel > settings.maxZoomLevel)
-                settings.minZoomLevel = 0;
-
-            settings.zoomLevel = getValidZoomLevel(settings.zoomLevel);
-            settings.minPagesPerRow = Math.max(2, settings.minPagesPerRow);
-            settings.maxPagesPerRow = Math.max(settings.minPagesPerRow, settings.maxPagesPerRow);
+            DivaSettingsValidator.validate(settings);
 
             diva.Events.subscribe('DocumentWillLoad', resetTilesLoaded, settings.ID);
 
@@ -3386,10 +3356,6 @@ window.divaPlugins = [];
                 else
                     settings.parentObject.prepend(elt('div', elemAttrs('title'), [settings.manifest.itemTitle]));
             }
-
-            // Make sure the value for settings.goDirectlyTo is valid
-            if (!isPageValid(parseInt(settings.goDirectlyTo), 10))
-                settings.goDirectlyTo = 0;
 
             // Calculate the horizontal and vertical inter-page padding based on the dimensions of the average zoom level
             if (settings.adaptivePadding > 0)
@@ -4562,5 +4528,222 @@ window.divaPlugins = [];
         }
 
         return imageInfo;
+    };
+
+    var DivaSettingsValidator = {
+        validations: [
+            {
+                key: 'goDirectlyTo',
+                validate: function (value, settings)
+                {
+                    if (value < 0 || value >= settings.manifest.pages.length)
+                        return 0;
+                }
+            },
+            {
+                key: 'minPagesPerRow',
+                validate: function (value, settings)
+                {
+                    return Math.max(2, value);
+                }
+            },
+            {
+                key: 'maxPagesPerRow',
+                validate: function (value, settings)
+                {
+                    return Math.max(value, settings.minPagesPerRow);
+                }
+            },
+            {
+                key: 'pagesPerRow',
+                validate: function (value, settings)
+                {
+                    // Default to the maximum
+                    if (value < settings.minPagesPerRow || value > settings.maxPagesPerRow)
+                        return settings.maxPagesPerRow;
+                }
+            },
+            {
+                key: 'maxZoomLevel',
+                validate: function (value, settings, config)
+                {
+                    // Changing this value isn't really an error, it just depends on the
+                    // source manifest
+                    config.suppressWarning();
+
+                    if (value < 0 || value > settings.manifest.maxZoom)
+                        return settings.manifest.maxZoom;
+                }
+            },
+            {
+                key: 'minZoomLevel',
+                validate: function (value, settings, config)
+                {
+                    // Changes based on the manifest value shouldn't trigger a
+                    // warning
+                    if (value > settings.manifest.maxZoom)
+                    {
+                        config.suppressWarning();
+                        return 0;
+                    }
+
+                    if (value < 0 || value > settings.maxZoomLevel)
+                        return 0;
+                }
+            },
+            {
+                key: 'zoomLevel',
+                validate: function (value, settings, config)
+                {
+                    if (value > settings.manifest.maxZoom)
+                    {
+                        config.suppressWarning();
+                        return 0;
+                    }
+
+                    if (value < settings.minZoomLevel || value > settings.maxZoomLevel)
+                        return settings.minZoomLevel;
+                }
+            }
+        ],
+
+        isValid: function (key, value, settings)
+        {
+            // Get the validation index
+            var validationIndex = null;
+
+            this.validations.some(function (validation, index)
+            {
+                if (validation.key !== key)
+                    return false;
+
+                validationIndex = index;
+                return true;
+            });
+
+            if (validationIndex === null)
+                return true;
+
+            // Run the validation
+            var dummyChanges = {};
+            dummyChanges[key] = value;
+            var proxier = this._createSettingsProxier(settings, dummyChanges);
+
+            return !this._runValidation(validationIndex, value, proxier);
+        },
+
+        validate: function (settings)
+        {
+            this._validateOptions({}, settings);
+        },
+
+        getValidatedOptions: function (settings, options)
+        {
+            cloned = $.extend({}, options);
+            this._validateOptions(settings, cloned);
+            return cloned;
+        },
+
+        _validateOptions: function (settings, options)
+        {
+            var settingsProxier = this._createSettingsProxier(settings, options);
+            this._applyValidations(options, settingsProxier);
+        },
+
+        _applyValidations: function (options, proxier)
+        {
+            this.validations.forEach(function (validation, index)
+            {
+                if (!options.hasOwnProperty(validation.key))
+                    return;
+
+                var input = options[validation.key];
+                var corrected = this._runValidation(index, input, proxier);
+
+                if (corrected)
+                {
+                    if (!corrected.warningSuppressed)
+                        this._emitWarning(validation.key, input, corrected.value);
+
+                    options[validation.key] = corrected.value;
+                }
+            }, this);
+        },
+
+        _runValidation: function (index, input, proxier)
+        {
+            var validation = this.validations[index];
+
+            proxier.index = index;
+
+            var warningSuppressed = false;
+            var config = {
+                suppressWarning: function ()
+                {
+                    warningSuppressed = true;
+                }
+            };
+
+            var outputValue = validation.validate(input, proxier.proxy, config);
+
+            if (outputValue === undefined || outputValue === input)
+                return null;
+
+            return {
+                value: outputValue,
+                warningSuppressed: warningSuppressed
+            };
+        },
+
+        /**
+         * The settings proxy wraps the settings object and ensures that
+         * only values which have previously been validated are accessed,
+         * throwing a TypeError otherwise.
+         *
+         * FIXME(wabain): Is it worth keeping this? When I wrote it I had
+         * multiple validation stages and it was a lot harder to keep track
+         * of everything, so this was more valuable.
+         */
+        _createSettingsProxier: function (settings, options)
+        {
+            var proxier = {
+                proxy: {},
+                index: null
+            };
+
+            var properties = {
+                manifest: {
+                    get: function ()
+                    {
+                        return options.manifest || settings.manifest;
+                    }
+                }
+            };
+
+            this.validations.forEach(function (validation, validationIndex)
+            {
+                var validations = this.validations;
+                var requiresManifest = !!validation.withManifest;
+
+                properties[validation.key] = {
+                    get: function ()
+                    {
+                        if (validationIndex < proxier.index)
+                            return (validation.key in options) ? options[validation.key] : settings[validation.key];
+
+                        throw new TypeError('Cannot access setting ' + validation.key + ' while validating ' + validations[proxier.index].key);
+                    }
+                };
+            }, this);
+
+            Object.defineProperties(proxier.proxy, properties);
+
+            return proxier;
+        },
+
+        _emitWarning: function (key, original, corrected)
+        {
+            console.warn('Invalid value for ' + key + ': ' + original + '. Using ' + corrected + ' instead.');
+        }
     };
 })(jQuery);
