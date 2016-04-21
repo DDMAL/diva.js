@@ -369,7 +369,7 @@ QUnit.test("setState()", function (assert)
         this.setState(state);
         assert.ok(!settings.inFullscreen, "Should not be in fullscreen");
         assert.ok(settings.inGrid, "Should be in grid");
-        assert.strictEqual(settings.currentPageIndex, 498, "Current page should be 500 (index of 499)");
+        assert.strictEqual(settings.currentPageIndex, 498, "Current page should be bm_500.tif (index of 498)");
         assert.strictEqual(settings.pagesPerRow, 4, "Pages per row should be 4");
         assert.strictEqual(settings.zoomLevel, 4, "Zoom level should be 4");
 
