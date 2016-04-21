@@ -280,28 +280,39 @@ QUnit.test("getPageIndex()", function (assert)
 // Can't really test getURLHash easily either
 // Since it relies on getState, we can test the public version of that instead
 
-QUnit.skip("getState()", function (assert)
+QUnit.test("getState()", function (assert)
 {
     var done = assert.async();
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
+        var viewportHeight = 700;
+        var scrollbarWidth = $.getScrollbarWidth();
+        var pageDimens = this.getCurrentPageDimensionsAtCurrentZoomLevel();
+
         var expected = {
             f: false,
             v: 'd',
             i: 'bm_001.tif',
             n: 5,
             p: false,
-            x: 340,
-            y: 335,
+            x: pageDimens.width / 2,
+            y: (viewportHeight - scrollbarWidth) / 2,
             z: 2
         };
 
         var actual = this.getState();
 
-        for (var key in expected) {
-            assert.strictEqual(actual[key], expected[key], "Checking key '" + key + "'");
-        }
+        // Sanity check
+        assert.propEqual(Object.keys(actual).sort(), Object.keys(expected).sort(), 'State shape should be as expected');
+
+        Object.keys(expected).forEach(function (key)
+        {
+            if (key === 'x' || key === 'y')
+                assert.close(actual[key], expected[key], 1, "State key '" + key + "'");
+            else
+                assert.strictEqual(actual[key], expected[key], "State key '" + key + "'");
+        });
 
         done();
     });
