@@ -34,9 +34,15 @@ module.exports = function(config)
     }
 
     var files = [
+        // Assets
         {pattern: 'demo/**/*.json', included: false, served: true},
+
+        // Dependencies
+        'node_modules/qunit-assert-close/qunit-assert-close.js',
         'node_modules/jquery/dist/jquery.js',
         'node_modules/jquery-simulate/jquery.simulate.js',
+
+        // CSS
         'build/css/diva.min.css',
         {pattern: 'build/css/diva.min.css.map', included: false, served: true}
     ].concat(srcFiles).concat([

@@ -134,9 +134,8 @@ testHashParams("page number (p), view = 'g'", {p: "100", v: "g"}, function (sett
 
 testHashParams("horizontal and vertical offsets (x, y) without page specified", {x: 100, y: 200}, function (settings, assert)
 {
-    // Expect the page to be centered in the viewport (the -1 is a quick fix for rounding issues)
-    var expectedLeftScroll = (settings.innerElement.clientWidth - settings.panelWidth) / 2 - 1;
-    assert.strictEqual(settings.outerElement.scrollLeft, expectedLeftScroll, 'x position should not change');
+    var expectedLeftScroll = (settings.innerElement.clientWidth - settings.panelWidth) / 2;
+    assert.close(settings.outerElement.scrollLeft, expectedLeftScroll, 1.5, 'x position should not change');
     assert.strictEqual(settings.outerElement.scrollTop, 0, 'y position should not change');
 });
 
