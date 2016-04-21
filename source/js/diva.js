@@ -1331,11 +1331,15 @@ window.divaPlugins = [];
                 settings.verticallyOriented = options.verticallyOriented;
 
             // Update page position (no event fired here)
-            if ('position' in options)
+            if ('goDirectlyTo' in options)
             {
-                settings.goDirectlyTo = options.position.pageIndex;
-                settings.verticalOffset = options.position.verticalOffset;
-                settings.horizontalOffset = options.position.horizontalOffset;
+                settings.goDirectlyTo = options.goDirectlyTo;
+
+                if ('verticalOffset' in options)
+                    settings.verticalOffset = options.verticalOffset;
+
+                if ('horizontalOffset' in options)
+                    settings.horizontalOffset = options.horizontalOffset;
             }
             else
             {
@@ -1742,11 +1746,9 @@ window.divaPlugins = [];
             reloadViewer({
                 inGrid: false,
                 verticallyOriented: verticallyOriented,
-                position: {
-                    pageIndex: settings.currentPageIndex,
-                    verticalOffset: getYOffset(),
-                    horizontalOffset: getXOffset()
-                }
+                goDirectlyTo: settings.currentPageIndex,
+                verticalOffset: getYOffset(),
+                horizontalOffset: getXOffset()
             });
 
             return verticallyOriented;
@@ -1792,11 +1794,9 @@ window.divaPlugins = [];
             // Leave grid view, jump directly to the desired page
             reloadViewer({
                 inGrid: false,
-                position: {
-                    pageIndex: pageIndex,
-                    horizontalOffset: (event.pageX - pageOffset.left) * zoomProportion,
-                    verticalOffset: (event.pageY - pageOffset.top) * zoomProportion
-                }
+                goDirectlyTo: pageIndex,
+                horizontalOffset: (event.pageX - pageOffset.left) * zoomProportion,
+                verticalOffset: (event.pageY - pageOffset.top) * zoomProportion
             });
         };
 
@@ -2094,11 +2094,9 @@ window.divaPlugins = [];
                 var horizontalOffset = parseInt(state.x, 10);
                 var verticalOffset = parseInt(state.y, 10);
 
-                options.position = {
-                    pageIndex: pageIndex,
-                    horizontalOffset: horizontalOffset,
-                    verticalOffset: verticalOffset
-                };
+                options.goDirectlyTo = pageIndex;
+                options.horizontalOffset = horizontalOffset;
+                options.verticalOffset = verticalOffset;
             }
 
             return options;
@@ -2199,11 +2197,9 @@ window.divaPlugins = [];
             settings.resizeTimer = setTimeout(function ()
             {
                 reloadViewer({
-                    position: {
-                        pageIndex: settings.currentPageIndex,
-                        verticalOffset: getCurrentYOffset(),
-                        horizontalOffset: getCurrentXOffset()
-                    }
+                    goDirectlyTo: settings.currentPageIndex,
+                    verticalOffset: getCurrentYOffset(),
+                    horizontalOffset: getCurrentXOffset()
                 });
             }, 200);
         };
@@ -3265,45 +3261,42 @@ window.divaPlugins = [];
             var hashState = getHashParamState();
             var loadOptions = getLoadOptionsForState(hashState);
 
-            var position, needsXCoord, needsYCoord;
+            var needsXCoord, needsYCoord;
 
             var anchoredVertically = false;
             var anchoredHorizontally = false;
 
-            if (loadOptions.position == null)
+            if (loadOptions.goDirectlyTo == null)
             {
-                position = loadOptions.position = {
-                    pageIndex: settings.goDirectlyTo
-                };
-
+                loadOptions.goDirectlyTo = settings.goDirectlyTo;
                 needsXCoord = needsYCoord = true;
             }
             else
             {
-                position = loadOptions.position;
-                needsXCoord = isNaN(position.horizontalOffset);
-                needsYCoord = isNaN(position.verticalOffset);
+                needsXCoord = loadOptions.horizontalOffset == null || isNaN(loadOptions.horizontalOffset);
+                needsYCoord = loadOptions.verticalOffset == null || isNaN(loadOptions.verticalOffset);
             }
 
             // Set default values for the horizontal and vertical offsets
             if (needsXCoord)
             {
-                if (position.pageIndex === 0 && settings.inBookLayout && settings.verticallyOriented)
+                // FIXME: What if inBookLayout/verticallyOriented is changed by loadOptions?
+                if (loadOptions.goDirectlyTo === 0 && settings.inBookLayout && settings.verticallyOriented)
                 {
                     // if in book layout, center the first opening by default
-                    position.horizontalOffset = 0 + settings.horizontalPadding;
+                    loadOptions.horizontalOffset = settings.horizontalPadding;
                 }
                 else
                 {
                     anchoredHorizontally = true;
-                    position.horizontalOffset = getXOffset(settings.currentPageIndex, "center");
+                    loadOptions.horizontalOffset = getXOffset(loadOptions.goDirectlyTo, "center");
                 }
             }
 
             if (needsYCoord)
             {
                 anchoredVertically = true;
-                position.verticalOffset = getYOffset(settings.currentPageIndex, "top");
+                loadOptions.verticalOffset = getYOffset(loadOptions.goDirectlyTo, "top");
             }
 
             reloadViewer(loadOptions);
