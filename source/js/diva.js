@@ -3323,10 +3323,10 @@ window.divaPlugins = [];
                 gotoPage(settings.currentPageIndex, settings.verticalOffset, settings.horizontalOffset);
             }
 
-            diva.Events.publish("ViewerDidLoad", [settings], self);
-
             // signal that everything should be set up and ready to go.
             settings.loaded = true;
+
+            diva.Events.publish("ViewerDidLoad", [settings], self);
         };
 
         var parseObjectData = function(responseData)
