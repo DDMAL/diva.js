@@ -7,19 +7,29 @@ QUnit.module("Navigation", { beforeEach: clearTempDiva });
 
 // FIXME: This test pattern is pretty iffy. There should be more robust ways to do this than
 // with a timeout, and the toolbar and page index are kind of separate concerns.
-var assertPageIs = function (index, divaInst, assert, done)
+var assertPageAfterScroll = function (scroll, index, divaInst, assert, done)
 {
-    setTimeout(function () {
-        var rendered = (index + 1) + '';
+    var outerObject = divaInst.getSettings().outerObject;
 
-        var actualIndex = divaInst.getCurrentPageIndex();
-        assert.strictEqual(actualIndex, index, "The page should now be " + rendered + " (index of " + index + ")");
+    if ('left' in scroll)
+        outerObject.scrollLeft(scroll.left);
 
-        var actualRendered = $(divaInst.getSettings().selector + 'current-page').text();
-        assert.strictEqual(actualRendered, rendered, "The toolbar should have been updated");
+    outerObject.one('scroll', function ()
+    {
+        setTimeout(function () {
+            var rendered = (index + 1) + '';
 
-        done();
-    }, 10);
+            var actualIndex = divaInst.getCurrentPageIndex();
+            assert.strictEqual(actualIndex, index, "The page should now be " + rendered + " (index of " + index + ")");
+
+            var actualRendered = $(divaInst.getSettings().selector + 'current-page').text();
+            assert.strictEqual(actualRendered, rendered, "The toolbar should have been updated");
+
+            done();
+        }, 10);
+    });
+
+    outerObject.scrollTop(scroll.top);
 };
 
 var assertZoomIs = function (level, divaInst, controlName, assert)
@@ -37,8 +47,7 @@ QUnit.test("Scrolling in document view", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        settings.outerObject.scrollTop(10000);
-        assertPageIs(34, this, assert, done);
+        assertPageAfterScroll({ top: 10000 }, 34, this, assert, done);
     });
 
     $.tempDiva({
@@ -55,7 +64,7 @@ QUnit.test("Scrolling in grid view", function (assert)
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         settings.outerObject.scrollTop(10000);
-        assertPageIs(24, this, assert, done);
+        assertPageAfterScroll({ top: 10000 }, 24, this, assert, done);
     });
 
     $.tempDiva({
@@ -71,9 +80,7 @@ QUnit.test("Scrolling in book view", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        settings.outerObject.scrollLeft(200);
-        settings.outerObject.scrollTop(10000);
-        assertPageIs(18, this, assert, done);
+        assertPageAfterScroll({ left: 200, top: 10000 }, 18, this, assert, done);
     });
 
     $.tempDiva({
