@@ -310,18 +310,39 @@ QUnit.test("Switching between regular and fullscreen mode", function (assert)
 {
     var done = assert.async();
 
+    var initialX = null;
+    var initialY = null;
+
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         assert.ok(!settings.inFullscreen, "Not in fullscreen initially");
-        $(settings.selector + 'fullscreen-icon').click();
 
-        // Click the fullscreen icon, then wait for a bit for the event to be triggered
-        setTimeout(function () {
-            assert.ok(settings.inFullscreen, "Should now be in fullscreen");
+        var state = this.getState();
+        initialX = state.x;
+        initialY = state.y;
+
+        this.enterFullscreenMode();
+    });
+
+    diva.Events.subscribe('ModeDidSwitch', function (inFullscreen)
+    {
+        if (inFullscreen)
+        {
+            assert.ok(this.getSettings().inFullscreen, "Should now be in fullscreen");
             assert.ok($('body').hasClass('diva-hide-scrollbar'), "Body should have the hide-scrollbar class");
 
+            this.leaveFullscreenMode();
+        }
+        else
+        {
+            var state = this.getState();
+
+            assert.ok(!this.getSettings().inFullscreen, "Should now not be in fullscreen");
+            assert.strictEqual(state.x, initialX, 'Entering and leaving fullscreen mode should not change the x position');
+            assert.strictEqual(state.y, initialY, 'Entering and leaving fullscreen mode should not change the y position');
+
             done();
-        }, 10);
+        }
     });
 
     $.tempDiva({});

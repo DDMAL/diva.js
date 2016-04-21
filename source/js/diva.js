@@ -1362,7 +1362,7 @@ window.divaPlugins = [];
             if (hasChangedOption(options, 'inFullscreen'))
             {
                 settings.inFullscreen = options.inFullscreen;
-                prepareModeChange(settings.inFullscreen);
+                prepareModeChange(options);
                 queuedEvents.push(["ModeDidSwitch", [settings.inFullscreen]]);
             }
 
@@ -1385,10 +1385,10 @@ window.divaPlugins = [];
         };
 
         // Handles switching in and out of fullscreen mode
-        var prepareModeChange = function (inFullscreen)
+        var prepareModeChange = function (options)
         {
             // Toggle the classes
-            var changeClass = inFullscreen ? 'addClass' : 'removeClass';
+            var changeClass = options.inFullscreen ? 'addClass' : 'removeClass';
             settings.outerObject[changeClass]('diva-fullscreen');
             $('body')[changeClass]('diva-hide-scrollbar');
             settings.parentObject[changeClass]('diva-full-width');
@@ -1396,10 +1396,10 @@ window.divaPlugins = [];
             // Adjust Diva's internal panel size, keeping the old values
             var storedHeight = settings.panelHeight;
             var storedWidth = settings.panelWidth;
-            updatePanelSize();
+            updatePanelSize({ updateOffsets: false });
 
-            // If this isn't the original load...
-            if (settings.oldZoomLevel >= 0 && !settings.inGrid)
+            // If this isn't the original load and the position isn't being changed...
+            if (settings.oldZoomLevel >= 0 && !settings.inGrid && !('verticalOffset' in options))
             {
                 //get the updated panel size
                 var newHeight = settings.panelHeight;
@@ -1411,7 +1411,7 @@ window.divaPlugins = [];
             }
 
             //turn on/off escape key listener
-            if (inFullscreen)
+            if (options.inFullscreen)
                 $(document).on('keyup', escapeListener);
             else
                 $(document).off('keyup', escapeListener);
@@ -2124,14 +2124,22 @@ window.divaPlugins = [];
         };
 
         // updates panelHeight/panelWidth on resize
-        var updatePanelSize = function ()
+        var updatePanelSize = function (options)
         {
             var outerElem = settings.outerElement;
             settings.panelHeight = outerElem.clientHeight;
             settings.panelWidth = outerElem.clientWidth;
 
-            settings.horizontalOffset = getCurrentXOffset();
-            settings.verticalOffset = getCurrentYOffset();
+            // Hack to handle calls in the middle of reloadViewer, where the
+            // logical offsets aren't the real ones
+
+            // FIXME(wabain): Find a more principled solution. Assuming by default that the
+            // current viewport position hasn't been invalidated seems like a mistake.
+            if (!options || options.updateOffsets)
+            {
+                settings.horizontalOffset = getCurrentXOffset();
+                settings.verticalOffset = getCurrentYOffset();
+            }
 
             gotoPage(settings.currentPageIndex, settings.verticalOffset, settings.horizontalOffset);
             return true;

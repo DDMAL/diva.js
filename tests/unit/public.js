@@ -320,7 +320,7 @@ QUnit.test("getState()", function (assert)
     $.tempDiva({});
 });
 
-QUnit.skip("setState()", function (assert)
+QUnit.test("setState()", function (assert)
 {
     var done = assert.async();
 
@@ -336,6 +336,7 @@ QUnit.skip("setState()", function (assert)
             y: 300,
             z: 3
         };
+
         this.setState(state);
         assert.ok(settings.inFullscreen, "Should now be in fullscreen");
         assert.ok(!settings.inGrid, "Should not be in grid");
@@ -344,11 +345,15 @@ QUnit.skip("setState()", function (assert)
         assert.strictEqual(settings.pagesPerRow, 3, "Pages per row should be 3");
         assert.strictEqual(settings.zoomLevel, 3, "Zoom level should be 3");
 
-        // Have to leave fullscreen to test dimension-related things
-        this.leaveFullscreenMode();
+        // Recompute the offsets from first principles
+        var index = this.getPageIndex("bm_005.tif");
+        var topOffset = settings.pageTopOffsets[index];
+        var leftOffset = settings.pageLeftOffsets[index];
+        var x = settings.outerElement.scrollLeft - leftOffset + (settings.outerElement.clientWidth / 2);
+        var y = settings.outerElement.scrollTop - topOffset + (settings.outerElement.clientHeight / 2);
 
-        assert.strictEqual(settings.outerObject.scrollTop(), 8591, "Scroll from top should be default top for bm_005 after leaving fullscreen");
-        assert.strictEqual(settings.outerObject.scrollLeft(), 627, "Scroll from left should be 500 more");
+        assert.close(x, 500, 1, "Scroll from top should be default top for bm_005 after leaving fullscreen");
+        assert.close(y, 300, 1, "Scroll from left should be 500 more");
 
         state = {
             f: false,
