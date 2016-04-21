@@ -18,7 +18,22 @@
             }
             </style>
             <script type="text/javascript">
-                $(document).ready(function() {
+                $(document).ready(function()
+                {
+                    if (window.location.protocol === "https:")
+                    {
+                        var httpUrl = (window.location + '').replace(/^https/, 'http');
+
+                        $('#menu').after(
+                                '<div style="max-width: 500px;margin:auto;padding:10px;">' +
+                                'You are viewing this page through an HTTPS connection. ' +
+                                'Some of the external manifests will not be displayed ' +
+                                'correctly. ' +
+                                '<a href="' + httpUrl + '" style="font-weight: 700;">Switch to HTTP.</a>' +
+                                '</div>'
+                        );
+                    }
+
                     $('#diva-wrapper').diva({
                         fixedHeightGrid: true,
                         objectData: 'https://oculus-dev.harvardx.harvard.edu/manifests/drs:5981093',
