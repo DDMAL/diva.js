@@ -16,7 +16,8 @@ var assertPageAfterScroll = function (scroll, index, divaInst, assert, done)
 
     outerObject.one('scroll', function ()
     {
-        setTimeout(function () {
+        setTimeout(function ()
+        {
             var rendered = (index + 1) + '';
 
             var actualIndex = divaInst.getCurrentPageIndex();
@@ -116,7 +117,8 @@ QUnit.skip('Page positioning on zoom', function (assert)
     });
 });
 
-QUnit.test("Zooming using the slider", function (assert) {
+QUnit.test("Zooming using the slider", function (assert)
+{
     var done = assert.async();
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
@@ -205,7 +207,8 @@ QUnit.test("Scrolling and subsequently zooming in Grid view", function (assert)
         settings.outerObject.scrollTop(10050);
 
         var self = this;
-        setTimeout(function () {
+        setTimeout(function ()
+        {
             assert.strictEqual(self.getCurrentPageIndex(), 160, "The current page should be 170 (10050px down, 1000px viewport)");
 
             $(settings.selector + 'grid-slider').val(8);
@@ -267,9 +270,11 @@ QUnit.test("Zooming by double-clicking", function (assert)
         testEvent.pageY = 350 + wrapperOffset.top;
         testEvent.target = settings.outerObject.find('.diva-document-page')[0];
 
-        setTimeout(function () {
+        setTimeout(function ()
+        {
             settings.outerObject.trigger(testEvent);
-            setTimeout(function () {
+            setTimeout(function ()
+            {
                 assert.strictEqual(settings.zoomLevel, 2, "Zoom level should now be 2");
                 assert.strictEqual(settings.currentPageIndex, 100, "Should still be on page 100");
                 done();
@@ -293,7 +298,8 @@ QUnit.test("Switching between document and grid view", function (assert)
         $(settings.selector + 'grid-icon').click();
 
         // Click the grid icon, then wait a bit for the event to be triggered
-        setTimeout(function () {
+        setTimeout(function ()
+        {
             assert.ok(settings.inGrid, "Should now be in grid");
             assert.ok($(settings.selector + 'grid-out-button').is(':visible'), "Grid buttons should be visible (-)");
             assert.ok($(settings.selector + 'grid-in-button').is(':visible'), "Grid buttons should be visible (+)");
@@ -361,7 +367,8 @@ QUnit.test("Jumping to page in Book view", function (assert)
 
         var dv = this;
 
-        setTimeout(function() {
+        setTimeout(function()
+        {
             assert.ok($(settings.selector + 'page-5').length, "The element for page 6 (index 5) should be in the DOM");
 
             dv.gotoPageByIndex(6);
