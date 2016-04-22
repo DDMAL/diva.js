@@ -1,5 +1,4 @@
-/* jshint node:true */
-'use strict'
+'use strict';
 
 var gulp = require('gulp');
 var $ = require('gulp-load-plugins')();
