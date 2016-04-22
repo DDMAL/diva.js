@@ -400,9 +400,6 @@ QUnit.test("valid max/minPagesPerRow, valid pagesPerRow", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        // Have to enter the grid first, otherwise pagesPerRow isn't changed
-        this.enterGridView();
-
         assert.strictEqual(settings.minPagesPerRow, 3, "minPagesPerRow should be 3");
         assert.strictEqual(settings.maxPagesPerRow, 5, "maxPagesPerRow should be 5");
         assert.strictEqual(settings.pagesPerRow, 5, "pagesPerRow is valid");
@@ -422,8 +419,6 @@ QUnit.test("invalid max/minPagesPerRow, invalid pagesPerRow", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        this.enterGridView();
-
         assert.strictEqual(settings.minPagesPerRow, 2, "minPagesPerRow is invalid, set to 2");
         assert.strictEqual(settings.maxPagesPerRow, 2, "maxPagesPerRow should be set to min");
         assert.strictEqual(settings.pagesPerRow, 2, "invalid pages per row should be set to min");
