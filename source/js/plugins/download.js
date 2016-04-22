@@ -3,6 +3,8 @@ Download plugin for diva.js
 Allows you to download images served by IIPImage or IIIF compatible image servers
 */
 
+var jQuery = require('jquery');
+
 (function ($)
 {
     window.divaPlugins.push((function()

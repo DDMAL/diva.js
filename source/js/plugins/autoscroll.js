@@ -18,6 +18,9 @@ Relevant methods:
     -disableManualScroll, enableManualScroll
 */
 
+var jQuery = require('jquery');
+var diva = require('../diva');
+
 (function ($)
 {
     window.divaPlugins.push((function()

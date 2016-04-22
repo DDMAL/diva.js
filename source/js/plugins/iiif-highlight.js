@@ -3,6 +3,9 @@ IIIF Highlight plugin for diva.js
 Allows you to highlight regions of a page image based off of annotations in a IIIF Manifest
 */
 
+var jQuery = require('jquery');
+var diva = require('../diva');
+
 (function ($)
 {
     window.divaPlugins.push((function()

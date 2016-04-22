@@ -1,6 +1,9 @@
-
 // IIIF Metadata plugin for diva.js
 // Displays object metadata from a IIIF manifest
+
+var jQuery = require('jquery');
+var diva = require('../diva');
+
 (function ($)
 {
     window.divaPlugins.push((function()

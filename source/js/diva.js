@@ -20,9 +20,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-/* globals elt, setDOMAttributes */
 /* jshint unused: true */
 
+var jQuery = require('jquery');
+
+var utils = require('./utils');
+
+var diva = utils.diva,
+    elt = utils.elt,
+    setDOMAttributes = utils.setDOMAttributes;
+
+module.exports = diva;
+
+// Expose the Diva variable globally (needed for plugins, possibly even in CommonJS environments)
+window.diva = diva;
 window.divaPlugins = [];
 
 // this pattern was taken from http://www.virgentech.com/blog/2009/10/building-object-oriented-jquery-plugin.html

@@ -1,5 +1,8 @@
 // Utility methods for testing
 
+var jQuery = require('jquery');
+var $ = jQuery;
+
 (function () {
     // Allows you to clone, create a document viewer on, then remove an element
     $.tempDiva = function (settings) {
@@ -40,7 +43,7 @@
     };
 })(jQuery);
 
-var clearTempDiva = function()
+module.exports.clearTempDiva = function()
 {
     // First, empty it in case something else has been using it
     var dv = $('#diva-temp').data('diva');

@@ -3,6 +3,9 @@ Test coverage: pretty much complete
 Can't really (or don't need to) test any of the others
 */
 
+var $ = require('jquery');
+var elt = require('../../source/js/utils').elt;
+
 QUnit.module("Utility methods");
 
 QUnit.test("getHashParam()", function (assert)
@@ -82,7 +85,7 @@ QUnit.test("updateHashParam()", function (assert)
 });
 
 // Disabled until variable access is worked out
-QUnit.skip("elt()", function (assert)
+QUnit.test("elt()", function (assert)
 {
     // Serialize node type and text content (not attributes, because those are more complicated)
     var serialize = function (node)

@@ -2,6 +2,10 @@
 Test coverage: pretty much complete
 */
 
+var $ = require('jquery');
+var clearTempDiva = require('../utils').clearTempDiva;
+var diva = require('../../source/js/diva');
+
 QUnit.module("Public functions", { beforeEach: clearTempDiva });
 
 QUnit.test("getItemTitle()", function (assert)

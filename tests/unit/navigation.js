@@ -3,6 +3,10 @@ Test coverage: pretty much complete
 Could also test key navigation, but it's pretty difficult and doesn't seem worth it
 */
 
+var $ = require('jquery');
+var clearTempDiva = require('../utils').clearTempDiva;
+var diva = require('../../source/js/diva');
+
 QUnit.module("Navigation", { beforeEach: clearTempDiva });
 
 // FIXME: This test pattern is pretty iffy. There should be more robust ways to do this than

@@ -3,57 +3,34 @@ module.exports = function(config)
     // Default port plus three; hopefully, this will help prevent collisions
     var KARMA_PORT = 9879;
 
-    var srcFiles, reporters, preprocessors;
-
-    if (process.env.TEST_DIVA === 'build')
-    {
-        srcFiles = [
-            'build/js/diva.min.js'
-        ];
-
-        // Don't run coverage on the minified build
-        reporters = ['mocha'];
-        preprocessors = {};
-    }
-    else
-    {
-        // Order is important here
-        srcFiles = [
-            'source/js/utils.js',
-            'source/js/diva.js',
-            'source/js/plugins/highlight.js',
-            'source/js/plugins/canvas.js',
-            'source/js/plugins/download.js'
-        ];
-
-        // Run coverage
-        reporters = ['mocha', 'coverage'];
-        preprocessors = {
-            'source/**/*.js': ['coverage']
-        };
-    }
+    var webpackConfig = require('./webpack.conf.karma');
 
     var files = [
         // Assets
         {pattern: 'demo/**/*.json', included: false, served: true},
 
-        // Dependencies
-        'node_modules/qunit-assert-close/qunit-assert-close.js',
-        'node_modules/jquery/dist/jquery.js',
-        'node_modules/jquery-simulate/jquery.simulate.js',
-
         // CSS
         'build/css/diva.min.css',
-        {pattern: 'build/css/diva.min.css.map', included: false, served: true}
-    ].concat(srcFiles).concat([
-        'tests/utils.js',
-        'tests/unit/**/*.js'
-    ]);
+        {pattern: 'build/css/diva.min.css.map', included: false, served: true},
+
+        // JS (root file)
+        'tests/main.js'
+    ];
 
     config.set({
         frameworks: ['qunit'],
-        reporters: reporters,
-        preprocessors: preprocessors,
+
+        preprocessors: {
+            'tests/main.js': ['webpack', 'sourcemap']
+        },
+
+        webpack: webpackConfig,
+
+        webpackMiddleware: {
+            noInfo: true
+        },
+
+        reporters: ['mocha', 'coverage'],
 
         coverageReporter: {
             type: 'html',

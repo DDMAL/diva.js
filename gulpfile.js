@@ -5,13 +5,27 @@ var $ = require('gulp-load-plugins')();
 var merge = require('merge-stream');
 var sourcemaps = require('gulp-sourcemaps');
 var less = require('gulp-less');
-var uglify = require('gulp-uglify');
-var concat = require('gulp-concat');
 var rename = require('gulp-rename');
 
 var karma = require('karma');
 
 var Promise = require('bluebird');
+
+var getSourceCompiler = (function webpackCompilerGetter()
+{
+    var webpackCompiler = null;
+
+    return function ()
+    {
+        if (webpackCompiler === null)
+        {
+            var webpack = require('webpack');
+            webpackCompiler = webpack(require('./get-webpack-config')(process.env.DIVA_ENV || 'production'));
+        }
+
+        return webpackCompiler;
+    };
+})();
 
 gulp.task('develop:jshint', function()
 {
@@ -21,24 +35,10 @@ gulp.task('develop:jshint', function()
                .pipe($.jshint.reporter('fail'));
 });
 
-gulp.task('develop:compile', function()
+gulp.task('develop:compile', function(done)
 {
-    return gulp.src([
-        'source/js/diva.prefix',
-        'source/js/utils.js',
-        'source/js/diva.js',
-        'source/js/plugins/*.js',
-        'source/js/diva.suffix'
-    ])
-               .pipe(sourcemaps.init())
-               .pipe(concat('diva.min.js'))
-               .pipe(uglify())
-               .pipe(sourcemaps.write('./'))
-               .pipe(gulp.dest('build/js'))
-               .on('error', function()
-               {
-                    console.log('A compiler error has occurred');
-               });
+    getSourceCompiler().run(done);
+
 });
 
 gulp.task('develop:styles', function()
@@ -108,17 +108,34 @@ gulp.task('develop:build', ['develop:styles', 'develop:compile'], function()
     return merge(js, processing, demo, meta);
 });
 
-gulp.task('develop', ['develop:build', 'develop:server', 'develop:testServer'], function()
+gulp.task('develop', ['develop:styles', 'develop:server', 'develop:testServer'], function()
 {
     $.livereload.listen();
 
     gulp.watch([
-        'build/js/**/*',
-        'build/css/diva.css'
+        'build/js/**/*.js',
+        'build/css/**/*.css'
     ]).on('change', $.livereload.changed);
 
-    gulp.watch('source/js/**/*.js', ['develop:jshint', 'develop:compile']);
+    gulp.watch(['source/js/**/*.js', 'tests/**/*.js'], ['develop:jshint']);
     gulp.watch('source/css/**/*.less', ['develop:styles']);
+
+    // This also runs the initial compilation
+    getSourceCompiler().watch({}, logWebpackErrors);
+
+    function logWebpackErrors(err, stats)
+    {
+        if (err)
+            console.error(err);
+
+        var jsonStats = stats.toJson();
+
+        if (jsonStats.errors.length > 0)
+            console.error(jsonStats.errors);
+
+        if (jsonStats.warnings.length > 0)
+            console.error(jsonStats.warnings);
+    }
 });
 
 gulp.task('release', ['develop:build'], function()
@@ -166,7 +183,8 @@ gulp.task('develop:testServer', function (done)
     done();
 });
 
-gulp.task('develop:test', ['develop:build'], function (done)
+// The JS dependencies are bundled inside Karma, so we only to build the styles
+gulp.task('develop:test', ['develop:styles'], function (done)
 {
     new karma.Server({
         configFile: __dirname + '/karma.conf.js',

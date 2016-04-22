@@ -3,6 +3,9 @@ Highlight plugin for diva.js
 Allows you to highlight regions of a page image
 */
 
+var jQuery = require('jquery');
+var diva = require('../diva');
+
 (function ($)
 {
     window.divaPlugins.push((function()

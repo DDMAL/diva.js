@@ -5,6 +5,9 @@ Adds an adjustment icon next to each image
 
 */
 
+var jQuery = require('jquery');
+var diva = require('../diva');
+
 (function ($)
 {
     window.divaPlugins.push((function ()

@@ -1,17 +1,12 @@
 language: node_js
 sudo: false
 
-env:
-  - TEST_DIVA=source
-  - TEST_DIVA=build
-
 install:
-  - npm install -g gulp
   - npm install
 
 script:
-  - gulp develop:jshint
-  - gulp develop:test
+  - npm run lint
+  - npm test
 
 notifications:
 webhooks:
