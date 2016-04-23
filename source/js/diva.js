@@ -1741,29 +1741,38 @@ window.divaPlugins = [];
         {
             // Hold control to zoom out, otherwise, zoom in
             var newZoomLevel = (event.ctrlKey) ? settings.zoomLevel - 1 : settings.zoomLevel + 1;
-            var outerPosition = settings.outerElement.getBoundingClientRect();
-            var pagePosition = this.getBoundingClientRect();
+
+            var focalPoint = getFocalPoint(this, event);
 
             // compensate for interpage padding
             // FIXME: Still a few pixels unaccounted for. This really needs to be accounted for with post-zoom values.
-            var verticalPadding = (settings.verticallyOriented) ? settings.verticalPadding : 0;
-            var horizontalPadding = (settings.verticallyOriented && !settings.inBookLayout) ? 0 : settings.horizontalPadding;
+            if (settings.verticallyOriented)
+                focalPoint.pageRelative.y += settings.verticalPadding;
+
+            if (!settings.verticallyOriented || settings.inBookLayout)
+                focalPoint.pageRelative.x += settings.horizontalPadding;
+
+            handleZoom(newZoomLevel, focalPoint);
+        };
+
+        var getFocalPoint = function (pageElement, event)
+        {
+            var outerPosition = settings.outerElement.getBoundingClientRect();
+            var pagePosition = pageElement.getBoundingClientRect();
 
             // This argument format is awkward and redundant, but it's easiest to
             // compute all these values at once here
-            var focalPoint = {
-                pageIndex: parseInt(this.getAttribute('data-index'), 10),
+            return {
+                pageIndex: parseInt(pageElement.getAttribute('data-index'), 10),
                 viewportRelative: {
                     x: event.pageX - outerPosition.left,
                     y: event.pageY - outerPosition.top
                 },
                 pageRelative: {
-                    x: event.pageX - pagePosition.left + horizontalPadding,
-                    y: event.pageY - pagePosition.top + verticalPadding
+                    x: event.pageX - pagePosition.left,
+                    y: event.pageY - pagePosition.top
                 }
             };
-
-            handleZoom(newZoomLevel, focalPoint);
         };
 
         // Called after double-clicking on a page in grid view
@@ -1795,16 +1804,12 @@ window.divaPlugins = [];
             else
                 return;
 
+            var focalPoint = getFocalPoint(this, event);
+
             // Set scaleWait to true so that we wait for this scale event to finish
             settings.scaleWait = true;
 
-            // Store the offset information so that it can be used in loadDocument()
-            var pageOffset = $(this).offset();
-            settings.horizontalOffset = event.pageX - pageOffset.left;
-            settings.verticalOffset = event.pageY - pageOffset.top;
-            settings.goDirectlyTo = parseInt($(this).attr('data-index'), 10); //page index
-
-            handleZoom(newZoomLevel);
+            handleZoom(newZoomLevel, focalPoint);
         };
 
         var preloadPages = function()
