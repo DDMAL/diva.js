@@ -21,6 +21,7 @@ THE SOFTWARE.
 */
 
 /* globals elt, setDOMAttributes */
+/* jshint unused: true */
 
 window.divaPlugins = [];
 
@@ -380,7 +381,6 @@ window.divaPlugins = [];
             var heightFromTop = settings.pageTopOffsets[pageIndex] + settings.verticalPadding;
             var widthFromLeft = settings.pageLeftOffsets[pageIndex] + settings.horizontalPadding;
             var pageSelector = settings.selector + 'page-' + pageIndex;
-            var plugin;
 
             // If the page has not been loaded yet, append the div to the DOM
             if (!isPageLoaded(pageIndex))
@@ -783,8 +783,7 @@ window.divaPlugins = [];
             settings.innerElement.appendChild(rowDiv);
 
             // Declare variables used in the loop
-            var i, pageIndex, filename, realWidth, realHeight, pageWidth, pageHeight, leftOffset, imageURL, version, quality, iiifSuffix;
-            var imdir = settings.imageDir + "/";
+            var i, pageIndex, filename, realWidth, realHeight, pageWidth, pageHeight, leftOffset, imageURL;
 
             // Load each page within that row
             var ppr = settings.pagesPerRow;
@@ -803,10 +802,6 @@ window.divaPlugins = [];
                 pageWidth = (settings.fixedHeightGrid) ? (settings.rowHeight - settings.fixedPadding) * realWidth / realHeight : settings.gridPageWidth;
                 pageHeight = (settings.fixedHeightGrid) ? settings.rowHeight - settings.fixedPadding : pageWidth / realWidth * realHeight;
                 leftOffset = parseInt(i * (settings.fixedPadding + settings.gridPageWidth) + settings.fixedPadding, 10);
-
-                version = settings.manifest.pages[pageIndex].api;
-                quality = (version >= 2.0) ? 'default' : 'native';
-                iiifSuffix = ',/0/' + quality + '.jpg';
 
                 // Make sure they're all integers for nice, round numbers
                 pageWidth = parseInt(pageWidth, 10);
@@ -2613,13 +2608,13 @@ window.divaPlugins = [];
                 var elem = createSliderElement('zoom-slider', settings.zoomLevel, settings.minZoomLevel, settings.maxZoomLevel);
                 var $elem = $(elem);
 
-                $elem.on('input', function(e)
+                $elem.on('input', function()
                 {
                     var intValue = parseInt(this.value, 10);
                     handleZoom(intValue);
                 });
 
-                $elem.on('change', function (e)
+                $elem.on('change', function ()
                 {
                     var intValue = parseInt(this.value, 10);
                     if (intValue !== settings.zoomLevel)
@@ -2679,13 +2674,13 @@ window.divaPlugins = [];
                 var elem = createSliderElement('grid-slider', settings.pagesPerRow, settings.minPagesPerRow, settings.maxPagesPerRow);
                 var $elem = $(elem);
 
-                $elem.on('input', function(e)
+                $elem.on('input', function()
                 {
                     var intValue = parseInt(elem.value, 10);
                     handleGrid(intValue);
                 });
 
-                $elem.on('change', function (e)
+                $elem.on('change', function ()
                 {
                     var intValue = parseInt(elem.value, 10);
                     if (intValue !== settings.pagesPerRow)
@@ -3135,17 +3130,6 @@ window.divaPlugins = [];
 
             // Hide the throbber if it has already executed
             $(settings.selector + 'throbber').hide();
-        };
-
-        var switchViewState = function (view)
-        {
-            var viewState = getViewState(view);
-
-            if (viewState)
-            {
-                settings.inGrid = viewState.inGrid;
-                settings.inBookLayout = viewState.inBookLayout;
-            }
         };
 
         var getViewState = function(view)
@@ -4026,7 +4010,7 @@ window.divaPlugins = [];
                 cache: true,
                 dataType: 'json',
                 error: ajaxError,
-                success: function (responseData, status, jqxhr)
+                success: function (responseData)
                 {
                     parseObjectData(responseData);
                     hideThrobber();
@@ -4388,8 +4372,6 @@ window.divaPlugins = [];
         var totalHeights = createArrayWithValue(lowestMaxZoom + 1, 0);
         var maxWidths = createArrayWithValue(lowestMaxZoom + 1, 0);
         var maxHeights = createArrayWithValue(lowestMaxZoom + 1, 0);
-        // separate calculation for paged/book view
-        var totalHeightsPaged = createArrayWithValue(lowestMaxZoom + 1, 0);
 
         var pages = [];
         var currentPageZoomData; // dimensions per zoomlevel
@@ -4547,7 +4529,7 @@ window.divaPlugins = [];
             },
             {
                 key: 'minPagesPerRow',
-                validate: function (value, settings)
+                validate: function (value)
                 {
                     return Math.max(2, value);
                 }
@@ -4728,7 +4710,6 @@ window.divaPlugins = [];
             this.validations.forEach(function (validation, validationIndex)
             {
                 var validations = this.validations;
-                var requiresManifest = !!validation.withManifest;
 
                 properties[validation.key] = {
                     get: function ()
