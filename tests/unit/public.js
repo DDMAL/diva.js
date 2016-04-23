@@ -352,8 +352,8 @@ QUnit.test("setState()", function (assert)
         var x = settings.outerElement.scrollLeft - leftOffset + (settings.outerElement.clientWidth / 2);
         var y = settings.outerElement.scrollTop - topOffset + (settings.outerElement.clientHeight / 2);
 
-        assert.close(x, 500, 1, "Scroll from top should be default top for bm_005 after leaving fullscreen");
-        assert.close(y, 300, 1, "Scroll from left should be 500 more");
+        assert.close(x, 500, 1, "x offset should be the specified value");
+        assert.close(y, 300, 1, "y offset should be the specified value");
 
         state = {
             f: false,
