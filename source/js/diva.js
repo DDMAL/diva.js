@@ -1299,7 +1299,7 @@ window.divaPlugins = [];
         {
             var queuedEvents = [];
 
-            var options = DivaSettingsValidator.getValidatedOptions(settings, options);
+            options = DivaSettingsValidator.getValidatedOptions(settings, options);
 
             // Set the zoom level if valid and fire a ZoomLevelDidChange event
             if (hasChangedOption(options, 'zoomLevel'))
@@ -4639,7 +4639,7 @@ window.divaPlugins = [];
 
         getValidatedOptions: function (settings, options)
         {
-            cloned = $.extend({}, options);
+            var cloned = $.extend({}, options);
             this._validateOptions(settings, cloned);
             return cloned;
         },
