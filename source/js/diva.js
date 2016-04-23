@@ -1388,8 +1388,8 @@ window.divaPlugins = [];
             var storedWidth = settings.panelWidth;
             updatePanelSize({ updateOffsets: false });
 
-            // If this isn't the original load and the position isn't being changed...
-            if (settings.oldZoomLevel >= 0 && !settings.inGrid && !('verticalOffset' in options))
+            // If this isn't the original load, the offsets matter, and the position isn't being changed...
+            if (!settings.loaded && !settings.inGrid && !('verticalOffset' in options))
             {
                 //get the updated panel size
                 var newHeight = settings.panelHeight;
