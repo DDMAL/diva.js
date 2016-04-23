@@ -169,7 +169,7 @@ QUnit.test("inViewport()", function (assert)
     });
 });
 
-QUnit.test("toggleFullscreenMode(), enterFullscreen(), leaveFullscreen()", function (assert)
+QUnit.test("toggleFullscreenMode(), enterFullscreenMode(), leaveFullscreenMode()", function (assert)
 {
     var done = assert.async();
 
