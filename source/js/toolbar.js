@@ -318,6 +318,17 @@ function createToolbar(viewer)
             ]);
     };
 
+    var createPageNavigationControls = function ()
+    {
+        // Go to page form
+        var gotoForm = settings.enableGotoPage ? createGotoPageForm() : null;
+
+        return elt('span', elemAttrs('page-nav'),
+            createPageLabel(), // 'Page x of y' label
+            gotoForm
+        );
+    };
+
     var createGotoPageForm = function ()
     {
         var gotoPageInput = elt('input', {
@@ -473,39 +484,12 @@ function createToolbar(viewer)
     // Handles all status updating etc (both fullscreen and not)
     var init = function ()
     {
-        var leftTools = [];
-        var rightTools = [];
-
-        // Toolbar Left
-        leftTools.push(createZoomControls, createGridControls);
-
-        // Toolbar right
-
-        // Page Navigation (Go to page form and 'Page x of y label')
-        rightTools.push(function ()
-        {
-            // Go to page form
-            var gotoForm = settings.enableGotoPage ? createGotoPageForm() : null;
-
-            return elt('span', elemAttrs('page-nav'),
-                createPageLabel(), // 'Page x of y' label
-                gotoForm
-            );
-        });
-
-        rightTools.push(createToolbarButtonGroup);
-
-        var instantiateTools = function (tools)
-        {
-            return tools.map(function (creator)
-            {
-                return creator();
-            });
-        };
+        var leftTools = [createZoomControls(), createGridControls()];
+        var rightTools = [createPageNavigationControls(), createToolbarButtonGroup()];
 
         var tools = elt('div', elemAttrs('tools'),
-            elt('div', elemAttrs('tools-left'), instantiateTools(leftTools)),
-            elt('div', elemAttrs('tools-right'), instantiateTools(rightTools))
+            elt('div', elemAttrs('tools-left'), leftTools),
+            elt('div', elemAttrs('tools-right'), rightTools)
         );
 
         settings.toolbarParentObject.prepend(tools);
