@@ -31,6 +31,7 @@ var elt = require('./utils/elt');
 var generateId = require('./utils/generate-id');
 var getScrollbarWidth = require('./utils/get-scrollbar-width');
 var HashParams = require('./utils/hash-params');
+var Viewport = require('./viewport');
 
 var ActiveDivaController = require('./active-diva-controller');
 var ImageManifest = require('./image-manifest');
@@ -220,8 +221,6 @@ var DivaSettingsValidator = new ValidationRunner({
             pageTopOffsets: [],         // Distance from the top side of each page to the top side of the diva-inner object
             pageTimeouts: [],           // Stack to hold the loadPage timeouts
             pageTools: '',              // The string for page tools
-            panelHeight: 0,             // Height of the document viewer pane
-            panelWidth: 0,              // Width of the document viewer pane
             parentObject: parentObject, // JQuery object referencing the parent element
             plugins: [],                // Filled with the enabled plugins from window.divaPlugins
             previousLeftScroll: 0,      // Used to determine horizontal scroll direction
@@ -240,7 +239,27 @@ var DivaSettingsValidator = new ValidationRunner({
             totalHeight: 0,             // The total height for the current zoom level (including padding)
             totalWidth: 0,              // The total height for the current zoom level (including padding)
             verticalOffset: 0,          // Distance from the center of the diva element to the left side of the current page
-            verticalPadding: 0          // Either the fixed padding or adaptive padding
+            verticalPadding: 0,         // Either the fixed padding or adaptive padding
+            viewport: null              // Object caching the viewport dimensions
+        });
+
+        // Aliases for compatibilty
+        // TODO(wabain): Get rid of usages of these
+        Object.defineProperties(settings, {
+            // Height of the document viewer pane
+            panelHeight: {
+                get: function ()
+                {
+                    return settings.viewport.height;
+                }
+            },
+            // Width of the document viewer pane
+            panelWidth: {
+                get: function ()
+                {
+                    return settings.viewport.width;
+                }
+            }
         });
 
         var self = this;
@@ -285,26 +304,11 @@ var DivaSettingsValidator = new ValidationRunner({
             return -1;
         };
 
-        var getViewport = function ()
-        {
-            var top = settings.outerElement.scrollTop;
-            var bottom = top + settings.panelHeight;
-            var left = settings.outerElement.scrollLeft;
-            var right = left + settings.panelWidth;
-
-            return {
-                top: top,
-                bottom: bottom,
-                left: left,
-                right: right
-            };
-        };
-
         // Checks if a page or tile is within the viewport horizontally
-        var isHorizontallyInViewport = function (left, right, viewportLeft, viewportRight)
+        var isHorizontallyInViewport = function (left, right)
         {
-            var leftOfViewport = viewportLeft - settings.viewportMargin;
-            var rightOfViewport = viewportRight + settings.viewportMargin * 2;
+            var leftOfViewport = settings.viewport.left - settings.viewportMargin;
+            var rightOfViewport = settings.viewport.right + settings.viewportMargin * 2;
 
             var leftVisible = left >= leftOfViewport && left <= rightOfViewport;
             var middleVisible = left <= leftOfViewport && right >= rightOfViewport;
@@ -314,11 +318,11 @@ var DivaSettingsValidator = new ValidationRunner({
         };
 
         // Checks if a page or tile is within the viewport vertically
-        var isVerticallyInViewport = function (top, bottom, viewportTop, viewportBottom)
+        var isVerticallyInViewport = function (top, bottom)
         {
             //topOfViewport may need to have settings.innerObject.offset().top subtracted from it?
-            var topOfViewport = viewportTop - settings.viewportMargin;
-            var bottomOfViewport = viewportBottom + settings.viewportMargin * 2;
+            var topOfViewport = settings.viewport.top - settings.viewportMargin;
+            var bottomOfViewport = settings.viewport.bottom + settings.viewportMargin * 2;
 
             var topVisible = top >= topOfViewport && top <= bottomOfViewport;
             var middleVisible = top <= topOfViewport && bottom >= bottomOfViewport;
@@ -328,7 +332,7 @@ var DivaSettingsValidator = new ValidationRunner({
         };
 
         // Check if a tile is near the specified viewport and thus should be loaded (performance-sensitive)
-        var isTileVisible = function (pageIndex, tile, viewport)
+        var isTileVisible = function (pageIndex, tile)
         {
             // Viewport-relative coordinates
             var tileTop, tileBottom, tileLeft, tileRight;
@@ -347,7 +351,7 @@ var DivaSettingsValidator = new ValidationRunner({
             tileBottom = tileTop + settings.tileHeight;
             tileRight = tileLeft + settings.tileWidth;
 
-            return isVerticallyInViewport(tileTop, tileBottom, viewport.top, viewport.bottom) && isHorizontallyInViewport(tileLeft, tileRight, viewport.left, viewport.right);
+            return isVerticallyInViewport(tileTop, tileBottom) && isHorizontallyInViewport(tileLeft, tileRight);
         };
 
         // Check if a tile has been loaded (note: performance-sensitive function)
@@ -373,7 +377,7 @@ var DivaSettingsValidator = new ValidationRunner({
         };
 
         // Check if a page is in or near the viewport and thus should be loaded
-        var isPageVisible = function (pageIndex, viewport)
+        var isPageVisible = function (pageIndex)
         {
             var topOfPage = settings.pageTopOffsets[pageIndex];
             var bottomOfPage = topOfPage + getPageData(pageIndex, 'h') + settings.verticalPadding;
@@ -381,7 +385,7 @@ var DivaSettingsValidator = new ValidationRunner({
             var leftOfPage = settings.pageLeftOffsets[pageIndex];
             var rightOfPage = leftOfPage + getPageData(pageIndex, 'w') + settings.horizontalPadding;
 
-            return isVerticallyInViewport(topOfPage, bottomOfPage, viewport.top, viewport.bottom) && isHorizontallyInViewport(leftOfPage, rightOfPage, viewport.left, viewport.right);
+            return isVerticallyInViewport(topOfPage, bottomOfPage) && isHorizontallyInViewport(leftOfPage, rightOfPage);
         };
 
         // Check if a page has been appended to the DOM
@@ -391,7 +395,7 @@ var DivaSettingsValidator = new ValidationRunner({
         };
 
         // Loads page tiles into the supplied canvas.
-        var loadTiles = function(pageIndex, filename, width, height, canvasElement, viewport)
+        var loadTiles = function(pageIndex, filename, width, height, canvasElement)
         {
             var context;
 
@@ -436,7 +440,7 @@ var DivaSettingsValidator = new ValidationRunner({
                 if (isTileLoaded(pageIndex, tileIndex, context, tile.left, tile.top))
                     return;
 
-                if (!isTileVisible(pageIndex, tile, viewport))
+                if (!isTileVisible(pageIndex, tile))
                 {
                     allTilesLoaded = false;
                     return;
@@ -456,15 +460,14 @@ var DivaSettingsValidator = new ValidationRunner({
         var loadPageTiles = function (pageIndex, filename, width, height, pageSelector)
         {
             var pageElement = document.getElementById(settings.ID + 'page-' + pageIndex);
-            var viewport = getViewport();
 
             // If the page is no longer in the viewport or loaded, don't load any tiles
-            if (pageElement === null || !isPageVisible(pageIndex, viewport))
+            if (pageElement === null || !isPageVisible(pageIndex))
                 return;
 
             var canvasElement = document.getElementById(settings.ID + 'canvas-' + pageIndex);
 
-            loadTiles(pageIndex, filename, width, height, canvasElement, viewport);
+            loadTiles(pageIndex, filename, width, height, canvasElement);
 
             diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector], self);
         };
@@ -593,7 +596,7 @@ var DivaSettingsValidator = new ValidationRunner({
             }
         };
 
-        var preloadPage = function(pageIndex, viewport)
+        var preloadPage = function(pageIndex)
         {
             // Exit if we've already started preloading this page and we're not still zooming
             if (typeof settings.pagePreloadCanvases[pageIndex] !== 'undefined' && !settings.isZooming)
@@ -619,7 +622,7 @@ var DivaSettingsValidator = new ValidationRunner({
             }
 
             // Load visible page tiles into canvas
-            loadTiles(pageIndex, filename, width, height, pageCanvas, viewport);
+            loadTiles(pageIndex, filename, width, height, pageCanvas);
 
             diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector], self);
 
@@ -650,18 +653,14 @@ var DivaSettingsValidator = new ValidationRunner({
         var pageAboveViewport = function (pageIndex)
         {
             var bottomOfPage = settings.pageTopOffsets[pageIndex] + getPageData(pageIndex, 'h') + settings.verticalPadding;
-            var topOfViewport = settings.outerElement.scrollTop;
-
-            return bottomOfPage < topOfViewport;
+            return bottomOfPage < settings.viewport.top;
         };
 
         // Check if the top of a page is below the bottom of a viewport (scrolling up)
         var pageBelowViewport = function (pageIndex)
         {
             var topOfPage = settings.pageTopOffsets[pageIndex];
-            var bottomOfViewport = settings.outerElement.scrollTop + settings.panelHeight;
-
-            return topOfPage > bottomOfViewport;
+            return topOfPage > settings.viewport.bottom;
         };
 
         // Check if the left side of a page is to the left of a viewport (scrolling right)
@@ -669,18 +668,14 @@ var DivaSettingsValidator = new ValidationRunner({
         var pageLeftOfViewport = function (pageIndex)
         {
             var rightOfPage = settings.pageLeftOffsets[pageIndex] + getPageData(pageIndex, 'w') + settings.horizontalPadding;
-            var leftOfViewport = settings.outerElement.scrollLeft;
-
-            return rightOfPage < leftOfViewport;
+            return rightOfPage < settings.viewport.left;
         };
 
         // Check if the right side of a page is to the right of a viewport (scrolling left)
         var pageRightOfViewport = function (pageIndex)
         {
             var leftOfPage = settings.pageLeftOffsets[pageIndex];
-            var rightOfViewport = settings.outerElement.scrollLeft + settings.panelWidth;
-
-            return leftOfPage > rightOfViewport;
+            return leftOfPage > settings.viewport.right;
         };
 
         //shorthand functions to determine which is the right "before" viewport function to use
@@ -696,7 +691,7 @@ var DivaSettingsValidator = new ValidationRunner({
         };
 
         // Called by adjust pages - determine what pages should be visible, and show them
-        var attemptPageShow = function (pageIndex, direction, viewport)
+        var attemptPageShow = function (pageIndex, direction)
         {
             if (isPageValid(pageIndex))
             {
@@ -704,33 +699,33 @@ var DivaSettingsValidator = new ValidationRunner({
                 {
                     // Direction is positive - we're scrolling down
                     // If the page should be visible, then yes, add it
-                    if (isPageVisible(pageIndex, viewport))
+                    if (isPageVisible(pageIndex))
                     {
                         loadPage(pageIndex);
                         settings.lastPageLoaded = pageIndex;
 
                         // Recursively call this function until there's nothing to add
-                        attemptPageShow(settings.lastPageLoaded + 1, direction, viewport);
+                        attemptPageShow(settings.lastPageLoaded + 1, direction);
                     }
-                    else if (isPageValid(pageIndex + 1) && isPageVisible(pageIndex + 1, viewport))
+                    else if (isPageValid(pageIndex + 1) && isPageVisible(pageIndex + 1))
                     {
                         loadPage(pageIndex + 1);
                         settings.lastPageLoaded = pageIndex + 1;
 
                         // Recursively call this function until there's nothing to add
-                        attemptPageShow(settings.lastPageLoaded + 1, direction, viewport);
+                        attemptPageShow(settings.lastPageLoaded + 1, direction);
                     }
                     else if (pageBeforeViewport(pageIndex))
                     {
                         // If the page is below the viewport. try to load the next one
-                        attemptPageShow(pageIndex + 1, direction, viewport);
+                        attemptPageShow(pageIndex + 1, direction);
                     }
                 }
                 else
                 {
                     // Direction is negative - we're scrolling up
                     // If it's near the viewport, yes, add it
-                    if (isPageVisible(pageIndex, viewport))
+                    if (isPageVisible(pageIndex))
                     {
                         loadPage(pageIndex);
 
@@ -738,20 +733,20 @@ var DivaSettingsValidator = new ValidationRunner({
                         settings.firstPageLoaded = pageIndex;
 
                         // Recursively call this function until there's nothing to add
-                        attemptPageShow(settings.firstPageLoaded - 1, direction, viewport);
+                        attemptPageShow(settings.firstPageLoaded - 1, direction);
                     }
-                    else if (isPageValid(pageIndex - 1) && isPageVisible(pageIndex - 1, viewport))
+                    else if (isPageValid(pageIndex - 1) && isPageVisible(pageIndex - 1))
                     {
                         loadPage(pageIndex - 1);
                         settings.firstPageLoaded = pageIndex - 1;
 
                         // Recursively call this function until there's nothing to add
-                        attemptPageShow(settings.firstPageLoaded - 1, direction, viewport);
+                        attemptPageShow(settings.firstPageLoaded - 1, direction);
                     }
                     else if (pageAfterViewport(pageIndex))
                     {
                         // Attempt to call this on the next page, do not increment anything
-                        attemptPageShow(pageIndex - 1, direction, viewport);
+                        attemptPageShow(pageIndex - 1, direction);
                     }
                 }
             }
@@ -793,14 +788,11 @@ var DivaSettingsValidator = new ValidationRunner({
         {
             var i;
 
-            // Cache scroll state
-            var viewport = getViewport();
-
             if (direction < 0)
             {
                 // Direction is negative, so we're scrolling up/left (doesn't matter for these calls)
                 // Attempt showing pages in ascending order starting from the last visible page in the viewport
-                attemptPageShow(settings.lastPageLoaded, direction, viewport);
+                attemptPageShow(settings.lastPageLoaded, direction);
                 setCurrentPage(-1);
                 attemptPageHide(settings.lastPageLoaded, direction);
             }
@@ -808,7 +800,7 @@ var DivaSettingsValidator = new ValidationRunner({
             {
                 // Direction is positive so we're scrolling down/right (doesn't matter for these calls)
                 // Attempt showing pages in descending order starting from the first visible page in the viewport
-                attemptPageShow(settings.firstPageLoaded, direction, viewport);
+                attemptPageShow(settings.firstPageLoaded, direction);
                 setCurrentPage(1);
                 attemptPageHide(settings.firstPageLoaded, direction);
             }
@@ -823,12 +815,12 @@ var DivaSettingsValidator = new ValidationRunner({
                 var lpl = settings.lastPageLoaded;
                 for (i = Math.max(settings.firstPageLoaded, 0); i <= lpl; i++)
                 {
-                    if (isPageVisible(i, viewport))
+                    if (isPageVisible(i))
                         loadPage(i);
                 }
             }
 
-            var scrollSoFar = (settings.verticallyOriented ? viewport.top : viewport.left);
+            var scrollSoFar = (settings.verticallyOriented ? settings.viewport.top : settings.viewport.left);
 
             diva.Events.publish("ViewerDidScroll", [scrollSoFar], self);
 
@@ -851,12 +843,12 @@ var DivaSettingsValidator = new ValidationRunner({
         };
 
         // Check if a row should be visible in the viewport
-        var isRowVisible = function (rowIndex, viewportTop, viewportBottom)
+        var isRowVisible = function (rowIndex)
         {
             var topOfRow = settings.rowHeight * rowIndex;
             var bottomOfRow = topOfRow + settings.rowHeight + settings.fixedPadding;
 
-            return isVerticallyInViewport(topOfRow, bottomOfRow, viewportTop, viewportBottom);
+            return isVerticallyInViewport(topOfRow, bottomOfRow);
         };
 
         // Check if a row (in grid view) is present in the DOM
@@ -959,37 +951,33 @@ var DivaSettingsValidator = new ValidationRunner({
         var rowAboveViewport = function (rowIndex)
         {
             var bottomOfRow = settings.rowHeight * (rowIndex + 1);
-            var topOfViewport = settings.outerElement.scrollTop;
-
-            return (bottomOfRow < topOfViewport);
+            return (bottomOfRow < settings.viewport.top);
         };
 
         // Check if the top of a row is below the bottom of the viewport (scrolling up)
         var rowBelowViewport = function (rowIndex)
         {
             var topOfRow = settings.rowHeight * rowIndex;
-            var bottomOfViewport = settings.outerElement.scrollTop + settings.panelHeight;
-
-            return (topOfRow > bottomOfViewport);
+            return (topOfRow > settings.viewport.bottom);
         };
 
         // Same thing as attemptPageShow only with rows
-        var attemptRowShow = function (rowIndex, direction, viewportTop, viewportBottom)
+        var attemptRowShow = function (rowIndex, direction)
         {
             if (direction > 0)
             {
                 if (isRowValid(rowIndex))
                 {
-                    if (isRowVisible(rowIndex, viewportTop, viewportBottom))
+                    if (isRowVisible(rowIndex))
                     {
                         loadRow(rowIndex);
                         settings.lastRowLoaded = rowIndex;
 
-                        attemptRowShow(settings.lastRowLoaded + 1, direction, viewportTop, viewportBottom);
+                        attemptRowShow(settings.lastRowLoaded + 1, direction);
                     }
                     else if (rowAboveViewport(rowIndex))
                     {
-                        attemptRowShow(rowIndex + 1, direction, viewportTop, viewportBottom);
+                        attemptRowShow(rowIndex + 1, direction);
                     }
                 }
             }
@@ -997,16 +985,16 @@ var DivaSettingsValidator = new ValidationRunner({
             {
                 if (isRowValid(rowIndex))
                 {
-                    if (isRowVisible(rowIndex, viewportTop, viewportBottom))
+                    if (isRowVisible(rowIndex))
                     {
                         loadRow(rowIndex);
                         settings.firstRowLoaded = rowIndex;
 
-                        attemptRowShow(settings.firstRowLoaded - 1, direction, viewportTop, viewportBottom);
+                        attemptRowShow(settings.firstRowLoaded - 1, direction);
                     }
                     else if (rowBelowViewport(rowIndex))
                     {
-                        attemptRowShow(rowIndex - 1, direction, viewportTop, viewportBottom);
+                        attemptRowShow(rowIndex - 1, direction);
                     }
                 }
             }
@@ -1038,24 +1026,20 @@ var DivaSettingsValidator = new ValidationRunner({
 
         var adjustRows = function (direction)
         {
-            // Cache scroll state
-            var viewportTop = settings.outerElement.scrollTop;
-            var viewportBottom = viewportTop + settings.panelHeight;
-
             if (direction < 0)
             {
-                attemptRowShow(settings.firstRowLoaded, -1, viewportTop, viewportBottom);
+                attemptRowShow(settings.firstRowLoaded, -1);
                 setCurrentRow(-1);
                 attemptRowHide(settings.lastRowLoaded, -1);
             }
             else if (direction > 0)
             {
-                attemptRowShow(settings.lastRowLoaded, 1, viewportTop, viewportBottom);
+                attemptRowShow(settings.lastRowLoaded, 1);
                 setCurrentRow(1);
                 attemptRowHide(settings.firstRowLoaded, 1);
             }
 
-            var newTopScroll = settings.outerElement.scrollTop;
+            var newTopScroll = settings.viewport.top;
 
             diva.Events.publish("ViewerDidScroll", [newTopScroll], self);
 
@@ -1122,15 +1106,15 @@ var DivaSettingsValidator = new ValidationRunner({
         {
             var currentPage = settings.currentPageIndex;
             var pageToConsider = currentPage + direction;
-            var outerElement = settings.outerElement;
+            var viewport = settings.viewport;
 
             pageToConsider = getClosestVisiblePage(pageToConsider, direction);
 
             if (!isPageValid(pageToConsider))
                 return false;
 
-            var middleOfViewport = (settings.verticallyOriented ? outerElement.scrollTop + (settings.panelHeight / 2) : outerElement.scrollLeft + (settings.panelWidth / 2));
-            var verticalMiddleOfViewport = outerElement.scrollLeft + (settings.panelWidth / 2);
+            var middleOfViewport = (settings.verticallyOriented ? viewport.top + (settings.panelHeight / 2) : viewport.left + (settings.panelWidth / 2));
+            var verticalMiddleOfViewport = viewport.left + (settings.panelWidth / 2);
             var changeCurrentPage = false;
 
             if (direction < 0)
@@ -1225,7 +1209,7 @@ var DivaSettingsValidator = new ValidationRunner({
         {
             var currentRow = Math.floor(settings.currentPageIndex / settings.pagesPerRow);
             var rowToConsider = currentRow + parseInt(direction, 10);
-            var topScroll = settings.outerElement.scrollTop;
+            var topScroll = settings.viewport.top;
             var middleOfViewport = topScroll + (settings.panelHeight / 2);
             var changeCurrentRow = false;
 
@@ -1289,8 +1273,8 @@ var DivaSettingsValidator = new ValidationRunner({
         {
             var desiredScroll = calculateDesiredScroll(pageIndex, verticalOffset, horizontalOffset);
 
-            settings.outerElement.scrollTop = desiredScroll.top;
-            settings.outerElement.scrollLeft = desiredScroll.left;
+            settings.viewport.top = desiredScroll.top;
+            settings.viewport.left = desiredScroll.left;
 
             // Pretend that this is the current page
             if (pageIndex !== settings.currentPageIndex)
@@ -1308,7 +1292,8 @@ var DivaSettingsValidator = new ValidationRunner({
         var gotoRow = function (pageIndex)
         {
             var desiredRow = Math.floor(pageIndex / settings.pagesPerRow);
-            settings.outerElement.scrollTop = desiredRow * settings.rowHeight;
+
+            settings.viewport.top = desiredRow * settings.rowHeight;
 
             // Pretend that this is the current page (it probably isn't)
             settings.currentPageIndex = pageIndex;
@@ -1339,7 +1324,7 @@ var DivaSettingsValidator = new ValidationRunner({
             settings.innerElement.style.transformOrigin = '';
 
             settings.allTilesLoaded = [];
-            settings.outerElement.scrollTop = 0;
+            settings.viewport.top = 0;
 
             while (settings.innerElement.firstChild)
             {
@@ -1673,7 +1658,7 @@ var DivaSettingsValidator = new ValidationRunner({
 
             for (var i = 0; i < settings.numPages; i++)
             {
-                if (isPageVisible(i, getViewport()))
+                if (isPageVisible(i))
                 {
                     loadPage(i);
 
@@ -1741,16 +1726,13 @@ var DivaSettingsValidator = new ValidationRunner({
             settings.pageTopOffsets = [];
             settings.pageLeftOffsets = [];
 
-            var viewportTop = settings.outerElement.scrollTop;
-            var viewportBottom = viewportTop + settings.panelHeight;
-
             // Figure out the row each page is in
             var np = settings.numPages;
             for (i = 0; i < np; i += settings.pagesPerRow)
             {
                 rowIndex = Math.floor(i / settings.pagesPerRow);
 
-                if (isRowVisible(rowIndex, viewportTop, viewportBottom))
+                if (isRowVisible(rowIndex))
                 {
                     settings.firstRowLoaded = (settings.firstRowLoaded < 0) ? rowIndex : settings.firstRowLoaded;
                     loadRow(rowIndex);
@@ -1909,19 +1891,16 @@ var DivaSettingsValidator = new ValidationRunner({
             var documentDimensions = calculateDocumentDimensions(settings.zoomLevel);
             calculatePageOffsets(documentDimensions.widthToSet, documentDimensions.heightToSet);
 
-            //    b. determine diva-inner's visible rectangle
-            var viewport = getViewport();
-
-            //    c. for all pages (see loadDocument)
+            //    b. for all pages (see loadDocument)
             //        i) if page coords fall within visible coords, add to visible page block
             var pageBlockFound = false;
 
             for (var i = 0; i < settings.numPages; i++)
             {
-                if (isPageVisible(i, viewport))
+                if (isPageVisible(i))
                 {
                     // it will be visible, start loading it at the new zoom level into an offscreen canvas
-                    settings.pagePreloadCanvases[i] = preloadPage(i, viewport);
+                    settings.pagePreloadCanvases[i] = preloadPage(i);
                     pageBlockFound = true;
                 }
                 else if (pageBlockFound) // There will only be one consecutive block of pages to load; once we find a page that's invisible, we can terminate this loop.
@@ -1978,8 +1957,8 @@ var DivaSettingsValidator = new ValidationRunner({
             settings.verticalOffset = (focalPoint.pageRelative.y * zoomRatio) - focalYToCenter;
 
             // Set up the origin for the transform
-            originX = focalPoint.viewportRelative.x + settings.outerElement.scrollLeft;
-            originY = focalPoint.viewportRelative.y + settings.outerElement.scrollTop;
+            originX = focalPoint.viewportRelative.x + settings.viewport.left;
+            originY = focalPoint.viewportRelative.y + settings.viewport.top;
             settings.innerElement.style.transformOrigin = originX + 'px ' + originY + 'px';
 
             // Before the first zoom, save currently visible canvases in previousZoomLevelCanvases so preloadPages can start drawing overtop the existing page data
@@ -1989,7 +1968,7 @@ var DivaSettingsValidator = new ValidationRunner({
 
                 for (var pageIndex = 0; pageIndex < settings.numPages; pageIndex++)
                 {
-                    if (isPageVisible(pageIndex, getViewport()))
+                    if (isPageVisible(pageIndex))
                     {
                         settings.previousZoomLevelCanvases[pageIndex] = document.getElementById(settings.ID + 'canvas-' + pageIndex);
                         pageBlockFound = true;
@@ -2081,7 +2060,7 @@ var DivaSettingsValidator = new ValidationRunner({
         //gets distance from the center of the diva-outer element to the top of the current page
         var getCurrentYOffset = function()
         {
-            var scrollTop = settings.outerElement.scrollTop;
+            var scrollTop = settings.viewport.top;
             var elementHeight = settings.panelHeight;
 
             return (scrollTop - settings.pageTopOffsets[settings.currentPageIndex] + parseInt(elementHeight / 2, 10));
@@ -2090,7 +2069,7 @@ var DivaSettingsValidator = new ValidationRunner({
         //gets distance from the center of the diva-outer element to the left of the current page
         var getCurrentXOffset = function()
         {
-            var scrollLeft = settings.outerElement.scrollLeft;
+            var scrollLeft = settings.viewport.left;
             var elementWidth = settings.panelWidth;
 
             return (scrollLeft - settings.pageLeftOffsets[settings.currentPageIndex] + parseInt(elementWidth / 2, 10));
@@ -2188,9 +2167,7 @@ var DivaSettingsValidator = new ValidationRunner({
         // updates panelHeight/panelWidth on resize
         var updatePanelSize = function (options)
         {
-            var outerElem = settings.outerElement;
-            settings.panelHeight = outerElem.clientHeight;
-            settings.panelWidth = outerElem.clientWidth;
+            settings.viewport.invalidate();
 
             // Hack to handle calls in the middle of reloadViewer, where the
             // logical offsets aren't the real ones
@@ -2405,8 +2382,10 @@ var DivaSettingsValidator = new ValidationRunner({
         {
             var direction;
 
-            var newScrollTop = settings.outerElement.scrollTop;
-            var newScrollLeft = settings.outerElement.scrollLeft;
+            settings.viewport.invalidate();
+
+            var newScrollTop = settings.viewport.top;
+            var newScrollLeft = settings.viewport.left;
 
             if (settings.verticallyOriented || settings.inGrid)
                 direction = newScrollTop - settings.previousTopScroll;
@@ -2473,7 +2452,7 @@ var DivaSettingsValidator = new ValidationRunner({
                 // Space or page down - go to the next page
                 if ((settings.enableSpaceScroll && !event.shiftKey && event.keyCode === spaceKey) || (settings.enableKeyScroll && event.keyCode === pageDownKey))
                 {
-                    settings.outerElement.scrollTop += settings.panelHeight;
+                    settings.viewport.top += settings.panelHeight;
                     return false;
                 }
                 else if (!settings.enableSpaceScroll && event.keyCode === spaceKey)
@@ -2491,37 +2470,37 @@ var DivaSettingsValidator = new ValidationRunner({
                     {
                         case pageUpKey:
                             // Page up - go to the previous page
-                            settings.outerElement.scrollTop -= settings.panelHeight;
+                            settings.viewport.top -= settings.panelHeight;
                             return false;
 
                         case upArrowKey:
                             // Up arrow - scroll up
-                            settings.outerElement.scrollTop -= settings.arrowScrollAmount;
+                            settings.viewport.top -= settings.arrowScrollAmount;
                             return false;
 
                         case downArrowKey:
                             // Down arrow - scroll down
-                            settings.outerElement.scrollTop += settings.arrowScrollAmount;
+                            settings.viewport.top += settings.arrowScrollAmount;
                             return false;
 
                         case leftArrowKey:
                             // Left arrow - scroll left
-                            settings.outerElement.scrollLeft -= settings.arrowScrollAmount;
+                            settings.viewport.left -= settings.arrowScrollAmount;
                             return false;
 
                         case rightArrowKey:
                             // Right arrow - scroll right
-                            settings.outerElement.scrollLeft += settings.arrowScrollAmount;
+                            settings.viewport.left += settings.arrowScrollAmount;
                             return false;
 
                         case homeKey:
                             // Home key - go to the beginning of the document
-                            settings.outerElement.scrollTop = 0;
+                            settings.viewport.top = 0;
                             return false;
 
                         case endKey:
                             // End key - go to the end of the document
-                            settings.outerElement.scrollTop = settings.totalHeight;
+                            settings.viewport.top = settings.totalHeight;
                             return false;
 
                         default:
@@ -3028,6 +3007,8 @@ var DivaSettingsValidator = new ValidationRunner({
 
             settings.parentObject.append(settings.outerElement);
 
+            settings.viewport = new Viewport(settings.outerElement);
+
             // Create the toolbar and display the title + total number of pages
             if (settings.enableToolbar)
             {
@@ -3076,7 +3057,6 @@ var DivaSettingsValidator = new ValidationRunner({
                     gotoRow(pageIndex);
                 else
                     gotoPage(pageIndex, getYOffset(pageIndex, yAnchor), getXOffset(pageIndex, xAnchor));
-
                 return true;
             }
             return false;
@@ -3222,9 +3202,7 @@ var DivaSettingsValidator = new ValidationRunner({
             var left = settings.pageLeftOffsets[pageIndex] + leftOffset;
             var right = left + width;
 
-            var viewport = getViewport();
-
-            return isVerticallyInViewport(top, bottom, viewport.top, viewport.bottom) && isHorizontallyInViewport(left, right, viewport.left, viewport.right);
+            return isVerticallyInViewport(top, bottom) && isHorizontallyInViewport(left, right);
         };
 
         //Public wrapper for isPageVisible
