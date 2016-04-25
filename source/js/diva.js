@@ -2433,24 +2433,14 @@ var DivaSettingsValidator = new ValidationRunner({
         var handleEvents = function ()
         {
             // Change the cursor for dragging
-            settings.innerObject.mouseover(function ()
-            {
-                $(this).removeClass('diva-grabbing').addClass('diva-grab');
-            });
-
-            settings.innerObject.mouseout(function ()
-            {
-                $(this).removeClass('diva-grab');
-            });
-
             settings.innerObject.mousedown(function ()
             {
-                $(this).removeClass('diva-grab').addClass('diva-grabbing');
+                $(this).addClass('diva-grabbing');
             });
 
             settings.innerObject.mouseup(function ()
             {
-                $(this).removeClass('diva-grabbing').addClass('diva-grab');
+                $(this).removeClass('diva-grabbing');
             });
 
             bindMouseEvents();

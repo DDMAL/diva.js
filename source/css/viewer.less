@@ -141,9 +141,14 @@
 }
 
     .diva-inner {
+        .grab;
         position: relative;
         overflow: hidden;
         margin: 0 auto;
+
+        &.diva-grabbing {
+            .grabbing;
+        }
     }
 
         .diva-page {
@@ -194,14 +199,6 @@
 .diva-row {
     position: absolute;
     width: 100%;
-}
-
-.diva-grab {
-    .grab;
-}
-
-.diva-grabbing {
-    .grabbing;
 }
 
 .diva-fullscreen {
