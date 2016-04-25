@@ -1461,7 +1461,7 @@ var DivaSettingsValidator = new ValidationRunner({
             // Adjust Diva's internal panel size, keeping the old values
             var storedHeight = settings.panelHeight;
             var storedWidth = settings.panelWidth;
-            updatePanelSize({ updateOffsets: false });
+            settings.viewport.invalidate();
 
             // If this isn't the original load, the offsets matter, and the position isn't being changed...
             if (!settings.loaded && !settings.inGrid && !('verticalOffset' in options))
@@ -2165,20 +2165,12 @@ var DivaSettingsValidator = new ValidationRunner({
         };
 
         // updates panelHeight/panelWidth on resize
-        var updatePanelSize = function (options)
+        var updatePanelSize = function ()
         {
             settings.viewport.invalidate();
 
-            // Hack to handle calls in the middle of reloadViewer, where the
-            // logical offsets aren't the real ones
-
-            // FIXME(wabain): Find a more principled solution. Assuming by default that the
-            // current viewport position hasn't been invalidated seems like a mistake.
-            if (!options || options.updateOffsets)
-            {
-                settings.horizontalOffset = getCurrentXOffset();
-                settings.verticalOffset = getCurrentYOffset();
-            }
+            settings.horizontalOffset = getCurrentXOffset();
+            settings.verticalOffset = getCurrentYOffset();
 
             gotoPage(settings.currentPageIndex, settings.verticalOffset, settings.horizontalOffset);
             return true;
