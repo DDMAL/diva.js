@@ -26,8 +26,8 @@ var jQuery = require('jquery');
 
 require('./utils/jquery-extensions');
 
+var diva = require('./diva-global');
 var elt = require('./utils/elt');
-var Events = require('./utils/events');
 var generateId = require('./utils/generate-id');
 var getScrollbarWidth = require('./utils/get-scrollbar-width');
 var HashParams = require('./utils/hash-params');
@@ -36,15 +36,11 @@ var ActiveDivaController = require('./active-diva-controller');
 var ImageManifest = require('./image-manifest');
 var ValidationRunner = require('./validation-runner');
 
-var diva = {
-    Events: new Events()
-};
-
-module.exports = diva;
-
 // Start the active Diva tracker
 // FIXME(wabain): Could defer this, if the logic isn't just getting removed
 var activeDiva = new ActiveDivaController(); // jshint ignore: line
+
+module.exports = diva;
 
 // Expose the Diva variable globally (needed for plugins, possibly even in CommonJS environments)
 window.diva = diva;
