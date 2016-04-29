@@ -27,16 +27,13 @@ var jQuery = require('jquery');
 require('./utils/jquery-extensions');
 
 var diva = require('./diva-global');
-var eltLib = require('./utils/elt');
+var elt = require('./utils/elt');
 var generateId = require('./utils/generate-id');
 var getScrollbarWidth = require('./utils/get-scrollbar-width');
 
 var ActiveDivaController = require('./active-diva-controller');
 var ImageManifest = require('./image-manifest');
 var ValidationRunner = require('./validation-runner');
-
-var elt = eltLib.elt;
-var setDOMAttributes = eltLib.setDOMAttributes;
 
 // Start the active Diva tracker
 // FIXME(wabain): Could defer this, if the logic isn't just getting removed
@@ -524,7 +521,7 @@ var DivaSettingsValidator = new ValidationRunner({
                 }
 
                 // FIXME(wabain): Why is this declared after the fact?
-                setDOMAttributes(canvasElement, {
+                elt.setAttributes(canvasElement, {
                     id: settings.ID + 'canvas-' + pageIndex,
                     class: 'diva-canvas',
                     style: {
@@ -1779,7 +1776,7 @@ var DivaSettingsValidator = new ValidationRunner({
                 minHeight: null
             }, dimensions);
 
-            setDOMAttributes(settings.innerElement, {
+            elt.setAttributes(settings.innerElement, {
                 style: dimensions
             });
         };

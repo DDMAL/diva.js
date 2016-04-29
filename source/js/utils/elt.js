@@ -1,5 +1,5 @@
-module.exports.elt = elt;
-module.exports.setDOMAttributes = setDOMAttributes;
+module.exports = elt;
+module.exports.setAttributes = setDOMAttributes;
 
 /**
  * Convenience function to create a DOM element, set attributes on it, and

@@ -1,4 +1,4 @@
-var elt = require('../../../source/js/utils/elt').elt;
+var elt = require('../../../source/js/utils/elt');
 
 QUnit.module('elt()');
 
