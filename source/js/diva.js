@@ -3738,6 +3738,24 @@ var DivaSettingsValidator = new ValidationRunner({
             return handleZoom(zoomLevel);
         };
 
+        this.getGridPagesPerRow = function ()
+        {
+            // TODO(wabain): Add test case
+            return this.pagesPerRow;
+        };
+
+        this.setGridPagesPerRow = function (newValue)
+        {
+            // TODO(wabain): Add test case
+            if (!isValidSetting('pagesPerRow', newValue))
+                return false;
+
+            return reloadViewer({
+                inGrid: true,
+                pagesPerRow: newValue
+            });
+        };
+
         // Zoom in. Will return false if it's at the maximum zoom
         this.zoomIn = function ()
         {
