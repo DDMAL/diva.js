@@ -2849,8 +2849,7 @@ var DivaSettingsValidator = new ValidationRunner({
 
             var selectView = function (view)
             {
-                // FIXME: Why is this indirection needed?
-                diva.Events.publish('UserDidChooseView', [view], self);
+                changeView(view);
 
                 //hide view menu
                 $(viewOptionsList).hide();
@@ -3155,9 +3154,6 @@ var DivaSettingsValidator = new ValidationRunner({
 
             subscribe('ModeDidSwitch', switchMode);
             subscribe('ViewerDidLoad', switchMode);
-
-            // Handle view choices set from the view menu
-            subscribe('UserDidChooseView', changeView);
 
             var toolbar = {
                 element: tools,
