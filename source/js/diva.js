@@ -26,11 +26,11 @@ var jQuery = require('jquery');
 
 require('./utils/jquery-extensions');
 
-var HashParams = require('./utils/hash-params');
 var elt = require('./utils/elt');
 var Events = require('./utils/events');
 var generateId = require('./utils/generate-id');
 var getScrollbarWidth = require('./utils/get-scrollbar-width');
+var HashParams = require('./utils/hash-params');
 
 var ActiveDivaController = require('./active-diva-controller');
 var ImageManifest = require('./image-manifest');
