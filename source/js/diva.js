@@ -28,6 +28,7 @@ require('./utils/jquery-extensions');
 
 var diva = require('./diva-global');
 var eltLib = require('./utils/elt');
+var generateId = require('./utils/generate-id');
 
 var ActiveDivaController = require('./active-diva-controller');
 var ImageManifest = require('./image-manifest');
@@ -3558,7 +3559,7 @@ var DivaSettingsValidator = new ValidationRunner({
             settings.mobileWebkit = window.orientation !== undefined;
 
             // Generate an ID that can be used as a prefix for all the other IDs
-            settings.ID = $.generateId('diva-');
+            settings.ID = generateId('diva-');
             settings.selector = '#' + settings.ID;
 
             // Figure out the hashParamSuffix from the ID

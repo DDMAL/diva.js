@@ -5,6 +5,7 @@ Test coverage: pretty much complete
 var $ = require('jquery');
 var clearTempDiva = require('../utils').clearTempDiva;
 var diva = require('../../source/js/diva');
+var generateId = require('../../source/js/utils/generate-id');
 
 QUnit.module("Hash params", { beforeEach: clearTempDiva });
 
@@ -15,7 +16,7 @@ var testHashParams = function (testName, hashParams, onReadyCallback, config)
         var done = assert.async();
 
         var previousHash = window.location.hash;
-        var suffix = parseInt($.generateId(), 10) + 1;
+        var suffix = parseInt(generateId(), 10) + 1;
 
         var hashValue;
         var first = true;

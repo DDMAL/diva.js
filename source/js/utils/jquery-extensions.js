@@ -1,18 +1,5 @@
 var jQuery = require('jquery');
 
-// from http://forrst.com/posts/jQuery_element_ID_generator-RoM
-(function ($) {
-    var counter = 1;
-    $.generateId = function(suffix) {
-        var generatedId;
-        do {
-            generatedId = (counter++) + (suffix ? '-' + suffix : '');
-        } while(document.getElementById(generatedId));
-
-        return generatedId;
-    };
-})(jQuery);
-
 // From http://www.alexandre-gomes.com/?p=115, modified slightly
 (function ($) {
     $.getScrollbarWidth = function() {
