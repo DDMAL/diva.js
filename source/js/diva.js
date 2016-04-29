@@ -27,6 +27,7 @@ var jQuery = require('jquery');
 require('./utils/jquery-extensions');
 
 var diva = require('./diva-global');
+var HashParams = require('./utils/hash-params');
 var elt = require('./utils/elt');
 var generateId = require('./utils/generate-id');
 var getScrollbarWidth = require('./utils/get-scrollbar-width');
@@ -3484,7 +3485,7 @@ var DivaSettingsValidator = new ValidationRunner({
 
             ['f', 'v', 'z', 'n', 'i', 'p', 'y', 'x'].forEach(function (param)
             {
-                var value = $.getHashParam(param + settings.hashParamSuffix);
+                var value = HashParams.get(param + settings.hashParamSuffix);
 
                 // `false` is returned if the value is missing
                 if (value !== false)
