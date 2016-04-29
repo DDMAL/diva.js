@@ -5,6 +5,7 @@ Test coverage: pretty much complete
 var $ = require('jquery');
 var clearTempDiva = require('../utils').clearTempDiva;
 var diva = require('../../source/js/diva');
+var getScrollbarWidth = require('../../source/js/utils/get-scrollbar-width');
 
 QUnit.module("Public functions", { beforeEach: clearTempDiva });
 
@@ -291,7 +292,7 @@ QUnit.test("getState()", function (assert)
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         var viewportHeight = 700;
-        var scrollbarWidth = $.getScrollbarWidth();
+        var scrollbarWidth = getScrollbarWidth();
         var pageDimens = this.getCurrentPageDimensionsAtCurrentZoomLevel();
 
         var expected = {

@@ -29,6 +29,7 @@ require('./utils/jquery-extensions');
 var diva = require('./diva-global');
 var eltLib = require('./utils/elt');
 var generateId = require('./utils/generate-id');
+var getScrollbarWidth = require('./utils/get-scrollbar-width');
 
 var ActiveDivaController = require('./active-diva-controller');
 var ImageManifest = require('./image-manifest');
@@ -3553,7 +3554,9 @@ var DivaSettingsValidator = new ValidationRunner({
         var init = function ()
         {
             // First figure out the width of the scrollbar in this browser
-            settings.scrollbarWidth = $.getScrollbarWidth();
+            // TODO(wabain): Cache this somewhere else
+            // Only some of the plugins rely on this now
+            settings.scrollbarWidth = getScrollbarWidth();
 
             // If window.orientation is defined, then it's probably mobileWebkit
             settings.mobileWebkit = window.orientation !== undefined;
