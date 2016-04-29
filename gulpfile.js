@@ -77,6 +77,7 @@ gulp.task('develop:server', function(done)
         .on('listening', function()
         {
             console.log('Started a web server on http://localhost:9001');
+            console.log('Visit http://localhost:9001/demo/ or http://localhost:9001/diva/tests/');
             done();
         });
 });
