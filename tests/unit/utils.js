@@ -4,7 +4,10 @@ Can't really (or don't need to) test any of the others
 */
 
 var $ = require('jquery');
-var elt = require('../../source/js/utils').elt;
+
+require('../../source/js/utils/jquery-extensions');
+
+var elt = require('../../source/js/utils/elt').elt;
 
 QUnit.module("Utility methods");
 

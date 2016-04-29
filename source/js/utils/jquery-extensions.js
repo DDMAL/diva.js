@@ -120,115 +120,115 @@ var jQuery = require('jquery');
  */
 (function ($) { // secure $ jQuery alias
 
-/**
- * Adds the ability to manage elements scroll by dragging
- * one or more of its descendant elements. Options parameter
- * allow to specifically select which inner elements will
- * respond to the drag events.
- *
- * options properties:
- * ------------------------------------------------------------------------
- *  dragSelector         | jquery selector to apply to each wrapped element
- *                       | to find which will be the dragging elements.
- *                       | Defaults to '>:first' which is the first child of
- *                       | scrollable element
- * ------------------------------------------------------------------------
- *  acceptPropagatedEvent| Will the dragging element accept propagated
- *                       | events? default is yes, a propagated mouse event
- *                       | on a inner element will be accepted and processed.
- *                       | If set to false, only events originated on the
- *                       | draggable elements will be processed.
- * ------------------------------------------------------------------------
- *  preventDefault       | Prevents the event to propagate further effectivey
- *                       | dissabling other default actions. Defaults to true
- * ------------------------------------------------------------------------
- *
- *  usage examples:
- *
- *  To add the scroll by drag to the element id=viewport when dragging its
- *  first child accepting any propagated events
- *  $('#viewport').dragscrollable();
- *
- *  To add the scroll by drag ability to any element div of class viewport
- *  when dragging its first descendant of class dragMe responding only to
- *  evcents originated on the '.dragMe' elements.
- *  $('div.viewport').dragscrollable({dragSelector:'.dragMe:first',
+    /**
+     * Adds the ability to manage elements scroll by dragging
+     * one or more of its descendant elements. Options parameter
+     * allow to specifically select which inner elements will
+     * respond to the drag events.
+     *
+     * options properties:
+     * ------------------------------------------------------------------------
+     *  dragSelector         | jquery selector to apply to each wrapped element
+     *                       | to find which will be the dragging elements.
+     *                       | Defaults to '>:first' which is the first child of
+     *                       | scrollable element
+     * ------------------------------------------------------------------------
+     *  acceptPropagatedEvent| Will the dragging element accept propagated
+     *                       | events? default is yes, a propagated mouse event
+     *                       | on a inner element will be accepted and processed.
+     *                       | If set to false, only events originated on the
+     *                       | draggable elements will be processed.
+     * ------------------------------------------------------------------------
+     *  preventDefault       | Prevents the event to propagate further effectivey
+     *                       | dissabling other default actions. Defaults to true
+     * ------------------------------------------------------------------------
+     *
+     *  usage examples:
+     *
+     *  To add the scroll by drag to the element id=viewport when dragging its
+     *  first child accepting any propagated events
+     *  $('#viewport').dragscrollable();
+     *
+     *  To add the scroll by drag ability to any element div of class viewport
+     *  when dragging its first descendant of class dragMe responding only to
+     *  evcents originated on the '.dragMe' elements.
+     *  $('div.viewport').dragscrollable({dragSelector:'.dragMe:first',
  *                                    acceptPropagatedEvent: false});
- *
- *  Notice that some 'viewports' could be nested within others but events
- *  would not interfere as acceptPropagatedEvent is set to false.
- *
- */
-$.fn.dragscrollable = function( options ){
+     *
+     *  Notice that some 'viewports' could be nested within others but events
+     *  would not interfere as acceptPropagatedEvent is set to false.
+     *
+     */
+    $.fn.dragscrollable = function( options ){
 
-    var settings = $.extend(
-        {
-            dragSelector:'>:first',
-            acceptPropagatedEvent: true,
-            preventDefault: true
-        },options || {});
+        var settings = $.extend(
+            {
+                dragSelector:'>:first',
+                acceptPropagatedEvent: true,
+                preventDefault: true
+            },options || {});
 
 
-    var dragscroll= {
-        mouseDownHandler : function(event) {
-            // mousedown, left click, check propagation
-            if (event.which!=1 ||
-                (!event.data.acceptPropagatedEvent && event.target != this)){
-                return false;
+        var dragscroll= {
+            mouseDownHandler : function(event) {
+                // mousedown, left click, check propagation
+                if (event.which!=1 ||
+                    (!event.data.acceptPropagatedEvent && event.target != this)){
+                    return false;
+                }
+
+                // Initial coordinates will be the last when dragging
+                event.data.lastCoord = {left: event.clientX, top: event.clientY};
+
+                $.event.add( document, "mouseup",
+                    dragscroll.mouseUpHandler, event.data );
+                $.event.add( document, "mousemove",
+                    dragscroll.mouseMoveHandler, event.data );
+                if (event.data.preventDefault) {
+                    event.preventDefault();
+                    return false;
+                }
+            },
+            mouseMoveHandler : function(event) { // User is dragging
+                // How much did the mouse move?
+                var delta = {left: (event.clientX - event.data.lastCoord.left),
+                    top: (event.clientY - event.data.lastCoord.top)};
+
+                // Set the scroll position relative to what ever the scroll is now
+                event.data.scrollable.scrollLeft(
+                    event.data.scrollable.scrollLeft() - delta.left);
+                event.data.scrollable.scrollTop(
+                    event.data.scrollable.scrollTop() - delta.top);
+
+                // Save where the cursor is
+                event.data.lastCoord={left: event.clientX, top: event.clientY};
+                if (event.data.preventDefault) {
+                    event.preventDefault();
+                    return false;
+                }
+
+            },
+            mouseUpHandler : function(event) { // Stop scrolling
+                $.event.remove( document, "mousemove", dragscroll.mouseMoveHandler);
+                $.event.remove( document, "mouseup", dragscroll.mouseUpHandler);
+                if (event.data.preventDefault) {
+                    event.preventDefault();
+                    return false;
+                }
             }
+        };
 
-            // Initial coordinates will be the last when dragging
-            event.data.lastCoord = {left: event.clientX, top: event.clientY};
-
-            $.event.add( document, "mouseup",
-                         dragscroll.mouseUpHandler, event.data );
-            $.event.add( document, "mousemove",
-                         dragscroll.mouseMoveHandler, event.data );
-            if (event.data.preventDefault) {
-                event.preventDefault();
-                return false;
-            }
-        },
-        mouseMoveHandler : function(event) { // User is dragging
-            // How much did the mouse move?
-            var delta = {left: (event.clientX - event.data.lastCoord.left),
-                         top: (event.clientY - event.data.lastCoord.top)};
-
-            // Set the scroll position relative to what ever the scroll is now
-            event.data.scrollable.scrollLeft(
-                            event.data.scrollable.scrollLeft() - delta.left);
-            event.data.scrollable.scrollTop(
-                            event.data.scrollable.scrollTop() - delta.top);
-
-            // Save where the cursor is
-            event.data.lastCoord={left: event.clientX, top: event.clientY};
-            if (event.data.preventDefault) {
-                event.preventDefault();
-                return false;
-            }
-
-        },
-        mouseUpHandler : function(event) { // Stop scrolling
-            $.event.remove( document, "mousemove", dragscroll.mouseMoveHandler);
-            $.event.remove( document, "mouseup", dragscroll.mouseUpHandler);
-            if (event.data.preventDefault) {
-                event.preventDefault();
-                return false;
-            }
-        }
-    };
-
-    // set up the initial events
-    this.each(function() {
-        // closure object data for each scrollable element
-        var data = {scrollable : $(this),
-                    acceptPropagatedEvent : settings.acceptPropagatedEvent,
-                    preventDefault : settings.preventDefault };
-        // Set mouse initiating event on the desired descendant
-        $(this).find(settings.dragSelector).
-                        bind('mousedown', data, dragscroll.mouseDownHandler);
-    });
-}; //end plugin dragscrollable
+        // set up the initial events
+        this.each(function() {
+            // closure object data for each scrollable element
+            var data = {scrollable : $(this),
+                acceptPropagatedEvent : settings.acceptPropagatedEvent,
+                preventDefault : settings.preventDefault };
+            // Set mouse initiating event on the desired descendant
+            $(this).find(settings.dragSelector).
+            bind('mousedown', data, dragscroll.mouseDownHandler);
+        });
+    }; //end plugin dragscrollable
 
 })( jQuery ); // confine scope
 
@@ -820,353 +820,3 @@ $.fn.dragscrollable = function( options ){
             .unbind('dragstart', settings.events.dragStart);
     };
 })(jQuery);
-
-/**
-*      Events. Pub/Sub system for Loosely Coupled logic.
-*      Based on Peter Higgins' port from Dojo to jQuery
-*      https://github.com/phiggins42/bloody-jquery-plugins/blob/master/pubsub.js
-*
-*      Re-adapted to vanilla Javascript
-*
-*      @class Events
-*/
-var diva = (function() {
-    var cache = {};
-    var pub = {
-        Events: {
-            /**
-             *      diva.Events.publish
-             *      e.g.: diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector], this);
-             *
-             *      @class Events
-             *      @method publish
-             *      @param topic {String}
-             *      @param args  {Array}
-             *      @param scope {Object=} Optional - Subscribed functions will be executed with the supplied object as `this`.
-             *          It is necessary to supply this argument with the self variable when within a Diva instance.
-             *          The scope argument is matched with the instance ID of subscribers to determine whether they
-             *              should be executed. (See instanceID argument of subscribe.)
-             */
-            publish: function (topic, args, scope)
-            {
-                if (cache[topic])
-                {
-                    var thisTopic = cache[topic];
-
-                    if (typeof thisTopic.global !== 'undefined')
-                    {
-                        var thisTopicGlobal = thisTopic.global;
-                        var i = thisTopicGlobal.length;
-
-                        while (i--)
-                        {
-                            thisTopicGlobal[i].apply(scope || this, args || []);
-                        }
-                    }
-
-                    if (scope && typeof scope.getInstanceId !== 'undefined')
-                    {
-                        // get publisher instance ID from scope arg, compare, and execute if match
-                        var instanceID = scope.getInstanceId();
-
-                        if (cache[topic][instanceID])
-                        {
-                            var thisTopicInstance = cache[topic][instanceID];
-                            var j = thisTopicInstance.length;
-
-                            while (j--)
-                            {
-                                thisTopicInstance[j].apply(scope || this, args || []);
-                            }
-                        }
-                    }
-                }
-            },
-            /**
-             *      diva.Events.subscribe
-             *      e.g.: diva.Events.subscribe("PageDidLoad", highlight, settings.ID)
-             *
-             *      @class Events
-             *      @method subscribe
-             *      @param topic {String}
-             *      @param callback {Function}
-             *      @param instanceID {String=} Optional - String representing the ID of a Diva instance; if provided,
-             *                                            callback only fires for events published from that instance.
-             *      @return Event handler {Array}
-             */
-            subscribe: function (topic, callback, instanceID)
-            {
-                if (!cache[topic])
-                {
-                    cache[topic] = {};
-                }
-
-                if (typeof instanceID === 'string')
-                {
-                    if (!cache[topic][instanceID])
-                    {
-                        cache[topic][instanceID] = [];
-                    }
-
-                    cache[topic][instanceID].push(callback);
-                }
-                else
-                {
-                    if (!cache[topic].global)
-                    {
-                        cache[topic].global = [];
-                    }
-
-                    cache[topic].global.push(callback);
-                }
-
-                var handle = instanceID ? [topic, callback, instanceID] : [topic, callback];
-
-                return handle;
-            },
-            /**
-             *      diva.Events.unsubscribe
-             *      e.g.: var handle = Events.subscribe("PageDidLoad", highlight);
-             *              Events.unsubscribe(handle);
-             *
-             *      @class Events
-             *      @method unsubscribe
-             *      @param handle {Array}
-             *      @param completely {Boolean=} - Unsubscribe all events for a given topic.
-             *      @return success {Boolean}
-             */
-            unsubscribe: function (handle, completely)
-            {
-                var t = handle[0];
-
-                if (cache[t])
-                {
-                    var topicArray;
-                    var instanceID = (handle.length === 3 && typeof cache[t][handle[2]] !== 'undefined') ? handle[2] : 'global';
-
-                    topicArray = cache[t][instanceID];
-                    var i = topicArray.length;
-
-                    while (i--)
-                    {
-                        if (topicArray[i] === handle[1])
-                        {
-                            cache[t][instanceID].splice(i, 1);
-
-                            if (completely)
-                            {
-                                delete cache[t][instanceID];
-                            }
-
-                            return true;
-                        }
-                    }
-                }
-
-                return false;
-            },
-            /**
-             *      diva.Events.unsubscribeAll
-             *      e.g.: diva.Events.unsubscribeAll('global');
-             *
-             *      @class Events
-             *      @param {String=} Optional - instance ID to remove subscribers from or 'global' (if omitted,
-             *                                 subscribers in all scopes removed)
-             *      @method unsubscribe
-             */
-            unsubscribeAll: function (instanceID)
-            {
-                if (instanceID)
-                {
-                    var topics = Object.keys(cache);
-                    var i = topics.length;
-                    var topic;
-
-                    while (i--)
-                    {
-                        topic = topics[i];
-
-                        if (cache[topic][instanceID] !== 'undefined')
-                        {
-                            delete cache[topic][instanceID];
-                        }
-                    }
-                }
-                else
-                {
-                    cache = {};
-                }
-            }
-        }
-    };
-
-    return pub;
-}());
-
-module.exports.diva = diva;
-
-//Used to keep track of whether Diva was last clicked or which Diva was last clicked when there are multiple
-var activeDivaController = (function ($)
-{
-    return function ()
-    {
-        var active;
-
-        //global click listener
-        $(document).on('click', function(e)
-        {
-            updateActive($(e.target));
-        });
-
-        //parameter should already be a jQuery selector
-        var updateActive = function (target)
-        {
-            var nearestOuter;
-
-            //these will find 0 or 1 objects, never more
-            var findOuter = target.find('.diva-outer');
-            var closestOuter = target.closest('.diva-outer');
-            var outers = document.getElementsByClassName('diva-outer');
-            var outerLen = outers.length;
-            var idx;
-
-            //clicked on something that was not either a parent or sibling of a diva-outer
-            if (findOuter.length > 0)
-            {
-                nearestOuter = findOuter;
-            }
-            //clicked on something that was a child of a diva-outer
-            else if (closestOuter.length > 0)
-            {
-                nearestOuter = closestOuter;
-            }
-            //clicked on something that was not in any Diva tree
-            else
-            {
-                //deactivate everything and return
-                for (idx = 0; idx < outerLen; idx++)
-                {
-                    $(outers[idx].parentElement).data('diva').deactivate();
-                }
-                return;
-            }
-
-            //if we found one, activate it...
-            nearestOuter.parent().data('diva').activate();
-            active = nearestOuter.parent();
-
-            //...and deactivate all the others
-            outers = document.getElementsByClassName('diva-outer');
-            for(idx = 0; idx < outerLen; idx++)
-            {
-                //getAttribute to attr - comparing DOM element to jQuery element
-                if (outers[idx].getAttribute('id') != nearestOuter.attr('id'))
-                    $(outers[idx].parentElement).data('diva').deactivate();
-            }
-        };
-
-        //public accessor in case. Will return a jQuery selector.
-        this.getActive = function()
-        {
-            return active;
-        };
-    };
-})(jQuery);
-
-var activeDiva = new activeDivaController();
-
-/**
- * Convenience function to create a DOM element, set attributes on it, and
- * append children. All arguments which are not of primitive type, are not
- * arrays, and are not DOM nodes are treated as attribute hashes and are
- * handled as described for setDOMAttributes. Children can either be a DOM
- * node or a primitive value, which is converted to a text node. Arrays are
- * handled recursively. Null and undefined values are ignored.
- *
- * Inspired by the ProseMirror helper of the same name.
- */
-function elt(tag)
-{
-    var el = document.createElement(tag);
-    var args = Array.prototype.slice.call(arguments, 1);
-
-    while (args.length)
-    {
-        var arg = args.shift();
-        handleEltConstructorArg(el, arg);
-    }
-
-    return el;
-}
-
-function handleEltConstructorArg(el, arg)
-{
-    if (arg == null)
-        return;
-
-    if (typeof arg !== 'object' && typeof arg !== 'function')
-    {
-        // Coerce to string
-        el.appendChild(document.createTextNode(arg));
-    }
-    else if (arg instanceof window.Node)
-    {
-        el.appendChild(arg);
-    }
-    else if (arg instanceof Array)
-    {
-        var childCount = arg.length;
-        for (var i = 0; i < childCount; i++)
-            handleEltConstructorArg(el, arg[i]);
-    }
-    else
-    {
-        setDOMAttributes(el, arg);
-    }
-}
-
-/**
- * Set attributes of a DOM element. The `style` property is special-cased to
- * accept either a string or an object whose own attributes are assigned to
- * el.style.
- */
-function setDOMAttributes(el, attributes)
-{
-    for (var prop in attributes)
-    {
-        if (!attributes.hasOwnProperty(prop))
-            continue;
-
-        if (prop === 'style')
-        {
-            setStyle(el, attributes.style);
-        }
-        else
-        {
-            el.setAttribute(prop, attributes[prop]);
-        }
-    }
-}
-
-function setStyle(el, style)
-{
-    if (!style)
-        return;
-
-    if (typeof style !== 'object')
-    {
-        el.style.cssText = style;
-        return;
-    }
-
-    for (var cssProp in style)
-    {
-        if (!style.hasOwnProperty(cssProp))
-            continue;
-
-        el.style[cssProp] = style[cssProp];
-    }
-}
-
-module.exports.elt = elt;
-module.exports.setDOMAttributes = setDOMAttributes;

@@ -24,13 +24,21 @@ THE SOFTWARE.
 
 var jQuery = require('jquery');
 
+require('./utils/jquery-extensions');
+
+var diva = require('./diva-global');
+var eltLib = require('./utils/elt');
+
+var ActiveDivaController = require('./active-diva-controller');
 var ImageManifest = require('./image-manifest');
 var ValidationRunner = require('./validation-runner');
-var utils = require('./utils');
 
-var diva = utils.diva,
-    elt = utils.elt,
-    setDOMAttributes = utils.setDOMAttributes;
+var elt = eltLib.elt;
+var setDOMAttributes = eltLib.setDOMAttributes;
+
+// Start the active Diva tracker
+// FIXME(wabain): Could defer this, if the logic isn't just getting removed
+var activeDiva = new ActiveDivaController(); // jshint ignore: line
 
 module.exports = diva;
 
