@@ -1,4 +1,4 @@
-language: node_js
+language: 5  # Can't update to 6 until gulp does not depend on vinyl-fs 0.3.0
 sudo: false
 
 install:
