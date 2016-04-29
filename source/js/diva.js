@@ -25,6 +25,7 @@ THE SOFTWARE.
 var jQuery = require('jquery');
 
 var ImageManifest = require('./image-manifest');
+var ValidationRunner = require('./validation-runner');
 var utils = require('./utils');
 
 var diva = utils.diva,
@@ -36,6 +37,86 @@ module.exports = diva;
 // Expose the Diva variable globally (needed for plugins, possibly even in CommonJS environments)
 window.diva = diva;
 window.divaPlugins = [];
+
+// Define validations
+
+var DivaSettingsValidator = new ValidationRunner({
+    validations: [
+        {
+            key: 'goDirectlyTo',
+            validate: function (value, settings)
+            {
+                if (value < 0 || value >= settings.manifest.pages.length)
+                    return 0;
+            }
+        },
+        {
+            key: 'minPagesPerRow',
+            validate: function (value)
+            {
+                return Math.max(2, value);
+            }
+        },
+        {
+            key: 'maxPagesPerRow',
+            validate: function (value, settings)
+            {
+                return Math.max(value, settings.minPagesPerRow);
+            }
+        },
+        {
+            key: 'pagesPerRow',
+            validate: function (value, settings)
+            {
+                // Default to the maximum
+                if (value < settings.minPagesPerRow || value > settings.maxPagesPerRow)
+                    return settings.maxPagesPerRow;
+            }
+        },
+        {
+            key: 'maxZoomLevel',
+            validate: function (value, settings, config)
+            {
+                // Changing this value isn't really an error, it just depends on the
+                // source manifest
+                config.suppressWarning();
+
+                if (value < 0 || value > settings.manifest.maxZoom)
+                    return settings.manifest.maxZoom;
+            }
+        },
+        {
+            key: 'minZoomLevel',
+            validate: function (value, settings, config)
+            {
+                // Changes based on the manifest value shouldn't trigger a
+                // warning
+                if (value > settings.manifest.maxZoom)
+                {
+                    config.suppressWarning();
+                    return 0;
+                }
+
+                if (value < 0 || value > settings.maxZoomLevel)
+                    return 0;
+            }
+        },
+        {
+            key: 'zoomLevel',
+            validate: function (value, settings, config)
+            {
+                if (value > settings.manifest.maxZoom)
+                {
+                    config.suppressWarning();
+                    return 0;
+                }
+
+                if (value < settings.minZoomLevel || value > settings.maxZoomLevel)
+                    return settings.minZoomLevel;
+            }
+        }
+    ]
+});
 
 // this pattern was taken from http://www.virgentech.com/blog/2009/10/building-object-oriented-jquery-plugin.html
 (function ($)
@@ -4075,221 +4156,5 @@ window.divaPlugins = [];
             var diva = new Diva(this, options);
             divaParent.data('diva', diva);
         });
-    };
-
-    var DivaSettingsValidator = {
-        validations: [
-            {
-                key: 'goDirectlyTo',
-                validate: function (value, settings)
-                {
-                    if (value < 0 || value >= settings.manifest.pages.length)
-                        return 0;
-                }
-            },
-            {
-                key: 'minPagesPerRow',
-                validate: function (value)
-                {
-                    return Math.max(2, value);
-                }
-            },
-            {
-                key: 'maxPagesPerRow',
-                validate: function (value, settings)
-                {
-                    return Math.max(value, settings.minPagesPerRow);
-                }
-            },
-            {
-                key: 'pagesPerRow',
-                validate: function (value, settings)
-                {
-                    // Default to the maximum
-                    if (value < settings.minPagesPerRow || value > settings.maxPagesPerRow)
-                        return settings.maxPagesPerRow;
-                }
-            },
-            {
-                key: 'maxZoomLevel',
-                validate: function (value, settings, config)
-                {
-                    // Changing this value isn't really an error, it just depends on the
-                    // source manifest
-                    config.suppressWarning();
-
-                    if (value < 0 || value > settings.manifest.maxZoom)
-                        return settings.manifest.maxZoom;
-                }
-            },
-            {
-                key: 'minZoomLevel',
-                validate: function (value, settings, config)
-                {
-                    // Changes based on the manifest value shouldn't trigger a
-                    // warning
-                    if (value > settings.manifest.maxZoom)
-                    {
-                        config.suppressWarning();
-                        return 0;
-                    }
-
-                    if (value < 0 || value > settings.maxZoomLevel)
-                        return 0;
-                }
-            },
-            {
-                key: 'zoomLevel',
-                validate: function (value, settings, config)
-                {
-                    if (value > settings.manifest.maxZoom)
-                    {
-                        config.suppressWarning();
-                        return 0;
-                    }
-
-                    if (value < settings.minZoomLevel || value > settings.maxZoomLevel)
-                        return settings.minZoomLevel;
-                }
-            }
-        ],
-
-        isValid: function (key, value, settings)
-        {
-            // Get the validation index
-            var validationIndex = null;
-
-            this.validations.some(function (validation, index)
-            {
-                if (validation.key !== key)
-                    return false;
-
-                validationIndex = index;
-                return true;
-            });
-
-            if (validationIndex === null)
-                return true;
-
-            // Run the validation
-            var dummyChanges = {};
-            dummyChanges[key] = value;
-            var proxier = this._createSettingsProxier(settings, dummyChanges);
-
-            return !this._runValidation(validationIndex, value, proxier);
-        },
-
-        validate: function (settings)
-        {
-            this._validateOptions({}, settings);
-        },
-
-        getValidatedOptions: function (settings, options)
-        {
-            var cloned = $.extend({}, options);
-            this._validateOptions(settings, cloned);
-            return cloned;
-        },
-
-        _validateOptions: function (settings, options)
-        {
-            var settingsProxier = this._createSettingsProxier(settings, options);
-            this._applyValidations(options, settingsProxier);
-        },
-
-        _applyValidations: function (options, proxier)
-        {
-            this.validations.forEach(function (validation, index)
-            {
-                if (!options.hasOwnProperty(validation.key))
-                    return;
-
-                var input = options[validation.key];
-                var corrected = this._runValidation(index, input, proxier);
-
-                if (corrected)
-                {
-                    if (!corrected.warningSuppressed)
-                        this._emitWarning(validation.key, input, corrected.value);
-
-                    options[validation.key] = corrected.value;
-                }
-            }, this);
-        },
-
-        _runValidation: function (index, input, proxier)
-        {
-            var validation = this.validations[index];
-
-            proxier.index = index;
-
-            var warningSuppressed = false;
-            var config = {
-                suppressWarning: function ()
-                {
-                    warningSuppressed = true;
-                }
-            };
-
-            var outputValue = validation.validate(input, proxier.proxy, config);
-
-            if (outputValue === undefined || outputValue === input)
-                return null;
-
-            return {
-                value: outputValue,
-                warningSuppressed: warningSuppressed
-            };
-        },
-
-        /**
-         * The settings proxy wraps the settings object and ensures that
-         * only values which have previously been validated are accessed,
-         * throwing a TypeError otherwise.
-         *
-         * FIXME(wabain): Is it worth keeping this? When I wrote it I had
-         * multiple validation stages and it was a lot harder to keep track
-         * of everything, so this was more valuable.
-         */
-        _createSettingsProxier: function (settings, options)
-        {
-            var proxier = {
-                proxy: {},
-                index: null
-            };
-
-            var properties = {
-                manifest: {
-                    get: function ()
-                    {
-                        return options.manifest || settings.manifest;
-                    }
-                }
-            };
-
-            this.validations.forEach(function (validation, validationIndex)
-            {
-                var validations = this.validations;
-
-                properties[validation.key] = {
-                    get: function ()
-                    {
-                        if (validationIndex < proxier.index)
-                            return (validation.key in options) ? options[validation.key] : settings[validation.key];
-
-                        throw new TypeError('Cannot access setting ' + validation.key + ' while validating ' + validations[proxier.index].key);
-                    }
-                };
-            }, this);
-
-            Object.defineProperties(proxier.proxy, properties);
-
-            return proxier;
-        },
-
-        _emitWarning: function (key, original, corrected)
-        {
-            console.warn('Invalid value for ' + key + ': ' + original + '. Using ' + corrected + ' instead.');
-        }
     };
 })(jQuery);
