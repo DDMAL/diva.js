@@ -41,6 +41,8 @@ window.divaPlugins = [];
 // Define validations
 
 var DivaSettingsValidator = new ValidationRunner({
+    whitelistedKeys: ['manifest'],
+
     validations: [
         {
             key: 'goDirectlyTo',

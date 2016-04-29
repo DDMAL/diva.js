@@ -4,6 +4,7 @@ module.exports = ValidationRunner;
 
 function ValidationRunner(options)
 {
+    this.whitelistedKeys = options.whitelistedKeys || [];
     this.validations = options.validations;
 }
 
@@ -27,7 +28,7 @@ ValidationRunner.prototype.isValid = function (key, value, settings)
     // Run the validation
     var dummyChanges = {};
     dummyChanges[key] = value;
-    var proxier = createSettingsProxier(settings, dummyChanges, this.validations);
+    var proxier = createSettingsProxier(settings, dummyChanges, this);
 
     return !this._runValidation(validationIndex, value, proxier);
 };
@@ -46,7 +47,7 @@ ValidationRunner.prototype.getValidatedOptions = function (settings, options)
 
 ValidationRunner.prototype._validateOptions = function (settings, options)
 {
-    var settingsProxier = createSettingsProxier(settings, options, this.validations);
+    var settingsProxier = createSettingsProxier(settings, options, this);
     this._applyValidations(options, settingsProxier);
 };
 
@@ -104,34 +105,37 @@ ValidationRunner.prototype._runValidation = function (index, input, proxier)
  * multiple validation stages and it was a lot harder to keep track
  * of everything, so this was more valuable.
  */
-function createSettingsProxier(settings, options, validations)
+function createSettingsProxier(settings, options, runner)
 {
     var proxier = {
         proxy: {},
         index: null
     };
 
-    var properties = {
-        manifest: {
-            get: function ()
-            {
-                return options.manifest || settings.manifest;
-            }
-        }
-    };
+    var lookup = lookupValue.bind(null, settings, options);
 
-    validations.forEach(function (validation, validationIndex)
+    var properties = {};
+
+    runner.whitelistedKeys.forEach(function (whitelisted)
+    {
+        properties[whitelisted] = {
+            get: lookup.bind(null, whitelisted)
+        };
+    });
+
+    runner.validations.forEach(function (validation, validationIndex)
     {
         properties[validation.key] = {
             get: function ()
             {
                 if (validationIndex < proxier.index)
-                    return (validation.key in options) ? options[validation.key] : settings[validation.key];
+                    return lookup(validation.key);
 
-                throw new TypeError('Cannot access setting ' + validation.key + ' while validating ' + validations[proxier.index].key);
+                var currentKey = runner.validations[proxier.index].key;
+                throw new TypeError('Cannot access setting ' + validation.key + ' while validating ' + currentKey);
             }
         };
-    }, this);
+    });
 
     Object.defineProperties(proxier.proxy, properties);
 
@@ -141,4 +145,12 @@ function createSettingsProxier(settings, options, validations)
 function emitWarning(key, original, corrected)
 {
     console.warn('Invalid value for ' + key + ': ' + original + '. Using ' + corrected + ' instead.');
+}
+
+function lookupValue(base, extension, key)
+{
+    if (key in extension)
+        return extension[key];
+
+    return base[key];
 }
