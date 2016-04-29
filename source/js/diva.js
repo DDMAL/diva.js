@@ -24,7 +24,7 @@ THE SOFTWARE.
 
 var jQuery = require('jquery');
 
-require('./utils/jquery-extensions');
+require('../utils/jquery-extensions');
 
 var diva = require('./diva-global');
 var HashParams = require('./utils/hash-params');
