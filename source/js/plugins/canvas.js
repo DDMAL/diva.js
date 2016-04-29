@@ -877,7 +877,6 @@ var diva = require('../diva');
                 settings.pluginIcon = $(this);
 
                 settings.manifest = divaSettings.manifest;
-                settings.isIIIF = divaSettings.isIIIF;
                 settings.selectedPageIndex = selectedPageIndex;
 
                 // Limit the max zoom level if we're on the iPad
