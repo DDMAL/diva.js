@@ -8,7 +8,7 @@ Adds an adjustment icon next to each image
 var jQuery = require('jquery');
 var diva = require('../diva');
 
-require('./utils/jquery-extensions');
+require('../utils/jquery-extensions');
 
 (function ($)
 {
