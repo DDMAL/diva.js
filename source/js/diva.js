@@ -28,6 +28,7 @@ var elt = require('./utils/elt');
 var generateId = require('./utils/generate-id');
 var getScrollbarWidth = require('./utils/get-scrollbar-width');
 var HashParams = require('./utils/hash-params');
+var Transition = require('./utils/transition');
 
 var ActiveDivaController = require('./active-diva-controller');
 var diva = require('./diva-global');
@@ -1317,7 +1318,7 @@ var DivaSettingsValidator = new ValidationRunner({
         var clearViewer = function ()
         {
             // Post-zoom: clear scaling
-            settings.innerElement.style.transition = '';
+            settings.innerElement.style[Transition.property] = '';
             settings.innerElement.style.transform = '';
             settings.innerElement.style.transformOrigin = '';
 
@@ -1919,6 +1920,13 @@ var DivaSettingsValidator = new ValidationRunner({
             if (newZoomLevel !== newValue)
                 return false;
 
+            if (!Transition.supported)
+            {
+                return reloadViewer({
+                    zoomLevel: newZoomLevel
+                });
+            }
+
             // If no focal point was given, zoom on the center of the viewport
             if (focalPoint == null)
             {
@@ -1985,7 +1993,7 @@ var DivaSettingsValidator = new ValidationRunner({
             // If first zoom, set transition parameters TODO css class
             if (!settings.isZooming)
             {
-                settings.innerElement.style.transition = 'transform .3s cubic-bezier(0.000, 0.990, 1.000, 0.995)';
+                initiateZoomAnimation();
             }
 
             // If still zooming, zoomRatio needs to be multiplied by the previous zoomRatio and is reset on transitionend
@@ -2008,6 +2016,32 @@ var DivaSettingsValidator = new ValidationRunner({
             settings.outerObject.off('scroll');
 
             return true;
+        };
+
+        var initiateZoomAnimation = function ()
+        {
+            var fallbackMs = 300;
+
+            var endCallback = function ()
+            {
+                settings.isZooming = false;
+
+                settings.previousZoomRatio = 1;
+
+                // Clear the array of canvases at previous zoom level
+                settings.previousZoomLevelCanvases = [];
+
+                loadDocument();
+
+                settings.innerElement.removeEventListener(Transition.endEvent, endCallback, false);
+                clearTimeout(fallbackTimeoutId);
+            };
+
+            // Ensure the callback is run even if the end event doesn't fire
+            settings.innerElement.addEventListener(Transition.endEvent, endCallback, false);
+            var fallbackTimeoutId = setTimeout(endCallback, fallbackMs);
+
+            settings.innerElement.style[Transition.property] = 'transform .3s cubic-bezier(0.000, 0.990, 1.000, 0.995)';
         };
 
         /*
@@ -2534,54 +2568,6 @@ var DivaSettingsValidator = new ValidationRunner({
                 clearPageTimeouts();
                 clearTimeout(settings.resizeTimer);
             }, settings.ID);
-
-            // Detect supported transition end event, bind loadDocument to end of zoom transition
-            // http://stackoverflow.com/a/9090128
-            var getTransitionEndEventName = function()
-            {
-                var i;
-                var el = document.createElement('div');
-                var transitions = {
-                    'transition': 'transitionend',
-                    'OTransition': 'otransitionend',
-                    'MozTransition': 'transitionend',
-                    'WebkitTransition': 'webkitTransitionEnd'
-                };
-
-                for (i in transitions)
-                {
-                    if (transitions.hasOwnProperty(i) && el.style[i] !== undefined)
-                    {
-                        return transitions[i];
-                    }
-                }
-
-                return false;
-            };
-
-            var onZoomEnd = function()
-            {
-                settings.isZooming = false;
-
-                settings.previousZoomRatio = 1;
-
-                // Clear the array of canvases at previous zoom level
-                settings.previousZoomLevelCanvases = [];
-
-                loadDocument();
-            };
-
-            var transitionEnd = getTransitionEndEventName();
-
-            if (transitionEnd)
-            {
-                settings.innerElement.addEventListener(transitionEnd, onZoomEnd, false);
-            }
-            else
-            {
-                // Fallback for browsers without CSS transitions support
-                diva.Events.subscribe("ZoomLevelDidChange", onZoomEnd, settings.ID);
-            }
         };
 
         var initPlugins = function ()

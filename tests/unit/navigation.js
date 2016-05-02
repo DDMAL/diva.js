@@ -94,7 +94,7 @@ QUnit.test("Scrolling in book view", function (assert)
     });
 });
 
-QUnit.skip('Page positioning on zoom', function (assert)
+QUnit.test('Page positioning on zoom', function (assert)
 {
     var done = assert.async();
     var state;
@@ -290,11 +290,10 @@ QUnit.test("Zooming by double-clicking", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        // FIXME(wabain): Zooming end events are broken on PhantomJS
         var eventTracker = new EventTracker(assert, this);
         eventTracker.expect('ZoomLevelDidChange', 2);
-        //eventTracker.expect('ViewerDidZoomIn', 2);
-        //eventTracker.expect('ViewerDidZoom', 2);
+        eventTracker.expect('ViewerDidZoomIn', 2);
+        eventTracker.expect('ViewerDidZoom', 2);
 
         var wrapperOffset = $('#diva-temp').offset();
         var testEvent = $.Event("dblclick");
