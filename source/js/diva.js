@@ -24,17 +24,17 @@ var jQuery = require('jquery');
 
 require('./utils/jquery-extensions');
 
-var diva = require('./diva-global');
 var elt = require('./utils/elt');
 var generateId = require('./utils/generate-id');
 var getScrollbarWidth = require('./utils/get-scrollbar-width');
 var HashParams = require('./utils/hash-params');
-var Viewport = require('./viewport');
 
 var ActiveDivaController = require('./active-diva-controller');
+var diva = require('./diva-global');
 var ImageManifest = require('./image-manifest');
-var ValidationRunner = require('./validation-runner');
 var createToolbar = require('./toolbar');
+var ValidationRunner = require('./validation-runner');
+var Viewport = require('./viewport');
 
 // Start the active Diva tracker
 // FIXME(wabain): Could defer this, if the logic isn't just getting removed
