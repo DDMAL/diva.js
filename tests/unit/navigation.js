@@ -6,6 +6,7 @@ Could also test key navigation, but it's pretty difficult and doesn't seem worth
 var $ = require('jquery');
 var clearTempDiva = require('../utils').clearTempDiva;
 var diva = require('../../source/js/diva');
+var EventTracker = require('../event-tracker');
 
 QUnit.module("Navigation", { beforeEach: clearTempDiva });
 
@@ -104,6 +105,17 @@ QUnit.skip('Page positioning on zoom', function (assert)
     {
         diva.Events.unsubscribe(loadSig);
 
+        var eventTracker = new EventTracker(assert, dv);
+
+        eventTracker.expect('ZoomLevelDidChange', 1);
+        eventTracker.expect('ZoomLevelDidChange', 2);
+
+        eventTracker.expect('ViewerDidZoomOut', 1);
+        eventTracker.expect('ViewerDidZoom', 1);
+
+        eventTracker.expect('ViewerDidZoomIn', 2);
+        eventTracker.expect('ViewerDidZoom', 2);
+
         state = dv.getState();
 
         dv.zoomOut();
@@ -116,7 +128,7 @@ QUnit.skip('Page positioning on zoom', function (assert)
 
     diva.Events.subscribe('ViewerDidZoomIn', function ()
     {
-        assert.propEqual(dv.getState(), state, 'foo');
+        assert.propEqual(dv.getState(), state, 'State should not change from zooming out/in');
         done();
     });
 });
@@ -239,6 +251,16 @@ QUnit.test("Changing pages per row in Grid view using +/- buttons", function (as
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
+        var eventTracker = new EventTracker(assert, this);
+
+        eventTracker.expect('ViewDidSwitch', true);
+        eventTracker.expect('GridRowNumberDidChange', 3);
+        eventTracker.expect('GridRowNumberDidChange', 4);
+        eventTracker.expect('GridRowNumberDidChange', 5);
+        eventTracker.expect('GridRowNumberDidChange', 6);
+        eventTracker.expect('GridRowNumberDidChange', 7);
+        eventTracker.expect('GridRowNumberDidChange', 8);
+
         this.enterGridView();
         for (var i = 0; i < 6; i++)
         {
@@ -268,6 +290,12 @@ QUnit.test("Zooming by double-clicking", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
+        // FIXME(wabain): Zooming end events are broken on PhantomJS
+        var eventTracker = new EventTracker(assert, this);
+        eventTracker.expect('ZoomLevelDidChange', 2);
+        //eventTracker.expect('ViewerDidZoomIn', 2);
+        //eventTracker.expect('ViewerDidZoom', 2);
+
         var wrapperOffset = $('#diva-temp').offset();
         var testEvent = $.Event("dblclick");
         testEvent.pageX = 500;
@@ -298,6 +326,9 @@ QUnit.test("Switching between document and grid view", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
+        var eventTracker = new EventTracker(assert, this);
+        eventTracker.expect('ViewDidSwitch', true);
+
         assert.ok(!settings.inGrid, "Not in grid initially");
         $(settings.selector + 'grid-icon').click();
 
@@ -325,6 +356,11 @@ QUnit.test("Switching between regular and fullscreen mode", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
+        // FIXME(wabain): EventTracker should be used here to verify
+        // ModeDidSwitch, but the dispatch order gets messed up because
+        // of the second switch being invoked inside the callback for the
+        // first. How should those be handled?
+
         assert.ok(!settings.inFullscreen, "Not in fullscreen initially");
 
         var state = this.getState();
@@ -364,6 +400,14 @@ QUnit.test("Jumping to page in Book view", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
+        var eventTracker = new EventTracker(assert, this);
+
+        eventTracker.expect('VisiblePageDidChange', 5, this.getFilenames()[5]);
+        eventTracker.expect('ViewerDidJump', 5);
+
+        eventTracker.expect('VisiblePageDidChange', 6, this.getFilenames()[6]);
+        eventTracker.expect('ViewerDidJump', 6);
+
         this.gotoPageByIndex(5);
 
         assert.ok(settings.inBookLayout, "Should be in book layout");
