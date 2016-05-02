@@ -3614,12 +3614,7 @@ var DivaSettingsValidator = new ValidationRunner({
         this.gotoPageByNumber = function (pageNumber, xAnchor, yAnchor)
         {
             var pageIndex = parseInt(pageNumber, 10) - 1;
-            if (isPageValid(pageIndex))
-            {
-                gotoPage(pageIndex, getYOffset(pageIndex, yAnchor), getXOffset(pageIndex, xAnchor));
-                return true;
-            }
-            return false;
+            return this.gotoPageByIndex(pageIndex, xAnchor, yAnchor);
         };
 
         // Go to a particular page (with indexing starting at 0)
@@ -3631,7 +3626,11 @@ var DivaSettingsValidator = new ValidationRunner({
             pageIndex = parseInt(pageIndex, 10);
             if (isPageValid(pageIndex))
             {
-                gotoPage(pageIndex, getYOffset(pageIndex, yAnchor), getXOffset(pageIndex, xAnchor));
+                if (settings.inGrid)
+                    gotoRow(pageIndex);
+                else
+                    gotoPage(pageIndex, getYOffset(pageIndex, yAnchor), getXOffset(pageIndex, xAnchor));
+
                 return true;
             }
             return false;
@@ -3872,14 +3871,7 @@ var DivaSettingsValidator = new ValidationRunner({
         this.gotoPageByName = function (filename, xAnchor, yAnchor)
         {
             var pageIndex = getPageIndex(filename);
-
-            if (isPageValid(pageIndex))
-            {
-                gotoPage(pageIndex, getYOffset(pageIndex, yAnchor), getXOffset(pageIndex, xAnchor));
-                return true;
-            }
-
-            return false;
+            return this.gotoPageByIndex(pageIndex, xAnchor, yAnchor);
         };
 
         // Get the page index (0-based) corresponding to a given filename

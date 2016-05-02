@@ -32,9 +32,15 @@ QUnit.test("gotoPageByNumber() and getCurrentPage()", function (assert)
         this.gotoPageByNumber(500); // Go to page number 500 (index: 499)
         assert.strictEqual(this.getCurrentPageIndex(), 499, "The page index should now be 499");
 
-        // Reset it to the first page
-        this.gotoPageByNumber(0);
-        done();
+        diva.Events.subscribe('ViewDidSwitch', function ()
+        {
+            this.gotoPageByNumber(100);
+            assert.strictEqual(this.getCurrentPageIndex(), 99, 'Transitions in grid mode should work');
+
+            done();
+        });
+
+        this.enterGridView();
     });
 
     $.tempDiva({});
