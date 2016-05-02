@@ -45,7 +45,6 @@ var diva = require('../diva');
 {
     window.divaPlugins.push((function()
     {
-        var settings = {};
         var retval =
         {
             init: function(divaSettings, divaInstance)

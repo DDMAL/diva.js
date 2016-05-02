@@ -5,6 +5,5 @@
     "browserify": true,
 
     "latedef": false,
-    "unused": false,
     "eqeqeq": false
 }

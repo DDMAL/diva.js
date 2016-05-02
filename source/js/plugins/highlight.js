@@ -10,7 +10,6 @@ var diva = require('../diva');
 {
     window.divaPlugins.push((function()
     {
-        var settings = {};
         var retval =
         {
             init: function(divaSettings, divaInstance)
@@ -220,7 +219,6 @@ var diva = require('../diva');
                         divClass = divaSettings.ID + 'highlight ' + divClass;
                     }
 
-                    var maxZoom = divaInstance.getMaxZoomLevel();
                     var highlightsObj = divaSettings.parentObject.data('highlights');
 
                     highlightsObj[pageIdx] = {
@@ -243,12 +241,7 @@ var diva = require('../diva');
                 */
                 divaInstance.gotoHighlight = function(divID)
                 {
-                    var thisDiv;
-                    var centerYOfDiv;
-                    var centerXOfDiv;
-
                     var highlightsObj = divaSettings.parentObject.data('highlights');
-                    var highlightFound = false; //used to break both loops
 
                     //see if it exists in the DOM already first
                     if (document.getElementById(divID) !== null)

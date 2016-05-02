@@ -234,7 +234,6 @@ var diva = require('../diva');
                         divClass = divaSettings.ID + 'highlight ' + divClass;
                     }
 
-                    var maxZoom = divaInstance.getMaxZoomLevel();
                     var highlightsObj = divaSettings.parentObject.data('highlights');
 
                     highlightsObj[pageIdx] = {

@@ -1,3 +1,5 @@
+/* jshint unused: false */
+
 var jQuery = require('jquery');
 
 /*
