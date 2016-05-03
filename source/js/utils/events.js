@@ -174,7 +174,7 @@ Events.prototype.unsubscribeAll = function (instanceID)
         {
             topic = topics[i];
 
-            if (this._cache[topic][instanceID] !== 'undefined')
+            if (typeof this._cache[topic][instanceID] !== 'undefined')
             {
                 delete this._cache[topic][instanceID];
             }
