@@ -133,18 +133,18 @@ Events.prototype.unsubscribe = function (handle, completely)
             return false;
         }
 
+        if (completely)
+        {
+            delete this._cache[t][instanceID];
+            return topicArray.length > 0;
+        }
+
         var i = topicArray.length;
         while (i--)
         {
             if (topicArray[i] === handle[1])
             {
                 this._cache[t][instanceID].splice(i, 1);
-
-                if (completely)
-                {
-                    delete this._cache[t][instanceID];
-                }
-
                 return true;
             }
         }
