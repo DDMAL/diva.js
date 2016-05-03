@@ -127,8 +127,13 @@ Events.prototype.unsubscribe = function (handle, completely)
         var instanceID = (handle.length === 3 && typeof this._cache[t][handle[2]] !== 'undefined') ? handle[2] : 'global';
 
         topicArray = this._cache[t][instanceID];
-        var i = topicArray.length;
 
+        if (!topicArray)
+        {
+            return false;
+        }
+
+        var i = topicArray.length;
         while (i--)
         {
             if (topicArray[i] === handle[1])
