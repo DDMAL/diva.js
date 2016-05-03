@@ -36,9 +36,9 @@ Events.prototype.publish = function (topic, args, scope)
         if (typeof thisTopic.global !== 'undefined')
         {
             var thisTopicGlobal = thisTopic.global;
-            var i = thisTopicGlobal.length;
+            var globalCount = thisTopicGlobal.length;
 
-            while (i--)
+            for (var i=0; i < globalCount; i++)
             {
                 thisTopicGlobal[i].apply(scope || this, args || []);
             }
@@ -52,9 +52,9 @@ Events.prototype.publish = function (topic, args, scope)
             if (this._cache[topic][instanceID])
             {
                 var thisTopicInstance = this._cache[topic][instanceID];
-                var j = thisTopicInstance.length;
+                var scopedCount = thisTopicInstance.length;
 
-                while (j--)
+                for (var j=0; j < scopedCount; j++)
                 {
                     thisTopicInstance[j].apply(scope || this, args || []);
                 }
