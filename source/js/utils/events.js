@@ -158,9 +158,9 @@ Events.prototype.unsubscribe = function (handle, completely)
  *      e.g.: diva.Events.unsubscribeAll('global');
  *
  *      @class Events
- *      @param {String=} Optional - instance ID to remove subscribers from or 'global' (if omitted,
- *                                 subscribers in all scopes removed)
- *      @method unsubscribe
+ *      @param instanceID {String=} Optional - instance ID to remove subscribers from or 'global' (if omitted,
+ *                                   subscribers in all scopes removed)
+ *      @method unsubscribeAll
  */
 Events.prototype.unsubscribeAll = function (instanceID)
 {
