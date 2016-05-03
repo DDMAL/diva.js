@@ -1308,12 +1308,6 @@ var DivaSettingsValidator = new ValidationRunner({
             gotoRow(settings.goDirectlyTo);
         };
 
-        // If the given zoom level is valid, returns it; else, returns the min
-        var getValidZoomLevel = function (zoomLevel)
-        {
-            return (zoomLevel >= settings.minZoomLevel && zoomLevel <= settings.maxZoomLevel) ? zoomLevel : settings.minZoomLevel;
-        };
-
         // Reset some settings and empty the viewport
         var clearViewer = function ()
         {
@@ -1910,14 +1904,13 @@ var DivaSettingsValidator = new ValidationRunner({
         };
 
         // Called to handle any zoom level
-        var handleZoom = function (newValue, focalPoint)
+        var handleZoom = function (newZoomLevel, focalPoint)
         {
-            var newZoomLevel = getValidZoomLevel(newValue);
             var originX;
             var originY;
 
             // If the zoom level provided is invalid, return false
-            if (newZoomLevel !== newValue)
+            if (!isValidSetting('zoomLevel', newZoomLevel))
                 return false;
 
             if (!Transition.supported)
