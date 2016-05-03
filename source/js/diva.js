@@ -2024,7 +2024,8 @@ var DivaSettingsValidator = new ValidationRunner({
                 // Clear the array of canvases at previous zoom level
                 settings.previousZoomLevelCanvases = [];
 
-                loadDocument();
+                // Now render with the previously set zoomLevel
+                reloadViewer({});
 
                 settings.innerElement.removeEventListener(Transition.endEvent, endCallback, false);
                 clearTimeout(fallbackTimeoutId);
