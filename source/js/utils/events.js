@@ -40,7 +40,7 @@ Events.prototype.publish = function (topic, args, scope)
 
             for (var i=0; i < globalCount; i++)
             {
-                thisTopicGlobal[i].apply(scope || this, args || []);
+                thisTopicGlobal[i].apply(scope || null, args || []);
             }
         }
 
@@ -56,7 +56,7 @@ Events.prototype.publish = function (topic, args, scope)
 
                 for (var j=0; j < scopedCount; j++)
                 {
-                    thisTopicInstance[j].apply(scope || this, args || []);
+                    thisTopicInstance[j].apply(scope, args || []);
                 }
             }
         }
