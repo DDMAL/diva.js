@@ -355,11 +355,6 @@ QUnit.test("Switching between regular and fullscreen mode", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        // FIXME(wabain): EventTracker should be used here to verify
-        // ModeDidSwitch, but the dispatch order gets messed up because
-        // of the second switch being invoked inside the callback for the
-        // first. How should those be handled?
-
         assert.ok(!settings.inFullscreen, "Not in fullscreen initially");
 
         var state = this.getState();
