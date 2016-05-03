@@ -226,7 +226,7 @@ QUnit.test("enterGridView(), leaveGridView()", function (assert)
     $.tempDiva({});
 });
 
-QUnit.skip("gotoPageByName()", function (assert)
+QUnit.test("gotoPageByName()", function (assert)
 {
     var done = assert.async();
 
@@ -237,35 +237,6 @@ QUnit.skip("gotoPageByName()", function (assert)
         assert.ok(this.gotoPageByName('bm_002.tif', "right", "center"), "It should find the page index for bm_002.tif");
         assert.strictEqual(settings.currentPageIndex, 1, "Now the page number should be 2");
         done();
-
-        /*
-         so this is confusing. this tests the internal getX/YOffset anchor points.
-         1) gotoPageByName above is called with "right" and "top" anchors, two non-default values
-         2) the last line in this function subscribes the scroll motion to centerRightChecker
-         3) centerRightChecker checks center right, then scrolls to bottom left and calls bottom left
-         4) bottomLeftChecker checks bottom left and de-subscribes all
-         */
-        function bottomLeftChecker(a)
-        {
-            var pageSelector = "#" + this.getSettings().ID + "page-1";
-            assert.strictEqual($(pageSelector).offset().top, 1888, "Testing bottom anchor point on gotoPageByName.");
-            assert.strictEqual($(pageSelector).offset().left, 20, "Testing left anchor point on gotoPageByName.");
-
-            diva.Events.unsubscribe(["ViewerDidScroll", bottomLeftChecker]);
-        }
-
-        function centerRightChecker(a)
-        {
-            var pageSelector = "#" + this.getSettings().ID + "page-1";
-            assert.strictEqual($(pageSelector).offset().top, 2081, "Testing center anchor point on gotoPageByName.");
-            assert.strictEqual($(pageSelector).offset().left, 307, "Testing right anchor point on gotoPageByName.");
-
-            diva.Events.unsubscribe(["ViewerDidScroll", centerRightChecker]);
-            assert.ok(this.gotoPageByName('bm_002.tif', "left", "bottom"), "Going to the same page; offset should change as position is being changed");
-            diva.Events.subscribe("ViewerDidScroll", bottomLeftChecker);
-        }
-
-        diva.Events.subscribe("ViewerDidScroll", centerRightChecker);
     });
 
     $.tempDiva({});
