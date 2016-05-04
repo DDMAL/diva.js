@@ -307,7 +307,7 @@ var DivaSettingsValidator = new ValidationRunner({
         var isHorizontallyInViewport = function (left, right)
         {
             var leftOfViewport = settings.viewport.left - settings.viewportMargin;
-            var rightOfViewport = settings.viewport.right + settings.viewportMargin * 2;
+            var rightOfViewport = settings.viewport.right + settings.viewportMargin;
 
             var leftVisible = left >= leftOfViewport && left <= rightOfViewport;
             var middleVisible = left <= leftOfViewport && right >= rightOfViewport;
@@ -321,7 +321,7 @@ var DivaSettingsValidator = new ValidationRunner({
         {
             //topOfViewport may need to have settings.innerObject.offset().top subtracted from it?
             var topOfViewport = settings.viewport.top - settings.viewportMargin;
-            var bottomOfViewport = settings.viewport.bottom + settings.viewportMargin * 2;
+            var bottomOfViewport = settings.viewport.bottom + settings.viewportMargin;
 
             var topVisible = top >= topOfViewport && top <= bottomOfViewport;
             var middleVisible = top <= topOfViewport && bottom >= bottomOfViewport;
