@@ -1,8 +1,9 @@
 module.exports = Viewport;
 
-function Viewport(outer)
+function Viewport(outer, options)
 {
     this.outer = outer;
+    this.intersectionTolerance = (options && options.intersectionTolerance) || 0;
 
     this._top = this._left = this._width = this._height = null;
 
@@ -11,6 +12,35 @@ function Viewport(outer)
 
     this.invalidate();
 }
+
+Viewport.prototype.intersectsRegion = function (region)
+{
+    return this.hasHorizontalOverlap(region) && this.hasVerticalOverlap(region);
+};
+
+Viewport.prototype.hasVerticalOverlap = function (region)
+{
+    var top = this.top - this.intersectionTolerance;
+    var bottom = this.bottom + this.intersectionTolerance;
+
+    return (
+        fallsBetween(region.top, top, bottom) ||
+        fallsBetween(region.bottom, top, bottom) ||
+        (region.top <= top && region.bottom >= bottom)
+    );
+};
+
+Viewport.prototype.hasHorizontalOverlap = function (region)
+{
+    var left = this.left - this.intersectionTolerance;
+    var right = this.right + this.intersectionTolerance;
+
+    return (
+        fallsBetween(region.left, left, right) ||
+        fallsBetween(region.right, left, right) ||
+        (region.left <= left && region.right >= right)
+    );
+};
 
 Viewport.prototype.invalidate = function ()
 {
@@ -108,3 +138,8 @@ Object.defineProperties(Viewport.prototype, {
         }
     }
 });
+
+function fallsBetween(point, start, bottom)
+{
+    return point >= start && point <= bottom;
+}

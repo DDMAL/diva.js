@@ -303,38 +303,11 @@ var DivaSettingsValidator = new ValidationRunner({
             return -1;
         };
 
-        // Checks if a page or tile is within the viewport horizontally
-        var isHorizontallyInViewport = function (left, right)
-        {
-            var leftOfViewport = settings.viewport.left - settings.viewportMargin;
-            var rightOfViewport = settings.viewport.right + settings.viewportMargin;
-
-            var leftVisible = left >= leftOfViewport && left <= rightOfViewport;
-            var middleVisible = left <= leftOfViewport && right >= rightOfViewport;
-            var rightVisible = right >= leftOfViewport && right <= rightOfViewport;
-
-            return (leftVisible || middleVisible || rightVisible);
-        };
-
-        // Checks if a page or tile is within the viewport vertically
-        var isVerticallyInViewport = function (top, bottom)
-        {
-            //topOfViewport may need to have settings.innerObject.offset().top subtracted from it?
-            var topOfViewport = settings.viewport.top - settings.viewportMargin;
-            var bottomOfViewport = settings.viewport.bottom + settings.viewportMargin;
-
-            var topVisible = top >= topOfViewport && top <= bottomOfViewport;
-            var middleVisible = top <= topOfViewport && bottom >= bottomOfViewport;
-            var bottomVisible = bottom >= topOfViewport && bottom <= bottomOfViewport;
-
-            return (topVisible || middleVisible || bottomVisible);
-        };
-
         // Check if a tile is near the specified viewport and thus should be loaded (performance-sensitive)
         var isTileVisible = function (pageIndex, tile)
         {
             // Viewport-relative coordinates
-            var tileTop, tileBottom, tileLeft, tileRight;
+            var tileTop, tileLeft;
 
             if (settings.verticallyOriented)
             {
@@ -347,10 +320,12 @@ var DivaSettingsValidator = new ValidationRunner({
                 tileLeft = settings.pageLeftOffsets[pageIndex] + tile.left + settings.horizontalPadding;
             }
 
-            tileBottom = tileTop + settings.tileHeight;
-            tileRight = tileLeft + settings.tileWidth;
-
-            return isVerticallyInViewport(tileTop, tileBottom) && isHorizontallyInViewport(tileLeft, tileRight);
+            return settings.viewport.intersectsRegion({
+                top: tileTop,
+                bottom: tileTop + settings.tileHeight,
+                left: tileLeft,
+                right: tileLeft + settings.tileWidth
+            });
         };
 
         // Check if a tile has been loaded (note: performance-sensitive function)
@@ -384,7 +359,12 @@ var DivaSettingsValidator = new ValidationRunner({
             var leftOfPage = settings.pageLeftOffsets[pageIndex];
             var rightOfPage = leftOfPage + getPageData(pageIndex, 'w') + settings.horizontalPadding;
 
-            return isVerticallyInViewport(topOfPage, bottomOfPage) && isHorizontallyInViewport(leftOfPage, rightOfPage);
+            return settings.viewport.intersectsRegion({
+                top: topOfPage,
+                bottom: bottomOfPage,
+                left: leftOfPage,
+                right: rightOfPage
+            });
         };
 
         // Check if a page has been appended to the DOM
@@ -847,7 +827,10 @@ var DivaSettingsValidator = new ValidationRunner({
             var topOfRow = settings.rowHeight * rowIndex;
             var bottomOfRow = topOfRow + settings.rowHeight + settings.fixedPadding;
 
-            return isVerticallyInViewport(topOfRow, bottomOfRow);
+            return settings.viewport.hasVerticalOverlap({
+                top: topOfRow,
+                bottom: bottomOfRow
+            });
         };
 
         // Check if a row (in grid view) is present in the DOM
@@ -2967,7 +2950,9 @@ var DivaSettingsValidator = new ValidationRunner({
 
             settings.parentObject.append(settings.outerElement);
 
-            settings.viewport = new Viewport(settings.outerElement);
+            settings.viewport = new Viewport(settings.outerElement, {
+                intersectionTolerance: settings.viewportMargin
+            });
 
             // Create the toolbar and display the title + total number of pages
             if (settings.enableToolbar)
@@ -3162,7 +3147,12 @@ var DivaSettingsValidator = new ValidationRunner({
             var left = settings.pageLeftOffsets[pageIndex] + leftOffset;
             var right = left + width;
 
-            return isVerticallyInViewport(top, bottom) && isHorizontallyInViewport(left, right);
+            return settings.viewport.intersectsRegion({
+                top: top,
+                bottom: bottom,
+                left: left,
+                right: right
+            });
         };
 
         //Public wrapper for isPageVisible
