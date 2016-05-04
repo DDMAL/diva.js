@@ -38,6 +38,11 @@ ImageManifest.fromLegacyManifest = function (data, config)
     return new ImageManifest(data, new LegacyManifestSourceAdapter(config));
 };
 
+ImageManifest.prototype.isPageValid = function (pageIndex)
+{
+    return pageIndex >= 0 && pageIndex < this.pages.length;
+};
+
 /**
  * Returns a URL for the image of the given page. The optional size
  * parameter supports setting the image width or height (default is
