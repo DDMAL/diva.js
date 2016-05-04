@@ -32,6 +32,7 @@ var Transition = require('./utils/transition');
 
 var ActiveDivaController = require('./active-diva-controller');
 var diva = require('./diva-global');
+var DocumentRendering = require('./document-rendering');
 var ImageManifest = require('./image-manifest');
 var createToolbar = require('./toolbar');
 var ValidationRunner = require('./validation-runner');
@@ -188,6 +189,7 @@ var DivaSettingsValidator = new ValidationRunner({
             allTilesLoaded: [],         // A boolean for each page, indicating if all tiles have been loaded
             currentPageIndex: 0,        // The current page in the viewport (center-most page)
             unclampedVerticalPadding: 0, // Used to keep track of initial padding size before enforcing the minimum size needed to accommodate plugin icons
+            documentRendering: null,    // Used to manage the rendering of the pages
             firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
             firstRowLoaded: -1,         // The index of the first row loaded
             gridPageWidth: 0,           // Holds the max width of each row in grid view. Calculated in loadGrid()
@@ -218,7 +220,6 @@ var DivaSettingsValidator = new ValidationRunner({
             pageLeftOffsets: [],        // Distance from the left side of each page to the left side of the diva-inner object
             pagePreloadCanvases: [],    // Stack to hold canvases of pages preloading during zoom
             pageTopOffsets: [],         // Distance from the top side of each page to the top side of the diva-inner object
-            pageTimeouts: [],           // Stack to hold the loadPage timeouts
             pageTools: '',              // The string for page tools
             parentObject: parentObject, // JQuery object referencing the parent element
             plugins: [],                // Filled with the enabled plugins from window.divaPlugins
@@ -367,12 +368,6 @@ var DivaSettingsValidator = new ValidationRunner({
             });
         };
 
-        // Check if a page has been appended to the DOM
-        var isPageLoaded = function (pageIndex)
-        {
-            return !!document.getElementById(settings.ID + 'page-' + pageIndex);
-        };
-
         // Loads page tiles into the supplied canvas.
         var loadTiles = function(pageIndex, filename, width, height, canvasElement)
         {
@@ -455,7 +450,8 @@ var DivaSettingsValidator = new ValidationRunner({
         var loadPage = function (pageIndex)
         {
             // If the page and all of its tiles have been loaded, or if we are in book layout and the canvas is non-paged, exit
-            if ((isPageLoaded(pageIndex) && settings.allTilesLoaded[pageIndex]) || (settings.inBookLayout && settings.manifest.paged && !settings.manifest.pages[pageIndex].paged))
+            if ((settings.documentRendering.isPageLoaded(pageIndex) && settings.allTilesLoaded[pageIndex]) ||
+                (settings.inBookLayout && settings.manifest.paged && !settings.manifest.pages[pageIndex].paged))
                 return;
 
             var isPreloaded = typeof settings.pagePreloadCanvases[pageIndex] !== 'undefined';
@@ -469,7 +465,7 @@ var DivaSettingsValidator = new ValidationRunner({
             var pageSelector = settings.selector + 'page-' + pageIndex;
 
             // If the page has not been loaded yet, append the div to the DOM
-            if (!isPageLoaded(pageIndex))
+            if (!settings.documentRendering.isPageLoaded(pageIndex))
             {
                 var pageElement = elt('div', {
                     id: settings.ID + 'page-' + pageIndex,
@@ -571,7 +567,7 @@ var DivaSettingsValidator = new ValidationRunner({
 
             if (!isPreloaded)
             {
-                setPageTimeout(loadPageTiles, settings.pageLoadTimeout, [pageIndex, filename, width, height]);
+                settings.documentRendering.setPageTimeout(loadPageTiles, settings.pageLoadTimeout, [pageIndex, filename, width, height]);
             }
         };
 
@@ -1043,7 +1039,7 @@ var DivaSettingsValidator = new ValidationRunner({
             // FIXME: why define this inline?
             var loadFunction = function (rowIndex, pageIndex, imageURL, pageWidth, pageHeight)
             {
-                if (isPageLoaded(pageIndex))
+                if (settings.documentRendering.isPageLoaded(pageIndex))
                 {
                     var imgEl = elt('img', {
                         src: imageURL,
@@ -1057,7 +1053,7 @@ var DivaSettingsValidator = new ValidationRunner({
                 }
             };
 
-            setPageTimeout(loadFunction, settings.rowLoadTimeout, [rowIndex, pageIndex, imageURL, pageWidth, pageHeight]);
+            settings.documentRendering.setPageTimeout(loadFunction, settings.rowLoadTimeout, [rowIndex, pageIndex, imageURL, pageWidth, pageHeight]);
         };
 
         // Clamp pages to those with 'viewingHint: paged' === true (applicable only when document viewingHint === 'paged', see IIIF Presentation API 2.0)
@@ -1294,18 +1290,14 @@ var DivaSettingsValidator = new ValidationRunner({
         // Reset some settings and empty the viewport
         var clearViewer = function ()
         {
-            // Post-zoom: clear scaling
-            settings.innerElement.style[Transition.property] = '';
-            settings.innerElement.style.transform = '';
-            settings.innerElement.style.transformOrigin = '';
+            if (settings.documentRendering)
+            {
+                settings.documentRendering.destroy();
+                settings.documentRendering = null;
+            }
 
             settings.allTilesLoaded = [];
             settings.viewport.top = 0;
-
-            while (settings.innerElement.firstChild)
-            {
-                settings.innerElement.removeChild(settings.innerElement.firstChild);
-            }
 
             settings.firstPageLoaded = 0;
             settings.firstRowLoaded = -1;
@@ -1314,32 +1306,6 @@ var DivaSettingsValidator = new ValidationRunner({
 
             // Clear all the timeouts to prevent undesired pages from loading
             clearTimeout(settings.resizeTimer);
-
-            clearPageTimeouts();
-        };
-
-        var setPageTimeout = function (callback, waitMs, args)
-        {
-            var timeoutId = setTimeout(function ()
-            {
-                callback.apply(null, args);
-
-                // Remove the timeout ID from the list
-                var idIndex = settings.pageTimeouts.indexOf(timeoutId);
-
-                if (idIndex >= 0)
-                    settings.pageTimeouts.splice(idIndex, 1);
-            }, waitMs);
-
-            settings.pageTimeouts.push(timeoutId);
-        };
-
-        var clearPageTimeouts = function ()
-        {
-            while (settings.pageTimeouts.length)
-            {
-                clearTimeout(settings.pageTimeouts.pop());
-            }
         };
 
         /**
@@ -1406,6 +1372,13 @@ var DivaSettingsValidator = new ValidationRunner({
                 prepareModeChange(options);
                 queuedEvents.push(["ModeDidSwitch", [settings.inFullscreen]]);
             }
+
+            clearViewer();
+
+            settings.documentRendering = new DocumentRendering({
+                element: settings.innerElement,
+                ID: settings.ID
+            });
 
             if (settings.inGrid)
                 loadGrid();
@@ -1568,8 +1541,6 @@ var DivaSettingsValidator = new ValidationRunner({
             settings.outerObject.off('scroll');
             settings.outerObject.scroll(scrollFunction);
 
-            clearViewer();
-
             diva.Events.publish('DocumentWillLoad', [settings], self);
 
             var z = settings.zoomLevel;
@@ -1586,7 +1557,7 @@ var DivaSettingsValidator = new ValidationRunner({
 
             if (settings.verticallyOriented)
             {
-                setDocumentSize({
+                settings.documentRendering.setDocumentSize({
                     height: Math.round(settings.totalHeight) + 'px',
                     width: Math.round(documentDimensions.widthToSet) + 'px',
                     minWidth: settings.panelWidth + 'px'
@@ -1594,7 +1565,7 @@ var DivaSettingsValidator = new ValidationRunner({
             }
             else
             {
-                setDocumentSize({
+                settings.documentRendering.setDocumentSize({
                     height: Math.round(documentDimensions.heightToSet) + 'px',
                     minHeight: settings.panelHeight + 'px',
                     width: Math.round(settings.totalWidth) + 'px'
@@ -1680,8 +1651,6 @@ var DivaSettingsValidator = new ValidationRunner({
             settings.verticalOffset = (settings.verticallyOriented ? (settings.panelHeight / 2) : getPageData(pageIndex, "h") / 2);
             settings.horizontalOffset = (settings.verticallyOriented ? getPageData(pageIndex, "w") / 2 : (settings.panelWidth / 2));
 
-            clearViewer();
-
             var horizontalPadding = settings.fixedPadding * (settings.pagesPerRow + 1);
             var pageWidth = (settings.panelWidth - horizontalPadding) / settings.pagesPerRow;
             settings.gridPageWidth = pageWidth;
@@ -1691,7 +1660,7 @@ var DivaSettingsValidator = new ValidationRunner({
             settings.numRows = Math.ceil(settings.numPages / settings.pagesPerRow);
             settings.totalHeight = settings.numRows * settings.rowHeight + settings.fixedPadding;
 
-            setDocumentSize({
+            settings.documentRendering.setDocumentSize({
                 height: Math.round(settings.totalHeight) + 'px'
             });
 
@@ -1715,21 +1684,6 @@ var DivaSettingsValidator = new ValidationRunner({
                     settings.lastRowLoaded = rowIndex;
                 }
             }
-        };
-
-        var setDocumentSize = function (dimensions)
-        {
-            // Ensure values are reset if not specified
-            dimensions = $.extend({
-                width: null,
-                minWidth: null,
-                height: null,
-                minHeight: null
-            }, dimensions);
-
-            elt.setAttributes(settings.innerElement, {
-                style: dimensions
-            });
         };
 
         // Called when the fullscreen icon is clicked
@@ -2532,7 +2486,9 @@ var DivaSettingsValidator = new ValidationRunner({
             // Clear page and resize timeouts when the viewer is destroyed
             diva.Events.subscribe('ViewerDidTerminate', function ()
             {
-                clearPageTimeouts();
+                settings.documentRendering.destroy();
+                settings.documentRendering = null;
+
                 clearTimeout(settings.resizeTimer);
             }, settings.ID);
         };
@@ -3169,7 +3125,10 @@ var DivaSettingsValidator = new ValidationRunner({
         //Determines if a page is currently in the DOM
         this.isPageLoaded = function (pageIndex)
         {
-            return isPageLoaded(pageIndex);
+            if (!settings.documentRendering)
+                return false;
+
+            return settings.documentRendering.isPageLoaded(pageIndex);
         };
 
         // Toggle fullscreen mode
