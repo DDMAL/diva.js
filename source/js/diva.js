@@ -857,7 +857,7 @@ var DivaSettingsValidator = new ValidationRunner({
             settings.innerElement.appendChild(rowDiv);
 
             // Declare variables used in the loop
-            var i, pageIndex, filename, realWidth, realHeight, pageWidth, pageHeight, leftOffset, imageURL;
+            var i, pageIndex, pageData, filename, pageDimenData, heightToWidthRatio, pageWidth, pageHeight, leftOffset, imageURL;
 
             // Load each page within that row
             var ppr = settings.pagesPerRow;
@@ -869,12 +869,25 @@ var DivaSettingsValidator = new ValidationRunner({
                 if (!isPageValid(pageIndex))
                     break;
 
+                pageData = settings.manifest.pages[pageIndex];
+                filename = pageData.f;
+
                 // Calculate the width, height and horizontal placement of this page
-                filename = settings.manifest.pages[pageIndex].f;
-                realWidth = getPageData(pageIndex, 'w');
-                realHeight = getPageData(pageIndex, 'h');
-                pageWidth = (settings.fixedHeightGrid) ? (settings.rowHeight - settings.fixedPadding) * realWidth / realHeight : settings.gridPageWidth;
-                pageHeight = (settings.fixedHeightGrid) ? settings.rowHeight - settings.fixedPadding : pageWidth / realWidth * realHeight;
+                // Get dimensions at max zoom level, although any level should be fine
+                pageDimenData = pageData.d[pageData.d.length - 1];
+                heightToWidthRatio = pageDimenData.h / pageDimenData.w;
+
+                if (settings.fixedHeightGrid)
+                {
+                    pageWidth = (settings.rowHeight - settings.fixedPadding) / heightToWidthRatio;
+                    pageHeight = settings.rowHeight - settings.fixedPadding;
+                }
+                else
+                {
+                    pageWidth = settings.gridPageWidth;
+                    pageHeight = pageWidth * heightToWidthRatio;
+                }
+
                 leftOffset = parseInt(i * (settings.fixedPadding + settings.gridPageWidth) + settings.fixedPadding, 10);
 
                 // Make sure they're all integers for nice, round numbers
