@@ -1647,10 +1647,6 @@ var DivaSettingsValidator = new ValidationRunner({
 
         var loadGrid = function ()
         {
-            var pageIndex = settings.currentPageIndex;
-            settings.verticalOffset = (settings.verticallyOriented ? (settings.panelHeight / 2) : getPageData(pageIndex, "h") / 2);
-            settings.horizontalOffset = (settings.verticallyOriented ? getPageData(pageIndex, "w") / 2 : (settings.panelWidth / 2));
-
             var horizontalPadding = settings.fixedPadding * (settings.pagesPerRow + 1);
             var pageWidth = (settings.panelWidth - horizontalPadding) / settings.pagesPerRow;
             settings.gridPageWidth = pageWidth;
