@@ -180,6 +180,30 @@ QUnit.test("inViewport()", function (assert)
     });
 });
 
+QUnit.test("isPageInViewport()", function (assert)
+{
+    var done = assert.async();
+
+    diva.Events.subscribe('ViewerDidLoad', function ()
+    {
+        assert.ok(this.isPageInViewport(0), 'The first page should be in the viewport');
+        assert.ok(!this.isPageInViewport(100), 'The hundredth page should not be in the viewport');
+
+        this.enterGridView();
+    });
+
+    diva.Events.subscribe('ViewDidSwitch', function ()
+    {
+        assert.ok(this.isPageInViewport(0), 'The first page should be in the viewport grid');
+        assert.ok(this.isPageInViewport(5), 'The fifth page should be in the viewport grid');
+        assert.ok(!this.isPageInViewport(100), 'The hundredth page should not be in the viewport grid');
+
+        done();
+    });
+
+    $.tempDiva({});
+});
+
 QUnit.test("toggleFullscreenMode(), enterFullscreenMode(), leaveFullscreenMode()", function (assert)
 {
     var done = assert.async();

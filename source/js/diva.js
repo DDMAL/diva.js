@@ -3159,6 +3159,9 @@ var DivaSettingsValidator = new ValidationRunner({
         //Determines if a page is currently in the viewport
         this.isPageInViewport = function (pageIndex)
         {
+            if (settings.inGrid)
+                return isRowVisible(Math.floor(pageIndex / settings.pagesPerRow));
+
             return isPageVisible(pageIndex);
         };
 
