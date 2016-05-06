@@ -193,8 +193,6 @@ var DivaSettingsValidator = new ValidationRunner({
             unclampedVerticalPadding: 0, // Used to keep track of initial padding size before enforcing the minimum size needed to accommodate plugin icons
             documentRendering: null,    // Used to manage the rendering of the pages
             firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
-            firstRowLoaded: -1,         // The index of the first row loaded
-            gridPageWidth: 0,           // Holds the max width of each row in grid view. Calculated in loadGrid()
             hashParamSuffix: '',        // Used when there are multiple document viewers on a page
             horizontalOffset: 0,        // Distance from the center of the diva element to the top of the current page
             horizontalPadding: 0,       // Either the fixed padding or adaptive padding
@@ -208,13 +206,11 @@ var DivaSettingsValidator = new ValidationRunner({
             isIIIF: false,              // Specifies whether objectData is in Diva native or IIIF Manifest format
             isZooming: false,           // Flag to keep track of whether zooming is still in progress, for handleZoom
             lastPageLoaded: -1,         // The ID of the last page loaded (value set later)
-            lastRowLoaded: -1,          // The index of the last row loaded
             loaded: false,              // A flag for when everything is loaded and ready to go.
             // FIXME: Should this be a map?
             loadedTiles: [],            // Keeps track of which tiles have been loaded already
             mobileWebkit: false,        // Checks if the user is on a touch device (iPad/iPod/iPhone/Android)
             numPages: 0,                // Number of pages in the array
-            numRows: 0,                 // Number of rows
             oldZoomLevel: -1,           // Holds the previous zoom level after zooming in or out
             outerObject: {},            // $(settings.ID + 'outer'), for selecting the .diva-outer element
             outerElement: null,         // The native .diva-outer DOM object
@@ -230,7 +226,6 @@ var DivaSettingsValidator = new ValidationRunner({
             previousTopScroll: 0,       // Used to determine vertical scroll direction
             previousZoomLevelCanvases: [],  // Array to hold canvases of pages visible at previous zoom level (for page image persistence across zooms)
             resizeTimer: -1,            // Holds the ID of the timeout used when resizing the window (for clearing)
-            rowHeight: 0,               // Holds the max height of each row in grid view. Calculated in loadGrid()
             previousZoomRatio: 1,             // Used to keep track of the previous zoom ratio for scale transforming diva-inner
             scaleWait: false,           // For preventing double-zoom on touch devices (iPad, etc)
             scrollbarWidth: 0,          // Set to the actual scrollbar width in init()
@@ -326,7 +321,6 @@ var DivaSettingsValidator = new ValidationRunner({
             settings.viewport.top = 0;
 
             settings.firstPageLoaded = 0;
-            settings.firstRowLoaded = -1;
             settings.previousTopScroll = 0;
             settings.previousLeftScroll = 0;
 

@@ -5,18 +5,25 @@ module.exports = GridRendering;
 
 function GridRendering(viewer)
 {
+    var self = this;
     var settings = viewer.getSettings();
+
+    self.gridPageWidth = 0;
+    self.firstRowLoaded = -1;
+    self.lastRowLoaded = -1;
+    self.numRows = 0;
+    self.rowHeight = 0;
 
     var loadGrid = function ()
     {
         var horizontalPadding = settings.fixedPadding * (settings.pagesPerRow + 1);
         var pageWidth = (settings.panelWidth - horizontalPadding) / settings.pagesPerRow;
-        settings.gridPageWidth = pageWidth;
+        self.gridPageWidth = pageWidth;
 
         // Calculate the row height depending on whether we want to fix the width or the height
-        settings.rowHeight = (settings.fixedHeightGrid) ? settings.fixedPadding + settings.manifest.minRatio * pageWidth : settings.fixedPadding + settings.manifest.maxRatio * pageWidth;
-        settings.numRows = Math.ceil(settings.numPages / settings.pagesPerRow);
-        settings.totalHeight = settings.numRows * settings.rowHeight + settings.fixedPadding;
+        self.rowHeight = (settings.fixedHeightGrid) ? settings.fixedPadding + settings.manifest.minRatio * pageWidth : settings.fixedPadding + settings.manifest.maxRatio * pageWidth;
+        self.numRows = Math.ceil(settings.numPages / settings.pagesPerRow);
+        settings.totalHeight = self.numRows * self.rowHeight + settings.fixedPadding;
 
         settings.documentRendering.setDocumentSize({
             height: Math.round(settings.totalHeight) + 'px'
@@ -37,9 +44,9 @@ function GridRendering(viewer)
 
             if (isRowVisible(rowIndex))
             {
-                settings.firstRowLoaded = (settings.firstRowLoaded < 0) ? rowIndex : settings.firstRowLoaded;
+                self.firstRowLoaded = (self.firstRowLoaded < 0) ? rowIndex : self.firstRowLoaded;
                 loadRow(rowIndex);
-                settings.lastRowLoaded = rowIndex;
+                self.lastRowLoaded = rowIndex;
             }
         }
     };
@@ -47,7 +54,7 @@ function GridRendering(viewer)
     // Check if a row index is valid
     var isRowValid = function (rowIndex)
     {
-        return rowIndex >= 0 && rowIndex < settings.numRows;
+        return rowIndex >= 0 && rowIndex < self.numRows;
     };
 
     var isPageVisible = function (pageIndex)
@@ -58,8 +65,8 @@ function GridRendering(viewer)
     // Check if a row should be visible in the viewport
     var isRowVisible = function (rowIndex)
     {
-        var topOfRow = settings.rowHeight * rowIndex;
-        var bottomOfRow = topOfRow + settings.rowHeight + settings.fixedPadding;
+        var topOfRow = self.rowHeight * rowIndex;
+        var bottomOfRow = topOfRow + self.rowHeight + settings.fixedPadding;
 
         return settings.viewport.hasVerticalOverlap({
             top: topOfRow,
@@ -80,14 +87,14 @@ function GridRendering(viewer)
             return;
 
         // Load some data for this and initialise some variables
-        var heightFromTop = (settings.rowHeight * rowIndex) + settings.fixedPadding;
+        var heightFromTop = (self.rowHeight * rowIndex) + settings.fixedPadding;
 
         // Create the row div
         var rowDiv = elt('div', {
             id: settings.ID + 'row-' + rowIndex,
             class: 'diva-row',
             style: {
-                height: settings.rowHeight + 'px',
+                height: self.rowHeight + 'px',
                 top: heightFromTop + 'px'
             }
         });
@@ -111,10 +118,10 @@ function GridRendering(viewer)
 
             // Calculate the width, height and horizontal placement of this page
             pageDimens = getPageDimensions(pageIndex);
-            leftOffset = parseInt(i * (settings.fixedPadding + settings.gridPageWidth) + settings.fixedPadding, 10);
+            leftOffset = parseInt(i * (settings.fixedPadding + self.gridPageWidth) + settings.fixedPadding, 10);
 
             // Center the page if the height is fixed (otherwise, there is no horizontal padding)
-            leftOffset += (settings.fixedHeightGrid) ? (settings.gridPageWidth - pageDimens.width) / 2 : 0;
+            leftOffset += (settings.fixedHeightGrid) ? (self.gridPageWidth - pageDimens.width) / 2 : 0;
             imageURL = settings.manifest.getPageImageURL(pageIndex, { width: pageDimens.width });
 
             settings.pageTopOffsets[pageIndex] = heightFromTop;
@@ -157,12 +164,12 @@ function GridRendering(viewer)
 
         if (settings.fixedHeightGrid)
         {
-            pageWidth = (settings.rowHeight - settings.fixedPadding) / heightToWidthRatio;
-            pageHeight = settings.rowHeight - settings.fixedPadding;
+            pageWidth = (self.rowHeight - settings.fixedPadding) / heightToWidthRatio;
+            pageHeight = self.rowHeight - settings.fixedPadding;
         }
         else
         {
-            pageWidth = settings.gridPageWidth;
+            pageWidth = self.gridPageWidth;
             pageHeight = pageWidth * heightToWidthRatio;
         }
 
@@ -188,14 +195,14 @@ function GridRendering(viewer)
     // Check if the bottom of a row is above the top of the viewport (scrolling down)
     var rowAboveViewport = function (rowIndex)
     {
-        var bottomOfRow = settings.rowHeight * (rowIndex + 1);
+        var bottomOfRow = self.rowHeight * (rowIndex + 1);
         return (bottomOfRow < settings.viewport.top);
     };
 
     // Check if the top of a row is below the bottom of the viewport (scrolling up)
     var rowBelowViewport = function (rowIndex)
     {
-        var topOfRow = settings.rowHeight * rowIndex;
+        var topOfRow = self.rowHeight * rowIndex;
         return (topOfRow > settings.viewport.bottom);
     };
 
@@ -209,9 +216,9 @@ function GridRendering(viewer)
                 if (isRowVisible(rowIndex))
                 {
                     loadRow(rowIndex);
-                    settings.lastRowLoaded = rowIndex;
+                    self.lastRowLoaded = rowIndex;
 
-                    attemptRowShow(settings.lastRowLoaded + 1, direction);
+                    attemptRowShow(self.lastRowLoaded + 1, direction);
                 }
                 else if (rowAboveViewport(rowIndex))
                 {
@@ -226,9 +233,9 @@ function GridRendering(viewer)
                 if (isRowVisible(rowIndex))
                 {
                     loadRow(rowIndex);
-                    settings.firstRowLoaded = rowIndex;
+                    self.firstRowLoaded = rowIndex;
 
-                    attemptRowShow(settings.firstRowLoaded - 1, direction);
+                    attemptRowShow(self.firstRowLoaded - 1, direction);
                 }
                 else if (rowBelowViewport(rowIndex))
                 {
@@ -245,9 +252,9 @@ function GridRendering(viewer)
             if (isRowValid(rowIndex) && rowAboveViewport(rowIndex))
             {
                 deleteRow(rowIndex);
-                settings.firstRowLoaded++;
+                self.firstRowLoaded++;
 
-                attemptRowHide(settings.firstRowLoaded, direction);
+                attemptRowHide(self.firstRowLoaded, direction);
             }
         }
         else
@@ -255,9 +262,9 @@ function GridRendering(viewer)
             if (isRowValid(rowIndex) && rowBelowViewport(rowIndex))
             {
                 deleteRow(rowIndex);
-                settings.lastRowLoaded--;
+                self.lastRowLoaded--;
 
-                attemptRowHide(settings.lastRowLoaded, direction);
+                attemptRowHide(self.lastRowLoaded, direction);
             }
         }
     };
@@ -266,15 +273,15 @@ function GridRendering(viewer)
     {
         if (direction < 0)
         {
-            attemptRowShow(settings.firstRowLoaded, -1);
+            attemptRowShow(self.firstRowLoaded, -1);
             setCurrentRow(-1);
-            attemptRowHide(settings.lastRowLoaded, -1);
+            attemptRowHide(self.lastRowLoaded, -1);
         }
         else if (direction > 0)
         {
-            attemptRowShow(settings.lastRowLoaded, 1);
+            attemptRowShow(self.lastRowLoaded, 1);
             setCurrentRow(1);
-            attemptRowHide(settings.firstRowLoaded, 1);
+            attemptRowHide(self.firstRowLoaded, 1);
         }
 
         var newTopScroll = settings.viewport.top;
@@ -327,14 +334,14 @@ function GridRendering(viewer)
 
         if (direction < 0)
         {
-            if (rowToConsider >= 0 && (settings.rowHeight * currentRow >= middleOfViewport || settings.rowHeight * rowToConsider >= topScroll))
+            if (rowToConsider >= 0 && (self.rowHeight * currentRow >= middleOfViewport || self.rowHeight * rowToConsider >= topScroll))
             {
                 changeCurrentRow = true;
             }
         }
         else if (direction > 0)
         {
-            if ((settings.rowHeight * (currentRow + 1)) < topScroll && isRowValid(rowToConsider))
+            if ((self.rowHeight * (currentRow + 1)) < topScroll && isRowValid(rowToConsider))
             {
                 changeCurrentRow = true;
             }
@@ -365,7 +372,7 @@ function GridRendering(viewer)
     {
         var desiredRow = Math.floor(pageIndex / settings.pagesPerRow);
 
-        settings.viewport.top = desiredRow * settings.rowHeight;
+        settings.viewport.top = desiredRow * self.rowHeight;
 
         // Pretend that this is the current page (it probably isn't)
         settings.currentPageIndex = pageIndex;
@@ -381,14 +388,12 @@ function GridRendering(viewer)
         gotoRow(settings.goDirectlyTo);
     };
 
-    return {
-        load: loadGrid,
-        adjust: adjustRows,
-        goto: gotoRow,
-        preload: function () {},
-        isPageVisible: isPageVisible,
-        getPageDimensions: getPageDimensions
-    };
+    this.load = loadGrid;
+    this.adjust = adjustRows;
+    this.goto = gotoRow;
+    this.preload = function () { /* No-op */ };
+    this.isPageVisible = isPageVisible;
+    this.getPageDimensions = getPageDimensions;
 }
 
 GridRendering.getCompatibilityErrors = function ()
