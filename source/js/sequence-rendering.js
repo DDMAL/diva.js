@@ -687,81 +687,121 @@ function SequenceRendering(viewer)
 
     var calculatePageOffsets = function(widthToSet, heightToSet)
     {
+        var offsets = getPageOffsets(widthToSet, heightToSet);
+
+        settings.pageTopOffsets = offsets.map(function (offset)
+        {
+            return offset.top;
+        });
+
+        settings.pageLeftOffsets = offsets.map(function (offset)
+        {
+            return offset.left;
+        });
+    };
+
+    var getPageOffsets = function(widthToSet, heightToSet)
+    {
+        var manifest = settings.manifest;
+        var numPages = manifest.pages.length;
+
+        var inBookLayout = settings.inBookLayout;
+        var verticallyOriented = settings.verticallyOriented;
+
+        var horizontalPadding = settings.horizontalPadding;
+        var verticalPadding = settings.verticalPadding;
+
         // Set settings.pageTopOffsets/pageLeftOffsets to determine where we're going to need to scroll, reset them in case they were used for grid before
         var heightSoFar = 0;
         var widthSoFar = 0;
         var i;
 
-        settings.pageTopOffsets = [];
-        settings.pageLeftOffsets = [];
+        var offsets = [];
+        var offset;
 
-        if (settings.inBookLayout)
+        if (inBookLayout)
         {
             var isLeft = false;
 
-            if (settings.verticallyOriented)
+            if (verticallyOriented)
             {
-                for (i = 0; i < settings.numPages; i++)
+                for (i = 0; i < numPages; i++)
                 {
                     //set the height above that page counting only every other page and excluding non-paged canvases
                     //height of this 'row' = max(height of the pages in this row)
 
-                    settings.pageTopOffsets[i] = heightSoFar;
+                    offset = {
+                        top: heightSoFar,
+                        left: null
+                    };
 
                     if (isLeft)
                     {
                         //page on the left
-                        settings.pageLeftOffsets[i] = (widthToSet / 2) - getPageData(i, 'w') - settings.horizontalPadding;
+                        offset.left = (widthToSet / 2) - getPageData(i, 'w') - horizontalPadding;
                     }
                     else
                     {
                         //page on the right
-                        settings.pageLeftOffsets[i] = (widthToSet / 2) - settings.horizontalPadding;
+                        offset.left = (widthToSet / 2) - horizontalPadding;
 
                         //increment the height
-                        if (!settings.manifest.paged || settings.manifest.pages[i].paged)
+                        if (!manifest.paged || manifest.pages[i].paged)
                         {
                             var pageHeight = (isPageValid(i - 1)) ? Math.max(getPageData(i, 'h'), getPageData(i - 1, 'h')) : getPageData(i, 'h');
-                            heightSoFar = settings.pageTopOffsets[i] + pageHeight + settings.verticalPadding;
+                            heightSoFar = offset.top + pageHeight + verticalPadding;
                         }
                     }
 
+                    offsets.push(offset);
+
                     //don't include non-paged canvases in layout calculation
-                    if (!settings.manifest.paged || settings.manifest.pages[i].paged)
+                    if (!manifest.paged || manifest.pages[i].paged)
                         isLeft = !isLeft;
                 }
             }
             else
             {
                 // book, horizontally oriented
-                for (i = 0; i < settings.numPages; i++)
+                for (i = 0; i < numPages; i++)
                 {
-                    settings.pageTopOffsets[i] = parseInt((heightToSet - getPageData(i, 'h')) / 2, 10);
-                    settings.pageLeftOffsets[i] = widthSoFar;
+                    offset = {
+                        top: parseInt((heightToSet - getPageData(i, 'h')) / 2, 10),
+                        left: widthSoFar
+                    };
+
+                    offsets.push(offset);
 
                     var pageWidth = getPageData(i, 'w');
-                    var padding = (isLeft) ? 0 : settings.horizontalPadding;
-                    widthSoFar = settings.pageLeftOffsets[i] + pageWidth + padding;
+                    var padding = (isLeft) ? 0 : horizontalPadding;
+                    widthSoFar = offset.left + pageWidth + padding;
 
-                    if (!settings.manifest.paged || settings.manifest.pages[i].paged)
+                    if (!manifest.paged || manifest.pages[i].paged)
                         isLeft = !isLeft;
                 }
             }
         }
         else
         {
-            for (i = 0; i < settings.numPages; i++)
+            for (i = 0; i < numPages; i++)
             {
                 // First set the height above that page by adding this height to the previous total
                 // A page includes the padding above it
-                settings.pageTopOffsets[i] = parseInt(settings.verticallyOriented ? heightSoFar : (heightToSet - getPageData(i, 'h')) / 2, 10);
-                settings.pageLeftOffsets[i] = parseInt(settings.verticallyOriented ? (widthToSet - getPageData(i, 'w')) / 2 : widthSoFar, 10);
+
+                offset = {
+                    top: parseInt(verticallyOriented ? heightSoFar : (heightToSet - getPageData(i, 'h')) / 2, 10),
+                    left: parseInt(verticallyOriented ? (widthToSet - getPageData(i, 'w')) / 2 : widthSoFar, 10)
+                };
+
+                offsets.push(offset);
 
                 // Has to be done this way otherwise you get the height of the page included too
-                heightSoFar = settings.pageTopOffsets[i] + getPageData(i, 'h') + settings.verticalPadding;
-                widthSoFar = settings.pageLeftOffsets[i] + getPageData(i, 'w') + settings.horizontalPadding;
+                heightSoFar = offset.top + getPageData(i, 'h') + verticalPadding;
+                widthSoFar = offset.left + getPageData(i, 'w') + horizontalPadding;
             }
         }
+
+        return offsets;
     };
 
     var calculateDocumentDimensions = function(zoomLevel)
