@@ -398,17 +398,22 @@ var DivaSettingsValidator = new ValidationRunner({
 
             var Rendering = settings.inGrid ? GridRendering : SequenceRendering;
 
-            var compatErrors = Rendering.getCompatibilityErrors(self);
+            if (!(settings.viewRendering instanceof Rendering))
+            {
+                var compatErrors = Rendering.getCompatibilityErrors(self);
 
-            if (compatErrors)
-            {
-                showError(compatErrors);
+                if (compatErrors)
+                {
+                    showError(compatErrors);
+                }
+                else
+                {
+                    settings.viewRendering = new Rendering(self);
+                }
             }
-            else
-            {
-                settings.viewRendering = new Rendering(self);
+
+            if (settings.viewRendering)
                 settings.viewRendering.load();
-            }
 
             queuedEvents.forEach(function (args)
             {
