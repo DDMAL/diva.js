@@ -32,7 +32,6 @@ var Transition = require('./utils/transition');
 
 var ActiveDivaController = require('./active-diva-controller');
 var diva = require('./diva-global');
-var DocumentRendering = require('./document-rendering');
 var GridRendering = require('./grid-rendering');
 var SequenceRendering = require('./sequence-rendering');
 var ImageManifest = require('./image-manifest');
@@ -190,7 +189,6 @@ var DivaSettingsValidator = new ValidationRunner({
         $.extend(settings, {
             currentPageIndex: 0,        // The current page in the viewport (center-most page)
             unclampedVerticalPadding: 0, // Used to keep track of initial padding size before enforcing the minimum size needed to accommodate plugin icons
-            documentRendering: null,    // Used to manage the rendering of the pages
             hashParamSuffix: '',        // Used when there are multiple document viewers on a page
             horizontalOffset: 0,        // Distance from the center of the diva element to the top of the current page
             horizontalPadding: 0,       // Either the fixed padding or adaptive padding
@@ -305,12 +303,6 @@ var DivaSettingsValidator = new ValidationRunner({
         // Reset some settings and empty the viewport
         var clearViewer = function ()
         {
-            if (settings.documentRendering)
-            {
-                settings.documentRendering.destroy();
-                settings.documentRendering = null;
-            }
-
             settings.viewport.top = 0;
 
             settings.previousTopScroll = 0;
@@ -387,11 +379,6 @@ var DivaSettingsValidator = new ValidationRunner({
 
             clearViewer();
 
-            settings.documentRendering = new DocumentRendering({
-                element: settings.innerElement,
-                ID: settings.ID
-            });
-
             // re-attach scroll event to outer div (necessary if we just zoomed)
             settings.outerObject.off('scroll');
             settings.outerObject.scroll(scrollFunction);
@@ -408,6 +395,9 @@ var DivaSettingsValidator = new ValidationRunner({
                 }
                 else
                 {
+                    if (settings.viewRendering)
+                        settings.viewRendering.destroy();
+
                     settings.viewRendering = new Rendering(self);
                 }
             }
@@ -1241,8 +1231,8 @@ var DivaSettingsValidator = new ValidationRunner({
             // Clear page and resize timeouts when the viewer is destroyed
             diva.Events.subscribe('ViewerDidTerminate', function ()
             {
-                settings.documentRendering.destroy();
-                settings.documentRendering = null;
+                if (settings.viewRendering)
+                    settings.viewRendering.destroy();
 
                 clearTimeout(settings.resizeTimer);
             }, settings.ID);
@@ -1860,10 +1850,10 @@ var DivaSettingsValidator = new ValidationRunner({
         //Determines if a page is currently in the DOM
         this.isPageLoaded = function (pageIndex)
         {
-            if (!settings.documentRendering)
+            if (!settings.viewRendering)
                 return false;
 
-            return settings.documentRendering.isPageLoaded(pageIndex);
+            return settings.viewRendering.isPageLoaded(pageIndex);
         };
 
         // Toggle fullscreen mode
@@ -2167,6 +2157,10 @@ var DivaSettingsValidator = new ValidationRunner({
         {
             settings.loaded = false;
             clearViewer();
+
+            if (settings.viewRendering)
+                settings.viewRendering.destroy();
+
             settings.objectData = objectData;
 
             if (typeof objectData === 'object')

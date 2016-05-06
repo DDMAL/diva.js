@@ -1,5 +1,6 @@
 var elt = require('./utils/elt');
 var diva = require('./diva-global');
+var DocumentRendering = require('./document-rendering');
 
 module.exports = GridRendering;
 
@@ -16,6 +17,14 @@ function GridRendering(viewer)
 
     var loadGrid = function ()
     {
+        if (self.documentRendering)
+            self.documentRendering.destroy();
+
+        self.documentRendering = new DocumentRendering({
+            element: settings.innerElement,
+            ID: settings.ID
+        });
+
         var horizontalPadding = settings.fixedPadding * (settings.pagesPerRow + 1);
         var pageWidth = (settings.panelWidth - horizontalPadding) / settings.pagesPerRow;
         self.gridPageWidth = pageWidth;
@@ -25,7 +34,7 @@ function GridRendering(viewer)
         self.numRows = Math.ceil(settings.numPages / settings.pagesPerRow);
         settings.totalHeight = self.numRows * self.rowHeight + settings.fixedPadding;
 
-        settings.documentRendering.setDocumentSize({
+        self.documentRendering.setDocumentSize({
             height: Math.round(settings.totalHeight) + 'px'
         });
 
@@ -306,7 +315,7 @@ function GridRendering(viewer)
         // FIXME: why define this inline?
         var loadFunction = function (rowIndex, pageIndex, imageURL, pageWidth, pageHeight)
         {
-            if (settings.documentRendering.isPageLoaded(pageIndex))
+            if (self.documentRendering.isPageLoaded(pageIndex))
             {
                 var imgEl = elt('img', {
                     src: imageURL,
@@ -320,7 +329,7 @@ function GridRendering(viewer)
             }
         };
 
-        settings.documentRendering.setPageTimeout(loadFunction, settings.rowLoadTimeout, [rowIndex, pageIndex, imageURL, pageWidth, pageHeight]);
+        self.documentRendering.setPageTimeout(loadFunction, settings.rowLoadTimeout, [rowIndex, pageIndex, imageURL, pageWidth, pageHeight]);
     };
 
     // Sets the current page in grid view
@@ -388,12 +397,24 @@ function GridRendering(viewer)
         gotoRow(settings.goDirectlyTo);
     };
 
+    var isPageLoaded = function (pageIndex)
+    {
+        return self.documentRendering.isPageLoaded(pageIndex);
+    };
+
+    var destroy = function ()
+    {
+        self.documentRendering.destroy();
+    };
+
     this.load = loadGrid;
     this.adjust = adjustRows;
     this.goto = gotoRow;
     this.preload = function () { /* No-op */ };
     this.isPageVisible = isPageVisible;
+    this.isPageLoaded = isPageLoaded;
     this.getPageDimensions = getPageDimensions;
+    this.destroy = destroy;
 }
 
 GridRendering.getCompatibilityErrors = function ()

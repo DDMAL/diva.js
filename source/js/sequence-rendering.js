@@ -1,5 +1,6 @@
 var elt = require('./utils/elt');
 var diva = require('./diva-global');
+var DocumentRendering = require('./document-rendering');
 
 module.exports = SequenceRendering;
 
@@ -8,6 +9,7 @@ function SequenceRendering(viewer)
     var self = this;
     var settings = viewer.getSettings();
 
+    self.documentRendering = null;
     self.allTilesLoaded = [];
     self.loadedTiles = [];
     self.firstPageLoaded = -1;
@@ -155,7 +157,7 @@ function SequenceRendering(viewer)
     var loadPage = function (pageIndex)
     {
         // If the page and all of its tiles have been loaded, or if we are in book layout and the canvas is non-paged, exit
-        if ((settings.documentRendering.isPageLoaded(pageIndex) && self.allTilesLoaded[pageIndex]) ||
+        if ((self.documentRendering.isPageLoaded(pageIndex) && self.allTilesLoaded[pageIndex]) ||
             (settings.inBookLayout && settings.manifest.paged && !settings.manifest.pages[pageIndex].paged))
             return;
 
@@ -170,7 +172,7 @@ function SequenceRendering(viewer)
         var pageSelector = settings.selector + 'page-' + pageIndex;
 
         // If the page has not been loaded yet, append the div to the DOM
-        if (!settings.documentRendering.isPageLoaded(pageIndex))
+        if (!self.documentRendering.isPageLoaded(pageIndex))
         {
             var pageElement = elt('div', {
                 id: settings.ID + 'page-' + pageIndex,
@@ -272,7 +274,7 @@ function SequenceRendering(viewer)
 
         if (!isPreloaded)
         {
-            settings.documentRendering.setPageTimeout(loadPageTiles, settings.pageLoadTimeout, [pageIndex, filename, width, height]);
+            self.documentRendering.setPageTimeout(loadPageTiles, settings.pageLoadTimeout, [pageIndex, filename, width, height]);
         }
     };
 
@@ -783,6 +785,14 @@ function SequenceRendering(viewer)
     {
         diva.Events.publish('DocumentWillLoad', [settings], viewer);
 
+        if (self.documentRendering)
+            self.documentRendering.destroy();
+
+        self.documentRendering = new DocumentRendering({
+            element: settings.innerElement,
+            ID: settings.ID
+        });
+
         this.firstPageLoaded = 0;
         resetTilesLoaded();
 
@@ -800,7 +810,7 @@ function SequenceRendering(viewer)
 
         if (settings.verticallyOriented)
         {
-            settings.documentRendering.setDocumentSize({
+            self.documentRendering.setDocumentSize({
                 height: Math.round(settings.totalHeight) + 'px',
                 width: Math.round(documentDimensions.widthToSet) + 'px',
                 minWidth: settings.panelWidth + 'px'
@@ -808,7 +818,7 @@ function SequenceRendering(viewer)
         }
         else
         {
-            settings.documentRendering.setDocumentSize({
+            self.documentRendering.setDocumentSize({
                 height: Math.round(documentDimensions.heightToSet) + 'px',
                 minHeight: settings.panelHeight + 'px',
                 width: Math.round(settings.totalWidth) + 'px'
@@ -925,6 +935,11 @@ function SequenceRendering(viewer)
         }
     };
 
+    var isPageLoaded = function (pageIndex)
+    {
+        return self.documentRendering.isPageLoaded(pageIndex);
+    };
+
     var getPageDimensions = function (pageIndex)
     {
         return {
@@ -933,12 +948,19 @@ function SequenceRendering(viewer)
         };
     };
 
+    var destroy = function ()
+    {
+        self.documentRendering.destroy();
+    };
+
     this.load = loadDocument;
     this.adjust = adjustPages;
     this.goto = gotoPage;
     this.preload = preloadPages;
     this.isPageVisible = isPageVisible;
+    this.isPageLoaded = isPageLoaded;
     this.getPageDimensions = getPageDimensions;
+    this.destroy = destroy;
 }
 
 SequenceRendering.getCompatibilityErrors = function ()
