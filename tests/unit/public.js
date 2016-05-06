@@ -492,6 +492,46 @@ QUnit.test("translateToMaxZoomLevel()", function (assert)
     $.tempDiva({});
 });
 
+QUnit.test("getPageDimensionsAtCurrentGridLevel([pageIndex])", function (assert)
+{
+    var done = assert.async();
+
+    diva.Events.subscribe('ViewerDidLoad', function ()
+    {
+        var current = this.getPageDimensionsAtCurrentGridLevel();
+        var page10 = this.getPageDimensionsAtCurrentGridLevel();
+
+        assert.propEqual(current, page10, 'It should default to the current page');
+        assert.ok(typeof page10.height === 'number' && typeof page10.width === 'number', 'It should ... have numbers?');
+
+        this.leaveGridView();
+    });
+
+    diva.Events.subscribe('ViewDidSwitch', function ()
+    {
+        var err = null;
+
+        try
+        {
+            this.getPageDimensionsAtCurrentGridLevel();
+        }
+        catch (e)
+        {
+            err = e;
+        }
+
+        var expectedMessage = 'Cannot get grid-based dimensions when not in grid view';
+        assert.strictEqual(err.message, expectedMessage, 'It should throw outside grid view');
+
+        done();
+    });
+
+    $.tempDiva({
+        goDirectlyTo: 10,
+        inGrid: true
+    });
+});
+
 QUnit.skip("getPageIndexForPageXYValues()", function (assert)
 {
     var done = assert.async();

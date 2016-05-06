@@ -2115,15 +2115,14 @@ var DivaSettingsValidator = new ValidationRunner({
         //TODO: calculate all grid height levels and store them so this can be AtGridLevel(pageIndex, pagesPerRow) ?
         this.getPageDimensionsAtCurrentGridLevel = function(pageIndex)
         {
-            pageIndex = (isPageValid(pageIndex) ? pageIndex : settings.currentPageIndex);
+            // FIXME(wabain): This is a breaking change from 4.x to 5. Is this change desirable
+            // behaviour?
+            if (!settings.inGrid)
+                throw new Error('Cannot get grid-based dimensions when not in grid view');
 
-            var pageHeight = settings.rowHeight - settings.fixedPadding;
-            var pageWidth = (settings.fixedHeightGrid) ? (settings.rowHeight - settings.fixedPadding) * getPageData(pageIndex, 'w') / getPageData(pageIndex, 'h') : settings.gridPageWidth;
+            pageIndex = isPageValid(pageIndex) ? pageIndex : settings.currentPageIndex;
 
-            return {
-                'height': parseInt(pageHeight, 10),
-                'width': parseInt(pageWidth, 10)
-            };
+            return settings.viewRendering.getPageDimensions(pageIndex);
         };
 
         /*

@@ -96,7 +96,7 @@ function GridRendering(viewer)
         settings.innerElement.appendChild(rowDiv);
 
         // Declare variables used in the loop
-        var i, pageIndex, pageData, filename, pageDimenData, heightToWidthRatio, pageWidth, pageHeight, leftOffset, imageURL;
+        var i, pageIndex, filename, pageDimens, leftOffset, imageURL;
 
         // Load each page within that row
         var ppr = settings.pagesPerRow;
@@ -108,34 +108,15 @@ function GridRendering(viewer)
             if (!settings.manifest.isPageValid(pageIndex))
                 break;
 
-            pageData = settings.manifest.pages[pageIndex];
-            filename = pageData.f;
+            filename = settings.manifest.pages[pageIndex].f;
 
             // Calculate the width, height and horizontal placement of this page
-            // Get dimensions at max zoom level, although any level should be fine
-            pageDimenData = pageData.d[pageData.d.length - 1];
-            heightToWidthRatio = pageDimenData.h / pageDimenData.w;
-
-            if (settings.fixedHeightGrid)
-            {
-                pageWidth = (settings.rowHeight - settings.fixedPadding) / heightToWidthRatio;
-                pageHeight = settings.rowHeight - settings.fixedPadding;
-            }
-            else
-            {
-                pageWidth = settings.gridPageWidth;
-                pageHeight = pageWidth * heightToWidthRatio;
-            }
-
+            pageDimens = getPageDimensions(pageIndex);
             leftOffset = parseInt(i * (settings.fixedPadding + settings.gridPageWidth) + settings.fixedPadding, 10);
 
-            // Make sure they're all integers for nice, round numbers
-            pageWidth = parseInt(pageWidth, 10);
-            pageHeight = parseInt(pageHeight, 10);
-
             // Center the page if the height is fixed (otherwise, there is no horizontal padding)
-            leftOffset += (settings.fixedHeightGrid) ? (settings.gridPageWidth - pageWidth) / 2 : 0;
-            imageURL = settings.manifest.getPageImageURL(pageIndex, { width: pageWidth });
+            leftOffset += (settings.fixedHeightGrid) ? (settings.gridPageWidth - pageDimens.width) / 2 : 0;
+            imageURL = settings.manifest.getPageImageURL(pageIndex, { width: pageDimens.width });
 
             settings.pageTopOffsets[pageIndex] = heightFromTop;
             settings.pageLeftOffsets[pageIndex] = leftOffset;
@@ -144,8 +125,8 @@ function GridRendering(viewer)
                 id: settings.ID + 'page-' + pageIndex,
                 class: 'diva-page diva-grid-page',
                 style: {
-                    width: pageWidth + 'px',
-                    height: pageHeight + 'px',
+                    width: pageDimens.width + 'px',
+                    height: pageDimens.height + 'px',
                     left: leftOffset + 'px'
                 },
                 'data-index': pageIndex,
@@ -160,8 +141,36 @@ function GridRendering(viewer)
             diva.Events.publish("PageWillLoad", [pageIndex, filename, pageSelector], self);
 
             // Add each image to a queue so that images aren't loaded unnecessarily
-            addPageToQueue(rowIndex, pageIndex, imageURL, pageWidth, pageHeight);
+            addPageToQueue(rowIndex, pageIndex, imageURL, pageDimens.width, pageDimens.height);
         }
+    };
+
+    var getPageDimensions = function (pageIndex)
+    {
+        var pageData = settings.manifest.pages[pageIndex];
+
+        // Calculate the width, height and horizontal placement of this page
+        // Get dimensions at max zoom level, although any level should be fine
+        var pageDimenData = pageData.d[pageData.d.length - 1];
+        var heightToWidthRatio = pageDimenData.h / pageDimenData.w;
+
+        var pageWidth, pageHeight;
+
+        if (settings.fixedHeightGrid)
+        {
+            pageWidth = (settings.rowHeight - settings.fixedPadding) / heightToWidthRatio;
+            pageHeight = settings.rowHeight - settings.fixedPadding;
+        }
+        else
+        {
+            pageWidth = settings.gridPageWidth;
+            pageHeight = pageWidth * heightToWidthRatio;
+        }
+
+        return {
+            width: Math.round(pageWidth),
+            height: Math.round(pageHeight)
+        };
     };
 
     var deleteRow = function (rowIndex)
@@ -378,7 +387,8 @@ function GridRendering(viewer)
         adjust: adjustRows,
         goto: gotoRow,
         preload: function () {},
-        isPageVisible: isPageVisible
+        isPageVisible: isPageVisible,
+        getPageDimensions: getPageDimensions
     };
 }
 

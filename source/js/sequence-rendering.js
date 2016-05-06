@@ -905,12 +905,21 @@ function SequenceRendering(viewer)
         }
     };
 
+    var getPageDimensions = function (pageIndex)
+    {
+        return {
+            width: Math.floor(getPageData(pageIndex, 'w')),
+            height: Math.floor(getPageData(pageIndex, 'h'))
+        };
+    };
+
     return {
         load: loadDocument,
         adjust: adjustPages,
         goto: gotoPage,
         preload: preloadPages,
-        isPageVisible: isPageVisible
+        isPageVisible: isPageVisible,
+        getPageDimensions: getPageDimensions
     };
 }
 
