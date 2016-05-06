@@ -5,7 +5,14 @@ module.exports = SequenceRendering;
 
 function SequenceRendering(viewer)
 {
+    var self = this;
     var settings = viewer.getSettings();
+
+    self.allTilesLoaded = [];
+    self.loadedTiles = [];
+    self.firstPageLoaded = -1;
+    self.lastPageLoaded = -1;
+    self.pagePreloadCanvases = [];
 
     // FIXME(wabain): Temporarily copied from the Diva core
     var getPageData = function (pageIndex, attribute)
@@ -46,7 +53,7 @@ function SequenceRendering(viewer)
     // Check if a tile has been loaded (note: performance-sensitive function)
     var isTileLoaded = function (pageIndex, tileIndex)
     {
-        var tiles = settings.loadedTiles[pageIndex];
+        var tiles = self.loadedTiles[pageIndex];
 
         for (var i = tiles.length; i >= 0; i--)
         {
@@ -85,7 +92,7 @@ function SequenceRendering(viewer)
         {
             return function()
             {
-                settings.loadedTiles[pageIndex].push(tileIndex);
+                self.loadedTiles[pageIndex].push(tileIndex);
                 context.drawImage(currentTile, left, top);
             };
         }
@@ -125,7 +132,7 @@ function SequenceRendering(viewer)
             tileImage.src = tile.url;
         });
 
-        settings.allTilesLoaded[pageIndex] = allTilesLoaded;
+        self.allTilesLoaded[pageIndex] = allTilesLoaded;
     };
 
     // There are still tiles to load, so try to load those (after the delay specified in loadPage)
@@ -148,11 +155,11 @@ function SequenceRendering(viewer)
     var loadPage = function (pageIndex)
     {
         // If the page and all of its tiles have been loaded, or if we are in book layout and the canvas is non-paged, exit
-        if ((settings.documentRendering.isPageLoaded(pageIndex) && settings.allTilesLoaded[pageIndex]) ||
+        if ((settings.documentRendering.isPageLoaded(pageIndex) && self.allTilesLoaded[pageIndex]) ||
             (settings.inBookLayout && settings.manifest.paged && !settings.manifest.pages[pageIndex].paged))
             return;
 
-        var isPreloaded = typeof settings.pagePreloadCanvases[pageIndex] !== 'undefined';
+        var isPreloaded = typeof self.pagePreloadCanvases[pageIndex] !== 'undefined';
 
         // Load some data for this page
         var filename = settings.manifest.pages[pageIndex].f;
@@ -186,9 +193,9 @@ function SequenceRendering(viewer)
             // Append canvas element
             if (isPreloaded)
             {
-                canvasElement = settings.pagePreloadCanvases[pageIndex];
+                canvasElement = self.pagePreloadCanvases[pageIndex];
 
-                settings.pagePreloadCanvases[pageIndex] = undefined;
+                self.pagePreloadCanvases[pageIndex] = undefined;
             }
             else
             {
@@ -272,7 +279,7 @@ function SequenceRendering(viewer)
     var preloadPage = function(pageIndex)
     {
         // Exit if we've already started preloading this page and we're not still zooming
-        if (typeof settings.pagePreloadCanvases[pageIndex] !== 'undefined' && !settings.isZooming)
+        if (typeof self.pagePreloadCanvases[pageIndex] !== 'undefined' && !settings.isZooming)
             return;
 
         var filename = settings.manifest.pages[pageIndex].f;
@@ -316,7 +323,7 @@ function SequenceRendering(viewer)
         }
 
         //delete loaded tiles
-        settings.loadedTiles[pageIndex] = [];
+        self.loadedTiles[pageIndex] = [];
 
         theNode.parentNode.removeChild(theNode);
     };
@@ -375,18 +382,18 @@ function SequenceRendering(viewer)
                 if (isPageVisible(pageIndex))
                 {
                     loadPage(pageIndex);
-                    settings.lastPageLoaded = pageIndex;
+                    self.lastPageLoaded = pageIndex;
 
                     // Recursively call this function until there's nothing to add
-                    attemptPageShow(settings.lastPageLoaded + 1, direction);
+                    attemptPageShow(self.lastPageLoaded + 1, direction);
                 }
                 else if (isPageValid(pageIndex + 1) && isPageVisible(pageIndex + 1))
                 {
                     loadPage(pageIndex + 1);
-                    settings.lastPageLoaded = pageIndex + 1;
+                    self.lastPageLoaded = pageIndex + 1;
 
                     // Recursively call this function until there's nothing to add
-                    attemptPageShow(settings.lastPageLoaded + 1, direction);
+                    attemptPageShow(self.lastPageLoaded + 1, direction);
                 }
                 else if (pageBeforeViewport(pageIndex))
                 {
@@ -403,18 +410,18 @@ function SequenceRendering(viewer)
                     loadPage(pageIndex);
 
                     // Reset the first page loaded to this one
-                    settings.firstPageLoaded = pageIndex;
+                    self.firstPageLoaded = pageIndex;
 
                     // Recursively call this function until there's nothing to add
-                    attemptPageShow(settings.firstPageLoaded - 1, direction);
+                    attemptPageShow(self.firstPageLoaded - 1, direction);
                 }
                 else if (isPageValid(pageIndex - 1) && isPageVisible(pageIndex - 1))
                 {
                     loadPage(pageIndex - 1);
-                    settings.firstPageLoaded = pageIndex - 1;
+                    self.firstPageLoaded = pageIndex - 1;
 
                     // Recursively call this function until there's nothing to add
-                    attemptPageShow(settings.firstPageLoaded - 1, direction);
+                    attemptPageShow(self.firstPageLoaded - 1, direction);
                 }
                 else if (pageAfterViewport(pageIndex))
                 {
@@ -435,10 +442,10 @@ function SequenceRendering(viewer)
             {
                 // Yes, delete it, reset the first page loaded
                 deletePage(pageIndex);
-                settings.firstPageLoaded = pageIndex + 1;
+                self.firstPageLoaded = pageIndex + 1;
 
                 // Try to call this function recursively until there's nothing to delete
-                attemptPageHide(settings.firstPageLoaded, direction);
+                attemptPageHide(self.firstPageLoaded, direction);
             }
         }
         else
@@ -448,10 +455,10 @@ function SequenceRendering(viewer)
             {
                 // Yes, delete it, reset the last page loaded
                 deletePage(pageIndex);
-                settings.lastPageLoaded = pageIndex - 1;
+                self.lastPageLoaded = pageIndex - 1;
 
                 // Try to call this function recursively until there's nothing to delete
-                attemptPageHide(settings.lastPageLoaded, direction);
+                attemptPageHide(self.lastPageLoaded, direction);
             }
         }
     };
@@ -465,17 +472,17 @@ function SequenceRendering(viewer)
         {
             // Direction is negative, so we're scrolling up/left (doesn't matter for these calls)
             // Attempt showing pages in ascending order starting from the last visible page in the viewport
-            attemptPageShow(settings.lastPageLoaded, direction);
+            attemptPageShow(self.lastPageLoaded, direction);
             setCurrentPage(-1);
-            attemptPageHide(settings.lastPageLoaded, direction);
+            attemptPageHide(self.lastPageLoaded, direction);
         }
         else if (direction > 0)
         {
             // Direction is positive so we're scrolling down/right (doesn't matter for these calls)
             // Attempt showing pages in descending order starting from the first visible page in the viewport
-            attemptPageShow(settings.firstPageLoaded, direction);
+            attemptPageShow(self.firstPageLoaded, direction);
             setCurrentPage(1);
-            attemptPageHide(settings.firstPageLoaded, direction);
+            attemptPageHide(self.firstPageLoaded, direction);
         }
         else
         {
@@ -485,8 +492,8 @@ function SequenceRendering(viewer)
             }
 
             // Non-primary scroll, check if we need to reveal any tiles
-            var lpl = settings.lastPageLoaded;
-            for (i = Math.max(settings.firstPageLoaded, 0); i <= lpl; i++)
+            var lpl = self.lastPageLoaded;
+            for (i = Math.max(self.firstPageLoaded, 0); i <= lpl; i++)
             {
                 if (isPageVisible(i))
                     loadPage(i);
@@ -776,6 +783,9 @@ function SequenceRendering(viewer)
     {
         diva.Events.publish('DocumentWillLoad', [settings], viewer);
 
+        this.firstPageLoaded = 0;
+        resetTilesLoaded();
+
         var z = settings.zoomLevel;
 
         //TODO skip this if we just zoomed (happens in preloadPages)
@@ -842,7 +852,7 @@ function SequenceRendering(viewer)
             {
                 loadPage(i);
 
-                settings.lastPageLoaded = i;
+                self.lastPageLoaded = i;
                 pageBlockFound = true;
             }
             else if (pageBlockFound) // There will only be one consecutive block of pages to load; once we find a page that's invisible, we can terminate this loop.
@@ -878,6 +888,17 @@ function SequenceRendering(viewer)
         diva.Events.publish("DocumentDidLoad", [settings.currentPageIndex, fileName], viewer);
     };
 
+    var resetTilesLoaded = function ()
+    {
+        self.loadedTiles = new Array(settings.numPages);
+        var i = settings.numPages;
+
+        while (i--)
+        {
+            self.loadedTiles[i] = [];
+        }
+    };
+
     var preloadPages = function()
     {
         //1. determine visible pages at new zoom level
@@ -894,7 +915,7 @@ function SequenceRendering(viewer)
             if (isPageVisible(i))
             {
                 // it will be visible, start loading it at the new zoom level into an offscreen canvas
-                settings.pagePreloadCanvases[i] = preloadPage(i);
+                self.pagePreloadCanvases[i] = preloadPage(i);
                 pageBlockFound = true;
             }
             else if (pageBlockFound) // There will only be one consecutive block of pages to load; once we find a page that's invisible, we can terminate this loop.
@@ -912,14 +933,12 @@ function SequenceRendering(viewer)
         };
     };
 
-    return {
-        load: loadDocument,
-        adjust: adjustPages,
-        goto: gotoPage,
-        preload: preloadPages,
-        isPageVisible: isPageVisible,
-        getPageDimensions: getPageDimensions
-    };
+    this.load = loadDocument;
+    this.adjust = adjustPages;
+    this.goto = gotoPage;
+    this.preload = preloadPages;
+    this.isPageVisible = isPageVisible;
+    this.getPageDimensions = getPageDimensions;
 }
 
 SequenceRendering.getCompatibilityErrors = function ()

@@ -188,11 +188,9 @@ var DivaSettingsValidator = new ValidationRunner({
         // Things that cannot be changed because of the way they are used by the script
         // Many of these are declared with arbitrary values that are changed later on
         $.extend(settings, {
-            allTilesLoaded: [],         // A boolean for each page, indicating if all tiles have been loaded
             currentPageIndex: 0,        // The current page in the viewport (center-most page)
             unclampedVerticalPadding: 0, // Used to keep track of initial padding size before enforcing the minimum size needed to accommodate plugin icons
             documentRendering: null,    // Used to manage the rendering of the pages
-            firstPageLoaded: -1,        // The ID of the first page loaded (value set later)
             hashParamSuffix: '',        // Used when there are multiple document viewers on a page
             horizontalOffset: 0,        // Distance from the center of the diva element to the top of the current page
             horizontalPadding: 0,       // Either the fixed padding or adaptive padding
@@ -205,10 +203,7 @@ var DivaSettingsValidator = new ValidationRunner({
             isScrollable: true,         // Used in enable/disableScrollable public methods
             isIIIF: false,              // Specifies whether objectData is in Diva native or IIIF Manifest format
             isZooming: false,           // Flag to keep track of whether zooming is still in progress, for handleZoom
-            lastPageLoaded: -1,         // The ID of the last page loaded (value set later)
             loaded: false,              // A flag for when everything is loaded and ready to go.
-            // FIXME: Should this be a map?
-            loadedTiles: [],            // Keeps track of which tiles have been loaded already
             mobileWebkit: false,        // Checks if the user is on a touch device (iPad/iPod/iPhone/Android)
             numPages: 0,                // Number of pages in the array
             oldZoomLevel: -1,           // Holds the previous zoom level after zooming in or out
@@ -216,7 +211,6 @@ var DivaSettingsValidator = new ValidationRunner({
             outerElement: null,         // The native .diva-outer DOM object
             pages: [],                  // An array containing the data for all the pages
             pageLeftOffsets: [],        // Distance from the left side of each page to the left side of the diva-inner object
-            pagePreloadCanvases: [],    // Stack to hold canvases of pages preloading during zoom
             viewRendering: null,
             pageTopOffsets: [],         // Distance from the top side of each page to the top side of the diva-inner object
             pageTools: '',              // The string for page tools
@@ -317,10 +311,8 @@ var DivaSettingsValidator = new ValidationRunner({
                 settings.documentRendering = null;
             }
 
-            settings.allTilesLoaded = [];
             settings.viewport.top = 0;
 
-            settings.firstPageLoaded = 0;
             settings.previousTopScroll = 0;
             settings.previousLeftScroll = 0;
 
@@ -1395,18 +1387,6 @@ var DivaSettingsValidator = new ValidationRunner({
             showError(errorMessage);
         };
 
-        var resetTilesLoaded = function()
-        {
-            // re-initialize array to avoid sparseness if number of pages changes
-            settings.loadedTiles = new Array(settings.numPages);
-            var i = settings.numPages;
-
-            while (i--)
-            {
-                settings.loadedTiles[i] = [];
-            }
-        };
-
         var loadObjectData = function (data)
         {
             // store object data in settings
@@ -1517,8 +1497,6 @@ var DivaSettingsValidator = new ValidationRunner({
             settings.numPages = settings.manifest.pages.length;
 
             DivaSettingsValidator.validate(settings);
-
-            diva.Events.subscribe('DocumentWillLoad', resetTilesLoaded, settings.ID);
 
             diva.Events.publish('NumberOfPagesDidChange', [settings.numPages], self);
 
