@@ -743,24 +743,6 @@ var DivaSettingsValidator = new ValidationRunner({
             }
         };
 
-        //gets distance from the center of the diva-outer element to the top of the current page
-        var getCurrentYOffset = function()
-        {
-            var scrollTop = settings.viewport.top;
-            var elementHeight = settings.panelHeight;
-
-            return (scrollTop - settings.pageTopOffsets[settings.currentPageIndex] + parseInt(elementHeight / 2, 10));
-        };
-
-        //gets distance from the center of the diva-outer element to the left of the current page
-        var getCurrentXOffset = function()
-        {
-            var scrollLeft = settings.viewport.left;
-            var elementWidth = settings.panelWidth;
-
-            return (scrollLeft - settings.pageLeftOffsets[settings.currentPageIndex] + parseInt(elementWidth / 2, 10));
-        };
-
         var getState = function ()
         {
             var view;
@@ -778,6 +760,8 @@ var DivaSettingsValidator = new ValidationRunner({
                 view = 'd';
             }
 
+            var pageOffset = settings.viewRendering.getPageToViewportOffset();
+
             var state = {
                 'f': settings.inFullscreen,
                 'v': view,
@@ -785,8 +769,8 @@ var DivaSettingsValidator = new ValidationRunner({
                 'n': settings.pagesPerRow,
                 'i': (settings.enableFilename) ? settings.manifest.pages[settings.currentPageIndex].f : false,
                 'p': (settings.enableFilename) ? false : settings.currentPageIndex + 1,
-                'y': (settings.inGrid) ? false : getCurrentYOffset(),
-                'x': (settings.inGrid) ? false : getCurrentXOffset()
+                'y': pageOffset ? pageOffset.y : false,
+                'x': pageOffset ? pageOffset.x : false
             };
 
             return state;
@@ -855,13 +839,25 @@ var DivaSettingsValidator = new ValidationRunner({
         {
             settings.viewport.invalidate();
 
-            settings.horizontalOffset = getCurrentXOffset();
-            settings.verticalOffset = getCurrentYOffset();
-
+            // FIXME(wabain): This should really only be called after initial load
             if (settings.viewRendering)
+            {
+                updateOffsets();
                 settings.viewRendering.goto(settings.currentPageIndex, settings.verticalOffset, settings.horizontalOffset);
+            }
 
             return true;
+        };
+
+        var updateOffsets = function ()
+        {
+            var pageOffset = settings.viewRendering.getPageToViewportOffset();
+
+            if (pageOffset)
+            {
+                settings.horizontalOffset = pageOffset.x;
+                settings.verticalOffset = pageOffset.y;
+            }
         };
 
         // Bind mouse events (drag to scroll, double-click)
@@ -923,11 +919,22 @@ var DivaSettingsValidator = new ValidationRunner({
 
             settings.resizeTimer = setTimeout(function ()
             {
-                reloadViewer({
-                    goDirectlyTo: settings.currentPageIndex,
-                    verticalOffset: getCurrentYOffset(),
-                    horizontalOffset: getCurrentXOffset()
-                });
+                var pageOffset = settings.viewRendering.getPageToViewportOffset();
+
+                if (pageOffset)
+                {
+                    reloadViewer({
+                        goDirectlyTo: settings.currentPageIndex,
+                        verticalOffset: pageOffset.y,
+                        horizontalOffset: pageOffset.x
+                    });
+                }
+                else
+                {
+                    reloadViewer({
+                        goDirectlyTo: settings.currentPageIndex
+                    });
+                }
             }, 200);
         };
 
@@ -1078,8 +1085,7 @@ var DivaSettingsValidator = new ValidationRunner({
             settings.previousTopScroll = newScrollTop;
             settings.previousLeftScroll = newScrollLeft;
 
-            settings.horizontalOffset = getCurrentXOffset();
-            settings.verticalOffset = getCurrentYOffset();
+            updateOffsets();
         };
 
         // Binds most of the event handlers (some more in createToolbar)

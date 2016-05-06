@@ -402,6 +402,12 @@ function GridRendering(viewer)
         return self.documentRendering.isPageLoaded(pageIndex);
     };
 
+    var getPageToViewportOffset = function ()
+    {
+        // Not supported
+        return null;
+    };
+
     var destroy = function ()
     {
         self.documentRendering.destroy();
@@ -414,6 +420,7 @@ function GridRendering(viewer)
     this.isPageVisible = isPageVisible;
     this.isPageLoaded = isPageLoaded;
     this.getPageDimensions = getPageDimensions;
+    this.getPageToViewportOffset = getPageToViewportOffset;
     this.destroy = destroy;
 }
 

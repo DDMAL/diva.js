@@ -973,6 +973,24 @@ function SequenceRendering(viewer)
         };
     };
 
+    var getPageToViewportOffset = function ()
+    {
+        var scrollLeft = settings.viewport.left;
+        var elementWidth = settings.panelWidth;
+
+        var x = scrollLeft - settings.pageLeftOffsets[settings.currentPageIndex] + parseInt(elementWidth / 2, 10);
+
+        var scrollTop = settings.viewport.top;
+        var elementHeight = settings.panelHeight;
+
+        var y = scrollTop - settings.pageTopOffsets[settings.currentPageIndex] + parseInt(elementHeight / 2, 10);
+
+        return {
+            x: x,
+            y: y
+        };
+    };
+
     var destroy = function ()
     {
         self.documentRendering.destroy();
@@ -985,6 +1003,7 @@ function SequenceRendering(viewer)
     this.isPageVisible = isPageVisible;
     this.isPageLoaded = isPageLoaded;
     this.getPageDimensions = getPageDimensions;
+    this.getPageToViewportOffset = getPageToViewportOffset;
     this.destroy = destroy;
 }
 
