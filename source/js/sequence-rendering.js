@@ -15,6 +15,7 @@ function SequenceRendering(viewer)
     self.firstPageLoaded = -1;
     self.lastPageLoaded = -1;
     self.pagePreloadCanvases = [];
+    self.previousZoomLevelCanvases = null;
 
     // FIXME(wabain): Temporarily copied from the Diva core
     var getPageData = function (pageIndex, attribute)
@@ -296,9 +297,9 @@ function SequenceRendering(viewer)
         });
 
         // If corresponding page is in previousZoomLevelCanvases, copy existing image from previous zoom level, scaled, to canvas
-        if (settings.previousZoomLevelCanvases[pageIndex])
+        if (self.previousZoomLevelCanvases && self.previousZoomLevelCanvases[pageIndex])
         {
-            var oldCanvas = settings.previousZoomLevelCanvases[pageIndex];
+            var oldCanvas = self.previousZoomLevelCanvases[pageIndex];
             var newCanvasContext = pageCanvas.getContext('2d');
             newCanvasContext.drawImage(oldCanvas, 0, 0, width, height);
         }
@@ -785,6 +786,8 @@ function SequenceRendering(viewer)
     {
         diva.Events.publish('DocumentWillLoad', [settings], viewer);
 
+        self.previousZoomLevelCanvases = null;
+
         if (self.documentRendering)
             self.documentRendering.destroy();
 
@@ -911,6 +914,28 @@ function SequenceRendering(viewer)
 
     var preloadPages = function()
     {
+        var pageBlockFound;
+
+        // Before the first zoom, save currently visible canvases in previousZoomLevelCanvases so preloadPages can start drawing overtop the existing page data
+        if (!self.previousZoomLevelCanvases)
+        {
+            self.previousZoomLevelCanvases = {};
+            pageBlockFound = false;
+
+            for (var pageIndex = 0; pageIndex < settings.numPages; pageIndex++)
+            {
+                if (settings.viewRendering.isPageVisible(pageIndex))
+                {
+                    self.previousZoomLevelCanvases[pageIndex] = document.getElementById(settings.ID + 'canvas-' + pageIndex);
+                    pageBlockFound = true;
+                }
+                else if (pageBlockFound)
+                {
+                    break;
+                }
+            }
+        }
+
         //1. determine visible pages at new zoom level
         //    a. recalculate page layout at new zoom level
         var documentDimensions = calculateDocumentDimensions(settings.zoomLevel);
@@ -918,7 +943,7 @@ function SequenceRendering(viewer)
 
         //    b. for all pages (see loadDocument)
         //        i) if page coords fall within visible coords, add to visible page block
-        var pageBlockFound = false;
+        pageBlockFound = false;
 
         for (var i = 0; i < settings.numPages; i++)
         {

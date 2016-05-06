@@ -216,7 +216,6 @@ var DivaSettingsValidator = new ValidationRunner({
             plugins: [],                // Filled with the enabled plugins from window.divaPlugins
             previousLeftScroll: 0,      // Used to determine horizontal scroll direction
             previousTopScroll: 0,       // Used to determine vertical scroll direction
-            previousZoomLevelCanvases: [],  // Array to hold canvases of pages visible at previous zoom level (for page image persistence across zooms)
             resizeTimer: -1,            // Holds the ID of the timeout used when resizing the window (for clearing)
             previousZoomRatio: 1,             // Used to keep track of the previous zoom ratio for scale transforming diva-inner
             scaleWait: false,           // For preventing double-zoom on touch devices (iPad, etc)
@@ -643,25 +642,6 @@ var DivaSettingsValidator = new ValidationRunner({
             originY = focalPoint.viewportRelative.y + settings.viewport.top;
             settings.innerElement.style.transformOrigin = originX + 'px ' + originY + 'px';
 
-            // Before the first zoom, save currently visible canvases in previousZoomLevelCanvases so preloadPages can start drawing overtop the existing page data
-            if (!settings.isZooming)
-            {
-                var pageBlockFound = false;
-
-                for (var pageIndex = 0; pageIndex < settings.numPages; pageIndex++)
-                {
-                    if (settings.viewRendering.isPageVisible(pageIndex))
-                    {
-                        settings.previousZoomLevelCanvases[pageIndex] = document.getElementById(settings.ID + 'canvas-' + pageIndex);
-                        pageBlockFound = true;
-                    }
-                    else if (pageBlockFound)
-                    {
-                        break;
-                    }
-                }
-            }
-
             // Update the zoom level
             settings.oldZoomLevel = settings.zoomLevel;
             settings.zoomLevel = newZoomLevel;
@@ -703,9 +683,6 @@ var DivaSettingsValidator = new ValidationRunner({
                 settings.isZooming = false;
 
                 settings.previousZoomRatio = 1;
-
-                // Clear the array of canvases at previous zoom level
-                settings.previousZoomLevelCanvases = [];
 
                 // Now render with the previously set zoomLevel
                 reloadViewer({});
