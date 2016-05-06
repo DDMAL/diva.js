@@ -5,7 +5,6 @@ module.exports = SequenceRendering;
 
 function SequenceRendering(viewer)
 {
-    var self = viewer;
     var settings = viewer.getSettings();
 
     // FIXME(wabain): Temporarily copied from the Diva core
@@ -142,7 +141,7 @@ function SequenceRendering(viewer)
 
         loadTiles(pageIndex, filename, width, height, canvasElement);
 
-        diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector], self);
+        diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector], viewer);
     };
 
     // Appends the page directly into the document body, or loads the relevant tiles
@@ -261,7 +260,7 @@ function SequenceRendering(viewer)
             }
 
             settings.innerElement.appendChild(pageElement);
-            diva.Events.publish("PageWillLoad", [pageIndex, filename, pageSelector], self);
+            diva.Events.publish("PageWillLoad", [pageIndex, filename, pageSelector], viewer);
         }
 
         if (!isPreloaded)
@@ -298,7 +297,7 @@ function SequenceRendering(viewer)
         // Load visible page tiles into canvas
         loadTiles(pageIndex, filename, width, height, pageCanvas);
 
-        diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector], self);
+        diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector], viewer);
 
         return pageCanvas;
     };
@@ -496,17 +495,17 @@ function SequenceRendering(viewer)
 
         var scrollSoFar = (settings.verticallyOriented ? settings.viewport.top : settings.viewport.left);
 
-        diva.Events.publish("ViewerDidScroll", [scrollSoFar], self);
+        diva.Events.publish("ViewerDidScroll", [scrollSoFar], viewer);
 
         if (direction > 0)
         {
             // scrolling forwards
-            diva.Events.publish("ViewerDidScrollDown", [scrollSoFar], self);
+            diva.Events.publish("ViewerDidScrollDown", [scrollSoFar], viewer);
         }
         else if (direction < 0)
         {
             // scrolling backwards
-            diva.Events.publish("ViewerDidScrollUp", [scrollSoFar], self);
+            diva.Events.publish("ViewerDidScrollUp", [scrollSoFar], viewer);
         }
     };
 
@@ -612,7 +611,7 @@ function SequenceRendering(viewer)
             if (isValidPagePosition && bookPageToConsider !== settings.currentPageIndex)
             {
                 settings.currentPageIndex = bookPageToConsider;
-                diva.Events.publish("VisiblePageDidChange", [bookPageToConsider, settings.manifest.pages[bookPageToConsider].f], self);
+                diva.Events.publish("VisiblePageDidChange", [bookPageToConsider, settings.manifest.pages[bookPageToConsider].f], viewer);
             }
         }
 
@@ -627,7 +626,7 @@ function SequenceRendering(viewer)
                 if (!setCurrentPage(direction))
                 {
                     var filename = settings.manifest.pages[pageToConsider].f;
-                    diva.Events.publish("VisiblePageDidChange", [pageToConsider, filename], self);
+                    diva.Events.publish("VisiblePageDidChange", [pageToConsider, filename], viewer);
                 }
             }
             return true;
@@ -670,10 +669,10 @@ function SequenceRendering(viewer)
             settings.currentPageIndex = pageIndex;
             var filename = settings.manifest.pages[pageIndex].f;
 
-            diva.Events.publish("VisiblePageDidChange", [pageIndex, filename], self);
+            diva.Events.publish("VisiblePageDidChange", [pageIndex, filename], viewer);
         }
 
-        diva.Events.publish("ViewerDidJump", [pageIndex], self);
+        diva.Events.publish("ViewerDidJump", [pageIndex], viewer);
     };
 
     var calculatePageOffsets = function(widthToSet, heightToSet)
@@ -775,7 +774,7 @@ function SequenceRendering(viewer)
     // Called every time we need to load document view (after zooming, fullscreen, etc)
     var loadDocument = function ()
     {
-        diva.Events.publish('DocumentWillLoad', [settings], self);
+        diva.Events.publish('DocumentWillLoad', [settings], viewer);
 
         var z = settings.zoomLevel;
 
@@ -857,14 +856,14 @@ function SequenceRendering(viewer)
         {
             if (settings.oldZoomLevel < settings.zoomLevel)
             {
-                diva.Events.publish("ViewerDidZoomIn", [z], self);
+                diva.Events.publish("ViewerDidZoomIn", [z], viewer);
             }
             else
             {
-                diva.Events.publish("ViewerDidZoomOut", [z], self);
+                diva.Events.publish("ViewerDidZoomOut", [z], viewer);
             }
 
-            diva.Events.publish("ViewerDidZoom", [z], self);
+            diva.Events.publish("ViewerDidZoom", [z], viewer);
         }
         else
         {
@@ -876,7 +875,7 @@ function SequenceRendering(viewer)
             settings.scaleWait = false;
 
         var fileName = settings.manifest.pages[settings.currentPageIndex].f;
-        diva.Events.publish("DocumentDidLoad", [settings.currentPageIndex, fileName], self);
+        diva.Events.publish("DocumentDidLoad", [settings.currentPageIndex, fileName], viewer);
     };
 
     var preloadPages = function()

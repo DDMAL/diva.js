@@ -5,7 +5,6 @@ module.exports = GridRendering;
 
 function GridRendering(viewer)
 {
-    var self = viewer;
     var settings = viewer.getSettings();
 
     var loadGrid = function ()
@@ -138,7 +137,7 @@ function GridRendering(viewer)
             rowDiv.appendChild(pageDiv);
 
             var pageSelector = settings.selector + 'page-' + pageIndex;
-            diva.Events.publish("PageWillLoad", [pageIndex, filename, pageSelector], self);
+            diva.Events.publish("PageWillLoad", [pageIndex, filename, pageSelector], viewer);
 
             // Add each image to a queue so that images aren't loaded unnecessarily
             addPageToQueue(rowIndex, pageIndex, imageURL, pageDimens.width, pageDimens.height);
@@ -280,17 +279,17 @@ function GridRendering(viewer)
 
         var newTopScroll = settings.viewport.top;
 
-        diva.Events.publish("ViewerDidScroll", [newTopScroll], self);
+        diva.Events.publish("ViewerDidScroll", [newTopScroll], viewer);
 
         // If we're scrolling down
         if (direction > 0)
         {
-            diva.Events.publish("ViewerDidScrollDown", [newTopScroll], self);
+            diva.Events.publish("ViewerDidScrollDown", [newTopScroll], viewer);
         }
         else if (direction < 0)
         {
             // We're scrolling up
-            diva.Events.publish("ViewerDidScrollUp", [newTopScroll], self);
+            diva.Events.publish("ViewerDidScrollUp", [newTopScroll], viewer);
         }
     };
 
@@ -351,7 +350,7 @@ function GridRendering(viewer)
                 {
                     var pageIndex = settings.currentPageIndex;
                     var filename = settings.manifest.pages[pageIndex].f;
-                    diva.Events.publish("VisiblePageDidChange", [pageIndex, filename], self);
+                    diva.Events.publish("VisiblePageDidChange", [pageIndex, filename], viewer);
                 }
             }
 
@@ -371,7 +370,7 @@ function GridRendering(viewer)
         // Pretend that this is the current page (it probably isn't)
         settings.currentPageIndex = pageIndex;
         var filename = settings.manifest.pages[pageIndex].f;
-        diva.Events.publish("VisiblePageDidChange", [pageIndex, filename], self);
+        diva.Events.publish("VisiblePageDidChange", [pageIndex, filename], viewer);
     };
 
     // Don't call this when not in grid mode please
