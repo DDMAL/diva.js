@@ -767,8 +767,8 @@ var DivaSettingsValidator = new ValidationRunner({
                 'v': view,
                 'z': settings.zoomLevel,
                 'n': settings.pagesPerRow,
-                'i': (settings.enableFilename) ? settings.manifest.pages[settings.currentPageIndex].f : false,
-                'p': (settings.enableFilename) ? false : settings.currentPageIndex + 1,
+                'i': settings.enableFilename ? settings.manifest.pages[settings.currentPageIndex].f : false,
+                'p': settings.enableFilename ? false : settings.currentPageIndex + 1,
                 'y': pageOffset ? pageOffset.y : false,
                 'x': pageOffset ? pageOffset.x : false
             };
