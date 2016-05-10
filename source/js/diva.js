@@ -522,7 +522,7 @@ var DivaSettingsValidator = new ValidationRunner({
             if (settings.verticallyOriented)
                 focalPoint.pageRelative.y += settings.verticalPadding;
 
-            if (!settings.verticallyOriented || settings.inBookLayout)
+            if (!settings.verticallyOriented)
                 focalPoint.pageRelative.x += settings.horizontalPadding;
 
             handleZoom(newZoomLevel, focalPoint);

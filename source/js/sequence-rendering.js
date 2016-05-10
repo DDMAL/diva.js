@@ -168,8 +168,6 @@ function SequenceRendering(viewer)
         var filename = settings.manifest.pages[pageIndex].f;
         var width = Math.floor(getPageData(pageIndex, 'w'));
         var height = Math.floor(getPageData(pageIndex, 'h'));
-        var heightFromTop = settings.pageTopOffsets[pageIndex] + settings.verticalPadding;
-        var widthFromLeft = settings.pageLeftOffsets[pageIndex] + settings.horizontalPadding;
         var pageSelector = settings.selector + 'page-' + pageIndex;
 
         // If the page has not been loaded yet, append the div to the DOM
@@ -222,11 +220,12 @@ function SequenceRendering(viewer)
 
             if (settings.verticallyOriented)
             {
+                var heightFromTop = settings.pageTopOffsets[pageIndex] + settings.verticalPadding;
                 pageElement.style.top = heightFromTop + 'px';
 
                 if (settings.inBookLayout)
                 {
-                    pageElement.style.left = widthFromLeft + 'px';
+                    pageElement.style.left = settings.pageLeftOffsets[pageIndex] + 'px';
                     if (pageIndex % 2)
                     {
                         pageElement.classList.add('diva-page-book-left');
@@ -265,6 +264,7 @@ function SequenceRendering(viewer)
             }
             else
             {
+                var widthFromLeft = settings.pageLeftOffsets[pageIndex] + settings.horizontalPadding;
                 pageElement.style.left = widthFromLeft + 'px';
                 pageElement.classList.add('diva-page-horizontal');
             }
