@@ -1,3 +1,4 @@
+var extend = require('jquery').extend;
 var elt = require('./utils/elt');
 var diva = require('./diva-global');
 var DocumentRendering = require('./document-rendering');
@@ -702,106 +703,233 @@ function SequenceRendering(viewer)
 
     var getPageOffsets = function(widthToSet, heightToSet)
     {
-        var manifest = settings.manifest;
-        var numPages = manifest.pages.length;
-
-        var inBookLayout = settings.inBookLayout;
-        var verticallyOriented = settings.verticallyOriented;
-
-        var horizontalPadding = settings.horizontalPadding;
-        var verticalPadding = settings.verticalPadding;
-
-        // Set settings.pageTopOffsets/pageLeftOffsets to determine where we're going to need to scroll, reset them in case they were used for grid before
-        var heightSoFar = 0;
-        var widthSoFar = 0;
-        var i;
+        var groups = getPageGroups();
 
         var offsets = [];
-        var offset;
 
-        if (inBookLayout)
+        var documentSecondaryExtent = settings.verticallyOriented ? widthToSet : heightToSet;
+        var primaryDocPosition = 0;
+        var primaryPadding = settings.verticallyOriented ? settings.verticalPadding : settings.horizontalPadding;
+
+        groups.forEach(function (group)
         {
-            var isLeft = false;
-
-            if (verticallyOriented)
+            // Handle non-paged entries in book layout
+            // FIXME(wabain): Handle this better
+            if (!group.rendered)
             {
-                for (i = 0; i < numPages; i++)
+                group.pageOffsets.forEach(function ()
                 {
-                    //set the height above that page counting only every other page and excluding non-paged canvases
-                    //height of this 'row' = max(height of the pages in this row)
+                    offsets.push({
+                        primary: -1,
+                        secondary: -1
+                    });
+                });
 
-                    offset = {
-                        top: heightSoFar,
-                        left: null
-                    };
+                return;
+            }
 
-                    if (isLeft)
-                    {
-                        //page on the left
-                        offset.left = (widthToSet / 2) - getPageData(i, 'w') - horizontalPadding;
-                    }
-                    else
-                    {
-                        //page on the right
-                        offset.left = (widthToSet / 2) - horizontalPadding;
+            var groupPrimaryExtent, groupSecondaryExtent;
 
-                        //increment the height
-                        if (!manifest.paged || manifest.pages[i].paged)
-                        {
-                            var pageHeight = (isPageValid(i - 1)) ? Math.max(getPageData(i, 'h'), getPageData(i - 1, 'h')) : getPageData(i, 'h');
-                            heightSoFar = offset.top + pageHeight + verticalPadding;
-                        }
-                    }
-
-                    offsets.push(offset);
-
-                    //don't include non-paged canvases in layout calculation
-                    if (!manifest.paged || manifest.pages[i].paged)
-                        isLeft = !isLeft;
-                }
+            if (settings.verticallyOriented)
+            {
+                groupPrimaryExtent = group.height;
+                groupSecondaryExtent = group.width;
             }
             else
             {
-                // book, horizontally oriented
-                for (i = 0; i < numPages; i++)
-                {
-                    offset = {
-                        top: parseInt((heightToSet - getPageData(i, 'h')) / 2, 10),
-                        left: widthSoFar
-                    };
-
-                    offsets.push(offset);
-
-                    var pageWidth = getPageData(i, 'w');
-                    var padding = (isLeft) ? 0 : horizontalPadding;
-                    widthSoFar = offset.left + pageWidth + padding;
-
-                    if (!manifest.paged || manifest.pages[i].paged)
-                        isLeft = !isLeft;
-                }
+                groupPrimaryExtent = group.width;
+                groupSecondaryExtent = group.height;
             }
+
+            var baseSecondaryOffset = (documentSecondaryExtent - groupSecondaryExtent) / 2;
+
+            group.pageOffsets.forEach(function (pageOffset)
+            {
+                var primaryPageOffset, secondaryPageOffset;
+
+                if (settings.verticallyOriented)
+                {
+                    primaryPageOffset = pageOffset.top;
+                    secondaryPageOffset = pageOffset.left;
+                }
+                else
+                {
+                    primaryPageOffset = pageOffset.left;
+                    secondaryPageOffset = pageOffset.top;
+                }
+
+                offsets.push({
+                    primary: primaryDocPosition + primaryPageOffset,
+                    secondary: baseSecondaryOffset + secondaryPageOffset
+                });
+            });
+
+            primaryDocPosition += groupPrimaryExtent + primaryPadding;
+        });
+
+        if (settings.verticallyOriented)
+        {
+            return offsets.map(function (offset)
+            {
+                return {
+                    top: offset.primary,
+                    left: offset.secondary
+                };
+            });
+        }
+
+        return offsets.map(function (offset)
+        {
+            return {
+                top: offset.secondary,
+                left: offset.primary
+            };
+        });
+    };
+
+    /** Centered along the secondary axis, not including padding */
+    var getPageGroups = function ()
+    {
+        if (settings.inBookLayout)
+            return getBookLayoutGroups();
+
+        return getSinglesLayoutGroups();
+    };
+
+    var getSinglesLayoutGroups = function ()
+    {
+        // Render each page alone in a group
+        return settings.manifest.pages.map(function (_, i)
+        {
+            var pageDims = getPageDimensions(i);
+
+            return extend({
+                rendered: true,
+                pageOffsets: [
+                    {index: i, top: 0, left: 0}
+                ]
+            }, pageDims);
+        });
+    };
+
+    var getBookLayoutGroups = function ()
+    {
+        var groups = [];
+        var leftPage = null;
+
+        settings.manifest.pages.forEach(function (page, index)
+        {
+            // Skip non-paged canvases in a paged manifest.
+            // NB: If there is currently a pending left page, then it will form
+            // an opening with the following page. This seems to be desired behaviour.
+            if (settings.manifest.paged && !page.paged)
+            {
+                groups.push({
+                    rendered: false,
+                    width: 0,
+                    height: 0,
+                    pageOffsets: [{
+                        index: index,
+                        top: 0,
+                        left: 0
+                    }]
+                });
+
+                return;
+            }
+
+            var pageDims = getPageDimensions(index, { round: false });
+
+            if (settings.verticallyOriented && index === 0)
+            {
+                // The first page is placed on its own to the right
+                groups.push({
+                    rendered: true,
+                    height: pageDims.height,
+                    width: pageDims.width * 2,
+                    pageOffsets: [{
+                        index: 0,
+                        top: 0,
+                        left: pageDims.width
+                    }]
+                });
+
+                return;
+            }
+
+            if (leftPage === null)
+            {
+                leftPage = extend({
+                    index: index
+                }, pageDims);
+
+                return;
+            }
+
+            groups.push(getFacingPageGroup(leftPage, extend({
+                index: index
+            }, pageDims)));
+
+            leftPage = null;
+        });
+
+        // Flush a final left page
+        if (leftPage !== null)
+        {
+            groups.push({
+                rendered: true,
+                height: leftPage.height,
+                width: leftPage.width * 2,
+                pageOffsets: [{
+                    index: leftPage.index,
+                    top: 0,
+                    left: 0
+                }]
+            });
+        }
+
+        return groups;
+    };
+
+    var getFacingPageGroup = function (leftPage, rightPage)
+    {
+        var height = Math.max(leftPage.height, rightPage.height);
+
+        var width, firstLeftOffset, secondLeftOffset;
+
+        if (settings.verticallyOriented)
+        {
+            var midWidth = Math.max(leftPage.width, rightPage.width);
+
+            width = midWidth * 2;
+
+            firstLeftOffset = midWidth - leftPage.width;
+            secondLeftOffset = midWidth;
         }
         else
         {
-            for (i = 0; i < numPages; i++)
-            {
-                // First set the height above that page by adding this height to the previous total
-                // A page includes the padding above it
-
-                offset = {
-                    top: parseInt(verticallyOriented ? heightSoFar : (heightToSet - getPageData(i, 'h')) / 2, 10),
-                    left: parseInt(verticallyOriented ? (widthToSet - getPageData(i, 'w')) / 2 : widthSoFar, 10)
-                };
-
-                offsets.push(offset);
-
-                // Has to be done this way otherwise you get the height of the page included too
-                heightSoFar = offset.top + getPageData(i, 'h') + verticalPadding;
-                widthSoFar = offset.left + getPageData(i, 'w') + horizontalPadding;
-            }
+            width = leftPage.width + rightPage.width;
+            firstLeftOffset = 0;
+            secondLeftOffset = leftPage.width;
         }
 
-        return offsets;
+        return {
+            rendered: true,
+            height: height,
+            width: width,
+            pageOffsets: [
+                {
+                    index: leftPage.index,
+                    top: 0,
+                    left: firstLeftOffset
+                },
+                {
+                    index: rightPage.index,
+                    top: 0,
+                    left: secondLeftOffset
+                }
+            ]
+        };
     };
 
     var calculateDocumentDimensions = function(zoomLevel)
@@ -1005,11 +1133,24 @@ function SequenceRendering(viewer)
         return self.documentRendering.isPageLoaded(pageIndex);
     };
 
-    var getPageDimensions = function (pageIndex)
+    var getPageDimensions = function (pageIndex, options)
     {
+        var width = Math.floor(getPageData(pageIndex, 'w'));
+        var height = Math.floor(getPageData(pageIndex, 'h'));
+
+        var round = !options || options.round;
+
+        if (round)
+        {
+            return {
+                width: Math.floor(width),
+                height: Math.floor(height)
+            };
+        }
+
         return {
-            width: Math.floor(getPageData(pageIndex, 'w')),
-            height: Math.floor(getPageData(pageIndex, 'h'))
+            width: width,
+            height: height
         };
     };
 
