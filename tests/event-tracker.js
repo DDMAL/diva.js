@@ -12,11 +12,25 @@ function EventTracker(assert, viewer)
 }
 
 /**
+ * Track events of the given type and make sure they aren't called unexpectedly.
+ * Event types are also watched if expect() is called for an event of that type.
+ *
+ * @param {string} eventName
+ */
+EventTracker.prototype.watchEvent = function (eventName)
+{
+    if (this._subscribedEvents.indexOf(eventName) === -1)
+    {
+        var handler = this._handleEvent.bind(this, eventName);
+
+        diva.Events.subscribe(eventName, handler, this._viewer.getInstanceId());
+        this._subscribedEvents.push(eventName);
+    }
+};
+
+/**
  * Assert that the next event of a watched type published by the viewer will
  * have these arguments.
- *
- * Event types are watched when expect() call is made for an event of that
- * type.
  *
  * @param {string} eventName
  * @param {...any} args
@@ -33,19 +47,19 @@ EventTracker.prototype.expect = function (eventName)
         done: this._assert.async()
     });
 
-    if (this._subscribedEvents.indexOf(eventName) === -1)
-    {
-        var handler = this._handleEvent.bind(this, eventName);
-
-        diva.Events.subscribe(eventName, handler, this._viewer.getInstanceId());
-        this._subscribedEvents.push(eventName);
-    }
+    this.watchEvent(eventName);
 };
 
 EventTracker.prototype._handleEvent = function (eventName)
 {
     var args = Array.prototype.slice.call(arguments, 1);
     var queued = this._queue.shift();
+
+    if (!queued)
+    {
+        this._assert.deepEqual({ event: eventName, args: args }, null, 'Unexpected event triggered');
+        return;
+    }
 
     var argString = queued.expected.args.map(function (arg)
     {

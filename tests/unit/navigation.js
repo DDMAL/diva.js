@@ -133,6 +133,57 @@ QUnit.test('Page positioning on zoom', function (assert)
     });
 });
 
+// Try to verify that zoom animation can be gracefully interrupted
+QUnit.skip('Interrupting zoom animation', function (assert)
+{
+    var done = assert.async();
+
+    diva.Events.subscribe('ViewerDidLoad', function ()
+    {
+        var eventTracker = new EventTracker(assert, this);
+
+        eventTracker.watchEvent('ViewerDidZoom');
+        eventTracker.watchEvent('ViewerDidZoomIn');
+        eventTracker.watchEvent('ViewerDidZoomOut');
+
+        eventTracker.expect('ZoomLevelDidChange', 3);
+        eventTracker.expect('ViewDidSwitch', true);
+        eventTracker.expect('ViewDidSwitch', false);
+
+        this.zoomIn();
+    });
+
+    diva.Events.subscribe('ZoomLevelDidChange', function ()
+    {
+        this.enterGridView();
+    });
+
+    diva.Events.subscribe('ViewDidSwitch', function (inGrid)
+    {
+        if (inGrid)
+        {
+            assert.ok(hasRows(this), 'Some rows should be rendered');
+
+            this.leaveGridView();
+        }
+        else
+        {
+            assert.ok(!hasRows(this), 'Rows should be removed after switching back');
+            assert.strictEqual(this.getZoomLevel(), 3, 'Zoom level should still be 3');
+
+            done();
+        }
+    });
+
+    $.tempDiva({});
+
+    function hasRows(viewer)
+    {
+        // Try to check that grid view is actually rendered
+        return !!viewer.getSettings().innerElement.querySelector('.diva-row');
+    }
+});
+
 QUnit.test("Zooming using the slider", function (assert)
 {
     var done = assert.async();
