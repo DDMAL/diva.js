@@ -15,20 +15,20 @@ module.exports = function (mode)
             filename: 'diva.min.js',
             library: 'diva',
             libraryTarget: 'umd'
+        },
+        externals: {
+            jquery: {
+                root: 'jQuery',
+                amd: 'jquery',
+                commonjs: 'jquery',
+                commonjs2: 'jquery'
+            }
         }
     };
 
     if (mode === 'production')
     {
-        config.externals = {
-            jquery: {
-                root: 'jQuery',
-                    amd: 'jquery',
-                    commonjs: 'jquery',
-                    commonjs2: 'jquery'
-            }
-        };
-
+        config.devtool = 'sourcemap';
         config.plugins = [
             new webpack.optimize.UglifyJsPlugin({
                 compress: {
