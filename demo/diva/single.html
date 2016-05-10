@@ -13,7 +13,7 @@
             <script src="/js/diva.min.js" type="text/javascript"></script>
             <script type="text/javascript">
                 $(document).ready(function() {
-                    $('#diva-wrapper').diva({
+                    window.viewer = $('#diva-wrapper').diva({
                         enableAutoHeight: true,
                         fixedHeightGrid: false,
                         iipServerURL: "http://diva.simssa.ca/fcgi-bin/iipsrv.fcgi",
@@ -21,7 +21,10 @@
                         imageDir: "/srv/images/beromunster",
                         enableCanvas: true,
                         enableDownload: true
-                    });
+                    }).data('diva');
+
+                    console.log('console.log(viewer)');
+                    console.log(window.viewer);
                 });
             </script>
         </head>
