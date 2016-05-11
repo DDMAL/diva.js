@@ -101,12 +101,13 @@ function SequenceRendering(viewer)
             };
         }
 
-        //resize canvas context to new zoom level if necessary before drawing tiles
-        // if context width is wrong, set it to h and w.
-        if (canvasElement.width !== Math.floor(getPageData(pageIndex, 'w')))
+        var dims = getPageDimensions(pageIndex);
+
+        // Resize canvas context to new zoom level if necessary before drawing tiles
+        if (canvasElement.width !== dims.width)
         {
-            canvasElement.width = Math.floor(getPageData(pageIndex, 'w'));
-            canvasElement.height = Math.floor(getPageData(pageIndex, 'h'));
+            canvasElement.width = dims.width;
+            canvasElement.height = dims.height;
         }
 
         var allTilesLoaded = true;
@@ -167,8 +168,9 @@ function SequenceRendering(viewer)
 
         // Load some data for this page
         var filename = settings.manifest.pages[pageIndex].f;
-        var width = Math.floor(getPageData(pageIndex, 'w'));
-        var height = Math.floor(getPageData(pageIndex, 'h'));
+        var dims = getPageDimensions(pageIndex);
+        var width = dims.width;
+        var height = dims.height;
         var pageSelector = settings.selector + 'page-' + pageIndex;
 
         // If the page has not been loaded yet, append the div to the DOM
@@ -287,26 +289,22 @@ function SequenceRendering(viewer)
             return;
 
         var filename = settings.manifest.pages[pageIndex].f;
-        var width = Math.floor(getPageData(pageIndex, 'w'));
-        var height = Math.floor(getPageData(pageIndex, 'h'));
+        var dims = getPageDimensions(pageIndex);
         var pageSelector = settings.selector + 'page-' + pageIndex;
 
         // New off-screen canvas
-        var pageCanvas = elt('canvas', {
-            width: width,
-            height: height
-        });
+        var pageCanvas = elt('canvas', dims);
 
         // If corresponding page is in previousZoomLevelCanvases, copy existing image from previous zoom level, scaled, to canvas
         if (self.previousZoomLevelCanvases && self.previousZoomLevelCanvases[pageIndex])
         {
             var oldCanvas = self.previousZoomLevelCanvases[pageIndex];
             var newCanvasContext = pageCanvas.getContext('2d');
-            newCanvasContext.drawImage(oldCanvas, 0, 0, width, height);
+            newCanvasContext.drawImage(oldCanvas, 0, 0, dims.width, dims.height);
         }
 
         // Load visible page tiles into canvas
-        loadTiles(pageIndex, filename, width, height, pageCanvas);
+        loadTiles(pageIndex, filename, dims.width, dims.height, pageCanvas);
 
         diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector], viewer);
 
