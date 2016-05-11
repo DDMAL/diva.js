@@ -32,10 +32,10 @@ function GridRendering(viewer)
         // Calculate the row height depending on whether we want to fix the width or the height
         self.rowHeight = (settings.fixedHeightGrid) ? settings.fixedPadding + settings.manifest.minRatio * pageWidth : settings.fixedPadding + settings.manifest.maxRatio * pageWidth;
         self.numRows = Math.ceil(settings.numPages / settings.pagesPerRow);
-        settings.totalHeight = self.numRows * self.rowHeight + settings.fixedPadding;
+        var totalHeight = self.numRows * self.rowHeight + settings.fixedPadding;
 
         self.documentRendering.setDocumentSize({
-            height: Math.round(settings.totalHeight) + 'px'
+            height: Math.round(totalHeight) + 'px'
         });
 
         // First scroll directly to the row containing the current page

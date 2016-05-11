@@ -225,8 +225,6 @@ var DivaSettingsValidator = new ValidationRunner({
             singleTap: false,           // Used for caching double-tap events on mobile browsers
             throbberTimeoutID: -1,      // Holds the ID of the throbber loading timeout
             toolbar: null,              // Holds an object with some toolbar-related functions
-            totalHeight: 0,             // The total height for the current zoom level (including padding)
-            totalWidth: 0,              // The total height for the current zoom level (including padding)
             verticalOffset: 0,          // Distance from the center of the diva element to the left side of the current page
             verticalPadding: 0,         // Either the fixed padding or adaptive padding
             viewport: null              // Object caching the viewport dimensions
@@ -1185,8 +1183,13 @@ var DivaSettingsValidator = new ValidationRunner({
                             return false;
 
                         case endKey:
+                            // FIXME(wabain): What should this do in horizontal orientation?
                             // End key - go to the end of the document
-                            settings.viewport.top = settings.totalHeight;
+
+                            // FIXME(wabain): Hack to get innerElement dimensions
+                            var innerStyle = getComputedStyle(settings.innerElement);
+                            settings.viewport.top = Math.max(0, parseFloat(innerStyle.height) - settings.panelHeight);
+
                             return false;
 
                         default:

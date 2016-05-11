@@ -453,12 +453,14 @@ function SequenceRendering(viewer)
         diva.Events.publish("ViewerDidJump", [pageIndex], viewer);
     };
 
-    var calculatePageLayout = function(widthToSet, heightToSet)
+    var calculateDocumentLayout = function()
     {
-        var pageGroups = getPageGroups(widthToSet, heightToSet);
-        var offsets = getPageOffsets(pageGroups);
+        var docLayout = getDocumentLayout();
 
-        self.pageGroups = pageGroups;
+        self.documentDimensions = docLayout.dimensions;
+        self.pageGroups = docLayout.pageGroups;
+
+        var offsets = getPageOffsets(docLayout.pageGroups);
 
         settings.pageTopOffsets = offsets.map(function (offset)
         {
@@ -504,8 +506,9 @@ function SequenceRendering(viewer)
         return offsets;
     };
 
-    var getPageGroups = function (widthToSet, heightToSet)
+    var getDocumentLayout = function ()
     {
+        // Get layout groups for the current view
         var layouts;
 
         if (settings.inBookLayout)
@@ -513,21 +516,20 @@ function SequenceRendering(viewer)
         else
             layouts = getSinglesLayoutGroups();
 
-        // Turn layouts into concrete regions
+        // Now turn layouts into concrete regions
 
-        // The extent of the document along the secondary axis
-        var documentSecondaryExtent = settings.verticallyOriented ? widthToSet : heightToSet;
+        var documentSecondaryExtent = getExtentAlongSecondaryAxis(layouts);
 
         // The current position in the document along the primary axis
         var primaryDocPosition = 0;
 
-        var groups = [];
+        var pageGroups = [];
 
         layouts.forEach(function (layout)
         {
             if (!layout.rendered)
             {
-                groups.push({
+                pageGroups.push({
                     region: {
                         top: 0,
                         bottom: 0,
@@ -569,13 +571,32 @@ function SequenceRendering(viewer)
                 primaryDocPosition = region.right;
             }
 
-            groups.push({
+            pageGroups.push({
                 layout: layout,
                 region: region
             });
         });
 
-        return groups;
+        var height, width;
+
+        if (settings.verticallyOriented)
+        {
+            height = primaryDocPosition + settings.verticalPadding;
+            width = documentSecondaryExtent;
+        }
+        else
+        {
+            height = documentSecondaryExtent;
+            width = primaryDocPosition + settings.horizontalPadding;
+        }
+
+        return {
+            dimensions: {
+                height: height,
+                width: width
+            },
+            pageGroups: pageGroups
+        };
     };
 
     var getSinglesLayoutGroups = function ()
@@ -714,21 +735,26 @@ function SequenceRendering(viewer)
         };
     };
 
-    var calculateDocumentDimensions = function(zoomLevel)
+    var getExtentAlongSecondaryAxis = function (layouts)
     {
-        var widthToSet;
+        // Get the extent of the document along the secondary axis
+        var secondaryDim, secondaryPadding;
 
-        if (settings.inBookLayout)
-            widthToSet = (settings.manifest.getMaxWidth(zoomLevel) + settings.horizontalPadding) * 2;
+        if (settings.verticallyOriented)
+        {
+            secondaryDim = 'width';
+            secondaryPadding = settings.horizontalPadding;
+        }
         else
-            widthToSet = settings.manifest.getMaxWidth(zoomLevel) + settings.horizontalPadding * 2;
+        {
+            secondaryDim = 'width';
+            secondaryPadding = settings.verticalPadding;
+        }
 
-        var heightToSet = settings.manifest.getMaxHeight(zoomLevel) + settings.verticalPadding * 2;
-
-        return {
-            widthToSet: widthToSet,
-            heightToSet: heightToSet
-        };
+        return (2 * secondaryPadding) + layouts.reduce(function (maxDim, layout)
+        {
+            return Math.max(layout[secondaryDim], maxDim);
+        }, 0);
     };
 
     // Called every time we need to load document view (after zooming, fullscreen, etc)
@@ -748,34 +774,23 @@ function SequenceRendering(viewer)
 
         resetTilesLoaded();
 
-        var z = settings.zoomLevel;
+        // FIXME(wabain): Optimize case where this was computed in preloadCanvases
+        // Calculate page layout (self.documentDimensions, self.pageGroups, settings.pageTopOffsets, settings.pageLeftOffsets)
+        calculateDocumentLayout();
 
-        //TODO skip this if we just zoomed (happens in preloadPages)
-        // Determine the length of the non-primary dimension of the inner element
-        var documentDimensions = calculateDocumentDimensions(z);
+        var dims = self.documentDimensions;
 
-        settings.totalHeight = settings.manifest.getTotalHeight(z) + settings.verticalPadding * (settings.numPages + 1);
-        settings.totalWidth = settings.manifest.getTotalWidth(z) + settings.horizontalPadding * (settings.numPages + 1);
-
-        // Calculate page layout (settings.pageTopOffsets, settings.pageLeftOffsets)
-        calculatePageLayout(documentDimensions.widthToSet, documentDimensions.heightToSet);
+        var documentSize = {
+            height: Math.round(dims.height) + 'px',
+            width: Math.round(dims.width) + 'px'
+        };
 
         if (settings.verticallyOriented)
-        {
-            self.documentRendering.setDocumentSize({
-                height: Math.round(settings.totalHeight) + 'px',
-                width: Math.round(documentDimensions.widthToSet) + 'px',
-                minWidth: settings.panelWidth + 'px'
-            });
-        }
+            documentSize.minWidth = settings.panelWidth + 'px';
         else
-        {
-            self.documentRendering.setDocumentSize({
-                height: Math.round(documentDimensions.heightToSet) + 'px',
-                minHeight: settings.panelHeight + 'px',
-                width: Math.round(settings.totalWidth) + 'px'
-            });
-        }
+            documentSize.minHeight = settings.panelHeight + 'px';
+
+        self.documentRendering.setDocumentSize(documentSize);
 
         // In book view, determine the total height/width based on the last opening's height/width and offset
         var lastPageIndex = settings.numPages - 1;
@@ -811,16 +826,18 @@ function SequenceRendering(viewer)
         // If this is not the initial load, trigger the zoom events
         if (settings.oldZoomLevel >= 0)
         {
+            var zoomLevel = settings.zoomLevel;
+
             if (settings.oldZoomLevel < settings.zoomLevel)
             {
-                diva.Events.publish("ViewerDidZoomIn", [z], viewer);
+                diva.Events.publish("ViewerDidZoomIn", [zoomLevel], viewer);
             }
             else
             {
-                diva.Events.publish("ViewerDidZoomOut", [z], viewer);
+                diva.Events.publish("ViewerDidZoomOut", [zoomLevel], viewer);
             }
 
-            diva.Events.publish("ViewerDidZoom", [z], viewer);
+            diva.Events.publish("ViewerDidZoom", [zoomLevel], viewer);
         }
         else
         {
@@ -872,8 +889,7 @@ function SequenceRendering(viewer)
 
         //1. determine visible pages at new zoom level
         //    a. recalculate page layout at new zoom level
-        var documentDimensions = calculateDocumentDimensions(settings.zoomLevel);
-        calculatePageLayout(documentDimensions.widthToSet, documentDimensions.heightToSet);
+        calculateDocumentLayout();
 
         //    b. for all pages (see loadDocument)
         //        i) if page coords fall within visible coords, add to visible page block
