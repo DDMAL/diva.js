@@ -15,6 +15,7 @@ function SequenceRendering(viewer)
     self.loadedTiles = [];
     self.firstPageLoaded = -1;
     self.lastPageLoaded = -1;
+    self.pageGroups = null;
     self.pagePreloadCanvases = [];
     self.previousZoomLevelCanvases = null;
 
@@ -669,9 +670,12 @@ function SequenceRendering(viewer)
         diva.Events.publish("ViewerDidJump", [pageIndex], viewer);
     };
 
-    var calculatePageOffsets = function(widthToSet, heightToSet)
+    var calculatePageLayout = function(widthToSet, heightToSet)
     {
-        var offsets = getPageOffsets(widthToSet, heightToSet);
+        var pageGroups = getPageGroups(widthToSet, heightToSet);
+        var offsets = getPageOffsets(pageGroups);
+
+        self.pageGroups = pageGroups;
 
         settings.pageTopOffsets = offsets.map(function (offset)
         {
@@ -684,99 +688,111 @@ function SequenceRendering(viewer)
         });
     };
 
-    var getPageOffsets = function(widthToSet, heightToSet)
+    var getPageOffsets = function(pageGroups)
     {
-        var groups = getPageGroups();
-
         var offsets = [];
 
-        var documentSecondaryExtent = settings.verticallyOriented ? widthToSet : heightToSet;
-        var primaryDocPosition = 0;
-        var primaryPadding = settings.verticallyOriented ? settings.verticalPadding : settings.horizontalPadding;
-
-        groups.forEach(function (group)
+        pageGroups.forEach(function (group)
         {
             // Handle non-paged entries in book layout
             // FIXME(wabain): Handle this better
-            if (!group.rendered)
+            if (!group.layout.rendered)
             {
-                group.pageOffsets.forEach(function ()
+                group.layout.pageOffsets.forEach(function ()
                 {
                     offsets.push({
-                        primary: -1,
-                        secondary: -1
+                        top: -1,
+                        left: -1
                     });
                 });
 
                 return;
             }
 
-            var groupPrimaryExtent, groupSecondaryExtent;
+            group.layout.pageOffsets.forEach(function (pageOffset)
+            {
+                offsets.push({
+                    top: group.region.top + pageOffset.top,
+                    left: group.region.left + pageOffset.left
+                });
+            });
+        });
+
+        return offsets;
+    };
+
+    var getPageGroups = function (widthToSet, heightToSet)
+    {
+        var layouts;
+
+        if (settings.inBookLayout)
+            layouts = getBookLayoutGroups();
+        else
+            layouts = getSinglesLayoutGroups();
+
+        // Turn layouts into concrete regions
+
+        // The extent of the document along the secondary axis
+        var documentSecondaryExtent = settings.verticallyOriented ? widthToSet : heightToSet;
+
+        // The current position in the document along the primary axis
+        var primaryDocPosition = 0;
+
+        var groups = [];
+
+        layouts.forEach(function (layout)
+        {
+            if (!layout.rendered)
+            {
+                groups.push({
+                    region: {
+                        top: 0,
+                        bottom: 0,
+                        left: 0,
+                        right: 0
+                    },
+                    layout: layout
+                });
+
+                return;
+            }
+
+            var region;
 
             if (settings.verticallyOriented)
             {
-                groupPrimaryExtent = group.height;
-                groupSecondaryExtent = group.width;
+                var left = (documentSecondaryExtent - layout.width) / 2;
+
+                region = {
+                    top: primaryDocPosition,
+                    bottom: primaryDocPosition + layout.height + settings.verticalPadding,
+                    left: left,
+                    right: left + layout.width
+                };
+
+                primaryDocPosition = region.bottom;
             }
             else
             {
-                groupPrimaryExtent = group.width;
-                groupSecondaryExtent = group.height;
+                var top = (documentSecondaryExtent - layout.height) / 2;
+
+                region = {
+                    top: top,
+                    bottom: top + layout.height,
+                    left: primaryDocPosition,
+                    right: primaryDocPosition + layout.width + settings.horizontalPadding
+                };
+
+                primaryDocPosition = region.right;
             }
 
-            var baseSecondaryOffset = (documentSecondaryExtent - groupSecondaryExtent) / 2;
-
-            group.pageOffsets.forEach(function (pageOffset)
-            {
-                var primaryPageOffset, secondaryPageOffset;
-
-                if (settings.verticallyOriented)
-                {
-                    primaryPageOffset = pageOffset.top;
-                    secondaryPageOffset = pageOffset.left;
-                }
-                else
-                {
-                    primaryPageOffset = pageOffset.left;
-                    secondaryPageOffset = pageOffset.top;
-                }
-
-                offsets.push({
-                    primary: primaryDocPosition + primaryPageOffset,
-                    secondary: baseSecondaryOffset + secondaryPageOffset
-                });
+            groups.push({
+                layout: layout,
+                region: region
             });
-
-            primaryDocPosition += groupPrimaryExtent + primaryPadding;
         });
 
-        if (settings.verticallyOriented)
-        {
-            return offsets.map(function (offset)
-            {
-                return {
-                    top: offset.primary,
-                    left: offset.secondary
-                };
-            });
-        }
-
-        return offsets.map(function (offset)
-        {
-            return {
-                top: offset.secondary,
-                left: offset.primary
-            };
-        });
-    };
-
-    /** Centered along the secondary axis, not including padding */
-    var getPageGroups = function ()
-    {
-        if (settings.inBookLayout)
-            return getBookLayoutGroups();
-
-        return getSinglesLayoutGroups();
+        return groups;
     };
 
     var getSinglesLayoutGroups = function ()
@@ -960,7 +976,7 @@ function SequenceRendering(viewer)
         settings.totalWidth = settings.manifest.getTotalWidth(z) + settings.horizontalPadding * (settings.numPages + 1);
 
         // Calculate page layout (settings.pageTopOffsets, settings.pageLeftOffsets)
-        calculatePageOffsets(documentDimensions.widthToSet, documentDimensions.heightToSet);
+        calculatePageLayout(documentDimensions.widthToSet, documentDimensions.heightToSet);
 
         if (settings.verticallyOriented)
         {
@@ -1090,7 +1106,7 @@ function SequenceRendering(viewer)
         //1. determine visible pages at new zoom level
         //    a. recalculate page layout at new zoom level
         var documentDimensions = calculateDocumentDimensions(settings.zoomLevel);
-        calculatePageOffsets(documentDimensions.widthToSet, documentDimensions.heightToSet);
+        calculatePageLayout(documentDimensions.widthToSet, documentDimensions.heightToSet);
 
         //    b. for all pages (see loadDocument)
         //        i) if page coords fall within visible coords, add to visible page block
