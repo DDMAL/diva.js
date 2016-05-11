@@ -897,6 +897,7 @@ function SequenceRendering(viewer)
 
         for (var i = 0; i < settings.numPages; i++)
         {
+            // FIXME(wabain): This doesn't fully account for viewport changes
             if (isPageVisible(i))
             {
                 // it will be visible, start loading it at the new zoom level into an offscreen canvas
