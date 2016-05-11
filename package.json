@@ -31,7 +31,8 @@
     "archives"
   ],
   "dependencies": {
-    "jquery": "~2.1.1"
+    "jquery": "~2.1.1",
+    "lodash.maxby": "^4.3.0"
   },
   "devDependencies": {
     "archiver": "^0.14.4",

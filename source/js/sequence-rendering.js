@@ -1,4 +1,5 @@
 var extend = require('jquery').extend;
+var maxBy = require('lodash.maxby');
 var elt = require('./utils/elt');
 var diva = require('./diva-global');
 var DocumentRendering = require('./document-rendering');
@@ -13,9 +14,8 @@ function SequenceRendering(viewer)
     self.documentRendering = null;
     self.allTilesLoaded = [];
     self.loadedTiles = [];
-    self.firstPageLoaded = -1;
-    self.lastPageLoaded = -1;
     self.pageGroups = null;
+    self.renderedPages = null;
     self.pagePreloadCanvases = [];
     self.previousZoomLevelCanvases = null;
 
@@ -331,303 +331,86 @@ function SequenceRendering(viewer)
         theNode.parentNode.removeChild(theNode);
     };
 
-    // Check if the bottom of a page is above the top of a viewport (scrolling down)
-    // For when you want to keep looping but don't want to load a specific page
-    var pageAboveViewport = function (pageIndex)
-    {
-        var bottomOfPage = settings.pageTopOffsets[pageIndex] + getPageData(pageIndex, 'h') + settings.verticalPadding;
-        return bottomOfPage < settings.viewport.top;
-    };
-
-    // Check if the top of a page is below the bottom of a viewport (scrolling up)
-    var pageBelowViewport = function (pageIndex)
-    {
-        var topOfPage = settings.pageTopOffsets[pageIndex];
-        return topOfPage > settings.viewport.bottom;
-    };
-
-    // Check if the left side of a page is to the left of a viewport (scrolling right)
-    // For when you want to keep looping but don't want to load a specific page
-    var pageLeftOfViewport = function (pageIndex)
-    {
-        var rightOfPage = settings.pageLeftOffsets[pageIndex] + getPageData(pageIndex, 'w') + settings.horizontalPadding;
-        return rightOfPage < settings.viewport.left;
-    };
-
-    // Check if the right side of a page is to the right of a viewport (scrolling left)
-    var pageRightOfViewport = function (pageIndex)
-    {
-        var leftOfPage = settings.pageLeftOffsets[pageIndex];
-        return leftOfPage > settings.viewport.right;
-    };
-
-    //shorthand functions to determine which is the right "before" viewport function to use
-    var pageBeforeViewport = function (pageIndex)
-    {
-        return (settings.verticallyOriented ? pageAboveViewport(pageIndex) : pageLeftOfViewport(pageIndex));
-    };
-
-    //shorthand functions to determine which is the right "after" viewport function to use
-    var pageAfterViewport = function (pageIndex)
-    {
-        return (settings.verticallyOriented ? pageBelowViewport(pageIndex) : pageRightOfViewport(pageIndex));
-    };
-
-    // Called by adjust pages - determine what pages should be visible, and show them
-    var attemptPageShow = function (pageIndex, direction)
-    {
-        if (isPageValid(pageIndex))
-        {
-            if (direction > 0)
-            {
-                // Direction is positive - we're scrolling down
-                // If the page should be visible, then yes, add it
-                if (isPageVisible(pageIndex))
-                {
-                    loadPage(pageIndex);
-                    self.lastPageLoaded = pageIndex;
-
-                    // Recursively call this function until there's nothing to add
-                    attemptPageShow(self.lastPageLoaded + 1, direction);
-                }
-                else if (isPageValid(pageIndex + 1) && isPageVisible(pageIndex + 1))
-                {
-                    loadPage(pageIndex + 1);
-                    self.lastPageLoaded = pageIndex + 1;
-
-                    // Recursively call this function until there's nothing to add
-                    attemptPageShow(self.lastPageLoaded + 1, direction);
-                }
-                else if (pageBeforeViewport(pageIndex))
-                {
-                    // If the page is below the viewport. try to load the next one
-                    attemptPageShow(pageIndex + 1, direction);
-                }
-            }
-            else
-            {
-                // Direction is negative - we're scrolling up
-                // If it's near the viewport, yes, add it
-                if (isPageVisible(pageIndex))
-                {
-                    loadPage(pageIndex);
-
-                    // Reset the first page loaded to this one
-                    self.firstPageLoaded = pageIndex;
-
-                    // Recursively call this function until there's nothing to add
-                    attemptPageShow(self.firstPageLoaded - 1, direction);
-                }
-                else if (isPageValid(pageIndex - 1) && isPageVisible(pageIndex - 1))
-                {
-                    loadPage(pageIndex - 1);
-                    self.firstPageLoaded = pageIndex - 1;
-
-                    // Recursively call this function until there's nothing to add
-                    attemptPageShow(self.firstPageLoaded - 1, direction);
-                }
-                else if (pageAfterViewport(pageIndex))
-                {
-                    // Attempt to call this on the next page, do not increment anything
-                    attemptPageShow(pageIndex - 1, direction);
-                }
-            }
-        }
-    };
-
-    // Called by adjustPages - see what pages need to be hidden, and hide them
-    var attemptPageHide = function (pageIndex, direction)
-    {
-        if (direction > 0)
-        {
-            // Scrolling down - see if this page needs to be deleted from the DOM
-            if (isPageValid(pageIndex) && pageBeforeViewport(pageIndex))
-            {
-                // Yes, delete it, reset the first page loaded
-                deletePage(pageIndex);
-                self.firstPageLoaded = pageIndex + 1;
-
-                // Try to call this function recursively until there's nothing to delete
-                attemptPageHide(self.firstPageLoaded, direction);
-            }
-        }
-        else
-        {
-            // Direction must be negative (not 0 - see adjustPages), we're scrolling up
-            if (isPageValid(pageIndex) && pageAfterViewport(pageIndex))
-            {
-                // Yes, delete it, reset the last page loaded
-                deletePage(pageIndex);
-                self.lastPageLoaded = pageIndex - 1;
-
-                // Try to call this function recursively until there's nothing to delete
-                attemptPageHide(self.lastPageLoaded, direction);
-            }
-        }
-    };
-
     // Handles showing and hiding pages when the user scrolls
-    var adjustPages = function (direction)
+    // FIXME(wabain): Remove the direction argument if it doesn't end up being needed.
+    var adjustPages = function (direction) // jshint ignore:line
     {
-        var i;
+        var newRenderedPages = [];
 
-        if (direction < 0)
+        self.pageGroups.forEach(function (group)
         {
-            // Direction is negative, so we're scrolling up/left (doesn't matter for these calls)
-            // Attempt showing pages in ascending order starting from the last visible page in the viewport
-            attemptPageShow(self.lastPageLoaded, direction);
-            setCurrentPage(-1);
-            attemptPageHide(self.lastPageLoaded, direction);
-        }
-        else if (direction > 0)
-        {
-            // Direction is positive so we're scrolling down/right (doesn't matter for these calls)
-            // Attempt showing pages in descending order starting from the first visible page in the viewport
-            attemptPageShow(self.firstPageLoaded, direction);
-            setCurrentPage(1);
-            attemptPageHide(self.firstPageLoaded, direction);
-        }
-        else
-        {
-            if (settings.inBookLayout)
-            {
-                setCurrentPage(0);
-            }
+            if (!group.layout.rendered || !settings.viewport.intersectsRegion(group.region))
+                return;
 
-            // Non-primary scroll, check if we need to reveal any tiles
-            var lpl = self.lastPageLoaded;
-            for (i = Math.max(self.firstPageLoaded, 0); i <= lpl; i++)
+            group.layout.pageOffsets.forEach(function (pageOffset)
             {
-                if (isPageVisible(i))
-                    loadPage(i);
-            }
+                var index = pageOffset.index;
+
+                if (isPageVisible(index))
+                {
+                    loadPage(index);
+                    newRenderedPages.push(index);
+                }
+            });
+        });
+
+        if (self.renderedPages)
+        {
+            self.renderedPages.forEach(function (pageIndex)
+            {
+                if (newRenderedPages.indexOf(pageIndex) === -1)
+                    deletePage(pageIndex);
+            });
         }
+
+        self.renderedPages = newRenderedPages;
+
+        updateCurrentPage();
     };
 
-    // Clamp pages to those with 'viewingHint: paged' === true (applicable only when document viewingHint === 'paged', see IIIF Presentation API 2.0)
-    // Traverses pages in the specified direction looking for the closest visible page
-    var getClosestVisiblePage = function(pageIndex, direction)
+    var updateCurrentPage = function ()
     {
-        var totalPages = settings.numPages;
+        // FIXME(wabain): Should this happen?
+        if (!self.renderedPages || self.renderedPages.length === 0)
+            return;
 
-        if (settings.manifest.paged && settings.inBookLayout)
+        var centerY = settings.viewport.top + (settings.viewport.height / 2);
+        var centerX = settings.viewport.left + (settings.viewport.width / 2);
+
+        // Find the minimum distance from the viewport center to a page.
+        // Compute minus the squared distance from viewport center to the page's border.
+        // http://gamedev.stackexchange.com/questions/44483/how-do-i-calculate-distance-between-a-point-and-an-axis-aligned-rectangle
+        var closestPage = maxBy(self.renderedPages, function (index)
         {
-            while (pageIndex > 0 && pageIndex < totalPages)
-            {
-                if (settings.manifest.pages[pageIndex].paged)
-                {
-                    return pageIndex;
-                }
+            var dims = getPageDimensions(index);
 
-                pageIndex += direction;
-            }
-        }
+            var top, left;
 
-        return pageIndex;
-    };
-
-    // Determines and sets the "current page" (settings.currentPageIndex); called within adjustPages
-    // The "direction" is either 1 (downward scroll) or -1 (upward scroll)
-    var setCurrentPage = function (direction)
-    {
-        var currentPage = settings.currentPageIndex;
-        var pageToConsider = currentPage + direction;
-        var viewport = settings.viewport;
-
-        pageToConsider = getClosestVisiblePage(pageToConsider, direction);
-
-        if (!isPageValid(pageToConsider))
-            return false;
-
-        var middleOfViewport = (settings.verticallyOriented ? viewport.top + (settings.panelHeight / 2) : viewport.left + (settings.panelWidth / 2));
-        var verticalMiddleOfViewport = viewport.left + (settings.panelWidth / 2);
-        var changeCurrentPage = false;
-
-        if (direction < 0)
-        {
-            // When scrolling forwards:
-            // If the previous page > middle of viewport
             if (settings.verticallyOriented)
             {
-                if (pageToConsider >= 0 && (settings.pageTopOffsets[pageToConsider] + getPageData(pageToConsider, 'h') + (settings.verticalPadding) >= middleOfViewport))
-                {
-                    changeCurrentPage = true;
-                }
+                top = settings.pageTopOffsets[index] + settings.verticalPadding;
+                left = settings.pageLeftOffsets[index];
             }
             else
             {
-                if (pageToConsider >= 0 && (settings.pageLeftOffsets[pageToConsider] + getPageData(pageToConsider, 'w') + (settings.horizontalPadding) >= middleOfViewport))
-                {
-                    changeCurrentPage = true;
-                }
+                top = settings.pageTopOffsets[index];
+                left = settings.pageLeftOffsets[index] + settings.horizontalPadding;
             }
-        }
-        else if (direction > 0)
+
+            var midX = left + (dims.height / 2);
+            var midY = top + (dims.width / 2);
+
+            var dx = Math.max(Math.abs(centerX - midX) - (dims.width / 2), 0);
+            var dy = Math.max(Math.abs(centerY - midY) - (dims.height / 2), 0);
+
+            return -(dx * dx + dy * dy);
+        });
+
+        if (closestPage !== settings.currentPageIndex)
         {
-            // When scrolling backwards:
-            // If this page < middle of viewport
-            if (settings.verticallyOriented)
-            {
-                if (settings.pageTopOffsets[currentPage] + getPageData(currentPage, 'h') + settings.verticalPadding < middleOfViewport)
-                {
-                    changeCurrentPage = true;
-                }
-            }
-            else
-            {
-                if (settings.pageLeftOffsets[currentPage] + getPageData(currentPage, 'w') + settings.horizontalPadding < middleOfViewport)
-                {
-                    changeCurrentPage = true;
-                }
-            }
+            settings.currentPageIndex = closestPage;
+            diva.Events.publish("VisiblePageDidChange", [closestPage, settings.manifest.pages[closestPage].f], viewer);
         }
-
-        if (settings.inBookLayout && settings.verticallyOriented)
-        {
-            // if the viewer is scrolled to the rightmost side, switch the current page to that on the right. if less, choose the page on the left.
-            var isScrolledToRight = verticalMiddleOfViewport > settings.manifest.getMaxWidth(settings.zoomLevel);
-            var bookDirection = (isScrolledToRight) ? 1 : -1;
-            var bookPageToConsider = currentPage + bookDirection;
-            var isValidPagePosition;
-
-            bookPageToConsider = getClosestVisiblePage(bookPageToConsider, bookDirection);
-
-            if (isScrolledToRight)
-            {
-                // the viewer is scrolled to the rightmost page, switch to next page if it's on the right
-                isValidPagePosition = settings.pageLeftOffsets[bookPageToConsider] >= (settings.manifest.getMaxWidth(settings.zoomLevel) / 2);
-            }
-            else
-            {
-                // the viewer is scrolled to the leftmost page, switch to previous page if it's on the left
-                isValidPagePosition = settings.pageLeftOffsets[bookPageToConsider] < (settings.manifest.getMaxWidth(settings.zoomLevel) / 2);
-            }
-
-            if (isValidPagePosition && bookPageToConsider !== settings.currentPageIndex)
-            {
-                settings.currentPageIndex = bookPageToConsider;
-                diva.Events.publish("VisiblePageDidChange", [bookPageToConsider, settings.manifest.pages[bookPageToConsider].f], viewer);
-            }
-        }
-
-        if (changeCurrentPage)
-        {
-            // Set this to the current page
-            settings.currentPageIndex = pageToConsider;
-            // Now try to change the next page, given that we're not going to a specific page
-            // Calls itself recursively - this way we accurately obtain the current page
-            if (direction !== 0)
-            {
-                if (!setCurrentPage(direction))
-                {
-                    var filename = settings.manifest.pages[pageToConsider].f;
-                    diva.Events.publish("VisiblePageDidChange", [pageToConsider, filename], viewer);
-                }
-            }
-            return true;
-        }
-
-        return false;
     };
 
     var calculateDesiredScroll = function(pageIndex, verticalOffset, horizontalOffset)
@@ -963,7 +746,6 @@ function SequenceRendering(viewer)
             ID: settings.ID
         });
 
-        this.firstPageLoaded = 0;
         resetTilesLoaded();
 
         var z = settings.zoomLevel;
@@ -1023,23 +805,8 @@ function SequenceRendering(viewer)
         // Scroll to the proper place using stored y/x offsets (relative to the center of the page)
         gotoPage(settings.goDirectlyTo, settings.verticalOffset, settings.horizontalOffset);
 
-        // Once the viewport is aligned, we can determine which pages will be visible and load them
-        var pageBlockFound = false;
-
-        for (var i = 0; i < settings.numPages; i++)
-        {
-            if (isPageVisible(i))
-            {
-                loadPage(i);
-
-                self.lastPageLoaded = i;
-                pageBlockFound = true;
-            }
-            else if (pageBlockFound) // There will only be one consecutive block of pages to load; once we find a page that's invisible, we can terminate this loop.
-            {
-                break;
-            }
-        }
+        // Load the visible pages
+        adjustPages(0);
 
         // If this is not the initial load, trigger the zoom events
         if (settings.oldZoomLevel >= 0)
