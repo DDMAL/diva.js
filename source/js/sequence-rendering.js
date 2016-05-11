@@ -501,21 +501,6 @@ function SequenceRendering(viewer)
                     loadPage(i);
             }
         }
-
-        var scrollSoFar = (settings.verticallyOriented ? settings.viewport.top : settings.viewport.left);
-
-        diva.Events.publish("ViewerDidScroll", [scrollSoFar], viewer);
-
-        if (direction > 0)
-        {
-            // scrolling forwards
-            diva.Events.publish("ViewerDidScrollDown", [scrollSoFar], viewer);
-        }
-        else if (direction < 0)
-        {
-            // scrolling backwards
-            diva.Events.publish("ViewerDidScrollUp", [scrollSoFar], viewer);
-        }
     };
 
     // Clamp pages to those with 'viewingHint: paged' === true (applicable only when document viewingHint === 'paged', see IIIF Presentation API 2.0)

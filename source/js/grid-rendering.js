@@ -292,21 +292,6 @@ function GridRendering(viewer)
             setCurrentRow(1);
             attemptRowHide(self.firstRowLoaded, 1);
         }
-
-        var newTopScroll = settings.viewport.top;
-
-        diva.Events.publish("ViewerDidScroll", [newTopScroll], viewer);
-
-        // If we're scrolling down
-        if (direction > 0)
-        {
-            diva.Events.publish("ViewerDidScrollDown", [newTopScroll], viewer);
-        }
-        else if (direction < 0)
-        {
-            // We're scrolling up
-            diva.Events.publish("ViewerDidScrollUp", [newTopScroll], viewer);
-        }
     };
 
     // Used to delay loading of page images in grid view to prevent unnecessary loads

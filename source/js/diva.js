@@ -1085,6 +1085,19 @@ var DivaSettingsValidator = new ValidationRunner({
             settings.previousTopScroll = newScrollTop;
             settings.previousLeftScroll = newScrollLeft;
 
+            var primaryScroll = (settings.verticallyOriented || settings.inGrid) ? newScrollTop : newScrollLeft;
+
+            diva.Events.publish("ViewerDidScroll", [primaryScroll], self);
+
+            if (direction > 0)
+            {
+                diva.Events.publish("ViewerDidScrollDown", [primaryScroll], self);
+            }
+            else if (direction < 0)
+            {
+                diva.Events.publish("ViewerDidScrollUp", [primaryScroll], self);
+            }
+
             updateOffsets();
         };
 
