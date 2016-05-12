@@ -3,6 +3,7 @@ var maxBy = require('lodash.maxby');
 var elt = require('./utils/elt');
 var diva = require('./diva-global');
 var DocumentRendering = require('./document-rendering');
+var TiledImageRenderer = require('./tiled-image-renderer');
 
 module.exports = SequenceRendering;
 
@@ -11,15 +12,17 @@ function SequenceRendering(viewer)
     var self = this;
     var settings = viewer.getSettings();
 
+    self.tileDimensions = {
+        width: settings.tileWidth,
+        height: settings.tileHeight
+    };
+    self.tiledImageRenderers = {};
+
     self.documentRendering = null;
-    self.allTilesLoaded = [];
-    self.loadedTiles = [];
     self.pageGroups = null;
     self.pageTopOffsets = null;
     self.pageLeftOffsets = null;
     self.renderedPages = null;
-    self.pagePreloadCanvases = [];
-    self.previousZoomLevelCanvases = null;
 
     // FIXME(wabain): Temporarily copied from the Diva core
     var getPageData = function (pageIndex, attribute)
@@ -30,47 +33,6 @@ function SequenceRendering(viewer)
     var isPageValid = function (pageIndex)
     {
         return settings.manifest.isPageValid(pageIndex);
-    };
-
-    // Check if a tile is near the specified viewport and thus should be loaded (performance-sensitive)
-    var isTileVisible = function (pageIndex, tile)
-    {
-        // Viewport-relative coordinates
-        var tileTop, tileLeft;
-
-        if (settings.verticallyOriented)
-        {
-            tileTop = self.pageTopOffsets[pageIndex] + tile.top + settings.verticalPadding;
-            tileLeft = self.pageLeftOffsets[pageIndex] + tile.left;
-        }
-        else
-        {
-            tileTop = self.pageTopOffsets[pageIndex] + tile.top;
-            tileLeft = self.pageLeftOffsets[pageIndex] + tile.left + settings.horizontalPadding;
-        }
-
-        return settings.viewport.intersectsRegion({
-            top: tileTop,
-            bottom: tileTop + settings.tileHeight,
-            left: tileLeft,
-            right: tileLeft + settings.tileWidth
-        });
-    };
-
-    // Check if a tile has been loaded (note: performance-sensitive function)
-    var isTileLoaded = function (pageIndex, tileIndex)
-    {
-        var tiles = self.loadedTiles[pageIndex];
-
-        for (var i = tiles.length; i >= 0; i--)
-        {
-            if (tiles[i] === tileIndex)
-            {
-                return true;
-            }
-        }
-
-        return false;
     };
 
     // Check if a page is in or near the viewport and thus should be loaded
@@ -90,85 +52,61 @@ function SequenceRendering(viewer)
         });
     };
 
-    // Loads page tiles into the supplied canvas.
-    var loadTiles = function(pageIndex, filename, width, height, canvasElement)
-    {
-        var context = canvasElement.getContext('2d');
-
-        function getDrawTileFunction(pageIndex, tileIndex, currentTile, left, top)
-        {
-            return function()
-            {
-                self.loadedTiles[pageIndex].push(tileIndex);
-                context.drawImage(currentTile, left, top);
-            };
-        }
-
-        var dims = getPageDimensions(pageIndex);
-
-        // Resize canvas context to new zoom level if necessary before drawing tiles
-        if (canvasElement.width !== dims.width)
-        {
-            canvasElement.width = dims.width;
-            canvasElement.height = dims.height;
-        }
-
-        var allTilesLoaded = true;
-
-        var tileDimens = {
-            height: settings.tileHeight,
-            width: settings.tileWidth
-        };
-
-        settings.manifest.getPageImageTiles(pageIndex, settings.zoomLevel, tileDimens).forEach(function (tile, tileIndex)
-        {
-            // this check looks to see if the tile is already loaded, and then if
-            // it isn't, if it should be visible.
-            if (isTileLoaded(pageIndex, tileIndex, context, tile.left, tile.top))
-                return;
-
-            if (!isTileVisible(pageIndex, tile))
-            {
-                allTilesLoaded = false;
-                return;
-            }
-
-            var tileImage = new Image();
-            tileImage.crossOrigin = "anonymous";
-
-            tileImage.onload = getDrawTileFunction(pageIndex, tileIndex, tileImage, tile.left, tile.top);
-            tileImage.src = tile.url;
-        });
-
-        self.allTilesLoaded[pageIndex] = allTilesLoaded;
-    };
-
-    // There are still tiles to load, so try to load those (after the delay specified in loadPage)
-    var loadPageTiles = function (pageIndex, filename, width, height, pageSelector)
-    {
-        var pageElement = document.getElementById(settings.ID + 'page-' + pageIndex);
-
-        // If the page is no longer in the viewport or loaded, don't load any tiles
-        if (pageElement === null || !isPageVisible(pageIndex))
-            return;
-
-        var canvasElement = document.getElementById(settings.ID + 'canvas-' + pageIndex);
-
-        loadTiles(pageIndex, filename, width, height, canvasElement);
-
-        diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector], viewer);
-    };
-
     // Appends the page directly into the document body, or loads the relevant tiles
     var loadPage = function (pageIndex)
     {
-        // If the page and all of its tiles have been loaded, or if we are in book layout and the canvas is non-paged, exit
-        if ((self.documentRendering.isPageLoaded(pageIndex) && self.allTilesLoaded[pageIndex]) ||
-            (settings.inBookLayout && settings.manifest.paged && !settings.manifest.pages[pageIndex].paged))
+        // If we are in book layout and the canvas is non-paged, exit
+        // FIXME(wabain): Is this condition needed anymore?
+        if (settings.inBookLayout && settings.manifest.paged && !settings.manifest.pages[pageIndex].paged)
             return;
 
-        var isPreloaded = typeof self.pagePreloadCanvases[pageIndex] !== 'undefined';
+        var pageElement = self.documentRendering.getPageElement(pageIndex);
 
+        if (!pageElement)
+            pageElement = renderPageElement(pageIndex);
+
+        var tileRenderer = getTiledImageRenderer(pageIndex);
+
+        tileRenderer.updateZoomLevel(settings.zoomLevel);
+
+        var canvasElement = tileRenderer.getImageRendering();
+
+        // Place the canvas in the DOM if it is new
+        // FIXME(wabain): There should be a nicer way to handle this
+        if (!canvasElement.parentNode)
+        {
+            var canvasId = settings.ID + 'canvas-' + pageIndex;
+            var oldCanvas = document.getElementById(canvasId);
+
+            if (oldCanvas)
+                oldCanvas.parentNode.removeChild(oldCanvas);
+
+            elt.setAttributes(canvasElement, {
+                id: canvasId,
+                class: 'diva-canvas'
+            });
+
+            pageElement.appendChild(canvasElement);
+        }
+
+        if (!tileRenderer.fullImageIsLoading())
+        {
+            self.documentRendering.setPageTimeout(function ()
+            {
+                var renderer = self.tiledImageRenderers[pageIndex];
+
+                // The page is no longer visible
+                // FIXME(wabain): Should the timeout just be cancelled in that case?
+                if (!renderer)
+                    return;
+
+                renderer.load(getImageOffset(pageIndex));
+            }, settings.pageLoadTimeout, []);
+        }
+    };
+
+    var renderPageElement = function (pageIndex)
+    {
         // Load some data for this page
         var filename = settings.manifest.pages[pageIndex].f;
         var dims = getPageDimensions(pageIndex);
@@ -176,142 +114,109 @@ function SequenceRendering(viewer)
         var height = dims.height;
         var pageSelector = settings.selector + 'page-' + pageIndex;
 
-        // If the page has not been loaded yet, append the div to the DOM
-        if (!self.documentRendering.isPageLoaded(pageIndex))
+        var pageElement = elt('div', {
+            id: settings.ID + 'page-' + pageIndex,
+            class: 'diva-page diva-document-page',
+            style: {
+                width: width + 'px',
+                height: height + 'px'
+            },
+            'data-index': pageIndex,
+            'data-filename': filename
+        });
+
+        if (settings.enableImageTitles) pageElement.title = "Page " + (pageIndex + 1);
+
+        // Append page tools
+        pageElement.innerHTML = settings.pageTools;
+
+        if (settings.verticallyOriented)
         {
-            var pageElement = elt('div', {
-                id: settings.ID + 'page-' + pageIndex,
-                class: 'diva-page diva-document-page',
-                style: {
-                    width: width + 'px',
-                    height: height + 'px'
-                },
-                'data-index': pageIndex,
-                'data-filename': filename
-            });
+            var heightFromTop = self.pageTopOffsets[pageIndex] + settings.verticalPadding;
+            pageElement.style.top = heightFromTop + 'px';
 
-            if (settings.enableImageTitles) pageElement.title = "Page " + (pageIndex + 1);
-
-            // Append page tools
-            pageElement.innerHTML = settings.pageTools;
-
-            var canvasElement;
-
-            // Append canvas element
-            if (isPreloaded)
+            if (settings.inBookLayout)
             {
-                canvasElement = self.pagePreloadCanvases[pageIndex];
-
-                self.pagePreloadCanvases[pageIndex] = undefined;
-            }
-            else
-            {
-                canvasElement = elt('canvas', {
-                    width: width,
-                    height: height
-                });
-            }
-
-            // FIXME(wabain): Why is this declared after the fact?
-            elt.setAttributes(canvasElement, {
-                id: settings.ID + 'canvas-' + pageIndex,
-                class: 'diva-canvas',
-                style: {
-                    width: width + 'px',
-                    height: height + 'px'
-                }
-            });
-
-            pageElement.appendChild(canvasElement);
-
-            if (settings.verticallyOriented)
-            {
-                var heightFromTop = self.pageTopOffsets[pageIndex] + settings.verticalPadding;
-                pageElement.style.top = heightFromTop + 'px';
-
-                if (settings.inBookLayout)
+                pageElement.style.left = self.pageLeftOffsets[pageIndex] + 'px';
+                if (pageIndex % 2)
                 {
-                    pageElement.style.left = self.pageLeftOffsets[pageIndex] + 'px';
-                    if (pageIndex % 2)
-                    {
-                        pageElement.classList.add('diva-page-book-left');
-                    }
-                    else
-                    {
-                        if (pageIndex === 0)
-                        {
-                            // create a placeholder div for the left side of the first opening
-                            var placeholderElement = elt('div', {
-                                id: settings.ID + 'page-placeholder',
-                                class: 'diva-page diva-document-page',
-                                style: {
-                                    width: width + 'px',
-                                    height: height + 'px',
-                                    top: 0,
-                                    left: 0 - width + 'px',
-                                    border: '1px solid #ccc',
-                                    background: '#fdfdfd',
-                                    mozBoxSizing: 'border-box',
-                                    webkitBoxSizing: 'border-box',
-                                    boxSizing: 'border-box'
-                                }
-                            });
-
-                            // append the placeholder element to page as first child
-                            pageElement.appendChild(placeholderElement);
-                        }
-                        pageElement.classList.add('diva-page-book');
-                    }
+                    pageElement.classList.add('diva-page-book-left');
                 }
                 else
                 {
-                    pageElement.classList.add('diva-page-vertical');
+                    if (pageIndex === 0)
+                    {
+                        // create a placeholder div for the left side of the first opening
+                        var placeholderElement = elt('div', {
+                            id: settings.ID + 'page-placeholder',
+                            class: 'diva-page diva-document-page',
+                            style: {
+                                width: width + 'px',
+                                height: height + 'px',
+                                top: 0,
+                                left: 0 - width + 'px',
+                                border: '1px solid #ccc',
+                                background: '#fdfdfd',
+                                mozBoxSizing: 'border-box',
+                                webkitBoxSizing: 'border-box',
+                                boxSizing: 'border-box'
+                            }
+                        });
+
+                        // append the placeholder element to page as first child
+                        pageElement.appendChild(placeholderElement);
+                    }
+                    pageElement.classList.add('diva-page-book');
                 }
             }
             else
             {
-                var widthFromLeft = self.pageLeftOffsets[pageIndex] + settings.horizontalPadding;
-                pageElement.style.left = widthFromLeft + 'px';
-                pageElement.classList.add('diva-page-horizontal');
+                pageElement.classList.add('diva-page-vertical');
             }
-
-            settings.innerElement.appendChild(pageElement);
-            diva.Events.publish("PageWillLoad", [pageIndex, filename, pageSelector], viewer);
         }
-
-        if (!isPreloaded)
+        else
         {
-            self.documentRendering.setPageTimeout(loadPageTiles, settings.pageLoadTimeout, [pageIndex, filename, width, height]);
+            var widthFromLeft = self.pageLeftOffsets[pageIndex] + settings.horizontalPadding;
+            pageElement.style.left = widthFromLeft + 'px';
+            pageElement.classList.add('diva-page-horizontal');
         }
+
+        settings.innerElement.appendChild(pageElement);
+        diva.Events.publish("PageWillLoad", [pageIndex, filename, pageSelector], viewer);
+
+        return pageElement;
     };
 
-    var preloadPage = function(pageIndex)
+    var getTiledImageRenderer = function (pageIndex)
     {
-        // Exit if we've already started preloading this page and we're not still zooming
-        if (typeof self.pagePreloadCanvases[pageIndex] !== 'undefined' && !settings.isZooming)
-            return;
+        var renderer = self.tiledImageRenderers[pageIndex];
+
+        if (renderer)
+            return renderer;
+
+        renderer = new TiledImageRenderer({
+            viewport: settings.viewport,
+            manifest: settings.manifest,
+            pageIndex: pageIndex,
+            tileDimensions: self.tileDimensions,
+            initialZoomLevel: settings.zoomLevel
+        });
+
+        self.tiledImageRenderers[pageIndex] = renderer;
+
+        return renderer;
+    };
+
+    var preloadPage = function (pageIndex)
+    {
+        var renderer = getTiledImageRenderer(pageIndex);
+
+        renderer.updateZoomLevel(settings.zoomLevel);
+        renderer.load(getImageOffset(pageIndex));
 
         var filename = settings.manifest.pages[pageIndex].f;
-        var dims = getPageDimensions(pageIndex);
         var pageSelector = settings.selector + 'page-' + pageIndex;
-
-        // New off-screen canvas
-        var pageCanvas = elt('canvas', dims);
-
-        // If corresponding page is in previousZoomLevelCanvases, copy existing image from previous zoom level, scaled, to canvas
-        if (self.previousZoomLevelCanvases && self.previousZoomLevelCanvases[pageIndex])
-        {
-            var oldCanvas = self.previousZoomLevelCanvases[pageIndex];
-            var newCanvasContext = pageCanvas.getContext('2d');
-            newCanvasContext.drawImage(oldCanvas, 0, 0, dims.width, dims.height);
-        }
-
-        // Load visible page tiles into canvas
-        loadTiles(pageIndex, filename, dims.width, dims.height, pageCanvas);
-
         diva.Events.publish("PageDidLoad", [pageIndex, filename, pageSelector], viewer);
-
-        return pageCanvas;
     };
 
     // Delete a page from the DOM; will occur when a page is scrolled out of the viewport
@@ -327,8 +232,11 @@ function SequenceRendering(viewer)
             theNode.removeChild(theNode.firstChild);
         }
 
-        //delete loaded tiles
-        self.loadedTiles[pageIndex] = [];
+        if (self.tiledImageRenderers[pageIndex])
+        {
+            self.tiledImageRenderers[pageIndex].destroy();
+            self.tiledImageRenderers[pageIndex] = null;
+        }
 
         theNode.parentNode.removeChild(theNode);
     };
@@ -764,8 +672,6 @@ function SequenceRendering(viewer)
     {
         diva.Events.publish('DocumentWillLoad', [settings], viewer);
 
-        self.previousZoomLevelCanvases = null;
-
         if (self.documentRendering)
             self.documentRendering.destroy();
 
@@ -773,8 +679,6 @@ function SequenceRendering(viewer)
             element: settings.innerElement,
             ID: settings.ID
         });
-
-        resetTilesLoaded();
 
         // FIXME(wabain): Optimize case where this was computed in preloadCanvases
         // Calculate page layout (self.documentDimensions, self.pageGroups, settings.pageTopOffsets, settings.pageLeftOffsets)
@@ -854,56 +758,22 @@ function SequenceRendering(viewer)
         diva.Events.publish("DocumentDidLoad", [settings.currentPageIndex, fileName], viewer);
     };
 
-    var resetTilesLoaded = function ()
-    {
-        self.loadedTiles = new Array(settings.numPages);
-        var i = settings.numPages;
-
-        while (i--)
-        {
-            self.loadedTiles[i] = [];
-        }
-    };
-
     var preloadPages = function()
     {
-        var pageBlockFound;
-
-        // Before the first zoom, save currently visible canvases in previousZoomLevelCanvases so preloadPages can start drawing overtop the existing page data
-        if (!self.previousZoomLevelCanvases)
-        {
-            self.previousZoomLevelCanvases = {};
-            pageBlockFound = false;
-
-            for (var pageIndex = 0; pageIndex < settings.numPages; pageIndex++)
-            {
-                if (settings.viewRendering.isPageVisible(pageIndex))
-                {
-                    self.previousZoomLevelCanvases[pageIndex] = document.getElementById(settings.ID + 'canvas-' + pageIndex);
-                    pageBlockFound = true;
-                }
-                else if (pageBlockFound)
-                {
-                    break;
-                }
-            }
-        }
-
         //1. determine visible pages at new zoom level
         //    a. recalculate page layout at new zoom level
         calculateDocumentLayout();
 
         //    b. for all pages (see loadDocument)
         //        i) if page coords fall within visible coords, add to visible page block
-        pageBlockFound = false;
+        var pageBlockFound = false;
 
         for (var i = 0; i < settings.numPages; i++)
         {
             // FIXME(wabain): This doesn't fully account for viewport changes
             if (isPageVisible(i))
             {
-                // it will be visible, start loading it at the new zoom level into an offscreen canvas
-                self.pagePreloadCanvases[i] = preloadPage(i);
+                preloadPage(i);
                 pageBlockFound = true;
             }
             else if (pageBlockFound) // There will only be one consecutive block of pages to load; once we find a page that's invisible, we can terminate this loop.
@@ -947,6 +817,21 @@ function SequenceRendering(viewer)
         };
     };
 
+    var getImageOffset = function (pageIndex)
+    {
+        var imageOffset = {
+            top: self.pageTopOffsets[pageIndex],
+            left: self.pageLeftOffsets[pageIndex]
+        };
+
+        if (settings.verticallyOriented)
+            imageOffset.top += settings.verticalPadding;
+        else
+            imageOffset.left += settings.horizontalPadding;
+
+        return imageOffset;
+    };
+
     var getPageToViewportOffset = function ()
     {
         var scrollLeft = settings.viewport.left;
@@ -967,6 +852,12 @@ function SequenceRendering(viewer)
 
     var destroy = function ()
     {
+        // FIXME(wabain): Kind of duplicates documentRendering.destroy
+        self.renderedPages.forEach(function (index)
+        {
+            deletePage(index);
+        });
+
         self.documentRendering.destroy();
     };
 

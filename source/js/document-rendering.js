@@ -32,9 +32,14 @@ DocumentRendering.prototype.setDocumentSize = function (dimensions)
     });
 };
 
+DocumentRendering.prototype.getPageElement = function (pageIndex)
+{
+    return document.getElementById(this._viewerID + 'page-' + pageIndex);
+};
+
 DocumentRendering.prototype.isPageLoaded = function (pageIndex)
 {
-    return !!document.getElementById(this._viewerID + 'page-' + pageIndex);
+    return !!this.getPageElement(pageIndex);
 };
 
 DocumentRendering.prototype.setPageTimeout = function (callback, waitMs, args)
