@@ -553,10 +553,12 @@ function SequenceRendering(viewer)
         // Flush a final left page
         if (leftPage !== null)
         {
+            // We need to left-align the page in vertical orientation, so we double
+            // the group width
             groups.push({
                 rendered: true,
                 height: leftPage.height,
-                width: leftPage.width * 2,
+                width: settings.verticallyOriented ? leftPage.width * 2 : leftPage.width,
                 pageOffsets: [{
                     index: leftPage.index,
                     top: 0,
@@ -661,27 +663,6 @@ function SequenceRendering(viewer)
             documentSize.minHeight = settings.panelHeight + 'px';
 
         self.documentRendering.setDocumentSize(documentSize);
-
-        // In book view, determine the total height/width based on the last opening's height/width and offset
-        var lastPageIndex = settings.numPages - 1;
-
-        // FIXME: This block should be folded into the preceding one so that dimensions are only calculated once
-        if (settings.inBookLayout)
-        {
-            var offset = getPageOffset(lastPageIndex);
-
-            if (settings.verticallyOriented)
-            {
-                // Last opening height is the max height of the last two pages if they are an opening, else the height of the last page since it's on its own on the left
-                // If the last page is page 0, then it's on its own on the right
-                var lastOpeningHeight = (lastPageIndex % 2 || lastPageIndex === 0) ? getPageData(lastPageIndex, 'h') : Math.max(getPageData(lastPageIndex, 'h'), getPageData(lastPageIndex - 1, 'h'));
-                settings.innerElement.style.height = offset.top + lastOpeningHeight + (settings.verticalPadding * 2) + 'px';
-            }
-            else
-            {
-                settings.innerElement.style.width = offset.left + getPageData(lastPageIndex, 'w') + (settings.horizontalPadding * 2) + 'px';
-            }
-        }
 
         // Make sure the value for settings.goDirectlyTo is valid
         if (!isPageValid(settings.goDirectlyTo))
