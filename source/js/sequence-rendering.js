@@ -15,6 +15,8 @@ function SequenceRendering(viewer)
     self.allTilesLoaded = [];
     self.loadedTiles = [];
     self.pageGroups = null;
+    self.pageTopOffsets = null;
+    self.pageLeftOffsets = null;
     self.renderedPages = null;
     self.pagePreloadCanvases = [];
     self.previousZoomLevelCanvases = null;
@@ -38,13 +40,13 @@ function SequenceRendering(viewer)
 
         if (settings.verticallyOriented)
         {
-            tileTop = settings.pageTopOffsets[pageIndex] + tile.top + settings.verticalPadding;
-            tileLeft = settings.pageLeftOffsets[pageIndex] + tile.left;
+            tileTop = self.pageTopOffsets[pageIndex] + tile.top + settings.verticalPadding;
+            tileLeft = self.pageLeftOffsets[pageIndex] + tile.left;
         }
         else
         {
-            tileTop = settings.pageTopOffsets[pageIndex] + tile.top;
-            tileLeft = settings.pageLeftOffsets[pageIndex] + tile.left + settings.horizontalPadding;
+            tileTop = self.pageTopOffsets[pageIndex] + tile.top;
+            tileLeft = self.pageLeftOffsets[pageIndex] + tile.left + settings.horizontalPadding;
         }
 
         return settings.viewport.intersectsRegion({
@@ -74,10 +76,10 @@ function SequenceRendering(viewer)
     // Check if a page is in or near the viewport and thus should be loaded
     var isPageVisible = function (pageIndex)
     {
-        var topOfPage = settings.pageTopOffsets[pageIndex];
+        var topOfPage = self.pageTopOffsets[pageIndex];
         var bottomOfPage = topOfPage + getPageData(pageIndex, 'h') + settings.verticalPadding;
 
-        var leftOfPage = settings.pageLeftOffsets[pageIndex];
+        var leftOfPage = self.pageLeftOffsets[pageIndex];
         var rightOfPage = leftOfPage + getPageData(pageIndex, 'w') + settings.horizontalPadding;
 
         return settings.viewport.intersectsRegion({
@@ -224,12 +226,12 @@ function SequenceRendering(viewer)
 
             if (settings.verticallyOriented)
             {
-                var heightFromTop = settings.pageTopOffsets[pageIndex] + settings.verticalPadding;
+                var heightFromTop = self.pageTopOffsets[pageIndex] + settings.verticalPadding;
                 pageElement.style.top = heightFromTop + 'px';
 
                 if (settings.inBookLayout)
                 {
-                    pageElement.style.left = settings.pageLeftOffsets[pageIndex] + 'px';
+                    pageElement.style.left = self.pageLeftOffsets[pageIndex] + 'px';
                     if (pageIndex % 2)
                     {
                         pageElement.classList.add('diva-page-book-left');
@@ -268,7 +270,7 @@ function SequenceRendering(viewer)
             }
             else
             {
-                var widthFromLeft = settings.pageLeftOffsets[pageIndex] + settings.horizontalPadding;
+                var widthFromLeft = self.pageLeftOffsets[pageIndex] + settings.horizontalPadding;
                 pageElement.style.left = widthFromLeft + 'px';
                 pageElement.classList.add('diva-page-horizontal');
             }
@@ -388,13 +390,13 @@ function SequenceRendering(viewer)
 
             if (settings.verticallyOriented)
             {
-                top = settings.pageTopOffsets[index] + settings.verticalPadding;
-                left = settings.pageLeftOffsets[index];
+                top = self.pageTopOffsets[index] + settings.verticalPadding;
+                left = self.pageLeftOffsets[index];
             }
             else
             {
-                top = settings.pageTopOffsets[index];
-                left = settings.pageLeftOffsets[index] + settings.horizontalPadding;
+                top = self.pageTopOffsets[index];
+                left = self.pageLeftOffsets[index] + settings.horizontalPadding;
             }
 
             var midX = left + (dims.height / 2);
@@ -419,10 +421,10 @@ function SequenceRendering(viewer)
         horizontalOffset = (typeof horizontalOffset !== 'undefined') ? horizontalOffset : 0;
         verticalOffset = (typeof verticalOffset !== 'undefined') ? verticalOffset : 0;
 
-        var desiredVerticalCenter = settings.pageTopOffsets[pageIndex] + verticalOffset;
+        var desiredVerticalCenter = self.pageTopOffsets[pageIndex] + verticalOffset;
         var desiredTop = desiredVerticalCenter - parseInt(settings.panelHeight / 2, 10);
 
-        var desiredHorizontalCenter = settings.pageLeftOffsets[pageIndex] + horizontalOffset;
+        var desiredHorizontalCenter = self.pageLeftOffsets[pageIndex] + horizontalOffset;
         var desiredLeft = desiredHorizontalCenter - parseInt(settings.panelWidth / 2, 10);
 
         return {
@@ -462,12 +464,12 @@ function SequenceRendering(viewer)
 
         var offsets = getPageOffsets(docLayout.pageGroups);
 
-        settings.pageTopOffsets = offsets.map(function (offset)
+        self.pageTopOffsets = offsets.map(function (offset)
         {
             return offset.top;
         });
 
-        settings.pageLeftOffsets = offsets.map(function (offset)
+        self.pageLeftOffsets = offsets.map(function (offset)
         {
             return offset.left;
         });
@@ -803,11 +805,11 @@ function SequenceRendering(viewer)
                 // Last opening height is the max height of the last two pages if they are an opening, else the height of the last page since it's on its own on the left
                 // If the last page is page 0, then it's on its own on the right
                 var lastOpeningHeight = (lastPageIndex % 2 || lastPageIndex === 0) ? getPageData(lastPageIndex, 'h') : Math.max(getPageData(lastPageIndex, 'h'), getPageData(lastPageIndex - 1, 'h'));
-                settings.innerElement.style.height = settings.pageTopOffsets[lastPageIndex] + lastOpeningHeight + (settings.verticalPadding * 2) + 'px';
+                settings.innerElement.style.height = self.pageTopOffsets[lastPageIndex] + lastOpeningHeight + (settings.verticalPadding * 2) + 'px';
             }
             else
             {
-                settings.innerElement.style.width = settings.pageLeftOffsets[lastPageIndex] + getPageData(lastPageIndex, 'w') + (settings.horizontalPadding * 2) + 'px';
+                settings.innerElement.style.width = self.pageLeftOffsets[lastPageIndex] + getPageData(lastPageIndex, 'w') + (settings.horizontalPadding * 2) + 'px';
             }
         }
 
@@ -940,8 +942,8 @@ function SequenceRendering(viewer)
     var getPageOffset = function (pageIndex)
     {
         return {
-            top: settings.pageTopOffsets[pageIndex],
-            left: settings.pageLeftOffsets[pageIndex]
+            top: self.pageTopOffsets[pageIndex],
+            left: self.pageLeftOffsets[pageIndex]
         };
     };
 
@@ -950,12 +952,12 @@ function SequenceRendering(viewer)
         var scrollLeft = settings.viewport.left;
         var elementWidth = settings.panelWidth;
 
-        var x = scrollLeft - settings.pageLeftOffsets[settings.currentPageIndex] + parseInt(elementWidth / 2, 10);
+        var x = scrollLeft - self.pageLeftOffsets[settings.currentPageIndex] + parseInt(elementWidth / 2, 10);
 
         var scrollTop = settings.viewport.top;
         var elementHeight = settings.panelHeight;
 
-        var y = scrollTop - settings.pageTopOffsets[settings.currentPageIndex] + parseInt(elementHeight / 2, 10);
+        var y = scrollTop - self.pageTopOffsets[settings.currentPageIndex] + parseInt(elementHeight / 2, 10);
 
         return {
             x: x,

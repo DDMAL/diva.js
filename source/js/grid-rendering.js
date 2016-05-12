@@ -14,6 +14,8 @@ function GridRendering(viewer)
     self.lastRowLoaded = -1;
     self.numRows = 0;
     self.rowHeight = 0;
+    self.pageTopOffsets = null;
+    self.pageLeftOffsets = null;
 
     var loadGrid = function ()
     {
@@ -42,8 +44,8 @@ function GridRendering(viewer)
         gridScroll();
 
         var i, rowIndex;
-        settings.pageTopOffsets = [];
-        settings.pageLeftOffsets = [];
+        self.pageTopOffsets = [];
+        self.pageLeftOffsets = [];
 
         // Figure out the row each page is in
         var np = settings.numPages;
@@ -133,8 +135,8 @@ function GridRendering(viewer)
             leftOffset += (settings.fixedHeightGrid) ? (self.gridPageWidth - pageDimens.width) / 2 : 0;
             imageURL = settings.manifest.getPageImageURL(pageIndex, { width: pageDimens.width });
 
-            settings.pageTopOffsets[pageIndex] = heightFromTop;
-            settings.pageLeftOffsets[pageIndex] = leftOffset;
+            self.pageTopOffsets[pageIndex] = heightFromTop;
+            self.pageLeftOffsets[pageIndex] = leftOffset;
 
             var pageDiv = elt('div', {
                 id: settings.ID + 'page-' + pageIndex,
@@ -390,8 +392,8 @@ function GridRendering(viewer)
     var getPageOffset = function (pageIndex)
     {
         return {
-            top: settings.pageTopOffsets[pageIndex],
-            left: settings.pageLeftOffsets[pageIndex]
+            top: self.pageTopOffsets[pageIndex],
+            left: self.pageLeftOffsets[pageIndex]
         };
     };
 

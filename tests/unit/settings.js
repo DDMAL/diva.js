@@ -337,8 +337,8 @@ QUnit.test("inBookLayout true", function (assert)
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         assert.ok(settings.inBookLayout, 'inBookLayout should remain true after initialization');
-        assert.ok(settings.pageLeftOffsets[1] < settings.pageLeftOffsets[2], 'Page 1 should be to the left of page 2');
-        assert.ok(settings.pageLeftOffsets[2] > settings.pageLeftOffsets[3], 'Page 2 should be to the right of page 3');
+        assert.ok(this.getPageOffset(1).left < this.getPageOffset(2).left, 'Page 1 should be to the left of page 2');
+        assert.ok(this.getPageOffset(2).left > this.getPageOffset(3).left, 'Page 2 should be to the right of page 3');
         done();
     });
 

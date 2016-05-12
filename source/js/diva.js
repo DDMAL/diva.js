@@ -208,9 +208,7 @@ var DivaSettingsValidator = new ValidationRunner({
             outerObject: {},            // $(settings.ID + 'outer'), for selecting the .diva-outer element
             outerElement: null,         // The native .diva-outer DOM object
             pages: [],                  // An array containing the data for all the pages
-            pageLeftOffsets: [],        // Distance from the left side of each page to the left side of the diva-inner object
             viewRendering: null,
-            pageTopOffsets: [],         // Distance from the top side of each page to the top side of the diva-inner object
             pageTools: '',              // The string for page tools
             parentObject: parentObject, // JQuery object referencing the parent element
             plugins: [],                // Filled with the enabled plugins from window.divaPlugins
