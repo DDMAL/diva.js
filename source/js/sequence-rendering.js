@@ -790,6 +790,7 @@ function SequenceRendering(viewer)
 
     var getPageDimensions = function (pageIndex, options)
     {
+        // FIXME(wabain): These are always rounded! Does rounding really need to be optional?
         var width = Math.floor(getPageData(pageIndex, 'w'));
         var height = Math.floor(getPageData(pageIndex, 'h'));
 
