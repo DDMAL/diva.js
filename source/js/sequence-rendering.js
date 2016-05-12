@@ -937,6 +937,14 @@ function SequenceRendering(viewer)
         };
     };
 
+    var getPageOffset = function (pageIndex)
+    {
+        return {
+            top: settings.pageTopOffsets[pageIndex],
+            left: settings.pageLeftOffsets[pageIndex]
+        };
+    };
+
     var getPageToViewportOffset = function ()
     {
         var scrollLeft = settings.viewport.left;
@@ -967,6 +975,7 @@ function SequenceRendering(viewer)
     this.isPageVisible = isPageVisible;
     this.isPageLoaded = isPageLoaded;
     this.getPageDimensions = getPageDimensions;
+    this.getPageOffset = getPageOffset;
     this.getPageToViewportOffset = getPageToViewportOffset;
     this.destroy = destroy;
 }

@@ -387,6 +387,14 @@ function GridRendering(viewer)
         return self.documentRendering.isPageLoaded(pageIndex);
     };
 
+    var getPageOffset = function (pageIndex)
+    {
+        return {
+            top: settings.pageTopOffsets[pageIndex],
+            left: settings.pageLeftOffsets[pageIndex]
+        };
+    };
+
     var getPageToViewportOffset = function ()
     {
         // Not supported
@@ -405,6 +413,7 @@ function GridRendering(viewer)
     this.isPageVisible = isPageVisible;
     this.isPageLoaded = isPageLoaded;
     this.getPageDimensions = getPageDimensions;
+    this.getPageOffset = getPageOffset;
     this.getPageToViewportOffset = getPageToViewportOffset;
     this.destroy = destroy;
 }

@@ -1824,17 +1824,19 @@ var DivaSettingsValidator = new ValidationRunner({
         // Check if something (e.g. a highlight box on a particular page) is visible
         this.inViewport = function (pageNumber, leftOffset, topOffset, width, height)
         {
-            var pageIndex = pageNumber - 1;
-            var top = settings.pageTopOffsets[pageIndex] + topOffset;
-            var bottom = top + height;
-            var left = settings.pageLeftOffsets[pageIndex] + leftOffset;
-            var right = left + width;
+            if (!settings.viewRendering)
+                return false;
+
+            var offset = settings.viewRendering.getPageOffset(pageNumber - 1);
+
+            var top = offset.top + topOffset;
+            var left = offset.left + leftOffset;
 
             return settings.viewport.intersectsRegion({
                 top: top,
-                bottom: bottom,
+                bottom: top + height,
                 left: left,
-                right: right
+                right: left + width
             });
         };
 
@@ -2065,10 +2067,10 @@ var DivaSettingsValidator = new ValidationRunner({
         //Returns distance between the northwest corners of diva-inner and page index
         this.getPageOffset = function(pageIndex)
         {
-            return {
-                'top': parseInt(settings.pageTopOffsets[pageIndex]),
-                'left': parseInt(settings.pageLeftOffsets[pageIndex])
-            };
+            if (!settings.viewRendering)
+                return null;
+
+            return settings.viewRendering.getPageOffset(pageIndex);
         };
 
         //shortcut to getPageOffset for current page
