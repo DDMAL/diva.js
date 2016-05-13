@@ -115,10 +115,22 @@ function SequenceRendering(viewer)
         var height = dims.height;
         var pageSelector = settings.selector + 'page-' + pageIndex;
 
+        var groupOffset = self.pages[pageIndex].groupOffset;
+
+        var pageLeft = groupOffset.left;
+        var pageTop = groupOffset.top;
+
+        if (settings.verticallyOriented)
+            pageTop += settings.verticalPadding;
+        else
+            pageLeft += settings.horizontalPadding;
+
         var pageElement = elt('div', {
             id: settings.ID + 'page-' + pageIndex,
             class: 'diva-page diva-document-page',
             style: {
+                left: pageLeft + 'px',
+                top: pageTop + 'px',
                 width: width + 'px',
                 height: height + 'px'
             },
@@ -131,17 +143,10 @@ function SequenceRendering(viewer)
         // Append page tools
         pageElement.innerHTML = settings.pageTools;
 
-        var imageOffset = getImageOffset(pageIndex);
-
         if (settings.verticallyOriented)
         {
-            var heightFromTop = imageOffset.top;
-
-            pageElement.style.top = heightFromTop + 'px';
-
             if (settings.inBookLayout)
             {
-                pageElement.style.left = imageOffset.left + 'px';
                 if (pageIndex % 2)
                 {
                     pageElement.classList.add('diva-page-book-left');
@@ -149,45 +154,73 @@ function SequenceRendering(viewer)
                 else
                 {
                     if (pageIndex === 0)
-                    {
-                        // create a placeholder div for the left side of the first opening
-                        var placeholderElement = elt('div', {
-                            id: settings.ID + 'page-placeholder',
-                            class: 'diva-page diva-document-page',
-                            style: {
-                                width: width + 'px',
-                                height: height + 'px',
-                                top: 0,
-                                left: 0 - width + 'px',
-                                border: '1px solid #ccc',
-                                background: '#fdfdfd',
-                                mozBoxSizing: 'border-box',
-                                webkitBoxSizing: 'border-box',
-                                boxSizing: 'border-box'
-                            }
-                        });
+                        attachOpeningPlaceholder(pageElement, dims);
 
-                        // append the placeholder element to page as first child
-                        pageElement.appendChild(placeholderElement);
-                    }
                     pageElement.classList.add('diva-page-book');
                 }
             }
-            else
-            {
-                pageElement.classList.add('diva-page-vertical');
-            }
-        }
-        else
-        {
-            pageElement.style.left = imageOffset.left + 'px';
-            pageElement.classList.add('diva-page-horizontal');
         }
 
-        settings.innerElement.appendChild(pageElement);
+        var groupElement = renderPageGroup(pageIndex);
+        groupElement.appendChild(pageElement);
+
         diva.Events.publish("PageWillLoad", [pageIndex, filename, pageSelector], viewer);
 
         return pageElement;
+    };
+
+    var renderPageGroup = function (pageIndex)
+    {
+        var group = self.pages[pageIndex].group;
+
+        var groupId = settings.ID + 'page-group-' + group.index;
+        var groupElement = document.getElementById(groupId);
+
+        if (groupElement)
+            return groupElement;
+
+        var style = {
+            width: (group.region.right - group.region.left) + 'px',
+            height: (group.region.bottom - group.region.top) + 'px'
+        };
+
+        if (settings.verticallyOriented)
+            style.top = group.region.top + 'px';
+        else
+            style.left = group.region.left + 'px';
+
+        groupElement = elt('div', {
+            id: groupId,
+            class: 'diva-page-group diva-page-group-' + (settings.verticallyOriented ? 'vertical' : 'horizontal'),
+            style: style
+        });
+
+        settings.innerElement.appendChild(groupElement);
+
+        return groupElement;
+    };
+
+    var attachOpeningPlaceholder = function (pageElement, dimensions)
+    {
+        // create a placeholder div for the left side of the first opening
+        var placeholderElement = elt('div', {
+            id: settings.ID + 'page-placeholder',
+            class: 'diva-page diva-document-page',
+            style: {
+                width: dimensions.width + 'px',
+                height: dimensions.height + 'px',
+                top: 0,
+                left: (-dimensions.width) + 'px',
+                border: '1px solid #ccc',
+                background: '#fdfdfd',
+                mozBoxSizing: 'border-box',
+                webkitBoxSizing: 'border-box',
+                boxSizing: 'border-box'
+            }
+        });
+
+        // append the placeholder element to page as first child
+        pageElement.appendChild(placeholderElement);
     };
 
     var getTiledImageRenderer = function (pageIndex)
@@ -241,7 +274,16 @@ function SequenceRendering(viewer)
             self.tiledImageRenderers[pageIndex] = null;
         }
 
-        theNode.parentNode.removeChild(theNode);
+        var pageGroup = theNode.parentNode;
+
+        if (pageGroup.childElementCount === 1)
+        {
+            pageGroup.parentNode.removeChild(pageGroup);
+        }
+        else
+        {
+            pageGroup.removeChild(theNode);
+        }
     };
 
     // Handles showing and hiding pages when the user scrolls
@@ -399,11 +441,12 @@ function SequenceRendering(viewer)
 
         var pageGroups = [];
 
-        layouts.forEach(function (layout)
+        layouts.forEach(function (layout, index)
         {
             if (!layout.rendered)
             {
                 pageGroups.push({
+                    index: index,
                     region: {
                         top: 0,
                         bottom: 0,
@@ -446,6 +489,7 @@ function SequenceRendering(viewer)
             }
 
             pageGroups.push({
+                index: index,
                 layout: layout,
                 region: region
             });
