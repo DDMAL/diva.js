@@ -20,7 +20,7 @@ function SequenceRendering(viewer)
 
     self.documentRendering = null;
     self.pageGroups = null;
-    self.pages = null;
+    self.pageLookup = null;
     self.renderedPages = null;
 
     // FIXME(wabain): Temporarily copied from the Diva core
@@ -115,7 +115,7 @@ function SequenceRendering(viewer)
         var height = dims.height;
         var pageSelector = settings.selector + 'page-' + pageIndex;
 
-        var groupOffset = self.pages[pageIndex].groupOffset;
+        var groupOffset = self.pageLookup[pageIndex].groupOffset;
 
         var pageLeft = groupOffset.left;
         var pageTop = groupOffset.top;
@@ -171,7 +171,7 @@ function SequenceRendering(viewer)
 
     var renderPageGroup = function (pageIndex)
     {
-        var group = self.pages[pageIndex].group;
+        var group = self.pageLookup[pageIndex].group;
 
         var groupId = settings.ID + 'page-group-' + group.index;
         var groupElement = document.getElementById(groupId);
@@ -294,7 +294,7 @@ function SequenceRendering(viewer)
 
         self.pageGroups.forEach(function (group)
         {
-            if (!group.layout.rendered || !settings.viewport.intersectsRegion(group.region))
+            if (!settings.viewport.intersectsRegion(group.region))
                 return;
 
             group.layout.pageOffsets.forEach(function (pageOffset)
@@ -406,20 +406,20 @@ function SequenceRendering(viewer)
         self.documentDimensions = docLayout.dimensions;
         self.pageGroups = docLayout.pageGroups;
 
-        var pages = [];
+        var pages = {};
 
         self.pageGroups.forEach(function (group)
         {
             group.layout.pageOffsets.forEach(function (groupOffset)
             {
-                pages.push({
+                pages[groupOffset.index] = {
                     group: group,
                     groupOffset: groupOffset
-                });
+                };
             });
         });
 
-        self.pages = pages;
+        self.pageLookup = pages;
     };
 
     var getDocumentLayout = function ()
@@ -443,22 +443,6 @@ function SequenceRendering(viewer)
 
         layouts.forEach(function (layout, index)
         {
-            if (!layout.rendered)
-            {
-                pageGroups.push({
-                    index: index,
-                    region: {
-                        top: 0,
-                        bottom: 0,
-                        left: 0,
-                        right: 0
-                    },
-                    layout: layout
-                });
-
-                return;
-            }
-
             var region;
 
             if (settings.verticallyOriented)
@@ -525,7 +509,6 @@ function SequenceRendering(viewer)
             var pageDims = getPageDimensions(i);
 
             return extend({
-                rendered: true,
                 pageOffsets: [
                     {index: i, top: 0, left: 0}
                 ]
@@ -544,20 +527,7 @@ function SequenceRendering(viewer)
             // NB: If there is currently a pending left page, then it will form
             // an opening with the following page. This seems to be desired behaviour.
             if (settings.manifest.paged && !page.paged)
-            {
-                groups.push({
-                    rendered: false,
-                    width: 0,
-                    height: 0,
-                    pageOffsets: [{
-                        index: index,
-                        top: 0,
-                        left: 0
-                    }]
-                });
-
                 return;
-            }
 
             var pageDims = getPageDimensions(index, { round: false });
 
@@ -565,7 +535,6 @@ function SequenceRendering(viewer)
             {
                 // The first page is placed on its own to the right
                 groups.push({
-                    rendered: true,
                     height: pageDims.height,
                     width: pageDims.width * 2,
                     pageOffsets: [{
@@ -600,7 +569,6 @@ function SequenceRendering(viewer)
             // We need to left-align the page in vertical orientation, so we double
             // the group width
             groups.push({
-                rendered: true,
                 height: leftPage.height,
                 width: settings.verticallyOriented ? leftPage.width * 2 : leftPage.width,
                 pageOffsets: [{
@@ -637,7 +605,6 @@ function SequenceRendering(viewer)
         }
 
         return {
-            rendered: true,
             height: height,
             width: width,
             pageOffsets: [
@@ -691,7 +658,7 @@ function SequenceRendering(viewer)
         });
 
         // FIXME(wabain): Optimize case where this was computed in preloadCanvases
-        // Calculate page layout (self.documentDimensions, self.pageGroups, self.pages)
+        // Calculate page layout (self.documentDimensions, self.pageGroups, self.pageLookup)
         calculateDocumentLayout();
 
         var dims = self.documentDimensions;
@@ -762,7 +729,7 @@ function SequenceRendering(viewer)
         for (var i = 0; i < settings.numPages; i++)
         {
             // FIXME(wabain): This doesn't fully account for viewport changes
-            if (isPageVisible(i))
+            if (self.pageLookup[i] && isPageVisible(i))
             {
                 preloadPage(i);
                 pageBlockFound = true;
@@ -804,7 +771,10 @@ function SequenceRendering(viewer)
     // Note: getImageOffset() mutates the object returned from here
     var getPageOffset = function (pageIndex)
     {
-        var page = self.pages[pageIndex];
+        var page = self.pageLookup[pageIndex];
+
+        if (!page)
+            return null;
 
         return {
             top: page.group.region.top + page.groupOffset.top,
