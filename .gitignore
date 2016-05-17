@@ -5,5 +5,9 @@ todo.md
 .DS_Store
 tags
 
+# IntelliJ things
+/.idea/
+*.iml
+
 /node_modules/
 /coverage/
