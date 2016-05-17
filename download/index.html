@@ -8,13 +8,18 @@ layout: default
             <p class="lead">1. Download the release package.</p>
             <p>This package contains everything you need to set up Diva.js on the front-end.</p>
             <p>
-            <a href="https://github.com/DDMAL/diva.js/releases/download/v4.1.0/diva-v4.1.0.zip"><button type="button" class="btn btn-primary">
-                    <i class="fa fa-download"></i> Download diva-v4.1.0.zip
+            <a href="{{site.data.release.downloads.zip}}"><button type="button" class="btn btn-primary">
+                    <i class="fa fa-download"></i> Download diva-v{{site.data.release.version}}.zip
                 </button>
                 </a>
             </p>
-            <p><small><a href="https://github.com/DDMAL/diva.js/releases/download/v4.1.0/diva-v4.1.0.tar.gz"><i class="fa fa-download"></i> Download diva-v4.1.0.tar.gz</a></small></p>
-            <p><small>The latest stable version is 4.1.0. <a href="https://github.com/DDMAL/diva.js/releases/tag/v4.1.0">(Release Notes + Source Code)</a></small></p>
+            <p><small><a href={{site.data.release.downloads.tgz}}><i class="fa fa-download"></i> Download diva-v{{site.data.release.version}}.tar.gz</a></small></p>
+            <p>
+                <small>
+                    The latest stable version is {{site.data.release.version}}.
+                    <a href="https://github.com/DDMAL/diva.js/releases/tag/v{{site.data.release.version}}">(Release Notes + Source Code)</a>
+                </small>
+            </p>
         </div>
     </div>
 </section>
