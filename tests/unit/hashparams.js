@@ -18,24 +18,10 @@ var testHashParams = function (testName, hashParams, onReadyCallback, config)
         var previousHash = window.location.hash;
         var suffix = parseInt(generateId(), 10) + 1;
 
-        var hashValue;
-        var first = true;
-        var prefix = '';
-        for (var hashParam in hashParams)
+        window.location.hash = Object.keys(hashParams).map(function (param)
         {
-            if (hashParams.hasOwnProperty(hashParam))
-            {
-                hashValue = hashParams[hashParam];
-
-                window.location.hash += prefix + hashParam + suffix + '=' + hashValue;
-
-                if (first)
-                {
-                    prefix = '&';
-                    first = false;
-                }
-            }
-        }
+            return param + suffix + '=' + hashParams[param];
+        }).join('&');
 
         diva.Events.subscribe('ViewerDidLoad', function(settings)
         {
