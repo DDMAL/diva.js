@@ -435,40 +435,45 @@ function SequenceRendering(viewer)
 
         layouts.forEach(function (layout, index)
         {
-            var region;
+            var top, left;
+            var padding;
 
             if (settings.verticallyOriented)
             {
-                var left = (documentSecondaryExtent - layout.width) / 2;
+                top = primaryDocPosition;
+                left = (documentSecondaryExtent - layout.width) / 2;
 
-                region = {
-                    top: primaryDocPosition,
-                    bottom: primaryDocPosition + layout.height + settings.verticalPadding,
-                    left: left,
-                    right: left + layout.width
+                padding = {
+                    top: settings.verticalPadding,
+                    left: 0
                 };
-
-                primaryDocPosition = region.bottom;
             }
             else
             {
-                var top = (documentSecondaryExtent - layout.height) / 2;
+                top = (documentSecondaryExtent - layout.height) / 2;
+                left = primaryDocPosition;
 
-                region = {
-                    top: top,
-                    bottom: top + layout.height,
-                    left: primaryDocPosition,
-                    right: primaryDocPosition + layout.width + settings.horizontalPadding
+                padding = {
+                    top: 0,
+                    left: settings.horizontalPadding
                 };
-
-                primaryDocPosition = region.right;
             }
+
+            var region = {
+                top: top,
+                bottom: top + padding.top + layout.height,
+                left: left,
+                right: left + padding.left + layout.width
+            };
 
             pageGroups.push({
                 index: index,
                 layout: layout,
-                region: region
+                region: region,
+                padding: padding
             });
+
+            primaryDocPosition = settings.verticallyOriented ? region.bottom : region.right;
         });
 
         var height, width;
