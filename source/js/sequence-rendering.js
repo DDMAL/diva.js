@@ -56,11 +56,6 @@ function SequenceRendering(viewer)
     // Appends the page directly into the document body, or loads the relevant tiles
     var loadPage = function (pageIndex)
     {
-        // If we are in book layout and the canvas is non-paged, exit
-        // FIXME(wabain): Is this condition needed anymore?
-        if (settings.inBookLayout && settings.manifest.paged && !settings.manifest.pages[pageIndex].paged)
-            return;
-
         var pageElement = self.documentRendering.getPageElement(pageIndex);
 
         if (!pageElement)
