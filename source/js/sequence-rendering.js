@@ -1,9 +1,9 @@
-var extend = require('jquery').extend;
 var maxBy = require('lodash.maxby');
 var elt = require('./utils/elt');
 var diva = require('./diva-global');
 var DocumentRendering = require('./document-rendering');
 var TiledImageRenderer = require('./tiled-image-renderer');
+var getDocumentLayout = require('./layout');
 
 module.exports = SequenceRendering;
 
@@ -393,7 +393,7 @@ function SequenceRendering(viewer)
 
     var calculateDocumentLayout = function()
     {
-        var docLayout = getDocumentLayout();
+        var docLayout = getDocumentLayout(settings);
 
         self.documentDimensions = docLayout.dimensions;
         self.pageGroups = docLayout.pageGroups;
@@ -412,233 +412,6 @@ function SequenceRendering(viewer)
         });
 
         self.pageLookup = pages;
-    };
-
-    var getDocumentLayout = function ()
-    {
-        // Get layout groups for the current view
-        var layouts;
-
-        if (settings.inBookLayout)
-            layouts = getBookLayoutGroups();
-        else
-            layouts = getSinglesLayoutGroups();
-
-        // Now turn layouts into concrete regions
-
-        var documentSecondaryExtent = getExtentAlongSecondaryAxis(layouts);
-
-        // The current position in the document along the primary axis
-        var primaryDocPosition = 0;
-
-        var pageGroups = [];
-
-        layouts.forEach(function (layout, index)
-        {
-            var top, left;
-            var padding;
-
-            if (settings.verticallyOriented)
-            {
-                top = primaryDocPosition;
-                left = (documentSecondaryExtent - layout.width) / 2;
-
-                padding = {
-                    top: settings.verticalPadding,
-                    left: 0
-                };
-            }
-            else
-            {
-                top = (documentSecondaryExtent - layout.height) / 2;
-                left = primaryDocPosition;
-
-                padding = {
-                    top: 0,
-                    left: settings.horizontalPadding
-                };
-            }
-
-            var region = {
-                top: top,
-                bottom: top + padding.top + layout.height,
-                left: left,
-                right: left + padding.left + layout.width
-            };
-
-            pageGroups.push({
-                index: index,
-                layout: layout,
-                region: region,
-                padding: padding
-            });
-
-            primaryDocPosition = settings.verticallyOriented ? region.bottom : region.right;
-        });
-
-        var height, width;
-
-        if (settings.verticallyOriented)
-        {
-            height = primaryDocPosition + settings.verticalPadding;
-            width = documentSecondaryExtent;
-        }
-        else
-        {
-            height = documentSecondaryExtent;
-            width = primaryDocPosition + settings.horizontalPadding;
-        }
-
-        return {
-            dimensions: {
-                height: height,
-                width: width
-            },
-            pageGroups: pageGroups
-        };
-    };
-
-    var getSinglesLayoutGroups = function ()
-    {
-        // Render each page alone in a group
-        return settings.manifest.pages.map(function (_, i)
-        {
-            var pageDims = getPageDimensions(i);
-
-            return extend({
-                pageOffsets: [
-                    {index: i, top: 0, left: 0}
-                ]
-            }, pageDims);
-        });
-    };
-
-    var getBookLayoutGroups = function ()
-    {
-        var groups = [];
-        var leftPage = null;
-
-        settings.manifest.pages.forEach(function (page, index)
-        {
-            // Skip non-paged canvases in a paged manifest.
-            // NB: If there is currently a pending left page, then it will form
-            // an opening with the following page. This seems to be desired behaviour.
-            if (settings.manifest.paged && !page.paged)
-                return;
-
-            var pageDims = getPageDimensions(index, { round: false });
-
-            if (settings.verticallyOriented && index === 0)
-            {
-                // The first page is placed on its own to the right
-                groups.push({
-                    height: pageDims.height,
-                    width: pageDims.width * 2,
-                    pageOffsets: [{
-                        index: 0,
-                        top: 0,
-                        left: pageDims.width
-                    }]
-                });
-
-                return;
-            }
-
-            if (leftPage === null)
-            {
-                leftPage = extend({
-                    index: index
-                }, pageDims);
-
-                return;
-            }
-
-            groups.push(getFacingPageGroup(leftPage, extend({
-                index: index
-            }, pageDims)));
-
-            leftPage = null;
-        });
-
-        // Flush a final left page
-        if (leftPage !== null)
-        {
-            // We need to left-align the page in vertical orientation, so we double
-            // the group width
-            groups.push({
-                height: leftPage.height,
-                width: settings.verticallyOriented ? leftPage.width * 2 : leftPage.width,
-                pageOffsets: [{
-                    index: leftPage.index,
-                    top: 0,
-                    left: 0
-                }]
-            });
-        }
-
-        return groups;
-    };
-
-    var getFacingPageGroup = function (leftPage, rightPage)
-    {
-        var height = Math.max(leftPage.height, rightPage.height);
-
-        var width, firstLeftOffset, secondLeftOffset;
-
-        if (settings.verticallyOriented)
-        {
-            var midWidth = Math.max(leftPage.width, rightPage.width);
-
-            width = midWidth * 2;
-
-            firstLeftOffset = midWidth - leftPage.width;
-            secondLeftOffset = midWidth;
-        }
-        else
-        {
-            width = leftPage.width + rightPage.width;
-            firstLeftOffset = 0;
-            secondLeftOffset = leftPage.width;
-        }
-
-        return {
-            height: height,
-            width: width,
-            pageOffsets: [
-                {
-                    index: leftPage.index,
-                    top: 0,
-                    left: firstLeftOffset
-                },
-                {
-                    index: rightPage.index,
-                    top: 0,
-                    left: secondLeftOffset
-                }
-            ]
-        };
-    };
-
-    var getExtentAlongSecondaryAxis = function (layouts)
-    {
-        // Get the extent of the document along the secondary axis
-        var secondaryDim, secondaryPadding;
-
-        if (settings.verticallyOriented)
-        {
-            secondaryDim = 'width';
-            secondaryPadding = settings.horizontalPadding;
-        }
-        else
-        {
-            secondaryDim = 'width';
-            secondaryPadding = settings.verticalPadding;
-        }
-
-        return (2 * secondaryPadding) + layouts.reduce(function (maxDim, layout)
-        {
-            return Math.max(layout[secondaryDim], maxDim);
-        }, 0);
     };
 
     // Called every time we need to load document view (after zooming, fullscreen, etc)
@@ -741,6 +514,7 @@ function SequenceRendering(viewer)
         return self.documentRendering.isPageLoaded(pageIndex);
     };
 
+    // FIXME(wabain): Mostly duplicated in layout.js
     var getPageDimensions = function (pageIndex, options)
     {
         // FIXME(wabain): These are always rounded! Does rounding really need to be optional?
