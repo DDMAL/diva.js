@@ -29,11 +29,6 @@ function SequenceRendering(viewer)
         return settings.manifest.pages[pageIndex].d[settings.zoomLevel][attribute];
     };
 
-    var isPageValid = function (pageIndex)
-    {
-        return settings.manifest.isPageValid(pageIndex);
-    };
-
     // Check if a page is in or near the viewport and thus should be loaded
     var isPageVisible = function (pageIndex)
     {
@@ -670,11 +665,9 @@ function SequenceRendering(viewer)
 
         self.documentRendering.setDocumentSize(documentSize);
 
-        // Make sure the value for settings.goDirectlyTo is valid
-        if (!isPageValid(settings.goDirectlyTo))
-        {
-            settings.goDirectlyTo = 0;
-        }
+        // FIXME(wabain): Remove this when there's more confidence the check shouldn't be needed
+        if (!self.pageLookup[settings.goDirectlyTo])
+            throw new Error('invalid page: ' + settings.goDirectlyTo);
 
         // Scroll to the proper place using stored y/x offsets (relative to the center of the page)
         gotoPage(settings.goDirectlyTo, settings.verticalOffset, settings.horizontalOffset);
