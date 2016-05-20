@@ -99,7 +99,7 @@ QUnit.test("get/setZoomLevel(), zoomIn() and zoomOut()", function (assert)
     });
 });
 
-QUnit.test("enable/disableScrollable()", function (assert)
+QUnit.skip("enable/disableScrollable()", function (assert)
 {
     var done = assert.async();
 

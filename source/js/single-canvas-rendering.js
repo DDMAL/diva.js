@@ -1,0 +1,429 @@
+'use strict';
+
+var maxBy = require('lodash.maxby');
+var debug = require('debug')('diva:SingleCanvasRendering');
+
+var elt = require('./utils/elt');
+var diva = require('./diva-global');
+var getDocumentLayout = require('./layout');
+var DocumentRendering = require('./document-rendering');
+var ImageCache = require('./image-cache');
+var ImageRequestHandler = require('./image-request-handler');
+
+
+module.exports = SingleCanvasRendering;
+
+function SingleCanvasRendering(viewer)
+{
+    var settings = viewer.getSettings();
+
+    this._viewport = settings.viewport;
+    this._tileDimensions = {
+        width: settings.tileWidth,
+        height: settings.tileHeight
+    };
+
+    this._canvas = elt('canvas', { class: 'diva-single-canvas' });
+
+    this._ctx = this._canvas.getContext('2d');
+
+    this._viewer = viewer;
+    this._manifest = settings.manifest;
+
+    this._documentRendering = null;
+    this._renderedPages = null;
+    this._dimens = null;
+    this._pageLookup = null;
+
+    // FIXME(wabain): What level should this be maintained at?
+    // Diva global?
+    this._cache = new ImageCache();
+    this._pendingRequests = {};
+}
+
+SingleCanvasRendering.getCompatibilityErrors = function ()
+{
+    if (typeof HTMLCanvasElement !== 'undefined')
+        return null;
+
+    return ['Your browser lacks support for the ', elt('pre', 'canvas'), ' element. Please upgrade your browser.'];
+};
+
+SingleCanvasRendering.prototype.load = function ()
+{
+    var settings = this._viewer.getSettings();
+
+    diva.Events.publish('DocumentWillLoad', [settings], this._viewer);
+
+    this._dimens = getDocumentLayout(settings);
+
+    // TODO: Encapsulate this better
+    var pageLookup = {};
+
+    this._dimens.pageGroups.forEach(function (group)
+    {
+        group.layout.pageOffsets.forEach(function (groupOffset)
+        {
+            pageLookup[groupOffset.index] = {
+                group: group,
+                groupOffset: groupOffset
+            };
+        });
+    });
+
+    this._pageLookup = pageLookup;
+
+    if (this._documentRendering)
+        this._documentRendering.destroy();
+
+    this._documentRendering = new DocumentRendering({
+        element: settings.innerElement,
+        ID: settings.ID
+    });
+
+    this._documentRendering.setDocumentSize({
+        height: this._dimens.dimensions.height + 'px',
+        width: this._dimens.dimensions.width + 'px'
+    });
+
+    // FIXME(wabain): Remove this when there's more confidence the check shouldn't be needed
+    if (!this._pageLookup[settings.goDirectlyTo])
+        throw new Error('invalid page: ' + settings.goDirectlyTo);
+
+    this.goto(settings.goDirectlyTo, settings.verticalOffset, settings.horizontalOffset);
+    this.adjust(0);
+
+    if (this._canvas.width !== this._viewport.width || this._canvas.height !== this._viewport.height)
+    {
+        debug('Canvas dimension change: (%s, %s) -> (%s, %s)', this._canvas.width, this._canvas.height,
+            this._viewport.width, this._viewport.height);
+
+        this._canvas.width = this._viewport.width;
+        this._canvas.height = this._viewport.height;
+    } else {
+        debug('clearRect?');
+        this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+    }
+
+    if (this._canvas.parentNode !== settings.outerElement)
+        settings.outerElement.insertBefore(this._canvas, settings.outerElement.firstChild);
+
+    // FIXME(wabain): Move this into the viewer, probably?
+    // If this is not the initial load, trigger the zoom events
+    if (settings.oldZoomLevel >= 0)
+    {
+        var zoomLevel = settings.zoomLevel;
+
+        if (settings.oldZoomLevel < settings.zoomLevel)
+        {
+            diva.Events.publish("ViewerDidZoomIn", [zoomLevel], this._viewer);
+        }
+        else
+        {
+            diva.Events.publish("ViewerDidZoomOut", [zoomLevel], this._viewer);
+        }
+
+        diva.Events.publish("ViewerDidZoom", [zoomLevel], this._viewer);
+    }
+    else
+    {
+        settings.oldZoomLevel = settings.zoomLevel;
+    }
+
+    // For the iPad - wait until this request finishes before accepting others
+    if (settings.scaleWait)
+        settings.scaleWait = false;
+
+    var fileName = settings.manifest.pages[settings.currentPageIndex].f;
+    diva.Events.publish("DocumentDidLoad", [settings.currentPageIndex, fileName], this._viewer);
+};
+
+// FIXME(wabain): Remove the direction argument if it doesn't end up being needed.
+SingleCanvasRendering.prototype.adjust = function (direction) // jshint ignore:line
+{
+    var newRenderedPages = [];
+
+    this._dimens.pageGroups.forEach(function (group)
+    {
+        if (!this._viewport.intersectsRegion(group.region))
+            return;
+
+        var visiblePages = group.layout.pageOffsets
+            .filter(function (page)
+            {
+                return this.isPageVisible(page.index);
+            }, this)
+            .map(function (page)
+            {
+                return page.index;
+            });
+
+        newRenderedPages.push.apply(newRenderedPages, visiblePages);
+    }, this);
+
+    this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+    newRenderedPages.forEach(this._queueTilesForPage, this);
+
+    this._renderedPages = newRenderedPages;
+    this._updateCurrentPage();
+};
+
+SingleCanvasRendering.prototype._queueTilesForPage = function (pageIndex)
+{
+    // TODO(wabain): Debounce
+    var tileSources = this._manifest.getPageImageTiles(pageIndex, this._viewer.getZoomLevel(), this._tileDimensions);
+
+    tileSources.forEach(function (source, tileIndex)
+    {
+        if (this._pendingRequests[source.url] || !this._isTileVisible(pageIndex, source))
+            return;
+
+        if (this._cache.has(source.url))
+        {
+            this._drawTile(pageIndex, tileIndex, source, this._cache.get(source.url));
+            return;
+        }
+
+        this._pendingRequests[source.url] = new ImageRequestHandler(source.url, function (img)
+        {
+            delete this._pendingRequests[source.url];
+            this._cache.put(source.url, img);
+
+            if (!this._isTileVisible(pageIndex, source))
+            {
+                debug('Page %s, tile %s no longer visible on image load', pageIndex, tileIndex);
+                return;
+            }
+
+            this._drawTile(pageIndex, tileIndex, source, img);
+        }.bind(this));
+    }, this);
+};
+
+SingleCanvasRendering.prototype._drawTile = function (pageIndex, tileIndex, tileRecord, img)
+{
+    var tileOffset = this._getTileOffset(pageIndex, tileRecord);
+
+    var viewportOffsetX = tileOffset.left - this._viewport.left;
+    var viewportOffsetY = tileOffset.top - this._viewport.top;
+
+    var tileX = viewportOffsetX < 0 ? -viewportOffsetX : 0;
+    var tileY = viewportOffsetY < 0 ? -viewportOffsetY : 0;
+
+    var canvasX = Math.max(0, viewportOffsetX);
+    var canvasY = Math.max(0, viewportOffsetY);
+
+    // FIXME(wabain): Get tile dimensions from tile source (or img?)
+    var width = this._tileDimensions.width - tileX;
+    var height = this._tileDimensions.height - tileY;
+
+    debug('Drawing page %s, tile %s from %s, %s to viewport at %s, %s', pageIndex, tileIndex,
+        tileX, tileY, canvasX, canvasY);
+
+    this._ctx.drawImage(img, tileX, tileY, width, height, canvasX, canvasY, width, height);
+};
+
+SingleCanvasRendering.prototype._isTileVisible = function (pageIndex, tileSource)
+{
+    var tileOffset = this._getTileOffset(pageIndex, tileSource);
+
+    // FIXME(wabain): This check is insufficient during a zoom transition
+    // FIXME(wabain): Get tile dimensions from tile source
+    return this._viewport.intersectsRegion({
+        top: tileOffset.top,
+        bottom: tileOffset.top + this._tileDimensions.height,
+        left: tileOffset.left,
+        right: tileOffset.left + this._tileDimensions.width
+    });
+};
+
+SingleCanvasRendering.prototype._getTileOffset = function (pageIndex, tileSource)
+{
+    var imageOffset = this._getImageOffset(pageIndex);
+
+    return {
+        top: imageOffset.top + tileSource.top,
+        left: imageOffset.left + tileSource.left
+    };
+};
+
+SingleCanvasRendering.prototype._getImageOffset = function (pageIndex)
+{
+    var pageOffset = this.getPageOffset(pageIndex);
+
+    // FIXME?
+    var padding = this._pageLookup[pageIndex].group.padding;
+
+    return {
+        top: pageOffset.top + padding.top,
+        left: pageOffset.left + padding.left
+    };
+};
+
+SingleCanvasRendering.prototype._updateCurrentPage = function ()
+{
+    // FIXME(wabain): Should this happen?
+    if (!this._renderedPages || this._renderedPages.length === 0)
+        return;
+
+    var centerY = this._viewport.top + (this._viewport.height / 2);
+    var centerX = this._viewport.left + (this._viewport.width / 2);
+
+    // Find the minimum distance from the viewport center to a page.
+    // Compute minus the squared distance from viewport center to the page's border.
+    // http://gamedev.stackexchange.com/questions/44483/how-do-i-calculate-distance-between-a-point-and-an-axis-aligned-rectangle
+    var closestPage = maxBy(this._renderedPages, function (index)
+    {
+        var dims = this.getPageDimensions(index);
+
+        var imageOffset = this._getImageOffset(index);
+
+        var midX = imageOffset.left + (dims.height / 2);
+        var midY = imageOffset.top + (dims.width / 2);
+
+        var dx = Math.max(Math.abs(centerX - midX) - (dims.width / 2), 0);
+        var dy = Math.max(Math.abs(centerY - midY) - (dims.height / 2), 0);
+
+        return -(dx * dx + dy * dy);
+    }.bind(this));
+
+    // FIXME(wabain): Doing this here is pretty gross
+    var settings = this._viewer.getSettings();
+
+    if (closestPage !== settings.currentPageIndex)
+    {
+        settings.currentPageIndex = closestPage;
+        diva.Events.publish("VisiblePageDidChange", [closestPage, settings.manifest.pages[closestPage].f], this._viewer);
+    }
+};
+
+// FIXME(wabain): Move this logic to the viewer
+SingleCanvasRendering.prototype.goto = function (pageIndex, verticalOffset, horizontalOffset)
+{
+    var pageOffset = this.getPageOffset(pageIndex);
+
+    var desiredVerticalCenter = pageOffset.top + verticalOffset;
+    var top = desiredVerticalCenter - parseInt(this._viewport.height / 2, 10);
+
+    var desiredHorizontalCenter = pageOffset.left + horizontalOffset;
+    var left = desiredHorizontalCenter - parseInt(this._viewport.width / 2, 10);
+
+    this._viewport.top = top;
+    this._viewport.left = left;
+
+    var settings = this._viewer.getSettings();
+
+    // Pretend that this is the current page
+    if (pageIndex !== settings.currentPageIndex)
+    {
+        settings.currentPageIndex = pageIndex;
+        var filename = settings.manifest.pages[pageIndex].f;
+
+        diva.Events.publish("VisiblePageDidChange", [pageIndex, filename], this._viewer);
+    }
+
+    diva.Events.publish("ViewerDidJump", [pageIndex], this._viewer);
+};
+
+SingleCanvasRendering.prototype.preload = function ()
+{
+    // TODO
+};
+
+SingleCanvasRendering.prototype.isPageVisible = function (pageIndex)
+{
+    if (!this._pageLookup)
+        return false;
+
+    var page = this._pageLookup[pageIndex];
+
+    if (!page)
+        return false;
+
+    return this._viewport.intersectsRegion(getPageRegionFromGroupInfo(page));
+};
+
+SingleCanvasRendering.prototype.isPageLoaded = function (pageIndex)
+{
+    return this._renderedPages.indexOf(pageIndex) >= 0;
+};
+
+SingleCanvasRendering.prototype.getPageDimensions = function (pageIndex)
+{
+    if (!this._pageLookup || !this._pageLookup[pageIndex])
+        return null;
+
+    var region = getPageRegionFromGroupInfo(this._pageLookup[pageIndex]);
+
+    return {
+        height: region.bottom - region.top,
+        width: region.right - region.left
+    };
+};
+
+// TODO(wabain): Get rid of this; it's a subset of the page region, so
+// give that instead
+SingleCanvasRendering.prototype.getPageOffset = function (pageIndex)
+{
+    if (!this._pageLookup || !this._pageLookup[pageIndex])
+        return null;
+
+    var region = getPageRegionFromGroupInfo(this._pageLookup[pageIndex]);
+
+    if (!region)
+        return null;
+
+    return {
+        top: region.top,
+        left: region.left
+    };
+};
+
+SingleCanvasRendering.prototype.getPageToViewportOffset = function ()
+{
+    var scrollLeft = this._viewport.left;
+    var elementWidth = this._viewport.width;
+
+    var offset = this.getPageOffset(this._viewer.getSettings().currentPageIndex);
+
+    var x = scrollLeft - offset.left + parseInt(elementWidth / 2, 10);
+
+    var scrollTop = this._viewport.top;
+    var elementHeight = this._viewport.height;
+
+    var y = scrollTop - offset.top + parseInt(elementHeight / 2, 10);
+
+    return {
+        x: x,
+        y: y
+    };
+};
+
+SingleCanvasRendering.prototype.destroy = function ()
+{
+    // FIXME(wabain): I don't know if we should actually do this
+    Object.keys(this._pendingRequests).forEach(function (req)
+    {
+        var handler = this._pendingRequests[req];
+        delete this._pendingRequests[req];
+
+        handler.abort();
+    }, this);
+
+    this._canvas.parentNode.removeChild(this._canvas);
+};
+
+function getPageRegionFromGroupInfo(page)
+{
+    var top    = page.groupOffset.top  + page.group.region.top;
+    var bottom = page.groupOffset.top  + page.group.region.bottom;
+    var left   = page.groupOffset.left + page.group.region.left;
+    var right  = page.groupOffset.left + page.group.region.right;
+
+    return {
+        top: top,
+        bottom: bottom,
+        left: left,
+        right: right
+    };
+}

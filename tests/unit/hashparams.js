@@ -53,7 +53,7 @@ testHashParams("book view (v)", {v: "b"}, function (settings, assert)
 {
     assert.ok(settings.inBookLayout, "inBookLayout setting should be true");
     assert.strictEqual($(settings.selector + 'view-menu').children()[0].classList[0], 'diva-book-icon', "Current toolbar view icon should be the book icon");
-    assert.ok($('.diva-page-book').length, 'There should be some book pages');
+    assert.ok(this.isPageLoaded(0), 'There should be some book pages');
 });
 
 testHashParams("fullscreen (f)", {f: "true"}, function (settings, assert)

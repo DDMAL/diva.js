@@ -574,12 +574,14 @@ QUnit.test("viewportMargin, value of 0", function (assert)
 {
     var done = assert.async();
 
-    diva.Events.subscribe('ViewerDidLoad', function(settings)
+    diva.Events.subscribe('ViewerDidLoad', function()
     {
+        var dv = this;
+
         setTimeout(function ()
         {
-            assert.notStrictEqual($(settings.selector + 'page-0').length, 0, "The first page should be present");
-            assert.strictEqual($(settings.selector + 'page-1').length, 0, "The second page should not be present");
+            assert.ok(dv.isPageLoaded(0), "The first page should be loaded");
+            assert.notOk(dv.isPageLoaded(1), "The second page should not be loaded");
             done();
         }, 100);
     });
@@ -593,12 +595,14 @@ QUnit.test("viewportMargin, value of 1000", function (assert)
 {
     var done = assert.async();
 
-    diva.Events.subscribe('ViewerDidLoad', function(settings)
+    diva.Events.subscribe('ViewerDidLoad', function()
     {
+        var dv = this;
+
         // The second page should be visible after a timeout
         setTimeout(function () {
-            assert.notStrictEqual($(settings.selector + 'page-0').length, 0, "The first page should be present");
-            assert.notStrictEqual($(settings.selector + 'page-1').length, 0, "The second page should be present");
+            assert.ok(dv.isPageLoaded(0), "The first page should be loaded");
+            assert.ok(dv.isPageLoaded(1), "The second page should be loaded");
             done();
         }, 100);
     });

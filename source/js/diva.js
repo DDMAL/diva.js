@@ -33,7 +33,7 @@ var Transition = require('./utils/transition');
 var ActiveDivaController = require('./active-diva-controller');
 var diva = require('./diva-global');
 var GridRendering = require('./grid-rendering');
-var SequenceRendering = require('./sequence-rendering');
+var SingleCanvasRendering = require('./single-canvas-rendering');
 var ImageManifest = require('./image-manifest');
 var createToolbar = require('./toolbar');
 var ValidationRunner = require('./validation-runner');
@@ -380,7 +380,7 @@ var DivaSettingsValidator = new ValidationRunner({
             settings.viewportObject.off('scroll');
             settings.viewportObject.scroll(scrollFunction);
 
-            var Rendering = settings.inGrid ? GridRendering : SequenceRendering;
+            var Rendering = settings.inGrid ? GridRendering : SingleCanvasRendering;
 
             if (!(settings.viewRendering instanceof Rendering))
             {

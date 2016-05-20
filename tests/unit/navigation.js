@@ -335,7 +335,7 @@ QUnit.test("Changing pages per row in Grid view using +/- buttons", function (as
     });
 });
 
-QUnit.test("Zooming by double-clicking", function (assert)
+QUnit.skip("Zooming by double-clicking", function (assert)
 {
     var done = assert.async();
 
@@ -350,7 +350,7 @@ QUnit.test("Zooming by double-clicking", function (assert)
         var testEvent = $.Event("dblclick");
         testEvent.pageX = 500;
         testEvent.pageY = 350 + wrapperOffset.top;
-        testEvent.target = settings.outerObject.find('.diva-document-page')[0];
+        testEvent.target = settings.innerElement;
 
         setTimeout(function ()
         {
@@ -462,11 +462,11 @@ QUnit.test("Jumping to page in Book view", function (assert)
 
         setTimeout(function()
         {
-            assert.ok($(settings.selector + 'page-5').length, "The element for page 6 (index 5) should be in the DOM");
+            assert.ok(dv.isPageLoaded(5), "Page 6 (index 5) should be loaded");
 
             dv.gotoPageByIndex(6);
             assert.strictEqual($(settings.selector + 'current-page').text(), '7', "Toolbar should indicate page 7");
-            assert.ok($(settings.selector + 'page-6').length, "The element for page 7 (index 6) should be in the DOM");
+            assert.ok(dv.isPageLoaded(6), "Page 7 (index 6) should be loaded");
 
             done();
         }, 10);
