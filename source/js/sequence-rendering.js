@@ -32,19 +32,21 @@ function SequenceRendering(viewer)
     // Check if a page is in or near the viewport and thus should be loaded
     var isPageVisible = function (pageIndex)
     {
-        var offset = getPageOffset(pageIndex);
+        var page = self.pageLookup[pageIndex];
 
-        var topOfPage = offset.top;
-        var bottomOfPage = topOfPage + getPageData(pageIndex, 'h') + settings.verticalPadding;
+        if (!page)
+            return false;
 
-        var leftOfPage = offset.left;
-        var rightOfPage = leftOfPage + getPageData(pageIndex, 'w') + settings.horizontalPadding;
+        var top    = page.groupOffset.top  + page.group.region.top;
+        var bottom = page.groupOffset.top  + page.group.region.bottom;
+        var left   = page.groupOffset.left + page.group.region.left;
+        var right  = page.groupOffset.left + page.group.region.right;
 
         return settings.viewport.intersectsRegion({
-            top: topOfPage,
-            bottom: bottomOfPage,
-            left: leftOfPage,
-            right: rightOfPage
+            top: top,
+            bottom: bottom,
+            left: left,
+            right: right
         });
     };
 
