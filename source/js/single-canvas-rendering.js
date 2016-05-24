@@ -418,7 +418,9 @@ function getPageLookup(pageGroups)
         group.pages.forEach(function (page)
         {
             pageLookup[page.index] = {
+                index: page.index,
                 group: group,
+                dimensions: page.dimensions,
                 groupOffset: page.groupOffset
             };
         });
@@ -430,9 +432,9 @@ function getPageLookup(pageGroups)
 function getPageRegionFromGroupInfo(page)
 {
     var top    = page.groupOffset.top  + page.group.region.top;
-    var bottom = page.groupOffset.top  + page.group.region.bottom;
+    var bottom = top + page.dimensions.height;
     var left   = page.groupOffset.left + page.group.region.left;
-    var right  = page.groupOffset.left + page.group.region.right;
+    var right  = left + page.dimensions.width;
 
     return {
         top: top,
