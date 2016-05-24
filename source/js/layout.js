@@ -2,31 +2,36 @@ var extend = require('jquery').extend;
 
 module.exports = getDocumentLayout;
 
-function getDocumentLayout(settings)
+function getDocumentLayout(config)
 {
     // Get layout groups for the current view
     var layouts;
 
-    if (settings.inBookLayout)
-        layouts = getBookLayoutGroups(settings.manifest, settings.zoomLevel, settings.verticallyOriented);
+    if (config.inBookLayout)
+        layouts = getBookLayoutGroups(config.manifest, config.zoomLevel, config.verticallyOriented);
     else
-        layouts = getSinglesLayoutGroups(settings.manifest, settings.zoomLevel, settings.verticallyOriented);
+        layouts = getSinglesLayoutGroups(config.manifest, config.zoomLevel, config.verticallyOriented);
 
     // Now turn layouts into concrete regions
 
-    var documentSecondaryExtent = getExtentAlongSecondaryAxis(layouts, settings);
+    var documentSecondaryExtent = getExtentAlongSecondaryAxis(layouts, config);
 
     // The current position in the document along the primary axis
     var primaryDocPosition = 0;
 
     var pageGroups = [];
-    var padding = getPagePadding(settings);
+
+    // TODO: Use bottom, right as well
+    var pagePadding = {
+        top: config.padding.page.top,
+        left: config.padding.page.left
+    };
 
     layouts.forEach(function (layout, index)
     {
         var top, left;
 
-        if (settings.verticallyOriented)
+        if (config.verticallyOriented)
         {
             top = primaryDocPosition;
             left = (documentSecondaryExtent - layout.width) / 2;
@@ -39,32 +44,32 @@ function getDocumentLayout(settings)
 
         var region = {
             top: top,
-            bottom: top + padding.top + layout.height,
+            bottom: top + pagePadding.top + layout.height,
             left: left,
-            right: left + padding.left + layout.width
+            right: left + pagePadding.left + layout.width
         };
 
         pageGroups.push({
             index: index,
             layout: layout,
             region: region,
-            padding: padding
+            padding: pagePadding
         });
 
-        primaryDocPosition = settings.verticallyOriented ? region.bottom : region.right;
+        primaryDocPosition = config.verticallyOriented ? region.bottom : region.right;
     });
 
     var height, width;
 
-    if (settings.verticallyOriented)
+    if (config.verticallyOriented)
     {
-        height = primaryDocPosition + settings.verticalPadding;
+        height = primaryDocPosition + pagePadding.top;
         width = documentSecondaryExtent;
     }
     else
     {
         height = documentSecondaryExtent;
-        width = primaryDocPosition + settings.horizontalPadding;
+        width = primaryDocPosition + pagePadding.left;
     }
 
     return {
@@ -195,41 +200,24 @@ function getFacingPageGroup(leftPage, rightPage, verticallyOriented)
     };
 }
 
-function getPagePadding(settings)
-{
-    if (settings.verticallyOriented)
-    {
-        return {
-            top: settings.verticalPadding,
-            left: 0
-        };
-    }
-    else
-    {
-        return {
-            top: 0,
-            left: settings.horizontalPadding
-        };
-    }
-}
-
-function getExtentAlongSecondaryAxis(layouts, settings)
+function getExtentAlongSecondaryAxis(layouts, config)
 {
     // Get the extent of the document along the secondary axis
     var secondaryDim, secondaryPadding;
+    var docPadding = config.padding.document;
 
-    if (settings.verticallyOriented)
+    if (config.verticallyOriented)
     {
         secondaryDim = 'width';
-        secondaryPadding = settings.horizontalPadding;
+        secondaryPadding = docPadding.left + docPadding.right;
     }
     else
     {
         secondaryDim = 'height';
-        secondaryPadding = settings.verticalPadding;
+        secondaryPadding = docPadding.top + docPadding.bottom;
     }
 
-    return (2 * secondaryPadding) + layouts.reduce(function (maxDim, layout)
+    return secondaryPadding + layouts.reduce(function (maxDim, layout)
     {
         return Math.max(layout[secondaryDim], maxDim);
     }, 0);

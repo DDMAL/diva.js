@@ -400,7 +400,7 @@ var DivaSettingsValidator = new ValidationRunner({
             }
 
             if (settings.viewRendering)
-                settings.viewRendering.load();
+                settings.viewRendering.load(getViewRenderingState());
 
             queuedEvents.forEach(function (args)
             {
@@ -446,6 +446,55 @@ var DivaSettingsValidator = new ValidationRunner({
                 $(document).on('keyup', escapeListener);
             else
                 $(document).off('keyup', escapeListener);
+        };
+
+        // FIXME: For now GridRendering still goes through the
+        // settings directly instead of using this
+        // TODO: The usage of padding variables is still really
+        // messy and inconsistent
+        var getViewRenderingState = function ()
+        {
+            var topPadding, leftPadding;
+
+            // FIXME: Set real padding for GridRendering
+            if (settings.inGrid)
+            {
+                topPadding = leftPadding = -1;
+            }
+            else
+            {
+                topPadding = settings.verticallyOriented ? settings.verticalPadding : 0;
+                leftPadding = settings.verticallyOriented ? 0 : settings.horizontalPadding;
+            }
+
+            var docVPadding = settings.verticallyOriented ? 0 : settings.verticalPadding;
+            var docHPadding = settings.verticallyOriented ? settings.horizontalPadding : 0;
+
+            return {
+                manifest: settings.manifest,
+
+                zoomLevel: settings.zoomLevel,
+
+                verticallyOriented: settings.verticallyOriented,
+
+                inGrid: settings.inGrid,
+                inBookLayout: settings.inBookLayout,
+
+                padding: {
+                    document: {
+                        top: docVPadding,
+                        bottom: docVPadding,
+                        left: docHPadding,
+                        right: docHPadding
+                    },
+                    page: {
+                        top: topPadding,
+                        bottom: 0,
+                        left: leftPadding,
+                        right: 0
+                    }
+                }
+            };
         };
 
         //Shortcut for closing fullscreen with the escape key

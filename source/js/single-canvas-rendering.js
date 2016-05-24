@@ -49,14 +49,13 @@ SingleCanvasRendering.getCompatibilityErrors = function ()
     return ['Your browser lacks support for the ', elt('pre', 'canvas'), ' element. Please upgrade your browser.'];
 };
 
-SingleCanvasRendering.prototype.load = function ()
+SingleCanvasRendering.prototype.load = function (config)
 {
     var settings = this._viewer.getSettings();
 
     diva.Events.publish('DocumentWillLoad', [settings], this._viewer);
 
-    this._dimens = getDocumentLayout(settings);
-
+    this._dimens = getDocumentLayout(config);
     this._pageLookup = getPageLookup(this._dimens.pageGroups);
 
     if (this._documentRendering)
