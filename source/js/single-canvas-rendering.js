@@ -5,7 +5,7 @@ var debug = require('debug')('diva:SingleCanvasRendering');
 
 var elt = require('./utils/elt');
 var diva = require('./diva-global');
-var getDocumentLayout = require('./layout');
+var getDocumentLayout = require('./document-layout');
 var DocumentRendering = require('./document-rendering');
 var ImageCache = require('./image-cache');
 var ImageRequestHandler = require('./image-request-handler');

@@ -1,87 +1,19 @@
-module.exports = getDocumentLayout;
+module.exports = getPageLayouts;
 
-function getDocumentLayout(config)
+/** Get the relative positioning of pages for the current view */
+function getPageLayouts(viewerConfig)
 {
-    // Get layout groups for the current view
-    var layouts;
-
-    if (config.inBookLayout)
-        layouts = getBookLayoutGroups(config.manifest, config.zoomLevel, config.verticallyOriented);
+    if (viewerConfig.inBookLayout)
+        return getBookLayoutGroups(viewerConfig);
     else
-        layouts = getSinglesLayoutGroups(config.manifest, config.zoomLevel, config.verticallyOriented);
-
-    // Now turn layouts into concrete regions
-
-    var documentSecondaryExtent = getExtentAlongSecondaryAxis(layouts, config);
-
-    // The current position in the document along the primary axis
-    var primaryDocPosition = 0;
-
-    var pageGroups = [];
-
-    // TODO: Use bottom, right as well
-    var pagePadding = {
-        top: config.padding.page.top,
-        left: config.padding.page.left
-    };
-
-    layouts.forEach(function (layout, index)
-    {
-        var top, left;
-
-        if (config.verticallyOriented)
-        {
-            top = primaryDocPosition;
-            left = (documentSecondaryExtent - layout.dimensions.width) / 2;
-        }
-        else
-        {
-            top = (documentSecondaryExtent - layout.dimensions.height) / 2;
-            left = primaryDocPosition;
-        }
-
-        var region = {
-            top: top,
-            bottom: top + pagePadding.top + layout.dimensions.height,
-            left: left,
-            right: left + pagePadding.left + layout.dimensions.width
-        };
-
-        pageGroups.push({
-            index: index,
-            dimensions: layout.dimensions,
-            pages: layout.pages,
-            region: region,
-            padding: pagePadding
-        });
-
-        primaryDocPosition = config.verticallyOriented ? region.bottom : region.right;
-    });
-
-    var height, width;
-
-    if (config.verticallyOriented)
-    {
-        height = primaryDocPosition + pagePadding.top;
-        width = documentSecondaryExtent;
-    }
-    else
-    {
-        height = documentSecondaryExtent;
-        width = primaryDocPosition + pagePadding.left;
-    }
-
-    return {
-        dimensions: {
-            height: height,
-            width: width
-        },
-        pageGroups: pageGroups
-    };
+        return getSinglesLayoutGroups(viewerConfig);
 }
 
-function getSinglesLayoutGroups(manifest, zoomLevel)
+function getSinglesLayoutGroups(viewerConfig)
 {
+    var manifest = viewerConfig.manifest;
+    var zoomLevel = viewerConfig.zoomLevel;
+
     // Render each page alone in a group
     return manifest.pages.map(function (_, i)
     {
@@ -100,8 +32,12 @@ function getSinglesLayoutGroups(manifest, zoomLevel)
     });
 }
 
-function getBookLayoutGroups(manifest, zoomLevel, verticallyOriented)
+function getBookLayoutGroups(viewerConfig)
 {
+    var manifest = viewerConfig.manifest;
+    var zoomLevel = viewerConfig.zoomLevel;
+    var verticallyOriented = viewerConfig.verticallyOriented;
+
     var groups = [];
     var leftPage = null;
 
@@ -224,29 +160,6 @@ function getFacingPageGroup(leftPage, rightPage, verticallyOriented)
             }
         ]
     };
-}
-
-function getExtentAlongSecondaryAxis(layouts, config)
-{
-    // Get the extent of the document along the secondary axis
-    var secondaryDim, secondaryPadding;
-    var docPadding = config.padding.document;
-
-    if (config.verticallyOriented)
-    {
-        secondaryDim = 'width';
-        secondaryPadding = docPadding.left + docPadding.right;
-    }
-    else
-    {
-        secondaryDim = 'height';
-        secondaryPadding = docPadding.top + docPadding.bottom;
-    }
-
-    return secondaryPadding + layouts.reduce(function (maxDim, layout)
-    {
-        return Math.max(layout.dimensions[secondaryDim], maxDim);
-    }, 0);
 }
 
 function getPageDimensions(pageIndex, manifest, zoomLevel, options)

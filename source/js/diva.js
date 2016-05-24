@@ -35,6 +35,7 @@ var diva = require('./diva-global');
 var GridRendering = require('./grid-rendering');
 var SingleCanvasRendering = require('./single-canvas-rendering');
 var ImageManifest = require('./image-manifest');
+var getPageLayouts = require('./page-layouts');
 var createToolbar = require('./toolbar');
 var ValidationRunner = require('./validation-runner');
 var Viewport = require('./viewport');
@@ -448,11 +449,34 @@ var DivaSettingsValidator = new ValidationRunner({
                 $(document).off('keyup', escapeListener);
         };
 
-        // FIXME: For now GridRendering still goes through the
-        // settings directly instead of using this
         // TODO: The usage of padding variables is still really
         // messy and inconsistent
         var getViewRenderingState = function ()
+        {
+            // FIXME: For now GridRendering still goes through the
+            // settings directly instead of using this
+            if (settings.inGrid)
+                return null;
+
+            var pageLayouts = getPageLayouts({
+                manifest: settings.manifest,
+                zoomLevel: settings.zoomLevel,
+                verticallyOriented: settings.verticallyOriented,
+                inGrid: settings.inGrid,
+                inBookLayout: settings.inBookLayout
+            });
+
+            var padding = getPadding();
+
+            return {
+                pageLayouts: pageLayouts,
+                padding: padding,
+                zoomLevel: settings.zoomLevel,
+                verticallyOriented: settings.verticallyOriented
+            };
+        };
+
+        var getPadding = function ()
         {
             var topPadding, leftPadding;
 
@@ -471,28 +495,17 @@ var DivaSettingsValidator = new ValidationRunner({
             var docHPadding = settings.verticallyOriented ? settings.horizontalPadding : 0;
 
             return {
-                manifest: settings.manifest,
-
-                zoomLevel: settings.zoomLevel,
-
-                verticallyOriented: settings.verticallyOriented,
-
-                inGrid: settings.inGrid,
-                inBookLayout: settings.inBookLayout,
-
-                padding: {
-                    document: {
-                        top: docVPadding,
-                        bottom: docVPadding,
-                        left: docHPadding,
-                        right: docHPadding
-                    },
-                    page: {
-                        top: topPadding,
-                        bottom: 0,
-                        left: leftPadding,
-                        right: 0
-                    }
+                document: {
+                    top: docVPadding,
+                    bottom: docVPadding,
+                    left: docHPadding,
+                    right: docHPadding
+                },
+                page: {
+                    top: topPadding,
+                    bottom: 0,
+                    left: leftPadding,
+                    right: 0
                 }
             };
         };
