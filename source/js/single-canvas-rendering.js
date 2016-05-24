@@ -49,7 +49,10 @@ SingleCanvasRendering.getCompatibilityErrors = function ()
     if (typeof HTMLCanvasElement !== 'undefined')
         return null;
 
-    return ['Your browser lacks support for the ', elt('pre', 'canvas'), ' element. Please upgrade your browser.'];
+    return [
+        'Your browser lacks support for the ', elt('pre', 'canvas'),
+        ' element. Please upgrade your browser.'
+    ];
 };
 
 SingleCanvasRendering.prototype.load = function (config)
