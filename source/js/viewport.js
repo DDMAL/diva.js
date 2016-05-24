@@ -145,7 +145,7 @@ Object.defineProperties(Viewport.prototype, {
     }
 });
 
-function fallsBetween(point, start, bottom)
+function fallsBetween(point, start, end)
 {
-    return point >= start && point <= bottom;
+    return point >= start && point <= end;
 }
