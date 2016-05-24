@@ -1,5 +1,3 @@
-var extend = require('jquery').extend;
-
 module.exports = getDocumentLayout;
 
 function getDocumentLayout(config)
@@ -34,24 +32,25 @@ function getDocumentLayout(config)
         if (config.verticallyOriented)
         {
             top = primaryDocPosition;
-            left = (documentSecondaryExtent - layout.width) / 2;
+            left = (documentSecondaryExtent - layout.dimensions.width) / 2;
         }
         else
         {
-            top = (documentSecondaryExtent - layout.height) / 2;
+            top = (documentSecondaryExtent - layout.dimensions.height) / 2;
             left = primaryDocPosition;
         }
 
         var region = {
             top: top,
-            bottom: top + pagePadding.top + layout.height,
+            bottom: top + pagePadding.top + layout.dimensions.height,
             left: left,
-            right: left + pagePadding.left + layout.width
+            right: left + pagePadding.left + layout.dimensions.width
         };
 
         pageGroups.push({
             index: index,
-            layout: layout,
+            dimensions: layout.dimensions,
+            pages: layout.pages,
             region: region,
             padding: pagePadding
         });
@@ -88,11 +87,16 @@ function getSinglesLayoutGroups(manifest, zoomLevel)
     {
         var pageDims = getPageDimensions(i, manifest, zoomLevel);
 
-        return extend({
-            pageOffsets: [
-                {index: i, top: 0, left: 0}
+        return {
+            dimensions: pageDims,
+            pages: [
+                {
+                    index: i,
+                    groupOffset: {top: 0, left: 0},
+                    dimensions: pageDims
+                }
             ]
-        }, pageDims);
+        };
     });
 }
 
@@ -115,12 +119,17 @@ function getBookLayoutGroups(manifest, zoomLevel, verticallyOriented)
         {
             // The first page is placed on its own to the right
             groups.push({
-                height: pageDims.height,
-                width: pageDims.width * 2,
-                pageOffsets: [{
+                dimensions: {
+                    height: pageDims.height,
+                    width: pageDims.width * 2
+                },
+                pages: [{
                     index: 0,
-                    top: 0,
-                    left: pageDims.width
+                    groupOffset: {
+                        top: 0,
+                        left: pageDims.width
+                    },
+                    dimensions: pageDims
                 }]
             });
 
@@ -129,14 +138,15 @@ function getBookLayoutGroups(manifest, zoomLevel, verticallyOriented)
 
         if (leftPage === null)
         {
-            leftPage = extend({
-                index: index
-            }, pageDims);
+            leftPage = {
+                index: index,
+                dimensions: pageDims
+            };
 
             return;
         }
 
-        groups.push(getFacingPageGroup(leftPage, extend({ index: index }, pageDims), verticallyOriented));
+        groups.push(getFacingPageGroup(leftPage, { index: index, dimensions: pageDims }, verticallyOriented));
 
         leftPage = null;
     });
@@ -147,12 +157,17 @@ function getBookLayoutGroups(manifest, zoomLevel, verticallyOriented)
         // We need to left-align the page in vertical orientation, so we double
         // the group width
         groups.push({
-            height: leftPage.height,
-            width: verticallyOriented ? leftPage.width * 2 : leftPage.width,
-            pageOffsets: [{
+            dimensions: {
+                height: leftPage.dimensions.height,
+                width: verticallyOriented ? leftPage.dimensions.width * 2 : leftPage.dimensions.width
+            },
+            pages: [{
                 index: leftPage.index,
-                top: 0,
-                left: 0
+                groupOffset: {
+                    top: 0,
+                    left: 0
+                },
+                dimensions: leftPage.dimensions
             }]
         });
     }
@@ -162,39 +177,50 @@ function getBookLayoutGroups(manifest, zoomLevel, verticallyOriented)
 
 function getFacingPageGroup(leftPage, rightPage, verticallyOriented)
 {
-    var height = Math.max(leftPage.height, rightPage.height);
+    var leftDims = leftPage.dimensions;
+    var rightDims = rightPage.dimensions;
+
+    var height = Math.max(leftDims.height, rightDims.height);
 
     var width, firstLeftOffset, secondLeftOffset;
 
     if (verticallyOriented)
     {
-        var midWidth = Math.max(leftPage.width, rightPage.width);
+        var midWidth = Math.max(leftDims.width, rightDims.width);
 
         width = midWidth * 2;
 
-        firstLeftOffset = midWidth - leftPage.width;
+        firstLeftOffset = midWidth - leftDims.width;
         secondLeftOffset = midWidth;
     }
     else
     {
-        width = leftPage.width + rightPage.width;
+        width = leftDims.width + rightDims.width;
         firstLeftOffset = 0;
-        secondLeftOffset = leftPage.width;
+        secondLeftOffset = leftDims.width;
     }
 
     return {
-        height: height,
-        width: width,
-        pageOffsets: [
+        dimensions: {
+            height: height,
+            width: width
+        },
+        pages: [
             {
                 index: leftPage.index,
-                top: 0,
-                left: firstLeftOffset
+                dimensions: leftDims,
+                groupOffset: {
+                    top: 0,
+                    left: firstLeftOffset
+                }
             },
             {
                 index: rightPage.index,
-                top: 0,
-                left: secondLeftOffset
+                dimensions: rightDims,
+                groupOffset: {
+                    top: 0,
+                    left: secondLeftOffset
+                }
             }
         ]
     };
@@ -219,7 +245,7 @@ function getExtentAlongSecondaryAxis(layouts, config)
 
     return secondaryPadding + layouts.reduce(function (maxDim, layout)
     {
-        return Math.max(layout[secondaryDim], maxDim);
+        return Math.max(layout.dimensions[secondaryDim], maxDim);
     }, 0);
 }
 

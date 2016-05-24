@@ -144,7 +144,7 @@ SingleCanvasRendering.prototype.adjust = function (direction) // jshint ignore:l
         if (!this._viewport.intersectsRegion(group.region))
             return;
 
-        var visiblePages = group.layout.pageOffsets
+        var visiblePages = group.pages
             .filter(function (page)
             {
                 return this.isPageVisible(page.index);
@@ -415,11 +415,11 @@ function getPageLookup(pageGroups)
 
     pageGroups.forEach(function (group)
     {
-        group.layout.pageOffsets.forEach(function (groupOffset)
+        group.pages.forEach(function (page)
         {
-            pageLookup[groupOffset.index] = {
+            pageLookup[page.index] = {
                 group: group,
-                groupOffset: groupOffset
+                groupOffset: page.groupOffset
             };
         });
     });
