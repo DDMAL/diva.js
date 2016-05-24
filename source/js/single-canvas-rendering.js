@@ -57,21 +57,7 @@ SingleCanvasRendering.prototype.load = function ()
 
     this._dimens = getDocumentLayout(settings);
 
-    // TODO: Encapsulate this better
-    var pageLookup = {};
-
-    this._dimens.pageGroups.forEach(function (group)
-    {
-        group.layout.pageOffsets.forEach(function (groupOffset)
-        {
-            pageLookup[groupOffset.index] = {
-                group: group,
-                groupOffset: groupOffset
-            };
-        });
-    });
-
-    this._pageLookup = pageLookup;
+    this._pageLookup = getPageLookup(this._dimens.pageGroups);
 
     if (this._documentRendering)
         this._documentRendering.destroy();
@@ -412,6 +398,24 @@ SingleCanvasRendering.prototype.destroy = function ()
 
     this._canvas.parentNode.removeChild(this._canvas);
 };
+
+function getPageLookup(pageGroups)
+{
+    var pageLookup = {};
+
+    pageGroups.forEach(function (group)
+    {
+        group.layout.pageOffsets.forEach(function (groupOffset)
+        {
+            pageLookup[groupOffset.index] = {
+                group: group,
+                groupOffset: groupOffset
+            };
+        });
+    });
+
+    return pageLookup;
+}
 
 function getPageRegionFromGroupInfo(page)
 {
