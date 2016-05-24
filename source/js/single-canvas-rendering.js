@@ -31,6 +31,9 @@ function SingleCanvasRendering(viewer)
     this._manifest = settings.manifest;
 
     this._documentRendering = null;
+    this._documentElement = settings.innerElement;
+    this._viewerId = settings.ID;
+
     this._renderedPages = null;
     this._dimens = null;
     this._pageLookup = null;
@@ -58,18 +61,7 @@ SingleCanvasRendering.prototype.load = function (config)
     this._dimens = getDocumentLayout(config);
     this._pageLookup = getPageLookup(this._dimens.pageGroups);
 
-    if (this._documentRendering)
-        this._documentRendering.destroy();
-
-    this._documentRendering = new DocumentRendering({
-        element: settings.innerElement,
-        ID: settings.ID
-    });
-
-    this._documentRendering.setDocumentSize({
-        height: this._dimens.dimensions.height + 'px',
-        width: this._dimens.dimensions.width + 'px'
-    });
+    this._updateDocumentRendering();
 
     // FIXME(wabain): Remove this when there's more confidence the check shouldn't be needed
     if (!this._pageLookup[settings.goDirectlyTo])
@@ -121,6 +113,22 @@ SingleCanvasRendering.prototype.load = function (config)
 
     var fileName = settings.manifest.pages[settings.currentPageIndex].f;
     diva.Events.publish("DocumentDidLoad", [settings.currentPageIndex, fileName], this._viewer);
+};
+
+SingleCanvasRendering.prototype._updateDocumentRendering = function ()
+{
+    if (this._documentRendering)
+        this._documentRendering.destroy();
+
+    this._documentRendering = new DocumentRendering({
+        element: this._documentElement,
+        ID: this._viewerId
+    });
+
+    this._documentRendering.setDocumentSize({
+        height: this._dimens.dimensions.height + 'px',
+        width: this._dimens.dimensions.width + 'px'
+    });
 };
 
 // FIXME(wabain): Remove the direction argument if it doesn't end up being needed.
