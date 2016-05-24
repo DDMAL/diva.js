@@ -1,36 +1,6 @@
-module.exports = getPageLayouts;
+var getPageDimensions = require('./page-dimensions');
 
-/** Get the relative positioning of pages for the current view */
-function getPageLayouts(viewerConfig)
-{
-    if (viewerConfig.inBookLayout)
-        return getBookLayoutGroups(viewerConfig);
-    else
-        return getSinglesLayoutGroups(viewerConfig);
-}
-
-function getSinglesLayoutGroups(viewerConfig)
-{
-    var manifest = viewerConfig.manifest;
-    var zoomLevel = viewerConfig.zoomLevel;
-
-    // Render each page alone in a group
-    return manifest.pages.map(function (_, i)
-    {
-        var pageDims = getPageDimensions(i, manifest, zoomLevel);
-
-        return {
-            dimensions: pageDims,
-            pages: [
-                {
-                    index: i,
-                    groupOffset: {top: 0, left: 0},
-                    dimensions: pageDims
-                }
-            ]
-        };
-    });
-}
+module.exports = getBookLayoutGroups;
 
 function getBookLayoutGroups(viewerConfig)
 {
@@ -159,15 +129,5 @@ function getFacingPageGroup(leftPage, rightPage, verticallyOriented)
                 }
             }
         ]
-    };
-}
-
-function getPageDimensions(pageIndex, manifest, zoomLevel)
-{
-    var pageData = manifest.pages[pageIndex].d[zoomLevel];
-
-    return {
-        width: Math.floor(pageData.w),
-        height: Math.floor(pageData.h)
     };
 }
