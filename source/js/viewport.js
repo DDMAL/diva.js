@@ -2,8 +2,12 @@ module.exports = Viewport;
 
 function Viewport(outer, options)
 {
+    options = options || {};
+
+    this.intersectionTolerance = options.intersectionTolerance || 0;
+    this.maxExtent = options.maxExtent || 2000;
+
     this.outer = outer;
-    this.intersectionTolerance = (options && options.intersectionTolerance) || 0;
 
     this._top = this._left = this._width = this._height = null;
 
@@ -72,10 +76,12 @@ Viewport.prototype._setInvalid = function ()
 
 Viewport.prototype._revalidate = function ()
 {
+    this._width = Math.min(this.outer.clientWidth, this.maxExtent);
+    this._height = Math.min(this.outer.clientHeight, this.maxExtent);
+
     this._top = this.outer.scrollTop;
     this._left = this.outer.scrollLeft;
-    this._width = this.outer.clientWidth;
-    this._height = this.outer.clientHeight;
+
     this._valid = true;
     this._validationPending = false;
 };
