@@ -49,7 +49,7 @@ function getBookLayoutGroups(viewerConfig)
         if (manifest.paged && !page.paged)
             return;
 
-        var pageDims = getPageDimensions(index, manifest, zoomLevel, { round: false });
+        var pageDims = getPageDimensions(index, manifest, zoomLevel);
 
         if (verticallyOriented && index === 0)
         {
@@ -162,26 +162,12 @@ function getFacingPageGroup(leftPage, rightPage, verticallyOriented)
     };
 }
 
-function getPageDimensions(pageIndex, manifest, zoomLevel, options)
+function getPageDimensions(pageIndex, manifest, zoomLevel)
 {
     var pageData = manifest.pages[pageIndex].d[zoomLevel];
 
-    // FIXME(wabain): These are always rounded! Does rounding really need to be optional?
-    var width = Math.floor(pageData.w);
-    var height = Math.floor(pageData.h);
-
-    var round = !options || options.round;
-
-    if (round)
-    {
-        return {
-            width: Math.floor(width),
-            height: Math.floor(height)
-        };
-    }
-
     return {
-        width: width,
-        height: height
+        width: Math.floor(pageData.w),
+        height: Math.floor(pageData.h)
     };
 }
