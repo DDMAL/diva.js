@@ -8,14 +8,6 @@ module.exports = {
     },
 
     module: {
-        preLoaders: [
-            // instrument only testing sources with Istanbul
-            {
-                test: /\.js$/,
-                include: path.resolve('source/js/'),
-                loader: 'istanbul-instrumenter'
-            }
-        ],
         loaders: [
             {
                 include: path.resolve('node_modules/jquery-simulate'),

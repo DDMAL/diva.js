@@ -17,7 +17,8 @@
   "scripts": {
     "lint": "gulp develop:jshint",
     "test": "gulp develop:test",
-    "trigger-tests": "karma run"
+    "trigger-tests": "karma run",
+    "coverage": "DIVA_ENV=coverage karma start --single-run"
   },
   "repository": {
     "type": "git",

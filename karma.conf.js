@@ -3,7 +3,9 @@ module.exports = function(config)
     // Default port plus three; hopefully, this will help prevent collisions
     var KARMA_PORT = 9879;
 
-    var webpackConfig = require('./webpack.conf.karma');
+    var webpackConfig = process.env.DIVA_ENV === 'coverage' ?
+        require('./webpack.conf.coverage') :
+        require('./webpack.conf.test');
 
     var files = [
         // Assets
