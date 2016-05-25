@@ -21,19 +21,19 @@ function getBookLayoutGroups(viewerConfig)
 
         var pageDims = getPageDimensions(index, manifest, zoomLevel);
 
-        if (verticallyOriented && index === 0)
+        if (index === 0)
         {
-            // The first page is placed on its own to the right
+            // The first page is placed on its own (to the right in vertical orientation)
             groups.push({
                 dimensions: {
                     height: pageDims.height,
-                    width: pageDims.width * 2
+                    width: verticallyOriented ? pageDims.width * 2 : pageDims.width
                 },
                 pages: [{
                     index: 0,
                     groupOffset: {
                         top: 0,
-                        left: pageDims.width
+                        left: verticallyOriented ? pageDims.width : 0
                     },
                     dimensions: pageDims
                 }]

@@ -7,8 +7,6 @@ var manifest = ImageManifest.fromIIIF(iiifBeromunster);
 
 QUnit.module('getBookLayout');
 
-// TODO: Height
-
 QUnit.test('In vertical orientation positions first page to the right', function (assert)
 {
     var layouts = getBookLayout({
@@ -25,7 +23,7 @@ QUnit.test('In vertical orientation positions first page to the right', function
     assert.close(firstGroup.pages[0].groupOffset.left, width, 1, 'Page should be offset to the left by its width');
 });
 
-QUnit.skip('In horizontal orientation, shrink first group to single page size', function (assert)
+QUnit.test('In horizontal orientation, shrink first group to single page size', function (assert)
 {
     var layouts = getBookLayout({
         manifest: manifest,
@@ -65,7 +63,7 @@ QUnit.test('In horizontal orientation, facing pages groups fit max height, tight
         verticallyOriented: false
     });
 
-    var group = layouts[16];
+    var group = layouts[1];
 
     assertDifferentSizePages(group, assert);
     assertFitsMax(group, 'height', assert);
