@@ -32,6 +32,7 @@ var Transition = require('./utils/transition');
 
 var ActiveDivaController = require('./active-diva-controller');
 var diva = require('./diva-global');
+var DocumentHandler = require('./document-handler');
 var GridRendering = require('./grid-rendering');
 var SingleCanvasRendering = require('./single-canvas-rendering');
 var ImageManifest = require('./image-manifest');
@@ -209,7 +210,6 @@ var DivaSettingsValidator = new ValidationRunner({
             outerObject: {},            // $(settings.ID + 'outer'), for selecting the .diva-outer element
             outerElement: null,         // The native .diva-outer DOM object
             pages: [],                  // An array containing the data for all the pages
-            viewRendering: null,
             pageTools: '',              // The string for page tools
             parentObject: parentObject, // JQuery object referencing the parent element
             plugins: [],                // Filled with the enabled plugins from window.divaPlugins
@@ -228,7 +228,9 @@ var DivaSettingsValidator = new ValidationRunner({
             verticalPadding: 0,         // Either the fixed padding or adaptive padding
             viewport: null,             // Object caching the viewport dimensions
             viewportElement: null,
-            viewportObject: null
+            viewportObject: null,
+            viewHandler: null,
+            viewRendering: null
         });
 
         // Aliases for compatibilty
@@ -381,27 +383,14 @@ var DivaSettingsValidator = new ValidationRunner({
             settings.viewportObject.off('scroll');
             settings.viewportObject.scroll(scrollFunction);
 
-            var Rendering = settings.inGrid ? GridRendering : SingleCanvasRendering;
-
-            if (!(settings.viewRendering instanceof Rendering))
-            {
-                var compatErrors = Rendering.getCompatibilityErrors(self);
-
-                if (compatErrors)
-                {
-                    showError(compatErrors);
-                }
-                else
-                {
-                    if (settings.viewRendering)
-                        settings.viewRendering.destroy();
-
-                    settings.viewRendering = new Rendering(self);
-                }
-            }
+            updateViewHandlerAndRendering();
 
             if (settings.viewRendering)
                 settings.viewRendering.load(getViewRenderingState());
+
+            // For the iPad - wait until this request finishes before accepting others
+            if (settings.scaleWait)
+                settings.scaleWait = false;
 
             queuedEvents.forEach(function (args)
             {
@@ -447,6 +436,76 @@ var DivaSettingsValidator = new ValidationRunner({
                 $(document).on('keyup', escapeListener);
             else
                 $(document).off('keyup', escapeListener);
+        };
+
+        // Update the view handler and the view rendering for the current view
+        var updateViewHandlerAndRendering = function ()
+        {
+            var Handler = settings.inGrid ? null : DocumentHandler;
+
+            if (Handler)
+            {
+                if (settings.viewHandler && !(settings.viewHandler instanceof Handler))
+                {
+                    // TODO: May need to destroy handler in future
+                    settings.viewHandler = null;
+                }
+
+                if (!settings.viewHandler)
+                {
+                    settings.viewHandler = new Handler(self);
+                }
+            }
+            else
+            {
+                settings.viewHandler = null;
+            }
+
+            var Rendering = settings.inGrid ? GridRendering : SingleCanvasRendering;
+
+            if (settings.viewRendering && !(settings.viewRendering instanceof Rendering))
+            {
+                settings.viewRendering.destroy();
+                settings.viewRendering = null;
+            }
+
+            if (!settings.viewRendering)
+            {
+                var compatErrors = Rendering.getCompatibilityErrors(self);
+
+                if (compatErrors)
+                {
+                    showError(compatErrors);
+                }
+                else
+                {
+                    var hooks;
+
+                    if (settings.viewHandler)
+                    {
+                        hooks = {
+                            onViewWillLoad: function ()
+                            {
+                                settings.viewHandler.onViewWillLoad();
+                            },
+                            onViewDidLoad: function ()
+                            {
+                                settings.viewHandler.onViewDidLoad();
+                            },
+                            onPageDidChange: function (pageIndex)
+                            {
+                                settings.viewHandler.onPageDidChange(pageIndex);
+                            },
+                            onViewerDidJump: function (pageIndex)
+                            {
+                                settings.viewHandler.onViewerDidJump(pageIndex);
+                            }
+                        };
+                    }
+
+                    settings.viewRendering = new Rendering(self, hooks);
+                }
+            }
         };
 
         // TODO: The usage of padding variables is still really

@@ -4,7 +4,6 @@ var maxBy = require('lodash.maxby');
 var debug = require('debug')('diva:SingleCanvasRendering');
 
 var elt = require('./utils/elt');
-var diva = require('./diva-global');
 var getDocumentLayout = require('./document-layout');
 var DocumentRendering = require('./document-rendering');
 var ImageCache = require('./image-cache');
@@ -13,8 +12,9 @@ var ImageRequestHandler = require('./image-request-handler');
 
 module.exports = SingleCanvasRendering;
 
-function SingleCanvasRendering(viewer)
+function SingleCanvasRendering(viewer, hooks)
 {
+    this._hooks = hooks || {};
     var settings = viewer.getSettings();
 
     this._viewport = settings.viewport;
@@ -57,9 +57,8 @@ SingleCanvasRendering.getCompatibilityErrors = function ()
 
 SingleCanvasRendering.prototype.load = function (config)
 {
-    var settings = this._viewer.getSettings();
-
-    diva.Events.publish('DocumentWillLoad', [settings], this._viewer);
+    if (this._hooks.onViewWillLoad)
+        this._hooks.onViewWillLoad();
 
     this._dimens = getDocumentLayout(config);
     this._pageLookup = getPageLookup(this._dimens.pageGroups);
@@ -67,6 +66,7 @@ SingleCanvasRendering.prototype.load = function (config)
     this._updateDocumentRendering();
 
     // FIXME(wabain): Remove this when there's more confidence the check shouldn't be needed
+    var settings = this._viewer.getSettings();
     if (!this._pageLookup[settings.goDirectlyTo])
         throw new Error('invalid page: ' + settings.goDirectlyTo);
 
@@ -88,34 +88,8 @@ SingleCanvasRendering.prototype.load = function (config)
     if (this._canvas.parentNode !== settings.outerElement)
         settings.outerElement.insertBefore(this._canvas, settings.outerElement.firstChild);
 
-    // FIXME(wabain): Move this into the viewer, probably?
-    // If this is not the initial load, trigger the zoom events
-    if (settings.oldZoomLevel >= 0)
-    {
-        var zoomLevel = settings.zoomLevel;
-
-        if (settings.oldZoomLevel < settings.zoomLevel)
-        {
-            diva.Events.publish("ViewerDidZoomIn", [zoomLevel], this._viewer);
-        }
-        else
-        {
-            diva.Events.publish("ViewerDidZoomOut", [zoomLevel], this._viewer);
-        }
-
-        diva.Events.publish("ViewerDidZoom", [zoomLevel], this._viewer);
-    }
-    else
-    {
-        settings.oldZoomLevel = settings.zoomLevel;
-    }
-
-    // For the iPad - wait until this request finishes before accepting others
-    if (settings.scaleWait)
-        settings.scaleWait = false;
-
-    var fileName = settings.manifest.pages[settings.currentPageIndex].f;
-    diva.Events.publish("DocumentDidLoad", [settings.currentPageIndex, fileName], this._viewer);
+    if (this._hooks.onViewDidLoad)
+        this._hooks.onViewDidLoad();
 };
 
 SingleCanvasRendering.prototype._updateDocumentRendering = function ()
@@ -283,13 +257,9 @@ SingleCanvasRendering.prototype._updateCurrentPage = function ()
         return -(dx * dx + dy * dy);
     }.bind(this));
 
-    // FIXME(wabain): Doing this here is pretty gross
-    var settings = this._viewer.getSettings();
-
-    if (closestPage !== settings.currentPageIndex)
+    if (this._hooks.onPageDidChange && closestPage !== this._viewer.getSettings().currentPageIndex)
     {
-        settings.currentPageIndex = closestPage;
-        diva.Events.publish("VisiblePageDidChange", [closestPage, settings.manifest.pages[closestPage].f], this._viewer);
+        this._hooks.onPageDidChange(closestPage);
     }
 };
 
@@ -307,18 +277,12 @@ SingleCanvasRendering.prototype.goto = function (pageIndex, verticalOffset, hori
     this._viewport.top = top;
     this._viewport.left = left;
 
-    var settings = this._viewer.getSettings();
-
     // Pretend that this is the current page
-    if (pageIndex !== settings.currentPageIndex)
-    {
-        settings.currentPageIndex = pageIndex;
-        var filename = settings.manifest.pages[pageIndex].f;
+    if (this._hooks.onPageDidChange)
+        this._hooks.onPageDidChange(pageIndex);
 
-        diva.Events.publish("VisiblePageDidChange", [pageIndex, filename], this._viewer);
-    }
-
-    diva.Events.publish("ViewerDidJump", [pageIndex], this._viewer);
+    if (this._hooks.onViewerDidJump)
+        this._hooks.onViewerDidJump(pageIndex);
 };
 
 SingleCanvasRendering.prototype.preload = function ()
