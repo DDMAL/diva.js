@@ -81,8 +81,14 @@ ImageManifest.prototype.getPageImageTiles = function (pageIndex, zoomLevel, tile
             });
 
             tiles.push({
-                top: row * tileDimensions.height,
-                left: col * tileDimensions.width,
+                dimensions: {
+                    height: tileDimensions.height,
+                    width: tileDimensions.width
+                },
+                offset: {
+                    top: row * tileDimensions.height,
+                    left: col * tileDimensions.width
+                },
                 url: url
             });
         }

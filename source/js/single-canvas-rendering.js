@@ -172,7 +172,7 @@ SingleCanvasRendering.prototype._queueTilesForPage = function (pageIndex)
 
 SingleCanvasRendering.prototype._drawTile = function (pageIndex, tileIndex, tileRecord, img)
 {
-    var tileOffset = this._getTileOffset(pageIndex, tileRecord);
+    var tileOffset = this._getTileToDocumentOffset(pageIndex, tileRecord);
 
     var viewportOffsetX = tileOffset.left - this._viewport.left;
     var viewportOffsetY = tileOffset.top - this._viewport.top;
@@ -183,9 +183,9 @@ SingleCanvasRendering.prototype._drawTile = function (pageIndex, tileIndex, tile
     var canvasX = Math.max(0, viewportOffsetX);
     var canvasY = Math.max(0, viewportOffsetY);
 
-    // FIXME(wabain): Get tile dimensions from tile source (or img?)
-    var width = this._tileDimensions.width - tileX;
-    var height = this._tileDimensions.height - tileY;
+    // FIXME(wabain): Get tile dimensions from img?
+    var width = tileRecord.dimensions.width - tileX;
+    var height = tileRecord.dimensions.height - tileY;
 
     debug('Drawing page %s, tile %s from %s, %s to viewport at %s, %s', pageIndex, tileIndex,
         tileX, tileY, canvasX, canvasY);
@@ -195,25 +195,24 @@ SingleCanvasRendering.prototype._drawTile = function (pageIndex, tileIndex, tile
 
 SingleCanvasRendering.prototype._isTileVisible = function (pageIndex, tileSource)
 {
-    var tileOffset = this._getTileOffset(pageIndex, tileSource);
+    var tileOffset = this._getTileToDocumentOffset(pageIndex, tileSource);
 
     // FIXME(wabain): This check is insufficient during a zoom transition
-    // FIXME(wabain): Get tile dimensions from tile source
     return this._viewport.intersectsRegion({
         top: tileOffset.top,
-        bottom: tileOffset.top + this._tileDimensions.height,
+        bottom: tileOffset.top + tileSource.dimensions.height,
         left: tileOffset.left,
-        right: tileOffset.left + this._tileDimensions.width
+        right: tileOffset.left + tileSource.dimensions.width
     });
 };
 
-SingleCanvasRendering.prototype._getTileOffset = function (pageIndex, tileSource)
+SingleCanvasRendering.prototype._getTileToDocumentOffset = function (pageIndex, tileSource)
 {
     var imageOffset = this._getImageOffset(pageIndex);
 
     return {
-        top: imageOffset.top + tileSource.top,
-        left: imageOffset.left + tileSource.left
+        top: imageOffset.top + tileSource.offset.top,
+        left: imageOffset.left + tileSource.offset.left
     };
 };
 
