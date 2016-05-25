@@ -9,7 +9,9 @@ function getDocumentLayout(config)
     var documentSecondaryExtent = getExtentAlongSecondaryAxis(config);
 
     // The current position in the document along the primary axis
-    var primaryDocPosition = 0;
+    var primaryDocPosition = config.verticallyOriented ?
+        config.padding.document.top :
+        config.padding.document.left;
 
     var pageGroups = [];
 
