@@ -75,6 +75,46 @@ QUnit.test('In horizontal orientation, facing pages groups fit max height, tight
     assert.close(groupWidth, width1 + width2, 1, 'Group width should be sum of page widths');
 });
 
+QUnit.test('In vertical orientation, final left page is left-aligned', function (assert)
+{
+    var layouts = getBookLayout({
+        manifest: manifest,
+        zoomLevel: 2,
+        verticallyOriented: true
+    });
+
+    var lastGroup = layouts[layouts.length - 1];
+
+    assert.strictEqual(lastGroup.pages.length, 1, 'Sanity check: Last group should be a single page');
+
+    assert.close(lastGroup.dimensions.width,
+        lastGroup.pages[0].dimensions.width * 2,
+        1,
+        'Group width should be twice page width');
+
+    assert.strictEqual(lastGroup.dimensions.height,
+        lastGroup.pages[0].dimensions.height,
+        'Group height should be page height');
+
+    assert.close(lastGroup.pages[0].groupOffset.left, 0, 1, 'Page should not be offset to the left');
+});
+
+QUnit.test('In horizontal orientation, final left page is is in tight-fit group', function (assert)
+{
+    var layouts = getBookLayout({
+        manifest: manifest,
+        zoomLevel: 2,
+        verticallyOriented: false
+    });
+
+    var lastGroup = layouts[layouts.length - 1];
+
+    assert.strictEqual(lastGroup.pages.length, 1, 'Sanity check: Last group should be a single page');
+
+    assert.propEqual(lastGroup.dimensions, lastGroup.pages[0].dimensions, 1, 'Group size should be page size');
+    assert.close(lastGroup.pages[0].groupOffset.left, 0, 1, 'Page should not be offset to the left');
+});
+
 function assertFitsMax(group, dimension, assert)
 {
     var p1 = group.pages[0].dimensions[dimension];
