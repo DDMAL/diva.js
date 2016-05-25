@@ -55,6 +55,7 @@
     "istanbul-instrumenter-loader": "^0.2.0",
     "jquery-simulate": "jquery/jquery-simulate#v1.0.1",
     "jshint-stylish": "^2.0.0",
+    "json-loader": "^0.5.4",
     "karma": "^0.13.22",
     "karma-coverage": "^0.5.5",
     "karma-mocha-reporter": "^2.0.0",

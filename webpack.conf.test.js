@@ -10,6 +10,10 @@ module.exports = {
     module: {
         loaders: [
             {
+                test: /\.json$/,
+                loader: 'json'
+            },
+            {
                 include: path.resolve('node_modules/jquery-simulate'),
                 loader: 'imports?jQuery=jquery'
             }
