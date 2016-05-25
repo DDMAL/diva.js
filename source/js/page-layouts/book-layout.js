@@ -4,11 +4,20 @@ module.exports = getBookLayoutGroups;
 
 function getBookLayoutGroups(viewerConfig)
 {
+    var groupings = getGroupings(viewerConfig);
+
+    return groupings.map(function (grouping)
+    {
+        return getGroupLayoutsFromPageGrouping(viewerConfig, grouping);
+    });
+}
+
+function getGroupings(viewerConfig)
+{
     var manifest = viewerConfig.manifest;
     var zoomLevel = viewerConfig.zoomLevel;
-    var verticallyOriented = viewerConfig.verticallyOriented;
 
-    var groups = [];
+    var pagesByGroup = [];
     var leftPage = null;
 
     manifest.pages.forEach(function (page, index)
@@ -19,66 +28,67 @@ function getBookLayoutGroups(viewerConfig)
         if (manifest.paged && !page.paged)
             return;
 
-        var pageDims = getPageDimensions(index, manifest, zoomLevel);
+        var pageRecord = {
+            index: index,
+            dimensions: getPageDimensions(index, manifest, zoomLevel)
+        };
 
         if (index === 0)
         {
-            // The first page is placed on its own (to the right in vertical orientation)
-            groups.push({
-                dimensions: {
-                    height: pageDims.height,
-                    width: verticallyOriented ? pageDims.width * 2 : pageDims.width
-                },
-                pages: [{
-                    index: 0,
-                    groupOffset: {
-                        top: 0,
-                        left: verticallyOriented ? pageDims.width : 0
-                    },
-                    dimensions: pageDims
-                }]
-            });
-
-            return;
+            // The first page is placed on its own
+            pagesByGroup.push([pageRecord]);
         }
-
-        if (leftPage === null)
+        else if (leftPage === null)
         {
-            leftPage = {
-                index: index,
-                dimensions: pageDims
-            };
-
-            return;
+            leftPage = pageRecord;
         }
-
-        groups.push(getFacingPageGroup(leftPage, { index: index, dimensions: pageDims }, verticallyOriented));
-
-        leftPage = null;
+        else
+        {
+            pagesByGroup.push([leftPage, pageRecord]);
+            leftPage = null;
+        }
     });
 
     // Flush a final left page
     if (leftPage !== null)
     {
-        // We need to left-align the page in vertical orientation, so we double
-        // the group width
-        groups.push({
-            dimensions: {
-                height: leftPage.dimensions.height,
-                width: verticallyOriented ? leftPage.dimensions.width * 2 : leftPage.dimensions.width
-            },
-            pages: [{
-                index: leftPage.index,
-                groupOffset: {
-                    top: 0,
-                    left: 0
-                },
-                dimensions: leftPage.dimensions
-            }]
-        });
+        pagesByGroup.push([leftPage]);
     }
 
-    return groups;
+    return pagesByGroup;
+}
+
+function getGroupLayoutsFromPageGrouping(viewerConfig, grouping)
+{
+    var verticallyOriented = viewerConfig.verticallyOriented;
+
+    if (grouping.length === 2)
+        return getFacingPageGroup(grouping[0], grouping[1], verticallyOriented);
+
+    var page = grouping[0];
+    var pageDims = page.dimensions;
+
+    // The first page is placed on its own to the right in vertical orientation.
+    // NB that this needs to be the page with index 0; if the first page is excluded
+    // from the layout then this special case shouldn't apply.
+    var leftOffset = (page.index === 0 && verticallyOriented) ? pageDims.width : 0;
+
+    // We need to left-align the page in vertical orientation, so we double
+    // the group width
+    return {
+        dimensions: {
+            height: pageDims.height,
+            width: verticallyOriented ? pageDims.width * 2 : pageDims.width
+        },
+        pages: [{
+            index: page.index,
+            groupOffset: {
+                top: 0,
+                left: leftOffset
+            },
+            dimensions: pageDims
+        }]
+    };
 }
 
 function getFacingPageGroup(leftPage, rightPage, verticallyOriented)
