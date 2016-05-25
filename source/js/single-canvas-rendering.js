@@ -1,6 +1,5 @@
 'use strict';
 
-var maxBy = require('lodash.maxby');
 var debug = require('debug')('diva:SingleCanvasRendering');
 
 var elt = require('./utils/elt');
@@ -70,8 +69,8 @@ SingleCanvasRendering.prototype.load = function (config)
     if (!this._pageLookup[settings.goDirectlyTo])
         throw new Error('invalid page: ' + settings.goDirectlyTo);
 
+    // FIXME: What hooks should be called here?
     this.goto(settings.goDirectlyTo, settings.verticalOffset, settings.horizontalOffset);
-    this.adjust(0);
 
     if (this._canvas.width !== this._viewport.width || this._canvas.height !== this._viewport.height)
     {
@@ -108,8 +107,35 @@ SingleCanvasRendering.prototype._updateDocumentRendering = function ()
     });
 };
 
+SingleCanvasRendering.prototype.adjust = function (direction)
+{
+    this._render(direction);
+
+    if (this._hooks.onViewDidUpdate)
+    {
+        var pageStats = this._getPageInfoForUpdateHook();
+        this._hooks.onViewDidUpdate(pageStats, null);
+    }
+};
+
+SingleCanvasRendering.prototype._getPageInfoForUpdateHook = function ()
+{
+    // TODO(wabain): Standardize how dimensions are given
+    return this._renderedPages.map(function (index)
+    {
+        var page = this._pageLookup[index];
+
+        return {
+            index: index,
+            dimensions: page.dimensions,
+            paddingRegionOffset: this.getPageOffset(index),
+            imageOffset: this._getImageOffset(index)
+        };
+    }, this);
+};
+
 // FIXME(wabain): Remove the direction argument if it doesn't end up being needed.
-SingleCanvasRendering.prototype.adjust = function (direction) // jshint ignore:line
+SingleCanvasRendering.prototype._render = function (direction) // jshint ignore:line
 {
     var newRenderedPages = [];
 
@@ -135,7 +161,6 @@ SingleCanvasRendering.prototype.adjust = function (direction) // jshint ignore:l
     newRenderedPages.forEach(this._queueTilesForPage, this);
 
     this._renderedPages = newRenderedPages;
-    this._updateCurrentPage();
 };
 
 SingleCanvasRendering.prototype._queueTilesForPage = function (pageIndex)
@@ -229,42 +254,9 @@ SingleCanvasRendering.prototype._getImageOffset = function (pageIndex)
     };
 };
 
-SingleCanvasRendering.prototype._updateCurrentPage = function ()
-{
-    // FIXME(wabain): Should this happen?
-    if (!this._renderedPages || this._renderedPages.length === 0)
-        return;
-
-    var centerY = this._viewport.top + (this._viewport.height / 2);
-    var centerX = this._viewport.left + (this._viewport.width / 2);
-
-    // Find the minimum distance from the viewport center to a page.
-    // Compute minus the squared distance from viewport center to the page's border.
-    // http://gamedev.stackexchange.com/questions/44483/how-do-i-calculate-distance-between-a-point-and-an-axis-aligned-rectangle
-    var closestPage = maxBy(this._renderedPages, function (index)
-    {
-        var dims = this.getPageDimensions(index);
-
-        var imageOffset = this._getImageOffset(index);
-
-        var midX = imageOffset.left + (dims.height / 2);
-        var midY = imageOffset.top + (dims.width / 2);
-
-        var dx = Math.max(Math.abs(centerX - midX) - (dims.width / 2), 0);
-        var dy = Math.max(Math.abs(centerY - midY) - (dims.height / 2), 0);
-
-        return -(dx * dx + dy * dy);
-    }.bind(this));
-
-    if (this._hooks.onPageDidChange && closestPage !== this._viewer.getSettings().currentPageIndex)
-    {
-        this._hooks.onPageDidChange(closestPage);
-    }
-};
-
-// FIXME(wabain): Move this logic to the viewer
 SingleCanvasRendering.prototype.goto = function (pageIndex, verticalOffset, horizontalOffset)
 {
+    // FIXME(wabain): Move this logic to the viewer
     var pageOffset = this.getPageOffset(pageIndex);
 
     var desiredVerticalCenter = pageOffset.top + verticalOffset;
@@ -276,12 +268,13 @@ SingleCanvasRendering.prototype.goto = function (pageIndex, verticalOffset, hori
     this._viewport.top = top;
     this._viewport.left = left;
 
-    // Pretend that this is the current page
-    if (this._hooks.onPageDidChange)
-        this._hooks.onPageDidChange(pageIndex);
+    this._render(0);
 
-    if (this._hooks.onViewerDidJump)
-        this._hooks.onViewerDidJump(pageIndex);
+    if (this._hooks.onViewDidUpdate)
+    {
+        var pages = this._getPageInfoForUpdateHook();
+        this._hooks.onViewDidUpdate(pages, pageIndex);
+    }
 };
 
 SingleCanvasRendering.prototype.preload = function ()

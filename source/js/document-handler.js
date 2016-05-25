@@ -1,10 +1,12 @@
 var diva = require('./diva-global');
+var maxBy = require('lodash.maxby');
 
 module.exports = DocumentHandler;
 
 function DocumentHandler(viewer)
 {
     this._viewer = viewer;
+    this._viewport = viewer.getSettings().viewport;
 }
 
 DocumentHandler.prototype.onViewWillLoad = function ()
@@ -43,15 +45,48 @@ DocumentHandler.prototype.onViewDidLoad = function ()
     diva.Events.publish("DocumentDidLoad", [settings.currentPageIndex, fileName], this._viewer);
 };
 
-DocumentHandler.prototype.onPageDidChange = function (pageIndex)
+DocumentHandler.prototype.onViewDidUpdate = function (renderedPages, targetPage)
 {
+    var currentPage = (targetPage !== null) ?
+        targetPage :
+        getCentermostPage(renderedPages, this._viewport);
+
     var settings = this._viewer.getSettings();
-    settings.currentPageIndex = pageIndex;
-    diva.Events.publish("VisiblePageDidChange", [pageIndex, settings.manifest.pages[pageIndex].f], this._viewer);
+
+    if (currentPage !== settings.currentPageIndex)
+    {
+        settings.currentPageIndex = currentPage;
+
+        diva.Events.publish("VisiblePageDidChange",
+            [currentPage, settings.manifest.pages[currentPage].f],
+            this._viewer);
+    }
+
+    if (targetPage !== null)
+    {
+        diva.Events.publish("ViewerDidJump", [targetPage], this._viewer);
+    }
 };
 
-DocumentHandler.prototype.onViewerDidJump = function (pageIndex)
+function getCentermostPage(pages, viewport)
 {
-    diva.Events.publish("ViewerDidJump", [pageIndex], this._viewer);
-};
+    var centerY = viewport.top + (viewport.height / 2);
+    var centerX = viewport.left + (viewport.width / 2);
 
+    // Find the minimum distance from the viewport center to a page.
+    // Compute minus the squared distance from viewport center to the page's border.
+    // http://gamedev.stackexchange.com/questions/44483/how-do-i-calculate-distance-between-a-point-and-an-axis-aligned-rectangle
+    return maxBy(pages, function (page)
+    {
+        var dims = page.dimensions;
+        var imageOffset = page.imageOffset;
+
+        var midX = imageOffset.left + (dims.height / 2);
+        var midY = imageOffset.top + (dims.width / 2);
+
+        var dx = Math.max(Math.abs(centerX - midX) - (dims.width / 2), 0);
+        var dy = Math.max(Math.abs(centerY - midY) - (dims.height / 2), 0);
+
+        return -(dx * dx + dy * dy);
+    }).index;
+}

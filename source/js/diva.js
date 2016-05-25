@@ -492,13 +492,9 @@ var DivaSettingsValidator = new ValidationRunner({
                             {
                                 settings.viewHandler.onViewDidLoad();
                             },
-                            onPageDidChange: function (pageIndex)
+                            onViewDidUpdate: function (pages, targetPage)
                             {
-                                settings.viewHandler.onPageDidChange(pageIndex);
-                            },
-                            onViewerDidJump: function (pageIndex)
-                            {
-                                settings.viewHandler.onViewerDidJump(pageIndex);
+                                settings.viewHandler.onViewDidUpdate(pages, targetPage);
                             }
                         };
                     }
