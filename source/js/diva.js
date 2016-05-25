@@ -33,7 +33,7 @@ var Transition = require('./utils/transition');
 var ActiveDivaController = require('./active-diva-controller');
 var diva = require('./diva-global');
 var DocumentHandler = require('./document-handler');
-var GridRendering = require('./grid-rendering');
+var GridHandler = require('./grid-handler');
 var SingleCanvasRendering = require('./single-canvas-rendering');
 var ImageManifest = require('./image-manifest');
 var getPageLayouts = require('./page-layouts');
@@ -385,8 +385,38 @@ var DivaSettingsValidator = new ValidationRunner({
 
             updateViewHandlerAndRendering();
 
+            var getImageSourcesForPage;
+
+            if (settings.inGrid)
+            {
+                getImageSourcesForPage = function (page) {
+                    var url = settings.manifest.getPageImageURL(page.index, {
+                        width: page.dimensions.width
+                    });
+
+                    return [{
+                        url: url,
+                        dimensions: page.dimensions,
+                        offset: {
+                            top: 0,
+                            left: 0
+                        }
+                    }];
+                };
+            }
+            else
+            {
+                getImageSourcesForPage = function (page)
+                {
+                    return settings.manifest.getPageImageTiles(page.index, settings.zoomLevel, {
+                        width: settings.tileWidth,
+                        height: settings.tileHeight
+                    });
+                };
+            }
+
             if (settings.viewRendering)
-                settings.viewRendering.load(getViewRenderingState());
+                settings.viewRendering.load(getViewRenderingState(), getImageSourcesForPage);
 
             // For the iPad - wait until this request finishes before accepting others
             if (settings.scaleWait)
@@ -441,66 +471,47 @@ var DivaSettingsValidator = new ValidationRunner({
         // Update the view handler and the view rendering for the current view
         var updateViewHandlerAndRendering = function ()
         {
-            var Handler = settings.inGrid ? null : DocumentHandler;
+            var Handler = settings.inGrid ? GridHandler : DocumentHandler;
 
-            if (Handler)
+            if (settings.viewHandler && !(settings.viewHandler instanceof Handler))
             {
-                if (settings.viewHandler && !(settings.viewHandler instanceof Handler))
-                {
-                    // TODO: May need to destroy handler in future
-                    settings.viewHandler = null;
-                }
-
-                if (!settings.viewHandler)
-                {
-                    settings.viewHandler = new Handler(self);
-                }
-            }
-            else
-            {
+                // TODO: May need to destroy handler in future
                 settings.viewHandler = null;
             }
 
-            var Rendering = settings.inGrid ? GridRendering : SingleCanvasRendering;
-
-            if (settings.viewRendering && !(settings.viewRendering instanceof Rendering))
-            {
-                settings.viewRendering.destroy();
-                settings.viewRendering = null;
-            }
+            if (!settings.viewHandler)
+                settings.viewHandler = new Handler(self);
 
             if (!settings.viewRendering)
+                initializeViewRendering();
+        };
+
+        var initializeViewRendering = function ()
+        {
+            var compatErrors = SingleCanvasRendering.getCompatibilityErrors(self);
+
+            if (compatErrors)
             {
-                var compatErrors = Rendering.getCompatibilityErrors(self);
-
-                if (compatErrors)
-                {
-                    showError(compatErrors);
-                }
-                else
-                {
-                    var hooks;
-
-                    if (settings.viewHandler)
+                showError(compatErrors);
+            }
+            else
+            {
+                var hooks = {
+                    onViewWillLoad: function ()
                     {
-                        hooks = {
-                            onViewWillLoad: function ()
-                            {
-                                settings.viewHandler.onViewWillLoad();
-                            },
-                            onViewDidLoad: function ()
-                            {
-                                settings.viewHandler.onViewDidLoad();
-                            },
-                            onViewDidUpdate: function (pages, targetPage)
-                            {
-                                settings.viewHandler.onViewDidUpdate(pages, targetPage);
-                            }
-                        };
+                        settings.viewHandler.onViewWillLoad();
+                    },
+                    onViewDidLoad: function ()
+                    {
+                        settings.viewHandler.onViewDidLoad();
+                    },
+                    onViewDidUpdate: function (pages, targetPage)
+                    {
+                        settings.viewHandler.onViewDidUpdate(pages, targetPage);
                     }
+                };
 
-                    settings.viewRendering = new Rendering(self, hooks);
-                }
+                settings.viewRendering = new SingleCanvasRendering(self, hooks);
             }
         };
 
@@ -508,46 +519,35 @@ var DivaSettingsValidator = new ValidationRunner({
         // messy and inconsistent
         var getViewRenderingState = function ()
         {
-            // FIXME: For now GridRendering still goes through the
-            // settings directly instead of using this
-            if (settings.inGrid)
-                return null;
-
-            var pageLayouts = getPageLayouts({
-                manifest: settings.manifest,
-                zoomLevel: settings.zoomLevel,
-                verticallyOriented: settings.verticallyOriented,
-                inGrid: settings.inGrid,
-                inBookLayout: settings.inBookLayout
-            });
-
+            var pageLayouts = getPageLayouts(self);
             var padding = getPadding();
 
             return {
                 pageLayouts: pageLayouts,
                 padding: padding,
                 zoomLevel: settings.zoomLevel,
-                verticallyOriented: settings.verticallyOriented
+                verticallyOriented: settings.verticallyOriented || settings.inGrid
             };
         };
 
         var getPadding = function ()
         {
             var topPadding, leftPadding;
+            var docVPadding, docHPadding;
 
-            // FIXME: Set real padding for GridRendering
             if (settings.inGrid)
             {
-                topPadding = leftPadding = -1;
+                docVPadding = settings.fixedPadding;
+                topPadding = leftPadding = docHPadding = 0;
             }
             else
             {
                 topPadding = settings.verticallyOriented ? settings.verticalPadding : 0;
                 leftPadding = settings.verticallyOriented ? 0 : settings.horizontalPadding;
-            }
 
-            var docVPadding = settings.verticallyOriented ? 0 : settings.verticalPadding;
-            var docHPadding = settings.verticallyOriented ? settings.horizontalPadding : 0;
+                docVPadding = settings.verticallyOriented ? 0 : settings.verticalPadding;
+                docHPadding = settings.verticallyOriented ? settings.horizontalPadding : 0;
+            }
 
             return {
                 document: {

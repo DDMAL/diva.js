@@ -45,8 +45,6 @@ testHashParams("grid view (v)", {v: "g"}, function (settings, assert)
     assert.ok($(settings.selector + 'grid-out-button').is(':visible'), "Grid buttons (-) should be visible");
     assert.ok($(settings.selector + 'grid-in-button').is(':visible'), "Grid buttons (+) should be visible");
     assert.ok(!$(settings.selector + 'zoom-slider').is(':visible'), "Zoom slider should not be visible");
-    assert.strictEqual($('.diva-document-page').length, 0, "There should be no document pages");
-    assert.notStrictEqual($('.diva-row').length, 0, "There should be at least one row");
 });
 
 testHashParams("book view (v)", {v: "b"}, function (settings, assert)
@@ -118,7 +116,6 @@ testHashParams("pagesPerRow (n) and view (v) = 'g'", {n: "3", v: "g"}, function 
 
     // Check that the pages per row setting is actually 3
     assert.strictEqual($(settings.selector + 'grid-label').text(), "Pages per row: 3", "Grid buttons label should show 3 pages per row");
-    assert.strictEqual($(settings.selector + 'row-0').children().length, 3, "The first row should have 3 pages");
 });
 
 testHashParams("page filename (i) - valid value", {i: "bm_005.tif"}, function (settings, assert)

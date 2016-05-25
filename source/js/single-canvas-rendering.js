@@ -17,17 +17,12 @@ function SingleCanvasRendering(viewer, hooks)
     var settings = viewer.getSettings();
 
     this._viewport = settings.viewport;
-    this._tileDimensions = {
-        width: settings.tileWidth,
-        height: settings.tileHeight
-    };
 
     this._canvas = elt('canvas', { class: 'diva-single-canvas' });
 
     this._ctx = this._canvas.getContext('2d');
 
     this._viewer = viewer;
-    this._manifest = settings.manifest;
 
     this._documentRendering = null;
     this._documentElement = settings.innerElement;
@@ -54,11 +49,12 @@ SingleCanvasRendering.getCompatibilityErrors = function ()
     ];
 };
 
-SingleCanvasRendering.prototype.load = function (config)
+SingleCanvasRendering.prototype.load = function (config, getImageSourcesForPage)
 {
     if (this._hooks.onViewWillLoad)
         this._hooks.onViewWillLoad();
 
+    this._getImageSourcesForPage = getImageSourcesForPage;
     this._dimens = getDocumentLayout(config);
     this._pageLookup = getPageLookup(this._dimens.pageGroups);
 
@@ -128,6 +124,7 @@ SingleCanvasRendering.prototype._getPageInfoForUpdateHook = function ()
         return {
             index: index,
             dimensions: page.dimensions,
+            group: page.group,
             paddingRegionOffset: this.getPageOffset(index),
             imageOffset: this._getImageOffset(index)
         };
@@ -138,7 +135,6 @@ SingleCanvasRendering.prototype._getPageInfoForUpdateHook = function ()
 SingleCanvasRendering.prototype._render = function (direction) // jshint ignore:line
 {
     var newRenderedPages = [];
-
     this._dimens.pageGroups.forEach(function (group)
     {
         if (!this._viewport.intersectsRegion(group.region))
@@ -166,7 +162,7 @@ SingleCanvasRendering.prototype._render = function (direction) // jshint ignore:
 SingleCanvasRendering.prototype._queueTilesForPage = function (pageIndex)
 {
     // TODO(wabain): Debounce
-    var tileSources = this._manifest.getPageImageTiles(pageIndex, this._viewer.getZoomLevel(), this._tileDimensions);
+    var tileSources = this._getImageSourcesForPage(this._pageLookup[pageIndex]);
 
     tileSources.forEach(function (source, tileIndex)
     {

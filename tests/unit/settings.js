@@ -245,21 +245,12 @@ QUnit.test("fixedHeightGrid false", function (assert)
 {
     var done = assert.async();
 
-    diva.Events.subscribe('ViewerDidLoad', function(settings)
+    diva.Events.subscribe('ViewerDidLoad', function()
     {
         this.enterGridView();
-        // Check all the widths are the same, but that the heights are different
-        var pages = $('.diva-page');
-        var firstPage = $(pages[0]);
-        var sameWidths = true, sameHeights = true, thisPage, i, length;
-        for (i = 1, length = pages.length; i < length; i++) {
-            thisPage = $(pages[i]);
-            sameWidths = sameWidths && (thisPage.width() == firstPage.width());
-            sameHeights = sameHeights && (thisPage.height() == firstPage.height());
-        }
 
-        assert.ok(sameWidths, "All page widths should be equal");
-        assert.ok(!sameHeights, "All page heights should NOT be equal");
+        assert.ok(pagesHaveEqualDimension(this, 'width'), 'All page widths should be equal');
+        assert.notOk(pagesHaveEqualDimension(this, 'height'), 'All page heights should NOT be equal');
 
         done();
     });
@@ -273,22 +264,12 @@ QUnit.test("fixedHeightGrid true", function (assert)
 {
     var done = assert.async();
 
-    diva.Events.subscribe('ViewerDidLoad', function(settings)
+    diva.Events.subscribe('ViewerDidLoad', function()
     {
         this.enterGridView();
 
-        // Check that all the widths are the same, bu that the heights are different
-        var pages = $('.diva-page');
-        var firstPage = $(pages[0]);
-        var sameWidths = true, sameHeights = true, thisPage, i, length;
-        for (i = 1, length = pages.length; i < length; i++) {
-            thisPage = $(pages[i]);
-            sameWidths = sameWidths && (thisPage.width() == firstPage.width());
-            sameHeights = sameHeights && (thisPage.height() == firstPage.height());
-        }
-
-        assert.ok(!sameWidths, "All page widths should NOT be equal");
-        assert.ok(sameHeights, "All page heights should be equal");
+        assert.notOk(pagesHaveEqualDimension(this, 'width'), 'All page widths should NOT be equal');
+        assert.ok(pagesHaveEqualDimension(this, 'height'), 'All page heights should be equal');
 
         done();
     });
@@ -297,6 +278,24 @@ QUnit.test("fixedHeightGrid true", function (assert)
         fixedHeightGrid: true
     });
 });
+
+function pagesHaveEqualDimension(viewer, dimension)
+{
+    var dimensions = [];
+
+    var numPages = viewer.getNumberOfPages();
+
+    for (var i = 0; i < numPages; i++)
+        dimensions.push(viewer.getPageDimensionsAtCurrentGridLevel(i)[dimension]);
+
+    var first = dimensions[0];
+
+    return dimensions.every(function (dim)
+    {
+        // FIXME: Should floating point numbers happen here?
+        return Math.abs(dim - first) < 0.5;
+    });
+}
 
 QUnit.test("goDirectlyTo, valid", function (assert)
 {
