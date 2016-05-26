@@ -225,7 +225,9 @@ var DivaSettingsValidator = new ValidationRunner({
             toolbar: null,              // Holds an object with some toolbar-related functions
             verticalOffset: 0,          // Distance from the center of the diva element to the left side of the current page
             verticalPadding: 0,         // Either the fixed padding or adaptive padding
-            viewport: null              // Object caching the viewport dimensions
+            viewport: null,             // Object caching the viewport dimensions
+            viewportElement: null,
+            viewportObject: null
         });
 
         // Aliases for compatibilty
@@ -375,8 +377,8 @@ var DivaSettingsValidator = new ValidationRunner({
             clearViewer();
 
             // re-attach scroll event to outer div (necessary if we just zoomed)
-            settings.outerObject.off('scroll');
-            settings.outerObject.scroll(scrollFunction);
+            settings.viewportObject.off('scroll');
+            settings.viewportObject.scroll(scrollFunction);
 
             var Rendering = settings.inGrid ? GridRendering : SequenceRendering;
 
@@ -665,7 +667,7 @@ var DivaSettingsValidator = new ValidationRunner({
             diva.Events.publish("ZoomLevelDidChange", [newZoomLevel], self);
 
             // While zooming, don't update scroll offsets based on the scaled version of diva-inner
-            settings.outerObject.off('scroll');
+            settings.viewportObject.off('scroll');
 
             return true;
         };
@@ -860,7 +862,7 @@ var DivaSettingsValidator = new ValidationRunner({
         var bindMouseEvents = function()
         {
             // Set drag scroll on first descendant of class dragger on both selected elements
-            settings.outerObject.dragscrollable({dragSelector: '.diva-dragger', acceptPropagatedEvent: true});
+            settings.viewportObject.dragscrollable({dragSelector: '.diva-dragger', acceptPropagatedEvent: true});
             settings.innerObject.dragscrollable({dragSelector: '.diva-dragger', acceptPropagatedEvent: true});
 
             // Double-click to zoom
@@ -950,7 +952,7 @@ var DivaSettingsValidator = new ValidationRunner({
             }
 
             // Touch events for swiping in the viewport to scroll pages
-            settings.outerObject.kinetic({
+            settings.viewportObject.kinetic({
                 triggerHardware: true
             });
 
@@ -1113,7 +1115,7 @@ var DivaSettingsValidator = new ValidationRunner({
 
             bindMouseEvents();
 
-            settings.outerObject.scroll(scrollFunction);
+            settings.viewportObject.scroll(scrollFunction);
 
             var upArrowKey = 38,
                 downArrowKey = 40,
@@ -1624,17 +1626,23 @@ var DivaSettingsValidator = new ValidationRunner({
             }
 
             // Create the inner and outer panels
-            settings.innerElement = elt('div', elemAttrs('inner', { class: 'diva-inner diva-dragger' }));
-            settings.outerElement = elt('div', elemAttrs('outer'),
-                settings.innerElement,
+            var innerElem = elt('div', elemAttrs('inner', { class: 'diva-inner diva-dragger' }));
+            var viewportElem = elt('div', elemAttrs('viewport'), innerElem);
+            var outerElem = elt('div', elemAttrs('outer'),
+                viewportElem,
                 elt('div', elemAttrs('throbber')));
 
-            settings.innerObject = $(settings.innerElement);
-            settings.outerObject = $(settings.outerElement);
+            settings.innerElement = innerElem;
+            settings.viewportElement = viewportElem;
+            settings.outerElement = outerElem;
 
-            settings.parentObject.append(settings.outerElement);
+            settings.innerObject = $(innerElem);
+            settings.viewportObject = $(viewportElem);
+            settings.outerObject = $(outerElem);
 
-            settings.viewport = new Viewport(settings.outerElement, {
+            settings.parentObject.append(outerElem);
+
+            settings.viewport = new Viewport(settings.viewportElement, {
                 intersectionTolerance: settings.viewportMargin
             });
 
@@ -2027,7 +2035,7 @@ var DivaSettingsValidator = new ValidationRunner({
                 bindMouseEvents();
                 settings.enableKeyScroll = settings.initialKeyScroll;
                 settings.enableSpaceScroll = settings.initialSpaceScroll;
-                settings.outerElement.style.overflow = 'auto';
+                settings.viewportElement.style.overflow = 'auto';
                 settings.isScrollable = true;
             }
         };
@@ -2044,7 +2052,7 @@ var DivaSettingsValidator = new ValidationRunner({
                 settings.outerObject.unbind('contextmenu');
 
                 // disable all other scrolling actions
-                settings.outerElement.style.overflow = 'hidden';
+                settings.viewportElement.style.overflow = 'hidden';
 
                 // block scrolling keys behavior, respecting initial scroll settings
                 settings.initialKeyScroll = settings.enableKeyScroll;

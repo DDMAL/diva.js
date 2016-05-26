@@ -25,7 +25,11 @@ var testHashParams = function (testName, hashParams, onReadyCallback, config)
 
         diva.Events.subscribe('ViewerDidLoad', function(settings)
         {
-            onReadyCallback.call(this, settings, assert);
+            var scroll = {
+                left: settings.viewportElement.scrollLeft,
+                top: settings.viewportElement.scrollTop
+            };
+            onReadyCallback.call(this, settings, assert, scroll);
             window.location.hash = previousHash;
             done();
         });
@@ -143,76 +147,66 @@ testHashParams("page number (p), view = 'g'", {p: "100", v: "g"}, function (sett
     assert.ok(settings.inGrid, "Should be in grid");
 }, {enableFilename: false});
 
-testHashParams("horizontal and vertical offsets (x, y) without page specified", {x: 100, y: 200}, function (settings, assert)
+testHashParams("horizontal and vertical offsets (x, y) without page specified", {x: 100, y: 200}, function (settings, assert, scroll)
 {
     var expectedLeftScroll = (settings.innerElement.clientWidth - settings.panelWidth) / 2;
-    assert.close(settings.outerElement.scrollLeft, expectedLeftScroll, 1.5, 'x position should not change');
-    assert.strictEqual(settings.outerElement.scrollTop, 0, 'y position should not change');
+    assert.close(scroll.left, expectedLeftScroll, 1.5, 'x position should not change');
+    assert.strictEqual(scroll.top, 0, 'y position should not change');
 });
 
-testHashParams("vertical offset (y) on first page - positive value", {y: "600", p: "1"}, function (settings, assert)
+testHashParams("vertical offset (y) on first page - positive value", {y: "600", p: "1"}, function (settings, assert, scroll)
 {
-    var topScroll = settings.outerObject.scrollTop();
-    assert.strictEqual(topScroll, 250, "Should have scrolled 250 (600 = top of page - viewport y-center) vertically");
+    assert.strictEqual(scroll.top, 250, "Should have scrolled 250 (600 = top of page - viewport y-center) vertically");
 });
 
-testHashParams("vertical offset (y) on first page - negative value", {y: "-600", p: "1"}, function (settings, assert)
+testHashParams("vertical offset (y) on first page - negative value", {y: "-600", p: "1"}, function (settings, assert, scroll)
 {
-    var topScroll = settings.outerObject.scrollTop();
-    assert.strictEqual(topScroll, 0, "Should not have scrolled negatively because, well, you can't");
+    assert.strictEqual(scroll.top, 0, "Should not have scrolled negatively because, well, you can't");
 });
 
-testHashParams("vertical offset (y) and page number (p)", {y: 500, p: 50}, function (settings, assert)
+testHashParams("vertical offset (y) and page number (p)", {y: 500, p: 50}, function (settings, assert, scroll)
 {
-    var topScroll = settings.outerObject.scrollTop();
     var expectedTopScroll = 52922;
     assert.strictEqual(settings.currentPageIndex, 49, "Current page should be 50 (index of 49)");
-    assert.strictEqual(topScroll, expectedTopScroll, "Should be heightAbovePages + 500 pixels of scroll from the top + page y-center");
+    assert.strictEqual(scroll.top, expectedTopScroll, "Should be heightAbovePages + 500 pixels of scroll from the top + page y-center");
 
     // Check that the horizontal scroll hasn't been weirdly affected
-    var leftScroll = settings.outerObject.scrollLeft();
     var expectedInnerWidth = settings.manifest.getMaxWidth(settings.zoomLevel) + settings.horizontalPadding * 2;
     var expectedLeftScroll = parseInt((expectedInnerWidth - settings.panelWidth) / 2, 10);
-    assert.strictEqual(leftScroll, expectedLeftScroll, "Horizontal scroll should just center it");
+    assert.strictEqual(scroll.left, expectedLeftScroll, "Horizontal scroll should just center it");
 }, {enableFilename: false, zoomLevel: 2});
 
-testHashParams("horizontal offset (x) on first page - positive value", {x: "100", p: "1"}, function (settings, assert)
+testHashParams("horizontal offset (x) on first page - positive value", {x: "100", p: "1"}, function (settings, assert, scroll)
 {
-    var leftScroll = settings.outerObject.scrollLeft();
     var halfMaxWidth = (settings.manifest.getMaxWidth(settings.zoomLevel) / 2 + settings.horizontalPadding + 100);
     var expectedLeftScroll = (halfMaxWidth > settings.panelWidth) ? (halfMaxWidth - settings.panelWidth) / 2 : 0;
-    assert.strictEqual(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
+    assert.strictEqual(scroll.left, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
 });
 
-testHashParams("horizontal offset (x) on first page - negative value", {x: "-100", p: "1"}, function (settings, assert)
+testHashParams("horizontal offset (x) on first page - negative value", {x: "-100", p: "1"}, function (settings, assert, scroll)
 {
-    var leftScroll = settings.outerObject.scrollLeft();
     var halfMaxWidth = (settings.manifest.getMaxWidth(settings.zoomLevel) / 2 + settings.horizontalPadding - 100);
     var expectedLeftScroll = (halfMaxWidth > settings.panelWidth) ? (halfMaxWidth - settings.panelWidth) / 2 : 0;
-    assert.strictEqual(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the left");
+    assert.strictEqual(scroll.left, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the left");
 });
 
-testHashParams("horizontal offset (x) and page number (p)", {x: 100, p: 50}, function (settings, assert)
+testHashParams("horizontal offset (x) and page number (p)", {x: 100, p: 50}, function (settings, assert, scroll)
 {
-    var topScroll = settings.outerObject.scrollTop();
     var expectedTopScroll = 52772;
-    assert.strictEqual(topScroll, expectedTopScroll, "vertical scroll should be just to page 50");
+    assert.strictEqual(scroll.top, expectedTopScroll, "vertical scroll should be just to page 50");
 
-    var leftScroll = settings.outerObject.scrollLeft();
     var halfMaxWidth = (settings.manifest.getMaxWidth(settings.zoomLevel) / 2 + settings.horizontalPadding + 100);
     var expectedLeftScroll = (halfMaxWidth > settings.panelWidth) ? (halfMaxWidth - settings.panelWidth) / 2 : 0;
-    assert.strictEqual(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
+    assert.strictEqual(scroll.left, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
 }, {enableFilename: false});
 
-testHashParams("horizontal offset (x), vertical offset (y), page number (p)", {x: 100, y: 200, p: 50}, function (settings, assert)
+testHashParams("horizontal offset (x), vertical offset (y), page number (p)", {x: 100, y: 200, p: 50}, function (settings, assert, scroll)
 {
-    var topScroll = settings.outerObject.scrollTop();
     var expectedTopScroll = 52622;
-    assert.strictEqual(topScroll, expectedTopScroll, "vertical scroll should be to page 50 + 200 + page y-center");
+    assert.strictEqual(scroll.top, expectedTopScroll, "vertical scroll should be to page 50 + 200 + page y-center");
 
-    var leftScroll = settings.outerObject.scrollLeft();
     var halfMaxWidth = (settings.manifest.getMaxWidth(settings.zoomLevel) / 2 + settings.horizontalPadding + 100);
     var expectedLeftScroll = (halfMaxWidth > settings.panelWidth) ? (halfMaxWidth - settings.panelWidth) / 2 : 0;
-    assert.strictEqual(leftScroll, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
+    assert.strictEqual(scroll.left, parseInt(expectedLeftScroll), "Horizontal scroll should center it + 100 pixels to the right");
 }, {enableFilename: false});
 

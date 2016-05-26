@@ -315,17 +315,17 @@ var diva = require('../diva');
                         return false;
                     }
 
-                    var outerObject = divaInstance.getSettings().outerObject;
+                    var viewportObject = divaInstance.getSettings().viewportObject;
 
                     var desiredY = divaInstance.translateFromMaxZoomLevel(centerYOfDiv);
                     var desiredX = divaInstance.translateFromMaxZoomLevel(centerXOfDiv);
 
                     divaInstance.gotoPageByIndex(page);
-                    var currentTop = outerObject.scrollTop() + desiredY - (outerObject.height() / 2) + divaSettings.verticalPadding;
-                    var currentLeft = outerObject.scrollLeft() + desiredX - (outerObject.width() / 2) + divaSettings.horizontalPadding;
+                    var currentTop = viewportObject.scrollTop() + desiredY - (viewportObject.height() / 2) + divaSettings.verticalPadding;
+                    var currentLeft = viewportObject.scrollLeft() + desiredX - (viewportObject.width() / 2) + divaSettings.horizontalPadding;
 
-                    outerObject.scrollTop(currentTop);
-                    outerObject.scrollLeft(currentLeft);
+                    viewportObject.scrollTop(currentTop);
+                    viewportObject.scrollLeft(currentLeft);
 
                     divaSettings.currentHighlight = divID;
 

@@ -14,12 +14,12 @@ QUnit.module("Navigation", { beforeEach: clearTempDiva });
 // with a timeout, and the toolbar and page index are kind of separate concerns.
 var assertPageAfterScroll = function (scroll, index, divaInst, assert, done)
 {
-    var outerObject = divaInst.getSettings().outerObject;
+    var viewportObject = divaInst.getSettings().viewportObject;
 
     if ('left' in scroll)
-        outerObject.scrollLeft(scroll.left);
+        viewportObject.scrollLeft(scroll.left);
 
-    outerObject.one('scroll', function ()
+    viewportObject.one('scroll', function ()
     {
         setTimeout(function ()
         {
@@ -35,7 +35,7 @@ var assertPageAfterScroll = function (scroll, index, divaInst, assert, done)
         }, 10);
     });
 
-    outerObject.scrollTop(scroll.top);
+    viewportObject.scrollTop(scroll.top);
 };
 
 var assertZoomIs = function (level, divaInst, controlName, assert)
@@ -271,7 +271,7 @@ QUnit.test("Scrolling and subsequently zooming in Grid view", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        settings.outerObject.scrollTop(10050);
+        settings.viewportObject.scrollTop(10050);
 
         var self = this;
         setTimeout(function ()

@@ -65,13 +65,13 @@ var diva = require('../diva');
                     if (divaSettings.verticallyOriented)
                     {
                         divaSettings.autoScrollInterval = setInterval(function(){
-                            divaSettings.outerObject.scrollTop(divaSettings.outerObject.scrollTop() + pixelsPerScroll);
+                            divaSettings.viewportObject.scrollTop(divaSettings.viewportObject.scrollTop() + pixelsPerScroll);
                         }, autoScrollRefresh);
                     }
                     else
                     {
                         divaSettings.autoScrollInterval = setInterval(function(){
-                            divaSettings.outerObject.scrollLeft(divaSettings.outerObject.scrollLeft() + pixelsPerScroll);
+                            divaSettings.viewportObject.scrollLeft(divaSettings.viewportObject.scrollLeft() + pixelsPerScroll);
                         }, autoScrollRefresh);
                     }
                 };
@@ -186,10 +186,10 @@ var diva = require('../diva');
                         else
                         {
                             settings.jqObj.css({
-                                'right': $(window).width() - (divaSettings.outerObject.offset().left + divaSettings.outerObject.outerWidth()) + divaSettings.scrollbarWidth,
+                                'right': $(window).width() - (divaSettings.viewportObject.offset().left + divaSettings.viewportObject.outerWidth()) + divaSettings.scrollbarWidth,
                                 'margin-right': '.6em'
                             });
-                            settings.jqObj.offset({'top': divaSettings.outerObject.offset().top + 1});
+                            settings.jqObj.offset({'top': divaSettings.viewportObject.offset().top + 1});
                         }
                     };
 

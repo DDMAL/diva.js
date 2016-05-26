@@ -295,13 +295,13 @@ var diva = require('../diva');
                     //navigates to the page
                     page = parseInt(page, 10);
                     divaInstance.gotoPageByIndex(page);
-                    var outerObject = divaInstance.getSettings().outerObject;
-                    var currentTop = outerObject.scrollTop() + desiredY - (outerObject.height() / 2) + divaSettings.verticalPadding;
-                    var currentLeft = outerObject.scrollLeft() + desiredX - (outerObject.width() / 2) + divaSettings.horizontalPadding;
+                    var viewportObject = divaInstance.getSettings().viewportObject;
+                    var currentTop = viewportObject.scrollTop() + desiredY - (viewportObject.height() / 2) + divaSettings.verticalPadding;
+                    var currentLeft = viewportObject.scrollLeft() + desiredX - (viewportObject.width() / 2) + divaSettings.horizontalPadding;
 
                     //changes the scroll location to center on the div as much as is possible
-                    outerObject.scrollTop(currentTop);
-                    outerObject.scrollLeft(currentLeft);
+                    viewportObject.scrollTop(currentTop);
+                    viewportObject.scrollLeft(currentLeft);
 
                     currentHighlight = thisDiv.divID;
                     currentHighlightPage = page;

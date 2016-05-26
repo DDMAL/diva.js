@@ -115,10 +115,10 @@ QUnit.test("enable/disableScrollable()", function (assert)
         assert.strictEqual(settings.zoomLevel, 3, "Should be able to zoom by double click, zoom level should now be 3");
 
         // should be able to scroll by dragging
-        var initScroll = settings.outerObject.scrollTop();
+        var initScroll = settings.viewportObject.scrollTop();
         // simulate drag downwards
         $('.diva-dragger').simulate('drag', { dx: 0, dy: -500 });
-        var finalScroll = settings.outerObject.scrollTop();
+        var finalScroll = settings.viewportObject.scrollTop();
 
         assert.ok(finalScroll > initScroll, "Should have scrolled down before disableScrollable()");
 
@@ -133,9 +133,9 @@ QUnit.test("enable/disableScrollable()", function (assert)
 
         // should not be able to drag
         // store previous scroll in initScroll
-        initScroll = settings.outerObject.scrollTop();
+        initScroll = settings.viewportObject.scrollTop();
         $('.diva-dragger').simulate('drag', { dx: 0, dy: -500 });
-        finalScroll = settings.outerObject.scrollTop();
+        finalScroll = settings.viewportObject.scrollTop();
         assert.ok(finalScroll === initScroll, "Should not have scrolled down after disableScrollable()");
 
         this.enableScrollable();
@@ -148,10 +148,10 @@ QUnit.test("enable/disableScrollable()", function (assert)
         assert.strictEqual(settings.zoomLevel, 4, "Should be able to zoom by double click after enableScrollable(), zoom level should now be 4");
 
         // should be able to scroll by dragging
-        initScroll = settings.outerObject.scrollTop();
+        initScroll = settings.viewportObject.scrollTop();
         // simulate drag downwards
         $('.diva-dragger').simulate('drag', { dx: 0, dy: -500 });
-        finalScroll = settings.outerObject.scrollTop();
+        finalScroll = settings.viewportObject.scrollTop();
 
         assert.ok(finalScroll > initScroll, "Should have scrolled down after enableScrollable()");
 
@@ -354,8 +354,8 @@ QUnit.test("setState()", function (assert)
         // Recompute the offsets from first principles
         var index = this.getPageIndex("bm_005.tif");
         var offset = this.getPageOffset(index);
-        var x = settings.outerElement.scrollLeft - offset.left + (settings.outerElement.clientWidth / 2);
-        var y = settings.outerElement.scrollTop - offset.top + (settings.outerElement.clientHeight / 2);
+        var x = settings.viewportElement.scrollLeft - offset.left + (settings.viewportElement.clientWidth / 2);
+        var y = settings.viewportElement.scrollTop - offset.top + (settings.viewportElement.clientHeight / 2);
 
         assert.close(x, 500, 1, "x offset should be the specified value");
         assert.close(y, 300, 1, "y offset should be the specified value");
@@ -537,9 +537,8 @@ QUnit.skip("getPageIndexForPageXYValues()", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        var outerObj = $("#" + settings.ID + "outer");
         $('.diva-dragger').simulate('drag', { dx: 0, dy: -100000 });
-        outerObj.scroll();
+        settings.viewportObject.scroll();
 
         assert.strictEqual(this.getPageIndexForPageXYValues(500, 5000), 93, "scrolled to a later page, click should register on a page");
         assert.strictEqual(this.getPageIndexForPageXYValues(10, 10), false, "click should be outside diva-outer and thus return false");

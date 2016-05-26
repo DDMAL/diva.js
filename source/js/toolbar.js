@@ -458,7 +458,8 @@ function createToolbar(viewer)
             });
 
             // Also delete it upon scroll and page up/down key events
-            settings.outerObject.scroll(function ()
+            // FIXME(wabain): This is aggressive
+            settings.viewportObject.scroll(function ()
             {
                 $(settings.selector + 'link-popup').remove();
             });
