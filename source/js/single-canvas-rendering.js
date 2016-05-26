@@ -65,9 +65,6 @@ SingleCanvasRendering.prototype.load = function (config, getImageSourcesForPage)
     if (!this._pageLookup[settings.goDirectlyTo])
         throw new Error('invalid page: ' + settings.goDirectlyTo);
 
-    // FIXME: What hooks should be called here?
-    this.goto(settings.goDirectlyTo, settings.verticalOffset, settings.horizontalOffset);
-
     if (this._canvas.width !== this._viewport.width || this._canvas.height !== this._viewport.height)
     {
         debug('Canvas dimension change: (%s, %s) -> (%s, %s)', this._canvas.width, this._canvas.height,
@@ -76,9 +73,11 @@ SingleCanvasRendering.prototype.load = function (config, getImageSourcesForPage)
         this._canvas.width = this._viewport.width;
         this._canvas.height = this._viewport.height;
     } else {
-        debug('clearRect?');
-        this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+        debug('Reload, no size change');
     }
+
+    // FIXME: What hooks should be called here?
+    this.goto(settings.goDirectlyTo, settings.verticalOffset, settings.horizontalOffset);
 
     if (this._canvas.parentNode !== settings.outerElement)
         settings.outerElement.insertBefore(this._canvas, settings.outerElement.firstChild);
