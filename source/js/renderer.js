@@ -18,7 +18,7 @@ function Renderer(viewer, hooks)
 
     this._viewport = settings.viewport;
 
-    this._canvas = elt('canvas', { class: 'diva-single-canvas' });
+    this._canvas = elt('canvas', { class: 'diva-viewer-canvas' });
 
     this._ctx = this._canvas.getContext('2d');
 
