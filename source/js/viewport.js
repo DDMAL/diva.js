@@ -52,12 +52,33 @@ Viewport.prototype.invalidate = function ()
     this._left = this.outer.scrollLeft;
 };
 
-['top', 'left'].forEach(function (prop)
-{
-    var privateProp = '_' + prop;
-    var source = 'scroll' + prop.charAt(0).toUpperCase() + prop.slice(1);
+Object.defineProperties(Viewport.prototype, {
+    top: getCoordinateDescriptor('top'),
+    left: getCoordinateDescriptor('left'),
 
-    Object.defineProperty(Viewport.prototype, prop, {
+    width: getDimensionDescriptor('width'),
+    height: getDimensionDescriptor('height'),
+
+    bottom: {
+        get: function ()
+        {
+            return this._top + this._height;
+        }
+    },
+    right: {
+        get: function ()
+        {
+            return this._left + this._width;
+        }
+    }
+});
+
+function getCoordinateDescriptor(coord)
+{
+    var privateProp = '_' + coord;
+    var source = 'scroll' + coord.charAt(0).toUpperCase() + coord.slice(1);
+
+    return {
         get: function ()
         {
             return this[privateProp];
@@ -72,33 +93,18 @@ Viewport.prototype.invalidate = function ()
             // values anyway, so not much is gained by adding checks here.
             this[privateProp] = this.outer[source] = newValue;
         }
-    });
-});
+    };
+}
 
-['width', 'height'].forEach(function (prop)
+function getDimensionDescriptor(dimen)
 {
-    Object.defineProperty(Viewport.prototype, prop, {
+    return {
         get: function ()
         {
-            return this['_' + prop];
+            return this['_' + dimen];
         }
-    });
-});
-
-Object.defineProperties(Viewport.prototype, {
-    bottom: {
-        get: function ()
-        {
-            return this._top + this._height;
-        }
-    },
-    right: {
-        get: function ()
-        {
-            return this._left + this._width;
-        }
-    }
-});
+    };
+}
 
 function fallsBetween(point, start, end)
 {
