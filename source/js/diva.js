@@ -213,8 +213,6 @@ var DivaSettingsValidator = new ValidationRunner({
             pageTools: '',              // The string for page tools
             parentObject: parentObject, // JQuery object referencing the parent element
             plugins: [],                // Filled with the enabled plugins from window.divaPlugins
-            previousLeftScroll: 0,      // Used to determine horizontal scroll direction
-            previousTopScroll: 0,       // Used to determine vertical scroll direction
             renderer: null,
             resizeTimer: -1,            // Holds the ID of the timeout used when resizing the window (for clearing)
             previousZoomRatio: 1,             // Used to keep track of the previous zoom ratio for scale transforming diva-inner
@@ -304,9 +302,6 @@ var DivaSettingsValidator = new ValidationRunner({
         var clearViewer = function ()
         {
             settings.viewport.top = 0;
-
-            settings.previousTopScroll = 0;
-            settings.previousLeftScroll = 0;
 
             // Clear all the timeouts to prevent undesired pages from loading
             clearTimeout(settings.resizeTimer);
@@ -1182,6 +1177,9 @@ var DivaSettingsValidator = new ValidationRunner({
         // Handle the scroll
         var scrollFunction = function ()
         {
+            var previousTopScroll = settings.viewport.top;
+            var previousLeftScroll = settings.viewport.left;
+
             var direction;
 
             settings.viewport.invalidate();
@@ -1190,15 +1188,12 @@ var DivaSettingsValidator = new ValidationRunner({
             var newScrollLeft = settings.viewport.left;
 
             if (settings.verticallyOriented || settings.inGrid)
-                direction = newScrollTop - settings.previousTopScroll;
+                direction = newScrollTop - previousTopScroll;
             else
-                direction = newScrollLeft - settings.previousLeftScroll;
+                direction = newScrollLeft - previousLeftScroll;
 
             //give adjust the direction we care about
             settings.renderer.adjust(direction);
-
-            settings.previousTopScroll = newScrollTop;
-            settings.previousLeftScroll = newScrollLeft;
 
             var primaryScroll = (settings.verticallyOriented || settings.inGrid) ? newScrollTop : newScrollLeft;
 
