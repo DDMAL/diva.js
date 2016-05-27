@@ -34,7 +34,7 @@ var ActiveDivaController = require('./active-diva-controller');
 var diva = require('./diva-global');
 var DocumentHandler = require('./document-handler');
 var GridHandler = require('./grid-handler');
-var SingleCanvasRendering = require('./single-canvas-rendering');
+var Renderer = require('./renderer');
 var ImageManifest = require('./image-manifest');
 var getPageLayouts = require('./page-layouts');
 var createToolbar = require('./toolbar');
@@ -215,6 +215,7 @@ var DivaSettingsValidator = new ValidationRunner({
             plugins: [],                // Filled with the enabled plugins from window.divaPlugins
             previousLeftScroll: 0,      // Used to determine horizontal scroll direction
             previousTopScroll: 0,       // Used to determine vertical scroll direction
+            renderer: null,
             resizeTimer: -1,            // Holds the ID of the timeout used when resizing the window (for clearing)
             previousZoomRatio: 1,             // Used to keep track of the previous zoom ratio for scale transforming diva-inner
             scaleWait: false,           // For preventing double-zoom on touch devices (iPad, etc)
@@ -229,8 +230,7 @@ var DivaSettingsValidator = new ValidationRunner({
             viewport: null,             // Object caching the viewport dimensions
             viewportElement: null,
             viewportObject: null,
-            viewHandler: null,
-            viewRendering: null
+            viewHandler: null
         });
 
         // Aliases for compatibilty
@@ -415,8 +415,8 @@ var DivaSettingsValidator = new ValidationRunner({
                 };
             }
 
-            if (settings.viewRendering)
-                settings.viewRendering.load(getViewRenderingState(), getImageSourcesForPage);
+            if (settings.renderer)
+                settings.renderer.load(getRendererState(), getImageSourcesForPage);
 
             // For the iPad - wait until this request finishes before accepting others
             if (settings.scaleWait)
@@ -482,13 +482,13 @@ var DivaSettingsValidator = new ValidationRunner({
             if (!settings.viewHandler)
                 settings.viewHandler = new Handler(self);
 
-            if (!settings.viewRendering)
-                initializeViewRendering();
+            if (!settings.renderer)
+                initializeRenderer();
         };
 
-        var initializeViewRendering = function ()
+        var initializeRenderer = function ()
         {
-            var compatErrors = SingleCanvasRendering.getCompatibilityErrors(self);
+            var compatErrors = Renderer.getCompatibilityErrors(self);
 
             if (compatErrors)
             {
@@ -511,13 +511,13 @@ var DivaSettingsValidator = new ValidationRunner({
                     }
                 };
 
-                settings.viewRendering = new SingleCanvasRendering(self, hooks);
+                settings.renderer = new Renderer(self, hooks);
             }
         };
 
         // TODO: The usage of padding variables is still really
         // messy and inconsistent
-        var getViewRenderingState = function ()
+        var getRendererState = function ()
         {
             var pageLayouts = getPageLayouts(self);
             var padding = getPadding();
@@ -778,7 +778,7 @@ var DivaSettingsValidator = new ValidationRunner({
             settings.isZooming = true;
 
             // Starts preloading pages for the new zoom level
-            settings.viewRendering.preload();
+            settings.renderer.preload();
 
             // Update the slider
             diva.Events.publish("ZoomLevelDidChange", [newZoomLevel], self);
@@ -875,7 +875,7 @@ var DivaSettingsValidator = new ValidationRunner({
                 view = 'd';
             }
 
-            var pageOffset = settings.viewRendering.getPageToViewportOffset();
+            var pageOffset = settings.renderer.getPageToViewportOffset();
 
             var state = {
                 'f': settings.inFullscreen,
@@ -955,10 +955,10 @@ var DivaSettingsValidator = new ValidationRunner({
             settings.viewport.invalidate();
 
             // FIXME(wabain): This should really only be called after initial load
-            if (settings.viewRendering)
+            if (settings.renderer)
             {
                 updateOffsets();
-                settings.viewRendering.goto(settings.currentPageIndex, settings.verticalOffset, settings.horizontalOffset);
+                settings.renderer.goto(settings.currentPageIndex, settings.verticalOffset, settings.horizontalOffset);
             }
 
             return true;
@@ -966,7 +966,7 @@ var DivaSettingsValidator = new ValidationRunner({
 
         var updateOffsets = function ()
         {
-            var pageOffset = settings.viewRendering.getPageToViewportOffset();
+            var pageOffset = settings.renderer.getPageToViewportOffset();
 
             if (pageOffset)
             {
@@ -1034,7 +1034,7 @@ var DivaSettingsValidator = new ValidationRunner({
 
             settings.resizeTimer = setTimeout(function ()
             {
-                var pageOffset = settings.viewRendering.getPageToViewportOffset();
+                var pageOffset = settings.renderer.getPageToViewportOffset();
 
                 if (pageOffset)
                 {
@@ -1195,7 +1195,7 @@ var DivaSettingsValidator = new ValidationRunner({
                 direction = newScrollLeft - settings.previousLeftScroll;
 
             //give adjust the direction we care about
-            settings.viewRendering.adjust(direction);
+            settings.renderer.adjust(direction);
 
             settings.previousTopScroll = newScrollTop;
             settings.previousLeftScroll = newScrollLeft;
@@ -1347,8 +1347,8 @@ var DivaSettingsValidator = new ValidationRunner({
             // Clear page and resize timeouts when the viewer is destroyed
             diva.Events.subscribe('ViewerDidTerminate', function ()
             {
-                if (settings.viewRendering)
-                    settings.viewRendering.destroy();
+                if (settings.renderer)
+                    settings.renderer.destroy();
 
                 clearTimeout(settings.resizeTimer);
             }, settings.ID);
@@ -1571,7 +1571,7 @@ var DivaSettingsValidator = new ValidationRunner({
                 if (anchoredHorizontally)
                     settings.horizontalOffset = getXOffset(settings.currentPageIndex, "center");
 
-                settings.viewRendering.goto(settings.currentPageIndex, settings.verticalOffset, settings.horizontalOffset);
+                settings.renderer.goto(settings.currentPageIndex, settings.verticalOffset, settings.horizontalOffset);
             }
 
             // signal that everything should be set up and ready to go.
@@ -1807,7 +1807,7 @@ var DivaSettingsValidator = new ValidationRunner({
             pageIndex = parseInt(pageIndex, 10);
             if (isPageValid(pageIndex))
             {
-                settings.viewRendering.goto(pageIndex, getYOffset(pageIndex, yAnchor), getXOffset(pageIndex, xAnchor));
+                settings.renderer.goto(pageIndex, getYOffset(pageIndex, yAnchor), getXOffset(pageIndex, xAnchor));
                 return true;
             }
             return false;
@@ -1947,10 +1947,10 @@ var DivaSettingsValidator = new ValidationRunner({
         // Check if something (e.g. a highlight box on a particular page) is visible
         this.inViewport = function (pageNumber, leftOffset, topOffset, width, height)
         {
-            if (!settings.viewRendering)
+            if (!settings.renderer)
                 return false;
 
-            var offset = settings.viewRendering.getPageOffset(pageNumber - 1);
+            var offset = settings.renderer.getPageOffset(pageNumber - 1);
 
             var top = offset.top + topOffset;
             var left = offset.left + leftOffset;
@@ -1967,17 +1967,17 @@ var DivaSettingsValidator = new ValidationRunner({
         //Determines if a page is currently in the viewport
         this.isPageInViewport = function (pageIndex)
         {
-            return settings.viewRendering.isPageVisible(pageIndex);
+            return settings.renderer.isPageVisible(pageIndex);
         };
 
         //Public wrapper for isPageLoaded
         //Determines if a page is currently in the DOM
         this.isPageLoaded = function (pageIndex)
         {
-            if (!settings.viewRendering)
+            if (!settings.renderer)
                 return false;
 
-            return settings.viewRendering.isPageLoaded(pageIndex);
+            return settings.renderer.isPageLoaded(pageIndex);
         };
 
         // Toggle fullscreen mode
@@ -2190,10 +2190,10 @@ var DivaSettingsValidator = new ValidationRunner({
         //Returns distance between the northwest corners of diva-inner and page index
         this.getPageOffset = function(pageIndex)
         {
-            if (!settings.viewRendering)
+            if (!settings.renderer)
                 return null;
 
-            return settings.viewRendering.getPageOffset(pageIndex);
+            return settings.renderer.getPageOffset(pageIndex);
         };
 
         //shortcut to getPageOffset for current page
@@ -2213,7 +2213,7 @@ var DivaSettingsValidator = new ValidationRunner({
 
             pageIndex = isPageValid(pageIndex) ? pageIndex : settings.currentPageIndex;
 
-            return settings.viewRendering.getPageDimensions(pageIndex);
+            return settings.renderer.getPageDimensions(pageIndex);
         };
 
         /*
@@ -2282,8 +2282,8 @@ var DivaSettingsValidator = new ValidationRunner({
             settings.loaded = false;
             clearViewer();
 
-            if (settings.viewRendering)
-                settings.viewRendering.destroy();
+            if (settings.renderer)
+                settings.renderer.destroy();
 
             settings.objectData = objectData;
 

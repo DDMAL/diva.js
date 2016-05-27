@@ -1,6 +1,6 @@
 'use strict';
 
-var debug = require('debug')('diva:SingleCanvasRendering');
+var debug = require('debug')('diva:Renderer');
 
 var elt = require('./utils/elt');
 var getDocumentLayout = require('./document-layout');
@@ -9,9 +9,9 @@ var ImageRequestHandler = require('./image-request-handler');
 var Transition = require('./utils/transition');
 
 
-module.exports = SingleCanvasRendering;
+module.exports = Renderer;
 
-function SingleCanvasRendering(viewer, hooks)
+function Renderer(viewer, hooks)
 {
     this._hooks = hooks || {};
     var settings = viewer.getSettings();
@@ -36,7 +36,7 @@ function SingleCanvasRendering(viewer, hooks)
     this._pendingRequests = {};
 }
 
-SingleCanvasRendering.getCompatibilityErrors = function ()
+Renderer.getCompatibilityErrors = function ()
 {
     if (typeof HTMLCanvasElement !== 'undefined')
         return null;
@@ -47,7 +47,7 @@ SingleCanvasRendering.getCompatibilityErrors = function ()
     ];
 };
 
-SingleCanvasRendering.prototype.load = function (config, getImageSourcesForPage)
+Renderer.prototype.load = function (config, getImageSourcesForPage)
 {
     if (this._hooks.onViewWillLoad)
         this._hooks.onViewWillLoad();
@@ -84,7 +84,7 @@ SingleCanvasRendering.prototype.load = function (config, getImageSourcesForPage)
         this._hooks.onViewDidLoad();
 };
 
-SingleCanvasRendering.prototype._updateDocumentSize = function ()
+Renderer.prototype._updateDocumentSize = function ()
 {
     var elem = this._documentElement;
 
@@ -101,7 +101,7 @@ SingleCanvasRendering.prototype._updateDocumentSize = function ()
     });
 };
 
-SingleCanvasRendering.prototype.adjust = function (direction)
+Renderer.prototype.adjust = function (direction)
 {
     this._render(direction);
 
@@ -112,7 +112,7 @@ SingleCanvasRendering.prototype.adjust = function (direction)
     }
 };
 
-SingleCanvasRendering.prototype._getPageInfoForUpdateHook = function ()
+Renderer.prototype._getPageInfoForUpdateHook = function ()
 {
     // TODO(wabain): Standardize how dimensions are given
     return this._renderedPages.map(function (index)
@@ -130,7 +130,7 @@ SingleCanvasRendering.prototype._getPageInfoForUpdateHook = function ()
 };
 
 // FIXME(wabain): Remove the direction argument if it doesn't end up being needed.
-SingleCanvasRendering.prototype._render = function (direction) // jshint ignore:line
+Renderer.prototype._render = function (direction) // jshint ignore:line
 {
     var newRenderedPages = [];
     this._dimens.pageGroups.forEach(function (group)
@@ -157,7 +157,7 @@ SingleCanvasRendering.prototype._render = function (direction) // jshint ignore:
     this._renderedPages = newRenderedPages;
 };
 
-SingleCanvasRendering.prototype._queueTilesForPage = function (pageIndex)
+Renderer.prototype._queueTilesForPage = function (pageIndex)
 {
     // TODO(wabain): Debounce
     var tileSources = this._getImageSourcesForPage(this._pageLookup[pageIndex]);
@@ -189,7 +189,7 @@ SingleCanvasRendering.prototype._queueTilesForPage = function (pageIndex)
     }, this);
 };
 
-SingleCanvasRendering.prototype._drawTile = function (pageIndex, tileIndex, tileRecord, img)
+Renderer.prototype._drawTile = function (pageIndex, tileIndex, tileRecord, img)
 {
     var tileOffset = this._getTileToDocumentOffset(pageIndex, tileRecord);
 
@@ -216,7 +216,7 @@ SingleCanvasRendering.prototype._drawTile = function (pageIndex, tileIndex, tile
     this._ctx.drawImage(img, tileX, tileY, width, height, canvasX, canvasY, width, height);
 };
 
-SingleCanvasRendering.prototype._isTileVisible = function (pageIndex, tileSource)
+Renderer.prototype._isTileVisible = function (pageIndex, tileSource)
 {
     var tileOffset = this._getTileToDocumentOffset(pageIndex, tileSource);
 
@@ -229,7 +229,7 @@ SingleCanvasRendering.prototype._isTileVisible = function (pageIndex, tileSource
     });
 };
 
-SingleCanvasRendering.prototype._getTileToDocumentOffset = function (pageIndex, tileSource)
+Renderer.prototype._getTileToDocumentOffset = function (pageIndex, tileSource)
 {
     var imageOffset = this._getImageOffset(pageIndex);
 
@@ -239,7 +239,7 @@ SingleCanvasRendering.prototype._getTileToDocumentOffset = function (pageIndex, 
     };
 };
 
-SingleCanvasRendering.prototype._getImageOffset = function (pageIndex)
+Renderer.prototype._getImageOffset = function (pageIndex)
 {
     var pageOffset = this.getPageOffset(pageIndex);
 
@@ -252,7 +252,7 @@ SingleCanvasRendering.prototype._getImageOffset = function (pageIndex)
     };
 };
 
-SingleCanvasRendering.prototype.goto = function (pageIndex, verticalOffset, horizontalOffset)
+Renderer.prototype.goto = function (pageIndex, verticalOffset, horizontalOffset)
 {
     // FIXME(wabain): Move this logic to the viewer
     var pageOffset = this.getPageOffset(pageIndex);
@@ -275,12 +275,12 @@ SingleCanvasRendering.prototype.goto = function (pageIndex, verticalOffset, hori
     }
 };
 
-SingleCanvasRendering.prototype.preload = function ()
+Renderer.prototype.preload = function ()
 {
     // TODO
 };
 
-SingleCanvasRendering.prototype.isPageVisible = function (pageIndex)
+Renderer.prototype.isPageVisible = function (pageIndex)
 {
     if (!this._pageLookup)
         return false;
@@ -293,12 +293,12 @@ SingleCanvasRendering.prototype.isPageVisible = function (pageIndex)
     return this._viewport.intersectsRegion(getPageRegionFromGroupInfo(page));
 };
 
-SingleCanvasRendering.prototype.isPageLoaded = function (pageIndex)
+Renderer.prototype.isPageLoaded = function (pageIndex)
 {
     return this._renderedPages.indexOf(pageIndex) >= 0;
 };
 
-SingleCanvasRendering.prototype.getPageDimensions = function (pageIndex)
+Renderer.prototype.getPageDimensions = function (pageIndex)
 {
     if (!this._pageLookup || !this._pageLookup[pageIndex])
         return null;
@@ -313,7 +313,7 @@ SingleCanvasRendering.prototype.getPageDimensions = function (pageIndex)
 
 // TODO(wabain): Get rid of this; it's a subset of the page region, so
 // give that instead
-SingleCanvasRendering.prototype.getPageOffset = function (pageIndex)
+Renderer.prototype.getPageOffset = function (pageIndex)
 {
     if (!this._pageLookup || !this._pageLookup[pageIndex])
         return null;
@@ -329,7 +329,7 @@ SingleCanvasRendering.prototype.getPageOffset = function (pageIndex)
     };
 };
 
-SingleCanvasRendering.prototype.getPageToViewportOffset = function ()
+Renderer.prototype.getPageToViewportOffset = function ()
 {
     var scrollLeft = this._viewport.left;
     var elementWidth = this._viewport.width;
@@ -349,7 +349,7 @@ SingleCanvasRendering.prototype.getPageToViewportOffset = function ()
     };
 };
 
-SingleCanvasRendering.prototype.destroy = function ()
+Renderer.prototype.destroy = function ()
 {
     // FIXME(wabain): I don't know if we should actually do this
     Object.keys(this._pendingRequests).forEach(function (req)
