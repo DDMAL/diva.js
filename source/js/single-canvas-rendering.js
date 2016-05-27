@@ -4,9 +4,9 @@ var debug = require('debug')('diva:SingleCanvasRendering');
 
 var elt = require('./utils/elt');
 var getDocumentLayout = require('./document-layout');
-var DocumentRendering = require('./document-rendering');
 var ImageCache = require('./image-cache');
 var ImageRequestHandler = require('./image-request-handler');
+var Transition = require('./utils/transition');
 
 
 module.exports = SingleCanvasRendering;
@@ -24,9 +24,7 @@ function SingleCanvasRendering(viewer, hooks)
 
     this._viewer = viewer;
 
-    this._documentRendering = null;
     this._documentElement = settings.innerElement;
-    this._viewerId = settings.ID;
 
     this._renderedPages = null;
     this._dimens = null;
@@ -58,7 +56,7 @@ SingleCanvasRendering.prototype.load = function (config, getImageSourcesForPage)
     this._dimens = getDocumentLayout(config);
     this._pageLookup = getPageLookup(this._dimens.pageGroups);
 
-    this._updateDocumentRendering();
+    this._updateDocumentSize();
 
     // FIXME(wabain): Remove this when there's more confidence the check shouldn't be needed
     var settings = this._viewer.getSettings();
@@ -86,19 +84,20 @@ SingleCanvasRendering.prototype.load = function (config, getImageSourcesForPage)
         this._hooks.onViewDidLoad();
 };
 
-SingleCanvasRendering.prototype._updateDocumentRendering = function ()
+SingleCanvasRendering.prototype._updateDocumentSize = function ()
 {
-    if (this._documentRendering)
-        this._documentRendering.destroy();
+    var elem = this._documentElement;
 
-    this._documentRendering = new DocumentRendering({
-        element: this._documentElement,
-        ID: this._viewerId
-    });
+    // Post-zoom: clear scaling
+    elem.style[Transition.property] = '';
+    elem.style.transform = '';
+    elem.style.transformOrigin = '';
 
-    this._documentRendering.setDocumentSize({
-        height: this._dimens.dimensions.height + 'px',
-        width: this._dimens.dimensions.width + 'px'
+    elt.setAttributes(elem, {
+        style: {
+            height: this._dimens.dimensions.height + 'px',
+            width: this._dimens.dimensions.width + 'px'
+        }
     });
 };
 
