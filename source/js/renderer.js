@@ -11,20 +11,16 @@ var Transition = require('./utils/transition');
 
 module.exports = Renderer;
 
-function Renderer(viewer, hooks)
+function Renderer(options, hooks)
 {
-    this._hooks = hooks || {};
-    var settings = viewer.getSettings();
+    this._viewport = options.viewport;
+    this._outerElement = options.outerElement;
+    this._documentElement = options.innerElement;
 
-    this._viewport = settings.viewport;
+    this._hooks = hooks || {};
 
     this._canvas = elt('canvas', { class: 'diva-viewer-canvas' });
-
     this._ctx = this._canvas.getContext('2d');
-
-    this._viewer = viewer;
-
-    this._documentElement = settings.innerElement;
 
     this._renderedPages = null;
     this._dimens = null;
@@ -59,9 +55,8 @@ Renderer.prototype.load = function (config, getImageSourcesForPage)
     this._updateDocumentSize();
 
     // FIXME(wabain): Remove this when there's more confidence the check shouldn't be needed
-    var settings = this._viewer.getSettings();
-    if (!this._pageLookup[settings.goDirectlyTo])
-        throw new Error('invalid page: ' + settings.goDirectlyTo);
+    if (!this._pageLookup[config.position.anchorPage])
+        throw new Error('invalid page: ' + config.position.anchorPage);
 
     if (this._canvas.width !== this._viewport.width || this._canvas.height !== this._viewport.height)
     {
@@ -75,10 +70,10 @@ Renderer.prototype.load = function (config, getImageSourcesForPage)
     }
 
     // FIXME: What hooks should be called here?
-    this.goto(settings.goDirectlyTo, settings.verticalOffset, settings.horizontalOffset);
+    this.goto(config.position.anchorPage, config.position.verticalOffset, config.position.horizontalOffset);
 
-    if (this._canvas.parentNode !== settings.outerElement)
-        settings.outerElement.insertBefore(this._canvas, settings.outerElement.firstChild);
+    if (this._canvas.parentNode !== this._outerElement)
+        this._outerElement.insertBefore(this._canvas, this._outerElement.firstChild);
 
     if (this._hooks.onViewDidLoad)
         this._hooks.onViewDidLoad();
@@ -329,12 +324,12 @@ Renderer.prototype.getPageOffset = function (pageIndex)
     };
 };
 
-Renderer.prototype.getPageToViewportOffset = function ()
+Renderer.prototype.getPageToViewportCenterOffset = function (pageIndex)
 {
     var scrollLeft = this._viewport.left;
     var elementWidth = this._viewport.width;
 
-    var offset = this.getPageOffset(this._viewer.getSettings().currentPageIndex);
+    var offset = this.getPageOffset(pageIndex);
 
     var x = scrollLeft - offset.left + parseInt(elementWidth / 2, 10);
 

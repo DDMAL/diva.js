@@ -491,6 +491,12 @@ var DivaSettingsValidator = new ValidationRunner({
             }
             else
             {
+                var options = {
+                    viewport: settings.viewport,
+                    outerElement: settings.outerElement,
+                    innerElement: settings.innerElement
+                };
+
                 var hooks = {
                     onViewWillLoad: function ()
                     {
@@ -506,7 +512,7 @@ var DivaSettingsValidator = new ValidationRunner({
                     }
                 };
 
-                settings.renderer = new Renderer(self, hooks);
+                settings.renderer = new Renderer(options, hooks);
             }
         };
 
@@ -521,7 +527,12 @@ var DivaSettingsValidator = new ValidationRunner({
                 pageLayouts: pageLayouts,
                 padding: padding,
                 zoomLevel: settings.zoomLevel,
-                verticallyOriented: settings.verticallyOriented || settings.inGrid
+                verticallyOriented: settings.verticallyOriented || settings.inGrid,
+                position: {
+                    anchorPage: settings.goDirectlyTo,
+                    verticalOffset: settings.verticalOffset,
+                    horizontalOffset: settings.horizontalOffset
+                }
             };
         };
 
@@ -870,7 +881,7 @@ var DivaSettingsValidator = new ValidationRunner({
                 view = 'd';
             }
 
-            var pageOffset = settings.renderer.getPageToViewportOffset();
+            var pageOffset = settings.renderer.getPageToViewportCenterOffset(settings.currentPageIndex);
 
             var state = {
                 'f': settings.inFullscreen,
@@ -961,7 +972,7 @@ var DivaSettingsValidator = new ValidationRunner({
 
         var updateOffsets = function ()
         {
-            var pageOffset = settings.renderer.getPageToViewportOffset();
+            var pageOffset = settings.renderer.getPageToViewportCenterOffset(settings.currentPageIndex);
 
             if (pageOffset)
             {
@@ -1029,7 +1040,7 @@ var DivaSettingsValidator = new ValidationRunner({
 
             settings.resizeTimer = setTimeout(function ()
             {
-                var pageOffset = settings.renderer.getPageToViewportOffset();
+                var pageOffset = settings.renderer.getPageToViewportCenterOffset(settings.currentPageIndex);
 
                 if (pageOffset)
                 {
