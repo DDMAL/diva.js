@@ -193,8 +193,12 @@ SingleCanvasRendering.prototype._drawTile = function (pageIndex, tileIndex, tile
 {
     var tileOffset = this._getTileToDocumentOffset(pageIndex, tileRecord);
 
-    var viewportOffsetX = tileOffset.left - this._viewport.left;
-    var viewportOffsetY = tileOffset.top - this._viewport.top;
+    // Ensure the document is drawn to the center of the viewport
+    var viewportPaddingX = Math.max(0, (this._viewport.width - this._dimens.dimensions.width) / 2);
+    var viewportPaddingY = Math.max(0, (this._viewport.height - this._dimens.dimensions.height) / 2);
+
+    var viewportOffsetX = tileOffset.left - this._viewport.left + viewportPaddingX;
+    var viewportOffsetY = tileOffset.top - this._viewport.top + viewportPaddingY;
 
     var tileX = viewportOffsetX < 0 ? -viewportOffsetX : 0;
     var tileY = viewportOffsetY < 0 ? -viewportOffsetY : 0;
