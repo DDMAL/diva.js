@@ -201,14 +201,24 @@ Renderer.prototype._drawTile = function (pageIndex, tileIndex, tileRecord, img)
     var canvasX = Math.max(0, viewportOffsetX);
     var canvasY = Math.max(0, viewportOffsetY);
 
-    // FIXME(wabain): Get tile dimensions from img?
-    var width = tileRecord.dimensions.width - tileX;
-    var height = tileRecord.dimensions.height - tileY;
+    var destWidth = tileRecord.dimensions.width - tileX;
+    var destHeight = tileRecord.dimensions.height - tileY;
 
-    debug('Drawing page %s, tile %s from %s, %s to viewport at %s, %s', pageIndex, tileIndex,
-        tileX, tileY, canvasX, canvasY);
+    var sourceWidth = destWidth / tileRecord.scaleRatio;
+    var sourceHeight = destHeight / tileRecord.scaleRatio;
 
-    this._ctx.drawImage(img, tileX, tileY, width, height, canvasX, canvasY, width, height);
+    debug.enabled && debug('Drawing page %s, tile %s from %s, %s to viewport at %s, %s, scale %s%%',
+        pageIndex, tileIndex,
+        tileX, tileY,
+        canvasX, canvasY,
+        Math.round(tileRecord.scaleRatio * 100));
+
+    this._ctx.drawImage(
+        img,
+        tileX, tileY,
+        sourceWidth, sourceHeight,
+        canvasX, canvasY,
+        destWidth, destHeight);
 };
 
 Renderer.prototype._isTileVisible = function (pageIndex, tileSource)

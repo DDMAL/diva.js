@@ -43,6 +43,18 @@ ImageManifest.prototype.isPageValid = function (pageIndex)
     return pageIndex >= 0 && pageIndex < this.pages.length;
 };
 
+ImageManifest.prototype.getPageDimensionsAtZoomLevel = function (pageIndex, zoomLevel)
+{
+    var maxDims = this.pages[pageIndex].d[this.maxZoom];
+
+    var scaleRatio = getScaleRatio(this.maxZoom, zoomLevel);
+
+    return {
+        height: maxDims.h * scaleRatio,
+        width: maxDims.w * scaleRatio
+    };
+};
+
 /**
  * Returns a URL for the image of the given page. The optional size
  * parameter supports setting the image width or height (default is
@@ -58,10 +70,12 @@ ImageManifest.prototype.getPageImageURL = function (pageIndex, size)
  */
 ImageManifest.prototype.getPageImageTiles = function (pageIndex, zoomLevel, tileDimensions)
 {
+    var imageZoomLevel = Math.ceil(zoomLevel);
+
     var page = this.pages[pageIndex];
 
-    var rows = Math.ceil(page.d[zoomLevel].h / tileDimensions.height);
-    var cols = Math.ceil(page.d[zoomLevel].w / tileDimensions.width);
+    var rows = Math.ceil(page.d[imageZoomLevel].h / tileDimensions.height);
+    var cols = Math.ceil(page.d[imageZoomLevel].w / tileDimensions.width);
 
     var tiles = [];
 
@@ -76,18 +90,21 @@ ImageManifest.prototype.getPageImageTiles = function (pageIndex, zoomLevel, tile
                 col: col,
                 rowCount: rows,
                 colCount: cols,
-                zoomLevel: zoomLevel,
+                zoomLevel: imageZoomLevel,
                 tileDimensions: tileDimensions
             });
 
+            var scaleRatio = getScaleRatio(imageZoomLevel, zoomLevel);
+
             tiles.push({
+                scaleRatio: scaleRatio,
                 dimensions: {
-                    height: tileDimensions.height,
-                    width: tileDimensions.width
+                    height: tileDimensions.height * scaleRatio,
+                    width: tileDimensions.width * scaleRatio
                 },
                 offset: {
-                    top: row * tileDimensions.height,
-                    left: col * tileDimensions.width
+                    top: row * tileDimensions.height * scaleRatio,
+                    left: col * tileDimensions.width * scaleRatio
                 },
                 url: url
             });
@@ -110,6 +127,11 @@ function zoomedPropertyGetter(privateName)
     {
         return this[privateName][zoomLevel];
     };
+}
+
+function getScaleRatio(sourceZoomLevel, targetZoomLevel)
+{
+    return 1 / Math.pow(2, sourceZoomLevel - targetZoomLevel);
 }
 
 function IIIFSourceAdapter()
