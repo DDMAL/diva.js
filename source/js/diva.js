@@ -390,6 +390,7 @@ var DivaSettingsValidator = new ValidationRunner({
 
                     return [{
                         url: url,
+                        scaleRatio: 1,
                         dimensions: page.dimensions,
                         offset: {
                             top: 0,
