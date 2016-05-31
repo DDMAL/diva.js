@@ -5,10 +5,8 @@ var getGridLayoutGroups = require('./grid-layout');
 module.exports = getPageLayouts;
 
 /** Get the relative positioning of pages for the current view */
-function getPageLayouts(viewer)
+function getPageLayouts(settings)
 {
-    var settings = viewer.getSettings();
-
     if (settings.inGrid)
     {
         return getGridLayoutGroups(pluck(settings, [

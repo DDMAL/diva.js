@@ -425,7 +425,7 @@ function ViewerCore(element, options, publicInstance)
     // messy and inconsistent
     var getRendererState = function ()
     {
-        var pageLayouts = getPageLayouts(publicInstance);
+        var pageLayouts = getPageLayouts(settings);
         var padding = getPadding();
 
         return {
