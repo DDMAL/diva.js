@@ -354,8 +354,9 @@ QUnit.test("setState()", function (assert)
         // Recompute the offsets from first principles
         var index = this.getPageIndex("bm_005.tif");
         var offset = this.getPageOffset(index);
-        var x = settings.viewportElement.scrollLeft - offset.left + (settings.viewportElement.clientWidth / 2);
-        var y = settings.viewportElement.scrollTop - offset.top + (settings.viewportElement.clientHeight / 2);
+        var viewportElem = settings.viewportElement;
+        var x = viewportElem.scrollLeft - offset.left + (viewportElem.clientWidth / 2);
+        var y = viewportElem.scrollTop - offset.top + (viewportElem.clientHeight / 2);
 
         assert.close(x, 500, 1, "x offset should be the specified value");
         assert.close(y, 300, 1, "y offset should be the specified value");
