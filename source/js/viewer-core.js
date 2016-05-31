@@ -226,14 +226,14 @@ function ViewerCore(element, options, publicInstance)
         {
             viewerState.oldZoomLevel = settings.zoomLevel;
             viewerState.options.zoomLevel = newOptions.zoomLevel;
-            queuedEvents.push(["ZoomLevelDidChange", [newOptions.zoomLevel]]);
+            queuedEvents.push(["ZoomLevelDidChange", newOptions.zoomLevel]);
         }
 
         // Set the pages per row if valid and fire an event
         if (hasChangedOption(newOptions, 'pagesPerRow'))
         {
             viewerState.options.pagesPerRow = newOptions.pagesPerRow;
-            queuedEvents.push(["GridRowNumberDidChange", [newOptions.pagesPerRow]]);
+            queuedEvents.push(["GridRowNumberDidChange", newOptions.pagesPerRow]);
         }
 
         // Update verticallyOriented (no event fired)
@@ -265,7 +265,7 @@ function ViewerCore(element, options, publicInstance)
             if ('inBookLayout' in newOptions)
                 viewerState.options.inBookLayout = newOptions.inBookLayout;
 
-            queuedEvents.push(["ViewDidSwitch", [settings.inGrid]]);
+            queuedEvents.push(["ViewDidSwitch", settings.inGrid]);
         }
 
         // Note: prepareModeChange() depends on inGrid and the vertical/horizontalOffset (for now)
@@ -273,7 +273,7 @@ function ViewerCore(element, options, publicInstance)
         {
             viewerState.options.inFullscreen = newOptions.inFullscreen;
             prepareModeChange(newOptions);
-            queuedEvents.push(["ModeDidSwitch", [settings.inFullscreen]]);
+            queuedEvents.push(["ModeDidSwitch", settings.inFullscreen]);
         }
 
         clearViewer();
@@ -322,9 +322,9 @@ function ViewerCore(element, options, publicInstance)
         if (viewerState.scaleWait)
             viewerState.scaleWait = false;
 
-        queuedEvents.forEach(function (args)
+        queuedEvents.forEach(function (params)
         {
-            diva.Events.publish.apply(diva.Events, args.concat([publicInstance]));
+            publish.apply(null, params);
         });
 
         return true;
@@ -644,7 +644,7 @@ function ViewerCore(element, options, publicInstance)
         viewerState.renderer.preload();
 
         // Update the slider
-        diva.Events.publish("ZoomLevelDidChange", [newZoomLevel], publicInstance);
+        publish("ZoomLevelDidChange", newZoomLevel);
 
         // While zooming, don't update scroll offsets based on the scaled version of diva-inner
         viewerState.viewportObject.off('scroll');
@@ -974,15 +974,15 @@ function ViewerCore(element, options, publicInstance)
 
         var primaryScroll = (settings.verticallyOriented || settings.inGrid) ? newScrollTop : newScrollLeft;
 
-        diva.Events.publish("ViewerDidScroll", [primaryScroll], publicInstance);
+        publish("ViewerDidScroll", primaryScroll);
 
         if (direction > 0)
         {
-            diva.Events.publish("ViewerDidScrollDown", [primaryScroll], publicInstance);
+            publish("ViewerDidScrollDown", primaryScroll);
         }
         else if (direction < 0)
         {
-            diva.Events.publish("ViewerDidScrollUp", [primaryScroll], publicInstance);
+            publish("ViewerDidScrollUp", primaryScroll);
         }
 
         updateOffsets();
@@ -1234,7 +1234,7 @@ function ViewerCore(element, options, publicInstance)
 
         optionsValidator.validate(viewerState.options);
 
-        diva.Events.publish('NumberOfPagesDidChange', [settings.numPages], publicInstance);
+        publish('NumberOfPagesDidChange', settings.numPages);
 
         if (settings.enableAutoTitle)
         {
@@ -1273,7 +1273,7 @@ function ViewerCore(element, options, publicInstance)
         }
 
         // Plugin setup hooks should be bound to the ObjectDidLoad event
-        diva.Events.publish('ObjectDidLoad', [settings], publicInstance);
+        publish('ObjectDidLoad', settings);
 
         // Adjust the document panel dimensions
         updatePanelSize();
@@ -1343,7 +1343,13 @@ function ViewerCore(element, options, publicInstance)
         // signal that everything should be set up and ready to go.
         viewerState.loaded = true;
 
-        diva.Events.publish("ViewerDidLoad", [settings], publicInstance);
+        publish("ViewerDidLoad", settings);
+    };
+
+    var publish = function (event)
+    {
+        var args = Array.prototype.slice.call(arguments, 1);
+        diva.Events.publish(event, args, publicInstance);
     };
 
     var init = function ()
@@ -1507,13 +1513,14 @@ function ViewerCore(element, options, publicInstance)
     // Destroys this instance, tells plugins to do the same (for testing)
     this.destroy = function ()
     {
+
         // Removes the hide-scrollbar class from the body
         $('body').removeClass('diva-hide-scrollbar');
 
         // Empty the parent container and remove any diva-related data
         settings.parentObject.empty().removeData('diva');
 
-        diva.Events.publish('ViewerDidTerminate', [settings], publicInstance);
+        publish('ViewerDidTerminate', [settings]);
 
         // Remove any additional styling on the parent element
         settings.parentObject.removeAttr('style').removeAttr('class');
