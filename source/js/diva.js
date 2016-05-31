@@ -53,7 +53,7 @@ window.diva = diva;
 window.divaPlugins = [];
 
 // Define validations
-var settingsValidations = [
+var optionsValidations = [
     {
         key: 'goDirectlyTo',
         validate: function (value, settings)
@@ -247,7 +247,7 @@ var settingsValidations = [
 
         var self = this;
 
-        var DivaSettingsValidator = new ValidationRunner({
+        var optionsValidator = new ValidationRunner({
             additionalProperties: [
                     {
                     key: 'manifest',
@@ -258,12 +258,12 @@ var settingsValidations = [
                 }
             ],
 
-            validations: settingsValidations
+            validations: optionsValidations
         });
 
-        var isValidSetting = function (key, value)
+        var isValidOption = function (key, value)
         {
-            return DivaSettingsValidator.isValid(key, value, settings);
+            return optionsValidator.isValid(key, value, viewerState.options);
         };
 
         var elemAttrs = function (ident, base)
@@ -324,7 +324,7 @@ var settingsValidations = [
         {
             var queuedEvents = [];
 
-            newOptions = DivaSettingsValidator.getValidatedOptions(settings, newOptions);
+            newOptions = optionsValidator.getValidatedOptions(settings, newOptions);
 
             // Set the zoom level if valid and fire a ZoomLevelDidChange event
             if (hasChangedOption(newOptions, 'zoomLevel'))
@@ -723,7 +723,7 @@ var settingsValidations = [
             var originY;
 
             // If the zoom level provided is invalid, return false
-            if (!isValidSetting('zoomLevel', newZoomLevel))
+            if (!isValidOption('zoomLevel', newZoomLevel))
                 return false;
 
             if (!Transition.supported)
@@ -1623,7 +1623,7 @@ var settingsValidations = [
             // Convenience value
             viewerState.numPages = settings.manifest.pages.length;
 
-            DivaSettingsValidator.validate(viewerState.options);
+            optionsValidator.validate(viewerState.options);
 
             diva.Events.publish('NumberOfPagesDidChange', [settings.numPages], self);
 
@@ -1939,7 +1939,7 @@ var settingsValidations = [
         this.setGridPagesPerRow = function (newValue)
         {
             // TODO(wabain): Add test case
-            if (!isValidSetting('pagesPerRow', newValue))
+            if (!isValidOption('pagesPerRow', newValue))
                 return false;
 
             return reloadViewer({
