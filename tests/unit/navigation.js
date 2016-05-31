@@ -69,7 +69,6 @@ QUnit.test("Scrolling in grid view", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        settings.outerObject.scrollTop(10000);
         assertPageAfterScroll({ top: 10000 }, 26, this, assert, done);
     });
 
