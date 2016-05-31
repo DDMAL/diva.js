@@ -97,6 +97,7 @@ var optionsValidations = [
 
 function ViewerCore(element, options, publicInstance)
 {
+    var self = this;
     var parentObject = $(element);
 
     // Things that cannot be changed because of the way they are used by the script
@@ -380,7 +381,7 @@ function ViewerCore(element, options, publicInstance)
         }
 
         if (!viewerState.viewHandler)
-            viewerState.viewHandler = new Handler(publicInstance, viewerState);
+            viewerState.viewHandler = new Handler(self);
 
         if (!viewerState.renderer)
             initializeRenderer();
@@ -1504,6 +1505,8 @@ function ViewerCore(element, options, publicInstance)
     {
         return getYOffset(pageIndex, yAnchor);
     };
+
+    this.publish = publish;
 
     this.clear = function ()
     {

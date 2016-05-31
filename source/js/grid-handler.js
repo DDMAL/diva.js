@@ -1,13 +1,12 @@
 var maxBy = require('lodash.maxby');
-var diva = require('./diva-global');
 
 module.exports = GridHandler;
 
-function GridHandler(viewer, viewerState)
+function GridHandler(viewerCore)
 {
-    this._viewer = viewer;
-    this._viewerState = viewerState;
-    this._viewport = viewerState.viewport;
+    this._viewerCore = viewerCore;
+    this._viewerState = viewerCore.getInternalState();
+    this._viewport = this._viewerState.viewport;
 }
 
 GridHandler.prototype.onViewWillLoad = function ()
@@ -52,7 +51,7 @@ GridHandler.prototype.onViewDidUpdate = function (pages, targetPage)
     else
         chosenGroup = getCentermostGroup(groups, this._viewport);
 
-    var currentPage = this._viewer.getCurrentPageIndex();
+    var currentPage = this._viewerState.currentPageIndex;
 
     var hasCurrentPage = chosenGroup.pages.some(function (page)
     {
@@ -66,7 +65,9 @@ GridHandler.prototype.onViewDidUpdate = function (pages, targetPage)
 GridHandler.prototype._setCurrentPage = function (pageIndex)
 {
     this._viewerState.currentPageIndex = pageIndex;
-    diva.Events.publish("VisiblePageDidChange", [pageIndex, this._viewerState.manifest.pages[pageIndex].f], this._viewer);
+
+    var filename = this._viewerState.manifest.pages[pageIndex].f;
+    this._viewerCore.publish("VisiblePageDidChange", pageIndex, filename);
 };
 
 function getCentermostGroup(groups, viewport)

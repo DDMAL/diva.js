@@ -1,18 +1,17 @@
-var diva = require('./diva-global');
 var maxBy = require('lodash.maxby');
 
 module.exports = DocumentHandler;
 
-function DocumentHandler(viewer, viewerState)
+function DocumentHandler(viewerCore)
 {
-    this._viewer = viewer;
-    this._viewerState = viewerState;
-    this._viewport = viewerState.viewport;
+    this._viewerCore = viewerCore;
+    this._viewerState = viewerCore.getInternalState();
+    this._viewport = this._viewerState.viewport;
 }
 
 DocumentHandler.prototype.onViewWillLoad = function ()
 {
-    diva.Events.publish('DocumentWillLoad', [this._viewer.getSettings()], this._viewer);
+    this._viewerCore.publish('DocumentWillLoad', this._viewerCore.getSettings());
 };
 
 DocumentHandler.prototype.onViewDidLoad = function ()
@@ -25,14 +24,14 @@ DocumentHandler.prototype.onViewDidLoad = function ()
     {
         if (viewerState.oldZoomLevel < zoomLevel)
         {
-            diva.Events.publish("ViewerDidZoomIn", [zoomLevel], this._viewer);
+            this._viewerCore.publish("ViewerDidZoomIn", zoomLevel);
         }
         else
         {
-            diva.Events.publish("ViewerDidZoomOut", [zoomLevel], this._viewer);
+            this._viewerCore.publish("ViewerDidZoomOut", zoomLevel);
         }
 
-        diva.Events.publish("ViewerDidZoom", [zoomLevel], this._viewer);
+        this._viewerCore.publish("ViewerDidZoom", zoomLevel);
     }
     else
     {
@@ -40,7 +39,7 @@ DocumentHandler.prototype.onViewDidLoad = function ()
     }
 
     var fileName = viewerState.manifest.pages[viewerState.currentPageIndex].f;
-    diva.Events.publish("DocumentDidLoad", [viewerState.currentPageIndex, fileName], this._viewer);
+    this._viewerCore.publish("DocumentDidLoad", viewerState.currentPageIndex, fileName);
 };
 
 DocumentHandler.prototype.onViewDidUpdate = function (renderedPages, targetPage)
@@ -53,14 +52,13 @@ DocumentHandler.prototype.onViewDidUpdate = function (renderedPages, targetPage)
     {
         this._viewerState.currentPageIndex = currentPage;
 
-        diva.Events.publish("VisiblePageDidChange",
-            [currentPage, this._viewerState.manifest.pages[currentPage].f],
-            this._viewer);
+        var filename = this._viewerState.manifest.pages[currentPage].f;
+        this._viewerCore.publish("VisiblePageDidChange", currentPage, filename);
     }
 
     if (targetPage !== null)
     {
-        diva.Events.publish("ViewerDidJump", [targetPage], this._viewer);
+        this._viewerCore.publish("ViewerDidJump", targetPage);
     }
 };
 
