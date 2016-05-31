@@ -388,7 +388,7 @@ function ViewerCore(element, options, publicInstance)
 
     var initializeRenderer = function ()
     {
-        var compatErrors = Renderer.getCompatibilityErrors(publicInstance);
+        var compatErrors = Renderer.getCompatibilityErrors();
 
         if (compatErrors)
         {
