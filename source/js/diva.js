@@ -37,6 +37,7 @@ var GridHandler = require('./grid-handler');
 var Renderer = require('./renderer');
 var ImageManifest = require('./image-manifest');
 var getPageLayouts = require('./page-layouts');
+var createSettingsView = require('./settings-view');
 var createToolbar = require('./toolbar');
 var ValidationRunner = require('./validation-runner');
 var Viewport = require('./viewport');
@@ -52,86 +53,81 @@ window.diva = diva;
 window.divaPlugins = [];
 
 // Define validations
-
-var DivaSettingsValidator = new ValidationRunner({
-    whitelistedKeys: ['manifest'],
-
-    validations: [
+var settingsValidations = [
+    {
+        key: 'goDirectlyTo',
+        validate: function (value, settings)
         {
-            key: 'goDirectlyTo',
-            validate: function (value, settings)
-            {
-                if (value < 0 || value >= settings.manifest.pages.length)
-                    return 0;
-            }
-        },
-        {
-            key: 'minPagesPerRow',
-            validate: function (value)
-            {
-                return Math.max(2, value);
-            }
-        },
-        {
-            key: 'maxPagesPerRow',
-            validate: function (value, settings)
-            {
-                return Math.max(value, settings.minPagesPerRow);
-            }
-        },
-        {
-            key: 'pagesPerRow',
-            validate: function (value, settings)
-            {
-                // Default to the maximum
-                if (value < settings.minPagesPerRow || value > settings.maxPagesPerRow)
-                    return settings.maxPagesPerRow;
-            }
-        },
-        {
-            key: 'maxZoomLevel',
-            validate: function (value, settings, config)
-            {
-                // Changing this value isn't really an error, it just depends on the
-                // source manifest
-                config.suppressWarning();
-
-                if (value < 0 || value > settings.manifest.maxZoom)
-                    return settings.manifest.maxZoom;
-            }
-        },
-        {
-            key: 'minZoomLevel',
-            validate: function (value, settings, config)
-            {
-                // Changes based on the manifest value shouldn't trigger a
-                // warning
-                if (value > settings.manifest.maxZoom)
-                {
-                    config.suppressWarning();
-                    return 0;
-                }
-
-                if (value < 0 || value > settings.maxZoomLevel)
-                    return 0;
-            }
-        },
-        {
-            key: 'zoomLevel',
-            validate: function (value, settings, config)
-            {
-                if (value > settings.manifest.maxZoom)
-                {
-                    config.suppressWarning();
-                    return 0;
-                }
-
-                if (value < settings.minZoomLevel || value > settings.maxZoomLevel)
-                    return settings.minZoomLevel;
-            }
+            if (value < 0 || value >= settings.manifest.pages.length)
+                return 0;
         }
-    ]
-});
+    },
+    {
+        key: 'minPagesPerRow',
+        validate: function (value)
+        {
+            return Math.max(2, value);
+        }
+    },
+    {
+        key: 'maxPagesPerRow',
+        validate: function (value, settings)
+        {
+            return Math.max(value, settings.minPagesPerRow);
+        }
+    },
+    {
+        key: 'pagesPerRow',
+        validate: function (value, settings)
+        {
+            // Default to the maximum
+            if (value < settings.minPagesPerRow || value > settings.maxPagesPerRow)
+                return settings.maxPagesPerRow;
+        }
+    },
+    {
+        key: 'maxZoomLevel',
+        validate: function (value, settings, config)
+        {
+            // Changing this value isn't really an error, it just depends on the
+            // source manifest
+            config.suppressWarning();
+
+            if (value < 0 || value > settings.manifest.maxZoom)
+                return settings.manifest.maxZoom;
+        }
+    },
+    {
+        key: 'minZoomLevel',
+        validate: function (value, settings, config)
+        {
+            // Changes based on the manifest value shouldn't trigger a
+            // warning
+            if (value > settings.manifest.maxZoom)
+            {
+                config.suppressWarning();
+                return 0;
+            }
+
+            if (value < 0 || value > settings.maxZoomLevel)
+                return 0;
+        }
+    },
+    {
+        key: 'zoomLevel',
+        validate: function (value, settings, config)
+        {
+            if (value > settings.manifest.maxZoom)
+            {
+                config.suppressWarning();
+                return 0;
+            }
+
+            if (value < settings.minZoomLevel || value > settings.maxZoomLevel)
+                return settings.minZoomLevel;
+        }
+    }
+];
 
 // this pattern was taken from http://www.virgentech.com/blog/2009/10/building-object-oriented-jquery-plugin.html
 (function ($)
@@ -142,7 +138,7 @@ var DivaSettingsValidator = new ValidationRunner({
 
         // These are elements that can be overridden upon instantiation
         // See https://github.com/DDMAL/diva.js/wiki/Settings for more details
-        var settings = {
+        options = $.extend({
             adaptivePadding: 0.05,      // The ratio of padding to the page dimension
             arrowScrollAmount: 40,      // The amount (in pixels) to scroll by when using arrow keys
             blockMobileMove: false,     // Prevent moving or scrolling the page on mobile devices
@@ -181,40 +177,38 @@ var DivaSettingsValidator = new ValidationRunner({
             verticallyOriented: true,   // Determines vertical vs. horizontal orientation
             viewportMargin: 200,        // Pretend tiles +/- 200px away from viewport are in
             zoomLevel: 2                // The initial zoom level (used to store the current zoom level)
-        };
-
-        // Override the defaults with passed-in options
-        $.extend(settings, options);
+        }, options);
 
         // Things that cannot be changed because of the way they are used by the script
         // Many of these are declared with arbitrary values that are changed later on
-        $.extend(settings, {
+        var viewerState = {
             currentPageIndex: 0,        // The current page in the viewport (center-most page)
-            unclampedVerticalPadding: 0, // Used to keep track of initial padding size before enforcing the minimum size needed to accommodate plugin icons
             hashParamSuffix: '',        // Used when there are multiple document viewers on a page
             horizontalOffset: 0,        // Distance from the center of the diva element to the top of the current page
             horizontalPadding: 0,       // Either the fixed padding or adaptive padding
             ID: null,                   // The prefix of the IDs of the elements (usually 1-diva-)
             initialKeyScroll: false,    // Holds the initial state of enableKeyScroll
             initialSpaceScroll: false,  // Holds the initial state of enableSpaceScroll
-            innerObject: {},            // $(settings.ID + 'inner'), for selecting the .diva-inner element
             innerElement: null,         // The native .diva-outer DOM object
+            innerObject: {},            // $(settings.ID + 'inner'), for selecting the .diva-inner element
             isActiveDiva: true,         // In the case that multiple diva panes exist on the same page, this should have events funneled to it.
-            isScrollable: true,         // Used in enable/disableScrollable public methods
             isIIIF: false,              // Specifies whether objectData is in Diva native or IIIF Manifest format
+            isScrollable: true,         // Used in enable/disableScrollable public methods
             isZooming: false,           // Flag to keep track of whether zooming is still in progress, for handleZoom
             loaded: false,              // A flag for when everything is loaded and ready to go.
+            manifest: null,
             mobileWebkit: false,        // Checks if the user is on a touch device (iPad/iPod/iPhone/Android)
             numPages: 0,                // Number of pages in the array
             oldZoomLevel: -1,           // Holds the previous zoom level after zooming in or out
-            outerObject: {},            // $(settings.ID + 'outer'), for selecting the .diva-outer element
+            options: options,
             outerElement: null,         // The native .diva-outer DOM object
+            outerObject: {},            // $(settings.ID + 'outer'), for selecting the .diva-outer element
             pageTools: '',              // The string for page tools
             parentObject: parentObject, // JQuery object referencing the parent element
             plugins: [],                // Filled with the enabled plugins from window.divaPlugins
+            previousZoomRatio: 1,             // Used to keep track of the previous zoom ratio for scale transforming diva-inner
             renderer: null,
             resizeTimer: -1,            // Holds the ID of the timeout used when resizing the window (for clearing)
-            previousZoomRatio: 1,             // Used to keep track of the previous zoom ratio for scale transforming diva-inner
             scaleWait: false,           // For preventing double-zoom on touch devices (iPad, etc)
             scrollbarWidth: 0,          // Set to the actual scrollbar width in init()
             selector: '',               // Uses the generated ID prefix to easily select elements
@@ -222,34 +216,50 @@ var DivaSettingsValidator = new ValidationRunner({
             singleTap: false,           // Used for caching double-tap events on mobile browsers
             throbberTimeoutID: -1,      // Holds the ID of the throbber loading timeout
             toolbar: null,              // Holds an object with some toolbar-related functions
+            unclampedVerticalPadding: 0, // Used to keep track of initial padding size before enforcing the minimum size needed to accommodate plugin icons
             verticalOffset: 0,          // Distance from the center of the diva element to the left side of the current page
             verticalPadding: 0,         // Either the fixed padding or adaptive padding
+            viewHandler: null,
             viewport: null,             // Object caching the viewport dimensions
             viewportElement: null,
-            viewportObject: null,
-            viewHandler: null
-        });
+            viewportObject: null
+        };
+
+        var settings = createSettingsView([options, viewerState]);
 
         // Aliases for compatibilty
-        // TODO(wabain): Get rid of usages of these
         Object.defineProperties(settings, {
             // Height of the document viewer pane
             panelHeight: {
                 get: function ()
                 {
-                    return settings.viewport.height;
+                    return viewerState.viewport.height;
                 }
             },
             // Width of the document viewer pane
             panelWidth: {
                 get: function ()
                 {
-                    return settings.viewport.width;
+                    return viewerState.viewport.width;
                 }
             }
         });
 
         var self = this;
+
+        var DivaSettingsValidator = new ValidationRunner({
+            additionalProperties: [
+                    {
+                    key: 'manifest',
+                    get: function ()
+                    {
+                        return viewerState.manifest;
+                    }
+                }
+            ],
+
+            validations: settingsValidations
+        });
 
         var isValidSetting = function (key, value)
         {
@@ -300,82 +310,82 @@ var DivaSettingsValidator = new ValidationRunner({
         // Reset some settings and empty the viewport
         var clearViewer = function ()
         {
-            settings.viewport.top = 0;
+            viewerState.viewport.top = 0;
 
             // Clear all the timeouts to prevent undesired pages from loading
-            clearTimeout(settings.resizeTimer);
+            clearTimeout(viewerState.resizeTimer);
         };
 
         /**
          * Update settings to match the specified options. Load the viewer,
          * fire appropriate events for changed options.
          */
-        var reloadViewer = function (options)
+        var reloadViewer = function (newOptions)
         {
             var queuedEvents = [];
 
-            options = DivaSettingsValidator.getValidatedOptions(settings, options);
+            newOptions = DivaSettingsValidator.getValidatedOptions(settings, newOptions);
 
             // Set the zoom level if valid and fire a ZoomLevelDidChange event
-            if (hasChangedOption(options, 'zoomLevel'))
+            if (hasChangedOption(newOptions, 'zoomLevel'))
             {
-                settings.oldZoomLevel = settings.zoomLevel;
-                settings.zoomLevel = options.zoomLevel;
-                queuedEvents.push(["ZoomLevelDidChange", [options.zoomLevel]]);
+                viewerState.oldZoomLevel = settings.zoomLevel;
+                viewerState.options.zoomLevel = newOptions.zoomLevel;
+                queuedEvents.push(["ZoomLevelDidChange", [newOptions.zoomLevel]]);
             }
 
             // Set the pages per row if valid and fire an event
-            if (hasChangedOption(options, 'pagesPerRow'))
+            if (hasChangedOption(newOptions, 'pagesPerRow'))
             {
-                settings.pagesPerRow = options.pagesPerRow;
-                queuedEvents.push(["GridRowNumberDidChange", [options.pagesPerRow]]);
+                viewerState.options.pagesPerRow = newOptions.pagesPerRow;
+                queuedEvents.push(["GridRowNumberDidChange", [newOptions.pagesPerRow]]);
             }
 
             // Update verticallyOriented (no event fired)
-            if (hasChangedOption(options, 'verticallyOriented'))
-                settings.verticallyOriented = options.verticallyOriented;
+            if (hasChangedOption(newOptions, 'verticallyOriented'))
+                viewerState.options.verticallyOriented = newOptions.verticallyOriented;
 
             // Update page position (no event fired here)
-            if ('goDirectlyTo' in options)
+            if ('goDirectlyTo' in newOptions)
             {
-                settings.goDirectlyTo = options.goDirectlyTo;
+                viewerState.options.goDirectlyTo = newOptions.goDirectlyTo;
 
-                if ('verticalOffset' in options)
-                    settings.verticalOffset = options.verticalOffset;
+                if ('verticalOffset' in newOptions)
+                    viewerState.verticalOffset = newOptions.verticalOffset;
 
-                if ('horizontalOffset' in options)
-                    settings.horizontalOffset = options.horizontalOffset;
+                if ('horizontalOffset' in newOptions)
+                    viewerState.horizontalOffset = newOptions.horizontalOffset;
             }
             else
             {
                 // Otherwise the default is to remain on the current page
-                settings.goDirectlyTo = settings.currentPageIndex;
+                viewerState.options.goDirectlyTo = settings.currentPageIndex;
             }
 
-            if (hasChangedOption(options, 'inGrid') || hasChangedOption(options, 'inBookLayout'))
+            if (hasChangedOption(newOptions, 'inGrid') || hasChangedOption(newOptions, 'inBookLayout'))
             {
-                if ('inGrid' in options)
-                    settings.inGrid = options.inGrid;
+                if ('inGrid' in newOptions)
+                    viewerState.options.inGrid = newOptions.inGrid;
 
-                if ('inBookLayout' in options)
-                    settings.inBookLayout = options.inBookLayout;
+                if ('inBookLayout' in newOptions)
+                    viewerState.options.inBookLayout = newOptions.inBookLayout;
 
                 queuedEvents.push(["ViewDidSwitch", [settings.inGrid]]);
             }
 
             // Note: prepareModeChange() depends on inGrid and the vertical/horizontalOffset (for now)
-            if (hasChangedOption(options, 'inFullscreen'))
+            if (hasChangedOption(newOptions, 'inFullscreen'))
             {
-                settings.inFullscreen = options.inFullscreen;
-                prepareModeChange(options);
+                viewerState.options.inFullscreen = newOptions.inFullscreen;
+                prepareModeChange(newOptions);
                 queuedEvents.push(["ModeDidSwitch", [settings.inFullscreen]]);
             }
 
             clearViewer();
 
             // re-attach scroll event to outer div (necessary if we just zoomed)
-            settings.viewportObject.off('scroll');
-            settings.viewportObject.scroll(scrollFunction);
+            viewerState.viewportObject.off('scroll');
+            viewerState.viewportObject.scroll(scrollFunction);
 
             updateViewHandlerAndRendering();
 
@@ -410,12 +420,12 @@ var DivaSettingsValidator = new ValidationRunner({
                 };
             }
 
-            if (settings.renderer)
-                settings.renderer.load(getRendererState(), getImageSourcesForPage);
+            if (viewerState.renderer)
+                viewerState.renderer.load(getRendererState(), getImageSourcesForPage);
 
             // For the iPad - wait until this request finishes before accepting others
-            if (settings.scaleWait)
-                settings.scaleWait = false;
+            if (viewerState.scaleWait)
+                viewerState.scaleWait = false;
 
             queuedEvents.forEach(function (args)
             {
@@ -435,25 +445,25 @@ var DivaSettingsValidator = new ValidationRunner({
         {
             // Toggle the classes
             var changeClass = options.inFullscreen ? 'addClass' : 'removeClass';
-            settings.outerObject[changeClass]('diva-fullscreen');
+            viewerState.outerObject[changeClass]('diva-fullscreen');
             $('body')[changeClass]('diva-hide-scrollbar');
             settings.parentObject[changeClass]('diva-full-width');
 
             // Adjust Diva's internal panel size, keeping the old values
             var storedHeight = settings.panelHeight;
             var storedWidth = settings.panelWidth;
-            settings.viewport.invalidate();
+            viewerState.viewport.invalidate();
 
             // If this isn't the original load, the offsets matter, and the position isn't being changed...
-            if (!settings.loaded && !settings.inGrid && !('verticalOffset' in options))
+            if (!viewerState.loaded && !settings.inGrid && !('verticalOffset' in options))
             {
                 //get the updated panel size
                 var newHeight = settings.panelHeight;
                 var newWidth = settings.panelWidth;
 
                 //and re-center the new panel on the same point
-                settings.verticalOffset += ((storedHeight - newHeight) / 2);
-                settings.horizontalOffset += ((storedWidth - newWidth) / 2);
+                viewerState.verticalOffset += ((storedHeight - newHeight) / 2);
+                viewerState.horizontalOffset += ((storedWidth - newWidth) / 2);
             }
 
             //turn on/off escape key listener
@@ -468,16 +478,16 @@ var DivaSettingsValidator = new ValidationRunner({
         {
             var Handler = settings.inGrid ? GridHandler : DocumentHandler;
 
-            if (settings.viewHandler && !(settings.viewHandler instanceof Handler))
+            if (viewerState.viewHandler && !(viewerState.viewHandler instanceof Handler))
             {
                 // TODO: May need to destroy handler in future
-                settings.viewHandler = null;
+                viewerState.viewHandler = null;
             }
 
-            if (!settings.viewHandler)
-                settings.viewHandler = new Handler(self);
+            if (!viewerState.viewHandler)
+                viewerState.viewHandler = new Handler(self, viewerState);
 
-            if (!settings.renderer)
+            if (!viewerState.renderer)
                 initializeRenderer();
         };
 
@@ -492,27 +502,27 @@ var DivaSettingsValidator = new ValidationRunner({
             else
             {
                 var options = {
-                    viewport: settings.viewport,
-                    outerElement: settings.outerElement,
-                    innerElement: settings.innerElement
+                    viewport: viewerState.viewport,
+                    outerElement: viewerState.outerElement,
+                    innerElement: viewerState.innerElement
                 };
 
                 var hooks = {
                     onViewWillLoad: function ()
                     {
-                        settings.viewHandler.onViewWillLoad();
+                        viewerState.viewHandler.onViewWillLoad();
                     },
                     onViewDidLoad: function ()
                     {
-                        settings.viewHandler.onViewDidLoad();
+                        viewerState.viewHandler.onViewDidLoad();
                     },
                     onViewDidUpdate: function (pages, targetPage)
                     {
-                        settings.viewHandler.onViewDidUpdate(pages, targetPage);
+                        viewerState.viewHandler.onViewDidUpdate(pages, targetPage);
                     }
                 };
 
-                settings.renderer = new Renderer(options, hooks);
+                viewerState.renderer = new Renderer(options, hooks);
             }
         };
 
@@ -530,8 +540,8 @@ var DivaSettingsValidator = new ValidationRunner({
                 verticallyOriented: settings.verticallyOriented || settings.inGrid,
                 position: {
                     anchorPage: settings.goDirectlyTo,
-                    verticalOffset: settings.verticalOffset,
-                    horizontalOffset: settings.horizontalOffset
+                    verticalOffset: viewerState.verticalOffset,
+                    horizontalOffset: viewerState.horizontalOffset
                 }
             };
         };
@@ -548,11 +558,11 @@ var DivaSettingsValidator = new ValidationRunner({
             }
             else
             {
-                topPadding = settings.verticallyOriented ? settings.verticalPadding : 0;
-                leftPadding = settings.verticallyOriented ? 0 : settings.horizontalPadding;
+                topPadding = settings.verticallyOriented ? viewerState.verticalPadding : 0;
+                leftPadding = settings.verticallyOriented ? 0 : viewerState.horizontalPadding;
 
-                docVPadding = settings.verticallyOriented ? 0 : settings.verticalPadding;
-                docHPadding = settings.verticallyOriented ? settings.horizontalPadding : 0;
+                docVPadding = settings.verticallyOriented ? 0 : viewerState.verticalPadding;
+                docHPadding = settings.verticallyOriented ? viewerState.horizontalPadding : 0;
             }
 
             return {
@@ -641,17 +651,17 @@ var DivaSettingsValidator = new ValidationRunner({
             // compensate for interpage padding
             // FIXME: Still a few pixels unaccounted for. This really needs to be accounted for with post-zoom values.
             if (settings.verticallyOriented)
-                focalPoint.pageRelative.y += settings.verticalPadding;
+                focalPoint.pageRelative.y += viewerState.verticalPadding;
 
             if (!settings.verticallyOriented)
-                focalPoint.pageRelative.x += settings.horizontalPadding;
+                focalPoint.pageRelative.x += viewerState.horizontalPadding;
 
             handleZoom(newZoomLevel, focalPoint);
         };
 
         var getFocalPoint = function (pageElement, event)
         {
-            var outerPosition = settings.outerElement.getBoundingClientRect();
+            var outerPosition = viewerState.outerElement.getBoundingClientRect();
             var pagePosition = pageElement.getBoundingClientRect();
 
             // This argument format is awkward and redundant, but it's easiest to
@@ -701,7 +711,7 @@ var DivaSettingsValidator = new ValidationRunner({
             var focalPoint = getFocalPoint(this, event);
 
             // Set scaleWait to true so that we wait for this scale event to finish
-            settings.scaleWait = true;
+            viewerState.scaleWait = true;
 
             handleZoom(newZoomLevel, focalPoint);
         };
@@ -733,8 +743,8 @@ var DivaSettingsValidator = new ValidationRunner({
                         y: settings.panelHeight / 2
                     },
                     pageRelative: {
-                        x: settings.horizontalOffset,
-                        y: settings.verticalOffset
+                        x: viewerState.horizontalOffset,
+                        y: viewerState.verticalOffset
                     }
                 };
             }
@@ -742,55 +752,55 @@ var DivaSettingsValidator = new ValidationRunner({
             var zoomRatio = Math.pow(2, newZoomLevel - settings.zoomLevel);
 
             // Scale padding with zoom
-            settings.unclampedVerticalPadding *= zoomRatio;
-            settings.horizontalPadding *= zoomRatio;
+            viewerState.unclampedVerticalPadding *= zoomRatio;
+            viewerState.horizontalPadding *= zoomRatio;
 
             // Make sure the vertical padding is at least 40, if plugin icons are enabled
-            settings.verticalPadding = (settings.pageTools.length) ? Math.max(settings.unclampedVerticalPadding, 40) : settings.unclampedVerticalPadding;
+            viewerState.verticalPadding = (viewerState.pageTools.length) ? Math.max(viewerState.unclampedVerticalPadding, 40) : viewerState.unclampedVerticalPadding;
 
-            settings.goDirectlyTo = focalPoint.pageIndex;
+            viewerState.options.goDirectlyTo = focalPoint.pageIndex;
 
             // calculate distance from cursor coordinates to center of viewport
             var focalXToCenter = focalPoint.viewportRelative.x - (settings.panelWidth / 2);
             var focalYToCenter = focalPoint.viewportRelative.y - (settings.panelHeight / 2);
 
             // calculate horizontal/verticalOffset: distance from viewport center to page upper left corner
-            settings.horizontalOffset = (focalPoint.pageRelative.x * zoomRatio) - focalXToCenter;
-            settings.verticalOffset = (focalPoint.pageRelative.y * zoomRatio) - focalYToCenter;
+            viewerState.horizontalOffset = (focalPoint.pageRelative.x * zoomRatio) - focalXToCenter;
+            viewerState.verticalOffset = (focalPoint.pageRelative.y * zoomRatio) - focalYToCenter;
 
             // Set up the origin for the transform
-            originX = focalPoint.viewportRelative.x + settings.viewport.left;
-            originY = focalPoint.viewportRelative.y + settings.viewport.top;
-            settings.innerElement.style.transformOrigin = originX + 'px ' + originY + 'px';
+            originX = focalPoint.viewportRelative.x + viewerState.viewport.left;
+            originY = focalPoint.viewportRelative.y + viewerState.viewport.top;
+            viewerState.innerElement.style.transformOrigin = originX + 'px ' + originY + 'px';
 
             // Update the zoom level
-            settings.oldZoomLevel = settings.zoomLevel;
-            settings.zoomLevel = newZoomLevel;
+            viewerState.oldZoomLevel = settings.zoomLevel;
+            viewerState.options.zoomLevel = newZoomLevel;
 
             // If first zoom, set transition parameters TODO css class
-            if (!settings.isZooming)
+            if (!viewerState.isZooming)
             {
                 initiateZoomAnimation();
             }
 
             // If still zooming, zoomRatio needs to be multiplied by the previous zoomRatio and is reset on transitionend
-            zoomRatio *= settings.previousZoomRatio;
-            settings.previousZoomRatio = zoomRatio;
+            zoomRatio *= viewerState.previousZoomRatio;
+            viewerState.previousZoomRatio = zoomRatio;
 
             // Transition to new zoom level
-            settings.innerElement.style.transform = 'scale(' + zoomRatio + ')';
+            viewerState.innerElement.style.transform = 'scale(' + zoomRatio + ')';
 
             // Set flag to indicate zooming is in progress until loadDocument is called by transitionend
-            settings.isZooming = true;
+            viewerState.isZooming = true;
 
             // Starts preloading pages for the new zoom level
-            settings.renderer.preload();
+            viewerState.renderer.preload();
 
             // Update the slider
             diva.Events.publish("ZoomLevelDidChange", [newZoomLevel], self);
 
             // While zooming, don't update scroll offsets based on the scaled version of diva-inner
-            settings.viewportObject.off('scroll');
+            viewerState.viewportObject.off('scroll');
 
             return true;
         };
@@ -801,22 +811,22 @@ var DivaSettingsValidator = new ValidationRunner({
 
             var endCallback = function ()
             {
-                settings.isZooming = false;
+                viewerState.isZooming = false;
 
-                settings.previousZoomRatio = 1;
+                viewerState.previousZoomRatio = 1;
 
                 // Now render with the previously set zoomLevel
                 reloadViewer({});
 
-                settings.innerElement.removeEventListener(Transition.endEvent, endCallback, false);
+                viewerState.innerElement.removeEventListener(Transition.endEvent, endCallback, false);
                 clearTimeout(fallbackTimeoutId);
             };
 
             // Ensure the callback is run even if the end event doesn't fire
-            settings.innerElement.addEventListener(Transition.endEvent, endCallback, false);
+            viewerState.innerElement.addEventListener(Transition.endEvent, endCallback, false);
             var fallbackTimeoutId = setTimeout(endCallback, fallbackMs);
 
-            settings.innerElement.style[Transition.property] = 'transform .3s cubic-bezier(0.000, 0.990, 1.000, 0.995)';
+            viewerState.innerElement.style[Transition.property] = 'transform .3s cubic-bezier(0.000, 0.990, 1.000, 0.995)';
         };
 
         /*
@@ -881,7 +891,7 @@ var DivaSettingsValidator = new ValidationRunner({
                 view = 'd';
             }
 
-            var pageOffset = settings.renderer.getPageToViewportCenterOffset(settings.currentPageIndex);
+            var pageOffset = viewerState.renderer.getPageToViewportCenterOffset(settings.currentPageIndex);
 
             var state = {
                 'f': settings.inFullscreen,
@@ -958,13 +968,13 @@ var DivaSettingsValidator = new ValidationRunner({
         // updates panelHeight/panelWidth on resize
         var updatePanelSize = function ()
         {
-            settings.viewport.invalidate();
+            viewerState.viewport.invalidate();
 
             // FIXME(wabain): This should really only be called after initial load
-            if (settings.renderer)
+            if (viewerState.renderer)
             {
                 updateOffsets();
-                settings.renderer.goto(settings.currentPageIndex, settings.verticalOffset, settings.horizontalOffset);
+                viewerState.renderer.goto(settings.currentPageIndex, viewerState.verticalOffset, viewerState.horizontalOffset);
             }
 
             return true;
@@ -972,12 +982,12 @@ var DivaSettingsValidator = new ValidationRunner({
 
         var updateOffsets = function ()
         {
-            var pageOffset = settings.renderer.getPageToViewportCenterOffset(settings.currentPageIndex);
+            var pageOffset = viewerState.renderer.getPageToViewportCenterOffset(settings.currentPageIndex);
 
             if (pageOffset)
             {
-                settings.horizontalOffset = pageOffset.x;
-                settings.verticalOffset = pageOffset.y;
+                viewerState.horizontalOffset = pageOffset.x;
+                viewerState.verticalOffset = pageOffset.y;
             }
         };
 
@@ -985,11 +995,11 @@ var DivaSettingsValidator = new ValidationRunner({
         var bindMouseEvents = function()
         {
             // Set drag scroll on first descendant of class dragger on both selected elements
-            settings.viewportObject.dragscrollable({dragSelector: '.diva-dragger', acceptPropagatedEvent: true});
-            settings.innerObject.dragscrollable({dragSelector: '.diva-dragger', acceptPropagatedEvent: true});
+            viewerState.viewportObject.dragscrollable({dragSelector: '.diva-dragger', acceptPropagatedEvent: true});
+            viewerState.innerObject.dragscrollable({dragSelector: '.diva-dragger', acceptPropagatedEvent: true});
 
             // Double-click to zoom
-            settings.outerObject.on('dblclick', '.diva-document-page', function (event)
+            viewerState.outerObject.on('dblclick', '.diva-document-page', function (event)
             {
                 if (!event.ctrlKey)
                 {
@@ -998,26 +1008,26 @@ var DivaSettingsValidator = new ValidationRunner({
             });
 
             // Handle the control key for macs (in conjunction with double-clicking)
-            settings.outerObject.on('contextmenu', '.diva-document-page', function (event)
+            viewerState.outerObject.on('contextmenu', '.diva-document-page', function (event)
             {
                 if (event.ctrlKey)
                 {
                     // In Firefox, this doesn't trigger a double-click, so we apply one manually
-                    clearTimeout(settings.singleClickTimeout);
+                    clearTimeout(viewerState.singleClickTimeout);
 
-                    if (settings.singleClick)
+                    if (viewerState.singleClick)
                     {
                         handleDocumentDoubleClick.call(this, event);
-                        settings.singleClick = false;
+                        viewerState.singleClick = false;
                     }
                     else
                     {
-                        settings.singleClick = true;
+                        viewerState.singleClick = true;
 
                         // Set it to false again after 500 milliseconds (standard double-click timeout)
-                        settings.singleClickTimeout = setTimeout(function ()
+                        viewerState.singleClickTimeout = setTimeout(function ()
                         {
-                            settings.singleClick = false;
+                            viewerState.singleClick = false;
                         }, 500);
                     }
                 }
@@ -1025,7 +1035,7 @@ var DivaSettingsValidator = new ValidationRunner({
                 return false;
             });
 
-            settings.outerObject.on('dblclick', '.diva-row', function (event)
+            viewerState.outerObject.on('dblclick', '.diva-row', function (event)
             {
                 handleGridDoubleClick.call($(event.target).parent(), event);
             });
@@ -1036,11 +1046,11 @@ var DivaSettingsValidator = new ValidationRunner({
         {
             updatePanelSize();
             // Cancel any previously-set resize timeouts
-            clearTimeout(settings.resizeTimer);
+            clearTimeout(viewerState.resizeTimer);
 
-            settings.resizeTimer = setTimeout(function ()
+            viewerState.resizeTimer = setTimeout(function ()
             {
-                var pageOffset = settings.renderer.getPageToViewportCenterOffset(settings.currentPageIndex);
+                var pageOffset = viewerState.renderer.getPageToViewportCenterOffset(settings.currentPageIndex);
 
                 if (pageOffset)
                 {
@@ -1075,7 +1085,7 @@ var DivaSettingsValidator = new ValidationRunner({
             }
 
             // Touch events for swiping in the viewport to scroll pages
-            settings.viewportObject.kinetic({
+            viewerState.viewportObject.kinetic({
                 triggerHardware: true
             });
 
@@ -1084,7 +1094,7 @@ var DivaSettingsValidator = new ValidationRunner({
                 move = [],
                 startDistance = 0;
 
-            settings.outerObject.on('touchstart', '.diva-document-page', function(event)
+            viewerState.outerObject.on('touchstart', '.diva-document-page', function(event)
             {
                 // Prevent mouse event from firing
                 event.preventDefault();
@@ -1100,7 +1110,7 @@ var DivaSettingsValidator = new ValidationRunner({
                 }
             });
 
-            settings.outerObject.on('touchmove', '.diva-document-page', function(event)
+            viewerState.outerObject.on('touchmove', '.diva-document-page', function(event)
             {
                 // Prevent mouse event from firing
                 event.preventDefault();
@@ -1115,7 +1125,7 @@ var DivaSettingsValidator = new ValidationRunner({
                     var moveDistance = distance(move[2], move[0], move[3], move[1]);
                     var zoomDelta = moveDistance - startDistance;
 
-                    if (!settings.scaleWait)
+                    if (!viewerState.scaleWait)
                     {
                         if (settings.inGrid)
                         {
@@ -1139,7 +1149,7 @@ var DivaSettingsValidator = new ValidationRunner({
                 // Prevent mouse event from firing
                 event.preventDefault();
 
-                if (settings.singleTap)
+                if (viewerState.singleTap)
                 {
                     // Doubletap has occurred
                     var touchEvent = {
@@ -1155,19 +1165,19 @@ var DivaSettingsValidator = new ValidationRunner({
                         else
                             handleDocumentDoubleClick.call(this, touchEvent);
 
-                    settings.singleTap = false;
+                    viewerState.singleTap = false;
                     firstTapCoordinates = {};
                 }
                 else
                 {
-                    settings.singleTap = true;
+                    viewerState.singleTap = true;
                     firstTapCoordinates.pageX = event.originalEvent.changedTouches[0].clientX;
                     firstTapCoordinates.pageY = event.originalEvent.changedTouches[0].clientY;
 
                     // Cancel doubletap after 250 milliseconds
-                    settings.singleTapTimeout = setTimeout(function()
+                    viewerState.singleTapTimeout = setTimeout(function()
                     {
-                        settings.singleTap = false;
+                        viewerState.singleTap = false;
                         firstTapCoordinates = {};
                     }, 250);
                 }
@@ -1175,7 +1185,7 @@ var DivaSettingsValidator = new ValidationRunner({
 
             // Document view: Double-tap to zoom in
             // Grid view: Double-tap to jump to current page in document view
-            settings.outerObject.on('touchend', '.diva-page', onDoubleTap);
+            viewerState.outerObject.on('touchend', '.diva-page', onDoubleTap);
 
         };
 
@@ -1188,15 +1198,15 @@ var DivaSettingsValidator = new ValidationRunner({
         // Handle the scroll
         var scrollFunction = function ()
         {
-            var previousTopScroll = settings.viewport.top;
-            var previousLeftScroll = settings.viewport.left;
+            var previousTopScroll = viewerState.viewport.top;
+            var previousLeftScroll = viewerState.viewport.left;
 
             var direction;
 
-            settings.viewport.invalidate();
+            viewerState.viewport.invalidate();
 
-            var newScrollTop = settings.viewport.top;
-            var newScrollLeft = settings.viewport.left;
+            var newScrollTop = viewerState.viewport.top;
+            var newScrollLeft = viewerState.viewport.left;
 
             if (settings.verticallyOriented || settings.inGrid)
                 direction = newScrollTop - previousTopScroll;
@@ -1204,7 +1214,7 @@ var DivaSettingsValidator = new ValidationRunner({
                 direction = newScrollLeft - previousLeftScroll;
 
             //give adjust the direction we care about
-            settings.renderer.adjust(direction);
+            viewerState.renderer.adjust(direction);
 
             var primaryScroll = (settings.verticallyOriented || settings.inGrid) ? newScrollTop : newScrollLeft;
 
@@ -1226,19 +1236,19 @@ var DivaSettingsValidator = new ValidationRunner({
         var handleEvents = function ()
         {
             // Change the cursor for dragging
-            settings.innerObject.mousedown(function ()
+            viewerState.innerObject.mousedown(function ()
             {
                 $(this).addClass('diva-grabbing');
             });
 
-            settings.innerObject.mouseup(function ()
+            viewerState.innerObject.mouseup(function ()
             {
                 $(this).removeClass('diva-grabbing');
             });
 
             bindMouseEvents();
 
-            settings.viewportObject.scroll(scrollFunction);
+            viewerState.viewportObject.scroll(scrollFunction);
 
             var upArrowKey = 38,
                 downArrowKey = 40,
@@ -1253,13 +1263,13 @@ var DivaSettingsValidator = new ValidationRunner({
             // Catch the key presses in document
             $(document).on('keydown.diva', function (event)
             {
-                if (!settings.isActiveDiva)
+                if (!viewerState.isActiveDiva)
                     return true;
 
                 // Space or page down - go to the next page
                 if ((settings.enableSpaceScroll && !event.shiftKey && event.keyCode === spaceKey) || (settings.enableKeyScroll && event.keyCode === pageDownKey))
                 {
-                    settings.viewport.top += settings.panelHeight;
+                    viewerState.viewport.top += settings.panelHeight;
                     return false;
                 }
                 else if (!settings.enableSpaceScroll && event.keyCode === spaceKey)
@@ -1277,32 +1287,32 @@ var DivaSettingsValidator = new ValidationRunner({
                     {
                         case pageUpKey:
                             // Page up - go to the previous page
-                            settings.viewport.top -= settings.panelHeight;
+                            viewerState.viewport.top -= settings.panelHeight;
                             return false;
 
                         case upArrowKey:
                             // Up arrow - scroll up
-                            settings.viewport.top -= settings.arrowScrollAmount;
+                            viewerState.viewport.top -= settings.arrowScrollAmount;
                             return false;
 
                         case downArrowKey:
                             // Down arrow - scroll down
-                            settings.viewport.top += settings.arrowScrollAmount;
+                            viewerState.viewport.top += settings.arrowScrollAmount;
                             return false;
 
                         case leftArrowKey:
                             // Left arrow - scroll left
-                            settings.viewport.left -= settings.arrowScrollAmount;
+                            viewerState.viewport.left -= settings.arrowScrollAmount;
                             return false;
 
                         case rightArrowKey:
                             // Right arrow - scroll right
-                            settings.viewport.left += settings.arrowScrollAmount;
+                            viewerState.viewport.left += settings.arrowScrollAmount;
                             return false;
 
                         case homeKey:
                             // Home key - go to the beginning of the document
-                            settings.viewport.top = 0;
+                            viewerState.viewport.top = 0;
                             return false;
 
                         case endKey:
@@ -1310,8 +1320,8 @@ var DivaSettingsValidator = new ValidationRunner({
                             // End key - go to the end of the document
 
                             // FIXME(wabain): Hack to get innerElement dimensions
-                            var innerStyle = getComputedStyle(settings.innerElement);
-                            settings.viewport.top = Math.max(0, parseFloat(innerStyle.height) - settings.panelHeight);
+                            var innerStyle = getComputedStyle(viewerState.innerElement);
+                            viewerState.viewport.top = Math.max(0, parseFloat(innerStyle.height) - settings.panelHeight);
 
                             return false;
 
@@ -1353,10 +1363,10 @@ var DivaSettingsValidator = new ValidationRunner({
             // Clear page and resize timeouts when the viewer is destroyed
             diva.Events.subscribe('ViewerDidTerminate', function ()
             {
-                if (settings.renderer)
-                    settings.renderer.destroy();
+                if (viewerState.renderer)
+                    viewerState.renderer.destroy();
 
-                clearTimeout(settings.resizeTimer);
+                clearTimeout(viewerState.resizeTimer);
             }, settings.ID);
         };
 
@@ -1391,12 +1401,12 @@ var DivaSettingsValidator = new ValidationRunner({
                             // Delegate the click event - pass it the settings
                             var pluginButtonElement = '.diva-' + plugin.pluginName + '-icon';
 
-                            settings.outerObject.on('click', pluginButtonElement, function (event)
+                            viewerState.outerObject.on('click', pluginButtonElement, function (event)
                             {
                                 plugin.handleClick.call(this, event, settings, self);
                             });
 
-                            settings.outerObject.on('touchend', pluginButtonElement, function (event)
+                            viewerState.outerObject.on('touchend', pluginButtonElement, function (event)
                             {
                                 // Prevent firing of emulated mouse events
                                 event.preventDefault();
@@ -1412,14 +1422,14 @@ var DivaSettingsValidator = new ValidationRunner({
 
                 // Save the page tools bar so it can be added for each page
                 if (pageTools.length)
-                    settings.pageTools = '<div class="diva-page-tools">' + pageTools.join('') + '</div>';
+                    viewerState.pageTools = '<div class="diva-page-tools">' + pageTools.join('') + '</div>';
             }
         };
 
         var hideThrobber = function ()
         {
             // Clear the timeout, if it hasn't executed yet
-            clearTimeout(settings.throbberTimeoutID);
+            clearTimeout(viewerState.throbberTimeoutID);
 
             // Hide the throbber if it has already executed
             $(settings.selector + 'throbber').hide();
@@ -1462,7 +1472,7 @@ var DivaSettingsValidator = new ValidationRunner({
                 elt('div', message)
             ]);
 
-            settings.outerObject.append(errorElement);
+            viewerState.outerObject.append(errorElement);
 
             //bind dialog close button
             $(settings.selector + 'error-close').on('click', function()
@@ -1541,7 +1551,7 @@ var DivaSettingsValidator = new ValidationRunner({
                 if (loadOptions.goDirectlyTo === 0 && settings.inBookLayout && settings.verticallyOriented)
                 {
                     // if in book layout, center the first opening by default
-                    loadOptions.horizontalOffset = settings.horizontalPadding;
+                    loadOptions.horizontalOffset = viewerState.horizontalPadding;
                 }
                 else
                 {
@@ -1563,25 +1573,25 @@ var DivaSettingsValidator = new ValidationRunner({
 
             // FIXME: This is a hack to ensure that the outerElement scrollbars are taken into account
             if (settings.verticallyOriented)
-                settings.innerElement.style.minWidth = settings.panelWidth + 'px';
+                viewerState.innerElement.style.minWidth = settings.panelWidth + 'px';
             else
-                settings.innerElement.style.minHeight = settings.panelHeight + 'px';
+                viewerState.innerElement.style.minHeight = settings.panelHeight + 'px';
 
             // FIXME: If the page was supposed to be positioned relative to the viewport we need to
             // recalculate it to take into account the scrollbars
             if (anchoredVertically || anchoredHorizontally)
             {
                 if (anchoredVertically)
-                    settings.verticalOffset = getYOffset(settings.currentPageIndex, "top");
+                    viewerState.verticalOffset = getYOffset(settings.currentPageIndex, "top");
 
                 if (anchoredHorizontally)
-                    settings.horizontalOffset = getXOffset(settings.currentPageIndex, "center");
+                    viewerState.horizontalOffset = getXOffset(settings.currentPageIndex, "center");
 
-                settings.renderer.goto(settings.currentPageIndex, settings.verticalOffset, settings.horizontalOffset);
+                viewerState.renderer.goto(settings.currentPageIndex, viewerState.verticalOffset, viewerState.horizontalOffset);
             }
 
             // signal that everything should be set up and ready to go.
-            settings.loaded = true;
+            viewerState.loaded = true;
 
             diva.Events.publish("ViewerDidLoad", [settings], self);
         };
@@ -1592,17 +1602,17 @@ var DivaSettingsValidator = new ValidationRunner({
             if (responseData.hasOwnProperty('@context') && (responseData['@context'].indexOf('iiif') !== -1 ||
                 responseData['@context'].indexOf('shared-canvas') !== -1))
             {
-                settings.isIIIF = true;
+                viewerState.isIIIF = true;
 
                 // trigger ManifestDidLoad event
                 // FIXME: Why is this triggered before the manifest is parsed?
                 diva.Events.publish('ManifestDidLoad', [responseData], self);
 
-                settings.manifest = ImageManifest.fromIIIF(responseData);
+                viewerState.manifest = ImageManifest.fromIIIF(responseData);
             }
             else
             {
-                settings.manifest = ImageManifest.fromLegacyManifest(responseData, {
+                viewerState.manifest = ImageManifest.fromLegacyManifest(responseData, {
                     iipServerURL: settings.iipServerURL,
                     imageDir: settings.imageDir
                 });
@@ -1611,9 +1621,9 @@ var DivaSettingsValidator = new ValidationRunner({
             hideThrobber();
 
             // Convenience value
-            settings.numPages = settings.manifest.pages.length;
+            viewerState.numPages = settings.manifest.pages.length;
 
-            DivaSettingsValidator.validate(settings);
+            DivaSettingsValidator.validate(viewerState.options);
 
             diva.Events.publish('NumberOfPagesDidChange', [settings.numPages], self);
 
@@ -1629,28 +1639,28 @@ var DivaSettingsValidator = new ValidationRunner({
             if (settings.adaptivePadding > 0)
             {
                 var z = Math.floor((settings.minZoomLevel + settings.maxZoomLevel) / 2);
-                settings.horizontalPadding = parseInt(settings.manifest.getAverageWidth(z) * settings.adaptivePadding, 10);
-                settings.verticalPadding = parseInt(settings.manifest.getAverageHeight(z) * settings.adaptivePadding, 10);
+                viewerState.horizontalPadding = parseInt(settings.manifest.getAverageWidth(z) * settings.adaptivePadding, 10);
+                viewerState.verticalPadding = parseInt(settings.manifest.getAverageHeight(z) * settings.adaptivePadding, 10);
             }
             else
             {
                 // It's less than or equal to 0; use fixedPadding instead
-                settings.horizontalPadding = settings.fixedPadding;
-                settings.verticalPadding = settings.fixedPadding;
+                viewerState.horizontalPadding = settings.fixedPadding;
+                viewerState.verticalPadding = settings.fixedPadding;
             }
 
-            settings.unclampedVerticalPadding = settings.verticalPadding;
+            viewerState.unclampedVerticalPadding = viewerState.verticalPadding;
 
             // Make sure the vertical padding is at least 40, if plugin icons are enabled
-            if (settings.pageTools.length)
+            if (viewerState.pageTools.length)
             {
-                settings.verticalPadding = Math.max(40, settings.verticalPadding);
+                viewerState.verticalPadding = Math.max(40, viewerState.verticalPadding);
             }
 
             // If we detect a viewingHint of 'paged' in the manifest or sequence, enable book view by default
             if (settings.manifest.paged)
             {
-                settings.inBookLayout = true;
+                viewerState.options.inBookLayout = true;
             }
         };
 
@@ -1701,7 +1711,7 @@ var DivaSettingsValidator = new ValidationRunner({
             }
 
             // If the request hasn't completed after a specified time, show it
-            settings.throbberTimeoutID = setTimeout(function ()
+            viewerState.throbberTimeoutID = setTimeout(function ()
             {
                 $(settings.selector + 'throbber').show();
             }, settings.throbberTimeout);
@@ -1717,7 +1727,7 @@ var DivaSettingsValidator = new ValidationRunner({
 
         var checkLoaded = function()
         {
-            if (!settings.loaded)
+            if (!viewerState.loaded)
             {
                 console.warn("The viewer is not completely initialized. This is likely because it is still downloading data. To fix this, only call this function if the isReady() method returns true.");
                 return false;
@@ -1730,14 +1740,14 @@ var DivaSettingsValidator = new ValidationRunner({
             // First figure out the width of the scrollbar in this browser
             // TODO(wabain): Cache this somewhere else
             // Only some of the plugins rely on this now
-            settings.scrollbarWidth = getScrollbarWidth();
+            viewerState.scrollbarWidth = getScrollbarWidth();
 
             // If window.orientation is defined, then it's probably mobileWebkit
-            settings.mobileWebkit = window.orientation !== undefined;
+            viewerState.mobileWebkit = window.orientation !== undefined;
 
             // Generate an ID that can be used as a prefix for all the other IDs
-            settings.ID = generateId('diva-');
-            settings.selector = '#' + settings.ID;
+            viewerState.ID = generateId('diva-');
+            viewerState.selector = '#' + settings.ID;
 
             // Figure out the hashParamSuffix from the ID
             var divaNumber = parseInt(settings.ID, 10);
@@ -1745,7 +1755,7 @@ var DivaSettingsValidator = new ValidationRunner({
             if (divaNumber > 1)
             {
                 // If this is document viewer #1, don't use a suffix; otherwise, use the document viewer number
-                settings.hashParamSuffix = divaNumber;
+                viewerState.hashParamSuffix = divaNumber;
             }
 
             // Create the inner and outer panels
@@ -1755,24 +1765,24 @@ var DivaSettingsValidator = new ValidationRunner({
                 viewportElem,
                 elt('div', elemAttrs('throbber')));
 
-            settings.innerElement = innerElem;
-            settings.viewportElement = viewportElem;
-            settings.outerElement = outerElem;
+            viewerState.innerElement = innerElem;
+            viewerState.viewportElement = viewportElem;
+            viewerState.outerElement = outerElem;
 
-            settings.innerObject = $(innerElem);
-            settings.viewportObject = $(viewportElem);
-            settings.outerObject = $(outerElem);
+            viewerState.innerObject = $(innerElem);
+            viewerState.viewportObject = $(viewportElem);
+            viewerState.outerObject = $(outerElem);
 
             settings.parentObject.append(outerElem);
 
-            settings.viewport = new Viewport(settings.viewportElement, {
+            viewerState.viewport = new Viewport(viewerState.viewportElement, {
                 intersectionTolerance: settings.viewportMargin
             });
 
             // Create the toolbar and display the title + total number of pages
             if (settings.enableToolbar)
             {
-                settings.toolbar = createToolbar(self);
+                viewerState.toolbar = createToolbar(self);
             }
 
             // Do the initial AJAX request and viewer loading
@@ -1813,7 +1823,7 @@ var DivaSettingsValidator = new ValidationRunner({
             pageIndex = parseInt(pageIndex, 10);
             if (isPageValid(pageIndex))
             {
-                settings.renderer.goto(pageIndex, getYOffset(pageIndex, yAnchor), getXOffset(pageIndex, xAnchor));
+                viewerState.renderer.goto(pageIndex, getYOffset(pageIndex, yAnchor), getXOffset(pageIndex, xAnchor));
                 return true;
             }
             return false;
@@ -1849,7 +1859,7 @@ var DivaSettingsValidator = new ValidationRunner({
 
         this.isReady = function ()
         {
-            return settings.loaded;
+            return viewerState.loaded;
         };
 
         this.getCurrentPageIndex = function ()
@@ -1953,15 +1963,15 @@ var DivaSettingsValidator = new ValidationRunner({
         // Check if something (e.g. a highlight box on a particular page) is visible
         this.inViewport = function (pageNumber, leftOffset, topOffset, width, height)
         {
-            if (!settings.renderer)
+            if (!viewerState.renderer)
                 return false;
 
-            var offset = settings.renderer.getPageOffset(pageNumber - 1);
+            var offset = viewerState.renderer.getPageOffset(pageNumber - 1);
 
             var top = offset.top + topOffset;
             var left = offset.left + leftOffset;
 
-            return settings.viewport.intersectsRegion({
+            return viewerState.viewport.intersectsRegion({
                 top: top,
                 bottom: top + height,
                 left: left,
@@ -1973,17 +1983,17 @@ var DivaSettingsValidator = new ValidationRunner({
         //Determines if a page is currently in the viewport
         this.isPageInViewport = function (pageIndex)
         {
-            return settings.renderer.isPageVisible(pageIndex);
+            return viewerState.renderer.isPageVisible(pageIndex);
         };
 
         //Public wrapper for isPageLoaded
         //Determines if a page is currently in the DOM
         this.isPageLoaded = function (pageIndex)
         {
-            if (!settings.renderer)
+            if (!viewerState.renderer)
                 return false;
 
-            return settings.renderer.isPageLoaded(pageIndex);
+            return viewerState.renderer.isPageLoaded(pageIndex);
         };
 
         // Toggle fullscreen mode
@@ -2153,37 +2163,37 @@ var DivaSettingsValidator = new ValidationRunner({
         // Re-enables document dragging, scrolling (by keyboard if set), and zooming by double-clicking
         this.enableScrollable = function()
         {
-            if (!settings.isScrollable)
+            if (!viewerState.isScrollable)
             {
                 bindMouseEvents();
-                settings.enableKeyScroll = settings.initialKeyScroll;
-                settings.enableSpaceScroll = settings.initialSpaceScroll;
-                settings.viewportElement.style.overflow = 'auto';
-                settings.isScrollable = true;
+                viewerState.options.enableKeyScroll = viewerState.initialKeyScroll;
+                viewerState.options.enableSpaceScroll = viewerState.initialSpaceScroll;
+                viewerState.viewportElement.style.overflow = 'auto';
+                viewerState.isScrollable = true;
             }
         };
 
         // Disables document dragging, scrolling (by keyboard if set), and zooming by double-clicking
         this.disableScrollable = function ()
         {
-            if (settings.isScrollable)
+            if (viewerState.isScrollable)
             {
                 // block dragging/double-click zooming
-                if (settings.innerObject.hasClass('diva-dragger'))
-                    settings.innerObject.unbind('mousedown');
-                settings.outerObject.unbind('dblclick');
-                settings.outerObject.unbind('contextmenu');
+                if (viewerState.innerObject.hasClass('diva-dragger'))
+                    viewerState.innerObject.unbind('mousedown');
+                viewerState.outerObject.unbind('dblclick');
+                viewerState.outerObject.unbind('contextmenu');
 
                 // disable all other scrolling actions
-                settings.viewportElement.style.overflow = 'hidden';
+                viewerState.viewportElement.style.overflow = 'hidden';
 
                 // block scrolling keys behavior, respecting initial scroll settings
-                settings.initialKeyScroll = settings.enableKeyScroll;
-                settings.initialSpaceScroll = settings.enableSpaceScroll;
-                settings.enableKeyScroll = false;
-                settings.enableSpaceScroll = false;
+                viewerState.initialKeyScroll = settings.enableKeyScroll;
+                viewerState.initialSpaceScroll = settings.enableSpaceScroll;
+                viewerState.options.enableKeyScroll = false;
+                viewerState.options.enableSpaceScroll = false;
 
-                settings.isScrollable = false;
+                viewerState.isScrollable = false;
             }
         };
 
@@ -2196,10 +2206,10 @@ var DivaSettingsValidator = new ValidationRunner({
         //Returns distance between the northwest corners of diva-inner and page index
         this.getPageOffset = function(pageIndex)
         {
-            if (!settings.renderer)
+            if (!viewerState.renderer)
                 return null;
 
-            return settings.renderer.getPageOffset(pageIndex);
+            return viewerState.renderer.getPageOffset(pageIndex);
         };
 
         //shortcut to getPageOffset for current page
@@ -2219,7 +2229,7 @@ var DivaSettingsValidator = new ValidationRunner({
 
             pageIndex = isPageValid(pageIndex) ? pageIndex : settings.currentPageIndex;
 
-            return settings.renderer.getPageDimensions(pageIndex);
+            return viewerState.renderer.getPageDimensions(pageIndex);
         };
 
         /*
@@ -2229,7 +2239,7 @@ var DivaSettingsValidator = new ValidationRunner({
         this.getPageIndexForPageXYValues = function(pageX, pageY)
         {
             //get the four edges of the outer element
-            var outerOffset = settings.outerElement.getBoundingClientRect();
+            var outerOffset = viewerState.outerElement.getBoundingClientRect();
             var outerTop = outerOffset.top;
             var outerLeft = outerOffset.left;
             var outerBottom = outerOffset.bottom;
@@ -2285,13 +2295,13 @@ var DivaSettingsValidator = new ValidationRunner({
 
         this.changeObject = function(objectData)
         {
-            settings.loaded = false;
+            viewerState.loaded = false;
             clearViewer();
 
-            if (settings.renderer)
-                settings.renderer.destroy();
+            if (viewerState.renderer)
+                viewerState.renderer.destroy();
 
-            settings.objectData = objectData;
+            viewerState.options.objectData = objectData;
 
             if (typeof objectData === 'object')
             {
@@ -2299,13 +2309,13 @@ var DivaSettingsValidator = new ValidationRunner({
                 {
                     parseObjectData(objectData);
                     reloadViewer({});
-                    settings.loaded = true;
+                    viewerState.loaded = true;
                 });
 
                 return;
             }
 
-            settings.throbberTimeoutID = setTimeout(function ()
+            viewerState.throbberTimeoutID = setTimeout(function ()
             {
                 $(settings.selector + 'throbber').show();
             }, settings.throbberTimeout);
@@ -2320,19 +2330,19 @@ var DivaSettingsValidator = new ValidationRunner({
                     parseObjectData(responseData);
                     hideThrobber();
                     reloadViewer({});
-                    settings.loaded = true;
+                    viewerState.loaded = true;
                 }
             });
         };
 
         this.activate = function ()
         {
-            settings.isActiveDiva = true;
+            viewerState.isActiveDiva = true;
         };
 
         this.deactivate = function ()
         {
-            settings.isActiveDiva = false;
+            viewerState.isActiveDiva = false;
         };
 
         // Destroys this instance, tells plugins to do the same (for testing)

@@ -7,7 +7,6 @@ module.exports = getPageLayouts;
 /** Get the relative positioning of pages for the current view */
 function getPageLayouts(viewer)
 {
-    // FIXME(wabain): This should be possible through the public API
     var settings = viewer.getSettings();
 
     if (settings.inGrid)

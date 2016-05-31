@@ -5,6 +5,7 @@ module.exports = ValidationRunner;
 function ValidationRunner(options)
 {
     this.whitelistedKeys = options.whitelistedKeys || [];
+    this.additionalProperties = options.additionalProperties || [];
     this.validations = options.validations;
 }
 
@@ -120,6 +121,13 @@ function createSettingsProxier(settings, options, runner)
     {
         properties[whitelisted] = {
             get: lookup.bind(null, whitelisted)
+        };
+    });
+
+    runner.additionalProperties.forEach(function (additional)
+    {
+        properties[additional.key] = {
+            get: additional.get
         };
     });
 

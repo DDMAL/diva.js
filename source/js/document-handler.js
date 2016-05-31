@@ -3,29 +3,27 @@ var maxBy = require('lodash.maxby');
 
 module.exports = DocumentHandler;
 
-function DocumentHandler(viewer)
+function DocumentHandler(viewer, viewerState)
 {
     this._viewer = viewer;
-    this._viewport = viewer.getSettings().viewport;
+    this._viewerState = viewerState;
+    this._viewport = viewerState.viewport;
 }
 
 DocumentHandler.prototype.onViewWillLoad = function ()
 {
-    var settings = this._viewer.getSettings();
-
-    diva.Events.publish('DocumentWillLoad', [settings], this._viewer);
+    diva.Events.publish('DocumentWillLoad', [this._viewer.getSettings()], this._viewer);
 };
 
 DocumentHandler.prototype.onViewDidLoad = function ()
 {
-    var settings = this._viewer.getSettings();
+    var viewerState = this._viewerState;
+    var zoomLevel = viewerState.options.zoomLevel;
 
     // If this is not the initial load, trigger the zoom events
-    if (settings.oldZoomLevel >= 0)
+    if (viewerState.oldZoomLevel >= 0)
     {
-        var zoomLevel = settings.zoomLevel;
-
-        if (settings.oldZoomLevel < settings.zoomLevel)
+        if (viewerState.oldZoomLevel < zoomLevel)
         {
             diva.Events.publish("ViewerDidZoomIn", [zoomLevel], this._viewer);
         }
@@ -38,11 +36,11 @@ DocumentHandler.prototype.onViewDidLoad = function ()
     }
     else
     {
-        settings.oldZoomLevel = settings.zoomLevel;
+        viewerState.oldZoomLevel = zoomLevel;
     }
 
-    var fileName = settings.manifest.pages[settings.currentPageIndex].f;
-    diva.Events.publish("DocumentDidLoad", [settings.currentPageIndex, fileName], this._viewer);
+    var fileName = viewerState.manifest.pages[viewerState.currentPageIndex].f;
+    diva.Events.publish("DocumentDidLoad", [viewerState.currentPageIndex, fileName], this._viewer);
 };
 
 DocumentHandler.prototype.onViewDidUpdate = function (renderedPages, targetPage)
@@ -51,14 +49,12 @@ DocumentHandler.prototype.onViewDidUpdate = function (renderedPages, targetPage)
         targetPage :
         getCentermostPage(renderedPages, this._viewport);
 
-    var settings = this._viewer.getSettings();
-
-    if (currentPage !== settings.currentPageIndex)
+    if (currentPage !== this._viewerState.currentPageIndex)
     {
-        settings.currentPageIndex = currentPage;
+        this._viewerState.currentPageIndex = currentPage;
 
         diva.Events.publish("VisiblePageDidChange",
-            [currentPage, settings.manifest.pages[currentPage].f],
+            [currentPage, this._viewerState.manifest.pages[currentPage].f],
             this._viewer);
     }
 

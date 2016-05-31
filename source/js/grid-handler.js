@@ -3,10 +3,11 @@ var diva = require('./diva-global');
 
 module.exports = GridHandler;
 
-function GridHandler(viewer)
+function GridHandler(viewer, viewerState)
 {
     this._viewer = viewer;
-    this._viewport = viewer.getSettings().viewport;
+    this._viewerState = viewerState;
+    this._viewport = viewerState.viewport;
 }
 
 GridHandler.prototype.onViewWillLoad = function ()
@@ -64,9 +65,8 @@ GridHandler.prototype.onViewDidUpdate = function (pages, targetPage)
 
 GridHandler.prototype._setCurrentPage = function (pageIndex)
 {
-    var settings = this._viewer.getSettings();
-    settings.currentPageIndex = pageIndex;
-    diva.Events.publish("VisiblePageDidChange", [pageIndex, settings.manifest.pages[pageIndex].f], this._viewer);
+    this._viewerState.currentPageIndex = pageIndex;
+    diva.Events.publish("VisiblePageDidChange", [pageIndex, this._viewerState.manifest.pages[pageIndex].f], this._viewer);
 };
 
 function getCentermostGroup(groups, viewport)
