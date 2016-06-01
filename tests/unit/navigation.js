@@ -127,7 +127,23 @@ QUnit.test('Page positioning on zoom', function (assert)
 
     diva.Events.subscribe('ViewerDidZoomIn', function ()
     {
-        assert.propEqual(dv.getState(), state, 'State should not change from zooming out/in');
+        var newState = dv.getState();
+
+        Object.keys(state).forEach(function (key)
+        {
+            var msg = 'state.' + key + ' should not change from zooming in and out';
+
+            if (key === 'x' || key === 'y')
+            {
+                // Numbers are hard :(
+                assert.close(newState[key], state[key], 3, msg);
+            }
+            else
+            {
+                assert.strictEqual(newState[key], state[key], msg);
+            }
+        });
+
         done();
     });
 });
@@ -334,7 +350,7 @@ QUnit.test("Changing pages per row in Grid view using +/- buttons", function (as
     });
 });
 
-QUnit.skip("Zooming by double-clicking", function (assert)
+QUnit.test("Zooming by double-clicking", function (assert)
 {
     var done = assert.async();
 
@@ -353,7 +369,7 @@ QUnit.skip("Zooming by double-clicking", function (assert)
 
         setTimeout(function ()
         {
-            settings.outerObject.trigger(testEvent);
+            settings.innerObject.trigger(testEvent);
             setTimeout(function ()
             {
                 assert.strictEqual(settings.zoomLevel, 2, "Zoom level should now be 2");

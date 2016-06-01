@@ -303,6 +303,11 @@ Renderer.prototype.isPageLoaded = function (pageIndex)
     return this._renderedPages.indexOf(pageIndex) >= 0;
 };
 
+Renderer.prototype.getRenderedPages = function ()
+{
+    return this._renderedPages.slice();
+};
+
 Renderer.prototype.getPageDimensions = function (pageIndex)
 {
     if (!this._pageLookup || !this._pageLookup[pageIndex])
@@ -320,10 +325,7 @@ Renderer.prototype.getPageDimensions = function (pageIndex)
 // give that instead
 Renderer.prototype.getPageOffset = function (pageIndex)
 {
-    if (!this._pageLookup || !this._pageLookup[pageIndex])
-        return null;
-
-    var region = getPageRegionFromGroupInfo(this._pageLookup[pageIndex]);
+    var region = this.getPageRegion(pageIndex);
 
     if (!region)
         return null;
@@ -332,6 +334,14 @@ Renderer.prototype.getPageOffset = function (pageIndex)
         top: region.top,
         left: region.left
     };
+};
+
+Renderer.prototype.getPageRegion = function (pageIndex)
+{
+    if (!this._pageLookup || !this._pageLookup[pageIndex])
+        return null;
+
+    return getPageRegionFromGroupInfo(this._pageLookup[pageIndex]);
 };
 
 Renderer.prototype.getPageToViewportCenterOffset = function (pageIndex)

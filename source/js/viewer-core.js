@@ -7,6 +7,7 @@ var generateId = require('./utils/generate-id');
 var getScrollbarWidth = require('./utils/get-scrollbar-width');
 var Transition = require('./utils/transition');
 
+var gestureEvents = require('./gesture-events');
 var diva = require('./diva-global');
 var DocumentHandler = require('./document-handler');
 var GridHandler = require('./grid-handler');
@@ -15,6 +16,8 @@ var getPageLayouts = require('./page-layouts');
 var createSettingsView = require('./settings-view');
 var ValidationRunner = require('./validation-runner');
 var Viewport = require('./viewport');
+
+var debug = require('debug')('diva:ViewerCore');
 
 module.exports = ViewerCore;
 
@@ -133,8 +136,6 @@ function ViewerCore(element, options, publicInstance)
         scaleWait: false,           // For preventing double-zoom on touch devices (iPad, etc)
         scrollbarWidth: 0,          // Set to the actual scrollbar width in init()
         selector: '',               // Uses the generated ID prefix to easily select elements
-        singleClick: false,         // Used for catching ctrl+double-click events in Firefox in Mac OS
-        singleTap: false,           // Used for caching double-tap events on mobile browsers
         throbberTimeoutID: -1,      // Holds the ID of the throbber loading timeout
         toolbar: null,              // Holds an object with some toolbar-related functions
         unclampedVerticalPadding: 0, // Used to keep track of initial padding size before enforcing the minimum size needed to accommodate plugin icons
@@ -488,82 +489,6 @@ function ViewerCore(element, options, publicInstance)
         }
     };
 
-    // Called after double-click or ctrl+double-click events on pages in document view
-    var handleDocumentDoubleClick = function (event)
-    {
-        // Hold control to zoom out, otherwise, zoom in
-        var newZoomLevel = (event.ctrlKey) ? settings.zoomLevel - 1 : settings.zoomLevel + 1;
-
-        var focalPoint = getFocalPoint(this, event);
-
-        // compensate for interpage padding
-        // FIXME: Still a few pixels unaccounted for. This really needs to be accounted for with post-zoom values.
-        if (settings.verticallyOriented)
-            focalPoint.pageRelative.y += viewerState.verticalPadding;
-
-        if (!settings.verticallyOriented)
-            focalPoint.pageRelative.x += viewerState.horizontalPadding;
-
-        handleZoom(newZoomLevel, focalPoint);
-    };
-
-    var getFocalPoint = function (pageElement, event)
-    {
-        var outerPosition = viewerState.outerElement.getBoundingClientRect();
-        var pagePosition = pageElement.getBoundingClientRect();
-
-        // This argument format is awkward and redundant, but it's easiest to
-        // compute all these values at once here
-        return {
-            pageIndex: parseInt(pageElement.getAttribute('data-index'), 10),
-            viewportRelative: {
-                x: event.pageX - outerPosition.left,
-                y: event.pageY - outerPosition.top
-            },
-            pageRelative: {
-                x: event.pageX - pagePosition.left,
-                y: event.pageY - pagePosition.top
-            }
-        };
-    };
-
-    // Called after double-clicking on a page in grid view
-    var handleGridDoubleClick = function (event)
-    {
-        var pageIndex = parseInt($(this).attr('data-index'), 10);
-        var pageOffset = $(this).offset();
-        var zoomProportion = getPageData(pageIndex, "w") / $(this).width();
-
-        // Leave grid view, jump directly to the desired page
-        reloadViewer({
-            inGrid: false,
-            goDirectlyTo: pageIndex,
-            horizontalOffset: (event.pageX - pageOffset.left) * zoomProportion,
-            verticalOffset: (event.pageY - pageOffset.top) * zoomProportion
-        });
-    };
-
-    // Handles pinch-zooming for mobile devices
-    var handlePinchZoom = function (zoomDelta, event)
-    {
-        var newZoomLevel = settings.zoomLevel;
-
-        // First figure out the new zoom level:
-        if (zoomDelta > 100 && newZoomLevel < settings.maxZoomLevel)
-            newZoomLevel++;
-        else if (zoomDelta < -100 && newZoomLevel > settings.minZoomLevel)
-            newZoomLevel--;
-        else
-            return;
-
-        var focalPoint = getFocalPoint(this, event);
-
-        // Set scaleWait to true so that we wait for this scale event to finish
-        viewerState.scaleWait = true;
-
-        handleZoom(newZoomLevel, focalPoint);
-    };
-
     // Called to handle any zoom level
     var handleZoom = function (newZoomLevel, focalPoint)
     {
@@ -584,15 +509,14 @@ function ViewerCore(element, options, publicInstance)
         // If no focal point was given, zoom on the center of the viewport
         if (focalPoint == null)
         {
+            var viewport = viewerState.viewport;
+            var currentRegion = viewerState.renderer.getPageRegion(settings.currentPageIndex);
+
             focalPoint = {
-                pageIndex: settings.currentPageIndex,
-                viewportRelative: {
-                    x: settings.panelWidth / 2,
-                    y: settings.panelHeight / 2
-                },
-                pageRelative: {
-                    x: viewerState.horizontalOffset,
-                    y: viewerState.verticalOffset
+                anchorPage: settings.currentPageIndex,
+                offset: {
+                    left: (viewport.width / 2) - (currentRegion.left - viewport.left),
+                    top: (viewport.height / 2) - (currentRegion.top - viewport.top)
                 }
             };
         }
@@ -606,19 +530,23 @@ function ViewerCore(element, options, publicInstance)
         // Make sure the vertical padding is at least 40, if plugin icons are enabled
         viewerState.verticalPadding = (viewerState.pageTools.length) ? Math.max(viewerState.unclampedVerticalPadding, 40) : viewerState.unclampedVerticalPadding;
 
-        viewerState.options.goDirectlyTo = focalPoint.pageIndex;
+        viewerState.options.goDirectlyTo = focalPoint.anchorPage;
+
+        var pageRegion = viewerState.renderer.getPageRegion(focalPoint.anchorPage);
 
         // calculate distance from cursor coordinates to center of viewport
-        var focalXToCenter = focalPoint.viewportRelative.x - (settings.panelWidth / 2);
-        var focalYToCenter = focalPoint.viewportRelative.y - (settings.panelHeight / 2);
+        var focalXToCenter = (settings.viewport.left + (settings.viewport.width / 2)) -
+            (pageRegion.left + focalPoint.offset.left);
+        var focalYToCenter = (settings.viewport.top + (settings.viewport.height / 2)) -
+            (pageRegion.top + focalPoint.offset.top);
 
         // calculate horizontal/verticalOffset: distance from viewport center to page upper left corner
-        viewerState.horizontalOffset = (focalPoint.pageRelative.x * zoomRatio) - focalXToCenter;
-        viewerState.verticalOffset = (focalPoint.pageRelative.y * zoomRatio) - focalYToCenter;
+        viewerState.horizontalOffset = (focalPoint.offset.left * zoomRatio) - focalXToCenter;
+        viewerState.verticalOffset = (focalPoint.offset.top * zoomRatio) - focalYToCenter;
 
         // Set up the origin for the transform
-        originX = focalPoint.viewportRelative.x + viewerState.viewport.left;
-        originY = focalPoint.viewportRelative.y + viewerState.viewport.top;
+        originX = pageRegion.left + focalPoint.offset.left;
+        originY = pageRegion.top + focalPoint.offset.top;
         viewerState.innerElement.style.transformOrigin = originX + 'px ' + originY + 'px';
 
         // Update the zoom level
@@ -755,48 +683,11 @@ function ViewerCore(element, options, publicInstance)
         viewerState.viewportObject.dragscrollable({dragSelector: '.diva-dragger', acceptPropagatedEvent: true});
         viewerState.innerObject.dragscrollable({dragSelector: '.diva-dragger', acceptPropagatedEvent: true});
 
-        // Double-click to zoom
-        viewerState.outerObject.on('dblclick', '.diva-document-page', function (event)
+        gestureEvents.onDoubleClick(viewerState.viewportObject, function (event, coords)
         {
-            if (!event.ctrlKey)
-            {
-                handleDocumentDoubleClick.call(this, event);
-            }
+            debug('Double click at %s, %s', coords.left, coords.top);
+            viewerState.viewHandler.onDoubleClick(event, coords);
         });
-
-        // Handle the control key for macs (in conjunction with double-clicking)
-        viewerState.outerObject.on('contextmenu', '.diva-document-page', function (event)
-        {
-            if (event.ctrlKey)
-            {
-                // In Firefox, this doesn't trigger a double-click, so we apply one manually
-                clearTimeout(viewerState.singleClickTimeout);
-
-                if (viewerState.singleClick)
-                {
-                    handleDocumentDoubleClick.call(this, event);
-                    viewerState.singleClick = false;
-                }
-                else
-                {
-                    viewerState.singleClick = true;
-
-                    // Set it to false again after 500 milliseconds (standard double-click timeout)
-                    viewerState.singleClickTimeout = setTimeout(function ()
-                    {
-                        viewerState.singleClick = false;
-                    }, 500);
-                }
-            }
-
-            return false;
-        });
-
-        viewerState.outerObject.on('dblclick', '.diva-row', function (event)
-        {
-            handleGridDoubleClick.call($(event.target).parent(), event);
-        });
-
     };
 
     var onResize = function()
@@ -846,110 +737,17 @@ function ViewerCore(element, options, publicInstance)
             triggerHardware: true
         });
 
-        // Bind events for pinch-zooming
-        var start = [],
-            move = [],
-            startDistance = 0;
-
-        viewerState.outerObject.on('touchstart', '.diva-document-page', function(event)
+        gestureEvents.onPinch(viewerState.viewportObject, function (event, coords, zoomDelta)
         {
-            // Prevent mouse event from firing
-            event.preventDefault();
-
-            if (event.originalEvent.touches.length === 2)
-            {
-                start = [event.originalEvent.touches[0].clientX,
-                    event.originalEvent.touches[0].clientY,
-                    event.originalEvent.touches[1].clientX,
-                    event.originalEvent.touches[1].clientY];
-
-                startDistance = distance(start[2], start[0], start[3], start[1]);
-            }
+            debug('Pinch %s at %s, %s', zoomDelta, coords.left, coords.top);
+            viewerState.viewHandler.onPinch(event, coords, zoomDelta);
         });
 
-        viewerState.outerObject.on('touchmove', '.diva-document-page', function(event)
+        gestureEvents.onDoubleTap(viewerState.viewportObject, function (event, coords)
         {
-            // Prevent mouse event from firing
-            event.preventDefault();
-
-            if (event.originalEvent.touches.length === 2)
-            {
-                move = [event.originalEvent.touches[0].clientX,
-                    event.originalEvent.touches[0].clientY,
-                    event.originalEvent.touches[1].clientX,
-                    event.originalEvent.touches[1].clientY];
-
-                var moveDistance = distance(move[2], move[0], move[3], move[1]);
-                var zoomDelta = moveDistance - startDistance;
-
-                if (!viewerState.scaleWait)
-                {
-                    if (settings.inGrid)
-                    {
-                        reloadViewer({
-                            inGrid: false
-                        });
-                    }
-                    else
-                    {
-                        handlePinchZoom.call(this, zoomDelta, event);
-                    }
-                }
-            }
+            debug('Double tap at %s, %s', coords.left, coords.top);
+            viewerState.viewHandler.onDoubleClick(event, coords);
         });
-
-        var firstTapCoordinates = {},
-            tapDistance = 0;
-
-        var onDoubleTap = function(event)
-        {
-            // Prevent mouse event from firing
-            event.preventDefault();
-
-            if (viewerState.singleTap)
-            {
-                // Doubletap has occurred
-                var touchEvent = {
-                    pageX: event.originalEvent.changedTouches[0].clientX,
-                    pageY: event.originalEvent.changedTouches[0].clientY
-                };
-
-                // If first tap is close to second tap (prevents interference with scale event)
-                tapDistance = distance(firstTapCoordinates.pageX, touchEvent.pageX, firstTapCoordinates.pageY, touchEvent.pageY);
-                if (tapDistance < 50 && settings.zoomLevel < settings.maxZoomLevel)
-                    if (settings.inGrid)
-                        handleGridDoubleClick.call($(event.target).parent(), touchEvent);
-                    else
-                        handleDocumentDoubleClick.call(this, touchEvent);
-
-                viewerState.singleTap = false;
-                firstTapCoordinates = {};
-            }
-            else
-            {
-                viewerState.singleTap = true;
-                firstTapCoordinates.pageX = event.originalEvent.changedTouches[0].clientX;
-                firstTapCoordinates.pageY = event.originalEvent.changedTouches[0].clientY;
-
-                // Cancel doubletap after 250 milliseconds
-                viewerState.singleTapTimeout = setTimeout(function()
-                {
-                    viewerState.singleTap = false;
-                    firstTapCoordinates = {};
-                }, 250);
-            }
-        };
-
-        // Document view: Double-tap to zoom in
-        // Grid view: Double-tap to jump to current page in document view
-        viewerState.outerObject.on('touchend', '.diva-page', onDoubleTap);
-
-    };
-
-    // Pythagorean theorem to get the distance between two points (used for calculating finger distance for double-tap and pinch-zoom)
-    var distance = function(x2, x1, y2, y1)
-    {
-        return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
     };
 
     // Handle the scroll
@@ -1417,6 +1215,48 @@ function ViewerCore(element, options, publicInstance)
     this.getInternalState = function ()
     {
         return viewerState;
+    };
+
+    this.getPagePositionAtViewportOffset = function (coords)
+    {
+        var docCoords = {
+            left: coords.left + viewerState.viewport.left,
+            top: coords.top + viewerState.viewport.top
+        };
+
+        var renderedPages = viewerState.renderer.getRenderedPages();
+        var pageCount = renderedPages.length;
+
+        // Find the page on which the coords occur
+        for (var i=0; i < pageCount; i++)
+        {
+            var pageIndex = renderedPages[i];
+            var region = viewerState.renderer.getPageRegion(pageIndex);
+
+            if (region.left <= docCoords.left && region.right >= docCoords.left &&
+                region.top <= docCoords.top && region.bottom >= docCoords.top)
+            {
+                return {
+                    anchorPage: pageIndex,
+                    offset: {
+                        left: docCoords.left - region.left,
+                        top: docCoords.top - region.top
+                    }
+                };
+            }
+        }
+
+        // Fall back to current page
+        // FIXME: Would be better to use the closest page or something
+        var currentRegion = viewerState.renderer.getPageRegion(settings.currentPageIndex);
+
+        return {
+            anchorPage: settings.currentPageIndex,
+            offset: {
+                left: docCoords.left - currentRegion.left,
+                top: docCoords.top - currentRegion.top
+            }
+        };
     };
 
     this.setManifest = function (manifest, isIIIF, loadOptions)

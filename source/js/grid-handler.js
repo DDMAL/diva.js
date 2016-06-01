@@ -9,6 +9,29 @@ function GridHandler(viewerCore)
     this._viewport = this._viewerState.viewport;
 }
 
+// USER EVENTS
+GridHandler.prototype.onDoubleClick = function (event, coords)
+{
+    var position = this._viewerCore.getPagePositionAtViewportOffset(coords);
+
+    // FIXME: Get this in a nicer way
+    var pageToViewportCenterOffset = this._viewerCore.getSettings()
+        .renderer.getPageToViewportCenterOffset(position.anchorPage);
+
+    this._viewerCore.reload({
+        inGrid: false,
+        goDirectlyTo: position.anchorPage,
+        horizontalOffset: pageToViewportCenterOffset.x + position.offset.left,
+        verticalOffset: pageToViewportCenterOffset.y + position.offset.top
+    });
+};
+
+GridHandler.prototype.onPinch = function ()
+{
+    this._viewerCore.reload({ inGrid: false });
+};
+
+// VIEW EVENTS
 GridHandler.prototype.onViewWillLoad = function ()
 {
     // FIXME(wabain): Should something happen here?

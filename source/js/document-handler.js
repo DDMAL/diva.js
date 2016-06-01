@@ -9,6 +9,44 @@ function DocumentHandler(viewerCore)
     this._viewport = this._viewerState.viewport;
 }
 
+// USER EVENTS
+DocumentHandler.prototype.onDoubleClick = function (event, coords)
+{
+    var settings = this._viewerCore.getSettings();
+    var newZoomLevel = event.ctrlKey ? settings.zoomLevel - 1 : settings.zoomLevel + 1;
+
+    var position = this._viewerCore.getPagePositionAtViewportOffset(coords);
+
+    this._viewerCore.zoom(newZoomLevel, position);
+};
+
+DocumentHandler.prototype.onPinch = function (event, coords, zoomDelta)
+{
+    // FIXME: Do this check in a way which is less spaghetti code-y
+    var viewerState = this._viewerCore.getInternalState();
+    if (viewerState.scaleWait)
+        return;
+
+    var settings = this._viewerCore.getSettings();
+    var newZoomLevel = settings.zoomLevel;
+
+    // First figure out the new zoom level:
+    if (zoomDelta > 0 && newZoomLevel < settings.maxZoomLevel)
+        newZoomLevel++;
+    else if (zoomDelta < 0 && newZoomLevel > settings.minZoomLevel)
+        newZoomLevel--;
+    else
+        return;
+
+    var position = this._viewerCore.getPagePositionAtViewportOffset(coords);
+
+    // Set scaleWait to true so that we wait for this scale event to finish
+    viewerState.scaleWait = true;
+
+    this._viewerCore.zoom(newZoomLevel, position);
+};
+
+// VIEW EVENTS
 DocumentHandler.prototype.onViewWillLoad = function ()
 {
     this._viewerCore.publish('DocumentWillLoad', this._viewerCore.getSettings());
