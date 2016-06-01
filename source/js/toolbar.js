@@ -96,20 +96,25 @@ function createToolbar(viewer)
 
         createSlider: function ()
         {
-            var elem = createSliderElement('zoom-slider', settings.zoomLevel, settings.minZoomLevel, settings.maxZoomLevel);
+            var elem = createSlider('zoom-slider', {
+                step: 0.1,
+                value: settings.zoomLevel,
+                min: settings.minZoomLevel,
+                max: settings.maxZoomLevel
+            });
             var $elem = $(elem);
 
             $elem.on('input', function()
             {
-                var intValue = parseInt(this.value, 10);
-                viewer.setZoomLevel(intValue);
+                var floatValue = parseFloat(this.value);
+                viewer.setZoomLevel(floatValue);
             });
 
             $elem.on('change', function ()
             {
-                var intValue = parseInt(this.value, 10);
-                if (intValue !== settings.zoomLevel)
-                    viewer.setZoomLevel(intValue);
+                var floatValue = parseFloat(this.value);
+                if (floatValue !== settings.zoomLevel)
+                    viewer.setZoomLevel(floatValue);
             });
 
             var updateSlider = function ()
@@ -119,7 +124,15 @@ function createToolbar(viewer)
             };
 
             subscribe('ZoomLevelDidChange', updateSlider);
-            subscribe('ViewerDidLoad', updateSlider);
+            subscribe('ViewerDidLoad', function ()
+            {
+                elt.setAttributes(elem, {
+                    min: settings.minZoomLevel,
+                    max: settings.maxZoomLevel
+                });
+
+                updateSlider();
+            });
 
             return elem;
         },
@@ -145,7 +158,7 @@ function createToolbar(viewer)
 
             var updateText = function ()
             {
-                textSpan.textContent = settings.zoomLevel;
+                textSpan.textContent = settings.zoomLevel.toFixed(2);
             };
 
             subscribe('ZoomLevelDidChange', updateText);
@@ -162,7 +175,11 @@ function createToolbar(viewer)
 
         createSlider: function ()
         {
-            var elem = createSliderElement('grid-slider', settings.pagesPerRow, settings.minPagesPerRow, settings.maxPagesPerRow);
+            var elem = createSlider('grid-slider', {
+                value: settings.pagesPerRow,
+                min: settings.minPagesPerRow,
+                max: settings.maxPagesPerRow
+            });
             var $elem = $(elem);
 
             $elem.on('input', function()
@@ -292,15 +309,12 @@ function createToolbar(viewer)
         );
     };
 
-    var createSliderElement = function(name, value, min, max)
+    var createSlider = function(name, options)
     {
-        return elt('input', {
+        return elt('input', options, {
             id: settings.ID + name,
             class: 'diva-' + name + ' diva-slider',
-            type: 'range',
-            value: value,
-            min: min,
-            max: max
+            type: 'range'
         });
     };
 

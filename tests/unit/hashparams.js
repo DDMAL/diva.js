@@ -84,7 +84,7 @@ testHashParams("zoom level (z) and view (v) = 'g' ", {z: "1", v: "g"}, function 
     // Now let's switch into document view and see if the zoom level is preserved
     $(settings.selector + 'grid-icon').click();
     assert.strictEqual(settings.zoomLevel, 1, "Zoom level setting should still be 1");
-    assert.strictEqual($(settings.selector + 'zoom-label').text(), "Zoom level: 1", "Zoom buttons label should show a zoom level of 1");
+    assert.strictEqual($(settings.selector + 'zoom-label').text(), "Zoom level: 1.00", "Zoom buttons label should show a zoom level of 1");
 });
 
 testHashParams("zoom level (z) and fullscreen (f)", {z: "1", f: "true"}, function (settings, assert)
@@ -96,7 +96,7 @@ testHashParams("zoom level (z) and fullscreen (f)", {z: "1", f: "true"}, functio
     assert.ok($('body').hasClass('diva-hide-scrollbar'), "The body element should have the hide-scrollbar class");
 
     // Check that the zoom level is actually 1
-    assert.strictEqual($(settings.selector + 'zoom-label').text(), "Zoom level: 1", "Zoom buttons label should show a zoom level of 1");
+    assert.strictEqual($(settings.selector + 'zoom-label').text(), "Zoom level: 1.00", "Zoom buttons label should show a zoom level of 1");
 });
 
 testHashParams("pagesPerRow (n) - valid value", {n: "3"}, function (settings, assert)

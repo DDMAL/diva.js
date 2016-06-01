@@ -44,7 +44,7 @@ var assertZoomIs = function (level, divaInst, controlName, assert)
     var renderedLevel = $(divaInst.getSettings().selector + 'zoom-level').text();
 
     assert.strictEqual(actualLevel, level, "Zoom level should now be " + level);
-    assert.strictEqual(renderedLevel, level + '', "The " + controlName + " label should have been updated");
+    assert.strictEqual(renderedLevel, level.toFixed(2), "The " + controlName + " label should have been updated");
 };
 
 QUnit.test("Scrolling in document view", function (assert)
