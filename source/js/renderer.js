@@ -201,8 +201,10 @@ Renderer.prototype._drawTile = function (pageIndex, tileIndex, tileRecord, img)
     var canvasX = Math.max(0, viewportOffsetX);
     var canvasY = Math.max(0, viewportOffsetY);
 
-    var destWidth = tileRecord.dimensions.width - tileX;
-    var destHeight = tileRecord.dimensions.height - tileY;
+    // Ensure that the specified dimensions are no greater than the actual
+    // size of the image. Safari won't display the tile if they are.
+    var destWidth = Math.min(tileRecord.dimensions.width, img.width * tileRecord.scaleRatio) - tileX;
+    var destHeight = Math.min(tileRecord.dimensions.height, img.height * tileRecord.scaleRatio) - tileY;
 
     var sourceWidth = destWidth / tileRecord.scaleRatio;
     var sourceHeight = destHeight / tileRecord.scaleRatio;

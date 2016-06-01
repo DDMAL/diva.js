@@ -96,6 +96,8 @@ ImageManifest.prototype.getPageImageTiles = function (pageIndex, zoomLevel, tile
 
             var scaleRatio = getScaleRatio(imageZoomLevel, zoomLevel);
 
+            // FIXME: Dimensions should account for partial tiles (e.g. the
+            // last row and column in a tiled image)
             tiles.push({
                 scaleRatio: scaleRatio,
                 dimensions: {
