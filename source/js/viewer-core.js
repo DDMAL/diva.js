@@ -285,39 +285,10 @@ function ViewerCore(element, options, publicInstance)
 
         updateViewHandlerAndRendering();
 
-        var getImageSourcesForPage;
-
-        if (settings.inGrid)
-        {
-            getImageSourcesForPage = function (page) {
-                var url = settings.manifest.getPageImageURL(page.index, {
-                    width: page.dimensions.width
-                });
-
-                return [{
-                    url: url,
-                    scaleRatio: 1,
-                    dimensions: page.dimensions,
-                    offset: {
-                        top: 0,
-                        left: 0
-                    }
-                }];
-            };
-        }
-        else
-        {
-            getImageSourcesForPage = function (page)
-            {
-                return settings.manifest.getPageImageTiles(page.index, settings.zoomLevel, {
-                    width: settings.tileWidth,
-                    height: settings.tileHeight
-                });
-            };
-        }
+        var sourceProvider = getCurrentSourceProvider();
 
         if (viewerState.renderer)
-            viewerState.renderer.load(getRendererState(), getImageSourcesForPage);
+            viewerState.renderer.load(getRendererState(), sourceProvider);
 
         // For the iPad - wait until this request finishes before accepting others
         if (viewerState.scaleWait)
@@ -420,6 +391,70 @@ function ViewerCore(element, options, publicInstance)
 
             viewerState.renderer = new Renderer(options, hooks);
         }
+    };
+
+    var getCurrentSourceProvider = function ()
+    {
+        if (settings.inGrid)
+        {
+            var gridSourceProvider = {
+                getAllZoomLevelsForPage: function (page)
+                {
+                    return [gridSourceProvider.getBestZoomLevelForPage(page)];
+                },
+                getBestZoomLevelForPage: function (page)
+                {
+                    var url = settings.manifest.getPageImageURL(page.index, {
+                        width: page.dimensions.width
+                    });
+
+                    return {
+                        zoomLevel: 1, // FIXME
+                        rows: 1,
+                        cols: 1,
+                        tiles: [{
+                            url: url,
+                            zoomLevel: 1, // FIXME
+                            row: 0,
+                            col: 0,
+                            dimensions: page.dimensions,
+                            offset: {
+                                top: 0,
+                                left: 0
+                            }
+                        }]
+                    };
+                }
+            };
+
+            return gridSourceProvider;
+        }
+
+        var tileDimens = {
+            width: settings.tileWidth,
+            height: settings.tileHeight
+        };
+
+        return {
+            getBestZoomLevelForPage: function (page)
+            {
+                return settings.manifest.getPageImageTiles(page.index, Math.ceil(settings.zoomLevel), tileDimens);
+            },
+            getAllZoomLevelsForPage: function (page)
+            {
+                var levels = [];
+                var maxLevel = Math.ceil(settings.zoomLevel);
+
+                for (var level=0; level <= maxLevel; level++)
+                {
+                    levels.push(settings.manifest.getPageImageTiles(page.index, level, tileDimens));
+                }
+
+                levels.reverse();
+
+                return levels;
+            }
+        };
     };
 
     // TODO: The usage of padding variables is still really

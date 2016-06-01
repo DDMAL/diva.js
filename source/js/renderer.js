@@ -1,8 +1,11 @@
 'use strict';
 
 var debug = require('debug')('diva:Renderer');
+var debugPaints = require('debug')('diva:Renderer:paints');
 
 var elt = require('./utils/elt');
+
+var CompositeImage = require('./composite-image');
 var getDocumentLayout = require('./document-layout');
 var ImageCache = require('./image-cache');
 var ImageRequestHandler = require('./image-request-handler');
@@ -22,9 +25,13 @@ function Renderer(options, hooks)
     this._canvas = elt('canvas', { class: 'diva-viewer-canvas' });
     this._ctx = this._canvas.getContext('2d');
 
+    this._sourceResolver = null;
     this._renderedPages = null;
     this._dimens = null;
+    this._zoomLevel = null;
     this._pageLookup = null;
+    this._compositeImages = null;
+    this._renderedTiles = null;
 
     // FIXME(wabain): What level should this be maintained at?
     // Diva global?
@@ -43,14 +50,16 @@ Renderer.getCompatibilityErrors = function ()
     ];
 };
 
-Renderer.prototype.load = function (config, getImageSourcesForPage)
+Renderer.prototype.load = function (config, sourceResolver)
 {
     if (this._hooks.onViewWillLoad)
         this._hooks.onViewWillLoad();
 
-    this._getImageSourcesForPage = getImageSourcesForPage;
+    this._sourceResolver = sourceResolver;
     this._dimens = getDocumentLayout(config);
+    this._zoomLevel = config.zoomLevel;
     this._pageLookup = getPageLookup(this._dimens.pageGroups);
+    this._compositeImages = {};
 
     this._updateDocumentSize();
 
@@ -147,26 +156,93 @@ Renderer.prototype._render = function (direction) // jshint ignore:line
     }, this);
 
     this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
-    newRenderedPages.forEach(this._queueTilesForPage, this);
+
+    newRenderedPages.forEach(function (pageIndex)
+    {
+        if (!this._compositeImages[pageIndex])
+        {
+            var page = this._pageLookup[pageIndex];
+            var zoomLevels = this._sourceResolver.getAllZoomLevelsForPage(page);
+            var composite = new CompositeImage(zoomLevels);
+            composite.updateFromCache(this._cache);
+            this._compositeImages[pageIndex] = composite;
+        }
+
+        this._initiatePageTileRequests(pageIndex);
+    }, this);
+
+    if (this._renderedPages)
+    {
+        this._renderedPages.forEach(function (pageIndex)
+        {
+            if (newRenderedPages.indexOf(pageIndex) === -1)
+            {
+                delete this._compositeImages[pageIndex];
+            }
+        }, this);
+    }
 
     this._renderedPages = newRenderedPages;
+    this._paint();
 };
 
-Renderer.prototype._queueTilesForPage = function (pageIndex)
+Renderer.prototype._paint = function ()
+{
+    debug('Repainting');
+
+    var renderedTiles = [];
+
+    this._renderedPages.forEach(function (pageIndex)
+    {
+        this._compositeImages[pageIndex].getTiles().forEach(function (source)
+        {
+            var scaled = getScaledTileRecord(source, this._zoomLevel);
+
+            if (this._isTileVisible(pageIndex, scaled))
+            {
+                renderedTiles.push(source.url);
+                this._drawTile(pageIndex, scaled, this._cache.get(source.url));
+            }
+        }, this);
+    }, this);
+
+    var cache = this._cache;
+
+    var changes = findChanges(this._renderedTiles || [], renderedTiles);
+
+    changes.added.forEach(function (url)
+    {
+        cache.acquire(url);
+    });
+
+    changes.removed.forEach(function (url)
+    {
+        cache.release(url);
+    });
+
+    if (changes.removed)
+    {
+        // FIXME: Should only need to update the composite images
+        // for which tiles were removed
+        this._renderedPages.forEach(function (pageIndex)
+        {
+            this._compositeImages[pageIndex].updateFromCache(this._cache);
+        }, this);
+    }
+
+    this._renderedTiles = renderedTiles;
+};
+
+Renderer.prototype._initiatePageTileRequests = function (pageIndex)
 {
     // TODO(wabain): Debounce
-    var tileSources = this._getImageSourcesForPage(this._pageLookup[pageIndex]);
+    var tileSources = this._sourceResolver.getBestZoomLevelForPage(this._pageLookup[pageIndex]).tiles;
+    var composite = this._compositeImages[pageIndex];
 
     tileSources.forEach(function (source, tileIndex)
     {
-        if (this._pendingRequests[source.url] || !this._isTileVisible(pageIndex, source))
+        if (this._pendingRequests[source.url] || this._cache.has(source.url) || !this._isTileForSourceVisible(pageIndex, source))
             return;
-
-        if (this._cache.has(source.url))
-        {
-            this._drawTile(pageIndex, tileIndex, source, this._cache.get(source.url));
-            return;
-        }
 
         this._pendingRequests[source.url] = new ImageRequestHandler({
             url: source.url,
@@ -175,13 +251,16 @@ Renderer.prototype._queueTilesForPage = function (pageIndex)
                 delete this._pendingRequests[source.url];
                 this._cache.put(source.url, img);
 
-                if (!this._isTileVisible(pageIndex, source))
+                // Awkward way to check for updates
+                if (composite === this._compositeImages[pageIndex])
                 {
-                    debug('Page %s, tile %s no longer visible on image load', pageIndex, tileIndex);
-                    return;
-                }
+                    composite.updateWithLoadedUrls([source.url]);
 
-                this._drawTile(pageIndex, tileIndex, source, img);
+                    if (this._isTileForSourceVisible(pageIndex, source))
+                        this._paint();
+                    else
+                        debugPaints('Page %s, tile %s no longer visible on image load', pageIndex, tileIndex);
+                }
             }.bind(this),
             error: function ()
             {
@@ -192,9 +271,9 @@ Renderer.prototype._queueTilesForPage = function (pageIndex)
     }, this);
 };
 
-Renderer.prototype._drawTile = function (pageIndex, tileIndex, tileRecord, img)
+Renderer.prototype._drawTile = function (pageIndex, scaledTile, img)
 {
-    var tileOffset = this._getTileToDocumentOffset(pageIndex, tileRecord);
+    var tileOffset = this._getTileToDocumentOffset(pageIndex, scaledTile);
 
     // Ensure the document is drawn to the center of the viewport
     var viewportPaddingX = Math.max(0, (this._viewport.width - this._dimens.dimensions.width) / 2);
@@ -206,25 +285,28 @@ Renderer.prototype._drawTile = function (pageIndex, tileIndex, tileRecord, img)
     var destXOffset = viewportOffsetX < 0 ? -viewportOffsetX : 0;
     var destYOffset = viewportOffsetY < 0 ? -viewportOffsetY : 0;
 
-    var sourceXOffset = destXOffset / tileRecord.scaleRatio;
-    var sourceYOffset = destYOffset / tileRecord.scaleRatio;
+    var sourceXOffset = destXOffset / scaledTile.scaleRatio;
+    var sourceYOffset = destYOffset / scaledTile.scaleRatio;
 
     var canvasX = Math.max(0, viewportOffsetX);
     var canvasY = Math.max(0, viewportOffsetY);
 
     // Ensure that the specified dimensions are no greater than the actual
     // size of the image. Safari won't display the tile if they are.
-    var destWidth = Math.min(tileRecord.dimensions.width, img.width * tileRecord.scaleRatio) - destXOffset;
-    var destHeight = Math.min(tileRecord.dimensions.height, img.height * tileRecord.scaleRatio) - destYOffset;
+    var destWidth = Math.min(scaledTile.dimensions.width, img.width * scaledTile.scaleRatio) - destXOffset;
+    var destHeight = Math.min(scaledTile.dimensions.height, img.height * scaledTile.scaleRatio) - destYOffset;
 
-    var sourceWidth = destWidth / tileRecord.scaleRatio;
-    var sourceHeight = destHeight / tileRecord.scaleRatio;
+    var sourceWidth = destWidth / scaledTile.scaleRatio;
+    var sourceHeight = destHeight / scaledTile.scaleRatio;
 
-    debug.enabled && debug('Drawing page %s, tile %s from %s, %s to viewport at %s, %s, scale %s%%',
-        pageIndex, tileIndex,
-        sourceXOffset, sourceYOffset,
-        canvasX, canvasY,
-        Math.round(tileRecord.scaleRatio * 100));
+    if (debugPaints.enabled) {
+        debugPaints('Drawing page %s, tile %sx (%s, %s) from %s, %s to viewport at %s, %s, scale %s%%',
+            pageIndex,
+            scaledTile.sourceZoomLevel, scaledTile.row, scaledTile.col,
+            sourceXOffset, sourceYOffset,
+            canvasX, canvasY,
+            Math.round(scaledTile.scaleRatio * 100));
+    }
 
     this._ctx.drawImage(
         img,
@@ -234,26 +316,31 @@ Renderer.prototype._drawTile = function (pageIndex, tileIndex, tileRecord, img)
         destWidth, destHeight);
 };
 
-Renderer.prototype._isTileVisible = function (pageIndex, tileSource)
+Renderer.prototype._isTileForSourceVisible = function (pageIndex, tileSource)
 {
-    var tileOffset = this._getTileToDocumentOffset(pageIndex, tileSource);
+    return this._isTileVisible(pageIndex, getScaledTileRecord(tileSource, this._zoomLevel));
+};
+
+Renderer.prototype._isTileVisible = function (pageIndex, scaledTile)
+{
+    var tileOffset = this._getTileToDocumentOffset(pageIndex, scaledTile);
 
     // FIXME(wabain): This check is insufficient during a zoom transition
     return this._viewport.intersectsRegion({
         top: tileOffset.top,
-        bottom: tileOffset.top + tileSource.dimensions.height,
+        bottom: tileOffset.top + scaledTile.dimensions.height,
         left: tileOffset.left,
-        right: tileOffset.left + tileSource.dimensions.width
+        right: tileOffset.left + scaledTile.dimensions.width
     });
 };
 
-Renderer.prototype._getTileToDocumentOffset = function (pageIndex, tileSource)
+Renderer.prototype._getTileToDocumentOffset = function (pageIndex, scaledTile)
 {
     var imageOffset = this._getImageOffset(pageIndex);
 
     return {
-        top: imageOffset.top + tileSource.offset.top,
-        left: imageOffset.left + tileSource.offset.left
+        top: imageOffset.top + scaledTile.offset.top,
+        left: imageOffset.left + scaledTile.offset.left
     };
 };
 
@@ -411,6 +498,27 @@ function getPageLookup(pageGroups)
     return pageLookup;
 }
 
+function getScaledTileRecord(source, scaleFactor)
+{
+    var scaleRatio = Math.pow(2, scaleFactor - source.zoomLevel);
+
+    return {
+        sourceZoomLevel: source.zoomLevel,
+        scaleRatio: scaleRatio,
+        row: source.row,
+        col: source.col,
+        dimensions: {
+            width: source.dimensions.width * scaleRatio,
+            height: source.dimensions.height * scaleRatio
+        },
+        offset: {
+            left: source.offset.left * scaleRatio,
+            top: source.offset.top * scaleRatio
+        },
+        url: source.url
+    };
+}
+
 function getPageRegionFromGroupInfo(page)
 {
     var top    = page.groupOffset.top  + page.group.region.top;
@@ -423,5 +531,31 @@ function getPageRegionFromGroupInfo(page)
         bottom: bottom,
         left: left,
         right: right
+    };
+}
+
+function findChanges(oldArray, newArray)
+{
+    if (oldArray === newArray)
+    {
+        return {
+            added: [],
+            removed: []
+        };
+    }
+
+    var removed = oldArray.filter(function (oldEntry)
+    {
+        return newArray.indexOf(oldEntry) === -1;
+    });
+
+    var added = newArray.filter(function (newEntry)
+    {
+        return oldArray.indexOf(newEntry) === -1;
+    });
+
+    return {
+        added: added,
+        removed: removed
     };
 }

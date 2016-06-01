@@ -66,16 +66,17 @@ ImageManifest.prototype.getPageImageURL = function (pageIndex, size)
 };
 
 /**
- * Return an array of tile objects for the specified page and zoom level
+ * Return an array of tile objects for the specified page and integer zoom level
  */
 ImageManifest.prototype.getPageImageTiles = function (pageIndex, zoomLevel, tileDimensions)
 {
-    var imageZoomLevel = Math.ceil(zoomLevel);
-
     var page = this.pages[pageIndex];
 
-    var rows = Math.ceil(page.d[imageZoomLevel].h / tileDimensions.height);
-    var cols = Math.ceil(page.d[imageZoomLevel].w / tileDimensions.width);
+    if (!isFinite(zoomLevel) || zoomLevel % 1 !== 0)
+        throw new TypeError('Zoom level must be an integer: ' + zoomLevel);
+
+    var rows = Math.ceil(page.d[zoomLevel].h / tileDimensions.height);
+    var cols = Math.ceil(page.d[zoomLevel].w / tileDimensions.width);
 
     var tiles = [];
 
@@ -90,30 +91,35 @@ ImageManifest.prototype.getPageImageTiles = function (pageIndex, zoomLevel, tile
                 col: col,
                 rowCount: rows,
                 colCount: cols,
-                zoomLevel: imageZoomLevel,
+                zoomLevel: zoomLevel,
                 tileDimensions: tileDimensions
             });
-
-            var scaleRatio = getScaleRatio(imageZoomLevel, zoomLevel);
 
             // FIXME: Dimensions should account for partial tiles (e.g. the
             // last row and column in a tiled image)
             tiles.push({
-                scaleRatio: scaleRatio,
+                row: row,
+                col: col,
+                zoomLevel: zoomLevel,
                 dimensions: {
-                    height: tileDimensions.height * scaleRatio,
-                    width: tileDimensions.width * scaleRatio
+                    height: tileDimensions.height,
+                    width: tileDimensions.width
                 },
                 offset: {
-                    top: row * tileDimensions.height * scaleRatio,
-                    left: col * tileDimensions.width * scaleRatio
+                    top: row * tileDimensions.height,
+                    left: col * tileDimensions.width
                 },
                 url: url
             });
         }
     }
 
-    return tiles;
+    return {
+        zoomLevel: zoomLevel,
+        rows: rows,
+        cols: cols,
+        tiles: tiles
+    };
 };
 
 ImageManifest.prototype.getMaxWidth = zoomedPropertyGetter('_maxWidths');
