@@ -195,29 +195,32 @@ Renderer.prototype._drawTile = function (pageIndex, tileIndex, tileRecord, img)
     var viewportOffsetX = tileOffset.left - this._viewport.left + viewportPaddingX;
     var viewportOffsetY = tileOffset.top - this._viewport.top + viewportPaddingY;
 
-    var tileX = viewportOffsetX < 0 ? -viewportOffsetX : 0;
-    var tileY = viewportOffsetY < 0 ? -viewportOffsetY : 0;
+    var destXOffset = viewportOffsetX < 0 ? -viewportOffsetX : 0;
+    var destYOffset = viewportOffsetY < 0 ? -viewportOffsetY : 0;
+
+    var sourceXOffset = destXOffset / tileRecord.scaleRatio;
+    var sourceYOffset = destYOffset / tileRecord.scaleRatio;
 
     var canvasX = Math.max(0, viewportOffsetX);
     var canvasY = Math.max(0, viewportOffsetY);
 
     // Ensure that the specified dimensions are no greater than the actual
     // size of the image. Safari won't display the tile if they are.
-    var destWidth = Math.min(tileRecord.dimensions.width, img.width * tileRecord.scaleRatio) - tileX;
-    var destHeight = Math.min(tileRecord.dimensions.height, img.height * tileRecord.scaleRatio) - tileY;
+    var destWidth = Math.min(tileRecord.dimensions.width, img.width * tileRecord.scaleRatio) - destXOffset;
+    var destHeight = Math.min(tileRecord.dimensions.height, img.height * tileRecord.scaleRatio) - destYOffset;
 
     var sourceWidth = destWidth / tileRecord.scaleRatio;
     var sourceHeight = destHeight / tileRecord.scaleRatio;
 
     debug.enabled && debug('Drawing page %s, tile %s from %s, %s to viewport at %s, %s, scale %s%%',
         pageIndex, tileIndex,
-        tileX, tileY,
+        sourceXOffset, sourceYOffset,
         canvasX, canvasY,
         Math.round(tileRecord.scaleRatio * 100));
 
     this._ctx.drawImage(
         img,
-        tileX, tileY,
+        sourceXOffset, sourceYOffset,
         sourceWidth, sourceHeight,
         canvasX, canvasY,
         destWidth, destHeight);
