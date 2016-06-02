@@ -18,11 +18,11 @@
     border: @borderSize solid @colour;
 }
 
-.plugin-icon(@plugin) {
-    background: data-uri('@{iconPath}plugins/@{plugin}.png') no-repeat;
+.plugin-icon(@plugin-name) {
+    background: data-uri('@{iconPath}plugins/@{plugin-name}.png') no-repeat;
 
     &:hover {
-        background: data-uri('@{iconPath}plugins/@{plugin}-hover.png') no-repeat;
+        background: data-uri('@{iconPath}plugins/@{plugin-name}-hover.png') no-repeat;
     }
 }
 
