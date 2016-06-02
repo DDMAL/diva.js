@@ -108,7 +108,6 @@ function ViewerCore(element, options, publicInstance)
     // Many of these are declared with arbitrary values that are changed later on
     var viewerState = {
         currentPageIndex: 0,        // The current page in the viewport (center-most page)
-        hashParamSuffix: '',        // Used when there are multiple document viewers on a page
         horizontalOffset: 0,        // Distance from the center of the diva element to the top of the current page
         horizontalPadding: 0,       // Either the fixed padding or adaptive padding
         ID: null,                   // The prefix of the IDs of the elements (usually 1-diva-)
@@ -1164,13 +1163,20 @@ function ViewerCore(element, options, publicInstance)
         viewerState.ID = generateId('diva-');
         viewerState.selector = '#' + settings.ID;
 
-        // Figure out the hashParamSuffix from the ID
-        var divaNumber = parseInt(settings.ID, 10);
-
-        if (divaNumber > 1)
+        if (options.hashParamSuffix === null)
         {
-            // If this is document viewer #1, don't use a suffix; otherwise, use the document viewer number
-            viewerState.hashParamSuffix = divaNumber;
+            // Figure out the hashParamSuffix from the ID
+            var divaNumber = parseInt(settings.ID, 10);
+
+            if (divaNumber === 1)
+            {
+                options.hashParamSuffix = '';
+            }
+            else
+            {
+                // If this is document viewer #1, don't use a suffix; otherwise, use the document viewer number
+                options.hashParamSuffix = divaNumber;
+            }
         }
 
         // Create the inner and outer panels

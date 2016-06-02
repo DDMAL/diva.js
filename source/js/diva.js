@@ -68,6 +68,7 @@ module.exports = diva;
             fixedPadding: 10,           // Fallback if adaptive padding is set to 0
             fixedHeightGrid: true,      // So each page in grid view has the same height (only widths differ)
             goDirectlyTo: 0,            // Default initial page to show (0-indexed)
+            hashParamSuffix: null,      // Used when there are multiple document viewers on a page
             iipServerURL: '',           // The URL to the IIPImage installation, including the `?FIF=` - *REQUIRED*, unless using IIIF
             inFullscreen: false,        // Set to true to load fullscreen mode initially
             inBookLayout: false,       // Set to true to view the document with facing pages in document mode

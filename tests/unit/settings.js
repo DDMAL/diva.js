@@ -327,6 +327,34 @@ QUnit.test("goDirectlyTo, invalid", function (assert)
     });
 });
 
+QUnit.test('hashParamSuffix, omitted', function (assert)
+{
+    var done = assert.async();
+
+    diva.Events.subscribe('ViewerDidLoad', function(settings)
+    {
+        assert.strictEqual(typeof settings.hashParamSuffix, 'string', "If omitted, hashParamSuffix should default to... some string");
+        done();
+    });
+
+    $.tempDiva({});
+});
+
+QUnit.test('hashParamSuffix, provided', function (assert)
+{
+    var done = assert.async();
+
+    diva.Events.subscribe('ViewerDidLoad', function(settings)
+    {
+        assert.strictEqual(settings.hashParamSuffix, '!!!!!!!', 'User hashParamSuffix should be honoured');
+        done();
+    });
+
+    $.tempDiva({
+        hashParamSuffix: '!!!!!!!'
+    });
+});
+
 // iipServerURL can't really be tested, just have to rely on this to work
 
 QUnit.test("inBookLayout true", function (assert)
