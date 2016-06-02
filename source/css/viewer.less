@@ -1,5 +1,5 @@
 @import (reference) "variables.less";
-@import "mixins.less";
+@import (reference) "mixins.less";
 
 .diva-title {
     text-align: center;
@@ -7,6 +7,53 @@
     font-size: 1.3em;
     max-width: 50em;
     margin: 0 auto;
+}
+
+.diva-button, .diva-input {
+    box-sizing: border-box;
+    outline: none;
+    border-radius: 0;
+    font: inherit;
+    vertical-align: middle;
+
+    &::-moz-focus-inner {
+        padding: 0;
+    }
+}
+
+.diva-button {
+    display: inline-block;
+    cursor: pointer;
+    .square(@buttonSize);
+
+    line-height: @buttonSize;
+    -webkit-appearance: none;
+    padding: 0;
+
+    background-color: @buttonBg;
+    background-repeat: no-repeat;
+    background-position: center;
+    .frame(@buttonFrame);
+
+    &:hover, &:focus {
+        background-color: @buttonHover;
+    }
+
+    &.diva-button-text {
+        width: auto;
+        padding: 0 @buttonPadding;
+    }
+}
+
+.diva-input {
+    height: @inputSize;
+    .frame(@inputFrame);
+
+    padding: 0 @inputPadding;
+
+    &:focus {
+        border-color: @inputHoverFrame;
+    }
 }
 
 .diva-label {
