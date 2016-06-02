@@ -20,7 +20,7 @@ DocumentHandler.prototype.onDoubleClick = function (event, coords)
     this._viewerCore.zoom(newZoomLevel, position);
 };
 
-DocumentHandler.prototype.onPinch = function (event, coords, zoomDelta)
+DocumentHandler.prototype.onPinch = function (event, coords, startDistance, endDistance)
 {
     // FIXME: Do this check in a way which is less spaghetti code-y
     var viewerState = this._viewerCore.getInternalState();
@@ -28,14 +28,12 @@ DocumentHandler.prototype.onPinch = function (event, coords, zoomDelta)
         return;
 
     var settings = this._viewerCore.getSettings();
-    var newZoomLevel = settings.zoomLevel;
 
-    // First figure out the new zoom level:
-    if (zoomDelta > 0 && newZoomLevel < settings.maxZoomLevel)
-        newZoomLevel++;
-    else if (zoomDelta < 0 && newZoomLevel > settings.minZoomLevel)
-        newZoomLevel--;
-    else
+    var newZoomLevel = Math.log(Math.pow(2, settings.zoomLevel) * endDistance / (startDistance * Math.log(2))) / Math.log(2);
+    newZoomLevel = Math.max(settings.minZoomLevel, newZoomLevel);
+    newZoomLevel = Math.min(settings.maxZoomLevel, newZoomLevel);
+
+    if (newZoomLevel === settings.zoomLevel)
         return;
 
     var position = this._viewerCore.getPagePositionAtViewportOffset(coords);
@@ -43,7 +41,15 @@ DocumentHandler.prototype.onPinch = function (event, coords, zoomDelta)
     // Set scaleWait to true so that we wait for this scale event to finish
     viewerState.scaleWait = true;
 
-    this._viewerCore.zoom(newZoomLevel, position);
+    var centerOffset = viewerState.renderer.getPageToViewportCenterOffset(position.anchorPage);
+    var scaleRatio = 1 / Math.pow(2, settings.zoomLevel - newZoomLevel);
+
+    this._viewerCore.reload({
+        zoomLevel: newZoomLevel,
+        goDirectlyTo: position.anchorPage,
+        horizontalOffset: (centerOffset.x - position.offset.left) + position.offset.left * scaleRatio,
+        verticalOffset: (centerOffset.y - position.offset.top) + position.offset.top * scaleRatio
+    });
 };
 
 // VIEW EVENTS

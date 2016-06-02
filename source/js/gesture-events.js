@@ -6,8 +6,6 @@ module.exports = {
 
 var DOUBLE_CLICK_TIMEOUT = 500;
 
-var PINCH_DISTANCE_THRESHOLD = 100;
-
 var DOUBLE_TAP_DISTANCE_THRESHOLD = 50;
 var DOUBLE_TAP_TIMEOUT = 250;
 
@@ -82,14 +80,14 @@ function onPinch(elem, callback)
 
             var zoomDelta = moveDistance - startDistance;
 
-            if (Math.abs(zoomDelta) > PINCH_DISTANCE_THRESHOLD)
+            if (Math.abs(zoomDelta) > 0)
             {
                 var touchCenter = {
                     pageX: (touches[0].clientX + touches[1].clientX) / 2,
                     pageY: (touches[0].clientY + touches[1].clientY) / 2
                 };
 
-                callback(event, getRelativeOffset(event.currentTarget, touchCenter), zoomDelta);
+                callback(event, getRelativeOffset(event.currentTarget, touchCenter), startDistance, moveDistance);
             }
         }
     });

@@ -288,7 +288,29 @@ function ViewerCore(element, options, publicInstance)
         var sourceProvider = getCurrentSourceProvider();
 
         if (viewerState.renderer)
-            viewerState.renderer.load(getRendererState(), sourceProvider);
+        {
+            var rendererState = getRendererState();
+
+            if (debug.enabled)
+            {
+                var serialized = Object.keys(rendererState)
+                    .filter(function (key)
+                    {
+                        // Too long
+                        return key !== 'pageLayouts' && key !== 'padding';
+                    })
+                    .map(function (key)
+                    {
+                        var value = rendererState[key];
+                        return key + ': ' + JSON.stringify(value);
+                    })
+                    .join(', ');
+
+                debug('reload with %s', serialized);
+            }
+
+            viewerState.renderer.load(rendererState, sourceProvider);
+        }
 
         // For the iPad - wait until this request finishes before accepting others
         if (viewerState.scaleWait)
@@ -771,10 +793,10 @@ function ViewerCore(element, options, publicInstance)
             triggerHardware: true
         });
 
-        gestureEvents.onPinch(viewerState.viewportObject, function (event, coords, zoomDelta)
+        gestureEvents.onPinch(viewerState.viewportObject, function (event, coords, start, end)
         {
-            debug('Pinch %s at %s, %s', zoomDelta, coords.left, coords.top);
-            viewerState.viewHandler.onPinch(event, coords, zoomDelta);
+            debug('Pinch %s at %s, %s', end - start, coords.left, coords.top);
+            viewerState.viewHandler.onPinch(event, coords, start, end);
         });
 
         gestureEvents.onDoubleTap(viewerState.viewportObject, function (event, coords)
