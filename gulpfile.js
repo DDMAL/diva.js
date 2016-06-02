@@ -8,6 +8,7 @@ var less = require('gulp-less');
 var rename = require('gulp-rename');
 
 var karma = require('karma');
+var autoprefixer = require('autoprefixer');
 
 var Promise = require('bluebird');
 
@@ -43,9 +44,12 @@ gulp.task('develop:compile', function(done)
 
 gulp.task('develop:styles', function()
 {
+    var autoprefix = autoprefixer(['last 2 versions', 'Firefox ESR', 'IE >= 9']);
+
     var unminimized = gulp.src('source/css/diva.less')
         .pipe(sourcemaps.init())
         .pipe(less())
+        .pipe($.postcss([autoprefix]))
         .pipe(sourcemaps.write('./'))
         .pipe(gulp.dest('build/css'));
 
@@ -53,6 +57,7 @@ gulp.task('develop:styles', function()
         .pipe(rename({suffix: '.min'}))
         .pipe(sourcemaps.init())
         .pipe(less({compress: true}))
+        .pipe($.postcss([autoprefix]))
         .pipe(sourcemaps.write('./'))
         .pipe(gulp.dest('build/css'));
 

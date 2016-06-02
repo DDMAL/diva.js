@@ -22,7 +22,7 @@
 
 .diva-tools-left {
     float: left;
-    .prevent-selection;
+    user-select: none;
 }
 
     .diva-zoom-out-button, .diva-grid-out-button {
@@ -39,7 +39,7 @@
 
     .diva-button {
         margin-left: -1px;
-        .prevent-selection;
+        user-select: none;
     }
 }
 
@@ -70,7 +70,7 @@
             top: @buttonSize;
             z-index: 1;
             display: none;
-            .box-shadow(1px 1px 4px 0 rgba(0,0,0,0.1));
+            box-shadow: 1px 1px 4px 0 rgba(0,0,0,0.1);
         }
 
             .diva-view-options .diva-button {
@@ -166,7 +166,7 @@
     }
 
         .diva-page {
-            .box-shadow(7px 7px 6px -6px rgba(0,0,0,0.3));
+            box-shadow: 7px 7px 6px -6px rgba(0,0,0,0.3);
             position: absolute;
             background-color: @pageBg;
         }
@@ -258,8 +258,6 @@
     height: 200px;
     background-color: #fff;
     border: 1px solid #ddd;
-    -webkit-box-shadow: 2px 2px 4px 0 rgba(0,0,0,0.5);
-    -moz-box-shadow: 2px 2px 4px 0 rgba(0,0,0,0.5);
     box-shadow: 2px 2px 4px 0 rgba(0,0,0,0.5);
     top: 50%;
     left: 50%;
@@ -289,8 +287,6 @@
     width: 32em;
     background-color: #fff;
     border: 1px solid #ddd;
-    -webkit-box-shadow: 2px 2px 4px 0 rgba(0,0,0,0.5);
-    -moz-box-shadow: 2px 2px 4px 0 rgba(0,0,0,0.5);
     box-shadow: 2px 2px 4px 0 rgba(0,0,0,0.5);
     top: 50%;
     left: 50%;

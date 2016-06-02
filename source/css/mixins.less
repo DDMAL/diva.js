@@ -1,17 +1,5 @@
 @import (reference) "variables.less";
 
-.border-radius(@radius) {
-    -webkit-border-radius: @radius;
-    -moz-border-radius: @radius;
-    border-radius: @radius;
-}
-
-.box-shadow(@shadow) {
-    -webkit-box-shadow: @shadow;
-    -moz-box-shadow: @shadow;
-    box-shadow: @shadow;
-}
-
 .size(@height, @width) {
     height: @height;
     width: @width;
@@ -51,7 +39,7 @@
 }
 
 .pretty-shadow(@distance: 4px) {
-    .box-shadow(2px 2px @distance 0 rgba(0, 0, 0, 0.5));
+    box-shadow: 2px 2px @distance 0 rgba(0, 0, 0, 0.5);
 }
 
 .full-width {
@@ -62,15 +50,6 @@
 .full-height {
     height: 100% !important;
     max-height: 100% !important;
-}
-
-.prevent-selection {
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
 }
 
 .diva-button, .diva-input {

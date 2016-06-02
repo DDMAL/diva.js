@@ -38,6 +38,7 @@
   },
   "devDependencies": {
     "archiver": "^0.14.4",
+    "autoprefixer": "^6.3.6",
     "bluebird": "^3.3.4",
     "chalk": "^0.5.1",
     "connect": "^3.3.5",
@@ -49,6 +50,7 @@
     "gulp-less": "^3.0.3",
     "gulp-livereload": "^3.8.0",
     "gulp-load-plugins": "^1.0.0-rc.1",
+    "gulp-postcss": "^6.1.1",
     "gulp-rename": "^1.2.2",
     "gulp-sourcemaps": "^1.5.2",
     "imports-loader": "^0.6.5",
