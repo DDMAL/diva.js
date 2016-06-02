@@ -115,6 +115,20 @@ QUnit.test('In horizontal orientation, final left page is is in tight-fit group'
     assert.close(lastGroup.pages[0].groupOffset.left, 0, 1, 'Page should not be offset to the left');
 });
 
+QUnit.test('Displays facing pages in tight-fit group', function (assert)
+{
+    var layouts = getBookLayout({
+        manifest: manifest,
+        zoomLevel: 2,
+        verticallyOriented: true
+    });
+
+    var group = layouts[17];
+
+    assert.strictEqual(group.pages.length, 1, 'In own group');
+    assert.strictEqual(group.dimensions.width, group.pages[0].dimensions.width, 'Tight fit width');
+});
+
 function assertFitsMax(group, dimension, assert)
 {
     var p1 = group.pages[0].dimensions[dimension];
@@ -138,5 +152,4 @@ function assertDimenDiffers(group, dimension, assert)
     var p2 = group.pages[1].dimensions[dimension];
 
     assert.notStrictEqual(p1, p2, 'Sanity check: page ' + dimension + ' differs');
-
 }

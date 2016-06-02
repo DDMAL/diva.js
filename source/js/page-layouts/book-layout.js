@@ -33,7 +33,7 @@ function getGroupings(viewerConfig)
             dimensions: getPageDimensions(index, manifest, zoomLevel)
         };
 
-        if (index === 0)
+        if (index === 0 || page.facingPages)
         {
             // The first page is placed on its own
             pagesByGroup.push([pageRecord]);
@@ -73,12 +73,15 @@ function getGroupLayoutsFromPageGrouping(viewerConfig, grouping)
     // from the layout then this special case shouldn't apply.
     var leftOffset = (page.index === 0 && verticallyOriented) ? pageDims.width : 0;
 
+    var shouldBeHorizontallyAdjusted =
+        verticallyOriented && !viewerConfig.manifest.pages[page.index].facingPages;
+
     // We need to left-align the page in vertical orientation, so we double
     // the group width
     return {
         dimensions: {
             height: pageDims.height,
-            width: verticallyOriented ? pageDims.width * 2 : pageDims.width
+            width: shouldBeHorizontallyAdjusted ? pageDims.width * 2 : pageDims.width
         },
         pages: [{
             index: page.index,

@@ -80,6 +80,7 @@ function parseIIIFManifest(manifest)
 
         // indicate whether canvas has viewingHint of non-paged
         var paged = canvases[i].viewingHint !== 'non-paged';
+        var facingPages = canvases[i].viewingHint === 'facing-pages';
 
         context = resource.service['@context'];
         if (context === 'http://iiif.io/api/image/2/context.json')
@@ -102,7 +103,8 @@ function parseIIIFManifest(manifest)
             'fn': label,
             'url': url,
             'api': imageAPIVersion,
-            'paged': paged
+            'paged': paged,
+            'facingPages': facingPages
         };
 
         if (info.hasOwnProperty('x'))
@@ -167,7 +169,8 @@ function parseIIIFManifest(manifest)
             f: images[i].fn,
             url: images[i].url,
             api: images[i].api,
-            paged: images[i].paged
+            paged: images[i].paged,
+            facingPages: images[i].facingPages
         };
 
         if (images[i].hasOwnProperty('xoffset'))

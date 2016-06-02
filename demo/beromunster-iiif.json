@@ -897,6 +897,7 @@
           "@id": "http://dev-diva.simssa.ca/iiif/srv/images/beromunster/canvas/bm_035.json",
           "@type": "sc:Canvas",
           "label": "Bm 035",
+          "viewingHint": "facing-pages",
           "height": 4378,
           "width": 4781,
           "images": [
@@ -923,6 +924,7 @@
           "@id": "http://dev-diva.simssa.ca/iiif/srv/images/beromunster/canvas/bm_036.json",
           "@type": "sc:Canvas",
           "label": "Bm 036",
+          "viewingHint": "non-paged",
           "height": 4089,
           "width": 2490,
           "images": [
