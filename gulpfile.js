@@ -8,7 +8,6 @@ var less = require('gulp-less');
 var rename = require('gulp-rename');
 
 var karma = require('karma');
-var autoprefixer = require('autoprefixer');
 
 var Promise = require('bluebird');
 
@@ -44,12 +43,16 @@ gulp.task('develop:compile', function(done)
 
 gulp.task('develop:styles', function()
 {
+    var autoprefixer = require('autoprefixer');
+    var auditDivaClasses = require('./audit-diva-css-classes');
+    var reporter = require('postcss-reporter');
+
     var autoprefix = autoprefixer(['last 2 versions', 'Firefox ESR', 'IE >= 9']);
 
     var unminimized = gulp.src('source/css/diva.less')
         .pipe(sourcemaps.init())
         .pipe(less())
-        .pipe($.postcss([autoprefix]))
+        .pipe($.postcss([autoprefix, auditDivaClasses(), reporter]))
         .pipe(sourcemaps.write('./'))
         .pipe(gulp.dest('build/css'));
 
