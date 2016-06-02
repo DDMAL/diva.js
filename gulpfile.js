@@ -21,7 +21,7 @@ var getSourceCompiler = (function webpackCompilerGetter()
         if (webpackCompiler === null)
         {
             var webpack = require('webpack');
-            webpackCompiler = webpack(require('./get-webpack-config')(process.env.DIVA_ENV || 'production'));
+            webpackCompiler = webpack(require('./get-webpack-config')(process.env.DIVA_ENV || 'development'));
         }
 
         return webpackCompiler;
@@ -144,15 +144,31 @@ gulp.task('develop', ['develop:styles', 'develop:server', 'develop:testServer'],
     }
 });
 
-gulp.task('release', ['develop:build'], function()
+gulp.task('release', function()
+{
+    var runSequence = require('run-sequence');
+
+    if (!process.env.DIVA_ENV)
+    {
+        process.env.DIVA_ENV = 'production';
+    }
+    else if (process.env.DIVA_ENV !== 'release')
+    {
+        console.warn('Running release script in ' + process.env.DIVA_ENV + ' mode!');
+    }
+
+    runSequence('package');
+});
+
+gulp.task('package', ['develop:build'], function ()
 {
     var archiver = require('archiver');
 
     var argv = require('yargs')
-                .usage('Usage: gulp release -v [num]')
-                .demand(['v'])
-                .alias('v', 'version')
-                .argv;
+        .usage('Usage: gulp release -v [num]')
+        .demand(['v'])
+        .alias('v', 'version')
+        .argv;
 
     var release_name = 'diva-v' + argv.v;
 
