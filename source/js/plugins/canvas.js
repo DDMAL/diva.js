@@ -12,7 +12,7 @@ require('../utils/jquery-extensions');
 
 (function ($)
 {
-    window.divaPlugins.push((function ()
+    module.exports = (function ()
     {
         var canvas = {},
             map = {},
@@ -959,5 +959,5 @@ require('../utils/jquery-extensions');
         // embedded.
         return retval;
 
-    })());
+    })();
 })(jQuery);

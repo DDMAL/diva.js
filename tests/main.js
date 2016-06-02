@@ -8,6 +8,8 @@ require('./utils');
 const srcContext = require.context('../source/js/', true, /(diva|plugins\/.*)\.js$/);
 srcContext.keys().forEach(srcContext);
 
+require('../source/js/register-builtin-plugins');
+
 // Load all test files
 const testsContext = require.context('./unit/', true, /\.js$/);
 testsContext.keys().forEach(testsContext);

@@ -11,6 +11,7 @@ var gestureEvents = require('./gesture-events');
 var diva = require('./diva-global');
 var DocumentHandler = require('./document-handler');
 var GridHandler = require('./grid-handler');
+var PluginRegistry = require('./plugin-registry');
 var Renderer = require('./renderer');
 var getPageLayouts = require('./page-layouts');
 var createSettingsView = require('./settings-view');
@@ -129,7 +130,7 @@ function ViewerCore(element, options, publicInstance)
         outerObject: {},            // $(settings.ID + 'outer'), for selecting the .diva-outer element
         pageTools: '',              // The string for page tools
         parentObject: parentObject, // JQuery object referencing the parent element
-        plugins: [],                // Filled with the enabled plugins from window.divaPlugins
+        plugins: [],                // Filled with the enabled plugins from the registry
         previousZoomRatio: 1,             // Used to keep track of the previous zoom ratio for scale transforming diva-inner
         renderer: null,
         resizeTimer: -1,            // Holds the ID of the timeout used when resizing the window (for clearing)
@@ -927,58 +928,56 @@ function ViewerCore(element, options, publicInstance)
 
     var initPlugins = function ()
     {
-        if (window.divaPlugins)
+        var pageTools = [];
+
+        // Add all the plugins that have not been explicitly disabled to
+        // settings.plugins
+        PluginRegistry.getAll().forEach(function (plugin)
         {
-            var pageTools = [];
+            var pluginProperName = plugin.pluginName[0].toUpperCase() + plugin.pluginName.substring(1);
 
-            // Add all the plugins that have not been explicitly disabled to settings.plugins
-            $.each(window.divaPlugins, function (index, plugin)
+            if (settings['enable' + pluginProperName])
             {
-                var pluginProperName = plugin.pluginName[0].toUpperCase() + plugin.pluginName.substring(1);
+                // Call the init function and check return value
+                var enablePlugin = plugin.init(settings, publicInstance);
 
-                if (settings['enable' + pluginProperName])
+                // If int returns false, consider the plugin disabled
+                if (!enablePlugin)
+                    return;
+
+                // If the title text is undefined, use the name of the plugin
+                var titleText = plugin.titleText || pluginProperName + " plugin";
+
+                // Create the pageTools bar if handleClick is set to a function
+                if (typeof plugin.handleClick === 'function')
                 {
-                    // Call the init function and check return value
-                    var enablePlugin = plugin.init(settings, publicInstance);
+                    pageTools.push('<div class="diva-' + plugin.pluginName + '-icon" title="' + titleText + '"></div>');
 
-                    // If int returns false, consider the plugin disabled
-                    if (!enablePlugin)
-                        return;
+                    // Delegate the click event - pass it the settings
+                    var pluginButtonElement = '.diva-' + plugin.pluginName + '-icon';
 
-                    // If the title text is undefined, use the name of the plugin
-                    var titleText = plugin.titleText || pluginProperName + " plugin";
-
-                    // Create the pageTools bar if handleClick is set to a function
-                    if (typeof plugin.handleClick === 'function')
+                    viewerState.outerObject.on('click', pluginButtonElement, function (event)
                     {
-                        pageTools.push('<div class="diva-' + plugin.pluginName + '-icon" title="' + titleText + '"></div>');
+                        plugin.handleClick.call(this, event, settings, publicInstance);
+                    });
 
-                        // Delegate the click event - pass it the settings
-                        var pluginButtonElement = '.diva-' + plugin.pluginName + '-icon';
+                    viewerState.outerObject.on('touchend', pluginButtonElement, function (event)
+                    {
+                        // Prevent firing of emulated mouse events
+                        event.preventDefault();
 
-                        viewerState.outerObject.on('click', pluginButtonElement, function (event)
-                        {
-                            plugin.handleClick.call(this, event, settings, publicInstance);
-                        });
-
-                        viewerState.outerObject.on('touchend', pluginButtonElement, function (event)
-                        {
-                            // Prevent firing of emulated mouse events
-                            event.preventDefault();
-
-                            plugin.handleClick.call(this, event, settings, publicInstance);
-                        });
-                    }
-
-                    // Add it to settings.plugins so it can be used later
-                    settings.plugins.push(plugin);
+                        plugin.handleClick.call(this, event, settings, publicInstance);
+                    });
                 }
-            });
 
-            // Save the page tools bar so it can be added for each page
-            if (pageTools.length)
-                viewerState.pageTools = '<div class="diva-page-tools">' + pageTools.join('') + '</div>';
-        }
+                // Add it to settings.plugins so it can be used later
+                settings.plugins.push(plugin);
+            }
+        });
+
+        // Save the page tools bar so it can be added for each page
+        if (pageTools.length)
+            viewerState.pageTools = '<div class="diva-page-tools">' + pageTools.join('') + '</div>';
     };
 
     var showThrobber = function ()

@@ -37,9 +37,9 @@ var activeDiva = new ActiveDivaController(); // jshint ignore: line
 
 module.exports = diva;
 
-// Expose the Diva variable globally (needed for plugins, possibly even in CommonJS environments)
+// Expose the Diva variable globally
+// TODO: Remove this; it shouldn't be necessary
 window.diva = diva;
-window.divaPlugins = [];
 
 // this pattern was taken from http://www.virgentech.com/blog/2009/10/building-object-oriented-jquery-plugin.html
 (function ($)

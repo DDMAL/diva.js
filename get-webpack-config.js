@@ -1,15 +1,13 @@
-var glob = require('glob');
 var webpack = require('webpack');
 
 module.exports = function (mode)
 {
-    var plugins = glob.sync('./source/js/plugins/*.js');
-
     var config = {
-        entry: plugins.concat([
+        entry: [
+            './source/js/register-builtin-plugins.js',
             // The export
             './source/js/diva.js'
-        ]),
+        ],
         output: {
             path: __dirname + '/build/js',
             filename: 'diva.min.js',

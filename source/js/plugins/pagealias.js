@@ -43,7 +43,7 @@ var diva = require('../diva');
 
 (function ($)
 {
-    window.divaPlugins.push((function()
+    module.exports = (function()
     {
         var retval =
         {
@@ -153,5 +153,5 @@ var diva = require('../diva');
             titleText: 'Re-aliases page indexes'
         };
         return retval;
-    })());
+    })();
 })(jQuery);

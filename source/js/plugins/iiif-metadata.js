@@ -6,7 +6,7 @@ var diva = require('../diva');
 
 (function ($)
 {
-    window.divaPlugins.push((function()
+    module.exports = (function()
     {
         var retval =
         {
@@ -125,5 +125,5 @@ var diva = require('../diva');
             titleText: 'Show metadata from a IIIF manifest'
         };
         return retval;
-    })());
+    })();
 })(jQuery);

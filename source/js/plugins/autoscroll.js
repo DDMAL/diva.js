@@ -23,7 +23,7 @@ var diva = require('../diva');
 
 (function ($)
 {
-    window.divaPlugins.push((function()
+    module.exports = (function()
     {
         var settings = {};
         var retval =
@@ -247,5 +247,5 @@ var diva = require('../diva');
             titleText: 'Automatically scrolls page along primary axis'
         };
         return retval;
-    })());
+    })();
 })(jQuery);

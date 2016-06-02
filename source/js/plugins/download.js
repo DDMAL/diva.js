@@ -7,7 +7,7 @@ var jQuery = require('jquery');
 
 (function ($)
 {
-    window.divaPlugins.push((function()
+    module.exports = (function()
     {
         var settings = {};
         var retval =
@@ -31,5 +31,5 @@ var jQuery = require('jquery');
         };
 
         return retval;
-    })());
+    })();
 })(jQuery);
