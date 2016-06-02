@@ -9,7 +9,7 @@
     .size(@size, @size);
 }
 
-.hidden {
+.hidden() {
     display: none;
 }
 
@@ -26,15 +26,15 @@
     }
 }
 
-.grab {
+.grab() {
     cursor: data-uri("@{iconPath}openhand.cur"), pointer;
 }
 
-.grabbing {
+.grabbing() {
     cursor: data-uri("@{iconPath}closedhand.cur"), move !important;
 }
 
-.loading {
+.loading() {
     background: data-uri("@{iconPath}loading.gif") no-repeat center;
 }
 
@@ -42,12 +42,12 @@
     box-shadow: 2px 2px @distance 0 rgba(0, 0, 0, 0.5);
 }
 
-.full-width {
+.full-width() {
     width: 100% !important;
     max-width: 100% !important;
 }
 
-.full-height {
+.full-height() {
     height: 100% !important;
     max-height: 100% !important;
 }
