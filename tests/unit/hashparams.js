@@ -5,7 +5,6 @@ Test coverage: pretty much complete
 var $ = require('jquery');
 var clearTempDiva = require('../utils').clearTempDiva;
 var diva = require('../../source/js/diva');
-var generateId = require('../../source/js/utils/generate-id');
 
 QUnit.module("Hash params", { beforeEach: clearTempDiva });
 
@@ -16,11 +15,10 @@ var testHashParams = function (testName, hashParams, onReadyCallback, config)
         var done = assert.async();
 
         var previousHash = window.location.hash;
-        var suffix = parseInt(generateId(), 10) + 1;
 
         window.location.hash = Object.keys(hashParams).map(function (param)
         {
-            return param + suffix + '=' + hashParams[param];
+            return param + '=' + hashParams[param];
         }).join('&');
 
         diva.Events.subscribe('ViewerDidLoad', function(settings)
@@ -34,9 +32,17 @@ var testHashParams = function (testName, hashParams, onReadyCallback, config)
             done();
         });
 
-        $.tempDiva(config);
+        $.tempDiva($.extend({
+            hashParamSuffix: ''
+        }, config));
     });
 };
+
+testHashParams('works with hashParamSuffix', {vxyz: 'g', f: 'true'}, function (settings, assert)
+{
+    assert.ok(settings.inGrid, 'Should read properties with the specified suffix');
+    assert.ok(!settings.inFullscreen, 'Should not read properties without it');
+}, {hashParamSuffix: 'xyz'});
 
 testHashParams("grid view (v)", {v: "g"}, function (settings, assert)
 {
