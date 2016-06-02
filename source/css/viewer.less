@@ -1,4 +1,5 @@
-@buttonHeight: @buttonSize + (2 * @borderSize);
+@import (reference) "variables.less";
+@import "mixins.less";
 
 .diva-title {
     text-align: center;
@@ -10,9 +11,13 @@
 
 .diva-label {
     margin: 0 @toolbarGroupMargin;
-    line-height: 34px;
+    line-height: @buttonSize;
     vertical-align: top;
     white-space: nowrap;
+}
+
+.diva-tools-left, .diva-tools-right {
+    margin-bottom: @toolbarGroupMargin;
 }
 
 .diva-tools-left {
@@ -45,13 +50,10 @@
 
         .diva-page-nav form {
             display: inline-block;
-            vertical-align: top;
-            line-height: @buttonHeight;
         }
 
-            .diva-input {
+            .diva-goto-page-input {
                 width: 3em;
-                margin-right: 4px;
             }
 
     .diva-fullscreen-icon {
@@ -65,7 +67,7 @@
 
         .diva-view-options {
             position: absolute;
-            top: @buttonHeight;
+            top: @buttonSize;
             z-index: 1;
             display: none;
             .box-shadow(1px 1px 4px 0 rgba(0,0,0,0.1));
@@ -106,6 +108,10 @@
     background: @toolsBg;
     .pretty-shadow;
 
+    .diva-tools-left, .diva-tools-right {
+        margin-bottom: 0;
+    }
+
     .diva-tools-right {
         margin-left: 2em;
     }
@@ -116,16 +122,12 @@
 
     /* prevent variable number of digits in labels from resizing .diva-fullscreen-tools */
     .diva-zoom-label, .diva-grid-label, .diva-page-label {
-        width: 6em;
+        width: 8em;
         display: block;
     }
 
     .diva-page-nav {
         margin-right: 0;
-
-        form {
-            line-height: 1;
-        }
     }
 }
 

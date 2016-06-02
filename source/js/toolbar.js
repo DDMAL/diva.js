@@ -32,7 +32,8 @@ function createToolbar(viewer)
     // Creates a toolbar button
     var createButtonElement = function(name, label, callback)
     {
-        var button = elt('span', {
+        var button = elt('button', {
+            type: 'button',
             id: settings.ID + name,
             class: 'diva-' + name + ' diva-button',
             title: label
@@ -347,7 +348,7 @@ function createToolbar(viewer)
     {
         var gotoPageInput = elt('input', {
             id: settings.ID + 'goto-page-input',
-            class: 'diva-input',
+            class: 'diva-input diva-goto-page-input',
             type: 'text'
         });
 
@@ -357,6 +358,7 @@ function createToolbar(viewer)
             },
             gotoPageInput,
             elt('input', {
+                class: 'diva-button diva-button-text',
                 type: 'submit',
                 value: 'Go'
             })

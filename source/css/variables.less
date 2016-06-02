@@ -13,21 +13,20 @@
 @viewerBg:              @lightGrey;
 @pageBg:                @lighterGrey;
 @viewerFrame:           @primaryBorder;
+
 @toolsBg:               @white;
 @toolsFrame:            @grey;
+
+// TODO: Could probably unify button, input variables
 @buttonBg:              @lightGrey;
 @buttonFrame:           @primaryBorder;
 @buttonHover:           @lighterGrey;
+
+@inputFrame:            @primaryBorder;
+@inputHoverFrame:       darken(@primaryBorder, 10%);
+
 @linkBg:                @white;
 @linkFrame:             @grey;
-@sliderBg:              @lighterGrey;
-@sliderFrame:           @grey;
-@handleBg:              @lighterGrey;
-@handleFrame:           @mediumGrey;
-@handleHoverBg:         lighten(@primaryBorder, 20%);
-@handleHoverFrame:      darken(@primaryBorder, 10%);
-@handleActiveBg:        lighten(@primaryBorder, 25%);
-@handleActiveFrame:     @primaryBorder;
 
 // z-index information
 @fullscreenZIndex:      100;
@@ -37,7 +36,12 @@
 @fullscreenIconSize:    26px;
 @throbberWidth:         50px;
 @throbberHeight:        50px;
-@toolbarGroupMargin:    0.7em;
+@toolbarGroupMargin:    1em;
 
-@buttonSize: 32px;
-@borderSize: 1px;
+@borderSize:            1px;
+
+@buttonSize:            34px;
+@buttonPadding:         0.5em;
+
+@inputSize:             34px;
+@inputPadding:          0.5em;

@@ -1,3 +1,5 @@
+@import (reference) "variables.less";
+
 .border-radius(@radius) {
     -webkit-border-radius: @radius;
     -moz-border-radius: @radius;
@@ -71,18 +73,50 @@
     user-select: none;
 }
 
+.diva-button, .diva-input {
+    box-sizing: border-box;
+    outline: none;
+    border-radius: 0;
+    font: inherit;
+    vertical-align: middle;
+
+    &::-moz-focus-inner {
+        padding: 0;
+    }
+}
+
 .diva-button {
     display: inline-block;
     cursor: pointer;
     .square(@buttonSize);
+
+    line-height: @buttonSize;
+    -webkit-appearance: none;
+    padding: 0;
+
     background-color: @buttonBg;
     background-repeat: no-repeat;
     background-position: center;
     .frame(@buttonFrame);
 
-    @media screen and (min-device-width: 769px) {
-        &:hover {
-            background-color: @buttonHover;
-        }
+    &:hover, &:focus {
+        background-color: @buttonHover;
+    }
+
+    &.diva-button-text {
+        width: auto;
+        padding: 0 @buttonPadding;
+    }
+}
+
+
+.diva-input {
+    height: @inputSize;
+    .frame(@inputFrame);
+
+    padding: 0 @inputPadding;
+
+    &:focus {
+        border-color: @inputHoverFrame;
     }
 }
