@@ -85,7 +85,8 @@
     padding: 10px;
     padding-bottom: 0;
     div {
-        .square(18px);
+        height: 18px;
+        width: 18px;
         background-repeat: no-repeat;
         cursor: pointer;
         z-index: @canvasZIndex + 4;
@@ -205,7 +206,8 @@
 }
 
 #diva-canvas-minimap {
-    .square(@toolsWidth - 20px);
+    height: @toolsWidth - 20px;
+    width: @toolsWidth - 20px;
     cursor: crosshair;
     margin-bottom: 10px;
     background: @canvasPreviewBg;
