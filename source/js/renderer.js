@@ -168,19 +168,27 @@ Renderer.prototype._queueTilesForPage = function (pageIndex)
             return;
         }
 
-        this._pendingRequests[source.url] = new ImageRequestHandler(source.url, function (img)
-        {
-            delete this._pendingRequests[source.url];
-            this._cache.put(source.url, img);
-
-            if (!this._isTileVisible(pageIndex, source))
+        this._pendingRequests[source.url] = new ImageRequestHandler({
+            url: source.url,
+            load: function (img)
             {
-                debug('Page %s, tile %s no longer visible on image load', pageIndex, tileIndex);
-                return;
-            }
+                delete this._pendingRequests[source.url];
+                this._cache.put(source.url, img);
 
-            this._drawTile(pageIndex, tileIndex, source, img);
-        }.bind(this));
+                if (!this._isTileVisible(pageIndex, source))
+                {
+                    debug('Page %s, tile %s no longer visible on image load', pageIndex, tileIndex);
+                    return;
+                }
+
+                this._drawTile(pageIndex, tileIndex, source, img);
+            }.bind(this),
+            error: function ()
+            {
+                // TODO: Could make a limited number of retries, etc.
+                delete this._pendingRequests[source.url];
+            }.bind(this)
+        });
     }, this);
 };
 

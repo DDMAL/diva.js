@@ -9,19 +9,21 @@ module.exports = ImageRequestHandler;
  * @param callback
  * @constructor
  */
-function ImageRequestHandler(url, callback)
+function ImageRequestHandler(options)
 {
-    this._url = url;
-    this._callback = callback;
+    this._url = options.url;
+    this._callback = options.load;
+    this._errorCallback = options.error;
     this._aborted = this._complete = false;
 
     // Initiate the request
     this._image = new Image();
     this._image.crossOrigin = "anonymous";
     this._image.onload = this._handleLoad.bind(this);
-    this._image.src = url;
+    this._image.onerror = this._handleError.bind(this);
+    this._image.src = options.url;
 
-    debug('Requesting image %s', url);
+    debug('Requesting image %s', options.url);
 }
 
 ImageRequestHandler.prototype.abort = function ()
@@ -37,7 +39,7 @@ ImageRequestHandler.prototype.abort = function ()
     //
     // https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element
     // http://stackoverflow.com/questions/7390888/does-changing-the-src-attribute-of-an-image-stop-the-image-from-downloading
-    this._image.onload = null;
+    this._image.onload = this._image.onerror = null;
     this._aborted = true;
 
     this._image.src = '';
@@ -61,4 +63,10 @@ ImageRequestHandler.prototype._handleLoad = function ()
 
     debug('Received image %s', this._url);
     this._callback(this._image);
+};
+
+ImageRequestHandler.prototype._handleError = function ()
+{
+    debug('Failed to load image %s', this._url);
+    this._errorCallback(this._image);
 };
