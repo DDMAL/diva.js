@@ -3,6 +3,8 @@
 var jQuery = require('jquery');
 var $ = jQuery;
 
+var diva = require('../source/js/diva');
+
 (function () {
     // Allows you to clone, create a document viewer on, then remove an element
     $.tempDiva = function (settings) {
