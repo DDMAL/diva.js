@@ -3,7 +3,6 @@ var $ = require('jquery');
 require('./utils/jquery-extensions');
 
 var elt = require('./utils/elt');
-var generateId = require('./utils/generate-id');
 var getScrollbarWidth = require('./utils/get-scrollbar-width');
 var Transition = require('./utils/transition');
 
@@ -1160,23 +1159,17 @@ function ViewerCore(element, options, publicInstance)
         viewerState.mobileWebkit = window.orientation !== undefined;
 
         // Generate an ID that can be used as a prefix for all the other IDs
-        viewerState.ID = generateId('diva-');
+        var idNumber = generateId();
+        viewerState.ID = 'diva-' + idNumber + '-';
         viewerState.selector = '#' + settings.ID;
 
         if (options.hashParamSuffix === null)
         {
-            // Figure out the hashParamSuffix from the ID
-            var divaNumber = parseInt(settings.ID, 10);
-
-            if (divaNumber === 1)
-            {
+            // Omit the suffix from the first instance
+            if (idNumber === 1)
                 options.hashParamSuffix = '';
-            }
             else
-            {
-                // If this is document viewer #1, don't use a suffix; otherwise, use the document viewer number
-                options.hashParamSuffix = divaNumber;
-            }
+                options.hashParamSuffix = idNumber + '';
         }
 
         // Create the inner and outer panels
@@ -1379,4 +1372,10 @@ function ViewerCore(element, options, publicInstance)
 
     // Call the init function when this object is created.
     init();
+}
+
+generateId.counter = 1;
+
+function generateId() {
+    return generateId.counter++;
 }
