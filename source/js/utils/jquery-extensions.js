@@ -2,6 +2,7 @@
 
 var jQuery = require('jquery');
 
+/* istanbul ignore next This is a vendored dependency */
 /*
  * jQuery dragscrollable Plugin
  * version: 1.0 (25-Jun-2009)
@@ -127,6 +128,7 @@ var jQuery = require('jquery');
 
 })( jQuery ); // confine scope
 
+/* istanbul ignore next This is a vendored dependency */
 /**
  jQuery.kinetic v2.2.1
  Dave Taylor http://davetayls.me
@@ -665,6 +667,9 @@ var jQuery = require('jquery');
     };
 
 }(jQuery));
+
+/* istanbul ignore next
+    We should maybe be testing this, but realistically that would mean maintaining a real fork */
 
 // jQuery.kinetic core modifications for diva.js (compatible with jQuery.kinetic 2.2.1)
 // use jQuery.kinetic for touch handlers only since we are using dragscrollable for mouse handlers
