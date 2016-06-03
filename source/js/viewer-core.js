@@ -827,12 +827,12 @@ function ViewerCore(element, options, publicInstance)
         // Change the cursor for dragging
         viewerState.innerObject.mousedown(function ()
         {
-            $(this).addClass('diva-grabbing');
+            viewerState.innerObject.addClass('diva-grabbing');
         });
 
         viewerState.innerObject.mouseup(function ()
         {
-            $(this).removeClass('diva-grabbing');
+            viewerState.innerObject.removeClass('diva-grabbing');
         });
 
         bindMouseEvents();
