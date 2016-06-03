@@ -569,10 +569,10 @@ function ViewerCore(element, options, publicInstance)
         var pageRegion = viewerState.renderer.getPageRegion(focalPoint.anchorPage);
 
         // calculate distance from cursor coordinates to center of viewport
-        var focalXToCenter = (settings.viewport.left + (settings.viewport.width / 2)) -
-            (pageRegion.left + focalPoint.offset.left);
-        var focalYToCenter = (settings.viewport.top + (settings.viewport.height / 2)) -
-            (pageRegion.top + focalPoint.offset.top);
+        var focalXToCenter = (pageRegion.left + focalPoint.offset.left) -
+            (settings.viewport.left + (settings.viewport.width / 2));
+        var focalYToCenter = (pageRegion.top + focalPoint.offset.top) -
+            (settings.viewport.top + (settings.viewport.height / 2));
 
         // calculate horizontal/verticalOffset: distance from viewport center to page upper left corner
         viewerState.horizontalOffset = (focalPoint.offset.left * zoomRatio) - focalXToCenter;
