@@ -1,4 +1,5 @@
 var maxBy = require('lodash.maxby');
+var PageToolsOverlay = require('./page-tools-overlay');
 
 module.exports = DocumentHandler;
 
@@ -6,6 +7,27 @@ function DocumentHandler(viewerCore)
 {
     this._viewerCore = viewerCore;
     this._viewerState = viewerCore.getInternalState();
+    this._overlays = [];
+
+    var pageToolsHTML = viewerCore.getPageToolsHTML();
+
+    if (pageToolsHTML)
+    {
+        var settings = viewerCore.getSettings();
+
+        var numPages = settings.numPages,
+            innerElement = settings.innerElement;
+
+        var getLayout = viewerCore.getCurrentLayout.bind(viewerCore);
+        var getViewport = viewerCore.getViewport.bind(viewerCore);
+
+        for (var i=0; i < numPages; i++)
+        {
+            var overlay = new PageToolsOverlay(i, innerElement, pageToolsHTML, getLayout, getViewport);
+            this._overlays.push(overlay);
+            viewerCore.addPageOverlay(overlay);
+        }
+    }
 }
 
 // USER EVENTS
@@ -101,6 +123,14 @@ DocumentHandler.prototype._handleZoomLevelChange = function ()
     }
 
     viewerState.oldZoomLevel = zoomLevel;
+};
+
+DocumentHandler.prototype.destroy = function ()
+{
+    this._overlays.forEach(function (overlay)
+    {
+        this._viewerCore.removePageOverlay(overlay);
+    }, this);
 };
 
 function getCentermostPage(renderedPages, layout, viewport)

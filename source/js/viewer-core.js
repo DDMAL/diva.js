@@ -9,6 +9,7 @@ var gestureEvents = require('./gesture-events');
 var diva = require('./diva-global');
 var DocumentHandler = require('./document-handler');
 var GridHandler = require('./grid-handler');
+var PageOverlayManager = require('./page-overlay-manager');
 var PluginRegistry = require('./plugin-registry');
 var Renderer = require('./renderer');
 var getPageLayouts = require('./page-layouts');
@@ -125,6 +126,7 @@ function ViewerCore(element, options, publicInstance)
         options: options,
         outerElement: null,         // The native .diva-outer DOM object
         outerObject: {},            // $(settings.ID + 'outer'), for selecting the .diva-outer element
+        pageOverlays: new PageOverlayManager(),
         pageTools: '',              // The string for page tools
         parentObject: parentObject, // JQuery object referencing the parent element
         plugins: [],                // Filled with the enabled plugins from the registry
@@ -370,7 +372,7 @@ function ViewerCore(element, options, publicInstance)
 
         if (viewerState.viewHandler && !(viewerState.viewHandler instanceof Handler))
         {
-            // TODO: May need to destroy handler in future
+            viewerState.viewHandler.destroy();
             viewerState.viewHandler = null;
         }
 
@@ -381,6 +383,7 @@ function ViewerCore(element, options, publicInstance)
             initializeRenderer();
     };
 
+    // TODO: This could probably be done upon ViewerCore initialization
     var initializeRenderer = function ()
     {
         var compatErrors = Renderer.getCompatibilityErrors();
@@ -404,11 +407,17 @@ function ViewerCore(element, options, publicInstance)
                 },
                 onViewDidLoad: function ()
                 {
+                    updatePageOverlays();
                     viewerState.viewHandler.onViewDidLoad();
                 },
                 onViewDidUpdate: function (pages, targetPage)
                 {
+                    updatePageOverlays();
                     viewerState.viewHandler.onViewDidUpdate(pages, targetPage);
+                },
+                onViewDidTransition: function ()
+                {
+                    updatePageOverlays();
                 }
             };
 
@@ -513,6 +522,11 @@ function ViewerCore(element, options, publicInstance)
                 right: 0
             }
         };
+    };
+
+    var updatePageOverlays = function ()
+    {
+        viewerState.pageOverlays.updateOverlays(viewerState.renderer.getRenderedPages());
     };
 
     //Shortcut for closing fullscreen with the escape key
@@ -1219,6 +1233,11 @@ function ViewerCore(element, options, publicInstance)
         return viewerState;
     };
 
+    this.getPageToolsHTML = function ()
+    {
+        return viewerState.pageTools;
+    };
+
     this.getCurrentLayout = function ()
     {
         return viewerState.renderer ? viewerState.renderer.layout : null;
@@ -1238,6 +1257,16 @@ function ViewerCore(element, options, publicInstance)
             width: viewport.width,
             height: viewport.height
         };
+    };
+
+    this.addPageOverlay = function (overlay)
+    {
+        viewerState.pageOverlays.addOverlay(overlay);
+    };
+
+    this.removePageOverlay = function (overlay)
+    {
+        viewerState.pageOverlays.removeOverlay(overlay);
     };
 
     this.getPagePositionAtViewportOffset = function (coords)

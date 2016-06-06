@@ -85,6 +85,11 @@ GridHandler.prototype.onViewDidUpdate = function (renderedPages, targetPage)
         this._viewerCore.setCurrentPage(chosenGroup.pages[0].index);
 };
 
+GridHandler.prototype.destroy = function ()
+{
+    // No-op
+};
+
 function getCentermostGroup(groups, viewport)
 {
     var viewportMiddle = viewport.top + viewport.height / 2;

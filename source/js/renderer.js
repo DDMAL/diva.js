@@ -382,6 +382,8 @@ Renderer.prototype.transitionViewportPosition = function (options)
     var getPosition = options.getPosition;
     var self = this;
 
+    var onViewDidTransition = this._hooks.onViewDidTransition;
+
     this._animation = InterpolateAnimation.animate({
         duration: options.duration,
         parameters: options.parameters,
@@ -389,6 +391,9 @@ Renderer.prototype.transitionViewportPosition = function (options)
         {
             // TODO: Do image preloading, work with that
             self._setViewportPosition(getPosition(values));
+
+            if (onViewDidTransition)
+                onViewDidTransition();
         },
         onEnd: function (info)
         {

@@ -219,12 +219,15 @@
             background-color: @pageBg;
         }
 
-.diva-page-tools {
+.diva-page-tools-wrapper {
     position: absolute;
-    top: -@pluginIconSize;
-    left: 0;
-    height: @pluginIconSize;
     z-index: 3;
+}
+
+.diva-page-tools {
+    position: relative;
+    top: -@pluginIconSize;
+    height: @pluginIconSize;
 
     div {
         display: inline-block;
