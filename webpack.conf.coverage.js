@@ -13,7 +13,7 @@ module.exports = {
             // instrument only testing sources with Istanbul
             {
                 test: /\.js$/,
-                include: path.resolve('source/js/'),
+                include: path.join(__dirname, 'source/js/'),
                 loader: 'istanbul-instrumenter'
             }
         ],
@@ -23,7 +23,7 @@ module.exports = {
                 loader: 'json'
             },
             {
-                include: path.resolve('node_modules/jquery-simulate'),
+                include: path.join(__dirname, 'node_modules/jquery-simulate'),
                 loader: 'imports?jQuery=jquery'
             }
         ]

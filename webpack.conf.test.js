@@ -14,7 +14,7 @@ module.exports = {
                 loader: 'json'
             },
             {
-                include: path.resolve('node_modules/jquery-simulate'),
+                include: path.join(__dirname, 'node_modules/jquery-simulate'),
                 loader: 'imports?jQuery=jquery'
             }
         ]
