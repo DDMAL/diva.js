@@ -53,7 +53,7 @@ gulp.task('develop:styles', function()
         .pipe(sourcemaps.init())
         .pipe(less())
         .pipe($.postcss([autoprefix, auditDivaClasses(), reporter]))
-        .pipe(sourcemaps.write('./'))
+        .pipe(sourcemaps.write('./', {sourceRoot: '/source/css'}))
         .pipe(gulp.dest('build/css'));
 
     var minimized = gulp.src('source/css/diva.less')
@@ -61,7 +61,7 @@ gulp.task('develop:styles', function()
         .pipe(sourcemaps.init())
         .pipe(less({compress: true}))
         .pipe($.postcss([autoprefix]))
-        .pipe(sourcemaps.write('./'))
+        .pipe(sourcemaps.write('./', {sourceRoot: '/source/css'}))
         .pipe(gulp.dest('build/css'));
 
     return merge(minimized, unminimized);
