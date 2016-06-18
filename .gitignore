@@ -11,3 +11,4 @@ tags
 
 /node_modules/
 /coverage/
+/build/
