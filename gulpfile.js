@@ -142,7 +142,7 @@ gulp.task('release', function ()
     {
         process.env.DIVA_ENV = 'production';
     }
-    else if (process.env.DIVA_ENV !== 'release')
+    else if (process.env.DIVA_ENV !== 'production')
     {
         console.warn('Running release script in ' + process.env.DIVA_ENV + ' mode!');
     }
