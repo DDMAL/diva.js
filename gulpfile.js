@@ -20,7 +20,15 @@ var getSourceCompiler = (function webpackCompilerGetter()
         if (webpackCompiler === null)
         {
             var webpack = require('webpack');
-            webpackCompiler = webpack(require('./get-webpack-config')(process.env.DIVA_ENV || 'development'));
+
+            var conf;
+
+            if (process.env.DIVA_ENV === 'production')
+                conf = require('./webpack.conf.prod');
+            else
+                conf = require('./webpack.conf.dev');
+
+            webpackCompiler = webpack(conf);
         }
 
         return webpackCompiler;

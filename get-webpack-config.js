@@ -1,7 +1,18 @@
 var webpack = require('webpack');
 
-module.exports = function (mode)
+module.exports = function (mode, options)
 {
+    var isCompressed = options && options.compress;
+
+    var outputFilename;
+
+    if (options && options.outputFilename)
+        outputFilename = options.outputFilename;
+    else if (isCompressed)
+        outputFilename = 'diva.min.js';
+    else
+        outputFilename = 'diva.js';
+
     var config = {
         entry: [
             './source/js/register-builtin-plugins.js',
@@ -10,7 +21,7 @@ module.exports = function (mode)
         ],
         output: {
             path: __dirname + '/build/js',
-            filename: 'diva.min.js',
+            filename: outputFilename,
             library: 'diva',
             libraryTarget: 'umd'
         },
@@ -21,12 +32,12 @@ module.exports = function (mode)
                 commonjs: 'jquery',
                 commonjs2: 'jquery'
             }
-        }
+        },
+        devtool: mode === 'production' ? 'sourcemap' : 'inline-source-map'
     };
 
-    if (mode === 'production')
+    if (isCompressed)
     {
-        config.devtool = 'sourcemap';
         config.plugins = [
             new webpack.optimize.UglifyJsPlugin({
                 compress: {
@@ -34,10 +45,6 @@ module.exports = function (mode)
                 }
             })
         ];
-    }
-    else
-    {
-        config.devtool = 'inline-source-map';
     }
 
     return config;
