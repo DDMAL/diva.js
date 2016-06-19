@@ -1,7 +1,15 @@
+# npm-specific ignores:
 **/.*
-node_modules
-bower_components
-develop
 diva_env
-legacy
-.gitignore
+/legacy/
+
+# General ignores:
+*.swp
+*.pyc
+*dev.html
+todo.md
+.DS_Store
+tags
+
+/node_modules/
+/coverage/
