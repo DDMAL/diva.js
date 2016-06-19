@@ -490,6 +490,7 @@ function ViewerCore(element, options, publicInstance)
             pageLayouts: pageLayouts,
             padding: padding,
             zoomLevel: settings.inGrid ? null : settings.zoomLevel,
+            maxZoomLevel: settings.inGrid ? null : viewerState.manifest.maxZoom,
             verticallyOriented: settings.verticallyOriented || settings.inGrid,
             position: {
                 anchorPage: settings.goDirectlyTo,

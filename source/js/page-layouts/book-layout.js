@@ -15,7 +15,6 @@ function getBookLayoutGroups(viewerConfig)
 function getGroupings(viewerConfig)
 {
     var manifest = viewerConfig.manifest;
-    var zoomLevel = viewerConfig.zoomLevel;
 
     var pagesByGroup = [];
     var leftPage = null;
@@ -30,7 +29,7 @@ function getGroupings(viewerConfig)
 
         var pageRecord = {
             index: index,
-            dimensions: getPageDimensions(index, manifest, zoomLevel)
+            dimensions: getPageDimensions(index, manifest)
         };
 
         if (index === 0 || page.facingPages)

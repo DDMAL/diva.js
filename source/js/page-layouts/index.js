@@ -19,7 +19,7 @@ function getPageLayouts(settings)
     }
     else
     {
-        var config = pluck(settings, ['manifest', 'zoomLevel', 'verticallyOriented']);
+        var config = pluck(settings, ['manifest', 'verticallyOriented']);
 
         if (settings.inBookLayout)
             return getBookLayoutGroups(config);

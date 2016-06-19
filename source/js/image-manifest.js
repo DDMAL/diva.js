@@ -43,6 +43,16 @@ ImageManifest.prototype.isPageValid = function (pageIndex)
     return pageIndex >= 0 && pageIndex < this.pages.length;
 };
 
+ImageManifest.prototype.getMaxPageDimensions = function (pageIndex)
+{
+    var maxDims = this.pages[pageIndex].d[this.maxZoom];
+
+    return {
+        height: maxDims.h,
+        width: maxDims.w
+    };
+};
+
 ImageManifest.prototype.getPageDimensionsAtZoomLevel = function (pageIndex, zoomLevel)
 {
     var maxDims = this.pages[pageIndex].d[this.maxZoom];

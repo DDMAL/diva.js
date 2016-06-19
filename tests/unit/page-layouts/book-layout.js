@@ -11,39 +11,36 @@ QUnit.test('In vertical orientation positions first page to the right', function
 {
     var layouts = getBookLayout({
         manifest: manifest,
-        zoomLevel: 2,
         verticallyOriented: true
     });
 
     var firstGroup = layouts[0];
-    var width = manifest.pages[0].d[2].w;
+    var width = manifest.getMaxPageDimensions(0).width;
 
     assert.strictEqual(firstGroup.pages.length, 1, 'First group should be a single page');
-    assert.close(firstGroup.dimensions.width, 2 * width, 1, 'Group size should be twice page width');
-    assert.close(firstGroup.pages[0].groupOffset.left, width, 1, 'Page should be offset to the left by its width');
+    assert.strictEqual(firstGroup.dimensions.width, 2 * width, 1, 'Group size should be twice page width');
+    assert.strictEqual(firstGroup.pages[0].groupOffset.left, width, 1, 'Page should be offset to the left by its width');
 });
 
 QUnit.test('In horizontal orientation, shrink first group to single page size', function (assert)
 {
     var layouts = getBookLayout({
         manifest: manifest,
-        zoomLevel: 2,
         verticallyOriented: false
     });
 
     var firstGroup = layouts[0];
-    var width = manifest.pages[0].d[2].w;
+    var width = manifest.getMaxPageDimensions(0).width;
 
     assert.strictEqual(firstGroup.pages.length, 1, 'First group should be a single page');
-    assert.close(firstGroup.dimensions.width, width, 1, 'Group width should be page width');
-    assert.close(firstGroup.pages[0].groupOffset.left, 0, 1, 'Page should not be offset to the left');
+    assert.strictEqual(firstGroup.dimensions.width, width, 1, 'Group width should be page width');
+    assert.strictEqual(firstGroup.pages[0].groupOffset.left, 0, 1, 'Page should not be offset to the left');
 });
 
 QUnit.test('In vertical orientation, facing pages groups fit max height, width', function (assert)
 {
     var layouts = getBookLayout({
         manifest: manifest,
-        zoomLevel: 2,
         verticallyOriented: true
     });
 
@@ -59,7 +56,6 @@ QUnit.test('In horizontal orientation, facing pages groups fit max height, tight
 {
     var layouts = getBookLayout({
         manifest: manifest,
-        zoomLevel: 2,
         verticallyOriented: false
     });
 
@@ -79,7 +75,6 @@ QUnit.test('In vertical orientation, final left page is left-aligned', function 
 {
     var layouts = getBookLayout({
         manifest: manifest,
-        zoomLevel: 2,
         verticallyOriented: true
     });
 
@@ -103,7 +98,6 @@ QUnit.test('In horizontal orientation, final left page is is in tight-fit group'
 {
     var layouts = getBookLayout({
         manifest: manifest,
-        zoomLevel: 2,
         verticallyOriented: false
     });
 
@@ -119,7 +113,6 @@ QUnit.test('Displays facing pages in tight-fit group', function (assert)
 {
     var layouts = getBookLayout({
         manifest: manifest,
-        zoomLevel: 2,
         verticallyOriented: true
     });
 
