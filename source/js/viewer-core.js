@@ -489,7 +489,7 @@ function ViewerCore(element, options, publicInstance)
         return {
             pageLayouts: pageLayouts,
             padding: padding,
-            zoomLevel: settings.zoomLevel,
+            zoomLevel: settings.inGrid ? null : settings.zoomLevel,
             verticallyOriented: settings.verticallyOriented || settings.inGrid,
             position: {
                 anchorPage: settings.goDirectlyTo,

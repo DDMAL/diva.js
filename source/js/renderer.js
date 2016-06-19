@@ -500,7 +500,12 @@ function getPageLookup(pageGroups)
 
 function getScaledTileRecord(source, scaleFactor)
 {
-    var scaleRatio = Math.pow(2, scaleFactor - source.zoomLevel);
+    var scaleRatio;
+
+    if (scaleFactor === null)
+        scaleRatio = 1;
+    else
+        scaleRatio = Math.pow(2, scaleFactor - source.zoomLevel);
 
     return {
         sourceZoomLevel: source.zoomLevel,
