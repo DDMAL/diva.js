@@ -285,15 +285,29 @@ function ViewerCore(element, options, publicInstance)
 
         updateViewHandlerAndRendering();
 
-        var sourceProvider = getCurrentSourceProvider();
-
         if (viewerState.renderer)
         {
-            var rendererState = getRendererState();
+            // TODO: The usage of padding variables is still really
+            // messy and inconsistent
+            var rendererConfig = {
+                pageLayouts: getPageLayouts(settings),
+                padding: getPadding(),
+                maxZoomLevel: settings.inGrid ? null : viewerState.manifest.maxZoom,
+                verticallyOriented: settings.verticallyOriented || settings.inGrid,
+            };
+
+            var viewportPosition = {
+                zoomLevel: settings.inGrid ? null : settings.zoomLevel,
+                anchorPage: settings.goDirectlyTo,
+                verticalOffset: viewerState.verticalOffset,
+                horizontalOffset: viewerState.horizontalOffset
+            };
+
+            var sourceProvider = getCurrentSourceProvider();
 
             if (debug.enabled)
             {
-                var serialized = Object.keys(rendererState)
+                var serialized = Object.keys(rendererConfig)
                     .filter(function (key)
                     {
                         // Too long
@@ -301,7 +315,7 @@ function ViewerCore(element, options, publicInstance)
                     })
                     .map(function (key)
                     {
-                        var value = rendererState[key];
+                        var value = rendererConfig[key];
                         return key + ': ' + JSON.stringify(value);
                     })
                     .join(', ');
@@ -309,7 +323,7 @@ function ViewerCore(element, options, publicInstance)
                 debug('reload with %s', serialized);
             }
 
-            viewerState.renderer.load(rendererState, sourceProvider);
+            viewerState.renderer.load(rendererConfig, viewportPosition, sourceProvider);
         }
 
         // For the iPad - wait until this request finishes before accepting others
@@ -475,27 +489,6 @@ function ViewerCore(element, options, publicInstance)
                 levels.reverse();
 
                 return levels;
-            }
-        };
-    };
-
-    // TODO: The usage of padding variables is still really
-    // messy and inconsistent
-    var getRendererState = function ()
-    {
-        var pageLayouts = getPageLayouts(settings);
-        var padding = getPadding();
-
-        return {
-            pageLayouts: pageLayouts,
-            padding: padding,
-            zoomLevel: settings.inGrid ? null : settings.zoomLevel,
-            maxZoomLevel: settings.inGrid ? null : viewerState.manifest.maxZoom,
-            verticallyOriented: settings.verticallyOriented || settings.inGrid,
-            position: {
-                anchorPage: settings.goDirectlyTo,
-                verticalOffset: viewerState.verticalOffset,
-                horizontalOffset: viewerState.horizontalOffset
             }
         };
     };

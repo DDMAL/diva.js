@@ -50,22 +50,22 @@ Renderer.getCompatibilityErrors = function ()
     ];
 };
 
-Renderer.prototype.load = function (config, sourceResolver)
+Renderer.prototype.load = function (config, viewportPosition, sourceResolver)
 {
     if (this._hooks.onViewWillLoad)
         this._hooks.onViewWillLoad();
 
     this._sourceResolver = sourceResolver;
-    this._dimens = getDocumentLayout(config);
-    this._zoomLevel = config.zoomLevel;
+    this._dimens = getDocumentLayout(config, viewportPosition.zoomLevel);
+    this._zoomLevel = viewportPosition.zoomLevel;
     this._pageLookup = getPageLookup(this._dimens.pageGroups);
     this._compositeImages = {};
 
     this._updateDocumentSize();
 
     // FIXME(wabain): Remove this when there's more confidence the check shouldn't be needed
-    if (!this._pageLookup[config.position.anchorPage])
-        throw new Error('invalid page: ' + config.position.anchorPage);
+    if (!this._pageLookup[viewportPosition.anchorPage])
+        throw new Error('invalid page: ' + viewportPosition.anchorPage);
 
     if (this._canvas.width !== this._viewport.width || this._canvas.height !== this._viewport.height)
     {
@@ -79,7 +79,7 @@ Renderer.prototype.load = function (config, sourceResolver)
     }
 
     // FIXME: What hooks should be called here?
-    this.goto(config.position.anchorPage, config.position.verticalOffset, config.position.horizontalOffset);
+    this.goto(viewportPosition.anchorPage, viewportPosition.verticalOffset, viewportPosition.horizontalOffset);
 
     if (this._canvas.parentNode !== this._outerElement)
         this._outerElement.insertBefore(this._canvas, this._outerElement.firstChild);
