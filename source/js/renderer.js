@@ -9,7 +9,7 @@ var CompositeImage = require('./composite-image');
 var getDocumentLayout = require('./document-layout');
 var ImageCache = require('./image-cache');
 var ImageRequestHandler = require('./image-request-handler');
-var Transition = require('./utils/transition');
+var InterpolateAnimation = require('./interpolate-animation');
 
 
 module.exports = Renderer;
@@ -27,11 +27,13 @@ function Renderer(options, hooks)
 
     this._sourceResolver = null;
     this._renderedPages = null;
+    this._config = null;
     this._dimens = null;
     this._zoomLevel = null;
     this._pageLookup = null;
     this._compositeImages = null;
     this._renderedTiles = null;
+    this._animation = null;
 
     // FIXME(wabain): What level should this be maintained at?
     // Diva global?
@@ -52,16 +54,15 @@ Renderer.getCompatibilityErrors = function ()
 
 Renderer.prototype.load = function (config, viewportPosition, sourceResolver)
 {
+    this._clearAnimation();
+
     if (this._hooks.onViewWillLoad)
         this._hooks.onViewWillLoad();
 
     this._sourceResolver = sourceResolver;
-    this._dimens = getDocumentLayout(config, viewportPosition.zoomLevel);
-    this._zoomLevel = viewportPosition.zoomLevel;
-    this._pageLookup = getPageLookup(this._dimens.pageGroups);
+    this._config = config;
     this._compositeImages = {};
-
-    this._updateDocumentSize();
+    this._setLayoutToZoomLevel(viewportPosition.zoomLevel);
 
     // FIXME(wabain): Remove this when there's more confidence the check shouldn't be needed
     if (!this._pageLookup[viewportPosition.anchorPage])
@@ -88,16 +89,33 @@ Renderer.prototype.load = function (config, viewportPosition, sourceResolver)
         this._hooks.onViewDidLoad();
 };
 
+Renderer.prototype._setViewportPosition = function (viewportPosition)
+{
+    if (viewportPosition.zoomLevel !== this._zoomLevel)
+    {
+        if (this._zoomLevel === null)
+            throw new TypeError('The current view is not zoomable');
+        else if (viewportPosition.zoomLevel === null)
+            throw new TypeError('The current view requires a zoom level');
+
+        this._setLayoutToZoomLevel(viewportPosition.zoomLevel);
+    }
+
+    this._goto(viewportPosition.anchorPage, viewportPosition.verticalOffset, viewportPosition.horizontalOffset);
+};
+
+Renderer.prototype._setLayoutToZoomLevel = function (zoomLevel)
+{
+    this._dimens = getDocumentLayout(this._config, zoomLevel);
+    this._zoomLevel = zoomLevel;
+    this._pageLookup = getPageLookup(this._dimens.pageGroups);
+
+    this._updateDocumentSize();
+};
+
 Renderer.prototype._updateDocumentSize = function ()
 {
-    var elem = this._documentElement;
-
-    // Post-zoom: clear scaling
-    elem.style[Transition.property] = '';
-    elem.style.transform = '';
-    elem.style.transformOrigin = '';
-
-    elt.setAttributes(elem, {
+    elt.setAttributes(this._documentElement, {
         style: {
             height: this._dimens.dimensions.height + 'px',
             width: this._dimens.dimensions.width + 'px'
@@ -107,6 +125,8 @@ Renderer.prototype._updateDocumentSize = function ()
 
 Renderer.prototype.adjust = function (direction)
 {
+    this._clearAnimation();
+
     this._render(direction);
 
     if (this._hooks.onViewDidUpdate)
@@ -357,7 +377,19 @@ Renderer.prototype._getImageOffset = function (pageIndex)
     };
 };
 
+// TODO: Update signature
 Renderer.prototype.goto = function (pageIndex, verticalOffset, horizontalOffset)
+{
+    this._clearAnimation();
+    this._goto(pageIndex, verticalOffset, horizontalOffset);
+    if (this._hooks.onViewDidUpdate)
+    {
+        var pages = this._getPageInfoForUpdateHook();
+        this._hooks.onViewDidUpdate(pages, pageIndex);
+    }
+};
+
+Renderer.prototype._goto = function (pageIndex, verticalOffset, horizontalOffset)
 {
     // FIXME(wabain): Move this logic to the viewer
     var pageOffset = this.getPageOffset(pageIndex);
@@ -372,11 +404,43 @@ Renderer.prototype.goto = function (pageIndex, verticalOffset, horizontalOffset)
     this._viewport.left = left;
 
     this._render(0);
+};
 
-    if (this._hooks.onViewDidUpdate)
+Renderer.prototype.transitionViewportPosition = function (options)
+{
+    this._clearAnimation();
+
+    var getPosition = options.getPosition;
+    var self = this;
+
+    this._animation = InterpolateAnimation.animate({
+        duration: options.duration,
+        parameters: options.parameters,
+        onUpdate: function (values)
+        {
+            // TODO: Do image preloading, work with that
+            self._setViewportPosition(getPosition(values));
+        },
+        onEnd: function (info)
+        {
+            if (options.onEnd)
+                options.onEnd(info);
+
+            if (self._hooks.onViewDidUpdate && !info.interrupted)
+            {
+                var pageStats = self._getPageInfoForUpdateHook();
+                self._hooks.onViewDidUpdate(pageStats, null);
+            }
+        }
+    });
+};
+
+Renderer.prototype._clearAnimation = function ()
+{
+    if (this._animation)
     {
-        var pages = this._getPageInfoForUpdateHook();
-        this._hooks.onViewDidUpdate(pages, pageIndex);
+        this._animation.cancel();
+        this._animation = null;
     }
 };
 
@@ -466,6 +530,8 @@ Renderer.prototype.getPageToViewportCenterOffset = function (pageIndex)
 
 Renderer.prototype.destroy = function ()
 {
+    this._clearAnimation();
+
     // FIXME(wabain): I don't know if we should actually do this
     Object.keys(this._pendingRequests).forEach(function (req)
     {

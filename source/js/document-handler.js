@@ -60,30 +60,11 @@ DocumentHandler.prototype.onViewWillLoad = function ()
 
 DocumentHandler.prototype.onViewDidLoad = function ()
 {
-    var viewerState = this._viewerState;
-    var zoomLevel = viewerState.options.zoomLevel;
+    this._handleZoomLevelChange();
 
-    // If this is not the initial load, trigger the zoom events
-    if (viewerState.oldZoomLevel >= 0)
-    {
-        if (viewerState.oldZoomLevel < zoomLevel)
-        {
-            this._viewerCore.publish("ViewerDidZoomIn", zoomLevel);
-        }
-        else
-        {
-            this._viewerCore.publish("ViewerDidZoomOut", zoomLevel);
-        }
-
-        this._viewerCore.publish("ViewerDidZoom", zoomLevel);
-    }
-    else
-    {
-        viewerState.oldZoomLevel = zoomLevel;
-    }
-
-    var fileName = viewerState.manifest.pages[viewerState.currentPageIndex].f;
-    this._viewerCore.publish("DocumentDidLoad", viewerState.currentPageIndex, fileName);
+    var currentPageIndex = this._viewerState.currentPageIndex;
+    var fileName = this._viewerState.manifest.pages[currentPageIndex].f;
+    this._viewerCore.publish("DocumentDidLoad", currentPageIndex, fileName);
 };
 
 DocumentHandler.prototype.onViewDidUpdate = function (renderedPages, targetPage)
@@ -106,6 +87,31 @@ DocumentHandler.prototype.onViewDidUpdate = function (renderedPages, targetPage)
     {
         this._viewerCore.publish("ViewerDidJump", targetPage);
     }
+
+    this._handleZoomLevelChange();
+};
+
+DocumentHandler.prototype._handleZoomLevelChange = function ()
+{
+    var viewerState = this._viewerState;
+    var zoomLevel = viewerState.options.zoomLevel;
+
+    // If this is not the initial load, trigger the zoom events
+    if (viewerState.oldZoomLevel !== zoomLevel && viewerState.oldZoomLevel >= 0)
+    {
+        if (viewerState.oldZoomLevel < zoomLevel)
+        {
+            this._viewerCore.publish("ViewerDidZoomIn", zoomLevel);
+        }
+        else
+        {
+            this._viewerCore.publish("ViewerDidZoomOut", zoomLevel);
+        }
+
+        this._viewerCore.publish("ViewerDidZoom", zoomLevel);
+    }
+
+    viewerState.oldZoomLevel = zoomLevel;
 };
 
 function getCentermostPage(pages, viewport)

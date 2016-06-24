@@ -71,7 +71,7 @@ CompositeImage.prototype.getTiles = function (baseZoomLevel)
     var levelsByPreference = this._levels.slice(0, bestLevelIndex + 1).reverse()
         .concat(this._levels.slice(bestLevelIndex + 1));
 
-    levelsByPreference.forEach(function (level, levelIndex)
+    levelsByPreference.forEach(function (level)
     {
         var loaded = this._loadedByLevel[level.zoomLevel];
 

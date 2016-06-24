@@ -149,9 +149,10 @@ QUnit.test('Page positioning on zoom', function (assert)
 });
 
 // Try to verify that zoom animation can be gracefully interrupted
-QUnit.skip('Interrupting zoom animation', function (assert)
+QUnit.test('View change during zoom animation', function (assert)
 {
     var done = assert.async();
+    var gridViewSeen = false;
 
     diva.Events.subscribe('ViewerDidLoad', function ()
     {
@@ -165,37 +166,41 @@ QUnit.skip('Interrupting zoom animation', function (assert)
         eventTracker.expect('ViewDidSwitch', true);
         eventTracker.expect('ViewDidSwitch', false);
 
+        diva.Events.subscribe('ZoomLevelDidChange', function ()
+        {
+            this.enterGridView();
+        }, this.getInstanceId());
+
+        diva.Events.subscribe('ViewDidSwitch', function (inGrid)
+        {
+            // debugger
+            if (inGrid)
+            {
+                gridViewSeen = true;
+                assert.strictEqual(this.getZoomLevel(), 3, 'Updated zoom level should be set');
+
+                defer(this.leaveGridView, this);
+            }
+            else
+            {
+                assert.ok(gridViewSeen, 'Grid view should have been entered');
+                assert.strictEqual(this.getZoomLevel(), 3, 'Zoom level should still be 3');
+
+                done();
+            }
+        }, this.getInstanceId());
+
+        // debugger
         this.zoomIn();
     });
 
-    diva.Events.subscribe('ZoomLevelDidChange', function ()
-    {
-        this.enterGridView();
+    $.tempDiva({
+        zoomLevel: 2
     });
 
-    diva.Events.subscribe('ViewDidSwitch', function (inGrid)
+    function defer(callback, ctx)
     {
-        if (inGrid)
-        {
-            assert.ok(hasRows(this), 'Some rows should be rendered');
-
-            this.leaveGridView();
-        }
-        else
-        {
-            assert.ok(!hasRows(this), 'Rows should be removed after switching back');
-            assert.strictEqual(this.getZoomLevel(), 3, 'Zoom level should still be 3');
-
-            done();
-        }
-    });
-
-    $.tempDiva({});
-
-    function hasRows(viewer)
-    {
-        // Try to check that grid view is actually rendered
-        return !!viewer.getSettings().innerElement.querySelector('.diva-row');
+        setTimeout(callback.bind(ctx), 10);
     }
 });
 
