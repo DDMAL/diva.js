@@ -24,9 +24,6 @@ DocumentHandler.prototype.onPinch = function (event, coords, startDistance, endD
 {
     // FIXME: Do this check in a way which is less spaghetti code-y
     var viewerState = this._viewerCore.getInternalState();
-    if (viewerState.scaleWait)
-        return;
-
     var settings = this._viewerCore.getSettings();
 
     var newZoomLevel = Math.log(Math.pow(2, settings.zoomLevel) * endDistance / (startDistance * Math.log(2))) / Math.log(2);
@@ -37,9 +34,6 @@ DocumentHandler.prototype.onPinch = function (event, coords, startDistance, endD
         return;
 
     var position = this._viewerCore.getPagePositionAtViewportOffset(coords);
-
-    // Set scaleWait to true so that we wait for this scale event to finish
-    viewerState.scaleWait = true;
 
     var centerOffset = viewerState.renderer.getPageToViewportCenterOffset(position.anchorPage);
     var scaleRatio = 1 / Math.pow(2, settings.zoomLevel - newZoomLevel);

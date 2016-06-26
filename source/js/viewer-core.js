@@ -131,7 +131,6 @@ function ViewerCore(element, options, publicInstance)
         previousZoomRatio: 1,             // Used to keep track of the previous zoom ratio for scale transforming diva-inner
         renderer: null,
         resizeTimer: -1,            // Holds the ID of the timeout used when resizing the window (for clearing)
-        scaleWait: false,           // For preventing double-zoom on touch devices (iPad, etc)
         scrollbarWidth: 0,          // Set to the actual scrollbar width in init()
         selector: '',               // Uses the generated ID prefix to easily select elements
         throbberTimeoutID: -1,      // Holds the ID of the throbber loading timeout
@@ -319,10 +318,6 @@ function ViewerCore(element, options, publicInstance)
 
             viewerState.renderer.load(rendererConfig, viewportPosition, sourceProvider);
         }
-
-        // For the iPad - wait until this request finishes before accepting others
-        if (viewerState.scaleWait)
-            viewerState.scaleWait = false;
 
         queuedEvents.forEach(function (params)
         {
