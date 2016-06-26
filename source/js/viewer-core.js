@@ -878,11 +878,8 @@ function ViewerCore(element, options, publicInstance)
                     case endKey:
                         // FIXME(wabain): What should this do in horizontal orientation?
                         // End key - go to the end of the document
-
-                        // FIXME(wabain): Hack to get innerElement dimensions
-                        var innerStyle = getComputedStyle(viewerState.innerElement);
-                        viewerState.viewport.top = Math.max(0, parseFloat(innerStyle.height) - settings.panelHeight);
-
+                        // Count on the value being normalized
+                        viewerState.viewport.top = Infinity;
                         return false;
 
                     default:

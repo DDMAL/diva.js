@@ -9,7 +9,7 @@ function Viewport(outer, options)
 
     this.outer = outer;
 
-    this._top = this._left = this._width = this._height = null;
+    this._top = this._left = this._width = this._height = this._innerDimensions = null;
 
     this.invalidate();
 }
@@ -45,16 +45,28 @@ Viewport.prototype.hasHorizontalOverlap = function (region)
 
 Viewport.prototype.invalidate = function ()
 {
-    this._width = Math.min(this.outer.clientWidth, this.maxExtent);
-    this._height = Math.min(this.outer.clientHeight, this.maxExtent);
+    // FIXME: Should this check the inner dimensions as well?
+    this._width = clampMax(this.outer.clientWidth, this.maxExtent);
+    this._height = clampMax(this.outer.clientHeight, this.maxExtent);
 
     this._top = this.outer.scrollTop;
     this._left = this.outer.scrollLeft;
 };
 
+Viewport.prototype.setInnerDimensions = function (dimensions)
+{
+    this._innerDimensions = dimensions;
+
+    if (dimensions)
+    {
+        this._top = clamp(this._top, 0, dimensions.height - this._height);
+        this._left = clamp(this._left, 0, dimensions.width - this._width);
+    }
+};
+
 Object.defineProperties(Viewport.prototype, {
-    top: getCoordinateDescriptor('top'),
-    left: getCoordinateDescriptor('left'),
+    top: getCoordinateDescriptor('top', 'height'),
+    left: getCoordinateDescriptor('left', 'width'),
 
     width: getDimensionDescriptor('width'),
     height: getDimensionDescriptor('height'),
@@ -73,7 +85,7 @@ Object.defineProperties(Viewport.prototype, {
     }
 });
 
-function getCoordinateDescriptor(coord)
+function getCoordinateDescriptor(coord, associatedDimension)
 {
     var privateProp = '_' + coord;
     var source = 'scroll' + coord.charAt(0).toUpperCase() + coord.slice(1);
@@ -85,13 +97,19 @@ function getCoordinateDescriptor(coord)
         },
         set: function (newValue)
         {
-            // TODO: It would make sense to validate these values, but that can't
-            // be done by reading the dimensions of the inner element because
-            // that would trigger reflows and cause layout thrashing. Therefore,
-            // Viewport would need to know about the dimensions of the document,
-            // and everything that uses these setters is working with knowledge of those
-            // values anyway, so not much is gained by adding checks here.
-            this[privateProp] = this.outer[source] = newValue;
+            var normalized;
+
+            if (this._innerDimensions)
+            {
+                var maxAllowed = this._innerDimensions[associatedDimension] - this[associatedDimension];
+                normalized = clamp(newValue, 0, maxAllowed);
+            }
+            else
+            {
+                normalized = clampMin(newValue, 0);
+            }
+
+            this[privateProp] = this.outer[source] = normalized;
         }
     };
 }
@@ -109,4 +127,19 @@ function getDimensionDescriptor(dimen)
 function fallsBetween(point, start, end)
 {
     return point >= start && point <= end;
+}
+
+function clamp(value, min, max)
+{
+    return clampMin(clampMax(value, max), min);
+}
+
+function clampMin(value, min)
+{
+    return Math.max(value, min);
+}
+
+function clampMax(value, max)
+{
+    return Math.min(value, max);
 }

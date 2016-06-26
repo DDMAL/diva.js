@@ -93,7 +93,9 @@ QUnit.test("Scrolling in book view", function (assert)
     });
 });
 
-QUnit.test('Page positioning on zoom', function (assert)
+// FIXME: The behaviour for this should be better-defined, but the behaviour
+// in this test isn't necessarily right either.
+QUnit.skip('Page positioning on zoom', function (assert)
 {
     var done = assert.async();
     var state;

@@ -110,17 +110,14 @@ Renderer.prototype._setLayoutToZoomLevel = function (zoomLevel)
     this._zoomLevel = zoomLevel;
     this._pageLookup = getPageLookup(this._dimens.pageGroups);
 
-    this._updateDocumentSize();
-};
-
-Renderer.prototype._updateDocumentSize = function ()
-{
     elt.setAttributes(this._documentElement, {
         style: {
             height: this._dimens.dimensions.height + 'px',
             width: this._dimens.dimensions.width + 'px'
         }
     });
+
+    this._viewport.setInnerDimensions(this._dimens.dimensions);
 };
 
 Renderer.prototype.adjust = function (direction)
