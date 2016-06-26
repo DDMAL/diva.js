@@ -194,7 +194,7 @@ Renderer.prototype._paint = function ()
 
     this._renderedPages.forEach(function (pageIndex)
     {
-        this._compositeImages[pageIndex].getTiles().forEach(function (source)
+        this._compositeImages[pageIndex].getTiles(this._zoomLevel).forEach(function (source)
         {
             var scaled = getScaledTileRecord(source, this._zoomLevel);
 

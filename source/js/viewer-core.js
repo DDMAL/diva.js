@@ -479,9 +479,9 @@ function ViewerCore(element, options, publicInstance)
             getAllZoomLevelsForPage: function (page)
             {
                 var levels = [];
-                var maxLevel = Math.ceil(settings.zoomLevel);
 
-                for (var level=0; level <= maxLevel; level++)
+                var levelCount = viewerState.manifest.maxZoom;
+                for (var level=0; level <= levelCount; level++)
                 {
                     levels.push(settings.manifest.getPageImageTiles(page.index, level, tileDimens));
                 }

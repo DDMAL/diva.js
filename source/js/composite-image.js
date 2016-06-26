@@ -18,12 +18,12 @@ function CompositeImage(levels)
     this._levels = levels;  // Assume levels sorted high-res first
     var urlsToTiles = this._urlsToTiles = {};
 
-    levels.forEach(function (level, levelIndex)
+    levels.forEach(function (level)
     {
         level.tiles.forEach(function (tile)
         {
             urlsToTiles[tile.url] = {
-                levelIndex: levelIndex,
+                zoomLevel: level.zoomLevel,
                 row: tile.row,
                 col: tile.col
             };
@@ -35,21 +35,45 @@ function CompositeImage(levels)
 
 CompositeImage.prototype.clear = function ()
 {
-    this._loadedByLevel = this._levels.map(function (level)
+    var loadedByLevel = this._loadedByLevel = {};
+
+    this._levels.forEach(function (level)
     {
-        return new TileCoverageMap(level.rows, level.cols);
+        loadedByLevel[level.zoomLevel] = new TileCoverageMap(level.rows, level.cols);
     });
 };
 
-CompositeImage.prototype.getTiles = function ()
+CompositeImage.prototype.getTiles = function (baseZoomLevel)
 {
     var toRenderByLevel = [];
-    var baseZoomLevel = this._levels[0].zoomLevel;
+    var highestZoomLevel = this._levels[0].zoomLevel;
     var covered = new TileCoverageMap(this._levels[0].rows, this._levels[0].cols);
 
-    this._levels.forEach(function (level, levelIndex)
+    var bestLevelIndex;
+
+    // Default to the lowest zoom level
+    if (baseZoomLevel === null)
     {
-        var loaded = this._loadedByLevel[levelIndex];
+        bestLevelIndex = 0;
+    }
+    else
+    {
+        var ceilLevel = Math.ceil(baseZoomLevel);
+        bestLevelIndex = findIndex(this._levels, function (level)
+        {
+            return level.zoomLevel <= ceilLevel;
+        });
+    }
+
+
+    // The best level, followed by higher-res levels in ascending order of resolution,
+    // followed by lower-res levels in descending order of resolution
+    var levelsByPreference = this._levels.slice(0, bestLevelIndex + 1).reverse()
+        .concat(this._levels.slice(bestLevelIndex + 1));
+
+    levelsByPreference.forEach(function (level, levelIndex)
+    {
+        var loaded = this._loadedByLevel[level.zoomLevel];
 
         var additionalTiles = level.tiles.filter(function (tile)
         {
@@ -62,7 +86,7 @@ CompositeImage.prototype.getTiles = function ()
         // with some of it ultimately covered, or to pick out the region
         // which needs to be drawn?
 
-        var scaleRatio = Math.pow(2, baseZoomLevel - level.zoomLevel);
+        var scaleRatio = Math.pow(2, highestZoomLevel - level.zoomLevel);
 
         additionalTiles = additionalTiles.filter(function (tile)
         {
@@ -89,7 +113,7 @@ CompositeImage.prototype.getTiles = function ()
         toRenderByLevel.push(additionalTiles);
     }, this);
 
-    // Low-res tiles should come first
+    // Less-preferred tiles should come first
     toRenderByLevel.reverse();
 
     var tiles = [];
@@ -112,9 +136,9 @@ CompositeImage.prototype.updateFromCache = function (cache)
 {
     this.clear();
 
-    this._levels.forEach(function (level, levelIndex)
+    this._levels.forEach(function (level)
     {
-        var loaded = this._loadedByLevel[levelIndex];
+        var loaded = this._loadedByLevel[level.zoomLevel];
 
         level.tiles.forEach(function (tile)
         {
@@ -129,7 +153,7 @@ CompositeImage.prototype.updateWithLoadedUrls = function (urls)
     urls.forEach(function (url)
     {
         var entry = this._urlsToTiles[url];
-        this._loadedByLevel[entry.levelIndex].set(entry.row, entry.col, true);
+        this._loadedByLevel[entry.zoomLevel].set(entry.row, entry.col, true);
     }, this);
 };
 
@@ -168,4 +192,16 @@ function fill(count, value)
         arr[i] = value;
 
     return arr;
+}
+
+function findIndex(array, predicate)
+{
+    var length = array.length;
+    for (var i = 0; i < length; i++)
+    {
+        if (predicate(array[i], i))
+            return i;
+    }
+
+    return -1;
 }

@@ -4,7 +4,7 @@ var CompositeImage = require('../../source/js/composite-image');
 
 QUnit.module('CompositeImage');
 
-QUnit.test('getTiles()', function (assert)
+QUnit.test('getTiles(zoomLevel)', function (assert)
 {
     var tileLevels = [
         dummyTileLevel({ zoomLevel: 2, baseRows: 1, baseCols: 1 }),
@@ -14,23 +14,26 @@ QUnit.test('getTiles()', function (assert)
 
     var composite = new CompositeImage(tileLevels);
 
-    // Load all the really low-res tiles
+    // Load the really low-res tile
     composite.updateWithLoadedUrls(getUrls(tileLevels[2].tiles));
 
-    assert.propEqual(composite.getTiles(), tileLevels[2].tiles, 'Should load available images');
+    assert.propEqual(composite.getTiles(2), tileLevels[2].tiles, 'Should load available images');
 
     var mostOfLevel1 = tileLevels[1].tiles.slice(1);
     composite.updateWithLoadedUrls(getUrls(mostOfLevel1));
 
-    assert.propEqual(composite.getTiles(), [tileLevels[2].tiles[0]].concat(mostOfLevel1),
+    assert.propEqual(composite.getTiles(2), [tileLevels[2].tiles[0]].concat(mostOfLevel1),
         'Should load lower-res tiles if not completely covered (with low-res first)');
+
+    assert.propEqual(composite.getTiles(0), tileLevels[2].tiles,
+        'Should prefer tiles at the specified zoomLevel, then higher levels, then lower');
 
     composite.clear();
     composite.updateWithLoadedUrls(getUrls(tileLevels[2].tiles));
     var mostOfLevel0 = tileLevels[0].tiles.slice(1);
     composite.updateWithLoadedUrls(getUrls(mostOfLevel0));
 
-    assert.propEqual(composite.getTiles(), [tileLevels[2].tiles[0]].concat(mostOfLevel0),
+    assert.propEqual(composite.getTiles(2), [tileLevels[2].tiles[0]].concat(mostOfLevel0),
         'Should load lower-res tiles across multiple zoom levels if not completely covered');
 });
 
