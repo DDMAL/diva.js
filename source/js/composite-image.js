@@ -56,38 +56,35 @@ CompositeImage.prototype.getTiles = function ()
             return loaded.isLoaded(tile.row, tile.col);
         });
 
-        if (levelIndex !== 0)
+        // Filter out entirely covered tiles
+
+        // FIXME: Is it better to draw all of a partially covered tile,
+        // with some of it ultimately covered, or to pick out the region
+        // which needs to be drawn?
+
+        var scaleRatio = Math.pow(2, baseZoomLevel - level.zoomLevel);
+
+        additionalTiles = additionalTiles.filter(function (tile)
         {
-            // Filter out entirely covered tiles
+            var isNeeded = false;
 
-            // FIXME: Is it better to draw all of a partially covered tile,
-            // with some of it ultimately covered, or to pick out the region
-            // which needs to be drawn?
+            var highResRow = tile.row * scaleRatio;
+            var highResCol = tile.col * scaleRatio;
 
-            var scaleRatio = Math.pow(2, baseZoomLevel - level.zoomLevel);
-
-            additionalTiles = additionalTiles.filter(function (tile)
+            for (var i=0; i < scaleRatio; i++)
             {
-                var isNeeded = false;
-
-                var highResRow = tile.row * scaleRatio;
-                var highResCol = tile.col * scaleRatio;
-
-                for (var i=0; i < scaleRatio; i++)
+                for (var j=0; j < scaleRatio; j++)
                 {
-                    for (var j=0; j < scaleRatio; j++)
+                    if (!covered.isLoaded(highResRow + i, highResCol + j))
                     {
-                        if (!covered.isLoaded(highResRow + i, highResCol + j))
-                        {
-                            isNeeded = true;
-                            covered.set(highResRow + i, highResCol + j, true);
-                        }
+                        isNeeded = true;
+                        covered.set(highResRow + i, highResCol + j, true);
                     }
                 }
+            }
 
-                return isNeeded;
-            });
-        }
+            return isNeeded;
+        });
 
         toRenderByLevel.push(additionalTiles);
     }, this);
