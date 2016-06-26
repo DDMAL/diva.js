@@ -876,10 +876,13 @@ function ViewerCore(element, options, publicInstance)
                         return false;
 
                     case endKey:
-                        // FIXME(wabain): What should this do in horizontal orientation?
                         // End key - go to the end of the document
-                        // Count on the value being normalized
-                        viewerState.viewport.top = Infinity;
+                        // Count on the viewport coordinate value being normalized
+                        if (settings.verticallyOriented)
+                            viewerState.viewport.top = Infinity;
+                        else
+                            viewerState.viewport.left = Infinity;
+
                         return false;
 
                     default:
