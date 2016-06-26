@@ -128,14 +128,12 @@ function ViewerCore(element, options, publicInstance)
         pageTools: '',              // The string for page tools
         parentObject: parentObject, // JQuery object referencing the parent element
         plugins: [],                // Filled with the enabled plugins from the registry
-        previousZoomRatio: 1,             // Used to keep track of the previous zoom ratio for scale transforming diva-inner
         renderer: null,
         resizeTimer: -1,            // Holds the ID of the timeout used when resizing the window (for clearing)
         scrollbarWidth: 0,          // Set to the actual scrollbar width in init()
         selector: '',               // Uses the generated ID prefix to easily select elements
         throbberTimeoutID: -1,      // Holds the ID of the throbber loading timeout
         toolbar: null,              // Holds an object with some toolbar-related functions
-        unclampedVerticalPadding: 0, // Used to keep track of initial padding size before enforcing the minimum size needed to accommodate plugin icons
         verticalOffset: 0,          // Distance from the center of the diva element to the left side of the current page
         verticalPadding: 0,         // Either the fixed padding or adaptive padding
         viewHandler: null,
@@ -1061,8 +1059,6 @@ function ViewerCore(element, options, publicInstance)
             viewerState.horizontalPadding = settings.fixedPadding;
             viewerState.verticalPadding = settings.fixedPadding;
         }
-
-        viewerState.unclampedVerticalPadding = viewerState.verticalPadding;
 
         // Make sure the vertical padding is at least 40, if plugin icons are enabled
         if (viewerState.pageTools.length)
