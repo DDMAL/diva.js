@@ -6,7 +6,7 @@ var debugPaints = require('debug')('diva:Renderer:paints');
 var elt = require('./utils/elt');
 
 var CompositeImage = require('./composite-image');
-var getDocumentLayout = require('./document-layout');
+var DocumentLayout = require('./document-layout');
 var ImageCache = require('./image-cache');
 var ImageRequestHandler = require('./image-request-handler');
 var InterpolateAnimation = require('./interpolate-animation');
@@ -25,12 +25,12 @@ function Renderer(options, hooks)
     this._canvas = elt('canvas', { class: 'diva-viewer-canvas' });
     this._ctx = this._canvas.getContext('2d');
 
+    this.layout = null;
+
     this._sourceResolver = null;
     this._renderedPages = null;
     this._config = null;
-    this._dimens = null;
     this._zoomLevel = null;
-    this._pageLookup = null;
     this._compositeImages = null;
     this._renderedTiles = null;
     this._animation = null;
@@ -65,7 +65,7 @@ Renderer.prototype.load = function (config, viewportPosition, sourceResolver)
     this._setLayoutToZoomLevel(viewportPosition.zoomLevel);
 
     // FIXME(wabain): Remove this when there's more confidence the check shouldn't be needed
-    if (!this._pageLookup[viewportPosition.anchorPage])
+    if (!this.layout.getPageInfo(viewportPosition.anchorPage))
         throw new Error('invalid page: ' + viewportPosition.anchorPage);
 
     if (this._canvas.width !== this._viewport.width || this._canvas.height !== this._viewport.height)
@@ -106,18 +106,17 @@ Renderer.prototype._setViewportPosition = function (viewportPosition)
 
 Renderer.prototype._setLayoutToZoomLevel = function (zoomLevel)
 {
-    this._dimens = getDocumentLayout(this._config, zoomLevel);
+    this.layout = new DocumentLayout(this._config, zoomLevel);
     this._zoomLevel = zoomLevel;
-    this._pageLookup = getPageLookup(this._dimens.pageGroups);
 
     elt.setAttributes(this._documentElement, {
         style: {
-            height: this._dimens.dimensions.height + 'px',
-            width: this._dimens.dimensions.width + 'px'
+            height: this.layout.dimensions.height + 'px',
+            width: this.layout.dimensions.width + 'px'
         }
     });
 
-    this._viewport.setInnerDimensions(this._dimens.dimensions);
+    this._viewport.setInnerDimensions(this.layout.dimensions);
 };
 
 Renderer.prototype.adjust = function (direction)
@@ -138,13 +137,13 @@ Renderer.prototype._getPageInfoForUpdateHook = function ()
     // TODO(wabain): Standardize how dimensions are given
     return this._renderedPages.map(function (index)
     {
-        var page = this._pageLookup[index];
+        var page = this.layout.getPageInfo(index);
 
         return {
             index: index,
             dimensions: page.dimensions,
             group: page.group,
-            paddingRegionOffset: this.getPageOffset(index),
+            paddingRegionOffset: this.layout.getPageOffset(index),
             imageOffset: this._getImageOffset(index)
         };
     }, this);
@@ -154,7 +153,7 @@ Renderer.prototype._getPageInfoForUpdateHook = function ()
 Renderer.prototype._render = function (direction) // jshint ignore:line
 {
     var newRenderedPages = [];
-    this._dimens.pageGroups.forEach(function (group)
+    this.layout.pageGroups.forEach(function (group)
     {
         if (!this._viewport.intersectsRegion(group.region))
             return;
@@ -178,7 +177,7 @@ Renderer.prototype._render = function (direction) // jshint ignore:line
     {
         if (!this._compositeImages[pageIndex])
         {
-            var page = this._pageLookup[pageIndex];
+            var page = this.layout.getPageInfo(pageIndex);
             var zoomLevels = this._sourceResolver.getAllZoomLevelsForPage(page);
             var composite = new CompositeImage(zoomLevels);
             composite.updateFromCache(this._cache);
@@ -253,7 +252,7 @@ Renderer.prototype._paint = function ()
 Renderer.prototype._initiatePageTileRequests = function (pageIndex)
 {
     // TODO(wabain): Debounce
-    var tileSources = this._sourceResolver.getBestZoomLevelForPage(this._pageLookup[pageIndex]).tiles;
+    var tileSources = this._sourceResolver.getBestZoomLevelForPage(this.layout.getPageInfo(pageIndex)).tiles;
     var composite = this._compositeImages[pageIndex];
 
     tileSources.forEach(function (source, tileIndex)
@@ -293,8 +292,8 @@ Renderer.prototype._drawTile = function (pageIndex, scaledTile, img)
     var tileOffset = this._getTileToDocumentOffset(pageIndex, scaledTile);
 
     // Ensure the document is drawn to the center of the viewport
-    var viewportPaddingX = Math.max(0, (this._viewport.width - this._dimens.dimensions.width) / 2);
-    var viewportPaddingY = Math.max(0, (this._viewport.height - this._dimens.dimensions.height) / 2);
+    var viewportPaddingX = Math.max(0, (this._viewport.width - this.layout.dimensions.width) / 2);
+    var viewportPaddingY = Math.max(0, (this._viewport.height - this.layout.dimensions.height) / 2);
 
     var viewportOffsetX = tileOffset.left - this._viewport.left + viewportPaddingX;
     var viewportOffsetY = tileOffset.top - this._viewport.top + viewportPaddingY;
@@ -363,10 +362,10 @@ Renderer.prototype._getTileToDocumentOffset = function (pageIndex, scaledTile)
 
 Renderer.prototype._getImageOffset = function (pageIndex)
 {
-    var pageOffset = this.getPageOffset(pageIndex);
+    var pageOffset = this.layout.getPageOffset(pageIndex);
 
     // FIXME?
-    var padding = this._pageLookup[pageIndex].group.padding;
+    var padding = this.layout.getPageInfo(pageIndex).group.padding;
 
     return {
         top: pageOffset.top + padding.top,
@@ -389,7 +388,7 @@ Renderer.prototype.goto = function (pageIndex, verticalOffset, horizontalOffset)
 Renderer.prototype._goto = function (pageIndex, verticalOffset, horizontalOffset)
 {
     // FIXME(wabain): Move this logic to the viewer
-    var pageOffset = this.getPageOffset(pageIndex);
+    var pageOffset = this.layout.getPageOffset(pageIndex);
 
     var desiredVerticalCenter = pageOffset.top + verticalOffset;
     var top = desiredVerticalCenter - parseInt(this._viewport.height / 2, 10);
@@ -448,15 +447,15 @@ Renderer.prototype.preload = function ()
 
 Renderer.prototype.isPageVisible = function (pageIndex)
 {
-    if (!this._pageLookup)
+    if (!this.layout)
         return false;
 
-    var page = this._pageLookup[pageIndex];
+    var page = this.layout.getPageInfo(pageIndex);
 
     if (!page)
         return false;
 
-    return this._viewport.intersectsRegion(getPageRegionFromGroupInfo(page));
+    return this._viewport.intersectsRegion(this.layout.getPageRegion(pageIndex));
 };
 
 Renderer.prototype.isPageLoaded = function (pageIndex)
@@ -467,62 +466,6 @@ Renderer.prototype.isPageLoaded = function (pageIndex)
 Renderer.prototype.getRenderedPages = function ()
 {
     return this._renderedPages.slice();
-};
-
-Renderer.prototype.getPageDimensions = function (pageIndex)
-{
-    if (!this._pageLookup || !this._pageLookup[pageIndex])
-        return null;
-
-    var region = getPageRegionFromGroupInfo(this._pageLookup[pageIndex]);
-
-    return {
-        height: region.bottom - region.top,
-        width: region.right - region.left
-    };
-};
-
-// TODO(wabain): Get rid of this; it's a subset of the page region, so
-// give that instead
-Renderer.prototype.getPageOffset = function (pageIndex)
-{
-    var region = this.getPageRegion(pageIndex);
-
-    if (!region)
-        return null;
-
-    return {
-        top: region.top,
-        left: region.left
-    };
-};
-
-Renderer.prototype.getPageRegion = function (pageIndex)
-{
-    if (!this._pageLookup || !this._pageLookup[pageIndex])
-        return null;
-
-    return getPageRegionFromGroupInfo(this._pageLookup[pageIndex]);
-};
-
-Renderer.prototype.getPageToViewportCenterOffset = function (pageIndex)
-{
-    var scrollLeft = this._viewport.left;
-    var elementWidth = this._viewport.width;
-
-    var offset = this.getPageOffset(pageIndex);
-
-    var x = scrollLeft - offset.left + parseInt(elementWidth / 2, 10);
-
-    var scrollTop = this._viewport.top;
-    var elementHeight = this._viewport.height;
-
-    var y = scrollTop - offset.top + parseInt(elementHeight / 2, 10);
-
-    return {
-        x: x,
-        y: y
-    };
 };
 
 Renderer.prototype.destroy = function ()
@@ -540,26 +483,6 @@ Renderer.prototype.destroy = function ()
 
     this._canvas.parentNode.removeChild(this._canvas);
 };
-
-function getPageLookup(pageGroups)
-{
-    var pageLookup = {};
-
-    pageGroups.forEach(function (group)
-    {
-        group.pages.forEach(function (page)
-        {
-            pageLookup[page.index] = {
-                index: page.index,
-                group: group,
-                dimensions: page.dimensions,
-                groupOffset: page.groupOffset
-            };
-        });
-    });
-
-    return pageLookup;
-}
 
 function getScaledTileRecord(source, scaleFactor)
 {
@@ -584,21 +507,6 @@ function getScaledTileRecord(source, scaleFactor)
             top: source.offset.top * scaleRatio
         },
         url: source.url
-    };
-}
-
-function getPageRegionFromGroupInfo(page)
-{
-    var top    = page.groupOffset.top  + page.group.region.top;
-    var bottom = top + page.dimensions.height;
-    var left   = page.groupOffset.left + page.group.region.left;
-    var right  = left + page.dimensions.width;
-
-    return {
-        top: top,
-        bottom: bottom,
-        left: left,
-        right: right
     };
 }
 

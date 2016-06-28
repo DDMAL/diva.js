@@ -14,9 +14,10 @@ GridHandler.prototype.onDoubleClick = function (event, coords)
 {
     var position = this._viewerCore.getPagePositionAtViewportOffset(coords);
 
+    var layout = this._viewerCore.getCurrentLayout();
     // FIXME: Get this in a nicer way
-    var pageToViewportCenterOffset = this._viewerCore.getSettings()
-        .renderer.getPageToViewportCenterOffset(position.anchorPage);
+    var viewport = this._viewerCore.getInternalState().viewport;
+    var pageToViewportCenterOffset = layout.getPageToViewportCenterOffset(position.anchorPage, viewport);
 
     this._viewerCore.reload({
         inGrid: false,

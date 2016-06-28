@@ -35,7 +35,8 @@ DocumentHandler.prototype.onPinch = function (event, coords, startDistance, endD
 
     var position = this._viewerCore.getPagePositionAtViewportOffset(coords);
 
-    var centerOffset = viewerState.renderer.getPageToViewportCenterOffset(position.anchorPage);
+    var layout = this._viewerCore.getCurrentLayout();
+    var centerOffset = layout.getPageToViewportCenterOffset(position.anchorPage, viewerState.viewport);
     var scaleRatio = 1 / Math.pow(2, settings.zoomLevel - newZoomLevel);
 
     this._viewerCore.reload({

@@ -537,7 +537,7 @@ function ViewerCore(element, options, publicInstance)
         if (focalPoint == null)
         {
             var viewport = viewerState.viewport;
-            var currentRegion = viewerState.renderer.getPageRegion(settings.currentPageIndex);
+            var currentRegion = viewerState.renderer.layout.getPageRegion(settings.currentPageIndex);
 
             focalPoint = {
                 anchorPage: settings.currentPageIndex,
@@ -548,7 +548,7 @@ function ViewerCore(element, options, publicInstance)
             };
         }
 
-        var pageRegion = viewerState.renderer.getPageRegion(focalPoint.anchorPage);
+        var pageRegion = viewerState.renderer.layout.getPageRegion(focalPoint.anchorPage);
 
         // calculate distance from cursor coordinates to center of viewport
         var focalXToCenter = (pageRegion.left + focalPoint.offset.left) -
@@ -672,7 +672,7 @@ function ViewerCore(element, options, publicInstance)
 
     var updateOffsets = function ()
     {
-        var pageOffset = viewerState.renderer.getPageToViewportCenterOffset(settings.currentPageIndex);
+        var pageOffset = viewerState.renderer.layout.getPageToViewportCenterOffset(settings.currentPageIndex, viewerState.viewport);
 
         if (pageOffset)
         {
@@ -703,7 +703,7 @@ function ViewerCore(element, options, publicInstance)
 
         viewerState.resizeTimer = setTimeout(function ()
         {
-            var pageOffset = viewerState.renderer.getPageToViewportCenterOffset(settings.currentPageIndex);
+            var pageOffset = viewerState.renderer.layout.getPageToViewportCenterOffset(settings.currentPageIndex, viewerState.viewport);
 
             if (pageOffset)
             {
@@ -1219,6 +1219,11 @@ function ViewerCore(element, options, publicInstance)
         return viewerState;
     };
 
+    this.getCurrentLayout = function ()
+    {
+        return viewerState.renderer ? viewerState.renderer.layout : null;
+    };
+
     this.getPagePositionAtViewportOffset = function (coords)
     {
         var docCoords = {
@@ -1233,7 +1238,7 @@ function ViewerCore(element, options, publicInstance)
         for (var i=0; i < pageCount; i++)
         {
             var pageIndex = renderedPages[i];
-            var region = viewerState.renderer.getPageRegion(pageIndex);
+            var region = viewerState.renderer.layout.getPageRegion(pageIndex);
 
             if (region.left <= docCoords.left && region.right >= docCoords.left &&
                 region.top <= docCoords.top && region.bottom >= docCoords.top)
@@ -1250,7 +1255,7 @@ function ViewerCore(element, options, publicInstance)
 
         // Fall back to current page
         // FIXME: Would be better to use the closest page or something
-        var currentRegion = viewerState.renderer.getPageRegion(settings.currentPageIndex);
+        var currentRegion = viewerState.renderer.layout.getPageRegion(settings.currentPageIndex);
 
         return {
             anchorPage: settings.currentPageIndex,

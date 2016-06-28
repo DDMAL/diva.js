@@ -192,7 +192,8 @@ module.exports = diva;
                 view = 'd';
             }
 
-            var pageOffset = viewerState.renderer.getPageToViewportCenterOffset(settings.currentPageIndex);
+            var layout = divaState.viewerCore.getCurrentLayout();
+            var pageOffset = layout.getPageToViewportCenterOffset(settings.currentPageIndex, viewerState.viewport);
 
             var state = {
                 'f': settings.inFullscreen,
@@ -615,10 +616,12 @@ module.exports = diva;
         // Check if something (e.g. a highlight box on a particular page) is visible
         this.inViewport = function (pageNumber, leftOffset, topOffset, width, height)
         {
-            if (!viewerState.renderer)
+            var layout = divaState.viewerCore.getCurrentLayout();
+
+            if (!layout)
                 return false;
 
-            var offset = viewerState.renderer.getPageOffset(pageNumber - 1);
+            var offset = layout.getPageOffset(pageNumber - 1);
 
             var top = offset.top + topOffset;
             var left = offset.left + leftOffset;
@@ -833,10 +836,12 @@ module.exports = diva;
         //Returns distance between the northwest corners of diva-inner and page index
         this.getPageOffset = function(pageIndex)
         {
-            if (!viewerState.renderer)
+            var layout = divaState.viewerCore.getCurrentLayout(pageIndex);
+
+            if (!layout)
                 return null;
 
-            return viewerState.renderer.getPageOffset(pageIndex);
+            return layout.getPageOffset(pageIndex);
         };
 
         //shortcut to getPageOffset for current page
@@ -856,7 +861,7 @@ module.exports = diva;
 
             pageIndex = isPageValid(pageIndex) ? pageIndex : settings.currentPageIndex;
 
-            return viewerState.renderer.getPageDimensions(pageIndex);
+            return divaState.viewerCore.getCurrentLayout().getPageDimensions(pageIndex);
         };
 
         /*
