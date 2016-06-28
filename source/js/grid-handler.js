@@ -42,7 +42,7 @@ GridHandler.prototype.onViewDidLoad = function ()
     /* No-op */
 };
 
-GridHandler.prototype.onViewDidUpdate = function (pages, targetPage)
+GridHandler.prototype.onViewDidUpdate = function (renderedPages, targetPage)
 {
     if (targetPage !== null)
     {
@@ -55,12 +55,13 @@ GridHandler.prototype.onViewDidUpdate = function (pages, targetPage)
     // If the current page is in that group then don't change it. Otherwise, set
     // the current page to the group's first page.
 
+    var layout = this._viewerCore.getCurrentLayout();
     var groups = [];
-
-    pages.forEach(function (page)
+    renderedPages.forEach(function (pageIndex)
     {
-        if (groups.length === 0 || page.group !== groups[groups.length - 1])
-            groups.push(page.group);
+        var group = layout.getPageInfo(pageIndex).group;
+        if (groups.length === 0 || group !== groups[groups.length - 1])
+            groups.push(group);
     });
 
     var viewport = this._viewerCore.getViewport();

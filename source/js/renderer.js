@@ -127,26 +127,8 @@ Renderer.prototype.adjust = function (direction)
 
     if (this._hooks.onViewDidUpdate)
     {
-        var pageStats = this._getPageInfoForUpdateHook();
-        this._hooks.onViewDidUpdate(pageStats, null);
+        this._hooks.onViewDidUpdate(this._renderedPages.slice(), null);
     }
-};
-
-Renderer.prototype._getPageInfoForUpdateHook = function ()
-{
-    // TODO(wabain): Standardize how dimensions are given
-    return this._renderedPages.map(function (index)
-    {
-        var page = this.layout.getPageInfo(index);
-
-        return {
-            index: index,
-            dimensions: page.dimensions,
-            group: page.group,
-            paddingRegionOffset: this.layout.getPageOffset(index),
-            imageOffset: this._getImageOffset(index)
-        };
-    }, this);
 };
 
 // FIXME(wabain): Remove the direction argument if it doesn't end up being needed.
@@ -362,15 +344,7 @@ Renderer.prototype._getTileToDocumentOffset = function (pageIndex, scaledTile)
 
 Renderer.prototype._getImageOffset = function (pageIndex)
 {
-    var pageOffset = this.layout.getPageOffset(pageIndex);
-
-    // FIXME?
-    var padding = this.layout.getPageInfo(pageIndex).group.padding;
-
-    return {
-        top: pageOffset.top + padding.top,
-        left: pageOffset.left + padding.left
-    };
+    return this.layout.getPageOffset(pageIndex, {excludePadding: true});
 };
 
 // TODO: Update signature
@@ -380,8 +354,7 @@ Renderer.prototype.goto = function (pageIndex, verticalOffset, horizontalOffset)
     this._goto(pageIndex, verticalOffset, horizontalOffset);
     if (this._hooks.onViewDidUpdate)
     {
-        var pages = this._getPageInfoForUpdateHook();
-        this._hooks.onViewDidUpdate(pages, pageIndex);
+        this._hooks.onViewDidUpdate(this._renderedPages.slice(), pageIndex);
     }
 };
 
@@ -424,8 +397,7 @@ Renderer.prototype.transitionViewportPosition = function (options)
 
             if (self._hooks.onViewDidUpdate && !info.interrupted)
             {
-                var pageStats = self._getPageInfoForUpdateHook();
-                self._hooks.onViewDidUpdate(pageStats, null);
+                self._hooks.onViewDidUpdate(self._renderedPages.slice(), null);
             }
         }
     });

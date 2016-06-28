@@ -56,11 +56,12 @@ DocumentLayout.prototype.getPageDimensions = function (pageIndex)
  * Get the top-left coordinates of a page, including*** padding
  *
  * @param pageIndex
+ * @param options
  * @returns {{top: number, left: number} | null}
  */
-DocumentLayout.prototype.getPageOffset = function (pageIndex)
+DocumentLayout.prototype.getPageOffset = function (pageIndex, options)
 {
-    var region = this.getPageRegion(pageIndex);
+    var region = this.getPageRegion(pageIndex, options);
 
     if (!region)
         return null;
@@ -71,12 +72,29 @@ DocumentLayout.prototype.getPageOffset = function (pageIndex)
     };
 };
 
-DocumentLayout.prototype.getPageRegion = function (pageIndex)
+DocumentLayout.prototype.getPageRegion = function (pageIndex, options)
 {
-    if (!this._pageLookup[pageIndex])
+    var pageInfo = this._pageLookup[pageIndex];
+
+    if (!pageInfo)
         return null;
 
-    return getPageRegionFromPageInfo(this._pageLookup[pageIndex]);
+    var region = getPageRegionFromPageInfo(pageInfo);
+
+    if (options && options.excludePadding)
+    {
+        // FIXME?
+        var padding = pageInfo.group.padding;
+
+        return {
+            top: region.top + padding.top,
+            left: region.left + padding.left,
+            bottom: region.bottom,
+            right: region.right
+        };
+    }
+
+    return region;
 };
 
 /**

@@ -67,7 +67,7 @@ DocumentHandler.prototype.onViewDidUpdate = function (renderedPages, targetPage)
 {
     var currentPage = (targetPage !== null) ?
         targetPage :
-        getCentermostPage(renderedPages, this._viewerCore.getViewport());
+        getCentermostPage(renderedPages, this._viewerCore.getCurrentLayout(), this._viewerCore.getViewport());
 
     // Don't change the current page if there is no page in the viewport
     // FIXME: Would be better to fall back to the page closest to the viewport
@@ -103,7 +103,7 @@ DocumentHandler.prototype._handleZoomLevelChange = function ()
     viewerState.oldZoomLevel = zoomLevel;
 };
 
-function getCentermostPage(pages, viewport)
+function getCentermostPage(renderedPages, layout, viewport)
 {
     var centerY = viewport.top + (viewport.height / 2);
     var centerX = viewport.left + (viewport.width / 2);
@@ -111,10 +111,10 @@ function getCentermostPage(pages, viewport)
     // Find the minimum distance from the viewport center to a page.
     // Compute minus the squared distance from viewport center to the page's border.
     // http://gamedev.stackexchange.com/questions/44483/how-do-i-calculate-distance-between-a-point-and-an-axis-aligned-rectangle
-    var centerPage = maxBy(pages, function (page)
+    var centerPage = maxBy(renderedPages, function (pageIndex)
     {
-        var dims = page.dimensions;
-        var imageOffset = page.imageOffset;
+        var dims = layout.getPageDimensions(pageIndex);
+        var imageOffset = layout.getPageOffset(pageIndex, {excludePadding: false});
 
         var midX = imageOffset.left + (dims.height / 2);
         var midY = imageOffset.top + (dims.width / 2);
@@ -125,5 +125,5 @@ function getCentermostPage(pages, viewport)
         return -(dx * dx + dy * dy);
     });
 
-    return centerPage ? centerPage.index : null;
+    return centerPage != null ? centerPage : null;
 }
