@@ -1224,6 +1224,22 @@ function ViewerCore(element, options, publicInstance)
         return viewerState.renderer ? viewerState.renderer.layout : null;
     };
 
+    /** Get a copy of the current viewport dimensions */
+    this.getViewport = function ()
+    {
+        var viewport = viewerState.viewport;
+
+        return {
+            top: viewport.top,
+            left: viewport.left,
+            bottom: viewport.bottom,
+            right: viewport.right,
+
+            width: viewport.width,
+            height: viewport.height
+        };
+    };
+
     this.getPagePositionAtViewportOffset = function (coords)
     {
         var docCoords = {
@@ -1269,6 +1285,25 @@ function ViewerCore(element, options, publicInstance)
     this.setManifest = function (manifest, isIIIF, loadOptions)
     {
         setManifest(manifest, isIIIF, loadOptions || {});
+    };
+
+    /**
+     * Set the current page to the given index, firing VisiblePageDidChange
+     *
+     * @param pageIndex
+     */
+    this.setCurrentPage = function (pageIndex)
+    {
+        if (viewerState.currentPageIndex !== pageIndex)
+        {
+            viewerState.currentPageIndex = pageIndex;
+            publish("VisiblePageDidChange", pageIndex, this.getPageName(pageIndex));
+        }
+    };
+
+    this.getPageName = function (pageIndex)
+    {
+        return viewerState.manifest.pages[pageIndex].f;
     };
 
     this.reload = function (newOptions)

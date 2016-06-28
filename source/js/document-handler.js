@@ -6,7 +6,6 @@ function DocumentHandler(viewerCore)
 {
     this._viewerCore = viewerCore;
     this._viewerState = viewerCore.getInternalState();
-    this._viewport = this._viewerState.viewport;
 }
 
 // USER EVENTS
@@ -55,10 +54,12 @@ DocumentHandler.prototype.onViewWillLoad = function ()
 
 DocumentHandler.prototype.onViewDidLoad = function ()
 {
+    // TODO: Should only be necessary to handle changes on view update, not
+    // initial load
     this._handleZoomLevelChange();
 
-    var currentPageIndex = this._viewerState.currentPageIndex;
-    var fileName = this._viewerState.manifest.pages[currentPageIndex].f;
+    var currentPageIndex = this._viewerCore.getSettings().currentPageIndex;
+    var fileName = this._viewerCore.getPageName(currentPageIndex);
     this._viewerCore.publish("DocumentDidLoad", currentPageIndex, fileName);
 };
 
@@ -66,22 +67,15 @@ DocumentHandler.prototype.onViewDidUpdate = function (renderedPages, targetPage)
 {
     var currentPage = (targetPage !== null) ?
         targetPage :
-        getCentermostPage(renderedPages, this._viewport);
+        getCentermostPage(renderedPages, this._viewerCore.getViewport());
 
     // Don't change the current page if there is no page in the viewport
     // FIXME: Would be better to fall back to the page closest to the viewport
-    if (currentPage !== null && currentPage !== this._viewerState.currentPageIndex)
-    {
-        this._viewerState.currentPageIndex = currentPage;
-
-        var filename = this._viewerState.manifest.pages[currentPage].f;
-        this._viewerCore.publish("VisiblePageDidChange", currentPage, filename);
-    }
+    if (currentPage !== null)
+        this._viewerCore.setCurrentPage(currentPage);
 
     if (targetPage !== null)
-    {
         this._viewerCore.publish("ViewerDidJump", targetPage);
-    }
 
     this._handleZoomLevelChange();
 };

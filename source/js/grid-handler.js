@@ -5,8 +5,6 @@ module.exports = GridHandler;
 function GridHandler(viewerCore)
 {
     this._viewerCore = viewerCore;
-    this._viewerState = viewerCore.getInternalState();
-    this._viewport = this._viewerState.viewport;
 }
 
 // USER EVENTS
@@ -15,8 +13,7 @@ GridHandler.prototype.onDoubleClick = function (event, coords)
     var position = this._viewerCore.getPagePositionAtViewportOffset(coords);
 
     var layout = this._viewerCore.getCurrentLayout();
-    // FIXME: Get this in a nicer way
-    var viewport = this._viewerCore.getInternalState().viewport;
+    var viewport = this._viewerCore.getViewport();
     var pageToViewportCenterOffset = layout.getPageToViewportCenterOffset(position.anchorPage, viewport);
 
     this._viewerCore.reload({
@@ -49,7 +46,7 @@ GridHandler.prototype.onViewDidUpdate = function (pages, targetPage)
 {
     if (targetPage !== null)
     {
-        this._setCurrentPage(targetPage);
+        this._viewerCore.setCurrentPage(targetPage);
         return;
     }
 
@@ -66,16 +63,17 @@ GridHandler.prototype.onViewDidUpdate = function (pages, targetPage)
             groups.push(page.group);
     });
 
+    var viewport = this._viewerCore.getViewport();
     var chosenGroup;
 
-    if (groups.length === 1 || groups[0].region.top >= this._viewport.top)
+    if (groups.length === 1 || groups[0].region.top >= viewport.top)
         chosenGroup = groups[0];
-    else if (groups[1].region.bottom <= this._viewport.bottom)
+    else if (groups[1].region.bottom <= viewport.bottom)
         chosenGroup = groups[1];
     else
-        chosenGroup = getCentermostGroup(groups, this._viewport);
+        chosenGroup = getCentermostGroup(groups, viewport);
 
-    var currentPage = this._viewerState.currentPageIndex;
+    var currentPage = this._viewerCore.getSettings().currentPageIndex;
 
     var hasCurrentPage = chosenGroup.pages.some(function (page)
     {
@@ -83,15 +81,7 @@ GridHandler.prototype.onViewDidUpdate = function (pages, targetPage)
     });
 
     if (!hasCurrentPage)
-        this._setCurrentPage(chosenGroup.pages[0].index);
-};
-
-GridHandler.prototype._setCurrentPage = function (pageIndex)
-{
-    this._viewerState.currentPageIndex = pageIndex;
-
-    var filename = this._viewerState.manifest.pages[pageIndex].f;
-    this._viewerCore.publish("VisiblePageDidChange", pageIndex, filename);
+        this._viewerCore.setCurrentPage(chosenGroup.pages[0].index);
 };
 
 function getCentermostGroup(groups, viewport)
