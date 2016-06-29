@@ -5,6 +5,7 @@ Allows you to highlight regions of a page image based off of annotations in a II
 
 var jQuery = require('jquery');
 var diva = require('../diva');
+var HighlightManager = require('./highlight').HighlightManager;
 
 (function ($)
 {
@@ -15,115 +16,17 @@ var diva = require('../diva');
         {
             init: function(divaSettings, divaInstance)
             {
-                // initialize an empty highlights object.
-                divaSettings.parentObject.data('highlights', {});
-
-                /*
-                    When a new page is loaded, this method will be called with the
-                    page index for the page. This method looks at the 'highlights'
-                    data object set on the diva parent element, and determines whether
-                    highlights exist for that page.
-
-                    If so, this method will create and render elements for every
-                    highlighted box.
-
-                    If a page scrolls out of the viewer, the highlight elements
-                    will be removed as part of the Diva DOM pruning process, since
-                    each highlight element is a child of the the page object. When the page
-                    is scrolled back in to view, this method is called again.
-
-                    @param pageIdx       The page index of the page that is to be highlighted
-                    @param filename      The image filename of the page
-                    @param pageSelector  The selector for the page (unused here)
-                */
-                function _highlight(pageIdx, filename, pageSelector)
-                {
-                    var highlightObj = divaSettings.parentObject.data('highlights');
-
-                    if (typeof highlightObj === 'undefined' || !settings.highlightsVisible)
-                        return;
-
-                    if (highlightObj.hasOwnProperty(pageIdx))
-                    {
-                        var pageId = divaInstance.getInstanceId() + 'page-' + pageIdx;
-                        var pageObj = document.getElementById(pageId);
-                        var regions = highlightObj[pageIdx].regions;
-                        var colour = highlightObj[pageIdx].colour;
-                        var divClass = highlightObj[pageIdx].divClass;
-
-                        var maxZoom = divaInstance.getMaxZoomLevel();
-                        var zoomDifference;
-
-                        if (divaSettings.inGrid)
-                        {
-                            var maxZoomWidth = divaInstance.getPageDimensionsAtZoomLevel(pageIdx, maxZoom).width;
-                            var currentWidth = pageObj.clientWidth;
-                            var widthProportion = maxZoomWidth / currentWidth;
-                            zoomDifference = Math.log(widthProportion) / Math.log(2);
-                        }
-                        else
-                        {
-                            zoomDifference = maxZoom - divaInstance.getZoomLevel();
-                        }
-
-                        var j = regions.length;
-                        while (j--)
-                        {
-                            var box = document.createElement('div');
-
-                            box.style.width = _incorporate_zoom(regions[j].width, zoomDifference) + "px";
-                            box.style.height = _incorporate_zoom(regions[j].height, zoomDifference) + "px";
-                            box.style.top = _incorporate_zoom(regions[j].uly, zoomDifference) + "px";
-                            box.style.left = _incorporate_zoom(regions[j].ulx, zoomDifference) + "px";
-                            box.style.background = colour;
-                            box.style.border = "1px solid #555";
-                            box.style.position = "absolute";
-                            box.style.zIndex = 100;
-                            box.className = divClass;
-
-                            if (typeof regions[j].name !== 'undefined')
-                            {
-                                box.setAttribute('data-name', regions[j].name);
-                            }
-
-                            if (typeof regions[j].divID !== 'undefined')
-                            {
-                                box.id = regions[j].divID;
-                            }
-
-                            pageObj.appendChild(box);
-                        }
-                    }
-
-                    diva.Events.publish("HighlightCompleted", [pageIdx, filename, pageSelector]);
-                }
+                var highlightManager = new HighlightManager(divaInstance);
+                divaSettings.parentObject.data('highlightManager', highlightManager);
 
                 settings.highlightedPages = [];
-
-                // subscribe the highlight method to the page change notification
-                diva.Events.subscribe("PageWillLoad", _highlight, divaSettings.ID);
-
-                var _incorporate_zoom = function(position, zoomDifference)
-                {
-                    return position / Math.pow(2, zoomDifference);
-                };
 
                 /*
                     Reset the highlights object and removes all highlights from the document.
                 */
                 divaInstance.resetHighlights = function()
                 {
-                    var inner = document.getElementById(divaSettings.ID + 'inner');
-                    var highlightClass = divaSettings.ID + 'highlight';
-                    var descendents = inner.getElementsByClassName(highlightClass);
-                    var j = descendents.length;
-
-                    while (j--) {
-                        var parentObj = descendents[j].parentNode;
-                        parentObj.removeChild(descendents[j]);
-                    }
-
-                    divaSettings.parentObject.data('highlights', {});
+                    highlightManager.clear();
                 };
 
                 /*
@@ -131,69 +34,19 @@ var diva = require('../diva');
                 */
                 divaInstance.removeHighlightsOnPage = function(pageIdx)
                 {
-                    var highlightsObj = divaSettings.parentObject.data('highlights');
-                    if (highlightsObj.hasOwnProperty(pageIdx))
-                    {
-                        var pageId = divaInstance.getInstanceId() + 'page-' + pageIdx;
-                        var pageObj = document.getElementById(pageId);
-                        var descendents = pageObj.getElementsByTagName('div');
-                        var highlightClass = highlightsObj[pageIdx].divClass;
-
-                        var j = descendents.length;
-
-                        while (j--)
-                        {
-                            if (descendents[j].className === highlightClass)
-                                pageObj.removeChild(descendents[j]);
-                        }
-
-                        delete highlightsObj[pageIdx];
-                    }
+                    highlightManager.removeHighlightsOnPage(pageIdx);
                 };
 
                 divaInstance.hideHighlights = function()
                 {
                     settings.highlightsVisible = false;
-
-                    var highlightClass = divaSettings.ID + 'highlight';
-
-                    var inner = document.getElementById(divaSettings.ID + 'inner');
-                    var highlights = inner.getElementsByClassName(highlightClass);
-
-                    var j = highlights.length;
-
-                    while (j--) {
-                        var parentObj = highlights[j].parentNode;
-                        parentObj.removeChild(highlights[j]);
-                    }
+                    $(divaSettings.innerElement).addClass('annotations-hidden');
                 };
 
                 divaInstance.showHighlights = function()
                 {
                     settings.highlightsVisible = true;
-
-                    var inner = document.getElementById(divaSettings.ID + 'inner');
-                    var pages = inner.getElementsByClassName('diva-document-page');
-
-                    var pageIdx;
-
-                    for (var i = 0; i < pages.length; i++)
-                    {
-                        pageIdx = parseInt(pages[i].getAttribute('data-index'), 10);
-
-                        var highlightsObj = divaSettings.parentObject.data('highlights');
-
-                        if (!highlightsObj.hasOwnProperty(pageIdx))
-                        {
-                            //highlights object is empty, check if it has annotations
-                            getAnnotationsList(pageIdx);
-                        }
-                        else
-                        {
-                            //draw the existing highlights
-                            _highlight(pageIdx, null, null);
-                        }
-                    }
+                    $(divaSettings.innerElement).removeClass('annotations-hidden');
                 };
 
                 /*
@@ -220,31 +73,26 @@ var diva = require('../diva');
                 */
                 divaInstance.highlightOnPage = function(pageIdx, regions, colour, divClass)
                 {
-                    if (typeof colour === 'undefined')
+                    if (colour === undefined)
                     {
-                        colour = 'rgba(255, 0, 0, 0.1)';
+                        colour = 'rgba(255, 0, 0, 0.2)';
                     }
 
-                    if (typeof divClass === 'undefined')
+                    if (divClass === undefined)
                     {
-                        divClass = divaSettings.ID + 'highlight';
+                        divClass = divaSettings.ID + 'highlight diva-highlight';
                     }
                     else
                     {
-                        divClass = divaSettings.ID + 'highlight ' + divClass;
+                        divClass = divaSettings.ID + 'highlight diva-highlight ' + divClass;
                     }
 
-                    var highlightsObj = divaSettings.parentObject.data('highlights');
-
-                    highlightsObj[pageIdx] = {
-                        'regions': regions, 'colour': colour, 'divClass': divClass
-                    };
-
-                    //Highlights are created on load; create them for all loaded pages now
-                    if (divaInstance.isPageLoaded(pageIdx))
-                    {
-                        _highlight(pageIdx, null, null);
-                    }
+                    highlightManager.addHighlight({
+                        page: pageIdx,
+                        regions: regions,
+                        colour: colour,
+                        divClass: divClass
+                    });
 
                     return true;
                 };
@@ -255,81 +103,37 @@ var diva = require('../diva');
                 */
                 divaInstance.gotoHighlight = function(divID)
                 {
-                    var page;
-                    var thisDiv;
-                    var centerYOfDiv;
-                    var centerXOfDiv;
+                    var result = highlightManager.getHighlightByRegionId(divID);
 
-                    var highlightsObj = divaSettings.parentObject.data('highlights');
-                    var highlightFound = false; //used to break both loops
+                    if (result)
+                        return gotoDiv(result.highlight.page, result.region);
 
-                    //see if it exists in the DOM already first
-                    if (document.getElementById(divID) !== null)
-                    {
-                        page = parseInt(document.getElementById(divID).parentNode.getAttribute('data-index'), 10);
+                    console.warn("Diva just tried to find a highlight that doesn't exist.");
+                    return false;
+                };
 
-                        var numDivs = highlightsObj[page].regions.length;
-                        while (numDivs--)
-                        {
-                            if (highlightsObj[page].regions[numDivs].divID === divID)
-                            {
-                                thisDiv = highlightsObj[page].regions[numDivs];
-                                centerYOfDiv = parseFloat(thisDiv.uly) + parseFloat(thisDiv.height) / 2;
-                                centerXOfDiv = parseFloat(thisDiv.ulx) + parseFloat(thisDiv.width) / 2;
-
-                                highlightFound = true;
-                                break;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        var pageArr = Object.keys(highlightsObj);
-                        var pageIdx = pageArr.length;
-                        while (pageIdx--)
-                        {
-                            var regionArr = highlightsObj[pageArr[pageIdx]].regions;
-                            var arrIndex = regionArr.length;
-
-                            while (arrIndex--)
-                            {
-                                if (regionArr[arrIndex].divID === divID)
-                                {
-                                    page = pageArr[pageIdx];
-                                    thisDiv = regionArr[arrIndex];
-                                    centerYOfDiv = parseFloat(thisDiv.uly) + parseFloat(thisDiv.height) / 2;
-                                    centerXOfDiv = parseFloat(thisDiv.ulx) + parseFloat(thisDiv.width) / 2;
-
-                                    highlightFound = true;
-                                    break;
-                                }
-                            }
-
-                            if (highlightFound) break;
-                        }
-                    }
-
-                    if (!highlightFound)
-                    {
-                        console.warn("Diva just tried to find a highlight that doesn't exist.");
-                        return false;
-                    }
-
-                    var viewportObject = divaInstance.getSettings().viewportObject;
+                /**
+                 * Moves the diva pane to (page)
+                 */
+                var gotoDiv = function(page, thisDiv)
+                {
+                    //gets center of the div
+                    var centerYOfDiv = parseFloat(thisDiv.uly) + parseFloat(thisDiv.height) / 2;
+                    var centerXOfDiv = parseFloat(thisDiv.ulx) + parseFloat(thisDiv.width) / 2;
 
                     var desiredY = divaInstance.translateFromMaxZoomLevel(centerYOfDiv);
                     var desiredX = divaInstance.translateFromMaxZoomLevel(centerXOfDiv);
 
+                    //navigates to the page
+                    page = parseInt(page, 10);
                     divaInstance.gotoPageByIndex(page);
+                    var viewportObject = divaInstance.getSettings().viewportObject;
                     var currentTop = viewportObject.scrollTop() + desiredY - (viewportObject.height() / 2) + divaSettings.verticalPadding;
                     var currentLeft = viewportObject.scrollLeft() + desiredX - (viewportObject.width() / 2) + divaSettings.horizontalPadding;
 
+                    //changes the scroll location to center on the div as much as is possible
                     viewportObject.scrollTop(currentTop);
                     viewportObject.scrollLeft(currentLeft);
-
-                    divaSettings.currentHighlight = divID;
-
-                    return true;
                 };
 
                 var showAnnotations = function(canvasIndex)

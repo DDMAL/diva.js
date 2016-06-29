@@ -490,6 +490,15 @@ module.exports = diva;
             return settings.numPages;
         };
 
+        // Get page dimensions in the current view and zoom level
+        this.getPageDimensions = function (pageIndex)
+        {
+            if (!checkLoaded())
+                return null;
+
+            return divaState.viewerCore.getCurrentLayout().getPageDimensions(pageIndex);
+        };
+
         // Returns the dimensions of a given page index at a given zoom level
         this.getPageDimensionsAtZoomLevel = function (pageIdx, zoomLevel)
         {
@@ -834,14 +843,14 @@ module.exports = diva;
         };
 
         //Returns distance between the northwest corners of diva-inner and page index
-        this.getPageOffset = function(pageIndex)
+        this.getPageOffset = function(pageIndex, options)
         {
-            var layout = divaState.viewerCore.getCurrentLayout(pageIndex);
+            var region = divaState.viewerCore.getPageRegion(pageIndex, options);
 
-            if (!layout)
-                return null;
-
-            return layout.getPageOffset(pageIndex);
+            return {
+                top: region.top,
+                left: region.left
+            };
         };
 
         //shortcut to getPageOffset for current page
@@ -976,6 +985,17 @@ module.exports = diva;
         this.destroy = function ()
         {
             divaState.viewerCore.destroy();
+        };
+
+        // "Secretly" expose the page overlay API for the highlight plugin
+        this.__addPageOverlay = function (overlay)
+        {
+            divaState.viewerCore.addPageOverlay(overlay);
+        };
+
+        this.__removePageOverlay = function (overlay)
+        {
+            divaState.viewerCore.removePageOverlay(overlay);
         };
 
         // Call the init function when this object is created.

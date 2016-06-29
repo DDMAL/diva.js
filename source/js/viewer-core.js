@@ -127,7 +127,7 @@ function ViewerCore(element, options, publicInstance)
         outerElement: null,         // The native .diva-outer DOM object
         outerObject: {},            // $(settings.ID + 'outer'), for selecting the .diva-outer element
         pageOverlays: new PageOverlayManager(),
-        pageTools: '',              // The string for page tools
+        pageTools: [],              // The plugins which are enabled as page tools
         parentObject: parentObject, // JQuery object referencing the parent element
         plugins: [],                // Filled with the enabled plugins from the registry
         renderer: null,
@@ -418,6 +418,10 @@ function ViewerCore(element, options, publicInstance)
                 onViewDidTransition: function ()
                 {
                     updatePageOverlays();
+                },
+                onPageWillLoad: function (pageIndex)
+                {
+                    publish('PageWillLoad', pageIndex);
                 }
             };
 
@@ -946,8 +950,6 @@ function ViewerCore(element, options, publicInstance)
 
     var initPlugins = function ()
     {
-        var pageTools = [];
-
         // Add all the plugins that have not been explicitly disabled to
         // settings.plugins
         PluginRegistry.getAll().forEach(function (plugin)
@@ -963,39 +965,16 @@ function ViewerCore(element, options, publicInstance)
                 if (!enablePlugin)
                     return;
 
-                // If the title text is undefined, use the name of the plugin
-                var titleText = plugin.titleText || pluginProperName + " plugin";
-
                 // Create the pageTools bar if handleClick is set to a function
                 if (typeof plugin.handleClick === 'function')
                 {
-                    pageTools.push('<div class="diva-' + plugin.pluginName + '-icon" title="' + titleText + '"></div>');
-
-                    // Delegate the click event - pass it the settings
-                    var pluginButtonElement = '.diva-' + plugin.pluginName + '-icon';
-
-                    viewerState.outerObject.on('click', pluginButtonElement, function (event)
-                    {
-                        plugin.handleClick.call(this, event, settings, publicInstance);
-                    });
-
-                    viewerState.outerObject.on('touchend', pluginButtonElement, function (event)
-                    {
-                        // Prevent firing of emulated mouse events
-                        event.preventDefault();
-
-                        plugin.handleClick.call(this, event, settings, publicInstance);
-                    });
+                    viewerState.pageTools.push(plugin);
                 }
 
                 // Add it to settings.plugins so it can be used later
                 settings.plugins.push(plugin);
             }
         });
-
-        // Save the page tools bar so it can be added for each page
-        if (pageTools.length)
-            viewerState.pageTools = '<div class="diva-page-tools">' + pageTools.join('') + '</div>';
     };
 
     var showThrobber = function ()
@@ -1233,7 +1212,12 @@ function ViewerCore(element, options, publicInstance)
         return viewerState;
     };
 
-    this.getPageToolsHTML = function ()
+    this.getPublicInstance = function ()
+    {
+        return publicInstance;
+    };
+
+    this.getPageTools = function ()
     {
         return viewerState.pageTools;
     };
@@ -1267,6 +1251,45 @@ function ViewerCore(element, options, publicInstance)
     this.removePageOverlay = function (overlay)
     {
         viewerState.pageOverlays.removeOverlay(overlay);
+    };
+
+    this.getPageRegion = function (pageIndex, options)
+    {
+        var layout = viewerState.renderer.layout;
+        var region = layout.getPageRegion(pageIndex, options);
+
+        if (options && options.incorporateViewport)
+        {
+            var secondaryDim = settings.verticallyOriented ? 'width' : 'height';
+
+            if (viewerState.viewport[secondaryDim] > layout.dimensions[secondaryDim])
+            {
+                var docOffset = (viewerState.viewport[secondaryDim] - layout.dimensions[secondaryDim]) / 2;
+
+                if (settings.verticallyOriented)
+                {
+                    return {
+                        top: region.top,
+                        bottom: region.bottom,
+
+                        left: region.left + docOffset,
+                        right: region.right + docOffset
+                    };
+                }
+                else
+                {
+                    return {
+                        top: region.top + docOffset,
+                        bottom: region.bottom + docOffset,
+
+                        left: region.left,
+                        right: region.right
+                    };
+                }
+            }
+        }
+
+        return region;
     };
 
     this.getPagePositionAtViewportOffset = function (coords)

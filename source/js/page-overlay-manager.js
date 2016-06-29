@@ -4,7 +4,7 @@ module.exports = PageOverlayManager;
  * Manages a collection of page overlays, which implement a low-level
  * API for synchronizing HTML pages to the canvas. Each overlay needs
  * to implement the following protocol:
- * 
+ *
  *   mount(): Called when a page is first rendered
  *   refresh(): Called when a page is moved
  *   unmount(): Called when a previously rendered page has stopped being rendered
@@ -15,6 +15,7 @@ module.exports = PageOverlayManager;
 function PageOverlayManager()
 {
     this._pages = {};
+    this._renderedPages = [];
     this._renderedPageMap = {};
 }
 
@@ -52,7 +53,7 @@ PageOverlayManager.prototype.removeOverlay = function (overlay)
 
 PageOverlayManager.prototype.updateOverlays = function (renderedPages)
 {
-    var previouslyRendered = Object.keys(this._renderedPageMap);
+    var previouslyRendered = this._renderedPages;
     var newRenderedMap = {};
 
     renderedPages.forEach(function (pageIndex)
@@ -89,6 +90,8 @@ PageOverlayManager.prototype.updateOverlays = function (renderedPages)
             });
         }
     }, this);
+
+    this._renderedPages = renderedPages;
 };
 
 PageOverlayManager.prototype._invokeOnOverlays = function (pageIndex, func)

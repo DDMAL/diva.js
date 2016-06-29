@@ -865,13 +865,16 @@ require('../utils/jquery-extensions');
                 sliders.zoom.max = settings.maxZoomLevel;
             },
 
-            handleClick: function(event, divaSettings, divaInstance)
+            handleClick: function(event, divaSettings, divaInstance, selectedPageIndex)
             {
                 // loadCanvas() calls all the other necessary functions to load
-                var page = $(this).parent().parent();
-                var filename = $(page).attr('data-filename');
-                var selectedPageIndex = $(page).attr('data-index');
-                var width = $(page).width() - 1;
+                var filename = divaInstance.getFilenames()[selectedPageIndex];
+
+                // TODO: Move rationale for -1 from Wiki (TLDR an old IIP bug)
+                var width = divaInstance
+                    .getPageDimensions(selectedPageIndex)
+                    .width - 1;
+
                 var zoomLevel = divaSettings.zoomLevel;
                 var slider;
 
@@ -929,11 +932,12 @@ require('../utils/jquery-extensions');
                 var imageURL = getImageURL(zoomLevel);
 
                 // Change the title of the page
-                $('#diva-canvas-info').text($(page).attr('title'));
+                // FIXME: This is legacy behaviour. Should this be a filename/label?
+                $('#diva-canvas-info').text('Page ' + (selectedPageIndex + 1));
 
                 showThrobber();
 
-                diva.Events.publish('CanvasViewDidActivate', [page]);
+                diva.Events.publish('CanvasViewDidActivate', [selectedPageIndex]);
 
                 loadCanvas(imageURL);
             },

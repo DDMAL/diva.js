@@ -169,19 +169,23 @@ Renderer.prototype._render = function (direction) // jshint ignore:line
         this._initiatePageTileRequests(pageIndex);
     }, this);
 
-    if (this._renderedPages)
+    var changes = findChanges(this._renderedPages || [], newRenderedPages);
+
+    changes.removed.forEach(function (pageIndex)
     {
-        this._renderedPages.forEach(function (pageIndex)
-        {
-            if (newRenderedPages.indexOf(pageIndex) === -1)
-            {
-                delete this._compositeImages[pageIndex];
-            }
-        }, this);
-    }
+        delete this._compositeImages[pageIndex];
+    }, this);
 
     this._renderedPages = newRenderedPages;
     this._paint();
+
+    if (this._hooks.onPageWillLoad)
+    {
+        changes.added.forEach(function (pageIndex)
+        {
+            this._hooks.onPageWillLoad(pageIndex);
+        }, this);
+    }
 };
 
 Renderer.prototype._paint = function ()

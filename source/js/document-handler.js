@@ -9,21 +9,13 @@ function DocumentHandler(viewerCore)
     this._viewerState = viewerCore.getInternalState();
     this._overlays = [];
 
-    var pageToolsHTML = viewerCore.getPageToolsHTML();
-
-    if (pageToolsHTML)
+    if (viewerCore.getPageTools().length)
     {
-        var settings = viewerCore.getSettings();
-
-        var numPages = settings.numPages,
-            innerElement = settings.innerElement;
-
-        var getLayout = viewerCore.getCurrentLayout.bind(viewerCore);
-        var getViewport = viewerCore.getViewport.bind(viewerCore);
+        var numPages = viewerCore.getSettings().numPages;
 
         for (var i=0; i < numPages; i++)
         {
-            var overlay = new PageToolsOverlay(i, innerElement, pageToolsHTML, getLayout, getViewport);
+            var overlay = new PageToolsOverlay(i, viewerCore);
             this._overlays.push(overlay);
             viewerCore.addPageOverlay(overlay);
         }

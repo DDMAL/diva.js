@@ -19,11 +19,13 @@ var jQuery = require('jquery');
             },
             pluginName: 'download',
             titleText: 'Download image at the given zoom level',
-            handleClick: function(event, divaSettings)
+            handleClick: function(event, divaSettings, divaInstance, pageIndex)
             {
-                var pageDiv = $(this).parent().parent();
-                var pageIndex = $(pageDiv).attr('data-index');
-                var width = $(pageDiv).width() - 1;
+                // TODO: Move rationale for -1 from Wiki (TLDR an old IIP bug)
+                var width = divaInstance
+                        .getPageDimensions(pageIndex)
+                        .width - 1;
+
                 var image = settings.divaInstance.getPageImageURL(pageIndex, { width: width });
 
                 window.open(image);
