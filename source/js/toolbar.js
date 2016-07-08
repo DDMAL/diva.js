@@ -352,16 +352,19 @@ function createToolbar(viewer)
             type: 'text'
         });
 
+        var gotoPageSubmit = elt('input', {
+            id: settings.ID + 'goto-page-submit',
+            class: 'diva-button diva-button-text',
+            type: 'submit',
+            value: 'Go'
+        });
+
         var gotoForm = elt('form', {
                 id: settings.ID + 'goto-page',
                 class: 'diva-goto-form'
             },
             gotoPageInput,
-            elt('input', {
-                class: 'diva-button diva-button-text',
-                type: 'submit',
-                value: 'Go'
-            })
+            gotoPageSubmit
         );
 
         $(gotoForm).on('submit', function ()
