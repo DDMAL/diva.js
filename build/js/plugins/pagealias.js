@@ -2,22 +2,22 @@
 Diva.JS pagealias plugin
 Author: Andrew Horwitz
 
-Lets pages be set up with custom aliases to allow for sections with different 
+Lets pages be set up with custom aliases to allow for sections with different
 numbering schemas.
 
 Diva needs to be instantiated with one or both of the following settings:
 
-1) a pageAliases dictionary attribute, structured as {(0-indexed page index): 
-(aliased page index)}. For example, a document with three forward pages may be 
+1) a pageAliases dictionary attribute, structured as {(0-indexed page index):
+(aliased page index)}. For example, a document with three forward pages may be
 constructed as:
 
     {0: 'i', 1: 'ii', 2: 'iii'}
 
-This object does not need to have a complete list of possible page indices. 
+This object does not need to have a complete list of possible page indices.
 
-2) a pageAliasFunction function that takes in a 0-indexed integer value (the 
+2) a pageAliasFunction function that takes in a 0-indexed integer value (the
 original page index) and returns either the aliased page index or the boolean
-value "false". For example, the default mapping from 0-index to 1-index may be 
+value "false". For example, the default mapping from 0-index to 1-index may be
 constructed as:
 
     pageAliasFunction: function(originalPageIndex)
@@ -26,15 +26,15 @@ constructed as:
     }
 
 
-This plugin is solely for cosmetic purposes; it will replace the "Page _ of XX" 
-counter and add functions that run in parallel with their non-aliased 
-equivalents instead of replacing them. When one of the aliased functions is 
-called, the  plugin will first try to find the page alias in the pageAliases 
+This plugin is solely for cosmetic purposes; it will replace the "Page _ of XX"
+counter and add functions that run in parallel with their non-aliased
+equivalents instead of replacing them. When one of the aliased functions is
+called, the  plugin will first try to find the page alias in the pageAliases
 attribute. If this fails, the plugin will then pass the original page index into
-the pageAliasFunction function. If this function returns a boolean "false" (NOT 
+the pageAliasFunction function. If this function returns a boolean "false" (NOT
 a number 0 or an undefined), the plugin will revert to the default page index.
 
-The plugin may also be instantiated with the 'divaSettings.newTotalPages' 
+The plugin may also be instantiated with the 'divaSettings.newTotalPages'
 attribute, which will replace the "Page 1 of __" counter.
 */
 
@@ -47,7 +47,7 @@ attribute, which will replace the "Page 1 of __" counter.
         {
             init: function(divaSettings, divaInstance)
             {
-                if (divaSettings.pageAliases === undefined) 
+                if (divaSettings.pageAliases === undefined)
                 {
                     divaSettings.pageAliases = {};
                 }
@@ -55,10 +55,10 @@ attribute, which will replace the "Page 1 of __" counter.
                 if (divaSettings.pageAliasFunction === undefined)
                 {
                     divaSettings.pageAliasFunction = function(){return false;};
-                } 
+                }
 
                 /*
-                    Main function. Will return the first of these three that 
+                    Main function. Will return the first of these three that
                         resolves to boolean true:
                     -Explicit alias as defined in pageAliases
                     -Result of pageAliasFunction
@@ -139,8 +139,9 @@ attribute, which will replace the "Page 1 of __" counter.
                     //actually changes values
                     document.getElementById(this.getSettings().ID + 'num-pages').textContent = newTotalPages;
                     document.getElementById(this.getSettings().ID + 'current-page').textContent = this.getCurrentAliasedPageIndex();
-                    
+
                     //resubscribes our new update function
+                    diva.Events.unsubscribe(["ViewerDidLoad", tempSettings.toolbar.updateCurrentPage, tempSettings.ID]);
                     diva.Events.unsubscribe(["VisiblePageDidChange", tempSettings.toolbar.updateCurrentPage, divaSettings.ID]);
                     diva.Events.subscribe("VisiblePageDidChange", updateCurrentAliasedPage, divaSettings.ID);
                 };
