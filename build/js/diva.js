@@ -3303,10 +3303,7 @@ window.divaPlugins = [];
 
                 // update toolbar items that depend on the final layout of the viewer
                 diva.Events.subscribe('ViewerDidLoad', settings.toolbar.switchMode, settings.ID);
-                diva.Events.subscribe('ViewerDidLoad', function()
-                {
-                    settings.toolbar.updateCurrentPage(settings.currentPageIndex);
-                }, settings.ID);
+                diva.Events.subscribe('ViewerDidLoad', settings.toolbar.updateCurrentPage, settings.ID);
 
                 diva.Events.subscribe('ViewerDidLoad', function()
                 {
