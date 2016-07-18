@@ -262,6 +262,7 @@ Renderer.prototype._paintOutline = function (pages)
         var destWidth = pageInfo.dimensions.width - destXOffset;
         var destHeight = pageInfo.dimensions.height - destYOffset;
 
+        this._ctx.strokeStyle = '#AAA';
         // In order to get a 1px wide line using strokes, we need to start at a 'half pixel'
         this._ctx.strokeRect(canvasX + 0.5, canvasY + 0.5, destWidth, destHeight);
     }, this);
