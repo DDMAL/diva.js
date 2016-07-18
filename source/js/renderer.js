@@ -156,6 +156,7 @@ Renderer.prototype._render = function (direction) // jshint ignore:line
     }, this);
 
     this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+    this._paintOutline(newRenderedPages);
 
     newRenderedPages.forEach(function (pageIndex)
     {
@@ -235,6 +236,35 @@ Renderer.prototype._paint = function ()
     }
 
     this._renderedTiles = renderedTiles;
+};
+
+// Paint a page outline while the tiles are loading.
+Renderer.prototype._paintOutline = function (pages)
+{
+    pages.forEach(function (pageIndex)
+    {
+        var pageInfo = this.layout.getPageInfo(pageIndex);
+        var pageOffset = this._getImageOffset(pageIndex);
+
+        // Ensure the document is drawn to the center of the viewport
+        var viewportPaddingX = Math.max(0, (this._viewport.width - this.layout.dimensions.width) / 2);
+        var viewportPaddingY = Math.max(0, (this._viewport.height - this.layout.dimensions.height) / 2);
+
+        var viewportOffsetX = pageOffset.left - this._viewport.left + viewportPaddingX;
+        var viewportOffsetY = pageOffset.top - this._viewport.top + viewportPaddingY;
+
+        var destXOffset = viewportOffsetX < 0 ? -viewportOffsetX : 0;
+        var destYOffset = viewportOffsetY < 0 ? -viewportOffsetY : 0;
+
+        var canvasX = Math.max(0, viewportOffsetX);
+        var canvasY = Math.max(0, viewportOffsetY);
+
+        var destWidth = pageInfo.dimensions.width - destXOffset;
+        var destHeight = pageInfo.dimensions.height - destYOffset;
+
+        // In order to get a 1px wide line using strokes, we need to start at a 'half pixel'
+        this._ctx.strokeRect(canvasX + 0.5, canvasY + 0.5, destWidth, destHeight);
+    }, this);
 };
 
 // This is a debounced function that will keep the last 'nbVisiblePage' number of calls
