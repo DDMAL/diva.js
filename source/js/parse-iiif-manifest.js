@@ -48,6 +48,7 @@ function parseIIIFManifest(manifest)
     var width;
     var height;
     var url;
+    var filename;
     var info;
     var maxZoom;
     var label;
@@ -65,6 +66,7 @@ function parseIIIFManifest(manifest)
 
         info = parseImageInfo(resource);
         url = info.url;
+        filename = url; // For IIIF, the url is the filename
 
         //append trailing / from url if it's not there
         if (url.slice(-1) !== '/')
@@ -100,7 +102,8 @@ function parseIIIFManifest(manifest)
             'mx_w': width,
             'mx_h': height,
             'mx_z': maxZoom,
-            'fn': label,
+            'label': label,
+            'fn': filename,
             'url': url,
             'api': imageAPIVersion,
             'paged': paged,
@@ -166,6 +169,7 @@ function parseIIIFManifest(manifest)
         pages[i] = {
             d: currentPageZoomData,
             m: images[i].mx_z,
+            l: images[i].label,
             f: images[i].fn,
             url: images[i].url,
             api: images[i].api,
