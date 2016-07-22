@@ -739,6 +739,20 @@ module.exports = diva;
             return this.gotoPageByIndex(pageIndex, xAnchor, yAnchor);
         };
 
+        this.gotoPageByLabel = function (label, xAnchor, yAnchor)
+        {
+            var pages = settings.manifest.pages;
+            for (var i = 0, len = pages.length; i < len; i++)
+            {
+                if (pages[i].l.toLowerCase().indexOf(label.toLowerCase()) > -1)
+                    return this.gotoPageByIndex(i, xAnchor, yAnchor);
+            }
+
+            // If no label was found, try to parse a page number
+            var pageIndex = parseInt(label, 10) - 1;
+            return this.gotoPageByIndex(pageIndex, xAnchor, yAnchor);
+        };
+
         // Get the page index (0-based) corresponding to a given filename
         // If the page index doesn't exist, this will return -1
         this.getPageIndex = function (filename)

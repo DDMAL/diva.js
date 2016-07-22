@@ -349,6 +349,7 @@ function createToolbar(viewer)
         var gotoPageInput = elt('input', {
             id: settings.ID + 'goto-page-input',
             class: 'diva-input diva-goto-page-input',
+            autocomplete: 'off',
             type: 'text'
         });
 
@@ -359,24 +360,121 @@ function createToolbar(viewer)
             value: 'Go'
         });
 
+        var inputSuggestions = elt('div', {
+                id: settings.ID + 'input-suggestions',
+                class: 'diva-input-suggestions'
+            }
+        );
+
         var gotoForm = elt('form', {
                 id: settings.ID + 'goto-page',
                 class: 'diva-goto-form'
             },
             gotoPageInput,
-            gotoPageSubmit
+            gotoPageSubmit,
+            inputSuggestions
         );
 
         $(gotoForm).on('submit', function ()
         {
-            var desiredPage = parseInt(gotoPageInput.value, 10);
-            var pageIndex = desiredPage - 1;
+            var desiredPageLabel = gotoPageInput.value;
 
-            if (!viewer.gotoPageByIndex(pageIndex))
-                alert("Invalid page number");
+            if (!viewer.gotoPageByLabel(desiredPageLabel))
+                alert("No page could be found with that label or page number");
+
+            // Hide the suggestions
+            inputSuggestions.style.display = 'none';
 
             // Prevent the default action of reloading the page
             return false;
+        });
+
+        $(gotoPageInput).on('input focus', function ()
+        {
+            inputSuggestions.innerHTML = ''; // Remove all previous suggestions
+
+            var value = gotoPageInput.value;
+            var numSuggestions = 0;
+            if (value)
+            {
+                var pages = settings.manifest.pages;
+                for (var i = 0, len = pages.length; i < len && numSuggestions < 10; i++)
+                {
+                    if (pages[i].l.toLowerCase().indexOf(value.toLowerCase()) > -1)
+                    {
+                        var newInputSuggestion = elt('div', {
+                                class: 'diva-input-suggestion'
+                            },
+                            pages[i].l
+                        );
+
+                        inputSuggestions.appendChild(newInputSuggestion);
+
+                        numSuggestions++;
+                    }
+                }
+
+                // Show label suggestions
+                if (numSuggestions > 0)
+                    inputSuggestions.style.display = 'block';
+            }
+            else
+                inputSuggestions.style.display = 'none';
+        });
+
+        $(gotoPageInput).on('keydown', function (e)
+        {
+            var el;
+            if (e.keyCode === 13) // 'Enter' key
+            {
+                var active = $('.active', inputSuggestions);
+                if (active.length)
+                    gotoPageInput.value = active.text();
+
+            }
+            if (e.keyCode === 38) // Up arrow key
+            {
+                el = $('.active', inputSuggestions);
+                var prevEl = el.prev();
+                if (prevEl.length)
+                {
+                    el.removeClass('active');
+                    prevEl.addClass('active');
+                }
+                else
+                {
+                    el.removeClass('active');
+                    $('.diva-input-suggestion:last', inputSuggestions).addClass('active');
+                }
+            }
+            else if (e.keyCode === 40) // Down arrow key
+            {
+                el = $('.active', inputSuggestions);
+                var nextEl = el.next();
+                if (nextEl.length)
+                {
+                    el.removeClass('active');
+                    nextEl.addClass('active');
+                }
+                else
+                {
+                    el.removeClass('active');
+                    $('.diva-input-suggestion:first', inputSuggestions).addClass('active');
+                }
+            }
+        });
+
+        $(inputSuggestions).on('mousedown', '.diva-input-suggestion', function()
+        {
+            gotoPageInput.value = this.textContent;
+            inputSuggestions.style.display = 'none';
+            $(gotoPageInput).trigger('submit');
+        });
+
+        $(gotoPageInput).on('blur', function ()
+        {
+            // Hide label suggestions
+            inputSuggestions.style.display = 'none';
         });
 
         return gotoForm;

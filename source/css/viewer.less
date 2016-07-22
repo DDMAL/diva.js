@@ -96,13 +96,41 @@
         margin-right: @toolbarGroupMargin;
     }
 
-        .diva-page-nav form {
+        .diva-goto-form {
             display: inline-block;
+            position: relative;
         }
 
             .diva-goto-page-input {
-                width: 3em;
+                width: 5em;
             }
+
+            .diva-input-suggestions {
+                display: none;
+                box-sizing: border-box;
+                position: absolute;
+                width: 100%;
+                background-color: white;
+                border: solid 1px #aaa;
+                border-top: none;
+                z-index: 1;
+            }
+
+                .diva-input-suggestion {
+                    box-sizing: border-box;
+                    width: 100%;
+                    margin-top: 3px;
+                    padding: 2px;
+                    padding-left: 5px;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    cursor: pointer;
+                }
+
+                .diva-input-suggestion.active, .diva-input-suggestion:hover {
+                    background-color: @highlightBlue;
+                }
 
     .diva-fullscreen-icon {
         background-image: data-uri("@{iconPath}fullscreen.png");

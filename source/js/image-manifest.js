@@ -35,6 +35,10 @@ ImageManifest.fromIIIF = function (iiifManifest)
 
 ImageManifest.fromLegacyManifest = function (data, config)
 {
+    // For IIP manifests, use the page number (indexed starting from 1) as a label for each page
+    for (var i = 0, len = data.pgs.length; i < len; i++)
+        data.pgs[i].l = (i + 1).toString();
+
     return new ImageManifest(data, new LegacyManifestSourceAdapter(config));
 };
 

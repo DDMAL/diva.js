@@ -42,8 +42,9 @@ function parseIIIFManifest(manifest)
     //@TODO choose a sequence intelligently
     var canvases = sequence.canvases;
 
-    var zoomLevels = new Array(canvases.length);
-    var images = new Array(canvases.length);
+    var zoomLevels = [];
+    var images = [];
+    var imageIndex = 0;
 
     var width;
     var height;
@@ -98,7 +99,7 @@ function parseIIIFManifest(manifest)
             imageAPIVersion = 1.0;
         }
 
-        images[i] = {
+        images[imageIndex] = {
             'mx_w': width,
             'mx_h': height,
             'mx_z': maxZoom,
@@ -112,11 +113,12 @@ function parseIIIFManifest(manifest)
 
         if (info.hasOwnProperty('x'))
         {
-            images[i].xoffset = info.x;
-            images[i].yoffset = info.y;
+            images[imageIndex].xoffset = info.x;
+            images[imageIndex].yoffset = info.y;
         }
 
-        zoomLevels[i] = maxZoom;
+        zoomLevels[imageIndex] = maxZoom;
+        imageIndex++;
     }
 
     var lowestMaxZoom = Math.min.apply(Math, zoomLevels);
