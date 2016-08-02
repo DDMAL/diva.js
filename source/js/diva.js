@@ -460,6 +460,7 @@ module.exports = diva;
         // returns True if the page number passed is valid; false if it is not.
         this.gotoPageByNumber = function (pageNumber, xAnchor, yAnchor)
         {
+            console.warn("This method is deprecated. Consider using gotoPageByIndex(pageIndex, xAnchor, yAnchor) instead.");
             var pageIndex = parseInt(pageNumber, 10) - 1;
             return this.gotoPageByIndex(pageIndex, xAnchor, yAnchor);
         };
@@ -513,10 +514,21 @@ module.exports = diva;
             return {'width': pgAtZoom.w, 'height': pgAtZoom.h};
         };
 
+        // Returns the dimensions of a given page at the current zoom level
+        // Also works in Grid view
+        this.getPageDimensionsAtCurrentZoomLevel = function(pageIndex)
+        {
+            if (!isPageValid(pageIndex))
+                throw new Error('Invalid Page Index');
+
+            return divaState.viewerCore.getCurrentLayout().getPageDimensions(pageIndex);
+        };
+
         // Returns the dimensions of the current page at the current zoom level
+        // Also works in Grid view
         this.getCurrentPageDimensionsAtCurrentZoomLevel = function ()
         {
-            return this.getPageDimensionsAtZoomLevel(settings.currentPageIndex, settings.zoomLevel);
+            return this.getPageDimensionsAtCurrentZoomLevel(settings.currentPageIndex);
         };
 
         this.isReady = function ()
@@ -536,6 +548,7 @@ module.exports = diva;
 
         this.getCurrentPageNumber = function ()
         {
+            console.warn("This method is deprecated. Consider using getCurrentPageIndex() instead.");
             return settings.currentPageIndex + 1;
         };
 
@@ -623,14 +636,14 @@ module.exports = diva;
         };
 
         // Check if something (e.g. a highlight box on a particular page) is visible
-        this.inViewport = function (pageNumber, leftOffset, topOffset, width, height)
+        this.isRegionInViewport = function (pageIndex, leftOffset, topOffset, width, height)
         {
             var layout = divaState.viewerCore.getCurrentLayout();
 
             if (!layout)
                 return false;
 
-            var offset = layout.getPageOffset(pageNumber - 1);
+            var offset = layout.getPageOffset(pageIndex);
 
             var top = offset.top + topOffset;
             var left = offset.left + leftOffset;
@@ -654,10 +667,8 @@ module.exports = diva;
         //Determines if a page is currently in the DOM
         this.isPageLoaded = function (pageIndex)
         {
-            if (!viewerState.renderer)
-                return false;
-
-            return viewerState.renderer.isPageLoaded(pageIndex);
+            console.warn("This method is deprecated. Consider using isPageInViewport(pageIndex) instead.");
+            return this.isPageInViewport(pageIndex);
         };
 
         // Toggle fullscreen mode
@@ -873,23 +884,16 @@ module.exports = diva;
             return this.getPageOffset(settings.currentPageIndex);
         };
 
-        //Returns the page position and size (ulx, uly, h, w properties) of page pageIndex when there are pagesPerRow pages per row
-        //TODO: calculate all grid height levels and store them so this can be AtGridLevel(pageIndex, pagesPerRow) ?
+        //Returns the page dimensions of given page at the current zoom level
         this.getPageDimensionsAtCurrentGridLevel = function(pageIndex)
         {
-            // FIXME(wabain): This is a breaking change from 4.x to 5. Is this change desirable
-            // behaviour?
-            if (!settings.inGrid)
-                throw new Error('Cannot get grid-based dimensions when not in grid view');
-
-            pageIndex = isPageValid(pageIndex) ? pageIndex : settings.currentPageIndex;
-
-            return divaState.viewerCore.getCurrentLayout().getPageDimensions(pageIndex);
+            console.warn("This method is deprecated. Consider using getPageDimensionsAtCurrentZoomLevel(pageIndex) instead.");
+            return this.getPageDimensionsAtCurrentZoomLevel(pageIndex);
         };
 
         /*
             Given a pageX and pageY value (as could be retreived from a jQuery event object),
-                returns either the page visible at that (x,y) position or "false" if no page is.
+                returns either the page visible at that (x,y) position or -1 if no page is.
         */
         this.getPageIndexForPageXYValues = function(pageX, pageY)
         {
@@ -902,10 +906,10 @@ module.exports = diva;
 
             //if the clicked position was outside the diva-outer object, it was not on a visible portion of a page
             if (pageX < outerLeft || pageX > outerRight)
-                return false;
+                return -1;
 
             if (pageY < outerTop || pageY > outerBottom)
-                return false;
+                return -1;
 
             //navigate through all diva page objects
             var pages = document.getElementsByClassName('diva-page');
@@ -929,7 +933,7 @@ module.exports = diva;
             }
 
             //if we made it through that entire while loop, we didn't click on a page
-            return false;
+            return -1;
         };
 
         /**

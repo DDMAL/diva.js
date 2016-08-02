@@ -494,11 +494,6 @@ Renderer.prototype.isPageVisible = function (pageIndex)
     return this._viewport.intersectsRegion(this.layout.getPageRegion(pageIndex));
 };
 
-Renderer.prototype.isPageLoaded = function (pageIndex)
-{
-    return this._renderedPages.indexOf(pageIndex) >= 0;
-};
-
 Renderer.prototype.getRenderedPages = function ()
 {
     return this._renderedPages.slice();
