@@ -19,7 +19,7 @@ var diva = require('../diva');
                         var labelProper = label.charAt(0).toUpperCase() + label.slice(1);
                         var labelFormatted = labelProper.replace('_', ' ');
 
-                        if (value.indexOf('http://') === 0)
+                        if (value.match(/^https?:\/\//))
                         {
                             value = '<a href="' + value + '" target="_blank">' + value + '</a>';
                         }
@@ -94,7 +94,6 @@ var diva = require('../diva');
                         'description',
                         'within',
                         'see_also',
-                        'service',
                         'license',
                         'attribution'
                     ]);
