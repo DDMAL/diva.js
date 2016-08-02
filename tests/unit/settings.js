@@ -286,7 +286,7 @@ function pagesHaveEqualDimension(viewer, dimension)
     var numPages = viewer.getNumberOfPages();
 
     for (var i = 0; i < numPages; i++)
-        dimensions.push(viewer.getPageDimensionsAtCurrentGridLevel(i)[dimension]);
+        dimensions.push(viewer.getPageDimensionsAtCurrentZoomLevel(i)[dimension]);
 
     var first = dimensions[0];
 
@@ -607,8 +607,8 @@ QUnit.test("viewportMargin, value of 0", function (assert)
 
         setTimeout(function ()
         {
-            assert.ok(dv.isPageLoaded(0), "The first page should be loaded");
-            assert.notOk(dv.isPageLoaded(1), "The second page should not be loaded");
+            assert.ok(dv.isPageInViewport(0), "The first page should be loaded");
+            assert.notOk(dv.isPageInViewport(1), "The second page should not be loaded");
             done();
         }, 100);
     });
@@ -628,8 +628,8 @@ QUnit.test("viewportMargin, value of 1000", function (assert)
 
         // The second page should be visible after a timeout
         setTimeout(function () {
-            assert.ok(dv.isPageLoaded(0), "The first page should be loaded");
-            assert.ok(dv.isPageLoaded(1), "The second page should be loaded");
+            assert.ok(dv.isPageInViewport(0), "The first page should be loaded");
+            assert.ok(dv.isPageInViewport(1), "The second page should be loaded");
             done();
         }, 100);
     });

@@ -22,20 +22,20 @@ QUnit.test("getItemTitle()", function (assert)
     $.tempDiva({});
 });
 
-QUnit.test("gotoPageByNumber() and getCurrentPage()", function (assert)
+QUnit.test("getCurrentPage()", function (assert)
 {
     var done = assert.async();
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         assert.strictEqual(this.getCurrentPageIndex(), 0, "Initial page should be 0");
-        this.gotoPageByNumber(500); // Go to page number 500 (index: 499)
-        assert.strictEqual(this.getCurrentPageIndex(), 499, "The page index should now be 499");
+        this.gotoPageByIndex(500); // Go to page index 500
+        assert.strictEqual(this.getCurrentPageIndex(), 500, "The page index should now be 500");
 
         diva.Events.subscribe('ViewDidSwitch', function ()
         {
-            this.gotoPageByNumber(100);
-            assert.strictEqual(this.getCurrentPageIndex(), 99, 'Transitions in grid mode should work');
+            this.gotoPageByIndex(100);
+            assert.strictEqual(this.getCurrentPageIndex(), 100, 'Transitions in grid mode should work');
 
             done();
         });
@@ -492,14 +492,14 @@ QUnit.test("translateToMaxZoomLevel()", function (assert)
     $.tempDiva({});
 });
 
-QUnit.test("getPageDimensionsAtCurrentGridLevel([pageIndex])", function (assert)
+QUnit.test("getPageDimensionsAtCurrentZoomLevel([pageIndex])", function (assert)
 {
     var done = assert.async();
 
     diva.Events.subscribe('ViewerDidLoad', function ()
     {
-        var current = this.getPageDimensionsAtCurrentGridLevel();
-        var page10 = this.getPageDimensionsAtCurrentGridLevel();
+        var current = this.getPageDimensionsAtCurrentZoomLevel();
+        var page10 = this.getPageDimensionsAtCurrentZoomLevel();
 
         assert.propEqual(current, page10, 'It should default to the current page');
         assert.ok(typeof page10.height === 'number' && typeof page10.width === 'number', 'It should ... have numbers?');

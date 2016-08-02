@@ -484,11 +484,11 @@ QUnit.test("Jumping to page in Book view", function (assert)
 
         setTimeout(function()
         {
-            assert.ok(dv.isPageLoaded(5), "Page 6 (index 5) should be loaded");
+            assert.ok(dv.isPageInViewport(5), "Page 6 (index 5) should be loaded");
 
             dv.gotoPageByIndex(6);
             assert.strictEqual($(settings.selector + 'current-page').text(), '7', "Toolbar should indicate page 7");
-            assert.ok(dv.isPageLoaded(6), "Page 7 (index 6) should be loaded");
+            assert.ok(dv.isPageInViewport(6), "Page 7 (index 6) should be loaded");
 
             done();
         }, 10);
