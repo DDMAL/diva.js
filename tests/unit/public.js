@@ -161,16 +161,16 @@ QUnit.skip("enable/disableScrollable()", function (assert)
     $.tempDiva({});
 });
 
-QUnit.test("inViewport()", function (assert)
+QUnit.test("isRegionInViewport()", function (assert)
 {
     var done = assert.async();
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         // Can only do fairly simple checks
-        assert.ok(this.inViewport(1, 100, 200, 100, 150));
-        assert.ok(!this.inViewport(1, 100, -200, 100, 100));
-        assert.ok(!this.inViewport(40, 100, 50, 100, 200));
+        assert.ok(this.isRegionInViewport(0, 100, 200, 100, 150));
+        assert.ok(!this.isRegionInViewport(0, 100, -200, 100, 100));
+        assert.ok(!this.isRegionInViewport(40, 100, 50, 100, 200));
 
         done();
     });
@@ -505,23 +505,6 @@ QUnit.test("getPageDimensionsAtCurrentGridLevel([pageIndex])", function (assert)
         assert.ok(typeof page10.height === 'number' && typeof page10.width === 'number', 'It should ... have numbers?');
 
         this.leaveGridView();
-    });
-
-    diva.Events.subscribe('ViewDidSwitch', function ()
-    {
-        var err = null;
-
-        try
-        {
-            this.getPageDimensionsAtCurrentGridLevel();
-        }
-        catch (e)
-        {
-            err = e;
-        }
-
-        var expectedMessage = 'Cannot get grid-based dimensions when not in grid view';
-        assert.strictEqual(err.message, expectedMessage, 'It should throw outside grid view');
 
         done();
     });

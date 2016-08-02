@@ -885,9 +885,11 @@ module.exports = diva;
         };
 
         //Returns the page dimensions of given page at the current zoom level
+        //The current page index will be used if no pageIndex is specified
         this.getPageDimensionsAtCurrentGridLevel = function(pageIndex)
         {
             console.warn("This method is deprecated. Consider using getPageDimensionsAtCurrentZoomLevel(pageIndex) instead.");
+            pageIndex = isPageValid(pageIndex) ? pageIndex : settings.currentPageIndex;
             return this.getPageDimensionsAtCurrentZoomLevel(pageIndex);
         };
 
