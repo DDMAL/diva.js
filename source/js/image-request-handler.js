@@ -14,21 +14,28 @@ function ImageRequestHandler(options)
     this._url = options.url;
     this._callback = options.load;
     this._errorCallback = options.error;
+    this.timeoutTime = options.timeoutTime || 0;
     this._aborted = this._complete = false;
 
-    // Initiate the request
-    this._image = new Image();
-    this._image.crossOrigin = "anonymous";
-    this._image.onload = this._handleLoad.bind(this);
-    this._image.onerror = this._handleError.bind(this);
-    this._image.src = options.url;
+    //Use a timeout to allow the requests to be debounced (as they are in renderer)
+    this.timeout = setTimeout(function()
+    {
+        // Initiate the request
+        this._image = new Image();
+        this._image.crossOrigin = "anonymous";
+        this._image.onload = this._handleLoad.bind(this);
+        this._image.onerror = this._handleError.bind(this);
+        this._image.src = options.url;
 
-    debug('Requesting image %s', options.url);
+        debug('Requesting image %s', options.url);
+    }.bind(this), this.timeoutTime);
 }
 
 ImageRequestHandler.prototype.abort = function ()
 {
     debug('Aborting request to %s', this._url);
+
+    clearTimeout(this.timeout);
 
     // FIXME
     // People on the Internet say that doing this {{should/should not}} abort the request. I believe
@@ -39,10 +46,14 @@ ImageRequestHandler.prototype.abort = function ()
     //
     // https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element
     // http://stackoverflow.com/questions/7390888/does-changing-the-src-attribute-of-an-image-stop-the-image-from-downloading
-    this._image.onload = this._image.onerror = null;
-    this._aborted = true;
+    if (this._image)
+    {
+        this._image.onload = this._image.onerror = null;
 
-    this._image.src = '';
+        this._image.src = '';
+    }
+
+    this._aborted = true;
 };
 
 ImageRequestHandler.prototype._handleLoad = function ()

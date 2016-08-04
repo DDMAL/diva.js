@@ -168,9 +168,9 @@ Renderer.prototype._render = function (direction) // jshint ignore:line
             composite.updateFromCache(this._cache);
             this._compositeImages[pageIndex] = composite;
         }
-
-        this._initiatePageTileRequests(newRenderedPages.length, pageIndex);
     }, this);
+
+    this._initiateTileRequests(newRenderedPages);
 
     var changes = findChanges(this._renderedPages || [], newRenderedPages);
 
@@ -268,65 +268,78 @@ Renderer.prototype._paintOutline = function (pages)
     }, this);
 };
 
-// This is a debounced function that will keep the last 'nbVisiblePage' number of calls
-// active. e.g. if you call _initiatePageTileRequests(2, 0) and there are more than
-// 2 calls waiting on the timeout, the oldest ones will be cancelled to leave space for
-// the latest call and to have at most 'nbVisiblePage' number of calls active at once.
-// This means that only requests for currently visible pages will be kept active, while
-// the ones that are scrolled out of the view before they start will be cancelled.
-Renderer.prototype._initiatePageTileRequests = (function customDebounce(wait)
+// This method should be sent all visible pages at once because it will initiate
+// all image requests and cancel any remaining image requests. In the case that
+// a request is ongoing and the tile is still visible in the viewport, the old request
+// is kept active instead of restarting it. The image requests are given a timeout
+// before loading in order to debounce them and have a small reaction time
+// to cancel them and avoid useless requests.
+Renderer.prototype._initiateTileRequests = function(pages)
+{
+    // Only requests in this object are kept alive, since all others are not visible in the viewport
+    var newPendingRequests = {};
+
+    // Used later as a closure to initiate the image requests with the right source and pageIndex
+    var initiateRequest = function (source, pageIndex)
     {
-        var timeouts = []; // Use this array as a queue of method calls
+        var composite = this._compositeImages[pageIndex];
 
-        // The arguments just below are the ones that need to be passed to _initiatePageTileRequests
-        return function(nbVisiblePages, pageIndex)
-        {
-            var removedTimeouts = timeouts.splice(0, timeouts.length - nbVisiblePages + 1);
-
-            for (var i = 0; i < removedTimeouts.length; i++)
-                clearTimeout(removedTimeouts[i]);
-
-            timeouts.push(setTimeout(function()
+        newPendingRequests[source.url] = new ImageRequestHandler({
+            url: source.url,
+            timeoutTime: REQUEST_DEBOUNCE_INTERVAL,
+            load: function (img)
             {
-                // HERE is where the real method '_initiatePageTileRequests' call begins
+                delete this._pendingRequests[source.url];
+                this._cache.put(source.url, img);
 
-                var tileSources = this._sourceResolver.getBestZoomLevelForPage(this.layout.getPageInfo(pageIndex)).tiles;
-                var composite = this._compositeImages[pageIndex];
-
-                tileSources.forEach(function (source, tileIndex)
+                // Awkward way to check for updates
+                if (composite === this._compositeImages[pageIndex])
                 {
-                    if (this._pendingRequests[source.url] || this._cache.has(source.url) || !this._isTileForSourceVisible(pageIndex, source))
-                        return;
+                    composite.updateWithLoadedUrls([source.url]);
 
-                    this._pendingRequests[source.url] = new ImageRequestHandler({
-                        url: source.url,
-                        load: function (img)
-                        {
-                            delete this._pendingRequests[source.url];
-                            this._cache.put(source.url, img);
+                    if (this._isTileForSourceVisible(pageIndex, source))
+                        this._paint();
+                    else
+                        debugPaints('Page %s, tile %s no longer visible on image load', pageIndex, source.url);
+                }
+            }.bind(this),
+            error: function ()
+            {
+                // TODO: Could make a limited number of retries, etc.
+                delete this._pendingRequests[source.url];
+            }.bind(this)
+        });
+    }.bind(this);
 
-                            // Awkward way to check for updates
-                            if (composite === this._compositeImages[pageIndex])
-                            {
-                                composite.updateWithLoadedUrls([source.url]);
+    for (var i = 0; i < pages.length; i++)
+    {
+        var pageIndex = pages[i];
+        var tiles = this._sourceResolver.getBestZoomLevelForPage(this.layout.getPageInfo(pageIndex)).tiles;
 
-                                if (this._isTileForSourceVisible(pageIndex, source))
-                                    this._paint();
-                                else
-                                    debugPaints('Page %s, tile %s no longer visible on image load', pageIndex, tileIndex);
-                            }
-                        }.bind(this),
-                        error: function ()
-                        {
-                            // TODO: Could make a limited number of retries, etc.
-                            delete this._pendingRequests[source.url];
-                        }.bind(this)
-                    });
-                }, this);
-            }.bind(this), wait));
-        };
+        for (var j = 0; j < tiles.length; j++)
+        {
+            var source = tiles[j];
+            if (this._cache.has(source.url) || !this._isTileForSourceVisible(pageIndex, source))
+                continue;
+
+            // Don't create a new request if the tile is already being loaded
+            if (this._pendingRequests[source.url])
+            {
+                newPendingRequests[source.url] = this._pendingRequests[source.url];
+                delete this._pendingRequests[source.url];
+                continue;
+            }
+
+            // Use a closure since the load and error methods are going to be called later and
+            // we need to keep the right reference to the source and the page index
+            initiateRequest(source, pageIndex);
+        }
     }
-)(REQUEST_DEBOUNCE_INTERVAL);
+
+    for (var url in this._pendingRequests)
+        this._pendingRequests[url].abort();
+    this._pendingRequests = newPendingRequests;
+};
 
 Renderer.prototype._drawTile = function (pageIndex, scaledTile, img)
 {
