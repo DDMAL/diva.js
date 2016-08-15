@@ -21,12 +21,6 @@ function getGroupings(viewerConfig)
 
     manifest.pages.forEach(function (page, index)
     {
-        // Skip non-paged canvases in a paged manifest.
-        // NB: If there is currently a pending left page, then it will form
-        // an opening with the following page. This seems to be desired behaviour.
-        if (manifest.paged && !page.paged)
-            return;
-
         var pageRecord = {
             index: index,
             dimensions: getPageDimensions(index, manifest)
