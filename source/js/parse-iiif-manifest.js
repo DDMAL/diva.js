@@ -133,16 +133,12 @@ function parseIIIFManifest(manifest)
     var maxHeights = createArrayWithValue(lowestMaxZoom + 1, 0);
 
     var pages = [];
-    var nonPagedPages = [];
     var currentPageZoomData; // dimensions per zoomlevel
 
     var widthAtCurrentZoomLevel;
     var heightAtCurrentZoomLevel;
 
     var numImages = images.length;
-
-    var pageIndex = 0;
-    var nonPagedIndex = 0;
 
     // for each page image:
     for (i = 0; i < numImages; i++)
@@ -172,21 +168,16 @@ function parseIIIFManifest(manifest)
             minRatio = Math.min(ratio, minRatio);
         }
 
-        var pageData = {
+        pages[i] = {
             d: currentPageZoomData,
             m: images[i].mx_z,
             l: images[i].label,
             f: images[i].fn,
             url: images[i].url,
             api: images[i].api,
+            paged: images[i].paged,
             facingPages: images[i].facingPages
         };
-
-        if (images[i].paged)
-            pages[pageIndex++] = pageData;
-        else
-            nonPagedPages[nonPagedIndex++] = pageData;
-
 
         if (images[i].hasOwnProperty('xoffset'))
         {
