@@ -123,15 +123,15 @@ var diva = require('../diva');
                     viewportObject.scrollLeft(currentLeft);
 
                     currentHighlight = {
-                        id: thisDiv.divID,
+                        region: thisDiv,
                         page: page
                     };
 
-                    diva.Events.publish("SelectedHighlightChanged", [currentHighlight.id, currentHighlight.page]);
+                    diva.Events.publish("SelectedHighlightChanged", [thisDiv.id, currentHighlight.page]);
 
                     //selects the highlight
                     updateCurrentHighlight(divaInstance, currentHighlight);
-                    return currentHighlight.id;
+                    return thisDiv.id;
                 };
 
                 var getDivCenter = function(thisDiv)
@@ -156,99 +156,90 @@ var diva = require('../diva');
                     var thisDiv;
                     var compFunction;
 
-
-                    //if currentHighlight already exists
-                    if(currentHighlight)
+                    // If currentHighlight does not already exists,
+                    // just pretend we're starting at the northwest corner of diva-inner
+                    if (!currentHighlight)
                     {
+                        centerOfCurrentDiv = 0;
+                        currentPage = 0;
+                    }
+                    else {
                         currentPage = currentHighlight.page;
-                        regionArr = highlightManager.getHighlightRegions(currentPage);
-                        arrIndex = regionArr.length;
 
                         //find the center of the current div
-                        while(arrIndex--)
-                        {
-                            if (regionArr[arrIndex].divID == currentHighlight.id)
-                            {
-                                thisDiv = regionArr[arrIndex];
-                                centerOfCurrentDiv = getDivCenter(thisDiv);
-                                break;
-                            }
-                        }
-
-                        //if we do have a current highlight, try to find the next one in the same page
-
-                        //reinitialize the index in case regionArr is out of order
-                        arrIndex = regionArr.length;
-                        pageDims = divaInstance.getPageDimensionsAtZoomLevel(currentPage, divaInstance.getZoomLevel());
-
-                        //initialize the center of the div to the maximum possible value
-                        if(forward) centerOfTargetDiv = (divaSettings.verticallyOriented) ? pageDims.height : pageDims.width;
-                        else centerOfTargetDiv = 0;
-
-                        if(forward)
-                        {
-                            compFunction = function(thisC, curC, targetC)
-                            {
-                                return (thisC > curC && thisC < targetC);
-                            };
-                        }
-                        else
-                        {
-                            compFunction = function(thisC, curC, targetC)
-                            {
-                                return (thisC < curC && thisC > targetC);
-                            };
-                        }
-
-                        while(arrIndex--)
-                        {
-                            thisDiv = regionArr[arrIndex];
-                            centerOfDiv = getDivCenter(thisDiv);
-
-                            //skip if the data-highlight-id is the same
-                            if (thisDiv.divID === currentHighlight.id) continue;
-
-                            //if this div is farther along the main axis but closer than the current closest
-                            if (compFunction(centerOfDiv, centerOfCurrentDiv, centerOfTargetDiv))
-                            {
-                                //update targetDiv
-                                highlightFound = true;
-                                centerOfTargetDiv = centerOfDiv;
-                                targetDiv = thisDiv;
-                            }
-                        }
-
-                        //if a highlight was found on the current page that was next; this can get overwritten but we're still good
-                        if (highlightFound) return gotoDiv(currentPage, targetDiv);
-                        //if it wasn't found, continue on...
+                        centerOfCurrentDiv = getDivCenter(currentHighlight.region);
                     }
-                    //otherwise just pretend we're starting at the northwest corner of diva-inner...
-                    //if we got into the previous if statement, currentPage and centerOfCurrentDiv should already be set and we still want next
+
+                    //if we do have a current highlight, try to find the next one in the same page
+
+                    regionArr = highlightManager.getHighlightRegions(currentPage);
+                    arrIndex = regionArr.length;
+                    pageDims = divaInstance.getPageDimensionsAtZoomLevel(currentPage, divaInstance.getZoomLevel());
+
+                    //initialize the center of the div to the maximum possible value
+                    if(forward) centerOfTargetDiv = (divaSettings.verticallyOriented) ? pageDims.height : pageDims.width;
+                    else centerOfTargetDiv = 0;
+
+                    if(forward)
+                    {
+                        compFunction = function(thisC, curC, targetC)
+                        {
+                            return (thisC > curC && thisC < targetC);
+                        };
+                    }
                     else
                     {
-                        currentPage = 0;
-                        centerOfCurrentDiv = 0;
+                        compFunction = function(thisC, curC, targetC)
+                        {
+                            return (thisC < curC && thisC > targetC);
+                        };
                     }
+
+                    while(arrIndex--)
+                    {
+                        thisDiv = regionArr[arrIndex];
+                        centerOfDiv = getDivCenter(thisDiv);
+
+                        //if this div is farther along the main axis but closer than the current closest
+                        if (compFunction(centerOfDiv, centerOfCurrentDiv, centerOfTargetDiv))
+                        {
+                            //update targetDiv
+                            highlightFound = true;
+                            centerOfTargetDiv = centerOfDiv;
+                            targetDiv = thisDiv;
+                        }
+                    }
+
+                    //if a highlight was found on the current page that was next; this can get overwritten but we're still good
+                    if (highlightFound) return gotoDiv(currentPage, targetDiv);
+                    //if it wasn't found, continue on...
 
                     //find the minimum div on the next page with highlights and loop around if necessary
 
                     //find the next page in the pageArr; this will be in order
                     var pageArr = highlightManager.getHighlightedPages();
-                    var curIdx = pageArr.indexOf(currentPage);
+                    var curIdx = pageArr.indexOf(currentPage.toString());
+
                     var targetPage;
 
                     if(forward)
                     {
-                        //default to first page, move to next if possible
-                        if(curIdx == pageArr.length - 1) targetPage = pageArr[0];
-                        else targetPage = pageArr[curIdx + 1];
+                        while (!targetPage || !divaInstance.isPageIndexValid (targetPage))
+                        {
+                            //default to first page, move to next if possible
+                            if (curIdx == pageArr.length - 1) targetPage = pageArr[0];
+                            else targetPage = pageArr[++curIdx];
+                        }
                     }
 
                     else
                     {
-                        //default to last page, move to previous if possible
-                        if(curIdx === 0) targetPage = pageArr[pageArr.length - 1];
-                        else targetPage = pageArr[curIdx - 1];
+                        while (!targetPage || !divaInstance.isPageIndexValid (targetPage))
+                        {
+                            //default to last page, move to previous if possible
+                            if (curIdx === 0) targetPage = pageArr[pageArr.length - 1];
+                            else targetPage = pageArr[--curIdx];
+                        }
                     }
 
                     //reset regionArr and centerOfTargetDiv for the new page we're testing
@@ -296,7 +287,10 @@ var diva = require('../diva');
                 */
                 divaInstance.gotoNextHighlight = function()
                 {
-                    return findAdjacentHighlight(true);
+                    if (highlightManager.getHighlightCount() > 0)
+                        return findAdjacentHighlight(true);
+                    else
+                        return false;
                 };
 
                 /*
@@ -304,7 +298,10 @@ var diva = require('../diva');
                 */
                 divaInstance.gotoPreviousHighlight = function()
                 {
-                    return findAdjacentHighlight(false);
+                    if (highlightManager.getHighlightCount() > 0)
+                        return findAdjacentHighlight(false);
+                    else
+                        return false;
                 };
 
                 diva.Events.subscribe('ViewerDidTerminate', this.destroy, divaSettings.ID);
@@ -334,6 +331,17 @@ function HighlightManager(divaInstance, getCurrentHighlight)
     this._overlays = {};
     this._getCurrentHighlight = getCurrentHighlight;
 }
+
+HighlightManager.prototype.getHighlightCount = function ()
+{
+    var count = 0;
+    Object.keys(this._overlays).forEach(function (key)
+    {
+        count += this._overlays[key].highlight.regions.length;
+    }, this);
+
+    return count;
+};
 
 HighlightManager.prototype.getHighlightRegions = function (pageIndex)
 {
@@ -554,7 +562,7 @@ function updateCurrentHighlight(divaInstance, currentHighlight)
         }
     }
 
-    if (divaInstance.isPageLoaded(currentHighlight.page))
+    if (divaInstance.isPageInViewport(currentHighlight.page))
     {
         boxes = document.querySelectorAll("*[data-highlight-id=" + currentHighlight.id + "]");
         for(idx = 0; idx < boxes.length; idx++)
