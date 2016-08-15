@@ -780,6 +780,12 @@ module.exports = diva;
             return getCurrentURL();
         };
 
+        // Check if a page index is within the range of the document
+        this.isPageIndexValid = function (pageIndex)
+        {
+            return isPageValid(pageIndex);
+        };
+
         // Get the hash part only of the current URL (without the leading #)
         this.getURLHash = function ()
         {
