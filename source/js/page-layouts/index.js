@@ -14,12 +14,13 @@ function getPageLayouts(settings)
             'viewport',
             'pagesPerRow',
             'fixedHeightGrid',
-            'fixedPadding'
+            'fixedPadding',
+            'showNonPagedPages'
         ]));
     }
     else
     {
-        var config = pluck(settings, ['manifest', 'verticallyOriented']);
+        var config = pluck(settings, ['manifest', 'verticallyOriented', 'showNonPagedPages']);
 
         if (settings.inBookLayout)
             return getBookLayoutGroups(config);

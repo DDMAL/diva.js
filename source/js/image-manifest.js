@@ -27,9 +27,9 @@ function ImageManifest(data, urlAdapter)
     this._urlAdapter = urlAdapter;
 }
 
-ImageManifest.fromIIIF = function (iiifManifest, showNonPagedPages)
+ImageManifest.fromIIIF = function (iiifManifest)
 {
-    var data = parseIIIFManifest(iiifManifest, showNonPagedPages);
+    var data = parseIIIFManifest(iiifManifest);
     return new ImageManifest(data, new IIIFSourceAdapter());
 };
 
@@ -42,8 +42,11 @@ ImageManifest.fromLegacyManifest = function (data, config)
     return new ImageManifest(data, new LegacyManifestSourceAdapter(config));
 };
 
-ImageManifest.prototype.isPageValid = function (pageIndex)
+ImageManifest.prototype.isPageValid = function (pageIndex, showNonPagedPages)
 {
+    if (!showNonPagedPages && this.paged && !this.pages[pageIndex].paged)
+        return false;
+
     return pageIndex >= 0 && pageIndex < this.pages.length;
 };
 

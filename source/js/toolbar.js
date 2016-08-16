@@ -522,10 +522,11 @@ function createToolbar(viewer)
         if (settings.enableLinkIcon)
             buttons.push(createLinkIcon());
 
+        if (settings.enableNonPagedVisibilityIcon)
+            buttons.push(createToggleNonPagedButton());
+
         if (settings.enableFullscreen)
             buttons.push(createFullscreenButton());
-
-        buttons.push(createShowNonPagedButton());
 
         return elt('span', elemAttrs('toolbar-button-group'), buttons);
     };
@@ -601,12 +602,32 @@ function createToolbar(viewer)
         });
     };
 
-    var createShowNonPagedButton = function ()
+    var createToggleNonPagedButton = function ()
     {
-        return createButtonElement('show-nonpaged-icon', 'Show non-paged pages', function()
+        var toggleNonPagedButton = createButtonElement('toggle-nonpaged-icon', 'Toggle visibility of non-paged pages', function()
         {
             viewer.toggleNonPagedPagesVisibility();
         });
+
+        var updateNonPagedButtonVisibility = function ()
+        {
+            var pages = settings.manifest.pages;
+            for (var i = 0; i < pages.length; i++)
+            {
+                if (settings.manifest.paged && !pages[i].paged)
+                {
+                    // Show the button, there is at least one non-paged page
+                    toggleNonPagedButton.style.display = 'inline-block';
+                    return;
+                }
+            }
+
+            // No non-paged pages were found, hide the button
+            toggleNonPagedButton.style.display = 'none';
+        };
+        subscribe('ObjectDidLoad', updateNonPagedButtonVisibility);
+
+        return toggleNonPagedButton;
     };
 
     // Handles all status updating etc (both fullscreen and not)

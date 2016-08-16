@@ -62,6 +62,7 @@ module.exports = diva;
             enableImageTitles: true,    // Adds "Page {n}" title to page images if true
             enableKeyScroll: true,      // Captures scrolling using the arrow and page up/down keys regardless of page focus. When off, defers to default browser scrolling behavior.
             enableLinkIcon: true,       // Controls the visibility of the link icon
+            enableNonPagedVisibilityIcon: true, // Controls the visibility of the icon to toggle the visibility of non-paged pages. (Automatically hidden if no 'non-paged' pages).
             enableSpaceScroll: false,   // Scrolling down by pressing the space key
             enableToolbar: true,        // Enables the toolbar. Note that disabling this means you have to handle all controls yourself.
             enableZoomControls: 'buttons', // Specify controls for zooming in and out. Possible values: 'buttons' (+/-), 'slider'. Any other value disables the controls.
@@ -116,7 +117,7 @@ module.exports = diva;
         // Check if a page index is valid
         var isPageValid = function (pageIndex)
         {
-            return settings.manifest.isPageValid(pageIndex);
+            return settings.manifest.isPageValid(pageIndex, settings.showNonPagedPages);
         };
 
         var reloadViewer = function (newOptions)
@@ -349,7 +350,7 @@ module.exports = diva;
                 // FIXME: Why is this triggered before the manifest is parsed?
                 diva.Events.publish('ManifestDidLoad', [responseData], self);
 
-                manifest = ImageManifest.fromIIIF(responseData, settings.showNonPagedPages);
+                manifest = ImageManifest.fromIIIF(responseData);
             }
             else
             {
@@ -684,10 +685,19 @@ module.exports = diva;
         // Show/Hide non-paged pages
         this.toggleNonPagedPagesVisibility = function ()
         {
-            console.log('This is supposed to show non paged pages :O');
             reloadViewer({ showNonPagedPages: !settings.showNonPagedPages });
+        };
 
-            //TODO show + hide methods
+        // Show non-paged pages
+        this.showNonPagedPages = function ()
+        {
+            reloadViewer({ showNonPagedPages: true });
+        };
+
+        // Hide non-paged pages
+        this.hideNonPagedPages = function ()
+        {
+            reloadViewer({ showNonPagedPages: false });
         };
 
         // Close toolbar popups

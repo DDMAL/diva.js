@@ -37,6 +37,10 @@ function getGroupings(viewerConfig)
             paged: (!manifest.paged || page.paged)
         };
 
+        // Only display non-paged pages if specified in the settings
+        if (!viewerConfig.showNonPagedPages && !pageRecord.paged)
+            return;
+
         if (!pageRecord.paged)
         {
             nonPagedPages.push(pageRecord);
@@ -83,10 +87,11 @@ function getGroupLayoutsFromPageGrouping(viewerConfig, grouping)
     // NB that this needs to be the page with index 0; if the first page is excluded
     // from the layout then this special case shouldn't apply.
     // If the page is tagged as 'non-paged', center it horizontally
+    var leftOffset;
     if (page.paged)
-        var leftOffset = (page.index === 0 && verticallyOriented) ? pageDims.width : 0;
+        leftOffset = (page.index === 0 && verticallyOriented) ? pageDims.width : 0;
     else
-        var leftOffset = (verticallyOriented) ? pageDims.width / 2 : 0;
+        leftOffset = (verticallyOriented) ? pageDims.width / 2 : 0;
 
     var shouldBeHorizontallyAdjusted =
         verticallyOriented && !viewerConfig.manifest.pages[page.index].facingPages;

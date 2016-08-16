@@ -7,6 +7,7 @@ function getGridLayoutGroups(viewerConfig)
     var pagesPerRow = viewerConfig.pagesPerRow;
     var fixedHeightGrid = viewerConfig.fixedHeightGrid;
     var fixedPadding = viewerConfig.fixedPadding;
+    var showNonPagedPages = viewerConfig.showNonPagedPages;
 
     var horizontalPadding = fixedPadding * (pagesPerRow + 1);
     var pageWidth = (viewportWidth - horizontalPadding) / pagesPerRow;
@@ -51,6 +52,9 @@ function getGridLayoutGroups(viewerConfig)
 
     manifest.pages.forEach(function (page, pageIndex)
     {
+        if (!showNonPagedPages && manifest.paged && !page.paged)
+            return;
+
         // Calculate the width, height and horizontal placement of this page
         var pageDimens = getGridPageDimensions(page);
         var leftOffset = Math.floor(currentPages.length * (fixedPadding + gridPageWidth) + fixedPadding);

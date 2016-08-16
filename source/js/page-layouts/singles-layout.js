@@ -5,11 +5,15 @@ module.exports = function getSinglesLayoutGroups(viewerConfig)
     var manifest = viewerConfig.manifest;
 
     // Render each page alone in a group
-    return manifest.pages.map(function (_unused, index)
+    var pages = [];
+    manifest.pages.forEach(function (page, index)
     {
+        if (!viewerConfig.showNonPagedPages && manifest.paged && !page.paged)
+            return;
+
         var pageDims = getPageDimensions(index, manifest);
 
-        return {
+        pages.push({
             dimensions: pageDims,
             pages: [
                 {
@@ -18,6 +22,8 @@ module.exports = function getSinglesLayoutGroups(viewerConfig)
                     dimensions: pageDims
                 }
             ]
-        };
+        });
     });
+
+    return pages;
 };
