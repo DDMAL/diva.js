@@ -57,6 +57,7 @@ module.exports = diva;
             enableFilename: true,       // Uses filenames and not page numbers for links (i=bm_001.tif, not p=1)
             enableFullscreen: true,     // Enable or disable fullscreen icon (mode still available)
             enableGotoPage: true,       // A "go to page" jump box
+            enableGotoSuggestions: true, // Controls whether suggestions are shown under the input field when the user is typing in the 'go to page' form
             enableGridIcon: true,       // A grid view of all the pages
             enableGridControls: 'buttons',  // Specify control of pages per grid row in Grid view. Possible values: 'buttons' (+/-), 'slider'. Any other value disables the controls.
             enableImageTitles: true,    // Adds "Page {n}" title to page images if true
@@ -79,6 +80,7 @@ module.exports = diva;
             maxZoomLevel: -1,           // Optional; defaults to the max zoom returned in the JSON response
             minPagesPerRow: 2,          // Minimum pages per row in grid view. Recommended default.
             minZoomLevel: 0,            // Defaults to 0 (the minimum zoom)
+            onGotoSubmit: null,         // When set to a function that takes a string and returns a page index, this will override the default behaviour of the 'go to page' form submission
             pageLoadTimeout: 200,       // Number of milliseconds to wait before loading pages
             pagesPerRow: 5,             // The default number of pages per row in grid view
             rowLoadTimeout: 50,         // Number of milliseconds to wait before loading a row

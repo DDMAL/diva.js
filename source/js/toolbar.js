@@ -379,8 +379,18 @@ function createToolbar(viewer)
         {
             var desiredPageLabel = gotoPageInput.value;
 
-            if (!viewer.gotoPageByLabel(desiredPageLabel))
-                alert("No page could be found with that label or page number");
+            if (settings.onGotoSubmit && typeof settings.onGotoSubmit === "function")
+            {
+                var pageIndex = settings.onGotoSubmit(desiredPageLabel);
+                if (!viewer.gotoPageByIndex(pageIndex))
+                    alert("No page could be found with that label or page number");
+
+            }
+            else // Default if no function is specified in the settings
+            {
+                if (!viewer.gotoPageByLabel(desiredPageLabel))
+                    alert("No page could be found with that label or page number");
+            }
 
             // Hide the suggestions
             inputSuggestions.style.display = 'none';
@@ -395,7 +405,7 @@ function createToolbar(viewer)
 
             var value = gotoPageInput.value;
             var numSuggestions = 0;
-            if (value)
+            if (settings.enableGotoSuggestions && value)
             {
                 var pages = settings.manifest.pages;
                 for (var i = 0, len = pages.length; i < len && numSuggestions < 10; i++)
