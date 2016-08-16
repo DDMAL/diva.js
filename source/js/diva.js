@@ -354,6 +354,9 @@ module.exports = diva;
             }
             else
             {
+                // IIP support is now deprecated
+                console.warn("Usage of IIP manifests is deprecated. Consider switching to IIIF manifests. Visit http://iiif.io/ for more information.");
+
                 isIIIF = false;
                 manifest = ImageManifest.fromLegacyManifest(responseData, {
                     iipServerURL: settings.iipServerURL,
