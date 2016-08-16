@@ -129,6 +129,7 @@ function ViewerCore(element, options, publicInstance)
         pageOverlays: new PageOverlayManager(),
         pageTools: [],              // The plugins which are enabled as page tools
         parentObject: parentObject, // JQuery object referencing the parent element
+        pendingManifestRequest: null, // Reference to the xhr request retrieving the manifest. Used to cancel the request on destroy()
         plugins: [],                // Filled with the enabled plugins from the registry
         renderer: null,
         resizeTimer: -1,            // Holds the ID of the timeout used when resizing the window (for clearing)
@@ -1453,9 +1454,17 @@ function ViewerCore(element, options, publicInstance)
         clearViewer();
     };
 
+    this.setPendingManifestRequest = function (pendingManifestRequest)
+    {
+        viewerState.pendingManifestRequest = pendingManifestRequest;
+    };
+
     // Destroys this instance, tells plugins to do the same (for testing)
     this.destroy = function ()
     {
+        // Cancel any pending request retrieving a manifest
+        if (settings.pendingManifestRequest)
+            settings.pendingManifestRequest.abort();
 
         // Removes the hide-scrollbar class from the body
         $('body').removeClass('diva-hide-scrollbar');

@@ -436,7 +436,7 @@ module.exports = diva;
             }
             else
             {
-                $.ajax({
+                var pendingManifestRequest = $.ajax({
                     url: settings.objectData,
                     cache: true,
                     dataType: 'json',
@@ -446,6 +446,9 @@ module.exports = diva;
                         loadObjectData(responseData, hashState);
                     }
                 });
+
+                // Store the pending request so that it can be cancelled in the event that Diva needs to be destroyed
+                viewerCore.setPendingManifestRequest(pendingManifestRequest);
             }
         };
 
