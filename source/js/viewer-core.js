@@ -585,6 +585,7 @@ function ViewerCore(element, options, publicInstance)
         {
             var zoomRatio = Math.pow(2, zoomLevel - initialZoomLevel);
 
+            //TODO(jeromepl): Calculate position from page top left to viewport top left
             // calculate horizontal/verticalOffset: distance from viewport center to page upper left corner
             var horizontalOffset = (focalPoint.offset.left * zoomRatio) - focalXToCenter;
             var verticalOffset = (focalPoint.offset.top * zoomRatio) - focalYToCenter;
