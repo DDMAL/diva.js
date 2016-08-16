@@ -10,7 +10,7 @@ module.exports = parseIIIFManifest;
  * @param {Object} manifest - an object that represents a valid IIIF manifest
  * @returns {Object} divaServiceBlock - the data needed by Diva to show a view of a single document
  */
-function parseIIIFManifest(manifest)
+function parseIIIFManifest(manifest, showNonPagedPages)
 {
 
     var incorporateZoom = function (imageDimension, zoomDifference)
@@ -133,6 +133,7 @@ function parseIIIFManifest(manifest)
     var maxHeights = createArrayWithValue(lowestMaxZoom + 1, 0);
 
     var pages = [];
+    var pageIndex = 0;
     var currentPageZoomData; // dimensions per zoomlevel
 
     var widthAtCurrentZoomLevel;
@@ -144,6 +145,10 @@ function parseIIIFManifest(manifest)
     for (i = 0; i < numImages; i++)
     {
         currentPageZoomData = [];
+
+        // Only show pages tagged as 'non-paged' if specified in the settings
+        if (!showNonPagedPages && !images[i].paged)
+            continue;
 
         // construct 'd' key. for each zoom level:
         for (var j = 0; j < lowestMaxZoom + 1; j++)
@@ -168,7 +173,7 @@ function parseIIIFManifest(manifest)
             minRatio = Math.min(ratio, minRatio);
         }
 
-        pages[i] = {
+        pages[pageIndex++] = {
             d: currentPageZoomData,
             m: images[i].mx_z,
             l: images[i].label,

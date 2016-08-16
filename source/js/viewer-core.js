@@ -16,6 +16,7 @@ var getPageLayouts = require('./page-layouts');
 var createSettingsView = require('./settings-view');
 var ValidationRunner = require('./validation-runner');
 var Viewport = require('./viewport');
+var ImageManifest = require('./image-manifest');
 
 var debug = require('debug')('diva:ViewerCore');
 
@@ -238,6 +239,49 @@ function ViewerCore(element, options, publicInstance)
         // Update verticallyOriented (no event fired)
         if (hasChangedOption(newOptions, 'verticallyOriented'))
             viewerState.options.verticallyOriented = newOptions.verticallyOriented;
+
+        // Show/Hide non-paged pages
+        if (hasChangedOption(newOptions, 'showNonPagedPages'))
+        {
+            viewerState.options.showNonPagedPages = newOptions.showNonPagedPages;
+
+            //TODO replace by diva.changeObject(viewerState.options.objectData);
+            viewerState.loaded = false;
+            clearViewer();
+
+            if (viewerState.renderer)
+                viewerState.renderer.destroy();
+
+            viewerState.throbberTimeoutID = setTimeout(function ()
+            {
+                $(viewerState.options.selector + 'throbber').show();
+            }, viewerState.options.throbberTimeout);
+
+            $.ajax({
+                url: viewerState.options.objectData,
+                cache: true,
+                dataType: 'json',
+                success: function (responseData)
+                {
+                    var isIIIF, manifest;
+
+                    // parse IIIF manifest if it is an IIIF manifest. TODO improve IIIF detection method
+                    if (responseData.hasOwnProperty('@context') && (responseData['@context'].indexOf('iiif') !== -1 ||
+                        responseData['@context'].indexOf('shared-canvas') !== -1))
+                    {
+                        isIIIF = true;
+
+                        // trigger ManifestDidLoad event
+                        // FIXME: Why is this triggered before the manifest is parsed?
+                        diva.Events.publish('ManifestDidLoad', [responseData], self);
+
+                        manifest = ImageManifest.fromIIIF(responseData, viewerState.options.showNonPagedPages);
+                    }
+
+                    setManifest(manifest, isIIIF, {});
+                }
+            });
+        }
 
         // Update page position (no event fired here)
         if ('goDirectlyTo' in newOptions)

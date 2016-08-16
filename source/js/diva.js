@@ -81,6 +81,7 @@ module.exports = diva;
             pageLoadTimeout: 200,       // Number of milliseconds to wait before loading pages
             pagesPerRow: 5,             // The default number of pages per row in grid view
             rowLoadTimeout: 50,         // Number of milliseconds to wait before loading a row
+            showNonPagedPages: false,   // Whether pages tagged as 'non-paged' (in IIIF manifests only) should be visible
             throbberTimeout: 100,       // Number of milliseconds to wait before showing throbber
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
@@ -348,7 +349,7 @@ module.exports = diva;
                 // FIXME: Why is this triggered before the manifest is parsed?
                 diva.Events.publish('ManifestDidLoad', [responseData], self);
 
-                manifest = ImageManifest.fromIIIF(responseData);
+                manifest = ImageManifest.fromIIIF(responseData, settings.showNonPagedPages);
             }
             else
             {
@@ -678,6 +679,15 @@ module.exports = diva;
         this.toggleFullscreenMode = function ()
         {
             toggleFullscreen();
+        };
+
+        // Show/Hide non-paged pages
+        this.toggleNonPagedPagesVisibility = function ()
+        {
+            console.log('This is supposed to show non paged pages :O');
+            reloadViewer({ showNonPagedPages: !settings.showNonPagedPages });
+
+            //TODO show + hide methods
         };
 
         // Close toolbar popups

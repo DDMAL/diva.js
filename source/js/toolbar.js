@@ -525,6 +525,8 @@ function createToolbar(viewer)
         if (settings.enableFullscreen)
             buttons.push(createFullscreenButton());
 
+        buttons.push(createShowNonPagedButton());
+
         return elt('span', elemAttrs('toolbar-button-group'), buttons);
     };
 
@@ -596,6 +598,14 @@ function createToolbar(viewer)
         return createButtonElement('fullscreen-icon', 'Toggle fullscreen mode', function ()
         {
             viewer.toggleFullscreenMode();
+        });
+    };
+
+    var createShowNonPagedButton = function ()
+    {
+        return createButtonElement('show-nonpaged-icon', 'Show non-paged pages', function()
+        {
+            viewer.toggleNonPagedPagesVisibility();
         });
     };
 

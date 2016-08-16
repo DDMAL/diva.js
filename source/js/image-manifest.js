@@ -27,9 +27,9 @@ function ImageManifest(data, urlAdapter)
     this._urlAdapter = urlAdapter;
 }
 
-ImageManifest.fromIIIF = function (iiifManifest)
+ImageManifest.fromIIIF = function (iiifManifest, showNonPagedPages)
 {
-    var data = parseIIIFManifest(iiifManifest);
+    var data = parseIIIFManifest(iiifManifest, showNonPagedPages);
     return new ImageManifest(data, new IIIFSourceAdapter());
 };
 

@@ -18,24 +18,34 @@ function getGroupings(viewerConfig)
 
     var pagesByGroup = [];
     var leftPage = null;
+    var nonPagedPages = []; // Pages to display below the current group
+
+    var _addNonPagedPages = function()
+    {
+        for (var i = 0; i < nonPagedPages.length; i++)
+        {
+            pagesByGroup.push([ nonPagedPages[i] ]);
+        }
+        nonPagedPages = [];
+    };
 
     manifest.pages.forEach(function (page, index)
     {
-        // Skip non-paged canvases in a paged manifest.
-        // NB: If there is currently a pending left page, then it will form
-        // an opening with the following page. This seems to be desired behaviour.
-        if (manifest.paged && !page.paged)
-            return;
-
         var pageRecord = {
             index: index,
-            dimensions: getPageDimensions(index, manifest)
+            dimensions: getPageDimensions(index, manifest),
+            paged: (!manifest.paged || page.paged)
         };
 
-        if (index === 0 || page.facingPages)
+        if (!pageRecord.paged)
+        {
+            nonPagedPages.push(pageRecord);
+        }
+        else if (index === 0 || page.facingPages)
         {
             // The first page is placed on its own
             pagesByGroup.push([pageRecord]);
+            _addNonPagedPages();
         }
         else if (leftPage === null)
         {
@@ -45,6 +55,7 @@ function getGroupings(viewerConfig)
         {
             pagesByGroup.push([leftPage, pageRecord]);
             leftPage = null;
+            _addNonPagedPages();
         }
     });
 
@@ -52,6 +63,7 @@ function getGroupings(viewerConfig)
     if (leftPage !== null)
     {
         pagesByGroup.push([leftPage]);
+        _addNonPagedPages();
     }
 
     return pagesByGroup;
@@ -70,7 +82,11 @@ function getGroupLayoutsFromPageGrouping(viewerConfig, grouping)
     // The first page is placed on its own to the right in vertical orientation.
     // NB that this needs to be the page with index 0; if the first page is excluded
     // from the layout then this special case shouldn't apply.
-    var leftOffset = (page.index === 0 && verticallyOriented) ? pageDims.width : 0;
+    // If the page is tagged as 'non-paged', center it horizontally
+    if (page.paged)
+        var leftOffset = (page.index === 0 && verticallyOriented) ? pageDims.width : 0;
+    else
+        var leftOffset = (verticallyOriented) ? pageDims.width / 2 : 0;
 
     var shouldBeHorizontallyAdjusted =
         verticallyOriented && !viewerConfig.manifest.pages[page.index].facingPages;
