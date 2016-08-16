@@ -84,7 +84,7 @@ module.exports = diva;
             pageLoadTimeout: 200,       // Number of milliseconds to wait before loading pages
             pagesPerRow: 5,             // The default number of pages per row in grid view
             rowLoadTimeout: 50,         // Number of milliseconds to wait before loading a row
-            showNonPagedPages: false,   // Whether pages tagged as 'non-paged' (in IIIF manifests only) should be visible
+            showNonPagedPages: false,   // Whether pages tagged as 'non-paged' (in IIIF manifests only) should be visible after initial load
             throbberTimeout: 100,       // Number of milliseconds to wait before showing throbber
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
