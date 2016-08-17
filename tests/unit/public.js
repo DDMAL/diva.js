@@ -260,6 +260,13 @@ QUnit.test("gotoPageByName()", function (assert)
         assert.ok(!this.gotoPageByName('bm_000.tif'), "It should not find anything for bm_000.tif");
         assert.ok(this.gotoPageByName('bm_002.tif', "right", "center"), "It should find the page index for bm_002.tif");
         assert.strictEqual(settings.currentPageIndex, 1, "Now the page number should be 2");
+
+        assert.strictEqual(settings.viewport.top, 1348, "The page should be anchored to the center (vertically)");
+        assert.strictEqual(settings.viewport.left, 0, "The page should be anchored to the right");
+        this.gotoPageByIndex(1, "left", "top");
+        assert.strictEqual(settings.viewport.top, 1162, "The page should be anchored to the top");
+        assert.strictEqual(settings.viewport.left, 291, "The page should be anchored to the left");
+
         done();
     });
 
