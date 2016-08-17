@@ -487,7 +487,7 @@ module.exports = diva;
                 var xOffset = divaState.viewerCore.getXOffset(pageIndex, xAnchor);
                 var yOffset = divaState.viewerCore.getYOffset(pageIndex, yAnchor);
 
-                viewerState.renderer.goto(pageIndex, xOffset, yOffset);
+                viewerState.renderer.goto(pageIndex, yOffset, xOffset);
                 return true;
             }
             return false;
