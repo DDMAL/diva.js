@@ -1463,6 +1463,9 @@ function ViewerCore(element, options, publicInstance)
     // Destroys this instance, tells plugins to do the same (for testing)
     this.destroy = function ()
     {
+        // Useful event to access elements in diva before they get destroyed. Used by the highlight plugin.
+        publish('ViewerWillTerminate', settings);
+
         // Cancel any pending request retrieving a manifest
         if (settings.pendingManifestRequest)
             settings.pendingManifestRequest.abort();

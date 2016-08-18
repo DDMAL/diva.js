@@ -304,7 +304,7 @@ var diva = require('../diva');
                         return false;
                 };
 
-                diva.Events.subscribe('ViewerDidTerminate', this.destroy, divaSettings.ID);
+                diva.Events.subscribe('ViewerWillTerminate', this.destroy, divaSettings.ID);
 
                 return true;
             },
