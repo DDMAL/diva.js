@@ -41,7 +41,7 @@ var ActiveDivaController = (function ($)
                 //deactivate everything and return
                 for (idx = 0; idx < outerLen; idx++)
                 {
-                    $(outers[idx].parentElement).data('diva').deactivate();
+                    $(outers[idx].parentElement.parentElement).data('diva').deactivate();
                 }
                 return;
             }
@@ -56,7 +56,7 @@ var ActiveDivaController = (function ($)
             {
                 //getAttribute to attr - comparing DOM element to jQuery element
                 if (outers[idx].getAttribute('id') != nearestOuter.attr('id'))
-                    $(outers[idx].parentElement).data('diva').deactivate();
+                    $(outers[idx].parentElement.parentElement).data('diva').deactivate();
             }
         };
 

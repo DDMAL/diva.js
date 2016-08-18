@@ -1471,12 +1471,12 @@ function ViewerCore(element, options, publicInstance)
         $('body').removeClass('diva-hide-scrollbar');
 
         // Empty the parent container and remove any diva-related data
-        settings.parentObject.empty().removeData('diva');
-
-        publish('ViewerDidTerminate', [settings]);
+        settings.parentObject.parent().empty().removeData('diva');
 
         // Remove any additional styling on the parent element
-        settings.parentObject.removeAttr('style').removeAttr('class');
+        settings.parentObject.parent().removeAttr('style').removeAttr('class');
+
+        publish('ViewerDidTerminate', settings);
 
         // Clear the Events cache
         diva.Events.unsubscribeAll(settings.ID);
