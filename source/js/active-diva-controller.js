@@ -47,7 +47,7 @@ var ActiveDivaController = (function ($)
             }
 
             //if we found one, activate it...
-            nearestOuter.parent().data('diva').activate();
+            nearestOuter.parent().parent().data('diva').activate();
             active = nearestOuter.parent();
 
             //...and deactivate all the others

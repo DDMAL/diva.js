@@ -1,6 +1,21 @@
 @import (reference) "variables.less";
 @import (reference) "mixins.less";
 
+.diva-wrapper {
+    min-height: 100%;
+    width: 100%;
+    flex-grow: 1;
+
+    &.diva-wrapper-flexbox {
+        display: flex;
+        flex-direction: column;
+    }
+
+    >*:not(.diva-outer) {
+        flex-shrink: 0;
+    }
+}
+
 .diva-title {
     text-align: center;
     font-weight: bold;
@@ -212,6 +227,7 @@
 }
 
 .diva-outer {
+    display: flex;
     clear: both;
     background: @viewerBg;
     .frame(@viewerFrame);
@@ -220,6 +236,7 @@
     min-height: 100px;
     min-width: 200px;
     height: 700px;
+    flex-grow: 1;
 }
 
 .diva-viewer-canvas {
@@ -231,7 +248,8 @@
 .diva-viewport {
     position: relative;
     overflow: auto;
-    height: 100%;
+    min-height: 100%;
+    flex-grow: 1;
 }
 
     .diva-inner {
