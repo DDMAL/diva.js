@@ -19,13 +19,6 @@ QUnit.test('diva.create(elem, options) -> Diva', function (assert)
     {
         diva.create(wrapper, options);
     }, new Error("Diva is already initialized on #diva-temp"), 'Should throw if element is already initialized');
-
-    // FIXME: Needed because the destroying a viewer before load won't work
-    var done = assert.async();
-    diva.Events.subscribe('ViewerDidLoad', function ()
-    {
-        done();
-    });
 });
 
 QUnit.test('diva.find(elem) -> ?Diva', function (assert)
