@@ -614,9 +614,16 @@ function createToolbar(viewer)
 
     var createToggleNonPagedButton = function ()
     {
-        var toggleNonPagedButton = createButtonElement('toggle-nonpaged-icon', 'Toggle visibility of non-paged pages', function()
+        var getClassName = function()
+        {
+            return 'toggle-nonpaged-icon' + (viewer.getSettings().showNonPagedPages ? '-active' : '');
+        };
+
+        var toggleNonPagedButton = createButtonElement(getClassName(), 'Toggle visibility of non-paged pages', function()
         {
             viewer.toggleNonPagedPagesVisibility();
+            var newClassName = 'diva-' + getClassName();
+            this.className = this.className.replace(/diva-toggle-nonpaged-icon(-active)?/, newClassName);
         });
 
         var updateNonPagedButtonVisibility = function ()
