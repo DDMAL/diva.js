@@ -37,6 +37,9 @@ var diva = require('../diva');
                                 return data[i]['@value'];
                             }
                         }
+
+                        // Handle the case where no language is specified, or when a single object is passed
+                        return data[0]['@value'] || data['@value'];
                     };
 
                     /**
