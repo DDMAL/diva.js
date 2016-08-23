@@ -897,7 +897,7 @@
           "@id": "https://images.simssa.ca/iiif/image/beromunster/canvas/bm_035.json",
           "@type": "sc:Canvas",
           "label": "Bm 035",
-          "viewingHint": "facing-pages",
+          "viewingHint": "non-paged",
           "height": 4378,
           "width": 4781,
           "images": [
