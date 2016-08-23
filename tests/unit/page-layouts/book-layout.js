@@ -1,7 +1,7 @@
 var ImageManifest = require('../../../source/js/image-manifest');
 var getBookLayout = require('../../../source/js/page-layouts/book-layout');
 
-var iiifBeromunster = require('../../../demo/beromunster-iiif.json');
+var iiifBeromunster = require('../../../demo/beromunster-iiif-test.json');
 
 var manifest = ImageManifest.fromIIIF(iiifBeromunster);
 
