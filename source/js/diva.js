@@ -348,7 +348,7 @@ module.exports = diva;
                 isIIIF = true;
 
                 // trigger ManifestDidLoad event
-                // FIXME: Why is this triggered before the manifest is parsed?
+                // FIXME: Why is this triggered before the manifest is parsed? See https://github.com/DDMAL/diva.js/issues/357
                 diva.Events.publish('ManifestDidLoad', [responseData], self);
 
                 manifest = ImageManifest.fromIIIF(responseData);
