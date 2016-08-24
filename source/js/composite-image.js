@@ -85,6 +85,7 @@ CompositeImage.prototype.getTiles = function (baseZoomLevel)
         // FIXME: Is it better to draw all of a partially covered tile,
         // with some of it ultimately covered, or to pick out the region
         // which needs to be drawn?
+        // See https://github.com/DDMAL/diva.js/issues/358
 
         var scaleRatio = Math.pow(2, highestZoomLevel - level.zoomLevel);
 
