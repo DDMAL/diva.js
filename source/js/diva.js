@@ -32,7 +32,6 @@ var createToolbar = require('./toolbar');
 var ViewerCore = require('./viewer-core');
 
 // Start the active Diva tracker
-// FIXME(wabain): Could defer this, if the logic isn't just getting removed
 var activeDiva = new ActiveDivaController(); // jshint ignore: line
 
 module.exports = diva;
