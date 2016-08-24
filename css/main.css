@@ -153,6 +153,10 @@ section#features h2 {
     margin-top: -.2em;
 }
 
+#iiif-logo {
+    vertical-align: initial;
+}
+
 .vcenter {
     display: inline-block;
     vertical-align: middle;
