@@ -309,7 +309,6 @@ module.exports = diva;
         var ajaxError = function(jqxhr, status, error)
         {
             // Show a basic error message within the document viewer pane
-            // FIXME: Make this more end-user friendly. What about 404's etc?
 
             var errorMessage = ['Invalid objectData setting. Error code: ' + jqxhr.status + ' ' + error];
 
