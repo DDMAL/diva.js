@@ -1,14 +1,39 @@
-/* jshint node:true */
-'use strict'
+'use strict';
 
 var gulp = require('gulp');
 var $ = require('gulp-load-plugins')();
+var merge = require('merge-stream');
 var sourcemaps = require('gulp-sourcemaps');
 var less = require('gulp-less');
-var uglify = require('gulp-uglify');
-var concat = require('gulp-concat');
 var rename = require('gulp-rename');
-var qunit = require('./tests/gulp-qunit.js');
+
+var karma = require('karma');
+
+var Promise = global.Promise || require('bluebird');
+
+var getSourceCompiler = (function webpackCompilerGetter()
+{
+    var webpackCompiler = null;
+
+    return function ()
+    {
+        if (webpackCompiler === null)
+        {
+            var webpack = require('webpack');
+
+            var conf;
+
+            if (process.env.DIVA_ENV === 'production')
+                conf = require('./webpack.conf.prod');
+            else
+                conf = require('./webpack.conf.dev');
+
+            webpackCompiler = webpack(conf);
+        }
+
+        return webpackCompiler;
+    };
+})();
 
 gulp.task('develop:jshint', function()
 {
@@ -18,181 +43,180 @@ gulp.task('develop:jshint', function()
                .pipe($.jshint.reporter('fail'));
 });
 
-gulp.task('develop:compile', function()
+gulp.task('develop:compile', function(done)
 {
-    return gulp.src([
-        'source/js/diva.prefix',
-        'source/js/utils.js',
-        'source/js/diva.js',
-        'source/js/plugins/*.js',
-        'source/js/diva.suffix'
-    ])
-               .pipe(sourcemaps.init())
-               .pipe(concat('diva.min.js'))
-               .pipe(uglify())
-               .pipe(sourcemaps.write('./'))
-               .pipe(gulp.dest('build/js'))
-               .on('error', function()
-               {
-                    console.log('A compiler error has occurred');
-               });
+    getSourceCompiler().run(done);
+
 });
 
 gulp.task('develop:styles', function()
 {
-    gulp.src('source/css/diva.less')
+    var autoprefixer = require('autoprefixer');
+    var auditDivaClasses = require('./audit-diva-css-classes');
+    var reporter = require('postcss-reporter');
+
+    var autoprefix = autoprefixer(['last 2 versions', 'Firefox ESR', 'IE >= 9']);
+
+    var unminimized = gulp.src('source/css/diva.less')
         .pipe(sourcemaps.init())
         .pipe(less())
-        .pipe(sourcemaps.write('./'))
+        .pipe($.postcss([autoprefix, auditDivaClasses(), reporter]))
+        .pipe(sourcemaps.write('./', {sourceRoot: '/source/css'}))
         .pipe(gulp.dest('build/css'));
 
-    gulp.src('source/css/diva.less')
+    var minimized = gulp.src('source/css/diva.less')
         .pipe(rename({suffix: '.min'}))
         .pipe(sourcemaps.init())
         .pipe(less({compress: true}))
-        .pipe(sourcemaps.write('./'))
+        .pipe($.postcss([autoprefix]))
+        .pipe(sourcemaps.write('./', {sourceRoot: '/source/css'}))
         .pipe(gulp.dest('build/css'));
+
+    return merge(minimized, unminimized);
 });
 
-gulp.task('develop:server', function()
+gulp.task('develop:server', function(done)
 {
     var serveStatic = require('serve-static');
     var serveIndex = require('serve-index');
 
     var app = require('connect')()
-                .use(require('connect-livereload')({port:35729}))
-                .use(serveStatic('build'))
-                .use(serveIndex('build'));
+        .use(require('connect-livereload')({port:35729}))
+        .use(serveStatic('.'))
+        .use(serveIndex('.'))
+        .use('/js', serveStatic('build/js'))
+        .use('/css', serveStatic('build/css'))
+        .use('/demo', serveStatic('demo/diva'));  // Munge demo/ and demo/diva/ directories
 
-    require('http').createServer(app)
+    require('http')
+        .createServer(app)
         .listen(9001)
         .on('listening', function()
         {
             console.log('Started a web server on http://localhost:9001');
+            console.log('Visit http://localhost:9001/demo/ or http://localhost:9001/tests/');
+            done();
         });
 });
 
-gulp.task('develop:clean', function()
+gulp.task('develop:clean', function(done)
 {
     var del = require('del');
+
     del(['build/'], function() {
         console.log('Cleaning build directory');
+        done();
     });
 });
 
-gulp.task('develop:build', ['develop:styles', 'develop:compile'], function()
-{
-    gulp.src('source/js/**/*.js')
-        .pipe(gulp.dest('build/js'));
+gulp.task('develop:build', ['develop:styles', 'develop:compile']);
 
-    gulp.src('source/processing/*.py')
-        .pipe(gulp.dest('build/processing'));
-
-    gulp.src('demo/*')
-        .pipe(gulp.dest('build/demo'));
-
-    gulp.src('demo/diva/*')
-        .pipe(gulp.dest('build/demo'));
-
-    gulp.src('AUTHORS')
-        .pipe(gulp.dest('build'));
-
-    gulp.src('LICENSE')
-        .pipe(gulp.dest('build'));
-
-    gulp.src('readme.md')
-        .pipe(gulp.dest('build'));
-
-    // gulp.start('develop:styles');
-    // gulp.start('develop:compile');
-});
-
-gulp.task('develop', ['develop:build', 'develop:server'], function()
+gulp.task('develop', ['develop:styles', 'develop:server', 'develop:testServer'], function()
 {
     $.livereload.listen();
 
     gulp.watch([
-        'build/js/**/*',
-        'build/css/diva.css'
+        'build/js/**/*.js',
+        'build/css/**/*.css'
     ]).on('change', $.livereload.changed);
 
-    gulp.watch('source/js/**/*.js', ['develop:jshint', 'develop:compile']);
+    gulp.watch(['source/js/**/*.js', 'tests/**/*.js'], ['develop:jshint']);
     gulp.watch('source/css/**/*.less', ['develop:styles']);
+
+    // This also runs the initial compilation
+    getSourceCompiler().watch({}, logWebpackErrors);
+
+    function logWebpackErrors(err, stats)
+    {
+        if (err)
+            console.error(err);
+
+        var jsonStats = stats.toJson();
+
+        if (jsonStats.errors.length > 0)
+            console.error(jsonStats.errors);
+
+        if (jsonStats.warnings.length > 0)
+            console.error(jsonStats.warnings);
+    }
 });
 
-gulp.task('release', ['develop:build'], function()
+gulp.task('release', function ()
 {
-    var spawn = require('child_process').spawn;
-    var fs = require('fs');
-    var del = require('del');
-    var archiver = require('archiver');
+    var runSequence = require('run-sequence');
+    var checkGitStatus = require('./tools/check-git-status');
+
+    if (!process.env.DIVA_ENV)
+    {
+        process.env.DIVA_ENV = 'production';
+    }
+    else if (process.env.DIVA_ENV !== 'production')
+    {
+        console.warn('Running release script in ' + process.env.DIVA_ENV + ' mode!');
+    }
+
+    return checkGitStatus().then(function ()
+    {
+        return new Promise(function (resolve, reject)
+        {
+            runSequence('develop:clean', 'develop:build', 'release:version', 'release:package', function (err)
+            {
+                if (err)
+                    reject(err);
+                else
+                    resolve();
+            });
+        })
+    });
+});
+
+gulp.task('release:version', function ()
+{
+    var npmExec = require('./tools/npm-exec');
     var argv = require('yargs')
-                .usage('Usage: gulp release -v [num]')
-                .demand(['v'])
-                .alias('v', 'version')
-                .argv;
+        .usage('Usage: gulp release -v [num]')
+        .demand(['v'])
+        .alias('v', 'version')
+        .argv;
 
-    var release_name = 'diva-v' + argv.v;
-
-    // Bump the package.json version
-    var npm = spawn('npm', ['version', '--no-git-tag-version', argv.v], {stdio: 'inherit'});
-
-    npm.on('close', function (code)
-    {
-        if (code !== 0)
-            console.error('npm exited with code ' + code);
-    });
-
-    /// tar.gz creation
-    var tgz_out = fs.createWriteStream(__dirname + '/' + release_name + '.tar.gz');
-    var tgz_archive = archiver('tar', {
-        gzip: true,
-        gzipOptions: {
-            level: 9
-        }
-    });
-    tgz_archive.on('close', function()
-    {
-        console.log(tgz_archive.pointer() + ' total bytes');
-        console.log('Finished writing tar.gz archive');
-    });
-    tgz_archive.on('error', function()
-    {
-        console.log('There was a problem creating the tar.gz archive.');
-    });
-    tgz_archive.pipe(tgz_out);
-    tgz_archive.directory('build/', release_name)
-               .finalize();
-
-    /// zipfile creation
-    var zip_out = fs.createWriteStream(__dirname + '/' + release_name + '.zip');
-    var zip_archive = archiver('zip');
-    zip_archive.on('close', function()
-    {
-        console.log(zip_archive.pointer() + ' total bytes');
-        console.log('Finished writing zip archive');
-    });
-    zip_archive.on('error', function()
-    {
-        console.log('There was a problem creating the zip archive.');
-    });
-    zip_archive.pipe(zip_out);
-    zip_archive.directory('build/', release_name)
-               .finalize();
+    return npmExec(['version', '--no-git-tag-version', argv.v]);
 });
 
-gulp.task('develop:test', ['develop:build'], function ()
+gulp.task('release:package', function ()
 {
-    var testsPath = (process.env.TEST_DIVA === 'source') ? './tests/source.html' : './tests/index.html';
+    var generateArchives = require('./tools/generate-archives');
 
-    return gulp.src(testsPath)
-        .pipe(qunit({
-            'timeout': 10,
-            'testRunner': 'runner-json.js'
-        }));
+    return generateArchives().then(function ()
+    {
+        console.warn('Manually release on GitHub, publish to npm, and update the website');
+        console.warn('See https://github.com/DDMAL/diva.js/wiki/Developing-Diva.js#releasing-a-new-version');
+    });
 });
 
-gulp.task('default', ['develop:build'], function()
+// Start a background Karma server
+gulp.task('develop:testServer', function (done)
 {
-    gulp.start('develop:build');
+    var server = new karma.Server({
+        configFile: __dirname + '/karma.conf.js',
+        singleRun: false,
+        autoWatch: false,
+        logLevel: 'OFF' // disable logging in the server process
+    });
+
+    server.start();
+
+    console.log('Karma server started. Run `npm run trigger-tests` to run the test suite.');
+
+    done();
 });
+
+// The JS dependencies are bundled inside Karma, so we only to build the styles
+gulp.task('develop:test', ['develop:styles'], function (done)
+{
+    new karma.Server({
+        configFile: __dirname + '/karma.conf.js',
+        singleRun: true
+    }, done).start();
+});
+
+gulp.task('default', ['develop:build']);

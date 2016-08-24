@@ -1,15 +1,13 @@
 language: node_js
+node_js: 5  # Can't update to 6 until gulp does not depend on vinyl-fs 0.3.0
 sudo: false
 
-env:
-  - TEST_DIVA=source
-  - TEST_DIVA=build
-
 install:
-  - npm install -g gulp
-  - npm install
+  - npm install --no-spin
 
-script: gulp develop:test
+script:
+  - npm run lint
+  - npm test
 
 notifications:
 webhooks:

@@ -1,12 +1,19 @@
 body {
     font-family: 'Helvetica Neue', 'Helvetica', Arial, Verdana, sans-serif;
     -webkit-font-smoothing: antialiased;
+    box-sizing: border-box;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
 }
 
 body, html {
-    height:90%;
+    height:100%;
+    margin: 0;
 }
 
-#diva-wrapper, .diva-outer {
-    height: 100%;
+#diva-wrapper {
+    display: flex;
+    flex-grow: 1;
+    height: 0;
 }

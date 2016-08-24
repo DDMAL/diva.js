@@ -1,6 +1,18 @@
+## ------------------------------------------------------------------------ ##
+## NOTE: Changes to this file should usually also be applied to .npmignore  ##
+## ------------------------------------------------------------------------ ##
+
 *.swp
 *.pyc
 *dev.html
 todo.md
 .DS_Store
 tags
+
+# IntelliJ things
+/.idea/
+*.iml
+
+/node_modules/
+/coverage/
+/build/

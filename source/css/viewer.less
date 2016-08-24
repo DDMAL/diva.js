@@ -1,4 +1,20 @@
-@buttonHeight: @buttonSize + (2 * @borderSize);
+@import (reference) "variables.less";
+@import (reference) "mixins.less";
+
+.diva-wrapper {
+    min-height: 100%;
+    width: 100%;
+    flex-grow: 1;
+
+    &.diva-wrapper-flexbox {
+        display: flex;
+        flex-direction: column;
+    }
+
+    >*:not(.diva-outer) {
+        flex-shrink: 0;
+    }
+}
 
 .diva-title {
     text-align: center;
@@ -8,29 +24,75 @@
     margin: 0 auto;
 }
 
+.diva-button, .diva-input {
+    box-sizing: border-box;
+    outline: none;
+    border-radius: 0;
+    font: inherit;
+    vertical-align: middle;
+
+    &::-moz-focus-inner {
+        padding: 0;
+    }
+}
+
+.diva-button {
+    display: inline-block;
+    cursor: pointer;
+    height: @buttonSize;
+    width: @buttonSize;
+
+    line-height: @buttonSize;
+    -webkit-appearance: none;
+    padding: 0;
+
+    background-color: @buttonBg;
+    background-repeat: no-repeat;
+    background-position: center;
+    .frame(@buttonFrame);
+
+    &:hover, &:focus {
+        background-color: @buttonHover;
+    }
+
+    &.diva-button-text {
+        width: auto;
+        padding: 0 @buttonPadding;
+    }
+}
+
+.diva-input {
+    height: @inputSize;
+    .frame(@inputFrame);
+
+    padding: 0 @inputPadding;
+
+    &:focus {
+        border-color: @inputHoverFrame;
+    }
+}
+
 .diva-label {
     margin: 0 @toolbarGroupMargin;
-    line-height: 34px;
+    line-height: @buttonSize;
     vertical-align: top;
     white-space: nowrap;
 }
 
-.diva-tools-left {
-    float: left;
-    .prevent-selection;
+.diva-tools-left, .diva-tools-right {
+    margin-bottom: @toolbarGroupMargin;
 }
 
-    .diva-zoom-label, .diva-grid-label {
-        .hidden;
-    }
+.diva-tools-left {
+    float: left;
+    user-select: none;
+}
 
     .diva-zoom-out-button, .diva-grid-out-button {
-        .hidden;
         background-image: data-uri("@{iconPath}zoomout.png");
     }
 
     .diva-zoom-in-button, .diva-grid-in-button {
-        .hidden;
         background-image: data-uri("@{iconPath}zoomin.png");
         margin-left: -1px;
     }
@@ -40,7 +102,7 @@
 
     .diva-button {
         margin-left: -1px;
-        .prevent-selection;
+        user-select: none;
     }
 }
 
@@ -49,19 +111,52 @@
         margin-right: @toolbarGroupMargin;
     }
 
-        .diva-page-nav form {
+        .diva-goto-form {
             display: inline-block;
-            vertical-align: top;
-            line-height: @buttonHeight;
+            position: relative;
         }
 
-            .diva-input {
-                width: 3em;
-                margin-right: 4px;
+            .diva-goto-page-input {
+                width: 5em;
             }
+
+            .diva-input-suggestions {
+                display: none;
+                box-sizing: border-box;
+                position: absolute;
+                width: 100%;
+                background-color: white;
+                border: solid 1px #aaa;
+                border-top: none;
+                z-index: 1;
+            }
+
+                .diva-input-suggestion {
+                    box-sizing: border-box;
+                    width: 100%;
+                    margin-top: 3px;
+                    padding: 2px;
+                    padding-left: 5px;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    cursor: pointer;
+                }
+
+                .diva-input-suggestion.active, .diva-input-suggestion:hover {
+                    background-color: @highlightBlue;
+                }
 
     .diva-fullscreen-icon {
         background-image: data-uri("@{iconPath}fullscreen.png");
+    }
+
+    .diva-toggle-nonpaged-icon {
+        background-image: data-uri("@{iconPath}toggle-nonpaged.png");
+    }
+
+    .diva-toggle-nonpaged-icon-active {
+        background-image: data-uri("@{iconPath}toggle-nonpaged-active.png");
     }
 
     .diva-view-menu {
@@ -71,13 +166,13 @@
 
         .diva-view-options {
             position: absolute;
-            top: @buttonHeight;
+            top: @buttonSize;
             z-index: 1;
             display: none;
-            .box-shadow(1px 1px 4px 0 rgba(0,0,0,0.1));
+            box-shadow: 1px 1px 4px 0 rgba(0,0,0,0.1);
         }
 
-            .diva-view-options span {
+            .diva-view-options .diva-button {
                 margin-top: -1px;
                 display: block;
             }
@@ -98,7 +193,7 @@
         background-image: data-uri("@{iconPath}link.png");
     }
 
-    .diva-page-label {
+    .diva-zoom-label, .diva-grid-label, .diva-page-label {
         display: inline-block;
     }
 
@@ -112,6 +207,10 @@
     background: @toolsBg;
     .pretty-shadow;
 
+    .diva-tools-left, .diva-tools-right {
+        margin-bottom: 0;
+    }
+
     .diva-tools-right {
         margin-left: 2em;
     }
@@ -122,95 +221,76 @@
 
     /* prevent variable number of digits in labels from resizing .diva-fullscreen-tools */
     .diva-zoom-label, .diva-grid-label, .diva-page-label {
-        width: 6em;
-    }
-
-    .diva-page-label {
+        width: 8em;
         display: block;
     }
 
     .diva-page-nav {
         margin-right: 0;
-
-        form {
-            line-height: 1;
-        }
     }
 }
 
 .diva-outer {
+    display: flex;
     clear: both;
     background: @viewerBg;
     .frame(@viewerFrame);
     position: relative;
+    overflow: hidden;
     min-height: 100px;
     min-width: 200px;
     height: 700px;
+    flex-grow: 1;
+}
+
+.diva-viewer-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.diva-viewport {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
     overflow: auto;
 }
 
     .diva-inner {
+        .grab;
         position: relative;
         overflow: hidden;
         margin: 0 auto;
+
+        &.diva-grabbing {
+            .grabbing;
+        }
     }
 
         .diva-page {
-            .box-shadow(7px 7px 6px -6px rgba(0,0,0,0.3));
-            .loading;
+            box-shadow: 7px 7px 6px -6px rgba(0,0,0,0.3);
             position: absolute;
+            background-color: @pageBg;
         }
 
-        .diva-document-page {
-            left: 0;
-            right: 0;
-        }
+.diva-page-tools-wrapper {
+    position: absolute;
+    z-index: 3;
+}
 
 .diva-page-tools {
-    position: absolute;
+    position: relative;
     top: -@pluginIconSize;
-    left: 0;
     height: @pluginIconSize;
-    z-index: 3;
 
     div {
         display: inline-block;
-        .square(@pluginIconSize);
+        height: @pluginIconSize;
+        width: @pluginIconSize;
         cursor: pointer;
     }
-}
-
-/* shadow only on bottom to prevent spilling onto righthand pages */
-.diva-page-book-left {
-    .box-shadow(0px 7px 6px -6px rgba(0,0,0,0.3));
-}
-
-.diva-page-vertical {
-    margin: 0 auto;
-    display: inline-block;
-}
-
-.diva-page-horizontal {
-    vertical-align: middle;
-    display: inline-block;
-    top: 50%;
-    transform: translate(0, -50%);
-    -webkit-transform: translate(0, -50%);
-    -moz-transform: translate(0, -50%);
-    -ms-transform: translate(0, -50%);
-}
-
-.diva-row {
-    position: absolute;
-    width: 100%;
-}
-
-.diva-grab {
-    .grab;
-}
-
-.diva-grabbing {
-    .grabbing;
 }
 
 .diva-fullscreen {
@@ -254,20 +334,9 @@
     overflow: hidden !important;
 }
 
-.zoom-slider {
+.diva-slider {
     position: relative;
     top: 0.6em;
-    display: none;
-    float: left;
-    @media (max-width: 480px) {
-        width: 100px;
-    }
-}
-
-.grid-slider {
-    position: relative;
-    top: 0.6em;
-    display: none;
     float: left;
     @media (max-width: 480px) {
         width: 100px;
@@ -297,8 +366,6 @@
     height: 200px;
     background-color: #fff;
     border: 1px solid #ddd;
-    -webkit-box-shadow: 2px 2px 4px 0 rgba(0,0,0,0.5);
-    -moz-box-shadow: 2px 2px 4px 0 rgba(0,0,0,0.5);
     box-shadow: 2px 2px 4px 0 rgba(0,0,0,0.5);
     top: 50%;
     left: 50%;
@@ -308,13 +375,26 @@
     padding: 0 1em;
 }
 
+.diva-error-close {
+    width: 18px;
+    height: 18px;
+    border: none;
+    background: #fff data-uri("@{iconPath}close.png");
+    position: absolute;
+    top: 1em;
+    right: 1em;
+
+    &:hover {
+        background-image: data-uri("@{iconPath}close-hover.png");
+        cursor: hand;
+    }
+}
+
 .diva-modal {
     position: absolute;
     width: 32em;
     background-color: #fff;
     border: 1px solid #ddd;
-    -webkit-box-shadow: 2px 2px 4px 0 rgba(0,0,0,0.5);
-    -moz-box-shadow: 2px 2px 4px 0 rgba(0,0,0,0.5);
     box-shadow: 2px 2px 4px 0 rgba(0,0,0,0.5);
     top: 50%;
     left: 50%;

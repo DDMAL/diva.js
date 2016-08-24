@@ -1,25 +1,6 @@
-.border-radius(@radius) {
-    -webkit-border-radius: @radius;
-    -moz-border-radius: @radius;
-    border-radius: @radius;
-}
+@import (reference) "variables.less";
 
-.box-shadow(@shadow) {
-    -webkit-box-shadow: @shadow;
-    -moz-box-shadow: @shadow;
-    box-shadow: @shadow;
-}
-
-.size(@height, @width) {
-    height: @height;
-    width: @width;
-}
-
-.square(@size) {
-    .size(@size, @size);
-}
-
-.hidden {
+.hidden() {
     display: none;
 }
 
@@ -28,61 +9,36 @@
     border: @borderSize solid @colour;
 }
 
-.plugin-icon(@plugin) {
-    background: data-uri('@{iconPath}plugins/@{plugin}.png') no-repeat;
+.plugin-icon(@plugin-name) {
+    background: data-uri('@{iconPath}plugins/@{plugin-name}.png') no-repeat;
 
     &:hover {
-        background: data-uri('@{iconPath}plugins/@{plugin}-hover.png') no-repeat;
+        background: data-uri('@{iconPath}plugins/@{plugin-name}-hover.png') no-repeat;
     }
 }
 
-.grab {
+.grab() {
     cursor: data-uri("@{iconPath}openhand.cur"), pointer;
 }
 
-.grabbing {
+.grabbing() {
     cursor: data-uri("@{iconPath}closedhand.cur"), move !important;
 }
 
-.loading {
+.loading() {
     background: data-uri("@{iconPath}loading.gif") no-repeat center;
 }
 
 .pretty-shadow(@distance: 4px) {
-    .box-shadow(2px 2px @distance 0 rgba(0, 0, 0, 0.5));
+    box-shadow: 2px 2px @distance 0 rgba(0, 0, 0, 0.5);
 }
 
-.full-width {
+.full-width() {
     width: 100% !important;
     max-width: 100% !important;
 }
 
-.full-height {
+.full-height() {
     height: 100% !important;
     max-height: 100% !important;
-}
-
-.prevent-selection {
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-}
-
-.diva-button {
-    display: inline-block;
-    cursor: pointer;
-    .square(@buttonSize);
-    background-color: @buttonBg;
-    background-repeat: no-repeat;
-    background-position: center;
-    .frame(@buttonFrame);
-
-    @media screen and (min-device-width: 769px) {
-        &:hover {
-            background-color: @buttonHover;
-        }
-    }
 }

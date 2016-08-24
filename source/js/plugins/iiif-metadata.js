@@ -1,14 +1,13 @@
-
 // IIIF Metadata plugin for diva.js
 // Displays object metadata from a IIIF manifest
+
+var jQuery = require('jquery');
+var diva = require('../diva');
+
 (function ($)
 {
-    window.divaPlugins.push((function()
+    module.exports = (function()
     {
-        var settings = {
-            metadataModal: ''
-        };
-
         var retval =
         {
             init: function(divaSettings, divaInstance)
@@ -20,7 +19,7 @@
                         var labelProper = label.charAt(0).toUpperCase() + label.slice(1);
                         var labelFormatted = labelProper.replace('_', ' ');
 
-                        if (value.indexOf('http://') === 0)
+                        if (value.match(/^https?:\/\//))
                         {
                             value = '<a href="' + value + '" target="_blank">' + value + '</a>';
                         }
@@ -38,6 +37,9 @@
                                 return data[i]['@value'];
                             }
                         }
+
+                        // Handle the case where no language is specified, or when a single object is passed
+                        return data[0]['@value'] || data['@value'];
                     };
 
                     /**
@@ -95,7 +97,6 @@
                         'description',
                         'within',
                         'see_also',
-                        'service',
                         'license',
                         'attribution'
                     ]);
@@ -126,5 +127,5 @@
             titleText: 'Show metadata from a IIIF manifest'
         };
         return retval;
-    })());
+    })();
 })(jQuery);

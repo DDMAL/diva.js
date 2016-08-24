@@ -38,11 +38,13 @@ The plugin may also be instantiated with the 'divaSettings.newTotalPages'
 attribute, which will replace the "Page 1 of __" counter.
 */
 
+var jQuery = require('jquery');
+var diva = require('../diva');
+
 (function ($)
 {
-    window.divaPlugins.push((function()
+    module.exports = (function()
     {
-        var settings = {};
         var retval =
         {
             init: function(divaSettings, divaInstance)
@@ -151,5 +153,5 @@ attribute, which will replace the "Page 1 of __" counter.
             titleText: 'Re-aliases page indexes'
         };
         return retval;
-    })());
+    })();
 })(jQuery);

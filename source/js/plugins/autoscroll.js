@@ -18,9 +18,12 @@ Relevant methods:
     -disableManualScroll, enableManualScroll
 */
 
+var jQuery = require('jquery');
+var diva = require('../diva');
+
 (function ($)
 {
-    window.divaPlugins.push((function()
+    module.exports = (function()
     {
         var settings = {};
         var retval =
@@ -56,19 +59,19 @@ Relevant methods:
                     restartScrollingInterval();
                 };
 
-                restartScrollingInterval = function()
+                var restartScrollingInterval = function()
                 {
                     clearInterval(divaSettings.autoScrollInterval);
                     if (divaSettings.verticallyOriented)
                     {
                         divaSettings.autoScrollInterval = setInterval(function(){
-                            divaSettings.outerObject.scrollTop(divaSettings.outerObject.scrollTop() + pixelsPerScroll);
+                            divaSettings.viewportObject.scrollTop(divaSettings.viewportObject.scrollTop() + pixelsPerScroll);
                         }, autoScrollRefresh);
                     }
                     else
                     {
                         divaSettings.autoScrollInterval = setInterval(function(){
-                            divaSettings.outerObject.scrollLeft(divaSettings.outerObject.scrollLeft() + pixelsPerScroll);
+                            divaSettings.viewportObject.scrollLeft(divaSettings.viewportObject.scrollLeft() + pixelsPerScroll);
                         }, autoScrollRefresh);
                     }
                 };
@@ -183,10 +186,10 @@ Relevant methods:
                         else
                         {
                             settings.jqObj.css({
-                                'right': $(window).width() - (divaSettings.outerObject.offset().left + divaSettings.outerObject.outerWidth()) + divaSettings.scrollbarWidth,
+                                'right': $(window).width() - (divaSettings.viewportObject.offset().left + divaSettings.viewportObject.outerWidth()) + divaSettings.scrollbarWidth,
                                 'margin-right': '.6em'
                             });
-                            settings.jqObj.offset({'top': divaSettings.outerObject.offset().top + 1});
+                            settings.jqObj.offset({'top': divaSettings.viewportObject.offset().top + 1});
                         }
                     };
 
@@ -244,5 +247,5 @@ Relevant methods:
             titleText: 'Automatically scrolls page along primary axis'
         };
         return retval;
-    })());
+    })();
 })(jQuery);

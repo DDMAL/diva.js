@@ -5,9 +5,14 @@ Adds an adjustment icon next to each image
 
 */
 
+var jQuery = require('jquery');
+var diva = require('../diva');
+
+require('../utils/jquery-extensions');
+
 (function ($)
 {
-    window.divaPlugins.push((function ()
+    module.exports = (function ()
     {
         var canvas = {},
             map = {},
@@ -392,22 +397,8 @@ Adds an adjustment icon next to each image
         var getImageURL = function (zoomLevel)
         {
             var width = settings.zoomWidthRatio * Math.pow(2, zoomLevel);
-            var imdir = settings.imageDir + "/";
-            var pageIndex = settings.selectedPageIndex;
 
-            var imageURL;
-
-            if (settings.isIIIF)
-            {
-                var quality = (settings.pages[pageIndex].api > 1.1) ? 'default' : 'native';
-                imageURL = encodeURI(settings.pages[pageIndex].url + 'full/' + width + ',/0/' + quality + '.jpg');
-            }
-            else
-            {
-                imageURL = settings.iipServerURL + "?FIF=" + imdir + settings.filename + '&WID=' + width + '&CVT=JPEG';
-            }
-
-            return imageURL;
+            return settings.divaInstance.getPageImageURL(settings.selectedPageIndex, { width: width });
         };
 
         var showThrobber = function ()
@@ -444,7 +435,7 @@ Adds an adjustment icon next to each image
             if (changed)
             {
                 settings.pluginIcon.addClass('new');
-                localStorage.setObject(storageKey, sliderSettings);
+                storeObject(storageKey, sliderSettings);
             }
             else
             {
@@ -502,6 +493,17 @@ Adds an adjustment icon next to each image
             }
         };
 
+        // Serialize an object to JSON and save it in localStorage
+        var storeObject = function (key, value) {
+            localStorage.setItem(key, JSON.stringify(value));
+        };
+
+        // Load and deserialize a localStorage object
+        var loadStoredObject = function (key) {
+            var value = localStorage.getItem(key);
+            return value && JSON.parse(value);
+        };
+
         var retval =
         {
             init: function (divaSettings, divaInstance)
@@ -515,6 +517,7 @@ Adds an adjustment icon next to each image
                 // Override all the configurable settings defined under canvasPlugin
                 $.extend(settings, defaults, divaSettings.canvasPlugin);
 
+                settings.divaInstance = divaInstance;
                 settings.inCanvas = false;
                 settings.iipServerURL = divaSettings.iipServerURL;
                 settings.imageDir = divaSettings.imageDir;
@@ -862,21 +865,23 @@ Adds an adjustment icon next to each image
                 sliders.zoom.max = settings.maxZoomLevel;
             },
 
-            handleClick: function(event, divaSettings, divaInstance)
+            handleClick: function(event, divaSettings, divaInstance, selectedPageIndex)
             {
                 // loadCanvas() calls all the other necessary functions to load
-                var page = $(this).parent().parent();
-                var filename = $(page).attr('data-filename');
-                var selectedPageIndex = $(page).attr('data-index');
-                var width = $(page).width() - 1;
+                var filename = divaInstance.getFilenames()[selectedPageIndex];
+
+                // TODO: Move rationale for -1 from Wiki (TLDR an old IIP bug)
+                var width = divaInstance
+                    .getPageDimensions(selectedPageIndex)
+                    .width - 1;
+
                 var zoomLevel = divaSettings.zoomLevel;
                 var slider;
 
                 settings.zoomWidthRatio = width / Math.pow(2, zoomLevel);
                 settings.pluginIcon = $(this);
 
-                settings.pages = divaSettings.pages;
-                settings.isIIIF = divaSettings.isIIIF;
+                settings.manifest = divaSettings.manifest;
                 settings.selectedPageIndex = selectedPageIndex;
 
                 // Limit the max zoom level if we're on the iPad
@@ -889,7 +894,7 @@ Adds an adjustment icon next to each image
                 sliders.zoom.current = zoomLevel;
 
                 // Find the settings stored in localStorage, if they exist
-                var sliderSettings = localStorage.getObject(settings.localStoragePrefix + settings.filename);
+                var sliderSettings = loadStoredObject(settings.localStoragePrefix + settings.filename);
                 if (sliderSettings)
                 {
                     for (slider in sliderSettings)
@@ -927,11 +932,12 @@ Adds an adjustment icon next to each image
                 var imageURL = getImageURL(zoomLevel);
 
                 // Change the title of the page
-                $('#diva-canvas-info').text($(page).attr('title'));
+                // FIXME: This is legacy behaviour. Should this be a filename/label?
+                $('#diva-canvas-info').text('Page ' + (selectedPageIndex + 1));
 
                 showThrobber();
 
-                diva.Events.publish('CanvasViewDidActivate', [page]);
+                diva.Events.publish('CanvasViewDidActivate', [selectedPageIndex]);
 
                 loadCanvas(imageURL);
             },
@@ -957,5 +963,5 @@ Adds an adjustment icon next to each image
         // embedded.
         return retval;
 
-    })());
+    })();
 })(jQuery);

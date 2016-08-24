@@ -1,3 +1,6 @@
+@import (reference) "../variables.less";
+@import (reference) "../mixins.less";
+
 /* Begin canvas plugin */
 
 // Colours - should not be changed
@@ -82,7 +85,8 @@
     padding: 10px;
     padding-bottom: 0;
     div {
-        .square(18px);
+        height: 18px;
+        width: 18px;
         background-repeat: no-repeat;
         cursor: pointer;
         z-index: @canvasZIndex + 4;
@@ -102,10 +106,10 @@
 }
 
 #diva-canvas-close {
-    background-image: data-uri("@{iconPath}plugins/canvas/canvas-close.png");
+    background-image: data-uri("@{iconPath}close.png");
 
     &:hover {
-        background-image: data-uri("@{iconPath}plugins/canvas/canvas-close-hover.png");
+        background-image: data-uri("@{iconPath}close-hover.png");
     }
 }
 
@@ -202,7 +206,8 @@
 }
 
 #diva-canvas-minimap {
-    .square(@toolsWidth - 20px);
+    height: @toolsWidth - 20px;
+    width: @toolsWidth - 20px;
     cursor: crosshair;
     margin-bottom: 10px;
     background: @canvasPreviewBg;
@@ -224,7 +229,7 @@
     top: 10px;
     left: 10px;
     cursor: crosshair;
-    .prevent-selection;
+    user-select: none;
     .hidden;
 }
 

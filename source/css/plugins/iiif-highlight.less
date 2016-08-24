@@ -1,3 +1,5 @@
+@import (reference) "../variables.less";
+
 /* Begin iiif-highlight plugin */
 
 .annotation-overlay {
@@ -12,6 +14,10 @@
 
 .annotations-icon-active {
   background-image: data-uri("@{iconPath}plugins/annotation-active.png");
+}
+
+.diva-inner.annotations-hidden .diva-highlight {
+  display: none;
 }
 
 /* End iiif-highlight plugin */

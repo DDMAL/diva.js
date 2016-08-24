@@ -8,14 +8,11 @@ Diva.js [![Build Status](https://travis-ci.org/DDMAL/diva.js.svg?branch=master)]
 
 Diva.js (Document Image Viewer with AJAX) is a JavaScript book image viewer designed to present multi-page documents at multiple resolutions.
 
-Version 4.0 contains many new features and improvements:
+Version 5.0 contains many new features and improvements:
 
- * [International Image Interoperability Framework](http://iiif.io) (IIIF) support
- * Book Layout view (facing pages)
- * New plugins: Autoscroll (animated page scrolling), Page Alias (pages may have multiple identifiers), IIIF Metadata (displays document metadata from IIIF manifest), IIIF Highlight (displays annotations from a IIIF manifest)
- * Improved development workflow ([Gulp](https://github.com/gulpjs/gulp))
- * Support for changing which document is being viewed without re-instantiating the viewer
- * Numerous bug fixes and optimizations (See our [commits](https://github.com/DDMAL/diva.js/commits/master) for more details).
+- Page images are now rendered using the HTML Canvas, allowing us to support “smooth” zooming. 
+- Improved IIIF support: Easily toggle “non-paged” pages' visibility and search for pages based on their label name.
+- Complete re-organization of the source code. We now use ES6, WebPack, and Karma. This makes both the development process and code debugging much easier.
 
 ## Overview
 
@@ -50,7 +47,7 @@ Downloading the Diva.js release package provides access to image processing scri
 
 ### Locally (release package)
 
-Download the [latest release](https://github.com/DDMAL/diva.js/releases) of Diva. In the `diva.js` directory (or `build` if you have the source code) you can find a pre-compiled version. The `css` and `js` directories contain the files necessary to use Diva. Simply include [jQuery 2.x](https://jquery.com/), `css/diva.min.css` and `js/diva.min.js` in the `<head>` of your webpage, as shown in the HTML source of the demo pages. You will also find some helper scripts for processing your image files.
+Download the [latest release](https://github.com/DDMAL/diva.js/releases) of Diva. In the `diva.js` directory you can find a pre-compiled version. The `css` and `js` directories contain the files necessary to use Diva. Simply include [jQuery 2.x](https://jquery.com/), `css/diva.min.css` and `js/diva.min.js` in the `<head>` of your webpage, as shown in the HTML source of the demo pages. You will also find some helper scripts for processing your image files.
 
 ### Basic setup
 
@@ -61,7 +58,7 @@ After including the necessary files, the most basic Diva viewer is instantiated 
             iipServerURL: "http://www.example.com/fcgi-bin/iipsrv.fcgi",
             objectData: "http://www.example.com/beromunster.json",
             imageDir: "/mnt/images/beromunster"
-    });
+        });
     </script>
 
 Required for IIP and IIIF:
