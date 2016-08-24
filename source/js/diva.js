@@ -1079,7 +1079,7 @@ module.exports = diva;
                 return;
 
             // Throw an error if the element is not in the DOM, since it causes some problems
-            if (!document.contains(this))
+            if (!document.body.contains(this))
                 throw new Error('Diva could not be initialized because this element is not attached to the DOM');
 
             // Otherwise, instantiate the document viewer
