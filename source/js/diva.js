@@ -81,6 +81,8 @@ module.exports = diva;
             minPagesPerRow: 2,          // Minimum pages per row in grid view. Recommended default.
             minZoomLevel: 0,            // Defaults to 0 (the minimum zoom)
             onGotoSubmit: null,         // When set to a function that takes a string and returns a page index, this will override the default behaviour of the 'go to page' form submission
+            pageAliases: {},            // An object mapping specific page indices to aliases (has priority over 'pageAliasFunction'
+            pageAliasFunction: function(){return false;},  // A function mapping page indices to an alias. If false is returned, default page number is displayed
             pageLoadTimeout: 200,       // Number of milliseconds to wait before loading pages
             pagesPerRow: 5,             // The default number of pages per row in grid view
             rowLoadTimeout: 50,         // Number of milliseconds to wait before loading a row
@@ -1060,6 +1062,65 @@ module.exports = diva;
         this.__removePageOverlay = function (overlay)
         {
             divaState.viewerCore.removePageOverlay(overlay);
+        };
+
+        /**** Page Alias Functions ****/
+        /*
+         Main function. Will return the first of these three that
+         resolves to boolean true:
+         -Explicit alias as defined in pageAliases
+         -Result of pageAliasFunction
+         -originalPageIndex + 1 (to simulate the original mapping)
+
+         Else the function will return false.
+         */
+        this.getAliasForPageIndex = function(originalPageIndex)
+        {
+            var pageIndex = parseInt(originalPageIndex, 10);
+            return settings.pageAliases[pageIndex] || settings.pageAliasFunction(pageIndex) || pageIndex + 1;
+        };
+
+        /*
+         Returns the first page index found for a given aliased number or false if not found.
+         This may cause issues if a specific alias is found for multiple page indices; use getPageIndicesForAlias and reimplement functions as necessary if this is the case.
+         */
+        this.getPageIndexForAlias = function(aliasedNumber)
+        {
+            for(var idx = 0; idx < settings.numPages; idx++)
+            {
+                if(this.getAliasForPageIndex(idx) === aliasedNumber)
+                {
+                    return idx;
+                }
+            }
+            return false;
+        };
+
+        //Returns array of page indices for a given aliased number. Returns an empty array if none are found.
+        this.getPageIndicesForAlias = function(aliasedNumber)
+        {
+            var indexArr = [];
+            for(var idx = 0; idx < settings.numPages; idx++)
+            {
+                if(this.getAliasForPageIndex(idx) === aliasedNumber)
+                {
+                    indexArr.push(idx);
+                }
+            }
+            return indexArr;
+        };
+
+
+        //Maps the current page index to getAliasForPageIndex
+        this.getCurrentAliasedPageIndex = function()
+        {
+            return this.getAliasForPageIndex(settings.currentPageIndex);
+        };
+
+        //Wrapper for gotoPageByIndex, keeping the aliased numbers in mind
+        this.gotoPageByAliasedNumber = function(aliasedNumber, xAnchor, yAnchor)
+        {
+            return this.gotoPageByIndex(this.getPageIndexForAlias(aliasedNumber), xAnchor, yAnchor);
         };
 
         // Call the init function when this object is created.

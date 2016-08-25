@@ -499,7 +499,7 @@ function createToolbar(viewer)
 
         var updateCurrentPage = function ()
         {
-            currentPage.textContent = parseInt(settings.currentPageIndex, 10) + 1;
+            currentPage.textContent = viewer.getCurrentAliasedPageIndex();
         };
 
         subscribe('VisiblePageDidChange', updateCurrentPage);
