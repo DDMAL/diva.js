@@ -14,6 +14,8 @@ Version 5.0 contains many new features and improvements:
 - Improved IIIF support: Easily toggle “non-paged” pages' visibility and search for pages based on their label name.
 - Complete re-organization of the source code. We now use ES6, WebPack, and Karma. This makes both the development process and code debugging much easier.
 
+For a complete list of new features, bug fixes and API changes, view [the changelog](https://github.com/DDMAL/diva.js/releases/tag/v5.0.0).
+
 ## Overview
 
 There are two components to a functioning Diva system:
