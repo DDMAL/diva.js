@@ -593,8 +593,6 @@ QUnit.test("object for objectData", function (assert)
 
 // pagesPerRow is tested above, along with max/minPagesPerRow
 
-// rowLoadTimeout is in the same boat as pageLoadTimeout
-
 // No real point testing tileHeight/Width as we don't have images of different tile sizes
 
 QUnit.test("viewportMargin, value of 0", function (assert)

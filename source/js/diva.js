@@ -85,7 +85,6 @@ module.exports = diva;
             pageAliasFunction: function(){return false;},  // A function mapping page indices to an alias. If false is returned, default page number is displayed
             pageLoadTimeout: 200,       // Number of milliseconds to wait before loading pages
             pagesPerRow: 5,             // The default number of pages per row in grid view
-            rowLoadTimeout: 50,         // Number of milliseconds to wait before loading a row
             showNonPagedPages: false,   // Whether pages tagged as 'non-paged' (in IIIF manifests only) should be visible after initial load
             throbberTimeout: 100,       // Number of milliseconds to wait before showing throbber
             tileHeight: 256,            // The height of each tile, in pixels; usually 256
