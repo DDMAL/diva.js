@@ -21,6 +21,7 @@ function Renderer(options, hooks)
     this._viewport = options.viewport;
     this._outerElement = options.outerElement;
     this._documentElement = options.innerElement;
+    this._enableCrossOrigin = options.enableCrossOrigin;
 
     this._hooks = hooks || {};
 
@@ -287,6 +288,7 @@ Renderer.prototype._initiateTileRequests = function(pages)
         newPendingRequests[source.url] = new ImageRequestHandler({
             url: source.url,
             timeoutTime: REQUEST_DEBOUNCE_INTERVAL,
+            enableCrossOrigin: this._enableCrossOrigin,
             load: function (img)
             {
                 delete this._pendingRequests[source.url];

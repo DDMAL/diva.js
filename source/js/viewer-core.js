@@ -404,7 +404,8 @@ function ViewerCore(element, options, publicInstance)
             var options = {
                 viewport: viewerState.viewport,
                 outerElement: viewerState.outerElement,
-                innerElement: viewerState.innerElement
+                innerElement: viewerState.innerElement,
+                enableCrossOrigin: settings.options.enableCrossOrigin
             };
 
             var hooks = {

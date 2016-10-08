@@ -62,6 +62,7 @@ module.exports = diva;
             enableImageTitles: true,    // Adds "Page {n}" title to page images if true
             enableKeyScroll: true,      // Captures scrolling using the arrow and page up/down keys regardless of page focus. When off, defers to default browser scrolling behavior.
             enableLinkIcon: true,       // Controls the visibility of the link icon
+            enableCrossOrigin: true,    // if enabled images on diva canvas will have crossOrigin = "anonymous"
             enableNonPagedVisibilityIcon: true, // Controls the visibility of the icon to toggle the visibility of non-paged pages. (Automatically hidden if no 'non-paged' pages).
             enableSpaceScroll: false,   // Scrolling down by pressing the space key
             enableToolbar: true,        // Enables the toolbar. Note that disabling this means you have to handle all controls yourself.
