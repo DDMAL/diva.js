@@ -118,6 +118,7 @@ function ViewerCore(element, options, publicInstance)
         isIIIF: false,              // Specifies whether objectData is in Diva native or IIIF Manifest format
         isScrollable: true,         // Used in enable/disableScrollable public methods
         isZooming: false,           // Flag to keep track of whether zooming is still in progress, for handleZoom
+        enableCrossOrigin: options.enableCrossOrigin,
         loaded: false,              // A flag for when everything is loaded and ready to go.
         manifest: null,
         mobileWebkit: false,        // Checks if the user is on a touch device (iPad/iPod/iPhone/Android)
@@ -405,7 +406,7 @@ function ViewerCore(element, options, publicInstance)
                 viewport: viewerState.viewport,
                 outerElement: viewerState.outerElement,
                 innerElement: viewerState.innerElement,
-                enableCrossOrigin: settings.options.enableCrossOrigin
+                enableCrossOrigin: viewerState.enableCrossOrigin
             };
 
             var hooks = {
