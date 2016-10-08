@@ -943,45 +943,78 @@ module.exports = diva;
                 returns either the page visible at that (x,y) position or -1 if no page is.
         */
         this.getPageIndexForPageXYValues = function(pageX, pageY)
-        {
-            //get the four edges of the outer element
-            var outerOffset = viewerState.outerElement.getBoundingClientRect();
-            var outerTop = outerOffset.top;
-            var outerLeft = outerOffset.left;
-            var outerBottom = outerOffset.bottom;
-            var outerRight = outerOffset.right;
+	        {
+	            //get the four edges of the outer element
+	            var outerOffset = viewerState.outerElement.getBoundingClientRect();
+	            var outerTop = outerOffset.top;
+	            var outerLeft = outerOffset.left;
+	            var outerBottom = outerOffset.bottom;
+	            var outerRight = outerOffset.right;
+	
+	            //if the clicked position was outside the diva-outer object, it was not on a visible portion of a page
+	            if (pageX < outerLeft || pageX > outerRight)
+	                return -1;
+	
+	            if (pageY < outerTop || pageY > outerBottom)
+	                return -1;
+					
+				// Get the current page index
+				var currentPageIndex = this.getCurrentPageIndex();
+				// Get the current page dimension
+				
+				var pageDimension = this.getPageDimensionsAtCurrentZoomLevel(currentPageIndex);
+	            if (settings.inGrid) {
+					// Calculate the position of top left corner of the current page 
+					var yOffset = outerOffset.height / 2 - viewerState.verticalOffset + outerTop;
+					var xOffset = outerOffset.width / 2 - viewerState.horizontalOffset + outerLeft; 
+					
+					// Calculate the row and column index relative to current page index
+					var colIndex = Math.floor((pageX - xOffset) / pageDimension.width);
+					var rowIndex = Math.floor((pageY - yOffset) / pageDimension.height);
+					// Using the pages per row to calculate the page index
+					var clickPageIndex = rowIndex * settings.pagesPerRow + colIndex + currentPageIndex;
+					if (clickPageIndex > viewerState.numPages) {
+						return -1;
+					}
+					return clickPageIndex;
+				} else if (settings.inBookLayout) {
+					// Calculate the position of top left corner of the current page 
+					var yOffset = outerOffset.height / 2 - viewerState.verticalOffset + outerTop;
+					var xOffset = outerOffset.width / 2 - viewerState.horizontalOffset + outerLeft; 
+					
+					// Calculate the row and column index relative to current page index
+					var colIndex = Math.floor((pageX - xOffset) / pageDimension.width);
+					var rowIndex = Math.floor((pageY - yOffset) / pageDimension.height);
+					// Using the pages per row to calculate the page index
+					var clickPageIndex = rowIndex * 2 + colIndex + currentPageIndex;
+					if (clickPageIndex > viewerState.numPages) {
+						return -1;
+					}
+					return clickPageIndex;
+				} else {
 
-            //if the clicked position was outside the diva-outer object, it was not on a visible portion of a page
-            if (pageX < outerLeft || pageX > outerRight)
-                return -1;
+					// Calculate the position of top left corner of the current page 
+					var yOffset = outerOffset.height / 2 - viewerState.verticalOffset + outerTop;
+					var xOffset = outerOffset.width / 2 - pageDimension.width / 2 + outerLeft; 
+					
+					if (pageX < xOffset || pageX > xOffset + pageDimension.width) {
+						return -1;
+					}
+					
+					// Calculate the row and column index relative to current page index
+					var colIndex = Math.floor((pageX - xOffset) / pageDimension.width);
+					var rowIndex = Math.floor((pageY - yOffset) / pageDimension.height);
+					// Using the pages per row to calculate the page index
+					var clickPageIndex = rowIndex + currentPageIndex;
+					if (clickPageIndex > viewerState.numPages) {
+						return -1;
+					}
+					return clickPageIndex;
+		
+				}
 
-            if (pageY < outerTop || pageY > outerBottom)
-                return -1;
-
-            //navigate through all diva page objects
-            var pages = document.getElementsByClassName('diva-page');
-            var curPageIdx = pages.length;
-            while (curPageIdx--)
-            {
-                //get the offset for each page
-                var curPage = pages[curPageIdx];
-                var curOffset = curPage.getBoundingClientRect();
-
-                //if this point is outside the horizontal boundaries of the page, continue
-                if (pageX < curOffset.left || pageX > curOffset.right)
-                    continue;
-
-                //same with vertical boundaries
-                if (pageY < curOffset.top || pageY > curOffset.bottom)
-                    continue;
-
-                //if we made it through the above two, we found the page we're looking for
-                return curPage.getAttribute('data-index');
-            }
-
-            //if we made it through that entire while loop, we didn't click on a page
-            return -1;
-        };
+	            return -1;
+	        };
 
         /**
          * Returns a URL for the image of the page at the given index. The
