@@ -1012,8 +1012,6 @@ module.exports = diva;
 					return clickPageIndex;
 		
 				}
-
-	            return -1;
 	        };
 
         /**
