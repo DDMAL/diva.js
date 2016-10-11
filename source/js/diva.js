@@ -939,48 +939,28 @@ module.exports = diva;
         };
 
         /*
-            Given a pageX and pageY value (as could be retreived from a jQuery event object),
+            Given a pageX and pageY value
                 returns either the page visible at that (x,y) position or -1 if no page is.
         */
-        this.getPageIndexForPageXYValues = function(pageX, pageY)
-        {
-            //get the four edges of the outer element
-            var outerOffset = viewerState.outerElement.getBoundingClientRect();
-            var outerTop = outerOffset.top;
-            var outerLeft = outerOffset.left;
-            var outerBottom = outerOffset.bottom;
-            var outerRight = outerOffset.right;
-
-            //if the clicked position was outside the diva-outer object, it was not on a visible portion of a page
-            if (pageX < outerLeft || pageX > outerRight)
-                return -1;
-
-            if (pageY < outerTop || pageY > outerBottom)
-                return -1;
-
-            //navigate through all diva page objects
-            var pages = document.getElementsByClassName('diva-page');
-            var curPageIdx = pages.length;
-            while (curPageIdx--)
-            {
-                //get the offset for each page
-                var curPage = pages[curPageIdx];
-                var curOffset = curPage.getBoundingClientRect();
-
-                //if this point is outside the horizontal boundaries of the page, continue
-                if (pageX < curOffset.left || pageX > curOffset.right)
-                    continue;
-
-                //same with vertical boundaries
-                if (pageY < curOffset.top || pageY > curOffset.bottom)
-                    continue;
-
-                //if we made it through the above two, we found the page we're looking for
-                return curPage.getAttribute('data-index');
+        this.getPageIndexForPageXYValues = function(clientX, clientY) {
+            if (viewerState.renderer) {
+                var pageHit = viewerState.renderer.getPageHit(clientX, clientY);
+                if (pageHit) {
+                    return pageHit.pg;
+                }
             }
-
-            //if we made it through that entire while loop, we didn't click on a page
             return -1;
+        };
+
+        /*
+         Given a pageX and pageY value
+         returns either the page hit containing the page index and x, y value (where x and y are the percentage location on the page)
+         */
+        this.getPageHit = function(clientX, clientY) {
+            if (viewerState.renderer) {
+                return viewerState.renderer.getPageHit(clientX, clientY);
+            }
+            return null;
         };
 
         /**
