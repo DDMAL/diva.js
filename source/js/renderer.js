@@ -243,7 +243,7 @@ Renderer.prototype.getPageHit = function (clientX, clientY) {
     if (clientX < bounds.left || clientY < bounds.top ||
         clientX > bounds.left + bounds.width || clientY > bounds.top + bounds.height)
     {
-        return -1;
+        return null;
     }
 
     // adjust the x and y to be inside the outer element
