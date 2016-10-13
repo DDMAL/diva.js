@@ -939,25 +939,30 @@ module.exports = diva;
         };
 
         /*
-            Given a pageX and pageY value
+         Given clientX and clientY (as could be retrieved from a jQuery event object)
                 returns either the page visible at that (x,y) position or -1 if no page is.
         */
-        this.getPageIndexForPageXYValues = function(clientX, clientY) {
-            if (viewerState.renderer) {
+        this.getPageIndexForPageXYValues = function(clientX, clientY)
+        {
+            if (viewerState.renderer)
+            {
                 var pageHit = viewerState.renderer.getPageHit(clientX, clientY);
-                if (pageHit) {
-                    return pageHit.pg;
+                if (pageHit)
+                {
+                    return pageHit.pageIndex;
                 }
             }
             return -1;
         };
 
         /*
-         Given a pageX and pageY value
-         returns either the page hit containing the page index and x, y value (where x and y are the percentage location on the page)
+            Given clientX and clientY (as could be retrieved from a jQuery event object)
+                returns the page index, percentageX, and percentageY position of (clientX, clientY) on the page or null if the coordinates do not intersect with any visible page
          */
-        this.getPageHit = function(clientX, clientY) {
-            if (viewerState.renderer) {
+        this.getPageHit = function(clientX, clientY)
+        {
+            if (viewerState.renderer)
+            {
                 return viewerState.renderer.getPageHit(clientX, clientY);
             }
             return null;

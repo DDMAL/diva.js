@@ -238,7 +238,9 @@ Renderer.prototype._paint = function ()
     this._renderedTiles = renderedTiles;
 };
 
-Renderer.prototype.getPageHit = function (clientX, clientY) {
+// get the page index, percentageX, and percentageY position on the page given clientX and clientY (as could be retrieved from a jQuery event object)
+Renderer.prototype.getPageHit = function (clientX, clientY)
+{
     var bounds = this._outerElement.getBoundingClientRect();
     if (clientX < bounds.left || clientY < bounds.top ||
         clientX > bounds.left + bounds.width || clientY > bounds.top + bounds.height)
@@ -251,7 +253,8 @@ Renderer.prototype.getPageHit = function (clientX, clientY) {
     clientY -= bounds.top;
 
     // check each rendered page to see if the x,y are inside the page bounds
-    for (var i = 0; i < this._renderedPages.length; i++) {
+    for (var i = 0; i < this._renderedPages.length; i++)
+    {
         var pageIndex = this._renderedPages[i];
         var pageInfo = this.layout.getPageInfo(pageIndex);
         var pageOffset = this._getImageOffset(pageIndex);
@@ -271,12 +274,13 @@ Renderer.prototype.getPageHit = function (clientX, clientY) {
         var destWidth = pageInfo.dimensions.width - destXOffset;
         var destHeight = pageInfo.dimensions.height - destYOffset;
 
-        if (clientX >= canvasX && clientX <= canvasX + destWidth && clientY >= canvasY && clientY <= canvasY + destHeight) {
+        if (clientX >= canvasX && clientX <= canvasX + destWidth && clientY >= canvasY && clientY <= canvasY + destHeight)
+        {
             // to get the percentage x and y you need to adjust the by the scroll offset and the canvas position
             return {
-                pg: pageIndex,
-                x: ((clientX + destXOffset) - canvasX) / pageInfo.dimensions.width,
-                y: ((clientY + destYOffset) - canvasY) / pageInfo.dimensions.height
+                pageIndex: pageIndex,
+                percentageX: ((clientX + destXOffset) - canvasX) / pageInfo.dimensions.width,
+                percentageY: ((clientY + destYOffset) - canvasY) / pageInfo.dimensions.height
             };
         }
     }
