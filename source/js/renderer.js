@@ -253,7 +253,7 @@ Renderer.prototype.getPageHit = function (clientX, clientY)
     clientY -= bounds.top;
 
     // check each rendered page to see if the x,y are inside the page bounds
-    for (var i = 0; i < this._renderedPages.length; i++)
+    for (var i = 0, len = this._renderedPages.length; i < len; i++)
     {
         var pageIndex = this._renderedPages[i];
         var pageInfo = this.layout.getPageInfo(pageIndex);
