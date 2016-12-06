@@ -751,6 +751,11 @@ module.exports = diva;
             return false;
         };
 
+        this.isInFullscreen = function ()
+        {
+            return settings.inFullscreen;
+        }
+
         // Change views. Takes 'document', 'book', or 'grid' to specify which view to switch into
         this.changeView = function(destinationView)
         {
