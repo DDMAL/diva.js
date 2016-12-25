@@ -569,6 +569,11 @@ module.exports = diva;
             return settings.manifest.pages[settings.currentPageIndex].f;
         };
 
+        this.getCurrentCanvas = function (settings)
+        {
+            return settings.manifest.pages[settings.currentPageIndex].canvas;
+        };
+
         this.getCurrentPageNumber = function ()
         {
             console.warn("This method is deprecated. Consider using getCurrentPageIndex() instead.");
