@@ -16,7 +16,7 @@ var incorporateZoom = function (imageDimension, zoomDifference)
 var getOtherImageData = function(otherImages, lowestMaxZoom, canvasWidth, canvasHeight)
 {
     return otherImages.map(
-        function (itm, idx)
+        function (itm)
         {
             var w = itm.width || canvasWidth;
             var h = itm.height || canvasHeight;
@@ -27,12 +27,12 @@ var getOtherImageData = function(otherImages, lowestMaxZoom, canvasWidth, canvas
                 dims[j] = {
                     h: Math.floor(incorporateZoom(h, lowestMaxZoom - j)),
                     w: Math.floor(incorporateZoom(w, lowestMaxZoom - j))
-                }
+                };
             }
             return {
                 label: itm.label || "",
                 dims: dims
-            }
+            };
         }
     );
 };
@@ -146,7 +146,7 @@ function parseIIIFManifest(manifest)
             totalWidths[k] += widthAtCurrentZoomLevel;
             totalHeights[k] += heightAtCurrentZoomLevel;
             maxWidths[k] = Math.max(widthAtCurrentZoomLevel, maxWidths[k]);
-            maxHeights[k] = Math.max(heightAtCurrentZoomLevel, maxHeights[k])
+            maxHeights[k] = Math.max(heightAtCurrentZoomLevel, maxHeights[k]);
         }
 
         pages[i] = {
