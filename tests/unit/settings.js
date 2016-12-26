@@ -387,7 +387,7 @@ QUnit.test("manifest.paged triggers inBookLayout", function (assert)
     });
 
     $.tempDiva({
-        objectData: '../demo/beromunster-iiif.json'
+        objectData: '../demo/beromunster-iiif-test.json'
     });
 });
 

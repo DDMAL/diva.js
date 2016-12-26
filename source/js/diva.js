@@ -19,6 +19,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
+require('array.prototype.fill');
 
 var jQuery = require('jquery');
 
@@ -99,6 +100,11 @@ module.exports = diva;
         var getPageIndex = function (filename)
         {
             return getPageIndexForManifest(settings.manifest, filename);
+        };
+
+        var NotAnIIIFManifestException = function (message)
+        {
+            return message;
         };
 
         var getPageIndexForManifest = function (manifest, filename)
@@ -340,35 +346,22 @@ module.exports = diva;
 
         var loadObjectData = function (responseData, hashState)
         {
-            var isIIIF, manifest;
+            var manifest;
 
-            // parse IIIF manifest if it is an IIIF manifest. TODO improve IIIF detection method
-            if (responseData.hasOwnProperty('@context') && (responseData['@context'].indexOf('iiif') !== -1 ||
-                responseData['@context'].indexOf('shared-canvas') !== -1))
+            // TODO improve IIIF detection method
+            if (!responseData.hasOwnProperty('@context') && (responseData['@context'].indexOf('iiif') === -1 || responseData['@context'].indexOf('shared-canvas') === -1))
             {
-                isIIIF = true;
-
-                // trigger ManifestDidLoad event
-                // FIXME: Why is this triggered before the manifest is parsed? See https://github.com/DDMAL/diva.js/issues/357
-                diva.Events.publish('ManifestDidLoad', [responseData], self);
-
-                manifest = ImageManifest.fromIIIF(responseData);
-            }
-            else
-            {
-                // IIP support is now deprecated
-                console.warn("Usage of IIP manifests is deprecated. Consider switching to IIIF manifests. Visit http://iiif.io/ for more information.");
-
-                isIIIF = false;
-                manifest = ImageManifest.fromLegacyManifest(responseData, {
-                    iipServerURL: settings.iipServerURL,
-                    imageDir: settings.imageDir
-                });
+                throw new NotAnIIIFManifestException('This does not appear to be a IIIF Manifest.');
             }
 
+            // trigger ManifestDidLoad event
+            // FIXME: Why is this triggered before the manifest is parsed? See https://github.com/DDMAL/diva.js/issues/357
+            diva.Events.publish('ManifestDidLoad', [responseData], self);
+
+            manifest = ImageManifest.fromIIIF(responseData);
             var loadOptions = hashState ? getLoadOptionsForState(hashState, manifest) : {};
 
-            divaState.viewerCore.setManifest(manifest, isIIIF, loadOptions);
+            divaState.viewerCore.setManifest(manifest, loadOptions);
         };
 
         /** Parse the hash parameters into the format used by getState and setState */
@@ -492,6 +485,7 @@ module.exports = diva;
         this.gotoPageByIndex = function (pageIndex, xAnchor, yAnchor)
         {
             pageIndex = parseInt(pageIndex, 10);
+
             if (isPageValid(pageIndex))
             {
                 var xOffset = divaState.viewerCore.getXOffset(pageIndex, xAnchor);
@@ -500,6 +494,7 @@ module.exports = diva;
                 viewerState.renderer.goto(pageIndex, yOffset, xOffset);
                 return true;
             }
+
             return false;
         };
 

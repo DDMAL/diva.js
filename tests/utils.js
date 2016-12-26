@@ -39,9 +39,7 @@ var getWrapper = module.exports.getWrapper = function ()
 
         settings = settings || {};
         // If the divaserveURL, imageDir, iconPath and iipServerURL settings aren't defined, define them
-        settings.imageDir = settings.imageDir || "/srv/images/beromunster";
-        settings.iipServerURL = settings.iipServerURL || "http://diva.simssa.ca/fcgi-bin/iipsrv.fcgi";
-        settings.objectData = settings.objectData || "../demo/beromunster.json";
+        settings.objectData = settings.objectData || "../demo/beromunster-iiif.json";
 
         // These are always enabled. I don't think that was really intentional
         // initially, but it's required now to keep existing tests from breaking.
