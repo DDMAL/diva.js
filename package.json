@@ -34,6 +34,7 @@
     "archives"
   ],
   "dependencies": {
+    "array.prototype.fill": "^1.0.2",
     "debug": "^2.2.0",
     "jquery": "~2.1.1",
     "lodash.maxby": "^4.3.0"
