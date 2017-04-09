@@ -117,7 +117,7 @@ function parseIIIFManifest(manifest)
         imageLabel = thisImage.label || null;
 
         info = parseImageInfo(thisImage);
-        url = info.url.slice(-1) === '/' ? info.url + '/' : info.url;  // append trailing slash to url if it's not there.
+        url = info.url.slice(-1) !== '/' ? info.url + '/' : info.url;  // append trailing slash to url if it's not there.
 
         context = thisImage.service['@context'];
 
