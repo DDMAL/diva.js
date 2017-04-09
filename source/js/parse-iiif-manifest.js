@@ -86,10 +86,10 @@ function parseIIIFManifest(manifest)
     }
 
     // Uint8Arrays are pre-initialized with zeroes.
-    var totalWidths = new Uint8Array(lowestMaxZoom + 1);
-    var totalHeights = new Uint8Array(lowestMaxZoom + 1);
-    var maxWidths = new Uint8Array(lowestMaxZoom + 1);
-    var maxHeights = new Uint8Array(lowestMaxZoom + 1);
+    var totalWidths = new Array(lowestMaxZoom + 1).fill(0);
+    var totalHeights = new Array(lowestMaxZoom + 1).fill(0);
+    var maxWidths = new Array(lowestMaxZoom + 1).fill(0);
+    var maxHeights = new Array(lowestMaxZoom + 1).fill(0);
 
     for (var i = 0; i < numCanvases; i++)
     {
@@ -160,8 +160,11 @@ function parseIIIFManifest(manifest)
                 w: widthAtCurrentZoomLevel
             };
 
-            totalWidths[k] += widthAtCurrentZoomLevel;
-            totalHeights[k] += heightAtCurrentZoomLevel;
+            var currentTotalWidths = totalWidths[k] + widthAtCurrentZoomLevel;
+            var currentTotalHeights = totalHeights[k] + heightAtCurrentZoomLevel;
+
+            totalWidths[k] = currentTotalWidths;
+            totalHeights[k] = currentTotalHeights;
             maxWidths[k] = Math.max(widthAtCurrentZoomLevel, maxWidths[k]);
             maxHeights[k] = Math.max(heightAtCurrentZoomLevel, maxHeights[k]);
         }
