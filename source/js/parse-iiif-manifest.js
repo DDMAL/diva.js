@@ -68,6 +68,13 @@ function parseIIIFManifest(manifest)
     for (var z = 0; z < numCanvases; z++)
     {
         var c = canvases[z];
+
+        // if this canvas has an empty width or height, don't factor that into our calculations.
+        if (c.width === 0 || c.height === 0)
+        {
+            continue;
+        }
+
         var w = c.width;
         var h = c.height;
         var mz = getMaxZoomLevel(w, h);
@@ -88,6 +95,13 @@ function parseIIIFManifest(manifest)
     {
         thisCanvas = canvases[i];
         canvas = thisCanvas['@id'];
+
+        if (!thisCanvas.images || thisCanvas.images.length === 0)
+        {
+            console.warn("An empty canvas was found: " + canvas);
+            continue;
+        }
+
         label = thisCanvas.label;
         thisResource = thisCanvas.images[0].resource;
 
@@ -136,6 +150,7 @@ function parseIIIFManifest(manifest)
         }
 
         zoomDimensions = new Array(lowestMaxZoom + 1);
+
         for (var k = 0; k < lowestMaxZoom + 1; k++)
         {
             widthAtCurrentZoomLevel = Math.floor(incorporateZoom(width, lowestMaxZoom - k));
@@ -170,6 +185,7 @@ function parseIIIFManifest(manifest)
 
     var averageWidths = new Array(lowestMaxZoom + 1).fill(0);
     var averageHeights = new Array(lowestMaxZoom + 1).fill(0);
+
     for (var a = 0; a < lowestMaxZoom + 1; a++)
     {
         averageWidths[a] = totalWidths[a] / numCanvases;
