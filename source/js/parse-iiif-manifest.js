@@ -1,5 +1,6 @@
 /* jshint unused: true */
-"use strict"
+/* jshint -W097 */
+"use strict";
 
 module.exports = parseIIIFManifest;
 
