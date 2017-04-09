@@ -147,7 +147,7 @@ function parseIIIFManifest(manifest)
             totalWidths[k] += widthAtCurrentZoomLevel;
             totalHeights[k] += heightAtCurrentZoomLevel;
             maxWidths[k] = Math.max(widthAtCurrentZoomLevel, maxWidths[k]);
-            maxHeights[k] = Math.max(heightAtCurrentZoomLevel, maxHeights[k])
+            maxHeights[k] = Math.max(heightAtCurrentZoomLevel, maxHeights[k]);
         }
 
         pages[i] = {
