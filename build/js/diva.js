@@ -2272,8 +2272,45 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports) {
 
 	/* jshint unused: true */
+	/* jshint -W097 */
+	"use strict";
 
 	module.exports = parseIIIFManifest;
+
+	var getMaxZoomLevel = function (width, height)
+	{
+	    var largestDimension = Math.max(width, height);
+	    return Math.ceil(Math.log((largestDimension + 1) / (256 + 1)) / Math.log(2));
+	};
+
+	var incorporateZoom = function (imageDimension, zoomDifference)
+	{
+	    return imageDimension / (Math.pow(2, zoomDifference));
+	};
+
+	var getOtherImageData = function(otherImages, lowestMaxZoom, canvasWidth, canvasHeight)
+	{
+	    return otherImages.map(
+	        function (itm)
+	        {
+	            var w = itm.width || canvasWidth;
+	            var h = itm.height || canvasHeight;
+
+	            var dims = new Array(lowestMaxZoom + 1);
+	            for (var j = 0; j < lowestMaxZoom + 1; j++)
+	            {
+	                dims[j] = {
+	                    h: Math.floor(incorporateZoom(h, lowestMaxZoom - j)),
+	                    w: Math.floor(incorporateZoom(w, lowestMaxZoom - j))
+	                };
+	            }
+	            return {
+	                label: itm.label || "",
+	                dims: dims
+	            };
+	        }
+	    );
+	};
 
 	/**
 	 * Parses a IIIF Presentation API Manifest and converts it into a Diva.js-format object
@@ -2285,83 +2322,82 @@ return /******/ (function(modules) { // webpackBootstrap
 	 */
 	function parseIIIFManifest(manifest)
 	{
-
-	    var incorporateZoom = function (imageDimension, zoomDifference)
-	    {
-	        return imageDimension / (Math.pow(2, zoomDifference));
-	    };
-
-	    var getMaxZoomLevel = function (width, height)
-	    {
-	        var largestDimension = Math.max(width, height);
-	        return Math.ceil(Math.log((largestDimension + 1) / (256 + 1)) / Math.log(2));
-	    };
-
-	    var createArrayWithValue = function (length, value)
-	    {
-	        var array = new Array(length);
-	        var i = length;
-
-	        while (i--)
-	        {
-	            array[i] = value;
-	        }
-
-	        return array;
-	    };
-
 	    var sequence = manifest.sequences[0];
-
-	    //@TODO choose a sequence intelligently
 	    var canvases = sequence.canvases;
+	    var numCanvases = canvases.length;
 
-	    var zoomLevels = [];
-	    var images = [];
-	    var imageIndex = 0;
+	    var pages = new Array(canvases.length);
 
-	    var width;
-	    var height;
-	    var url;
-	    var filename;
-	    var info;
-	    var maxZoom;
-	    var label;
-	    var context;
-	    var resource;
-	    var imageAPIVersion;
+	    var thisCanvas, thisResource, thisImage, otherImages, context, url, info, imageAPIVersion,
+	        width, height, maxZoom, canvas, label, imageLabel, zoomDimensions, widthAtCurrentZoomLevel,
+	        heightAtCurrentZoomLevel;
 
-	    var title = manifest.label;
+	    var lowestMaxZoom = 100;
+	    var maxRatio = 0;
+	    var minRatio = 100;
 
-	    for (var i = 0, numCanvases = canvases.length; i < numCanvases; i++)
+	    // quickly determine the lowest possible max zoom level (i.e., the upper bound for images) across all canvases.
+	    // while we're here, compute the global ratios as well.
+	    for (var z = 0; z < numCanvases; z++)
 	    {
-	        resource = canvases[i].images[0].resource;
-	        width = resource.width || canvases[i].width;
-	        height = resource.height || canvases[i].height;
+	        var c = canvases[z];
+	        var w = c.width;
+	        var h = c.height;
+	        var mz = getMaxZoomLevel(w, h);
+	        var ratio = w / h;
+	        maxRatio = Math.max(ratio, maxRatio);
+	        minRatio = Math.min(ratio, minRatio);
 
-	        info = parseImageInfo(resource);
-	        url = info.url;
-	        filename = url; // For IIIF, the url is the filename
+	        lowestMaxZoom = Math.min(lowestMaxZoom, mz);
+	    }
 
-	        //append trailing / from url if it's not there
-	        if (url.slice(-1) !== '/')
+	    // Uint8Arrays are pre-initialized with zeroes.
+	    var totalWidths = new Uint8Array(lowestMaxZoom + 1);
+	    var totalHeights = new Uint8Array(lowestMaxZoom + 1);
+	    var maxWidths = new Uint8Array(lowestMaxZoom + 1);
+	    var maxHeights = new Uint8Array(lowestMaxZoom + 1);
+
+	    for (var i = 0; i < numCanvases; i++)
+	    {
+	        thisCanvas = canvases[i];
+	        canvas = thisCanvas['@id'];
+	        label = thisCanvas.label;
+	        thisResource = thisCanvas.images[0].resource;
+
+	        /*
+	         * If a canvas has multiple images it will be encoded
+	         * with a resource type of "oa:Choice". The primary image will be available
+	         * on the 'default' key, with other images available under 'item.'
+	         * */
+	        if (thisResource['@type'] === "oa:Choice")
 	        {
-	            url = url + '/';
+	            thisImage = thisResource.default;
+	        }
+	        else
+	        {
+	            thisImage = thisResource;
 	        }
 
+	        // Prioritize the canvas height / width first, since images may not have h/w
+	        width = thisCanvas.width || thisImage.width;
+	        height = thisCanvas.height || thisImage.height;
 	        maxZoom = getMaxZoomLevel(width, height);
 
-	        // get filenames from service block (@TODO should this be changed to 'identifiers?')
-	        // get label from canvas block ('filename' is legacy)
-	        label = canvases[i].label;
+	        if (thisResource.item)
+	        {
+	            otherImages = getOtherImageData(thisResource.item, lowestMaxZoom, width, height);
+	        }
 
-	        // indicate whether canvas has viewingHint of non-paged
-	        var paged = canvases[i].viewingHint !== 'non-paged';
-	        var facingPages = canvases[i].viewingHint === 'facing-pages';
+	        imageLabel = thisImage.label || null;
 
-	        context = resource.service['@context'];
+	        info = parseImageInfo(thisImage);
+	        url = info.url.slice(-1) !== '/' ? info.url + '/' : info.url;  // append trailing slash to url if it's not there.
+
+	        context = thisImage.service['@context'];
+
 	        if (context === 'http://iiif.io/api/image/2/context.json')
 	        {
-	            imageAPIVersion = 2.0;
+	            imageAPIVersion = 2;
 	        }
 	        else if (context === 'http://library.stanford.edu/iiif/image-api/1.1/context.json')
 	        {
@@ -2372,124 +2408,65 @@ return /******/ (function(modules) { // webpackBootstrap
 	            imageAPIVersion = 1.0;
 	        }
 
-	        images[imageIndex] = {
-	            'mx_w': width,
-	            'mx_h': height,
-	            'mx_z': maxZoom,
-	            'label': label,
-	            'fn': filename,
-	            'url': url,
-	            'api': imageAPIVersion,
-	            'paged': paged,
-	            'facingPages': facingPages
-	        };
-
-	        if (info.hasOwnProperty('x'))
+	        zoomDimensions = new Array(lowestMaxZoom + 1);
+	        for (var k = 0; k < lowestMaxZoom + 1; k++)
 	        {
-	            images[imageIndex].xoffset = info.x;
-	            images[imageIndex].yoffset = info.y;
-	        }
-
-	        zoomLevels[imageIndex] = maxZoom;
-	        imageIndex++;
-	    }
-
-	    var lowestMaxZoom = Math.min.apply(Math, zoomLevels);
-
-	    // ratio calculations
-	    var maxRatio = 0;
-	    var minRatio = 100; // initialize high so we can get the minimum later
-
-	    var totalWidths = createArrayWithValue(lowestMaxZoom + 1, 0);
-	    var totalHeights = createArrayWithValue(lowestMaxZoom + 1, 0);
-	    var maxWidths = createArrayWithValue(lowestMaxZoom + 1, 0);
-	    var maxHeights = createArrayWithValue(lowestMaxZoom + 1, 0);
-
-	    var pages = [];
-	    var currentPageZoomData; // dimensions per zoomlevel
-
-	    var widthAtCurrentZoomLevel;
-	    var heightAtCurrentZoomLevel;
-
-	    var numImages = images.length;
-
-	    // for each page image:
-	    for (i = 0; i < numImages; i++)
-	    {
-	        currentPageZoomData = [];
-
-	        // construct 'd' key. for each zoom level:
-	        for (var j = 0; j < lowestMaxZoom + 1; j++)
-	        {
-	            // calculate current page zoom data
-	            widthAtCurrentZoomLevel = Math.floor(incorporateZoom(images[i].mx_w, lowestMaxZoom - j));
-	            heightAtCurrentZoomLevel = Math.floor(incorporateZoom(images[i].mx_h, lowestMaxZoom - j));
-	            currentPageZoomData[j] = {
+	            widthAtCurrentZoomLevel = Math.floor(incorporateZoom(width, lowestMaxZoom - k));
+	            heightAtCurrentZoomLevel = Math.floor(incorporateZoom(height, lowestMaxZoom - k));
+	            zoomDimensions[k] = {
 	                h: heightAtCurrentZoomLevel,
 	                w: widthAtCurrentZoomLevel
 	            };
 
-	            // add width of image at current zoom level to total widths/heights
-	            totalWidths[j] += widthAtCurrentZoomLevel;
-	            totalHeights[j] += heightAtCurrentZoomLevel;
-	            maxWidths[j] = Math.max(widthAtCurrentZoomLevel, maxWidths[j]);
-	            maxHeights[j] = Math.max(heightAtCurrentZoomLevel, maxHeights[j]);
-
-	            // calculate max/min ratios
-	            var ratio = images[i].mx_h / images[i].mx_w;
-	            maxRatio = Math.max(ratio, maxRatio);
-	            minRatio = Math.min(ratio, minRatio);
+	            totalWidths[k] += widthAtCurrentZoomLevel;
+	            totalHeights[k] += heightAtCurrentZoomLevel;
+	            maxWidths[k] = Math.max(widthAtCurrentZoomLevel, maxWidths[k]);
+	            maxHeights[k] = Math.max(heightAtCurrentZoomLevel, maxHeights[k]);
 	        }
 
 	        pages[i] = {
-	            d: currentPageZoomData,
-	            m: images[i].mx_z,
-	            l: images[i].label,
-	            f: images[i].fn,
-	            url: images[i].url,
-	            api: images[i].api,
-	            paged: images[i].paged,
-	            facingPages: images[i].facingPages
+	            d: zoomDimensions,
+	            m: maxZoom,
+	            l: label,         // canvas label ('page 1, page 2', etc.)
+	            il: imageLabel,   // default image label ('primary image', 'UV light', etc.)
+	            f: url,
+	            url: url,
+	            api: imageAPIVersion,
+	            paged: thisCanvas.viewingHint !== 'non-paged',
+	            facingPages: thisCanvas.viewingHint === 'facing-pages',
+	            canvas: canvas,
+	            otherImages: otherImages,
+	            xoffset: info.x || null,
+	            yoffset: info.y || null
 	        };
-
-	        if (images[i].hasOwnProperty('xoffset'))
-	        {
-	            pages[i].xoffset = images[i].xoffset;
-	            pages[i].yoffset = images[i].yoffset;
-	        }
 	    }
 
-	    var averageWidths = [];
-	    var averageHeights = [];
-
-	    // for each zoom level, calculate average of heights/widths
-	    for (i = 0; i < lowestMaxZoom + 1; i++)
+	    var averageWidths = new Array(lowestMaxZoom + 1).fill(0);
+	    var averageHeights = new Array(lowestMaxZoom + 1).fill(0);
+	    for (var a = 0; a < lowestMaxZoom + 1; a++)
 	    {
-	        averageWidths.push(totalWidths[i] / images.length);
-	        averageHeights.push(totalHeights[i] / images.length);
+	        averageWidths[a] = totalWidths[a] / numCanvases;
+	        averageHeights[a] = totalHeights[a] / numCanvases;
 	    }
 
 	    var dims = {
-	        'a_wid': averageWidths,
-	        'a_hei': averageHeights,
-	        'max_w': maxWidths,
-	        'max_h': maxHeights,
-	        'max_ratio': maxRatio,
-	        'min_ratio': minRatio,
-	        't_hei': totalHeights,
-	        't_wid': totalWidths
+	        a_wid: averageWidths,
+	        a_hei: averageHeights,
+	        max_w: maxWidths,
+	        max_h: maxHeights,
+	        max_ratio: maxRatio,
+	        min_ratio: minRatio,
+	        t_hei: totalHeights,
+	        t_wid: totalWidths
 	    };
 
-
-	    var divaServiceBlock = {
-	        item_title: title,
+	    return {
+	        item_title: manifest.label,
 	        dims: dims,
 	        max_zoom: lowestMaxZoom,
 	        pgs: pages,
-	        paged: manifest.viewingHint === 'paged' || sequence.viewingHint === 'paged'
+	        pages: manifest.viewingHint === 'paged' || sequence.viewingHint === 'paged'
 	    };
-
-	    return divaServiceBlock;
 	}
 
 	/**
@@ -2550,7 +2527,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    return imageInfo;
 	}
-
 
 /***/ },
 /* 13 */
