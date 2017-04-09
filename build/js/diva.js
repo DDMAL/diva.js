@@ -723,6 +723,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	            for (i = 0; i < np; i++)
 	            {
+	                if (!manifest.pages[i])
+	                {
+	                    return -1;
+	                }
+
 	                if (manifest.pages[i].f === filename)
 	                {
 	                    return i;
@@ -2341,6 +2346,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	    for (var z = 0; z < numCanvases; z++)
 	    {
 	        var c = canvases[z];
+
+	        // if this canvas has an empty width or height, don't factor that into our calculations.
+	        if (c.width === 0 || c.height === 0)
+	        {
+	            continue;
+	        }
+
 	        var w = c.width;
 	        var h = c.height;
 	        var mz = getMaxZoomLevel(w, h);
@@ -2352,15 +2364,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 
 	    // Uint8Arrays are pre-initialized with zeroes.
-	    var totalWidths = new Uint8Array(lowestMaxZoom + 1);
-	    var totalHeights = new Uint8Array(lowestMaxZoom + 1);
-	    var maxWidths = new Uint8Array(lowestMaxZoom + 1);
-	    var maxHeights = new Uint8Array(lowestMaxZoom + 1);
+	    var totalWidths = new Array(lowestMaxZoom + 1).fill(0);
+	    var totalHeights = new Array(lowestMaxZoom + 1).fill(0);
+	    var maxWidths = new Array(lowestMaxZoom + 1).fill(0);
+	    var maxHeights = new Array(lowestMaxZoom + 1).fill(0);
 
 	    for (var i = 0; i < numCanvases; i++)
 	    {
 	        thisCanvas = canvases[i];
 	        canvas = thisCanvas['@id'];
+
+	        if (!thisCanvas.images || thisCanvas.images.length === 0)
+	        {
+	            console.warn("An empty canvas was found: " + canvas);
+	            continue;
+	        }
+
 	        label = thisCanvas.label;
 	        thisResource = thisCanvas.images[0].resource;
 
@@ -2409,6 +2428,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 
 	        zoomDimensions = new Array(lowestMaxZoom + 1);
+
 	        for (var k = 0; k < lowestMaxZoom + 1; k++)
 	        {
 	            widthAtCurrentZoomLevel = Math.floor(incorporateZoom(width, lowestMaxZoom - k));
@@ -2418,8 +2438,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	                w: widthAtCurrentZoomLevel
 	            };
 
-	            totalWidths[k] += widthAtCurrentZoomLevel;
-	            totalHeights[k] += heightAtCurrentZoomLevel;
+	            var currentTotalWidths = totalWidths[k] + widthAtCurrentZoomLevel;
+	            var currentTotalHeights = totalHeights[k] + heightAtCurrentZoomLevel;
+
+	            totalWidths[k] = currentTotalWidths;
+	            totalHeights[k] = currentTotalHeights;
 	            maxWidths[k] = Math.max(widthAtCurrentZoomLevel, maxWidths[k]);
 	            maxHeights[k] = Math.max(heightAtCurrentZoomLevel, maxHeights[k]);
 	        }
@@ -2443,6 +2466,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    var averageWidths = new Array(lowestMaxZoom + 1).fill(0);
 	    var averageHeights = new Array(lowestMaxZoom + 1).fill(0);
+
 	    for (var a = 0; a < lowestMaxZoom + 1; a++)
 	    {
 	        averageWidths[a] = totalWidths[a] / numCanvases;
