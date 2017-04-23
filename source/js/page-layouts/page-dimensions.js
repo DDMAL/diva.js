@@ -1,6 +1,6 @@
-module.exports = function getPageDimensions(pageIndex, manifest)
+export default function getPageDimensions (pageIndex, manifest)
 {
-    var dims = manifest.getMaxPageDimensions(pageIndex);
+    const dims = manifest.getMaxPageDimensions(pageIndex);
 
     return {
         width: Math.floor(dims.width),

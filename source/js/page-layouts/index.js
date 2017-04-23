@@ -1,11 +1,9 @@
-var getBookLayoutGroups = require('./book-layout');
-var getSinglesLayoutGroups = require('./singles-layout');
-var getGridLayoutGroups = require('./grid-layout');
-
-module.exports = getPageLayouts;
+import getBookLayoutGroups from './book-layout';
+import getSinglesLayoutGroups from './singles-layout';
+import getGridLayoutGroups from './grid-layout';
 
 /** Get the relative positioning of pages for the current view */
-function getPageLayouts(settings)
+export default function getPageLayouts (settings)
 {
     if (settings.inGrid)
     {
@@ -20,7 +18,7 @@ function getPageLayouts(settings)
     }
     else
     {
-        var config = pluck(settings, ['manifest', 'verticallyOriented', 'showNonPagedPages']);
+        const config = pluck(settings, ['manifest', 'verticallyOriented', 'showNonPagedPages']);
 
         if (settings.inBookLayout)
             return getBookLayoutGroups(config);
@@ -29,9 +27,9 @@ function getPageLayouts(settings)
     }
 }
 
-function pluck(obj, keys)
+function pluck (obj, keys)
 {
-    var out = {};
+    const out = {};
     keys.forEach(function (key)
     {
         out[key] = obj[key];

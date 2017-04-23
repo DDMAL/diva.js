@@ -1,10 +1,9 @@
-module.exports = createSettingsView;
 
-function createSettingsView(sources)
+export default function createSettingsView(sources)
 {
-    var obj = {};
+    const obj = {};
 
-    sources.forEach(function (source)
+    sources.forEach( (source) =>
     {
         registerMixin(obj, source);
     });
@@ -14,14 +13,14 @@ function createSettingsView(sources)
 
 function registerMixin(obj, mixin)
 {
-    Object.keys(mixin).forEach(function (key)
+    Object.keys(mixin).forEach( (key) =>
     {
         Object.defineProperty(obj, key, {
-            get: function ()
+            get: () =>
             {
                 return mixin[key];
             },
-            set: function ()
+            set: () =>
             {
                 // TODO: Make everything strict mode so this isn't needed
                 throw new TypeError('Cannot set settings.' + key);

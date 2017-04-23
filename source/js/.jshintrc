@@ -1,9 +1,0 @@
-{
-    "extends": "../../.jshintrc",
-
-    "node": false,
-    "browserify": true,
-
-    "latedef": false,
-    "eqeqeq": false
-}

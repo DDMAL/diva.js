@@ -1,5 +1,3 @@
-module.exports = CompositeImage;
-
 /**
  * @class CompositeImage
  * @private
@@ -13,192 +11,188 @@ module.exports = CompositeImage;
  * @param levels {Array.<Array.<Tile>>}
  * @constructor
  */
-function CompositeImage(levels)
+export default class CompositeImage
 {
-    this._levels = levels;  // Assume levels sorted high-res first
-    var urlsToTiles = this._urlsToTiles = {};
-
-    levels.forEach(function (level)
+    constructor(levels)
     {
-        level.tiles.forEach(function (tile)
+        this._levels = levels;  // Assume levels sorted high-res first
+        const urlsToTiles = this._urlsToTiles = {};
+
+        levels.forEach(level =>
         {
-            urlsToTiles[tile.url] = {
-                zoomLevel: level.zoomLevel,
-                row: tile.row,
-                col: tile.col
-            };
-        });
-    });
-
-    this.clear();
-}
-
-CompositeImage.prototype.clear = function ()
-{
-    var loadedByLevel = this._loadedByLevel = {};
-
-    this._levels.forEach(function (level)
-    {
-        loadedByLevel[level.zoomLevel] = new TileCoverageMap(level.rows, level.cols);
-    });
-};
-
-CompositeImage.prototype.getTiles = function (baseZoomLevel)
-{
-    var toRenderByLevel = [];
-    var highestZoomLevel = this._levels[0].zoomLevel;
-    var covered = new TileCoverageMap(this._levels[0].rows, this._levels[0].cols);
-
-    var bestLevelIndex;
-
-    // Default to the lowest zoom level
-    if (baseZoomLevel === null)
-    {
-        bestLevelIndex = 0;
-    }
-    else
-    {
-        var ceilLevel = Math.ceil(baseZoomLevel);
-        bestLevelIndex = findIndex(this._levels, function (level)
-        {
-            return level.zoomLevel <= ceilLevel;
-        });
-    }
-
-
-    // The best level, followed by higher-res levels in ascending order of resolution,
-    // followed by lower-res levels in descending order of resolution
-    var levelsByPreference = this._levels.slice(0, bestLevelIndex + 1).reverse()
-        .concat(this._levels.slice(bestLevelIndex + 1));
-
-    levelsByPreference.forEach(function (level)
-    {
-        var loaded = this._loadedByLevel[level.zoomLevel];
-
-        var additionalTiles = level.tiles.filter(function (tile)
-        {
-            return loaded.isLoaded(tile.row, tile.col);
-        });
-
-        // Filter out entirely covered tiles
-
-        // FIXME: Is it better to draw all of a partially covered tile,
-        // with some of it ultimately covered, or to pick out the region
-        // which needs to be drawn?
-        // See https://github.com/DDMAL/diva.js/issues/358
-
-        var scaleRatio = Math.pow(2, highestZoomLevel - level.zoomLevel);
-
-        additionalTiles = additionalTiles.filter(function (tile)
-        {
-            var isNeeded = false;
-
-            var highResRow = tile.row * scaleRatio;
-            var highResCol = tile.col * scaleRatio;
-
-            for (var i=0; i < scaleRatio; i++)
+            level.tiles.forEach(tile =>
             {
-                for (var j=0; j < scaleRatio; j++)
+                urlsToTiles[tile.url] = {
+                    zoomLevel: level.zoomLevel,
+                    row: tile.row,
+                    col: tile.col
+                };
+            });
+        });
+
+        this.clear();
+    }
+
+    clear ()
+    {
+        const loadedByLevel = this._loadedByLevel = {};
+
+        this._levels.forEach(level => {
+            loadedByLevel[level.zoomLevel] = new TileCoverageMap(level.rows, level.cols);
+        });
+    }
+
+    getTiles (baseZoomLevel)
+    {
+        const toRenderByLevel = [];
+        const highestZoomLevel = this._levels[0].zoomLevel;
+        const covered = new TileCoverageMap(this._levels[0].rows, this._levels[0].cols);
+
+        let bestLevelIndex;
+
+        // Default to the lowest zoom level
+        if (baseZoomLevel === null)
+        {
+            bestLevelIndex = 0;
+        }
+        else
+        {
+            const ceilLevel = Math.ceil(baseZoomLevel);
+            bestLevelIndex = findIndex(this._levels, level => level.zoomLevel <= ceilLevel);
+            // bestLevelIndex = this._levels.findIndex((level) => level.zoomLevel <= ceilLevel);
+        }
+
+
+        // The best level, followed by higher-res levels in ascending order of resolution,
+        // followed by lower-res levels in descending order of resolution
+        const levelsByPreference = this._levels.slice(0, bestLevelIndex + 1).reverse()
+            .concat(this._levels.slice(bestLevelIndex + 1));
+
+        levelsByPreference.forEach( (level) =>
+        {
+            const loaded = this._loadedByLevel[level.zoomLevel];
+
+            let additionalTiles = level.tiles.filter(tile => loaded.isLoaded(tile.row, tile.col));
+
+            // Filter out entirely covered tiles
+
+            // FIXME: Is it better to draw all of a partially covered tile,
+            // with some of it ultimately covered, or to pick out the region
+            // which needs to be drawn?
+            // See https://github.com/DDMAL/diva.js/issues/358
+
+            const scaleRatio = Math.pow(2, highestZoomLevel - level.zoomLevel);
+
+            additionalTiles = additionalTiles.filter(tile => {
+                let isNeeded = false;
+
+                const highResRow = tile.row * scaleRatio;
+                const highResCol = tile.col * scaleRatio;
+
+                for (let i=0; i < scaleRatio; i++)
                 {
-                    if (!covered.isLoaded(highResRow + i, highResCol + j))
+                    for (let j=0; j < scaleRatio; j++)
                     {
-                        isNeeded = true;
-                        covered.set(highResRow + i, highResCol + j, true);
+                        if (!covered.isLoaded(highResRow + i, highResCol + j))
+                        {
+                            isNeeded = true;
+                            covered.set(highResRow + i, highResCol + j, true);
+                        }
                     }
                 }
-            }
 
-            return isNeeded;
+                return isNeeded;
+            });
+
+            toRenderByLevel.push(additionalTiles);
+        }, this);
+
+        // Less-preferred tiles should come first
+        toRenderByLevel.reverse();
+
+        const tiles = [];
+
+        toRenderByLevel.forEach(byLevel => {
+            tiles.push.apply(tiles, byLevel);
         });
 
-        toRenderByLevel.push(additionalTiles);
-    }, this);
+        return tiles;
+    }
 
-    // Less-preferred tiles should come first
-    toRenderByLevel.reverse();
-
-    var tiles = [];
-
-    toRenderByLevel.forEach(function (byLevel)
+    /**
+     * Update the composite image to take into account all the URLs
+     * loaded in an image cache.
+     *
+     * @param cache {ImageCache}
+     */
+    updateFromCache (cache)
     {
-        tiles.push.apply(tiles, byLevel);
-    });
+        this.clear();
 
-    return tiles;
-};
-
-/**
- * Update the composite image to take into account all the URLs
- * loaded in an image cache.
- *
- * @param cache {ImageCache}
- */
-CompositeImage.prototype.updateFromCache = function (cache)
-{
-    this.clear();
-
-    this._levels.forEach(function (level)
-    {
-        var loaded = this._loadedByLevel[level.zoomLevel];
-
-        level.tiles.forEach(function (tile)
+        this._levels.forEach( (level) =>
         {
-            if (cache.has(tile.url))
-                loaded.set(tile.row, tile.col, true);
-        });
-    }, this);
-};
+            const loaded = this._loadedByLevel[level.zoomLevel];
 
-CompositeImage.prototype.updateWithLoadedUrls = function (urls)
-{
-    urls.forEach(function (url)
+            level.tiles.forEach(tile => {
+                if (cache.has(tile.url))
+                    loaded.set(tile.row, tile.col, true);
+            });
+        }, this);
+    }
+
+    updateWithLoadedUrls (urls)
     {
-        var entry = this._urlsToTiles[url];
-        this._loadedByLevel[entry.zoomLevel].set(entry.row, entry.col, true);
-    }, this);
-};
-
-function TileCoverageMap(rows, cols)
-{
-    this._rows = rows;
-    this._cols = cols;
-
-    this._map = fill(rows).map(function ()
-    {
-        return fill(cols, false);
-    });
+        urls.forEach( (url) =>
+        {
+            const entry = this._urlsToTiles[url];
+            this._loadedByLevel[entry.zoomLevel].set(entry.row, entry.col, true);
+        }, this);
+    }
 }
 
-TileCoverageMap.prototype.isLoaded = function (row, col)
+class TileCoverageMap
 {
-    // Return true for out of bounds tiles because they
-    // don't need to load. (Unfortunately this will also
-    // mask logical errors.)
-    if (row >= this._rows || col >= this._cols)
-        return true;
+    constructor (rows, cols)
+    {
+        this._rows = rows;
+        this._cols = cols;
+        // this._map = rows.fill(cols);
+        // this._map = fill(rows).map(() => fill(cols, false));
+        this._map = new Array(rows).fill(new Array(cols).fill(false));
+        debugger;
+    }
 
-    return this._map[row][col];
-};
+    isLoaded (row, col)
+    {
+        // Return true for out of bounds tiles because they
+        // don't need to load. (Unfortunately this will also
+        // mask logical errors.)
+        if (row >= this._rows || col >= this._cols)
+            return true;
 
-TileCoverageMap.prototype.set = function (row, col, value)
+        return this._map[row][col];
+    }
+
+    set(row, col, value)
+    {
+        this._map[row][col] = value;
+    }
+}
+
+function fill (count, value)
 {
-    this._map[row][col] = value;
-};
+    const arr = new Array(count);
 
-function fill(count, value)
-{
-    var arr = new Array(count);
-
-    for (var i=0; i < count; i++)
+    for (let i=0; i < count; i++)
         arr[i] = value;
 
     return arr;
 }
 
-function findIndex(array, predicate)
+function findIndex (array, predicate)
 {
-    var length = array.length;
-    for (var i = 0; i < length; i++)
+    const length = array.length;
+    for (let i = 0; i < length; i++)
     {
         if (predicate(array[i], i))
             return i;

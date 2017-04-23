@@ -1,0 +1,50 @@
+// Colours
+$white:                 #FFF;
+$mediumGrey:            #CCC;
+$grey:                  #DDD;
+$lightGrey:             #F1F1F1;
+$lighterGrey:           #FDFDFD;
+$primaryBorder:         #AAA;
+$highlightBlue:         #dfefff;
+$regularBlue:           rgb(0, 110, 188);
+
+// Customising the colour scheme
+$viewerBg:              $lightGrey;
+$pageBg:                $lighterGrey;
+$viewerFrame:           $primaryBorder;
+
+$toolsBg:               $white;
+$toolsFrame:            $grey;
+
+// TODO: Could probably unify button, input variables
+$buttonBg:              $lightGrey;
+$buttonFrame:           $primaryBorder;
+$buttonHover:           $lighterGrey;
+
+$inputFrame:            $primaryBorder;
+$inputHoverFrame:       darken($primaryBorder, 10%);
+
+$linkBg:                $white;
+$linkFrame:             $grey;
+
+// z-index information
+$fullscreenZIndex:      100;
+
+// Dimensions
+$pluginIconSize:        25px;
+$fullscreenIconSize:    26px;
+$throbberWidth:         50px;
+$throbberHeight:        50px;
+$toolbarGroupMargin:    1em;
+
+$borderSize:            1px;
+
+$buttonSize:            34px;
+$buttonPadding:         0.5em;
+
+$inputSize:             34px;
+$inputPadding:          0.5em;
+
+$spinkit-spinner-margin: auto auto !default;
+$spinkit-size: 40px !default;
+$spinkit-spinner-color: #333 !default;

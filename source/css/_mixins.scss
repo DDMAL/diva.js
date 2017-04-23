@@ -1,0 +1,53 @@
+@import "variables";
+
+@mixin hidden()
+{
+    display: none;
+}
+
+// Shortcut for a 1px solid border
+@mixin frame($colour)
+{
+    border: $borderSize solid $colour;
+}
+
+@mixin plugin-icon($plugin-name)
+{
+    background: data-uri('${iconPath}plugins/${plugin-name}.png') no-repeat;
+
+    &:hover {
+        background: data-uri('${iconPath}plugins/${plugin-name}-hover.png') no-repeat;
+    }
+}
+
+@mixin grab()
+{
+    cursor: data-uri("${iconPath}openhand.cur"), pointer;
+}
+
+@mixin grabbing()
+{
+    cursor: data-uri("${iconPath}closedhand.cur"), move !important;
+}
+
+@mixin loading()
+{
+    background: data-uri("${iconPath}loading.gif") no-repeat center;
+}
+
+@mixin pretty-shadow($distance: 4px)
+{
+    box-shadow: 2px 2px $distance 0 rgba(0, 0, 0, 0.5);
+}
+
+@mixin full-width()
+{
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+@mixin full-height()
+{
+    height: 100% !important;
+    max-height: 100% !important;
+}

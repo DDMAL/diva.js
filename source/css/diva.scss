@@ -1,0 +1,14 @@
+// Preboot stuff
+@import "variables";
+@import "mixins";
+
+// Stuff for the document viewer
+@import "viewer";
+
+// Plugins
+@import "plugins/manipulation";
+//@import "plugins/canvas.less";
+//@import "plugins/download.less";
+//@import "plugins/autoscroll.less";
+//@import "plugins/iiif-highlight.less";
+//@import "plugins/iiif-metadata.less";

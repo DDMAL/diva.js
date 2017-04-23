@@ -1,0 +1,48 @@
+@import "../mixins";
+@import "../variables";
+
+.manipulation-fullscreen {
+  @include full-width();
+  @include full-height();
+
+  z-index: $fullscreenZIndex;
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  margin: 0;
+  border: 0;
+
+  background-color: rgba(0, 0, 0, 0.9);
+
+  display: flex;
+}
+
+.manipulation-sidebar {
+  width: 20%;
+  overflow: scroll;
+  text-align: center;
+  padding: 10px;
+
+  .manipulation-sidebar-primary-image,
+  .manipulation-sidebar-secondary-image {
+    margin: 10px 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #fff;
+    color: #fff;
+  }
+}
+
+.manipulation-main-area {
+  width: 60%;
+  flex: 1 1 auto;
+  background-color: rgba(255, 255, 255, 0.5);
+  overflow: scroll;
+
+  canvas {
+    margin: 0 auto;
+  }
+}
+
+.manipulation-tools {
+  flex: 1 1 auto;
+}

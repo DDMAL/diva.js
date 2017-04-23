@@ -1,78 +1,81 @@
-var elt = require('./utils/elt');
+import { elt } from './utils/elt';
 
-module.exports = PageToolsOverlay;
-
-function PageToolsOverlay(pageIndex, viewerCore)
+export default class PageToolsOverlay
 {
-    this.page = pageIndex;
-
-    this._viewerCore = viewerCore;
-
-    this._innerElement = viewerCore.getSettings().innerElement;
-    this._pageToolsElem = null;
-}
-
-PageToolsOverlay.prototype.mount = function ()
-{
-    if (this._pageToolsElem === null)
+    constructor (pageIndex, viewerCore)
     {
-        var buttons = this._initializePageToolButtons();
+        this.page = pageIndex;
 
-        this._pageToolsElem = elt('div', {class: 'diva-page-tools-wrapper'},
-            elt('div', {class: 'diva-page-tools'}, buttons)
-        );
+        this._viewerCore = viewerCore;
+
+        this._innerElement = this._viewerCore.getSettings().innerElement;
+        this._pageToolsElem = null;
+        //
+        // this._buttons = null;
     }
 
-    this.refresh();
-    this._innerElement.appendChild(this._pageToolsElem);
-};
-
-PageToolsOverlay.prototype._initializePageToolButtons = function ()
-{
-    // Callback parameters
-    var settings = this._viewerCore.getSettings();
-    var publicInstance = this._viewerCore.getPublicInstance();
-    var pageIndex = this.page;
-
-    return this._viewerCore.getPageTools().map(function (plugin)
+    mount ()
     {
-        // If the title text is undefined, use the name of the plugin
-        var titleText = plugin.titleText || plugin.pluginName[0].toUpperCase() + plugin.pluginName.substring(1) + " plugin";
+        if (this._pageToolsElem === null)
+        {
+            this._buttons = this._initializePageToolButtons();
 
-        var button = elt('div', {
-            class: 'diva-' + plugin.pluginName + '-icon',
-            title: titleText
+            this._pageToolsElem = elt('div', { class: 'diva-page-tools-wrapper' },
+                elt('div', { class: 'diva-page-tools' }, this._buttons)
+            );
+        }
+
+        this.refresh();
+        this._innerElement.appendChild(this._pageToolsElem);
+    }
+
+    _initializePageToolButtons ()
+    {
+        // Callback parameters
+        const settings = this._viewerCore.getSettings();
+        const publicInstance = this._viewerCore.getPublicInstance();
+        const pageIndex = this.page;
+
+        return this._viewerCore.getPageTools().map( (plugin) =>
+        {
+            // !!! The node needs to be cloned otherwise it is detached from
+            //  one and reattached to the other.
+            const button = plugin.pageToolsIcon.cloneNode(true);
+
+            // ensure the plugin instance is handed as the first argument to call;
+            // this will set the context (i.e., `this`) of the handleClick call to the plugin instance
+            // itself.
+            button.addEventListener('click', (event) =>
+            {
+                plugin.handleClick.call(plugin, event, settings, publicInstance, pageIndex);
+            }, false);
+
+            button.addEventListener('touchend', (event) =>
+            {
+                // Prevent firing of emulated mouse events
+                event.preventDefault();
+
+                plugin.handleClick.call(plugin, event, settings, publicInstance, pageIndex);
+            }, false);
+
+            return button;
+
+        });
+    }
+
+    unmount ()
+    {
+        this._innerElement.removeChild(this._pageToolsElem);
+    }
+
+    refresh ()
+    {
+        const pos = this._viewerCore.getPageRegion(this.page, {
+            excludePadding: true,
+            incorporateViewport: true
         });
 
-        button.addEventListener('click', function (event)
-        {
-            plugin.handleClick.call(this, event, settings, publicInstance, pageIndex);
-        }, false);
-
-        button.addEventListener('touchend', function (event)
-        {
-            // Prevent firing of emulated mouse events
-            event.preventDefault();
-
-            plugin.handleClick.call(this, event, settings, publicInstance, pageIndex);
-        }, false);
-
-        return button;
-    }, this);
-};
-
-PageToolsOverlay.prototype.unmount = function ()
-{
-    this._innerElement.removeChild(this._pageToolsElem);
-};
-
-PageToolsOverlay.prototype.refresh = function ()
-{
-    var pos = this._viewerCore.getPageRegion(this.page, {
-        excludePadding: true,
-        incorporateViewport: true
-    });
-
-    this._pageToolsElem.style.top = pos.top + 'px';
-    this._pageToolsElem.style.left = pos.left + 'px';
-};
+        this._pageToolsElem.style.top = pos.top + 'px';
+        this._pageToolsElem.style.left = pos.left + 'px';
+    }
+}

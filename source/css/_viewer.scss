@@ -1,0 +1,444 @@
+@import "variables";
+@import "mixins";
+
+.diva-wrapper {
+    min-height: 100%;
+    width: 100%;
+    flex-grow: 1;
+
+    &.diva-wrapper-flexbox {
+        display: flex;
+        flex-direction: column;
+    }
+
+    >*:not(.diva-outer) {
+        flex-shrink: 0;
+    }
+}
+
+.diva-title {
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.3em;
+    max-width: 50em;
+    margin: 0 auto;
+}
+
+.diva-button, .diva-input {
+    box-sizing: border-box;
+    outline: none;
+    border-radius: 0;
+    font: inherit;
+    vertical-align: middle;
+
+    &::-moz-focus-inner {
+        padding: 0;
+    }
+}
+
+.diva-button {
+    display: inline-block;
+    cursor: pointer;
+    height: $buttonSize;
+    width: $buttonSize;
+
+    line-height: $buttonSize;
+    -webkit-appearance: none;
+    padding: 3px;
+
+    background-color: $buttonBg;
+    background-repeat: no-repeat;
+    background-position: center;
+    @include frame($buttonFrame);
+
+    &:hover, &:focus {
+        background-color: $buttonHover;
+    }
+
+    &.diva-button-text {
+        width: auto;
+        padding: 0 $buttonPadding;
+    }
+}
+
+.diva-input {
+    height: $inputSize;
+    @include frame($inputFrame);
+
+    padding: 0 $inputPadding;
+
+    &:focus {
+        border-color: $inputHoverFrame;
+    }
+}
+
+.diva-label {
+    margin: 0 $toolbarGroupMargin;
+    line-height: $buttonSize;
+    vertical-align: top;
+    white-space: nowrap;
+}
+
+.diva-tools-left, .diva-tools-right {
+    margin-bottom: $toolbarGroupMargin;
+}
+
+.diva-tools-left {
+    float: left;
+    user-select: none;
+}
+
+    .diva-zoom-in-button, .diva-grid-in-button {
+        margin-left: -1px;
+    }
+
+.diva-tools-right {
+    float: right;
+
+    .diva-button {
+        margin-left: -1px;
+        user-select: none;
+    }
+}
+
+    .diva-page-nav {
+        white-space: nowrap;
+        margin-right: $toolbarGroupMargin;
+    }
+
+        .diva-goto-form {
+            display: inline-block;
+            position: relative;
+        }
+
+            .diva-goto-page-input {
+                width: 5em;
+            }
+
+            .diva-input-suggestions {
+                display: none;
+                box-sizing: border-box;
+                position: absolute;
+                width: 100%;
+                background-color: white;
+                border: solid 1px #aaa;
+                border-top: none;
+                z-index: 1;
+            }
+
+                .diva-input-suggestion {
+                    box-sizing: border-box;
+                    width: 100%;
+                    margin-top: 3px;
+                    padding: 2px;
+                    padding-left: 5px;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    cursor: pointer;
+                }
+
+                .diva-input-suggestion.active, .diva-input-suggestion:hover {
+                    background-color: $highlightBlue;
+                }
+
+    .diva-fullscreen-icon {
+    }
+
+    .diva-toggle-nonpaged-icon {
+    }
+
+    .diva-toggle-nonpaged-icon-active {
+    }
+
+    .diva-view-menu {
+        display: inline-block;
+        position: relative;
+    }
+
+        .diva-view-options {
+            position: absolute;
+            top: $buttonSize;
+            z-index: 1;
+            display: none;
+            box-shadow: 1px 1px 4px 0 rgba(0,0,0,0.1);
+        }
+
+            .diva-view-options .diva-button {
+                margin-top: -1px;
+                display: block;
+            }
+
+            .diva-document-icon {
+            }
+
+            .diva-grid-icon {
+            }
+
+            .diva-book-icon {
+            }
+
+    .diva-link-icon {
+    }
+
+    .diva-zoom-label, .diva-grid-label, .diva-page-label {
+        display: inline-block;
+    }
+
+.diva-fullscreen-tools {
+    position: fixed;
+    top: 15px;
+    right: 30px;
+    z-index: $fullscreenZIndex + 1;
+    padding: 15px;
+    @include frame($toolsFrame);
+    background: $toolsBg;
+
+    @include pretty-shadow();
+
+    .diva-tools-left, .diva-tools-right {
+        margin-bottom: 0;
+    }
+
+    .diva-tools-right {
+        margin-left: 2em;
+    }
+
+    .diva-label, .diva-page-label {
+        margin: 0;
+    }
+
+    /* prevent variable number of digits in labels from resizing .diva-fullscreen-tools */
+    .diva-zoom-label, .diva-grid-label, .diva-page-label {
+        width: 8em;
+        display: block;
+    }
+
+    .diva-page-nav {
+        margin-right: 0;
+    }
+}
+
+.diva-outer {
+    display: flex;
+    clear: both;
+    background: $viewerBg;
+    @include frame($viewerFrame);
+    position: relative;
+    overflow: hidden;
+    min-height: 100px;
+    min-width: 200px;
+    height: 700px;
+    flex-grow: 1;
+}
+
+.diva-viewer-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.diva-viewport {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    overflow: auto;
+}
+
+    .diva-inner {
+        @include grab();
+        position: relative;
+        overflow: hidden;
+        margin: 0 auto;
+
+        &.diva-grabbing {
+            @include grabbing();
+        }
+    }
+
+        .diva-page {
+            box-shadow: 7px 7px 6px -6px rgba(0,0,0,0.3);
+            position: absolute;
+            background-color: $pageBg;
+        }
+
+.diva-page-tools-wrapper {
+    position: absolute;
+    z-index: 3;
+}
+
+.diva-page-tools {
+    position: relative;
+    top: -$pluginIconSize - 5;
+    height: $pluginIconSize;
+
+    div {
+        margin-bottom: 5px;
+        display: inline-block;
+        height: $pluginIconSize;
+        width: $pluginIconSize;
+        cursor: pointer;
+
+        svg:hover .diva-pagetool-icon {
+          fill: $regularBlue;
+        }
+    }
+}
+
+.diva-fullscreen {
+    @include full-width();
+    @include full-height();
+    z-index: $fullscreenZIndex;
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    margin: 0;
+    border: 0;
+}
+
+.diva-popup {
+    background: $linkBg;
+    @include frame($buttonFrame);
+    padding: .6em;
+    z-index: $fullscreenZIndex + 1;
+    position: absolute;
+    @include pretty-shadow();
+}
+
+.diva-link-popup {
+    font-size: 10pt;
+
+    input {
+        width: 18em;
+        &:focus {
+            outline: none;
+        }
+    }
+
+    &.in-fullscreen {
+        top: 150px;
+        right: 30px;
+    }
+}
+
+// Used for body in fullscreen mode
+.diva-hide-scrollbar {
+    overflow: hidden !important;
+}
+
+.diva-slider {
+    position: relative;
+    top: 0.6em;
+    float: left;
+    @media (max-width: 480px) {
+        width: 100px;
+    }
+}
+
+// The loading indicator, shown if the AJAX request is slow
+//.diva-throbber {
+//    .hidden;
+//    position: absolute;
+//    width: $throbberWidth;
+//    height: $throbberHeight;
+//    .loading;
+//    background-color: $white;
+//    border: 1px solid $grey;
+//    .pretty-shadow;
+//    top: 50%;
+//    left: 50%;
+//    margin-left: -$throbberWidth / 2;
+//    margin-top: -$throbberHeight / 2;
+//}
+
+// https://github.com/tobiasahlin/SpinKit/blob/master/scss/spinners/9-cube-grid.scss
+.diva-throbber {
+  @include pretty-shadow();
+
+  $delayRange: 0.4s;
+
+  width: $spinkit-size;
+  height: $spinkit-size;
+  margin: $spinkit-spinner-margin;
+  padding: 20px;
+  background-color: #fff;
+
+  .cube {
+    width: 33.33%;
+    height: 33.33%;
+    background-color: $spinkit-spinner-color;
+    float: left;
+    animation: sk-cubeGridScaleDelay 1.3s infinite ease-in-out;
+  }
+
+  /*
+   * Spinner positions
+   * 1 2 3
+   * 4 5 6
+   * 7 8 9
+   */
+
+  .cube1 { animation-delay: $delayRange * 0.50 }
+  .cube2 { animation-delay: $delayRange * 0.75 }
+  .cube3 { animation-delay: $delayRange }
+  .cube4 { animation-delay: $delayRange * 0.25 }
+  .cube5 { animation-delay: $delayRange * 0.50 }
+  .cube6 { animation-delay: $delayRange * 0.75 }
+  .cube7 { animation-delay: 0.0s }
+  .cube8 { animation-delay: $delayRange * 0.25 }
+  .cube9 { animation-delay: $delayRange * 0.50 }
+}
+
+@keyframes sk-cubeGridScaleDelay {
+  0%, 70%, 100% { transform:scale3D(1.0, 1.0, 1.0) }
+  35%           { transform:scale3D(0.0, 0.0, 1.0) }
+}
+
+
+
+// Error message box, only shown if there is an error
+.diva-error {
+    position: absolute;
+    width: 400px;
+    height: 200px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    box-shadow: 2px 2px 4px 0 rgba(0,0,0,0.5);
+    top: 50%;
+    left: 50%;
+    margin-left: -220px;
+    margin-top: -120px;
+    z-index: 120;
+    padding: 0 1em;
+}
+
+.diva-error-close {
+    width: 18px;
+    height: 18px;
+    border: none;
+    //background: #fff data-uri("${iconPath}close.png");
+    position: absolute;
+    top: 1em;
+    right: 1em;
+
+    &:hover {
+        //background-image: data-uri("${iconPath}close-hover.png");
+        cursor: hand;
+    }
+}
+
+.diva-modal {
+    position: absolute;
+    width: 32em;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    box-shadow: 2px 2px 4px 0 rgba(0,0,0,0.5);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 120;
+    padding: 2em 2.2em;
+}
+

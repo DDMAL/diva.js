@@ -1,54 +1,40 @@
-/*
-Copyright (C) 2011-2016 by Wendy Liu, Evan Magoni, Andrew Hankinson, Andrew Horwitz, Laurent Pugin
+import './utils/vanilla.kinetic';
+import './utils/dragscroll';
+import { elt } from "./utils/elt";
+import {
+    DivaParentElementNotFoundException,
+    NotAnIIIFManifestException,
+    ObjectDataNotSuppliedException
+} from "./exceptions";
+import diva from "./diva-global";
+import ViewerCore from "./viewer-core";
+import ImageManifest from "./image-manifest";
+import Toolbar from "./toolbar";
+import HashParams from "./utils/hash-params";
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-*/
-require('array.prototype.fill');
-
-var jQuery = require('jquery');
-
-var elt = require('./utils/elt');
-var HashParams = require('./utils/hash-params');
-
-var ActiveDivaController = require('./active-diva-controller');
-var diva = require('./diva-global');
-var ImageManifest = require('./image-manifest');
-var createToolbar = require('./toolbar');
-var ViewerCore = require('./viewer-core');
-
-// Start the active Diva tracker
-var activeDiva = new ActiveDivaController(); // jshint ignore: line
-
-module.exports = diva;
-
-// this pattern was taken from http://www.virgentech.com/blog/2009/10/building-object-oriented-jquery-plugin.html
-(function ($)
+class Diva
 {
-    var Diva = function (element, options)
+    constructor (element, options)
     {
-        // Global instance variables (set way down in `init`)
-        var settings, viewerState, divaState;
-        var self = this;
+        /*
+         * If a string is passed in, convert that to an element.
+         * */
+        if (!(element instanceof HTMLElement))
+        {
+            this.element = document.getElementById(element);
 
-        // These are elements that can be overridden upon instantiation
-        // See https://github.com/DDMAL/diva.js/wiki/Settings for more details
-        options = $.extend({
+            if (this.element === null)
+            {
+                throw new DivaParentElementNotFoundException();
+            }
+        }
+
+        if (!options.objectData)
+        {
+            throw new ObjectDataNotSuppliedException('You must supply either a URL or a literal object to the `objectData` key.');
+        }
+
+        this.options = Object.assign({
             adaptivePadding: 0.05,      // The ratio of padding to the page dimension
             arrowScrollAmount: 40,      // The amount (in pixels) to scroll by when using arrow keys
             blockMobileMove: false,     // Prevent moving or scrolling the page on mobile devices
@@ -96,1058 +82,1381 @@ module.exports = diva;
             zoomLevel: 2                // The initial zoom level (used to store the current zoom level)
         }, options);
 
-        // Returns the page index associated with the given filename; must called after setting settings.manifest
-        var getPageIndex = function (filename)
-        {
-            return getPageIndexForManifest(settings.manifest, filename);
+        // In order to fill the height, use a wrapper div displayed using a flexbox layout
+        const wrapperElement = elt('div', {
+            class: `diva-wrapper${this.options.fillParentHeight ? " diva-wrapper-flexbox" : ""}`
+        });
+
+        this.element.appendChild(wrapperElement);
+
+        this.options.toolbarParentObject = this.options.toolbarParentObject || wrapperElement;
+
+        const viewerCore = new ViewerCore(wrapperElement, this.options, this);
+
+        this.viewerState = viewerCore.getInternalState();
+        this.settings = viewerCore.getSettings();
+        this.toolbar = new Toolbar(this);
+
+        wrapperElement.id = this.settings.ID + 'wrapper';
+
+        this.divaState = {
+            viewerCore: viewerCore,
+            toolbar: this.settings.enableToolbar ? this.toolbar : null
         };
 
-        var NotAnIIIFManifestException = function (message)
-        {
-            return message;
-        };
+        this.toolbar.render();
+        this.hashState = this._getHashParamState();
 
-        var getPageIndexForManifest = function (manifest, filename)
-        {
-            var i,
-                np = manifest.pages.length;
+        this._loadOrFetchObjectData();
+    }
 
-            for (i = 0; i < np; i++)
+    /**
+     * @private
+     **/
+    _loadOrFetchObjectData ()
+    {
+        if (typeof this.settings.objectData === 'object')
+        {
+            // Defer execution until initialization has completed
+            setTimeout(function ()
             {
-                if (manifest.pages[i].f === filename)
-                {
-                    return i;
+                this._loadObjectData(this.settings.objectData, this.hashState);
+            }, 0);
+        }
+        else
+        {
+            const pendingManifestRequest = fetch(this.settings.objectData, {
+                headers: {
+                    "Accept": "application/json"
                 }
-            }
-
-            return -1;
-        };
-
-        // Check if a page index is valid
-        var isPageValid = function (pageIndex)
-        {
-            return settings.manifest.isPageValid(pageIndex, settings.showNonPagedPages);
-        };
-
-        var reloadViewer = function (newOptions)
-        {
-            return divaState.viewerCore.reload(newOptions);
-        };
-
-        // Called when the change view icon is clicked
-        var changeView = function (destinationView)
-        {
-            switch (destinationView)
+            }).then( (response) =>
             {
-                case 'document':
-                    return reloadViewer({
-                        inGrid: false,
-                        inBookLayout: false
-                    });
-
-                case 'book':
-                    return reloadViewer({
-                        inGrid: false,
-                        inBookLayout: true
-                    });
-
-                case 'grid':
-                    return reloadViewer({
-                        inGrid: true
-                    });
-
-                default:
-                    return false;
-            }
-        };
-
-        //toggles between orientations
-        var toggleOrientation = function ()
-        {
-            var verticallyOriented = !settings.verticallyOriented;
-
-            //if in grid, switch out of grid
-            reloadViewer({
-                inGrid: false,
-                verticallyOriented: verticallyOriented,
-                goDirectlyTo: settings.currentPageIndex,
-                verticalOffset: divaState.viewerCore.getYOffset(),
-                horizontalOffset: divaState.viewerCore.getXOffset()
-            });
-
-            return verticallyOriented;
-        };
-
-        // Called when the fullscreen icon is clicked
-        var toggleFullscreen = function ()
-        {
-            reloadViewer({
-                inFullscreen: !settings.inFullscreen
-            });
-        };
-
-        var getState = function ()
-        {
-            var view;
-
-            if (settings.inGrid)
-            {
-                view = 'g';
-            }
-            else if (settings.inBookLayout)
-            {
-                view = 'b';
-            }
-            else
-            {
-                view = 'd';
-            }
-
-            var layout = divaState.viewerCore.getCurrentLayout();
-            var pageOffset = layout.getPageToViewportCenterOffset(settings.currentPageIndex, viewerState.viewport);
-
-            var state = {
-                'f': settings.inFullscreen,
-                'v': view,
-                'z': settings.zoomLevel,
-                'n': settings.pagesPerRow,
-                'i': settings.enableFilename ? settings.manifest.pages[settings.currentPageIndex].f : false,
-                'p': settings.enableFilename ? false : settings.currentPageIndex + 1,
-                'y': pageOffset ? pageOffset.y : false,
-                'x': pageOffset ? pageOffset.x : false
-            };
-
-            return state;
-        };
-
-        var getLoadOptionsForState = function (state, manifest)
-        {
-            manifest = manifest || settings.manifest;
-
-            var options = ('v' in state) ? getViewState(state.v) : {};
-
-            if ('f' in state)
-                options.inFullscreen = state.f;
-
-            if ('z' in state)
-                options.zoomLevel = state.z;
-
-            if ('n' in state)
-                options.pagesPerRow = state.n;
-
-            // Only change specify the page if state.i or state.p is valid
-            var pageIndex = getPageIndexForManifest(manifest, state.i);
-
-            if (!(pageIndex >= 0 && pageIndex < manifest.pages.length))
-            {
-                pageIndex = state.p - 1;
-
-                // Possibly NaN
-                if (!(pageIndex >= 0 && pageIndex < manifest.pages.length))
-                    pageIndex = null;
-            }
-
-            if (pageIndex !== null)
-            {
-                var horizontalOffset = parseInt(state.x, 10);
-                var verticalOffset = parseInt(state.y, 10);
-
-                options.goDirectlyTo = pageIndex;
-                options.horizontalOffset = horizontalOffset;
-                options.verticalOffset = verticalOffset;
-            }
-
-            return options;
-        };
-
-        var getURLHash = function ()
-        {
-            var hashParams = getState();
-            var hashStringBuilder = [];
-            var param;
-
-            for (param in hashParams)
-            {
-                if (hashParams[param] !== false)
-                    hashStringBuilder.push(param + settings.hashParamSuffix + '=' + encodeURIComponent(hashParams[param]));
-            }
-
-            return hashStringBuilder.join('&');
-        };
-
-        // Returns the URL to the current state of the document viewer (so it should be an exact replica)
-        var getCurrentURL = function ()
-        {
-            return location.protocol + '//' + location.host + location.pathname + location.search + '#' + getURLHash();
-        };
-
-        var getViewState = function(view)
-        {
-            switch (view)
-            {
-                case 'd':
-                    return {
-                        inGrid: false,
-                        inBookLayout: false
-                    };
-
-                case 'b':
-                    return {
-                        inGrid: false,
-                        inBookLayout: true
-                    };
-
-                case 'g':
-                    return {
-                        inGrid: true,
-                        inBookLayout: false
-                    };
-
-                default:
-                    return null;
-            }
-        };
-
-        var showError = function(message)
-        {
-            divaState.viewerCore.showError(message);
-        };
-
-        var ajaxError = function(jqxhr, status, error)
-        {
-            // Show a basic error message within the document viewer pane
-
-            var errorMessage = ['Invalid objectData setting. Error code: ' + jqxhr.status + ' ' + error];
-
-            // Detect and handle CORS errors
-            var dataHasAbsolutePath = settings.objectData.lastIndexOf('http', 0) === 0;
-
-            if (dataHasAbsolutePath && error === '')
-            {
-                var jsonHost = settings.objectData.replace(/https?:\/\//i, "").split(/[/?#]/)[0];
-
-                if (location.hostname !== jsonHost)
+                if (!response.ok)
                 {
-                    errorMessage.push(
-                        elt('p', 'Attempted to access cross-origin data without CORS.'),
-                        elt('p',
-                            'You may need to update your server configuration to support CORS. For help, see the ',
-                            elt('a', {
-                                href: 'https://github.com/DDMAL/diva.js/wiki/Installation#a-note-about-cross-site-requests',
-                                target: '_blank'
-                            }, 'cross-site request documentation.')
-                        )
-                    );
+                    this._ajaxError(response);
+
+                    let error = new Error(response.statusText);
+                    error.response = response;
+                    throw error;
                 }
-            }
+                return response.json();
 
-            showError(errorMessage);
-        };
-
-        var loadObjectData = function (responseData, hashState)
-        {
-            var manifest;
-
-            // TODO improve IIIF detection method
-            if (!responseData.hasOwnProperty('@context') && (responseData['@context'].indexOf('iiif') === -1 || responseData['@context'].indexOf('shared-canvas') === -1))
+            }).then( (data) =>
             {
-                throw new NotAnIIIFManifestException('This does not appear to be a IIIF Manifest.');
-            }
-
-            // trigger ManifestDidLoad event
-            // FIXME: Why is this triggered before the manifest is parsed? See https://github.com/DDMAL/diva.js/issues/357
-            diva.Events.publish('ManifestDidLoad', [responseData], self);
-
-            manifest = ImageManifest.fromIIIF(responseData);
-            var loadOptions = hashState ? getLoadOptionsForState(hashState, manifest) : {};
-
-            divaState.viewerCore.setManifest(manifest, loadOptions);
-        };
-
-        /** Parse the hash parameters into the format used by getState and setState */
-        var getHashParamState = function ()
-        {
-            var state = {};
-
-            ['f', 'v', 'z', 'n', 'i', 'p', 'y', 'x'].forEach(function (param)
-            {
-                var value = HashParams.get(param + settings.hashParamSuffix);
-
-                // `false` is returned if the value is missing
-                if (value !== false)
-                    state[param] = value;
+                this._loadObjectData(data, this.hashState);
             });
 
-            // Do some awkward special-casing, since this format is kind of weird.
-
-            // For inFullscreen (f), true and false strings should be interpreted
-            // as booleans.
-            if (state.f === 'true')
-                state.f = true;
-            else if (state.f === 'false')
-                state.f = false;
-
-            // Convert numerical values to integers, if provided
-            ['z', 'n', 'p', 'x', 'y'].forEach(function (param)
-            {
-                if (param in state)
-                    state[param] = parseInt(state[param], 10);
-            });
-
-            return state;
-        };
-
-        var checkLoaded = function()
-        {
-            if (!viewerState.loaded)
-            {
-                console.warn("The viewer is not completely initialized. This is likely because it is still downloading data. To fix this, only call this function if the isReady() method returns true.");
-                return false;
-            }
-            return true;
-        };
-
-        var init = function ()
-        {
-            // In order to fill the height, use a wrapper div displayed using a flexbox layout
-            var wrapperElement = elt('div', {
-                class: "diva-wrapper" + (options.fillParentHeight ? " diva-wrapper-flexbox" : "")
-            });
-            element.appendChild(wrapperElement);
-            options.toolbarParentObject = options.toolbarParentObject || $(wrapperElement);
-
-            var viewerCore = new ViewerCore(wrapperElement, options, self);
-
-            viewerState = viewerCore.getInternalState();
-            settings = viewerCore.getSettings();
-
-            // Add the ID to the wrapper element now that the ID has been generated by the viewer core
-            wrapperElement.id = settings.ID + 'wrapper';
-
-            divaState = {
-                viewerCore: viewerCore,
-                toolbar: settings.enableToolbar ? createToolbar(self) : null
-            };
-
-            var hashState = getHashParamState();
-
-            if (typeof settings.objectData === 'object')
-            {
-                // Defer execution until initialization has completed
-                setTimeout(function ()
-                {
-                    loadObjectData(settings.objectData, hashState);
-                }, 0);
-            }
-            else
-            {
-                var pendingManifestRequest = $.ajax({
-                    url: settings.objectData,
-                    cache: true,
-                    dataType: 'json',
-                    error: ajaxError,
-                    success: function (responseData)
-                    {
-                        loadObjectData(responseData, hashState);
-                    }
-                });
-
-                // Store the pending request so that it can be cancelled in the event that Diva needs to be destroyed
-                viewerCore.setPendingManifestRequest(pendingManifestRequest);
-            }
-        };
-
-        /* PUBLIC FUNCTIONS
-        ===============================================
-        */
-
-        // Returns the title of the document, based on the directory name
-        this.getItemTitle = function ()
-        {
-            return settings.manifest.itemTitle;
-        };
-
-        // Go to a particular page by its page number (with indexing starting at 1)
-            //xAnchor may either be "left", "right", or default "center"; the (xAnchor) side of the page will be anchored to the (xAnchor) side of the diva-outer element
-            //yAnchor may either be "top", "bottom", or default "center"; same process as xAnchor.
-        // returns True if the page number passed is valid; false if it is not.
-        this.gotoPageByNumber = function (pageNumber, xAnchor, yAnchor)
-        {
-            console.warn("This method is deprecated. Consider using gotoPageByIndex(pageIndex, xAnchor, yAnchor) instead.");
-            var pageIndex = parseInt(pageNumber, 10) - 1;
-            return this.gotoPageByIndex(pageIndex, xAnchor, yAnchor);
-        };
-
-        // Go to a particular page (with indexing starting at 0)
-            //xAnchor may either be "left", "right", or default "center"; the (xAnchor) side of the page will be anchored to the (xAnchor) side of the diva-outer element
-            //yAnchor may either be "top", "bottom", or default "center"; same process as xAnchor.
-        // returns True if the page index is valid; false if it is not.
-        this.gotoPageByIndex = function (pageIndex, xAnchor, yAnchor)
-        {
-            pageIndex = parseInt(pageIndex, 10);
-
-            if (isPageValid(pageIndex))
-            {
-                var xOffset = divaState.viewerCore.getXOffset(pageIndex, xAnchor);
-                var yOffset = divaState.viewerCore.getYOffset(pageIndex, yAnchor);
-
-                viewerState.renderer.goto(pageIndex, yOffset, xOffset);
-                return true;
-            }
-
-            return false;
-        };
-
-        this.getNumberOfPages = function ()
-        {
-            if (!checkLoaded())
-                return false;
-
-            return settings.numPages;
-        };
-
-        // Get page dimensions in the current view and zoom level
-        this.getPageDimensions = function (pageIndex)
-        {
-            if (!checkLoaded())
-                return null;
-
-            return divaState.viewerCore.getCurrentLayout().getPageDimensions(pageIndex);
-        };
-
-        // Returns the dimensions of a given page index at a given zoom level
-        this.getPageDimensionsAtZoomLevel = function (pageIdx, zoomLevel)
-        {
-            if (!checkLoaded())
-                return false;
-
-            if (zoomLevel > settings.maxZoomLevel)
-                zoomLevel = settings.maxZoomLevel;
-
-            var pg = settings.manifest.pages[parseInt(pageIdx, 10)];
-            var pgAtZoom = pg.d[parseInt(zoomLevel, 10)];
-            return {'width': pgAtZoom.w, 'height': pgAtZoom.h};
-        };
-
-        // Returns the dimensions of a given page at the current zoom level
-        // The current page index will be used if no pageIndex is specified
-        // Also works in Grid view
-        this.getPageDimensionsAtCurrentZoomLevel = function(pageIndex)
-        {
-            pageIndex = isPageValid(pageIndex) ? pageIndex : settings.currentPageIndex;
-
-            if (!isPageValid(pageIndex))
-                throw new Error('Invalid Page Index');
-
-            return divaState.viewerCore.getCurrentLayout().getPageDimensions(pageIndex);
-        };
-
-        // Returns the dimensions of the current page at the current zoom level
-        // Also works in Grid view
-        this.getCurrentPageDimensionsAtCurrentZoomLevel = function ()
-        {
-            return this.getPageDimensionsAtCurrentZoomLevel(settings.currentPageIndex);
-        };
-
-        this.isReady = function ()
-        {
-            return viewerState.loaded;
-        };
-
-        this.getCurrentPageIndex = function ()
-        {
-            return settings.currentPageIndex;
-        };
-
-        this.getCurrentPageFilename = function ()
-        {
-            return settings.manifest.pages[settings.currentPageIndex].f;
-        };
-
-        this.getCurrentCanvas = function (settings)
-        {
-            return settings.manifest.pages[settings.currentPageIndex].canvas;
-        };
-
-        this.getCurrentPageNumber = function ()
-        {
-            console.warn("This method is deprecated. Consider using getCurrentPageIndex() instead.");
-            return settings.currentPageIndex + 1;
-        };
-
-        // Returns an array of all filenames in the document
-        this.getFilenames = function ()
-        {
-            var filenames = [];
-
-            for (var i = 0; i < settings.numPages; i++)
-            {
-                filenames[i] = settings.manifest.pages[i].f;
-            }
-
-            return filenames;
-        };
-
-        // Returns the current zoom level
-        this.getZoomLevel = function ()
-        {
-            return settings.zoomLevel;
-        };
-
-        // gets the maximum zoom level for the entire document
-        this.getMaxZoomLevel = function ()
-        {
-            return settings.maxZoomLevel;
-        };
-
-        // gets the max zoom level for a given page
-        this.getMaxZoomLevelForPage = function (pageIdx)
-        {
-            if (!checkLoaded)
-                return false;
-
-            return settings.manifest.pages[pageIdx].m;
-        };
-
-        this.getMinZoomLevel = function ()
-        {
-            return settings.minZoomLevel;
-        };
-
-        // Use the provided zoom level (will check for validity first)
-        // Returns false if the zoom level is invalid, true otherwise
-        this.setZoomLevel = function (zoomLevel)
-        {
-            if (settings.inGrid)
-            {
-                reloadViewer({
-                    inGrid: false
-                });
-            }
-
-            return divaState.viewerCore.zoom(zoomLevel);
-        };
-
-        this.getGridPagesPerRow = function ()
-        {
-            // TODO(wabain): Add test case
-            return this.pagesPerRow;
-        };
-
-        this.setGridPagesPerRow = function (newValue)
-        {
-            // TODO(wabain): Add test case
-            if (!divaState.viewerCore.isValidOption('pagesPerRow', newValue))
-                return false;
-
-            return reloadViewer({
-                inGrid: true,
-                pagesPerRow: newValue
-            });
-        };
-
-        // Zoom in. Will return false if it's at the maximum zoom
-        this.zoomIn = function ()
-        {
-            return this.setZoomLevel(settings.zoomLevel + 1);
-        };
-
-        // Zoom out. Will return false if it's at the minimum zoom
-        this.zoomOut = function ()
-        {
-            return this.setZoomLevel(settings.zoomLevel - 1);
-        };
-
-        // Check if something (e.g. a highlight box on a particular page) is visible
-        this.isRegionInViewport = function (pageIndex, leftOffset, topOffset, width, height)
-        {
-            var layout = divaState.viewerCore.getCurrentLayout();
-
-            if (!layout)
-                return false;
-
-            var offset = layout.getPageOffset(pageIndex);
-
-            var top = offset.top + topOffset;
-            var left = offset.left + leftOffset;
-
-            return viewerState.viewport.intersectsRegion({
-                top: top,
-                bottom: top + height,
-                left: left,
-                right: left + width
-            });
-        };
-
-        //Public wrapper for isPageVisible
-        //Determines if a page is currently in the viewport
-        this.isPageInViewport = function (pageIndex)
-        {
-            return viewerState.renderer.isPageVisible(pageIndex);
-        };
-
-        //Public wrapper for isPageLoaded
-        //Determines if a page is currently in the DOM
-        this.isPageLoaded = function (pageIndex)
-        {
-            console.warn("This method is deprecated. Consider using isPageInViewport(pageIndex) instead.");
-            return this.isPageInViewport(pageIndex);
-        };
-
-        // Toggle fullscreen mode
-        this.toggleFullscreenMode = function ()
-        {
-            toggleFullscreen();
-        };
-
-        // Show/Hide non-paged pages
-        this.toggleNonPagedPagesVisibility = function ()
-        {
-            reloadViewer({ showNonPagedPages: !settings.showNonPagedPages });
-        };
-
-        // Show non-paged pages
-        this.showNonPagedPages = function ()
-        {
-            reloadViewer({ showNonPagedPages: true });
-        };
-
-        // Hide non-paged pages
-        this.hideNonPagedPages = function ()
-        {
-            reloadViewer({ showNonPagedPages: false });
-        };
-
-        // Close toolbar popups
-        this.closePopups = function ()
-        {
-            divaState.toolbar.closePopups();
-        };
-
-        // Enter fullscreen mode if currently not in fullscreen mode
-        // Returns false if in fullscreen mode initially, true otherwise
-        // This function will work even if enableFullscreen is set to false
-        this.enterFullscreenMode = function ()
-        {
-            if (!settings.inFullscreen)
-            {
-                toggleFullscreen();
-                return true;
-            }
-
-            return false;
-        };
-
-        // Leave fullscreen mode if currently in fullscreen mode
-        // Returns true if in fullscreen mode intitially, false otherwise
-        this.leaveFullscreenMode = function ()
-        {
-            if (settings.inFullscreen)
-            {
-                toggleFullscreen();
-                return true;
-            }
-
-            return false;
-        };
-
-        this.isInFullscreen = function ()
-        {
-            return settings.inFullscreen;
-        };
-
-        // Change views. Takes 'document', 'book', or 'grid' to specify which view to switch into
-        this.changeView = function(destinationView)
-        {
-            return changeView(destinationView);
-        };
-
-        // Enter grid view if currently not in grid view
-        // Returns false if in grid view initially, true otherwise
-        this.enterGridView = function ()
-        {
-            if (!settings.inGrid)
-            {
-                changeView('grid');
-                return true;
-            }
-
-            return false;
-        };
-
-        // Leave grid view if currently in grid view
-        // Returns true if in grid view initially, false otherwise
-        this.leaveGridView = function ()
-        {
-            if (settings.inGrid)
-            {
-                reloadViewer({ inGrid: false });
-                return true;
-            }
-
-            return false;
-        };
-
-        // Jump to a page based on its filename
-        // Returns true if successful and false if the filename is invalid
-        this.gotoPageByName = function (filename, xAnchor, yAnchor)
-        {
-            var pageIndex = getPageIndex(filename);
-            return this.gotoPageByIndex(pageIndex, xAnchor, yAnchor);
-        };
-
-        this.gotoPageByLabel = function (label, xAnchor, yAnchor)
-        {
-            var pages = settings.manifest.pages;
-            for (var i = 0, len = pages.length; i < len; i++)
-            {
-                if (pages[i].l.toLowerCase().indexOf(label.toLowerCase()) > -1)
-                    return this.gotoPageByIndex(i, xAnchor, yAnchor);
-            }
-
-            // If no label was found, try to parse a page number
-            var pageIndex = parseInt(label, 10) - 1;
-            return this.gotoPageByIndex(pageIndex, xAnchor, yAnchor);
-        };
-
-        // Get the page index (0-based) corresponding to a given filename
-        // If the page index doesn't exist, this will return -1
-        this.getPageIndex = function (filename)
-        {
-            return getPageIndex(filename);
-        };
-
-        // Get the current URL (exposes the private method)
-        this.getCurrentURL = function ()
-        {
-            return getCurrentURL();
-        };
-
-        // Check if a page index is within the range of the document
-        this.isPageIndexValid = function (pageIndex)
-        {
-            return isPageValid(pageIndex);
-        };
-
-        // Get the hash part only of the current URL (without the leading #)
-        this.getURLHash = function ()
-        {
-            return getURLHash();
-        };
-
-        // Get an object representing the state of this diva instance (for setState)
-        this.getState = function ()
-        {
-            return getState();
-        };
-
-        // Align this diva instance with a state object (as returned by getState)
-        this.setState = function (state)
-        {
-            reloadViewer(getLoadOptionsForState(state));
-        };
-
-        // Get the instance selector for this instance, since it's auto-generated.
-        this.getInstanceSelector = function ()
-        {
-            return settings.selector;
-        };
-
-        // Get the instance ID -- essentially the selector without the leading '#'.
-        this.getInstanceId = function ()
-        {
-            return settings.ID;
-        };
-
-        this.getSettings = function ()
-        {
-            return settings;
-        };
-
-        /*
-            Translates a measurement from the zoom level on the largest size
-            to one on the current zoom level.
-
-            For example, a point 1000 on an image that is on zoom level 2 of 5
-            translates to a position of 111.111... (1000 / (5 - 2)^2).
-
-            Works for a single pixel co-ordinate or a dimension (e.g., translates a box
-            that is 1000 pixels wide on the original to one that is 111.111 pixels wide
-            on the current zoom level).
-        */
-        this.translateFromMaxZoomLevel = function (position)
-        {
-            var zoomDifference = settings.maxZoomLevel - settings.zoomLevel;
-            return position / Math.pow(2, zoomDifference);
-        };
-
-        /*
-            Translates a measurement from the current zoom level to the position on the
-            largest zoom level.
-
-            Works for a single pixel co-ordinate or a dimension (e.g., translates a box
-            that is 111.111 pixels wide on the current image to one that is 1000 pixels wide
-            on the current zoom level).
-        */
-        this.translateToMaxZoomLevel = function (position)
-        {
-            var zoomDifference = settings.maxZoomLevel - settings.zoomLevel;
-
-            // if there is no difference, it's a box on the max zoom level and
-            // we can just return the position.
-            if (zoomDifference === 0)
-                return position;
-
-            return position * Math.pow(2, zoomDifference);
-        };
-
-        // Re-enables document dragging, scrolling (by keyboard if set), and zooming by double-clicking
-        this.enableScrollable = function()
-        {
-            divaState.viewerCore.enableScrollable();
-        };
-
-        // Disables document dragging, scrolling (by keyboard if set), and zooming by double-clicking
-        this.disableScrollable = function ()
-        {
-            divaState.viewerCore.disableScrollable();
-        };
-
-        //Changes between horizontal layout and vertical layout. Returns true if document is now vertically oriented, false otherwise.
-        this.toggleOrientation = function ()
-        {
-            return toggleOrientation();
-        };
-
-        //Returns distance between the northwest corners of diva-inner and page index
-        this.getPageOffset = function(pageIndex, options)
-        {
-            var region = divaState.viewerCore.getPageRegion(pageIndex, options);
-
-            return {
-                top: region.top,
-                left: region.left
-            };
-        };
-
-        //shortcut to getPageOffset for current page
-        this.getCurrentPageOffset = function()
-        {
-            return this.getPageOffset(settings.currentPageIndex);
-        };
-
-        //Returns the page dimensions of given page at the current zoom level
-        this.getPageDimensionsAtCurrentGridLevel = function(pageIndex)
-        {
-            console.warn("This method is deprecated. Consider using getPageDimensionsAtCurrentZoomLevel(pageIndex) instead.");
-            return this.getPageDimensionsAtCurrentZoomLevel(pageIndex);
-        };
-
-        /*
-            Given a pageX and pageY value (as could be retreived from a jQuery event object),
-                returns either the page visible at that (x,y) position or -1 if no page is.
-        */
-        this.getPageIndexForPageXYValues = function(pageX, pageY)
-        {
-            //get the four edges of the outer element
-            var outerOffset = viewerState.outerElement.getBoundingClientRect();
-            var outerTop = outerOffset.top;
-            var outerLeft = outerOffset.left;
-            var outerBottom = outerOffset.bottom;
-            var outerRight = outerOffset.right;
-
-            //if the clicked position was outside the diva-outer object, it was not on a visible portion of a page
-            if (pageX < outerLeft || pageX > outerRight)
-                return -1;
-
-            if (pageY < outerTop || pageY > outerBottom)
-                return -1;
-
-            //navigate through all diva page objects
-            var pages = document.getElementsByClassName('diva-page');
-            var curPageIdx = pages.length;
-            while (curPageIdx--)
-            {
-                //get the offset for each page
-                var curPage = pages[curPageIdx];
-                var curOffset = curPage.getBoundingClientRect();
-
-                //if this point is outside the horizontal boundaries of the page, continue
-                if (pageX < curOffset.left || pageX > curOffset.right)
-                    continue;
-
-                //same with vertical boundaries
-                if (pageY < curOffset.top || pageY > curOffset.bottom)
-                    continue;
-
-                //if we made it through the above two, we found the page we're looking for
-                return curPage.getAttribute('data-index');
-            }
-
-            //if we made it through that entire while loop, we didn't click on a page
-            return -1;
-        };
-
-        /**
-         * Returns a URL for the image of the page at the given index. The
-         * optional size parameter supports setting the image width or height
-         * (default is full-sized).
-         */
-        this.getPageImageURL = function (pageIndex, size)
-        {
-            return settings.manifest.getPageImageURL(pageIndex, size);
-        };
-
-        //Pretty self-explanatory.
-        this.isVerticallyOriented = function()
-        {
-            return settings.verticallyOriented;
-        };
-
-        this.changeObject = function(objectData)
-        {
-            viewerState.loaded = false;
-            divaState.viewerCore.clear();
-
-            if (viewerState.renderer)
-                viewerState.renderer.destroy();
-
-            viewerState.options.objectData = objectData;
-
-            if (typeof objectData === 'object')
-            {
-                setTimeout(function ()
-                {
-                    loadObjectData(objectData);
-                });
-
-                return;
-            }
-
-            viewerState.throbberTimeoutID = setTimeout(function ()
-            {
-                $(settings.selector + 'throbber').show();
-            }, settings.throbberTimeout);
-
-            $.ajax({
-                url: settings.objectData,
-                cache: true,
-                dataType: 'json',
-                error: ajaxError,
-                success: function (responseData)
-                {
-                    loadObjectData(responseData);
-                }
-            });
-        };
-
-        this.activate = function ()
-        {
-            viewerState.isActiveDiva = true;
-        };
-
-        this.deactivate = function ()
-        {
-            viewerState.isActiveDiva = false;
-        };
-
-        // Destroys this instance, tells plugins to do the same (for testing)
-        this.destroy = function ()
-        {
-            divaState.viewerCore.destroy();
-        };
-
-        // "Secretly" expose the page overlay API for the highlight plugin
-        this.__addPageOverlay = function (overlay)
-        {
-            divaState.viewerCore.addPageOverlay(overlay);
-        };
-
-        this.__removePageOverlay = function (overlay)
-        {
-            divaState.viewerCore.removePageOverlay(overlay);
-        };
-
-        /**** Page Alias Functions ****/
-        /*
-         Main function. Will return the first of these three that
-         resolves to boolean true:
-         -Explicit alias as defined in pageAliases
-         -Result of pageAliasFunction
-         -originalPageIndex + 1 (to simulate the original mapping)
-
-         Else the function will return false.
-         */
-        this.getAliasForPageIndex = function(originalPageIndex)
-        {
-            var pageIndex = parseInt(originalPageIndex, 10);
-            return settings.pageAliases[pageIndex] || settings.pageAliasFunction(pageIndex) || pageIndex + 1;
-        };
-
-        /*
-         Returns the first page index found for a given aliased number or false if not found.
-         This may cause issues if a specific alias is found for multiple page indices; use getPageIndicesForAlias and reimplement functions as necessary if this is the case.
-         */
-        this.getPageIndexForAlias = function(aliasedNumber)
-        {
-            for(var idx = 0; idx < settings.numPages; idx++)
-            {
-                if(this.getAliasForPageIndex(idx) === aliasedNumber)
-                {
-                    return idx;
-                }
-            }
-            return false;
-        };
-
-        //Returns array of page indices for a given aliased number. Returns an empty array if none are found.
-        this.getPageIndicesForAlias = function(aliasedNumber)
-        {
-            var indexArr = [];
-            for(var idx = 0; idx < settings.numPages; idx++)
-            {
-                if(this.getAliasForPageIndex(idx) === aliasedNumber)
-                {
-                    indexArr.push(idx);
-                }
-            }
-            return indexArr;
-        };
-
-
-        //Maps the current page index to getAliasForPageIndex
-        this.getCurrentAliasedPageIndex = function()
-        {
-            return this.getAliasForPageIndex(settings.currentPageIndex);
-        };
-
-        //Wrapper for gotoPageByIndex, keeping the aliased numbers in mind
-        this.gotoPageByAliasedNumber = function(aliasedNumber, xAnchor, yAnchor)
-        {
-            return this.gotoPageByIndex(this.getPageIndexForAlias(aliasedNumber), xAnchor, yAnchor);
-        };
-
-        // Call the init function when this object is created.
-        init();
+            // Store the pending request so that it can be cancelled in the event that Diva needs to be destroyed
+            this.divaState.viewerCore.setPendingManifestRequest(pendingManifestRequest);
+        }
+    }
+
+    /**
+     * @private
+     **/
+    _showError (message)
+    {
+        this.divaState.viewerCore.showError(message);
     };
 
-    $.fn.diva = function (options)
+    /**
+     * @private
+     * */
+    _ajaxError (response)
     {
-        return this.each(function ()
+        // Show a basic error message within the document viewer pane
+
+        const errorMessage = ['Invalid objectData setting. Error code: ' + response.status + ' ' + response.statusText];
+
+        // Detect and handle CORS errors
+        const dataHasAbsolutePath = this.settings.objectData.lastIndexOf('http', 0) === 0;
+
+        if (dataHasAbsolutePath && error === '')
         {
-            var divaParent = $(this);
+            const jsonHost = this.settings.objectData.replace(/https?:\/\//i, "").split(/[/?#]/)[0];
 
-            // Return early if this element already has a plugin instance
-            if (divaParent.data('diva'))
-                return;
+            if (location.hostname !== jsonHost)
+            {
+                errorMessage.push(
+                    elt('p', 'Attempted to access cross-origin data without CORS.'),
+                    elt('p',
+                        'You may need to update your server configuration to support CORS. For help, see the ',
+                        elt('a', {
+                            href: 'https://github.com/DDMAL/diva.js/wiki/Installation#a-note-about-cross-site-requests',
+                            target: '_blank'
+                        }, 'cross-site request documentation.')
+                    )
+                );
+            }
+        }
 
-            // Throw an error if the element is not in the DOM, since it causes some problems
-            if (!document.body.contains(this))
-                throw new Error('Diva could not be initialized because this element is not attached to the DOM');
+        this._showError(errorMessage);
+    };
 
-            // Otherwise, instantiate the document viewer
-            var diva = new Diva(this, options);
-            divaParent.data('diva', diva);
+    /**
+     * @private
+     **/
+    _loadObjectData (responseData, hashState)
+    {
+        let manifest;
+
+        // TODO improve IIIF detection method
+        if (!responseData.hasOwnProperty('@context') && (responseData['@context'].indexOf('iiif') === -1 || responseData['@context'].indexOf('shared-canvas') === -1))
+        {
+            throw new NotAnIIIFManifestException('This does not appear to be a IIIF Manifest.');
+        }
+
+        // trigger ManifestDidLoad event
+        // FIXME: Why is this triggered before the manifest is parsed? See https://github.com/DDMAL/diva.js/issues/357
+        diva.Events.publish('ManifestDidLoad', [responseData], self);
+
+        manifest = ImageManifest.fromIIIF(responseData);
+        const loadOptions = hashState ? this._getLoadOptionsForState(hashState, manifest) : {};
+
+        this.divaState.viewerCore.setManifest(manifest, loadOptions);
+    };
+
+    /**
+     * Parse the hash parameters into the format used by getState and setState
+     *
+     * @private
+     **/
+    _getHashParamState ()
+    {
+        const state = {};
+
+        ['f', 'v', 'z', 'n', 'i', 'p', 'y', 'x'].forEach( (param) =>
+        {
+            const value = HashParams.get(param + this.settings.hashParamSuffix);
+
+            // `false` is returned if the value is missing
+            if (value !== false)
+                state[param] = value;
+        });
+
+        // Do some awkward special-casing, since this format is kind of weird.
+
+        // For inFullscreen (f), true and false strings should be interpreted
+        // as booleans.
+        if (state.f === 'true')
+            state.f = true;
+        else if (state.f === 'false')
+            state.f = false;
+
+        // Convert numerical values to integers, if provided
+        ['z', 'n', 'p', 'x', 'y'].forEach( (param) =>
+        {
+            if (param in state)
+                state[param] = parseInt(state[param], 10);
+        });
+
+        return state;
+    };
+
+    /**
+     * @private
+     **/
+    _getLoadOptionsForState (state, manifest)
+    {
+        manifest = manifest || this.settings.manifest;
+
+        const options = ('v' in state) ? this._getViewState(state.v) : {};
+
+        if ('f' in state)
+            options.inFullscreen = state.f;
+
+        if ('z' in state)
+            options.zoomLevel = state.z;
+
+        if ('n' in state)
+            options.pagesPerRow = state.n;
+
+        // Only change specify the page if state.i or state.p is valid
+        let pageIndex = this._getPageIndexForManifest(manifest, state.i);
+
+        if (!(pageIndex >= 0 && pageIndex < manifest.pages.length))
+        {
+            pageIndex = state.p - 1;
+
+            // Possibly NaN
+            if (!(pageIndex >= 0 && pageIndex < manifest.pages.length))
+                pageIndex = null;
+        }
+
+        if (pageIndex !== null)
+        {
+            const horizontalOffset = parseInt(state.x, 10);
+            const verticalOffset = parseInt(state.y, 10);
+
+            options.goDirectlyTo = pageIndex;
+            options.horizontalOffset = horizontalOffset;
+            options.verticalOffset = verticalOffset;
+        }
+
+        return options;
+    };
+
+    /**
+     * @private
+     * */
+    _getViewState (view)
+    {
+        switch (view)
+        {
+            case 'd':
+                return {
+                    inGrid: false,
+                    inBookLayout: false
+                };
+
+            case 'b':
+                return {
+                    inGrid: false,
+                    inBookLayout: true
+                };
+
+            case 'g':
+                return {
+                    inGrid: true,
+                    inBookLayout: false
+                };
+
+            default:
+                return null;
+        }
+    };
+
+    /**
+     * @private
+     * */
+    _getPageIndexForManifest (manifest, filename)
+    {
+        let i;
+        const np = manifest.pages.length;
+
+        for (i = 0; i < np; i++)
+        {
+            if (manifest.pages[i].f === filename)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    };
+
+    /**
+     * @private
+     * */
+    _getState ()
+    {
+        let view;
+
+        if (this.settings.inGrid)
+        {
+            view = 'g';
+        }
+        else if (this.settings.inBookLayout)
+        {
+            view = 'b';
+        }
+        else
+        {
+            view = 'd';
+        }
+
+        const layout = this.divaState.viewerCore.getCurrentLayout();
+        const pageOffset = layout.getPageToViewportCenterOffset(this.settings.currentPageIndex, this.viewerState.viewport);
+
+        return {
+            'f': this.settings.inFullscreen,
+            'v': view,
+            'z': this.settings.zoomLevel,
+            'n': this.settings.pagesPerRow,
+            'i': this.settings.enableFilename ? this.settings.manifest.pages[this.settings.currentPageIndex].f : false,
+            'p': this.settings.enableFilename ? false : this.settings.currentPageIndex + 1,
+            'y': pageOffset ? pageOffset.y : false,
+            'x': pageOffset ? pageOffset.x : false
+        };
+    };
+
+    /**
+     * @private
+     **/
+    _getURLHash ()
+    {
+        const hashParams = this._getState();
+        const hashStringBuilder = [];
+        let param;
+
+        for (param in hashParams)
+        {
+            if (hashParams[param] !== false)
+                hashStringBuilder.push(param + this.settings.hashParamSuffix + '=' + encodeURIComponent(hashParams[param]));
+        }
+
+        return hashStringBuilder.join('&');
+    };
+
+    /**
+     * Returns the page index associated with the given filename; must called after setting settings.manifest
+     *
+     * @private
+     **/
+    _getPageIndex (filename)
+    {
+        return this._getPageIndexForManifest(this.settings.manifest, filename);
+    };
+
+    /**
+     * @private
+     * */
+    _checkLoaded ()
+    {
+        if (!this.viewerState.loaded)
+        {
+            console.warn("The viewer is not completely initialized. This is likely because it is still downloading data. To fix this, only call this function if the isReady() method returns true.");
+            return false;
+        }
+        return true;
+    };
+
+    /**
+     * Called when the fullscreen icon is clicked
+     *
+     * @private
+     **/
+    _toggleFullscreen ()
+    {
+        this._reloadViewer({
+            inFullscreen: !this.settings.inFullscreen
         });
     };
-})(jQuery);
+
+    /**
+     * Toggles between orientations
+     *
+     * @private
+     * */
+    _togglePageLayoutOrientation ()
+    {
+        const verticallyOriented = !this.settings.verticallyOriented;
+
+        //if in grid, switch out of grid
+        this._reloadViewer({
+            inGrid: false,
+            verticallyOriented: verticallyOriented,
+            goDirectlyTo: this.settings.currentPageIndex,
+            verticalOffset: this.divaState.viewerCore.getYOffset(),
+            horizontalOffset: this.divaState.viewerCore.getXOffset()
+        });
+
+        return verticallyOriented;
+    };
+
+    /**
+     * Called when the change view icon is clicked
+     *
+     * @private
+     **/
+    _changeView (destinationView)
+    {
+        switch (destinationView)
+        {
+            case 'document':
+                return this._reloadViewer({
+                    inGrid: false,
+                    inBookLayout: false
+                });
+
+            case 'book':
+                return this._reloadViewer({
+                    inGrid: false,
+                    inBookLayout: true
+                });
+
+            case 'grid':
+                return this._reloadViewer({
+                    inGrid: true
+                });
+
+            default:
+                return false;
+        }
+    };
+
+    /**
+     * @private
+     *
+     * @param {Number} pageIndex - 0-based page index.
+     * @param {Number} xAnchor - x coordinate to jump to on resulting page.
+     * @param {Number} yAnchor - y coordinate to jump to on resulting page.
+     * @returns {Boolean} - Whether the jump was successful.
+     **/
+    _gotoPageByIndex (pageIndex, xAnchor, yAnchor)
+    {
+        let pidx = parseInt(pageIndex, 10);
+
+        if (this._isPageIndexValid(pidx))
+        {
+            const xOffset = this.divaState.viewerCore.getXOffset(pidx, xAnchor);
+            const yOffset = this.divaState.viewerCore.getYOffset(pidx, yAnchor);
+
+            this.viewerState.renderer.goto(pidx, yOffset, xOffset);
+            return true;
+        }
+
+        return false;
+    };
+
+    /**
+     * Check if a page index is valid
+     *
+     * @private
+     * @param {Number} pageIndex - Numeric (0-based) page index
+     * @return {Boolean} whether the page index is valid or not.
+     */
+    _isPageIndexValid (pageIndex)
+    {
+        return settings.manifest.isPageValid(pageIndex, settings.showNonPagedPages);
+    };
+
+    /**
+     * Given a pageX and pageY value, returns either the page visible at that (x,y)
+     * position or -1 if no page is.
+     *
+     * @private
+     */
+    _getPageIndexForPageXYValues (pageX, pageY)
+    {
+        //get the four edges of the outer element
+        const outerOffset = this.viewerState.outerElement.getBoundingClientRect();
+        const outerTop = outerOffset.top;
+        const outerLeft = outerOffset.left;
+        const outerBottom = outerOffset.bottom;
+        const outerRight = outerOffset.right;
+
+        //if the clicked position was outside the diva-outer object, it was not on a visible portion of a page
+        if (pageX < outerLeft || pageX > outerRight)
+            return -1;
+
+        if (pageY < outerTop || pageY > outerBottom)
+            return -1;
+
+        //navigate through all diva page objects
+        const pages = document.getElementsByClassName('diva-page');
+        let curPageIdx = pages.length;
+        while (curPageIdx--)
+        {
+            //get the offset for each page
+            const curPage = pages[curPageIdx];
+            const curOffset = curPage.getBoundingClientRect();
+
+            //if this point is outside the horizontal boundaries of the page, continue
+            if (pageX < curOffset.left || pageX > curOffset.right)
+                continue;
+
+            //same with vertical boundaries
+            if (pageY < curOffset.top || pageY > curOffset.bottom)
+                continue;
+
+            //if we made it through the above two, we found the page we're looking for
+            return curPage.getAttribute('data-index');
+        }
+
+        //if we made it through that entire while loop, we didn't click on a page
+        return -1;
+    };
+
+    /**
+     * @private
+     **/
+    _reloadViewer (newOptions)
+    {
+        return this.divaState.viewerCore.reload(newOptions);
+    };
+
+    /**
+     * @private
+     */
+    _getCurrentURL ()
+    {
+        return location.protocol + '//' + location.host + location.pathname + location.search + '#' + this._getURLHash();
+    };
+
+    /**
+     * ===============================================
+     *                PUBLIC FUNCTIONS
+     * ===============================================
+     **/
+
+    /**
+     *  Activate this instance of diva via the active Diva controller.
+     *
+     *  @public
+     */
+    activate ()
+    {
+        this.viewerState.isActiveDiva = true;
+    };
+
+    /**
+     * Change the object (objectData) parameter currently being rendered by Diva.
+     *
+     * @public
+     * @params {object} objectData - An IIIF Manifest object OR a URL to a IIIF manifest.
+     */
+    changeObject (objectData)
+    {
+        this.viewerState.loaded = false;
+        this.divaState.viewerCore.clear();
+
+        if (this.viewerState.renderer)
+            this.viewerState.renderer.destroy();
+
+        this.viewerState.options.objectData = objectData;
+
+        this._loadOrFetchObjectData();
+    };
+
+    /**
+     * Change views. Takes 'document', 'book', or 'grid' to specify which view to switch into
+     *
+     * @public
+     * @params {string} destinationView - the destination view to change to.
+     */
+    changeView (destinationView)
+    {
+        this._changeView(destinationView);
+    };
+
+    /**
+     * Close all popups on the toolbar.
+     *
+     * @public
+     **/
+    closePopups ()
+    {
+        this.divaState.toolbar.closePopups();
+    };
+
+    /**
+     *  Deactivate this diva instance through the active Diva controller.
+     *
+     *  @public
+     **/
+    deactivate ()
+    {
+        this.viewerState.isActiveDiva = false;
+    };
+
+    /**
+     * Destroys this instance, tells plugins to do the same
+     *
+     * @public
+     **/
+    destroy ()
+    {
+        this.divaState.viewerCore.destroy();
+    };
+
+    /**
+     * Disables document dragging, scrolling (by keyboard if set), and zooming by double-clicking
+     *
+     * @public
+     **/
+    disableScrollable ()
+    {
+        this.divaState.viewerCore.disableScrollable();
+    };
+
+    /**
+     * Re-enables document dragging, scrolling (by keyboard if set), and zooming by double-clicking
+     *
+     * @public
+     **/
+    enableScrollable ()
+    {
+        this.divaState.viewerCore.enableScrollable();
+    };
+
+    /**
+     * Enter fullscreen mode if currently not in fullscreen mode. If currently in fullscreen
+     * mode this will have no effect.
+     *
+     * This function will work even if enableFullscreen is set to false in the options.
+     *
+     * @public
+     * @returns {boolean} - Whether the switch to fullscreen was successful or not.
+     **/
+    enterFullscreenMode ()
+    {
+        if (!this.settings.inFullscreen)
+        {
+            this._toggleFullscreen();
+            return true;
+        }
+
+        return false;
+    };
+
+    /**
+     * Enter grid view if currently not in grid view. If currently in grid view mode
+     * this will have no effect.
+     *
+     * @public
+     * @returns {boolean} - Whether the switch to grid view was successful or not.
+     **/
+    enterGridView ()
+    {
+        if (!this.settings.inGrid)
+        {
+            this._changeView('grid');
+            return true;
+        }
+
+        return false;
+    };
+
+    /**
+     * Return the current URL for the viewer, including the hash parameters reflecting
+     * the current state of the viewer.
+     *
+     * @public
+     * @returns {string} - The URL for the current view state.
+     * */
+    getCurrentURL ()
+    {
+        return this._getCurrentURL();
+    }
+
+    /**
+     * Returns the title of the document, based on the label in the IIIF manifest.
+     *
+     * @public
+     * @returns {string} - The current title of the object from the label key in the IIIF Manifest.
+     **/
+    getItemTitle ()
+    {
+        return this.settings.manifest.itemTitle;
+    };
+
+    /**
+     * Get the canvas identifier for the currently visible page.
+     *
+     * @public
+     * @returns {string} - The URI of the currently visible canvas.
+     **/
+    getCurrentCanvas ()
+    {
+        return this.settings.manifest.pages[this.settings.currentPageIndex].canvas;
+    };
+
+    /**
+     * Returns the dimensions of the current page at the current zoom level. Also works in
+     * grid view.
+     *
+     * @public
+     * @returns {object} - An object containing the current page dimensions at the current zoom level.
+     **/
+    getCurrentPageDimensionsAtCurrentZoomLevel ()
+    {
+        return this.getPageDimensionsAtCurrentZoomLevel(this.settings.currentPageIndex);
+    };
+
+    /**
+     * Returns the current filename (deprecated). Returns the URI for current page.
+     *
+     * @public
+     * @deprecated
+     * @returns {string} - The URI for the current page image.
+     **/
+    getCurrentPageFilename ()
+    {
+        console.warn('This method will be deprecated in the next version of Diva. Please use getCurrentPageURI instead.');
+        return this.settings.manifest.pages[this.settings.currentPageIndex].f;
+    };
+
+    /**
+     * Returns the current URI for the visible page.
+     *
+     * @public
+     * @returns {string} - The URI for the current page image.
+     **/
+    getCurrentPageURI ()
+    {
+        return this.settings.manifest.pages[this.settings.currentPageIndex].f;
+    }
+
+    /**
+     * Returns the 0-based index for the current page.
+     *
+     * @public
+     * @returns {number} - The 0-based index for the currently visible page.
+     **/
+    getCurrentPageIndex ()
+    {
+        return this.settings.currentPageIndex;
+    };
+
+    /**
+     * Shortcut to getPageOffset for current page.
+     *
+     * @public
+     * @returns {} -
+     * */
+    getCurrentPageOffset ()
+    {
+        return this.getPageOffset(this.settings.currentPageIndex);
+    };
+
+    /**
+     * Returns an array of all filenames in the document. Deprecated.
+     *
+     * @public
+     * @deprecated
+     * @returns {Array} - An array of all the URIs in the document.
+     * */
+    getFilenames ()
+    {
+        console.warn('This will be removed in the next version of Diva. Use getAllPageURIs instead.');
+
+        return this.settings.manifest.pages.map( (pg) =>
+        {
+            return pg.f;
+        });
+    };
+
+    /**
+     * Returns an array of all page image URIs in the document.
+     *
+     * @public
+     * @returns {Array} - An array of all the URIs in the document.
+     * */
+    getAllPageURIs ()
+    {
+        return this.settings.manifest.pages.map( (pg) =>
+        {
+            return pg.f;
+        });
+    }
+
+    /**
+     * Get the number of grid pages per row.
+     *
+     * @public
+     * @returns {number} - The number of grid pages per row.
+     **/
+    getGridPagesPerRow ()
+    {
+        // TODO(wabain): Add test case
+        return this.settings.pagesPerRow;
+    };
+
+    /**
+     * Get the instance ID number.
+     *
+     * @public
+     * @returns {number} - The instance ID.
+     * */
+    //
+    getInstanceId ()
+    {
+        return this.settings.ID;
+    };
+
+    /**
+     * Get the instance selector for this instance. This is the selector for the parent
+     * div.
+     *
+     * @public
+     * @returns {string} - The viewport selector.
+     * */
+    getInstanceSelector ()
+    {
+        console.log(this);
+        return this.divaState.viewerCore.selector;
+    };
+
+    /**
+     * Gets the maximum zoom level for the entire document.
+     *
+     * @public
+     * @returns {number} - The maximum zoom level for the document
+     * */
+    getMaxZoomLevel ()
+    {
+        return this.settings.maxZoomLevel;
+    };
+
+    /**
+     * Gets the max zoom level for a given page.
+     *
+     * @public
+     * @param {number} pageIdx - The 0-based index number for the page.
+     * @returns {number} - The maximum zoom level for that page.
+     * */
+    getMaxZoomLevelForPage (pageIdx)
+    {
+        if (!this._checkLoaded())
+            return false;
+
+        return this.settings.manifest.pages[pageIdx].m;
+    };
+
+    /**
+     * Gets the minimum zoom level for the entire document.
+     *
+     * @public
+     * @returns {number} - The minimum zoom level for the document
+     * */
+    getMinZoomLevel ()
+    {
+        return this.settings.minZoomLevel;
+    };
+
+    /**
+     * Gets the number of pages in the document.
+     *
+     * @public
+     * @returns {number} - The number of pages in the document.
+     * */
+    getNumberOfPages ()
+    {
+        if (!this._checkLoaded())
+            return false;
+
+        return this.settings.numPages;
+    };
+
+    /**
+     * If a canvas has multiple images defined, returns the non-primary image.
+     *
+     * @public
+     * @params {number} pageIndex - The page index for which to return the other images.
+     * @returns {object} An object containing the other images.
+     **/
+    getOtherImages (pageIndex)
+    {
+        return this.settings.manifest.pages[pageIndex].otherImages;
+    }
+
+    /**
+     * Get page dimensions in the current view and zoom level
+     *
+     * @public
+     * @params {number} pageIndex - A valid 0-based page index
+     * @returns {object} - An object containing the dimensions of the page
+     * */
+    getPageDimensions (pageIndex)
+    {
+        if (!this._checkLoaded())
+            return null;
+
+        return this.divaState.viewerCore.getCurrentLayout().getPageDimensions(pageIndex);
+    };
+
+    /**
+     * Get page dimensions at a given zoom level
+     *
+     * @public
+     * @params {number} pageIdx - A valid 0-based page index
+     * @params {number} zoomLevel - A candidate zoom level.
+     * @returns {object} - An object containing the dimensions of the page at the given zoom level.
+     **/
+    getPageDimensionsAtZoomLevel (pageIdx, zoomLevel)
+    {
+        if (!this._checkLoaded())
+            return false;
+
+        if (zoomLevel > this.settings.maxZoomLevel)
+            zoomLevel = this.settings.maxZoomLevel;
+
+        const pg = this.settings.manifest.pages[parseInt(pageIdx, 10)];
+        const pgAtZoom = pg.d[parseInt(zoomLevel, 10)];
+
+        return {
+            width: pgAtZoom.w,
+            height: pgAtZoom.h
+        };
+    };
+
+    /**
+     * Returns the dimensions of a given page at the current zoom level.
+     * Also works in Grid view
+     *
+     * @public
+     * @param {number} pageIndex - The 0-based page index
+     * @returns {object} - An object containing the page dimensions at the current zoom level.
+     * */
+    getPageDimensionsAtCurrentZoomLevel (pageIndex)
+    {
+        let pidx = parseInt(pageIndex, 10);
+
+        if (!this._isPageIndexValid(pidx))
+            throw new Error('Invalid Page Index');
+
+        return this.divaState.viewerCore.getCurrentLayout().getPageDimensions(pidx);
+    };
+
+    /**
+     * Returns a URL for the image of the page at the given index. The
+     * optional size parameter supports setting the image width or height
+     * (default is full-sized).
+     *
+     * @public
+     * @params {number} pageIndex - 0-based page index
+     * @params {?object} size - an object containing width and height information
+     * @returns {string} - The IIIF URL for a given page at an optional size
+     */
+    getPageImageURL (pageIndex, size)
+    {
+        return this.settings.manifest.getPageImageURL(pageIndex, size);
+    };
+
+    /**
+     * Given a set of co-ordinates (e.g., from a mouse click), return the 0-based page index
+     * for which it matches.
+     *
+     * @public
+     * @params {number} pageX - The x co-ordinate
+     * @params {number} pageY - The y co-ordinate
+     * @returns {number} - The page index matching the co-ordinates.
+     * */
+    getPageIndexForPageXYValues (pageX, pageY)
+    {
+        return this._getPageIndexForPageXYValues(pageX, pageY);
+    }
+
+    /**
+     * Returns distance between the northwest corners of diva-inner and page index.
+     *
+     * @public
+     * @params {number} pageIndex - The 0-based page index
+     * @params {?options} options - A set of options to pass in.
+     * @returns {object} - The offset between the upper left corner and the page.
+     *
+     * */
+    getPageOffset (pageIndex, options)
+    {
+        const region = this.divaState.viewerCore.getPageRegion(pageIndex, options);
+
+        return {
+            top: region.top,
+            left: region.left
+        };
+    };
+
+    /**
+     * Get the instance settings.
+     *
+     * @public
+     * @returns {object} - The current instance settings.
+     * */
+    getSettings ()
+    {
+        return this.settings;
+    };
+
+    /**
+     * Get an object representing the complete state of the viewer.
+     *
+     * @public
+     * @returns {object} - The current instance state.
+     * */
+    getState (state)
+    {
+        return this._getState();
+    }
+
+    /**
+     * Get the current zoom level.
+     *
+     * @public
+     * @returns {number} - The current zoom level.
+     * */
+    getZoomLevel ()
+    {
+        return this.settings.zoomLevel;
+    };
+
+    /**
+     *  Go to a particular page (with indexing starting at 0).
+     *  The (xAnchor) side of the page will be anchored to the (xAnchor) side of the diva-outer element
+     *
+     *  @public
+     *  @params {number} pageIndex - 0-based page index.
+     *  @params {?string} xAnchor - may either be "left", "right", or default "center"
+     *  @params {?string} yAnchor - may either be "top", "bottom", or default "center"; same process as xAnchor.
+     *  @returns {boolean} - True if the page index is valid; false if it is not.
+     * */
+    gotoPageByIndex (pageIndex, xAnchor, yAnchor)
+    {
+        this._gotoPageByIndex(pageIndex, xAnchor, yAnchor);
+    }
+
+    /**
+     * Given a canvas label, attempt to go to that page. If no label was found.
+     * the label will be attempted to match against the page index.
+     *
+     * @public
+     * @params {string} label - The label to search on.
+     * @params {?string} xAnchor - may either be "left", "right", or default "center"
+     * @params {?string} yAnchor - may either be "top", "bottom", or default "center"
+     * @returns {boolean} - True if the page index is valid; false if it is not.
+     * */
+    gotoPageByLabel (label, xAnchor, yAnchor)
+    {
+        const pages = this.settings.manifest.pages;
+        let llc = label.toLowerCase();
+
+        for (let i = 0, len = pages.length; i < len; i++)
+        {
+            if (pages[i].l.toLowerCase().indexOf(llc) > -1)
+                return this._gotoPageByIndex(i, xAnchor, yAnchor);
+        }
+
+        const pageIndex = parseInt(label, 10) - 1;
+        return this._gotoPageByIndex(pageIndex, xAnchor, yAnchor);
+    };
+
+    /**
+     * Jump to a page based on its filename. Deprecated. Use gotoPageByURI instead.
+     *
+     * @public
+     * @params {string} filename - The filename of the image to jump to.
+     * @params {?string} xAnchor - may either be "left", "right", or default "center"
+     * @params {?string} yAnchor - may either be "top", "bottom", or default "center"
+     * @returns {boolean} true if successful and false if the filename is not found.
+    */
+    gotoPageByName (filename, xAnchor, yAnchor)
+    {
+        console.warn('This method will be removed in the next version of Diva.js. Use gotoPageByURI instead.');
+        const pageIndex = this._getPageIndex(filename);
+        return this._gotoPageByIndex(pageIndex, xAnchor, yAnchor);
+    };
+
+    /**
+     * Jump to a page based on its URI.
+     *
+     * @public
+     * @params {string} uri - The URI of the image to jump to.
+     * @params {?string} xAnchor - may either be "left", "right", or default "center"
+     * @params {?string} yAnchor - may either be "top", "bottom", or default "center"
+     * @returns {boolean} true if successful and false if the URI is not found.
+     */
+    gotoPageByURI (uri, xAnchor, yAnchor)
+    {
+        const pageIndex = this._getPageIndex(uri);
+        return this._gotoPageByIndex(pageIndex, xAnchor, yAnchor);
+    };
+
+    /**
+     * Whether the page has other images to display.
+     *
+     * @public
+     * @params {number} pageIndex - The 0-based page index
+     * @returns {boolean} Whether the page has other images to display.
+     **/
+    hasOtherImages (pageIndex)
+    {
+        return this.settings.manifest.pages[pageIndex].otherImages === true;
+    }
+
+    /**
+     * Hides the pages that are marked "non-paged" in the IIIF manifest.
+     *
+     * @public
+     **/
+    hideNonPagedPages ()
+    {
+        this._reloadViewer({ showNonPagedPages: false });
+    };
+
+    /**
+     * Is the viewer currently in full-screen mode?
+     *
+     * @public
+     * @returns {boolean} - Whether the viewer is in fullscreen mode.
+     **/
+    isInFullscreen ()
+    {
+        return this.settings.inFullscreen;
+    };
+
+    /**
+     * Check if a page index is within the range of the document
+     *
+     * @public
+     * @returns {boolean} - Whether the page index is valid.
+     **/
+    isPageIndexValid (pageIndex)
+    {
+        return this._isPageIndexValid(pageIndex);
+    };
+
+    /**
+     * Determines if a page is currently in the viewport
+     *
+     * @public
+     * @params {number} pageIndex - The 0-based page index
+     * @returns {boolean} - Whether the page is currently in the viewport.
+     **/
+    isPageInViewport (pageIndex)
+    {
+        return this.viewerState.renderer.isPageVisible(pageIndex);
+    };
+
+    /**
+     * Whether the Diva viewer has been fully initialized.
+     *
+     * @public
+     * @returns {boolean} - True if the viewer is initialized; false otherwise.
+     **/
+    isReady ()
+    {
+        return this.viewerState.loaded;
+    };
+
+    /**
+     * Check if something (e.g. a highlight box on a particular page) is visible
+     *
+     * @public
+     * @params {number} pageIndex - The 0-based page index
+     * @params {number} leftOffset - The distance of the region from the left of the viewport
+     * @params {number} topOffset - The distance of the region from the top of the viewport
+     * @params {number} width - The width of the region
+     * @params {number} height - The height of the region
+     * @returns {boolean} - Whether the region is in the viewport.
+     **/
+    isRegionInViewport (pageIndex, leftOffset, topOffset, width, height)
+    {
+        const layout = this.divaState.viewerCore.getCurrentLayout();
+
+        if (!layout)
+            return false;
+
+        const offset = layout.getPageOffset(pageIndex);
+
+        const top = offset.top + topOffset;
+        const left = offset.left + leftOffset;
+
+        return this.viewerState.viewport.intersectsRegion({
+            top: top,
+            bottom: top + height,
+            left: left,
+            right: left + width
+        });
+    };
+
+    /**
+     * Whether the page layout is vertically or horizontally oriented.
+     *
+     * @public
+     * @returns {boolean} - True if vertical; false if horizontal.
+     **/
+    isVerticallyOriented ()
+    {
+        return this.settings.verticallyOriented;
+    };
+
+    /**
+     * Leave fullscreen mode if currently in fullscreen mode.
+     *
+     * @public
+     * @returns {boolean} - true if in fullscreen mode intitially, false otherwise
+     **/
+    leaveFullscreenMode ()
+    {
+        if (this.settings.inFullscreen)
+        {
+            this.toggleFullscreen();
+            return true;
+        }
+
+        return false;
+    };
+
+    /**
+     * Leave grid view if currently in grid view.
+     *
+     * @public
+     * @returns {boolean} - true if in grid view initially, false otherwise
+     **/
+    leaveGridView ()
+    {
+        if (this.settings.inGrid)
+        {
+            this._reloadViewer({ inGrid: false });
+            return true;
+        }
+
+        return false;
+    };
+
+    /**
+     * Set the number of grid pages per row.
+     *
+     * @public
+     * @params {number} pagesPerRow - The number of pages per row
+     * @returns {boolean} - True if the operation was successful.
+     **/
+    setGridPagesPerRow (pagesPerRow)
+    {
+        // TODO(wabain): Add test case
+        if (!this.divaState.viewerCore.isValidOption('pagesPerRow', pagesPerRow))
+            return false;
+
+        return this._reloadViewer({
+            inGrid: true,
+            pagesPerRow: pagesPerRow
+        });
+    };
+
+    /**
+     * Align this diva instance with a state object (as returned by getState)
+     *
+     * @public
+     * @params {object} state - A Diva state object.
+     * @returns {boolean} - True if the operation was successful.
+     **/
+    setState (state)
+    {
+        this._reloadViewer(this._getLoadOptionsForState(state));
+    };
+
+    /**
+     * Show non-paged pages.
+     *
+     * @public
+     * @returns {boolean} - True if the operation was successful.
+     **/
+    showNonPagedPages ()
+    {
+        this._reloadViewer({ showNonPagedPages: true });
+    };
+
+    /**
+     * Sets the zoom level.
+     *
+     * @public
+     * @returns {boolean} - True if the operation was successful.
+     **/
+    setZoomLevel (zoomLevel)
+    {
+        if (this.settings.inGrid)
+        {
+            this._reloadViewer({
+                inGrid: false
+            });
+        }
+
+        return this.divaState.viewerCore.zoom(zoomLevel);
+    };
+
+    /**
+     * Toggle fullscreen mode.
+     *
+     * @public
+     * @returns {boolean} - True if the operation was successful.
+     **/
+    toggleFullscreenMode ()
+    {
+        this._toggleFullscreen();
+    };
+
+    /**
+     * Show/Hide non-paged pages
+     *
+     * @public
+     * @returns {boolean} - True if the operation was successful.
+     **/
+    toggleNonPagedPagesVisibility ()
+    {
+        this._reloadViewer({
+            showNonPagedPages: !this.settings.showNonPagedPages
+        });
+    };
+
+    //Changes between horizontal layout and vertical layout. Returns true if document is now vertically oriented, false otherwise.
+    toggleOrientation ()
+    {
+        return this._togglePageLayoutOrientation();
+    };
+
+    /**
+     * Translates a measurement from the zoom level on the largest size
+     * to one on the current zoom level.
+     *
+     * For example, a point 1000 on an image that is on zoom level 2 of 5
+     * translates to a position of 111.111... (1000 / (5 - 2)^2).
+     *
+     * Works for a single pixel co-ordinate or a dimension (e.g., translates a box
+     * that is 1000 pixels wide on the original to one that is 111.111 pixels wide
+     * on the current zoom level).
+     *
+     * @public
+     * @params {number} position - A point on the max zoom level
+     * @returns {number} - The same point on the current zoom level.
+    */
+    translateFromMaxZoomLevel (position)
+    {
+        const zoomDifference = this.settings.maxZoomLevel - this.settings.zoomLevel;
+        return position / Math.pow(2, zoomDifference);
+    };
+
+    /**
+     * Translates a measurement from the current zoom level to the position on the
+     * largest zoom level.
+     *
+     * Works for a single pixel co-ordinate or a dimension (e.g., translates a box
+     * that is 111.111 pixels wide on the current image to one that is 1000 pixels wide
+     * on the current zoom level).
+     *
+     * @public
+     * @params {number} position - A point on the current zoom level
+     * @returns {number} - The same point on the max zoom level.
+    */
+    translateToMaxZoomLevel (position)
+    {
+        const zoomDifference = this.settings.maxZoomLevel - this.settings.zoomLevel;
+
+        // if there is no difference, it's a box on the max zoom level and
+        // we can just return the position.
+        if (zoomDifference === 0)
+            return position;
+
+        return position * Math.pow(2, zoomDifference);
+    };
+
+    /**
+     * Zoom in.
+     *
+     * @public
+     * @returns {boolean} - false if it's at the maximum zoom
+     **/
+    zoomIn ()
+    {
+        return this.setZoomLevel(this.settings.zoomLevel + 1);
+    };
+
+    /**
+     * Zoom out.
+     * @returns {boolean} - false if it's at the minimum zoom
+     **/
+    zoomOut ()
+    {
+        return this.setZoomLevel(this.settings.zoomLevel - 1);
+    };
+}
+
+export default Diva;
+
+/**
+ * Make `Diva` available in the global context.
+ * */
+(function (global)
+{
+    global.Diva = global.Diva || Diva;
+    global.Diva.Events = diva.Events;
+})(window);
