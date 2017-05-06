@@ -35,9 +35,9 @@ function cleanTemp (done)
 function lint (files)
 {
     return gulp.src(files)
-               .pipe(p.eslint())
-               .pipe(p.eslint.format())
-               .pipe(p.eslint.failAfterError());
+               .pipe(p.jshint({lookup: true, devel: true}))
+               .pipe(p.jshint.reporter('jshint-stylish'))
+               .pipe(p.jshint.reporter('fail'));
 }
 
 function lintSrc ()
