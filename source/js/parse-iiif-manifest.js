@@ -70,8 +70,9 @@ export default function parseIIIFManifest (manifest)
         lowestMaxZoom = Math.min(lowestMaxZoom, mz);
     }
 
-    // Uint8Arrays are pre-initialized with zeroes. These ones need to be
-    // pre-initialized since we will do arithmetic and value checking on them
+    /*
+        These arrays need to be pre-initialized since we will do arithmetic and value checking on them
+    */
     const totalWidths = new Array(lowestMaxZoom + 1).fill(0);
     const totalHeights = new Array(lowestMaxZoom + 1).fill(0);
     const maxWidths = new Array(lowestMaxZoom + 1).fill(0);

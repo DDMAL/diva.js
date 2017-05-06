@@ -141,10 +141,8 @@ function _brightness (r, g, b, adjust)
         g + adj,
         b + adj,
         255
-    ]
+    ];
 }
-
-
 
 export function contrast (data, adjust)
 {
@@ -351,9 +349,8 @@ export function hsvToRGB (h, s, v)
         r: Math.floor(r * 255),
         g: Math.floor(g * 255),
         b: Math.floor(b * 255)
-    }
+    };
 }
-
 
 
 /*********************************************

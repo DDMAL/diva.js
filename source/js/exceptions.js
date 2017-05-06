@@ -5,7 +5,7 @@ export function DivaParentElementNotFoundException (message)
     this.stack = (new Error()).stack;
 }
 
-DivaParentElementNotFoundException.prototype = new Error;
+DivaParentElementNotFoundException.prototype = new Error();
 
 export function NotAnIIIFManifestException (message)
 {
@@ -14,7 +14,7 @@ export function NotAnIIIFManifestException (message)
     this.stack = (new Error()).stack;
 }
 
-NotAnIIIFManifestException.prototype = new Error;
+NotAnIIIFManifestException.prototype = new Error();
 
 export function ObjectDataNotSuppliedException (message)
 {
@@ -23,4 +23,4 @@ export function ObjectDataNotSuppliedException (message)
     this.stack = (new Error()).stack;
 }
 
-ObjectDataNotSuppliedException.prototype = new Error;
+ObjectDataNotSuppliedException.prototype = new Error();

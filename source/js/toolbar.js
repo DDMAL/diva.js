@@ -20,14 +20,14 @@ export default class Toolbar
             return Object.assign(attrs, base);
         else
             return attrs;
-    };
+    }
 
 
     /** Convenience function to subscribe to a Diva event */
     _subscribe (event, callback)
     {
         diva.Events.subscribe(event, callback, this.settings.ID);
-    };
+    }
 
 
     createButton (name, label, callback, icon)

@@ -24,4 +24,4 @@ export default function getSinglesLayoutGroups (viewerConfig)
     });
 
     return pages;
-};
+}

@@ -1,3 +1,5 @@
+import TileCoverageMap from "./tile-coverage-map";
+
 /**
  * @class CompositeImage
  * @private
@@ -150,44 +152,15 @@ export default class CompositeImage
     }
 }
 
-class TileCoverageMap
-{
-    constructor (rows, cols)
-    {
-        this._rows = rows;
-        this._cols = cols;
-        // this._map = rows.fill(cols);
-        // this._map = fill(rows).map(() => fill(cols, false));
-        this._map = new Array(rows).fill(new Array(cols).fill(false));
-        debugger;
-    }
-
-    isLoaded (row, col)
-    {
-        // Return true for out of bounds tiles because they
-        // don't need to load. (Unfortunately this will also
-        // mask logical errors.)
-        if (row >= this._rows || col >= this._cols)
-            return true;
-
-        return this._map[row][col];
-    }
-
-    set(row, col, value)
-    {
-        this._map[row][col] = value;
-    }
-}
-
-function fill (count, value)
-{
-    const arr = new Array(count);
-
-    for (let i=0; i < count; i++)
-        arr[i] = value;
-
-    return arr;
-}
+// function fill (count, value)
+// {
+//     const arr = new Array(count);
+//
+//     for (let i=0; i < count; i++)
+//         arr[i] = value;
+//
+//     return arr;
+// }
 
 function findIndex (array, predicate)
 {

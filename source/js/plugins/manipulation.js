@@ -173,7 +173,7 @@ export default class ManipulationPlugin
 
         this._sidebar.appendChild(primaryImgDiv);
 
-        primaryImgDiv.addEventListener('click', () => { this._loadImageInMainArea.call(this, event, this._page.url) });
+        primaryImgDiv.addEventListener('click', () => { this._loadImageInMainArea.call(this, event, this._page.url); });
 
         otherImageURLs.map( (url, idx) =>
         {
@@ -192,7 +192,7 @@ export default class ManipulationPlugin
             this._sidebar.appendChild(othDiv);
 
             othDiv.addEventListener('click', () => this._loadImageInMainArea.call(this, event, this._page.otherImages[idx].url));
-        })
+        });
     }
 
     _initializeTools ()

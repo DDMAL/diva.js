@@ -1,7 +1,7 @@
 export default {
     get: getHashParam,
     update: updateHashParam
-}
+};
 
 
 // For getting the #key values from the URL. For specifying a page and zoom level
@@ -58,7 +58,7 @@ function updateHashParam (key, value)
     if (originalValue !== value)
     {
         // Is the key already in the URL?
-        if (typeof originalValue == 'string')
+        if (typeof originalValue === 'string')
         {
             // Already in the URL. Just get rid of the original value
             const startIndex = (hash.indexOf('&' + key + '=') > 0) ? hash.indexOf('&' + key + '=') : hash.indexOf('#' + key + '=');

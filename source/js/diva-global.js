@@ -42,10 +42,10 @@ const diva = {
 
 export default diva;
 
-function reprElem(elem)
-{
-    const id = elem.id ? '#' + elem.id : elem.id;
-    const classes = elem.className ? '.' + elem.className.split(/\s+/g).join('.') : '';
-
-    return (id ? id : elem.tagName.toLowerCase()) + classes;
-}
+// function reprElem(elem)
+// {
+//     const id = elem.id ? '#' + elem.id : elem.id;
+//     const classes = elem.className ? '.' + elem.className.split(/\s+/g).join('.') : '';
+//
+//     return (id ? id : elem.tagName.toLowerCase()) + classes;
+// }

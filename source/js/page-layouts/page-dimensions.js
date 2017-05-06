@@ -6,4 +6,4 @@ export default function getPageDimensions (pageIndex, manifest)
         width: Math.floor(dims.width),
         height: Math.floor(dims.height)
     };
-};
+}

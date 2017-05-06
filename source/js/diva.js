@@ -157,7 +157,7 @@ class Diva
     _showError (message)
     {
         this.divaState.viewerCore.showError(message);
-    };
+    }
 
     /**
      * @private
@@ -165,17 +165,16 @@ class Diva
     _ajaxError (response)
     {
         // Show a basic error message within the document viewer pane
-
         const errorMessage = ['Invalid objectData setting. Error code: ' + response.status + ' ' + response.statusText];
 
         // Detect and handle CORS errors
         const dataHasAbsolutePath = this.settings.objectData.lastIndexOf('http', 0) === 0;
 
-        if (dataHasAbsolutePath && error === '')
+        if (dataHasAbsolutePath)
         {
             const jsonHost = this.settings.objectData.replace(/https?:\/\//i, "").split(/[/?#]/)[0];
 
-            if (location.hostname !== jsonHost)
+            if (window.location.hostname !== jsonHost)
             {
                 errorMessage.push(
                     elt('p', 'Attempted to access cross-origin data without CORS.'),
@@ -191,7 +190,7 @@ class Diva
         }
 
         this._showError(errorMessage);
-    };
+    }
 
     /**
      * @private
@@ -208,13 +207,13 @@ class Diva
 
         // trigger ManifestDidLoad event
         // FIXME: Why is this triggered before the manifest is parsed? See https://github.com/DDMAL/diva.js/issues/357
-        diva.Events.publish('ManifestDidLoad', [responseData], self);
+        diva.Events.publish('ManifestDidLoad', [responseData], this);
 
         manifest = ImageManifest.fromIIIF(responseData);
         const loadOptions = hashState ? this._getLoadOptionsForState(hashState, manifest) : {};
 
         this.divaState.viewerCore.setManifest(manifest, loadOptions);
-    };
+    }
 
     /**
      * Parse the hash parameters into the format used by getState and setState
@@ -251,7 +250,7 @@ class Diva
         });
 
         return state;
-    };
+    }
 
     /**
      * @private
@@ -294,7 +293,7 @@ class Diva
         }
 
         return options;
-    };
+    }
 
     /**
      * @private
@@ -324,7 +323,7 @@ class Diva
             default:
                 return null;
         }
-    };
+    }
 
     /**
      * @private
@@ -343,7 +342,7 @@ class Diva
         }
 
         return -1;
-    };
+    }
 
     /**
      * @private
@@ -378,7 +377,7 @@ class Diva
             'y': pageOffset ? pageOffset.y : false,
             'x': pageOffset ? pageOffset.x : false
         };
-    };
+    }
 
     /**
      * @private
@@ -396,7 +395,7 @@ class Diva
         }
 
         return hashStringBuilder.join('&');
-    };
+    }
 
     /**
      * Returns the page index associated with the given filename; must called after setting settings.manifest
@@ -406,7 +405,7 @@ class Diva
     _getPageIndex (filename)
     {
         return this._getPageIndexForManifest(this.settings.manifest, filename);
-    };
+    }
 
     /**
      * @private
@@ -419,7 +418,7 @@ class Diva
             return false;
         }
         return true;
-    };
+    }
 
     /**
      * Called when the fullscreen icon is clicked
@@ -431,7 +430,7 @@ class Diva
         this._reloadViewer({
             inFullscreen: !this.settings.inFullscreen
         });
-    };
+    }
 
     /**
      * Toggles between orientations
@@ -452,7 +451,7 @@ class Diva
         });
 
         return verticallyOriented;
-    };
+    }
 
     /**
      * Called when the change view icon is clicked
@@ -483,7 +482,7 @@ class Diva
             default:
                 return false;
         }
-    };
+    }
 
     /**
      * @private
@@ -507,7 +506,7 @@ class Diva
         }
 
         return false;
-    };
+    }
 
     /**
      * Check if a page index is valid
@@ -518,8 +517,8 @@ class Diva
      */
     _isPageIndexValid (pageIndex)
     {
-        return settings.manifest.isPageValid(pageIndex, settings.showNonPagedPages);
-    };
+        return this.settings.manifest.isPageValid(pageIndex, this.settings.showNonPagedPages);
+    }
 
     /**
      * Given a pageX and pageY value, returns either the page visible at that (x,y)
@@ -566,7 +565,7 @@ class Diva
 
         //if we made it through that entire while loop, we didn't click on a page
         return -1;
-    };
+    }
 
     /**
      * @private
@@ -574,7 +573,7 @@ class Diva
     _reloadViewer (newOptions)
     {
         return this.divaState.viewerCore.reload(newOptions);
-    };
+    }
 
     /**
      * @private
@@ -582,7 +581,7 @@ class Diva
     _getCurrentURL ()
     {
         return location.protocol + '//' + location.host + location.pathname + location.search + '#' + this._getURLHash();
-    };
+    }
 
     /**
      * ===============================================
@@ -598,7 +597,7 @@ class Diva
     activate ()
     {
         this.viewerState.isActiveDiva = true;
-    };
+    }
 
     /**
      * Change the object (objectData) parameter currently being rendered by Diva.
@@ -617,7 +616,7 @@ class Diva
         this.viewerState.options.objectData = objectData;
 
         this._loadOrFetchObjectData();
-    };
+    }
 
     /**
      * Change views. Takes 'document', 'book', or 'grid' to specify which view to switch into
@@ -628,7 +627,7 @@ class Diva
     changeView (destinationView)
     {
         this._changeView(destinationView);
-    };
+    }
 
     /**
      * Close all popups on the toolbar.
@@ -638,7 +637,7 @@ class Diva
     closePopups ()
     {
         this.divaState.toolbar.closePopups();
-    };
+    }
 
     /**
      *  Deactivate this diva instance through the active Diva controller.
@@ -648,7 +647,7 @@ class Diva
     deactivate ()
     {
         this.viewerState.isActiveDiva = false;
-    };
+    }
 
     /**
      * Destroys this instance, tells plugins to do the same
@@ -658,7 +657,7 @@ class Diva
     destroy ()
     {
         this.divaState.viewerCore.destroy();
-    };
+    }
 
     /**
      * Disables document dragging, scrolling (by keyboard if set), and zooming by double-clicking
@@ -668,7 +667,7 @@ class Diva
     disableScrollable ()
     {
         this.divaState.viewerCore.disableScrollable();
-    };
+    }
 
     /**
      * Re-enables document dragging, scrolling (by keyboard if set), and zooming by double-clicking
@@ -678,7 +677,7 @@ class Diva
     enableScrollable ()
     {
         this.divaState.viewerCore.enableScrollable();
-    };
+    }
 
     /**
      * Enter fullscreen mode if currently not in fullscreen mode. If currently in fullscreen
@@ -698,7 +697,7 @@ class Diva
         }
 
         return false;
-    };
+    }
 
     /**
      * Enter grid view if currently not in grid view. If currently in grid view mode
@@ -716,7 +715,7 @@ class Diva
         }
 
         return false;
-    };
+    }
 
     /**
      * Return the current URL for the viewer, including the hash parameters reflecting
@@ -739,7 +738,7 @@ class Diva
     getItemTitle ()
     {
         return this.settings.manifest.itemTitle;
-    };
+    }
 
     /**
      * Get the canvas identifier for the currently visible page.
@@ -750,7 +749,7 @@ class Diva
     getCurrentCanvas ()
     {
         return this.settings.manifest.pages[this.settings.currentPageIndex].canvas;
-    };
+    }
 
     /**
      * Returns the dimensions of the current page at the current zoom level. Also works in
@@ -762,7 +761,7 @@ class Diva
     getCurrentPageDimensionsAtCurrentZoomLevel ()
     {
         return this.getPageDimensionsAtCurrentZoomLevel(this.settings.currentPageIndex);
-    };
+    }
 
     /**
      * Returns the current filename (deprecated). Returns the URI for current page.
@@ -775,7 +774,7 @@ class Diva
     {
         console.warn('This method will be deprecated in the next version of Diva. Please use getCurrentPageURI instead.');
         return this.settings.manifest.pages[this.settings.currentPageIndex].f;
-    };
+    }
 
     /**
      * Returns the current URI for the visible page.
@@ -797,7 +796,7 @@ class Diva
     getCurrentPageIndex ()
     {
         return this.settings.currentPageIndex;
-    };
+    }
 
     /**
      * Shortcut to getPageOffset for current page.
@@ -808,7 +807,7 @@ class Diva
     getCurrentPageOffset ()
     {
         return this.getPageOffset(this.settings.currentPageIndex);
-    };
+    }
 
     /**
      * Returns an array of all filenames in the document. Deprecated.
@@ -825,7 +824,7 @@ class Diva
         {
             return pg.f;
         });
-    };
+    }
 
     /**
      * Returns an array of all page image URIs in the document.
@@ -851,7 +850,7 @@ class Diva
     {
         // TODO(wabain): Add test case
         return this.settings.pagesPerRow;
-    };
+    }
 
     /**
      * Get the instance ID number.
@@ -863,7 +862,7 @@ class Diva
     getInstanceId ()
     {
         return this.settings.ID;
-    };
+    }
 
     /**
      * Get the instance selector for this instance. This is the selector for the parent
@@ -876,7 +875,7 @@ class Diva
     {
         console.log(this);
         return this.divaState.viewerCore.selector;
-    };
+    }
 
     /**
      * Gets the maximum zoom level for the entire document.
@@ -887,7 +886,7 @@ class Diva
     getMaxZoomLevel ()
     {
         return this.settings.maxZoomLevel;
-    };
+    }
 
     /**
      * Gets the max zoom level for a given page.
@@ -902,7 +901,7 @@ class Diva
             return false;
 
         return this.settings.manifest.pages[pageIdx].m;
-    };
+    }
 
     /**
      * Gets the minimum zoom level for the entire document.
@@ -913,7 +912,7 @@ class Diva
     getMinZoomLevel ()
     {
         return this.settings.minZoomLevel;
-    };
+    }
 
     /**
      * Gets the number of pages in the document.
@@ -927,7 +926,7 @@ class Diva
             return false;
 
         return this.settings.numPages;
-    };
+    }
 
     /**
      * If a canvas has multiple images defined, returns the non-primary image.
@@ -954,7 +953,7 @@ class Diva
             return null;
 
         return this.divaState.viewerCore.getCurrentLayout().getPageDimensions(pageIndex);
-    };
+    }
 
     /**
      * Get page dimensions at a given zoom level
@@ -979,7 +978,7 @@ class Diva
             width: pgAtZoom.w,
             height: pgAtZoom.h
         };
-    };
+    }
 
     /**
      * Returns the dimensions of a given page at the current zoom level.
@@ -997,7 +996,7 @@ class Diva
             throw new Error('Invalid Page Index');
 
         return this.divaState.viewerCore.getCurrentLayout().getPageDimensions(pidx);
-    };
+    }
 
     /**
      * Returns a URL for the image of the page at the given index. The
@@ -1012,7 +1011,7 @@ class Diva
     getPageImageURL (pageIndex, size)
     {
         return this.settings.manifest.getPageImageURL(pageIndex, size);
-    };
+    }
 
     /**
      * Given a set of co-ordinates (e.g., from a mouse click), return the 0-based page index
@@ -1045,7 +1044,7 @@ class Diva
             top: region.top,
             left: region.left
         };
-    };
+    }
 
     /**
      * Get the instance settings.
@@ -1056,7 +1055,7 @@ class Diva
     getSettings ()
     {
         return this.settings;
-    };
+    }
 
     /**
      * Get an object representing the complete state of the viewer.
@@ -1078,7 +1077,7 @@ class Diva
     getZoomLevel ()
     {
         return this.settings.zoomLevel;
-    };
+    }
 
     /**
      *  Go to a particular page (with indexing starting at 0).
@@ -1118,7 +1117,7 @@ class Diva
 
         const pageIndex = parseInt(label, 10) - 1;
         return this._gotoPageByIndex(pageIndex, xAnchor, yAnchor);
-    };
+    }
 
     /**
      * Jump to a page based on its filename. Deprecated. Use gotoPageByURI instead.
@@ -1134,7 +1133,7 @@ class Diva
         console.warn('This method will be removed in the next version of Diva.js. Use gotoPageByURI instead.');
         const pageIndex = this._getPageIndex(filename);
         return this._gotoPageByIndex(pageIndex, xAnchor, yAnchor);
-    };
+    }
 
     /**
      * Jump to a page based on its URI.
@@ -1149,7 +1148,7 @@ class Diva
     {
         const pageIndex = this._getPageIndex(uri);
         return this._gotoPageByIndex(pageIndex, xAnchor, yAnchor);
-    };
+    }
 
     /**
      * Whether the page has other images to display.
@@ -1171,7 +1170,7 @@ class Diva
     hideNonPagedPages ()
     {
         this._reloadViewer({ showNonPagedPages: false });
-    };
+    }
 
     /**
      * Is the viewer currently in full-screen mode?
@@ -1182,7 +1181,7 @@ class Diva
     isInFullscreen ()
     {
         return this.settings.inFullscreen;
-    };
+    }
 
     /**
      * Check if a page index is within the range of the document
@@ -1193,7 +1192,7 @@ class Diva
     isPageIndexValid (pageIndex)
     {
         return this._isPageIndexValid(pageIndex);
-    };
+    }
 
     /**
      * Determines if a page is currently in the viewport
@@ -1205,7 +1204,7 @@ class Diva
     isPageInViewport (pageIndex)
     {
         return this.viewerState.renderer.isPageVisible(pageIndex);
-    };
+    }
 
     /**
      * Whether the Diva viewer has been fully initialized.
@@ -1216,7 +1215,7 @@ class Diva
     isReady ()
     {
         return this.viewerState.loaded;
-    };
+    }
 
     /**
      * Check if something (e.g. a highlight box on a particular page) is visible
@@ -1247,7 +1246,7 @@ class Diva
             left: left,
             right: left + width
         });
-    };
+    }
 
     /**
      * Whether the page layout is vertically or horizontally oriented.
@@ -1258,7 +1257,7 @@ class Diva
     isVerticallyOriented ()
     {
         return this.settings.verticallyOriented;
-    };
+    }
 
     /**
      * Leave fullscreen mode if currently in fullscreen mode.
@@ -1275,7 +1274,7 @@ class Diva
         }
 
         return false;
-    };
+    }
 
     /**
      * Leave grid view if currently in grid view.
@@ -1292,7 +1291,7 @@ class Diva
         }
 
         return false;
-    };
+    }
 
     /**
      * Set the number of grid pages per row.
@@ -1311,7 +1310,7 @@ class Diva
             inGrid: true,
             pagesPerRow: pagesPerRow
         });
-    };
+    }
 
     /**
      * Align this diva instance with a state object (as returned by getState)
@@ -1323,7 +1322,7 @@ class Diva
     setState (state)
     {
         this._reloadViewer(this._getLoadOptionsForState(state));
-    };
+    }
 
     /**
      * Show non-paged pages.
@@ -1334,7 +1333,7 @@ class Diva
     showNonPagedPages ()
     {
         this._reloadViewer({ showNonPagedPages: true });
-    };
+    }
 
     /**
      * Sets the zoom level.
@@ -1352,7 +1351,7 @@ class Diva
         }
 
         return this.divaState.viewerCore.zoom(zoomLevel);
-    };
+    }
 
     /**
      * Toggle fullscreen mode.
@@ -1363,7 +1362,7 @@ class Diva
     toggleFullscreenMode ()
     {
         this._toggleFullscreen();
-    };
+    }
 
     /**
      * Show/Hide non-paged pages
@@ -1376,13 +1375,13 @@ class Diva
         this._reloadViewer({
             showNonPagedPages: !this.settings.showNonPagedPages
         });
-    };
+    }
 
     //Changes between horizontal layout and vertical layout. Returns true if document is now vertically oriented, false otherwise.
     toggleOrientation ()
     {
         return this._togglePageLayoutOrientation();
-    };
+    }
 
     /**
      * Translates a measurement from the zoom level on the largest size
@@ -1403,7 +1402,7 @@ class Diva
     {
         const zoomDifference = this.settings.maxZoomLevel - this.settings.zoomLevel;
         return position / Math.pow(2, zoomDifference);
-    };
+    }
 
     /**
      * Translates a measurement from the current zoom level to the position on the
@@ -1427,7 +1426,7 @@ class Diva
             return position;
 
         return position * Math.pow(2, zoomDifference);
-    };
+    }
 
     /**
      * Zoom in.
@@ -1438,7 +1437,7 @@ class Diva
     zoomIn ()
     {
         return this.setZoomLevel(this.settings.zoomLevel + 1);
-    };
+    }
 
     /**
      * Zoom out.
@@ -1447,7 +1446,7 @@ class Diva
     zoomOut ()
     {
         return this.setZoomLevel(this.settings.zoomLevel - 1);
-    };
+    }
 }
 
 export default Diva;

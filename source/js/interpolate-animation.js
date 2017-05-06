@@ -8,6 +8,20 @@ export default {
     }
 };
 
+/* jshint ignore:start */
+let now;
+
+if (typeof performance !== 'undefined' && performance.now)
+{
+    now = () => { return performance.now() };
+}
+else
+{
+    now = () => { return Date.now() };
+}
+/* jshint ignore:end */
+
+
 function animate (options)
 {
     const durationMs = options.duration;
@@ -83,7 +97,7 @@ function animate (options)
 
 function interpolate(start, end, easing)
 {
-    return (elapsed) => { return start + (end - start) * easing(elapsed) };
+    return (elapsed) => { return start + (end - start) * easing(elapsed); };
 }
 
 /**
@@ -96,23 +110,15 @@ function linearEasing(e)
     return e;
 }
 
+/* jshint ignore:start */
 function inOutQuadEasing (e)
 {
     return e < .5 ? 2 * e * e : -1+(4-2 * e) * e
 }
+/* jshint ignore:end */
+
 
 function inOutCubicEasing (t)
 {
     return t < 0.5 ? 4 * t * t * t : ( t - 1 ) * ( 2 * t - 2 ) * ( 2 * t - 2 ) + 1;
-}
-
-let now;
-
-if (typeof performance !== 'undefined' && performance.now)
-{
-    now = () => { return performance.now() };
-}
-else
-{
-    now = () => { return Date.now() };
 }

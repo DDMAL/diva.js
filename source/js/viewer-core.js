@@ -614,7 +614,7 @@ export default class ViewerCore
         this.viewerState.pageOverlays.updateOverlays(
             this.viewerState.renderer.getRenderedPages()
         );
-    };
+    }
 
     // Called to handle any zoom level
     handleZoom (newZoomLevel, focalPoint)
@@ -649,9 +649,9 @@ export default class ViewerCore
         const focalYToCenter = (pageRegion.top + focalPoint.offset.top) -
             (this.settings.viewport.top + (this.settings.viewport.height / 2));
 
-        const getPositionForZoomLevel = function (zoomLevel)
+        const getPositionForZoomLevel = function (zoomLevel, initZoom)
         {
-            const zoomRatio = Math.pow(2, zoomLevel - initialZoomLevel);
+            const zoomRatio = Math.pow(2, zoomLevel - initZoom);
 
             //TODO(jeromepl): Calculate position from page top left to viewport top left
             // calculate horizontal/verticalOffset: distance from viewport center to page upper left corner
@@ -666,10 +666,9 @@ export default class ViewerCore
             };
         };
 
-        let initialZoomLevel = this.viewerState.oldZoomLevel = this.settings.zoomLevel;
         this.viewerState.options.zoomLevel = newZoomLevel;
-
-        const endPosition = getPositionForZoomLevel(newZoomLevel);
+        let initialZoomLevel = this.viewerState.oldZoomLevel = this.settings.zoomLevel;
+        const endPosition = getPositionForZoomLevel(newZoomLevel, initialZoomLevel);
         this.viewerState.options.goDirectlyTo = endPosition.anchorPage;
         this.viewerState.verticalOffset = endPosition.verticalOffset;
         this.viewerState.horizontalOffset = endPosition.horizontalOffset;
@@ -1194,18 +1193,18 @@ export default class ViewerCore
         this.viewerState.loaded = true;
 
         this.publish("ViewerDidLoad", this.settings);
-    };
+    }
 
     publish (event)
     {
         const args = Array.prototype.slice.call(arguments, 1);
         diva.Events.publish(event, args, this.publicInstance);
-    };
+    }
 
     getSettings ()
     {
         return this.settings;
-    };
+    }
 
     // Temporary accessor for the state of the viewer core
     // TODO: Replace this with a more restricted view of whatever needs
@@ -1213,22 +1212,22 @@ export default class ViewerCore
     getInternalState ()
     {
         return this.viewerState;
-    };
+    }
 
     getPublicInstance ()
     {
         return this.publicInstance;
-    };
+    }
 
     getPageTools ()
     {
         return this.viewerState.pageTools;
-    };
+    }
 
     getCurrentLayout ()
     {
         return this.viewerState.renderer ? this.viewerState.renderer.layout : null;
-    };
+    }
 
     /** Get a copy of the current viewport dimensions */
     getViewport ()
@@ -1244,17 +1243,17 @@ export default class ViewerCore
             width: viewport.width,
             height: viewport.height
         };
-    };
+    }
 
     addPageOverlay (overlay)
     {
         this.viewerState.pageOverlays.addOverlay(overlay);
-    };
+    }
 
     removePageOverlay (overlay)
     {
         this.viewerState.pageOverlays.removeOverlay(overlay);
-    };
+    }
 
     getPageRegion (pageIndex, options)
     {
@@ -1293,7 +1292,7 @@ export default class ViewerCore
         }
 
         return region;
-    };
+    }
 
     getPagePositionAtViewportOffset (coords)
     {
@@ -1335,7 +1334,7 @@ export default class ViewerCore
                 top: docCoords.top - currentRegion.top
             }
         };
-    };
+    }
 
     // setManifest (manifest, loadOptions)
     // {
@@ -1358,22 +1357,22 @@ export default class ViewerCore
             if (this.viewerState.manifest.pages[pageIndex].otherImages.length > 0)
                 this.publish('VisiblePageHasAlternateViews', pageIndex);
         }
-    };
+    }
 
     getPageName (pageIndex)
     {
         return this.viewerState.manifest.pages[pageIndex].f;
-    };
+    }
 
     reload (newOptions)
     {
         this.reloadViewer(newOptions);
-    };
+    }
 
     zoom (zoomLevel, focalPoint)
     {
         return this.handleZoom(zoomLevel, focalPoint);
-    };
+    }
 
     enableScrollable ()
     {
@@ -1385,7 +1384,7 @@ export default class ViewerCore
             this.viewerState.viewportElement.style.overflow = 'auto';
             this.viewerState.isScrollable = true;
         }
-    };
+    }
 
     disableScrollable ()
     {
@@ -1409,56 +1408,34 @@ export default class ViewerCore
 
             this.viewerState.isScrollable = false;
         }
-    };
+    }
 
     // isValidOption (key, value)
     // {
     //     return isValidOption(key, value);
     // };
 
-    showError (message)
-    {
-        // FIXME: Not totally sure it makes sense to always do that here
-        this.hideThrobber();
-
-        const errorElement = elt('div', this.elemAttrs('error'), [
-            elt('button', this.elemAttrs('error-close', {'aria-label': 'Close dialog'})),
-            elt('p',
-                elt('strong', 'Error')
-            ),
-            elt('div', message)
-        ]);
-
-        this.viewerState.outerObject.append(errorElement);
-
-        //bind dialog close button
-        document.getElementById(this.settings.selector + 'error-close').addEventListener('click', function()
-        {
-            errorElement.parentNode.removeChild(errorElement);
-        });
-    };
-
     // getXOffset (pageIndex, xAnchor)
     // {
     //     return getXOffset(pageIndex, xAnchor);
-    // };
+    // }
 
     // getYOffset (pageIndex, yAnchor)
     // {
     //     return getYOffset(pageIndex, yAnchor);
-    // };
+    // }
 
     // this.publish = publish;
 
     clear ()
     {
         this.clearViewer();
-    };
+    }
 
     setPendingManifestRequest (pendingManifestRequest)
     {
         this.viewerState.pendingManifestRequest = pendingManifestRequest;
-    };
+    }
 
     destroy ()
     {
@@ -1482,5 +1459,5 @@ export default class ViewerCore
 
         // Clear the Events cache
         diva.Events.unsubscribeAll(this.settings.ID);
-    };
+    }
 }
