@@ -6,21 +6,11 @@ const p = require('gulp-load-plugins')();
 const webpack = require('webpack');
 const webpackConf = require('./webpack.config');
 const WebpackDevServer = require('webpack-dev-server');
-const svg2png = require('gulp-svg2png');
-const svgSymbols = require('gulp-svg-symbols');
 
 const manifest = require('./package.json');
 const mainFile = manifest.main;
 const buildFolder = path.dirname(mainFile);
 
-
-const getSourceCompiler = (function compiler()
-{
-    return () =>
-    {
-        return webpack(webpackConf);
-    }
-})();
 
 function cleanDist (done)
 {
@@ -61,7 +51,7 @@ function plugins (done)
     webpack(pluginConfig).run(done);
 }
 
-function server (done)
+function server ()
 {
     let devConfig = Object.create(webpackConf)[0];
     devConfig.entry.unshift("webpack-dev-server/client?http://localhost:9001/");
@@ -81,8 +71,8 @@ function server (done)
     {
         if (err)
             throw new gutil.PluginError('dev-server', err);
-        gutil.log('dev-server', "http://localhost:9001/index.html")
-    })
+        gutil.log('dev-server', "http://localhost:9001/index.html");
+    });
 }
 
 
