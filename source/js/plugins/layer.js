@@ -18,7 +18,7 @@
  *
  *
  **/
-export default class DownloadPlugin
+export default class LayerPlugin
 {
     constructor (core)
     {
@@ -37,6 +37,7 @@ export default class DownloadPlugin
         window.open(url);
     }
 
+    //TODO: Currently the download icon, to be changed to a "layer icon"
     createIcon ()
     {
         /*
@@ -69,8 +70,8 @@ export default class DownloadPlugin
     }
 }
 
-DownloadPlugin.prototype.pluginName = "download";
-DownloadPlugin.prototype.isPageTool = true;
+LayerPlugin.prototype.pluginName = "layer";
+LayerPlugin.prototype.isPageTool = true;
 
 /**
  * Make this plugin available in the global context
@@ -78,5 +79,5 @@ DownloadPlugin.prototype.isPageTool = true;
  **/
 (function (global)
 {
-    global.Diva.DownloadPlugin = DownloadPlugin;
+    global.Diva.LayerPlugin = LayerPlugin;
 })(window);
