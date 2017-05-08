@@ -51,5 +51,5 @@ describe('Viewer', function ()
             objectData: 'https://example.com/iiif/manifest.json'
         }); };
         expect(fcn).to.not.throw(ObjectDataNotSuppliedException);
-    })
+    });
 });

@@ -82,7 +82,6 @@ export default class CompositeImage
             // with some of it ultimately covered, or to pick out the region
             // which needs to be drawn?
             // See https://github.com/DDMAL/diva.js/issues/358
-
             const scaleRatio = Math.pow(2, highestZoomLevel - level.zoomLevel);
 
             additionalTiles = additionalTiles.filter(tile => {

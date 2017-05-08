@@ -34,9 +34,8 @@ const getOtherImageData = (otherImages, lowestMaxZoom, canvasWidth, canvasHeight
 };
 
 /**
- * Parses a IIIF Presentation API Manifest and converts it into a Diva.js-format object
+ * Parses an IIIF Presentation API Manifest and converts it into a Diva.js-format object
  * (See https://github.com/DDMAL/diva.js/wiki/Development-notes#data-received-through-ajax-request)
- * (This is a client-side re-implementation of generate_json.py)
  *
  * @param {Object} manifest - an object that represents a valid IIIF manifest
  * @returns {Object} divaServiceBlock - the data needed by Diva to show a view of a single document

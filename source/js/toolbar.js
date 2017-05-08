@@ -198,7 +198,7 @@ export default class Toolbar
         return this.createButton('fullscreen-icon', 'Toggle fullscreen mode', () => {
             this.viewer.toggleFullscreenMode();
         }, fullscreenIcon);
-    };
+    }
 
     toggleZoomGridControls ()
     {

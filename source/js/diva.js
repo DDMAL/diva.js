@@ -12,6 +12,24 @@ import ImageManifest from "./image-manifest";
 import Toolbar from "./toolbar";
 import HashParams from "./utils/hash-params";
 
+
+/**
+ * The top-level class for Diva objects. This is instantiated by passing in an HTML element
+ * ID or HTML Element node and an object containing a list of options, of which the 'objectData'
+ * option is required and which must point to a IIIF Presentation API Manifest:
+ *
+ * var diva = new Diva('element-id', {
+ *     objectData: "http://example.com/iiif-manifest.json"
+ * });
+ *
+ * This class also serves as the entry point for the Events system, in which applications can subscribe
+ * to notifications sent from Diva instances:
+ *
+ * Diva.Events.subscribe('VisiblePageDidChange', function () { console.log("Visible Page Changed"); });
+ *
+ *
+ *
+ **/
 class Diva
 {
     constructor (element, options)
@@ -1063,7 +1081,7 @@ class Diva
      * @public
      * @returns {object} - The current instance state.
      * */
-    getState (state)
+    getState ()
     {
         return this._getState();
     }

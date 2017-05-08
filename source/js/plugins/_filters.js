@@ -25,6 +25,9 @@ export function addFilterToQueue (filter)
 
 }
 
+/**
+ * Pre-paints the adjustment to an offscreen canvas before moving it to the on-screen canvas.
+ **/
 function _getOffscreenCanvasData (w, h)
 {
     let tmpCanvas = document.createElement('canvas');

@@ -245,7 +245,7 @@ export default class ViewerCore
     isValidOption (key, value)
     {
         return this.optionsValidator.isValid(key, value, this.viewerState.options);
-    };
+    }
 
     elemAttrs (ident, base)
     {
@@ -258,12 +258,12 @@ export default class ViewerCore
             return Object.assign(attrs, base);
         else
             return attrs;
-    };
+    }
 
     getPageData (pageIndex, attribute)
     {
         return this.settings.manifest.pages[pageIndex].d[this.settings.zoomLevel][attribute];
-    };
+    }
 
     // Reset some settings and empty the viewport
     clearViewer ()
@@ -277,7 +277,7 @@ export default class ViewerCore
     hasChangedOption (options, key)
     {
         return key in options && options[key] !== this.settings[key];
-    };
+    }
 
     //Shortcut for closing fullscreen with the escape key
     escapeListener (e)
@@ -288,7 +288,7 @@ export default class ViewerCore
                 inFullscreen: !this.settings.inFullscreen
             });
         }
-    };
+    }
 
     /**
      * Update settings to match the specified options. Load the viewer,
@@ -444,7 +444,7 @@ export default class ViewerCore
             document.addEventListener('keyup', this.boundEscapeListener);
         else
             document.removeEventListener('keyup', this.boundEscapeListener);
-    };
+    }
 
     // Update the view handler and the view rendering for the current view
     updateViewHandlerAndRendering ()
@@ -462,7 +462,7 @@ export default class ViewerCore
 
         if (!this.viewerState.renderer)
             this.initializeRenderer();
-    };
+    }
 
     // TODO: This could probably be done upon ViewerCore initialization
     initializeRenderer ()
@@ -508,7 +508,7 @@ export default class ViewerCore
 
             this.viewerState.renderer = new Renderer(options, hooks);
         }
-    };
+    }
 
     getCurrentSourceProvider ()
     {
@@ -572,7 +572,7 @@ export default class ViewerCore
                 return levels;
             }
         };
-    };
+    }
 
     getPadding ()
     {
@@ -607,7 +607,7 @@ export default class ViewerCore
                 right: 0
             }
         };
-    };
+    }
 
     updatePageOverlays ()
     {
@@ -698,7 +698,7 @@ export default class ViewerCore
         this.publish("ZoomLevelDidChange", newZoomLevel);
 
         return true;
-    };
+    }
 
     /*
      Gets the Y-offset for a specific point on a specific page
@@ -724,7 +724,7 @@ export default class ViewerCore
         {
             return parseInt(this.settings.panelHeight / 2, 10);
         }
-    };
+    }
 
     //Same as getYOffset with "left" and "right" as acceptable values instead of "top" and "bottom"
     getXOffset (pageIndex, anchor)
@@ -743,7 +743,7 @@ export default class ViewerCore
         {
             return parseInt(this.getPageData(pidx, "w") / 2, 10);
         }
-    };
+    }
 
     // updates panelHeight/panelWidth on resize
     updatePanelSize ()
@@ -758,7 +758,7 @@ export default class ViewerCore
         }
 
         return true;
-    };
+    }
 
     updateOffsets ()
     {
@@ -769,7 +769,7 @@ export default class ViewerCore
             this.viewerState.horizontalOffset = pageOffset.x;
             this.viewerState.verticalOffset = pageOffset.y;
         }
-    };
+    }
 
     // Bind mouse events (drag to scroll, double-click)
     bindMouseEvents ()
@@ -782,7 +782,7 @@ export default class ViewerCore
             debug('Double click at %s, %s', coords.left, coords.top);
             this.viewerState.viewHandler.onDoubleClick(event, coords);
         });
-    };
+    }
 
     onResize ()
     {
@@ -809,7 +809,7 @@ export default class ViewerCore
                 });
             }
         }, 200);
-    };
+    }
 
     // Bind touch and orientation change events
     bindTouchEvents ()
@@ -840,7 +840,7 @@ export default class ViewerCore
             debug('Double tap at %s, %s', coords.left, coords.top);
             this.viewerState.viewHandler.onDoubleClick(event, coords);
         });
-    };
+    }
 
     // Handle the scroll
     scrollFunction ()
@@ -877,7 +877,7 @@ export default class ViewerCore
         }
 
         this.updateOffsets();
-    };
+    }
 
     // Binds most of the event handlers (some more in createToolbar)
     handleEvents ()
@@ -1006,14 +1006,14 @@ export default class ViewerCore
 
             clearTimeout(this.viewerState.resizeTimer);
         }, this.settings.ID);
-    };
+    }
 
     initPlugins ()
     {
         if (!this.settings.hasOwnProperty.call('plugins'))
             return null;
 
-        this.viewerState.pluginInstances = this.settings.plugins.map( (plugin, idx) =>
+        this.viewerState.pluginInstances = this.settings.plugins.map( (plugin) =>
         {
             const p = new plugin(this);
 
@@ -1022,7 +1022,7 @@ export default class ViewerCore
 
             return p;
         });
-    };
+    }
 
     showThrobber ()
     {
@@ -1033,7 +1033,7 @@ export default class ViewerCore
             let thb = document.getElementById(this.settings.selector + 'throbber');
             if (thb) thb.style.display = 'block';
         }, this.settings.throbberTimeout);
-    };
+    }
 
     hideThrobber ()
     {
@@ -1043,7 +1043,7 @@ export default class ViewerCore
         let thb = document.getElementById(this.settings.selector + 'throbber');
         // Hide the throbber if it has already executed
         if (thb) thb.style.display = 'none';
-    };
+    }
 
     showError (message)
     {
@@ -1062,7 +1062,7 @@ export default class ViewerCore
         {
             errorElement.parentNode.removeChild(errorElement);
         });
-    };
+    }
 
     setManifest (manifest, loadOptions)
     {
@@ -1339,7 +1339,7 @@ export default class ViewerCore
     // setManifest (manifest, loadOptions)
     // {
     //     setManifest(manifest, loadOptions || {});
-    // };
+    // }
 
     /**
      * Set the current page to the given index, firing VisiblePageDidChange
@@ -1413,7 +1413,7 @@ export default class ViewerCore
     // isValidOption (key, value)
     // {
     //     return isValidOption(key, value);
-    // };
+    // }
 
     // getXOffset (pageIndex, xAnchor)
     // {

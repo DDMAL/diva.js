@@ -9,28 +9,43 @@ import {
     sharpen
 } from "./_filters";
 
-// Returns a function, that, as long as it continues to be invoked, will not
-// be triggered. The function will be called after it stops being called for
-// N milliseconds. If `immediate` is passed, trigger the function on the
-// leading edge, instead of the trailing.
-function debounce(func, wait, immediate) {
+/**
+ * Returns a function, that, as long as it continues to be invoked, will not
+ be triggered. The function will be called after it stops being called for
+ N milliseconds. If `immediate` is passed, trigger the function on the
+ leading edge, instead of the trailing.
+ */
+function debounce(func, wait, immediate)
+{
     let timeout;
-    return function() {
+    return function ()
+    {
         let context = this, args = arguments;
-        let later = function() {
+        let later = function ()
+        {
             timeout = null;
-            if (!immediate) func.apply(context, args);
+            if (!immediate)
+            {
+                func.apply(context, args);
+            }
         };
         let callNow = immediate && !timeout;
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
-        if (callNow) func.apply(context, args);
+        if (callNow)
+        {
+            func.apply(context, args);
+        }
     };
 }
 
+/**
+ * A Diva.js plugin that allows users to manipulate images by adjusting their
+ * brightness, contrast, and other parameters.
+ **/
 export default class ManipulationPlugin
 {
-    constructor (core)
+    constructor(core)
     {
         this._core = core;
         this.pageToolsIcon = this.createIcon();
@@ -50,7 +65,7 @@ export default class ManipulationPlugin
         this.boundEscapeListener = this.escapeListener.bind(this);
     }
 
-    handleClick (event, settings, publicInstance, pageIndex)
+    handleClick(event, settings, publicInstance, pageIndex)
     {
         document.body.style.overflow = 'hidden';
         this._backdrop = document.createElement('div');
@@ -82,7 +97,12 @@ export default class ManipulationPlugin
         this._initializeTools();
     }
 
-    createIcon ()
+    /*
+    *  Returns an SVG object representing the icon for the project. Implemented in code
+    *  here so that the entire Diva object can be passed to the client with no external
+    *  dependencies.
+    **/
+    createIcon()
     {
         const manipulationIcon = document.createElement('div');
         manipulationIcon.classList.add('diva-manipulation-icon');
@@ -138,7 +158,7 @@ export default class ManipulationPlugin
         return manipulationIcon;
     }
 
-    escapeListener (event)
+    escapeListener(event)
     {
         if (event.keyCode === 27)
         {
@@ -148,13 +168,13 @@ export default class ManipulationPlugin
         }
     }
 
-    _initializeSidebar ()
+    _initializeSidebar()
     {
         // 150px wide images for the sidebar.
         let thumbnailSize = "150";
         let mainPageSidebarImageURL = `${this._page.url}full/${thumbnailSize},/0/default.jpg`;
 
-        let otherImageURLs = this._page.otherImages.map( (img) =>
+        let otherImageURLs = this._page.otherImages.map((img) =>
         {
             return `${img.url}full/${thumbnailSize},/0/default.jpg`;
         });
@@ -173,9 +193,12 @@ export default class ManipulationPlugin
 
         this._sidebar.appendChild(primaryImgDiv);
 
-        primaryImgDiv.addEventListener('click', () => { this._loadImageInMainArea.call(this, event, this._page.url); });
+        primaryImgDiv.addEventListener('click', () =>
+        {
+            this._loadImageInMainArea.call(this, event, this._page.url);
+        });
 
-        otherImageURLs.map( (url, idx) =>
+        otherImageURLs.map((url, idx) =>
         {
             let othDiv = document.createElement('div');
             othDiv.classList.add('manipulation-sidebar-secondary-image');
@@ -195,7 +218,7 @@ export default class ManipulationPlugin
         });
     }
 
-    _initializeTools ()
+    _initializeTools()
     {
         let bwDiv = document.createElement('div');
         let blackWhiteButton = document.createElement('button');
@@ -279,7 +302,7 @@ export default class ManipulationPlugin
         this._tools.appendChild(hueDiv);
     }
 
-    _loadImageInMainArea (event, imageURL)
+    _loadImageInMainArea(event, imageURL)
     {
         let url = `${imageURL}full/full/0/default.jpg`;
 
@@ -306,14 +329,16 @@ export default class ManipulationPlugin
         this._mainImage.src = url;
     }
 
-    _applyTransformationToImageData (event, func, value)
+    _applyTransformationToImageData(event, func, value)
     {
         let cw = this._canvas.width;
         let ch = this._canvas.height;
         let adjustment;
 
         if (value)
+        {
             adjustment = parseInt(value, 10);
+        }
 
         let newData = func(this._originalData, adjustment);
 
@@ -321,14 +346,16 @@ export default class ManipulationPlugin
         this._ctx.putImageData(newData, 0, 0);
     }
 
-    _applyConvolutionFilter (event, func, value)
+    _applyConvolutionFilter(event, func, value)
     {
         let cw = this._canvas.width;
         let ch = this._canvas.height;
         let adjustment;
 
         if (value)
+        {
             adjustment = parseInt(value, 10);
+        }
 
         let newData = func(this._originalData, adjustment);
 

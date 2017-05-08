@@ -70,9 +70,9 @@ class DivaEvents
      *
      * @class Events
      * @method subscribe
-     * @param topic {String}
-     * @param callback {Function}
-     * @param instanceID {String=} Optional - String representing the ID of a Diva instance; if provided,
+     * @param {string} topic
+     * @param {function} callback
+     * @param {string=} instanceID  Optional - String representing the ID of a Diva instance; if provided,
      *                                       callback only fires for events published from that instance.
      * @return Event handler {Array}
      */
@@ -112,9 +112,9 @@ class DivaEvents
      *
      * @class Events
      * @method unsubscribe
-     * @param handle {Array}
-     * @param completely {Boolean=} - Unsubscribe all events for a given topic.
-     * @return success {Boolean}
+     * @param {array} handle
+     * @param {boolean=} completely - Unsubscribe all events for a given topic.
+     * @return {boolean} success
      */
     unsubscribe(handle, completely)
     {
@@ -158,7 +158,7 @@ class DivaEvents
      * e.g.: diva.Events.unsubscribeAll('global');
      *
      * @class Events
-     * @param instanceID {String=} Optional - instance ID to remove subscribers from or 'global' (if omitted,
+     * @param {string=} instanceID Optional - instance ID to remove subscribers from or 'global' (if omitted,
      *                              subscribers in all scopes removed)
      * @method unsubscribeAll
      */

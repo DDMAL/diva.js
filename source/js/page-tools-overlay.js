@@ -1,5 +1,8 @@
 import { elt } from './utils/elt';
-
+/**
+*
+*
+**/
 export default class PageToolsOverlay
 {
     constructor (pageIndex, viewerCore)
