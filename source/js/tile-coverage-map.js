@@ -4,9 +4,7 @@ export default class TileCoverageMap
     {
         this._rows = rows;
         this._cols = cols;
-        // this._map = rows.fill(cols);
-        // this._map = fill(rows).map(() => fill(cols, false));
-        this._map = new Array(rows).fill(new Array(cols).fill(false));
+        this._map = new Array(rows).fill(null).map(() => new Array(cols).fill(false));
     }
 
     isLoaded (row, col)
