@@ -667,7 +667,8 @@ export default class ViewerCore
         };
 
         this.viewerState.options.zoomLevel = newZoomLevel;
-        let initialZoomLevel = this.viewerState.oldZoomLevel = this.settings.zoomLevel;
+        let initialZoomLevel = this.viewerState.oldZoomLevel;
+        this.viewerState.oldZoomLevel = this.settings.zoomLevel;
         const endPosition = getPositionForZoomLevel(newZoomLevel, initialZoomLevel);
         this.viewerState.options.goDirectlyTo = endPosition.anchorPage;
         this.viewerState.verticalOffset = endPosition.verticalOffset;
