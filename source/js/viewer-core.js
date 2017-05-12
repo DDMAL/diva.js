@@ -683,8 +683,6 @@ export default class ViewerCore
             },
             getPosition: (parameters) =>
             {
-                let initialZoomLevel = this.viewerState.oldZoomLevel = this.settings.zoomLevel;
-
                 return getPositionForZoomLevel(parameters.zoomLevel, initialZoomLevel)
             },
             onEnd: (info) =>
