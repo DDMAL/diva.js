@@ -7,6 +7,7 @@ import DocumentLayout from './document-layout';
 import ImageCache from './image-cache';
 import ImageRequestHandler from './image-request-handler';
 import InterpolateAnimation from './interpolate-animation';
+import diva from './diva-global';
 
 const REQUEST_DEBOUNCE_INTERVAL = 250;
 
@@ -201,6 +202,12 @@ export default class Renderer
         }
     }
 
+    publish (event)
+    {
+        const args = Array.prototype.slice.call(arguments, 1);
+        diva.Events.publish(event, args, this.publicInstance);
+    }
+
     _paint ()
     {
         debug('Repainting');
@@ -219,6 +226,7 @@ export default class Renderer
                     this._drawTile(pageIndex, scaled, this._cache.get(source.url));
                 }
             }, this);
+            this.publish("VisibleTilesDidLoad", pageIndex, this._zoomLevel);
         }, this);
 
         const cache = this._cache;
