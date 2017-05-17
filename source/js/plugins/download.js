@@ -1,8 +1,9 @@
 /**
  * A simple plugin that implements a download button for individual images. Plugins
  * should register themselves as a class in the global Diva namespace, e.g., global.Diva.DownloadPlugin.
- * Plugins are then included as *uninstantiated* references within a plugin configuration, e.g.,
- * plugins: [Diva.DownloadPlugin]. When the viewer is instantiated it will also instantiate the plugin, which
+ * Plugins are then included as *uninstantiated* references within a plugin configuration. To enable them, simply include
+ * plugins: [Diva.DownloadPlugin] when creating a Diva instance.
+ * When the viewer is instantiated it will also instantiate the plugin, which
  * will then configure itself.
  *
  * Plugin constructors should take one argument, which is an instance of a ViewerCore object.

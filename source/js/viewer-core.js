@@ -1011,7 +1011,7 @@ export default class ViewerCore
 
     initPlugins ()
     {
-        if (!this.settings.hasOwnProperty.call('plugins'))
+        if (!this.settings.hasOwnProperty('plugins'))
             return null;
 
         this.viewerState.pluginInstances = this.settings.plugins.map( (plugin) =>
