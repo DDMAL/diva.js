@@ -219,6 +219,7 @@ export default class Renderer
                     this._drawTile(pageIndex, scaled, this._cache.get(source.url));
                 }
             }, this);
+            this._hooks.onVisibleTilesDidLoad(pageIndex, this._zoomLevel);
         }, this);
 
         const cache = this._cache;
