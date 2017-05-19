@@ -506,7 +506,7 @@ export default class ViewerCore
                 },
                 onVisibleTilesDidLoad: (pageIndex, zoomLevel) =>
                 {
-                    this.publish('VisibleTilesDidLoad', pageIndex, zoomLevel);
+                    this.publish('VisibleTilesDidLoad', [pageIndex, zoomLevel]);
                 }
             };
 
