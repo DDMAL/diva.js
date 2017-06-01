@@ -366,10 +366,14 @@ Renderer.prototype._drawTile = function (pageIndex, scaledTile, img)
     var destWidth = Math.min(scaledTile.dimensions.width, img.width * scaledTile.scaleRatio) - destXOffset;
     var destHeight = Math.min(scaledTile.dimensions.height, img.height * scaledTile.scaleRatio) - destYOffset;
 
-    var sourceWidth = destWidth / scaledTile.scaleRatio;
-    var sourceHeight = destHeight / scaledTile.scaleRatio;
+    destWidth = Math.max(1, destWidth);
+    destHeight = Math.max(1, destHeight);
 
-    if (debugPaints.enabled) {
+    var sourceWidth = Math.abs(destWidth / scaledTile.scaleRatio);
+    var sourceHeight = Math.abs(destHeight / scaledTile.scaleRatio);
+
+    if (debugPaints.enabled)
+    {
         debugPaints('Drawing page %s, tile %sx (%s, %s) from %s, %s to viewport at %s, %s, scale %s%%',
             pageIndex,
             scaledTile.sourceZoomLevel, scaledTile.row, scaledTile.col,
