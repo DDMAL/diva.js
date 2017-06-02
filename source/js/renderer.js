@@ -480,6 +480,7 @@ export default class Renderer
             {
                 // TODO: Do image preloading, work with that
                 this._setViewportPosition(getPosition(values));
+                this._hooks.onZoomLevelWillChange(values.zoomLevel);
 
                 if (onViewDidTransition)
                 {

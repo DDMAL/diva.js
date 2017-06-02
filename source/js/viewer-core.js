@@ -503,6 +503,10 @@ export default class ViewerCore
                 onPageWillLoad: (pageIndex) =>
                 {
                     this.publish('PageWillLoad', pageIndex);
+                },
+                onZoomLevelWillChange: (zoomLevel) =>
+                {
+                    this.publish('ZoomLevelWillChange', zoomLevel)
                 }
             };
 
