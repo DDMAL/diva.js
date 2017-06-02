@@ -698,6 +698,26 @@ class Diva
     }
 
     /**
+     * Disables document drag scrolling
+     *
+     * @public
+     */
+    disableDragScrollable ()
+    {
+        this.divaState.viewerCore.disableDragScrollable();
+    }
+
+    /**
+     * Enables document drag scrolling
+     *
+     * @public
+     */
+    enableDragScrollable ()
+    {
+        this.divaState.viewerCore.enableDragScrollable();
+    }
+
+    /**
      * Enter fullscreen mode if currently not in fullscreen mode. If currently in fullscreen
      * mode this will have no effect.
      *
