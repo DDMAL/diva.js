@@ -238,6 +238,55 @@ Renderer.prototype._paint = function ()
     this._renderedTiles = renderedTiles;
 };
 
+// get the page index, percentageX, and percentageY position on the page given clientX and clientY (as could be retrieved from a jQuery event object)
+Renderer.prototype.getPageHit = function (clientX, clientY)
+{
+    var bounds = this._outerElement.getBoundingClientRect();
+    if (clientX < bounds.left || clientY < bounds.top ||
+        clientX > bounds.left + bounds.width || clientY > bounds.top + bounds.height)
+    {
+        return null;
+    }
+
+    // adjust the x and y to be inside the outer element
+    clientX -= bounds.left;
+    clientY -= bounds.top;
+
+    // check each rendered page to see if the x,y are inside the page bounds
+    for (var i = 0, len = this._renderedPages.length; i < len; i++)
+    {
+        var pageIndex = this._renderedPages[i];
+        var pageInfo = this.layout.getPageInfo(pageIndex);
+        var pageOffset = this._getImageOffset(pageIndex);
+
+        var viewportPaddingX = Math.max(0, (this._viewport.width - this.layout.dimensions.width) / 2);
+        var viewportPaddingY = Math.max(0, (this._viewport.height - this.layout.dimensions.height) / 2);
+
+        var viewportOffsetX = pageOffset.left - this._viewport.left + viewportPaddingX;
+        var viewportOffsetY = pageOffset.top - this._viewport.top + viewportPaddingY;
+
+        var destXOffset = viewportOffsetX < 0 ? -viewportOffsetX : 0;
+        var destYOffset = viewportOffsetY < 0 ? -viewportOffsetY : 0;
+
+        var canvasX = Math.max(0, viewportOffsetX);
+        var canvasY = Math.max(0, viewportOffsetY);
+
+        var destWidth = pageInfo.dimensions.width - destXOffset;
+        var destHeight = pageInfo.dimensions.height - destYOffset;
+
+        if (clientX >= canvasX && clientX <= canvasX + destWidth && clientY >= canvasY && clientY <= canvasY + destHeight)
+        {
+            // to get the percentage x and y you need to adjust the by the scroll offset and the canvas position
+            return {
+                pageIndex: pageIndex,
+                percentageX: ((clientX + destXOffset) - canvasX) / pageInfo.dimensions.width,
+                percentageY: ((clientY + destYOffset) - canvasY) / pageInfo.dimensions.height
+            };
+        }
+    }
+    return null;
+};
+
 // Paint a page outline while the tiles are loading.
 Renderer.prototype._paintOutline = function (pages)
 {
