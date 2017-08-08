@@ -11,8 +11,7 @@ module.exports = [{
         './source/js/diva.js'
     ],
     output: {
-        path: path.join(__dirname, 'build'),
-        publicPath: '/assets/',
+        path: path.join(__dirname, 'static', 'js'),
         filename: 'diva.js'
     },
     devtool: 'source-map',
@@ -40,7 +39,7 @@ module.exports = [{
         'manipulation': './source/js/plugins/manipulation.js'
     },
     output: {
-        path: path.join(__dirname, 'build', 'plugins'),
+        path: path.join(__dirname, 'static', 'js'),
         filename: '[name].js'
     },
     resolve: {

@@ -51,6 +51,12 @@ function plugins (done)
     webpack(pluginConfig).run(done);
 }
 
+function diva (done)
+{
+	let divaConfig = Object.create(webpackConf)[0];
+    webpack(divaConfig).run(done);
+}
+
 function server ()
 {
     let devConfig = Object.create(webpackConf)[0];
@@ -82,9 +88,11 @@ gulp.task('lint-gulpfile', lintGulpfile);
 
 gulp.task('develop:build-icons', ['convert-svg-to-png', 'make-sprites']);
 gulp.task('develop:build-plugins', plugins);
+gulp.task('develop:build-diva', diva);
 gulp.task('develop:clean', cleanDist);
 gulp.task('develop:tmp-clean', cleanTemp);
 gulp.task('develop:lint', ['lint-src', 'lint-test', 'lint-gulpfile']);
 gulp.task('develop:server', server);
 gulp.task('develop', ['develop:lint', 'develop:clean', 'develop:build-plugins', 'develop:server']);
+gulp.task('develop:rodan', ['develop:lint', 'develop:clean', 'develop:build-plugins', 'develop:build-diva']);
 gulp.task('default', ['develop']);
