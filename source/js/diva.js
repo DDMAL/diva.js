@@ -114,6 +114,11 @@ module.exports = diva;
 
             for (i = 0; i < np; i++)
             {
+                if (!manifest.pages[i])
+                {
+                    return -1;
+                }
+
                 if (manifest.pages[i].f === filename)
                 {
                     return i;
