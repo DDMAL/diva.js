@@ -36,7 +36,7 @@ module.exports = function (mode, options)
                 commonjs2: 'jquery'
             }
         },
-        devtool: mode === 'production' ? 'sourcemap' : 'inline-source-map'
+        devtool: mode === 'production' ? 'cheap-sourcemap' : 'inline-source-map'
     };
 
     if (isCompressed)
