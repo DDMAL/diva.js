@@ -1,6 +1,4 @@
 /* jshint unused: true */
-/* jshint -W097 */
-"use strict";
 
 module.exports = parseIIIFManifest;
 
@@ -68,24 +66,18 @@ function parseIIIFManifest(manifest)
     for (var z = 0; z < numCanvases; z++)
     {
         var c = canvases[z];
-
-        // if this canvas has an empty width or height, don't factor that into our calculations.
-        if (c.width === 0 || c.height === 0)
-        {
-            continue;
-        }
-
         var w = c.width;
         var h = c.height;
         var mz = getMaxZoomLevel(w, h);
-        var ratio = w / h;
+        var ratio = h / w;
         maxRatio = Math.max(ratio, maxRatio);
         minRatio = Math.min(ratio, minRatio);
 
         lowestMaxZoom = Math.min(lowestMaxZoom, mz);
     }
 
-    // Uint8Arrays are pre-initialized with zeroes.
+    // Uint8Arrays are pre-initialized with zeroes. These ones need to be
+    // pre-initialized since we will do arithmetic and value checking on them
     var totalWidths = new Array(lowestMaxZoom + 1).fill(0);
     var totalHeights = new Array(lowestMaxZoom + 1).fill(0);
     var maxWidths = new Array(lowestMaxZoom + 1).fill(0);
@@ -95,13 +87,6 @@ function parseIIIFManifest(manifest)
     {
         thisCanvas = canvases[i];
         canvas = thisCanvas['@id'];
-
-        if (!thisCanvas.images || thisCanvas.images.length === 0)
-        {
-            console.warn("An empty canvas was found: " + canvas);
-            continue;
-        }
-
         label = thisCanvas.label;
         thisResource = thisCanvas.images[0].resource;
 
@@ -122,6 +107,12 @@ function parseIIIFManifest(manifest)
         // Prioritize the canvas height / width first, since images may not have h/w
         width = thisCanvas.width || thisImage.width;
         height = thisCanvas.height || thisImage.height;
+        if (width <= 0 || height <= 0)
+        {
+            console.warn('Invalid width or height for canvas ' + label + '. Skipping');
+            continue;
+        }
+
         maxZoom = getMaxZoomLevel(width, height);
 
         if (thisResource.item)
@@ -160,11 +151,8 @@ function parseIIIFManifest(manifest)
                 w: widthAtCurrentZoomLevel
             };
 
-            var currentTotalWidths = totalWidths[k] + widthAtCurrentZoomLevel;
-            var currentTotalHeights = totalHeights[k] + heightAtCurrentZoomLevel;
-
-            totalWidths[k] = currentTotalWidths;
-            totalHeights[k] = currentTotalHeights;
+            totalWidths[k] += widthAtCurrentZoomLevel;
+            totalHeights[k] += heightAtCurrentZoomLevel;
             maxWidths[k] = Math.max(widthAtCurrentZoomLevel, maxWidths[k]);
             maxHeights[k] = Math.max(heightAtCurrentZoomLevel, maxHeights[k]);
         }
@@ -174,7 +162,7 @@ function parseIIIFManifest(manifest)
             m: maxZoom,
             l: label,         // canvas label ('page 1, page 2', etc.)
             il: imageLabel,   // default image label ('primary image', 'UV light', etc.)
-            f: url,
+            f: info.url,
             url: url,
             api: imageAPIVersion,
             paged: thisCanvas.viewingHint !== 'non-paged',
@@ -186,8 +174,8 @@ function parseIIIFManifest(manifest)
         };
     }
 
-    var averageWidths = new Array(lowestMaxZoom + 1).fill(0);
-    var averageHeights = new Array(lowestMaxZoom + 1).fill(0);
+    var averageWidths = new Array(lowestMaxZoom + 1);
+    var averageHeights = new Array(lowestMaxZoom + 1);
 
     for (var a = 0; a < lowestMaxZoom + 1; a++)
     {
@@ -211,7 +199,7 @@ function parseIIIFManifest(manifest)
         dims: dims,
         max_zoom: lowestMaxZoom,
         pgs: pages,
-        pages: manifest.viewingHint === 'paged' || sequence.viewingHint === 'paged'
+        paged: manifest.viewingHint === 'paged' || sequence.viewingHint === 'paged'
     };
 }
 

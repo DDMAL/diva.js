@@ -27,6 +27,7 @@ var testHashParams = function (testName, hashParams, onReadyCallback, config)
                 left: settings.viewportElement.scrollLeft,
                 top: settings.viewportElement.scrollTop
             };
+
             onReadyCallback.call(this, settings, assert, scroll);
             window.location.hash = previousHash;
             done();
@@ -124,19 +125,19 @@ testHashParams("pagesPerRow (n) and view (v) = 'g'", {n: "3", v: "g"}, function 
     assert.strictEqual($(settings.selector + 'grid-label').text(), "Pages per row: 3", "Grid buttons label should show 3 pages per row");
 });
 
-testHashParams("page filename (i) - valid value", {i: "bm_005.tif"}, function (settings, assert)
+testHashParams("page filename (i) - valid value", {i: "https://images.simssa.ca/iiif/image/beromunster/bm_006.tif"}, function (settings, assert)
 {
-    assert.strictEqual(settings.currentPageIndex, 4, "The initial page should be page 5 (index of 4)");
+    assert.strictEqual(settings.currentPageIndex, 5, "The initial page should be page 6 (index of 5)");
 }, {enableFilename: true});
 
-testHashParams("page filename (i) - invalid value", {i: "bm_000.tif"}, function (settings, assert)
+testHashParams("page filename (i) - invalid value", {i: "https://images.simssa.ca/iiif/image/beromunster/bm_000.tif"}, function (settings, assert)
 {
     assert.strictEqual(settings.currentPageIndex, 0, "The initial page should just be the first page");
 }, {enableFilename: true});
 
-testHashParams("page number (p) - valid value", {p: "5"}, function (settings, assert)
+testHashParams("page number (p) - valid value", {p: "6"}, function (settings, assert)
 {
-    assert.strictEqual(settings.currentPageIndex, 4, "The initial page should be page 5 (index of 4)");
+    assert.strictEqual(settings.currentPageIndex, 5, "The initial page should be page 6 (index of 5)");
 }, {enableFilename: false});
 
 testHashParams("page number (p) - invalid value", {p: "600"}, function (settings, assert)
@@ -167,7 +168,7 @@ testHashParams("vertical offset (y) on first page - negative value", {y: "-600",
     assert.strictEqual(scroll.top, 0, "Should not have scrolled negatively because, well, you can't");
 });
 
-testHashParams("vertical offset (y) and page number (p)", {y: 500, p: 50}, function (settings, assert, scroll)
+testHashParams("vertical offset (y) and page number (p)", {y: 500, p: "50"}, function (settings, assert, scroll)
 {
     var expectedTopScroll = 52922;
     assert.strictEqual(settings.currentPageIndex, 49, "Current page should be 50 (index of 49)");
@@ -191,7 +192,7 @@ testHashParams("horizontal offset (x) on first page - negative value", {x: "-100
     assert.strictEqual(scroll.left, 0, "Horizontal scroll should center it + 100 pixels to the left");
 });
 
-testHashParams("horizontal offset (x) and page number (p)", {x: 100, p: 50}, function (settings, assert, scroll)
+testHashParams("horizontal offset (x) and page number (p)", {x: 100, p: "50"}, function (settings, assert, scroll)
 {
     // FIXME: https://github.com/DDMAL/diva.js/issues/331
     var expectedTopScroll = 52772;
@@ -199,7 +200,7 @@ testHashParams("horizontal offset (x) and page number (p)", {x: 100, p: 50}, fun
     assert.strictEqual(scroll.left, 0, "Horizontal scroll should center it + 100 pixels to the right");
 }, {enableFilename: false});
 
-testHashParams("horizontal offset (x), vertical offset (y), page number (p)", {x: 100, y: 200, p: 50}, function (settings, assert, scroll)
+testHashParams("horizontal offset (x), vertical offset (y), page number (p)", {x: 100, y: 200, p: "50"}, function (settings, assert, scroll)
 {
     // FIXME: https://github.com/DDMAL/diva.js/issues/331
     var expectedTopScroll = 52622;

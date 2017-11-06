@@ -24,7 +24,7 @@ function Renderer(options, hooks)
 
     this._hooks = hooks || {};
 
-    this._canvas = elt('canvas', { class: 'diva-viewer-canvas' });
+    this._canvas = elt('canvas', { class: 'diva-viewer-canvas', tabindex: '1' });
     this._ctx = this._canvas.getContext('2d');
 
     this.layout = null;
@@ -52,6 +52,73 @@ Renderer.getCompatibilityErrors = function ()
         'Your browser lacks support for the ', elt('pre', 'canvas'),
         ' element. Please upgrade your browser.'
     ];
+};
+
+/*
+* Method supplied by Joseph Jezerinac, https://github.com/jezerinac
+*
+* https://github.com/DDMAL/diva.js/pull/370
+*
+* Given a pair of x,y co-ordinates, translate that to a position on a rendered
+* page. Returns an object containing the page index, a percentage of the w/h of
+* the image, and the absolute value of the hit point on the image, e.g., a click in
+* the top left corner of the image would return 0,0.
+*
+**/
+Renderer.prototype.getPageHit = function (clientX, clientY)
+{
+    var bounds = this._outerElement.getBoundingClientRect();
+    if (clientX < bounds.left || clientY < bounds.top ||
+        clientX > bounds.left + bounds.width || clientY > bounds.top + bounds.height)
+    {
+        return null;
+    }
+
+    clientX -= bounds.left;
+    clientY -= bounds.top;
+
+    var numRenderedPages = this._renderedPages.length;
+
+    for (var i = 0; i < numRenderedPages; i++)
+    {
+        var pageIndex = this._renderedPages[i];
+        var pageInfo = this.layout.getPageInfo(pageIndex);
+        var pageOffset = this._getImageOffset(pageIndex);
+
+        var viewportPaddingX = Math.max(0, (this._viewport.width - this.layout.dimensions.width) / 2);
+        var viewportPaddingY = Math.max(0, (this._viewport.height - this.layout.dimensions.height) / 2);
+
+        var viewportOffsetX = pageOffset.left - this._viewport.left + viewportPaddingX;
+        var viewportOffsetY = pageOffset.top - this._viewport.top + viewportPaddingY;
+
+        var destXOffset = viewportOffsetX < 0 ? -viewportOffsetX : 0;
+        var destYOffset = viewportOffsetY < 0 ? -viewportOffsetY : 0;
+
+        var canvasX = Math.max(0, viewportOffsetX);
+        var canvasY = Math.max(0, viewportOffsetY);
+
+        var destWidth = pageInfo.dimensions.width - destXOffset;
+        var destHeight = pageInfo.dimensions.height - destYOffset;
+
+        if (clientX >= canvasX && clientX <= canvasX + destWidth && clientY >= canvasY && clientY <= canvasY + destHeight)
+        {
+            var xhp = ((clientX + destXOffset) - canvasX);
+            var yhp = ((clientY + destYOffset) - canvasY);
+            /* To get the percentage x and y you need to adjust the by the scroll offset and the canvas position
+                Also returns the absolute x and y at a given zoom level; these can be adjusted by clients later
+                using the translateFromMaxZoomLevel / translateToMaxZoomLevel methods.
+             */
+            return {
+                pg: pageIndex,
+                pctx: xhp / pageInfo.dimensions.width,
+                pcty: yhp / pageInfo.dimensions.height,
+                x:  xhp,
+                y: yhp
+            };
+        }
+    }
+
+    return null;
 };
 
 Renderer.prototype.load = function (config, viewportPosition, sourceResolver)
@@ -132,6 +199,8 @@ Renderer.prototype.adjust = function (direction)
         this._hooks.onViewDidUpdate(this._renderedPages.slice(), null);
     }
 };
+
+
 
 // FIXME(wabain): Remove the direction argument if it doesn't end up being needed.
 Renderer.prototype._render = function (direction) // jshint ignore:line

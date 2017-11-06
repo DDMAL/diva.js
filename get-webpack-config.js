@@ -1,5 +1,8 @@
 var webpack = require('webpack');
 
+// polyfill array for older browsers.
+require('array.prototype.fill');
+
 module.exports = function (mode, options)
 {
     var isCompressed = options && options.compress;

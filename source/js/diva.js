@@ -19,6 +19,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
+require('array.prototype.fill');
 
 var jQuery = require('jquery');
 
@@ -99,6 +100,11 @@ module.exports = diva;
         var getPageIndex = function (filename)
         {
             return getPageIndexForManifest(settings.manifest, filename);
+        };
+
+        var NotAnIIIFManifestException = function (message)
+        {
+            return message;
         };
 
         var getPageIndexForManifest = function (manifest, filename)
@@ -345,35 +351,22 @@ module.exports = diva;
 
         var loadObjectData = function (responseData, hashState)
         {
-            var isIIIF, manifest;
+            var manifest;
 
-            // parse IIIF manifest if it is an IIIF manifest. TODO improve IIIF detection method
-            if (responseData.hasOwnProperty('@context') && (responseData['@context'].indexOf('iiif') !== -1 ||
-                responseData['@context'].indexOf('shared-canvas') !== -1))
+            // TODO improve IIIF detection method
+            if (!responseData.hasOwnProperty('@context') && (responseData['@context'].indexOf('iiif') === -1 || responseData['@context'].indexOf('shared-canvas') === -1))
             {
-                isIIIF = true;
-
-                // trigger ManifestDidLoad event
-                // FIXME: Why is this triggered before the manifest is parsed? See https://github.com/DDMAL/diva.js/issues/357
-                diva.Events.publish('ManifestDidLoad', [responseData], self);
-
-                manifest = ImageManifest.fromIIIF(responseData);
-            }
-            else
-            {
-                // IIP support is now deprecated
-                console.warn("Usage of IIP manifests is deprecated. Consider switching to IIIF manifests. Visit http://iiif.io/ for more information.");
-
-                isIIIF = false;
-                manifest = ImageManifest.fromLegacyManifest(responseData, {
-                    iipServerURL: settings.iipServerURL,
-                    imageDir: settings.imageDir
-                });
+                throw new NotAnIIIFManifestException('This does not appear to be a IIIF Manifest.');
             }
 
+            // trigger ManifestDidLoad event
+            // FIXME: Why is this triggered before the manifest is parsed? See https://github.com/DDMAL/diva.js/issues/357
+            diva.Events.publish('ManifestDidLoad', [responseData], self);
+
+            manifest = ImageManifest.fromIIIF(responseData);
             var loadOptions = hashState ? getLoadOptionsForState(hashState, manifest) : {};
 
-            divaState.viewerCore.setManifest(manifest, isIIIF, loadOptions);
+            divaState.viewerCore.setManifest(manifest, loadOptions);
         };
 
         /** Parse the hash parameters into the format used by getState and setState */
@@ -497,6 +490,7 @@ module.exports = diva;
         this.gotoPageByIndex = function (pageIndex, xAnchor, yAnchor)
         {
             pageIndex = parseInt(pageIndex, 10);
+
             if (isPageValid(pageIndex))
             {
                 var xOffset = divaState.viewerCore.getXOffset(pageIndex, xAnchor);
@@ -505,6 +499,7 @@ module.exports = diva;
                 viewerState.renderer.goto(pageIndex, yOffset, xOffset);
                 return true;
             }
+
             return false;
         };
 
@@ -572,6 +567,11 @@ module.exports = diva;
         this.getCurrentPageFilename = function ()
         {
             return settings.manifest.pages[settings.currentPageIndex].f;
+        };
+
+        this.getCurrentCanvas = function (settings)
+        {
+            return settings.manifest.pages[settings.currentPageIndex].canvas;
         };
 
         this.getCurrentPageNumber = function ()
@@ -871,7 +871,9 @@ module.exports = diva;
 
         /*
             Translates a measurement from the zoom level on the largest size
-            to one on the current zoom level.
+            to one on the current zoom level. Takes a single number from the
+            max zoom level and translates that to a number scaled to the current
+            zoom level.
 
             For example, a point 1000 on an image that is on zoom level 2 of 5
             translates to a position of 111.111... (1000 / (5 - 2)^2).
@@ -888,7 +890,8 @@ module.exports = diva;
 
         /*
             Translates a measurement from the current zoom level to the position on the
-            largest zoom level.
+            largest zoom level. Takes a single number and returns that number's value on the
+            image at the max zoom level.
 
             Works for a single pixel co-ordinate or a dimension (e.g., translates a box
             that is 111.111 pixels wide on the current image to one that is 1000 pixels wide
@@ -898,7 +901,7 @@ module.exports = diva;
         {
             var zoomDifference = settings.maxZoomLevel - settings.zoomLevel;
 
-            // if there is no difference, it's a box on the max zoom level and
+            // if there is no difference, it's a number on the max zoom level and
             // we can just return the position.
             if (zoomDifference === 0)
                 return position;
@@ -991,6 +994,20 @@ module.exports = diva;
 
             //if we made it through that entire while loop, we didn't click on a page
             return -1;
+        };
+
+        /*
+        *   Given a set of clientX, clientY co-ordinates, returns an object
+        *
+        **/
+        this.getPageCoordinatesHit = function(clientX, clientY)
+        {
+            if (viewerState.renderer)
+            {
+                return viewerState.renderer.getPageHit(clientX, clientY);
+            }
+
+            return null;
         };
 
         /**

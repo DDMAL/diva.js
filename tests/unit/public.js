@@ -234,17 +234,17 @@ QUnit.test("enterGridView(), leaveGridView()", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-            assert.ok(!settings.inGrid, "Should not be in grid initially");
-            this.enterGridView();
-            assert.ok(settings.inGrid, "Should now be in grid");
-            assert.ok(!this.enterGridView(), "Should not be possible to enter grid");
-            assert.ok(settings.inGrid, "Should still be in grid");
-            assert.ok(this.leaveGridView(), "Should be possible to exit grid");
-            assert.ok(!settings.inGrid, "No longer in grid");
-            assert.ok(!this.leaveGridView(), "Should not be possible to exit grid");
-            assert.ok(!settings.inGrid, "Still not in grid");
-            assert.ok(this.enterGridView(), "Should be possible to enter grid");
-            done();
+        assert.ok(!settings.inGrid, "Should not be in grid initially");
+        this.enterGridView();
+        assert.ok(settings.inGrid, "Should now be in grid");
+        assert.ok(!this.enterGridView(), "Should not be possible to enter grid");
+        assert.ok(settings.inGrid, "Should still be in grid");
+        assert.ok(this.leaveGridView(), "Should be possible to exit grid");
+        assert.ok(!settings.inGrid, "No longer in grid");
+        assert.ok(!this.leaveGridView(), "Should not be possible to exit grid");
+        assert.ok(!settings.inGrid, "Still not in grid");
+        assert.ok(this.enterGridView(), "Should be possible to enter grid");
+        done();
     });
 
     $.tempDiva({});
@@ -257,8 +257,8 @@ QUnit.test("gotoPageByName()", function (assert)
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
         assert.strictEqual(settings.currentPageIndex, 0, "Initial page number should be 1");
-        assert.ok(!this.gotoPageByName('bm_000.tif'), "It should not find anything for bm_000.tif");
-        assert.ok(this.gotoPageByName('bm_002.tif', "right", "center"), "It should find the page index for bm_002.tif");
+        assert.ok(!this.gotoPageByName('https://images.simssa.ca/iiif/image/beromunster/bm_000.tif'), "It should not find anything for bm_000.tif");
+        assert.ok(this.gotoPageByName('https://images.simssa.ca/iiif/image/beromunster/bm_002.tif', "right", "center"), "It should find the page index for bm_002.tif");
         assert.strictEqual(settings.currentPageIndex, 1, "Now the page number should be 2");
 
         assert.strictEqual(settings.viewport.top, 1348, "The page should be anchored to the center (vertically)");
@@ -279,8 +279,8 @@ QUnit.test("getPageIndex()", function (assert)
 
     diva.Events.subscribe('ViewerDidLoad', function(settings)
     {
-        assert.strictEqual(this.getPageIndex('bm_002.tif'), 1, "Valid filename");
-        assert.strictEqual(this.getPageIndex('bm_lol.tif'), -1, "Invalid filename");
+        assert.strictEqual(this.getPageIndex('https://images.simssa.ca/iiif/image/beromunster/bm_002.tif'), 1, "Valid filename");
+        assert.strictEqual(this.getPageIndex('https://images.simssa.ca/iiif/image/beromunster/bm_lol.tif'), -1, "Invalid filename");
 
         done();
     });
@@ -306,7 +306,7 @@ QUnit.test("getState()", function (assert)
         var expected = {
             f: false,
             v: 'd',
-            i: 'bm_001.tif',
+            i: 'https://images.simssa.ca/iiif/image/beromunster/bm_001.tif',
             n: 5,
             p: false,
             x: pageDimens.width / 2,
@@ -342,7 +342,7 @@ QUnit.test("setState()", function (assert)
         var state = {
             f: true,
             v: 'd',
-            i: "bm_005.tif",
+            i: "https://images.simssa.ca/iiif/image/beromunster/bm_005.tif",
             n: 3,
             p: false,
             x: 500,
@@ -359,7 +359,7 @@ QUnit.test("setState()", function (assert)
         assert.strictEqual(settings.zoomLevel, 3, "Zoom level should be 3");
 
         // Recompute the offsets from first principles
-        var index = this.getPageIndex("bm_005.tif");
+        var index = this.getPageIndex("https://images.simssa.ca/iiif/image/beromunster/bm_005.tif");
         var offset = this.getPageOffset(index);
         var viewportElem = settings.viewportElement;
         var x = viewportElem.scrollLeft - offset.left + (viewportElem.clientWidth / 2);
@@ -371,7 +371,7 @@ QUnit.test("setState()", function (assert)
         state = {
             f: false,
             v: 'g',
-            i: "bm_500.tif",
+            i: "https://images.simssa.ca/iiif/image/beromunster/bm_500.tif",
             n: 4,
             p: true,
             x: 100,
@@ -401,7 +401,7 @@ QUnit.test("translateFromMaxZoomLevel()", function (assert)
         var state = {
             f: true,
             v: 'd',
-            i: "bm_005.tif",
+            i: "https://images.simssa.ca/iiif/image/beromunster/bm_005.tif",
             n: 3,
             p: false,
             x: 500,
@@ -423,7 +423,7 @@ QUnit.test("translateFromMaxZoomLevel()", function (assert)
             state = {
                 f: true,
                 v: 'd',
-                i: "bm_005.tif",
+                i: "https://images.simssa.ca/iiif/image/beromunster/bm_005.tif",
                 n: 3,
                 p: false,
                 x: 500,
@@ -453,7 +453,7 @@ QUnit.test("translateToMaxZoomLevel()", function (assert)
         var state = {
             f: true,
             v: 'd',
-            i: "bm_005.tif",
+            i: "https://images.simssa.ca/iiif/image/beromunster/bm_005.tif",
             n: 3,
             p: false,
             x: 500,
@@ -475,7 +475,7 @@ QUnit.test("translateToMaxZoomLevel()", function (assert)
             state = {
                 f: true,
                 v: 'd',
-                i: "bm_005.tif",
+                i: "https://images.simssa.ca/iiif/image/beromunster/bm_005.tif",
                 n: 3,
                 p: false,
                 x: 500,

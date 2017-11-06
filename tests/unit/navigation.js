@@ -89,7 +89,7 @@ QUnit.test("Scrolling in book view", function (assert)
     });
 
     $.tempDiva({
-        objectData: '../demo/beromunster-iiif.json'
+        objectData: '../demo/beromunster-iiif-test.json'
     });
 });
 

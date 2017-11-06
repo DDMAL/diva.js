@@ -138,8 +138,8 @@ function getCentermostPage(renderedPages, layout, viewport)
         var dims = layout.getPageDimensions(pageIndex);
         var imageOffset = layout.getPageOffset(pageIndex, {excludePadding: false});
 
-        var midX = imageOffset.left + (dims.height / 2);
-        var midY = imageOffset.top + (dims.width / 2);
+        var midX = imageOffset.left + (dims.width / 2);
+        var midY = imageOffset.top + (dims.height / 2);
 
         var dx = Math.max(Math.abs(centerX - midX) - (dims.width / 2), 0);
         var dy = Math.max(Math.abs(centerY - midY) - (dims.height / 2), 0);

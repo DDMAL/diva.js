@@ -115,7 +115,6 @@ function ViewerCore(element, options, publicInstance)
         innerElement: null,         // The native .diva-outer DOM object
         innerObject: {},            // $(settings.ID + 'inner'), for selecting the .diva-inner element
         isActiveDiva: true,         // In the case that multiple diva panes exist on the same page, this should have events funneled to it.
-        isIIIF: false,              // Specifies whether objectData is in Diva native or IIIF Manifest format
         isScrollable: true,         // Used in enable/disableScrollable public methods
         isZooming: false,           // Flag to keep track of whether zooming is still in progress, for handleZoom
         loaded: false,              // A flag for when everything is loaded and ready to go.
@@ -1023,12 +1022,9 @@ function ViewerCore(element, options, publicInstance)
         });
     };
 
-    var setManifest = function (manifest, isIIIF, loadOptions)
+    var setManifest = function (manifest, loadOptions)
     {
         viewerState.manifest = manifest;
-
-        // FIXME: is isIIIF even needed?
-        viewerState.isIIIF = isIIIF;
 
         hideThrobber();
 
@@ -1084,6 +1080,7 @@ function ViewerCore(element, options, publicInstance)
         var anchoredVertically = false;
         var anchoredHorizontally = false;
 
+        // NB: `==` here will check both null and undefined
         if (loadOptions.goDirectlyTo == null)
         {
             loadOptions.goDirectlyTo = settings.goDirectlyTo;
@@ -1342,9 +1339,9 @@ function ViewerCore(element, options, publicInstance)
         };
     };
 
-    this.setManifest = function (manifest, isIIIF, loadOptions)
+    this.setManifest = function (manifest, loadOptions)
     {
-        setManifest(manifest, isIIIF, loadOptions || {});
+        setManifest(manifest, loadOptions || {});
     };
 
     /**

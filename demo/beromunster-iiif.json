@@ -3,7 +3,6 @@
   "@id": "https://images.simssa.ca/iiif/image/beromunster/manifest.json",
   "@type": "sc:Manifest",
   "label": "Beromunster",
-  "viewingHint": "paged",
   "sequences": [
     {
       "@type": "sc:Sequence",

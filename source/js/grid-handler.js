@@ -44,6 +44,9 @@ GridHandler.prototype.onViewDidLoad = function ()
 
 GridHandler.prototype.onViewDidUpdate = function (renderedPages, targetPage)
 {
+    // return early if there are no rendered pages in view.
+    if (renderedPages.length === 0) return;
+
     if (targetPage !== null)
     {
         this._viewerCore.setCurrentPage(targetPage);
@@ -57,6 +60,7 @@ GridHandler.prototype.onViewDidUpdate = function (renderedPages, targetPage)
 
     var layout = this._viewerCore.getCurrentLayout();
     var groups = [];
+
     renderedPages.forEach(function (pageIndex)
     {
         var group = layout.getPageInfo(pageIndex).group;
