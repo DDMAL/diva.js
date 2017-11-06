@@ -871,7 +871,9 @@ module.exports = diva;
 
         /*
             Translates a measurement from the zoom level on the largest size
-            to one on the current zoom level.
+            to one on the current zoom level. Takes a single number from the
+            max zoom level and translates that to a number scaled to the current
+            zoom level.
 
             For example, a point 1000 on an image that is on zoom level 2 of 5
             translates to a position of 111.111... (1000 / (5 - 2)^2).
@@ -888,7 +890,8 @@ module.exports = diva;
 
         /*
             Translates a measurement from the current zoom level to the position on the
-            largest zoom level.
+            largest zoom level. Takes a single number and returns that number's value on the
+            image at the max zoom level.
 
             Works for a single pixel co-ordinate or a dimension (e.g., translates a box
             that is 111.111 pixels wide on the current image to one that is 1000 pixels wide
@@ -898,7 +901,7 @@ module.exports = diva;
         {
             var zoomDifference = settings.maxZoomLevel - settings.zoomLevel;
 
-            // if there is no difference, it's a box on the max zoom level and
+            // if there is no difference, it's a number on the max zoom level and
             // we can just return the position.
             if (zoomDifference === 0)
                 return position;
@@ -991,6 +994,20 @@ module.exports = diva;
 
             //if we made it through that entire while loop, we didn't click on a page
             return -1;
+        };
+
+        /*
+        *   Given a set of clientX, clientY co-ordinates, returns an object
+        *
+        **/
+        this.getPageCoordinatesHit = function(clientX, clientY)
+        {
+            if (viewerState.renderer)
+            {
+                return viewerState.renderer.getPageHit(clientX, clientY);
+            }
+
+            return null;
         };
 
         /**
