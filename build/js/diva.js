@@ -65,11 +65,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	var diva = __webpack_require__(2);
 
 	diva.registerPlugin(__webpack_require__(6));
-	diva.registerPlugin(__webpack_require__(42));
 	diva.registerPlugin(__webpack_require__(43));
 	diva.registerPlugin(__webpack_require__(44));
 	diva.registerPlugin(__webpack_require__(45));
 	diva.registerPlugin(__webpack_require__(46));
+	diva.registerPlugin(__webpack_require__(47));
 
 
 /***/ }),
@@ -634,17 +634,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 	*/
+	__webpack_require__(8);
 
 	var jQuery = __webpack_require__(3);
 
-	var elt = __webpack_require__(8);
-	var HashParams = __webpack_require__(9);
+	var elt = __webpack_require__(9);
+	var HashParams = __webpack_require__(10);
 
-	var ActiveDivaController = __webpack_require__(10);
+	var ActiveDivaController = __webpack_require__(11);
 	var diva = __webpack_require__(2);
-	var ImageManifest = __webpack_require__(11);
-	var createToolbar = __webpack_require__(13);
-	var ViewerCore = __webpack_require__(14);
+	var ImageManifest = __webpack_require__(12);
+	var createToolbar = __webpack_require__(14);
+	var ViewerCore = __webpack_require__(15);
 
 	// Start the active Diva tracker
 	var activeDiva = new ActiveDivaController(); // jshint ignore: line
@@ -714,6 +715,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var getPageIndex = function (filename)
 	        {
 	            return getPageIndexForManifest(settings.manifest, filename);
+	        };
+
+	        var NotAnIIIFManifestException = function (message)
+	        {
+	            return message;
 	        };
 
 	        var getPageIndexForManifest = function (manifest, filename)
@@ -960,35 +966,22 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	        var loadObjectData = function (responseData, hashState)
 	        {
-	            var isIIIF, manifest;
+	            var manifest;
 
-	            // parse IIIF manifest if it is an IIIF manifest. TODO improve IIIF detection method
-	            if (responseData.hasOwnProperty('@context') && (responseData['@context'].indexOf('iiif') !== -1 ||
-	                responseData['@context'].indexOf('shared-canvas') !== -1))
+	            // TODO improve IIIF detection method
+	            if (!responseData.hasOwnProperty('@context') && (responseData['@context'].indexOf('iiif') === -1 || responseData['@context'].indexOf('shared-canvas') === -1))
 	            {
-	                isIIIF = true;
-
-	                // trigger ManifestDidLoad event
-	                // FIXME: Why is this triggered before the manifest is parsed? See https://github.com/DDMAL/diva.js/issues/357
-	                diva.Events.publish('ManifestDidLoad', [responseData], self);
-
-	                manifest = ImageManifest.fromIIIF(responseData);
-	            }
-	            else
-	            {
-	                // IIP support is now deprecated
-	                console.warn("Usage of IIP manifests is deprecated. Consider switching to IIIF manifests. Visit http://iiif.io/ for more information.");
-
-	                isIIIF = false;
-	                manifest = ImageManifest.fromLegacyManifest(responseData, {
-	                    iipServerURL: settings.iipServerURL,
-	                    imageDir: settings.imageDir
-	                });
+	                throw new NotAnIIIFManifestException('This does not appear to be a IIIF Manifest.');
 	            }
 
+	            // trigger ManifestDidLoad event
+	            // FIXME: Why is this triggered before the manifest is parsed? See https://github.com/DDMAL/diva.js/issues/357
+	            diva.Events.publish('ManifestDidLoad', [responseData], self);
+
+	            manifest = ImageManifest.fromIIIF(responseData);
 	            var loadOptions = hashState ? getLoadOptionsForState(hashState, manifest) : {};
 
-	            divaState.viewerCore.setManifest(manifest, isIIIF, loadOptions);
+	            divaState.viewerCore.setManifest(manifest, loadOptions);
 	        };
 
 	        /** Parse the hash parameters into the format used by getState and setState */
@@ -1112,6 +1105,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.gotoPageByIndex = function (pageIndex, xAnchor, yAnchor)
 	        {
 	            pageIndex = parseInt(pageIndex, 10);
+
 	            if (isPageValid(pageIndex))
 	            {
 	                var xOffset = divaState.viewerCore.getXOffset(pageIndex, xAnchor);
@@ -1120,6 +1114,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                viewerState.renderer.goto(pageIndex, yOffset, xOffset);
 	                return true;
 	            }
+
 	            return false;
 	        };
 
@@ -1187,6 +1182,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.getCurrentPageFilename = function ()
 	        {
 	            return settings.manifest.pages[settings.currentPageIndex].f;
+	        };
+
+	        this.getCurrentCanvas = function (settings)
+	        {
+	            return settings.manifest.pages[settings.currentPageIndex].canvas;
 	        };
 
 	        this.getCurrentPageNumber = function ()
@@ -1486,7 +1486,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	        /*
 	            Translates a measurement from the zoom level on the largest size
-	            to one on the current zoom level.
+	            to one on the current zoom level. Takes a single number from the
+	            max zoom level and translates that to a number scaled to the current
+	            zoom level.
 
 	            For example, a point 1000 on an image that is on zoom level 2 of 5
 	            translates to a position of 111.111... (1000 / (5 - 2)^2).
@@ -1503,7 +1505,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	        /*
 	            Translates a measurement from the current zoom level to the position on the
-	            largest zoom level.
+	            largest zoom level. Takes a single number and returns that number's value on the
+	            image at the max zoom level.
 
 	            Works for a single pixel co-ordinate or a dimension (e.g., translates a box
 	            that is 111.111 pixels wide on the current image to one that is 1000 pixels wide
@@ -1513,7 +1516,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        {
 	            var zoomDifference = settings.maxZoomLevel - settings.zoomLevel;
 
-	            // if there is no difference, it's a box on the max zoom level and
+	            // if there is no difference, it's a number on the max zoom level and
 	            // we can just return the position.
 	            if (zoomDifference === 0)
 	                return position;
@@ -1606,6 +1609,20 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	            //if we made it through that entire while loop, we didn't click on a page
 	            return -1;
+	        };
+
+	        /*
+	        *   Given a set of clientX, clientY co-ordinates, returns an object
+	        *
+	        **/
+	        this.getPageCoordinatesHit = function(clientX, clientY)
+	        {
+	            if (viewerState.renderer)
+	            {
+	                return viewerState.renderer.getPageHit(clientX, clientY);
+	            }
+
+	            return null;
 	        };
 
 	        /**
@@ -1777,6 +1794,70 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 8 */
 /***/ (function(module, exports) {
 
+	(function () {
+	  if (Array.prototype.fill) return;
+
+	  var fill = function (value) {
+	    // Steps 1-2.
+	    if (this == null) {
+	      throw new TypeError("this is null or not defined");
+	    }
+
+	    var O = Object(this);
+
+	    // Steps 3-5.
+	    var len = O.length >>> 0;
+
+	    // Steps 6-7.
+	    var start = arguments[1];
+	    var relativeStart = start >> 0;
+
+	    // Step 8.
+	    var k = relativeStart < 0 ?
+	      Math.max(len + relativeStart, 0) :
+	      Math.min(relativeStart, len);
+
+	    // Steps 9-10.
+	    var end = arguments[2];
+	    var relativeEnd = end === undefined ?
+	      len : end >> 0;
+
+	    // Step 11.
+	    var last = relativeEnd < 0 ?
+	      Math.max(len + relativeEnd, 0) :
+	      Math.min(relativeEnd, len);
+
+	    // Step 12.
+	    while (k < last) {
+	      O[k] = value;
+	      k++;
+	    }
+
+	    // Step 13.
+	    return O;
+	  };
+
+	  if (Object.defineProperty) {
+	    try {
+	      Object.defineProperty(Array.prototype, 'fill', {
+	        value: fill,
+	        configurable: true,
+	        enumerable: false,
+	        writable: true
+	      });
+	    } catch(e) {}
+	  }
+
+	  if (!Array.prototype.fill) {
+	    Array.prototype.fill = fill;
+	  }
+	})(this);
+
+
+/***/ }),
+/* 9 */
+/***/ (function(module, exports) {
+
 	module.exports = elt;
 	module.exports.setAttributes = setDOMAttributes;
 
@@ -1875,7 +1956,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 9 */
+/* 10 */
 /***/ (function(module, exports) {
 
 	module.exports.get = getHashParam;
@@ -1942,7 +2023,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 10 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	var jQuery = __webpack_require__(3);
@@ -2019,12 +2100,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 11 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* jshint unused: true */
 
-	var parseIIIFManifest = __webpack_require__(12);
+	var parseIIIFManifest = __webpack_require__(13);
 
 	module.exports = ImageManifest;
 
@@ -2273,12 +2354,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 12 */
+/* 13 */
 /***/ (function(module, exports) {
 
 	/* jshint unused: true */
-	/* jshint -W097 */
-	"use strict";
 
 	module.exports = parseIIIFManifest;
 
@@ -2346,24 +2425,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	    for (var z = 0; z < numCanvases; z++)
 	    {
 	        var c = canvases[z];
-
-	        // if this canvas has an empty width or height, don't factor that into our calculations.
-	        if (c.width === 0 || c.height === 0)
-	        {
-	            continue;
-	        }
-
 	        var w = c.width;
 	        var h = c.height;
 	        var mz = getMaxZoomLevel(w, h);
-	        var ratio = w / h;
+	        var ratio = h / w;
 	        maxRatio = Math.max(ratio, maxRatio);
 	        minRatio = Math.min(ratio, minRatio);
 
 	        lowestMaxZoom = Math.min(lowestMaxZoom, mz);
 	    }
 
-	    // Uint8Arrays are pre-initialized with zeroes.
+	    // Uint8Arrays are pre-initialized with zeroes. These ones need to be
+	    // pre-initialized since we will do arithmetic and value checking on them
 	    var totalWidths = new Array(lowestMaxZoom + 1).fill(0);
 	    var totalHeights = new Array(lowestMaxZoom + 1).fill(0);
 	    var maxWidths = new Array(lowestMaxZoom + 1).fill(0);
@@ -2373,13 +2446,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    {
 	        thisCanvas = canvases[i];
 	        canvas = thisCanvas['@id'];
-
-	        if (!thisCanvas.images || thisCanvas.images.length === 0)
-	        {
-	            console.warn("An empty canvas was found: " + canvas);
-	            continue;
-	        }
-
 	        label = thisCanvas.label;
 	        thisResource = thisCanvas.images[0].resource;
 
@@ -2400,6 +2466,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	        // Prioritize the canvas height / width first, since images may not have h/w
 	        width = thisCanvas.width || thisImage.width;
 	        height = thisCanvas.height || thisImage.height;
+	        if (width <= 0 || height <= 0)
+	        {
+	            console.warn('Invalid width or height for canvas ' + label + '. Skipping');
+	            continue;
+	        }
+
 	        maxZoom = getMaxZoomLevel(width, height);
 
 	        if (thisResource.item)
@@ -2438,11 +2510,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	                w: widthAtCurrentZoomLevel
 	            };
 
-	            var currentTotalWidths = totalWidths[k] + widthAtCurrentZoomLevel;
-	            var currentTotalHeights = totalHeights[k] + heightAtCurrentZoomLevel;
-
-	            totalWidths[k] = currentTotalWidths;
-	            totalHeights[k] = currentTotalHeights;
+	            totalWidths[k] += widthAtCurrentZoomLevel;
+	            totalHeights[k] += heightAtCurrentZoomLevel;
 	            maxWidths[k] = Math.max(widthAtCurrentZoomLevel, maxWidths[k]);
 	            maxHeights[k] = Math.max(heightAtCurrentZoomLevel, maxHeights[k]);
 	        }
@@ -2452,7 +2521,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            m: maxZoom,
 	            l: label,         // canvas label ('page 1, page 2', etc.)
 	            il: imageLabel,   // default image label ('primary image', 'UV light', etc.)
-	            f: url,
+	            f: info.url,
 	            url: url,
 	            api: imageAPIVersion,
 	            paged: thisCanvas.viewingHint !== 'non-paged',
@@ -2464,8 +2533,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        };
 	    }
 
-	    var averageWidths = new Array(lowestMaxZoom + 1).fill(0);
-	    var averageHeights = new Array(lowestMaxZoom + 1).fill(0);
+	    var averageWidths = new Array(lowestMaxZoom + 1);
+	    var averageHeights = new Array(lowestMaxZoom + 1);
 
 	    for (var a = 0; a < lowestMaxZoom + 1; a++)
 	    {
@@ -2489,7 +2558,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        dims: dims,
 	        max_zoom: lowestMaxZoom,
 	        pgs: pages,
-	        pages: manifest.viewingHint === 'paged' || sequence.viewingHint === 'paged'
+	        paged: manifest.viewingHint === 'paged' || sequence.viewingHint === 'paged'
 	    };
 	}
 
@@ -2552,14 +2621,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return imageInfo;
 	}
 
+
 /***/ }),
-/* 13 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(3);
 
 	var diva = __webpack_require__(2);
-	var elt = __webpack_require__(8);
+	var elt = __webpack_require__(9);
 
 	module.exports = createToolbar;
 
@@ -3263,29 +3333,29 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 14 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(3);
 
-	__webpack_require__(15);
+	__webpack_require__(16);
 
-	var elt = __webpack_require__(8);
-	var getScrollbarWidth = __webpack_require__(16);
+	var elt = __webpack_require__(9);
+	var getScrollbarWidth = __webpack_require__(17);
 
-	var gestureEvents = __webpack_require__(17);
+	var gestureEvents = __webpack_require__(18);
 	var diva = __webpack_require__(2);
-	var DocumentHandler = __webpack_require__(18);
-	var GridHandler = __webpack_require__(22);
-	var PageOverlayManager = __webpack_require__(23);
+	var DocumentHandler = __webpack_require__(19);
+	var GridHandler = __webpack_require__(23);
+	var PageOverlayManager = __webpack_require__(24);
 	var PluginRegistry = __webpack_require__(5);
-	var Renderer = __webpack_require__(24);
-	var getPageLayouts = __webpack_require__(34);
-	var createSettingsView = __webpack_require__(39);
-	var ValidationRunner = __webpack_require__(40);
-	var Viewport = __webpack_require__(41);
+	var Renderer = __webpack_require__(25);
+	var getPageLayouts = __webpack_require__(35);
+	var createSettingsView = __webpack_require__(40);
+	var ValidationRunner = __webpack_require__(41);
+	var Viewport = __webpack_require__(42);
 
-	var debug = __webpack_require__(25)('diva:ViewerCore');
+	var debug = __webpack_require__(26)('diva:ViewerCore');
 
 	module.exports = ViewerCore;
 
@@ -3383,7 +3453,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        innerElement: null,         // The native .diva-outer DOM object
 	        innerObject: {},            // $(settings.ID + 'inner'), for selecting the .diva-inner element
 	        isActiveDiva: true,         // In the case that multiple diva panes exist on the same page, this should have events funneled to it.
-	        isIIIF: false,              // Specifies whether objectData is in Diva native or IIIF Manifest format
 	        isScrollable: true,         // Used in enable/disableScrollable public methods
 	        isZooming: false,           // Flag to keep track of whether zooming is still in progress, for handleZoom
 	        loaded: false,              // A flag for when everything is loaded and ready to go.
@@ -4291,12 +4360,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        });
 	    };
 
-	    var setManifest = function (manifest, isIIIF, loadOptions)
+	    var setManifest = function (manifest, loadOptions)
 	    {
 	        viewerState.manifest = manifest;
-
-	        // FIXME: is isIIIF even needed?
-	        viewerState.isIIIF = isIIIF;
 
 	        hideThrobber();
 
@@ -4352,6 +4418,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var anchoredVertically = false;
 	        var anchoredHorizontally = false;
 
+	        // NB: `==` here will check both null and undefined
 	        if (loadOptions.goDirectlyTo == null)
 	        {
 	            loadOptions.goDirectlyTo = settings.goDirectlyTo;
@@ -4610,9 +4677,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        };
 	    };
 
-	    this.setManifest = function (manifest, isIIIF, loadOptions)
+	    this.setManifest = function (manifest, loadOptions)
 	    {
-	        setManifest(manifest, isIIIF, loadOptions || {});
+	        setManifest(manifest, loadOptions || {});
 	    };
 
 	    /**
@@ -4765,7 +4832,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 15 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* jshint unused: false */
@@ -5493,7 +5560,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 16 */
+/* 17 */
 /***/ (function(module, exports) {
 
 	// From http://www.alexandre-gomes.com/?p=115, modified slightly
@@ -5527,7 +5594,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 17 */
+/* 18 */
 /***/ (function(module, exports) {
 
 	module.exports = {
@@ -5724,11 +5791,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 18 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	var maxBy = __webpack_require__(19);
-	var PageToolsOverlay = __webpack_require__(21);
+	var maxBy = __webpack_require__(20);
+	var PageToolsOverlay = __webpack_require__(22);
 
 	module.exports = DocumentHandler;
 
@@ -5867,8 +5934,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var dims = layout.getPageDimensions(pageIndex);
 	        var imageOffset = layout.getPageOffset(pageIndex, {excludePadding: false});
 
-	        var midX = imageOffset.left + (dims.height / 2);
-	        var midY = imageOffset.top + (dims.width / 2);
+	        var midX = imageOffset.left + (dims.width / 2);
+	        var midY = imageOffset.top + (dims.height / 2);
 
 	        var dx = Math.max(Math.abs(centerX - midX) - (dims.width / 2), 0);
 	        var dy = Math.max(Math.abs(centerY - midY) - (dims.height / 2), 0);
@@ -5881,7 +5948,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 19 */
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global, module) {/**
@@ -8149,10 +8216,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	module.exports = maxBy;
 
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(20)(module)))
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(21)(module)))
 
 /***/ }),
-/* 20 */
+/* 21 */
 /***/ (function(module, exports) {
 
 	module.exports = function(module) {
@@ -8168,10 +8235,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 21 */
+/* 22 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	var elt = __webpack_require__(8);
+	var elt = __webpack_require__(9);
 
 	module.exports = PageToolsOverlay;
 
@@ -8252,10 +8319,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 22 */
+/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	var maxBy = __webpack_require__(19);
+	var maxBy = __webpack_require__(20);
 
 	module.exports = GridHandler;
 
@@ -8301,6 +8368,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	GridHandler.prototype.onViewDidUpdate = function (renderedPages, targetPage)
 	{
+	    // return early if there are no rendered pages in view.
+	    if (renderedPages.length === 0) return;
+
 	    if (targetPage !== null)
 	    {
 	        this._viewerCore.setCurrentPage(targetPage);
@@ -8314,6 +8384,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    var layout = this._viewerCore.getCurrentLayout();
 	    var groups = [];
+
 	    renderedPages.forEach(function (pageIndex)
 	    {
 	        var group = layout.getPageInfo(pageIndex).group;
@@ -8360,7 +8431,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 23 */
+/* 24 */
 /***/ (function(module, exports) {
 
 	module.exports = PageOverlayManager;
@@ -8468,21 +8539,21 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 24 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var debug = __webpack_require__(25)('diva:Renderer');
-	var debugPaints = __webpack_require__(25)('diva:Renderer:paints');
+	var debug = __webpack_require__(26)('diva:Renderer');
+	var debugPaints = __webpack_require__(26)('diva:Renderer:paints');
 
-	var elt = __webpack_require__(8);
+	var elt = __webpack_require__(9);
 
-	var CompositeImage = __webpack_require__(29);
-	var DocumentLayout = __webpack_require__(30);
-	var ImageCache = __webpack_require__(31);
-	var ImageRequestHandler = __webpack_require__(32);
-	var InterpolateAnimation = __webpack_require__(33);
+	var CompositeImage = __webpack_require__(30);
+	var DocumentLayout = __webpack_require__(31);
+	var ImageCache = __webpack_require__(32);
+	var ImageRequestHandler = __webpack_require__(33);
+	var InterpolateAnimation = __webpack_require__(34);
 
 	var REQUEST_DEBOUNCE_INTERVAL = 250;
 
@@ -8497,7 +8568,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    this._hooks = hooks || {};
 
-	    this._canvas = elt('canvas', { class: 'diva-viewer-canvas' });
+	    this._canvas = elt('canvas', { class: 'diva-viewer-canvas', tabindex: '1' });
 	    this._ctx = this._canvas.getContext('2d');
 
 	    this.layout = null;
@@ -8525,6 +8596,73 @@ return /******/ (function(modules) { // webpackBootstrap
 	        'Your browser lacks support for the ', elt('pre', 'canvas'),
 	        ' element. Please upgrade your browser.'
 	    ];
+	};
+
+	/*
+	* Method supplied by Joseph Jezerinac, https://github.com/jezerinac
+	*
+	* https://github.com/DDMAL/diva.js/pull/370
+	*
+	* Given a pair of x,y co-ordinates, translate that to a position on a rendered
+	* page. Returns an object containing the page index, a percentage of the w/h of
+	* the image, and the absolute value of the hit point on the image, e.g., a click in
+	* the top left corner of the image would return 0,0.
+	*
+	**/
+	Renderer.prototype.getPageHit = function (clientX, clientY)
+	{
+	    var bounds = this._outerElement.getBoundingClientRect();
+	    if (clientX < bounds.left || clientY < bounds.top ||
+	        clientX > bounds.left + bounds.width || clientY > bounds.top + bounds.height)
+	    {
+	        return null;
+	    }
+
+	    clientX -= bounds.left;
+	    clientY -= bounds.top;
+
+	    var numRenderedPages = this._renderedPages.length;
+
+	    for (var i = 0; i < numRenderedPages; i++)
+	    {
+	        var pageIndex = this._renderedPages[i];
+	        var pageInfo = this.layout.getPageInfo(pageIndex);
+	        var pageOffset = this._getImageOffset(pageIndex);
+
+	        var viewportPaddingX = Math.max(0, (this._viewport.width - this.layout.dimensions.width) / 2);
+	        var viewportPaddingY = Math.max(0, (this._viewport.height - this.layout.dimensions.height) / 2);
+
+	        var viewportOffsetX = pageOffset.left - this._viewport.left + viewportPaddingX;
+	        var viewportOffsetY = pageOffset.top - this._viewport.top + viewportPaddingY;
+
+	        var destXOffset = viewportOffsetX < 0 ? -viewportOffsetX : 0;
+	        var destYOffset = viewportOffsetY < 0 ? -viewportOffsetY : 0;
+
+	        var canvasX = Math.max(0, viewportOffsetX);
+	        var canvasY = Math.max(0, viewportOffsetY);
+
+	        var destWidth = pageInfo.dimensions.width - destXOffset;
+	        var destHeight = pageInfo.dimensions.height - destYOffset;
+
+	        if (clientX >= canvasX && clientX <= canvasX + destWidth && clientY >= canvasY && clientY <= canvasY + destHeight)
+	        {
+	            var xhp = ((clientX + destXOffset) - canvasX);
+	            var yhp = ((clientY + destYOffset) - canvasY);
+	            /* To get the percentage x and y you need to adjust the by the scroll offset and the canvas position
+	                Also returns the absolute x and y at a given zoom level; these can be adjusted by clients later
+	                using the translateFromMaxZoomLevel / translateToMaxZoomLevel methods.
+	             */
+	            return {
+	                pg: pageIndex,
+	                pctx: xhp / pageInfo.dimensions.width,
+	                pcty: yhp / pageInfo.dimensions.height,
+	                x:  xhp,
+	                y: yhp
+	            };
+	        }
+	    }
+
+	    return null;
 	};
 
 	Renderer.prototype.load = function (config, viewportPosition, sourceResolver)
@@ -8605,6 +8743,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this._hooks.onViewDidUpdate(this._renderedPages.slice(), null);
 	    }
 	};
+
+
 
 	// FIXME(wabain): Remove the direction argument if it doesn't end up being needed.
 	Renderer.prototype._render = function (direction) // jshint ignore:line
@@ -9059,7 +9199,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 25 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -9068,7 +9208,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * Expose `debug()` as the module.
 	 */
 
-	exports = module.exports = __webpack_require__(27);
+	exports = module.exports = __webpack_require__(28);
 	exports.log = log;
 	exports.formatArgs = formatArgs;
 	exports.save = save;
@@ -9248,10 +9388,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  } catch (e) {}
 	}
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(26)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(27)))
 
 /***/ }),
-/* 26 */
+/* 27 */
 /***/ (function(module, exports) {
 
 	// shim for using process in browser
@@ -9441,7 +9581,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 27 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	
@@ -9457,7 +9597,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.disable = disable;
 	exports.enable = enable;
 	exports.enabled = enabled;
-	exports.humanize = __webpack_require__(28);
+	exports.humanize = __webpack_require__(29);
 
 	/**
 	 * The currently active debug mode names, and names to skip.
@@ -9649,7 +9789,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 28 */
+/* 29 */
 /***/ (function(module, exports) {
 
 	/**
@@ -9807,7 +9947,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 29 */
+/* 30 */
 /***/ (function(module, exports) {
 
 	module.exports = CompositeImage;
@@ -10021,7 +10161,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 30 */
+/* 31 */
 /***/ (function(module, exports) {
 
 	module.exports = DocumentLayout;
@@ -10316,12 +10456,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 31 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var debug = __webpack_require__(25)('diva:ImageCache');
+	var debug = __webpack_require__(26)('diva:ImageCache');
 
 	module.exports = ImageCache;
 
@@ -10437,10 +10577,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 32 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	var debug = __webpack_require__(25)('diva:ImageRequestHandler');
+	var debug = __webpack_require__(26)('diva:ImageRequestHandler');
 
 	module.exports = ImageRequestHandler;
 
@@ -10526,7 +10666,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 33 */
+/* 34 */
 /***/ (function(module, exports) {
 
 	/* global performance */
@@ -10643,12 +10783,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 34 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	var getBookLayoutGroups = __webpack_require__(35);
-	var getSinglesLayoutGroups = __webpack_require__(37);
-	var getGridLayoutGroups = __webpack_require__(38);
+	var getBookLayoutGroups = __webpack_require__(36);
+	var getSinglesLayoutGroups = __webpack_require__(38);
+	var getGridLayoutGroups = __webpack_require__(39);
 
 	module.exports = getPageLayouts;
 
@@ -10689,10 +10829,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 35 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	var getPageDimensions = __webpack_require__(36);
+	var getPageDimensions = __webpack_require__(37);
 
 	module.exports = getBookLayoutGroups;
 
@@ -10861,7 +11001,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 36 */
+/* 37 */
 /***/ (function(module, exports) {
 
 	module.exports = function getPageDimensions(pageIndex, manifest)
@@ -10876,10 +11016,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 37 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	var getPageDimensions = __webpack_require__(36);
+	var getPageDimensions = __webpack_require__(37);
 
 	module.exports = function getSinglesLayoutGroups(viewerConfig)
 	{
@@ -10911,7 +11051,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 38 */
+/* 39 */
 /***/ (function(module, exports) {
 
 	module.exports = getGridLayoutGroups;
@@ -11015,7 +11155,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 39 */
+/* 40 */
 /***/ (function(module, exports) {
 
 	module.exports = createSettingsView;
@@ -11052,7 +11192,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 40 */
+/* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	var extend = __webpack_require__(3).extend;
@@ -11222,7 +11362,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 41 */
+/* 42 */
 /***/ (function(module, exports) {
 
 	module.exports = Viewport;
@@ -11373,7 +11513,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 42 */
+/* 43 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/*
@@ -11386,7 +11526,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var jQuery = __webpack_require__(3);
 	var diva = __webpack_require__(7);
 
-	__webpack_require__(15);
+	__webpack_require__(16);
 
 	(function ($)
 	{
@@ -12346,7 +12486,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 43 */
+/* 44 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/*
@@ -12389,7 +12529,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 44 */
+/* 45 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/*
@@ -12398,7 +12538,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	*/
 
 	var jQuery = __webpack_require__(3);
-	var elt = __webpack_require__(8);
+	var elt = __webpack_require__(9);
 	var diva = __webpack_require__(7);
 
 	(function ($)
@@ -12970,7 +13110,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 45 */
+/* 46 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/*
@@ -12980,7 +13120,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var jQuery = __webpack_require__(3);
 	var diva = __webpack_require__(7);
-	var HighlightManager = __webpack_require__(44).HighlightManager;
+	var HighlightManager = __webpack_require__(45).HighlightManager;
 
 	(function ($)
 	{
@@ -13272,7 +13412,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 46 */
+/* 47 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	// IIIF Metadata plugin for diva.js
