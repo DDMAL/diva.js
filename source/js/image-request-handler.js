@@ -22,7 +22,10 @@ function ImageRequestHandler(options)
     {
         // Initiate the request
         this._image = new Image();
-        this._image.crossOrigin = "anonymous";
+        if (options.enableCrossOrigin)
+        {
+            this._image.crossOrigin = "anonymous";
+        }
         this._image.onload = this._handleLoad.bind(this);
         this._image.onerror = this._handleError.bind(this);
         this._image.src = options.url;
