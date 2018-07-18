@@ -45,7 +45,7 @@ module.exports = [{
         filename: '[name].js'
     },
     resolve: {
-        extensions: ["", ".js"],
+        extensions: ["*", ".js"],
     },
     module: {
         rules: [

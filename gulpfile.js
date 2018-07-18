@@ -79,11 +79,10 @@ gulp.task('lint-src', lintSrc);
 gulp.task('lint-test', lintTest);
 gulp.task('lint-gulpfile', lintGulpfile);
 
-gulp.task('develop:build-icons', ['convert-svg-to-png', 'make-sprites']);
 gulp.task('develop:build-plugins', plugins);
 gulp.task('develop:clean', cleanDist);
 gulp.task('develop:tmp-clean', cleanTemp);
-gulp.task('develop:lint', ['lint-src', 'lint-test', 'lint-gulpfile']);
+gulp.task('develop:lint', gulp.series('lint-src', 'lint-test', 'lint-gulpfile'));
 gulp.task('develop:server', server);
-gulp.task('develop', ['develop:lint', 'develop:clean', 'develop:build-plugins', 'develop:server']);
-gulp.task('default', ['develop']);
+gulp.task('develop', gulp.series('develop:lint', 'develop:clean', 'develop:build-plugins', 'develop:server'));
+gulp.task('default', gulp.series('develop'));
