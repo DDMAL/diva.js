@@ -8,18 +8,16 @@ export default {
     }
 };
 
-/* jshint ignore:start */
 let now;
 
 if (typeof performance !== 'undefined' && performance.now)
 {
-    now = () => { return performance.now() };
+    now = () => { return performance.now(); };
 }
 else
 {
-    now = () => { return Date.now() };
+    now = () => { return Date.now(); };
 }
-/* jshint ignore:end */
 
 
 function animate (options)

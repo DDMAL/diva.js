@@ -133,7 +133,7 @@ export default class Renderer
         this._viewport.setInnerDimensions(this.layout.dimensions);
     }
 
-    adjust (direction)
+    adjust ()
     {
         this._clearAnimation();
 
