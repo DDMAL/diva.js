@@ -4,7 +4,7 @@
   "description": "Diva.js",
   "main": "build/js/diva.js",
   "scripts": {
-    "test": "mocha --compilers js:babel-register"
+    "test": "mocha -r babel-register"
   },
   "repository": {
     "type": "git",
@@ -43,10 +43,7 @@
     "jsdom-global": "2.1.1",
     "jshint": "^2.9.4",
     "jshint-stylish": "^2.2.1",
-    "mocha": "^3.2.0",
-    "phantomjs-prebuilt": "^2.1.14",
-    "sinon": "^1.17.7",
-    "sinon-chai": "^2.8.0",
+    "mocha": "^5.2.0",
     "webpack": "^4.14.0",
     "webpack-dev-server": "^3.1.4"
   },
