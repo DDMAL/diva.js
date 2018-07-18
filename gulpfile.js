@@ -56,7 +56,6 @@ function server ()
     let devConfig = Object.create(webpackConf)[0];
     devConfig.entry.unshift("webpack-dev-server/client?http://localhost:9001/");
     devConfig.devtool = "source-map";
-    devConfig.debug = true;
     devConfig.devServer = {
         inline: true
     };
