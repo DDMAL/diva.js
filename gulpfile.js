@@ -37,7 +37,7 @@ function lintSrc ()
 
 function lintTest ()
 {
-    return lint('tests/*.js');
+    return lint('test/*.js');
 }
 
 function lintGulpfile ()
