@@ -342,3 +342,7 @@
   transform: translate(-50%, -50%);
   z-index: 120;
   padding: 2em 2.2em; }
+
+.diva-fullscreen-tools {
+  transition: opacity 0.5s;
+}

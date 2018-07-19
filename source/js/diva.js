@@ -1398,8 +1398,22 @@ class Diva
     toggleFullscreenMode ()
     {
         this._toggleFullscreen();
-        if (this.settings.inFullscreen)
-            document.getElementById('diva-1-tools').classList.add("diva-fullscreen-tools");
+
+        let t;
+        if (this.settings.inFullscreen) 
+        {
+            let tools = document.getElementById('diva-1-tools');
+            tools.classList.add("diva-fullscreen-tools");
+            document.addEventListener('mousemove', function () 
+            {
+                tools.style.opacity = 1;
+                clearTimeout(t);
+                t = setTimeout(function () 
+                {
+                    tools.style.opacity = 0;
+                }, 1000);
+            });
+        }
         else
             document.getElementById('diva-1-tools').classList.remove("diva-fullscreen-tools");
     }
