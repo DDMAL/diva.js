@@ -1380,6 +1380,10 @@ class Diva
     toggleFullscreenMode ()
     {
         this._toggleFullscreen();
+        if (this.settings.inFullscreen)
+            document.getElementById('diva-1-tools').classList.add("diva-fullscreen-tools");
+        else
+            document.getElementById('diva-1-tools').classList.remove("diva-fullscreen-tools");
     }
 
     /**
