@@ -1383,6 +1383,7 @@ export default class ViewerCore
         if (!this.viewerState.isScrollable)
         {
             this.bindMouseEvents();
+            this.enableDragScrollable();
             this.viewerState.options.enableKeyScroll = this.viewerState.initialKeyScroll;
             this.viewerState.options.enableSpaceScroll = this.viewerState.initialSpaceScroll;
             this.viewerState.viewportElement.style.overflow = 'auto';
@@ -1390,14 +1391,20 @@ export default class ViewerCore
         }
     }
 
+    enableDragScrollable ()
+    {
+        if (this.viewerState.viewportObject.hasAttribute('nochilddrag'))
+            this.viewerState.viewportObject.removeAttribute('nochilddrag');
+    }
+
     disableScrollable ()
     {
         if (this.viewerState.isScrollable)
         {
-            // block dragging/double-click zooming
-            if (this.viewerState.innerObject.hasClass('diva-dragger'))
-                this.viewerState.innerObject.mousedown = null;
+            // block dragging
+            this.disableDragScrollable();
 
+            // block double-click zooming
             this.viewerState.outerObject.dblclick = null;
             this.viewerState.outerObject.contextmenu = null;
 
@@ -1412,6 +1419,12 @@ export default class ViewerCore
 
             this.viewerState.isScrollable = false;
         }
+    }
+
+    disableDragScrollable ()
+    {
+        if (!this.viewerState.viewportObject.hasAttribute('nochilddrag'))
+            this.viewerState.viewportObject.setAttribute('nochilddrag', "");
     }
 
     // isValidOption (key, value)
