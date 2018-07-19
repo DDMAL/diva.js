@@ -1400,6 +1400,7 @@ class Diva
         this._toggleFullscreen();
 
         let t;
+        let hover = false;
         if (this.settings.inFullscreen) 
         {
             let tools = document.getElementById('diva-1-tools');
@@ -1408,10 +1409,20 @@ class Diva
             {
                 tools.style.opacity = 1;
                 clearTimeout(t);
-                t = setTimeout(function () 
-                {
-                    tools.style.opacity = 0;
-                }, 1000);
+                if (!hover) {
+                    t = setTimeout(function () 
+                    {
+                        tools.style.opacity = 0;
+                    }, 500);
+                }
+            });
+            tools.addEventListener('mouseenter', function ()
+            {
+                hover = true;
+                tools.style.opacity = 1;
+            });
+            tools.addEventListener('mouseleave', function () {
+                hover = false;
             });
         }
         else
