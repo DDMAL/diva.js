@@ -1,32 +1,31 @@
-module.exports = getGridLayoutGroups;
 
-function getGridLayoutGroups(viewerConfig)
+export default function getGridLayoutGroups (viewerConfig)
 {
-    var viewportWidth = viewerConfig.viewport.width;
-    var manifest = viewerConfig.manifest;
-    var pagesPerRow = viewerConfig.pagesPerRow;
-    var fixedHeightGrid = viewerConfig.fixedHeightGrid;
-    var fixedPadding = viewerConfig.fixedPadding;
-    var showNonPagedPages = viewerConfig.showNonPagedPages;
+    const viewportWidth = viewerConfig.viewport.width;
+    const manifest = viewerConfig.manifest;
+    const pagesPerRow = viewerConfig.pagesPerRow;
+    const fixedHeightGrid = viewerConfig.fixedHeightGrid;
+    const fixedPadding = viewerConfig.fixedPadding;
+    const showNonPagedPages = viewerConfig.showNonPagedPages;
 
-    var horizontalPadding = fixedPadding * (pagesPerRow + 1);
-    var pageWidth = (viewportWidth - horizontalPadding) / pagesPerRow;
-    var gridPageWidth = pageWidth;
+    const horizontalPadding = fixedPadding * (pagesPerRow + 1);
+    const pageWidth = (viewportWidth - horizontalPadding) / pagesPerRow;
+    const gridPageWidth = pageWidth;
 
     // Calculate the row height depending on whether we want to fix the width or the height
-    var rowHeight = (fixedHeightGrid) ? fixedPadding + manifest.minRatio * pageWidth : fixedPadding + manifest.maxRatio * pageWidth;
+    const rowHeight = (fixedHeightGrid) ? fixedPadding + manifest.minRatio * pageWidth : fixedPadding + manifest.maxRatio * pageWidth;
 
-    var groups = [];
-    var currentPages = [];
+    const groups = [];
+    let currentPages = [];
 
-    var getGridPageDimensions = function (pageData)
+    const getGridPageDimensions = pageData =>
     {
         // Calculate the width, height and horizontal placement of this page
         // Get dimensions at max zoom level, although any level should be fine
-        var pageDimenData = pageData.d[pageData.d.length - 1];
-        var heightToWidthRatio = pageDimenData.h / pageDimenData.w;
+        const pageDimenData = pageData.d[pageData.d.length - 1];
+        const heightToWidthRatio = pageDimenData.h / pageDimenData.w;
 
-        var pageWidth, pageHeight;
+        let pageWidth, pageHeight;
 
         if (fixedHeightGrid)
         {
@@ -45,19 +44,19 @@ function getGridLayoutGroups(viewerConfig)
         };
     };
 
-    var rowDimensions = {
+    const rowDimensions = {
         height: rowHeight,
         width: viewportWidth
     };
 
-    manifest.pages.forEach(function (page, pageIndex)
+    manifest.pages.forEach( (page, pageIndex) =>
     {
         if (!showNonPagedPages && manifest.paged && !page.paged)
             return;
 
         // Calculate the width, height and horizontal placement of this page
-        var pageDimens = getGridPageDimensions(page);
-        var leftOffset = Math.floor(currentPages.length * (fixedPadding + gridPageWidth) + fixedPadding);
+        const pageDimens = getGridPageDimensions(page);
+        let leftOffset = Math.floor(currentPages.length * (fixedPadding + gridPageWidth) + fixedPadding);
 
         // Center the page if the height is fixed (otherwise, there is no horizontal padding)
         if (fixedHeightGrid)

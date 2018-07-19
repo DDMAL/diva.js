@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="source/css/diva.css" />
+    <title>Document</title>
+</head>
+<body>
+    <div id="diva-wrapper"></div>
+    <!-- <div id="diva-wrapper2" style="width:40%; float: left;"></div> -->
+    <script src="/assets/diva.js"></script>
+    <script src="build/plugins/download.js"></script>
+    <script src="build/plugins/manipulation.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function ()
+        {
+            var diva = new Diva('diva-wrapper', {
+                objectData: "https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json",
+                plugins: [Diva.DownloadPlugin, Diva.ManipulationPlugin]
+            });
+
+//            var bar = new Diva('diva-wrapper2', {
+//                objectData: "build/117.json"
+//            });
+
+            Diva.Events.subscribe('VisiblePageDidChange', function () { console.log('page changed')});
+            Diva.Events.subscribe('VisiblePageHasAlternateViews', function (idx) { console.log('page has alternate views', idx)});
+        }, false)
+    </script>
+</body>
+</html>

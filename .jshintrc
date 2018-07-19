@@ -8,5 +8,12 @@
     "node": true,
     "trailing": true,
     "undef": true,
-    "unused": true
+    "unused": true,
+    "esversion": 6,
+    "browser": true,
+    "mocha": true,
+    "globals": {
+        "define": true,
+        "expect": true
+    }
 }

@@ -1,17 +1,16 @@
-module.exports = {
-    onDoubleClick: onDoubleClick,
-    onPinch: onPinch,
-    onDoubleTap: onDoubleTap
+export default {
+    onDoubleClick,
+    onPinch,
+    onDoubleTap
 };
 
-var DOUBLE_CLICK_TIMEOUT = 500;
-
-var DOUBLE_TAP_DISTANCE_THRESHOLD = 50;
-var DOUBLE_TAP_TIMEOUT = 250;
+const DOUBLE_CLICK_TIMEOUT = 500;
+const DOUBLE_TAP_DISTANCE_THRESHOLD = 50;
+const DOUBLE_TAP_TIMEOUT = 250;
 
 function onDoubleClick(elem, callback)
 {
-    elem.on('dblclick', function (event)
+    elem.addEventListener('dblclick', function (event)
     {
         if (!event.ctrlKey)
         {
@@ -21,9 +20,9 @@ function onDoubleClick(elem, callback)
 
     // Handle the control key for macs (in conjunction with double-clicking)
     // FIXME: Does a click get handled with ctrl pressed on non-Macs?
-    var tracker = createDoubleEventTracker(DOUBLE_CLICK_TIMEOUT);
+    const tracker = createDoubleEventTracker(DOUBLE_CLICK_TIMEOUT);
 
-    elem.on('contextmenu', function (event)
+    elem.addEventListener('contextmenu', function (event)
     {
         event.preventDefault();
 
@@ -44,9 +43,9 @@ function onDoubleClick(elem, callback)
 
 function onPinch(elem, callback)
 {
-    var startDistance = 0;
+    let startDistance = 0;
 
-    elem.on('touchstart', function(event)
+    elem.addEventListener('touchstart', function (event)
     {
         // Prevent mouse event from firing
         event.preventDefault();
@@ -62,27 +61,27 @@ function onPinch(elem, callback)
         }
     });
 
-    elem.on('touchmove', function(event)
+    elem.addEventListener('touchmove', function(event)
     {
         // Prevent mouse event from firing
         event.preventDefault();
 
         if (event.originalEvent.touches.length === 2)
         {
-            var touches = event.originalEvent.touches;
+            const touches = event.originalEvent.touches;
 
-            var moveDistance = distance(
+            const moveDistance = distance(
                 touches[0].clientX,
                 touches[0].clientY,
                 touches[1].clientX,
                 touches[1].clientY
             );
 
-            var zoomDelta = moveDistance - startDistance;
+            const zoomDelta = moveDistance - startDistance;
 
             if (Math.abs(zoomDelta) > 0)
             {
-                var touchCenter = {
+                const touchCenter = {
                     pageX: (touches[0].clientX + touches[1].clientX) / 2,
                     pageY: (touches[0].clientY + touches[1].clientY) / 2
                 };
@@ -95,10 +94,10 @@ function onPinch(elem, callback)
 
 function onDoubleTap(elem, callback)
 {
-    var tracker = createDoubleEventTracker(DOUBLE_TAP_TIMEOUT);
-    var firstTap = null;
+    const tracker = createDoubleEventTracker(DOUBLE_TAP_TIMEOUT);
+    let firstTap = null;
 
-    elem.on('touchend', function (event)
+    elem.addEventListener('touchend', (event) =>
     {
         // Prevent mouse event from firing
         event.preventDefault();
@@ -108,13 +107,13 @@ function onDoubleTap(elem, callback)
             tracker.reset();
 
             // Doubletap has occurred
-            var secondTap = {
+            const secondTap = {
                 pageX: event.originalEvent.changedTouches[0].clientX,
                 pageY: event.originalEvent.changedTouches[0].clientY
             };
 
             // If first tap is close to second tap (prevents interference with scale event)
-            var tapDistance = distance(firstTap.pageX, firstTap.pageY, secondTap.pageX, secondTap.pageY);
+            const tapDistance = distance(firstTap.pageX, firstTap.pageY, secondTap.pageX, secondTap.pageY);
 
             // TODO: Could give something higher-level than secondTap to callback
             if (tapDistance < DOUBLE_TAP_DISTANCE_THRESHOLD)
@@ -145,11 +144,11 @@ function distance(x1, y1, x2, y2)
 // during a a given duration
 function createDoubleEventTracker(timeoutDuration)
 {
-    var triggered = false;
-    var timeoutId = null;
+    let triggered = false;
+    let timeoutId = null;
 
     return {
-        trigger: function ()
+        trigger()
         {
             triggered = true;
             resetTimeout();
@@ -159,11 +158,11 @@ function createDoubleEventTracker(timeoutDuration)
                 timeoutId = null;
             }, timeoutDuration);
         },
-        isTriggered: function ()
+        isTriggered()
         {
             return triggered;
         },
-        reset: function ()
+        reset()
         {
             triggered = false;
             resetTimeout();
@@ -182,7 +181,7 @@ function createDoubleEventTracker(timeoutDuration)
 
 function getRelativeOffset(elem, pageCoords)
 {
-    var bounds = elem.getBoundingClientRect();
+    const bounds = elem.getBoundingClientRect();
 
     return {
         left: pageCoords.pageX - bounds.left,
