@@ -4,6 +4,7 @@ var webpack = require('webpack');
 // var sharedJQueryPath = require.resolve('jquery');
 
 module.exports = [{
+    mode: "development",
     entry: [
         // 'babel-polyfill',
         'whatwg-fetch',
@@ -17,13 +18,13 @@ module.exports = [{
     },
     devtool: 'source-map',
     module: {
-        loaders: [
+        rules: [
             {
                 test: /\.json$/,
-                loaders: ['json']
+                'loaders': ['json']
             },
             {
-                loader: "babel",
+                loader: "babel-loader",
                 // include: [
                 //     path.resolve(__dirname, "source/js")
                 // ],
@@ -44,12 +45,12 @@ module.exports = [{
         filename: '[name].js'
     },
     resolve: {
-        extensions: ["", ".js"],
+        extensions: ["*", ".js"],
     },
     module: {
-        loaders: [
+        rules: [
             {
-                loader: "babel",
+                loader: "babel-loader",
                 include: [
                     path.resolve(__dirname, "source/js/plugins")
                 ],

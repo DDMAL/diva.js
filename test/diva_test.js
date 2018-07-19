@@ -1,3 +1,4 @@
+import 'jsdom-global/register';
 import Diva from "../source/js/diva";
 import {
     DivaParentElementNotFoundException,

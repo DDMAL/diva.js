@@ -6,7 +6,7 @@ const getMaxZoomLevel = (width, height) =>
 
 const incorporateZoom = (imageDimension, zoomDifference) => imageDimension / (Math.pow(2, zoomDifference));
 
-const getOtherImageData = (otherImages, lowestMaxZoom, canvasWidth, canvasHeight) =>
+const getOtherImageData = (otherImages, lowestMaxZoom) =>
 {
     return otherImages.map( (itm) =>
     {
@@ -111,7 +111,7 @@ export default function parseIIIFManifest (manifest)
 
         if (thisResource.item)
         {
-            otherImages = getOtherImageData(thisResource.item, lowestMaxZoom, width, height);
+            otherImages = getOtherImageData(thisResource.item, lowestMaxZoom);
         }
         else
         {
