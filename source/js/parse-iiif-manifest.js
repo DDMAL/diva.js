@@ -1,6 +1,8 @@
 const getMaxZoomLevel = (width, height) =>
 {
     const largestDimension = Math.max(width, height);
+    if (largestDimension < 128) 
+        return 0;
     return Math.ceil(Math.log((largestDimension + 1) / (256 + 1)) / Math.log(2));
 };
 
