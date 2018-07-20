@@ -1,7 +1,9 @@
-export default {
+let HashParams = {
     get: getHashParam,
     update: updateHashParam
 };
+
+export default HashParams;
 
 
 // For getting the #key values from the URL. For specifying a page and zoom level

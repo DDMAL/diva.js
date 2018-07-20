@@ -4,7 +4,7 @@
   "description": "Diva.js",
   "main": "build/js/diva.js",
   "scripts": {
-    "test": "mocha -r babel-register",
+    "test": "mocha -r babel-register --recursive -R spec",
     "lint": "gulp develop:lint"
   },
   "repository": {
