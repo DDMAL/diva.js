@@ -451,7 +451,7 @@ class Diva
         let t;
         let hover = false;
         let tools = document.getElementById('diva-1-tools');
-        const timeout = 2000;
+        const TIMEOUT = 2000;
 
         if (this.settings.inFullscreen) 
         {
@@ -464,7 +464,7 @@ class Diva
                     t = setTimeout(function () 
                     {
                         tools.style.opacity = 0;
-                    }, timeout);
+                    }, TIMEOUT);
                 }
             });
             tools.addEventListener('mouseenter', function ()
@@ -482,7 +482,7 @@ class Diva
                 t = setTimeout(function () 
                 {
                     tools.style.opacity = 0;
-                }, timeout);
+                }, TIMEOUT);
             });
         }
         else
