@@ -446,6 +446,47 @@ class Diva
         this._reloadViewer({
             inFullscreen: !this.settings.inFullscreen
         });
+
+        // handle toolbar opacity in fullscreen
+        let t;
+        let hover = false;
+        let tools = document.getElementById('diva-1-tools');
+        const timeout = 2000;
+
+        if (this.settings.inFullscreen) 
+        {
+            tools.classList.add("diva-fullscreen-tools");
+            document.addEventListener('mousemove', function () 
+            {
+                tools.style.opacity = 1;
+                clearTimeout(t);
+                if (!hover) {
+                    t = setTimeout(function () 
+                    {
+                        tools.style.opacity = 0;
+                    }, timeout);
+                }
+            });
+            tools.addEventListener('mouseenter', function ()
+            {
+                hover = true;
+                tools.style.opacity = 1;
+            });
+            tools.addEventListener('mouseleave', function () {
+                hover = false;
+            });
+            document.getElementsByClassName('diva-viewport')[0].addEventListener('scroll', function ()
+            {
+                tools.style.opacity = 1;
+                clearTimeout(t);
+                t = setTimeout(function () 
+                {
+                    tools.style.opacity = 0;
+                }, timeout);
+            });
+        }
+        else
+            tools.classList.remove("diva-fullscreen-tools");
     }
 
     /**
@@ -1398,35 +1439,6 @@ class Diva
     toggleFullscreenMode ()
     {
         this._toggleFullscreen();
-
-        let t;
-        let hover = false;
-        if (this.settings.inFullscreen) 
-        {
-            let tools = document.getElementById('diva-1-tools');
-            tools.classList.add("diva-fullscreen-tools");
-            document.addEventListener('mousemove', function () 
-            {
-                tools.style.opacity = 1;
-                clearTimeout(t);
-                if (!hover) {
-                    t = setTimeout(function () 
-                    {
-                        tools.style.opacity = 0;
-                    }, 500);
-                }
-            });
-            tools.addEventListener('mouseenter', function ()
-            {
-                hover = true;
-                tools.style.opacity = 1;
-            });
-            tools.addEventListener('mouseleave', function () {
-                hover = false;
-            });
-        }
-        else
-            document.getElementById('diva-1-tools').classList.remove("diva-fullscreen-tools");
     }
 
     /**
