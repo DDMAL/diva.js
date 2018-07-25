@@ -1,3 +1,5 @@
+require('jsdom-global/register');
+
 var expect = require('chai').expect;
 global.expect = expect;
 

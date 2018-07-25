@@ -74,12 +74,18 @@ function server ()
     });
 }
 
+function buildDiva (done)
+{
+    let devConfig = Object.create(webpackConf)[0];
+    webpack(devConfig).run(done);
+}
 
 gulp.task('lint-src', lintSrc);
 gulp.task('lint-test', lintTest);
 gulp.task('lint-gulpfile', lintGulpfile);
 
 gulp.task('develop:build-plugins', plugins);
+gulp.task('develop:build-diva', buildDiva);
 gulp.task('develop:clean', cleanDist);
 gulp.task('develop:tmp-clean', cleanTemp);
 gulp.task('develop:lint', gulp.series('lint-src', 'lint-test', 'lint-gulpfile'));
