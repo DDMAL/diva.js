@@ -6,18 +6,6 @@ import {
 
 describe('Viewer', function ()
 {
-    beforeEach(() =>
-    {
-        // console.log('before');
-        let wrapper = document.createElement('div');
-        wrapper.id = 'diva-wrapper';
-        document.body.appendChild(wrapper);
-    });
-
-    afterEach(() =>
-    {
-    });
-
     it('should throw an exception if the parent is not found', function ()
     {
         let fcn = () => { new Diva('blah', {}); };
