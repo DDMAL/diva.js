@@ -40,9 +40,11 @@ export default class MetadataPlugin
 
         for (var i = 0; i < metadata.length; i++) 
         {
-            div.innerHTML += metadata[i].label + ": " + metadata[i].value + '<br>';
+            div.innerHTML += '<b>' + metadata[i].label + '</b>: ' + metadata[i].value + '<br>';
         }
 
+        div.setAttribute('style', 'padding-left: 10%; padding-top: 2%;');
+        metadataWindow.document.body.style.backgroundColor = '#fffcee';
         metadataWindow.document.body.appendChild(div);
     }
 
