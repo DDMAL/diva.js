@@ -34,6 +34,9 @@ class Diva
 {
     constructor (element, options)
     {
+        // for the metadata plugin
+        this.metadata; 
+
         /*
          * If a string is passed in, convert that to an element.
          * */
@@ -225,6 +228,7 @@ class Diva
         // FIXME: Why is this triggered before the manifest is parsed? See https://github.com/DDMAL/diva.js/issues/357
         diva.Events.publish('ManifestDidLoad', [responseData], this);
 
+        this.metadata = responseData.metadata;
         manifest = ImageManifest.fromIIIF(responseData);
         const loadOptions = hashState ? this._getLoadOptionsForState(hashState, manifest) : {};
 

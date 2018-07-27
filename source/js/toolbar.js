@@ -243,7 +243,10 @@ export default class Toolbar
             else if (plugin.leftTool) 
                 leftTools.unshift(plugin.toolbarIcon);
 
-            plugin.toolbarIcon.addEventListener('click', plugin.handleClick);
+            plugin.toolbarIcon.addEventListener('click', () => 
+            {
+                plugin.handleClick(this.viewer);
+            });
         }
 
         const tools = elt('div', this._elemAttrs('tools'),

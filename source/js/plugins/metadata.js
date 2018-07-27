@@ -29,11 +29,21 @@ export default class MetadataPlugin
     }
 
     /**
-     * Open a new window with the IIIF manifest metadata
+     * Open a new window with the IIIF manifest metadata. Here viewer refers to the Diva instance
      **/
-    handleClick (event, settings, publicInstance, pageIndex) // jshint ignore:line
+    handleClick (viewer) 
     {
-        window.open('', '', 'height=600,width=600,scrollbars=yes');
+        let metadata = viewer.metadata;
+        let metadataWindow = window.open('', '', 'height=600,width=600,scrollbars=yes');
+        let div = metadataWindow.document.createElement('DIV');
+        div.innerHTML = '<h2>Metadata</h2>';
+
+        for (var i = 0; i < metadata.length; i++) 
+        {
+            div.innerHTML += metadata[i].label + ": " + metadata[i].value + '<br>';
+        }
+
+        metadataWindow.document.body.appendChild(div);
     }
 
     /**
