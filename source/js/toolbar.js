@@ -229,6 +229,23 @@ export default class Toolbar
             this.createFullscreenButton()
         ];
 
+        // assign toolbar plugins to proper side
+        let plugins = this.viewer.viewerState.pluginInstances;
+        for (var i = 0; i < plugins.length; i++) 
+        {
+            let plugin = plugins[i];
+
+            if (!plugin.toolbarIcon)
+                continue;
+
+            if (plugin.rightTool) 
+                rightTools.unshift(plugin.toolbarIcon);
+            else if (plugin.leftTool) 
+                leftTools.unshift(plugin.toolbarIcon);
+
+            plugin.toolbarIcon.addEventListener('click', plugin.handleClick);
+        }
+
         const tools = elt('div', this._elemAttrs('tools'),
                     elt('div', this._elemAttrs('tools-left'), leftTools),
                     elt('div', this._elemAttrs('tools-right'), rightTools)
