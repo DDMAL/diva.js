@@ -34,16 +34,8 @@ export default class MetadataPlugin
      **/
     handleClick (viewer) 
     {
-        // if metadata is already displayed, destroy
-        let metadataDiv = document.getElementById('metadataDiv');
-        if (metadataDiv !== null)
-        {
-            metadataDiv.parentNode.removeChild(metadataDiv);
-            return;
-        }
-
         let metadata = viewer.metadata;
-        metadataDiv = document.createElement('div');
+        let metadataDiv = document.createElement('div');
         metadataDiv.id = 'metadataDiv';
         metadataDiv.className = 'diva-modal';
 
@@ -69,6 +61,17 @@ export default class MetadataPlugin
         metadataDiv.appendChild(labels);
         metadataDiv.appendChild(values);
         document.getElementById(viewer.viewerState.ID + 'outer').appendChild(metadataDiv);
+
+        // dismiss on click outside of box
+        setTimeout(function ()
+        {
+            document.addEventListener('click', function dismissMeta (event) {
+                if (!metadataDiv.contains(event.target)) {
+                    metadataDiv.parentNode.removeChild(metadataDiv);
+                    document.removeEventListener('click', dismissMeta);
+                }
+            });
+        }, 100);
     }
 
     /**
