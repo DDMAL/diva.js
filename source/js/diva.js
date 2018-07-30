@@ -460,37 +460,33 @@ class Diva
         if (this.settings.inFullscreen) 
         {
             tools.classList.add("diva-fullscreen-tools");
-            document.addEventListener('mousemove', function () 
-            {
-                tools.style.opacity = 1;
-                clearTimeout(t);
-                if (!hover) {
-                    t = setTimeout(function () 
-                    {
-                        tools.style.opacity = 0;
-                    }, TIMEOUT);
-                }
-            });
-            tools.addEventListener('mouseenter', function ()
-            {
+
+            document.addEventListener('mousemove', toggleOpacity);
+            document.getElementsByClassName('diva-viewport')[0].addEventListener('scroll', toggleOpacity);
+            tools.addEventListener('mouseenter', function () {
                 hover = true;
-                tools.style.opacity = 1;
             });
             tools.addEventListener('mouseleave', function () {
                 hover = false;
             });
-            document.getElementsByClassName('diva-viewport')[0].addEventListener('scroll', function ()
-            {
-                tools.style.opacity = 1;
-                clearTimeout(t);
+        }
+        else
+        {
+            tools.classList.remove("diva-fullscreen-tools");
+        }
+
+        let _this = this;
+        function toggleOpacity () 
+        {
+            tools.style.opacity = 1;
+            clearTimeout(t);
+            if (!hover && _this.settings.inFullscreen) {
                 t = setTimeout(function () 
                 {
                     tools.style.opacity = 0;
                 }, TIMEOUT);
-            });
+            }
         }
-        else
-            tools.classList.remove("diva-fullscreen-tools");
     }
 
     /**
