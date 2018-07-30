@@ -39,17 +39,17 @@
     "gulp-eslint": "^5.0.0",
     "gulp-jshint": "^2.0.4",
     "gulp-load-plugins": "^1.4.0",
-    "gulp-svg-symbols": "^3.1.1",
+    "gulp-svg-symbols": "^3.2.0",
     "gulp-svg2png": "^2.0.2",
     "gulp-util": "^3.0.8",
     "isomorphic-fetch": "^2.2.1",
-    "jsdom": "^11.11.0",
+    "jsdom": "^11.12.0",
     "jsdom-global": "^3.0.2",
     "jshint": "^2.9.4",
     "jshint-stylish": "^2.2.1",
     "mocha": "^5.2.0",
-    "webpack": "^4.16.1",
-    "webpack-dev-server": "^3.1.4"
+    "webpack": "^4.16.3",
+    "webpack-dev-server": "^3.1.5"
   },
   "divaOptions": {
     "mainEntry": "diva.js",
