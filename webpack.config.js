@@ -38,7 +38,8 @@ module.exports = [{
 }, {
     entry: {
         'download': './source/js/plugins/download.js',
-        'manipulation': './source/js/plugins/manipulation.js'
+        'manipulation': './source/js/plugins/manipulation.js',
+        'metadata': './source/js/plugins/metadata.js'
     },
     output: {
         path: path.join(__dirname, 'build', 'plugins'),

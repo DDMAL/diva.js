@@ -34,6 +34,9 @@ class Diva
 {
     constructor (element, options)
     {
+        // for the metadata plugin
+        this.metadata; 
+
         /*
          * If a string is passed in, convert that to an element.
          * */
@@ -225,6 +228,7 @@ class Diva
         // FIXME: Why is this triggered before the manifest is parsed? See https://github.com/DDMAL/diva.js/issues/357
         diva.Events.publish('ManifestDidLoad', [responseData], this);
 
+        this.metadata = responseData.metadata;
         manifest = ImageManifest.fromIIIF(responseData);
         const loadOptions = hashState ? this._getLoadOptionsForState(hashState, manifest) : {};
 
@@ -456,37 +460,32 @@ class Diva
         if (this.settings.inFullscreen) 
         {
             tools.classList.add("diva-fullscreen-tools");
-            document.addEventListener('mousemove', function () 
-            {
-                tools.style.opacity = 1;
-                clearTimeout(t);
-                if (!hover) {
-                    t = setTimeout(function () 
-                    {
-                        tools.style.opacity = 0;
-                    }, TIMEOUT);
-                }
-            });
-            tools.addEventListener('mouseenter', function ()
-            {
+
+            document.addEventListener('mousemove', toggleOpacity.bind(this));
+            document.getElementsByClassName('diva-viewport')[0].addEventListener('scroll', toggleOpacity.bind(this));
+            tools.addEventListener('mouseenter', function () {
                 hover = true;
-                tools.style.opacity = 1;
             });
             tools.addEventListener('mouseleave', function () {
                 hover = false;
             });
-            document.getElementsByClassName('diva-viewport')[0].addEventListener('scroll', function ()
-            {
-                tools.style.opacity = 1;
-                clearTimeout(t);
+        }
+        else
+        {
+            tools.classList.remove("diva-fullscreen-tools");
+        }
+
+        function toggleOpacity () 
+        {
+            tools.style.opacity = 1;
+            clearTimeout(t);
+            if (!hover && this.settings.inFullscreen) {
                 t = setTimeout(function () 
                 {
                     tools.style.opacity = 0;
                 }, TIMEOUT);
-            });
+            }
         }
-        else
-            tools.classList.remove("diva-fullscreen-tools");
     }
 
     /**
