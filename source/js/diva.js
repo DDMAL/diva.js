@@ -461,8 +461,8 @@ class Diva
         {
             tools.classList.add("diva-fullscreen-tools");
 
-            document.addEventListener('mousemove', toggleOpacity);
-            document.getElementsByClassName('diva-viewport')[0].addEventListener('scroll', toggleOpacity);
+            document.addEventListener('mousemove', toggleOpacity.bind(this));
+            document.getElementsByClassName('diva-viewport')[0].addEventListener('scroll', toggleOpacity.bind(this));
             tools.addEventListener('mouseenter', function () {
                 hover = true;
             });
@@ -475,12 +475,11 @@ class Diva
             tools.classList.remove("diva-fullscreen-tools");
         }
 
-        let _this = this;
         function toggleOpacity () 
         {
             tools.style.opacity = 1;
             clearTimeout(t);
-            if (!hover && _this.settings.inFullscreen) {
+            if (!hover && this.settings.inFullscreen) {
                 t = setTimeout(function () 
                 {
                     tools.style.opacity = 0;

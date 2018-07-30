@@ -43,22 +43,24 @@ export default class MetadataPlugin
         }
 
         let metadata = viewer.metadata;
-        metadataDiv = document.createElement('DIV');
+        metadataDiv = document.createElement('div');
         metadataDiv.id = 'metadataDiv';
         metadataDiv.className = 'diva-modal';
 
-        let labels = document.createElement('DIV');
+        let labels = document.createElement('div');
         labels.setAttribute('style', 'width:20%; text-align:right; float:left;');
         let values = document.createElement('DIV');
         values.setAttribute('style', 'width:79%; text-align:left; float:right;');
 
-        for (var i = 0; i < metadata.length; i++) 
+        for (var i = 0, len = metadata.length; i < len; i++) 
         {
-            let lineLabel = document.createElement('DIV');
-            lineLabel.innerHTML = '<b>' + metadata[i].label + '</b>:';
+            let lineLabel = document.createElement('div');
+            let bold = document.createElement('b');
+            bold.innerText = metadata[i].label + ':';
+            lineLabel.appendChild(bold);
 
-            let lineValue = document.createElement('DIV');
-            lineValue.innerHTML = metadata[i].value + '<br>';
+            let lineValue = document.createElement('div');
+            lineValue.innerHTML = metadata[i].value;
 
             labels.appendChild(lineLabel);
             values.appendChild(lineValue);
