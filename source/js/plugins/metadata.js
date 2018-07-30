@@ -40,9 +40,9 @@ export default class MetadataPlugin
         metadataDiv.className = 'diva-modal';
 
         let labels = document.createElement('div');
-        labels.setAttribute('style', 'width:20%; text-align:right; float:left;');
+        labels.setAttribute('style', 'width:30%; text-align:right; float:left;');
         let values = document.createElement('DIV');
-        values.setAttribute('style', 'width:79%; text-align:left; float:right;');
+        values.setAttribute('style', 'width:69%; text-align:left; float:right;');
 
         for (var i = 0, len = metadata.length; i < len; i++) 
         {
