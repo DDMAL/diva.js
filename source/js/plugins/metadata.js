@@ -29,23 +29,44 @@ export default class MetadataPlugin
     }
 
     /**
-     * Open a new window with the IIIF manifest metadata. Here viewer refers to the Diva instance
+     * Display a modal with the IIIF manifest metadata. Here, viewer refers to the Diva instance (because
+     * the toolbar class refers to it as viewer)
      **/
     handleClick (viewer) 
     {
+        // if metadata is already displayed, destroy
+        let metadataDiv = document.getElementById('metadataDiv');
+        if (metadataDiv !== null)
+        {
+            metadataDiv.parentNode.removeChild(metadataDiv);
+            return;
+        }
+
         let metadata = viewer.metadata;
-        let metadataWindow = window.open('', '', 'height=600,width=600,scrollbars=yes');
-        let div = metadataWindow.document.createElement('DIV');
-        div.innerHTML = '<h2>Metadata</h2>';
+        metadataDiv = document.createElement('DIV');
+        metadataDiv.id = 'metadataDiv';
+        metadataDiv.className = 'diva-modal';
+
+        let labels = document.createElement('DIV');
+        labels.setAttribute('style', 'width:20%; text-align:right; float:left;');
+        let values = document.createElement('DIV');
+        values.setAttribute('style', 'width:79%; text-align:left; float:right;');
 
         for (var i = 0; i < metadata.length; i++) 
         {
-            div.innerHTML += '<b>' + metadata[i].label + '</b>: ' + metadata[i].value + '<br>';
+            let lineLabel = document.createElement('DIV');
+            lineLabel.innerHTML = '<b>' + metadata[i].label + '</b>:';
+
+            let lineValue = document.createElement('DIV');
+            lineValue.innerHTML = metadata[i].value + '<br>';
+
+            labels.appendChild(lineLabel);
+            values.appendChild(lineValue);
         }
 
-        div.setAttribute('style', 'padding-left: 10%; padding-top: 2%;');
-        metadataWindow.document.body.style.backgroundColor = '#fffcee';
-        metadataWindow.document.body.appendChild(div);
+        metadataDiv.appendChild(labels);
+        metadataDiv.appendChild(values);
+        document.getElementById(viewer.viewerState.ID + 'outer').appendChild(metadataDiv);
     }
 
     /**
