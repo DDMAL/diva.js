@@ -243,11 +243,14 @@ export default class Toolbar
             else if (plugin.leftTool) 
                 leftTools.unshift(plugin.toolbarIcon);
 
-            plugin.toolbarIcon.addEventListener('click', () => // jshint ignore:line
-            {
-                plugin.handleClick(this.viewer);
-            });
+            plugin.toolbarIcon.addEventListener('click', handlePluginClick.bind(this, plugin));
         }
+
+        function handlePluginClick (plugin) 
+        {
+            plugin.handleClick(this.viewer);
+        }
+
 
         const tools = elt('div', this._elemAttrs('tools'),
                     elt('div', this._elemAttrs('tools-left'), leftTools),

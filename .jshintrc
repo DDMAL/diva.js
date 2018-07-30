@@ -16,5 +16,6 @@
         "define": true,
         "expect": true,
         "assert": true
-    }
+    },
+    "validthis": true
 }
