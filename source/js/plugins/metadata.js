@@ -26,6 +26,8 @@ export default class MetadataPlugin
         this.core = core;
         this.toolbarIcon = this.createIcon();
         this.rightTool = true;
+        this.firstClick = true;
+        this.isVisible = false;
     }
 
     /**
@@ -34,44 +36,89 @@ export default class MetadataPlugin
      **/
     handleClick (viewer) 
     {
-        let metadata = viewer.metadata;
-        let metadataDiv = document.createElement('div');
-        metadataDiv.id = 'metadataDiv';
-        metadataDiv.className = 'diva-modal';
-
-        let labels = document.createElement('div');
-        labels.setAttribute('style', 'width:30%; text-align:right; float:left;');
-        let values = document.createElement('DIV');
-        values.setAttribute('style', 'width:69%; text-align:left; float:right;');
-
-        for (var i = 0, len = metadata.length; i < len; i++) 
+        // if first click create div elements
+        let metadataDiv;
+        if (this.firstClick)
         {
-            let lineLabel = document.createElement('div');
-            let bold = document.createElement('b');
-            bold.innerText = metadata[i].label + ':';
-            lineLabel.appendChild(bold);
+            let metadata = viewer.metadata;
+            metadataDiv = document.createElement('div');
+            metadataDiv.id = 'metadataDiv';
+            metadataDiv.className = 'diva-modal';
 
-            let lineValue = document.createElement('div');
-            lineValue.innerHTML = metadata[i].value;
+            let closeButton = document.createElement('button');
+            closeButton.innerHTML = '&#10006'; 
+            closeButton.setAttribute('style', 'position:absolute; right:2%; top:3%;');
+            closeButton.onclick = () => 
+            {
+                metadataDiv.style.display = 'none';            
+                this.isVisible = false;
+            };
 
-            labels.appendChild(lineLabel);
-            values.appendChild(lineValue);
+            let labels = document.createElement('div');
+            labels.setAttribute('style', 'width:30%; text-align:right; float:left;');
+            let values = document.createElement('DIV');
+            values.setAttribute('style', 'width:69%; text-align:left; float:right;');
+
+            for (var i = 0, len = metadata.length; i < len; i++) 
+            {
+                let lineLabel = document.createElement('div');
+                let bold = document.createElement('b');
+                bold.innerText = metadata[i].label + ':';
+                lineLabel.appendChild(bold);
+
+                let lineValue = document.createElement('div');
+                lineValue.innerHTML = metadata[i].value;
+
+                labels.appendChild(lineLabel);
+                values.appendChild(lineValue);
+            }
+
+            metadataDiv.appendChild(closeButton);
+            metadataDiv.appendChild(labels);
+            metadataDiv.appendChild(values);
+            document.body.appendChild(metadataDiv);
+
+            this.firstClick = false;
+        }
+        else
+        {
+            metadataDiv = document.getElementById('metadataDiv');
         }
 
-        metadataDiv.appendChild(labels);
-        metadataDiv.appendChild(values);
-        document.getElementById(viewer.viewerState.ID + 'outer').appendChild(metadataDiv);
-
-        // dismiss on click outside of box
-        setTimeout(function ()
+        if (this.isVisible)
         {
-            document.addEventListener('click', function dismissMeta (event) {
-                if (!metadataDiv.contains(event.target)) {
-                    metadataDiv.parentNode.removeChild(metadataDiv);
-                    document.removeEventListener('click', dismissMeta);
-                }
-            });
-        }, 100);
+            metadataDiv.style.display = 'none';            
+            this.isVisible = false;
+        }
+        else
+        {
+            metadataDiv.style.display = 'block';
+            this.isVisible = true;
+        }
+
+        // attach drag listeners
+        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+        metadataDiv.onmousedown = (e) => 
+        {
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+
+            document.onmousemove = (e) =>
+            {
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                metadataDiv.style.top = (metadataDiv.offsetTop - pos2) + 'px';
+                metadataDiv.style.left = (metadataDiv.offsetLeft - pos1) + 'px';
+            };
+
+            document.onmouseup = () =>
+            {
+                document.onmouseup = null;
+                document.onmousemove = null;
+            };
+        };
     }
 
     /**
