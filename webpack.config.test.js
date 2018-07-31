@@ -1,7 +1,7 @@
 var path = require('path');
 
 module.exports = {
-    entry: './tests/tests.js',
+    entry: './test/main.js',
     output: {
         filename: './build/test-bundle.js'
     },
@@ -9,9 +9,9 @@ module.exports = {
         fs: 'empty'
     },
     module: {
-        loaders: [
+        rules: [
             {
-                loader: "babel",
+                loader: "babel-loader",
                 include: [
                     path.resolve(__dirname, "tests")
                 ],
