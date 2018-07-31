@@ -4,7 +4,7 @@
 module.exports = function(config) {
   
   var webpackConfig = require('./webpack.config.test');
-  // webpackConfig.resolve.extensions = ['', 'tls', 'net', 'json'] //ts, or anything else
+  process.env.CHROME_BIN = require('puppeteer').executablePath()
 
   config.set({
 
@@ -38,7 +38,7 @@ module.exports = function(config) {
 
     babelPreprocessor: {
         options: {
-            presets: ['es2015']
+            presets: ['env']
         },
     },
 
@@ -62,12 +62,12 @@ module.exports = function(config) {
 
 
     // enable / disable watching file and executing tests whenever any file changes
-    autoWatch: true,
+    autoWatch: false,
 
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['Chrome'],
+    browsers: ['ChromeHeadless'],
 
 
     // Continuous Integration mode
