@@ -4,7 +4,7 @@
   "description": "Diva.js",
   "main": "build/js/diva.js",
   "scripts": {
-    "test": "mocha -r babel-register -r isomorphic-fetch --recursive -R spec",
+    "test": "karma start",
     "lint": "gulp develop:lint"
   },
   "repository": {
