@@ -454,7 +454,7 @@ class Diva
         // handle toolbar opacity in fullscreen
         let t;
         let hover = false;
-        let tools = document.getElementById('diva-1-tools');
+        let tools = document.getElementById(this.settings.selector + 'tools');
         const TIMEOUT = 2000;
 
         if (this.settings.inFullscreen) 
@@ -1345,7 +1345,7 @@ class Diva
     {
         if (this.settings.inFullscreen)
         {
-            this.toggleFullscreen();
+            this._toggleFullscreen();
             return true;
         }
 
