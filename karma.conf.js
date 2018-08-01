@@ -20,7 +20,7 @@ module.exports = function(config) {
     // list of files / patterns to load in the browser
     files: [
       'test/main.js',
-      'source/css/diva.css',
+      'source/css/diva.css'
     ],
 
 
@@ -64,6 +64,10 @@ module.exports = function(config) {
 
     // enable / disable watching file and executing tests whenever any file changes
     autoWatch: false,
+
+    client: {
+        captureConsole: true
+    },
 
 
     // start these browsers
