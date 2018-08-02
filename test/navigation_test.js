@@ -40,10 +40,8 @@ describe('Navigation', function ()
                 var actualIndex = divaInst.getCurrentPageIndex();
                 assert.strictEqual(actualIndex, index, "The page should now be " + rendered + " (index of " + index + ")");
 
-                // NOTE: toolbar no longer shows the current page, so below is no longer a valid assertion
-                // NOTE: will need to readd the go-to-page tool later
-                // var actualRendered = $(divaInst.getSettings().selector + 'current-page').innerText;
-                // assert.strictEqual(actualRendered, rendered, "The toolbar should have been updated");
+                var actualRendered = $(divaInst.getSettings().selector + 'current-page').innerText;
+                assert.strictEqual(actualRendered, rendered, "The toolbar should have been updated");
 
                 viewportObject.removeEventListener('scroll', handleScroll);
 
@@ -340,14 +338,14 @@ describe('Navigation', function ()
             this.gotoPageByIndex(5);
 
             assert.isOk(settings.inBookLayout, "Should be in book layout");
-            // assert.strictEqual($(settings.selector + 'current-page').innerText, '6', "Toolbar should indicate page 6");
+            assert.strictEqual($(settings.selector + 'current-page').innerText, '6', "Toolbar should indicate page 6");
 
             setTimeout(() =>
             {
                 assert.isOk(this.isPageInViewport(5), "Page 6 (index 5) should be loaded");
 
                 this.gotoPageByIndex(6);
-                // assert.strictEqual($(settings.selector + 'current-page').text(), '7', "Toolbar should indicate page 7");
+                assert.strictEqual($(settings.selector + 'current-page').innerText, '7', "Toolbar should indicate page 7");
                 assert.isOk(this.isPageInViewport(6), "Page 7 (index 6) should be loaded");
 
                 done();

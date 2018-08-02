@@ -53,7 +53,63 @@ describe('Settings', function ()
         });
     });
 
-    // NOTE: Removed all the enableButton tests since those features are deprecated in Diva6 (eg. enableFullscreen)
+    it("enableFullscreen false", function (done)
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function (settings)
+        {
+            // Make sure the fullscreen icon is not there
+            assert.isNull($(settings.selector + 'fullscreen-icon'), "Fullscreen icon should not be present");
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json',
+            enableFullscreen: false
+        });
+    });
+
+    it("enableFullscreen true", function (done)
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function (settings)
+        {
+            // Make sure the fullscreen icon is there
+            assert.isNotNull($(settings.selector + 'fullscreen-icon'), "Fullscreen icon should be present");
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json',
+            enableFullscreen: true
+        });
+    });
+
+    it("enableGotoPage false", function (done)
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function (settings)
+        {
+            assert.isNull($(settings.selector + 'goto-page'), "Go-to-page box should not be present");
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json',
+            enableGotoPage: false
+        });
+    });
+
+    it("enableGotoPage true", function (done)
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function (settings)
+        {
+            assert.isNotNull($(settings.selector + 'goto-page'), "Go-to-page box should be present");
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json',
+            enableGotoPage: true
+        });
+    });
 
     it("fixedHeightGrid false", function (done)
     {
