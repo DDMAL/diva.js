@@ -4,6 +4,10 @@ global.expect = expect;
 var assert = require('chai').assert;
 global.assert = assert;
 
+let wrapper = document.createElement('div');
+wrapper.id = 'parent-wrapper';
+wrapper.setAttribute('style', 'width: 984px; height: 800px');
 let div = document.createElement('div');
 div.id = 'diva-wrapper';
-document.body.appendChild(div);
+wrapper.appendChild(div);
+document.body.appendChild(wrapper);

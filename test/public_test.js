@@ -5,11 +5,15 @@ describe('Public Functions', function ()
     beforeEach(function ()
     {
         // recreate diva instance
-        let oldDiva = document.getElementById('diva-wrapper');
-        oldDiva.parentNode.removeChild(oldDiva);
-        let newDiva = document.createElement('div');
-        newDiva.id = 'diva-wrapper';
-        document.body.appendChild(newDiva);
+        let oldWrapper = document.getElementById('parent-wrapper');
+        oldWrapper.parentNode.removeChild(oldWrapper);
+        let newWrapper = document.createElement('div');
+        newWrapper.id = 'parent-wrapper';
+        newWrapper.setAttribute('style', 'width: 984px; height: 800px');
+        let div = document.createElement('div');
+        div.id = 'diva-wrapper';
+        newWrapper.appendChild(div);
+        document.body.appendChild(newWrapper);
 
         Diva.Events.unsubscribeAll();
     });
@@ -242,14 +246,17 @@ describe('Public Functions', function ()
     {
         Diva.Events.subscribe('ViewerDidLoad', function ()
         {
+            var viewportHeight = 700;
+            var pageDimens = this.getCurrentPageDimensionsAtCurrentZoomLevel();
+
             var expected = {
                 f: false,
                 v: 'd',
                 i: 'https://images.simssa.ca/iiif/image/cdn-hsmu-m2149l4/cdn-hsmu-m2149l4_001r.jp2',
                 n: 5,
                 p: false,
-                x: null,
-                y: null, 
+                x: pageDimens.width / 2,
+                y: viewportHeight / 2,
                 z: 2
             };
 
@@ -260,10 +267,8 @@ describe('Public Functions', function ()
 
             Object.keys(expected).forEach(function (key)
             {
-                if (key === 'x' || key === 'y')
-                {
-                    // can't test x and y since width of wrapper isn't specified here
-                }
+                if (key === 'x')
+                    assert.closeTo(actual[key], 456, 1, "State key '" + key + "'");
                 else
                     assert.strictEqual(actual[key], expected[key], "State key '" + key + "'");
             });
@@ -299,16 +304,16 @@ describe('Public Functions', function ()
             assert.strictEqual(settings.pagesPerRow, 3, "Pages per row should be 3");
             assert.strictEqual(settings.zoomLevel, 3, "Zoom level should be 3");
 
-            // NOTE: can't currently do these assertions since the diva parent size isn't fixed
             // Recompute the offsets from first principles
-            // var index = this._getPageIndex("https://images.simssa.ca/iiif/image/cdn-hsmu-m2149l4/cdn-hsmu-m2149l4_003r.jp2");
-            // var offset = this.getPageOffset(index);
-            // var viewportElem = settings.viewportElement;
+            var index = this._getPageIndex("https://images.simssa.ca/iiif/image/cdn-hsmu-m2149l4/cdn-hsmu-m2149l4_003r.jp2");
+            var offset = this.getPageOffset(index);
+            var viewportElem = settings.viewportElement;
             // var x = viewportElem.scrollLeft - offset.left + (viewportElem.clientWidth / 2);
-            // var y = viewportElem.scrollTop - offset.top + (viewportElem.clientHeight / 2);
+            var y = viewportElem.scrollTop - offset.top + (viewportElem.clientHeight / 2);
 
-            // assert.closeTo(x, 500, 1, "x offset should be the specified value");
-            // assert.closeTo(y, 300, 1, "y offset should be the specified value");
+            // NOTE: throws error in headless for some reason, works fine in debug though
+            // assert.closeTo(x, 925, 1, "x offset should be the specified value");
+            assert.closeTo(y, 300, 1, "y offset should be the specified value");
 
             state = {
                 f: false,
