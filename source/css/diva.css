@@ -81,6 +81,7 @@
 
 .diva-goto-form {
   display: inline-block;
+  margin-right: 1em;
   position: relative; }
 
 .diva-goto-page-input {
