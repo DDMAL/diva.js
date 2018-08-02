@@ -235,46 +235,46 @@ export default class Toolbar
             });
         });
 
-        // gotoPageInput.addEventListener('keydown', e => {
-        //     let el;
-        //     if (e.keyCode === 13) // 'Enter' key
-        //     {
-        //         const active = $('.active', inputSuggestions);
-        //         if (active.length)
-        //             gotoPageInput.value = active.text();
-
-        //     }
-        //     if (e.keyCode === 38) // Up arrow key
-        //     {
-        //         el = $('.active', inputSuggestions);
-        //         const prevEl = el.prev();
-        //         if (prevEl.length)
-        //         {
-        //             el.removeClass('active');
-        //             prevEl.addClass('active');
-        //         }
-        //         else
-        //         {
-        //             el.removeClass('active');
-        //             $('.diva-input-suggestion:last', inputSuggestions).addClass('active');
-        //         }
-        //     }
-        //     else if (e.keyCode === 40) // Down arrow key
-        //     {
-        //         el = $('.active', inputSuggestions);
-        //         const nextEl = el.next();
-        //         if (nextEl.length)
-        //         {
-        //             el.removeClass('active');
-        //             nextEl.addClass('active');
-        //         }
-        //         else
-        //         {
-        //             el.removeClass('active');
-        //             $('.diva-input-suggestion:first', inputSuggestions).addClass('active');
-        //         }
-        //     }
-        // });
+        gotoPageInput.addEventListener('keydown', e => {
+            let el;
+            if (e.keyCode === 13) // 'Enter' key
+            {
+                const active = document.getElementsByClassName('active')[0];
+                if (typeof active !== 'undefined')
+                    gotoPageInput.value = active.innerText;
+            }
+            if (e.keyCode === 38) // Up arrow key
+            {
+                el = document.getElementsByClassName('active')[0];
+                const prevEl = el ? el.previousSibling : undefined;
+                if (typeof prevEl !== 'undefined')
+                {
+                    el.classList.remove('active');
+                    if (prevEl !== null)
+                        prevEl.classList.add('active');
+                }
+                else
+                {
+                    let last = document.getElementsByClassName('diva-input-suggestion').length - 1;
+                    document.getElementsByClassName('diva-input-suggestion')[last].classList.add('active');
+                }
+            }
+            else if (e.keyCode === 40) // Down arrow key
+            {
+                el = document.getElementsByClassName('active')[0];
+                const nextEl = el ? el.nextSibling : undefined;
+                if (typeof nextEl !== 'undefined')
+                {
+                    el.classList.remove('active');
+                    if (nextEl !== null)
+                        nextEl.classList.add('active');
+                }
+                else
+                {
+                    document.getElementsByClassName('diva-input-suggestion')[0].classList.add('active');
+                }
+            }
+        });
 
         onEvent(inputSuggestions, 'mousedown', '.diva-input-suggestion', function ()
         {
