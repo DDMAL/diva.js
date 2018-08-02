@@ -426,10 +426,12 @@ export default class Toolbar
         ];
         let rightTools = [
             this.createPageLabel(),
-            this.createGotoPageForm(),
-            this.createViewMenu(),
-            this.createFullscreenButton()
+            this.createViewMenu()
         ];
+        if (this.settings.enableFullscreen)
+            rightTools.push(this.createFullscreenButton());
+        if (this.settings.enableGotoPage)
+            rightTools.splice(1, 0, this.createGotoPageForm());
 
         // assign toolbar plugins to proper side
         let plugins = this.viewer.viewerState.pluginInstances;
