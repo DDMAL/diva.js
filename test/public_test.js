@@ -96,7 +96,8 @@ describe('Public Functions', function ()
             assert.isOk(!this.setZoomLevel(5), "Setting zoom level to 5 should fail");
             assert.strictEqual(this.getZoomLevel(), 3, "Zoom level should still be 3");
 
-            assert.isOk(this.setZoomLevel(2), "Setting zoom level to 2 should be fine");
+            this.changeView('grid');
+            assert.isOk(this.setZoomLevel(2), "Setting zoom level to 2 from grid should be fine");
             assert.strictEqual(this.getZoomLevel(), 2, "Zoom level should now be 2");
             done();
         });
@@ -460,6 +461,9 @@ describe('Public Functions', function ()
 
             this.leaveGridView();
 
+            let fcn = () => { this.getPageDimensionsAtCurrentZoomLevel(-5); };
+            expect(fcn).to.throw('Invalid Page Index');
+
             done();
         });
 
@@ -467,6 +471,344 @@ describe('Public Functions', function ()
             objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json',
             goDirectlyTo: 10,
             inGrid: true
+        });
+    });
+
+    it('toggleOrientation()', function (done)
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function ()
+        {
+            assert.isOk(this.isVerticallyOriented(), 'Should be vertically oriented');
+            this.toggleOrientation();
+            assert.isOk(!this.isVerticallyOriented(), 'Should no longer be vertically oriented');
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json'
+        });
+    });
+
+    it('toggleNonPagedPagesVisibility()', function (done)
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function ()
+        {
+            assert.isOk(!this.settings.showNonPagedPages, 'Should not show non paged pages');
+            this.toggleNonPagedPagesVisibility();
+            assert.isOk(this.settings.showNonPagedPages, 'Should show non paged pages');
+
+            this.showNonPagedPages();
+            this.hideNonPagedPages();
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json'
+        });
+    });
+
+    it('setGridPagesPerRow(pagesPerRow)', function (done)
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function ()
+        {
+            this.setGridPagesPerRow(4);
+            assert.isOk(this.settings.inGrid, 'Should now be in grid');
+            assert.strictEqual(this.getGridPagesPerRow(), 4, 'Should be 4 pages per row');
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json'
+        });
+    });
+
+    it('isInFullscreen()', function (done)
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function ()
+        {
+            assert.isOk(!this.isInFullscreen(), 'Should not be in fullscreen');
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json'
+        });
+    });
+
+    it('isReady()', function (done)
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function ()
+        {
+            assert.isOk(this.isReady(), 'Viewer loaded, should be ready');
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json'
+        });
+
+        assert.isOk(!diva.isReady(), 'Should not be ready yet');
+    });
+
+    it('isPageIndexValid(pageIndex)', function (done)
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function ()
+        {
+            assert.isOk(this.isPageIndexValid(2), 'Page index 2 should be valid');
+            assert.isOk(!this.isPageIndexValid(-5), 'Page index -5 should not be valid');
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json'
+        });
+    });
+
+    it('hasOtherImages(pageIndex)', function (done)
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function ()
+        {
+            assert.isOk(!this.hasOtherImages(1), 'Page 1 should not have other images');
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json'
+        });
+    });
+
+    it('gotoPageByLabel(label)', function (done)
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function ()
+        {
+            this.gotoPageByLabel('folio 001v');
+            assert.strictEqual(this.getCurrentPageIndex(), 1, 'Should now be at page 2 (index 1)');
+
+            // try with number instead of label
+            this.gotoPageByLabel('asdfjkl');
+            assert.strictEqual(this.getCurrentPageIndex(), 1, 'Should still be on page 2');
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json'
+        });
+    });
+
+    it('getPageIndexForPageXYValues(pageX, pageY)', function (done)
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function ()
+        {
+            assert.strictEqual(this.getPageIndexForPageXYValues(-500, -500), -1, 'Index at (-500, -500) should be -1 (dne)');
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json'
+        });
+    });
+
+    it('getPageDimensionsAtZoomLevel(pageIdx, zoomLevel)', function (done)
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function ()
+        {
+            let dims = this.getPageDimensionsAtZoomLevel(0, 2);
+            assert.strictEqual(dims.width, 551, 'Width of first page at zoom 2 should be 551');
+
+            dims = this.getPageDimensionsAtZoomLevel(0, 10);
+            assert.strictEqual(dims.width, 4414, 'Zoom 10 should default to max, width should be 4414');
+
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json'
+        });
+
+        assert.isOk(!diva.getPageDimensionsAtZoomLevel(0, 1), 'Page not loaded should return false');
+    });
+
+    it('getPageDimensions(pageIndex)', function (done)
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function ()
+        {
+            assert.strictEqual(this.getPageDimensions(0).height, 874, 'Page 1 height should be 874');
+            assert.strictEqual(this.getPageDimensions(251).height, 866, 'Page 252 height should be 866');
+
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json'
+        });
+
+        assert.isNull(diva.getPageDimensions(0), 'Should return null if diva not loaded yet');
+    });
+
+    it('getOtherImages(pageIndex)', function (done)
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function ()
+        {
+            assert.isEmpty(this.getOtherImages(0), 'Page 1 should have no other images');
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json'
+        });
+    });
+
+    it('getNumberOfPages() viewer not loaded', function ()
+    {
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json'
+        });
+
+        assert.isFalse(diva.getNumberOfPages(), 'Should return false if diva not loaded yet');
+    });
+
+    it('getMinZoomLevel()', function (done)
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function ()
+        {
+            assert.strictEqual(this.getMinZoomLevel(), 0, 'Min zoom should be 0');
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json'
+        });
+    });
+
+    it('getMaxZoomLevelForPage(pageIdx)', function (done)
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function ()
+        {
+            assert.strictEqual(this.getMaxZoomLevelForPage(10), 5, 'Max zoom of page 10 should be 5');
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json'
+        });
+
+        assert.isFalse(diva.getMaxZoomLevelForPage(0), 'Should return false if diva not loaded yet');
+    });
+
+    it('getInstanceSelector()', function (done)
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function ()
+        {
+            // seems this function is actually broken (returns undefined). adding for coverage
+            this.getInstanceSelector();
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json'
+        });
+    });
+
+    it('getAllPageURIs()', function (done)
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function ()
+        {
+            let URIs = this.getAllPageURIs();
+            assert.strictEqual(URIs[0], 'https://images.simssa.ca/iiif/image/cdn-hsmu-m2149l4/cdn-hsmu-m2149l4_001r.jp2', 'First page URI should be right');
+
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json'
+        });
+    });
+
+    it('getCurrentPageURI()', function (done)
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function ()
+        {
+            assert.strictEqual(this.getCurrentPageURI(), 'https://images.simssa.ca/iiif/image/cdn-hsmu-m2149l4/cdn-hsmu-m2149l4_006r.jp2', 'Page 10 URI should be right');
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json',
+            goDirectlyTo: 10
+        });
+    });
+
+    it('getCurrentCanvas()', function (done) 
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function ()
+        {
+            assert.strictEqual(this.getCurrentCanvas(), 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/canvas/folio-001r.json', 'Page 1 canvas should be right');
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json'
+        });
+    });
+
+    it('getCurrentPageOffset()', function (done) 
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function ()
+        {
+            assert.strictEqual(this.getCurrentPageOffset().left, 27, 'First page left offset should be 27');
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json'
+        });
+    });
+
+    it('getCurrentURL()', function (done) 
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function ()
+        {
+            // can't really assert this since it could change based on testing environment
+            this.getCurrentURL();
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json'
+        });
+    });
+
+    it('disableDragScrollable(), enableDragScrollable()', function (done) 
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function ()
+        {
+            this.disableDragScrollable();
+            assert.isTrue(this.viewerState.viewportObject.hasAttribute('nochilddrag'), 'Should not be draggable');
+            this.enableDragScrollable();
+            assert.isFalse(this.viewerState.viewportObject.hasAttribute('nochilddrag'), 'Should be draggable');
+            
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json'
+        });
+    });
+
+    it('disableScrollable(), enableScrollable()', function (done) 
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function ()
+        {
+            this.disableScrollable();
+            assert.isFalse(this.viewerState.isScrollable, 'Should not be scrollable');
+            this.enableScrollable();
+            assert.isTrue(this.viewerState.isScrollable, 'Should be scrollable');
+            
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json'
         });
     });
 });

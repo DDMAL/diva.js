@@ -63,6 +63,7 @@ describe('Plugins', function ()
             document.dispatchEvent(e);
             e = new Event('mouseup');
             document.dispatchEvent(e);
+            icon.click();
 
             done();
         });
