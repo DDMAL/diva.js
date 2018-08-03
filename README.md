@@ -11,14 +11,15 @@ Diva.js (Document Image Viewer with AJAX) is a JavaScript book image viewer desi
 
 Version 6.0 contains many new features and improvements:
 
-- Complete re-organization of the source code. We now use ES6, WebPack, and Mocha (with Chai). This makes both the development process and code debugging much easier.
-- Complete removal of the jQuery dependency. 
+- Complete re-organization of the source code. Diva has been largely rewritten to ES6. We also use WebPack, Karma, and Mocha (with Chai). This makes both the development process and code debugging much easier.
+- Complete removal of external dependencies, namely JQuery. 
+- The metadata plugin. New plugins can now be easily hooked as toolbar plugins, instead of page-tool plugins.
 
 ## Overview
 
 There are two components to a functioning Diva system:
 
-1. **An image server** ([any IIIF-compatible image server](http://iiif.io/apps-demos.html)).
+1. **[A IIIF Manifest](https://iiif.io/)** that will be displayed.
 2. **The Diva.js plugin.** The embedded web application that displays the images in a browser.
 
 ### Details
@@ -31,27 +32,27 @@ Diva.js is an image viewing client compatible with version 2.0 of the IIIF [Imag
 ### From a CDN (hosted)
 
 Downloading the Diva.js release package provides access to image processing scripts and demos of possible configurations. If you don't need these you can skip downloading and simply paste the following tags into the `<head>` of any webpage to include all the  files necessary to use Diva.js.
-
-    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/diva.js/6.0.0/css/diva.min.css" />
-    <script src="//cdnjs.cloudflare.com/ajax/libs/diva.js/6.0.0/js/diva.min.js"></script>
-
+```javascript
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/diva.js/6.0.0/css/diva.min.css" />
+<script src="//cdnjs.cloudflare.com/ajax/libs/diva.js/6.0.0/js/diva.min.js"></script>
+```
 ### Locally (release package)
 
-Download the [latest release](https://github.com/DDMAL/diva.js/releases) of Diva. In the `diva.js` directory you can find a pre-compiled version. The `css` and `js` directories contain the files necessary to use Diva. Simply include `css/diva.min.css` and `js/diva.min.js` in the `<head>` of your webpage, as shown in the HTML source of the demo pages. You will also find some helper scripts for processing your image files.
+Download the [latest release](https://github.com/DDMAL/diva.js/releases) of Diva. In the `diva.js` directory you can find a pre-compiled version. The `css` and `js` directories contain the files necessary to use Diva. Simply include `build/css/diva.min.css` and `build/js/diva.min.js` in the `<head>` of your webpage, as shown in the HTML source of the demo pages. You will also find some helper scripts for processing your image files.
 
 ### Basic setup
 
 After including the necessary files, the most basic Diva viewer is instantiated with one (IIIF) required parameter:
 ```javascript
 <script>
-    $('#diva-wrapper').diva({
+    let diva = new Diva('diva-wrapper', {
         objectData: "http://www.example.com/beromunster.json",
     });
 </script>
 ```
  * `objectData`: The URL (absolute or relative) to the document's `.json` file, or a IIIF Manifest
 
-The `#diva-wrapper` selector points to a `div` element within which the document viewer will appear.
+The `diva-wrapper` selector points to a `div` element within which the document viewer will appear.
 
 See [Installation](https://github.com/DDMAL/diva.js/wiki/Installation) for full instructions.
 
@@ -73,11 +74,11 @@ If you wish to install from source, first you must install [node.js and npm](htt
 The full installation gives you access to the un-minified JavaScript source, the plugins, the documentation, and our unit-tests. We use [gulp](http://gulpjs.com/) as our build system and for other development tasks.
 
 ```javascript
-gulp develop          // Runs a webserver at localhost:9001 and automatically builds and reloads upon changes
+gulp develop         // Runs a webserver at localhost:9001 and automatically builds and reloads upon changes
 gulp develop:lint    // Lints all the source files
 ```
 
-Run `gulp develop` and navigate to [http://localhost:9001/demo](http://localhost:9001/demo) in your web browser to see the demo.
+Run `gulp develop` and navigate to [http://localhost:9001](http://localhost:9001) in your web browser to see a basic Diva instance.
 
 See [Installation](https://github.com/DDMAL/diva.js/wiki/Installation) for more information.
 
