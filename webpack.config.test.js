@@ -22,6 +22,15 @@ module.exports = {
                 query: {
                     presets: ["es2015"],
                 }
+            },
+            {
+                test: /\.js$/,
+                use: { 
+                    loader: 'istanbul-instrumenter-loader',
+                    options: { esModules: true }
+                },
+                enforce: 'post',
+                include: path.resolve('source/js/')
             }
         ]
     },
