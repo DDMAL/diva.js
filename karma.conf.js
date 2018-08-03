@@ -49,7 +49,7 @@ module.exports = function(config) {
     reporters: ['mocha', 'coverage-istanbul'],
 
     coverageIstanbulReporter: {
-      reports: [ 'text-summary' ],
+      reports: [ 'html', 'text-summary' ],
       fixWebpackSourcePaths: true
     },
 

@@ -29,6 +29,14 @@ module.exports = {
                     loader: 'istanbul-instrumenter-loader',
                     options: { esModules: true }
                 },
+                exclude: [
+                    // exclude so we don't test coverage of these files
+                    // very hard to test them with pure JS anyway
+                    /source\/js\/utils\/vanilla\.kinetic\.js/,
+                    /source\/js\/utils\/dragscroll\.js/,
+                    /source\/js\/plugins\/_filters\.js/,
+                    /source\/js\/gesture-events\.js/
+                ],
                 enforce: 'post',
                 include: path.resolve('source/js/')
             }
