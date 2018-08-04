@@ -225,7 +225,6 @@ class Diva
         }
 
         // trigger ManifestDidLoad event
-        // FIXME: Why is this triggered before the manifest is parsed? See https://github.com/DDMAL/diva.js/issues/357
         diva.Events.publish('ManifestDidLoad', [responseData], this);
 
         this.metadata = responseData.metadata;
