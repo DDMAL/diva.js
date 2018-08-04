@@ -4,20 +4,20 @@ describe('Composite Image', function ()
 {
     it('getTiles(zoomLevel) works properly', function ()
     {
-        var tileLevels = [
+        let tileLevels = [
             dummyTileLevel({ zoomLevel: 2, baseRows: 1, baseCols: 1 }),
             dummyTileLevel({ zoomLevel: 1, baseRows: 1, baseCols: 1 }),
             dummyTileLevel({ zoomLevel: 0, baseRows: 1, baseCols: 1 })
         ];
 
-        var composite = new CompositeImage(tileLevels);
+        let composite = new CompositeImage(tileLevels);
 
         // Load the really low-res tile
         composite.updateWithLoadedUrls(getUrls(tileLevels[2].tiles));
 
         assert.deepEqual(composite.getTiles(2), tileLevels[2].tiles, 'Should load available images');
 
-        var mostOfLevel1 = tileLevels[1].tiles.slice(1);
+        let mostOfLevel1 = tileLevels[1].tiles.slice(1);
         composite.updateWithLoadedUrls(getUrls(mostOfLevel1));
 
         assert.deepEqual(composite.getTiles(2), [tileLevels[2].tiles[0]].concat(mostOfLevel1),
@@ -28,7 +28,7 @@ describe('Composite Image', function ()
 
         composite.clear();
         composite.updateWithLoadedUrls(getUrls(tileLevels[2].tiles));
-        var mostOfLevel0 = tileLevels[0].tiles.slice(1);
+        let mostOfLevel0 = tileLevels[0].tiles.slice(1);
         composite.updateWithLoadedUrls(getUrls(mostOfLevel0));
 
         assert.deepEqual(composite.getTiles(2), [tileLevels[2].tiles[0]].concat(mostOfLevel0),
@@ -38,15 +38,15 @@ describe('Composite Image', function ()
 
 function dummyTileLevel(options)
 {
-    var zoomLevel = options.zoomLevel,
+    let zoomLevel = options.zoomLevel,
         baseRows = options.baseRows,
         baseCols = options.baseCols;
 
-    var tiles = [];
-    var scaleRatio = Math.pow(2, zoomLevel);
+    let tiles = [];
+    let scaleRatio = Math.pow(2, zoomLevel);
 
-    for (var baseRow=0; baseRow < baseRows; baseRow++) {
-        for (var baseCol=0; baseCol < baseCols; baseCol++) {
+    for (let baseRow=0; baseRow < baseRows; baseRow++) {
+        for (let baseCol=0; baseCol < baseCols; baseCol++) {
             tiles.push.apply(tiles, dummyTiles(scaleRatio, baseRow, baseCol));
         }
     }
@@ -61,16 +61,16 @@ function dummyTileLevel(options)
 
 function dummyTiles(scaleRatio, baseRow, baseCol)
 {
-    var tiles = [];
+    let tiles = [];
 
-    for (var rowOffset=0; rowOffset < scaleRatio; rowOffset++)
+    for (let rowOffset=0; rowOffset < scaleRatio; rowOffset++)
     {
-        for (var colOffset=0; colOffset < scaleRatio; colOffset++)
+        for (let colOffset=0; colOffset < scaleRatio; colOffset++)
         {
-            var row = baseRow * scaleRatio + rowOffset;
-            var col = baseCol * scaleRatio + colOffset;
+            let row = baseRow * scaleRatio + rowOffset;
+            let col = baseCol * scaleRatio + colOffset;
 
-            var url = 'dummy://ratio/' + scaleRatio + '/' +
+            let url = 'dummy://ratio/' + scaleRatio + '/' +
                 baseRow + '[' + rowOffset + ']/' +
                 baseCol + '[' + colOffset + ']';
 

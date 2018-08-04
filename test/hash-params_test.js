@@ -11,7 +11,7 @@ describe('Hash Params', function ()
         Diva.Events.unsubscribeAll();
     });
 
-    var testHashParams = function (testName, hashParams, onReadyCallback, config)
+    let testHashParams = function (testName, hashParams, onReadyCallback, config)
     {
         it(testName, function (done)
         {
@@ -27,7 +27,7 @@ describe('Hash Params', function ()
 
             Diva.Events.subscribe('ViewerDidLoad', function (settings)
             {
-                var scroll = {
+                let scroll = {
                     left: settings.viewportElement.scrollLeft,
                     top: settings.viewportElement.scrollTop
                 };
