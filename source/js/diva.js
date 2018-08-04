@@ -34,9 +34,6 @@ class Diva
 {
     constructor (element, options)
     {
-        // for the metadata plugin
-        this.metadata; 
-
         /*
          * If a string is passed in, convert that to an element.
          * */
