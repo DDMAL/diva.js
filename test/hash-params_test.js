@@ -1,7 +1,7 @@
 import Diva from '../source/js/diva';
 
 // jQuery mimic
-let $ = document.getElementById.bind(document);
+let el = document.getElementById.bind(document);
 
 describe('Hash Params', function ()
 {
@@ -47,13 +47,13 @@ describe('Hash Params', function ()
     testHashParams("grid view (v)", {v: "g"}, function (settings)
     {
         assert.isOk(settings.inGrid, "inGrid setting should be true");
-        assert.strictEqual($(settings.selector + 'view-menu').children[0].classList[0], 'diva-grid-icon', "Current toolbar view icon should be the grid icon");
+        assert.strictEqual(el(settings.selector + 'view-menu').children[0].classList[0], 'diva-grid-icon', "Current toolbar view icon should be the grid icon");
     });
 
     testHashParams("book view (v)", {v: "b"}, function (settings)
     {
         assert.isOk(settings.inBookLayout, "inBookLayout setting should be true");
-        assert.strictEqual($(settings.selector + 'view-menu').children[0].classList[0], 'diva-book-icon', "Current toolbar view icon should be the book icon");
+        assert.strictEqual(el(settings.selector + 'view-menu').children[0].classList[0], 'diva-book-icon', "Current toolbar view icon should be the book icon");
         assert.isOk(this.isPageInViewport(0), 'There should be some book pages');
     });
 
@@ -88,7 +88,7 @@ describe('Hash Params', function ()
         document.getElementsByClassName('diva-document-icon')[0].click();
         assert.strictEqual(settings.zoomLevel, 1, "Zoom level setting should still be 1");
         // zoom level is 0 indexed internally, so setting to 1 should display 2.00
-        assert.strictEqual($(settings.selector + 'zoom-label').textContent, "Zoom level: 2", "Zoom buttons label should show a zoom level of 2");
+        assert.strictEqual(el(settings.selector + 'zoom-label').textContent, "Zoom level: 2", "Zoom buttons label should show a zoom level of 2");
     });
 
     testHashParams("zoom level (z) and fullscreen (f)", {z: "1", f: "true"}, function (settings)
@@ -100,7 +100,7 @@ describe('Hash Params', function ()
         assert.isOk(document.body.classList.contains('diva-hide-scrollbar'), "The body element should have the hide-scrollbar class");
 
         // Check that the zoom level is actually 1 (second zoom)
-        assert.strictEqual($(settings.selector + 'zoom-label').textContent, "Zoom level: 2", "Zoom buttons label should show a zoom level of 2");
+        assert.strictEqual(el(settings.selector + 'zoom-label').textContent, "Zoom level: 2", "Zoom buttons label should show a zoom level of 2");
     });
 
     testHashParams("pagesPerRow (n) - valid value", {n: "3"}, function (settings)
@@ -119,7 +119,7 @@ describe('Hash Params', function ()
         assert.isOk(settings.inGrid, "Should be in grid initially");
 
         // Check that the pages per row setting is actually 3
-        assert.strictEqual($(settings.selector + 'grid-label').textContent, "Pages per row: 3", "Grid buttons label should show 3 pages per row");
+        assert.strictEqual(el(settings.selector + 'grid-label').textContent, "Pages per row: 3", "Grid buttons label should show 3 pages per row");
     });
 
     testHashParams("horizontal and vertical offsets (x, y) without page specified", {x: 100, y: 200}, function (settings, scroll)
