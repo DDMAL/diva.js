@@ -7,6 +7,7 @@
     "test": "mocha -r babel-register -r whatwg-fetch --recursive -R spec",
     "lint": "jshint --reporter=node_modules/jshint-stylish source/js",
     "develop": "webpack-dev-server",
+    "build:develop": "webpack --progress",
     "build:production": "NODE_ENV=production webpack --progress"
   },
   "repository": {
