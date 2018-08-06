@@ -840,6 +840,19 @@ class Diva
     }
 
     /**
+     * Returns the current filename (deprecated). Returns the URI for current page.
+     *
+     * @public
+     * @deprecated
+     * @returns {string} - The URI for the current page image.
+     **/
+    getCurrentPageFilename ()
+    {
+        console.warn('This method will be deprecated in the next version of Diva. Please use getCurrentPageURI instead.');
+        return this.settings.manifest.pages[this.settings.currentPageIndex].f;
+    }
+
+    /**
      * Returns the current URI for the visible page.
      *
      * @public
@@ -870,6 +883,23 @@ class Diva
     getCurrentPageOffset ()
     {
         return this.getPageOffset(this.settings.currentPageIndex);
+    }
+
+    /**
+     * Returns an array of all filenames in the document. Deprecated.
+     *
+     * @public
+     * @deprecated
+     * @returns {Array} - An array of all the URIs in the document.
+     * */
+    getFilenames ()
+    {
+        console.warn('This will be removed in the next version of Diva. Use getAllPageURIs instead.');
+
+        return this.settings.manifest.pages.map( (pg) =>
+        {
+            return pg.f;
+        });
     }
 
     /**
@@ -1161,6 +1191,22 @@ class Diva
         }
 
         const pageIndex = parseInt(label, 10) - 1;
+        return this._gotoPageByIndex(pageIndex, xAnchor, yAnchor);
+    }
+
+    /**
+     * Jump to a page based on its filename. Deprecated. Use gotoPageByURI instead.
+     *
+     * @public
+     * @params {string} filename - The filename of the image to jump to.
+     * @params {?string} xAnchor - may either be "left", "right", or default "center"
+     * @params {?string} yAnchor - may either be "top", "bottom", or default "center"
+     * @returns {boolean} true if successful and false if the filename is not found.
+    */
+    gotoPageByName (filename, xAnchor, yAnchor)
+    {
+        console.warn('This method will be removed in the next version of Diva.js. Use gotoPageByURI instead.');
+        const pageIndex = this._getPageIndex(filename);
         return this._gotoPageByIndex(pageIndex, xAnchor, yAnchor);
     }
 
