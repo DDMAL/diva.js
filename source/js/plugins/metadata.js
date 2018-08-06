@@ -46,7 +46,8 @@ export default class MetadataPlugin
             metadataDiv.className = 'diva-modal';
 
             let closeButton = document.createElement('button');
-            closeButton.innerHTML = '&#10006'; 
+            closeButton.innerHTML = '&#10006';
+            closeButton.id = 'closeMetadata';
             closeButton.setAttribute('style', 'position:absolute; right:2%; top:3%;');
             closeButton.onclick = () => 
             {

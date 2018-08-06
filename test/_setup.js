@@ -1,13 +1,13 @@
-require('jsdom-global/register');
-
-var expect = require('chai').expect;
+let expect = require('chai').expect;
 global.expect = expect;
 
-var assert = require('chai').assert;
+let assert = require('chai').assert;
 global.assert = assert;
 
-const jsdom = require('jsdom');
-const { JSDOM } = jsdom;
-var dom = new JSDOM(`<!DOCTYPE html><html><head></head><body><div id='diva-wrapper'></div></body></html>`);
-global.window = dom.window;
-global.document = dom.window.document;
+let wrapper = document.createElement('div');
+wrapper.id = 'parent-wrapper';
+wrapper.setAttribute('style', 'width: 984px; height: 800px');
+let div = document.createElement('div');
+div.id = 'diva-wrapper';
+wrapper.appendChild(div);
+document.body.appendChild(wrapper);

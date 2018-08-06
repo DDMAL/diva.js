@@ -340,7 +340,7 @@ class Diva
                 };
 
             default:
-                return null;
+                return {};
         }
     }
 
@@ -453,7 +453,7 @@ class Diva
         // handle toolbar opacity in fullscreen
         let t;
         let hover = false;
-        let tools = document.getElementById('diva-1-tools');
+        let tools = document.getElementById(this.settings.selector + 'tools');
         const TIMEOUT = 2000;
 
         if (this.settings.inFullscreen) 
@@ -682,16 +682,6 @@ class Diva
     changeView (destinationView)
     {
         this._changeView(destinationView);
-    }
-
-    /**
-     * Close all popups on the toolbar.
-     *
-     * @public
-     **/
-    closePopups ()
-    {
-        this.divaState.toolbar.closePopups();
     }
 
     /**
@@ -948,7 +938,6 @@ class Diva
      * */
     getInstanceSelector ()
     {
-        console.log(this);
         return this.divaState.viewerCore.selector;
     }
 
@@ -1344,7 +1333,7 @@ class Diva
     {
         if (this.settings.inFullscreen)
         {
-            this.toggleFullscreen();
+            this._toggleFullscreen();
             return true;
         }
 

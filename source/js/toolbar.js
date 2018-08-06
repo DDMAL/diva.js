@@ -108,6 +108,206 @@ export default class Toolbar
         return elt('div', {id: this.settings.ID + "grid-controls", style: "display:none" }, gridButtons);
     }
 
+    createPageLabel ()
+    {
+        // Current page
+        const currentPage = elt('span', {
+            id: this.settings.ID + 'current-page'
+        });
+
+        const updateCurrentPage = () => 
+        {
+            currentPage.textContent = this.viewer.getCurrentPageIndex() + 1; // pages are 0 indexed
+        };
+
+        this._subscribe('VisiblePageDidChange', updateCurrentPage);
+        this._subscribe('ViewerDidLoad', updateCurrentPage);
+
+        // Number of pages
+        const numPages = elt('span', {
+            id: this.settings.ID + 'num-pages'
+        });
+
+        const updateNumPages = () => 
+        {
+            numPages.textContent = this.settings.numPages;
+        };
+
+        this._subscribe('NumberOfPagesDidChange', updateNumPages);
+        this._subscribe('ObjectDidLoad', updateNumPages);
+
+        return elt('span', {
+                class: 'diva-page-label diva-label'
+            },
+            'Page ', currentPage, ' of ', numPages
+        );
+    }
+
+    createGotoPageForm ()  
+    {
+        const gotoPageInput = elt('input', {
+            id: this.settings.ID + 'goto-page-input',
+            class: 'diva-input diva-goto-page-input',
+            autocomplete: 'off',
+            type: 'text'
+        });
+
+        const gotoPageSubmit = elt('input', {
+            id: this.settings.ID + 'goto-page-submit',
+            class: 'diva-button diva-button-text',
+            type: 'submit',
+            value: 'Go'
+        });
+
+        const inputSuggestions = elt('div', {
+                id: this.settings.ID + 'input-suggestions',
+                class: 'diva-input-suggestions'
+            }
+        );
+
+        const gotoForm = elt('form', {
+                id: this.settings.ID + 'goto-page',
+                class: 'diva-goto-form'
+            },
+            gotoPageInput,
+            gotoPageSubmit,
+            inputSuggestions
+        );
+
+        gotoForm.addEventListener('submit', (e) => 
+        {
+            e.preventDefault();
+
+            const desiredPageLabel = gotoPageInput.value;
+
+            if (this.settings.onGotoSubmit && typeof this.settings.onGotoSubmit === "function")
+            {
+                const pageIndex = this.settings.onGotoSubmit(desiredPageLabel);
+                if (!this.viewer.gotoPageByIndex(pageIndex))
+                    window.alert("No page could be found with that label or page number");
+
+            }
+            else // Default if no function is specified in the settings
+            {
+                if (!this.viewer.gotoPageByLabel(desiredPageLabel))
+                    window.alert("No page could be found with that label or page number");
+            }
+
+            // Hide the suggestions
+            inputSuggestions.style.display = 'none';
+
+            // Prevent the default action of reloading the page
+            return false;
+        });
+
+        ['input', 'focus'].forEach(event => 
+        {
+            gotoPageInput.addEventListener(event, () => {
+                inputSuggestions.innerHTML = ''; // Remove all previous suggestions
+
+                const value = gotoPageInput.value;
+                let numSuggestions = 0;
+                if (this.settings.enableGotoSuggestions && value)
+                {
+                    const pages = this.settings.manifest.pages;
+                    for (let i = 0, len = pages.length; i < len && numSuggestions < 10; i++)
+                    {
+                        if (pages[i].l.toLowerCase().indexOf(value.toLowerCase()) > -1)
+                        {
+                            const newInputSuggestion = elt('div', {
+                                    class: 'diva-input-suggestion'
+                                },
+                                pages[i].l
+                            );
+
+                            inputSuggestions.appendChild(newInputSuggestion);
+
+                            numSuggestions++;
+                        }
+                    }
+
+                    // Show label suggestions
+                    if (numSuggestions > 0)
+                        inputSuggestions.style.display = 'block';
+                }
+                else
+                    inputSuggestions.style.display = 'none';
+            });
+        });
+
+        gotoPageInput.addEventListener('keydown', e => {
+            let el;
+            if (e.keyCode === 13) // 'Enter' key
+            {
+                const active = document.getElementsByClassName('active')[0];
+                if (typeof active !== 'undefined')
+                    gotoPageInput.value = active.innerText;
+            }
+            if (e.keyCode === 38) // Up arrow key
+            {
+                el = document.getElementsByClassName('active')[0];
+                const prevEl = el ? el.previousSibling : undefined;
+                if (typeof prevEl !== 'undefined')
+                {
+                    el.classList.remove('active');
+                    if (prevEl !== null)
+                        prevEl.classList.add('active');
+                }
+                else
+                {
+                    let last = document.getElementsByClassName('diva-input-suggestion').length - 1;
+                    document.getElementsByClassName('diva-input-suggestion')[last].classList.add('active');
+                }
+            }
+            else if (e.keyCode === 40) // Down arrow key
+            {
+                el = document.getElementsByClassName('active')[0];
+                const nextEl = el ? el.nextSibling : undefined;
+                if (typeof nextEl !== 'undefined')
+                {
+                    el.classList.remove('active');
+                    if (nextEl !== null)
+                        nextEl.classList.add('active');
+                }
+                else
+                {
+                    document.getElementsByClassName('diva-input-suggestion')[0].classList.add('active');
+                }
+            }
+        });
+
+        onEvent(inputSuggestions, 'mousedown', '.diva-input-suggestion', function ()
+        {
+            gotoPageInput.value = this.textContent;
+            inputSuggestions.style.display = 'none';
+
+            let submitEvent = new Event('submit');
+            gotoForm.dispatchEvent(submitEvent);
+        });
+
+        // javascript equivalent to jquery .on(event, selector, function)
+        function onEvent (elem, evt, sel, handler) 
+        {
+            elem.addEventListener(evt, function (event) 
+            {
+                var t = event.target;
+                while (t && t !== this) 
+                {
+                    if (t.matches(sel)) 
+                        handler.call(t, event);
+                    t = t.parentNode;
+                }
+            });
+        }
+
+        gotoPageInput.addEventListener('blur', () => {
+            // Hide label suggestions
+            inputSuggestions.style.display = 'none';
+        });
+
+        return gotoForm;
+    }
+
     createViewMenu ()
     {
         const viewOptionsList = elt('div', this._elemAttrs('view-options'));
@@ -225,9 +425,13 @@ export default class Toolbar
             this.createGridControls()
         ];
         let rightTools = [
-            this.createViewMenu(),
-            this.createFullscreenButton()
+            this.createPageLabel(),
+            this.createViewMenu()
         ];
+        if (this.settings.enableFullscreen)
+            rightTools.push(this.createFullscreenButton());
+        if (this.settings.enableGotoPage)
+            rightTools.splice(1, 0, this.createGotoPageForm());
 
         // assign toolbar plugins to proper side
         let plugins = this.viewer.viewerState.pluginInstances;
@@ -238,10 +442,11 @@ export default class Toolbar
             if (!plugin.toolbarIcon)
                 continue;
 
+            // add plugin tools after the go-to-page and page-label tools
             if (plugin.rightTool) 
-                rightTools.unshift(plugin.toolbarIcon);
+                rightTools.splice(2, 0, plugin.toolbarIcon);
             else if (plugin.leftTool) 
-                leftTools.unshift(plugin.toolbarIcon);
+                leftTools.splice(2, 0, plugin.toolbarIcon);
 
             plugin.toolbarIcon.addEventListener('click', handlePluginClick.bind(this, plugin));
         }

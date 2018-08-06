@@ -1,97 +1,58 @@
-var path = require('path');
-var webpack = require('webpack');
+const path = require('path');
+const buildMode = (process.env.NODE_ENV === "production") ? 'production' : 'development';
+const CleanWebpackPlugin = require('clean-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
-// var sharedJQueryPath = require.resolve('jquery');
 
 module.exports = [{
-    mode: "development",
     entry: [
         // 'babel-polyfill',
-        'whatwg-fetch',
         "array.prototype.fill",
-        './source/js/diva.js'
+        './source/js/diva.js',
+        './source/css/diva.scss'
     ],
-    output: {
-        path: path.join(__dirname, 'build'),
-        publicPath: '/assets/',
-        filename: 'diva.js'
-    },
-    devtool: 'source-map',
     module: {
         rules: [
             {
-                test: /\.json$/,
-                'loaders': ['json']
-            },
-            {
-                loader: "babel-loader",
-                // include: [
-                //     path.resolve(__dirname, "source/js")
-                // ],
-                query: {
-                    presets: ["es2015"],
-                }
+                test: /\.scss$/,
+                use: ['style-loader', MiniCssExtractPlugin.loader, 'css-loader', 'sass-loader']
             }
         ]
     },
-    plugins: (process.env.NODE_ENV === "production") ? productionPlugins() : developmentPlugins()
+    plugins: [
+        new CleanWebpackPlugin(['build']),
+        new CopyWebpackPlugin(),
+        new MiniCssExtractPlugin({
+            filename: path.join('diva.css')
+        })
+    ],
+    output: {
+        publicPath: '/build/',
+        path: path.join(__dirname, 'build'),
+        filename: 'diva.js'
+    },
+    mode: buildMode,
+    devtool: (buildMode === "production") ? 'cheap-source-map' : 'cheap-module-eval-source-map',
+    devServer: {
+        contentBase: __dirname,
+        compress: true,
+        port: 9001
+    }
 }, {
     entry: {
         'download': './source/js/plugins/download.js',
         'manipulation': './source/js/plugins/manipulation.js',
         'metadata': './source/js/plugins/metadata.js'
     },
+    plugins: [
+        new CleanWebpackPlugin([path.join('build', 'plugins')]),
+    ],
     output: {
+        publicPath: '/build/plugins/',
         path: path.join(__dirname, 'build', 'plugins'),
         filename: '[name].js'
     },
-    resolve: {
-        extensions: ["*", ".js"],
-    },
-    module: {
-        rules: [
-            {
-                loader: "babel-loader",
-                include: [
-                    path.resolve(__dirname, "source/js/plugins")
-                ],
-                query: {
-                    presets: ["es2015"]
-                }
-            }
-        ]
-    }
+    mode: buildMode,
+    devtool: (buildMode === "production") ? 'cheap-source-map' : 'cheap-module-eval-source-map'
 }];
-
-function productionPlugins()
-{
-    return [
-        new webpack.DefinePlugin({
-            'process.env': {
-                NODE_ENV: JSON.stringify('production')
-            }
-        }),
-        new webpack.optimize.UglifyJsPlugin(),
-        new webpack.optimize.OccurrenceOrderPlugin(true),
-        new webpack.ProvidePlugin({
-            // 'diva': 'diva',
-            // '$': sharedJQueryPath,
-            // 'jQuery': sharedJQueryPath,
-            // 'window.jQuery': sharedJQueryPath,
-            // URLSearchParams: "url-search-params"
-        })
-    ]
-}
-
-function developmentPlugins()
-{
-    return [
-        new webpack.ProvidePlugin({
-            // 'diva': 'diva',
-            // '$': sharedJQueryPath,
-            // 'jQuery': sharedJQueryPath,
-            // 'window.jQuery': sharedJQueryPath,
-            // URLSearchParams: "url-search-params"
-        })
-    ]
-}
