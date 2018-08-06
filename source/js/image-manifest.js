@@ -12,7 +12,7 @@ export default class ImageManifest
         this.maxRatio = data.dims.max_ratio;
         this.minRatio = data.dims.min_ratio;
         this.itemTitle = data.item_title;
-        this.metadata = data.metadata || null;
+        this.metadata = data.metadata;
 
         // Only given for IIIF manifests
         this.paged = !!data.paged;
