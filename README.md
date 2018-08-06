@@ -13,7 +13,8 @@ Version 6.0 contains many new features and improvements:
 
 - Complete re-organization of the source code. Diva has been largely rewritten to ES6. We also use WebPack, Karma, and Mocha (with Chai). This makes both the development process and code debugging much easier.
 - Complete removal of external dependencies, namely JQuery. 
-- The metadata plugin. New plugins can now be easily hooked as toolbar plugins, instead of page-tool plugins.
+- The metadata plugin. 
+- New plugins can now be easily hooked as toolbar plugins, instead of page-tool plugins.
 
 ## Overview
 
@@ -33,8 +34,8 @@ Diva.js is an image viewing client compatible with version 2.0 of the IIIF [Imag
 
 Downloading the Diva.js release package provides access to image processing scripts and demos of possible configurations. If you don't need these you can skip downloading and simply paste the following tags into the `<head>` of any webpage to include all the  files necessary to use Diva.js.
 ```javascript
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/diva.js/6.0.0/css/diva.min.css" />
-<script src="//cdnjs.cloudflare.com/ajax/libs/diva.js/6.0.0/js/diva.min.js"></script>
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/diva.js/6.0.0/css/diva.css" />
+<script src="//cdnjs.cloudflare.com/ajax/libs/diva.js/6.0.0/js/diva.js"></script>
 ```
 ### Locally (release package)
 
@@ -42,8 +43,10 @@ Download the [latest release](https://github.com/DDMAL/diva.js/releases) of Diva
 
 ### Basic setup
 
-After including the necessary files, the most basic Diva viewer is instantiated with one (IIIF) required parameter:
+After including the necessary files, the most basic Diva viewer is instantiated with one (IIIF) required parameter (by targeting a parent div, in this case diva-wrapper):
 ```javascript
+<div id="diva-wrapper"></div>
+
 <script>
     let diva = new Diva('diva-wrapper', {
         objectData: "http://www.example.com/beromunster.json",
