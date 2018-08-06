@@ -20,7 +20,7 @@ module.exports = {
                     path.resolve(__dirname, "tests")
                 ],
                 query: {
-                    presets: ["es2015"],
+                    presets: ["env"],
                 }
             },
             {

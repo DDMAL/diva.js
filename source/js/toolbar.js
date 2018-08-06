@@ -184,13 +184,13 @@ export default class Toolbar
             {
                 const pageIndex = this.settings.onGotoSubmit(desiredPageLabel);
                 if (!this.viewer.gotoPageByIndex(pageIndex))
-                    alert("No page could be found with that label or page number");
+                    window.alert("No page could be found with that label or page number");
 
             }
             else // Default if no function is specified in the settings
             {
                 if (!this.viewer.gotoPageByLabel(desiredPageLabel))
-                    alert("No page could be found with that label or page number");
+                    window.alert("No page could be found with that label or page number");
             }
 
             // Hide the suggestions
