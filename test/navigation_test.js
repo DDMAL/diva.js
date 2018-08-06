@@ -1,7 +1,7 @@
 import Diva from '../source/js/diva';
 
 // jQuery mimic
-let $ = document.getElementById.bind(document);
+let el = document.getElementById.bind(document);
 
 describe('Navigation', function () 
 {   
@@ -40,7 +40,7 @@ describe('Navigation', function ()
                 var actualIndex = divaInst.getCurrentPageIndex();
                 assert.strictEqual(actualIndex, index, "The page should now be " + rendered + " (index of " + index + ")");
 
-                var actualRendered = $(divaInst.getSettings().selector + 'current-page').innerText;
+                var actualRendered = el(divaInst.getSettings().selector + 'current-page').innerText;
                 assert.strictEqual(actualRendered, rendered, "The toolbar should have been updated");
 
                 viewportObject.removeEventListener('scroll', handleScroll);
@@ -55,7 +55,7 @@ describe('Navigation', function ()
     var assertZoomIs = function (level, divaInst, controlName)
     {
         var actualLevel = divaInst.getZoomLevel();
-        var renderedLevel = $(divaInst.getSettings().selector + 'zoom-level').innerText;
+        var renderedLevel = el(divaInst.getSettings().selector + 'zoom-level').innerText;
 
         assert.strictEqual(actualLevel, level, "Zoom level should now be " + level);
         assert.strictEqual(renderedLevel, (level + 1).toFixed(), "The " + controlName + " label should have been updated");
@@ -155,14 +155,14 @@ describe('Navigation', function ()
         {
             for (var i = 0; i < 5; i++)
             {
-                $(settings.selector + 'zoom-out-button').click();
+                el(settings.selector + 'zoom-out-button').click();
             }
 
             assertZoomIs(0, this, 'zoom buttons');
 
             for (i = 0; i < 5; i++)
             {
-                $(settings.selector + 'zoom-in-button').click();
+                el(settings.selector + 'zoom-in-button').click();
             }
 
             assertZoomIs(5, this, 'zoom buttons');
@@ -186,13 +186,13 @@ describe('Navigation', function ()
             {
                 assert.strictEqual(this.getCurrentPageIndex(), 165, "The current page should be 165 (10050px down, 1871px viewport)");
 
-                $(settings.selector + 'grid-out-button').click();
-                $(settings.selector + 'grid-out-button').click();
+                el(settings.selector + 'grid-out-button').click();
+                el(settings.selector + 'grid-out-button').click();
                 assert.strictEqual(this.getCurrentPageIndex(), 165, "The current page should still be 85");
 
                 for (var i = 0; i < 5; i++) 
                 {
-                    $(settings.selector + 'grid-in-button').click();
+                    el(settings.selector + 'grid-in-button').click();
                 }
                 assert.strictEqual(this.getCurrentPageIndex(), 165, "The current page should still be 85");
 
@@ -215,17 +215,17 @@ describe('Navigation', function ()
             this.enterGridView();
             for (var i = 0; i < 6; i++)
             {
-                $(settings.selector + 'grid-in-button').click();
+                el(settings.selector + 'grid-in-button').click();
             }
             assert.strictEqual(this.getState().n, 8, "Pages per row should now be 8");
-            assert.strictEqual($(settings.selector + 'pages-per-row').innerText, '8', "The grid buttons label should have been updated");
+            assert.strictEqual(el(settings.selector + 'pages-per-row').innerText, '8', "The grid buttons label should have been updated");
 
             for (i = 0; i < 6; i++)
             {
-                $(settings.selector + 'grid-out-button').click();
+                el(settings.selector + 'grid-out-button').click();
             }
             assert.strictEqual(this.getState().n, 2, "Pages per row should now be 2");
-            assert.strictEqual($(settings.selector + 'pages-per-row').innerText, '2', "The grid buttons label should have been updated");
+            assert.strictEqual(el(settings.selector + 'pages-per-row').innerText, '2', "The grid buttons label should have been updated");
 
             done();
         });
@@ -270,16 +270,16 @@ describe('Navigation', function ()
         Diva.Events.subscribe('ViewerDidLoad', function (settings)
         {
             assert.ok(!settings.inGrid, "Not in grid initially");
-            $(settings.selector + 'grid-icon').click();
+            el(settings.selector + 'grid-icon').click();
 
             // Click the grid icon, then wait a bit for the event to be triggered
             setTimeout(function ()
             {
                 assert.isOk(settings.inGrid, "Should now be in grid");
-                assert.isDefined($(settings.selector + 'grid-out-button'), "Grid buttons should be visible (-)");
-                assert.isDefined($(settings.selector + 'grid-in-button'), "Grid buttons should be visible (+)");
-                assert.isNull($(settings.selector + 'zoom-out-buttons'), "Zoom buttons should not be visible (-)");
-                assert.isNull($(settings.selector + 'zoom-in-buttons'), "Zoom buttons should not be visible (+)");
+                assert.isDefined(el(settings.selector + 'grid-out-button'), "Grid buttons should be visible (-)");
+                assert.isDefined(el(settings.selector + 'grid-in-button'), "Grid buttons should be visible (+)");
+                assert.isNull(el(settings.selector + 'zoom-out-buttons'), "Zoom buttons should not be visible (-)");
+                assert.isNull(el(settings.selector + 'zoom-in-buttons'), "Zoom buttons should not be visible (+)");
                 done();
             }, 10);
         });
@@ -338,14 +338,14 @@ describe('Navigation', function ()
             this.gotoPageByIndex(5);
 
             assert.isOk(settings.inBookLayout, "Should be in book layout");
-            assert.strictEqual($(settings.selector + 'current-page').innerText, '6', "Toolbar should indicate page 6");
+            assert.strictEqual(el(settings.selector + 'current-page').innerText, '6', "Toolbar should indicate page 6");
 
             setTimeout(() =>
             {
                 assert.isOk(this.isPageInViewport(5), "Page 6 (index 5) should be loaded");
 
                 this.gotoPageByIndex(6);
-                assert.strictEqual($(settings.selector + 'current-page').innerText, '7', "Toolbar should indicate page 7");
+                assert.strictEqual(el(settings.selector + 'current-page').innerText, '7', "Toolbar should indicate page 7");
                 assert.isOk(this.isPageInViewport(6), "Page 7 (index 6) should be loaded");
 
                 done();

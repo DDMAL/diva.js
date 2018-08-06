@@ -1,7 +1,7 @@
 import Diva from '../source/js/diva';
 
 // jQuery mimic
-let $ = document.getElementById.bind(document);
+let el = document.getElementById.bind(document);
 
 describe('Settings', function ()
 {
@@ -58,7 +58,7 @@ describe('Settings', function ()
         Diva.Events.subscribe('ViewerDidLoad', function (settings)
         {
             // Make sure the fullscreen icon is not there
-            assert.isNull($(settings.selector + 'fullscreen-icon'), "Fullscreen icon should not be present");
+            assert.isNull(el(settings.selector + 'fullscreen-icon'), "Fullscreen icon should not be present");
             done();
         });
 
@@ -73,7 +73,7 @@ describe('Settings', function ()
         Diva.Events.subscribe('ViewerDidLoad', function (settings)
         {
             // Make sure the fullscreen icon is there
-            assert.isNotNull($(settings.selector + 'fullscreen-icon'), "Fullscreen icon should be present");
+            assert.isNotNull(el(settings.selector + 'fullscreen-icon'), "Fullscreen icon should be present");
             done();
         });
 
@@ -87,7 +87,7 @@ describe('Settings', function ()
     {
         Diva.Events.subscribe('ViewerDidLoad', function (settings)
         {
-            assert.isNull($(settings.selector + 'goto-page'), "Go-to-page box should not be present");
+            assert.isNull(el(settings.selector + 'goto-page'), "Go-to-page box should not be present");
             done();
         });
 
@@ -101,7 +101,7 @@ describe('Settings', function ()
     {
         Diva.Events.subscribe('ViewerDidLoad', function (settings)
         {
-            assert.isNotNull($(settings.selector + 'goto-page'), "Go-to-page box should be present");
+            assert.isNotNull(el(settings.selector + 'goto-page'), "Go-to-page box should be present");
             done();
         });
 
@@ -256,7 +256,7 @@ describe('Settings', function ()
         Diva.Events.subscribe('ViewerDidLoad', function (settings)
         {
             assert.isOk(!settings.inGrid, "inGrid setting should still be false");
-            assert.strictEqual($(settings.selector + 'view-menu').children[0].classList[0], 'diva-document-icon', "Current toolbar view icon should be the document icon");
+            assert.strictEqual(el(settings.selector + 'view-menu').children[0].classList[0], 'diva-document-icon', "Current toolbar view icon should be the document icon");
             done();
         });
 
@@ -271,7 +271,7 @@ describe('Settings', function ()
         Diva.Events.subscribe('ViewerDidLoad', function (settings)
         {
             assert.isOk(settings.inGrid, "inGrid setting should be preserved");
-            assert.strictEqual($(settings.selector + 'view-menu').children[0].classList[0], 'diva-grid-icon', "Current toolbar view icon should be the grid icon");
+            assert.strictEqual(el(settings.selector + 'view-menu').children[0].classList[0], 'diva-grid-icon', "Current toolbar view icon should be the grid icon");
             done();
         });
 

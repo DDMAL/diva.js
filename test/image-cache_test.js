@@ -6,17 +6,17 @@ describe('Image Cache', function ()
 {
     it('Default max entries is 100', function ()
     {
-        var cache = new ImageCache();
+        let cache = new ImageCache();
         assert.strictEqual(cache.maxKeys, 100);
     });
 
     it('Evicts the least recently used entry', function ()
     {
-        var cache = new ImageCache({ maxKeys: 2 });
+        let cache = new ImageCache({ maxKeys: 2 });
 
-        var imgA = new Image();
-        var imgB = new Image();
-        var imgC = new Image();
+        let imgA = new Image();
+        let imgB = new Image();
+        let imgC = new Image();
 
         cache.put('A', imgA);
         cache.put('B', imgB);
@@ -38,12 +38,12 @@ describe('Image Cache', function ()
 
     it('Put overwrites existing entries and bumps their LRU position', function ()
     {
-        var cache = new ImageCache({ maxKeys: 2 });
+        let cache = new ImageCache({ maxKeys: 2 });
 
-        var imgA = new Image();
-        var imgA2 = new Image();
-        var imgB = new Image();
-        var imgC = new Image();
+        let imgA = new Image();
+        let imgA2 = new Image();
+        let imgB = new Image();
+        let imgC = new Image();
 
         cache.put('A', imgA);
         cache.put('B', imgB);
@@ -57,11 +57,11 @@ describe('Image Cache', function ()
 
     it("Entries which have been acquire()'d are promoted", function ()
     {
-        var cache = new ImageCache({ maxKeys: 2 });
+        let cache = new ImageCache({ maxKeys: 2 });
 
-        var imgA = new Image();
-        var imgB = new Image();
-        var imgC = new Image();
+        let imgA = new Image();
+        let imgB = new Image();
+        let imgC = new Image();
 
         cache.put('A', imgA);
         cache.put('B', imgB);
@@ -78,11 +78,11 @@ describe('Image Cache', function ()
 
     it("Entries which have been acquire()'d are not evicted until released", function ()
     {
-        var cache = new ImageCache({ maxKeys: 2 });
+        let cache = new ImageCache({ maxKeys: 2 });
 
-        var imgA = new Image();
-        var imgB = new Image();
-        var imgC = new Image();
+        let imgA = new Image();
+        let imgB = new Image();
+        let imgC = new Image();
 
         cache.put('A', imgA);
         cache.acquire('A');

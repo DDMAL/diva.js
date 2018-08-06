@@ -1,7 +1,7 @@
 import Diva from '../source/js/diva';
 
 // jQuery mimic
-let $ = document.getElementById.bind(document);
+let el = document.getElementById.bind(document);
 
 describe('Hash Params', function ()
 {
@@ -22,7 +22,7 @@ describe('Hash Params', function ()
         document.body.appendChild(newWrapper);
     });
 
-    var testHashParams = function (testName, hashParams, onReadyCallback, config)
+    let testHashParams = function (testName, hashParams, onReadyCallback, config)
     {
         it(testName, function (done)
         {
@@ -39,7 +39,7 @@ describe('Hash Params', function ()
 
             Diva.Events.subscribe('ViewerDidLoad', function (settings)
             {
-                var scroll = {
+                let scroll = {
                     left: settings.viewportElement.scrollLeft,
                     top: settings.viewportElement.scrollTop
                 };
@@ -59,13 +59,13 @@ describe('Hash Params', function ()
     testHashParams("grid view (v)", {v: "g"}, function (settings)
     {
         assert.isOk(settings.inGrid, "inGrid setting should be true");
-        assert.strictEqual($(settings.selector + 'view-menu').children[0].classList[0], 'diva-grid-icon', "Current toolbar view icon should be the grid icon");
+        assert.strictEqual(el(settings.selector + 'view-menu').children[0].classList[0], 'diva-grid-icon', "Current toolbar view icon should be the grid icon");
     });
 
     testHashParams("book view (v)", {v: "b"}, function (settings)
     {
         assert.isOk(settings.inBookLayout, "inBookLayout setting should be true");
-        assert.strictEqual($(settings.selector + 'view-menu').children[0].classList[0], 'diva-book-icon', "Current toolbar view icon should be the book icon");
+        assert.strictEqual(el(settings.selector + 'view-menu').children[0].classList[0], 'diva-book-icon', "Current toolbar view icon should be the book icon");
         assert.isOk(this.isPageInViewport(0), 'There should be some book pages');
     });
 
@@ -100,7 +100,7 @@ describe('Hash Params', function ()
         document.getElementsByClassName('diva-document-icon')[0].click();
         assert.strictEqual(settings.zoomLevel, 1, "Zoom level setting should still be 1");
         // zoom level is 0 indexed internally, so setting to 1 should display 2.00
-        assert.strictEqual($(settings.selector + 'zoom-label').textContent, "Zoom level: 2", "Zoom buttons label should show a zoom level of 2");
+        assert.strictEqual(el(settings.selector + 'zoom-label').textContent, "Zoom level: 2", "Zoom buttons label should show a zoom level of 2");
     });
 
     testHashParams("zoom level (z) and fullscreen (f)", {z: "1", f: "true"}, function (settings)
@@ -112,7 +112,7 @@ describe('Hash Params', function ()
         assert.isOk(document.body.classList.contains('diva-hide-scrollbar'), "The body element should have the hide-scrollbar class");
 
         // Check that the zoom level is actually 1 (second zoom)
-        assert.strictEqual($(settings.selector + 'zoom-label').textContent, "Zoom level: 2", "Zoom buttons label should show a zoom level of 2");
+        assert.strictEqual(el(settings.selector + 'zoom-label').textContent, "Zoom level: 2", "Zoom buttons label should show a zoom level of 2");
     });
 
     testHashParams("pagesPerRow (n) - valid value", {n: "3"}, function (settings)
@@ -131,7 +131,7 @@ describe('Hash Params', function ()
         assert.isOk(settings.inGrid, "Should be in grid initially");
 
         // Check that the pages per row setting is actually 3
-        assert.strictEqual($(settings.selector + 'grid-label').textContent, "Pages per row: 3", "Grid buttons label should show 3 pages per row");
+        assert.strictEqual(el(settings.selector + 'grid-label').textContent, "Pages per row: 3", "Grid buttons label should show 3 pages per row");
     });
 
     testHashParams("page filename (i) - valid value", {i: "https://images.simssa.ca/iiif/image/cdn-hsmu-m2149l4/cdn-hsmu-m2149l4_003r.jp2"}, function (settings)
@@ -176,12 +176,12 @@ describe('Hash Params', function ()
     });
     testHashParams("vertical offset (y) and page number (p)", {y: 500, p: "50"}, function (settings, scroll)
     {
-        var expectedTopScroll = 44891;
+        let expectedTopScroll = 44891;
         assert.strictEqual(settings.currentPageIndex, 49, "Current page should be 50 (index of 49)");
         assert.strictEqual(scroll.top, expectedTopScroll, "Should be heightAbovePages + 500 pixels of scroll from the top + page y-center");
 
         // Check that the horizontal scroll hasn't been weirdly affected
-        var expectedLeftScroll = 0; // no scrollbar at this zoom level
+        let expectedLeftScroll = 0; // no scrollbar at this zoom level
         assert.strictEqual(scroll.left, expectedLeftScroll, "Horizontal scroll should just center it");
     }, {enableFilename: false, zoomLevel: 2});
 
@@ -200,7 +200,7 @@ describe('Hash Params', function ()
     testHashParams("horizontal offset (x) and page number (p)", {x: 100, p: "50"}, function (settings, scroll)
     {
         // FIXME: https://github.com/DDMAL/diva.js/issues/331
-        var expectedTopScroll = 44741;
+        let expectedTopScroll = 44741;
         assert.strictEqual(scroll.top, expectedTopScroll, "vertical scroll should be just to page 50");
         assert.strictEqual(scroll.left, 0, "Horizontal scroll should center it + 100 pixels to the right");
     }, {enableFilename: false});
@@ -208,7 +208,7 @@ describe('Hash Params', function ()
     testHashParams("horizontal offset (x), vertical offset (y), page number (p)", {x: 100, y: 200, p: "50"}, function (settings, scroll)
     {
         // FIXME: https://github.com/DDMAL/diva.js/issues/331
-        var expectedTopScroll = 44591;
+        let expectedTopScroll = 44591;
         assert.strictEqual(scroll.top, expectedTopScroll, "vertical scroll should be to page 50 + 200 + page y-center");
         assert.strictEqual(scroll.left, 0, "Horizontal scroll should center it + 100 pixels to the right");
     }, {enableFilename: false});

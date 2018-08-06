@@ -1,7 +1,7 @@
-var expect = require('chai').expect;
+let expect = require('chai').expect;
 global.expect = expect;
 
-var assert = require('chai').assert;
+let assert = require('chai').assert;
 global.assert = assert;
 
 let wrapper = document.createElement('div');
