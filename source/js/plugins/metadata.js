@@ -34,13 +34,18 @@ export default class MetadataPlugin
      * Display a modal with the IIIF manifest metadata. Here, viewer refers to the Diva instance (because
      * the toolbar class refers to it as viewer)
      **/
-    handleClick (viewer) 
+    handleClick ()
     {
         // if first click create div elements
         let metadataDiv;
+
+        let metadata = this.core.viewerState.manifest.metadata || null;
+
+        if (!metadata)
+            return null;
+
         if (this.firstClick)
         {
-            let metadata = viewer.metadata;
             metadataDiv = document.createElement('div');
             metadataDiv.id = 'metadataDiv';
             metadataDiv.className = 'diva-modal';
@@ -60,7 +65,7 @@ export default class MetadataPlugin
             let values = document.createElement('DIV');
             values.setAttribute('style', 'width:69%; text-align:left; float:right;');
 
-            for (var i = 0, len = metadata.length; i < len; i++) 
+            for (let i = 0, len = metadata.length; i < len; i++)
             {
                 let lineLabel = document.createElement('div');
                 let bold = document.createElement('b');

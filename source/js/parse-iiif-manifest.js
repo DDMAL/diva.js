@@ -50,7 +50,23 @@ export default function parseIIIFManifest (manifest)
 
     const pages = new Array(canvases.length);
 
-    let thisCanvas, thisResource, thisImage, otherImages, context, url, info, imageAPIVersion, width, height, maxZoom, canvas, label, imageLabel, zoomDimensions, widthAtCurrentZoomLevel, heightAtCurrentZoomLevel;
+    let thisCanvas,
+        thisResource,
+        thisImage,
+        otherImages,
+        context,
+        url,
+        info,
+        imageAPIVersion,
+        width,
+        height,
+        maxZoom,
+        canvas,
+        label,
+        imageLabel,
+        zoomDimensions,
+        widthAtCurrentZoomLevel,
+        heightAtCurrentZoomLevel;
 
     let lowestMaxZoom = 100;
     let maxRatio = 0;
@@ -103,6 +119,7 @@ export default function parseIIIFManifest (manifest)
         // Prioritize the canvas height / width first, since images may not have h/w
         width = thisCanvas.width || thisImage.width;
         height = thisCanvas.height || thisImage.height;
+
         if (width <= 0 || height <= 0)
         {
             console.warn('Invalid width or height for canvas ' + label + '. Skipping');
@@ -196,6 +213,7 @@ export default function parseIIIFManifest (manifest)
 
     return {
         item_title: manifest.label,
+        metadata: manifest.metadata || null,
         dims: dims,
         max_zoom: lowestMaxZoom,
         pgs: pages,
