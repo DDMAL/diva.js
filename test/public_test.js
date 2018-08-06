@@ -99,6 +99,9 @@ describe('Public Functions', function ()
             this.changeView('grid');
             assert.isOk(this.setZoomLevel(2), "Setting zoom level to 2 from grid should be fine");
             assert.strictEqual(this.getZoomLevel(), 2, "Zoom level should now be 2");
+
+            this.changeView('book');
+            this.changeView(' ');
             done();
         });
 
@@ -198,7 +201,24 @@ describe('Public Functions', function ()
         });
     });
 
-    it("gotoPageByName()", function (done)
+    it('goToPageByName(filename, xAnchor, yAnchor)', function (done) 
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function (settings)
+        {
+            assert.isOk(this.gotoPageByName('https://images.simssa.ca/iiif/image/cdn-hsmu-m2149l4/cdn-hsmu-m2149l4_001v.jp2', "right", "center"), "It should find the page index for folio-001v");
+            assert.strictEqual(settings.currentPageIndex, 1, "Now the page number should be 2 (index 1)");
+            assert.strictEqual(settings.viewport.top, 1000, "The page should be anchored to the center (vertically)");
+            assert.strictEqual(settings.viewport.left, 0, "The page should be anchored to the right");
+            
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json'
+        });
+    });
+
+    it("gotoPageByURI(uri, xAnchor, yAnchor)", function (done)
     {
         Diva.Events.subscribe('ViewerDidLoad', function (settings)
         {
@@ -273,6 +293,9 @@ describe('Public Functions', function ()
                 else
                     assert.strictEqual(actual[key], expected[key], "State key '" + key + "'");
             });
+
+            this.changeView('book');
+            assert.strictEqual(this.getState().v, 'b', 'View state should be book');
 
             done();
         });
@@ -709,6 +732,21 @@ describe('Public Functions', function ()
         });
     });
 
+    it('getFilenames()', function (done)
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function ()
+        {
+            let filenames = this.getFilenames();
+            assert.strictEqual(filenames[0], 'https://images.simssa.ca/iiif/image/cdn-hsmu-m2149l4/cdn-hsmu-m2149l4_001r.jp2', 'First page URI should be right');
+
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json'
+        });
+    });
+
     it('getAllPageURIs()', function (done)
     {
         Diva.Events.subscribe('ViewerDidLoad', function ()
@@ -721,6 +759,20 @@ describe('Public Functions', function ()
 
         let diva = new Diva('diva-wrapper', { // jshint ignore:line
             objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json'
+        });
+    });
+
+    it('getCurrentPageFilename()', function (done)
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function ()
+        {
+            assert.strictEqual(this.getCurrentPageFilename(), 'https://images.simssa.ca/iiif/image/cdn-hsmu-m2149l4/cdn-hsmu-m2149l4_006r.jp2', 'Page 10 filename should be right');
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json',
+            goDirectlyTo: 10
         });
     });
 
@@ -804,6 +856,21 @@ describe('Public Functions', function ()
             this.enableScrollable();
             assert.isTrue(this.viewerState.isScrollable, 'Should be scrollable');
             
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json'
+        });
+    });
+
+    it('deactivate()', function (done) 
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function ()
+        {
+            this.deactivate();
+            assert.isFalse(this.viewerState.isActiveDiva, 'Diva should no longer be active');
+
             done();
         });
 

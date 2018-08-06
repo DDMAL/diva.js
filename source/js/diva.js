@@ -341,7 +341,7 @@ class Diva
                 };
 
             default:
-                return null;
+                return {};
         }
     }
 
@@ -683,16 +683,6 @@ class Diva
     changeView (destinationView)
     {
         this._changeView(destinationView);
-    }
-
-    /**
-     * Close all popups on the toolbar.
-     *
-     * @public
-     **/
-    closePopups ()
-    {
-        this.divaState.toolbar.closePopups();
     }
 
     /**

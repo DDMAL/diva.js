@@ -69,6 +69,12 @@ describe('Hash Params', function ()
         assert.isOk(this.isPageInViewport(0), 'There should be some book pages');
     });
 
+    testHashParams("invalid view parameter (v) ", {v: "a"}, function (settings)
+    {
+        assert.isFalse(settings.inBookLayout, 'Should not be in book layout');
+        assert.isFalse(settings.inGrid, 'Should also not be in grid layout');
+    });
+
     testHashParams("fullscreen (f)", {f: "true"}, function (settings)
     {
         assert.isOk(settings.inFullscreen, "inFullscreen setting should be true");
@@ -81,7 +87,7 @@ describe('Hash Params', function ()
         assert.isOk(settings.inGrid, "inGrid setting should be true");
     });
 
-    testHashParams("zoom level (z) - valid value", {z: "3"}, function (settings)
+    testHashParams("zoom level (z) - valid value", {z: "3", f: "false"}, function (settings)
     {
         assert.strictEqual(settings.zoomLevel, 3, "Initial zoom level should be 3");
     });
