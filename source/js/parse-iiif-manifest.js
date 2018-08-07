@@ -35,6 +35,18 @@ const getOtherImageData = (otherImages, lowestMaxZoom) =>
     });
 };
 
+const getIIIFPresentationVersion = (context) =>
+{
+    if (context === "http://iiif.io/api/presentation/2/context.json")
+        return 2;
+    else if (Array.isArray(context) && context.indexOf("http://iiif.io/api/presentation/2/context.json" !== -1))
+        return 2;
+    else if (Array.isArray(context) && context.indexOf("http://iiif.io/api/presentation/3/context.json" !== -1))
+        return 3;
+    else
+        return 2;
+}
+
 /**
  * Parses an IIIF Presentation API Manifest and converts it into a Diva.js-format object
  * (See https://github.com/DDMAL/diva.js/wiki/Development-notes#data-received-through-ajax-request)
@@ -44,8 +56,17 @@ const getOtherImageData = (otherImages, lowestMaxZoom) =>
  */
 export default function parseIIIFManifest (manifest)
 {
-    const sequence = manifest.sequences[0];
-    const canvases = sequence.canvases;
+    let ctx = manifest["@context"];
+
+    if (!ctx)
+    {
+        console.error("Invalid IIIF Manifest; No @context found.");
+        return null;
+    }
+
+    const version = getIIIFPresentationVersion(ctx);
+    const sequence = manifest.sequences[0] || null;
+    const canvases = sequence.canvases || manifest.items;
     const numCanvases = canvases.length;
 
     const pages = new Array(canvases.length);
@@ -82,7 +103,7 @@ export default function parseIIIFManifest (manifest)
     for (let i = 0; i < numCanvases; i++)
     {
         thisCanvas = canvases[i];
-        canvas = thisCanvas['@id'];
+        canvas = thisCanvas['@id'] || thisCanvas['id'];
         label = thisCanvas.label;
         thisResource = thisCanvas.images[0].resource;
 
@@ -125,9 +146,9 @@ export default function parseIIIFManifest (manifest)
         info = parseImageInfo(thisImage);
         url = info.url.slice(-1) !== '/' ? info.url + '/' : info.url;  // append trailing slash to url if it's not there.
 
-        context = thisImage.service['@context'];
+        context = thisImage.service['@context'] || thisImage.service['type'];
 
-        if (context === 'http://iiif.io/api/image/2/context.json')
+        if (context === 'http://iiif.io/api/image/2/context.json' || context === "ImageService2")
         {
             imageAPIVersion = 2;
         }
@@ -157,6 +178,9 @@ export default function parseIIIFManifest (manifest)
             maxHeights[k] = Math.max(heightAtCurrentZoomLevel, maxHeights[k]);
         }
 
+        let isPaged = thisCanvas.viewingHint !== 'non-paged' || thisCanvas.behavior !== 'non-paged';
+        let isFacing = thisCanvas.viewingHint === 'facing-pages' || thisCanvas.behavior === 'facing-pages';
+
         pages[i] = {
             d: zoomDimensions,
             m: maxZoom,
@@ -165,8 +189,8 @@ export default function parseIIIFManifest (manifest)
             f: info.url,
             url: url,
             api: imageAPIVersion,
-            paged: thisCanvas.viewingHint !== 'non-paged',
-            facingPages: thisCanvas.viewingHint === 'facing-pages',
+            paged: isPaged,
+            facingPages: isFacing,
             canvas: canvas,
             otherImages: otherImages,
             xoffset: info.x || null,
@@ -194,12 +218,13 @@ export default function parseIIIFManifest (manifest)
         t_wid: totalWidths
     };
 
+    // assumes paged is false for non-paged values
     return {
         item_title: manifest.label,
         dims: dims,
         max_zoom: lowestMaxZoom,
         pgs: pages,
-        paged: manifest.viewingHint === 'paged' || sequence.viewingHint === 'paged'
+        paged: manifest.viewingHint === 'paged' || manifest.behavior === 'paged' || sequence.viewingHint === 'paged' || false
     };
 }
 
@@ -213,7 +238,7 @@ export default function parseIIIFManifest (manifest)
  */
 function parseImageInfo (resource)
 {
-    let url = resource['@id'];
+    let url = resource['@id'] || resource['id'];
     const fragmentRegex = /#xywh=([0-9]+,[0-9]+,[0-9]+,[0-9]+)/;
     let xywh = '';
     let stripURL = true;
@@ -233,9 +258,8 @@ function parseImageInfo (resource)
     }
     else if (resource.service && resource.service['@id'])
     {
-        // assume canvas size based on image size
-        url = resource.service['@id'];
         // this URL excludes region parameters so we don't need to remove them
+        url = resource['@id'];
         stripURL = false;
     }
 
