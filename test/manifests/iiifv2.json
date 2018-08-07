@@ -1,4 +1,4 @@
-export default {
+{
     "@context": "http://iiif.io/api/presentation/2/context.json",
     "@id": "https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json",
     "@type": "sc:Manifest",
