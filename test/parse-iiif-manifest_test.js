@@ -54,7 +54,7 @@ describe('IIIF Manifest Parsing', function ()
             assert.strictEqual(m.maxZoom, 5, 'Manifest should have maxZoom of 5');
             assert.strictEqual(m.maxRatio, 1.495655771617708, 'Max ratio should be 1.4956...');
             assert.strictEqual(m.minRatio, 1.187177597641857, 'Min ratio should be 1.1871...');
-            assert.strictEqual(m.itemTitle.en[0], 'Bodleian Library: MS. Canon. Misc. 213', 'Item title should be right');
+            assert.strictEqual(m.itemTitle, 'Bodleian Library: MS. Canon. Misc. 213', 'Item title should be right');
             assert.isFalse(m.paged, 'Should not be paged');
             assert.strictEqual(m.pages[0].l, 'Upper board', 'First page should be Upper board');
 

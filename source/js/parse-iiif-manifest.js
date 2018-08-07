@@ -1,3 +1,5 @@
+import parseLabelValue from './utils/label-value-parser';
+
 const getMaxZoomLevel = (width, height) =>
 {
     const largestDimension = Math.max(width, height);
@@ -230,7 +232,7 @@ export default function parseIIIFManifest (manifest)
 
     // assumes paged is false for non-paged values
     return {
-        item_title: manifest.label,
+        item_title: parseLabelValue(manifest).label,
         metadata: manifest.metadata || null,
         dims: dims,
         max_zoom: lowestMaxZoom,
