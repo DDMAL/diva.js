@@ -387,6 +387,58 @@ describe('Settings', function ()
         });
     });
 
+    it("object for objectData", function (done)
+    {
+        Diva.Events.subscribe('ViewerDidLoad', function (settings)
+        {
+            assert.strictEqual(this.getItemTitle(), "First page of Beromunster", "Should process an object for objectData like a normal manifest");
+            done();
+        });
+
+        let diva = new Diva('diva-wrapper', { // jshint ignore:line
+            objectData: {
+              "@context": "http://iiif.io/api/presentation/2/context.json",
+              "@id": "https://images.simssa.ca/iiif/image/beromunster/manifest.json",
+              "@type": "sc:Manifest",
+              "label": "First page of Beromunster",
+              "viewingHint": "paged",
+              "sequences": [
+                {
+                  "@type": "sc:Sequence",
+                  "canvases": [
+                    {
+                      "@id": "https://images.simssa.ca/iiif/image/beromunster/canvas/bm_001.json",
+                      "@type": "sc:Canvas",
+                      "label": "Bm 001",
+                      "height": 4445,
+                      "width": 2846,
+                      "images": [
+                        {
+                          "@type": "oa:Annotation",
+                          "motivation": "sc:painting",
+                          "resource": {
+                            "@id": "https://images.simssa.ca/iiif/image/beromunster/bm_001.tif/full/full/0/default.jpg",
+                            "@type": "dctypes:Image",
+                            "format": "image/jpeg",
+                            "height": 4445,
+                            "width": 2846,
+                            "service": {
+                              "@context": "http://iiif.io/api/image/2/context.json",
+                              "@id": "https://images.simssa.ca/iiif/image/beromunster/bm_001.tif",
+                              "profile": "http://iiif.io/api/image/2/level2.json"
+                            }
+                          },
+                          "on": "https://images.simssa.ca/iiif/image/beromunster/canvas/bm_001.json"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+        });
+    });
+
     // // pageLoadTimeout is a bit weird to test, but the code is simple so it should be fine
 
     // // pagesPerRow is tested above, along with max/minPagesPerRow

@@ -138,7 +138,7 @@ class Diva
         if (typeof this.settings.objectData === 'object')
         {
             // Defer execution until initialization has completed
-            setTimeout(function ()
+            setTimeout(() =>
             {
                 this._loadObjectData(this.settings.objectData, this.hashState);
             }, 0);
