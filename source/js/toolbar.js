@@ -435,17 +435,21 @@ export default class Toolbar
 
         // assign toolbar plugins to proper side
         let plugins = this.viewer.viewerState.pluginInstances;
-        for (var i = 0; i < plugins.length; i++) 
+        for (var i = 0, len = plugins.length; i < len; i++) 
         {
             let plugin = plugins[i];
 
-            if (!plugin.toolbarIcon)
+            if (!plugin.toolbarSide) // not a toolbar tool
+                continue;
+
+            plugin.toolbarIcon = plugin.createIcon(); 
+            if (!plugin.toolbarIcon) // icon couldn't be created
                 continue;
 
             // add plugin tools after the go-to-page and page-label tools
-            if (plugin.rightTool) 
+            if (plugin.toolbarSide === 'right') 
                 rightTools.splice(2, 0, plugin.toolbarIcon);
-            else if (plugin.leftTool) 
+            else if (plugin.toolbarSide === 'left') 
                 leftTools.splice(2, 0, plugin.toolbarIcon);
 
             plugin.toolbarIcon.addEventListener('click', handlePluginClick.bind(this, plugin));
@@ -455,7 +459,6 @@ export default class Toolbar
         {
             plugin.handleClick(this.viewer);
         }
-
 
         const tools = elt('div', this._elemAttrs('tools'),
                     elt('div', this._elemAttrs('tools-left'), leftTools),

@@ -442,3 +442,12 @@
     padding: 2em 2.2em;
 }
 
+#closeMetadata {
+    position: absolute;
+    right: 2%;
+    top: 10%;
+}
+
+#closeMetadata:hover {
+  color: tomato;
+}
