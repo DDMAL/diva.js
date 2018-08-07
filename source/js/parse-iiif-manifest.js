@@ -136,10 +136,16 @@ export default function parseIIIFManifest (manifest)
 
         maxZoom = getMaxZoomLevel(width, height);
 
-        if (thisResource.item)
+        if (thisResource.item) // v2
         {
             otherImages = getOtherImageData(thisResource.item, lowestMaxZoom);
         }
+        else if (thisCanvas.items && thisCanvas.items[0].items[1]) // v3, more than one image so take all but first
+        {
+            let arr = thisCanvas.items[0].items.slice(1);
+            let images = arr.map(item => item.body);
+            otherImages = getOtherImageData(images, lowestMaxZoom); 
+        } 
         else
         {
             otherImages = [];
