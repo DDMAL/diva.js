@@ -11,6 +11,7 @@ install:
   - npm install --no-spin
 
 script:
+  - npm run build:production
   - npm run lint
   - npm test
 

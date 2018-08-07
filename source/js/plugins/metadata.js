@@ -17,30 +17,33 @@
  * @method createIcon - A div representing the icon. This *should* be implemented using SVG.
  * @method handleClick - The click handler for the icon.
  *
- *
+ * Toolbar plugins must have a toolbarIcon and toolbarSide attribute, with toolbarSide being either 'left' or 'right'
  **/
 export default class MetadataPlugin
 {
     constructor (core)
     {
         this.core = core;
-        this.toolbarIcon = this.createIcon();
-        this.rightTool = true;
+        this.toolbarIcon;
+        this.toolbarSide = 'right';
+
+        // helpers for handleClick
         this.firstClick = true;
         this.isVisible = false;
     }
 
     /**
-     * Display a modal with the IIIF manifest metadata. Here, viewer refers to the Diva instance (because
-     * the toolbar class refers to it as viewer)
+     * Display a modal with the IIIF manifest metadata.
      **/
-    handleClick (viewer) 
+    handleClick () 
     {
         // if first click create div elements
         let metadataDiv;
+
+        let metadata = this.core.viewerState.manifest.metadata;
+
         if (this.firstClick)
         {
-            let metadata = viewer.metadata;
             metadataDiv = document.createElement('div');
             metadataDiv.id = 'metadataDiv';
             metadataDiv.className = 'diva-modal';
@@ -48,7 +51,6 @@ export default class MetadataPlugin
             let closeButton = document.createElement('button');
             closeButton.innerHTML = '&#10006';
             closeButton.id = 'closeMetadata';
-            closeButton.setAttribute('style', 'position:absolute; right:2%; top:3%;');
             closeButton.onclick = () => 
             {
                 metadataDiv.style.display = 'none';            
@@ -60,7 +62,7 @@ export default class MetadataPlugin
             let values = document.createElement('DIV');
             values.setAttribute('style', 'width:69%; text-align:left; float:right;');
 
-            for (var i = 0, len = metadata.length; i < len; i++) 
+            for (let i = 0, len = metadata.length; i < len; i++) 
             {
                 let lineLabel = document.createElement('div');
                 let bold = document.createElement('b');
@@ -127,6 +129,9 @@ export default class MetadataPlugin
      **/
     createIcon ()
     {
+        if (!this.core.viewerState.manifest.metadata)
+            return;
+
         const toolbarIcon = document.createElement('div');
         toolbarIcon.classList.add('diva-metadata-icon', 'diva-button');
 

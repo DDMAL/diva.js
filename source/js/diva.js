@@ -34,9 +34,6 @@ class Diva
 {
     constructor (element, options)
     {
-        // for the metadata plugin
-        this.metadata; 
-
         /*
          * If a string is passed in, convert that to an element.
          * */
@@ -123,7 +120,11 @@ class Diva
             toolbar: this.settings.enableToolbar ? this.toolbar : null
         };
 
-        this.toolbar.render();
+        // only render the toolbar after the object has been loaded
+        Diva.Events.subscribe('ObjectDidLoad', () =>
+        {
+            this.toolbar.render();
+        });
         this.hashState = this._getHashParamState();
 
         this._loadOrFetchObjectData();
@@ -226,8 +227,6 @@ class Diva
 
         // trigger ManifestDidLoad event
         diva.Events.publish('ManifestDidLoad', [responseData], this);
-
-        this.metadata = responseData.metadata;
         manifest = ImageManifest.fromIIIF(responseData);
         const loadOptions = hashState ? this._getLoadOptionsForState(hashState, manifest) : {};
 

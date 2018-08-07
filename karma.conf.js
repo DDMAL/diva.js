@@ -20,7 +20,7 @@ module.exports = function(config) {
     // list of files / patterns to load in the browser
     files: [
       'test/main.js',
-      'source/css/diva.css'
+      'build/diva.css'
     ],
 
 
