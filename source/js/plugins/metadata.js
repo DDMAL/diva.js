@@ -51,6 +51,10 @@ export default class MetadataPlugin
             metadataDiv.id = 'metadataDiv';
             metadataDiv.className = 'diva-modal';
 
+            let title = document.createElement('h2');
+            title.innerText = 'Metadata';
+            title.id = 'metadataTitle';
+
             let closeButton = document.createElement('button');
             closeButton.innerHTML = '&#10006';
             closeButton.id = 'closeMetadata';
@@ -61,6 +65,7 @@ export default class MetadataPlugin
             };
 
             let contentDiv = document.createElement('div');
+            contentDiv.id = 'contentDiv';
 
             for (let i = 0, len = metadata.length; i < len; i++) 
             {
@@ -79,6 +84,7 @@ export default class MetadataPlugin
             }
 
             metadataDiv.appendChild(closeButton);
+            metadataDiv.appendChild(title);
             metadataDiv.appendChild(contentDiv);
             document.body.appendChild(metadataDiv);
 

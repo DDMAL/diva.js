@@ -440,9 +440,19 @@
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 120;
-    padding: 2em 2.2em;
     word-wrap: break-word;
+}
+
+#contentDiv {
     overflow-y: scroll;
+    max-height: 20em;
+    padding: 0em 0em 0em 2em;
+}
+
+#metadataTitle {
+    padding: 0.5em;
+    margin: 0;
+    text-align: center;
 }
 
 #closeMetadata {
