@@ -389,7 +389,7 @@ describe('Settings', function ()
 
     it("object for objectData", function (done)
     {
-        Diva.Events.subscribe('ViewerDidLoad', function (settings)
+        Diva.Events.subscribe('ViewerDidLoad', function ()
         {
             assert.strictEqual(this.getItemTitle(), "First page of Beromunster", "Should process an object for objectData like a normal manifest");
             done();

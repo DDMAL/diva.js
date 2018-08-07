@@ -15,6 +15,7 @@ Version 6.0 contains many new features and improvements:
 - Complete removal of external dependencies, namely JQuery. 
 - The metadata plugin. 
 - New plugins can now be easily hooked as toolbar plugins, instead of page-tool plugins.
+- Compatibility with IIIF version 3 image manifests. 
 
 ## Overview
 
