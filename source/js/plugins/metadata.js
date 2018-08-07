@@ -19,6 +19,9 @@
  *
  * Toolbar plugins must have a toolbarIcon and toolbarSide attribute, with toolbarSide being either 'left' or 'right'
  **/
+
+import parseLabelValue from '../utils/label-value-parser';
+
 export default class MetadataPlugin
 {
     constructor (core)
@@ -57,28 +60,26 @@ export default class MetadataPlugin
                 this.isVisible = false;
             };
 
-            let labels = document.createElement('div');
-            labels.setAttribute('style', 'width:30%; text-align:right; float:left;');
-            let values = document.createElement('DIV');
-            values.setAttribute('style', 'width:69%; text-align:left; float:right;');
+            let contentDiv = document.createElement('div');
 
             for (let i = 0, len = metadata.length; i < len; i++) 
             {
-                let lineLabel = document.createElement('div');
-                let bold = document.createElement('b');
-                bold.innerText = metadata[i].label + ':';
-                lineLabel.appendChild(bold);
+                let key = metadata[i];
 
-                let lineValue = document.createElement('div');
-                lineValue.innerHTML = metadata[i].value;
+                let header = document.createElement('h4');
+                header.innerText = parseLabelValue(key).label;
+                header.setAttribute('style', 'margin-bottom: 0');
 
-                labels.appendChild(lineLabel);
-                values.appendChild(lineValue);
+                let value = document.createElement('p');
+                value.innerText = parseLabelValue(key).value;
+                value.setAttribute('style', 'margin-top: 0');
+
+                contentDiv.appendChild(header);
+                contentDiv.appendChild(value);
             }
 
             metadataDiv.appendChild(closeButton);
-            metadataDiv.appendChild(labels);
-            metadataDiv.appendChild(values);
+            metadataDiv.appendChild(contentDiv);
             document.body.appendChild(metadataDiv);
 
             this.firstClick = false;
