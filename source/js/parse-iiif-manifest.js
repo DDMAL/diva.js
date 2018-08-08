@@ -190,8 +190,8 @@ export default function parseIIIFManifest (manifest)
             maxHeights[k] = Math.max(heightAtCurrentZoomLevel, maxHeights[k]);
         }
 
-        let isPaged = thisCanvas.viewingHint !== 'non-paged' || (thisCanvas.behavior ? thisCanvas.behavior !== 'non-paged' : false);
-        let isFacing = thisCanvas.viewingHint === 'facing-pages' || (thisCanvas.behavior ? thisCanvas.behavior === 'facing-pages' : false);
+        let isPaged = thisCanvas.viewingHint !== 'non-paged' || (thisCanvas.behavior ? thisCanvas.behavior[0] !== 'non-paged' : false);
+        let isFacing = thisCanvas.viewingHint === 'facing-pages' || (thisCanvas.behavior ? thisCanvas.behavior[0] === 'facing-pages' : false);
 
         pages[i] = {
             d: zoomDimensions,
@@ -238,7 +238,7 @@ export default function parseIIIFManifest (manifest)
         dims: dims,
         max_zoom: lowestMaxZoom,
         pgs: pages,
-        paged: manifest.viewingHint === 'paged' || manifest.behavior === 'paged' || (sequence ? sequence.viewingHint === 'paged' : false)
+        paged: manifest.viewingHint === 'paged' || manifest.behavior[0] === 'paged' || (sequence ? sequence.viewingHint === 'paged' : false)
     };
 }
 
