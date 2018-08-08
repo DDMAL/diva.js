@@ -206,16 +206,32 @@
                             "motivation":"painting",
                             "target":"https://iiif.bodleian.ox.ac.uk/iiif/canvas/afad6535-f141-404e-a497-207530420221.json",
                             "body":{
-                                "id":"https://iiif.bodleian.ox.ac.uk/iiif/image/afad6535-f141-404e-a497-207530420221",
-                                "type":"Image",
-                                "format":"image/jpeg",
-                                "width":5428,
-                                "height":6444,
-                                "service":{
-                                    "type":"ImageService2",
-                                    "profile":"level1",
-                                    "id":"https://iiif.bodleian.ox.ac.uk/iiif/image/afad6535-f141-404e-a497-207530420221"
-                                }
+                                "type": "Choice",
+                                "items": [{
+                                    "id":"https://iiif.bodleian.ox.ac.uk/iiif/image/afad6535-f141-404e-a497-207530420221",
+                                    "type":"Image",
+                                    "format":"image/jpeg",
+                                    "label": "Primary Colour",
+                                    "width":5428,
+                                    "height":6444,
+                                    "service":{
+                                        "type":"ImageService2",
+                                        "profile":"level1",
+                                        "id":"https://iiif.bodleian.ox.ac.uk/iiif/image/afad6535-f141-404e-a497-207530420221"
+                                    }
+                                }, {
+                                    "id":"https://iiif.bodleian.ox.ac.uk/iiif/image/797d3cbc-f3f9-4c82-9fa0-09108d395775",
+                                    "type":"Image",
+                                    "format":"image/jpeg",
+                                    "label": "Ultraviolet (Not really, Just a test)",
+                                    "width":5398,
+                                    "height":6472,
+                                    "service":{
+                                        "type":"ImageService2",
+                                        "profile":"level1",
+                                        "id":"https://iiif.bodleian.ox.ac.uk/iiif/image/797d3cbc-f3f9-4c82-9fa0-09108d395775"
+                                    }
+                                }]
                             }
                         }
                     ]
