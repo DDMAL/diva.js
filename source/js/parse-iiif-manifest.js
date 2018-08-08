@@ -238,7 +238,7 @@ export default function parseIIIFManifest (manifest)
         dims: dims,
         max_zoom: lowestMaxZoom,
         pgs: pages,
-        paged: manifest.viewingHint === 'paged' || manifest.behavior[0] === 'paged' || (sequence ? sequence.viewingHint === 'paged' : false)
+        paged: manifest.viewingHint === 'paged' || (manifest.behaviour ? manifest.behaviour[0] === 'paged' : false) || (sequence ? sequence.viewingHint === 'paged' : false)
     };
 }
 
