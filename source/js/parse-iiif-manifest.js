@@ -37,6 +37,18 @@ const getOtherImageData = (otherImages, lowestMaxZoom) =>
     });
 };
 
+const getIIIFPresentationVersion = (context) =>
+{
+    if (context === "http://iiif.io/api/presentation/2/context.json")
+        return 2;
+    else if (Array.isArray(context) && context.includes("http://iiif.io/api/presentation/2/context.json"))
+        return 2;
+    else if (Array.isArray(context) && context.includes("http://iiif.io/api/presentation/3/context.json"))
+        return 3;
+    else
+        return 2; // Assume a v2 manifest.
+};
+
 /**
  * Parses an IIIF Presentation API Manifest and converts it into a Diva.js-format object
  * (See https://github.com/DDMAL/diva.js/wiki/Development-notes#data-received-through-ajax-request)
@@ -54,6 +66,7 @@ export default function parseIIIFManifest (manifest)
         return null;
     }
 
+    const version = getIIIFPresentationVersion(ctx);
     const sequence = manifest.sequences ? manifest.sequences[0] : null;
     const canvases = sequence ? sequence.canvases : manifest.items;
     const numCanvases = canvases.length;
@@ -62,8 +75,9 @@ export default function parseIIIFManifest (manifest)
 
     let thisCanvas, 
         thisResource, 
-        thisImage, 
-        otherImages, 
+        thisImage,
+        secondaryImages,
+        otherImages = [],
         context, 
         url, 
         info, 
@@ -114,12 +128,13 @@ export default function parseIIIFManifest (manifest)
 
         /*
          * If a canvas has multiple images it will be encoded
-         * with a resource type of "oa:Choice". The primary image will be available
-         * on the 'default' key, with other images available under 'item.'
-         * */
-        if (thisResource['@type'] === "oa:Choice")
+         * with a resource type of "oa:Choice" (v2) or "Choice" (v3).
+         **/
+        if (thisResource['@type'] === "oa:Choice" || thisResource.type === "Choice")
         {
-            thisImage = thisResource.default;
+            thisImage = thisResource.default || thisResource.items[0];
+            secondaryImages = thisResource.item || thisResource.items.slice(1);
+            otherImages = getOtherImageData(secondaryImages, lowestMaxZoom);
         }
         else
         {
@@ -137,21 +152,6 @@ export default function parseIIIFManifest (manifest)
         }
 
         maxZoom = getMaxZoomLevel(width, height);
-
-        if (thisResource.item) // v2
-        {
-            otherImages = getOtherImageData(thisResource.item, lowestMaxZoom);
-        }
-        else if (thisCanvas.items && thisCanvas.items[0].items[1]) // v3, more than one image so take all but first
-        {
-            let arr = thisCanvas.items[0].items.slice(1);
-            let images = arr.map(item => item.body);
-            otherImages = getOtherImageData(images, lowestMaxZoom); 
-        } 
-        else
-        {
-            otherImages = [];
-        }
 
         imageLabel = thisImage.label || null;
 
@@ -232,6 +232,7 @@ export default function parseIIIFManifest (manifest)
 
     // assumes paged is false for non-paged values
     return {
+        version: version,
         item_title: parseLabelValue(manifest).label,
         metadata: manifest.metadata || null,
         dims: dims,
