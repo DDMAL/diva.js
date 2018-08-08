@@ -247,22 +247,27 @@
     overflow: auto;
 }
 
-    .diva-inner {
-        @include grab();
-        position: relative;
-        overflow: hidden;
-        margin: 0 auto;
+.diva-inner {
+    cursor: move; /* fallback if grab cursor is unsupported */
+    cursor: grab;
+    cursor: -moz-grab;
+    cursor: -webkit-grab;
+    position: relative;
+    overflow: hidden;
+    margin: 0 auto;
 
-        &.diva-grabbing {
-            @include grabbing();
-        }
+    &.diva-grabbing {
+        cursor: grabbing;
+        cursor: -moz-grabbing;
+        cursor: -webkit-grabbing;
     }
+}
 
-        .diva-page {
-            box-shadow: 7px 7px 6px -6px rgba(0,0,0,0.3);
-            position: absolute;
-            background-color: $pageBg;
-        }
+.diva-page {
+    box-shadow: 7px 7px 6px -6px rgba(0,0,0,0.3);
+    position: absolute;
+    background-color: $pageBg;
+}
 
 .diva-page-tools-wrapper {
     position: absolute;

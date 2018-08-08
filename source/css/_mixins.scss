@@ -20,16 +20,6 @@
     }
 }
 
-@mixin grab()
-{
-    cursor: data-uri("${iconPath}openhand.cur"), pointer;
-}
-
-@mixin grabbing()
-{
-    cursor: data-uri("${iconPath}closedhand.cur"), move !important;
-}
-
 @mixin loading()
 {
     background: data-uri("${iconPath}loading.gif") no-repeat center;
