@@ -53,6 +53,7 @@ class Diva
         }
 
         this.options = Object.assign({
+            acceptHeader: "application/json", // The header to send off to the server in content negotiation
             adaptivePadding: 0.05,      // The ratio of padding to the page dimension
             arrowScrollAmount: 40,      // The amount (in pixels) to scroll by when using arrow keys
             blockMobileMove: false,     // Prevent moving or scrolling the page on mobile devices
@@ -138,7 +139,7 @@ class Diva
         if (typeof this.settings.objectData === 'object')
         {
             // Defer execution until initialization has completed
-            setTimeout(function ()
+            setTimeout(() =>
             {
                 this._loadObjectData(this.settings.objectData, this.hashState);
             }, 0);
@@ -147,7 +148,7 @@ class Diva
         {
             const pendingManifestRequest = fetch(this.settings.objectData, {
                 headers: {
-                    "Accept": "application/json"
+                    "Accept": this.settings.acceptHeader
                 }
             }).then( (response) =>
             {

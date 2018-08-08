@@ -8,7 +8,6 @@ describe('HashParams', function ()
         assert.ok(!HashParams.get('anything'), "No hash params, should return false");
 
         // Now set the current URL to something
-        var baseUrl = window.location.href;
         window.location.hash = '#p=149&z=2';
         var nonexistentParam = HashParams.get('lol');
         var firstParam = HashParams.get('p');

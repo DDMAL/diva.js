@@ -4,7 +4,7 @@
   </a>
 </p>
 
-Diva.js [![Build Status](https://travis-ci.org/DDMAL/diva.js.svg?branch=master)](http://travis-ci.org/DDMAL/diva.js) [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/DDMAL/diva.js?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+Diva.js [![Build Status](https://travis-ci.org/DDMAL/diva.js.svg?branch=master)](http://travis-ci.org/DDMAL/diva.js)
 =========================================
 
 Diva.js (Document Image Viewer with AJAX) is a JavaScript book image viewer designed to present multi-page documents at multiple resolutions.
@@ -15,6 +15,7 @@ Version 6.0 contains many new features and improvements:
 - Complete removal of external dependencies, namely JQuery. 
 - The metadata plugin. 
 - New plugins can now be easily hooked as toolbar plugins, instead of page-tool plugins.
+- Compatibility with IIIF version 3 image manifests. 
 
 ## Overview
 
@@ -26,30 +27,35 @@ There are two components to a functioning Diva system:
 ### Details
 
 #### Using IIIF
-Diva.js is an image viewing client compatible with version 2.0 of the IIIF [Image](http://iiif.io/api/image/2.0/) and [Presentation](http://iiif.io/api/presentation/2.0/) APIs. Simply supply the path to a valid IIIF Manifest and Diva will display the document as described by the metadata (see [Installing](#installing)).
+Diva.js is an image viewer compatible with IIIF Presentation API versions [2](http://iiif.io/api/presentation/2.0/) and [3](http://iiif.io/api/presentation/3.0/). Simply supply the path to a valid IIIF Manifest and Diva will display the document as described by the metadata (see [Installing](#installing)).
 
 ## Installing
 
 ### From a CDN (hosted)
 
-Downloading the Diva.js release package provides access to image processing scripts and demos of possible configurations. If you don't need these you can skip downloading and simply paste the following tags into the `<head>` of any webpage to include all the  files necessary to use Diva.js.
-```javascript
+If you prefer to use a hosted version of Diva, copy and paste the following into the `<head>` of any webpage to include all the files necessary to use Diva.js.
+```html
 <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/diva.js/6.0.0/css/diva.css" />
 <script src="//cdnjs.cloudflare.com/ajax/libs/diva.js/6.0.0/js/diva.js"></script>
 ```
 ### Locally (release package)
 
-Download the [latest release](https://github.com/DDMAL/diva.js/releases) of Diva. In the `diva.js` directory you can find a pre-compiled version. The `css` and `js` directories contain the files necessary to use Diva. Simply include `build/css/diva.min.css` and `build/js/diva.min.js` in the `<head>` of your webpage, as shown in the HTML source of the demo pages. You will also find some helper scripts for processing your image files.
+Download the [latest release](https://github.com/DDMAL/diva.js/releases) of Diva. In the `diva.js` directory you can find a pre-compiled version. The `build` directory contains the files necessary to use Diva. Simply include `build/diva.css` and `build/diva.js` in the `<head>` of your webpage, as shown in the HTML source of the example [index page](https://github.com/DDMAL/diva.js/blob/develop/index.html). 
 
-### Basic setup
+### From npm
 
-After including the necessary files, the most basic Diva viewer is instantiated with one (IIIF) required parameter (by targeting a parent div, in this case diva-wrapper):
-```javascript
+You can also run `npm install diva.js` in order to install Diva as a node package. Then, Diva will be located under `node_modules/diva.js/`, and you can access the `build` directory the same as above. 
+
+## Basic setup
+### HTML
+After including the necessary files, the most basic Diva viewer is instantiated with one (IIIF) required parameter and several optional settings parameters. Diva must target a parent div, in this case diva-wrapper:
+```html
 <div id="diva-wrapper"></div>
 
 <script>
     let diva = new Diva('diva-wrapper', {
-        objectData: "http://www.example.com/beromunster.json",
+        objectData: "http://www.example.com/manifest.json"
+        // possible settings
     });
 </script>
 ```
@@ -57,37 +63,42 @@ After including the necessary files, the most basic Diva viewer is instantiated 
 
 The `diva-wrapper` selector points to a `div` element within which the document viewer will appear.
 
-See [Installation](https://github.com/DDMAL/diva.js/wiki/Installation) for full instructions.
+### JavaScript
+If you wish to include the Diva viewer component into your own JavaScript app, this can be done easily by just importing Diva beforehand. 
+```javascript
+import Diva from './path/to/source/diva.js';
 
-### Running the Demos
-
-Running the demos works best using a web server. The easiest is to use Python to start a small web server in the `diva.js` directory (or `build` if you have the source code):
-
-```bash
-$> cd diva-v6.0.0/diva.js/ # (or cd diva.js/build)
-$> python -m SimpleHTTPServer
-Serving HTTP on 0.0.0.0 port 8000 ...
+let diva = new Diva('diva-wrapper', {
+    objectData: "http://www.example.com/manifest.json"
+    // possible settings
+});
 ```
-You may then load the demos in your web browser by visiting `http://localhost:8000` in your browser.
+
+There are a large number of settings that can be enabled/disabled for this Diva instance. See [Settings](https://github.com/DDMAL/diva.js/wiki/Settings) for a comprehensive list.
+
+See [Installation](https://github.com/DDMAL/diva.js/wiki/Installation) for full instructions.
 
 ## Building from source
 
-If you wish to install from source, first you must install [node.js and npm](https://nodejs.org/en/). Then, check out the code from [our GitHub repository](http://github.com/DDMAL/diva.js) or run `npm install diva.js`. Once you've obtained the code, change to the project directory and run `npm install -g gulp` then `npm install` to fetch all development dependencies.
+If you wish to install from source, first you must install [node.js and npm](https://nodejs.org/en/). Then, check out the code from [our GitHub repository](http://github.com/DDMAL/diva.js). Once you've obtained the code, change to the project directory and run `npm install` to fetch all development dependencies.
 
-The full installation gives you access to the un-minified JavaScript source, the plugins, the documentation, and our unit-tests. We use [gulp](http://gulpjs.com/) as our build system and for other development tasks.
+The full installation gives you access to the un-minified JavaScript source, the plugins, the documentation, and our unit-tests. 
 
 ```javascript
-gulp develop         // Runs a webserver at localhost:9001 and automatically builds and reloads upon changes
-gulp develop:lint    // Lints all the source files
+npm run develop          // Runs a server at localhost:9001 and automatically builds and reloads upon changes
+npm run build:develop    // Compiles the Javascript and SASS source and places it in the build/ directory
+npm run lint             // Lints the Javascript source with JSHint
+npm test                 // Runs the unit tests and outputs a report to the console
+npm run build:production // Builds the release package
 ```
 
-Run `gulp develop` and navigate to [http://localhost:9001](http://localhost:9001) in your web browser to see a basic Diva instance.
+Run `npm run develop` and navigate to [http://localhost:9001](http://localhost:9001) in your web browser to see a basic Diva instance.
 
 See [Installation](https://github.com/DDMAL/diva.js/wiki/Installation) for more information.
 
 ## Getting help
 
-Help for Diva.js is available through this repository's [wiki](https://github.com/DDMAL/diva.js/wiki), in the form of code documentation, installation instructions and usage tips.
+Help for Diva.js is available through this repository's [wiki](https://github.com/DDMAL/diva.js/wiki), in the form of code documentation, installation instructions and usage tips. You can also [submit an issue](https://github.com/DDMAL/diva.js/issues)!
 
 ## Cross-site Requests
 
