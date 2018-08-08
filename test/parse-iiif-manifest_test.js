@@ -32,7 +32,7 @@ describe('IIIF Manifest Parsing', function ()
             assert.strictEqual(m.maxRatio, 1.584277299501586, 'Max ratio should be 1.5842...');
             assert.strictEqual(m.minRatio, 1.4961486180335297, 'Min ratio should be 1.4961...');
             assert.strictEqual(m.itemTitle, 'Salzinnes, CDN-Hsmu M2149.L4', 'Item title should be right');
-            assert.isFalse(m.paged, 'Should not be paged');
+            assert.isTrue(m.paged, 'Should not be paged');
             assert.strictEqual(m.pages[0].l, 'Folio 001r', 'First page should be Folio 001r');
 
             done();
@@ -55,7 +55,7 @@ describe('IIIF Manifest Parsing', function ()
             assert.strictEqual(m.maxRatio, 1.495655771617708, 'Max ratio should be 1.4956...');
             assert.strictEqual(m.minRatio, 1.187177597641857, 'Min ratio should be 1.1871...');
             assert.strictEqual(m.itemTitle, 'Bodleian Library: MS. Canon. Misc. 213', 'Item title should be right');
-            assert.isFalse(m.paged, 'Should not be paged');
+            assert.isTrue(m.paged, 'Should not be paged');
             assert.strictEqual(m.pages[0].l, 'Upper board', 'First page should be Upper board');
 
             done();
