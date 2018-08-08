@@ -1,3 +1,10 @@
+/**
+ * Parses a v3 manifest's label/value pair from an object & array to a string
+ *
+ * @public
+ * @params {string} key - The key from which a label/value pair should be extracted.
+ * @returns {object} - The label/value pair as strings.
+ * */
 
 export default function parseLabelValue (key)
 {
