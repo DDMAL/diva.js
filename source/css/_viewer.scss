@@ -193,6 +193,7 @@
     padding: 15px;
     @include frame($toolsFrame);
     background: $toolsBg;
+    transition: opacity 0.5s;
 
     @include pretty-shadow();
 
