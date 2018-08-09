@@ -1,7 +1,7 @@
 import ImageManifest from '../../source/js/image-manifest';
 import getBookLayout from '../../source/js/page-layouts/book-layout';
 
-var beromunsterManifest = require('./beromunsterManifest.json');
+var beromunsterManifest = require('../manifests/beromunsterManifest.json');
 var manifest = ImageManifest.fromIIIF(beromunsterManifest);
 
 describe('Get Book Layout', function ()
