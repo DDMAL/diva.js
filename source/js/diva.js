@@ -783,26 +783,17 @@ class Diva
     }
 
     /**
-     * Return the current URL for the viewer, including the hash parameters reflecting
-     * the current state of the viewer.
+     * Returns an array of all page image URIs in the document.
      *
      * @public
-     * @returns {string} - The URL for the current view state.
+     * @returns {Array} - An array of all the URIs in the document.
      * */
-    getCurrentURL ()
+    getAllPageURIs ()
     {
-        return this._getCurrentURL();
-    }
-
-    /**
-     * Returns the title of the document, based on the label in the IIIF manifest.
-     *
-     * @public
-     * @returns {string} - The current title of the object from the label key in the IIIF Manifest.
-     **/
-    getItemTitle ()
-    {
-        return this.settings.manifest.itemTitle;
+        return this.settings.manifest.pages.map( (pg) =>
+        {
+            return pg.f;
+        });
     }
 
     /**
@@ -842,17 +833,6 @@ class Diva
     }
 
     /**
-     * Returns the current URI for the visible page.
-     *
-     * @public
-     * @returns {string} - The URI for the current page image.
-     **/
-    getCurrentPageURI ()
-    {
-        return this.settings.manifest.pages[this.settings.currentPageIndex].f;
-    }
-
-    /**
      * Returns the 0-based index for the current page.
      *
      * @public
@@ -875,6 +855,29 @@ class Diva
     }
 
     /**
+     * Returns the current URI for the visible page.
+     *
+     * @public
+     * @returns {string} - The URI for the current page image.
+     **/
+    getCurrentPageURI ()
+    {
+        return this.settings.manifest.pages[this.settings.currentPageIndex].f;
+    }
+
+    /**
+     * Return the current URL for the viewer, including the hash parameters reflecting
+     * the current state of the viewer.
+     *
+     * @public
+     * @returns {string} - The URL for the current view state.
+     * */
+    getCurrentURL ()
+    {
+        return this._getCurrentURL();
+    }
+
+    /**
      * Returns an array of all filenames in the document. Deprecated.
      *
      * @public
@@ -885,20 +888,6 @@ class Diva
     {
         console.warn('This will be removed in the next version of Diva. Use getAllPageURIs instead.');
 
-        return this.settings.manifest.pages.map( (pg) =>
-        {
-            return pg.f;
-        });
-    }
-
-    /**
-     * Returns an array of all page image URIs in the document.
-     *
-     * @public
-     * @returns {Array} - An array of all the URIs in the document.
-     * */
-    getAllPageURIs ()
-    {
         return this.settings.manifest.pages.map( (pg) =>
         {
             return pg.f;
@@ -939,6 +928,17 @@ class Diva
     getInstanceSelector ()
     {
         return this.divaState.viewerCore.selector;
+    }
+
+    /**
+     * Returns the title of the document, based on the label in the IIIF manifest.
+     *
+     * @public
+     * @returns {string} - The current title of the object from the label key in the IIIF Manifest.
+     **/
+    getItemTitle ()
+    {
+        return this.settings.manifest.itemTitle;
     }
 
     /**
@@ -1020,6 +1020,24 @@ class Diva
     }
 
     /**
+     * Returns the dimensions of a given page at the current zoom level.
+     * Also works in Grid view
+     *
+     * @public
+     * @param {number} pageIndex - The 0-based page index
+     * @returns {object} - An object containing the page dimensions at the current zoom level.
+     * */
+    getPageDimensionsAtCurrentZoomLevel (pageIndex)
+    {
+        let pidx = parseInt(pageIndex, 10);
+
+        if (!this._isPageIndexValid(pidx))
+            throw new Error('Invalid Page Index');
+
+        return this.divaState.viewerCore.getCurrentLayout().getPageDimensions(pidx);
+    }
+
+    /**
      * Get page dimensions at a given zoom level
      *
      * @public
@@ -1042,24 +1060,6 @@ class Diva
             width: pgAtZoom.w,
             height: pgAtZoom.h
         };
-    }
-
-    /**
-     * Returns the dimensions of a given page at the current zoom level.
-     * Also works in Grid view
-     *
-     * @public
-     * @param {number} pageIndex - The 0-based page index
-     * @returns {object} - An object containing the page dimensions at the current zoom level.
-     * */
-    getPageDimensionsAtCurrentZoomLevel (pageIndex)
-    {
-        let pidx = parseInt(pageIndex, 10);
-
-        if (!this._isPageIndexValid(pidx))
-            throw new Error('Invalid Page Index');
-
-        return this.divaState.viewerCore.getCurrentLayout().getPageDimensions(pidx);
     }
 
     /**
@@ -1389,17 +1389,6 @@ class Diva
     }
 
     /**
-     * Show non-paged pages.
-     *
-     * @public
-     * @returns {boolean} - True if the operation was successful.
-     **/
-    showNonPagedPages ()
-    {
-        this._reloadViewer({ showNonPagedPages: true });
-    }
-
-    /**
      * Sets the zoom level.
      *
      * @public
@@ -1415,6 +1404,17 @@ class Diva
         }
 
         return this.divaState.viewerCore.zoom(zoomLevel);
+    }
+
+    /**
+     * Show non-paged pages.
+     *
+     * @public
+     * @returns {boolean} - True if the operation was successful.
+     **/
+    showNonPagedPages ()
+    {
+        this._reloadViewer({ showNonPagedPages: true });
     }
 
     /**

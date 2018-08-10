@@ -113,7 +113,7 @@ export default class ViewerCore
             initialKeyScroll: false,    // Holds the initial state of enableKeyScroll
             initialSpaceScroll: false,  // Holds the initial state of enableSpaceScroll
             innerElement: null,         // The native .diva-outer DOM object
-            innerObject: {},            // $(settings.ID + 'inner'), for selecting the .diva-inner element
+            innerObject: {},            // document.getElementById(settings.ID + 'inner'), for selecting the .diva-inner element
             isActiveDiva: true,         // In the case that multiple diva panes exist on the same page, this should have events funneled to it.
             isScrollable: true,         // Used in enable/disableScrollable public methods
             isZooming: false,           // Flag to keep track of whether zooming is still in progress, for handleZoom
@@ -124,7 +124,7 @@ export default class ViewerCore
             oldZoomLevel: -1,           // Holds the previous zoom level after zooming in or out
             options: options,
             outerElement: null,         // The native .diva-outer DOM object
-            outerObject: {},            // $(settings.ID + 'outer'), for selecting the .diva-outer element
+            outerObject: {},            // document.getElementById(settings.ID + 'outer'), for selecting the .diva-outer element
             pageOverlays: new PageOverlayManager(),
             pageTools: [],              // The plugins which are enabled as page tools
             parentObject: this.parentObject, // JQuery object referencing the parent element
