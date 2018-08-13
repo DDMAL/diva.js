@@ -120,9 +120,9 @@ export default class Toolbar
             // get labels for this and next page
             let index = this.viewer.getCurrentPageIndex();
             let currentPageLabel = this.settings.manifest.pages[index].l;
-            let nextPageLabel = this.settings.manifest.pages[index+1].l;
+            let nextPageLabel = this.settings.manifest.pages[index+1] ? this.settings.manifest.pages[index+1].l : false;
 
-            if (this.settings.inBookLayout)
+            if (this.settings.inBookLayout && index !== 0 && index !== this.viewer.getNumberOfPages())
                 currentPage.textContent = currentPageLabel + " - " + nextPageLabel;
             else
                 currentPage.textContent = currentPageLabel;
