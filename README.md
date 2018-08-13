@@ -11,11 +11,10 @@ Diva.js (Document Image Viewer with AJAX) is a JavaScript book image viewer desi
 
 Version 6.0 contains many new features and improvements:
 
-- Complete re-organization of the source code. Diva has been largely rewritten to ES6. We also use WebPack, Karma, and Mocha (with Chai). This makes both the development process and code debugging much easier.
-- Complete removal of external dependencies, namely JQuery. 
-- The metadata plugin. 
-- New plugins can now be easily hooked as toolbar plugins, instead of page-tool plugins.
-- Compatibility with IIIF version 3 image manifests. 
+- **Compatibility with IIIF Presentation API version 2.1 and 3**.
+- **Small footprint, zero dependencies**. Can be deployed with just a JavaScript and a CSS file.
+- **Rewritten in ES6** for compatibility with the new JavaScript module system.
+- **New plugins**: Metadata, Image Manipulation
 
 ## Overview
 
