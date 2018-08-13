@@ -130,6 +130,7 @@ export default class Toolbar
 
         this._subscribe('VisiblePageDidChange', updateCurrentPage);
         this._subscribe('ViewerDidLoad', updateCurrentPage);
+        this._subscribe('ViewDidSwitch', updateCurrentPage);
 
         return elt('span', {
                 class: 'diva-page-label diva-label'
