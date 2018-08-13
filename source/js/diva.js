@@ -122,9 +122,10 @@ class Diva
         };
 
         // only render the toolbar after the object has been loaded
-        diva.Events.subscribe('ObjectDidLoad', () =>
+        let handle = diva.Events.subscribe('ObjectDidLoad', () =>
         {
             this.toolbar.render();
+            diva.Events.unsubscribe(handle);
         });
         this.hashState = this._getHashParamState();
 
