@@ -12,7 +12,15 @@ export default function parseLabelValue (key)
     let label = (typeof l === 'object') ? l[Object.keys(l)[0]][0] : l;
 
     let v = key.value;
-    let value = (typeof v === 'object') ? v[Object.keys(v)[0]] : v;
+    let value;
+    if (Array.isArray(v))
+    { // is array of objects
+        value = v.map(e => e[Object.keys(e)[0]]);
+    }
+    else
+    { // is object where value is possibly an array
+        value = (typeof v === 'object') ? v[Object.keys(v)[0]] : v;
+    }
 
     if (Array.isArray(value))
     {
