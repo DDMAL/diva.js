@@ -424,7 +424,7 @@ input[type="range"] {
 
 .btn:hover,
 .btn:focus {
-  color: #ffffff;
+  color: tomato;
   text-decoration: none;
 }
 
