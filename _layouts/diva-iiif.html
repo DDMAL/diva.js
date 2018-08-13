@@ -50,6 +50,7 @@
                     selectObject.on('change', function()
                     {
                         diva.changeObject(selectObject.val());
+                        diva.gotoPageByIndex(0);
                     });
 
                     $('#orientation').on('click', function()
