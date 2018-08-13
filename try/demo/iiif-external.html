@@ -37,7 +37,7 @@
                         );
                     }
 
-                    diva = new Diva('diva-wrapper', {
+                    let diva = new Diva('diva-wrapper', {
                         objectData: "http://gallica.bnf.fr/iiif/ark%3A/12148/btv1b6000531z.r/manifest.json/",
                         plugins: [Diva.DownloadPlugin, Diva.ManipulationPlugin, Diva.MetadataPlugin],
                         fixedHeightGrid: true
@@ -61,7 +61,6 @@
                 <select name="select" id="object-select">
                     <option value="http://gallica.bnf.fr/iiif/ark:/12148/btv1b6000531z.r/manifest.json/" selected>Latin 12044 - Bibliothèque nationale de France</option>
                     <option value="http://gallica.bnf.fr/iiif/ark:/12148/btv1b550076223/manifest.json">Astronomicum Caesareum - Bibliothèque nationale de France</option>
-                    <option value="http://iiif.biblissima.fr/manifests/ark:/12148/btv1b84539771/manifest.json">MSS Arabe 3475 - Bibliothèque nationale de France</option>
                     <option value="http://www.e-codices.unifr.ch/metadata/iiif/zhl-0035-4/manifest.json">KB 35 4° - Luzern, Zentral und Hochschulbibliothek</option>
                 </select>
                 <button id="orientation" type="button">Toggle orientation</button>
