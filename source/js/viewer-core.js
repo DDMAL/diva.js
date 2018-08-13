@@ -1087,7 +1087,7 @@ export default class ViewerCore
 
             if (title)
             {
-                title.innerHTML(this.settings.manifest.itemTitle);
+                title.innerHTML = this.settings.manifest.itemTitle;
             }
             else
             {
