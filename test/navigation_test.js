@@ -24,7 +24,7 @@ describe('Navigation', function ()
 
     // FIXME: This test pattern is pretty iffy. There should be more robust ways to do this than
     // with a timeout, and the toolbar and page index are kind of separate concerns.
-    var assertPageAfterScroll = function (scroll, index, divaInst, done)
+    var assertPageAfterScroll = function (scroll, index, divaInst, done, label)
     {
         var viewportObject = divaInst.getSettings().viewportObject;
 
@@ -35,7 +35,7 @@ describe('Navigation', function ()
         {
             setTimeout(function ()
             {
-                var rendered = (index + 1) + '';
+                var rendered = label;
 
                 var actualIndex = divaInst.getCurrentPageIndex();
                 assert.strictEqual(actualIndex, index, "The page should now be " + rendered + " (index of " + index + ")");
@@ -65,7 +65,7 @@ describe('Navigation', function ()
     {
         Diva.Events.subscribe('ViewerDidLoad', function ()
         {
-            assertPageAfterScroll({ top: 10000 }, 40, this, done);
+            assertPageAfterScroll({ top: 10000 }, 40, this, done, 'Folio 021r');
         });
 
         let diva = new Diva('diva-wrapper', { // jshint ignore:line
@@ -80,7 +80,7 @@ describe('Navigation', function ()
     {
         Diva.Events.subscribe('ViewerDidLoad', function ()
         {
-            assertPageAfterScroll({ top: 10000 }, 26, this, done);
+            assertPageAfterScroll({ top: 10000 }, 26, this, done, 'Folio 014r');
         });
 
         let diva = new Diva('diva-wrapper', { // jshint ignore:line
@@ -95,7 +95,7 @@ describe('Navigation', function ()
     {
         Diva.Events.subscribe('ViewerDidLoad', function ()
         {
-            assertPageAfterScroll({ left: 200, top: 10000 }, 18, this, done);
+            assertPageAfterScroll({ left: 200, top: 10000 }, 18, this, done, 'Bm 019 - Bm 020');
         });
 
         let diva = new Diva('diva-wrapper', { // jshint ignore:line
@@ -338,14 +338,14 @@ describe('Navigation', function ()
             this.gotoPageByIndex(5);
 
             assert.isOk(settings.inBookLayout, "Should be in book layout");
-            assert.strictEqual(el(settings.selector + 'current-page').innerText, '6', "Toolbar should indicate page 6");
+            assert.strictEqual(el(settings.selector + 'current-page').innerText, 'Folio 003v - Folio 004r', "Toolbar should indicate label for page 6");
 
             setTimeout(() =>
             {
                 assert.isOk(this.isPageInViewport(5), "Page 6 (index 5) should be loaded");
 
                 this.gotoPageByIndex(6);
-                assert.strictEqual(el(settings.selector + 'current-page').innerText, '7', "Toolbar should indicate page 7");
+                assert.strictEqual(el(settings.selector + 'current-page').innerText, 'Folio 004r - Folio 004v', "Toolbar should indicate page 7");
                 assert.isOk(this.isPageInViewport(6), "Page 7 (index 6) should be loaded");
 
                 done();

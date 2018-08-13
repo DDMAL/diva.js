@@ -117,29 +117,24 @@ export default class Toolbar
 
         const updateCurrentPage = () => 
         {
-            currentPage.textContent = this.viewer.getCurrentPageIndex() + 1; // pages are 0 indexed
+            // get labels for this and next page
+            let index = this.viewer.getCurrentPageIndex();
+            let currentPageLabel = this.settings.manifest.pages[index].l;
+            let nextPageLabel = this.settings.manifest.pages[index+1].l;
+
+            if (this.settings.inBookLayout)
+                currentPage.textContent = currentPageLabel + " - " + nextPageLabel;
+            else
+                currentPage.textContent = currentPageLabel;
         };
 
         this._subscribe('VisiblePageDidChange', updateCurrentPage);
         this._subscribe('ViewerDidLoad', updateCurrentPage);
 
-        // Number of pages
-        const numPages = elt('span', {
-            id: this.settings.ID + 'num-pages'
-        });
-
-        const updateNumPages = () => 
-        {
-            numPages.textContent = this.settings.numPages;
-        };
-
-        this._subscribe('NumberOfPagesDidChange', updateNumPages);
-        this._subscribe('ObjectDidLoad', updateNumPages);
-
         return elt('span', {
                 class: 'diva-page-label diva-label'
             },
-            'Page ', currentPage, ' of ', numPages
+            currentPage
         );
     }
 
