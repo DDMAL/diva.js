@@ -95,7 +95,7 @@ class Diva
             tileWidth: 256,             // The width of each tile, in pixels; usually 256
             toolbarParentObject: null,  // The toolbar parent object.
             verticallyOriented: true,   // Determines vertical vs. horizontal orientation
-            viewportMargin: 200,        // Pretend tiles +/- 200px away from viewport are in
+            viewportMargin: 0,        // Pretend tiles +/- 200px away from viewport are in
             zoomLevel: 2                // The initial zoom level (used to store the current zoom level)
         }, options);
 

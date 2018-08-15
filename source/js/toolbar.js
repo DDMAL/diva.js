@@ -115,17 +115,19 @@ export default class Toolbar
             id: this.settings.ID + 'current-page'
         });
 
-        const updateCurrentPage = () => 
+        const updateCurrentPage = (pageIndices) => 
         {
-            // get labels for this and next page
-            let index = this.viewer.getCurrentPageIndices()[0];
-            let currentPageLabel = this.settings.manifest.pages[index].l;
-            let nextPageLabel = this.settings.manifest.pages[index+1] ? this.settings.manifest.pages[index+1].l : false;
+            // get labels for index range
+            let indices = this.viewer.getCurrentPageIndices();
+            let startIndex = indices[0];
+            let endIndex = indices[indices.length - 1];
+            let startLabel = this.settings.manifest.pages[startIndex].l;
+            let endLabel = this.settings.manifest.pages[endIndex].l;
 
-            if (this.settings.inBookLayout && index !== 0 && index !== this.viewer.getNumberOfPages())
-                currentPage.textContent = currentPageLabel + " - " + nextPageLabel;
+            if (startIndex !== endIndex)
+                currentPage.textContent = startLabel + " - " + endLabel;
             else
-                currentPage.textContent = currentPageLabel;
+                currentPage.textContent = startLabel;
         };
 
         this._subscribe('VisiblePageDidChange', updateCurrentPage);

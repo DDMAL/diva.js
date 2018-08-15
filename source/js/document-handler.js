@@ -74,7 +74,7 @@ export default class DocumentHandler
         // initial load
         this._handleZoomLevelChange();
 
-        const currentPageIndex = this._viewerCore.getSettings().currentPageIndices[0];
+        const currentPageIndex = this._viewerCore.getSettings().activePageIndex;
         const fileName = this._viewerCore.getPageName(currentPageIndex);
         this._viewerCore.publish("DocumentDidLoad", currentPageIndex, fileName);
     }
@@ -87,8 +87,10 @@ export default class DocumentHandler
 
         // calculate the visible pages from the rendered pages
         let temp = this._viewerState.viewport.intersectionTolerance;
+        // without setting to 0, isPageVisible returns true for pages out of viewport by intersectionTolerance
         this._viewerState.viewport.intersectionTolerance = 0;
         let visiblePages = renderedPages.filter(index => this._viewerState.renderer.isPageVisible(index));
+        // reset back to original value after getting true visible pages
         this._viewerState.viewport.intersectionTolerance = temp;
 
         // Don't change the current page if there is no page in the viewport

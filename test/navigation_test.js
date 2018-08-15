@@ -65,7 +65,7 @@ describe('Navigation', function ()
     {
         Diva.Events.subscribe('ViewerDidLoad', function ()
         {
-            assertPageAfterScroll({ top: 10000 }, 40, this, done, 'Folio 021r');
+            assertPageAfterScroll({ top: 10000 }, 40, this, done, 'Folio 020r - Folio 021v');
         });
 
         let diva = new Diva('diva-wrapper', { // jshint ignore:line
@@ -80,7 +80,7 @@ describe('Navigation', function ()
     {
         Diva.Events.subscribe('ViewerDidLoad', function ()
         {
-            assertPageAfterScroll({ top: 10000 }, 26, this, done, 'Folio 014r');
+            assertPageAfterScroll({ top: 10000 }, 26, this, done, 'Folio 014r - Folio 014v');
         });
 
         let diva = new Diva('diva-wrapper', { // jshint ignore:line
@@ -345,7 +345,7 @@ describe('Navigation', function ()
                 assert.isOk(this.isPageInViewport(5), "Page 6 (index 5) should be loaded");
 
                 this.gotoPageByIndex(6);
-                assert.strictEqual(el(settings.selector + 'current-page').innerText, 'Folio 004r - Folio 004v', "Toolbar should indicate page 7");
+                assert.strictEqual(el(settings.selector + 'current-page').innerText, 'Folio 003v - Folio 004r', "Toolbar should indicate page 7");
                 assert.isOk(this.isPageInViewport(6), "Page 7 (index 6) should be loaded");
 
                 done();
