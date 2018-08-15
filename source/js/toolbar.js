@@ -118,7 +118,7 @@ export default class Toolbar
         const updateCurrentPage = () => 
         {
             // get labels for this and next page
-            let index = this.viewer.getCurrentPageIndex();
+            let index = this.viewer.getCurrentPageIndices()[0];
             let currentPageLabel = this.settings.manifest.pages[index].l;
             let nextPageLabel = this.settings.manifest.pages[index+1] ? this.settings.manifest.pages[index+1].l : false;
 

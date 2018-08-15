@@ -74,7 +74,7 @@ export default class DocumentHandler
         // initial load
         this._handleZoomLevelChange();
 
-        const currentPageIndex = this._viewerCore.getSettings().currentPageIndex;
+        const currentPageIndex = this._viewerCore.getSettings().currentPageIndices[0];
         const fileName = this._viewerCore.getPageName(currentPageIndex);
         this._viewerCore.publish("DocumentDidLoad", currentPageIndex, fileName);
     }
@@ -85,11 +85,17 @@ export default class DocumentHandler
             targetPage :
             getCentermostPage(renderedPages, this._viewerCore.getCurrentLayout(), this._viewerCore.getViewport());
 
+        // calculate the visible pages from the rendered pages
+        let temp = this._viewerState.viewport.intersectionTolerance;
+        this._viewerState.viewport.intersectionTolerance = 0;
+        let visiblePages = renderedPages.filter(index => this._viewerState.renderer.isPageVisible(index));
+        this._viewerState.viewport.intersectionTolerance = temp;
+
         // Don't change the current page if there is no page in the viewport
         // FIXME: Would be better to fall back to the page closest to the viewport
         if (currentPage !== null)
         {
-            this._viewerCore.setCurrentPage(currentPage);
+            this._viewerCore.setCurrentPages(currentPage, visiblePages);
         }
 
         if (targetPage !== null)
