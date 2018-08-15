@@ -115,7 +115,7 @@ export default class Toolbar
             id: this.settings.ID + 'current-page'
         });
 
-        const updateCurrentPage = (pageIndices) => 
+        const updateCurrentPage = () => 
         {
             // get labels for index range
             let indices = this.viewer.getCurrentPageIndices();

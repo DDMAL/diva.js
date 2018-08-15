@@ -107,7 +107,7 @@ export default class ViewerCore
         // Many of these are declared with arbitrary values that are changed later on
         this.viewerState = {
             currentPageIndices: [0],    // The visible pages in the viewport
-            activePageIndex: 0,         // The current 'active' page in the viewport (center-most page)
+            activePageIndex: 0,         // The current 'active' page in the viewport
             horizontalOffset: 0,        // Distance from the center of the diva element to the top of the current page
             horizontalPadding: 0,       // Either the fixed padding or adaptive padding
             ID: null,                   // The prefix of the IDs of the elements (usually 1-diva-)
@@ -1351,18 +1351,18 @@ export default class ViewerCore
      *
      * @param pageIndex
      */
-    setCurrentPages (currentPage, visiblePages)
+    setCurrentPages (activePage, visiblePages)
     {
         // these arrays will never contain objects so this should be safe
         if (JSON.stringify(this.viewerState.currentPageIndices) !== JSON.stringify(visiblePages))
         {
             this.viewerState.currentPageIndices = visiblePages;
-            this.viewerState.activePageIndex = currentPage;
+            this.viewerState.activePageIndex = activePage;
             this.publish("VisiblePageDidChange", visiblePages);
 
             // Publish an event if the page we're switching to has other images.
-            if (this.viewerState.manifest.pages[currentPage].otherImages.length > 0)
-                this.publish('VisiblePageHasAlternateViews', currentPage);
+            if (this.viewerState.manifest.pages[activePage].otherImages.length > 0)
+                this.publish('VisiblePageHasAlternateViews', activePage);
         }
     }
 

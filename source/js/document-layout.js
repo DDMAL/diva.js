@@ -81,9 +81,8 @@ export default class DocumentLayout
 
         const region = getPageRegionFromPageInfo(pageInfo);
 
-        if (options && options.excludePadding)
+        if (options && !options.excludePadding)
         {
-            // FIXME?
             const padding = pageInfo.group.padding;
 
             return {
