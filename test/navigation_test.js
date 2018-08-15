@@ -37,7 +37,7 @@ describe('Navigation', function ()
             {
                 var rendered = label;
 
-                var actualIndex = divaInst.getCurrentPageIndex();
+                var actualIndex = divaInst.getActivePageIndex();
                 assert.strictEqual(actualIndex, index, "The page should now be " + rendered + " (index of " + index + ")");
 
                 var actualRendered = el(divaInst.getSettings().selector + 'current-page').innerText;
@@ -184,17 +184,17 @@ describe('Navigation', function ()
 
             setTimeout(() =>
             {
-                assert.strictEqual(this.getCurrentPageIndex(), 165, "The current page should be 165 (10050px down, 1871px viewport)");
+                assert.strictEqual(this.getActivePageIndex(), 165, "The current page should be 165 (10050px down, 1871px viewport)");
 
                 el(settings.selector + 'grid-out-button').click();
                 el(settings.selector + 'grid-out-button').click();
-                assert.strictEqual(this.getCurrentPageIndex(), 165, "The current page should still be 85");
+                assert.strictEqual(this.getActivePageIndex(), 165, "The current page should still be 85");
 
                 for (var i = 0; i < 5; i++) 
                 {
                     el(settings.selector + 'grid-in-button').click();
                 }
-                assert.strictEqual(this.getCurrentPageIndex(), 165, "The current page should still be 85");
+                assert.strictEqual(this.getActivePageIndex(), 165, "The current page should still be 85");
 
                 done();
             }, 10);
@@ -252,7 +252,7 @@ describe('Navigation', function ()
                 setTimeout(function ()
                 {
                     assert.strictEqual(settings.zoomLevel, 2, "Zoom level should now be 2");
-                    assert.strictEqual(settings.currentPageIndex, 100, "Should still be on page 100");
+                    assert.strictEqual(settings.activePageIndex, 100, "Should still be on page 100");
                     done();
                 }, 10);
             }, 10);
