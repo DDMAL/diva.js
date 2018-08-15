@@ -7,7 +7,6 @@ cache:
     - node_modules
 
 install:
-  - sudo apt-get install -yq libcairo2-dev libjpeg-dev libpango1.0-dev libgif-dev build-essential g++
   - npm install --no-spin
 
 script:
