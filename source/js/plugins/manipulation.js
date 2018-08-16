@@ -320,6 +320,14 @@ export default class ManipulationPlugin
         this._tools.appendChild(hueDiv);
     }
 
+    _resetTools()
+    {
+        for (let i = 2, len = this._tools.children.length; i < len; i++)
+        {
+            this._tools.children[i].children[0].value = 0;
+        }
+    }
+
     _loadImageInMainArea(event, imageURL)
     {
         let url = `${imageURL}full/full/0/default.jpg`;
@@ -345,6 +353,8 @@ export default class ManipulationPlugin
         });
 
         this._mainImage.src = url;
+
+        this._resetTools();
     }
 
     _applyTransformationToImageData(event, func, value)
