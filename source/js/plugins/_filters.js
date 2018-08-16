@@ -1,17 +1,37 @@
 
-let _filterQueue = {};
+// stores an array of objects, each object stores the function, image data, and adjust to apply
+let _filterQueue = [];
 
-export function addFilterToQueue (filter)
+// add a filter to the array. if it is new, _apply the function to the image data of the previous filter
+// and return this new image data
+export function addFilterToQueue (filter, data, adjust)
 {
     let fname = filter.name;
 
-    if (_filterQueue.hasOwnProperty(fname))
+    // index of the filter in the queue
+    let index = _filterQueue.findIndex(f => f.filter.name === fname);
+    if (index !== -1)
     {
-        // update existing filter
+        // filter exists in queue, adjust imgData and reapply other filters on top
     }
     else
     {
         // add new filter to the queue
+        _filterQueue.push({
+            filter: filter,
+            imgData: _filterQueue.length === 0 ? data : _filterQueue[_filterQueue.length - 1].imgData,
+            adjust: adjust
+        });
+
+        let filt = _filterQueue[_filterQueue.length - 1];
+
+        // sharpness doesn't use _apply, uses convolve instead
+        if (filt.filter.name === 'convolve')
+            filt.imgData = filt.filter(filt.imgData, filt.adjust)
+        else
+            filt.imgData = _apply(filt.imgData, filt.filter, filt.adjust);
+
+        return filt.imgData;
     }
 }
 
@@ -66,7 +86,7 @@ function _apply (data, pixelFunc, adjust)
  **/
 export function grayscale(data)
 {
-    return _apply(data, _grayscale);
+    return addFilterToQueue(_grayscale, data);
 }
 
 /**
@@ -88,7 +108,7 @@ function _grayscale (r, g, b)
 
 export function vibrance (data, adjust)
 {
-    return _apply(data, _vibrance, adjust);
+    return addFilterToQueue(_vibrance, data, adjust);
 }
 
 /**
@@ -122,7 +142,7 @@ function _vibrance (r, g, b, adjust)
 
 export function brightness (data, adjust)
 {
-    return _apply(data, _brightness, adjust);
+    return addFilterToQueue(_brightness, data, adjust);
 }
 
 function _brightness (r, g, b, adjust)
@@ -139,7 +159,7 @@ function _brightness (r, g, b, adjust)
 
 export function contrast (data, adjust)
 {
-    return _apply(data, _contrast, adjust);
+    return addFilterToQueue(_contrast, data, adjust);
 }
 
 /**
@@ -186,7 +206,7 @@ function _contrast (r, g, b, adjust)
  **/
 export function invert(data)
 {
-    return _apply(data, _invert);
+    return addFilterToQueue(_invert, data);
 }
 
 /**
@@ -210,7 +230,7 @@ function _invert (r, g, b)
 
 export function threshold(data, adjust)
 {
-    return _apply(data, _threshold, adjust);
+    return addFilterToQueue(_threshold, data, adjust);
 }
 
 /**
@@ -236,7 +256,7 @@ function _threshold (r, g, b, adjust)
 
 export function hue (data, adjust)
 {
-    return _apply(data, _hue, adjust);
+    return addFilterToQueue(_hue, data, adjust);
 }
 
 function _hue (r, g, b, adjust)
@@ -416,5 +436,5 @@ export function sharpen (data, adjust)
         0, -adj, 0
     ];
 
-    return convolve(data, weights);
+    return addFilterToQueue(convolve, data, weights);
 }
