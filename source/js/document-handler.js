@@ -151,7 +151,7 @@ function getCentermostPage (renderedPages, layout, viewport)
     const centerPage = maxBy(renderedPages, pageIndex =>
     {
         const dims = layout.getPageDimensions(pageIndex);
-        const imageOffset = layout.getPageOffset(pageIndex, {excludePadding: false});
+        const imageOffset = layout.getPageOffset(pageIndex, {includePadding: false});
 
         const midX = imageOffset.left + (dims.height / 2);
         const midY = imageOffset.top + (dims.width / 2);

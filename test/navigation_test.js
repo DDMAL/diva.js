@@ -65,7 +65,7 @@ describe('Navigation', function ()
     {
         Diva.Events.subscribe('ViewerDidLoad', function ()
         {
-            assertPageAfterScroll({ top: 10000 }, 40, this, done, 'Folio 020v - Folio 021v');
+            assertPageAfterScroll({ top: 10000 }, 40, this, done, 'Folio 020r - Folio 021v');
         });
 
         let diva = new Diva('diva-wrapper', { // jshint ignore:line
@@ -338,14 +338,14 @@ describe('Navigation', function ()
             this.gotoPageByIndex(5);
 
             assert.isOk(settings.inBookLayout, "Should be in book layout");
-            assert.strictEqual(el(settings.selector + 'current-page').innerText, 'Folio 003v - Folio 004r', "Toolbar should indicate label for page 6");
+            assert.strictEqual(el(settings.selector + 'current-page').innerText, 'Folio 003r - Folio 004r', "Toolbar should indicate label for page 6");
 
             setTimeout(() =>
             {
                 assert.isOk(this.isPageInViewport(5), "Page 6 (index 5) should be loaded");
 
                 this.gotoPageByIndex(6);
-                assert.strictEqual(el(settings.selector + 'current-page').innerText, 'Folio 003v - Folio 004r', "Toolbar should indicate page 7");
+                assert.strictEqual(el(settings.selector + 'current-page').innerText, 'Folio 003r - Folio 004r', "Toolbar should stay the same");
                 assert.isOk(this.isPageInViewport(6), "Page 7 (index 6) should be loaded");
 
                 done();

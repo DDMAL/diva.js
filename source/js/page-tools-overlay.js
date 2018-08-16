@@ -74,7 +74,7 @@ export default class PageToolsOverlay
     refresh ()
     {
         const pos = this._viewerCore.getPageRegion(this.page, {
-            excludePadding: true,
+            includePadding: true,
             incorporateViewport: true
         });
 
