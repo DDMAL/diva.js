@@ -1,6 +1,13 @@
 
 // stores an array of objects, each object stores the function, image data, and adjust to apply
 let _filterQueue = [];
+let inverted = false;
+
+export function emptyQueue ()
+{
+    _filterQueue = [];
+    inverted = false;
+}
 
 // add a filter to the array. if it is new, _apply the function to the image data of the previous filter
 // and return this new image data
@@ -13,20 +20,27 @@ export function addFilterToQueue (filter, data, adjust)
     if (index !== -1) // adjust an existing filter
     {
         let filt = _filterQueue[index];
+        filt.adjust = adjust;
         
         if (filt.filter.name === 'convolve') 
-            filt.postData = filt.filter(filt.prevData, adjust);
+            filt.postData = filt.filter(filt.prevData, filt.adjust);
         else if (filt.filter.name === '_invert') // invert filter should toggle, so use post-alteration image data
-            filt.postData = _apply(filt.postData, filt.filter, adjust);
+        {
+            filt.postData = _apply(filt.postData, filt.filter, filt.adjust);
+            inverted = !inverted;
+        }
         else 
-            filt.postData = _apply(filt.prevData, filt.filter, adjust);
+            filt.postData = _apply(filt.prevData, filt.filter, filt.adjust);
 
         // reapply all filters that come after in the queue
         for (let i = index + 1, len = _filterQueue.length; i < len; i++)
         {
             let f = _filterQueue[i];
 
-            f.prevData = _filterQueue[_filterQueue.length - 1].postData; // starts at filt
+            if (f.filter.name === '_invert' && !inverted)
+                continue;
+
+            f.prevData = _filterQueue[i - 1].postData; // starts at filt
 
             if (f.filter.name === 'convolve') 
                 f.postData = f.filter(f.prevData, f.adjust);
@@ -57,6 +71,9 @@ export function addFilterToQueue (filter, data, adjust)
             filt.postData = filt.filter(filt.prevData, filt.adjust);
         else 
             filt.postData = _apply(filt.prevData, filt.filter, filt.adjust);
+
+        if (filt.filter.name === '_invert')
+            inverted = true;
 
         return filt.postData;
     }
