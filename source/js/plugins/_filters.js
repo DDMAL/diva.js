@@ -10,28 +10,55 @@ export function addFilterToQueue (filter, data, adjust)
 
     // index of the filter in the queue
     let index = _filterQueue.findIndex(f => f.filter.name === fname);
-    if (index !== -1)
+    if (index !== -1) // adjust an existing filter
     {
-        // filter exists in queue, adjust imgData and reapply other filters on top
+        let filt = _filterQueue[index];
+        
+        if (filt.filter.name === 'convolve') 
+            filt.postData = filt.filter(filt.prevData, adjust);
+        else if (filt.filter.name === '_invert') // invert filter should toggle, so use post-alteration image data
+            filt.postData = _apply(filt.postData, filt.filter, adjust);
+        else 
+            filt.postData = _apply(filt.prevData, filt.filter, adjust);
+
+        // reapply all filters that come after in the queue
+        for (let i = index + 1, len = _filterQueue.length; i < len; i++)
+        {
+            let f = _filterQueue[i];
+
+            f.prevData = _filterQueue[_filterQueue.length - 1].postData; // starts at filt
+
+            if (f.filter.name === 'convolve') 
+                f.postData = f.filter(f.prevData, f.adjust);
+            else 
+                f.postData = _apply(f.prevData, f.filter, f.adjust);
+
+            if (i === len - 1) // last filter
+                return f.postData;
+        }
+
+        // only two filters in queue
+        return filt.postData; 
     }
     else
     {
         // add new filter to the queue
         _filterQueue.push({
             filter: filter,
-            imgData: _filterQueue.length === 0 ? data : _filterQueue[_filterQueue.length - 1].imgData,
+            prevData: _filterQueue.length === 0 ? data : _filterQueue[_filterQueue.length - 1].postData,
             adjust: adjust
         });
 
         let filt = _filterQueue[_filterQueue.length - 1];
+        console.log(_filterQueue);
 
         // sharpness doesn't use _apply, uses convolve instead
-        if (filt.filter.name === 'convolve')
-            filt.imgData = filt.filter(filt.imgData, filt.adjust)
-        else
-            filt.imgData = _apply(filt.imgData, filt.filter, filt.adjust);
+        if (filt.filter.name === 'convolve') 
+            filt.postData = filt.filter(filt.prevData, filt.adjust);
+        else 
+            filt.postData = _apply(filt.prevData, filt.filter, filt.adjust);
 
-        return filt.imgData;
+        return filt.postData;
     }
 }
 
