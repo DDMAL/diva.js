@@ -1,58 +1,60 @@
 
 // stores an array of objects, each object stores the function, image data, and adjust to apply
 let _filterQueue = [];
+// stores whether the invert filter was used (for if it should be reapplied)
 let inverted = false;
 
-export function emptyQueue ()
+export function resetFilters ()
 {
     _filterQueue = [];
     inverted = false;
 }
 
-// add a filter to the array. if it is new, _apply the function to the image data of the previous filter
-// and return this new image data
+// add a filter to the array. if it is new, apply the filter's function to the image data of the previous filter's 
+// returned image data (or the default image data if it's the first filter), and return this new image data
 export function addFilterToQueue (filter, data, adjust)
 {
-    let fname = filter.name;
-
-    // index of the filter in the queue
-    let index = _filterQueue.findIndex(f => f.filter.name === fname);
-    if (index !== -1) // adjust an existing filter
+    // index of the filter in the queue, -1 if not found
+    let index = _filterQueue.findIndex(f => f.filter.name === filter.name);
+    if (index !== -1)
     {
-        let filt = _filterQueue[index];
-        filt.adjust = adjust;
+        // adjust a filter already in the queue
+        let filtObj = _filterQueue[index];
+        filtObj.adjust = adjust;
         
-        if (filt.filter.name === 'convolve') 
-            filt.postData = filt.filter(filt.prevData, filt.adjust);
-        else if (filt.filter.name === '_invert') // invert filter should toggle, so use post-alteration image data
+        // sharpness filter uses convolve not apply
+        if (filtObj.filter.name === 'convolve') 
+            filtObj.postData = filtObj.filter(filtObj.prevData, filtObj.adjust);
+        else if (filtObj.filter.name === '_invert') // invert filter should toggle, so use post-alteration image data
         {
-            filt.postData = _apply(filt.postData, filt.filter, filt.adjust);
+            filtObj.postData = _apply(filtObj.postData, filtObj.filter, filtObj.adjust);
             inverted = !inverted;
         }
         else 
-            filt.postData = _apply(filt.prevData, filt.filter, filt.adjust);
+            filtObj.postData = _apply(filtObj.prevData, filtObj.filter, filtObj.adjust);
 
         // reapply all filters that come after in the queue
         for (let i = index + 1, len = _filterQueue.length; i < len; i++)
         {
-            let f = _filterQueue[i];
+            let otherFiltObj = _filterQueue[i];
 
-            if (f.filter.name === '_invert' && !inverted)
+            if (otherFiltObj.filter.name === '_invert' && !inverted) // don't reinvert the image
                 continue;
 
-            f.prevData = _filterQueue[i - 1].postData; // starts at filt
+            otherFiltObj.prevData = _filterQueue[i - 1].postData; // starts at filt
 
-            if (f.filter.name === 'convolve') 
-                f.postData = f.filter(f.prevData, f.adjust);
+            // sharpness filter uses convolve not apply
+            if (otherFiltObj.filter.name === 'convolve') 
+                otherFiltObj.postData = otherFiltObj.filter(otherFiltObj.prevData, otherFiltObj.adjust);
             else 
-                f.postData = _apply(f.prevData, f.filter, f.adjust);
+                otherFiltObj.postData = _apply(otherFiltObj.prevData, otherFiltObj.filter, otherFiltObj.adjust);
 
             if (i === len - 1) // last filter
-                return f.postData;
+                return otherFiltObj.postData;
         }
 
-        // only two filters in queue
-        return filt.postData; 
+        // only two filters in queue and second was modified
+        return filtObj.postData; 
     }
     else
     {
@@ -63,19 +65,19 @@ export function addFilterToQueue (filter, data, adjust)
             adjust: adjust
         });
 
-        let filt = _filterQueue[_filterQueue.length - 1];
-        console.log(_filterQueue);
+        let filtObj = _filterQueue[_filterQueue.length - 1];
 
-        // sharpness doesn't use _apply, uses convolve instead
-        if (filt.filter.name === 'convolve') 
-            filt.postData = filt.filter(filt.prevData, filt.adjust);
+        // sharpness filter uses convolve not apply
+        if (filtObj.filter.name === 'convolve') 
+            filtObj.postData = filtObj.filter(filtObj.prevData, filtObj.adjust);
         else 
-            filt.postData = _apply(filt.prevData, filt.filter, filt.adjust);
+            filtObj.postData = _apply(filtObj.prevData, filtObj.filter, filtObj.adjust);
 
-        if (filt.filter.name === '_invert')
+        // invert filter was added to queue
+        if (filtObj.filter.name === '_invert')
             inverted = true;
 
-        return filt.postData;
+        return filtObj.postData;
     }
 }
 

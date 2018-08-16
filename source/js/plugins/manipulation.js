@@ -7,7 +7,7 @@ import {
     invert,
     threshold,
     sharpen,
-    emptyQueue
+    resetFilters
 } from "./_filters";
 
 /**
@@ -328,7 +328,7 @@ export default class ManipulationPlugin
             this._tools.children[i].children[0].value = 0;
         }
 
-        emptyQueue();
+        resetFilters();
     }
 
     _loadImageInMainArea(event, imageURL)
