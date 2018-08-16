@@ -228,6 +228,8 @@ export default class ManipulationPlugin
 
         let vibDiv = document.createElement('div');
         let vibranceAdjust = document.createElement('input');
+        let vibranceText = document.createTextNode(' [ Vibrance ]');
+        vibDiv.setAttribute('style', 'color: white;');
         vibranceAdjust.setAttribute('type', 'range');
         vibranceAdjust.setAttribute('max', 100);
         vibranceAdjust.setAttribute('min', -100);
@@ -235,9 +237,12 @@ export default class ManipulationPlugin
 
         vibranceAdjust.addEventListener('change', debounce((e) => this._applyTransformationToImageData(e, vibrance, e.target.value), 250));
         vibDiv.appendChild(vibranceAdjust);
+        vibDiv.appendChild(vibranceText);
 
         let brightDiv = document.createElement('div');
         let brightnessAdjust = document.createElement('input');
+        let brightnessText = document.createTextNode(' [ Brightness ]');
+        brightDiv.setAttribute('style', 'color: white;');
         brightnessAdjust.setAttribute('type', 'range');
         brightnessAdjust.setAttribute('max', 100);
         brightnessAdjust.setAttribute('min', -100);
@@ -245,9 +250,12 @@ export default class ManipulationPlugin
 
         brightnessAdjust.addEventListener('change', debounce((e) => this._applyTransformationToImageData(e, brightness, e.target.value), 250));
         brightDiv.appendChild(brightnessAdjust);
+        brightDiv.appendChild(brightnessText);
 
         let contrastDiv = document.createElement('div');
         let contrastAdjust = document.createElement('input');
+        let contrastText = document.createTextNode(' [ Contrast ]');
+        contrastDiv.setAttribute('style', 'color: white;');
         contrastAdjust.setAttribute('type', 'range');
         contrastAdjust.setAttribute('max', 100);
         contrastAdjust.setAttribute('min', -100);
@@ -255,6 +263,7 @@ export default class ManipulationPlugin
 
         contrastAdjust.addEventListener('change', debounce((e) => this._applyTransformationToImageData(e, contrast, e.target.value), 250));
         contrastDiv.appendChild(contrastAdjust);
+        contrastDiv.appendChild(contrastText);
 
         let invDiv = document.createElement('div');
         let invertButton = document.createElement('button');
@@ -264,6 +273,8 @@ export default class ManipulationPlugin
 
         let threshDiv = document.createElement('div');
         let thresholdAdjust = document.createElement('input');
+        let thresholdText = document.createTextNode('  [ Threshold ]');
+        threshDiv.setAttribute('style', 'color: white;');
         thresholdAdjust.setAttribute('type', 'range');
         thresholdAdjust.setAttribute('max', 255);
         thresholdAdjust.setAttribute('min', 64);
@@ -271,9 +282,12 @@ export default class ManipulationPlugin
 
         thresholdAdjust.addEventListener('change', debounce((e) => this._applyTransformationToImageData(e, threshold, e.target.value), 250));
         threshDiv.appendChild(thresholdAdjust);
+        threshDiv.appendChild(thresholdText);
 
         let sharpDiv = document.createElement('div');
         let sharpenAdjust = document.createElement('input');
+        let sharpenText = document.createTextNode('  [ Sharpness ]');
+        sharpDiv.setAttribute('style', 'color: white;');
         sharpenAdjust.setAttribute('type', 'range');
         sharpenAdjust.setAttribute('max', 100);
         sharpenAdjust.setAttribute('min', 0);
@@ -281,9 +295,12 @@ export default class ManipulationPlugin
 
         sharpenAdjust.addEventListener('change', debounce((e) => this._applyConvolutionFilter(e, sharpen, e.target.value), 250));
         sharpDiv.appendChild(sharpenAdjust);
+        sharpDiv.appendChild(sharpenText);
 
         let hueDiv = document.createElement('div');
         let hueAdjust = document.createElement('input');
+        let hueText = document.createTextNode('  [ Hue ]');
+        hueDiv.setAttribute('style', 'color: white;');
         hueAdjust.setAttribute('type', 'range');
         hueAdjust.setAttribute('max', 100);
         hueAdjust.setAttribute('min', 0);
@@ -291,6 +308,7 @@ export default class ManipulationPlugin
 
         hueAdjust.addEventListener('change', debounce((e) => this._applyConvolutionFilter(e, hue, e.target.value), 250));
         hueDiv.appendChild(hueAdjust);
+        hueDiv.appendChild(hueText);
 
         this._tools.appendChild(bwDiv);
         this._tools.appendChild(invDiv);
