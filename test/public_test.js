@@ -35,16 +35,16 @@ describe('Public Functions', function ()
     {
         Diva.Events.subscribe('ViewerDidLoad', function ()
         {
-            assert.strictEqual(this.getCurrentPageIndex(), 0, "Initial page should be 0");
+            assert.strictEqual(this.getActivePageIndex(), 0, "Initial page should be 0");
             this.gotoPageByIndex(200); // Go to page index 200
-            assert.strictEqual(this.getCurrentPageIndex(), 200, "The page index should now be 200");
+            assert.strictEqual(this.getActivePageIndex(), 200, "The page index should now be 200");
             this.gotoPageByIndex(5); 
-            assert.strictEqual(this.getCurrentPageIndex(), 5, "The page index should now be 5");
+            assert.strictEqual(this.getActivePageIndex(), 5, "The page index should now be 5");
 
             Diva.Events.subscribe('ViewDidSwitch', function ()
             {
                 this.gotoPageByIndex(100);
-                assert.strictEqual(this.getCurrentPageIndex(), 100, 'Transitions in grid mode should work');
+                assert.strictEqual(this.getActivePageIndex(), 100, 'Transitions in grid mode should work');
 
                 done();
             });
@@ -57,17 +57,17 @@ describe('Public Functions', function ()
         });
     });
 
-    it("getCurrentPageIndex()", function (done)
+    it("getActivePageIndex()", function (done)
     {
         Diva.Events.subscribe('ViewerDidLoad', function ()
         {
-            assert.strictEqual(this.getCurrentPageIndex(), 0, "Initial page should be 0");
+            assert.strictEqual(this.getActivePageIndex(), 0, "Initial page should be 0");
             this.gotoPageByIndex(300);
-            assert.strictEqual(this.getCurrentPageIndex(), 300, "The page index should now be 300");
+            assert.strictEqual(this.getActivePageIndex(), 300, "The page index should now be 300");
 
             // Reset it to the first page
             this.gotoPageByIndex(0);
-            assert.strictEqual(this.getCurrentPageIndex(), 0, "The page index should now be 0");
+            assert.strictEqual(this.getActivePageIndex(), 0, "The page index should now be 0");
             done();
         });
 
@@ -206,7 +206,7 @@ describe('Public Functions', function ()
         Diva.Events.subscribe('ViewerDidLoad', function (settings)
         {
             assert.isOk(this.gotoPageByName('https://images.simssa.ca/iiif/image/cdn-hsmu-m2149l4/cdn-hsmu-m2149l4_001v.jp2', "right", "center"), "It should find the page index for folio-001v");
-            assert.strictEqual(settings.currentPageIndex, 1, "Now the page number should be 2 (index 1)");
+            assert.strictEqual(settings.activePageIndex, 1, "Now the page number should be 2 (index 1)");
             assert.strictEqual(settings.viewport.top, 1000, "The page should be anchored to the center (vertically)");
             assert.strictEqual(settings.viewport.left, 0, "The page should be anchored to the right");
             
@@ -222,10 +222,10 @@ describe('Public Functions', function ()
     {
         Diva.Events.subscribe('ViewerDidLoad', function (settings)
         {
-            assert.strictEqual(settings.currentPageIndex, 0, "Initial page number should be 1");
+            assert.strictEqual(settings.activePageIndex, 0, "Initial page number should be 1");
             assert.isOk(!this.gotoPageByURI('https://images.simssa.ca/iiif/image/cdn-hsmu-m2149l4/cdn-hsmu-m2149l4_000r.jp2'), "It should not find anything for 000r.jp2");
             assert.isOk(this.gotoPageByURI('https://images.simssa.ca/iiif/image/cdn-hsmu-m2149l4/cdn-hsmu-m2149l4_001v.jp2', "right", "center"), "It should find the page index for folio-001v");
-            assert.strictEqual(settings.currentPageIndex, 1, "Now the page number should be 2");
+            assert.strictEqual(settings.activePageIndex, 1, "Now the page number should be 2");
 
             assert.strictEqual(settings.viewport.top, 1000, "The page should be anchored to the center (vertically)");
             assert.strictEqual(settings.viewport.left, 0, "The page should be anchored to the right");
@@ -324,7 +324,7 @@ describe('Public Functions', function ()
             assert.isOk(settings.inFullscreen, "Should now be in fullscreen");
             assert.isOk(!settings.inGrid, "Should not be in grid");
             assert.isOk(!settings.inBookLayout, "Should not be in book view");
-            assert.strictEqual(settings.currentPageIndex, 4, "Current page should be 5 (index of 4)");
+            assert.strictEqual(settings.activePageIndex, 4, "Current page should be 5 (index of 4)");
             assert.strictEqual(settings.pagesPerRow, 3, "Pages per row should be 3");
             assert.strictEqual(settings.zoomLevel, 3, "Zoom level should be 3");
 
@@ -353,7 +353,7 @@ describe('Public Functions', function ()
             this.setState(state);
             assert.isOk(!settings.inFullscreen, "Should not be in fullscreen");
             assert.isOk(settings.inGrid, "Should be in grid");
-            assert.strictEqual(settings.currentPageIndex, 9, "Current page should be 005v.jp2 (index of 9)");
+            assert.strictEqual(settings.activePageIndex, 9, "Current page should be 005v.jp2 (index of 9)");
             assert.strictEqual(settings.pagesPerRow, 4, "Pages per row should be 4");
             assert.strictEqual(settings.zoomLevel, 4, "Zoom level should be 4");
 
@@ -605,11 +605,11 @@ describe('Public Functions', function ()
         Diva.Events.subscribe('ViewerDidLoad', function ()
         {
             this.gotoPageByLabel('folio 001v');
-            assert.strictEqual(this.getCurrentPageIndex(), 1, 'Should now be at page 2 (index 1)');
+            assert.strictEqual(this.getActivePageIndex(), 1, 'Should now be at page 2 (index 1)');
 
             // try with number instead of label
             this.gotoPageByLabel('asdfjkl');
-            assert.strictEqual(this.getCurrentPageIndex(), 1, 'Should still be on page 2');
+            assert.strictEqual(this.getActivePageIndex(), 1, 'Should still be on page 2');
             done();
         });
 

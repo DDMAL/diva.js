@@ -80,12 +80,10 @@ export default class DocumentLayout
             return null;
 
         const region = getPageRegionFromPageInfo(pageInfo);
+        const padding = pageInfo.group.padding;
 
-        if (options && options.excludePadding)
+        if (options && options.includePadding)
         {
-            // FIXME?
-            const padding = pageInfo.group.padding;
-
             return {
                 top: region.top + padding.top,
                 left: region.left + padding.left,
@@ -94,7 +92,14 @@ export default class DocumentLayout
             };
         }
 
-        return region;
+        return {
+            top: region.top,
+            left: region.left,
+            // need to account for plugin icons below the page, see 
+            // https://github.com/DDMAL/diva.js/issues/436
+            bottom: region.bottom + padding.top, 
+            right: region.right
+        };
     }
 
     /**

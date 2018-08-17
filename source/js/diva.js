@@ -385,15 +385,15 @@ class Diva
         }
 
         const layout = this.divaState.viewerCore.getCurrentLayout();
-        const pageOffset = layout.getPageToViewportCenterOffset(this.settings.currentPageIndex, this.viewerState.viewport);
+        const pageOffset = layout.getPageToViewportCenterOffset(this.settings.activePageIndex, this.viewerState.viewport);
 
         return {
             'f': this.settings.inFullscreen,
             'v': view,
             'z': this.settings.zoomLevel,
             'n': this.settings.pagesPerRow,
-            'i': this.settings.enableFilename ? this.settings.manifest.pages[this.settings.currentPageIndex].f : false,
-            'p': this.settings.enableFilename ? false : this.settings.currentPageIndex + 1,
+            'i': this.settings.enableFilename ? this.settings.manifest.pages[this.settings.activePageIndex].f : false,
+            'p': this.settings.enableFilename ? false : this.settings.activePageIndex + 1,
             'y': pageOffset ? pageOffset.y : false,
             'x': pageOffset ? pageOffset.x : false
         };
@@ -501,7 +501,7 @@ class Diva
         this._reloadViewer({
             inGrid: false,
             verticallyOriented: verticallyOriented,
-            goDirectlyTo: this.settings.currentPageIndex,
+            goDirectlyTo: this.settings.activePageIndex,
             verticalOffset: this.divaState.viewerCore.getYOffset(),
             horizontalOffset: this.divaState.viewerCore.getXOffset()
         });
@@ -805,7 +805,7 @@ class Diva
      **/
     getCurrentCanvas ()
     {
-        return this.settings.manifest.pages[this.settings.currentPageIndex].canvas;
+        return this.settings.manifest.pages[this.settings.activePageIndex].canvas;
     }
 
     /**
@@ -817,7 +817,7 @@ class Diva
      **/
     getCurrentPageDimensionsAtCurrentZoomLevel ()
     {
-        return this.getPageDimensionsAtCurrentZoomLevel(this.settings.currentPageIndex);
+        return this.getPageDimensionsAtCurrentZoomLevel(this.settings.activePageIndex);
     }
 
     /**
@@ -830,7 +830,18 @@ class Diva
     getCurrentPageFilename ()
     {
         console.warn('This method will be deprecated in the next version of Diva. Please use getCurrentPageURI instead.');
-        return this.settings.manifest.pages[this.settings.currentPageIndex].f;
+        return this.settings.manifest.pages[this.settings.activePageIndex].f;
+    }
+
+    /**
+     * Returns an array of page indices that are visible in the viewport.
+     *
+     * @public
+     * @returns {array} - The 0-based indices array for the currently visible pages.
+     **/
+    getCurrentPageIndices ()
+    {
+        return this.settings.currentPageIndices;
     }
 
     /**
@@ -839,10 +850,10 @@ class Diva
      * @public
      * @returns {number} - The 0-based index for the currently visible page.
      **/
-    getCurrentPageIndex ()
-    {
-        return this.settings.currentPageIndex;
-    }
+     getActivePageIndex ()
+     {
+        return this.settings.activePageIndex;
+     }
 
     /**
      * Shortcut to getPageOffset for current page.
@@ -852,7 +863,7 @@ class Diva
      * */
     getCurrentPageOffset ()
     {
-        return this.getPageOffset(this.settings.currentPageIndex);
+        return this.getPageOffset(this.settings.activePageIndex);
     }
 
     /**
@@ -863,7 +874,7 @@ class Diva
      **/
     getCurrentPageURI ()
     {
-        return this.settings.manifest.pages[this.settings.currentPageIndex].f;
+        return this.settings.manifest.pages[this.settings.activePageIndex].f;
     }
 
     /**

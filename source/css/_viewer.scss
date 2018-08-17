@@ -277,20 +277,32 @@
 
 .diva-page-tools {
     position: relative;
-    top: -$pluginIconSize - 5;
+    top: -$pluginIconSize - 7;
     height: $pluginIconSize;
 
     div {
-        margin-bottom: 5px;
         display: inline-block;
         height: $pluginIconSize;
         width: $pluginIconSize;
         cursor: pointer;
+        padding: 3px;
 
         svg:hover .diva-pagetool-icon {
           fill: $regularBlue;
         }
     }
+}
+
+.diva-page-labels-wrapper {
+    position: absolute;
+    z-index: 3;
+}
+
+.diva-page-labels {
+    position: relative;
+    top: -$pluginIconSize;
+    height: $pluginIconSize;
+    font-size: 0.8em;
 }
 
 .diva-fullscreen {

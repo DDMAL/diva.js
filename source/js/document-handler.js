@@ -74,7 +74,7 @@ export default class DocumentHandler
         // initial load
         this._handleZoomLevelChange();
 
-        const currentPageIndex = this._viewerCore.getSettings().currentPageIndex;
+        const currentPageIndex = this._viewerCore.getSettings().activePageIndex;
         const fileName = this._viewerCore.getPageName(currentPageIndex);
         this._viewerCore.publish("DocumentDidLoad", currentPageIndex, fileName);
     }
@@ -85,11 +85,19 @@ export default class DocumentHandler
             targetPage :
             getCentermostPage(renderedPages, this._viewerCore.getCurrentLayout(), this._viewerCore.getViewport());
 
+        // calculate the visible pages from the rendered pages
+        let temp = this._viewerState.viewport.intersectionTolerance;
+        // without setting to 0, isPageVisible returns true for pages out of viewport by intersectionTolerance
+        this._viewerState.viewport.intersectionTolerance = 0;
+        let visiblePages = renderedPages.filter(index => this._viewerState.renderer.isPageVisible(index));
+        // reset back to original value after getting true visible pages
+        this._viewerState.viewport.intersectionTolerance = temp;
+
         // Don't change the current page if there is no page in the viewport
         // FIXME: Would be better to fall back to the page closest to the viewport
         if (currentPage !== null)
         {
-            this._viewerCore.setCurrentPage(currentPage);
+            this._viewerCore.setCurrentPages(currentPage, visiblePages);
         }
 
         if (targetPage !== null)
@@ -143,7 +151,7 @@ function getCentermostPage (renderedPages, layout, viewport)
     const centerPage = maxBy(renderedPages, pageIndex =>
     {
         const dims = layout.getPageDimensions(pageIndex);
-        const imageOffset = layout.getPageOffset(pageIndex, {excludePadding: false});
+        const imageOffset = layout.getPageOffset(pageIndex, {includePadding: false});
 
         const midX = imageOffset.left + (dims.height / 2);
         const midY = imageOffset.top + (dims.width / 2);

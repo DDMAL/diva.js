@@ -117,29 +117,27 @@ export default class Toolbar
 
         const updateCurrentPage = () => 
         {
-            currentPage.textContent = this.viewer.getCurrentPageIndex() + 1; // pages are 0 indexed
+            // get labels for index range
+            let indices = this.viewer.getCurrentPageIndices();
+            let startIndex = indices[0];
+            let endIndex = indices[indices.length - 1];
+            let startLabel = this.settings.manifest.pages[startIndex].l;
+            let endLabel = this.settings.manifest.pages[endIndex].l;
+
+            if (startIndex !== endIndex)
+                currentPage.textContent = startLabel + " - " + endLabel;
+            else
+                currentPage.textContent = startLabel;
         };
 
         this._subscribe('VisiblePageDidChange', updateCurrentPage);
         this._subscribe('ViewerDidLoad', updateCurrentPage);
-
-        // Number of pages
-        const numPages = elt('span', {
-            id: this.settings.ID + 'num-pages'
-        });
-
-        const updateNumPages = () => 
-        {
-            numPages.textContent = this.settings.numPages;
-        };
-
-        this._subscribe('NumberOfPagesDidChange', updateNumPages);
-        this._subscribe('ObjectDidLoad', updateNumPages);
+        this._subscribe('ViewDidSwitch', updateCurrentPage);
 
         return elt('span', {
                 class: 'diva-page-label diva-label'
             },
-            'Page ', currentPage, ' of ', numPages
+            currentPage
         );
     }
 

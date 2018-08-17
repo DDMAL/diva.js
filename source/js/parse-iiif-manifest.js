@@ -1,4 +1,4 @@
-import parseLabelValue from './utils/label-value-parser';
+import parseLabelValue from './utils/parse-label-value';
 
 const getMaxZoomLevel = (width, height) =>
 {

@@ -435,7 +435,7 @@ export default class Renderer
 
     _getImageOffset (pageIndex)
     {
-        return this.layout.getPageOffset(pageIndex, {excludePadding: true});
+        return this.layout.getPageOffset(pageIndex, {includePadding: true});
     }
 
     // TODO: Update signature

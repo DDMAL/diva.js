@@ -106,7 +106,8 @@ export default class ViewerCore
         // Things that cannot be changed because of the way they are used by the script
         // Many of these are declared with arbitrary values that are changed later on
         this.viewerState = {
-            currentPageIndex: 0,        // The current page in the viewport (center-most page)
+            currentPageIndices: [0],    // The visible pages in the viewport
+            activePageIndex: 0,         // The current 'active' page in the viewport
             horizontalOffset: 0,        // Distance from the center of the diva element to the top of the current page
             horizontalPadding: 0,       // Either the fixed padding or adaptive padding
             ID: null,                   // The prefix of the IDs of the elements (usually 1-diva-)
@@ -339,7 +340,7 @@ export default class ViewerCore
         else
         {
             // Otherwise the default is to remain on the current page
-            this.viewerState.options.goDirectlyTo = this.settings.currentPageIndex;
+            this.viewerState.options.goDirectlyTo = this.settings.activePageIndex;
         }
 
         if (this.hasChangedOption(newOptions, 'inGrid') || this.hasChangedOption(newOptions, 'inBookLayout'))
@@ -634,10 +635,10 @@ export default class ViewerCore
         if (!focalPoint)
         {
             const viewport = this.viewerState.viewport;
-            const currentRegion = this.viewerState.renderer.layout.getPageRegion(this.settings.currentPageIndex);
+            const currentRegion = this.viewerState.renderer.layout.getPageRegion(this.settings.activePageIndex);
 
             focalPoint = {
-                anchorPage: this.settings.currentPageIndex,
+                anchorPage: this.settings.activePageIndex,
                 offset: {
                     left: (viewport.width / 2) - (currentRegion.left - viewport.left),
                     top: (viewport.height / 2) - (currentRegion.top - viewport.top)
@@ -715,7 +716,7 @@ export default class ViewerCore
      */
     getYOffset (pageIndex, anchor)
     {
-        let pidx = (typeof(pageIndex) === "undefined" ? this.settings.currentPageIndex : pageIndex);
+        let pidx = (typeof(pageIndex) === "undefined" ? this.settings.activePageIndex : pageIndex);
 
         if (anchor === "center" || anchor === "centre") //how you can tell an American coded this
         {
@@ -734,7 +735,7 @@ export default class ViewerCore
     //Same as getYOffset with "left" and "right" as acceptable values instead of "top" and "bottom"
     getXOffset (pageIndex, anchor)
     {
-        let pidx = (typeof(pageIndex) === "undefined" ? this.settings.currentPageIndex : pageIndex);
+        let pidx = (typeof(pageIndex) === "undefined" ? this.settings.activePageIndex : pageIndex);
 
         if (anchor === "left")
         {
@@ -759,7 +760,7 @@ export default class ViewerCore
         if (this.viewerState.renderer)
         {
             this.updateOffsets();
-            this.viewerState.renderer.goto(this.settings.currentPageIndex, this.viewerState.verticalOffset, this.viewerState.horizontalOffset);
+            this.viewerState.renderer.goto(this.settings.activePageIndex, this.viewerState.verticalOffset, this.viewerState.horizontalOffset);
         }
 
         return true;
@@ -767,7 +768,7 @@ export default class ViewerCore
 
     updateOffsets ()
     {
-        const pageOffset = this.viewerState.renderer.layout.getPageToViewportCenterOffset(this.settings.currentPageIndex, this.viewerState.viewport);
+        const pageOffset = this.viewerState.renderer.layout.getPageToViewportCenterOffset(this.settings.activePageIndex, this.viewerState.viewport);
 
         if (pageOffset)
         {
@@ -797,12 +798,12 @@ export default class ViewerCore
 
         this.viewerState.resizeTimer = setTimeout( () =>
         {
-            const pageOffset = this.viewerState.renderer.layout.getPageToViewportCenterOffset(this.settings.currentPageIndex, this.viewerState.viewport);
+            const pageOffset = this.viewerState.renderer.layout.getPageToViewportCenterOffset(this.settings.activePageIndex, this.viewerState.viewport);
 
             if (pageOffset)
             {
                 this.reloadViewer({
-                    goDirectlyTo: this.settings.currentPageIndex,
+                    goDirectlyTo: this.settings.activePageIndex,
                     verticalOffset: pageOffset.y,
                     horizontalOffset: pageOffset.x
                 });
@@ -810,7 +811,7 @@ export default class ViewerCore
             else
             {
                 this.reloadViewer({
-                    goDirectlyTo: this.settings.currentPageIndex
+                    goDirectlyTo: this.settings.activePageIndex
                 });
             }
         }, 200);
@@ -1185,12 +1186,12 @@ export default class ViewerCore
         if (anchoredVertically || anchoredHorizontally)
         {
             if (anchoredVertically)
-                this.viewerState.verticalOffset = this.getYOffset(this.settings.currentPageIndex, "top");
+                this.viewerState.verticalOffset = this.getYOffset(this.settings.activePageIndex, "top");
 
             if (anchoredHorizontally)
-                this.viewerState.horizontalOffset = this.getXOffset(this.settings.currentPageIndex, "center");
+                this.viewerState.horizontalOffset = this.getXOffset(this.settings.activePageIndex, "center");
 
-            this.viewerState.renderer.goto(this.settings.currentPageIndex, this.viewerState.verticalOffset, this.viewerState.horizontalOffset);
+            this.viewerState.renderer.goto(this.settings.activePageIndex, this.viewerState.verticalOffset, this.viewerState.horizontalOffset);
         }
 
         // signal that everything should be set up and ready to go.
@@ -1329,10 +1330,10 @@ export default class ViewerCore
 
         // Fall back to current page
         // FIXME: Would be better to use the closest page or something
-        const currentRegion = this.viewerState.renderer.layout.getPageRegion(this.settings.currentPageIndex);
+        const currentRegion = this.viewerState.renderer.layout.getPageRegion(this.settings.activePageIndex);
 
         return {
-            anchorPage: this.settings.currentPageIndex,
+            anchorPage: this.settings.activePageIndex,
             offset: {
                 left: docCoords.left - currentRegion.left,
                 top: docCoords.top - currentRegion.top
@@ -1350,16 +1351,18 @@ export default class ViewerCore
      *
      * @param pageIndex
      */
-    setCurrentPage (pageIndex)
+    setCurrentPages (activePage, visiblePages)
     {
-        if (this.viewerState.currentPageIndex !== pageIndex)
+        // these arrays will never contain objects so this should be safe
+        if (JSON.stringify(this.viewerState.currentPageIndices) !== JSON.stringify(visiblePages))
         {
-            this.viewerState.currentPageIndex = pageIndex;
-            this.publish("VisiblePageDidChange", pageIndex, this.getPageName(pageIndex));
+            this.viewerState.currentPageIndices = visiblePages;
+            this.viewerState.activePageIndex = activePage;
+            this.publish("VisiblePageDidChange", visiblePages);
 
             // Publish an event if the page we're switching to has other images.
-            if (this.viewerState.manifest.pages[pageIndex].otherImages.length > 0)
-                this.publish('VisiblePageHasAlternateViews', pageIndex);
+            if (this.viewerState.manifest.pages[activePage].otherImages.length > 0)
+                this.publish('VisiblePageHasAlternateViews', activePage);
         }
     }
 
