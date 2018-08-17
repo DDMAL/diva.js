@@ -88,6 +88,6 @@ export default class PageToolsOverlay
         this._pageToolsElem.style.left = pos.left + 'px';
 
         this._pageLabelsElem.style.top = pos.top + 'px';
-        this._pageLabelsElem.style.right = this._viewerCore.getViewport().width - pos.right + 5 + 'px';
+        this._pageLabelsElem.style.left = pos.right - this._pageLabelsElem.clientWidth - 5 + 'px';
     }
 }
