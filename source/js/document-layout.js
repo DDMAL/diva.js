@@ -87,7 +87,7 @@ export default class DocumentLayout
             return {
                 top: region.top + padding.top,
                 left: region.left + padding.left,
-                bottom: region.bottom + padding.top,
+                bottom: region.bottom,
                 right: region.right
             };
         }

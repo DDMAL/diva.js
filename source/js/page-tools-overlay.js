@@ -26,10 +26,15 @@ export default class PageToolsOverlay
             this._pageToolsElem = elt('div', { class: 'diva-page-tools-wrapper' },
                 elt('div', { class: 'diva-page-tools' }, this._buttons)
             );
+
+            this._pageLabelsElem = elt('div', { class: 'diva-page-labels-wrapper'},
+                elt('div', { class: 'diva-page-labels' }, this._viewerCore.settings.manifest.pages[this.page].l)
+            );
         }
 
         this.refresh();
         this._innerElement.appendChild(this._pageToolsElem);
+        this._innerElement.appendChild(this._pageLabelsElem);
     }
 
     _initializePageToolButtons ()
@@ -69,6 +74,7 @@ export default class PageToolsOverlay
     unmount ()
     {
         this._innerElement.removeChild(this._pageToolsElem);
+        this._innerElement.removeChild(this._pageLabelsElem);
     }
 
     refresh ()
@@ -80,5 +86,8 @@ export default class PageToolsOverlay
 
         this._pageToolsElem.style.top = pos.top + 'px';
         this._pageToolsElem.style.left = pos.left + 'px';
+
+        this._pageLabelsElem.style.top = pos.top + 'px';
+        this._pageLabelsElem.style.left = pos.right - this._pageLabelsElem.clientWidth - 5 + 'px';
     }
 }
