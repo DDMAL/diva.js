@@ -65,6 +65,7 @@ export default class ManipulationPlugin
 
         this.boundEscapeListener = this.escapeListener.bind(this);
 
+        // url of currently loaded image
         this.currentImageURL;
     }
 
@@ -223,6 +224,10 @@ export default class ManipulationPlugin
 
     _initializeTools()
     {
+        let title = document.createElement('h1');
+        title.setAttribute('style', 'color: white');
+        title.innerText = 'Filters';
+
         let bwDiv = document.createElement('div');
         let blackWhiteButton = document.createElement('button');
         blackWhiteButton.textContent = "Grayscale";
@@ -318,6 +323,13 @@ export default class ManipulationPlugin
         resetButton.appendChild(buttonText);
         resetButton.onclick = (e) => { this._loadImageInMainArea(e, this.currentImageURL); };
 
+        // keeps track of the order of filter application
+        let filterLog = document.createElement('div');
+        filterLog.setAttribute('style', 'color: white;');
+        filterLog.innerHTML = "<h3> Filter Application Order <h3>";
+        filterLog.id = 'filter-log';
+
+        this._tools.appendChild(title);
         this._tools.appendChild(bwDiv);
         this._tools.appendChild(invDiv);
         this._tools.appendChild(vibDiv);
@@ -327,14 +339,20 @@ export default class ManipulationPlugin
         this._tools.appendChild(sharpDiv);
         this._tools.appendChild(hueDiv);
         this._tools.appendChild(resetButton);
+        this._tools.appendChild(filterLog);
+
+        this._tools.setAttribute('style', 'padding: 0 1em;');
     }
 
     _resetSliders()
     {
-        for (let i = 2, len = this._tools.children.length - 1; i < len; i++)
+        // exclude the 3 buttons and filter log
+        for (let i = 2, len = this._tools.children.length - 2; i < len; i++)
         {
             this._tools.children[i].children[0].value = 0;
         }
+
+        this._tools.children[10].innerHTML = "<h3> Filter Application Order <h3>";
 
         resetFilters();
     }

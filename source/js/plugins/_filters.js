@@ -77,6 +77,15 @@ export function addFilterToQueue (filter, data, adjust)
         if (filtObj.filter.name === '_invert')
             inverted = true;
 
+        // add name to applied filters log
+        let p = document.createElement('p');
+        p.setAttribute('style', 'color: white; margin: 0;');
+
+        // strip leading underscore and capitalize
+        let name = filtObj.filter.name.charAt(1).toUpperCase() + filtObj.filter.name.slice(2);
+        p.innerText = name === 'Onvolve' ? 'Sharpness' : name;
+        document.getElementById('filter-log').appendChild(p);
+
         return filtObj.postData;
     }
 }
