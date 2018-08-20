@@ -64,6 +64,8 @@ export default class ManipulationPlugin
         this._originalData = null;
 
         this.boundEscapeListener = this.escapeListener.bind(this);
+
+        this.currentImageURL;
     }
 
     handleClick(event, settings, publicInstance, pageIndex)
@@ -311,6 +313,11 @@ export default class ManipulationPlugin
         hueDiv.appendChild(hueAdjust);
         hueDiv.appendChild(hueText);
 
+        let resetButton = document.createElement('button');
+        let buttonText = document.createTextNode('Reset Filters');
+        resetButton.appendChild(buttonText);
+        resetButton.onclick = (e) => { this._loadImageInMainArea(e, this.currentImageURL); };
+
         this._tools.appendChild(bwDiv);
         this._tools.appendChild(invDiv);
         this._tools.appendChild(vibDiv);
@@ -319,11 +326,12 @@ export default class ManipulationPlugin
         this._tools.appendChild(threshDiv);
         this._tools.appendChild(sharpDiv);
         this._tools.appendChild(hueDiv);
+        this._tools.appendChild(resetButton);
     }
 
-    _resetTools()
+    _resetSliders()
     {
-        for (let i = 2, len = this._tools.children.length; i < len; i++)
+        for (let i = 2, len = this._tools.children.length - 1; i < len; i++)
         {
             this._tools.children[i].children[0].value = 0;
         }
@@ -333,6 +341,8 @@ export default class ManipulationPlugin
 
     _loadImageInMainArea(event, imageURL)
     {
+        this.currentImageURL = imageURL; // for resetting
+
         let url = `${imageURL}full/full/0/default.jpg`;
 
         this._mainImage = new Image();
@@ -357,7 +367,7 @@ export default class ManipulationPlugin
 
         this._mainImage.src = url;
 
-        this._resetTools();
+        this._resetSliders();
     }
 
     _applyTransformationToImageData(event, func, value)
