@@ -14,7 +14,6 @@ export default class PageToolsOverlay
         this._innerElement = this._viewerCore.getSettings().innerElement;
         this._pageToolsElem = null;
         
-        this.windowWidth = window.innerWidth;
         this.wider = false;
     }
 
@@ -85,86 +84,24 @@ export default class PageToolsOverlay
             incorporateViewport: true
         });
 
-        const setLefts = () =>
-        {
-            if (this._viewerCore.settings.inBookLayout)
-            {
-                this._pageToolsElem.style.left = this.bookIconLeft;
-                this._pageLabelsElem.style.left = this.bookLabelLeft;
-            }
-            else
-            {
-                this._pageToolsElem.style.left = this.docIconLeft;
-                this._pageLabelsElem.style.left = this.docLabelLeft;
-            }
-        }
-
-        // get the left positions for document and book view
-        Diva.Events.subscribe('ViewerDidLoad', () => { this.getViewsLefts(pos); });
-        // handle view switch
-        Diva.Events.subscribe('ViewDidSwitch', setLefts);
-        Diva.Events.subscribe('ViewerDidScroll', setLefts)
-
-        if (!this.wider)
+        if (!this.wider) // not resized to wider than default
         {
             this._pageToolsElem.style.top = pos.top + 'px';
             this._pageToolsElem.style.left = pos.left + 'px';
 
             this._pageLabelsElem.style.top = pos.top + 'px';
-            this._pageLabelsElem.style.left = pos.right - this._pageLabelsElem.clientWidth - 5 + 'px';
-        }
-
-        window.addEventListener('resize', () =>
-        {
-            // if resizing larger, fix left styles
-            if (window.innerWidth > this.windowWidth)
-            {
-                setLefts();
-                this.wider = true;
-            } else
-            {
-                this.wider = false;
-            }
-        });
-    }
-
-    getViewsLefts (pos)
-    {
-        if (this._viewerCore.settings.inBookLayout)
-        {
-            // get book view left styles
-            this.bookIconLeft = pos.left + 'px';
-            this.bookLabelLeft = pos.right - this._pageLabelsElem.clientWidth - 5 + 'px';
-
-            // switch to document and get lefts
-            this._viewerCore.publicInstance.changeView('document');
-            pos = this._viewerCore.getPageRegion(this.page, {
-                includePadding: true,
-                incorporateViewport: true
-            });
-            this.docIconLeft = pos.left + 'px';
-            this.docLabelLeft = pos.right - this._pageLabelsElem.clientWidth - 5 + 'px';
-
-            // switch back
-            this._viewerCore.publicInstance.changeView('book');
+            this._pageLabelsElem.style.left = pos.right - this.labelWidth - 5 + 'px';
         } 
+
+        if (window.innerWidth > this.innerWidth)
+        {
+            this._pageToolsElem.style.left = this.fixedIconLeft;
+            this._pageLabelsElem.style.left = this.fixedLabelLeft;
+            this.wider = true;
+        }
         else
         {
-            // get doc view left styles
-            this.docIconLeft = pos.left + 'px';
-            this.docLabelLeft = pos.right - this._pageLabelsElem.clientWidth - 5 + 'px';
-
-            // switch to document and get lefts
-            this._viewerCore.publicInstance.changeView('book');
-            pos = this._viewerCore.getPageRegion(this.page, {
-                includePadding: true,
-                incorporateViewport: true
-            });
-            this.bookIconLeft = pos.left + 'px';
-            this.bookLabelLeft = pos.right - this._pageLabelsElem.clientWidth - 5 + 'px';
-
-            // switch back
-            this._viewerCore.publicInstance.changeView('document');
+            this.wider = false;
         }
     }
 }
