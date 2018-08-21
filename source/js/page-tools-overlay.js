@@ -90,7 +90,7 @@ export default class PageToolsOverlay
             this._pageToolsElem.style.left = pos.left + 'px';
 
             this._pageLabelsElem.style.top = pos.top + 'px';
-            this._pageLabelsElem.style.left = pos.right - this.labelWidth - 5 + 'px';
+            this._pageLabelsElem.style.left = pos.right - this.labelWidth - 15 + 'px';
         } 
 
         if (window.innerWidth > this.innerWidth)

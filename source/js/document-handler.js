@@ -45,8 +45,11 @@ export default class DocumentHandler
                         incorporateViewport: true
                     });
 
-                    overlay.fixedIconLeft = pos.left + 'px';
-                    overlay.fixedLabelLeft = pos.right - labelWidth - 5 + 'px';
+                    const fixedIconLeft = pos.left + 'px';
+                    const fixedLabelLeft = pos.right - labelWidth - 15 + 'px';
+
+                    overlay.fixedIconLeft = fixedIconLeft;
+                    overlay.fixedLabelLeft = fixedLabelLeft;
                 });
             }
         }
