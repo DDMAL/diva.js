@@ -16,7 +16,7 @@ import {
  N milliseconds. If `immediate` is passed, trigger the function on the
  leading edge, instead of the trailing.
  */
-function debounce(func, wait, immediate)
+function debounce (func, wait, immediate)
 {
     let timeout;
     return function ()
@@ -46,7 +46,7 @@ function debounce(func, wait, immediate)
  **/
 export default class ManipulationPlugin
 {
-    constructor(core)
+    constructor (core)
     {
         this._core = core;
         this.pageToolsIcon = this.createIcon();
@@ -69,7 +69,7 @@ export default class ManipulationPlugin
         this.currentImageURL;
     }
 
-    handleClick(event, settings, publicInstance, pageIndex)
+    handleClick (event, settings, publicInstance, pageIndex)
     {
         document.body.style.overflow = 'hidden';
         this._backdrop = document.createElement('div');
@@ -106,7 +106,7 @@ export default class ManipulationPlugin
     *  here so that the entire Diva object can be passed to the client with no external
     *  dependencies.
     **/
-    createIcon()
+    createIcon ()
     {
         const manipulationIcon = document.createElement('div');
         manipulationIcon.classList.add('diva-manipulation-icon');
@@ -162,7 +162,7 @@ export default class ManipulationPlugin
         return manipulationIcon;
     }
 
-    escapeListener(event)
+    escapeListener (event)
     {
         if (event.keyCode === 27)
         {
@@ -172,7 +172,7 @@ export default class ManipulationPlugin
         }
     }
 
-    _initializeSidebar()
+    _initializeSidebar ()
     {
         // 150px wide images for the sidebar.
         let thumbnailSize = "150";
@@ -222,7 +222,7 @@ export default class ManipulationPlugin
         });
     }
 
-    _initializeTools()
+    _initializeTools ()
     {
         let title = document.createElement('h1');
         title.classList.add('manipulation-tools-text');
@@ -358,7 +358,7 @@ export default class ManipulationPlugin
         this._tools.setAttribute('style', 'padding: 0 1em;');
     }
 
-    _resetSliders()
+    _resetSliders ()
     {
         // check if element is a slider, if so then reset 
         for (let i = 0, len = this._tools.children.length; i < len; i++)
@@ -373,7 +373,7 @@ export default class ManipulationPlugin
         resetFilters();
     }
 
-    _loadImageInMainArea(event, imageURL)
+    _loadImageInMainArea (event, imageURL)
     {
         this.currentImageURL = imageURL; // for resetting
 
@@ -404,7 +404,7 @@ export default class ManipulationPlugin
         this._resetSliders();
     }
 
-    _applyTransformationToImageData(event, func, value)
+    _applyTransformationToImageData (event, func, value)
     {
         let cw = this._canvas.width;
         let ch = this._canvas.height;
@@ -421,7 +421,7 @@ export default class ManipulationPlugin
         this._ctx.putImageData(newData, 0, 0);
     }
 
-    _applyConvolutionFilter(event, func, value)
+    _applyConvolutionFilter (event, func, value)
     {
         let cw = this._canvas.width;
         let ch = this._canvas.height;
