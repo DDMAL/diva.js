@@ -346,13 +346,15 @@ export default class ManipulationPlugin
 
     _resetSliders()
     {
-        // exclude the 3 buttons and filter log
-        for (let i = 2, len = this._tools.children.length - 2; i < len; i++)
+        // check if element is a slider, if so then reset 
+        for (let i = 0, len = this._tools.children.length; i < len; i++)
         {
-            this._tools.children[i].children[0].value = 0;
+            let tool = this._tools.children[i].children[0];
+            if (tool && tool.type === 'range')
+                tool.value = 0;
         }
 
-        this._tools.children[10].innerHTML = "<h3> Filter Application Order <h3>";
+        document.getElementById('filter-log').innerHTML = "<h3> Filter Application Order <h3>";
 
         resetFilters();
     }
