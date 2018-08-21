@@ -1,5 +1,5 @@
 
-// stores an array of objects, each object stores the function, image data, and adjust to apply
+// stores an array of objects, each object stores the function, image data, adjust to apply, and name
 let _filterQueue = [];
 // stores whether the invert filter was used (for if it should be reapplied)
 let inverted = false;
@@ -10,23 +10,29 @@ export function resetFilters ()
     inverted = false;
 }
 
-// add a filter to the array. if it is new, apply the filter's function to the image data of
+// Add a filter to the array. If it is new, apply the filter's function to the image data of
 // the previous filter's returned image data (or the default image data if it's the first filter),
-// and return this new image data. pass string name since function.name with minified = bad
+// and return this new image data. Pass string 'name' since function.name with minifiedJS = bad
+// Threshold is exclusive to other filters and vice versa
 export function addFilterToQueue (data, filter, adjust, name)
 {
     // index of the filter in the queue, -1 if not found
     let index = _filterQueue.findIndex(f => f.filter.name === filter.name);
-    if (index !== -1)
+    if (index !== -1) // adjust a filter already in the queue
     {
-        // adjust a filter already in the queue
         let filtObj = _filterQueue[index];
         filtObj.adjust = adjust;
         
         // all filters except sharpness use _apply (from within their private function 'filter')
         // whereas sharpness uses convolve, so need to check (ie. can't generalize for all filters)
         if (filtObj.name === 'Sharpness')
-            filtObj.postData = convolve(filtObj.prevData, filtObj.adjust);
+        {
+            // if adjust[1] is 0, then sharpness should be reset (cancelled)
+            if (filtObj.adjust[1] === 0)
+                filtObj.postData = filtObj.prevData;
+            else
+                filtObj.postData = convolve(filtObj.prevData, filtObj.adjust);
+        }
         else if (filtObj.name === 'Invert')
         {
             // invert filter should toggle, so use post-alteration image data
@@ -47,7 +53,10 @@ export function addFilterToQueue (data, filter, adjust, name)
             otherFiltObj.prevData = _filterQueue[i - 1].postData; // starts at filt
 
             if (otherFiltObj.name === 'Sharpness')
-                otherFiltObj.postData = convolve(otherFiltObj.prevData, otherFiltObj.adjust);
+                if (otherFiltObj.adjust[1] === 0)
+                    otherFiltObj.postData = otherFiltObj.prevData;
+                else
+                    otherFiltObj.postData = convolve(otherFiltObj.prevData, otherFiltObj.adjust);
             else 
                 otherFiltObj.postData = _apply(otherFiltObj.prevData, otherFiltObj.filter, otherFiltObj.adjust);
 
@@ -58,9 +67,35 @@ export function addFilterToQueue (data, filter, adjust, name)
         // only two filters in queue and second was modified
         return filtObj.postData; 
     }
-    else
+    else // add new filter to the queue
     {
-        // add new filter to the queue
+        // handle threshold uniqueness
+        if (name === 'Threshold' || (_filterQueue[0] && _filterQueue[0].name === 'Threshold'))
+        {
+            // reset filter queue
+            resetFilters();
+
+            // reset appropriate sliders
+            let tools = document.getElementsByClassName('manipulation-tools')[0];
+            for (let i = 0, len = tools.children.length; i < len; i++)
+            {
+                let tool = tools.children[i].children[0];
+
+                if (tool && tool.type === 'range')
+                {
+                    let isThreshold = tool.parentElement.textContent.includes('Threshold');
+
+                    if (name === 'Threshold' && !isThreshold) // reset all but threshold
+                        tool.value = 0;
+                    else if (name !== 'Threshold' && isThreshold) // reset only threshold
+                        tool.value = 0;
+                }
+            }
+
+            // reset log
+            document.getElementById('filter-log').innerHTML = "<h3> Filter Application Order <h3>";
+        }
+
         _filterQueue.push({
             filter: filter,
             prevData: _filterQueue.length === 0 ? data : _filterQueue[_filterQueue.length - 1].postData,
@@ -481,11 +516,11 @@ function convolve (data, weights, opaque)
 
 export function sharpen (data, adjust)
 {
-    if (adjust === 0)
-        return data;
-
     let adj = adjust ? adjust : 100;
     adj /= 100;
+
+    if (adjust === 0) // reset value
+        adj = 0;
 
     let weights = [
         0, -adj, 0,

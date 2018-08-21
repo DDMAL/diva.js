@@ -228,6 +228,10 @@ export default class ManipulationPlugin
         title.setAttribute('style', 'color: white');
         title.innerText = 'Filters';
 
+        let compatibleTitle = document.createElement('h3');
+        compatibleTitle.setAttribute('style', 'color: white; margin: 0.5em 0 0.2em 0;');
+        compatibleTitle.innerText = 'Compatible Filters';
+
         let bwDiv = document.createElement('div');
         let blackWhiteButton = document.createElement('button');
         blackWhiteButton.textContent = "Grayscale";
@@ -279,19 +283,6 @@ export default class ManipulationPlugin
         invertButton.addEventListener('click', (e) => this._applyTransformationToImageData(e, invert));
         invDiv.appendChild(invertButton);
 
-        let threshDiv = document.createElement('div');
-        let thresholdAdjust = document.createElement('input');
-        let thresholdText = document.createTextNode('  [ Threshold ]');
-        threshDiv.setAttribute('style', 'color: white;');
-        thresholdAdjust.setAttribute('type', 'range');
-        thresholdAdjust.setAttribute('max', 255);
-        thresholdAdjust.setAttribute('min', 64);
-        thresholdAdjust.setAttribute('value', 0);
-
-        thresholdAdjust.addEventListener('change', debounce((e) => this._applyTransformationToImageData(e, threshold, e.target.value), 250));
-        threshDiv.appendChild(thresholdAdjust);
-        threshDiv.appendChild(thresholdText);
-
         let sharpDiv = document.createElement('div');
         let sharpenAdjust = document.createElement('input');
         let sharpenText = document.createTextNode('  [ Sharpness ]');
@@ -318,7 +309,26 @@ export default class ManipulationPlugin
         hueDiv.appendChild(hueAdjust);
         hueDiv.appendChild(hueText);
 
+        let uniqueTitle = document.createElement('h3');
+        uniqueTitle.setAttribute('style', 'color: white; margin: 0.5em 0 0.2em 0;');
+        uniqueTitle.innerText = 'Unique Filters';
+
+        let threshDiv = document.createElement('div');
+        let thresholdAdjust = document.createElement('input');
+        let thresholdText = document.createTextNode('  [ Threshold ]');
+        threshDiv.setAttribute('style', 'color: white;');
+        thresholdAdjust.setAttribute('type', 'range');
+        thresholdAdjust.setAttribute('max', 255);
+        thresholdAdjust.setAttribute('min', 64);
+        thresholdAdjust.setAttribute('value', 0);
+
+        thresholdAdjust.addEventListener('change', debounce((e) => this._applyTransformationToImageData(e, threshold, e.target.value), 250));
+        threshDiv.appendChild(thresholdAdjust);
+        threshDiv.appendChild(thresholdText);
+
         let resetButton = document.createElement('button');
+        resetButton.id = 'reset-filters-button';
+        resetButton.setAttribute('style', 'margin-top: 1em;');
         let buttonText = document.createTextNode('Reset Filters');
         resetButton.appendChild(buttonText);
         resetButton.onclick = (e) => { this._loadImageInMainArea(e, this.currentImageURL); };
@@ -330,14 +340,16 @@ export default class ManipulationPlugin
         filterLog.id = 'filter-log';
 
         this._tools.appendChild(title);
+        this._tools.appendChild(compatibleTitle);
         this._tools.appendChild(bwDiv);
         this._tools.appendChild(invDiv);
         this._tools.appendChild(vibDiv);
         this._tools.appendChild(brightDiv);
         this._tools.appendChild(contrastDiv);
-        this._tools.appendChild(threshDiv);
         this._tools.appendChild(sharpDiv);
         this._tools.appendChild(hueDiv);
+        this._tools.appendChild(uniqueTitle);
+        this._tools.appendChild(threshDiv);
         this._tools.appendChild(resetButton);
         this._tools.appendChild(filterLog);
 
