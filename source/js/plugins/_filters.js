@@ -481,6 +481,9 @@ function convolve (data, weights, opaque)
 
 export function sharpen (data, adjust)
 {
+    if (adjust === 0)
+        return data;
+
     let adj = adjust ? adjust : 100;
     adj /= 100;
 
