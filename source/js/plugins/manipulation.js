@@ -225,11 +225,12 @@ export default class ManipulationPlugin
     _initializeTools()
     {
         let title = document.createElement('h1');
-        title.setAttribute('style', 'color: white');
-        title.innerText = 'Filters';
+        title.classList.add('manipulation-tools-text');
+        title.innerText = 'Tools';
 
         let compatibleTitle = document.createElement('h3');
-        compatibleTitle.setAttribute('style', 'color: white; margin: 0.5em 0 0.2em 0;');
+        compatibleTitle.setAttribute('style', 'margin: 0.5em 0 0.3em 0;');
+        compatibleTitle.classList.add('manipulation-tools-text');
         compatibleTitle.innerText = 'Compatible Filters';
 
         let bwDiv = document.createElement('div');
@@ -240,8 +241,8 @@ export default class ManipulationPlugin
 
         let vibDiv = document.createElement('div');
         let vibranceAdjust = document.createElement('input');
-        let vibranceText = document.createTextNode(' [ Vibrance ]');
-        vibDiv.setAttribute('style', 'color: white;');
+        let vibranceText = document.createTextNode('Vibrance');
+        vibDiv.classList.add('manipulation-tools-text');
         vibranceAdjust.setAttribute('type', 'range');
         vibranceAdjust.setAttribute('max', 100);
         vibranceAdjust.setAttribute('min', -100);
@@ -253,8 +254,8 @@ export default class ManipulationPlugin
 
         let brightDiv = document.createElement('div');
         let brightnessAdjust = document.createElement('input');
-        let brightnessText = document.createTextNode(' [ Brightness ]');
-        brightDiv.setAttribute('style', 'color: white;');
+        let brightnessText = document.createTextNode('Brightness');
+        brightDiv.classList.add('manipulation-tools-text');
         brightnessAdjust.setAttribute('type', 'range');
         brightnessAdjust.setAttribute('max', 100);
         brightnessAdjust.setAttribute('min', -100);
@@ -266,8 +267,8 @@ export default class ManipulationPlugin
 
         let contrastDiv = document.createElement('div');
         let contrastAdjust = document.createElement('input');
-        let contrastText = document.createTextNode(' [ Contrast ]');
-        contrastDiv.setAttribute('style', 'color: white;');
+        let contrastText = document.createTextNode('Contrast');
+        contrastDiv.classList.add('manipulation-tools-text');
         contrastAdjust.setAttribute('type', 'range');
         contrastAdjust.setAttribute('max', 100);
         contrastAdjust.setAttribute('min', -100);
@@ -285,8 +286,8 @@ export default class ManipulationPlugin
 
         let sharpDiv = document.createElement('div');
         let sharpenAdjust = document.createElement('input');
-        let sharpenText = document.createTextNode('  [ Sharpness ]');
-        sharpDiv.setAttribute('style', 'color: white;');
+        let sharpenText = document.createTextNode('Sharpness');
+        sharpDiv.classList.add('manipulation-tools-text');
         sharpenAdjust.setAttribute('type', 'range');
         sharpenAdjust.setAttribute('max', 100);
         sharpenAdjust.setAttribute('min', 0);
@@ -298,8 +299,8 @@ export default class ManipulationPlugin
 
         let hueDiv = document.createElement('div');
         let hueAdjust = document.createElement('input');
-        let hueText = document.createTextNode('  [ Hue ]');
-        hueDiv.setAttribute('style', 'color: white;');
+        let hueText = document.createTextNode('Hue');
+        hueDiv.classList.add('manipulation-tools-text');
         hueAdjust.setAttribute('type', 'range');
         hueAdjust.setAttribute('max', 100);
         hueAdjust.setAttribute('min', 0);
@@ -310,13 +311,14 @@ export default class ManipulationPlugin
         hueDiv.appendChild(hueText);
 
         let uniqueTitle = document.createElement('h3');
-        uniqueTitle.setAttribute('style', 'color: white; margin: 0.5em 0 0.2em 0;');
+        uniqueTitle.classList.add('manipulation-tools-text');
+        uniqueTitle.setAttribute('style', 'margin: 0.5em 0 0.2em 0;');
         uniqueTitle.innerText = 'Unique Filters';
 
         let threshDiv = document.createElement('div');
         let thresholdAdjust = document.createElement('input');
-        let thresholdText = document.createTextNode('  [ Threshold ]');
-        threshDiv.setAttribute('style', 'color: white;');
+        let thresholdText = document.createTextNode('Threshold');
+        threshDiv.classList.add('manipulation-tools-text');
         thresholdAdjust.setAttribute('type', 'range');
         thresholdAdjust.setAttribute('max', 255);
         thresholdAdjust.setAttribute('min', 64);
@@ -335,7 +337,7 @@ export default class ManipulationPlugin
 
         // keeps track of the order of filter application
         let filterLog = document.createElement('div');
-        filterLog.setAttribute('style', 'color: white;');
+        filterLog.classList.add('manipulation-tools-text');
         filterLog.innerHTML = "<h3> Filter Application Order <h3>";
         filterLog.id = 'filter-log';
 
