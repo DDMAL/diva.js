@@ -10,9 +10,10 @@ export function resetFilters ()
     inverted = false;
 }
 
-// add a filter to the array. if it is new, apply the filter's function to the image data of the previous filter's 
-// returned image data (or the default image data if it's the first filter), and return this new image data
-export function addFilterToQueue (data, filter, adjust)
+// add a filter to the array. if it is new, apply the filter's function to the image data of
+// the previous filter's returned image data (or the default image data if it's the first filter),
+// and return this new image data. pass string name since function.name with minified = bad
+export function addFilterToQueue (data, filter, adjust, name)
 {
     // index of the filter in the queue, -1 if not found
     let index = _filterQueue.findIndex(f => f.filter.name === filter.name);
@@ -24,10 +25,11 @@ export function addFilterToQueue (data, filter, adjust)
         
         // all filters except sharpness use _apply (from within their private function 'filter')
         // whereas sharpness uses convolve, so need to check (ie. can't generalize for all filters)
-        if (filtObj.filter.name === 'convolve') 
-            filtObj.postData = filtObj.filter(filtObj.prevData, filtObj.adjust);
-        else if (filtObj.filter.name === '_invert') // invert filter should toggle, so use post-alteration image data
+        if (filtObj.name === 'Sharpness')
+            filtObj.postData = convolve(filtObj.prevData, filtObj.adjust);
+        else if (filtObj.name === 'Invert')
         {
+            // invert filter should toggle, so use post-alteration image data
             filtObj.postData = _apply(filtObj.postData, filtObj.filter, filtObj.adjust);
             inverted = !inverted;
         }
@@ -39,13 +41,13 @@ export function addFilterToQueue (data, filter, adjust)
         {
             let otherFiltObj = _filterQueue[i];
 
-            if (otherFiltObj.filter.name === '_invert' && !inverted) // don't reinvert the image
+            if (otherFiltObj.name === 'Invert' && !inverted) // don't reinvert the image
                 continue;
 
             otherFiltObj.prevData = _filterQueue[i - 1].postData; // starts at filt
 
-            if (otherFiltObj.filter.name === 'convolve') 
-                otherFiltObj.postData = otherFiltObj.filter(otherFiltObj.prevData, otherFiltObj.adjust);
+            if (otherFiltObj.name === 'Sharpness')
+                otherFiltObj.postData = convolve(otherFiltObj.prevData, otherFiltObj.adjust);
             else 
                 otherFiltObj.postData = _apply(otherFiltObj.prevData, otherFiltObj.filter, otherFiltObj.adjust);
 
@@ -62,27 +64,25 @@ export function addFilterToQueue (data, filter, adjust)
         _filterQueue.push({
             filter: filter,
             prevData: _filterQueue.length === 0 ? data : _filterQueue[_filterQueue.length - 1].postData,
-            adjust: adjust
+            adjust: adjust,
+            name: name
         });
 
         let filtObj = _filterQueue[_filterQueue.length - 1];
 
-        if (filtObj.filter.name === 'convolve') 
-            filtObj.postData = filtObj.filter(filtObj.prevData, filtObj.adjust);
+        if (filtObj.name === 'Sharpness')
+            filtObj.postData = convolve(filtObj.prevData, filtObj.adjust);
         else 
             filtObj.postData = _apply(filtObj.prevData, filtObj.filter, filtObj.adjust);
 
         // invert filter was added to queue
-        if (filtObj.filter.name === '_invert')
+        if (filtObj.name === 'Invert')
             inverted = true;
 
         // add name to applied filters log
         let p = document.createElement('p');
         p.setAttribute('style', 'color: white; margin: 0;');
-
-        // strip leading underscore and capitalize
-        let name = filtObj.filter.name.charAt(1).toUpperCase() + filtObj.filter.name.slice(2);
-        p.innerText = name === 'Onvolve' ? 'Sharpness' : name;
+        p.innerText = filtObj.name;
         document.getElementById('filter-log').appendChild(p);
 
         return filtObj.postData;
@@ -140,7 +140,7 @@ function _apply (data, pixelFunc, adjust)
  **/
 export function grayscale(data)
 {
-    return addFilterToQueue(data, _grayscale);
+    return addFilterToQueue(data, _grayscale, null, 'Grayscale');
 }
 
 /**
@@ -162,7 +162,7 @@ function _grayscale (r, g, b)
 
 export function vibrance (data, adjust)
 {
-    return addFilterToQueue(data, _vibrance, adjust);
+    return addFilterToQueue(data, _vibrance, adjust, 'Vibrance');
 }
 
 /**
@@ -196,7 +196,7 @@ function _vibrance (r, g, b, adjust)
 
 export function brightness (data, adjust)
 {
-    return addFilterToQueue(data, _brightness, adjust);
+    return addFilterToQueue(data, _brightness, adjust, 'Brightness');
 }
 
 function _brightness (r, g, b, adjust)
@@ -213,7 +213,7 @@ function _brightness (r, g, b, adjust)
 
 export function contrast (data, adjust)
 {
-    return addFilterToQueue(data, _contrast, adjust);
+    return addFilterToQueue(data, _contrast, adjust, 'Contrast');
 }
 
 /**
@@ -260,7 +260,7 @@ function _contrast (r, g, b, adjust)
  **/
 export function invert(data)
 {
-    return addFilterToQueue(data, _invert);
+    return addFilterToQueue(data, _invert, null, 'Invert');
 }
 
 /**
@@ -284,7 +284,7 @@ function _invert (r, g, b)
 
 export function threshold(data, adjust)
 {
-    return addFilterToQueue(data, _threshold, adjust);
+    return addFilterToQueue(data, _threshold, adjust, 'Threshold');
 }
 
 /**
@@ -310,7 +310,7 @@ function _threshold (r, g, b, adjust)
 
 export function hue (data, adjust)
 {
-    return addFilterToQueue(data, _hue, adjust);
+    return addFilterToQueue(data, _hue, adjust, 'Hue');
 }
 
 function _hue (r, g, b, adjust)
@@ -493,5 +493,5 @@ export function sharpen (data, adjust)
         0, -adj, 0
     ];
 
-    return addFilterToQueue(data, convolve, weights);
+    return addFilterToQueue(data, convolve, weights, 'Sharpness');
 }
