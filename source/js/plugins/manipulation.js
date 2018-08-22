@@ -9,7 +9,7 @@ import {
     sharpen,
     resetFilters
 } from "./_filters";
-import '../utils/dragscroll';
+import gestureEvents from '../gesture-events';
 
 /**
  * Returns a function, that, as long as it continues to be invoked, will not
@@ -63,6 +63,10 @@ export default class ManipulationPlugin
         // store the data for the original main image so that we
         // do the processing on that, not on a previously-processed image.
         this._originalData = null;
+
+        // zoom stuff
+        this.maxZoom = 5;
+        this.minZoom = 1;
         this.zoom = 1;
 
         this.boundEscapeListener = this.escapeListener.bind(this);
@@ -82,10 +86,14 @@ export default class ManipulationPlugin
 
         this._mainArea = document.createElement('div');
         this._mainArea.classList.add('manipulation-main-area');
+
         // enable scroll by dragging
         this._mainArea.classList.add('dragscroll');
         this._mainArea.addEventListener('mousedown', () => { this._mainArea.classList.add('grabbing'); });
         this._mainArea.addEventListener('mouseup', () => { this._mainArea.classList.remove('grabbing'); });
+
+        // add double click zoom handler
+        gestureEvents.onDoubleClick(this._mainArea, handleDblClick.bind(this));
 
         this._tools = document.createElement('div');
         this._tools.classList.add('manipulation-tools');
@@ -108,6 +116,19 @@ export default class ManipulationPlugin
 
         window.resetDragscroll();
         this._loadImageInMainArea(event, this._page.url);
+
+        function handleDblClick (e)
+        {
+            let newZoom = e.ctrlKey ? this.zoom - 1 : this.zoom + 1;
+            if (newZoom < this.minZoom || newZoom > this.maxZoom)
+                return;
+
+            // update slider
+            let slider = document.getElementById('zoom-slider');
+            slider.value = newZoom;
+
+            this.handleZoom(e, newZoom);
+        }
     }
 
     /*
@@ -243,9 +264,10 @@ export default class ManipulationPlugin
         let zoomText = document.createTextNode('Zoom');
         zoomDiv.classList.add('manipulation-tools-text');
         zoomAdjust.setAttribute('type', 'range');
-        zoomAdjust.setAttribute('max', 5);
-        zoomAdjust.setAttribute('min', 1);
-        zoomAdjust.setAttribute('value', 1);
+        zoomAdjust.setAttribute('max', this.maxZoom);
+        zoomAdjust.setAttribute('min', this.minZoom);
+        zoomAdjust.setAttribute('value', this.zoom);
+        zoomAdjust.id = 'zoom-slider';
 
         zoomDiv.addEventListener('change', debounce((e) => this.handleZoom(e, e.target.value), 250));
         zoomDiv.appendChild(zoomAdjust);
