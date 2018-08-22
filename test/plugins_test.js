@@ -52,7 +52,7 @@ describe('Plugins', function ()
             assert.strictEqual(div.style.display, 'none', 'Div should be hidden');
 
             icon.click(); 
-            document.getElementById('closeMetadata').click();
+            document.getElementsByClassName('close-button')[0].click();
             assert.strictEqual(div.style.display, 'none', 'Div should be hidden from close button');
 
             // trigger drag events

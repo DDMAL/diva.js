@@ -254,6 +254,16 @@ export default class ManipulationPlugin
 
     _initializeTools ()
     {
+        let closeButton = document.createElement('button');
+        closeButton.innerHTML = '&#10006';
+        closeButton.classList.add('close-button');
+        closeButton.setAttribute('style', 'display: absolute; top: 1em; right: 1em;');
+        closeButton.onclick = () =>
+        {
+            document.body.style.overflow = 'auto';
+            this._core.parentObject.removeChild(this._backdrop);
+        };
+
         let header = document.createElement('h1');
         header.setAttribute('style', 'margin-bottom: 0.3em;');
         header.classList.add('manipulation-tools-text');
@@ -402,6 +412,7 @@ export default class ManipulationPlugin
         filterLog.innerHTML = "<h3> Filter Application Order <h3>";
         filterLog.id = 'filter-log';
 
+        this._tools.appendChild(closeButton);
         this._tools.appendChild(header);
         this._tools.appendChild(zoomDiv);
         this._tools.appendChild(filtersTitle);
@@ -556,7 +567,7 @@ export default class ManipulationPlugin
         this._ctx.scale(scale, scale);
         this._ctx.drawImage(tempCanvas, 0, 0);
 
-        this.zoom = value;
+        this.zoom = parseInt(value, 10);
     }
 }
 

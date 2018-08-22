@@ -473,12 +473,12 @@
     text-align: center;
 }
 
-#closeMetadata {
+.close-button {
     position: absolute;
     right: 1em;
     top: 1em;
 }
 
-#closeMetadata:hover {
+.close-button:hover {
   color: tomato;
 }

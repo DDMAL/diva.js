@@ -57,7 +57,7 @@ export default class MetadataPlugin
 
             let closeButton = document.createElement('button');
             closeButton.innerHTML = '&#10006';
-            closeButton.id = 'closeMetadata';
+            closeButton.classList.add('close-button');
             closeButton.onclick = () => 
             {
                 metadataDiv.style.display = 'none';            
