@@ -63,6 +63,7 @@ export default class ManipulationPlugin
         // store the data for the original main image so that we
         // do the processing on that, not on a previously-processed image.
         this._originalData = null;
+        this.zoom = 1;
 
         this.boundEscapeListener = this.escapeListener.bind(this);
 
@@ -448,6 +449,9 @@ export default class ManipulationPlugin
 
         this._ctx.clearRect(0, 0, cw, ch);
         this._ctx.putImageData(newData, 0, 0);
+
+        // necessary to reset the current zoom level (since ImageData gets altered at zoom 1)
+        this.handleZoom(event, this.zoom);
     }
 
     _applyConvolutionFilter (event, func, value)
@@ -466,6 +470,9 @@ export default class ManipulationPlugin
 
         this._ctx.clearRect(0, 0, cw, ch);
         this._ctx.putImageData(newData, 0, 0);
+
+        // necessary to reset the current zoom level (since ImageData gets altered at zoom 1)
+        this.handleZoom(event, this.zoom);
     }
 
     handleZoom (event, value)
@@ -486,7 +493,8 @@ export default class ManipulationPlugin
         this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
         this._ctx.scale(scale, scale);
         this._ctx.drawImage(tempCanvas, 0, 0);
-        // this._originalData = this._ctx.getImageData(0, 0, this._canvas.width, this._canvas.height);
+
+        this.zoom = value;
     }
 }
 
