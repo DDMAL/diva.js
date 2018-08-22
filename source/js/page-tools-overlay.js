@@ -13,8 +13,6 @@ export default class PageToolsOverlay
 
         this._innerElement = this._viewerCore.getSettings().innerElement;
         this._pageToolsElem = null;
-        
-        this.wider = false;
     }
 
     mount ()
@@ -84,24 +82,14 @@ export default class PageToolsOverlay
             incorporateViewport: true
         });
 
-        if (!this.wider) // not resized to wider than default
-        {
-            this._pageToolsElem.style.top = pos.top + 'px';
-            this._pageToolsElem.style.left = pos.left + 'px';
+        // if window is resized larger, a margin is created - need to subtract this from offsets
+        let marginLeft = window.getComputedStyle(this._innerElement, null).getPropertyValue('margin-left');
+        let labelWidth = this._pageLabelsElem.clientWidth;
 
-            this._pageLabelsElem.style.top = pos.top + 'px';
-            this._pageLabelsElem.style.left = pos.right - this.labelWidth - 15 + 'px';
-        } 
+        this._pageToolsElem.style.top = pos.top + 'px';
+        this._pageToolsElem.style.left = pos.left - parseFloat(marginLeft) + 'px';
 
-        if (window.innerWidth > this.innerWidth)
-        {
-            this._pageToolsElem.style.left = this.fixedIconLeft;
-            this._pageLabelsElem.style.left = this.fixedLabelLeft;
-            this.wider = true;
-        }
-        else
-        {
-            this.wider = false;
-        }
+        this._pageLabelsElem.style.top = pos.top + 'px';
+        this._pageLabelsElem.style.left = pos.right - parseFloat(marginLeft) - labelWidth - 5 + 'px';
     }
 }

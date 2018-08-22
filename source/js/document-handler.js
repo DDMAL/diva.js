@@ -19,38 +19,6 @@ export default class DocumentHandler
                 const overlay = new PageToolsOverlay(i, viewerCore);
                 this._overlays.push(overlay);
                 this._viewerCore.addPageOverlay(overlay);
-
-                overlay.innerWidth = window.innerWidth;
-
-                // create dummy label for width calculation
-                // this is necessary because the _pageToolsElem is only created on mount
-                // so there's no other way to get its width from here or page-tools-overlay.js
-                let dummyLabel = document.createElement('span');
-                dummyLabel.innerHTML = viewerCore.settings.manifest.pages[i].l;
-                dummyLabel.classList.add('diva-page-labels');
-                dummyLabel.setAttribute('style', 'display: inline-block;');
-                document.body.appendChild(dummyLabel);
-                let labelWidth = dummyLabel.clientWidth;
-                document.body.removeChild(dummyLabel);
-
-                overlay.labelWidth = labelWidth;
-
-                // assign default left values for icon/label for each page
-                // since overlays are only mounted on page render, we need to set the
-                // fixed left values outside of its class (ie. here)
-                Diva.Events.subscribe('ViewerDidLoad', () => // jshint ignore:line
-                {
-                    let pos = viewerCore.getPageRegion(i, {
-                        includePadding: true,
-                        incorporateViewport: true
-                    });
-
-                    const fixedIconLeft = pos.left + 'px';
-                    const fixedLabelLeft = pos.right - labelWidth - 15 + 'px';
-
-                    overlay.fixedIconLeft = fixedIconLeft;
-                    overlay.fixedLabelLeft = fixedLabelLeft;
-                });
             }
         }
     }
