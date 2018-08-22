@@ -1353,8 +1353,7 @@ export default class ViewerCore
      */
     setCurrentPages (activePage, visiblePages)
     {
-        // these arrays will never contain objects so this should be safe
-        if (JSON.stringify(this.viewerState.currentPageIndices) !== JSON.stringify(visiblePages))
+        if (!arraysEqual(this.viewerState.currentPageIndices, visiblePages))
         {
             this.viewerState.currentPageIndices = visiblePages;
             this.viewerState.activePageIndex = activePage;
@@ -1363,6 +1362,19 @@ export default class ViewerCore
             // Publish an event if the page we're switching to has other images.
             if (this.viewerState.manifest.pages[activePage].otherImages.length > 0)
                 this.publish('VisiblePageHasAlternateViews', activePage);
+        }
+
+        function arraysEqual (a, b)
+        {
+            if (a.length !== b.length)
+                return false;
+            
+            for (let i = 0, len = a.length; i < a; i++)
+            {
+                if (a[i] !== b[i])
+                    return false;
+            }
+            return true;
         }
     }
 
