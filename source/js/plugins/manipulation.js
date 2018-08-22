@@ -9,6 +9,7 @@ import {
     sharpen,
     resetFilters
 } from "./_filters";
+import '../utils/dragscroll';
 
 /**
  * Returns a function, that, as long as it continues to be invoked, will not
@@ -80,7 +81,10 @@ export default class ManipulationPlugin
 
         this._mainArea = document.createElement('div');
         this._mainArea.classList.add('manipulation-main-area');
+        // enable scroll by dragging
         this._mainArea.classList.add('dragscroll');
+        this._mainArea.addEventListener('mousedown', () => { this._mainArea.classList.add('grabbing'); });
+        this._mainArea.addEventListener('mouseup', () => { this._mainArea.classList.remove('grabbing'); });
 
         this._tools = document.createElement('div');
         this._tools.classList.add('manipulation-tools');
@@ -100,6 +104,8 @@ export default class ManipulationPlugin
 
         this._initializeSidebar();
         this._initializeTools();
+
+        window.resetDragscroll();
     }
 
     /*
@@ -235,7 +241,7 @@ export default class ManipulationPlugin
         let zoomText = document.createTextNode('Zoom');
         zoomDiv.classList.add('manipulation-tools-text');
         zoomAdjust.setAttribute('type', 'range');
-        zoomAdjust.setAttribute('max', 6);
+        zoomAdjust.setAttribute('max', 5);
         zoomAdjust.setAttribute('min', 1);
         zoomAdjust.setAttribute('value', 1);
 
@@ -344,9 +350,8 @@ export default class ManipulationPlugin
         threshDiv.appendChild(thresholdText);
 
         let resetButton = document.createElement('button');
-        resetButton.id = 'reset-filters-button';
         resetButton.setAttribute('style', 'margin-top: 1em;');
-        let buttonText = document.createTextNode('Reset Filters');
+        let buttonText = document.createTextNode('Reset');
         resetButton.appendChild(buttonText);
         resetButton.onclick = (e) => { this._loadImageInMainArea(e, this.currentImageURL); };
 

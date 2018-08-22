@@ -102,4 +102,5 @@
     }
 
     exports.reset = reset;
+    window.resetDragscroll = reset;
 }));
