@@ -19,6 +19,20 @@ export default class DocumentHandler
                 const overlay = new PageToolsOverlay(i, viewerCore);
                 this._overlays.push(overlay);
                 this._viewerCore.addPageOverlay(overlay);
+
+                // create dummy label for width calculation
+                // this is necessary because the _pageToolsElem is only created on mount
+                // so there's no other way to get its width before the pages are loaded
+                // (which we need to avoid their width temporarily being 0 while loading)
+                let dummyLabel = document.createElement('span');
+                dummyLabel.innerHTML = viewerCore.settings.manifest.pages[i].l;
+                dummyLabel.classList.add('diva-page-labels');
+                dummyLabel.setAttribute('style', 'display: inline-block;');
+                document.body.appendChild(dummyLabel);
+                let labelWidth = dummyLabel.clientWidth;
+                document.body.removeChild(dummyLabel);
+
+                overlay.labelWidth = labelWidth;
             }
         }
     }
