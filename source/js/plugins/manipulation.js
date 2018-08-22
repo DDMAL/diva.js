@@ -80,6 +80,7 @@ export default class ManipulationPlugin
 
         this._mainArea = document.createElement('div');
         this._mainArea.classList.add('manipulation-main-area');
+        this._mainArea.classList.add('dragscroll');
 
         this._tools = document.createElement('div');
         this._tools.classList.add('manipulation-tools');
@@ -225,8 +226,22 @@ export default class ManipulationPlugin
     _initializeTools ()
     {
         let title = document.createElement('h1');
+        title.setAttribute('style', 'margin-bottom: 0.3em;');
         title.classList.add('manipulation-tools-text');
         title.innerText = 'Tools';
+
+        let zoomDiv = document.createElement('div');
+        let zoomAdjust = document.createElement('input');
+        let zoomText = document.createTextNode('Zoom');
+        zoomDiv.classList.add('manipulation-tools-text');
+        zoomAdjust.setAttribute('type', 'range');
+        zoomAdjust.setAttribute('max', 6);
+        zoomAdjust.setAttribute('min', 1);
+        zoomAdjust.setAttribute('value', 1);
+
+        zoomDiv.addEventListener('change', debounce((e) => this.handleZoom(e, e.target.value), 250));
+        zoomDiv.appendChild(zoomAdjust);
+        zoomDiv.appendChild(zoomText);
 
         let compatibleTitle = document.createElement('h3');
         compatibleTitle.setAttribute('style', 'margin: 0.5em 0 0.3em 0;');
@@ -342,6 +357,7 @@ export default class ManipulationPlugin
         filterLog.id = 'filter-log';
 
         this._tools.appendChild(title);
+        this._tools.appendChild(zoomDiv);
         this._tools.appendChild(compatibleTitle);
         this._tools.appendChild(bwDiv);
         this._tools.appendChild(invDiv);
@@ -395,6 +411,11 @@ export default class ManipulationPlugin
             this._ctx.drawImage(this._mainImage, 0, 0, this._canvas.width, this._canvas.height);
             this._originalData = this._ctx.getImageData(0, 0, this._canvas.width, this._canvas.height);
 
+            this.dims = {
+                w: this._mainImage.width,
+                h: this._mainImage.height
+            };
+
             // clean up the image data since it's been painted to the canvas
             this._mainImage = null;
         });
@@ -438,6 +459,40 @@ export default class ManipulationPlugin
         this._ctx.putImageData(newData, 0, 0);
     }
 
+    handleZoom (event, value)
+    {
+        let scale = value * 0.5 + 0.5;
+
+        let w = this.dims.w;
+        let h = this.dims.h;
+
+        let url = `${this.currentImageURL}full/full/0/default.jpg`;
+
+        this._mainImage = new Image();
+        this._mainImage.crossOrigin = "anonymous";
+        this._mainImage.src = url;
+
+        this._mainImage.height = h * scale;
+        this._mainImage.width = w * scale;
+
+        // redraw image
+        this._mainImage.addEventListener('load', () =>
+        {
+            // Determine the size of the (square) canvas based on the hypoteneuse
+            this._canvas.size = Math.sqrt(this._mainImage.width * this._mainImage.width + this._mainImage.height * this._mainImage.height);
+            this._canvas.width = this._mainImage.width;
+            this._canvas.height = this._mainImage.height;
+            this._canvas.cornerX = (this._canvas.size - this._mainImage.width) / 2;
+            this._canvas.cornerY = (this._canvas.size - this._mainImage.height) / 2;
+
+            this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+            this._ctx.drawImage(this._mainImage, 0, 0, this._canvas.width, this._canvas.height);
+            this._originalData = this._ctx.getImageData(0, 0, this._canvas.width, this._canvas.height);
+
+            // clean up the image data since it's been painted to the canvas
+            this._mainImage = null;
+        });
+    }
 }
 
 ManipulationPlugin.prototype.pluginName = "manipulation";

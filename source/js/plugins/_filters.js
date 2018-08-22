@@ -84,8 +84,9 @@ export function addFilterToQueue (data, filter, adjust, name)
                 if (tool && tool.type === 'range')
                 {
                     let isThreshold = tool.parentElement.textContent.includes('Threshold');
+                    let isZoom = tool.parentElement.textContent.includes('Zoom');
 
-                    if (name === 'Threshold' && !isThreshold) // reset all but threshold
+                    if (name === 'Threshold' && !isThreshold && !isZoom) // reset all except
                         tool.value = 0;
                     else if (name !== 'Threshold' && isThreshold) // reset only threshold
                         tool.value = 0;
