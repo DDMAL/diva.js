@@ -233,10 +233,10 @@ export default class ManipulationPlugin
 
     _initializeTools ()
     {
-        let title = document.createElement('h1');
-        title.setAttribute('style', 'margin-bottom: 0.3em;');
-        title.classList.add('manipulation-tools-text');
-        title.innerText = 'Tools';
+        let header = document.createElement('h1');
+        header.setAttribute('style', 'margin-bottom: 0.3em;');
+        header.classList.add('manipulation-tools-text');
+        header.innerText = 'Tools';
 
         let zoomDiv = document.createElement('div');
         let zoomAdjust = document.createElement('input');
@@ -251,18 +251,34 @@ export default class ManipulationPlugin
         zoomDiv.appendChild(zoomAdjust);
         zoomDiv.appendChild(zoomText);
 
-        let compatibleTitle = document.createElement('h3');
-        compatibleTitle.setAttribute('style', 'margin: 0.5em 0 0.3em 0;');
-        compatibleTitle.classList.add('manipulation-tools-text');
-        compatibleTitle.innerText = 'Compatible Filters';
+        let filtersTitle = document.createElement('div');
+        filtersTitle.setAttribute('style', 'height: 2em; width: 100%; margin-bottom: 1em;');
+        let titleText = document.createElement('h3');
+        titleText.setAttribute('style', 'display: inline-block; margin-right: 3em;');
+        titleText.classList.add('manipulation-tools-text');
+        titleText.innerText = 'Filters';
+        let select = document.createElement('select');
+        select.setAttribute('style', 'display: inline;');
+        let colorFilters = document.createElement('option');
+        colorFilters.innerText = 'Color Filters';
+        let otherFilters = document.createElement('option');
+        otherFilters.innerText = 'Threshold';
+        
+        select.addEventListener('change', switchVisibleFilters);
+        select.appendChild(colorFilters);
+        select.appendChild(otherFilters);
+        filtersTitle.appendChild(titleText);
+        filtersTitle.appendChild(select);
 
         let bwDiv = document.createElement('div');
+        bwDiv.classList.add('color-filters');
         let blackWhiteButton = document.createElement('button');
         blackWhiteButton.textContent = "Grayscale";
         blackWhiteButton.addEventListener('click', (e) => this._applyTransformationToImageData(e, grayscale));
         bwDiv.appendChild(blackWhiteButton);
 
         let vibDiv = document.createElement('div');
+        vibDiv.classList.add('color-filters');
         let vibranceAdjust = document.createElement('input');
         let vibranceText = document.createTextNode('Vibrance');
         vibDiv.classList.add('manipulation-tools-text');
@@ -276,6 +292,7 @@ export default class ManipulationPlugin
         vibDiv.appendChild(vibranceText);
 
         let brightDiv = document.createElement('div');
+        brightDiv.classList.add('color-filters');
         let brightnessAdjust = document.createElement('input');
         let brightnessText = document.createTextNode('Brightness');
         brightDiv.classList.add('manipulation-tools-text');
@@ -289,6 +306,7 @@ export default class ManipulationPlugin
         brightDiv.appendChild(brightnessText);
 
         let contrastDiv = document.createElement('div');
+        contrastDiv.classList.add('color-filters');
         let contrastAdjust = document.createElement('input');
         let contrastText = document.createTextNode('Contrast');
         contrastDiv.classList.add('manipulation-tools-text');
@@ -302,12 +320,14 @@ export default class ManipulationPlugin
         contrastDiv.appendChild(contrastText);
 
         let invDiv = document.createElement('div');
+        invDiv.classList.add('color-filters');
         let invertButton = document.createElement('button');
         invertButton.textContent = "Invert Colours";
         invertButton.addEventListener('click', (e) => this._applyTransformationToImageData(e, invert));
         invDiv.appendChild(invertButton);
 
         let sharpDiv = document.createElement('div');
+        sharpDiv.classList.add('color-filters');
         let sharpenAdjust = document.createElement('input');
         let sharpenText = document.createTextNode('Sharpness');
         sharpDiv.classList.add('manipulation-tools-text');
@@ -321,6 +341,7 @@ export default class ManipulationPlugin
         sharpDiv.appendChild(sharpenText);
 
         let hueDiv = document.createElement('div');
+        hueDiv.classList.add('color-filters');
         let hueAdjust = document.createElement('input');
         let hueText = document.createTextNode('Hue');
         hueDiv.classList.add('manipulation-tools-text');
@@ -333,12 +354,8 @@ export default class ManipulationPlugin
         hueDiv.appendChild(hueAdjust);
         hueDiv.appendChild(hueText);
 
-        let uniqueTitle = document.createElement('h3');
-        uniqueTitle.classList.add('manipulation-tools-text');
-        uniqueTitle.setAttribute('style', 'margin: 0.5em 0 0.2em 0;');
-        uniqueTitle.innerText = 'Unique Filters';
-
         let threshDiv = document.createElement('div');
+        threshDiv.style.display = 'none';
         let thresholdAdjust = document.createElement('input');
         let thresholdText = document.createTextNode('Threshold');
         threshDiv.classList.add('manipulation-tools-text');
@@ -363,9 +380,9 @@ export default class ManipulationPlugin
         filterLog.innerHTML = "<h3> Filter Application Order <h3>";
         filterLog.id = 'filter-log';
 
-        this._tools.appendChild(title);
+        this._tools.appendChild(header);
         this._tools.appendChild(zoomDiv);
-        this._tools.appendChild(compatibleTitle);
+        this._tools.appendChild(filtersTitle);
         this._tools.appendChild(bwDiv);
         this._tools.appendChild(invDiv);
         this._tools.appendChild(vibDiv);
@@ -373,12 +390,35 @@ export default class ManipulationPlugin
         this._tools.appendChild(contrastDiv);
         this._tools.appendChild(sharpDiv);
         this._tools.appendChild(hueDiv);
-        this._tools.appendChild(uniqueTitle);
         this._tools.appendChild(threshDiv);
         this._tools.appendChild(resetButton);
         this._tools.appendChild(filterLog);
 
         this._tools.setAttribute('style', 'padding: 0 1em;');
+
+        function switchVisibleFilters ()
+        {
+            let filters = document.getElementsByClassName('color-filters');
+
+            if (this.value === 'Threshold')
+            {
+                for (let i = 0, len = filters.length; i < len; i++)
+                {
+                    filters[i].style.display = 'none';
+                }
+
+                threshDiv.style.display = 'block';
+            }
+            else
+            {
+                for (let i = 0, len = filters.length; i < len; i++)
+                {
+                    filters[i].style.display = 'block';
+                }
+
+                threshDiv.style.display = 'none';
+            }
+        }
     }
 
     _resetSliders ()
