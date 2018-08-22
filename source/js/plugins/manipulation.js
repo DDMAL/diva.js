@@ -106,6 +106,7 @@ export default class ManipulationPlugin
         this._initializeTools();
 
         window.resetDragscroll();
+        this._loadImageInMainArea(event, this._page.url);
     }
 
     /*
@@ -415,6 +416,7 @@ export default class ManipulationPlugin
             this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
             this._ctx.drawImage(this._mainImage, 0, 0, this._canvas.width, this._canvas.height);
             this._originalData = this._ctx.getImageData(0, 0, this._canvas.width, this._canvas.height);
+            this._alteredData = this._originalData;
 
             this.dims = {
                 w: this._mainImage.width,
@@ -442,6 +444,7 @@ export default class ManipulationPlugin
         }
 
         let newData = func(this._originalData, adjustment);
+        this._alteredData = newData;
 
         this._ctx.clearRect(0, 0, cw, ch);
         this._ctx.putImageData(newData, 0, 0);
@@ -459,6 +462,7 @@ export default class ManipulationPlugin
         }
 
         let newData = func(this._originalData, adjustment);
+        this._alteredData = newData;
 
         this._ctx.clearRect(0, 0, cw, ch);
         this._ctx.putImageData(newData, 0, 0);
@@ -471,32 +475,18 @@ export default class ManipulationPlugin
         let w = this.dims.w;
         let h = this.dims.h;
 
-        let url = `${this.currentImageURL}full/full/0/default.jpg`;
+        let tempCanvas = document.createElement('canvas');
+        let tempCtx = tempCanvas.getContext('2d');
+        tempCanvas.width = w;
+        tempCanvas.height = h;
+        tempCtx.putImageData(this._alteredData, 0, 0);
 
-        this._mainImage = new Image();
-        this._mainImage.crossOrigin = "anonymous";
-        this._mainImage.src = url;
-
-        this._mainImage.height = h * scale;
-        this._mainImage.width = w * scale;
-
-        // redraw image
-        this._mainImage.addEventListener('load', () =>
-        {
-            // Determine the size of the (square) canvas based on the hypoteneuse
-            this._canvas.size = Math.sqrt(this._mainImage.width * this._mainImage.width + this._mainImage.height * this._mainImage.height);
-            this._canvas.width = this._mainImage.width;
-            this._canvas.height = this._mainImage.height;
-            this._canvas.cornerX = (this._canvas.size - this._mainImage.width) / 2;
-            this._canvas.cornerY = (this._canvas.size - this._mainImage.height) / 2;
-
-            this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
-            this._ctx.drawImage(this._mainImage, 0, 0, this._canvas.width, this._canvas.height);
-            this._originalData = this._ctx.getImageData(0, 0, this._canvas.width, this._canvas.height);
-
-            // clean up the image data since it's been painted to the canvas
-            this._mainImage = null;
-        });
+        this._canvas.width = w * scale;
+        this._canvas.height = h * scale;
+        this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+        this._ctx.scale(scale, scale);
+        this._ctx.drawImage(tempCanvas, 0, 0);
+        // this._originalData = this._ctx.getImageData(0, 0, this._canvas.width, this._canvas.height);
     }
 }
 
