@@ -69,6 +69,12 @@ export default class ManipulationPlugin
         this.minZoom = 1;
         this.zoom = 1;
 
+        this.rotate = 0;
+
+        // mirror stuff, 1 for not mirrored, -1 for mirrored
+        this.mirrorHorizontal = 1;
+        this.mirrorVertical = 1;
+
         this.boundEscapeListener = this.escapeListener.bind(this);
 
         // url of currently loaded image
@@ -283,6 +289,30 @@ export default class ManipulationPlugin
         zoomDiv.appendChild(zoomAdjust);
         zoomDiv.appendChild(zoomText);
 
+        let rotateDiv = document.createElement('div');
+        let rotateAdjust = document.createElement('input');
+        let rotateText = document.createTextNode('Rotation');
+        rotateDiv.classList.add('manipulation-tools-text');
+        rotateAdjust.setAttribute('type', 'range');
+        rotateAdjust.setAttribute('max', 359);
+        rotateAdjust.setAttribute('min', 0);
+        rotateAdjust.setAttribute('value', 0);
+
+        rotateDiv.addEventListener('change', debounce((e) => this.handleRotate(e, e.target.value), 250));
+        rotateDiv.appendChild(rotateAdjust);
+        rotateDiv.appendChild(rotateText);
+
+        // let mirrorDiv = document.createElement('div');
+        // let verticalMirrorButton = document.createElement('button');
+        // verticalMirrorButton.textContent = "Mirror Vertically";
+        // let horizontalMirrorButton = document.createElement('button');
+        // horizontalMirrorButton.textContent = "Mirror Horizontally";
+
+        // verticalMirrorButton.addEventListener('click', (e) => this.handleMirror(e, 'vertical'));
+        // horizontalMirrorButton.addEventListener('click', (e) => this.handleMirror(e, 'horizontal'));
+        // mirrorDiv.appendChild(verticalMirrorButton);
+        // mirrorDiv.appendChild(horizontalMirrorButton);
+
         let filtersTitle = document.createElement('div');
         filtersTitle.setAttribute('style', 'height: 2em; width: 100%; margin-bottom: 1em;');
         let titleText = document.createElement('h3');
@@ -368,7 +398,7 @@ export default class ManipulationPlugin
         sharpenAdjust.setAttribute('min', 0);
         sharpenAdjust.setAttribute('value', 0);
 
-        sharpenAdjust.addEventListener('change', debounce((e) => this._applyConvolutionFilter(e, sharpen, e.target.value), 250));
+        sharpenAdjust.addEventListener('change', debounce((e) => this._applyTransformationToImageData(e, sharpen, e.target.value), 250));
         sharpDiv.appendChild(sharpenAdjust);
         sharpDiv.appendChild(sharpenText);
 
@@ -382,7 +412,7 @@ export default class ManipulationPlugin
         hueAdjust.setAttribute('min', 0);
         hueAdjust.setAttribute('value', 0);
 
-        hueAdjust.addEventListener('change', debounce((e) => this._applyConvolutionFilter(e, hue, e.target.value), 250));
+        hueAdjust.addEventListener('change', debounce((e) => this._applyTransformationToImageData(e, hue, e.target.value), 250));
         hueDiv.appendChild(hueAdjust);
         hueDiv.appendChild(hueText);
 
@@ -415,6 +445,8 @@ export default class ManipulationPlugin
         this._tools.appendChild(closeButton);
         this._tools.appendChild(header);
         this._tools.appendChild(zoomDiv);
+        this._tools.appendChild(rotateDiv);
+        // this._tools.appendChild(mirrorDiv);
         this._tools.appendChild(filtersTitle);
         this._tools.appendChild(bwDiv);
         this._tools.appendChild(invDiv);
@@ -465,6 +497,10 @@ export default class ManipulationPlugin
         }
 
         document.getElementById('filter-log').innerHTML = "<h3> Filter Application Order <h3>";
+
+        // reset counters
+        this.zoom = 1;
+        this.rotate = 0;
 
         resetFilters();
     }
@@ -525,27 +561,7 @@ export default class ManipulationPlugin
 
         // necessary to reset the current zoom level (since ImageData gets altered at zoom 1)
         this.handleZoom(event, this.zoom);
-    }
-
-    _applyConvolutionFilter (event, func, value)
-    {
-        let cw = this._canvas.width;
-        let ch = this._canvas.height;
-        let adjustment;
-
-        if (value)
-        {
-            adjustment = parseInt(value, 10);
-        }
-
-        let newData = func(this._originalData, adjustment);
-        this._alteredData = newData;
-
-        this._ctx.clearRect(0, 0, cw, ch);
-        this._ctx.putImageData(newData, 0, 0);
-
-        // necessary to reset the current zoom level (since ImageData gets altered at zoom 1)
-        this.handleZoom(event, this.zoom);
+        this.handleRotate(event, this.rotate);
     }
 
     handleZoom (event, value)
@@ -568,6 +584,53 @@ export default class ManipulationPlugin
         this._ctx.drawImage(tempCanvas, 0, 0);
 
         this.zoom = parseInt(value, 10);
+
+        this.handleRotate(event, this.rotate);
+    }
+
+    handleRotate (event, value)
+    {
+        let w = this.dims.w;
+        let h = this.dims.h;
+
+        let startX = -(w / 2);
+        let startY = -(h / 2);
+
+        let tempCanvas = document.createElement('canvas');
+        let tempCtx = tempCanvas.getContext('2d');
+        tempCanvas.width = w * (this.zoom * 0.5 + 0.5);
+        tempCanvas.height = h * (this.zoom * 0.5 + 0.5);
+        tempCtx.putImageData(this._alteredData, 0, 0);
+
+        this._ctx.save();
+        this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+        this._ctx.translate(w / 2, h / 2);
+        this._ctx.rotate(value * Math.PI / 180);
+        this._ctx.drawImage(tempCanvas, startX, startY, this._canvas.width, this._canvas.height);
+        this._ctx.restore();
+
+        this.rotate = value;
+    }
+
+    handleMirror (event, type)
+    {
+        let w = this.dims.w;
+        let h = this.dims.h;
+
+        let tempCanvas = document.createElement('canvas');
+        let tempCtx = tempCanvas.getContext('2d');
+        tempCanvas.width = w;
+        tempCanvas.height = h;
+        tempCtx.putImageData(this._alteredData, 0, 0);
+
+        if (type === 'vertical')
+            this.mirrorVertical *= -1;
+        else
+            this.mirrorHorizontal *= -1;
+
+        this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+        this._ctx.scale(this.mirrorHorizontal, this.mirrorVertical);
+        this._ctx.drawImage(tempCanvas, 0, 0, w * this.mirrorHorizontal, h * this.mirrorVertical);
     }
 }
 

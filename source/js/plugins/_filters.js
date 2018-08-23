@@ -85,8 +85,9 @@ export function addFilterToQueue (data, filter, adjust, name)
                 {
                     let isThreshold = tool.parentElement.textContent.includes('Threshold');
                     let isZoom = tool.parentElement.textContent.includes('Zoom');
+                    let isRotate = tool.parentElement.textContent.includes('Rotation');
 
-                    if (name === 'Threshold' && !isThreshold && !isZoom) // reset all except
+                    if (name === 'Threshold' && !isThreshold && !isZoom && !isRotate) // reset all except
                         tool.value = 0;
                     else if (name !== 'Threshold' && isThreshold) // reset only threshold
                         tool.value = 0;
