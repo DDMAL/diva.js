@@ -302,16 +302,16 @@ export default class ManipulationPlugin
         rotateDiv.appendChild(rotateAdjust);
         rotateDiv.appendChild(rotateText);
 
-        // let mirrorDiv = document.createElement('div');
-        // let verticalMirrorButton = document.createElement('button');
-        // verticalMirrorButton.textContent = "Mirror Vertically";
-        // let horizontalMirrorButton = document.createElement('button');
-        // horizontalMirrorButton.textContent = "Mirror Horizontally";
+        let mirrorDiv = document.createElement('div');
+        let verticalMirrorButton = document.createElement('button');
+        verticalMirrorButton.textContent = "Mirror Vertically";
+        let horizontalMirrorButton = document.createElement('button');
+        horizontalMirrorButton.textContent = "Mirror Horizontally";
 
-        // verticalMirrorButton.addEventListener('click', (e) => this.handleMirror(e, 'vertical'));
-        // horizontalMirrorButton.addEventListener('click', (e) => this.handleMirror(e, 'horizontal'));
-        // mirrorDiv.appendChild(verticalMirrorButton);
-        // mirrorDiv.appendChild(horizontalMirrorButton);
+        verticalMirrorButton.addEventListener('click', (e) => this.handleMirror(e, 'vertical'));
+        horizontalMirrorButton.addEventListener('click', (e) => this.handleMirror(e, 'horizontal'));
+        mirrorDiv.appendChild(verticalMirrorButton);
+        mirrorDiv.appendChild(horizontalMirrorButton);
 
         let filtersTitle = document.createElement('div');
         filtersTitle.setAttribute('style', 'height: 2em; width: 100%; margin-bottom: 1em;');
@@ -446,7 +446,7 @@ export default class ManipulationPlugin
         this._tools.appendChild(header);
         this._tools.appendChild(zoomDiv);
         this._tools.appendChild(rotateDiv);
-        // this._tools.appendChild(mirrorDiv);
+        this._tools.appendChild(mirrorDiv);
         this._tools.appendChild(filtersTitle);
         this._tools.appendChild(bwDiv);
         this._tools.appendChild(invDiv);
@@ -614,23 +614,14 @@ export default class ManipulationPlugin
 
     handleMirror (event, type)
     {
-        let w = this.dims.w;
-        let h = this.dims.h;
-
-        let tempCanvas = document.createElement('canvas');
-        let tempCtx = tempCanvas.getContext('2d');
-        tempCanvas.width = w;
-        tempCanvas.height = h;
-        tempCtx.putImageData(this._alteredData, 0, 0);
+        let canvas = document.getElementsByClassName('manipulation-main-area')[0].children[0];
 
         if (type === 'vertical')
             this.mirrorVertical *= -1;
         else
             this.mirrorHorizontal *= -1;
 
-        this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
-        this._ctx.scale(this.mirrorHorizontal, this.mirrorVertical);
-        this._ctx.drawImage(tempCanvas, 0, 0, w * this.mirrorHorizontal, h * this.mirrorVertical);
+        canvas.setAttribute('style', 'transform: scale('+this.mirrorHorizontal+','+this.mirrorVertical+');');
     }
 }
 
