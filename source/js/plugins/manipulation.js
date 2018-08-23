@@ -518,23 +518,27 @@ export default class ManipulationPlugin
         {
             // Determine the size of the (square) canvas based on the hypoteneuse
             this._canvas.size = Math.sqrt(this._mainImage.width * this._mainImage.width + this._mainImage.height * this._mainImage.height);
-            this._canvas.width = this._mainImage.width;
-            this._canvas.height = this._mainImage.height;
+            this._canvas.width = this._canvas.size;
+            this._canvas.height = this._canvas.size;
             this._canvas.cornerX = (this._canvas.size - this._mainImage.width) / 2;
             this._canvas.cornerY = (this._canvas.size - this._mainImage.height) / 2;
 
             this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
-            this._ctx.drawImage(this._mainImage, 0, 0, this._canvas.width, this._canvas.height);
-            this._originalData = this._ctx.getImageData(0, 0, this._canvas.width, this._canvas.height);
+            this._ctx.drawImage(this._mainImage, this._canvas.cornerX, this._canvas.cornerY, this._mainImage.width, this._mainImage.height);
+            this._originalData = this._ctx.getImageData(this._canvas.cornerX, this._canvas.cornerY, this._mainImage.width, this._mainImage.height);
             this._alteredData = this._originalData;
 
+            // to preserve pre-zoom dimensions
             this.dims = {
-                w: this._mainImage.width,
-                h: this._mainImage.height
+                w: this._canvas.width,
+                h: this._canvas.height
             };
 
             // clean up the image data since it's been painted to the canvas
             this._mainImage = null;
+
+            // center the viewport
+            this.centerView();
         });
 
         this._mainImage.src = url;
@@ -557,7 +561,7 @@ export default class ManipulationPlugin
         this._alteredData = newData;
 
         this._ctx.clearRect(0, 0, cw, ch);
-        this._ctx.putImageData(newData, 0, 0);
+        this._ctx.putImageData(newData, this._canvas.cornerX, this._canvas.cornerY);
 
         // necessary to reset the current zoom level (since ImageData gets altered at zoom 1)
         this.handleZoom(event, this.zoom);
@@ -571,11 +575,12 @@ export default class ManipulationPlugin
         let w = this.dims.w;
         let h = this.dims.h;
 
+        // temp canvas for drawing at original zoom level 
         let tempCanvas = document.createElement('canvas');
         let tempCtx = tempCanvas.getContext('2d');
         tempCanvas.width = w;
         tempCanvas.height = h;
-        tempCtx.putImageData(this._alteredData, 0, 0);
+        tempCtx.putImageData(this._alteredData, this._canvas.cornerX, this._canvas.cornerY);
 
         this._canvas.width = w * scale;
         this._canvas.height = h * scale;
@@ -586,6 +591,7 @@ export default class ManipulationPlugin
         this.zoom = parseInt(value, 10);
 
         this.handleRotate(event, this.rotate);
+        this.centerView();
     }
 
     handleRotate (event, value)
@@ -596,14 +602,15 @@ export default class ManipulationPlugin
         let startX = -(w / 2);
         let startY = -(h / 2);
 
+        // temp canvas at current zoom level size
         let tempCanvas = document.createElement('canvas');
         let tempCtx = tempCanvas.getContext('2d');
         tempCanvas.width = w * (this.zoom * 0.5 + 0.5);
         tempCanvas.height = h * (this.zoom * 0.5 + 0.5);
-        tempCtx.putImageData(this._alteredData, 0, 0);
+        tempCtx.putImageData(this._alteredData, this._canvas.cornerX, this._canvas.cornerY);
 
-        this._ctx.save();
         this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+        this._ctx.save();
         this._ctx.translate(w / 2, h / 2);
         this._ctx.rotate(value * Math.PI / 180);
         this._ctx.drawImage(tempCanvas, startX, startY, this._canvas.width, this._canvas.height);
@@ -622,6 +629,20 @@ export default class ManipulationPlugin
             this.mirrorHorizontal *= -1;
 
         canvas.setAttribute('style', 'transform: scale('+this.mirrorHorizontal+','+this.mirrorVertical+');');
+    }
+
+    centerView ()
+    {
+        let view = document.getElementsByClassName('manipulation-main-area')[0];
+
+        let h = this._canvas.height;
+        let w = this._canvas.width;
+
+        let top = (h - view.clientHeight) / 2;
+        let left = (w - view.clientWidth) / 2;
+
+        view.scrollTop = top;
+        view.scrollLeft = left;
     }
 }
 
