@@ -502,6 +502,11 @@ export default class ManipulationPlugin
         this.zoom = 1;
         this.rotate = 0;
 
+        // reset mirror
+        this.mirrorHorizontal = 1;
+        this.mirrorVertical = 1;
+        this.handleMirror(null, null);
+
         resetFilters();
     }
 
@@ -625,7 +630,7 @@ export default class ManipulationPlugin
 
         if (type === 'vertical')
             this.mirrorVertical *= -1;
-        else
+        else if (type === 'horizontal')
             this.mirrorHorizontal *= -1;
 
         canvas.setAttribute('style', 'transform: scale('+this.mirrorHorizontal+','+this.mirrorVertical+');');
