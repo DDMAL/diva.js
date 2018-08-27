@@ -298,7 +298,7 @@ export default class ManipulationPlugin
         rotateAdjust.setAttribute('min', 0);
         rotateAdjust.setAttribute('value', 0);
 
-        rotateDiv.addEventListener('change', debounce((e) => this.handleRotate(e, e.target.value), 250));
+        rotateDiv.addEventListener('input', (e) => { this.handleRotate(e, e.target.value); });
         rotateDiv.appendChild(rotateAdjust);
         rotateDiv.appendChild(rotateText);
 
