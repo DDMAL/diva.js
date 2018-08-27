@@ -4,7 +4,7 @@
   "description": "Diva.js",
   "main": "build/js/diva.js",
   "scripts": {
-    "test": "karma start",
+    "test": "npm run build:production && karma start",
     "lint": "jshint --reporter=node_modules/jshint-stylish source/js test",
     "develop": "webpack-dev-server",
     "build:develop": "webpack --progress",
