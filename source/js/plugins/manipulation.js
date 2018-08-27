@@ -65,7 +65,7 @@ export default class ManipulationPlugin
         this._originalData = null;
 
         // zoom stuff
-        this.maxZoom = 5;
+        this.maxZoom = 3;
         this.minZoom = 1;
         this.zoom = 1;
 
