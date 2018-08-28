@@ -601,10 +601,57 @@ export default class ManipulationPlugin
         this._ctx.scale(scale, scale);
         this._ctx.drawImage(tempCanvas, 0, 0);
 
+        // determine if zooming in or not
+        let zoomingIn = value > this.zoom ? true : false;
+
         this.zoom = parseInt(value, 10);
 
         if (recenter)
-            this.centerView(event.clientX, event.clientY);
+        {
+            let rect = event.target.getBoundingClientRect();
+            let x = event.clientX - rect.left;
+            let y = event.clientY - rect.top;
+
+            if (!zoomingIn)
+            {
+                // x & y are in terms of pre-zoom-out dimensions, so scale down accordingly
+                let scaleOut = (this.zoom * 0.5 + 0.5) / ((this.zoom + 1) * 0.5 + 0.5);
+                x *= scaleOut;
+                y *= scaleOut;
+            }
+
+            this.centerView(x, y, zoomingIn);
+        }
+    }
+
+    centerView (x, y, zoomingIn)
+    {
+        let view = document.getElementsByClassName('manipulation-main-area')[0];
+
+        if (zoomingIn)
+        {
+            // x & y are in terms of pre-zoom-in dimensions, so scale up accordingly
+            let scaleIn = (this.zoom * 0.5 + 0.5) / ((this.zoom - 1) * 0.5 + 0.5);
+            x *= scaleIn;
+            y *= scaleIn;
+        }
+
+        // distance from center
+        let center = this._canvas.height / 2;
+        let distY = y - center;
+        let distX = x - center;
+
+        let h = this._canvas.height;
+        let w = this._canvas.width;
+
+        let topCentered = (h - view.clientHeight) / 2;
+        let leftCentered = (w - view.clientWidth) / 2;
+
+        let top = y ? topCentered + distY : topCentered;
+        let left = x ? leftCentered + distX : leftCentered;
+
+        view.scrollTop = top;
+        view.scrollLeft = left;
     }
 
     handleTransform (event, type, value)
@@ -619,23 +666,6 @@ export default class ManipulationPlugin
         canvas.style.transform = "scale("+this.mirrorHorizontal+","+this.mirrorVertical+") rotate("+value+"deg)";
 
         this.rotate = value;
-    }
-
-    centerView (x, y)
-    {
-        let view = document.getElementsByClassName('manipulation-main-area')[0];
-
-        let relY = y * (this.zoom * 0.5 + 0.5) - view.clientHeight / 2;
-        let relX = (x - view.offsetLeft) * (this.zoom * 0.5 + 0.5) - view.clientWidth / 2;
-
-        let h = this._canvas.height;
-        let w = this._canvas.width;
-
-        let top = relY || (h - view.clientHeight) / 2;
-        let left = relX || (w - view.clientWidth) / 2;
-
-        view.scrollTop = top;
-        view.scrollLeft = left;
     }
 }
 
