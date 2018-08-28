@@ -78,7 +78,7 @@ export default class ManipulationPlugin
         this.boundEscapeListener = this.escapeListener.bind(this);
 
         // url of currently loaded image
-        this.currentImageURL;
+        this.currentImageURL = null;
     }
 
     handleClick (event, settings, publicInstance, pageIndex)
@@ -99,7 +99,7 @@ export default class ManipulationPlugin
         this._mainArea.addEventListener('mouseup', () => { this._mainArea.classList.remove('grabbing'); });
 
         // add double click zoom handler
-        gestureEvents.onDoubleClick(this._mainArea, handleDblClick.bind(this));
+        gestureEvents.onDoubleClick(this._mainArea, this.handleDblClick.bind(this));
 
         this._tools = document.createElement('div');
         this._tools.classList.add('manipulation-tools');
@@ -122,19 +122,19 @@ export default class ManipulationPlugin
 
         window.resetDragscroll();
         this._loadImageInMainArea(event, this._page.url);
+    }
 
-        function handleDblClick (e)
-        {
-            let newZoom = e.ctrlKey ? this.zoom - 1 : this.zoom + 1;
-            if (newZoom < this.minZoom || newZoom > this.maxZoom)
-                return;
+    handleDblClick (event)
+    {
+        let newZoom = event.ctrlKey ? this.zoom - 1 : this.zoom + 1;
+        if (newZoom < this.minZoom || newZoom > this.maxZoom)
+            return;
 
-            // update slider
-            let slider = document.getElementById('zoom-slider');
-            slider.value = newZoom;
+        // update slider
+        let slider = document.getElementById('zoom-slider');
+        slider.value = newZoom;
 
-            this.handleZoom(e, newZoom);
-        }
+        this.handleZoom(event, newZoom);
     }
 
     /*
@@ -261,9 +261,11 @@ export default class ManipulationPlugin
     _initializeTools ()
     {
         let closeButton = document.createElement('button');
+
         closeButton.innerHTML = '&#10006';
         closeButton.classList.add('close-button');
         closeButton.setAttribute('style', 'display: absolute; top: 1em; right: 1em;');
+
         closeButton.onclick = () =>
         {
             document.body.style.overflow = 'auto';
@@ -271,6 +273,7 @@ export default class ManipulationPlugin
         };
 
         let header = document.createElement('h1');
+
         header.setAttribute('style', 'margin-bottom: 0.3em;');
         header.classList.add('manipulation-tools-text');
         header.innerText = 'Tools';
@@ -278,13 +281,13 @@ export default class ManipulationPlugin
         let zoomDiv = document.createElement('div');
         let zoomAdjust = document.createElement('input');
         let zoomText = document.createTextNode('Zoom');
+
         zoomDiv.classList.add('manipulation-tools-text');
         zoomAdjust.setAttribute('type', 'range');
         zoomAdjust.setAttribute('max', this.maxZoom);
         zoomAdjust.setAttribute('min', this.minZoom);
         zoomAdjust.setAttribute('value', this.zoom);
         zoomAdjust.id = 'zoom-slider';
-
         zoomDiv.addEventListener('change', debounce((e) => this.handleZoom(e, e.target.value), 250));
         zoomDiv.appendChild(zoomAdjust);
         zoomDiv.appendChild(zoomText);
@@ -292,6 +295,7 @@ export default class ManipulationPlugin
         let rotateDiv = document.createElement('div');
         let rotateAdjust = document.createElement('input');
         let rotateText = document.createTextNode('Rotation');
+
         rotateDiv.classList.add('manipulation-tools-text');
         rotateAdjust.setAttribute('type', 'range');
         rotateAdjust.setAttribute('max', 359);
@@ -304,10 +308,10 @@ export default class ManipulationPlugin
 
         let mirrorDiv = document.createElement('div');
         let verticalMirrorButton = document.createElement('button');
-        verticalMirrorButton.textContent = "Mirror Vertically";
         let horizontalMirrorButton = document.createElement('button');
-        horizontalMirrorButton.textContent = "Mirror Horizontally";
 
+        verticalMirrorButton.textContent = "Mirror Vertically";
+        horizontalMirrorButton.textContent = "Mirror Horizontally";
         verticalMirrorButton.addEventListener('click', (e) => this.handleMirror(e, 'vertical'));
         horizontalMirrorButton.addEventListener('click', (e) => this.handleMirror(e, 'horizontal'));
         mirrorDiv.appendChild(verticalMirrorButton);
@@ -315,14 +319,18 @@ export default class ManipulationPlugin
 
         let filtersTitle = document.createElement('div');
         filtersTitle.setAttribute('style', 'height: 2em; width: 100%; margin-bottom: 1em;');
+
         let titleText = document.createElement('h3');
         titleText.setAttribute('style', 'display: inline-block; margin-right: 3em;');
         titleText.classList.add('manipulation-tools-text');
         titleText.innerText = 'Filters';
+
         let select = document.createElement('select');
         select.setAttribute('style', 'display: inline;');
+
         let colorFilters = document.createElement('option');
         colorFilters.innerText = 'Color Filters';
+
         let otherFilters = document.createElement('option');
         otherFilters.innerText = 'Threshold';
         
