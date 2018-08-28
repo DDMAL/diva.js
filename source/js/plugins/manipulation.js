@@ -298,7 +298,7 @@ export default class ManipulationPlugin
         rotateAdjust.setAttribute('min', 0);
         rotateAdjust.setAttribute('value', 0);
 
-        rotateDiv.addEventListener('input', (e) => { this.handleRotate(e, e.target.value); });
+        rotateDiv.addEventListener('input', (e) => { this.handleTransform(e, null, e.target.value); });
         rotateDiv.appendChild(rotateAdjust);
         rotateDiv.appendChild(rotateText);
 
@@ -308,8 +308,8 @@ export default class ManipulationPlugin
         let horizontalMirrorButton = document.createElement('button');
         horizontalMirrorButton.textContent = "Mirror Horizontally";
 
-        verticalMirrorButton.addEventListener('click', (e) => this.handleMirror(e, 'vertical'));
-        horizontalMirrorButton.addEventListener('click', (e) => this.handleMirror(e, 'horizontal'));
+        verticalMirrorButton.addEventListener('click', (e) => this.handleTransform(e, 'vertical', this.rotate));
+        horizontalMirrorButton.addEventListener('click', (e) => this.handleTransform(e, 'horizontal', this.rotate));
         mirrorDiv.appendChild(verticalMirrorButton);
         mirrorDiv.appendChild(horizontalMirrorButton);
 
@@ -505,7 +505,7 @@ export default class ManipulationPlugin
         // reset mirror
         this.mirrorHorizontal = 1;
         this.mirrorVertical = 1;
-        this.handleMirror(null, null);
+        this.handleTransform(null, null, this.rotate);
 
         resetFilters();
     }
@@ -595,36 +595,10 @@ export default class ManipulationPlugin
 
         this.zoom = parseInt(value, 10);
 
-        this.handleRotate(event, this.rotate);
         this.centerView();
     }
 
-    handleRotate (event, value)
-    {
-        let w = this.dims.w;
-        let h = this.dims.h;
-
-        let startX = -(w / 2);
-        let startY = -(h / 2);
-
-        // temp canvas at current zoom level size
-        let tempCanvas = document.createElement('canvas');
-        let tempCtx = tempCanvas.getContext('2d');
-        tempCanvas.width = w * (this.zoom * 0.5 + 0.5);
-        tempCanvas.height = h * (this.zoom * 0.5 + 0.5);
-        tempCtx.putImageData(this._alteredData, this._canvas.cornerX, this._canvas.cornerY);
-
-        this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
-        this._ctx.save();
-        this._ctx.translate(w / 2, h / 2);
-        this._ctx.rotate(value * Math.PI / 180);
-        this._ctx.drawImage(tempCanvas, startX, startY, this._canvas.width, this._canvas.height);
-        this._ctx.restore();
-
-        this.rotate = value;
-    }
-
-    handleMirror (event, type)
+    handleTransform (event, type, value)
     {
         let canvas = document.getElementsByClassName('manipulation-main-area')[0].children[0];
 
@@ -633,7 +607,9 @@ export default class ManipulationPlugin
         else if (type === 'horizontal')
             this.mirrorHorizontal *= -1;
 
-        canvas.setAttribute('style', 'transform: scale('+this.mirrorHorizontal+','+this.mirrorVertical+');');
+        canvas.style.transform = "scale("+this.mirrorHorizontal+","+this.mirrorVertical+") rotate("+value+"deg)";
+
+        this.rotate = value;
     }
 
     centerView ()
