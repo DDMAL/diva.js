@@ -310,6 +310,8 @@ export default class ManipulationPlugin
         let verticalMirrorButton = document.createElement('button');
         let horizontalMirrorButton = document.createElement('button');
 
+        verticalMirrorButton.textContent = "Mirror Vertically";
+        horizontalMirrorButton.textContent = "Mirror Horizontally";
         verticalMirrorButton.addEventListener('click', (e) => this.handleTransform(e, 'vertical', this.rotate));
         horizontalMirrorButton.addEventListener('click', (e) => this.handleTransform(e, 'horizontal', this.rotate));
         mirrorDiv.appendChild(verticalMirrorButton);
@@ -325,6 +327,7 @@ export default class ManipulationPlugin
 
         let select = document.createElement('select');
         select.setAttribute('style', 'display: inline;');
+        select.style.backgroundColor = 'white';
 
         let colorFilters = document.createElement('option');
         colorFilters.innerText = 'Color Filters';
@@ -576,7 +579,6 @@ export default class ManipulationPlugin
 
         // necessary to reset the current zoom level (since ImageData gets altered at zoom 1)
         this.handleZoom(event, this.zoom);
-        this.handleRotate(event, this.rotate);
     }
 
     handleZoom (event, value)
