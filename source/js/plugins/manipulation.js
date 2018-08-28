@@ -65,7 +65,7 @@ export default class ManipulationPlugin
         this._originalData = null;
 
         // zoom stuff
-        this.maxZoom = 3;
+        this.maxZoom = 4;
         this.minZoom = 1;
         this.zoom = 1;
 
@@ -134,7 +134,7 @@ export default class ManipulationPlugin
         let slider = document.getElementById('zoom-slider');
         slider.value = newZoom;
 
-        this.handleZoom(event, newZoom);
+        this.handleZoom(event, newZoom, true);
     }
 
     /*
@@ -288,7 +288,7 @@ export default class ManipulationPlugin
         zoomAdjust.setAttribute('min', this.minZoom);
         zoomAdjust.setAttribute('value', this.zoom);
         zoomAdjust.id = 'zoom-slider';
-        zoomDiv.addEventListener('change', debounce((e) => this.handleZoom(e, e.target.value), 250));
+        zoomDiv.addEventListener('change', debounce((e) => this.handleZoom(e, e.target.value, true), 250));
         zoomDiv.appendChild(zoomAdjust);
         zoomDiv.appendChild(zoomText);
 
@@ -578,10 +578,10 @@ export default class ManipulationPlugin
         this._ctx.putImageData(newData, this._canvas.cornerX, this._canvas.cornerY);
 
         // necessary to reset the current zoom level (since ImageData gets altered at zoom 1)
-        this.handleZoom(event, this.zoom);
+        this.handleZoom(event, this.zoom, false);
     }
 
-    handleZoom (event, value)
+    handleZoom (event, value, recenter)
     {
         let scale = value * 0.5 + 0.5;
 
@@ -603,7 +603,8 @@ export default class ManipulationPlugin
 
         this.zoom = parseInt(value, 10);
 
-        this.centerView();
+        if (recenter)
+            this.centerView(event.clientX, event.clientY);
     }
 
     handleTransform (event, type, value)
@@ -620,15 +621,18 @@ export default class ManipulationPlugin
         this.rotate = value;
     }
 
-    centerView ()
+    centerView (x, y)
     {
         let view = document.getElementsByClassName('manipulation-main-area')[0];
+
+        let relY = y * (this.zoom * 0.5 + 0.5) - view.clientHeight / 2;
+        let relX = (x - view.offsetLeft) * (this.zoom * 0.5 + 0.5) - view.clientWidth / 2;
 
         let h = this._canvas.height;
         let w = this._canvas.width;
 
-        let top = (h - view.clientHeight) / 2;
-        let left = (w - view.clientWidth) / 2;
+        let top = relY || (h - view.clientHeight) / 2;
+        let left = relX || (w - view.clientWidth) / 2;
 
         view.scrollTop = top;
         view.scrollLeft = left;
