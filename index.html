@@ -18,8 +18,8 @@
     <script>
         document.addEventListener('DOMContentLoaded', function ()
         {
-            diva = new Diva('diva-wrapper', {
-                objectData: "test/manifests/iiifv3.json",
+            var diva = new Diva('diva-wrapper', {
+                objectData: "https://iiif.bodleian.ox.ac.uk/iiif/manifest/34a6037b-12e8-4b12-8920-26c33914fe0e.json",
                 plugins: [Diva.DownloadPlugin, Diva.ManipulationPlugin, Diva.MetadataPlugin]
             });
         }, false)
