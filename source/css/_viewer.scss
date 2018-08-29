@@ -2,7 +2,7 @@
 @import "mixins";
 
 .diva-wrapper {
-    min-height: 100%;
+    min-height: 95vh;
     width: 100%;
     flex-grow: 1;
 
@@ -229,7 +229,6 @@
     overflow: hidden;
     min-height: 100px;
     min-width: 200px;
-    height: 700px;
     flex-grow: 1;
 }
 
