@@ -1,9 +1,14 @@
 import {
     grayscale,
+    saturation,
     vibrance,
     brightness,
     contrast,
     hue,
+    gamma,
+    ccRed,
+    ccGreen,
+    ccBlue,
     invert,
     threshold,
     sharpen,
@@ -260,6 +265,7 @@ export default class ManipulationPlugin
 
     _initializeTools ()
     {
+        // Close button
         let closeButton = document.createElement('button');
 
         closeButton.innerHTML = '&#10006';
@@ -272,12 +278,14 @@ export default class ManipulationPlugin
             this._core.parentObject.removeChild(this._backdrop);
         };
 
+        // Header title
         let header = document.createElement('h1');
 
         header.setAttribute('style', 'margin-bottom: 0.3em;');
         header.classList.add('manipulation-tools-text');
         header.innerText = 'Tools';
 
+        // Zoom tool
         let zoomDiv = document.createElement('div');
         let zoomAdjust = document.createElement('input');
         let zoomText = document.createTextNode('Zoom');
@@ -292,6 +300,7 @@ export default class ManipulationPlugin
         zoomDiv.appendChild(zoomAdjust);
         zoomDiv.appendChild(zoomText);
 
+        // Rotation tool
         let rotateDiv = document.createElement('div');
         let rotateAdjust = document.createElement('input');
         let rotateText = document.createTextNode('Rotation');
@@ -306,6 +315,7 @@ export default class ManipulationPlugin
         rotateDiv.appendChild(rotateAdjust);
         rotateDiv.appendChild(rotateText);
 
+        // Mirror tool
         let mirrorDiv = document.createElement('div');
         let verticalMirrorButton = document.createElement('button');
         let horizontalMirrorButton = document.createElement('button');
@@ -317,6 +327,7 @@ export default class ManipulationPlugin
         mirrorDiv.appendChild(verticalMirrorButton);
         mirrorDiv.appendChild(horizontalMirrorButton);
 
+        // Filters title
         let filtersTitle = document.createElement('div');
         filtersTitle.setAttribute('style', 'height: 2em; width: 100%; margin-bottom: 1em;');
 
@@ -325,6 +336,7 @@ export default class ManipulationPlugin
         titleText.classList.add('manipulation-tools-text');
         titleText.innerText = 'Filters';
 
+        // Selection options (color filters or threshold)
         let select = document.createElement('select');
         select.setAttribute('style', 'display: inline;');
         select.style.backgroundColor = 'white';
@@ -341,6 +353,7 @@ export default class ManipulationPlugin
         filtersTitle.appendChild(titleText);
         filtersTitle.appendChild(select);
 
+        // Grayscale filter
         let bwDiv = document.createElement('div');
         bwDiv.classList.add('color-filters');
         let blackWhiteButton = document.createElement('button');
@@ -348,11 +361,27 @@ export default class ManipulationPlugin
         blackWhiteButton.addEventListener('click', (e) => this._applyTransformationToImageData(e, grayscale));
         bwDiv.appendChild(blackWhiteButton);
 
+        // Saturation filter
+        let saturationDiv = document.createElement('div');
+        saturationDiv.classList.add('color-filters');
+        saturationDiv.classList.add('manipulation-tools-text');
+        let saturationAdjust = document.createElement('input');
+        let saturationText = document.createTextNode('Saturation');
+        saturationAdjust.setAttribute('type', 'range');
+        saturationAdjust.setAttribute('max', 100);
+        saturationAdjust.setAttribute('min', -100);
+        saturationAdjust.setAttribute('value', 0);
+
+        saturationAdjust.addEventListener('change', debounce((e) => this._applyTransformationToImageData(e, saturation, e.target.value), 250));
+        saturationDiv.appendChild(saturationAdjust);
+        saturationDiv.appendChild(saturationText);
+
+        // Vibrance filter
         let vibDiv = document.createElement('div');
         vibDiv.classList.add('color-filters');
+        vibDiv.classList.add('manipulation-tools-text');
         let vibranceAdjust = document.createElement('input');
         let vibranceText = document.createTextNode('Vibrance');
-        vibDiv.classList.add('manipulation-tools-text');
         vibranceAdjust.setAttribute('type', 'range');
         vibranceAdjust.setAttribute('max', 100);
         vibranceAdjust.setAttribute('min', -100);
@@ -362,11 +391,12 @@ export default class ManipulationPlugin
         vibDiv.appendChild(vibranceAdjust);
         vibDiv.appendChild(vibranceText);
 
+        // Brightness filter
         let brightDiv = document.createElement('div');
         brightDiv.classList.add('color-filters');
+        brightDiv.classList.add('manipulation-tools-text');
         let brightnessAdjust = document.createElement('input');
         let brightnessText = document.createTextNode('Brightness');
-        brightDiv.classList.add('manipulation-tools-text');
         brightnessAdjust.setAttribute('type', 'range');
         brightnessAdjust.setAttribute('max', 100);
         brightnessAdjust.setAttribute('min', -100);
@@ -376,11 +406,12 @@ export default class ManipulationPlugin
         brightDiv.appendChild(brightnessAdjust);
         brightDiv.appendChild(brightnessText);
 
+        // Contrast filter
         let contrastDiv = document.createElement('div');
         contrastDiv.classList.add('color-filters');
+        contrastDiv.classList.add('manipulation-tools-text');
         let contrastAdjust = document.createElement('input');
         let contrastText = document.createTextNode('Contrast');
-        contrastDiv.classList.add('manipulation-tools-text');
         contrastAdjust.setAttribute('type', 'range');
         contrastAdjust.setAttribute('max', 100);
         contrastAdjust.setAttribute('min', -100);
@@ -390,6 +421,7 @@ export default class ManipulationPlugin
         contrastDiv.appendChild(contrastAdjust);
         contrastDiv.appendChild(contrastText);
 
+        // Invert colours filter
         let invDiv = document.createElement('div');
         invDiv.classList.add('color-filters');
         let invertButton = document.createElement('button');
@@ -397,11 +429,12 @@ export default class ManipulationPlugin
         invertButton.addEventListener('click', (e) => this._applyTransformationToImageData(e, invert));
         invDiv.appendChild(invertButton);
 
+        // Sharpness filter
         let sharpDiv = document.createElement('div');
         sharpDiv.classList.add('color-filters');
+        sharpDiv.classList.add('manipulation-tools-text');
         let sharpenAdjust = document.createElement('input');
         let sharpenText = document.createTextNode('Sharpness');
-        sharpDiv.classList.add('manipulation-tools-text');
         sharpenAdjust.setAttribute('type', 'range');
         sharpenAdjust.setAttribute('max', 100);
         sharpenAdjust.setAttribute('min', 0);
@@ -411,11 +444,12 @@ export default class ManipulationPlugin
         sharpDiv.appendChild(sharpenAdjust);
         sharpDiv.appendChild(sharpenText);
 
+        // Hue filter
         let hueDiv = document.createElement('div');
         hueDiv.classList.add('color-filters');
+        hueDiv.classList.add('manipulation-tools-text');
         let hueAdjust = document.createElement('input');
         let hueText = document.createTextNode('Hue');
-        hueDiv.classList.add('manipulation-tools-text');
         hueAdjust.setAttribute('type', 'range');
         hueAdjust.setAttribute('max', 100);
         hueAdjust.setAttribute('min', 0);
@@ -425,6 +459,64 @@ export default class ManipulationPlugin
         hueDiv.appendChild(hueAdjust);
         hueDiv.appendChild(hueText);
 
+        // Gamma filter
+        let gammaDiv = document.createElement('div');
+        gammaDiv.classList.add('color-filters');
+        gammaDiv.classList.add('manipulation-tools-text');
+        let gammaAdjust = document.createElement('input');
+        let gammaText = document.createTextNode('Gamma');
+        gammaAdjust.setAttribute('type', 'range');
+        gammaAdjust.setAttribute('max', 300);
+        gammaAdjust.setAttribute('min', -100);
+        gammaAdjust.setAttribute('value', 0);
+
+        gammaAdjust.addEventListener('change', debounce((e) => this._applyTransformationToImageData(e, gamma, e.target.value), 250));
+        gammaDiv.appendChild(gammaAdjust);
+        gammaDiv.appendChild(gammaText);
+
+        // Colour channel RGB slides
+        let ccRedDiv = document.createElement('div');
+        ccRedDiv.classList.add('color-filters');
+        ccRedDiv.classList.add('manipulation-tools-text');
+        let ccRedAdjust = document.createElement('input');
+        let ccRedText = document.createTextNode('Red (Colour Channel)');
+        ccRedAdjust.setAttribute('type', 'range');
+        ccRedAdjust.setAttribute('max', 100);
+        ccRedAdjust.setAttribute('min', -100);
+        ccRedAdjust.setAttribute('value', 0);
+
+        let ccGreenDiv = document.createElement('div');
+        ccGreenDiv.classList.add('color-filters');
+        ccGreenDiv.classList.add('manipulation-tools-text');
+        let ccGreenAdjust = document.createElement('input');
+        let ccGreenText = document.createTextNode('Green (Colour Channel)');
+        ccGreenAdjust.setAttribute('type', 'range');
+        ccGreenAdjust.setAttribute('max', 100);
+        ccGreenAdjust.setAttribute('min', -100);
+        ccGreenAdjust.setAttribute('value', 0);
+
+        let ccBlueDiv = document.createElement('div');
+        ccBlueDiv.classList.add('color-filters');
+        ccBlueDiv.classList.add('manipulation-tools-text');
+        let ccBlueAdjust = document.createElement('input');
+        let ccBlueText = document.createTextNode('Blue (Colour Channel)');
+        ccBlueAdjust.setAttribute('type', 'range');
+        ccBlueAdjust.setAttribute('max', 100);
+        ccBlueAdjust.setAttribute('min', -100);
+        ccBlueAdjust.setAttribute('value', 0);
+
+        ccRedAdjust.addEventListener('change', debounce((e) => this._applyTransformationToImageData(e, ccRed, e.target.value), 250));
+        ccGreenAdjust.addEventListener('change', debounce((e) => this._applyTransformationToImageData(e, ccGreen, e.target.value), 250));
+        ccBlueAdjust.addEventListener('change', debounce((e) => this._applyTransformationToImageData(e, ccBlue, e.target.value), 250));
+        
+        ccRedDiv.appendChild(ccRedAdjust);
+        ccRedDiv.appendChild(ccRedText);
+        ccGreenDiv.appendChild(ccGreenAdjust);
+        ccGreenDiv.appendChild(ccGreenText);
+        ccBlueDiv.appendChild(ccBlueAdjust);
+        ccBlueDiv.appendChild(ccBlueText);
+
+        // Threshold filter
         let threshDiv = document.createElement('div');
         threshDiv.style.display = 'none';
         let thresholdAdjust = document.createElement('input');
@@ -439,13 +531,14 @@ export default class ManipulationPlugin
         threshDiv.appendChild(thresholdAdjust);
         threshDiv.appendChild(thresholdText);
 
+        // Reset button
         let resetButton = document.createElement('button');
         resetButton.setAttribute('style', 'margin-top: 1em;');
         let buttonText = document.createTextNode('Reset');
         resetButton.appendChild(buttonText);
         resetButton.onclick = (e) => { this._loadImageInMainArea(e, this.currentImageURL); };
 
-        // keeps track of the order of filter application
+        // Log to keep track of the order of filter application
         let filterLog = document.createElement('div');
         filterLog.classList.add('manipulation-tools-text');
         filterLog.innerHTML = "<h3> Filter Application Order <h3>";
@@ -459,11 +552,16 @@ export default class ManipulationPlugin
         this._tools.appendChild(filtersTitle);
         this._tools.appendChild(bwDiv);
         this._tools.appendChild(invDiv);
+        this._tools.appendChild(saturationDiv);
         this._tools.appendChild(vibDiv);
         this._tools.appendChild(brightDiv);
         this._tools.appendChild(contrastDiv);
         this._tools.appendChild(sharpDiv);
         this._tools.appendChild(hueDiv);
+        this._tools.appendChild(gammaDiv);
+        this._tools.appendChild(ccRedDiv);
+        this._tools.appendChild(ccGreenDiv);
+        this._tools.appendChild(ccBlueDiv);
         this._tools.appendChild(threshDiv);
         this._tools.appendChild(resetButton);
         this._tools.appendChild(filterLog);
