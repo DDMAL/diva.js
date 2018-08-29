@@ -316,6 +316,13 @@ export default class Renderer
                             debugPaints('Page %s, tile %s no longer visible on image load', pageIndex, source.url);
                         }
                     }
+                    else
+                    {
+                        if (this._isTileForSourceVisible(pageIndex, source))
+                            this._paint();
+                        else
+                            debugPaints('Page %s, tile %s no longer visible on image load', pageIndex, source.url);
+                    }
                 },
                 error: () =>
                 {
