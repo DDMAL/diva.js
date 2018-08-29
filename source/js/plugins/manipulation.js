@@ -55,10 +55,6 @@ export default class ManipulationPlugin
         this._page = null;
         this._mainImage = null;
         this._canvas = null;
-        this._filters = {
-            brightness: null,
-            contrast: null
-        };
 
         // store the data for the original main image so that we
         // do the processing on that, not on a previously-processed image.
