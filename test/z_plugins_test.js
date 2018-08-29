@@ -1,5 +1,7 @@
 import Diva from '../source/js/diva';
 
+let v3Manifest = require('./manifests/iiifv3.json');
+
 describe('Plugins', function ()
 {
     beforeEach(function ()
@@ -133,11 +135,47 @@ describe('Plugins', function ()
             let controls = document.getElementsByClassName('manipulation-tools')[0];
             assert.isNotNull(controls, 'Controls exist once icon is clicked');
 
-            done();
+            // give main image some time to load
+            setTimeout(() =>
+            {
+                // do all control related tests
+                let view = document.getElementsByClassName('manipulation-main-area')[0];
+
+                let event = new MouseEvent('dblclick', {
+                    'view': window,
+                    'bubbles': true,
+                    'cancelable': true
+                });
+
+                view.dispatchEvent(event);
+
+                let zoomSlider = document.getElementById('zoom-slider');
+                assert.strictEqual(zoomSlider.value, '2', 'Zoom should now be 2');
+
+                // click on mirror buttons
+                document.getElementById('horizontal-mirror-button').click();
+                document.getElementById('vertical-mirror-button').click();
+
+                // click on first color filter button (grayscale rn)
+                document.getElementsByClassName('color-filters')[0].click();
+                let log = document.getElementById('filter-log');
+
+                // change select to threshold
+                let select = document.getElementById('filter-select');
+                select.value = 'threshold';
+                event = new Event('change');
+                select.dispatchEvent(event);
+                assert.isFalse(log.innerText.includes('Grayscale'), 'Log should be reset');
+
+                // click on secondary image
+                document.getElementsByClassName('manipulation-sidebar-secondary-image')[0].click();
+
+                done();
+            }, 1000);
         });
 
         let diva = new Diva('diva-wrapper', { // jshint ignore:line
-            objectData: 'https://images.simssa.ca/iiif/manuscripts/cdn-hsmu-m2149l4/manifest.json',
+            objectData: v3Manifest,
             plugins: [Diva.ManipulationPlugin]
         });
     });

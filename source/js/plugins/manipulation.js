@@ -318,7 +318,9 @@ export default class ManipulationPlugin
         // Mirror tool
         let mirrorDiv = document.createElement('div');
         let verticalMirrorButton = document.createElement('button');
+        verticalMirrorButton.id = 'vertical-mirror-button';
         let horizontalMirrorButton = document.createElement('button');
+        horizontalMirrorButton.id = 'horizontal-mirror-button';
 
         verticalMirrorButton.textContent = "Mirror Vertically";
         horizontalMirrorButton.textContent = "Mirror Horizontally";
@@ -339,12 +341,15 @@ export default class ManipulationPlugin
         // Selection options (color filters or threshold)
         let select = document.createElement('select');
         select.setAttribute('style', 'display: inline;');
+        select.id = 'filter-select';
         select.style.backgroundColor = 'white';
 
         let colorFilters = document.createElement('option');
+        colorFilters.value = 'colours';
         colorFilters.innerText = 'Color Filters';
 
         let otherFilters = document.createElement('option');
+        otherFilters.value = 'threshold';
         otherFilters.innerText = 'Threshold';
         
         select.addEventListener('change', switchVisibleFilters);
@@ -479,7 +484,7 @@ export default class ManipulationPlugin
         ccRedDiv.classList.add('color-filters');
         ccRedDiv.classList.add('manipulation-tools-text');
         let ccRedAdjust = document.createElement('input');
-        let ccRedText = document.createTextNode('Red (Colour Channel)');
+        let ccRedText = document.createTextNode('CC Red');
         ccRedAdjust.setAttribute('type', 'range');
         ccRedAdjust.setAttribute('max', 100);
         ccRedAdjust.setAttribute('min', -100);
@@ -489,7 +494,7 @@ export default class ManipulationPlugin
         ccGreenDiv.classList.add('color-filters');
         ccGreenDiv.classList.add('manipulation-tools-text');
         let ccGreenAdjust = document.createElement('input');
-        let ccGreenText = document.createTextNode('Green (Colour Channel)');
+        let ccGreenText = document.createTextNode('CC Green');
         ccGreenAdjust.setAttribute('type', 'range');
         ccGreenAdjust.setAttribute('max', 100);
         ccGreenAdjust.setAttribute('min', -100);
@@ -499,7 +504,7 @@ export default class ManipulationPlugin
         ccBlueDiv.classList.add('color-filters');
         ccBlueDiv.classList.add('manipulation-tools-text');
         let ccBlueAdjust = document.createElement('input');
-        let ccBlueText = document.createTextNode('Blue (Colour Channel)');
+        let ccBlueText = document.createTextNode('CC Blue');
         ccBlueAdjust.setAttribute('type', 'range');
         ccBlueAdjust.setAttribute('max', 100);
         ccBlueAdjust.setAttribute('min', -100);
@@ -572,7 +577,7 @@ export default class ManipulationPlugin
         {
             let filters = document.getElementsByClassName('color-filters');
 
-            if (this.value === 'Threshold')
+            if (this.value === 'threshold')
             {
                 for (let i = 0, len = filters.length; i < len; i++)
                 {
