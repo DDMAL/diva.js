@@ -1,8 +1,8 @@
 {
-    "version": "5.0.0",
+    "version": "6.0.0",
     "downloads": {
-        "zip": "https://github.com/DDMAL/diva.js/releases/download/v5.0.0/diva-v5.0.0.zip",
-        "tgz": "https://github.com/DDMAL/diva.js/releases/download/v5.0.0/diva-v5.0.0.tar.gz"
+        "zip": "https://github.com/DDMAL/diva.js/releases/download/v6.0.0/diva-v6.0.0.zip",
+        "tgz": "https://github.com/DDMAL/diva.js/releases/download/v6.0.0/diva-v6.0.0.tar.gz"
     }
 }
 
