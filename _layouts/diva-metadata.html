@@ -17,13 +17,14 @@
     <link rel="stylesheet" href="{{ site.baseurl }}css/main.css">
     <script src="{{ site.baseurl }}try/js/diva.js"></script>
     <script src="{{ site.baseurl }}try/js/plugins/manipulation.js"></script>
+    <script src="{{ site.baseurl }}try/js/plugins/metadata.js"></script>
     <script src="{{ site.baseurl }}try/js/plugins/download.js"></script>
     <script type="text/javascript">
         document.addEventListener('DOMContentLoaded', function ()
         {
-            let diva = new Diva('diva-wrapper', {
-                objectData: "{{ site.baseurl }}try/demo/beromunster-iiif.json",
-                plugins: [Diva.DownloadPlugin, Diva.ManipulationPlugin]
+            diva = new Diva('diva-wrapper', {
+                objectData: "{{ site.baseurl }}try/demo/iiifv3.json",
+                plugins: [Diva.MetadataPlugin, Diva.DownloadPlugin, Diva.ManipulationPlugin]
             });
         }, false)
     </script>
