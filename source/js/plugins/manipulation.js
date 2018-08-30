@@ -123,6 +123,12 @@ export default class ManipulationPlugin
 
         window.resetDragscroll();
         this._loadImageInMainArea(event, this._page.url);
+
+        // hide toolbar if fullscreen
+        if (settings.inFullscreen)
+        {
+            document.getElementById(settings.selector + 'tools').style.display = 'none';
+        }
     }
 
     handleDblClick (event)
@@ -206,6 +212,9 @@ export default class ManipulationPlugin
             document.removeEventListener('keyup', this.boundEscapeListener);
             document.body.style.overflow = 'auto';
             this._core.parentObject.removeChild(this._backdrop);
+
+            // show toolbar 
+            document.getElementById(this._core.settings.selector + 'tools').style.display = 'block';
         }
     }
 
@@ -272,6 +281,7 @@ export default class ManipulationPlugin
         {
             document.body.style.overflow = 'auto';
             this._core.parentObject.removeChild(this._backdrop);
+            document.getElementById(this._core.settings.selector + 'tools').style.display = 'block';
         };
 
         // Header title
@@ -327,16 +337,15 @@ export default class ManipulationPlugin
 
         // Filters title
         let filtersTitle = document.createElement('div');
-        filtersTitle.setAttribute('style', 'height: 2em; width: 100%; margin-bottom: 1em;');
+        filtersTitle.setAttribute('style', 'margin: 1em 0;');
 
         let titleText = document.createElement('h3');
-        titleText.setAttribute('style', 'display: inline-block; margin-right: 3em;');
+        titleText.setAttribute('style', 'margin: 0;');
         titleText.classList.add('manipulation-tools-text');
         titleText.innerText = 'Filters';
 
         // Selection options (color filters or threshold)
         let select = document.createElement('select');
-        select.setAttribute('style', 'display: inline;');
         select.id = 'filter-select';
         select.style.backgroundColor = 'white';
 
