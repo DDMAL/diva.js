@@ -1,68 +1,68 @@
-module.exports = Viewport;
-
-function Viewport(outer, options)
+export default class Viewport
 {
-    options = options || {};
-
-    this.intersectionTolerance = options.intersectionTolerance || 0;
-    this.maxExtent = options.maxExtent || 2000;
-
-    this.outer = outer;
-
-    this._top = this._left = this._width = this._height = this._innerDimensions = null;
-
-    this.invalidate();
-}
-
-Viewport.prototype.intersectsRegion = function (region)
-{
-    return this.hasHorizontalOverlap(region) && this.hasVerticalOverlap(region);
-};
-
-Viewport.prototype.hasVerticalOverlap = function (region)
-{
-    var top = this.top - this.intersectionTolerance;
-    var bottom = this.bottom + this.intersectionTolerance;
-
-    return (
-        fallsBetween(region.top, top, bottom) ||
-        fallsBetween(region.bottom, top, bottom) ||
-        (region.top <= top && region.bottom >= bottom)
-    );
-};
-
-Viewport.prototype.hasHorizontalOverlap = function (region)
-{
-    var left = this.left - this.intersectionTolerance;
-    var right = this.right + this.intersectionTolerance;
-
-    return (
-        fallsBetween(region.left, left, right) ||
-        fallsBetween(region.right, left, right) ||
-        (region.left <= left && region.right >= right)
-    );
-};
-
-Viewport.prototype.invalidate = function ()
-{
-    // FIXME: Should this check the inner dimensions as well?
-    this._width = clampMax(this.outer.clientWidth, this.maxExtent);
-    this._height = clampMax(this.outer.clientHeight, this.maxExtent);
-
-    this._top = this.outer.scrollTop;
-    this._left = this.outer.scrollLeft;
-};
-
-Viewport.prototype.setInnerDimensions = function (dimensions)
-{
-    this._innerDimensions = dimensions;
-
-    if (dimensions)
+    constructor (outer, options)
     {
-        this._top = clamp(this._top, 0, dimensions.height - this._height);
-        this._left = clamp(this._left, 0, dimensions.width - this._width);
+        options = options || {};
+
+        this.intersectionTolerance = options.intersectionTolerance || 0;
+
+        this.outer = outer;
+
+        this._top = this._left = this._width = this._height = this._innerDimensions = null;
+
+        this.invalidate();
     }
-};
+
+    intersectsRegion (region)
+    {
+        return this.hasHorizontalOverlap(region) && this.hasVerticalOverlap(region);
+    }
+
+    hasVerticalOverlap (region)
+    {
+        const top = this.top - this.intersectionTolerance;
+        const bottom = this.bottom + this.intersectionTolerance;
+
+        return (
+            fallsBetween(region.top, top, bottom) ||
+            fallsBetween(region.bottom, top, bottom) ||
+            (region.top <= top && region.bottom >= bottom)
+        );
+    }
+
+    hasHorizontalOverlap (region)
+    {
+        const left = this.left - this.intersectionTolerance;
+        const right = this.right + this.intersectionTolerance;
+
+        return (
+            fallsBetween(region.left, left, right) ||
+            fallsBetween(region.right, left, right) ||
+            (region.left <= left && region.right >= right)
+        );
+    }
+
+    invalidate ()
+    {
+        // FIXME: Should this check the inner dimensions as well?
+        this._width = this.outer.clientWidth;
+        this._height = this.outer.clientHeight;
+
+        this._top = this.outer.scrollTop;
+        this._left = this.outer.scrollLeft;
+    }
+
+    setInnerDimensions (dimensions)
+    {
+        this._innerDimensions = dimensions;
+
+        if (dimensions)
+        {
+            this._top = clamp(this._top, 0, dimensions.height - this._height);
+            this._left = clamp(this._left, 0, dimensions.width - this._width);
+        }
+    }
+}
 
 Object.defineProperties(Viewport.prototype, {
     top: getCoordinateDescriptor('top', 'height'),
@@ -85,10 +85,10 @@ Object.defineProperties(Viewport.prototype, {
     }
 });
 
-function getCoordinateDescriptor(coord, associatedDimension)
+function getCoordinateDescriptor (coord, associatedDimension)
 {
-    var privateProp = '_' + coord;
-    var source = 'scroll' + coord.charAt(0).toUpperCase() + coord.slice(1);
+    const privateProp = '_' + coord;
+    const source = 'scroll' + coord.charAt(0).toUpperCase() + coord.slice(1);
 
     return {
         get: function ()
@@ -97,11 +97,11 @@ function getCoordinateDescriptor(coord, associatedDimension)
         },
         set: function (newValue)
         {
-            var normalized;
+            let normalized;
 
             if (this._innerDimensions)
             {
-                var maxAllowed = this._innerDimensions[associatedDimension] - this[associatedDimension];
+                const maxAllowed = this._innerDimensions[associatedDimension] - this[associatedDimension];
                 normalized = clamp(newValue, 0, maxAllowed);
             }
             else
@@ -114,7 +114,7 @@ function getCoordinateDescriptor(coord, associatedDimension)
     };
 }
 
-function getDimensionDescriptor(dimen)
+function getDimensionDescriptor (dimen)
 {
     return {
         get: function ()
@@ -124,22 +124,22 @@ function getDimensionDescriptor(dimen)
     };
 }
 
-function fallsBetween(point, start, end)
+function fallsBetween (point, start, end)
 {
     return point >= start && point <= end;
 }
 
-function clamp(value, min, max)
+function clamp (value, min, max)
 {
     return clampMin(clampMax(value, max), min);
 }
 
-function clampMin(value, min)
+function clampMin (value, min)
 {
     return Math.max(value, min);
 }
 
-function clampMax(value, max)
+function clampMax (value, max)
 {
     return Math.min(value, max);
 }

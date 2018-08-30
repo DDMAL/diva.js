@@ -1,101 +1,110 @@
-var extend = require('jquery').extend;
-
-module.exports = ValidationRunner;
-
-function ValidationRunner(options)
+export default class ValidationRunner
 {
-    this.whitelistedKeys = options.whitelistedKeys || [];
-    this.additionalProperties = options.additionalProperties || [];
-    this.validations = options.validations;
+    constructor (options)
+    {
+        this.whitelistedKeys = options.whitelistedKeys || [];
+        this.additionalProperties = options.additionalProperties || [];
+        this.validations = options.validations;
+    }
+
+    isValid (key, value, settings)
+    {
+        // Get the validation index
+        let validationIndex = null;
+
+        this.validations.some((validation, index) =>
+        {
+            if (validation.key !== key)
+            {
+                return false;
+            }
+
+            validationIndex = index;
+            return true;
+        });
+
+        if (validationIndex === null)
+        {
+            return true;
+        }
+
+        // Run the validation
+        const dummyChanges = {};
+        dummyChanges[key] = value;
+        const proxier = createSettingsProxier(settings, dummyChanges, this);
+
+        return !this._runValidation(validationIndex, value, proxier);
+    }
+
+    validate (settings)
+    {
+        this._validateOptions({}, settings);
+    }
+
+    getValidatedOptions (settings, options)
+    {
+        const cloned = Object.assign({}, options);
+        this._validateOptions(settings, cloned);
+        return cloned;
+    }
+
+    _validateOptions (settings, options)
+    {
+        const settingsProxier = createSettingsProxier(settings, options, this);
+        this._applyValidations(options, settingsProxier);
+    }
+
+    _applyValidations (options, proxier)
+    {
+        this.validations.forEach((validation, index) =>
+        {
+            if (!options.hasOwnProperty(validation.key))
+            {
+                return;
+            }
+
+            const input = options[validation.key];
+            const corrected = this._runValidation(index, input, proxier);
+
+            if (corrected)
+            {
+                if (!corrected.warningSuppressed)
+                {
+                    emitWarning(validation.key, input, corrected.value);
+                }
+
+                options[validation.key] = corrected.value;
+            }
+        }, this);
+    }
+
+    _runValidation (index, input, proxier)
+    {
+        const validation = this.validations[index];
+
+        proxier.index = index;
+
+        let warningSuppressed = false;
+        const config = {
+            suppressWarning: () =>
+            {
+                warningSuppressed = true;
+            }
+        };
+
+        const outputValue = validation.validate(input, proxier.proxy, config);
+
+        if (outputValue === undefined || outputValue === input)
+        {
+            return null;
+        }
+
+        return {
+            value: outputValue,
+            warningSuppressed: warningSuppressed
+        };
+    }
 }
-
-ValidationRunner.prototype.isValid = function (key, value, settings)
-{
-    // Get the validation index
-    var validationIndex = null;
-
-    this.validations.some(function (validation, index)
-    {
-        if (validation.key !== key)
-            return false;
-
-        validationIndex = index;
-        return true;
-    });
-
-    if (validationIndex === null)
-        return true;
-
-    // Run the validation
-    var dummyChanges = {};
-    dummyChanges[key] = value;
-    var proxier = createSettingsProxier(settings, dummyChanges, this);
-
-    return !this._runValidation(validationIndex, value, proxier);
-};
-
-ValidationRunner.prototype.validate = function (settings)
-{
-    this._validateOptions({}, settings);
-};
-
-ValidationRunner.prototype.getValidatedOptions = function (settings, options)
-{
-    var cloned = extend({}, options);
-    this._validateOptions(settings, cloned);
-    return cloned;
-};
-
-ValidationRunner.prototype._validateOptions = function (settings, options)
-{
-    var settingsProxier = createSettingsProxier(settings, options, this);
-    this._applyValidations(options, settingsProxier);
-};
-
-ValidationRunner.prototype._applyValidations = function (options, proxier)
-{
-    this.validations.forEach(function (validation, index)
-    {
-        if (!options.hasOwnProperty(validation.key))
-            return;
-
-        var input = options[validation.key];
-        var corrected = this._runValidation(index, input, proxier);
-
-        if (corrected)
-        {
-            if (!corrected.warningSuppressed)
-                emitWarning(validation.key, input, corrected.value);
-
-            options[validation.key] = corrected.value;
-        }
-    }, this);
-};
-
-ValidationRunner.prototype._runValidation = function (index, input, proxier)
-{
-    var validation = this.validations[index];
-
-    proxier.index = index;
-
-    var warningSuppressed = false;
-    var config = {
-        suppressWarning: function ()
-        {
-            warningSuppressed = true;
-        }
-    };
-
-    var outputValue = validation.validate(input, proxier.proxy, config);
-
-    if (outputValue === undefined || outputValue === input)
-        return null;
-
-    return {
-        value: outputValue,
-        warningSuppressed: warningSuppressed
-    };
-};
 
 /**
  * The settings proxy wraps the settings object and ensures that
@@ -106,40 +115,42 @@ ValidationRunner.prototype._runValidation = function (index, input, proxier)
  * multiple validation stages and it was a lot harder to keep track
  * of everything, so this was more valuable.
  */
-function createSettingsProxier(settings, options, runner)
+function createSettingsProxier (settings, options, runner)
 {
-    var proxier = {
+    const proxier = {
         proxy: {},
         index: null
     };
 
-    var lookup = lookupValue.bind(null, settings, options);
+    const lookup = lookupValue.bind(null, settings, options);
 
-    var properties = {};
+    const properties = {};
 
-    runner.whitelistedKeys.forEach(function (whitelisted)
+    runner.whitelistedKeys.forEach((whitelisted) =>
     {
         properties[whitelisted] = {
             get: lookup.bind(null, whitelisted)
         };
     });
 
-    runner.additionalProperties.forEach(function (additional)
+    runner.additionalProperties.forEach((additional) =>
     {
         properties[additional.key] = {
             get: additional.get
         };
     });
 
-    runner.validations.forEach(function (validation, validationIndex)
+    runner.validations.forEach( (validation, validationIndex) =>
     {
         properties[validation.key] = {
-            get: function ()
+            get: () =>
             {
                 if (validationIndex < proxier.index)
+                {
                     return lookup(validation.key);
+                }
 
-                var currentKey = runner.validations[proxier.index].key;
+                const currentKey = runner.validations[proxier.index].key;
                 throw new TypeError('Cannot access setting ' + validation.key + ' while validating ' + currentKey);
             }
         };
@@ -150,15 +161,17 @@ function createSettingsProxier(settings, options, runner)
     return proxier;
 }
 
-function emitWarning(key, original, corrected)
+function emitWarning (key, original, corrected)
 {
     console.warn('Invalid value for ' + key + ': ' + original + '. Using ' + corrected + ' instead.');
 }
 
-function lookupValue(base, extension, key)
+function lookupValue (base, extension, key)
 {
     if (key in extension)
+    {
         return extension[key];
+    }
 
     return base[key];
 }

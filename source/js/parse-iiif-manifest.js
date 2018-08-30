@@ -1,103 +1,141 @@
-/* jshint unused: true */
+import parseLabelValue from './utils/parse-label-value';
 
-module.exports = parseIIIFManifest;
-
-var getMaxZoomLevel = function (width, height)
+const getMaxZoomLevel = (width, height) =>
 {
-    var largestDimension = Math.max(width, height);
+    const largestDimension = Math.max(width, height);
+    if (largestDimension < 128) 
+        return 0;
     return Math.ceil(Math.log((largestDimension + 1) / (256 + 1)) / Math.log(2));
 };
 
-var incorporateZoom = function (imageDimension, zoomDifference)
-{
-    return imageDimension / (Math.pow(2, zoomDifference));
-};
+const incorporateZoom = (imageDimension, zoomDifference) => imageDimension / (Math.pow(2, zoomDifference));
 
-var getOtherImageData = function(otherImages, lowestMaxZoom, canvasWidth, canvasHeight)
+const getOtherImageData = (otherImages, lowestMaxZoom) =>
 {
-    return otherImages.map(
-        function (itm)
+    return otherImages.map( (itm) =>
+    {
+        const w = itm.width;
+        const h = itm.height;
+        const info = parseImageInfo(itm);
+        const url = info.url.slice(-1) !== '/' ? info.url + '/' : info.url;  // append trailing slash to url if it's not there.
+
+        const dims = new Array(lowestMaxZoom + 1);
+        for (let j = 0; j < lowestMaxZoom + 1; j++)
         {
-            var w = itm.width || canvasWidth;
-            var h = itm.height || canvasHeight;
-
-            var dims = new Array(lowestMaxZoom + 1);
-            for (var j = 0; j < lowestMaxZoom + 1; j++)
-            {
-                dims[j] = {
-                    h: Math.floor(incorporateZoom(h, lowestMaxZoom - j)),
-                    w: Math.floor(incorporateZoom(w, lowestMaxZoom - j))
-                };
-            }
-            return {
-                label: itm.label || "",
-                dims: dims
+            dims[j] = {
+                h: Math.floor(incorporateZoom(h, lowestMaxZoom - j)),
+                w: Math.floor(incorporateZoom(w, lowestMaxZoom - j))
             };
         }
-    );
+
+        return {
+            f: info.url,
+            url: url,
+            il: itm.label || "",
+            d: dims
+        };
+    });
+};
+
+const getIIIFPresentationVersion = (context) =>
+{
+    if (context === "http://iiif.io/api/presentation/2/context.json")
+        return 2;
+    else if (Array.isArray(context) && context.includes("http://iiif.io/api/presentation/2/context.json"))
+        return 2;
+    else if (Array.isArray(context) && context.includes("http://iiif.io/api/presentation/3/context.json"))
+        return 3;
+    else
+        return 2; // Assume a v2 manifest.
 };
 
 /**
- * Parses a IIIF Presentation API Manifest and converts it into a Diva.js-format object
+ * Parses an IIIF Presentation API Manifest and converts it into a Diva.js-format object
  * (See https://github.com/DDMAL/diva.js/wiki/Development-notes#data-received-through-ajax-request)
- * (This is a client-side re-implementation of generate_json.py)
  *
  * @param {Object} manifest - an object that represents a valid IIIF manifest
  * @returns {Object} divaServiceBlock - the data needed by Diva to show a view of a single document
  */
-function parseIIIFManifest(manifest)
+export default function parseIIIFManifest (manifest)
 {
-    var sequence = manifest.sequences[0];
-    var canvases = sequence.canvases;
-    var numCanvases = canvases.length;
+    let ctx = manifest["@context"];
 
-    var pages = new Array(canvases.length);
+    if (!ctx)
+    {
+        console.error("Invalid IIIF Manifest; No @context found.");
+        return null;
+    }
 
-    var thisCanvas, thisResource, thisImage, otherImages, context, url, info, imageAPIVersion,
-        width, height, maxZoom, canvas, label, imageLabel, zoomDimensions, widthAtCurrentZoomLevel,
+    const version = getIIIFPresentationVersion(ctx);
+    const sequence = manifest.sequences ? manifest.sequences[0] : null;
+    const canvases = sequence ? sequence.canvases : manifest.items;
+    const numCanvases = canvases.length;
+
+    const pages = new Array(canvases.length);
+
+    let thisCanvas, 
+        thisResource, 
+        thisImage,
+        secondaryImages,
+        otherImages = [],
+        context, 
+        url, 
+        info, 
+        imageAPIVersion, 
+        width, 
+        height, 
+        maxZoom, 
+        canvas, 
+        label, 
+        imageLabel, 
+        zoomDimensions, 
+        widthAtCurrentZoomLevel, 
         heightAtCurrentZoomLevel;
 
-    var lowestMaxZoom = 100;
-    var maxRatio = 0;
-    var minRatio = 100;
+    let lowestMaxZoom = 100;
+    let maxRatio = 0;
+    let minRatio = 100;
 
     // quickly determine the lowest possible max zoom level (i.e., the upper bound for images) across all canvases.
     // while we're here, compute the global ratios as well.
-    for (var z = 0; z < numCanvases; z++)
+    for (let z = 0; z < numCanvases; z++)
     {
-        var c = canvases[z];
-        var w = c.width;
-        var h = c.height;
-        var mz = getMaxZoomLevel(w, h);
-        var ratio = h / w;
+        const c = canvases[z];
+        const w = c.width;
+        const h = c.height;
+        const mz = getMaxZoomLevel(w, h);
+        const ratio = h / w;
         maxRatio = Math.max(ratio, maxRatio);
         minRatio = Math.min(ratio, minRatio);
 
         lowestMaxZoom = Math.min(lowestMaxZoom, mz);
     }
 
-    // Uint8Arrays are pre-initialized with zeroes. These ones need to be
-    // pre-initialized since we will do arithmetic and value checking on them
-    var totalWidths = new Array(lowestMaxZoom + 1).fill(0);
-    var totalHeights = new Array(lowestMaxZoom + 1).fill(0);
-    var maxWidths = new Array(lowestMaxZoom + 1).fill(0);
-    var maxHeights = new Array(lowestMaxZoom + 1).fill(0);
+    /*
+        These arrays need to be pre-initialized since we will do arithmetic and value checking on them
+    */
+    const totalWidths = new Array(lowestMaxZoom + 1).fill(0);
+    const totalHeights = new Array(lowestMaxZoom + 1).fill(0);
+    const maxWidths = new Array(lowestMaxZoom + 1).fill(0);
+    const maxHeights = new Array(lowestMaxZoom + 1).fill(0);
 
-    for (var i = 0; i < numCanvases; i++)
+    for (let i = 0; i < numCanvases; i++)
     {
         thisCanvas = canvases[i];
-        canvas = thisCanvas['@id'];
+        canvas = thisCanvas['@id'] || thisCanvas.id;
         label = thisCanvas.label;
-        thisResource = thisCanvas.images[0].resource;
+        thisResource = thisCanvas.images ? thisCanvas.images[0].resource : thisCanvas.items[0].items[0].body;
 
         /*
          * If a canvas has multiple images it will be encoded
-         * with a resource type of "oa:Choice". The primary image will be available
-         * on the 'default' key, with other images available under 'item.'
-         * */
-        if (thisResource['@type'] === "oa:Choice")
+         * with a resource type of "oa:Choice" (v2) or "Choice" (v3).
+         **/
+        otherImages = []; // reset array
+        if (thisResource['@type'] === "oa:Choice" || thisResource.type === "Choice")
         {
-            thisImage = thisResource.default;
+            thisImage = thisResource.default || thisResource.items[0];
+            secondaryImages = thisResource.item || thisResource.items.slice(1);
+            otherImages = getOtherImageData(secondaryImages, lowestMaxZoom);
         }
         else
         {
@@ -107,6 +145,7 @@ function parseIIIFManifest(manifest)
         // Prioritize the canvas height / width first, since images may not have h/w
         width = thisCanvas.width || thisImage.width;
         height = thisCanvas.height || thisImage.height;
+
         if (width <= 0 || height <= 0)
         {
             console.warn('Invalid width or height for canvas ' + label + '. Skipping');
@@ -115,19 +154,14 @@ function parseIIIFManifest(manifest)
 
         maxZoom = getMaxZoomLevel(width, height);
 
-        if (thisResource.item)
-        {
-            otherImages = getOtherImageData(thisResource.item, lowestMaxZoom, width, height);
-        }
-
         imageLabel = thisImage.label || null;
 
         info = parseImageInfo(thisImage);
         url = info.url.slice(-1) !== '/' ? info.url + '/' : info.url;  // append trailing slash to url if it's not there.
 
-        context = thisImage.service['@context'];
+        context = thisImage.service['@context'] || thisImage.service.type;
 
-        if (context === 'http://iiif.io/api/image/2/context.json')
+        if (context === 'http://iiif.io/api/image/2/context.json' || context === "ImageService2")
         {
             imageAPIVersion = 2;
         }
@@ -142,7 +176,7 @@ function parseIIIFManifest(manifest)
 
         zoomDimensions = new Array(lowestMaxZoom + 1);
 
-        for (var k = 0; k < lowestMaxZoom + 1; k++)
+        for (let k = 0; k < lowestMaxZoom + 1; k++)
         {
             widthAtCurrentZoomLevel = Math.floor(incorporateZoom(width, lowestMaxZoom - k));
             heightAtCurrentZoomLevel = Math.floor(incorporateZoom(height, lowestMaxZoom - k));
@@ -157,6 +191,9 @@ function parseIIIFManifest(manifest)
             maxHeights[k] = Math.max(heightAtCurrentZoomLevel, maxHeights[k]);
         }
 
+        let isPaged = thisCanvas.viewingHint !== 'non-paged' || (thisCanvas.behavior ? thisCanvas.behavior[0] !== 'non-paged' : false);
+        let isFacing = thisCanvas.viewingHint === 'facing-pages' || (thisCanvas.behavior ? thisCanvas.behavior[0] === 'facing-pages' : false);
+
         pages[i] = {
             d: zoomDimensions,
             m: maxZoom,
@@ -165,8 +202,8 @@ function parseIIIFManifest(manifest)
             f: info.url,
             url: url,
             api: imageAPIVersion,
-            paged: thisCanvas.viewingHint !== 'non-paged',
-            facingPages: thisCanvas.viewingHint === 'facing-pages',
+            paged: isPaged,
+            facingPages: isFacing,
             canvas: canvas,
             otherImages: otherImages,
             xoffset: info.x || null,
@@ -174,16 +211,16 @@ function parseIIIFManifest(manifest)
         };
     }
 
-    var averageWidths = new Array(lowestMaxZoom + 1);
-    var averageHeights = new Array(lowestMaxZoom + 1);
+    const averageWidths = new Array(lowestMaxZoom + 1);
+    const averageHeights = new Array(lowestMaxZoom + 1);
 
-    for (var a = 0; a < lowestMaxZoom + 1; a++)
+    for (let a = 0; a < lowestMaxZoom + 1; a++)
     {
         averageWidths[a] = totalWidths[a] / numCanvases;
         averageHeights[a] = totalHeights[a] / numCanvases;
     }
 
-    var dims = {
+    const dims = {
         a_wid: averageWidths,
         a_hei: averageHeights,
         max_w: maxWidths,
@@ -194,12 +231,15 @@ function parseIIIFManifest(manifest)
         t_wid: totalWidths
     };
 
+    // assumes paged is false for non-paged values
     return {
-        item_title: manifest.label,
+        version: version,
+        item_title: parseLabelValue(manifest).label,
+        metadata: manifest.metadata || null,
         dims: dims,
         max_zoom: lowestMaxZoom,
         pgs: pages,
-        paged: manifest.viewingHint === 'paged' || sequence.viewingHint === 'paged'
+        paged: manifest.viewingHint === 'paged' || (manifest.behaviour ? manifest.behaviour[0] === 'paged' : false) || (sequence ? sequence.viewingHint === 'paged' : false)
     };
 }
 
@@ -211,31 +251,30 @@ function parseIIIFManifest(manifest)
  * @param {Object} resource - an object representing the resource block of a canvas section in a IIIF manifest
  * @returns {Object} imageInfo - an object containing image URL and region
  */
-function parseImageInfo(resource)
+function parseImageInfo (resource)
 {
-    var url = resource['@id'];
-    var fragmentRegex = /#xywh=([0-9]+,[0-9]+,[0-9]+,[0-9]+)/;
-    var xywh = '';
-    var stripURL = true;
+    let url = resource['@id'] || resource.id;
+    const fragmentRegex = /#xywh=([0-9]+,[0-9]+,[0-9]+,[0-9]+)/;
+    let xywh = '';
+    let stripURL = true;
 
     if (/\/([0-9]+,[0-9]+,[0-9]+,[0-9]+)\//.test(url))
     {
         // if resource in image API format, extract region x,y,w,h from URL (after 4th slash from last)
         // matches coordinates in URLs of the form http://www.example.org/iiif/book1-page1/40,50,1200,1800/full/0/default.jpg
-        var urlArray = url.split('/');
+        const urlArray = url.split('/');
         xywh = urlArray[urlArray.length - 4];
     }
     else if (fragmentRegex.test(url))
     {
         // matches coordinates of the style http://www.example.org/iiif/book1/canvas/p1#xywh=50,50,320,240
-        var result = fragmentRegex.exec(url);
+        const result = fragmentRegex.exec(url);
         xywh = result[1];
     }
-    else if (resource.service && resource.service['@id'])
+    else if (resource.service && (resource.service['@id'] || resource.service.id))
     {
-        // assume canvas size based on image size
-        url = resource.service['@id'];
         // this URL excludes region parameters so we don't need to remove them
+        url = resource.service['@id'] || resource.service.id;
         stripURL = false;
     }
 
@@ -245,14 +284,14 @@ function parseImageInfo(resource)
         url = url.split('/').slice(0, -4).join('/');
     }
 
-    var imageInfo = {
+    const imageInfo = {
         url: url
     };
 
     if (xywh.length)
     {
         // parse into separate components
-        var dimensions = xywh.split(',');
+        const dimensions = xywh.split(',');
         imageInfo.x = parseInt(dimensions[0], 10);
         imageInfo.y = parseInt(dimensions[1], 10);
         imageInfo.w = parseInt(dimensions[2], 10);

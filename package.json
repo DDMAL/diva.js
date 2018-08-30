@@ -1,106 +1,67 @@
 {
-  "name": "diva.js",
-  "version": "5.2.0",
-  "description": "Diva.js is a JavaScript document image viewer designed to present multi-page documents at high resolutions.",
+  "name": "diva",
+  "version": "6.0.0",
+  "description": "Diva.js",
   "main": "build/js/diva.js",
-  "directories": {
-    "test": "tests"
-  },
-  "jspm": {
-    "files": [
-      "build"
-    ],
-    "ignore": [
-      "gulpfile.js"
-    ]
-  },
   "scripts": {
-    "lint": "gulp develop:jshint",
-    "test": "gulp develop:test",
-    "trigger-tests": "karma run",
-    "coverage": "DIVA_ENV=coverage karma start --single-run"
+    "test": "npm run build:production && karma start",
+    "lint": "jshint --reporter=node_modules/jshint-stylish source/js test",
+    "develop": "webpack-dev-server",
+    "build:develop": "webpack --progress",
+    "build:production": "NODE_ENV=production webpack --progress"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/DDMAL/diva.js.git"
+    "url": "git+https://github.com/DDMAL/diva.js.git"
   },
-  "keywords": [
-    "images",
-    "viewer",
-    "iiif",
-    "iip",
-    "documents",
-    "libraries",
-    "archives"
-  ],
-  "dependencies": {
-    "array.prototype.fill": "^1.0.2",
-    "debug": "^2.2.0",
-    "jquery": "~2.1.1",
-    "lodash.maxby": "^4.3.0"
-  },
-  "devDependencies": {
-    "archiver": "^1.3.0",
-    "autoprefixer": "^6.6.0",
-    "bluebird": "^3.3.4",
-    "chalk": "^1.1.3",
-    "connect": "^3.3.5",
-    "connect-livereload": "^0.6.0",
-    "del": "^2.2.2",
-    "gulp": "^3.9.1",
-    "gulp-jshint": "^2.0.4",
-    "gulp-less": "^3.0.3",
-    "gulp-livereload": "^3.8.0",
-    "gulp-load-plugins": "^1.0.0-rc.1",
-    "gulp-postcss": "^6.1.1",
-    "gulp-rename": "^1.2.2",
-    "gulp-sourcemaps": "^1.9.1",
-    "imports-loader": "^0.6.5",
-    "istanbul-instrumenter-loader": "^0.2.0",
-    "jquery-simulate": "github:jquery/jquery-simulate#v1.0.1",
-    "jshint": "^2.9.4",
-    "jshint-stylish": "^2.0.0",
-    "json-loader": "^0.5.4",
-    "karma": "^1.3.0",
-    "karma-coverage": "^1.1.1",
-    "karma-mocha-reporter": "^2.0.0",
-    "karma-phantomjs-launcher": "^1.0.0",
-    "karma-qunit": "^1.2.1",
-    "karma-sourcemap-loader": "^0.3.7",
-    "karma-webpack": "^1.8.1",
-    "less": "^2.7.1",
-    "merge-stream": "^1.0.0",
-    "phantomjs-prebuilt": "^2.1.14",
-    "postcss": "^5.2.7",
-    "postcss-reporter": "^3.0.0",
-    "qunit-assert-close": "^2.0.0",
-    "qunitjs": "^2.1.0",
-    "rimraf": "^2.5.2",
-    "run-sequence": "^1.2.1",
-    "serve-index": "^1.7.0",
-    "serve-static": "^1.9.3",
-    "tar-fs": "^1.13.0",
-    "webpack": "^1.14.0",
-    "yargs": "^6.5.0"
-  },
-  "author": "Andrew Hankinson",
-  "contributors": [
-    {
-      "name": "Evan Magoni"
-    },
-    {
-      "name": "Wendy Liu"
-    },
-    {
-      "name": "Andrew Horwitz"
-    },
-    {
-      "name": "Laurent Pugin"
-    }
-  ],
-  "license": "MIT",
+  "author": "",
+  "license": "ISC",
   "bugs": {
     "url": "https://github.com/DDMAL/diva.js/issues"
   },
-  "homepage": "https://github.com/DDMAL/diva.js"
+  "homepage": "https://github.com/DDMAL/diva.js#readme",
+  "dependencies": {
+    "array.prototype.fill": "^1.0.2",
+    "url-search-params": "^1.0.2",
+    "whatwg-fetch": "^2.0.4"
+  },
+  "devDependencies": {
+    "babel-core": "^6.21.0",
+    "babel-loader": "^8.0.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-register": "^6.18.0",
+    "chai": "^4.1.2",
+    "clean-webpack-plugin": "^0.1.19",
+    "connect": "^3.5.0",
+    "copy-webpack-plugin": "^4.5.2",
+    "css-loader": "^1.0.0",
+    "debug": "^3.1.0",
+    "del": "^3.0.0",
+    "es6-promise": "^4.2.4",
+    "istanbul-instrumenter-loader": "^3.0.1",
+    "jshint": "^2.9.6",
+    "jshint-stylish": "^2.2.1",
+    "karma": "^3.0.0",
+    "karma-babel-preprocessor": "^7.0.0",
+    "karma-chrome-launcher": "^2.2.0",
+    "karma-coverage-istanbul-reporter": "^2.0.2",
+    "karma-mocha": "^1.3.0",
+    "karma-mocha-reporter": "^2.2.5",
+    "karma-webpack": "^3.0.0",
+    "lodash.maxby": "^4.6.0",
+    "mini-css-extract-plugin": "^0.4.2",
+    "mocha": "^5.2.0",
+    "node-sass": "^4.9.3",
+    "postcss-loader": "^3.0.0",
+    "puppeteer": "^1.7.0",
+    "sass-loader": "^7.1.0",
+    "style-loader": "^0.23.0",
+    "webpack": "^4.17.1",
+    "webpack-cli": "^3.1.0",
+    "webpack-dev-server": "^3.1.7"
+  },
+  "divaOptions": {
+    "mainEntry": "diva.js",
+    "mainVarName": "Diva"
+  }
 }

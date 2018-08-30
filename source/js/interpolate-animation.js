@@ -1,41 +1,51 @@
-/* global performance */
-
 // TODO: requestAnimationFrame fallback
 
-module.exports = {
-    animate: animate,
+export default {
+    animate,
     easing: {
-        linear: linearEasing
+        linear: linearEasing,
+        cubic: inOutCubicEasing
     }
 };
 
-function animate(options)
+let now;
+
+if (typeof performance !== 'undefined' && performance.now)
 {
-    var durationMs = options.duration;
-    var parameters = options.parameters;
-    var onUpdate = options.onUpdate;
-    var onEnd = options.onEnd;
+    now = () => { return performance.now(); };
+}
+else
+{
+    now = () => { return Date.now(); };
+}
+
+
+function animate (options)
+{
+    const durationMs = options.duration;
+    const parameters = options.parameters;
+    const onUpdate = options.onUpdate;
+    const onEnd = options.onEnd;
 
     // Setup
     // Times are in milliseconds from a basically arbitrary start
-    var start = now();
-    var end = start + durationMs;
+    const start = now();
+    const end = start + durationMs;
 
-    var tweenFns = {};
-    var values = {};
-    var paramKeys = Object.keys(parameters);
+    const tweenFns = {};
+    const values = {};
+    const paramKeys = Object.keys(parameters);
 
-    paramKeys.forEach(function (key)
-    {
-        var config = parameters[key];
-        tweenFns[key] = interpolate(config.from, config.to, config.easing || linearEasing);
+    paramKeys.forEach(key => {
+        const config = parameters[key];
+        tweenFns[key] = interpolate(config.from, config.to, config.easing || inOutCubicEasing);
     });
 
     // Run it!
-    var requestId = requestAnimationFrame(update);
+    let requestId = requestAnimationFrame(update);
 
     return {
-        cancel: function ()
+        cancel()
         {
             if (requestId !== null)
             {
@@ -49,24 +59,27 @@ function animate(options)
 
     function update()
     {
-        var current = now();
-        var elapsed = Math.min((current - start) / durationMs, 1);
+        const current = now();
+        const elapsed = Math.min((current - start) / durationMs, 1);
 
         updateValues(elapsed);
         onUpdate(values);
 
         if (current < end)
+        {
             requestId = requestAnimationFrame(update);
+        }
         else
+        {
             handleAnimationCompletion({
                 interrupted: false
             });
+        }
     }
 
     function updateValues(elapsed)
     {
-        paramKeys.forEach(function (key)
-        {
+        paramKeys.forEach(key => {
             values[key] = tweenFns[key](elapsed);
         });
     }
@@ -82,30 +95,28 @@ function animate(options)
 
 function interpolate(start, end, easing)
 {
-    return function (elapsed)
-    {
-        return start + (end - start) * easing(elapsed);
-    };
+    return (elapsed) => { return start + (end - start) * easing(elapsed); };
 }
 
+/**
+ * Easing functions. inOutCubicEasing is the default, but
+ * others are given for convenience.
+ *
+ **/
 function linearEasing(e)
 {
     return e;
 }
 
-var now;
-
-if (typeof performance !== 'undefined' && performance.now)
+/* jshint ignore:start */
+function inOutQuadEasing (e)
 {
-    now = function ()
-    {
-        return performance.now();
-    };
+    return e < .5 ? 2 * e * e : -1+(4-2 * e) * e
 }
-else
+/* jshint ignore:end */
+
+
+function inOutCubicEasing (t)
 {
-    now = function ()
-    {
-        return Date.now();
-    };
+    return t < 0.5 ? 4 * t * t * t : ( t - 1 ) * ( 2 * t - 2 ) * ( 2 * t - 2 ) + 1;
 }

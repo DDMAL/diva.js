@@ -1,5 +1,4 @@
-module.exports = elt;
-module.exports.setAttributes = setDOMAttributes;
+export { setDOMAttributes as setAttributes };
 
 /**
  * Convenience function to create a DOM element, set attributes on it, and
@@ -11,23 +10,23 @@ module.exports.setAttributes = setDOMAttributes;
  *
  * Inspired by the ProseMirror helper of the same name.
  */
-function elt(tag)
+export function elt (tag)
 {
-    var el = document.createElement(tag);
-    var args = Array.prototype.slice.call(arguments, 1);
+    const el = document.createElement(tag);
+    const args = Array.prototype.slice.call(arguments, 1);
 
     while (args.length)
     {
-        var arg = args.shift();
+        const arg = args.shift();
         handleEltConstructorArg(el, arg);
     }
 
     return el;
 }
 
-function handleEltConstructorArg(el, arg)
+function handleEltConstructorArg (el, arg)
 {
-    if (arg == null)
+    if (arg == null)  // NB: == is correct;
         return;
 
     if (typeof arg !== 'object' && typeof arg !== 'function')
@@ -41,8 +40,8 @@ function handleEltConstructorArg(el, arg)
     }
     else if (arg instanceof Array)
     {
-        var childCount = arg.length;
-        for (var i = 0; i < childCount; i++)
+        const childCount = arg.length;
+        for (let i = 0; i < childCount; i++)
             handleEltConstructorArg(el, arg[i]);
     }
     else
@@ -56,9 +55,9 @@ function handleEltConstructorArg(el, arg)
  * accept either a string or an object whose own attributes are assigned to
  * el.style.
  */
-function setDOMAttributes(el, attributes)
+function setDOMAttributes (el, attributes)
 {
-    for (var prop in attributes)
+    for (const prop in attributes)
     {
         if (!attributes.hasOwnProperty(prop))
             continue;
@@ -74,7 +73,7 @@ function setDOMAttributes(el, attributes)
     }
 }
 
-function setStyle(el, style)
+function setStyle (el, style)
 {
     if (!style)
         return;
@@ -85,7 +84,7 @@ function setStyle(el, style)
         return;
     }
 
-    for (var cssProp in style)
+    for (const cssProp in style)
     {
         if (!style.hasOwnProperty(cssProp))
             continue;
