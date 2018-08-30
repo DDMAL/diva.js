@@ -153,18 +153,10 @@ describe('Navigation', function ()
     {
         Diva.Events.subscribe('ViewerDidLoad', function (settings)
         {
-            for (var i = 0; i < 5; i++)
-            {
-                el(settings.selector + 'zoom-out-button').click();
-            }
+            el(settings.selector + 'zoom-out-button').click();
+            assertZoomIs(4, this, 'zoom buttons');
 
-            assertZoomIs(0, this, 'zoom buttons');
-
-            for (i = 0; i < 5; i++)
-            {
-                el(settings.selector + 'zoom-in-button').click();
-            }
-
+            el(settings.selector + 'zoom-in-button').click();
             assertZoomIs(5, this, 'zoom buttons');
 
             done();

@@ -143,7 +143,7 @@ export default class ViewerCore
             viewport: null,             // Object caching the viewport dimensions
             viewportElement: null,
             viewportObject: null,
-            zoomDuration: 600
+            zoomDuration: 400
         };
 
         this.settings = createSettingsView([options, this.viewerState]);
@@ -699,6 +699,17 @@ export default class ViewerCore
                     this.viewerState.oldZoomLevel = newZoomLevel;
             }
         });
+
+        // Deactivate zoom buttons while zooming
+        let zoomInButton = document.getElementById(this.settings.selector + 'zoom-in-button');
+        let zoomOutButton = document.getElementById(this.settings.selector + 'zoom-out-button');
+        zoomInButton.disabled = true;
+        zoomOutButton.disabled = true;
+        setTimeout(() =>
+        {
+            zoomInButton.disabled = false;
+            zoomOutButton.disabled = false;
+        }, this.settings.zoomDuration);
 
         // Send off the zoom level did change event.
         this.publish("ZoomLevelDidChange", newZoomLevel);
