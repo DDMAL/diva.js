@@ -15,7 +15,7 @@ describe('Settings', function ()
         oldWrapper.parentNode.removeChild(oldWrapper);
         let newWrapper = document.createElement('div');
         newWrapper.id = 'parent-wrapper';
-        newWrapper.setAttribute('style', 'width: 984px; height: 800px');
+        newWrapper.setAttribute('style', 'width: 984px;');
         let div = document.createElement('div');
         div.id = 'diva-wrapper';
         newWrapper.appendChild(div);
@@ -169,7 +169,7 @@ describe('Settings', function ()
     {
         Diva.Events.subscribe('ViewerDidLoad', function (settings)
         {
-            assert.strictEqual(settings.currentPageIndex, 10, "The initial page index should be 10");
+            assert.strictEqual(settings.activePageIndex, 10, "The initial page index should be 10");
             done();
         });
 
@@ -183,7 +183,7 @@ describe('Settings', function ()
     {
         Diva.Events.subscribe('ViewerDidLoad', function (settings)
         {
-            assert.strictEqual(settings.currentPageIndex, 0, "The initial page index should be 0 (the fallback)");
+            assert.strictEqual(settings.activePageIndex, 0, "The initial page index should be 0 (the fallback)");
             done();
         });
 

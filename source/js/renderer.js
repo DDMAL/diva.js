@@ -316,6 +316,13 @@ export default class Renderer
                             debugPaints('Page %s, tile %s no longer visible on image load', pageIndex, source.url);
                         }
                     }
+                    else
+                    {
+                        if (this._isTileForSourceVisible(pageIndex, source))
+                            this._paint();
+                        else
+                            debugPaints('Page %s, tile %s no longer visible on image load', pageIndex, source.url);
+                    }
                 },
                 error: () =>
                 {
@@ -435,7 +442,7 @@ export default class Renderer
 
     _getImageOffset (pageIndex)
     {
-        return this.layout.getPageOffset(pageIndex, {excludePadding: true});
+        return this.layout.getPageOffset(pageIndex, {includePadding: true});
     }
 
     // TODO: Update signature

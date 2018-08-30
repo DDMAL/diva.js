@@ -15,7 +15,8 @@
     "globals": {
         "define": true,
         "expect": true,
-        "assert": true
+        "assert": true,
+        "Diva": true
     },
     "validthis": true
 }

@@ -11,7 +11,7 @@ describe('IIIF Manifest Parsing', function ()
         oldWrapper.parentNode.removeChild(oldWrapper);
         let newWrapper = document.createElement('div');
         newWrapper.id = 'parent-wrapper';
-        newWrapper.setAttribute('style', 'width: 984px; height: 800px');
+        newWrapper.setAttribute('style', 'width: 984px;');
         let div = document.createElement('div');
         div.id = 'diva-wrapper';
         newWrapper.appendChild(div);

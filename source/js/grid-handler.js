@@ -47,9 +47,17 @@ export default class GridHandler
         // return early if there are no rendered pages in view.
         if (renderedPages.length === 0) return;
 
+        // calculate the visible pages from the rendered pages
+        let temp = this._viewerCore.viewerState.viewport.intersectionTolerance;
+        // without setting to 0, isPageVisible returns true for pages out of viewport by intersectionTolerance
+        this._viewerCore.viewerState.viewport.intersectionTolerance = 0;
+        let visiblePages = renderedPages.filter(index => this._viewerCore.viewerState.renderer.isPageVisible(index));
+        // reset back to original value after getting true visible pages
+        this._viewerCore.viewerState.viewport.intersectionTolerance = temp;
+
         if (targetPage !== null)
         {
-            this._viewerCore.setCurrentPage(targetPage);
+            this._viewerCore.setCurrentPages(targetPage, visiblePages);
             return;
         }
 
@@ -86,13 +94,13 @@ export default class GridHandler
             chosenGroup = getCentermostGroup(groups, viewport);
         }
 
-        const currentPage = this._viewerCore.getSettings().currentPageIndex;
+        const currentPage = this._viewerCore.getSettings().activePageIndex;
 
         const hasCurrentPage = chosenGroup.pages.some(page => page.index === currentPage);
 
         if (!hasCurrentPage)
         {
-            this._viewerCore.setCurrentPage(chosenGroup.pages[0].index);
+            this._viewerCore.setCurrentPages(chosenGroup.pages[0].index, visiblePages);
         }
     }
 

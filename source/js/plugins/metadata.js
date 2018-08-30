@@ -20,7 +20,7 @@
  * Toolbar plugins must have a toolbarIcon and toolbarSide attribute, with toolbarSide being either 'left' or 'right'
  **/
 
-import parseLabelValue from '../utils/label-value-parser';
+import parseLabelValue from '../utils/parse-label-value';
 
 export default class MetadataPlugin
 {
@@ -57,7 +57,7 @@ export default class MetadataPlugin
 
             let closeButton = document.createElement('button');
             closeButton.innerHTML = '&#10006';
-            closeButton.id = 'closeMetadata';
+            closeButton.classList.add('close-button');
             closeButton.onclick = () => 
             {
                 metadataDiv.style.display = 'none';            
@@ -72,11 +72,11 @@ export default class MetadataPlugin
                 let key = metadata[i];
 
                 let header = document.createElement('h4');
-                header.innerText = parseLabelValue(key).label;
+                header.innerHTML = parseLabelValue(key).label;
                 header.setAttribute('style', 'margin-bottom: 0');
 
                 let value = document.createElement('p');
-                value.innerText = parseLabelValue(key).value;
+                value.innerHTML = parseLabelValue(key).value;
                 value.setAttribute('style', 'margin-top: 0');
 
                 contentDiv.appendChild(header);

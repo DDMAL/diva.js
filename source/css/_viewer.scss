@@ -2,7 +2,7 @@
 @import "mixins";
 
 .diva-wrapper {
-    min-height: 100%;
+    min-height: 95vh;
     width: 100%;
     flex-grow: 1;
 
@@ -229,7 +229,6 @@
     overflow: hidden;
     min-height: 100px;
     min-width: 200px;
-    height: 700px;
     flex-grow: 1;
 }
 
@@ -277,20 +276,32 @@
 
 .diva-page-tools {
     position: relative;
-    top: -$pluginIconSize - 5;
+    top: -$pluginIconSize - 7;
     height: $pluginIconSize;
 
     div {
-        margin-bottom: 5px;
         display: inline-block;
         height: $pluginIconSize;
         width: $pluginIconSize;
         cursor: pointer;
+        padding: 3px;
 
         svg:hover .diva-pagetool-icon {
           fill: $regularBlue;
         }
     }
+}
+
+.diva-page-labels-wrapper {
+    position: absolute;
+    z-index: 3;
+}
+
+.diva-page-labels {
+    position: relative;
+    top: -$pluginIconSize;
+    height: $pluginIconSize;
+    font-size: 0.8em;
 }
 
 .diva-fullscreen {
@@ -461,12 +472,12 @@
     text-align: center;
 }
 
-#closeMetadata {
+.close-button {
     position: absolute;
     right: 1em;
     top: 1em;
 }
 
-#closeMetadata:hover {
+.close-button:hover {
   color: tomato;
 }

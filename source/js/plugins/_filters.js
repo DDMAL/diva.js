@@ -1,17 +1,128 @@
 
-let _filterQueue = {};
+// stores an array of objects, each object stores the function, image data, adjust to apply, and name
+let _filterQueue = [];
+// stores whether the invert filter was used (for if it should be reapplied)
+let inverted = false;
 
-export function addFilterToQueue (filter)
+export function resetFilters ()
 {
-    let fname = filter.name;
+    _filterQueue = [];
+    inverted = false;
+}
 
-    if (_filterQueue.hasOwnProperty(fname))
+// Add a filter to the array. If it is new, apply the filter's function to the image data of
+// the previous filter's returned image data (or the default image data if it's the first filter),
+// and return this new image data. Pass string 'name' since function.name with minifiedJS = bad
+// Threshold is exclusive to other filters and vice versa
+export function addFilterToQueue (data, filter, adjust, name)
+{
+    // index of the filter in the queue, -1 if not found
+    let index = _filterQueue.findIndex(f => f.filter.name === filter.name);
+    if (index !== -1) // adjust a filter already in the queue
     {
-        // update existing filter
+        let filtObj = _filterQueue[index];
+        filtObj.adjust = adjust;
+        
+        // all filters except sharpness use _apply (from within their private function 'filter')
+        // whereas sharpness uses convolve, so need to check (ie. can't generalize for all filters)
+        if (filtObj.name === 'Sharpness')
+        {
+            // if adjust[1] is 0, then sharpness should be reset (cancelled)
+            if (filtObj.adjust[1] === 0)
+                filtObj.postData = filtObj.prevData;
+            else
+                filtObj.postData = convolve(filtObj.prevData, filtObj.adjust);
+        }
+        else if (filtObj.name === 'Invert')
+        {
+            // invert filter should toggle, so use post-alteration image data
+            filtObj.postData = _apply(filtObj.postData, filtObj.filter, filtObj.adjust);
+            inverted = !inverted;
+        }
+        else 
+            filtObj.postData = _apply(filtObj.prevData, filtObj.filter, filtObj.adjust);
+
+        // reapply all filters that come after in the queue
+        for (let i = index + 1, len = _filterQueue.length; i < len; i++)
+        {
+            let otherFiltObj = _filterQueue[i];
+
+            if (otherFiltObj.name === 'Invert' && !inverted) // don't reinvert the image
+                continue;
+
+            otherFiltObj.prevData = _filterQueue[i - 1].postData; // starts at filt
+
+            if (otherFiltObj.name === 'Sharpness')
+                if (otherFiltObj.adjust[1] === 0)
+                    otherFiltObj.postData = otherFiltObj.prevData;
+                else
+                    otherFiltObj.postData = convolve(otherFiltObj.prevData, otherFiltObj.adjust);
+            else 
+                otherFiltObj.postData = _apply(otherFiltObj.prevData, otherFiltObj.filter, otherFiltObj.adjust);
+
+            if (i === len - 1) // last filter
+                return otherFiltObj.postData;
+        }
+
+        // only two filters in queue and second was modified
+        return filtObj.postData; 
     }
-    else
+    else // add new filter to the queue
     {
-        // add new filter to the queue
+        // handle threshold uniqueness
+        if (name === 'Threshold' || (_filterQueue[0] && _filterQueue[0].name === 'Threshold'))
+        {
+            // reset filter queue
+            resetFilters();
+
+            // reset appropriate sliders
+            let tools = document.getElementsByClassName('manipulation-tools')[0];
+            for (let i = 0, len = tools.children.length; i < len; i++)
+            {
+                let tool = tools.children[i].children[0];
+
+                if (tool && tool.type === 'range')
+                {
+                    let isThreshold = tool.parentElement.textContent.includes('Threshold');
+                    let isZoom = tool.parentElement.textContent.includes('Zoom');
+                    let isRotate = tool.parentElement.textContent.includes('Rotation');
+
+                    if (name === 'Threshold' && !isThreshold && !isZoom && !isRotate) // reset all except
+                        tool.value = 0;
+                    else if (name !== 'Threshold' && isThreshold) // reset only threshold
+                        tool.value = 0;
+                }
+            }
+
+            // reset log
+            document.getElementById('filter-log').innerHTML = "<h3> Filter Application Order <h3>";
+        }
+
+        _filterQueue.push({
+            filter: filter,
+            prevData: _filterQueue.length === 0 ? data : _filterQueue[_filterQueue.length - 1].postData,
+            adjust: adjust,
+            name: name
+        });
+
+        let filtObj = _filterQueue[_filterQueue.length - 1];
+
+        if (filtObj.name === 'Sharpness')
+            filtObj.postData = convolve(filtObj.prevData, filtObj.adjust);
+        else 
+            filtObj.postData = _apply(filtObj.prevData, filtObj.filter, filtObj.adjust);
+
+        // invert filter was added to queue
+        if (filtObj.name === 'Invert')
+            inverted = true;
+
+        // add name to applied filters log
+        let p = document.createElement('p');
+        p.setAttribute('style', 'color: white; margin: 0;');
+        p.innerText = filtObj.name;
+        document.getElementById('filter-log').appendChild(p);
+
+        return filtObj.postData;
     }
 }
 
@@ -66,7 +177,7 @@ function _apply (data, pixelFunc, adjust)
  **/
 export function grayscale(data)
 {
-    return _apply(data, _grayscale);
+    return addFilterToQueue(data, _grayscale, null, 'Grayscale');
 }
 
 /**
@@ -86,9 +197,39 @@ function _grayscale (r, g, b)
     return [pixelAverage, pixelAverage, pixelAverage, 255];
 }
 
+export function saturation (data, adjust)
+{
+    return addFilterToQueue(data, _saturation, adjust, 'Saturation');
+}
+
+/**
+ * Adjusts the color saturation of the image.
+ * Range is -100 to 100. Values < 0 will desaturate the image while values > 0 will saturate it.
+ *
+ * See https://github.com/meltingice/CamanJS/blob/master/src/lib/filters.coffee#L42-L58
+ *
+ * @params {integer} r - the value of the red pixel
+ * @params {integer} g - the value of the green pixel
+ * @params {integer} b - the value of the blue pixel
+ * @params {integer} adjust - the saturation value for adjustment, -100 to 100
+ * @returns {Array} - The computed RGB values for the input, with a constant 255 for the alpha channel.
+ **/
+function _saturation (r, g, b, adjust)
+{
+    let adj = adjust * -0.01;
+    let max = Math.max(r, g, b);
+
+    return [
+        r !== max ? r + (max - r) * adj : r,
+        g !== max ? g + (max - g) * adj : g,
+        b !== max ? b + (max - b) * adj : b,
+        255
+    ];
+}
+
 export function vibrance (data, adjust)
 {
-    return _apply(data, _vibrance, adjust);
+    return addFilterToQueue(data, _vibrance, adjust, 'Vibrance');
 }
 
 /**
@@ -122,7 +263,7 @@ function _vibrance (r, g, b, adjust)
 
 export function brightness (data, adjust)
 {
-    return _apply(data, _brightness, adjust);
+    return addFilterToQueue(data, _brightness, adjust, 'Brightness');
 }
 
 function _brightness (r, g, b, adjust)
@@ -139,7 +280,7 @@ function _brightness (r, g, b, adjust)
 
 export function contrast (data, adjust)
 {
-    return _apply(data, _contrast, adjust);
+    return addFilterToQueue(data, _contrast, adjust, 'Contrast');
 }
 
 /**
@@ -186,7 +327,7 @@ function _contrast (r, g, b, adjust)
  **/
 export function invert(data)
 {
-    return _apply(data, _invert);
+    return addFilterToQueue(data, _invert, null, 'Invert');
 }
 
 /**
@@ -210,7 +351,7 @@ function _invert (r, g, b)
 
 export function threshold(data, adjust)
 {
-    return _apply(data, _threshold, adjust);
+    return addFilterToQueue(data, _threshold, adjust, 'Threshold');
 }
 
 /**
@@ -236,7 +377,7 @@ function _threshold (r, g, b, adjust)
 
 export function hue (data, adjust)
 {
-    return _apply(data, _hue, adjust);
+    return addFilterToQueue(data, _hue, adjust, 'Hue');
 }
 
 function _hue (r, g, b, adjust)
@@ -255,6 +396,121 @@ function _hue (r, g, b, adjust)
     ];
 }
 
+export function gamma (data, adjust)
+{
+    return addFilterToQueue(data, _gamma, adjust, 'Gamma');
+}
+
+/**
+ * Adjusts the gamma of the image.
+ * Range is 0 to 4. Values between 0 and 1 will lessen the contrast while values greater
+ * than 1 will increase it. Starts at 1 default. The actual adjust slider is from -100 to
+ * 300 (so default can be 0 and offset accordingly), so must scale properly
+ * See https://github.com/meltingice/CamanJS/blob/master/src/lib/filters.coffee#L210-L221
+ *
+ * @params {integer} r - the value of the red pixel
+ * @params {integer} g - the value of the green pixel
+ * @params {integer} b - the value of the blue pixel
+ * @params {integer} adjust - the gamma value for adjustment, 0 to 400
+ * @returns {Array} - The computed RGB values for the input, with a constant 255 for the alpha channel.
+ **/
+function _gamma (r, g, b, adjust)
+{
+    let adj = adjust / 100 + 1;
+    if (adj < 0)
+        adj *= -1;
+
+    return [
+        Math.pow(r / 255, adj) * 255,
+        Math.pow(g / 255, adj) * 255,
+        Math.pow(b / 255, adj) * 255,
+        255
+    ];
+}
+
+export function ccRed (data, adjust)
+{
+    return addFilterToQueue(data, _ccRed, adjust, 'CC Red');
+}
+
+/** 
+ * Adjusts the red intensity of the image.
+ *
+ * See https://github.com/meltingice/CamanJS/blob/master/src/lib/filters.coffee#L274-L305
+ *
+ * @params {integer} r - the value of the red pixel
+ * @params {integer} g - the value of the green pixel
+ * @params {integer} b - the value of the blue pixel
+ * @params {integer} adjust - the red value for adjustment, -100 to 100
+ * @returns {Array} - The computed RGB values for the input, with a constant 255 for the alpha channel.
+ */ 
+function _ccRed (r, g, b, adjust)
+{
+    let adj = adjust / 100;
+
+    return [
+        adj > 0 ? r + (255 - r) * adj : r - r * Math.abs(adj),
+        g,
+        b,
+        255
+    ];
+}
+
+export function ccGreen (data, adjust)
+{
+    return addFilterToQueue(data, _ccGreen, adjust, 'CC Green');
+}
+
+/** 
+ * Adjusts the green intensity of the image.
+ *
+ * See https://github.com/meltingice/CamanJS/blob/master/src/lib/filters.coffee#L274-L305
+ *
+ * @params {integer} r - the value of the red pixel
+ * @params {integer} g - the value of the green pixel
+ * @params {integer} b - the value of the blue pixel
+ * @params {integer} adjust - the green value for adjustment, -100 to 100
+ * @returns {Array} - The computed RGB values for the input, with a constant 255 for the alpha channel.
+ */ 
+function _ccGreen (r, g, b, adjust)
+{
+    let adj = adjust / 100;
+
+    return [
+        r,
+        adj > 0 ? g + (255 - g) * adj : g - g * Math.abs(adj),
+        b,
+        255
+    ];
+}
+
+export function ccBlue (data, adjust)
+{
+    return addFilterToQueue(data, _ccBlue, adjust, 'CC Blue');
+}
+
+/** 
+ * Adjusts the blue intensity of the image.
+ *
+ * See https://github.com/meltingice/CamanJS/blob/master/src/lib/filters.coffee#L274-L305
+ *
+ * @params {integer} r - the value of the red pixel
+ * @params {integer} g - the value of the green pixel
+ * @params {integer} b - the value of the blue pixel
+ * @params {integer} adjust - the blue value for adjustment, -100 to 100
+ * @returns {Array} - The computed RGB values for the input, with a constant 255 for the alpha channel.
+ */ 
+function _ccBlue (r, g, b, adjust)
+{
+    let adj = adjust / 100;
+
+    return [
+        r,
+        g,
+        adj > 0 ? b + (255 - b) * adj : b - b * Math.abs(adj),
+        255
+    ];
+}
 
 export function rgbToHSV (r, g, b)
 {
@@ -410,11 +666,14 @@ export function sharpen (data, adjust)
     let adj = adjust ? adjust : 100;
     adj /= 100;
 
+    if (adjust === 0) // reset value
+        adj = 0;
+
     let weights = [
         0, -adj, 0,
         -adj, 4 * adj + 1, -adj,
         0, -adj, 0
     ];
 
-    return convolve(data, weights);
+    return addFilterToQueue(data, convolve, weights, 'Sharpness');
 }

@@ -1,4 +1,4 @@
-import parseLabelValue from './utils/label-value-parser';
+import parseLabelValue from './utils/parse-label-value';
 
 const getMaxZoomLevel = (width, height) =>
 {
@@ -130,6 +130,7 @@ export default function parseIIIFManifest (manifest)
          * If a canvas has multiple images it will be encoded
          * with a resource type of "oa:Choice" (v2) or "Choice" (v3).
          **/
+        otherImages = []; // reset array
         if (thisResource['@type'] === "oa:Choice" || thisResource.type === "Choice")
         {
             thisImage = thisResource.default || thisResource.items[0];

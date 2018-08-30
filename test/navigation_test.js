@@ -15,7 +15,7 @@ describe('Navigation', function ()
         oldWrapper.parentNode.removeChild(oldWrapper);
         let newWrapper = document.createElement('div');
         newWrapper.id = 'parent-wrapper';
-        newWrapper.setAttribute('style', 'width: 984px; height: 800px');
+        newWrapper.setAttribute('style', 'width: 984px;');
         let div = document.createElement('div');
         div.id = 'diva-wrapper';
         newWrapper.appendChild(div);
@@ -24,7 +24,7 @@ describe('Navigation', function ()
 
     // FIXME: This test pattern is pretty iffy. There should be more robust ways to do this than
     // with a timeout, and the toolbar and page index are kind of separate concerns.
-    var assertPageAfterScroll = function (scroll, index, divaInst, done)
+    var assertPageAfterScroll = function (scroll, index, divaInst, done, label)
     {
         var viewportObject = divaInst.getSettings().viewportObject;
 
@@ -35,9 +35,9 @@ describe('Navigation', function ()
         {
             setTimeout(function ()
             {
-                var rendered = (index + 1) + '';
+                var rendered = label;
 
-                var actualIndex = divaInst.getCurrentPageIndex();
+                var actualIndex = divaInst.getActivePageIndex();
                 assert.strictEqual(actualIndex, index, "The page should now be " + rendered + " (index of " + index + ")");
 
                 var actualRendered = el(divaInst.getSettings().selector + 'current-page').innerText;
@@ -65,7 +65,7 @@ describe('Navigation', function ()
     {
         Diva.Events.subscribe('ViewerDidLoad', function ()
         {
-            assertPageAfterScroll({ top: 10000 }, 40, this, done);
+            assertPageAfterScroll({ top: 10000 }, 40, this, done, 'Folio 020r - Folio 021r');
         });
 
         let diva = new Diva('diva-wrapper', { // jshint ignore:line
@@ -80,7 +80,7 @@ describe('Navigation', function ()
     {
         Diva.Events.subscribe('ViewerDidLoad', function ()
         {
-            assertPageAfterScroll({ top: 10000 }, 26, this, done);
+            assertPageAfterScroll({ top: 10000 }, 26, this, done, 'Folio 014r - Folio 014v');
         });
 
         let diva = new Diva('diva-wrapper', { // jshint ignore:line
@@ -95,7 +95,7 @@ describe('Navigation', function ()
     {
         Diva.Events.subscribe('ViewerDidLoad', function ()
         {
-            assertPageAfterScroll({ left: 200, top: 10000 }, 18, this, done);
+            assertPageAfterScroll({ left: 200, top: 10000 }, 18, this, done, 'Bm 019 - Bm 020');
         });
 
         let diva = new Diva('diva-wrapper', { // jshint ignore:line
@@ -184,17 +184,17 @@ describe('Navigation', function ()
 
             setTimeout(() =>
             {
-                assert.strictEqual(this.getCurrentPageIndex(), 165, "The current page should be 165 (10050px down, 1871px viewport)");
+                assert.strictEqual(this.getActivePageIndex(), 165, "The current page should be 165 (10050px down, 1871px viewport)");
 
                 el(settings.selector + 'grid-out-button').click();
                 el(settings.selector + 'grid-out-button').click();
-                assert.strictEqual(this.getCurrentPageIndex(), 165, "The current page should still be 85");
+                assert.strictEqual(this.getActivePageIndex(), 165, "The current page should still be 85");
 
                 for (var i = 0; i < 5; i++) 
                 {
                     el(settings.selector + 'grid-in-button').click();
                 }
-                assert.strictEqual(this.getCurrentPageIndex(), 165, "The current page should still be 85");
+                assert.strictEqual(this.getActivePageIndex(), 165, "The current page should still be 85");
 
                 done();
             }, 10);
@@ -252,7 +252,7 @@ describe('Navigation', function ()
                 setTimeout(function ()
                 {
                     assert.strictEqual(settings.zoomLevel, 2, "Zoom level should now be 2");
-                    assert.strictEqual(settings.currentPageIndex, 100, "Should still be on page 100");
+                    assert.strictEqual(settings.activePageIndex, 100, "Should still be on page 100");
                     done();
                 }, 10);
             }, 10);
@@ -338,14 +338,14 @@ describe('Navigation', function ()
             this.gotoPageByIndex(5);
 
             assert.isOk(settings.inBookLayout, "Should be in book layout");
-            assert.strictEqual(el(settings.selector + 'current-page').innerText, '6', "Toolbar should indicate page 6");
+            assert.strictEqual(el(settings.selector + 'current-page').innerText, 'Folio 003r - Folio 004r', "Toolbar should indicate label for page 6");
 
             setTimeout(() =>
             {
                 assert.isOk(this.isPageInViewport(5), "Page 6 (index 5) should be loaded");
 
                 this.gotoPageByIndex(6);
-                assert.strictEqual(el(settings.selector + 'current-page').innerText, '7', "Toolbar should indicate page 7");
+                assert.strictEqual(el(settings.selector + 'current-page').innerText, 'Folio 003r - Folio 004r', "Toolbar should stay the same");
                 assert.isOk(this.isPageInViewport(6), "Page 7 (index 6) should be loaded");
 
                 done();

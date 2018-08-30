@@ -13,8 +13,6 @@ export default class PageToolsOverlay
 
         this._innerElement = this._viewerCore.getSettings().innerElement;
         this._pageToolsElem = null;
-        //
-        // this._buttons = null;
     }
 
     mount ()
@@ -26,10 +24,15 @@ export default class PageToolsOverlay
             this._pageToolsElem = elt('div', { class: 'diva-page-tools-wrapper' },
                 elt('div', { class: 'diva-page-tools' }, this._buttons)
             );
+
+            this._pageLabelsElem = elt('div', { class: 'diva-page-labels-wrapper'},
+                elt('div', { class: 'diva-page-labels' }, this._viewerCore.settings.manifest.pages[this.page].l)
+            );
         }
 
         this.refresh();
         this._innerElement.appendChild(this._pageToolsElem);
+        this._innerElement.appendChild(this._pageLabelsElem);
     }
 
     _initializePageToolButtons ()
@@ -69,16 +72,23 @@ export default class PageToolsOverlay
     unmount ()
     {
         this._innerElement.removeChild(this._pageToolsElem);
+        this._innerElement.removeChild(this._pageLabelsElem);
     }
 
     refresh ()
     {
         const pos = this._viewerCore.getPageRegion(this.page, {
-            excludePadding: true,
+            includePadding: true,
             incorporateViewport: true
         });
 
+        // if window is resized larger, a margin is created - need to subtract this from offsets
+        let marginLeft = window.getComputedStyle(this._innerElement, null).getPropertyValue('margin-left');
+
         this._pageToolsElem.style.top = pos.top + 'px';
-        this._pageToolsElem.style.left = pos.left + 'px';
+        this._pageToolsElem.style.left = pos.left - parseFloat(marginLeft) + 'px';
+
+        this._pageLabelsElem.style.top = pos.top + 'px';
+        this._pageLabelsElem.style.left = pos.right - parseFloat(marginLeft) - this.labelWidth - 5 + 'px';
     }
 }
