@@ -9,7 +9,7 @@ describe('Public Functions', function ()
         oldWrapper.parentNode.removeChild(oldWrapper);
         let newWrapper = document.createElement('div');
         newWrapper.id = 'parent-wrapper';
-        newWrapper.setAttribute('style', 'width: 984px; height: 800px');
+        newWrapper.setAttribute('style', 'width: 984px;');
         let div = document.createElement('div');
         div.id = 'diva-wrapper';
         newWrapper.appendChild(div);
@@ -207,7 +207,7 @@ describe('Public Functions', function ()
         {
             assert.isOk(this.gotoPageByName('https://images.simssa.ca/iiif/image/cdn-hsmu-m2149l4/cdn-hsmu-m2149l4_001v.jp2', "right", "center"), "It should find the page index for folio-001v");
             assert.strictEqual(settings.activePageIndex, 1, "Now the page number should be 2 (index 1)");
-            assert.strictEqual(settings.viewport.top, 1000, "The page should be anchored to the center (vertically)");
+            assert.strictEqual(settings.viewport.top, 1103, "The page should be anchored to the center (vertically)");
             assert.strictEqual(settings.viewport.left, 0, "The page should be anchored to the right");
             
             done();
@@ -227,7 +227,7 @@ describe('Public Functions', function ()
             assert.isOk(this.gotoPageByURI('https://images.simssa.ca/iiif/image/cdn-hsmu-m2149l4/cdn-hsmu-m2149l4_001v.jp2', "right", "center"), "It should find the page index for folio-001v");
             assert.strictEqual(settings.activePageIndex, 1, "Now the page number should be 2");
 
-            assert.strictEqual(settings.viewport.top, 1000, "The page should be anchored to the center (vertically)");
+            assert.strictEqual(settings.viewport.top, 1103, "The page should be anchored to the center (vertically)");
             assert.strictEqual(settings.viewport.left, 0, "The page should be anchored to the right");
             this.gotoPageByIndex(1, "left", "top");
             assert.strictEqual(settings.viewport.top, 917, "The page should be anchored to the top");
@@ -267,7 +267,7 @@ describe('Public Functions', function ()
     {
         Diva.Events.subscribe('ViewerDidLoad', function ()
         {
-            var viewportHeight = 700;
+            var viewportHeight = 494;
             var pageDimens = this.getCurrentPageDimensionsAtCurrentZoomLevel();
 
             var expected = {

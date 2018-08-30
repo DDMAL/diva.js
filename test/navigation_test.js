@@ -15,7 +15,7 @@ describe('Navigation', function ()
         oldWrapper.parentNode.removeChild(oldWrapper);
         let newWrapper = document.createElement('div');
         newWrapper.id = 'parent-wrapper';
-        newWrapper.setAttribute('style', 'width: 984px; height: 800px');
+        newWrapper.setAttribute('style', 'width: 984px;');
         let div = document.createElement('div');
         div.id = 'diva-wrapper';
         newWrapper.appendChild(div);
@@ -65,7 +65,7 @@ describe('Navigation', function ()
     {
         Diva.Events.subscribe('ViewerDidLoad', function ()
         {
-            assertPageAfterScroll({ top: 10000 }, 40, this, done, 'Folio 020r - Folio 021v');
+            assertPageAfterScroll({ top: 10000 }, 40, this, done, 'Folio 020r - Folio 021r');
         });
 
         let diva = new Diva('diva-wrapper', { // jshint ignore:line

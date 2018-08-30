@@ -197,6 +197,36 @@ function _grayscale (r, g, b)
     return [pixelAverage, pixelAverage, pixelAverage, 255];
 }
 
+export function saturation (data, adjust)
+{
+    return addFilterToQueue(data, _saturation, adjust, 'Saturation');
+}
+
+/**
+ * Adjusts the color saturation of the image.
+ * Range is -100 to 100. Values < 0 will desaturate the image while values > 0 will saturate it.
+ *
+ * See https://github.com/meltingice/CamanJS/blob/master/src/lib/filters.coffee#L42-L58
+ *
+ * @params {integer} r - the value of the red pixel
+ * @params {integer} g - the value of the green pixel
+ * @params {integer} b - the value of the blue pixel
+ * @params {integer} adjust - the saturation value for adjustment, -100 to 100
+ * @returns {Array} - The computed RGB values for the input, with a constant 255 for the alpha channel.
+ **/
+function _saturation (r, g, b, adjust)
+{
+    let adj = adjust * -0.01;
+    let max = Math.max(r, g, b);
+
+    return [
+        r !== max ? r + (max - r) * adj : r,
+        g !== max ? g + (max - g) * adj : g,
+        b !== max ? b + (max - b) * adj : b,
+        255
+    ];
+}
+
 export function vibrance (data, adjust)
 {
     return addFilterToQueue(data, _vibrance, adjust, 'Vibrance');
@@ -366,6 +396,121 @@ function _hue (r, g, b, adjust)
     ];
 }
 
+export function gamma (data, adjust)
+{
+    return addFilterToQueue(data, _gamma, adjust, 'Gamma');
+}
+
+/**
+ * Adjusts the gamma of the image.
+ * Range is 0 to 4. Values between 0 and 1 will lessen the contrast while values greater
+ * than 1 will increase it. Starts at 1 default. The actual adjust slider is from -100 to
+ * 300 (so default can be 0 and offset accordingly), so must scale properly
+ * See https://github.com/meltingice/CamanJS/blob/master/src/lib/filters.coffee#L210-L221
+ *
+ * @params {integer} r - the value of the red pixel
+ * @params {integer} g - the value of the green pixel
+ * @params {integer} b - the value of the blue pixel
+ * @params {integer} adjust - the gamma value for adjustment, 0 to 400
+ * @returns {Array} - The computed RGB values for the input, with a constant 255 for the alpha channel.
+ **/
+function _gamma (r, g, b, adjust)
+{
+    let adj = adjust / 100 + 1;
+    if (adj < 0)
+        adj *= -1;
+
+    return [
+        Math.pow(r / 255, adj) * 255,
+        Math.pow(g / 255, adj) * 255,
+        Math.pow(b / 255, adj) * 255,
+        255
+    ];
+}
+
+export function ccRed (data, adjust)
+{
+    return addFilterToQueue(data, _ccRed, adjust, 'CC Red');
+}
+
+/** 
+ * Adjusts the red intensity of the image.
+ *
+ * See https://github.com/meltingice/CamanJS/blob/master/src/lib/filters.coffee#L274-L305
+ *
+ * @params {integer} r - the value of the red pixel
+ * @params {integer} g - the value of the green pixel
+ * @params {integer} b - the value of the blue pixel
+ * @params {integer} adjust - the red value for adjustment, -100 to 100
+ * @returns {Array} - The computed RGB values for the input, with a constant 255 for the alpha channel.
+ */ 
+function _ccRed (r, g, b, adjust)
+{
+    let adj = adjust / 100;
+
+    return [
+        adj > 0 ? r + (255 - r) * adj : r - r * Math.abs(adj),
+        g,
+        b,
+        255
+    ];
+}
+
+export function ccGreen (data, adjust)
+{
+    return addFilterToQueue(data, _ccGreen, adjust, 'CC Green');
+}
+
+/** 
+ * Adjusts the green intensity of the image.
+ *
+ * See https://github.com/meltingice/CamanJS/blob/master/src/lib/filters.coffee#L274-L305
+ *
+ * @params {integer} r - the value of the red pixel
+ * @params {integer} g - the value of the green pixel
+ * @params {integer} b - the value of the blue pixel
+ * @params {integer} adjust - the green value for adjustment, -100 to 100
+ * @returns {Array} - The computed RGB values for the input, with a constant 255 for the alpha channel.
+ */ 
+function _ccGreen (r, g, b, adjust)
+{
+    let adj = adjust / 100;
+
+    return [
+        r,
+        adj > 0 ? g + (255 - g) * adj : g - g * Math.abs(adj),
+        b,
+        255
+    ];
+}
+
+export function ccBlue (data, adjust)
+{
+    return addFilterToQueue(data, _ccBlue, adjust, 'CC Blue');
+}
+
+/** 
+ * Adjusts the blue intensity of the image.
+ *
+ * See https://github.com/meltingice/CamanJS/blob/master/src/lib/filters.coffee#L274-L305
+ *
+ * @params {integer} r - the value of the red pixel
+ * @params {integer} g - the value of the green pixel
+ * @params {integer} b - the value of the blue pixel
+ * @params {integer} adjust - the blue value for adjustment, -100 to 100
+ * @returns {Array} - The computed RGB values for the input, with a constant 255 for the alpha channel.
+ */ 
+function _ccBlue (r, g, b, adjust)
+{
+    let adj = adjust / 100;
+
+    return [
+        r,
+        g,
+        adj > 0 ? b + (255 - b) * adj : b - b * Math.abs(adj),
+        255
+    ];
+}
 
 export function rgbToHSV (r, g, b)
 {

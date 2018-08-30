@@ -15,7 +15,7 @@ describe('Hash Params', function ()
         oldWrapper.parentNode.removeChild(oldWrapper);
         let newWrapper = document.createElement('div');
         newWrapper.id = 'parent-wrapper';
-        newWrapper.setAttribute('style', 'width: 984px; height: 800px');
+        newWrapper.setAttribute('style', 'width: 984px;');
         let div = document.createElement('div');
         div.id = 'diva-wrapper';
         newWrapper.appendChild(div);
@@ -173,7 +173,7 @@ describe('Hash Params', function ()
 
     testHashParams("vertical offset (y) on first page - positive value", {y: "600", p: "1"}, function (settings, scroll)
     {
-        assert.strictEqual(scroll.top, 250, "Should have scrolled 250 (600 = top of page - viewport y-center) vertically");
+        assert.strictEqual(scroll.top, 353, "Should have scrolled 353 (600 = top of page - viewport y-center) vertically");
     });
 
     testHashParams("vertical offset (y) on first page - negative value", {y: "-600", p: "1"}, function (settings, scroll)
@@ -182,7 +182,7 @@ describe('Hash Params', function ()
     });
     testHashParams("vertical offset (y) and page number (p)", {y: 500, p: "50"}, function (settings, scroll)
     {
-        let expectedTopScroll = 44891;
+        let expectedTopScroll = 44994;
         assert.strictEqual(settings.activePageIndex, 49, "Current page should be 50 (index of 49)");
         assert.strictEqual(scroll.top, expectedTopScroll, "Should be heightAbovePages + 500 pixels of scroll from the top + page y-center");
 
@@ -214,7 +214,7 @@ describe('Hash Params', function ()
     testHashParams("horizontal offset (x), vertical offset (y), page number (p)", {x: 100, y: 200, p: "50"}, function (settings, scroll)
     {
         // FIXME: https://github.com/DDMAL/diva.js/issues/331
-        let expectedTopScroll = 44591;
+        let expectedTopScroll = 44694;
         assert.strictEqual(scroll.top, expectedTopScroll, "vertical scroll should be to page 50 + 200 + page y-center");
         assert.strictEqual(scroll.left, 0, "Horizontal scroll should center it + 100 pixels to the right");
     }, {enableFilename: false});
