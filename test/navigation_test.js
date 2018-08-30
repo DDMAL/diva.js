@@ -156,10 +156,13 @@ describe('Navigation', function ()
             el(settings.selector + 'zoom-out-button').click();
             assertZoomIs(4, this, 'zoom buttons');
 
-            el(settings.selector + 'zoom-in-button').click();
-            assertZoomIs(5, this, 'zoom buttons');
+            setTimeout(() =>
+            {
+                el(settings.selector + 'zoom-in-button').click();
+                assertZoomIs(5, this, 'zoom buttons');
 
-            done();
+                done();
+            }, 600);
         });
 
         let diva = new Diva('diva-wrapper', { // jshint ignore:line
