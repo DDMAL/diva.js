@@ -285,9 +285,7 @@ export default class ViewerCore
     {
         if (e.keyCode === 27)
         {
-            this.reloadViewer({
-                inFullscreen: !this.settings.inFullscreen
-            });
+            this.publicInstance.leaveFullscreenMode();
         }
     }
 
