@@ -83,6 +83,11 @@ export default class MetadataPlugin
                 contentDiv.appendChild(value);
             }
 
+            // add link to manifest
+            let linkToManifest = document.createElement('h4');
+            linkToManifest.innerHTML = "<a target='_blank' href="+this.core.settings.objectData+">Link To Manifest</a>";
+            contentDiv.appendChild(linkToManifest);
+
             metadataDiv.appendChild(closeButton);
             metadataDiv.appendChild(title);
             metadataDiv.appendChild(contentDiv);
