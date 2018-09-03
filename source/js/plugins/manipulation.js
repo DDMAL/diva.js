@@ -214,7 +214,7 @@ export default class ManipulationPlugin
             this._core.parentObject.removeChild(this._backdrop);
 
             // show toolbar 
-            document.getElementById(this._core.settings.selector + 'tools').style.display = 'block';
+            document.getElementById(`${this._core.settings.selector}tools`).style.display = 'block';
         }
     }
 
