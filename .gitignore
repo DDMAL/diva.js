@@ -7,3 +7,4 @@ tags
 # IDE things
 *.iml
 /.idea/
+node_modules
