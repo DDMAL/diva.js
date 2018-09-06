@@ -83,6 +83,15 @@ export default class MetadataPlugin
                 contentDiv.appendChild(value);
             }
 
+            // add link to manifest
+            let linkToManifest = document.createElement('p');
+            let manifestAnchor = document.createElement('a');
+            manifestAnchor.setAttribute("target", "_blank");
+            manifestAnchor.setAttribute("href", `${this.core.settings.objectData}`);
+            manifestAnchor.innerHTML = "IIIF Manifest";
+            linkToManifest.appendChild(manifestAnchor);
+            contentDiv.appendChild(linkToManifest);
+
             metadataDiv.appendChild(closeButton);
             metadataDiv.appendChild(title);
             metadataDiv.appendChild(contentDiv);
@@ -119,8 +128,8 @@ export default class MetadataPlugin
                 pos2 = pos4 - e.clientY;
                 pos3 = e.clientX;
                 pos4 = e.clientY;
-                metadataDiv.style.top = (metadataDiv.offsetTop - pos2) + 'px';
-                metadataDiv.style.left = (metadataDiv.offsetLeft - pos1) + 'px';
+                metadataDiv.style.top = `${(metadataDiv.offsetTop - pos2)}px`;
+                metadataDiv.style.left = `${(metadataDiv.offsetLeft - pos1)}px`;
             };
 
             document.onmouseup = () =>
