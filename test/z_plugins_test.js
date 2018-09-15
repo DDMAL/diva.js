@@ -132,14 +132,14 @@ describe('Plugins', function ()
             let icon = document.getElementsByClassName('diva-manipulation-icon')[0];
             icon.click();
 
-            let controls = document.getElementsByClassName('manipulation-tools')[0];
+            let controls = document.getElementsByClassName('manipulation-tools-mobile')[0];
             assert.isNotNull(controls, 'Controls exist once icon is clicked');
 
             // give main image some time to load
             setTimeout(() =>
             {
                 // do all control related tests
-                let view = document.getElementsByClassName('manipulation-main-area')[0];
+                let view = document.getElementsByClassName('manipulation-main-area-mobile')[0];
 
                 let event = new MouseEvent('dblclick', {
                     'view': window,
@@ -152,9 +152,8 @@ describe('Plugins', function ()
                 let zoomSlider = document.getElementById('zoom-slider');
                 assert.strictEqual(zoomSlider.value, '2', 'Zoom should now be 2');
 
-                // click on mirror buttons
-                document.getElementById('horizontal-mirror-button').click();
-                document.getElementById('vertical-mirror-button').click();
+                // click on hamburger
+                document.getElementsByClassName('burger-menu')[0].click();
 
                 // click on first color filter button (grayscale rn)
                 document.getElementsByClassName('color-filters')[0].click();
@@ -166,9 +165,6 @@ describe('Plugins', function ()
                 event = new Event('change');
                 select.dispatchEvent(event);
                 assert.isFalse(log.innerText.includes('Grayscale'), 'Log should be reset');
-
-                // click on secondary image
-                document.getElementsByClassName('manipulation-sidebar-secondary-image')[0].click();
 
                 done();
             }, 1000);
