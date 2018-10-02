@@ -129,6 +129,51 @@ export default class ManipulationPlugin
         {
             document.getElementById(settings.selector + 'tools').style.display = 'none';
         }
+
+        // handle smaller viewport
+        if (window.innerWidth <= 1000)
+        {
+            this._mainArea.classList.remove('manipulation-main-area');
+            this._mainArea.classList.add('manipulation-main-area-mobile');
+            this._sidebar.classList.remove('manipulation-sidebar');
+            this._sidebar.classList.add('manipulation-sidebar-mobile');
+            this._tools.classList.remove('manipulation-tools');
+            this._tools.classList.add('manipulation-tools-mobile');
+
+            // add hamburger menus
+            let burger = document.createElement('div');
+            burger.classList.add('burger-menu');
+            let s1 = document.createElement('div');
+            let s2 = document.createElement('div');
+            let s3 = document.createElement('div');
+            s1.classList.add('stripe');
+            s2.classList.add('stripe');
+            s3.classList.add('stripe');
+
+            burger.appendChild(s1);
+            burger.appendChild(s2);
+            burger.appendChild(s3);
+
+            this.burgerClicked = false;
+
+            burger.onclick = () => {
+                if (this.burgerClicked)
+                {
+                    this._sidebar.style.display = 'none';
+                    this._tools.style.display = 'none';
+                    this._mainArea.style.display = 'block';
+                } 
+                else
+                {
+                    this._sidebar.style.display = 'block';
+                    this._tools.style.display = 'block';
+                    this._mainArea.style.display = 'none';
+                }
+                this.burgerClicked = !this.burgerClicked;
+            };
+
+            this._backdrop.appendChild(burger);
+        }
     }
 
     handleDblClick (event)
@@ -735,6 +780,8 @@ export default class ManipulationPlugin
     centerView (x, y, zoomingIn)
     {
         let view = document.getElementsByClassName('manipulation-main-area')[0];
+        if (!view)
+            view = document.getElementsByClassName('manipulation-main-area-mobile')[0];
 
         if (zoomingIn)
         {

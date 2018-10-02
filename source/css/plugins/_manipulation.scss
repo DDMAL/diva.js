@@ -18,7 +18,7 @@
 }
 
 .manipulation-sidebar {
-  width: 10%;
+  width: 15%;
   overflow: scroll;
   text-align: center;
   padding: 10px;
@@ -32,8 +32,23 @@
   }
 }
 
+.manipulation-sidebar-mobile {
+  width: 50%;
+  text-align: center;
+  padding: 10px;
+  display: none;
+
+  .manipulation-sidebar-primary-image,
+  .manipulation-sidebar-secondary-image {
+    margin: 10px 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #fff;
+    color: #fff;
+  }
+}
+
 .manipulation-main-area {
-  width: 80%;
+  width: 70%;
   flex: 1 1 auto;
   background-color: rgba(255, 255, 255, 0.5);
   overflow: scroll;
@@ -55,8 +70,30 @@
   }
 }
 
+.manipulation-main-area-mobile {
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.5);
+  overflow: scroll;
+  text-align: center;
+
+  cursor: move; /* fallback if grab cursor is unsupported */
+  cursor: grab;
+  cursor: -moz-grab;
+  cursor: -webkit-grab;
+
+  &.grabbing {
+      cursor: grabbing;
+      cursor: -moz-grabbing;
+      cursor: -webkit-grabbing;
+  }
+
+  canvas {
+    margin: 0 auto;
+  }
+}
+
 .manipulation-tools {
-  width: 10%;
+  width: 15%;
   flex: 1 1 auto;
   overflow: auto;
 
@@ -65,6 +102,36 @@
     margin-bottom: 0.7em;
   }
 }
+
+.manipulation-tools-mobile {
+  width: 50%;
+  flex: 1 1 auto;
+  overflow: auto;
+  display: none;
+
+  .manipulation-tools-text {
+    color: #FBF7F6;
+    margin-bottom: 0.7em;
+  }
+}
+
+.burger-menu {
+  position: fixed;
+  top: 0.5em;
+  left: 0.5em;
+  cursor: pointer;
+
+  .stripe {
+    width: 2em;
+    height: 0.3em;
+    background-color: #fff5ef;
+    margin: 0.2em 0;
+  }
+}
+
+
+
+
 
 input[type=range] {
   -webkit-appearance: none;
@@ -76,7 +143,7 @@ input[type=range]:focus {
 }
 input[type=range]::-webkit-slider-runnable-track {
   width: 100%;
-  height: 4px;
+  height: 5px;
   cursor: pointer;
   box-shadow: 0.4px 0.4px 2.4px rgba(0, 0, 0, 0.32), 0px 0px 0.4px rgba(13, 13, 13, 0.32);
   background: rgba(255, 255, 255, 0.66);
@@ -99,7 +166,7 @@ input[type=range]:focus::-webkit-slider-runnable-track {
 }
 input[type=range]::-moz-range-track {
   width: 100%;
-  height: 4px;
+  height: 5px;
   cursor: pointer;
   box-shadow: 0.4px 0.4px 2.4px rgba(0, 0, 0, 0.32), 0px 0px 0.4px rgba(13, 13, 13, 0.32);
   background: rgba(255, 255, 255, 0.66);
