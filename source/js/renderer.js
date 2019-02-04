@@ -391,6 +391,12 @@ export default class Renderer
         const destWidth = Math.min(scaledTile.dimensions.width, img.width * scaledTile.scaleRatio) - destXOffset;
         const destHeight = Math.min(scaledTile.dimensions.height, img.height * scaledTile.scaleRatio) - destYOffset;
 
+        // fix for Firefox exception with zero width or height
+        if (destWidth < 1 || destHeight < 1) {
+        	console.error("Tile width or height too small, aborting draw!");
+        	return;
+        }
+        
         const sourceWidth = destWidth / scaledTile.scaleRatio;
         const sourceHeight = destHeight / scaledTile.scaleRatio;
 
