@@ -22,6 +22,7 @@
   "homepage": "https://github.com/DDMAL/diva.js#readme",
   "dependencies": {
     "array.prototype.fill": "^1.0.2",
+    "lodash": ">=4.17.11",
     "url-search-params": "^1.0.2",
     "whatwg-fetch": "^2.0.4"
   },
@@ -58,7 +59,7 @@
     "style-loader": "^0.23.0",
     "webpack": "^4.17.1",
     "webpack-cli": "^3.1.0",
-    "webpack-dev-server": "^3.1.7"
+    "webpack-dev-server": ">=3.1.11"
   },
   "divaOptions": {
     "mainEntry": "diva.js",
