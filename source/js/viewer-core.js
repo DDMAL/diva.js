@@ -477,7 +477,8 @@ export default class ViewerCore
             const options = {
                 viewport: this.viewerState.viewport,
                 outerElement: this.viewerState.outerElement,
-                innerElement: this.viewerState.innerElement
+                innerElement: this.viewerState.innerElement,
+                settings: this.settings
             };
 
             const hooks = {
