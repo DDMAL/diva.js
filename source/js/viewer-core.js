@@ -653,7 +653,7 @@ export default class ViewerCore
         const focalYToCenter = (pageRegion.top + focalPoint.offset.top) -
             (this.settings.viewport.top + (this.settings.viewport.height / 2));
 
-        const getPositionForZoomLevel = function (zoomLevel, initZoom)
+        const getPositionForZoomLevel =  (zoomLevel, initZoom) =>
         {
             const zoomRatio = Math.pow(2, zoomLevel - initZoom);
 
