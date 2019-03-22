@@ -124,10 +124,20 @@ export default class Toolbar
             let startLabel = this.settings.manifest.pages[startIndex].l;
             let endLabel = this.settings.manifest.pages[endIndex].l;
 
-            if (startIndex !== endIndex)
-                currentPage.textContent = startLabel + " - " + endLabel;
+            if (startIndex !== endIndex) 
+            {
+            	if (this.settings.enableIndexAsLabel)
+                	currentPage.textContent = startIndex + " - " + endIndex;
+            	else
+            		currentPage.textContent = startLabel + " - " + endLabel;
+            }
             else
-                currentPage.textContent = startLabel;
+        	{
+            	if (this.settings.enableIndexAsLabel)
+            		currentPage.textContent = startIndex;
+            	else
+            		currentPage.textContent = startLabel;
+        	}
         };
 
         this._subscribe('VisiblePageDidChange', updateCurrentPage);

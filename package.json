@@ -22,7 +22,7 @@
   "homepage": "https://github.com/DDMAL/diva.js#readme",
   "dependencies": {
     "array.prototype.fill": "^1.0.2",
-    "extend": ">=3.0.2",
+    "extend": "^3.0.2",
     "lodash": ">=4.17.11",
     "url-search-params": "^1.0.2",
     "whatwg-fetch": "^2.0.4"
@@ -43,7 +43,7 @@
     "istanbul-instrumenter-loader": "^3.0.1",
     "jshint": "^2.9.6",
     "jshint-stylish": "^2.2.1",
-    "karma": "^4.0.1",
+    "karma": "^3.0.0",
     "karma-babel-preprocessor": "^7.0.0",
     "karma-chrome-launcher": "^2.2.0",
     "karma-coverage-istanbul-reporter": "^2.0.2",
