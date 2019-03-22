@@ -5,9 +5,7 @@ export default class Viewport
         options = options || {};
 
         this.intersectionTolerance = options.intersectionTolerance || 0;
-
         this.outer = outer;
-
         this._top = this._left = this._width = this._height = this._innerDimensions = null;
 
         this.invalidate();
