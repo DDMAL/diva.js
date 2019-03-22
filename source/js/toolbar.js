@@ -443,7 +443,7 @@ export default class Toolbar
 
         // assign toolbar plugins to proper side
         let plugins = this.viewer.viewerState.pluginInstances;
-        for (var i = 0, len = plugins.length; i < len; i++) 
+        for (let i = 0, len = plugins.length; i < len; i++)
         {
             let plugin = plugins[i];
 
