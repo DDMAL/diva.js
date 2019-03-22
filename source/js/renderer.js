@@ -17,6 +17,7 @@ export default class Renderer
         this._viewport = options.viewport;
         this._outerElement = options.outerElement;
         this._documentElement = options.innerElement;
+        this._settings = options.settings;
 
         this._hooks = hooks || {};
 
@@ -207,7 +208,7 @@ export default class Renderer
 
         const renderedTiles = [];
 
-        this._renderedPages.forEach(function (pageIndex)
+        this._renderedPages.forEach( (pageIndex) =>
         {
             this._compositeImages[pageIndex].getTiles(this._zoomLevel).forEach((source) =>
             {
@@ -218,8 +219,8 @@ export default class Renderer
                     renderedTiles.push(source.url);
                     this._drawTile(pageIndex, scaled, this._cache.get(source.url));
                 }
-            }, this);
-        }, this);
+            });
+        });
 
         const cache = this._cache;
 
@@ -457,6 +458,7 @@ export default class Renderer
     {
         this._clearAnimation();
         this._goto(pageIndex, verticalOffset, horizontalOffset);
+
         if (this._hooks.onViewDidUpdate)
         {
             this._hooks.onViewDidUpdate(this._renderedPages.slice(), pageIndex);
