@@ -77,6 +77,7 @@
     line-height: $buttonSize;
     vertical-align: top;
     white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .diva-tools-left, .diva-tools-right {
@@ -88,9 +89,9 @@
     user-select: none;
 }
 
-    .diva-zoom-in-button, .diva-grid-in-button {
+.diva-zoom-in-button, .diva-grid-in-button {
         margin-left: -1px;
-    }
+}
 
 .diva-tools-right {
     float: right;
