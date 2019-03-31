@@ -13,6 +13,7 @@ export default class PageToolsOverlay
 
         this._innerElement = this._viewerCore.getSettings().innerElement;
         this._pageToolsElem = null;
+        this.labelWidth = 0;
     }
 
     mount ()
@@ -85,10 +86,10 @@ export default class PageToolsOverlay
         // if window is resized larger, a margin is created - need to subtract this from offsets
         let marginLeft = window.getComputedStyle(this._innerElement, null).getPropertyValue('margin-left');
 
-        this._pageToolsElem.style.top = pos.top + 'px';
-        this._pageToolsElem.style.left = pos.left - parseFloat(marginLeft) + 'px';
+        this._pageToolsElem.style.top = `${pos.top}px`;
+        this._pageToolsElem.style.left = `${pos.left - parseInt(marginLeft)}px`;
 
-        this._pageLabelsElem.style.top = pos.top + 'px';
-        this._pageLabelsElem.style.left = pos.right - parseFloat(marginLeft) - this.labelWidth - 5 + 'px';
+        this._pageLabelsElem.style.top = `${pos.top}px`;
+        this._pageLabelsElem.style.left = `${pos.right - parseInt(marginLeft) - this.labelWidth - 5}px`;
     }
 }
