@@ -32,22 +32,28 @@ Diva.js is an image viewer compatible with IIIF Presentation API versions [2](ht
 
 ### From a CDN (hosted)
 
-If you prefer to use a hosted version of Diva, copy and paste the following into the `<head>` of any webpage to include all the files necessary to use Diva.js.
+If you prefer to use a hosted version of Diva, copy and paste the following into the `<head>` of any webpage to 
+include all the files necessary to use Diva.js.
 ```html
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/diva.js/6.0.0/css/diva.css" />
-<script src="//cdnjs.cloudflare.com/ajax/libs/diva.js/6.0.0/js/diva.js"></script>
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/diva.js/6.0.1/css/diva.css" />
+<script src="//cdnjs.cloudflare.com/ajax/libs/diva.js/6.0.1/js/diva.js"></script>
 ```
 ### Locally (release package)
 
-Download the [latest release](https://github.com/DDMAL/diva.js/releases) of Diva. In the `diva.js` directory you can find a pre-compiled version. The `build` directory contains the files necessary to use Diva. Simply include `build/diva.css` and `build/diva.js` in the `<head>` of your webpage, as shown in the HTML source of the example [index page](https://github.com/DDMAL/diva.js/blob/develop/index.html). 
+Download the [latest release](https://github.com/DDMAL/diva.js/releases) of Diva. In the `diva.js` directory you can
+find a pre-compiled version. The `build` directory contains the files necessary 
+to use Diva. Simply include `build/diva.css` and `build/diva.js` in the `<head>`
+of your webpage, as shown in the HTML source of the example [index page](https://github.com/DDMAL/diva.js/blob/develop/index.html). 
 
 ### From npm
 
-You can also run `npm install diva.js` in order to install Diva as a node package. Then, Diva will be located under `node_modules/diva.js/`, and you can access the `build` directory the same as above. 
+You can also run `npm install diva.js` in order to install Diva as a node package. Then, Diva will be located 
+under `node_modules/diva.js/`, and you can access the `build` directory the same as above. 
 
 ## Basic setup
 ### HTML
-After including the necessary files, the most basic Diva viewer is instantiated with one (IIIF) required parameter and several optional settings parameters. Diva must target a parent div, in this case diva-wrapper:
+After including the necessary files, the most basic Diva viewer is instantiated with one (IIIF) required parameter
+and several optional settings parameters. Diva must target a parent div, in this case diva-wrapper:
 ```html
 <div id="diva-wrapper"></div>
 
