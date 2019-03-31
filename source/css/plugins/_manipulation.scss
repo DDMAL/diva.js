@@ -129,18 +129,16 @@
   }
 }
 
-
-
-
-
 input[type=range] {
   -webkit-appearance: none;
   width: 100%;
   margin: 4.5px 0;
 }
+
 input[type=range]:focus {
   outline: none;
 }
+
 input[type=range]::-webkit-slider-runnable-track {
   width: 100%;
   height: 5px;
@@ -150,6 +148,7 @@ input[type=range]::-webkit-slider-runnable-track {
   border-radius: 25px;
   border: 0px solid rgba(1, 1, 1, 0);
 }
+
 input[type=range]::-webkit-slider-thumb {
   box-shadow: 1px 1px 6.2px rgba(0, 0, 49, 0.66), 0px 0px 1px rgba(0, 0, 75, 0.66);
   border: 0.9px solid rgba(0, 0, 30, 0.42);
@@ -164,6 +163,7 @@ input[type=range]::-webkit-slider-thumb {
 input[type=range]:focus::-webkit-slider-runnable-track {
   background: rgba(253, 133, 243, 0.66);
 }
+
 input[type=range]::-moz-range-track {
   width: 100%;
   height: 5px;
@@ -173,6 +173,7 @@ input[type=range]::-moz-range-track {
   border-radius: 25px;
   border: 0px solid rgba(1, 1, 1, 0);
 }
+
 input[type=range]::-moz-range-thumb {
   box-shadow: 1px 1px 6.2px rgba(0, 0, 49, 0.66), 0px 0px 1px rgba(0, 0, 75, 0.66);
   border: 0.9px solid rgba(0, 0, 30, 0.42);
@@ -182,6 +183,7 @@ input[type=range]::-moz-range-thumb {
   background: #ffffff;
   cursor: pointer;
 }
+
 input[type=range]::-ms-track {
   width: 100%;
   height: 4px;
@@ -190,18 +192,21 @@ input[type=range]::-ms-track {
   border-color: transparent;
   color: transparent;
 }
+
 input[type=range]::-ms-fill-lower {
   background: rgba(251, 83, 239, 0.66);
   border: 0px solid rgba(1, 1, 1, 0);
   border-radius: 50px;
   box-shadow: 0.4px 0.4px 2.4px rgba(0, 0, 0, 0.32), 0px 0px 0.4px rgba(13, 13, 13, 0.32);
 }
+
 input[type=range]::-ms-fill-upper {
   background: rgba(252, 108, 241, 0.66);
   border: 0px solid rgba(1, 1, 1, 0);
   border-radius: 50px;
   box-shadow: 0.4px 0.4px 2.4px rgba(0, 0, 0, 0.32), 0px 0px 0.4px rgba(13, 13, 13, 0.32);
 }
+
 input[type=range]::-ms-thumb {
   box-shadow: 1px 1px 6.2px rgba(0, 0, 49, 0.66), 0px 0px 1px rgba(0, 0, 75, 0.66);
   border: 0.9px solid rgba(0, 0, 30, 0.42);
@@ -212,9 +217,11 @@ input[type=range]::-ms-thumb {
   cursor: pointer;
   height: 4px;
 }
+
 input[type=range]:focus::-ms-fill-lower {
   background: rgba(252, 108, 241, 0.66);
 }
+
 input[type=range]:focus::-ms-fill-upper {
   background: rgba(253, 133, 243, 0.66);
 }

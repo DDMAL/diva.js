@@ -330,11 +330,11 @@ export default class ManipulationPlugin
         };
 
         // Header title
-        let header = document.createElement('h1');
+        let header = document.createElement('h2');
 
         header.setAttribute('style', 'margin-bottom: 0.3em;');
         header.classList.add('manipulation-tools-text');
-        header.innerText = 'Tools';
+        header.innerText = 'Image tools';
 
         // Zoom tool
         let zoomDiv = document.createElement('div');
