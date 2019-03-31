@@ -48,12 +48,12 @@ export default class MetadataPlugin
         if (this.firstClick)
         {
             metadataDiv = document.createElement('div');
-            metadataDiv.id = 'metadataDiv';
+            metadataDiv.id = 'metadata-modal';
             metadataDiv.className = 'diva-modal';
 
-            let title = document.createElement('h2');
-            title.innerText = 'Metadata';
-            title.id = 'metadataTitle';
+            let metadataTitle = document.createElement('h2');
+            metadataTitle.innerText = "About this item";
+            metadataTitle.id = "metadata-title";
 
             let closeButton = document.createElement('button');
             closeButton.innerHTML = '&#10006';
@@ -65,23 +65,25 @@ export default class MetadataPlugin
             };
 
             let contentDiv = document.createElement('div');
-            contentDiv.id = 'contentDiv';
+            contentDiv.id = 'metadata-content';
+
+            let contentDefinitionList = document.createElement('dl');
 
             for (let i = 0, len = metadata.length; i < len; i++) 
             {
                 let key = metadata[i];
 
-                let header = document.createElement('h4');
+                let header = document.createElement('dt');
                 header.innerHTML = parseLabelValue(key).label;
-                header.setAttribute('style', 'margin-bottom: 0');
 
-                let value = document.createElement('p');
+                let value = document.createElement('dd');
                 value.innerHTML = parseLabelValue(key).value;
-                value.setAttribute('style', 'margin-top: 0');
 
-                contentDiv.appendChild(header);
-                contentDiv.appendChild(value);
+                contentDefinitionList.appendChild(header);
+                contentDefinitionList.appendChild(value);
             }
+
+            contentDiv.appendChild(contentDefinitionList);
 
             // add link to manifest
             let linkToManifest = document.createElement('p');
@@ -93,7 +95,7 @@ export default class MetadataPlugin
             contentDiv.appendChild(linkToManifest);
 
             metadataDiv.appendChild(closeButton);
-            metadataDiv.appendChild(title);
+            metadataDiv.appendChild(metadataTitle);
             metadataDiv.appendChild(contentDiv);
             document.body.appendChild(metadataDiv);
 
@@ -101,7 +103,7 @@ export default class MetadataPlugin
         }
         else
         {
-            metadataDiv = document.getElementById('metadataDiv');
+            metadataDiv = document.getElementById('metadata-modal');
         }
 
         if (this.isVisible)
