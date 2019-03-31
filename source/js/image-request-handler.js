@@ -1,4 +1,3 @@
-const debug = require('debug')('diva:ImageRequestHandler');
 /**
  * Handler for the request for an image tile
  *
@@ -25,14 +24,11 @@ export default class ImageRequestHandler
             this._image.onerror = this._handleError.bind(this);
             this._image.src = options.url;
 
-            debug('Requesting image %s', options.url);
         }, this.timeoutTime);
     }
 
     abort ()
     {
-        debug('Aborting request to %s', this._url);
-
         clearTimeout(this.timeout);
 
         // FIXME
@@ -70,13 +66,11 @@ export default class ImageRequestHandler
 
         this._complete = true;
 
-        debug('Received image %s', this._url);
         this._callback(this._image);
     }
 
     _handleError ()
     {
-        debug('Failed to load image %s', this._url);
         this._errorCallback(this._image);
     }
 }
