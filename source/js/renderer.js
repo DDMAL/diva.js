@@ -1,6 +1,3 @@
-const debug = require('debug')('diva:Renderer');
-const debugPaints = require('debug')('diva:Renderer:paints');
-
 import { elt, setAttributes } from './utils/elt';
 import CompositeImage from './composite-image';
 import DocumentLayout from './document-layout';
@@ -75,15 +72,8 @@ export default class Renderer
 
         if (this._canvas.width !== this._viewport.width || this._canvas.height !== this._viewport.height)
         {
-            debug('Canvas dimension change: (%s, %s) -> (%s, %s)', this._canvas.width, this._canvas.height,
-                this._viewport.width, this._viewport.height);
-
             this._canvas.width = this._viewport.width;
             this._canvas.height = this._viewport.height;
-        }
-        else
-        {
-            debug('Reload, no size change');
         }
 
         // FIXME: What hooks should be called here?
@@ -204,8 +194,6 @@ export default class Renderer
 
     _paint ()
     {
-        debug('Repainting');
-
         const renderedTiles = [];
 
         this._renderedPages.forEach( (pageIndex) =>
@@ -312,17 +300,11 @@ export default class Renderer
                         {
                             this._paint();
                         }
-                        else
-                        {
-                            debugPaints('Page %s, tile %s no longer visible on image load', pageIndex, source.url);
-                        }
                     }
                     else
                     {
                         if (this._isTileForSourceVisible(pageIndex, source))
                             this._paint();
-                        else
-                            debugPaints('Page %s, tile %s no longer visible on image load', pageIndex, source.url);
                     }
                 },
                 error: () =>
