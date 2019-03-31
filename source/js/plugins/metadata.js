@@ -51,6 +51,8 @@ export default class MetadataPlugin
             metadataDiv.id = 'metadata-modal';
             metadataDiv.className = 'diva-modal';
 
+            let metadataHeaderBlock = document.createElement('div');
+
             let metadataTitle = document.createElement('h2');
             metadataTitle.innerText = "About this item";
             metadataTitle.id = "metadata-title";
@@ -94,8 +96,9 @@ export default class MetadataPlugin
             linkToManifest.appendChild(manifestAnchor);
             contentDiv.appendChild(linkToManifest);
 
-            metadataDiv.appendChild(closeButton);
-            metadataDiv.appendChild(metadataTitle);
+            metadataHeaderBlock.appendChild(closeButton);
+            metadataHeaderBlock.appendChild(metadataTitle);
+            metadataDiv.appendChild(metadataHeaderBlock);
             metadataDiv.appendChild(contentDiv);
             document.body.appendChild(metadataDiv);
 
