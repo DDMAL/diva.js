@@ -113,21 +113,26 @@ class Diva
 
         this.viewerState = viewerCore.getInternalState();
         this.settings = viewerCore.getSettings();
-        this.toolbar = new Toolbar(this);
+        this.toolbar = this.settings.enableToolbar ? new Toolbar(this) : null;
 
         wrapperElement.id = this.settings.ID + 'wrapper';
 
         this.divaState = {
             viewerCore: viewerCore,
-            toolbar: this.settings.enableToolbar ? this.toolbar : null
+            toolbar: this.toolbar
         };
 
         // only render the toolbar after the object has been loaded
         let handle = diva.Events.subscribe('ObjectDidLoad', () =>
         {
-            this.toolbar.render();
+            if (this.toolbar !== null)
+            {
+                this.toolbar.render();
+            }
+
             diva.Events.unsubscribe(handle);
         });
+
         this.hashState = this._getHashParamState();
 
         this._loadOrFetchObjectData();
