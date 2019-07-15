@@ -19,7 +19,7 @@ export default class ImageRequestHandler
         this.timeout = setTimeout(() => {
             // Initiate the request
             this._image = new Image();
-            this._image.crossOrigin = "anonymous";
+            //this._image.crossOrigin = "anonymous"; TODO: make configurable
             this._image.onload = this._handleLoad.bind(this);
             this._image.onerror = this._handleError.bind(this);
             this._image.src = options.url;

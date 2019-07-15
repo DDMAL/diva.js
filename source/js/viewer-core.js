@@ -1073,7 +1073,7 @@ export default class ViewerCore
         this.viewerState.outerObject.appendChild(errorElement);
 
         //bind dialog close button
-        document.querySelector(this.settings.selector + 'error-close').addEventListener('click', () =>
+        document.querySelector('#' + this.settings.selector + 'error-close').addEventListener('click', () =>
         {
             errorElement.parentNode.removeChild(errorElement);
         });

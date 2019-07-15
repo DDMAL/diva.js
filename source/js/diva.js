@@ -153,14 +153,22 @@ class Diva
         }
         else
         {
+        	let requestHeaders =  {
+                    "Accept": this.settings.acceptHeader,
+            }
+        	if (this.settings.addRequestHeaders) 
+        	{
+        		Object.assign(requestHeaders, this.settings.addRequestHeaders);
+        	}
             const pendingManifestRequest = fetch(this.settings.objectData, {
-                headers: {
-                    "Accept": this.settings.acceptHeader
-                }
+                headers: requestHeaders
             }).then( (response) =>
             {
                 if (!response.ok)
                 {
+                    // trigger manifest load error event
+                    diva.Events.publish('ManifestFetchError', [response], this);
+
                     this._ajaxError(response);
 
                     let error = new Error(response.statusText);
@@ -1173,7 +1181,7 @@ class Diva
      * */
     gotoPageByIndex (pageIndex, xAnchor, yAnchor)
     {
-        this._gotoPageByIndex(pageIndex, xAnchor, yAnchor);
+        return this._gotoPageByIndex(pageIndex, xAnchor, yAnchor);
     }
 
     /**
