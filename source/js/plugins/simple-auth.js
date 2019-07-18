@@ -35,19 +35,19 @@ export default class SimpleAuthPlugin
          * Re-tries load with auth token or shows log in window. 
          */
         Diva.Events.subscribe("ManifestFetchError", (response) => {
-        	if (response.status == 401) {
-            	if (this.authToken == null && this.authError == null) {
-            		// no auth token. let's get one
-            		this.requestAuthToken();
-            		// abort regular error message
-            		throw new Error("cancel error handler");
-            	} else {
-            		// auth token doesn't work. try to log in again
-            		this.showLoginMessage(response);
-            		// abort regular error message
-            		throw new Error("cancel error handler");
-            	}
-        	}
+            if (response.status === 401) {
+                if (this.authToken === null && this.authError === null) {
+                    // no auth token. let's get one
+                    this.requestAuthToken();
+                    // abort regular error handling
+                    throw new Error("Authentication required. Retrying with token. Error handling aborted.");
+                } else {
+                    // auth token doesn't work. try to log in again
+                    this.showLoginMessage(response);
+                    // abort regular error message
+                    throw new Error("Authentication required. Retrying with login. Error handling aborted.");
+                }
+            }
         }, core.settings.ID);
         
         /*
@@ -61,13 +61,13 @@ export default class SimpleAuthPlugin
             let data = event.data;
             //console.debug("received postMessage!", origin, data);
             
-            if (origin != this.serviceOrigin) return;
+            if (origin !== this.serviceOrigin) return;
             
-            if (data.messageId != this.authTokenId) return;
+            if (data.messageId !== this.authTokenId) return;
             
             if (data.hasOwnProperty('accessToken')) 
             {
-            	this.authToken = data.accessToken;
+                this.authToken = data.accessToken;
                 this.authError = null;
                 this.setAuthHeader(data.accessToken);
                 // reload manifest
@@ -76,11 +76,11 @@ export default class SimpleAuthPlugin
             else if (data.hasOwnProperty('error')) 
             {
                 // handle error condition
-            	console.debug("ERROR getting access token!");
-            	this.authError = data.error;
-            	this.authToken = null;
-            	this.setAuthHeader(null);
-            	// reload manifest to trigger login window
+                console.debug("ERROR getting access token!");
+                this.authError = data.error;
+                this.authToken = null;
+                this.setAuthHeader(null);
+                // reload manifest to trigger login window
                 this.core.publicInstance._loadOrFetchObjectData();
             }
         });
@@ -95,8 +95,8 @@ export default class SimpleAuthPlugin
         errorMessage.push(
             elt('p', 'The document you are trying to access requires authentication.'),
             elt('p', 'Please ',
-            	elt('button', this.core.elemAttrs('error-auth-login', {'aria-label': 'Log in'}), 'log in')
-    		));
+                elt('button', this.core.elemAttrs('error-auth-login', {'aria-label': 'Log in'}), 'log in')
+            ));
         
         this.core.showError(errorMessage);
         
@@ -116,14 +116,14 @@ export default class SimpleAuthPlugin
      */
     openLoginWindow () 
     {
-		const loginWindow = window.open(this.authLoginUrl);
-		
-		if (loginWindow == null) 
-		{
-			console.error("login service window did not open :-(");
-			return;
-		}
-		
+        const loginWindow = window.open(this.authLoginUrl);
+        
+        if (!loginWindow) 
+        {
+            console.error("login service window did not open :-(");
+            return;
+        }
+        
         // we need to wait for the window to close...
         const poll = window.setInterval( () => {
             if (loginWindow.closed) 
@@ -143,18 +143,18 @@ export default class SimpleAuthPlugin
      */
     requestAuthToken ()
     {
-    	const tokenFrameId = 'iiif-token-frame';
+        const tokenFrameId = 'iiif-token-frame';
         let tokenFrame = document.getElementById(tokenFrameId);
         if (tokenFrame == null) 
         {
-        	tokenFrame = document.createElement('iframe');
-        	tokenFrame.id = tokenFrameId;
+            tokenFrame = document.createElement('iframe');
+            tokenFrame.id = tokenFrameId;
             tokenFrame.setAttribute('style', 'display:none; width:30px; height:10px;');
             document.body.appendChild(tokenFrame);
         }
 
         // use utime as token id
-        this.authTokenId = Date.now();
+        this.authTokenId = Date.now().toString();
         // create url with id and origin
         const tokenUrl = this.authTokenUrl + "?messageId=" + this.authTokenId + "&origin=" + this.getOrigin();
         // load url in iframe
@@ -180,17 +180,15 @@ export default class SimpleAuthPlugin
      */
     setAuthHeader (token) 
     {
-    	if (token != null)
-    	{
-    		this.core.settings.addRequestHeaders = this.core.settings.addRequestHeaders || {};
-    		this.core.settings.addRequestHeaders["Authorization"] = "Bearer " + token;
-    	}
-    	else if (this.core.settings.addRequestHeaders != null)
-		{
-    		delete this.core.settings.addRequestHeaders["Authorization"];
-		}
+        if (token !== null)
+        {
+            this.core.settings.requestHeaders["Authorization"] = "Bearer " + token;
+        }
+        else
+        {
+            delete this.core.settings.requestHeaders["Authorization"];
+        }
     }
-    
 }
 
 SimpleAuthPlugin.prototype.pluginName = "simple-auth";
