@@ -77,6 +77,7 @@ class Diva
             fixedHeightGrid: true,      // So each page in grid view has the same height (only widths differ)
             goDirectlyTo: 0,            // Default initial page to show (0-indexed)
             hashParamSuffix: null,      // Used when there are multiple document viewers on a page
+            imageCrossOrigin: 'anonymous', // Set crossOrigin property for image requests
             inFullscreen: false,        // Set to true to load fullscreen mode initially
             inBookLayout: false,       // Set to true to view the document with facing pages in document mode
             inGrid: false,              // Set to true to load grid view initially

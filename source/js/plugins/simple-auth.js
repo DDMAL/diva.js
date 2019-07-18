@@ -28,24 +28,27 @@ export default class SimpleAuthPlugin
         this.authError = null;
         this.authTokenId = null;
         this.serviceOrigin = this.getOrigin(this.authTokenUrl);
+        
+        // unset imageCrossOrigin because we need cookies on the image requests
+        core.publicInstance.options.imageCrossOrigin = null;
 
         /*
          * Manifest load error handler.
          * 
          * Re-tries load with auth token or shows log in window. 
          */
-        Diva.Events.subscribe("ManifestFetchError", (response) => {
+        Diva.Events.subscribe('ManifestFetchError', (response) => {
             if (response.status === 401) {
                 if (this.authToken === null && this.authError === null) {
                     // no auth token. let's get one
                     this.requestAuthToken();
                     // abort regular error handling
-                    throw new Error("Authentication required. Retrying with token. Error handling aborted.");
+                    throw new Error('Authentication required. Retrying with token.');
                 } else {
                     // auth token doesn't work. try to log in again
                     this.showLoginMessage(response);
                     // abort regular error message
-                    throw new Error("Authentication required. Retrying with login. Error handling aborted.");
+                    throw new Error('Authentication required. Retrying with login.');
                 }
             }
         }, core.settings.ID);
@@ -56,7 +59,7 @@ export default class SimpleAuthPlugin
          * Receives data from IIIF-Auth token service in iframe.
          * (https://iiif.io/api/auth/1.0/#interaction-for-browser-based-client-applications)
          */
-        window.addEventListener("message", (event) => {
+        window.addEventListener('message', (event) => {
             let origin = event.origin;
             let data = event.data;
             //console.debug("received postMessage!", origin, data);
@@ -76,7 +79,7 @@ export default class SimpleAuthPlugin
             else if (data.hasOwnProperty('error')) 
             {
                 // handle error condition
-                console.debug("ERROR getting access token!");
+                //console.debug("ERROR getting access token!");
                 this.authError = data.error;
                 this.authToken = null;
                 this.setAuthHeader(null);
@@ -156,7 +159,7 @@ export default class SimpleAuthPlugin
         // use utime as token id
         this.authTokenId = Date.now().toString();
         // create url with id and origin
-        const tokenUrl = this.authTokenUrl + "?messageId=" + this.authTokenId + "&origin=" + this.getOrigin();
+        const tokenUrl = this.authTokenUrl + '?messageId=' + this.authTokenId + '&origin=' + this.getOrigin();
         // load url in iframe
         tokenFrame.src = tokenUrl;
     }
@@ -172,7 +175,7 @@ export default class SimpleAuthPlugin
             urlHolder = document.createElement('a');
             urlHolder.href = url;
         }
-        return urlHolder.protocol + "//" + urlHolder.hostname + (urlHolder.port ? ':'+urlHolder.port : '');
+        return urlHolder.protocol + '//' + urlHolder.hostname + (urlHolder.port ? ':'+urlHolder.port : '');
     }
     
     /**
@@ -182,16 +185,16 @@ export default class SimpleAuthPlugin
     {
         if (token !== null)
         {
-            this.core.settings.requestHeaders["Authorization"] = "Bearer " + token;
+            this.core.settings.requestHeaders['Authorization'] = 'Bearer ' + token;
         }
         else
         {
-            delete this.core.settings.requestHeaders["Authorization"];
+            delete this.core.settings.requestHeaders['Authorization'];
         }
     }
 }
 
-SimpleAuthPlugin.prototype.pluginName = "simple-auth";
+SimpleAuthPlugin.prototype.pluginName = 'simple-auth';
 SimpleAuthPlugin.prototype.isPageTool = false;
 
 /**

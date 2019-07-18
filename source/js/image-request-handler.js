@@ -14,12 +14,13 @@ export default class ImageRequestHandler
         this._errorCallback = options.error;
         this.timeoutTime = options.timeoutTime || 0;
         this._aborted = this._complete = false;
+        this._crossOrigin = options.settings.imageCrossOrigin;
 
         //Use a timeout to allow the requests to be debounced (as they are in renderer)
         this.timeout = setTimeout(() => {
             // Initiate the request
             this._image = new Image();
-            //this._image.crossOrigin = "anonymous"; TODO: make configurable
+            this._image.crossOrigin = this._crossOrigin;
             this._image.onload = this._handleLoad.bind(this);
             this._image.onerror = this._handleError.bind(this);
             this._image.src = options.url;
