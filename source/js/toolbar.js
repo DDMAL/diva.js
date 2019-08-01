@@ -288,8 +288,9 @@ export default class Toolbar
         {
             gotoPageInput.value = this.textContent;
             inputSuggestions.style.display = 'none';
-
-            let submitEvent = new Event('submit');
+            let submitEvent = new Event('submit', {
+                cancelable: true
+            });
             gotoForm.dispatchEvent(submitEvent);
         });
 
