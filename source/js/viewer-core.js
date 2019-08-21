@@ -1366,19 +1366,28 @@ export default class ViewerCore
         if (!arraysEqual(this.viewerState.currentPageIndices, visiblePages))
         {
             this.viewerState.currentPageIndices = visiblePages;
-            this.viewerState.activePageIndex = activePage;
+            if (this.viewerState.activePageIndex !== activePage)
+            {
+                this.viewerState.activePageIndex = activePage;
+                this.publish("ActivePageDidChange", activePage);
+            }
             this.publish("VisiblePageDidChange", visiblePages);
 
             // Publish an event if the page we're switching to has other images.
             if (this.viewerState.manifest.pages[activePage].otherImages.length > 0)
                 this.publish('VisiblePageHasAlternateViews', activePage);
         }
+        else if (this.viewerState.activePageIndex !== activePage)
+        {
+            this.viewerState.activePageIndex = activePage;
+            this.publish("ActivePageDidChange", activePage);
+        }
 
         function arraysEqual (a, b)
         {
             if (a.length !== b.length)
                 return false;
-            
+
             for (let i = 0, len = a.length; i < len; i++)
             {
                 if (a[i] !== b[i])
