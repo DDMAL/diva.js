@@ -46,6 +46,17 @@
                         fixedHeightGrid: true
                     });
 
+                    let loadUserManifest = function() {
+                      diva.changeObject(inputObject.val());
+                      diva.gotoPageByIndex(0);
+                    };
+
+                    var inputObject = $('#manifest-entry');
+                    var buttonObject = $('#manifest-confirm');
+                    inputObject.on('keypress', loadUserManifest);
+                    buttonObject.on('click', loadUserManifest);
+
+
                     var selectObject = $('#object-select');
                     selectObject.on('change', function()
                     {
