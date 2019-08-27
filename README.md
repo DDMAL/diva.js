@@ -35,8 +35,8 @@ Diva.js is an image viewer compatible with IIIF Presentation API versions [2](ht
 If you prefer to use a hosted version of Diva, copy and paste the following into the `<head>` of any webpage to 
 include all the files necessary to use Diva.js.
 ```html
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/diva.js/6.0.1/css/diva.css" />
-<script src="//cdnjs.cloudflare.com/ajax/libs/diva.js/6.0.1/js/diva.js"></script>
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/diva.js/6.0.2/css/diva.css" />
+<script src="//cdnjs.cloudflare.com/ajax/libs/diva.js/6.0.2/js/diva.js"></script>
 ```
 ### Locally (release package)
 
