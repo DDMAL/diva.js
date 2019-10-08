@@ -286,6 +286,7 @@ export default class Renderer
             newPendingRequests[source.url] = new ImageRequestHandler({
                 url: source.url,
                 timeoutTime: REQUEST_DEBOUNCE_INTERVAL,
+                settings: this._settings,
                 load: img =>
                 {
                     delete this._pendingRequests[source.url];

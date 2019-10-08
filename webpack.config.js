@@ -43,7 +43,8 @@ module.exports = [{
     entry: {
         'download': './source/js/plugins/download.js',
         'manipulation': './source/js/plugins/manipulation.js',
-        'metadata': './source/js/plugins/metadata.js'
+        'metadata': './source/js/plugins/metadata.js',
+        'simple-auth': './source/js/plugins/simple-auth.js'
     },
     plugins: [
         new CleanWebpackPlugin([path.join('build', 'plugins')]),
