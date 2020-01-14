@@ -2,7 +2,7 @@
   "name": "diva.js",
   "version": "6.0.2",
   "description": "Diva.js",
-  "main": "build/diva.js",
+  "main": "source/js/diva.js",
   "scripts": {
     "test": "npm run build:production && karma start",
     "lint": "jshint --reporter=node_modules/jshint-stylish source/js test",
