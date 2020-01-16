@@ -465,7 +465,7 @@ class Diva
         let tools = document.getElementById(this.settings.selector + 'tools');
         const TIMEOUT = 2000;
 
-        if (this.settings.inFullscreen) 
+        if (this.settings.inFullscreen)
         {
             tools.classList.add("diva-fullscreen-tools");
 
@@ -483,12 +483,12 @@ class Diva
             tools.classList.remove("diva-fullscreen-tools");
         }
 
-        function toggleOpacity () 
+        function toggleOpacity ()
         {
             tools.style.opacity = 1;
             clearTimeout(t);
             if (!hover && this.settings.inFullscreen) {
-                t = setTimeout(function () 
+                t = setTimeout(function ()
                 {
                     tools.style.opacity = 0;
                 }, TIMEOUT);
@@ -742,7 +742,7 @@ class Diva
     {
         this.divaState.viewerCore.disableDragScrollable();
     }
-    
+
     /**
      * Enables document drag scrolling
      *
@@ -1533,13 +1533,16 @@ class Diva
     }
 }
 
+Diva.Events = diva.Events;
+
 export default Diva;
 
 /**
  * Make `Diva` available in the global context.
  * */
-(function (global)
-{
-    global.Diva = global.Diva || Diva;
-    global.Diva.Events = diva.Events;
-})(window);
+if (typeof window !== 'undefined') {
+    (function (global)
+    {
+        global.Diva = global.Diva || Diva;
+    })(window);
+}
