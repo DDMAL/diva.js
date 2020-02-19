@@ -2,7 +2,7 @@
 // Generated on Tue Jul 31 2018 14:40:42 GMT-0400 (Eastern Daylight Time)
 
 module.exports = function(config) {
-  
+
   var webpackConfig = require('./webpack.config.test');
   process.env.CHROME_BIN = require('puppeteer').executablePath()
 
@@ -39,7 +39,7 @@ module.exports = function(config) {
 
     babelPreprocessor: {
         options: {
-            presets: ['env']
+            presets: ['@babel/preset-env']
         },
     },
 
@@ -69,7 +69,7 @@ module.exports = function(config) {
 
     // enable / disable watching file and executing tests whenever any file changes
     autoWatch: false,
-    
+
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
