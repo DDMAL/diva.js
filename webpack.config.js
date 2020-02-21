@@ -1,6 +1,6 @@
 const path = require('path');
 const buildMode = (process.env.NODE_ENV === "production") ? 'production' : 'development';
-const CleanWebpackPlugin = require('clean-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
@@ -21,7 +21,9 @@ module.exports = [{
         ]
     },
     plugins: [
-        new CleanWebpackPlugin(['build']),
+        new CleanWebpackPlugin({
+            cleanOnceBeforeBuildPatterns: ['*.js', '*.css', '*.map'],
+        }),
         new CopyWebpackPlugin(),
         new MiniCssExtractPlugin({
             filename: path.join('diva.css')
@@ -47,7 +49,7 @@ module.exports = [{
         'simple-auth': './source/js/plugins/simple-auth.js'
     },
     plugins: [
-        new CleanWebpackPlugin([path.join('build', 'plugins')]),
+        new CleanWebpackPlugin(),
     ],
     output: {
         publicPath: '/build/plugins/',

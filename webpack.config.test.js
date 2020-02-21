@@ -19,13 +19,13 @@ module.exports = {
                 include: [
                     path.resolve(__dirname, "tests")
                 ],
-                query: {
-                    presets: ["env"],
+                options: {
+                    presets: ["@babel/preset-env"],
                 }
             },
             {
                 test: /\.js$/,
-                use: { 
+                use: {
                     loader: 'istanbul-instrumenter-loader',
                     options: { esModules: true }
                 },
