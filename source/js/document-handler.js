@@ -1,4 +1,4 @@
-import maxBy from 'lodash.maxby';
+import { maxBy } from 'lodash';
 import PageToolsOverlay from './page-tools-overlay';
 
 
