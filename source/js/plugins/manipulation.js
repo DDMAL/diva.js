@@ -162,7 +162,7 @@ export default class ManipulationPlugin
                     this._sidebar.style.display = 'none';
                     this._tools.style.display = 'none';
                     this._mainArea.style.display = 'block';
-                } 
+                }
                 else
                 {
                     this._sidebar.style.display = 'block';
@@ -258,7 +258,7 @@ export default class ManipulationPlugin
             document.body.style.overflow = 'auto';
             this._core.parentObject.removeChild(this._backdrop);
 
-            // show toolbar 
+            // show toolbar
             document.getElementById(`${this._core.settings.selector}tools`).style.display = 'block';
         }
     }
@@ -339,7 +339,9 @@ export default class ManipulationPlugin
         // Zoom tool
         let zoomDiv = document.createElement('div');
         let zoomAdjust = document.createElement('input');
-        let zoomText = document.createTextNode('Zoom');
+        let zoomText = document.createElement('label');
+        zoomText.textContent = 'Zoom';
+        zoomText.setAttribute('for', 'zoom-slider');
 
         zoomDiv.classList.add('manipulation-tools-text');
         zoomAdjust.setAttribute('type', 'range');
@@ -354,9 +356,12 @@ export default class ManipulationPlugin
         // Rotation tool
         let rotateDiv = document.createElement('div');
         let rotateAdjust = document.createElement('input');
-        let rotateText = document.createTextNode('Rotation');
+        let rotateText = document.createElement('label');
+        rotateText.textContent = 'Rotation';
+        rotateText.setAttribute('for', 'rotate-slider');
 
         rotateDiv.classList.add('manipulation-tools-text');
+        rotateAdjust.id = 'rotate-slider';
         rotateAdjust.setAttribute('type', 'range');
         rotateAdjust.setAttribute('max', 359);
         rotateAdjust.setAttribute('min', 0);
@@ -388,11 +393,13 @@ export default class ManipulationPlugin
         titleText.setAttribute('style', 'margin: 0;');
         titleText.classList.add('manipulation-tools-text');
         titleText.innerText = 'Filters';
+        titleText.id = 'filters-title';
 
         // Selection options (color filters or threshold)
         let select = document.createElement('select');
         select.id = 'filter-select';
         select.style.backgroundColor = 'white';
+        select.setAttribute('aria-labelledby', 'filters-title');
 
         let colorFilters = document.createElement('option');
         colorFilters.value = 'colours';
@@ -401,7 +408,7 @@ export default class ManipulationPlugin
         let otherFilters = document.createElement('option');
         otherFilters.value = 'threshold';
         otherFilters.innerText = 'Threshold';
-        
+
         select.addEventListener('change', switchVisibleFilters);
         select.appendChild(colorFilters);
         select.appendChild(otherFilters);
@@ -421,11 +428,14 @@ export default class ManipulationPlugin
         saturationDiv.classList.add('color-filters');
         saturationDiv.classList.add('manipulation-tools-text');
         let saturationAdjust = document.createElement('input');
-        let saturationText = document.createTextNode('Saturation');
+        let saturationText = document.createElement('label');
+        saturationText.textContent = 'Saturation';
+        saturationText.setAttribute('for', 'saturation-slider');
         saturationAdjust.setAttribute('type', 'range');
         saturationAdjust.setAttribute('max', 100);
         saturationAdjust.setAttribute('min', -100);
         saturationAdjust.setAttribute('value', 0);
+        saturationAdjust.id = 'saturation-slider';
 
         saturationAdjust.addEventListener('change', debounce((e) => this._applyTransformationToImageData(e, saturation, e.target.value), 250));
         saturationDiv.appendChild(saturationAdjust);
@@ -436,11 +446,14 @@ export default class ManipulationPlugin
         vibDiv.classList.add('color-filters');
         vibDiv.classList.add('manipulation-tools-text');
         let vibranceAdjust = document.createElement('input');
-        let vibranceText = document.createTextNode('Vibrance');
+        let vibranceText = document.createElement('label');
+        vibranceText.textContent = 'Vibrance';
+        vibranceText.setAttribute('for', 'vibrance-slider');
         vibranceAdjust.setAttribute('type', 'range');
         vibranceAdjust.setAttribute('max', 100);
         vibranceAdjust.setAttribute('min', -100);
         vibranceAdjust.setAttribute('value', 0);
+        vibranceAdjust.id = 'vibrance-slider';
 
         vibranceAdjust.addEventListener('change', debounce((e) => this._applyTransformationToImageData(e, vibrance, e.target.value), 250));
         vibDiv.appendChild(vibranceAdjust);
@@ -451,11 +464,14 @@ export default class ManipulationPlugin
         brightDiv.classList.add('color-filters');
         brightDiv.classList.add('manipulation-tools-text');
         let brightnessAdjust = document.createElement('input');
-        let brightnessText = document.createTextNode('Brightness');
+        let brightnessText = document.createElement('label');
+        brightnessText.setAttribute('for', 'brightness-slider');
+        brightnessText.textContent = 'Brightness';
         brightnessAdjust.setAttribute('type', 'range');
         brightnessAdjust.setAttribute('max', 100);
         brightnessAdjust.setAttribute('min', -100);
         brightnessAdjust.setAttribute('value', 0);
+        brightnessAdjust.id = 'brightness-slider';
 
         brightnessAdjust.addEventListener('change', debounce((e) => this._applyTransformationToImageData(e, brightness, e.target.value), 250));
         brightDiv.appendChild(brightnessAdjust);
@@ -466,11 +482,14 @@ export default class ManipulationPlugin
         contrastDiv.classList.add('color-filters');
         contrastDiv.classList.add('manipulation-tools-text');
         let contrastAdjust = document.createElement('input');
-        let contrastText = document.createTextNode('Contrast');
+        let contrastText = document.createElement('label');
+        contrastText.textContent = 'Contrast';
+        contrastText.setAttribute('for', 'contrast-slider');
         contrastAdjust.setAttribute('type', 'range');
         contrastAdjust.setAttribute('max', 100);
         contrastAdjust.setAttribute('min', -100);
         contrastAdjust.setAttribute('value', 0);
+        contrastAdjust.id = 'contrast-slider';
 
         contrastAdjust.addEventListener('change', debounce((e) => this._applyTransformationToImageData(e, contrast, e.target.value), 250));
         contrastDiv.appendChild(contrastAdjust);
@@ -489,11 +508,14 @@ export default class ManipulationPlugin
         sharpDiv.classList.add('color-filters');
         sharpDiv.classList.add('manipulation-tools-text');
         let sharpenAdjust = document.createElement('input');
-        let sharpenText = document.createTextNode('Sharpness');
+        let sharpenText = document.createElement('label');
+        sharpenText.textContent = 'Sharpness';
+        sharpenText.setAttribute('for', 'sharpness-slider');
         sharpenAdjust.setAttribute('type', 'range');
         sharpenAdjust.setAttribute('max', 100);
         sharpenAdjust.setAttribute('min', 0);
         sharpenAdjust.setAttribute('value', 0);
+        sharpenAdjust.id = 'sharpness-slider';
 
         sharpenAdjust.addEventListener('change', debounce((e) => this._applyTransformationToImageData(e, sharpen, e.target.value), 250));
         sharpDiv.appendChild(sharpenAdjust);
@@ -504,11 +526,14 @@ export default class ManipulationPlugin
         hueDiv.classList.add('color-filters');
         hueDiv.classList.add('manipulation-tools-text');
         let hueAdjust = document.createElement('input');
-        let hueText = document.createTextNode('Hue');
+        let hueText = document.createElement('label');
+        hueText.textContent = 'Hue';
+        hueText.setAttribute('for', 'hue-slider');
         hueAdjust.setAttribute('type', 'range');
         hueAdjust.setAttribute('max', 100);
         hueAdjust.setAttribute('min', 0);
         hueAdjust.setAttribute('value', 0);
+        hueAdjust.id = 'hue-slider';
 
         hueAdjust.addEventListener('change', debounce((e) => this._applyTransformationToImageData(e, hue, e.target.value), 250));
         hueDiv.appendChild(hueAdjust);
@@ -519,11 +544,14 @@ export default class ManipulationPlugin
         gammaDiv.classList.add('color-filters');
         gammaDiv.classList.add('manipulation-tools-text');
         let gammaAdjust = document.createElement('input');
-        let gammaText = document.createTextNode('Gamma');
+        let gammaText = document.createElement('label');
+        gammaText.textContent = 'Gamma';
+        gammaText.setAttribute('for', 'gamma-slider');
         gammaAdjust.setAttribute('type', 'range');
         gammaAdjust.setAttribute('max', 300);
         gammaAdjust.setAttribute('min', -100);
         gammaAdjust.setAttribute('value', 0);
+        gammaAdjust.id = 'gamma-slider';
 
         gammaAdjust.addEventListener('change', debounce((e) => this._applyTransformationToImageData(e, gamma, e.target.value), 250));
         gammaDiv.appendChild(gammaAdjust);
@@ -534,36 +562,45 @@ export default class ManipulationPlugin
         ccRedDiv.classList.add('color-filters');
         ccRedDiv.classList.add('manipulation-tools-text');
         let ccRedAdjust = document.createElement('input');
-        let ccRedText = document.createTextNode('CC Red');
+        let ccRedText = document.createElement('label');
+        ccRedText.textContent = 'CC Red';
+        ccRedText.setAttribute('for', 'cc-red-slider');
         ccRedAdjust.setAttribute('type', 'range');
         ccRedAdjust.setAttribute('max', 100);
         ccRedAdjust.setAttribute('min', -100);
         ccRedAdjust.setAttribute('value', 0);
+        ccRedAdjust.id = 'cc-red-slider';
 
         let ccGreenDiv = document.createElement('div');
         ccGreenDiv.classList.add('color-filters');
         ccGreenDiv.classList.add('manipulation-tools-text');
         let ccGreenAdjust = document.createElement('input');
-        let ccGreenText = document.createTextNode('CC Green');
+        let ccGreenText = document.createElement('label');
+        ccGreenText.textContent = 'CC Green';
+        ccGreenText.setAttribute('for', 'cc-green-slider');
         ccGreenAdjust.setAttribute('type', 'range');
         ccGreenAdjust.setAttribute('max', 100);
         ccGreenAdjust.setAttribute('min', -100);
         ccGreenAdjust.setAttribute('value', 0);
+        ccGreenAdjust.id = 'cc-green-slider';
 
         let ccBlueDiv = document.createElement('div');
         ccBlueDiv.classList.add('color-filters');
         ccBlueDiv.classList.add('manipulation-tools-text');
         let ccBlueAdjust = document.createElement('input');
-        let ccBlueText = document.createTextNode('CC Blue');
+        let ccBlueText = document.createElement('label');
+        ccBlueText.textContent = 'CC Blue';
+        ccBlueText.setAttribute('for', 'cc-blue-slider');
         ccBlueAdjust.setAttribute('type', 'range');
         ccBlueAdjust.setAttribute('max', 100);
         ccBlueAdjust.setAttribute('min', -100);
         ccBlueAdjust.setAttribute('value', 0);
+        ccBlueAdjust.id = 'cc-blue-slider';
 
         ccRedAdjust.addEventListener('change', debounce((e) => this._applyTransformationToImageData(e, ccRed, e.target.value), 250));
         ccGreenAdjust.addEventListener('change', debounce((e) => this._applyTransformationToImageData(e, ccGreen, e.target.value), 250));
         ccBlueAdjust.addEventListener('change', debounce((e) => this._applyTransformationToImageData(e, ccBlue, e.target.value), 250));
-        
+
         ccRedDiv.appendChild(ccRedAdjust);
         ccRedDiv.appendChild(ccRedText);
         ccGreenDiv.appendChild(ccGreenAdjust);
@@ -575,12 +612,15 @@ export default class ManipulationPlugin
         let threshDiv = document.createElement('div');
         threshDiv.style.display = 'none';
         let thresholdAdjust = document.createElement('input');
-        let thresholdText = document.createTextNode('Threshold');
+        let thresholdText = document.createElement('label');
+        thresholdText.textContent = 'Threshold';
+        thresholdText.setAttribute('for', 'threshold-slider');
         threshDiv.classList.add('manipulation-tools-text');
         thresholdAdjust.setAttribute('type', 'range');
         thresholdAdjust.setAttribute('max', 255);
         thresholdAdjust.setAttribute('min', 64);
         thresholdAdjust.setAttribute('value', 0);
+        thresholdAdjust.id = 'threshold-slider';
 
         thresholdAdjust.addEventListener('change', debounce((e) => this._applyTransformationToImageData(e, threshold, e.target.value), 250));
         threshDiv.appendChild(thresholdAdjust);
@@ -650,7 +690,7 @@ export default class ManipulationPlugin
 
     _resetSliders ()
     {
-        // check if element is a slider, if so then reset 
+        // check if element is a slider, if so then reset
         for (let i = 0, len = this._tools.children.length; i < len; i++)
         {
             let tool = this._tools.children[i].children[0];
@@ -741,7 +781,7 @@ export default class ManipulationPlugin
         let w = this.dims.w;
         let h = this.dims.h;
 
-        // temp canvas for drawing at original zoom level 
+        // temp canvas for drawing at original zoom level
         let tempCanvas = document.createElement('canvas');
         let tempCtx = tempCanvas.getContext('2d');
         tempCanvas.width = w;

@@ -36,7 +36,8 @@ export default class Toolbar
             type: 'button',
             id: this.settings.ID + name,
             class: 'diva-' + name + ' diva-button',
-            title: label
+            title: label,
+            'aria-label': label
         });
 
         if (icon)
@@ -115,7 +116,7 @@ export default class Toolbar
             id: this.settings.ID + 'current-page'
         });
 
-        const updateCurrentPage = () => 
+        const updateCurrentPage = () =>
         {
             // get labels for index range
             let indices = this.viewer.getCurrentPageIndices();
@@ -124,7 +125,7 @@ export default class Toolbar
             let startLabel = this.settings.manifest.pages[startIndex].l;
             let endLabel = this.settings.manifest.pages[endIndex].l;
 
-            if (startIndex !== endIndex) 
+            if (startIndex !== endIndex)
             {
             	if (this.settings.enableIndexAsLabel)
                 	currentPage.textContent = startIndex + " - " + endIndex;
@@ -151,13 +152,14 @@ export default class Toolbar
         );
     }
 
-    createGotoPageForm ()  
+    createGotoPageForm ()
     {
         const gotoPageInput = elt('input', {
             id: this.settings.ID + 'goto-page-input',
             class: 'diva-input diva-goto-page-input',
             autocomplete: 'off',
-            type: 'text'
+            type: 'text',
+            'aria-label': 'Page Input'
         });
 
         const gotoPageSubmit = elt('input', {
@@ -182,7 +184,7 @@ export default class Toolbar
             inputSuggestions
         );
 
-        gotoForm.addEventListener('submit', (e) => 
+        gotoForm.addEventListener('submit', (e) =>
         {
             e.preventDefault();
 
@@ -208,7 +210,7 @@ export default class Toolbar
             return false;
         });
 
-        ['input', 'focus'].forEach(event => 
+        ['input', 'focus'].forEach(event =>
         {
             gotoPageInput.addEventListener(event, () => {
                 inputSuggestions.innerHTML = ''; // Remove all previous suggestions
@@ -295,14 +297,14 @@ export default class Toolbar
         });
 
         // javascript equivalent to jquery .on(event, selector, function)
-        function onEvent (elem, evt, sel, handler) 
+        function onEvent (elem, evt, sel, handler)
         {
-            elem.addEventListener(evt, function (event) 
+            elem.addEventListener(evt, function (event)
             {
                 var t = event.target;
-                while (t && t !== this) 
+                while (t && t !== this)
                 {
-                    if (t.matches(sel)) 
+                    if (t.matches(sel))
                         handler.call(t, event);
                     t = t.parentNode;
                 }
@@ -451,20 +453,20 @@ export default class Toolbar
             if (!plugin.toolbarSide) // not a toolbar tool
                 continue;
 
-            plugin.toolbarIcon = plugin.createIcon(); 
+            plugin.toolbarIcon = plugin.createIcon();
             if (!plugin.toolbarIcon) // icon couldn't be created
                 continue;
 
             // add plugin tools after the go-to-page and page-label tools
-            if (plugin.toolbarSide === 'right') 
+            if (plugin.toolbarSide === 'right')
                 rightTools.splice(2, 0, plugin.toolbarIcon);
-            else if (plugin.toolbarSide === 'left') 
+            else if (plugin.toolbarSide === 'left')
                 leftTools.splice(2, 0, plugin.toolbarIcon);
 
             plugin.toolbarIcon.addEventListener('click', handlePluginClick.bind(this, plugin));
         }
 
-        function handlePluginClick (plugin) 
+        function handlePluginClick (plugin)
         {
             plugin.handleClick(this.viewer);
         }
