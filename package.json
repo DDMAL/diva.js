@@ -53,7 +53,7 @@
     "lodash.maxby": "^4.6.0",
     "mini-css-extract-plugin": "^0.4.5",
     "mocha": "^5.2.0",
-    "node-sass": "^4.13.1",
+    "node-sass": "^8.0.0",
     "postcss-loader": "^3.0.0",
     "puppeteer": "^1.20.0",
     "sass-loader": "^8.0.2",
