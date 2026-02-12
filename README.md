@@ -1,4 +1,6 @@
-# IIIF Scroll POC
+# Diva.js
+
+Version 7.0
 
 ## Build
 
