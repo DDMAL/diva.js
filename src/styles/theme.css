@@ -1,0 +1,25 @@
+/* Shared CSS variables for the Diva theme. */
+
+:root {
+  --diva-accent: rgba(90, 107, 255, 1);
+  --diva-accent-light: rgba(154, 164, 255, 1);
+  --diva-border: rgba(217, 212, 206, 1);
+  --diva-danger: rgba(211, 47, 47, 1);
+  --diva-dark-bg: rgba(28, 29, 34, 1);
+  --diva-dark-border: rgba(44, 45, 51, 1);
+  --diva-overlay-bg: rgba(16, 17, 20, 0.6);
+  --diva-page-bg: rgba(247, 245, 241, 1);
+  --diva-shadow-dark: rgba(0, 0, 0, 0.15);
+  --diva-shadow-focus: rgba(154, 164, 255, 0.35);
+  --diva-shadow-modal: rgba(0, 0, 0, 0.25);
+  --diva-surface: rgba(230, 225, 220, 1);
+  --diva-text-muted: rgba(92, 90, 85, 1);
+  --diva-text-muted-on-dark: rgba(255, 255, 255, 0.7);
+  --diva-text-primary: rgba(27, 27, 27, 1);
+  --diva-white: rgba(255, 255, 255, 1);
+  --diva-font-lg: 16px;
+  --diva-font-md: 12px;
+  --diva-font-sm: 11px;
+  --diva-font-xs: 10px;
+  --diva-font-xl: 20px;
+}

@@ -1,0 +1,241 @@
+module View.Toolbar exposing (viewToolbar)
+
+import Html exposing (Html, div, text)
+import Html.Attributes as Attr exposing (classList)
+import Model exposing (Model, ResourceResponse(..), Response(..), SidebarState(..), ViewMode(..), currentManifest, getPageAt, pageViewStartIndex)
+import Msg exposing (Msg(..))
+import Utilites exposing (disabledIf, isNothing)
+import View.Helpers exposing (viewButton, viewMaybe)
+import View.Icons as Icons
+
+
+viewToolbar : Model -> Html Msg
+viewToolbar model =
+    let
+        controlsDisabled =
+            currentManifest model |> isNothing
+    in
+    div [ classList [ ( "canvas-toolbar", True ) ] ]
+        [ div [ classList [ ( "canvas-toolbar-section", True ) ] ]
+            [ viewButton
+                { label = "Zoom Out"
+                , icon = Icons.zoomOut
+                , onClickMsg = disabledIf controlsDisabled UserClickedZoomOut
+                , isFullscreen = model.fullscreen
+                }
+            , viewButton
+                { label = "Zoom In"
+                , icon = Icons.zoomIn
+                , onClickMsg = disabledIf controlsDisabled UserClickedZoomIn
+                , isFullscreen = model.fullscreen
+                }
+            ]
+        , div [ classList [ ( "canvas-toolbar-section", True ), ( "is-right", True ) ] ]
+            [ viewStatus model
+            , viewCurrentLabel model
+            , viewButton
+                { label = "Page View"
+                , icon = Icons.pageViewOpen
+                , onClickMsg = disabledIf controlsDisabled UserClickedOpenPageView
+                , isFullscreen = model.fullscreen
+                }
+            , viewButton
+                { label = "Manifest Info"
+                , icon = Icons.info
+                , onClickMsg = disabledIf controlsDisabled UserClickedOpenManifestInfo
+                , isFullscreen = model.fullscreen
+                }
+            , viewButton
+                { label =
+                    if model.viewMode == OneUp then
+                        "Two Page"
+
+                    else
+                        "One Page"
+                , icon =
+                    if model.viewMode == OneUp then
+                        Icons.openingPageView
+
+                    else
+                        Icons.scrollingPageView
+                , onClickMsg = disabledIf controlsDisabled UserToggledTwoUp
+                , isFullscreen = model.fullscreen
+                }
+            , viewButton
+                { label = "Shift Page"
+                , icon =
+                    if model.shiftByOne then
+                        Icons.shiftLeft
+
+                    else
+                        Icons.shiftRight
+                , onClickMsg = disabledIf (controlsDisabled || model.viewMode == OneUp) UserToggledShiftByOne
+                , isFullscreen = model.fullscreen
+                }
+            , viewButton
+                (let
+                    sidebarVisible =
+                        if model.isMobile then
+                            model.mobileSidebarOpen
+
+                        else
+                            model.sidebarState /= SidebarHidden
+                 in
+                 { label =
+                    if sidebarVisible then
+                        "Hide Sidebar"
+
+                    else
+                        "Show Sidebar"
+                 , icon =
+                    if sidebarVisible then
+                        Icons.hideSidebar
+
+                    else
+                        Icons.showSidebar
+                 , onClickMsg = disabledIf controlsDisabled UserToggledSidebar
+                 , isFullscreen = model.fullscreen
+                 }
+                )
+            , viewButton
+                { label =
+                    if model.fullscreen then
+                        "Exit Full"
+
+                    else
+                        "Fullscreen"
+                , icon =
+                    if model.fullscreen then
+                        Icons.fromFullscreen
+
+                    else
+                        Icons.toFullscreen
+                , onClickMsg = Just UserToggledFullscreen
+                , isFullscreen = model.fullscreen
+                }
+            ]
+        ]
+
+
+viewCurrentLabel : Model -> Html Msg
+viewCurrentLabel model =
+    let
+        labelText =
+            case model.selectedIndex of
+                Just index ->
+                    case model.viewMode of
+                        OneUp ->
+                            let
+                                startIndex =
+                                    pageViewStartIndex model.viewMode model.shiftByOne index
+
+                                firstLabel =
+                                    getPageAt startIndex model.pages
+                                        |> Maybe.map .label
+
+                                secondLabel =
+                                    getPageAt (startIndex + 1) model.pages
+                                        |> Maybe.map .label
+                            in
+                            case ( firstLabel, secondLabel ) of
+                                ( Just left, _ ) ->
+                                    if model.shiftByOne && startIndex == 0 then
+                                        left
+
+                                    else
+                                        case secondLabel of
+                                            Just right ->
+                                                left ++ " / " ++ right
+
+                                            Nothing ->
+                                                left
+
+                                _ ->
+                                    ""
+
+                        TwoUp ->
+                            getPageAt index model.pages
+                                |> Maybe.map .label
+                                |> Maybe.withDefault ""
+
+                Nothing ->
+                    ""
+
+    in
+    div
+        [ classList
+            [ ( "canvas-label", True )
+            , ( "is-fullscreen", model.fullscreen )
+            ]
+        ]
+        [ text labelText ]
+
+
+viewStatus : Model -> Html Msg
+viewStatus model =
+    let
+        maybeStatus =
+            case model.resourceResponse of
+                ResourceNotRequested ->
+                    Nothing
+
+                ResourceLoading ->
+                    Just
+                        (div
+                            [ classList [ ( "status", True ) ] ]
+                            [ text "Loading..." ]
+                        )
+
+                ResourceLoadedManifest _ ->
+                    if List.isEmpty model.tileSources then
+                        Just
+                            (div
+                                [ classList [ ( "status", True ) ] ]
+                                [ text "No canvases found in this manifest." ]
+                            )
+
+                    else
+                        Nothing
+
+                ResourceLoadedCollection _ ->
+                    case model.response of
+                        NotRequested ->
+                            Just
+                                (div
+                                    [ classList [ ( "status", True ) ] ]
+                                    [ text "Select a manifest from the collection to view." ]
+                                )
+
+                        Loading ->
+                            Just
+                                (div
+                                    [ classList [ ( "status", True ) ] ]
+                                    [ text "Select a manifest from the collection to view." ]
+                                )
+
+                        Loaded _ ->
+                            if List.isEmpty model.tileSources then
+                                Just
+                                    (div
+                                        [ classList [ ( "status", True ) ] ]
+                                        [ text "Select a manifest from the collection to view." ]
+                                    )
+
+                            else
+                                Nothing
+
+                        Failed message ->
+                            Just
+                                (div
+                                    [ classList [ ( "status", True ), ( "is-error", True ) ] ]
+                                    [ text message ]
+                                )
+
+                ResourceFailed message ->
+                    Just
+                        (div
+                            [ classList [ ( "status", True ), ( "is-error", True ) ] ]
+                            [ text message ]
+                        )
+    in
+    viewMaybe identity maybeStatus

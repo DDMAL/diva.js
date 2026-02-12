@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "ES2019",
+    "module": "ES2015",
+    "lib": ["DOM", "ES2019"],
+    "rootDir": "src",
+    "outDir": "public",
+    "strict": true,
+    "noEmitOnError": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.d.ts"]
+}

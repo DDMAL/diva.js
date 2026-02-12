@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Diva.js Viewer</title>
+<!--    <link rel="stylesheet" href="../build/diva.css">-->
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+      }
+      #diva-wrapper {
+        display: flex;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+
+    <div id="diva-wrapper"></div>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/5.0.1/openseadragon.min.js"></script>
+<!--    <script src="vendor/openseadragon.js"></script>-->
+    <script src="../build/diva.js"></script>
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const manifestParam = params.get("manifest");
+      const objectData = manifestParam && manifestParam.trim()
+        ? manifestParam.trim()
+        : "https://iiif.bodleian.ox.ac.uk/iiif/manifest/748a9d50-5a3a-440e-ab9d-567dd68b6abb.json";
+
+      new Diva("diva-wrapper", {
+        setLanguage: "ar",
+        objectData,
+        // objectData: "https://iiif.bodleian.ox.ac.uk/iiif/manifest/ae9f6cca-ae5c-4149-8fe4-95e6eca1f73c.json",
+        // objectData: "https://iiif.bodleian.ox.ac.uk/iiif/manifest/22baf2a5-5eb4-4c5b-b074-707aa29c83bc.json",
+        // objectData: "https://iiif.bodleian.ox.ac.uk/iiif/manifest/cbcbdb78-1f09-452c-8645-d77bcbf306f0.json",
+        // objectData: "https://www.diamm.ac.uk/sources/194/manifest/",
+        // objectData: "https://iiif.bodleian.ox.ac.uk/iiif/collection/top",
+        // objectData: "https://iiif.bodleian.ox.ac.uk/iiif/collection/all-souls",
+        // objectData: "https://iiif.io/api/cookbook/recipe/0033-choice/manifest.json",
+        // objectData: "./diamm-manifest.json",
+        acceptHeaders: ["application/ld+json;profile=http://iiif.io/api/presentation/3/context.json"],
+      });
+    </script>
+  </body>
+</html>

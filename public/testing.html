@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>IIIF Scroll POC - Testing</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+        background: #f5f2ea;
+        color: #222322;
+      }
+      .controls {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+        padding: 16px 20px;
+        border-bottom: 1px solid #e2d9cf;
+        background: #fffaf2;
+      }
+      .controls-row {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .controls label {
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        color: #6a6257;
+      }
+      .controls input[type="text"],
+      .controls select {
+        padding: 8px 10px;
+        border-radius: 6px;
+        border: 1px solid #d6cbbb;
+        min-width: 280px;
+        font-size: 14px;
+      }
+      .controls button {
+        padding: 8px 16px;
+        border-radius: 6px;
+        border: 1px solid #9f8c73;
+        background: #f0e6d7;
+        font-weight: 600;
+        cursor: pointer;
+      }
+       html,
+       body {
+         height: 100%;
+       }
+      #diva-wrapper {
+        display: flex;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+
+  </head>
+  <body>
+    <div class="controls">
+      <div class="controls-row">
+        <label>Manifest Source</label>
+        <label>
+          <input type="radio" name="manifest-source" value="list" checked />
+          Choose from list
+        </label>
+        <label>
+          <input type="radio" name="manifest-source" value="url" />
+          Enter URL
+        </label>
+      </div>
+      <div class="controls-row">
+        <label for="version-select">IIIF Version</label>
+        <select id="version-select">
+          <option value="">Auto</option>
+          <option value="v2">IIIF v2</option>
+          <option value="v3">IIIF v3</option>
+        </select>
+      </div>
+      <div class="controls-row" id="list-row">
+        <label for="manifest-select">Manifest</label>
+        <select id="manifest-select">
+          <option value="">(No manifests configured)</option>
+        </select>
+      </div>
+      <div class="controls-row" id="url-row" style="display:none;">
+        <label for="manifest-url">Manifest URL</label>
+        <input
+          id="manifest-url"
+          type="text"
+          placeholder="https://example.org/iiif/manifest.json"
+        />
+      </div>
+      <div class="controls-row">
+        <button id="manifest-go" type="button">Go</button>
+      </div>
+    </div>
+
+    <div id="diva-wrapper"></div>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/5.0.1/openseadragon.min.js"></script>
+    <script src="../build/diva.js"></script>
+    <script>
+      const manifests = [
+        { label: "GB-Ob MS Bodl. 264", url: "https://iiif.bodleian.ox.ac.uk/iiif/manifest/ae9f6cca-ae5c-4149-8fe4-95e6eca1f73c.json" },
+        { label: "GB-Cu MS Add. 10062", url: "https://cudl.lib.cam.ac.uk//iiif/MS-ADD-10062" },
+        { label: "GB-Och MS. Oppenheim Add. fol. 25 (RTL)", url: "https://iiif.bodleian.ox.ac.uk/iiif/manifest/22baf2a5-5eb4-4c5b-b074-707aa29c83bc.json" },
+        { label: "All Souls collection", url: "https://iiif.bodleian.ox.ac.uk/iiif/collection/all-souls" },
+        { label: "Madonna with Canon Joris", url: "https://dam.museabrugge.be/iiif/3/418/manifest.json" },
+        { label: "Huntingdon 61667, Canterbury Tales", url: "https://hdl.huntington.org/iiif/info/p15150coll3/6983/manifest.json" },
+        { label: "Adoration of the Magi, Ftizw. MAR.T.30-1912", url: "https://api.fitz.ms/data-distributor/iiif/object-110472/manifest" },
+        { label: "Map of Asia, Quatar 2702", url: "https://www.qdl.qa/en/iiif/qnlhc/2702/manifest" },
+        { label: "Wunder der Vererbung, Wellcome Collection", url: "https://iiif.wellcomecollection.org/presentation/b18035723" },
+        { label: "Mahabharata Scroll, University of Edinburgh", url: "https://librarylabs.ed.ac.uk/iiif/manifest/mahabharataFinal.json" },
+        { label: "Vatican Lat. 5757", url: "https://digi.vatlib.it/iiif/MSS_Vat.lat.5757/manifest.json" },
+        { label: "Codex Sang. 194", url: "https://www.e-codices.unifr.ch/metadata/iiif/csg-0194/manifest.json" },
+        { label: "San Lorenzo Palimpsest", url: "https://iiif.diamm.net/manifests/I-FL_MS2211/manifest.json" },
+        { label: "Barocci 197*", url: "https://iiif.bodleian.ox.ac.uk/iiif/manifest/3a910d94-9e88-4207-9020-8ee0634b01ec.json" },
+        { label: "Paris 12044", url: "https://gallica.bnf.fr/iiif/ark:/12148/btv1b8422976g/manifest.json" },
+        { label: "HP Lovecraft", url: "https://repository.library.brown.edu/iiif/presentation/bdr:425489/manifest.json" },
+        { label: "Onstage", url: "https://iiif.rism.digital/manifest/onstage/CH_Bm/CH_Bm_002/CH_Bm_prg-1391.json" },
+        { label: "Durham Breviary", url: "https://iiif.durham.ac.uk/manifests/trifle/32150/t2/m7/w6/t2m7w62f844z/manifest" },
+        { label: "Qatar Digital Library MS", url: "https://www.qdl.qa/en/iiif/81055/vdc_100098983347.0x000001/manifest" },
+        { label: "U of T Manifest", url: "https://iiif.library.utoronto.ca/presentation/v2/fisherbooks:F10083/manifest" },
+      ];
+
+      const selectEl = document.getElementById("manifest-select");
+      const urlInput = document.getElementById("manifest-url");
+      const versionSelect = document.getElementById("version-select");
+      const listRow = document.getElementById("list-row");
+      const urlRow = document.getElementById("url-row");
+      const goButton = document.getElementById("manifest-go");
+      const viewerWrap = document.querySelector(".viewer-wrap");
+      let wrapper = document.getElementById("diva-wrapper");
+
+      function populateList() {
+        selectEl.innerHTML = "";
+        if (manifests.length === 0) {
+          const option = document.createElement("option");
+          option.value = "";
+          option.textContent = "(No manifests configured)";
+          selectEl.appendChild(option);
+          return;
+        }
+        for (const manifest of manifests) {
+          const option = document.createElement("option");
+          option.value = manifest.url;
+          option.textContent = manifest.label || manifest.url;
+          selectEl.appendChild(option);
+        }
+      }
+
+      function getSelectedSource() {
+        const selected = document.querySelector('input[name="manifest-source"]:checked');
+        return selected ? selected.value : "list";
+      }
+
+      function setSourceVisibility() {
+        const source = getSelectedSource();
+        listRow.style.display = source === "list" ? "flex" : "none";
+        urlRow.style.display = source === "url" ? "flex" : "none";
+      }
+
+      let currentInstance = null;
+
+      function buildAcceptHeaders() {
+        if (versionSelect.value === "v2") {
+          return ["application/ld+json;profile=http://iiif.io/api/presentation/2/context.json"];
+        }
+        if (versionSelect.value === "v3") {
+          return ["application/ld+json;profile=http://iiif.io/api/presentation/3/context.json"];
+        }
+        return [];
+      }
+
+      function loadManifest(url) {
+        if (!url) {
+          alert("Please select or enter a manifest URL.");
+          return;
+        }
+        if (currentInstance && typeof currentInstance.destroy === "function") {
+          currentInstance.destroy();
+        }
+        if (viewerWrap) {
+          viewerWrap.innerHTML = '<div id="diva-wrapper"></div>';
+          wrapper = document.getElementById("diva-wrapper");
+        }
+        currentInstance = new Diva("diva-wrapper", {
+          objectData: url,
+          acceptHeaders: buildAcceptHeaders(),
+        });
+      }
+
+      document.addEventListener("change", (event) => {
+        if (event.target && event.target.name === "manifest-source") {
+          setSourceVisibility();
+        }
+      });
+
+      goButton.addEventListener("click", () => {
+        const source = getSelectedSource();
+        if (source === "list") {
+          loadManifest(selectEl.value);
+        } else {
+          loadManifest(urlInput.value.trim());
+        }
+      });
+
+      populateList();
+      setSourceVisibility();
+    </script>
+  </body>
+</html>

@@ -15,4 +15,5 @@ tags
 
 /node_modules/
 /coverage/
-/build/
+cache
+elm-stuff

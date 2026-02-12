@@ -1,0 +1,17 @@
+{
+  "name": "diva.js",
+  "version": "7.0.0",
+  "license": "MIT",
+  "scripts": {
+    "format": "find src -name \"*.ts\" -print0 | xargs -0 clang-format -i",
+    "develop": "chokidar \"src/**/*\" \"scripts/elm-esm.sh\" \"Makefile\" -c \"make build-dev\""
+  },
+  "devDependencies": {
+    "@types/openseadragon": "^5.0.1",
+    "chokidar-cli": "^3.0.0",
+    "concurrently": "^8.2.2",
+    "esbuild": "^0.27.2",
+    "lightningcss": "^1.31.1",
+    "typescript": "^5.4.5"
+  }
+}
