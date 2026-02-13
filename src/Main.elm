@@ -854,7 +854,7 @@ handleManifestLoaded model manifest =
             toViewingDirection manifest
 
         pages =
-            manifestToPages manifest
+            manifestToPages model.detectedLanguage manifest
 
         tileSources =
             List.filterMap (primaryImage >> Maybe.map .tileSource) pages

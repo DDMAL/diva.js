@@ -148,12 +148,15 @@ viewModalHeader model =
                 , onClickMsg = Just UserToggledPageViewFullscreen
                 , isFullscreen = model.fullscreen
                 }
-            , viewButton
-                { label = "Close"
-                , icon = Icons.close
-                , onClickMsg = Just UserClickedClosePageView
-                , isFullscreen = model.fullscreen
-                }
+            , div
+                [ classList [ ( "modal-close-action", True ) ] ]
+                [ viewButton
+                    { label = ""
+                    , icon = Icons.close
+                    , onClickMsg = Just UserClickedClosePageView
+                    , isFullscreen = model.fullscreen
+                    }
+                ]
             ]
         ]
 
@@ -161,7 +164,7 @@ viewModalHeader model =
 manifestTitleFor : Model -> String
 manifestTitleFor model =
     currentManifest model
-        |> Maybe.map (\m -> toLabel m |> extractLabelFromLanguageMap Default)
+        |> Maybe.map (\m -> toLabel m |> extractLabelFromLanguageMap model.detectedLanguage)
         |> Maybe.withDefault ""
 
 
@@ -1011,7 +1014,6 @@ viewImageChoiceItem selectedIndex index image =
     let
         isActive =
             index == selectedIndex
-
     in
     button
         [ classList

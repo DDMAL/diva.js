@@ -107,17 +107,17 @@ type alias Model =
     }
 
 
-manifestToPages : IIIFManifest -> List Page
-manifestToPages iiifManifest =
+manifestToPages : Language -> IIIFManifest -> List Page
+manifestToPages language iiifManifest =
     toCanvases iiifManifest
-        |> List.filterMap canvasToPage
+        |> List.filterMap (canvasToPage language)
 
 
-canvasToPage : Canvas -> Maybe Page
-canvasToPage canvas =
+canvasToPage : Language -> Canvas -> Maybe Page
+canvasToPage language canvas =
     let
         images =
-            List.map (iiifImageToPageImage canvas.images) canvas.images
+            List.map (iiifImageToPageImage language canvas.images) canvas.images
     in
     if List.isEmpty images then
         Nothing
@@ -130,8 +130,8 @@ canvasToPage canvas =
             }
 
 
-iiifImageToPageImage : List Image -> Image -> PageImage
-iiifImageToPageImage allImages image =
+iiifImageToPageImage : Language -> List Image -> Image -> PageImage
+iiifImageToPageImage language allImages image =
     let
         tileSource =
             createImageAddress image.id
@@ -140,7 +140,7 @@ iiifImageToPageImage allImages image =
             thumbnailUrlFromInfo tileSource
 
         label =
-            Maybe.map (extractLabelFromLanguageMap Default) image.label
+            Maybe.map (extractLabelFromLanguageMap language) image.label
                 |> Maybe.withDefault "Image"
 
         isFirst =

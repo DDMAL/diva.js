@@ -47,6 +47,7 @@ viewButton config =
                     [ classList
                         [ ( "canvas-toolbar-button", True )
                         , ( "is-disabled", isDisabled )
+                        , ( "is-fullscreen", config.isFullscreen )
                         ]
                     , type_ "button"
                     , Attr.title config.label

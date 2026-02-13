@@ -275,8 +275,8 @@ viewMetadataContent model =
             Just manifest ->
                 [ div
                     [ classList [ ( "metadata-body", True ) ] ]
-                    (metadataEntries manifest
-                        ++ homepageEntries manifest
+                    (metadataEntries model.detectedLanguage manifest
+                        ++ homepageEntries model.detectedLanguage manifest
                     )
                 ]
 
@@ -288,14 +288,14 @@ viewMetadataContent model =
         )
 
 
-metadataEntries : IIIFManifest -> List (Html Msg)
-metadataEntries manifest =
+metadataEntries : Language -> IIIFManifest -> List (Html Msg)
+metadataEntries language manifest =
     toMetadata manifest
-        |> List.map metadataEntry
+        |> List.map (metadataEntry language)
 
 
-homepageEntries : IIIFManifest -> List (Html Msg)
-homepageEntries manifest =
+homepageEntries : Language -> IIIFManifest -> List (Html Msg)
+homepageEntries language manifest =
     case toHomepage manifest of
         Just links ->
             if List.isEmpty links then
@@ -309,7 +309,7 @@ homepageEntries manifest =
                         [ text "Homepage" ]
                     , div
                         [ classList [ ( "metadata-value", True ) ] ]
-                        (List.map homepageLinkBlock links)
+                        (List.map (homepageLinkBlock language) links)
                     ]
                 ]
 
@@ -337,20 +337,22 @@ hasManifestMetadata manifest =
 
 
 homepageLinkBlock :
+    Language
+    ->
     { id : String
     , label : IIIF.Language.LanguageMap
     , format : MediaFormats
     , type_ : ResourceTypes
     }
     -> Html Msg
-homepageLinkBlock page =
+homepageLinkBlock language page =
     div []
         [ a
             [ Attr.href page.id
             , Attr.target "_blank"
             , Attr.rel "noopener noreferrer"
             ]
-            [ extractLabelFromLanguageMap Default page.label
+            [ extractLabelFromLanguageMap language page.label
                 |> text
             ]
         ]
@@ -483,7 +485,7 @@ viewOtpRangeItem model canvasLabelMap range =
             rangeCanvasLabels canvasLabelMap range
 
         labelText =
-            extractLabelFromLanguageMap Default range.label
+            extractLabelFromLanguageMap model.detectedLanguage range.label
 
         maybeIndex =
             Dict.get range.id model.rangeIndexMap
@@ -546,7 +548,7 @@ viewOtpRangeItem model canvasLabelMap range =
                         ]
 
         metadataBlock =
-            viewRangeMetadata range.metadata
+            viewRangeMetadata model.detectedLanguage range.metadata
     in
     li
         [ classList [ ( "contents-item", True ) ] ]
@@ -564,7 +566,7 @@ viewRangeNode : Model -> Dict String (Maybe Int) -> Range -> Html Msg
 viewRangeNode model rangeIndexMap range =
     let
         labelText =
-            extractLabelFromLanguageMap Default range.label
+            extractLabelFromLanguageMap model.detectedLanguage range.label
 
         maybeIndex =
             Dict.get range.id rangeIndexMap
@@ -604,7 +606,7 @@ viewRangeNode model rangeIndexMap range =
 
         metadataBlock =
             if model.selectedRangeId == Just range.id then
-                viewRangeMetadata range.metadata
+                viewRangeMetadata model.detectedLanguage range.metadata
 
             else
                 []
@@ -639,15 +641,15 @@ viewRangeItems model rangeIndexMap items =
         [ ul [ classList [ ( "contents-list-nested", True ), ( "list-reset", True ) ] ] rendered ]
 
 
-viewRangeMetadata : List LabelValue -> List (Html Msg)
-viewRangeMetadata metadata =
+viewRangeMetadata : Language -> List LabelValue -> List (Html Msg)
+viewRangeMetadata language metadata =
     if List.isEmpty metadata then
         []
 
     else
         [ div
             [ classList [ ( "contents-meta", True ) ] ]
-            (List.map metadataEntry metadata)
+            (List.map (metadataEntry language) metadata)
         ]
 
 
@@ -728,14 +730,14 @@ rangeCanvasIds items =
     step [ items ] []
 
 
-metadataEntry : LabelValue -> Html Msg
-metadataEntry entry =
+metadataEntry : Language -> LabelValue -> Html Msg
+metadataEntry language entry =
     div
         [ classList [ ( "metadata-item", True ) ] ]
         [ div
             [ classList [ ( "metadata-label", True ) ] ]
-            [ extractLabelFromLanguageMap Default entry.label |> text ]
+            [ extractLabelFromLanguageMap language entry.label |> text ]
         , div
             [ classList [ ( "metadata-value", True ) ] ]
-            (extractLabelFromLanguageMap Default entry.value |> renderHtml)
+            (extractLabelFromLanguageMap language entry.value |> renderHtml)
         ]

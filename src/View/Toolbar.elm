@@ -4,6 +4,7 @@ import Html exposing (Html, div, text)
 import Html.Attributes as Attr exposing (classList)
 import Model exposing (Model, ResourceResponse(..), Response(..), SidebarState(..), ViewMode(..), currentManifest, getPageAt, pageViewStartIndex)
 import Msg exposing (Msg(..))
+import String
 import Utilites exposing (disabledIf, isNothing)
 import View.Helpers exposing (viewButton, viewMaybe)
 import View.Icons as Icons
@@ -15,25 +16,25 @@ viewToolbar model =
         controlsDisabled =
             currentManifest model |> isNothing
     in
-    div [ classList [ ( "canvas-toolbar", True ) ] ]
-        [ div [ classList [ ( "canvas-toolbar-section", True ) ] ]
-            [ viewButton
-                { label = "Zoom Out"
-                , icon = Icons.zoomOut
-                , onClickMsg = disabledIf controlsDisabled UserClickedZoomOut
-                , isFullscreen = model.fullscreen
-                }
-            , viewButton
-                { label = "Zoom In"
-                , icon = Icons.zoomIn
-                , onClickMsg = disabledIf controlsDisabled UserClickedZoomIn
-                , isFullscreen = model.fullscreen
-                }
-            ]
-        , div [ classList [ ( "canvas-toolbar-section", True ), ( "is-right", True ) ] ]
-            [ viewStatus model
-            , viewCurrentLabel model
-            , viewButton
+    div [ classList [ ( "canvas-toolbar-stack", True ) ] ]
+        [ div [ classList [ ( "canvas-toolbar", True ) ] ]
+            [ div [ classList [ ( "canvas-toolbar-section", True ) ] ]
+                [ viewButton
+                    { label = "Zoom Out"
+                    , icon = Icons.zoomOut
+                    , onClickMsg = disabledIf controlsDisabled UserClickedZoomOut
+                    , isFullscreen = model.fullscreen
+                    }
+                , viewButton
+                    { label = "Zoom In"
+                    , icon = Icons.zoomIn
+                    , onClickMsg = disabledIf controlsDisabled UserClickedZoomIn
+                    , isFullscreen = model.fullscreen
+                    }
+                ]
+            , div [ classList [ ( "canvas-toolbar-section", True ), ( "is-right", True ) ] ]
+                [ viewStatus model
+                , viewButton
                 { label = "Page View"
                 , icon = Icons.pageViewOpen
                 , onClickMsg = disabledIf controlsDisabled UserClickedOpenPageView
@@ -113,18 +114,25 @@ viewToolbar model =
                 , onClickMsg = Just UserToggledFullscreen
                 , isFullscreen = model.fullscreen
                 }
+                ]
             ]
+        , viewCurrentLabel model
         ]
 
 
 viewCurrentLabel : Model -> Html Msg
 viewCurrentLabel model =
     let
-        labelText =
+        fullLabelText =
             case model.selectedIndex of
                 Just index ->
                     case model.viewMode of
                         OneUp ->
+                            getPageAt index model.pages
+                                |> Maybe.map .label
+                                |> Maybe.withDefault ""
+
+                        TwoUp ->
                             let
                                 startIndex =
                                     pageViewStartIndex model.viewMode model.shiftByOne index
@@ -153,14 +161,11 @@ viewCurrentLabel model =
                                 _ ->
                                     ""
 
-                        TwoUp ->
-                            getPageAt index model.pages
-                                |> Maybe.map .label
-                                |> Maybe.withDefault ""
-
                 Nothing ->
                     ""
 
+        labelText =
+            truncateLabel 140 fullLabelText
     in
     div
         [ classList
@@ -169,6 +174,15 @@ viewCurrentLabel model =
             ]
         ]
         [ text labelText ]
+
+
+truncateLabel : Int -> String -> String
+truncateLabel maxLength label =
+    if String.length label > maxLength then
+        String.left (maxLength - 3) label ++ "..."
+
+    else
+        label
 
 
 viewStatus : Model -> Html Msg

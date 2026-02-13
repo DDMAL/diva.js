@@ -872,7 +872,7 @@
   customElements.define("osd-viewer", OsdViewer);
 
   // cache/diva.css
-  var diva_default = ":root{--diva-accent:#5a6bff;--diva-accent-light:#9aa4ff;--diva-border:#d9d4ce;--diva-danger:#d32f2f;--diva-dark-bg:#1c1d22;--diva-dark-border:#2c2d33;--diva-overlay-bg:#10111499;--diva-page-bg:#f7f5f1;--diva-shadow-dark:#00000026;--diva-shadow-focus:#9aa4ff59;--diva-shadow-modal:#00000040;--diva-surface:#e6e1dc;--diva-text-muted:#5c5a55;--diva-text-muted-on-dark:#ffffffb3;--diva-text-primary:#1b1b1b;--diva-white:#fff;--diva-font-lg:16px;--diva-font-md:12px;--diva-font-sm:11px;--diva-font-xs:10px;--diva-font-xl:20px;color-scheme:light}*{box-sizing:border-box}.list-reset{margin:0;padding:0;list-style:none}.ui-button{text-align:left;cursor:pointer;color:var(--diva-text-primary);font-size:var(--diva-font-lg);background-color:#0000;border:none;padding:0}.ui-button:hover{background-color:var(--diva-surface)}.ui-card{cursor:pointer;border-radius:6px;width:100%;padding:6px}.ui-card--dark{background-color:var(--diva-dark-bg)}.diva-app{flex-direction:column;flex:1;height:100%;min-height:0;padding:24px;display:flex}.diva-app.is-fullscreen{height:100vh;min-height:100vh;padding:0}.diva-app-header{font-size:var(--diva-font-lg);align-items:center;gap:12px;margin-bottom:16px;font-weight:600;display:flex}.diva-app-title{font-size:var(--diva-font-xl);text-align:left;color:var(--diva-text-primary);margin-bottom:12px;font-weight:600}.diva-app-title.is-fullscreen{color:var(--diva-white)}.diva-app-body{flex:1;align-items:stretch;gap:0;height:100%;min-height:0;display:flex;position:relative}.diva-app-body.is-fullscreen{flex:1;min-height:0}.diva-canvas-column{flex-direction:column;flex:1;gap:24px;min-height:0;display:flex}.diva-canvas-column.is-fullscreen{flex:1;height:100%;min-height:0}.diva-canvas-wrapper{flex:1;min-height:0;position:relative}.diva-canvas{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);border-radius:6px 0 0 6px;width:100%;height:100%;overflow:hidden}.diva-canvas.is-fullscreen{border-radius:0;flex:1;height:100%}.diva-canvas.has-collection{border-radius:0}.metadata-panel{height:100%;padding:12px;overflow:auto}.metadata-body{flex-direction:column;gap:10px;display:flex}.metadata-item{flex-direction:column;gap:4px;display:flex}.metadata-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}.metadata-value{font-size:var(--diva-font-lg);color:var(--diva-text-muted);line-height:1.4}.contents-empty{font-size:var(--diva-font-lg);color:var(--diva-text-muted);padding-left:12px}.sidebar-resizer,.collection-resizer{width:12px;font-size:var(--diva-font-xl);color:var(--diva-white);background-color:var(--diva-text-muted);cursor:ew-resize;user-select:none;touch-action:none;flex:0 0 12px;justify-content:center;align-self:stretch;align-items:center;line-height:1;display:flex}.sidebar-resizer.is-hidden,.collection-resizer.is-hidden{display:none}.sidebar-panel.is-fullscreen,.collection-panel.is-fullscreen{border-radius:0;height:100%}.sidebar-panel.is-hidden,.collection-panel.is-hidden{opacity:0;pointer-events:none;border-width:0;padding:0;overflow:hidden}.required-statement-dock{justify-content:flex-end;width:100%;margin-top:12px;padding-right:8px;display:flex}.required-statement{font-size:var(--diva-font-md);color:var(--diva-text-muted);text-align:right;max-width:20vw;line-height:1.4}.diva-scrollbar-track{background:var(--diva-surface);border:1px solid var(--diva-border);z-index:100;border-radius:6px;width:12px;position:absolute;top:4px;bottom:4px;right:4px}.diva-scrollbar-thumb{background:var(--diva-text-muted);cursor:pointer;border-radius:5px;min-height:30px;position:absolute;left:1px;right:1px}.diva-scrollbar-thumb:hover{background:var(--diva-text-primary)}.diva-scrollbar-thumb:active{background:var(--diva-dark-border)}.throbber-overlay{pointer-events:none;justify-content:center;align-items:center;display:flex;position:absolute;inset:0}.throbber{background-color:var(--diva-white);width:64px;height:64px;box-shadow:0 8px 16px var(--diva-shadow-dark);border-radius:8px;flex-wrap:wrap;padding:8px;display:flex}.throbber-cube{background-color:var(--diva-accent);width:16px;height:16px;animation-name:diva-cube-grid;animation-duration:1.3s;animation-timing-function:ease-in-out;animation-iteration-count:infinite}@keyframes diva-cube-grid{0%{transform:scale(1)}35%{transform:scale(0)}70%{transform:scale(1)}to{transform:scale(1)}}@media (width<=720px){.diva-app{padding:12px}.diva-app-body{flex-direction:column;gap:12px}.sidebar-resizer,.collection-resizer{display:none}}.sidebar-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0 6px 6px 0;flex-direction:column;width:320px;height:100%;min-height:0;display:flex;overflow:hidden}.sidebar-tabs{border:1px solid var(--diva-surface);background-color:var(--diva-surface);border-radius:0 6px 0 0;display:flex}.sidebar-tab-button{font-size:var(--diva-font-md);text-transform:uppercase;cursor:pointer;color:var(--diva-text-muted);background-color:#0000;border:none;flex:1;padding:10px 12px}.sidebar-tab-button.is-active{background-color:var(--diva-white);font-weight:600}.sidebar-content{background-color:var(--diva-page-bg);flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}.sidebar-pane{flex:1;width:100%;min-height:0}.sidebar-pane.is-hidden{display:none}.thumbs{scroll-behavior:smooth;background-color:var(--diva-dark-bg);flex:1;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:10px;width:100%;height:100%;min-height:0;padding:12px;display:grid;overflow-y:auto}.thumbs.is-fullscreen{height:100%}.thumbs-item{border:1px solid var(--diva-dark-border);text-align:left;flex-direction:column;justify-content:flex-start;align-items:stretch;max-width:none;display:flex}.thumbs-item:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.thumbs-item.is-active{border-color:var(--diva-accent-light);box-shadow:0 0 0 var(--diva-shadow-focus);background-color:var(--diva-dark-bg);outline:2px solid var(--diva-accent-light);outline-offset:2px}.thumbs-image{border-radius:3px;width:100%;height:auto;display:block}.thumbs-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted-on-dark);margin-top:6px;line-height:1.3}.thumbs-label.is-active{color:var(--diva-white)}.contents-panel{height:100%;padding:12px;overflow:auto}.contents-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:10px;font-weight:600}.contents-view-tabs{gap:8px;margin-bottom:12px;display:flex}.contents-view-button{background-color:var(--diva-surface);border:1px solid var(--diva-border);font-size:var(--diva-font-sm);color:var(--diva-text-muted);cursor:pointer;border-radius:6px;padding:4px 10px}.contents-view-button.is-active{background-color:var(--diva-white);border-color:var(--diva-accent);color:var(--diva-text-primary)}.contents-list-nested{margin-top:6px;padding-left:16px}.contents-item{margin-bottom:6px}.contents-meta{border:1px solid var(--diva-dark-border);margin-top:6px;padding:8px}.contents-button:hover{color:var(--diva-accent)}@media (width<=720px){.sidebar-panel{border-radius:6px;height:auto;width:100%!important}.sidebar-panel.is-overlay{z-index:100;width:100%;height:100%;box-shadow:0 12px 24px var(--diva-shadow-dark);border-radius:0;position:absolute;inset:0}.sidebar-panel.is-mobile-hidden{display:none}.thumbs{grid-template-columns:repeat(3,minmax(0,1fr));width:100%;height:auto;overflow:auto hidden}.thumbs-item{min-width:120px}}.canvas-toolbar{align-items:center;width:100%;margin-bottom:0;display:flex}.canvas-toolbar-section{align-items:center;display:flex}.canvas-toolbar-section.is-right{margin-left:auto}.canvas-toolbar-item{flex-direction:column;align-items:center;gap:4px;width:80px;display:flex}.canvas-toolbar-button{background-color:var(--diva-surface);color:var(--diva-dark-border);border:1px solid var(--diva-dark-border);cursor:pointer;align-items:center;width:80%;height:40px;padding:4px;display:flex}.canvas-toolbar-button:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.canvas-toolbar-button:hover{background-color:var(--diva-surface)}.canvas-toolbar-button.is-disabled{opacity:.4;cursor:not-allowed}.canvas-toolbar-button.is-disabled:hover{background-color:var(--diva-surface)}.canvas-toolbar-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted);white-space:normal;text-overflow:ellipsis;text-align:center;word-break:break-word;min-height:2.2em;font-weight:500;line-height:1.1;overflow:hidden}.canvas-toolbar-label.is-fullscreen{color:var(--diva-white)}.canvas-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted)}.canvas-label.is-fullscreen{color:var(--diva-white)}.status{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:12px}.status.is-error{color:var(--diva-danger)}@media (width<=720px){.canvas-toolbar{flex-wrap:wrap;gap:8px}.canvas-toolbar-item{width:64px}.canvas-label,.status{display:none}}.modal-overlay{background-color:var(--diva-overlay-bg);z-index:100;justify-content:center;align-items:center;padding:24px;display:flex;position:fixed;inset:0}.modal-overlay.is-fullscreen{padding:0}.modal{background-color:var(--diva-page-bg);color:var(--diva-text-primary);width:min(1440px,96vw);max-height:90vh;box-shadow:0 20px 40px var(--diva-shadow-modal);border-radius:10px;flex-direction:column;display:flex}.modal.is-narrow{width:min(960px,94vw)}.modal.is-page-view{height:80vh;max-height:80vh}.modal.is-fullscreen{border-radius:0;width:100vw;height:100vh;max-height:100vh}.modal-header{justify-content:space-between;align-items:center;padding:16px 20px 0;display:flex}.modal-actions{gap:8px;display:flex}.modal-title-stack{flex-direction:column;gap:4px;display:flex}.modal-title{font-size:var(--diva-font-lg);font-weight:600}.modal-subtitle{font-size:var(--diva-font-lg);color:var(--diva-text-primary)}.modal-subtitle.is-muted{font-size:var(--diva-font-md)}.modal-body{flex:1;grid-template-columns:minmax(0,1fr) 240px;gap:16px;min-height:0;padding:16px 20px 20px;display:grid}.modal-body.is-no-gap{gap:0}.modal-body.is-two-column{grid-template-columns:minmax(0,1fr) 200px;align-items:start}.modal-body.is-no-sidebar{grid-template-columns:minmax(0,1fr)}.modal-body.is-fullscreen{flex:1;min-height:0}.modal-body.is-with-choices{grid-template-columns:120px minmax(0,1fr) 240px}.modal-body.is-with-choices-no-sidebar{grid-template-columns:120px minmax(0,1fr)}.modal-viewer{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);height:100%;overflow:hidden}.modal-viewer.is-fullscreen{border-radius:0;height:100%}.modal-viewer.is-outer-left{border-radius:6px 0 0 6px}.modal-canvas{width:100%;height:100%;display:block}.modal-sidebar{background-color:var(--diva-white);border-top:1px solid var(--diva-border);border-right:1px solid var(--diva-border);border-bottom:1px solid var(--diva-border);border-radius:0 6px 6px 0;padding:16px;overflow:auto}.manifest-info-logo-wrap{text-align:center;flex-direction:column;align-items:center;gap:8px;display:flex}.manifest-info-logo{width:100%;max-width:180px;height:auto}.page-view-choices{background-color:var(--diva-dark-bg);border-radius:6px 0 0 6px;flex-direction:column;gap:8px;padding:8px;display:flex;overflow:auto}.page-view-choice{border:2px solid #0000;flex-direction:column;gap:4px;display:flex}.page-view-choice:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.page-view-choice:hover{background-color:var(--diva-dark-bg)}.page-view-choice.is-active{border-color:var(--diva-accent-light);background-color:var(--diva-dark-bg)}.page-view-choice-thumb{border-radius:3px;width:100%;height:auto;display:block}.page-view-choice-label{font-size:var(--diva-font-xs);color:var(--diva-text-muted);text-overflow:ellipsis;white-space:nowrap;line-height:1.2;overflow:hidden}.filter-group{border-bottom:1px solid var(--diva-border);margin-bottom:12px;padding-bottom:12px}.filter-title-button{text-align:left;cursor:pointer;width:100%;font-size:var(--diva-font-sm);text-transform:uppercase;letter-spacing:.08em;color:var(--diva-text-muted);background-color:#0000;border:none;align-items:center;gap:8px;margin-bottom:8px;padding:0;font-weight:600;display:flex}.filter-title-button.is-collapsed{margin-bottom:0}.filter-title-icon{border-top:4px solid #0000;border-bottom:4px solid #0000;border-left:6px solid var(--diva-text-muted);width:0;height:0;transition:transform .15s;display:inline-block}.filter-title-icon.is-expanded{transform:rotate(90deg)}.filter-row{flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle{font-size:var(--diva-font-md);align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle.is-inline{margin-bottom:0}.filter-range-group{flex-direction:column;gap:6px;margin-bottom:10px;display:flex}.filter-range-header{justify-content:space-between;align-items:center;gap:8px;display:flex}.filter-range-header-right{align-items:center;gap:8px;display:flex}.filter-range-input{width:100%}.filter-value{font-size:var(--diva-font-sm);color:var(--diva-text-muted);text-align:right;width:40px}.filter-reset{font-size:var(--diva-font-xs);background-color:var(--diva-surface);border:1px solid var(--diva-border);cursor:pointer;color:var(--diva-text-muted);border-radius:3px;padding:2px 6px}.filter-reset:hover{background-color:var(--diva-border)}.filter-json{width:100%;min-height:120px;font-size:var(--diva-font-sm);border:1px solid var(--diva-border);background-color:var(--diva-white);resize:vertical;border-radius:4px;padding:6px 8px;font-family:Menlo,Monaco,Consolas,Liberation Mono,monospace}.filter-json-error{font-size:var(--diva-font-sm);color:var(--diva-danger);margin-top:4px}.filter-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted)}.filter-select{border:1px solid var(--diva-border);background-color:var(--diva-white);font-size:var(--diva-font-sm);border-radius:4px;padding:4px 6px}.filter-color-input{border:1px solid var(--diva-border);background-color:var(--diva-white);border-radius:4px;width:42px;height:28px;padding:0}.collection-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:6px 0 0 6px;flex-direction:column;height:70vh;display:flex;overflow:hidden}.collection-header{background-color:var(--diva-surface);border-bottom:1px solid var(--diva-border);border-radius:6px 0 0;padding:12px}.collection-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:4px;font-weight:600}.collection-summary{font-size:var(--diva-font-md);color:var(--diva-text-muted);line-height:1.4}.collection-tree-item{padding-left:12px}.collection-node-button{align-items:center;gap:6px;width:100%;padding:6px 8px;display:flex}.collection-expand-icon{flex-shrink:0;justify-content:center;align-items:center;width:16px;height:16px;display:flex}.manifest-tree-item{padding:6px 8px 6px 30px}.manifest-tree-item.is-active{background-color:var(--diva-border);font-weight:600}.sidebar-pane.is-scroll{overflow-y:auto}@media (width<=720px){.collection-panel{border-radius:6px;width:100%;height:auto}}";
+  var diva_default = ":root{--diva-accent:#5a6bff;--diva-accent-light:#9aa4ff;--diva-border:#d9d4ce;--diva-danger:#d32f2f;--diva-dark-bg:#1c1d22;--diva-dark-border:#2c2d33;--diva-overlay-bg:#10111499;--diva-page-bg:#f7f5f1;--diva-shadow-dark:#00000026;--diva-shadow-focus:#9aa4ff59;--diva-shadow-modal:#00000040;--diva-surface:#e6e1dc;--diva-text-muted:#5c5a55;--diva-text-muted-on-dark:#ffffffb3;--diva-text-primary:#1b1b1b;--diva-toolbar-button-bg:#5258626b;--diva-toolbar-button-bg-hover:#5c636e85;--diva-toolbar-button-bg-fullscreen:#52586285;--diva-toolbar-button-bg-fullscreen-hover:#6068749e;--diva-toolbar-button-border:#ffffff59;--diva-toolbar-button-border-hover:#ffffff73;--diva-toolbar-button-border-fullscreen-hover:#fff9;--diva-toolbar-button-icon:#2c2d33;--diva-toolbar-button-shadow:inset 0 1px 0 #ffffff8c, inset 0 -1px 0 #ffffff2e;--diva-toolbar-button-shadow-hover:inset 0 1px 0 #ffffffb3, inset 0 -1px 0 #ffffff3d;--diva-white:#fff;--diva-font-lg:16px;--diva-font-md:13px;--diva-font-sm:11px;--diva-font-xs:10px;--diva-font-xl:20px;color-scheme:light}*{box-sizing:border-box}.list-reset{margin:0;padding:0;list-style:none}.ui-button{text-align:left;cursor:pointer;color:var(--diva-text-primary);font-size:var(--diva-font-lg);background-color:#0000;border:none;padding:0}.ui-button:hover{background-color:var(--diva-surface)}.ui-card{cursor:pointer;border-radius:6px;width:100%;padding:6px}.ui-card--dark{background-color:var(--diva-dark-bg)}.diva-app{flex-direction:column;flex:1;height:100%;min-height:0;padding:24px;display:flex}.diva-app.is-fullscreen{height:100vh;min-height:100vh;padding:0}.diva-app-header{font-size:var(--diva-font-lg);align-items:center;gap:12px;margin-bottom:16px;font-weight:600;display:flex}.diva-app-title{font-size:var(--diva-font-xl);text-align:left;color:var(--diva-text-primary);margin-bottom:12px;font-weight:600}.diva-app-title.is-fullscreen{color:var(--diva-white)}.diva-app-body{flex:1;align-items:stretch;gap:0;height:100%;min-height:0;display:flex;position:relative}.diva-app-body.is-fullscreen{flex:1;min-height:0}.diva-canvas-column{flex-direction:column;flex:1;gap:24px;min-height:0;display:flex}.diva-canvas-column.is-fullscreen{flex:1;height:100%;min-height:0}.diva-canvas-wrapper{flex:1;min-height:0;position:relative}.diva-canvas{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);border-radius:6px 0 0 6px;width:100%;height:100%;overflow:hidden}.diva-canvas.is-fullscreen{border-radius:0;flex:1;height:100%}.diva-canvas.has-collection{border-radius:0}.metadata-panel{height:100%;padding:12px;overflow:auto}.metadata-body{flex-direction:column;gap:10px;display:flex}.metadata-item{flex-direction:column;gap:4px;display:flex}.metadata-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}.metadata-value{font-size:var(--diva-font-lg);color:var(--diva-text-muted);line-height:1.4}.contents-empty{font-size:var(--diva-font-lg);color:var(--diva-text-muted);padding-left:12px}.sidebar-resizer,.collection-resizer{width:12px;font-size:var(--diva-font-xl);color:var(--diva-white);background-color:var(--diva-text-muted);cursor:ew-resize;user-select:none;touch-action:none;flex:0 0 12px;justify-content:center;align-self:stretch;align-items:center;line-height:1;display:flex}.sidebar-resizer.is-hidden,.collection-resizer.is-hidden{display:none}.sidebar-panel.is-fullscreen,.collection-panel.is-fullscreen{border-radius:0;height:100%}.sidebar-panel.is-hidden,.collection-panel.is-hidden{opacity:0;pointer-events:none;border-width:0;padding:0;overflow:hidden}.required-statement-dock{justify-content:flex-end;width:100%;margin-top:12px;padding-right:8px;display:flex}.required-statement{font-size:var(--diva-font-md);color:var(--diva-text-muted);text-align:right;max-width:20vw;line-height:1.4}.diva-scrollbar-track{background:var(--diva-surface);border:1px solid var(--diva-border);z-index:100;border-radius:6px;width:12px;position:absolute;top:4px;bottom:4px;right:4px}.diva-scrollbar-thumb{background:var(--diva-text-muted);cursor:pointer;border-radius:5px;min-height:30px;position:absolute;left:1px;right:1px}.diva-scrollbar-thumb:hover{background:var(--diva-text-primary)}.diva-scrollbar-thumb:active{background:var(--diva-dark-border)}.throbber-overlay{pointer-events:none;justify-content:center;align-items:center;display:flex;position:absolute;inset:0}.throbber{background-color:var(--diva-white);width:64px;height:64px;box-shadow:0 8px 16px var(--diva-shadow-dark);border-radius:8px;flex-wrap:wrap;padding:8px;display:flex}.throbber-cube{background-color:var(--diva-accent);width:16px;height:16px;animation-name:diva-cube-grid;animation-duration:1.3s;animation-timing-function:ease-in-out;animation-iteration-count:infinite}@keyframes diva-cube-grid{0%{transform:scale(1)}35%{transform:scale(0)}70%{transform:scale(1)}to{transform:scale(1)}}@media (width<=720px){.diva-app{padding:12px}.diva-app-body{flex-direction:column;gap:12px}.sidebar-resizer,.collection-resizer{display:none}}.sidebar-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0 6px 6px 0;flex-direction:column;width:320px;height:100%;min-height:0;display:flex;overflow:hidden}.sidebar-tabs{border:1px solid var(--diva-surface);background-color:var(--diva-surface);border-radius:0 6px 0 0;display:flex}.sidebar-tab-button{font-size:var(--diva-font-md);text-transform:uppercase;cursor:pointer;color:var(--diva-text-muted);background-color:#0000;border:none;flex:1;padding:10px 12px}.sidebar-tab-button.is-active{background-color:var(--diva-white);font-weight:600}.sidebar-content{background-color:var(--diva-page-bg);flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}.sidebar-pane{flex:1;width:100%;min-height:0}.sidebar-pane.is-hidden{display:none}.thumbs{scroll-behavior:smooth;background-color:var(--diva-dark-bg);flex:1;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:10px;width:100%;height:100%;min-height:0;padding:12px;display:grid;overflow-y:auto}.thumbs.is-fullscreen{height:100%}.thumbs-item{border:1px solid var(--diva-dark-border);text-align:left;flex-direction:column;justify-content:flex-start;align-items:stretch;max-width:none;display:flex}.thumbs-item:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.thumbs-item.is-active{border-color:var(--diva-accent-light);box-shadow:0 0 0 var(--diva-shadow-focus);background-color:var(--diva-dark-bg);outline:2px solid var(--diva-accent-light);outline-offset:2px}.thumbs-image{border-radius:3px;width:100%;height:auto;display:block}.thumbs-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted-on-dark);margin-top:6px;line-height:1.3}.thumbs-label.is-active{color:var(--diva-white)}.contents-panel{height:100%;padding:12px;overflow:auto}.contents-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:10px;font-weight:600}.contents-view-tabs{gap:8px;margin-bottom:12px;display:flex}.contents-view-button{background-color:var(--diva-surface);border:1px solid var(--diva-border);font-size:var(--diva-font-sm);color:var(--diva-text-muted);cursor:pointer;border-radius:6px;padding:4px 10px}.contents-view-button.is-active{background-color:var(--diva-white);border-color:var(--diva-accent);color:var(--diva-text-primary)}.contents-list-nested{margin-top:6px;padding-left:16px}.contents-item{margin-bottom:6px}.contents-meta{border:1px solid var(--diva-dark-border);margin-top:6px;padding:8px}.contents-button:hover{color:var(--diva-accent)}@media (width<=720px){.sidebar-panel{border-radius:6px;height:auto;width:100%!important}.sidebar-panel.is-overlay{z-index:100;width:100%;height:100%;box-shadow:0 12px 24px var(--diva-shadow-dark);border-radius:0;position:absolute;inset:0}.sidebar-panel.is-mobile-hidden{display:none}.thumbs{grid-template-columns:repeat(3,minmax(0,1fr));width:100%;height:auto;overflow:auto hidden}.thumbs-item{min-width:120px}}.canvas-toolbar-stack{flex-direction:column;gap:6px;width:100%;min-width:0;display:flex}.canvas-toolbar{align-items:center;width:100%;margin-bottom:0;display:flex}.canvas-toolbar-section{flex:none;align-items:center;gap:12px;min-width:0;display:flex}.canvas-toolbar-section.is-right{flex:none;margin-left:auto}.canvas-toolbar-item{flex-direction:column;flex:none;align-items:center;gap:6px;width:80px;display:flex}.canvas-toolbar-button{background-color:var(--diva-toolbar-button-bg);color:var(--diva-toolbar-button-icon);border:2px solid var(--diva-toolbar-button-icon);box-shadow:var(--diva-toolbar-button-shadow);-webkit-backdrop-filter:blur(10px)saturate(140%);cursor:pointer;border-radius:6px;align-items:center;width:80%;height:46px;padding:4px 6px;display:flex}.canvas-toolbar-button:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.canvas-toolbar-button:hover{background-color:var(--diva-toolbar-button-bg-hover);border-color:var(--diva-toolbar-button-icon);box-shadow:var(--diva-toolbar-button-shadow-hover)}.canvas-toolbar-button.is-fullscreen{color:var(--diva-white);background-color:var(--diva-toolbar-button-bg-fullscreen);border-color:var(--diva-toolbar-button-border-hover)}.canvas-toolbar-button.is-fullscreen:hover{background-color:var(--diva-toolbar-button-bg-fullscreen-hover);border-color:var(--diva-toolbar-button-border-fullscreen-hover)}.canvas-toolbar-button.is-disabled{opacity:.4;cursor:not-allowed}.canvas-toolbar-button.is-disabled:hover{background-color:var(--diva-toolbar-button-bg);border-color:var(--diva-toolbar-button-icon);box-shadow:var(--diva-toolbar-button-shadow)}.canvas-toolbar-button.is-fullscreen.is-disabled:hover{background-color:var(--diva-toolbar-button-bg-fullscreen);border-color:var(--diva-toolbar-button-border-hover);box-shadow:var(--diva-toolbar-button-shadow)}.canvas-toolbar-label{font-size:var(--diva-font-sm);color:var(--diva-text-primary);white-space:normal;text-overflow:ellipsis;text-align:center;text-transform:uppercase;word-break:break-word;min-height:2.2em;font-weight:500;line-height:1.1;overflow:hidden}.canvas-toolbar-label.is-fullscreen{color:var(--diva-white)}.canvas-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-align:left;white-space:normal;overflow-wrap:anywhere;word-break:break-word;width:100%}.canvas-label.is-fullscreen{color:var(--diva-white)}.status{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:0}.status.is-error{color:var(--diva-danger)}@media (width<=720px){.canvas-toolbar{flex-wrap:wrap;gap:8px}.canvas-toolbar-item{width:64px}.canvas-label,.status{display:none}}.modal-overlay{background-color:var(--diva-overlay-bg);z-index:100;justify-content:center;align-items:center;padding:24px;display:flex;position:fixed;inset:0}.modal-overlay.is-fullscreen{padding:0}.modal{background-color:var(--diva-page-bg);color:var(--diva-text-primary);width:min(1440px,96vw);max-height:90vh;box-shadow:0 20px 40px var(--diva-shadow-modal);border-radius:10px;flex-direction:column;display:flex}.modal.is-narrow{width:min(960px,94vw)}.modal.is-page-view{height:80vh;max-height:80vh}.modal.is-fullscreen{border-radius:0;width:100vw;height:100vh;max-height:100vh}.modal-header{justify-content:space-between;align-items:center;padding:16px 20px 0;display:flex}.modal-actions{gap:8px;display:flex}.modal-close-action .canvas-toolbar-button{color:var(--diva-danger);box-shadow:none;-webkit-backdrop-filter:none;background-color:#0000;border:none;width:auto;height:auto;padding:2px}.modal-close-action .canvas-toolbar-button:hover{background-color:#d32f2f1f;border-color:#0000}.modal-close-action .canvas-toolbar-item{gap:2px;width:32px}.modal-close-action .canvas-toolbar-label{font-size:var(--diva-font-xs);min-height:auto}.modal-title-stack{flex-direction:column;gap:4px;display:flex}.modal-title{font-size:var(--diva-font-lg);font-weight:600}.modal-subtitle{font-size:var(--diva-font-lg);color:var(--diva-text-primary)}.modal-subtitle.is-muted{font-size:var(--diva-font-md)}.modal-body{flex:1;grid-template-columns:minmax(0,1fr) 240px;gap:16px;min-height:0;padding:16px 20px 20px;display:grid}.modal-body.is-no-gap{gap:0}.modal-body.is-two-column{grid-template-columns:minmax(0,1fr) 200px;align-items:start}.modal-body.is-no-sidebar{grid-template-columns:minmax(0,1fr)}.modal-body.is-fullscreen{flex:1;min-height:0}.modal-body.is-with-choices{grid-template-columns:120px minmax(0,1fr) 240px}.modal-body.is-with-choices-no-sidebar{grid-template-columns:120px minmax(0,1fr)}.modal-viewer{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);height:100%;overflow:hidden}.modal-viewer.is-fullscreen{border-radius:0;height:100%}.modal-viewer.is-outer-left{border-radius:6px 0 0 6px}.modal-canvas{width:100%;height:100%;display:block}.modal-sidebar{background-color:var(--diva-white);border-top:1px solid var(--diva-border);border-right:1px solid var(--diva-border);border-bottom:1px solid var(--diva-border);border-radius:0 6px 6px 0;padding:16px;overflow:auto}.manifest-info-logo-wrap{text-align:center;flex-direction:column;align-items:center;gap:8px;display:flex}.manifest-info-logo{width:100%;max-width:180px;height:auto}.page-view-choices{background-color:var(--diva-dark-bg);border-radius:6px 0 0 6px;flex-direction:column;gap:8px;padding:8px;display:flex;overflow:auto}.page-view-choice{border:2px solid #0000;flex-direction:column;gap:4px;display:flex}.page-view-choice:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.page-view-choice:hover{background-color:var(--diva-dark-bg)}.page-view-choice.is-active{border-color:var(--diva-accent-light);background-color:var(--diva-dark-bg)}.page-view-choice-thumb{border-radius:3px;width:100%;height:auto;display:block}.page-view-choice-label{font-size:var(--diva-font-xs);color:var(--diva-text-muted);text-overflow:ellipsis;white-space:nowrap;line-height:1.2;overflow:hidden}.filter-group{border-bottom:1px solid var(--diva-border);margin-bottom:12px;padding-bottom:12px}.filter-title-button{text-align:left;cursor:pointer;width:100%;font-size:var(--diva-font-sm);text-transform:uppercase;letter-spacing:.08em;color:var(--diva-text-muted);background-color:#0000;border:none;align-items:center;gap:8px;margin-bottom:8px;padding:0;font-weight:600;display:flex}.filter-title-button.is-collapsed{margin-bottom:0}.filter-title-icon{border-top:4px solid #0000;border-bottom:4px solid #0000;border-left:6px solid var(--diva-text-muted);width:0;height:0;transition:transform .15s;display:inline-block}.filter-title-icon.is-expanded{transform:rotate(90deg)}.filter-row{flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle{font-size:var(--diva-font-md);align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle.is-inline{margin-bottom:0}.filter-range-group{flex-direction:column;gap:6px;margin-bottom:10px;display:flex}.filter-range-header{justify-content:space-between;align-items:center;gap:8px;display:flex}.filter-range-header-right{align-items:center;gap:8px;display:flex}.filter-range-input{width:100%}.filter-value{font-size:var(--diva-font-sm);color:var(--diva-text-muted);text-align:right;width:40px}.filter-reset{font-size:var(--diva-font-xs);background-color:var(--diva-surface);border:1px solid var(--diva-border);cursor:pointer;color:var(--diva-text-muted);border-radius:3px;padding:2px 6px}.filter-reset:hover{background-color:var(--diva-border)}.filter-json{width:100%;min-height:120px;font-size:var(--diva-font-sm);border:1px solid var(--diva-border);background-color:var(--diva-white);resize:vertical;border-radius:4px;padding:6px 8px;font-family:Menlo,Monaco,Consolas,Liberation Mono,monospace}.filter-json-error{font-size:var(--diva-font-sm);color:var(--diva-danger);margin-top:4px}.filter-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted)}.filter-select{border:1px solid var(--diva-border);background-color:var(--diva-white);font-size:var(--diva-font-sm);border-radius:4px;padding:4px 6px}.filter-color-input{border:1px solid var(--diva-border);background-color:var(--diva-white);border-radius:4px;width:42px;height:28px;padding:0}.collection-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:6px 0 0 6px;flex-direction:column;height:70vh;display:flex;overflow:hidden}.collection-header{background-color:var(--diva-surface);border-bottom:1px solid var(--diva-border);border-radius:6px 0 0;padding:12px}.collection-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:4px;font-weight:600}.collection-summary{font-size:var(--diva-font-md);color:var(--diva-text-muted);line-height:1.4}.collection-tree-item{padding-left:12px}.collection-node-button{align-items:center;gap:6px;width:100%;padding:6px 8px;display:flex}.collection-expand-icon{flex-shrink:0;justify-content:center;align-items:center;width:16px;height:16px;display:flex}.manifest-tree-item{padding:6px 8px 6px 30px}.manifest-tree-item.is-active{background-color:var(--diva-border);font-weight:600}.sidebar-pane.is-scroll{overflow-y:auto}@media (width<=720px){.collection-panel{border-radius:6px;width:100%;height:auto}}";
 
   // cache/elm-esm.js
   function F(arity, fun, wrapper) {
@@ -16264,8 +16264,8 @@
       return infoUrl;
     }
   };
-  var $author$project$Model$iiifImageToPageImage = F2(
-    function(allImages, image) {
+  var $author$project$Model$iiifImageToPageImage = F3(
+    function(language, allImages, image) {
       var tileSource = $rism_digital$elm_iiif$IIIF$Image$createImageAddress(image.id);
       var thumbUrl = $rism_digital$elm_iiif$IIIF$Image$thumbnailUrlFromInfo(tileSource);
       var label = A2(
@@ -16273,7 +16273,7 @@
         "Image",
         A2(
           $elm$core$Maybe$map,
-          $rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap($rism_digital$elm_iiif$IIIF$Language$Default),
+          $rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap(language),
           image.label
         )
       );
@@ -16294,20 +16294,22 @@
       return { isPrimary, label, thumbUrl, tileSource };
     }
   );
-  var $author$project$Model$canvasToPage = function(canvas) {
-    var images = A2(
-      $elm$core$List$map,
-      $author$project$Model$iiifImageToPageImage(canvas.images),
-      canvas.images
-    );
-    return $elm$core$List$isEmpty(images) ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(
-      {
-        aspect: $rism_digital$elm_iiif$IIIF$Presentation$canvasAspect(canvas),
-        images,
-        label: $rism_digital$elm_iiif$IIIF$Presentation$canvasLabel(canvas)
-      }
-    );
-  };
+  var $author$project$Model$canvasToPage = F2(
+    function(language, canvas) {
+      var images = A2(
+        $elm$core$List$map,
+        A2($author$project$Model$iiifImageToPageImage, language, canvas.images),
+        canvas.images
+      );
+      return $elm$core$List$isEmpty(images) ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(
+        {
+          aspect: $rism_digital$elm_iiif$IIIF$Presentation$canvasAspect(canvas),
+          images,
+          label: $rism_digital$elm_iiif$IIIF$Presentation$canvasLabel(canvas)
+        }
+      );
+    }
+  );
   var $rism_digital$elm_iiif$IIIF$Presentation$toManifest = function(_v0) {
     var iiifManifest = _v0.b;
     return iiifManifest;
@@ -16324,13 +16326,15 @@
       return $.canvases;
     }
   );
-  var $author$project$Model$manifestToPages = function(iiifManifest) {
-    return A2(
-      $elm$core$List$filterMap,
-      $author$project$Model$canvasToPage,
-      $rism_digital$elm_iiif$IIIF$Presentation$toCanvases(iiifManifest)
-    );
-  };
+  var $author$project$Model$manifestToPages = F2(
+    function(language, iiifManifest) {
+      return A2(
+        $elm$core$List$filterMap,
+        $author$project$Model$canvasToPage(language),
+        $rism_digital$elm_iiif$IIIF$Presentation$toCanvases(iiifManifest)
+      );
+    }
+  );
   var $rism_digital$elm_iiif$IIIF$Presentation$manifestViewingLayout = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
     function($) {
       return $.viewingLayout;
@@ -16392,7 +16396,7 @@
   var $author$project$Main$handleManifestLoaded = F2(
     function(model, manifest) {
       var viewingDirection = $rism_digital$elm_iiif$IIIF$Presentation$toViewingDirection(manifest);
-      var pages = $author$project$Model$manifestToPages(manifest);
+      var pages = A2($author$project$Model$manifestToPages, model.detectedLanguage, manifest);
       var tileSources = A2(
         $elm$core$List$filterMap,
         A2(
@@ -18300,16 +18304,14 @@
   var $author$project$Msg$UserClickedCollectionItem = function(a) {
     return { $: "UserClickedCollectionItem", a };
   };
-  var $elm$virtual_dom$VirtualDom$lazy2 = _VirtualDom_lazy2;
-  var $elm$html$Html$Lazy$lazy2 = $elm$virtual_dom$VirtualDom$lazy2;
   var $author$project$Msg$UserClickedManifestItem = F2(
     function(a, b) {
       return { $: "UserClickedManifestItem", a, b };
     }
   );
-  var $author$project$View$CollectionExplorer$viewManifestItem = F2(
-    function(collectionState, manifest) {
-      var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, $rism_digital$elm_iiif$IIIF$Language$Default, manifest.label);
+  var $author$project$View$CollectionExplorer$viewManifestItem = F3(
+    function(language, collectionState, manifest) {
+      var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, language, manifest.label);
       var isActive = _Utils_eq(
         collectionState.selectedManifestId,
         $elm$core$Maybe$Just(manifest.id)
@@ -18349,19 +18351,19 @@
       );
     }
   );
-  var $author$project$View$CollectionExplorer$viewCollectionItem = F2(
-    function(collectionState, item) {
+  var $author$project$View$CollectionExplorer$viewCollectionItem = F3(
+    function(language, collectionState, item) {
       if (item.$ === "NestedCollection") {
         var collection = item.a;
-        return A2($author$project$View$CollectionExplorer$viewNestedCollection, collectionState, collection);
+        return A3($author$project$View$CollectionExplorer$viewNestedCollection, language, collectionState, collection);
       } else {
         var manifest = item.a;
-        return A2($author$project$View$CollectionExplorer$viewManifestItem, collectionState, manifest);
+        return A3($author$project$View$CollectionExplorer$viewManifestItem, language, collectionState, manifest);
       }
     }
   );
-  var $author$project$View$CollectionExplorer$viewCollectionTree = F2(
-    function(collectionState, items) {
+  var $author$project$View$CollectionExplorer$viewCollectionTree = F3(
+    function(language, collectionState, items) {
       return A2(
         $elm$html$Html$ul,
         _List_fromArray(
@@ -18378,15 +18380,15 @@
         ),
         A2(
           $elm$core$List$map,
-          A2($elm$html$Html$Lazy$lazy2, $author$project$View$CollectionExplorer$viewCollectionItem, collectionState),
+          A3($elm$html$Html$Lazy$lazy3, $author$project$View$CollectionExplorer$viewCollectionItem, language, collectionState),
           items
         )
       );
     }
   );
-  var $author$project$View$CollectionExplorer$viewNestedCollection = F2(
-    function(collectionState, collection) {
-      var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, $rism_digital$elm_iiif$IIIF$Language$Default, collection.label);
+  var $author$project$View$CollectionExplorer$viewNestedCollection = F3(
+    function(language, collectionState, collection) {
+      var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, language, collection.label);
       var isExpanded = A2($elm$core$Set$member, collection.id, collectionState.expandedIds);
       var expandIcon = isExpanded ? "\u25BC" : "\u25B6";
       var childrenView = (function() {
@@ -18417,7 +18419,7 @@
           ) : _List_Nil;
           return A2(
             $elm$core$List$cons,
-            A2($author$project$View$CollectionExplorer$viewCollectionTree, collectionState, collection.items),
+            A3($author$project$View$CollectionExplorer$viewCollectionTree, language, collectionState, collection.items),
             loadingView
           );
         } else {
@@ -18491,10 +18493,10 @@
     function(model, collectionState) {
       var _v0 = collectionState.collection;
       var collection = _v0.b;
-      var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, $rism_digital$elm_iiif$IIIF$Language$Default, collection.label);
+      var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, collection.label);
       var summaryText = A2(
         $elm$core$Maybe$map,
-        $rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap($rism_digital$elm_iiif$IIIF$Language$Default),
+        $rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap(model.detectedLanguage),
         collection.summary
       );
       return A2(
@@ -18612,7 +18614,7 @@
                     ),
                     _List_fromArray(
                       [
-                        A2($author$project$View$CollectionExplorer$viewCollectionTree, collectionState, collection.items)
+                        A3($author$project$View$CollectionExplorer$viewCollectionTree, model.detectedLanguage, collectionState, collection.items)
                       ]
                     )
                   )
@@ -22653,7 +22655,7 @@
         "None",
         A2(
           $elm$core$Maybe$map,
-          $rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap($rism_digital$elm_iiif$IIIF$Language$Default),
+          $rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap(model.detectedLanguage),
           innerManifest.summary
         )
       );
@@ -22793,114 +22795,116 @@
       return $.provider;
     }
   );
-  var $author$project$View$ManifestInfoModal$viewLogoBlock = function(manifest) {
-    var _v0 = (function() {
-      var _v1 = A2(
-        $elm$core$Maybe$andThen,
-        $elm$core$List$head,
-        $rism_digital$elm_iiif$IIIF$Presentation$toProvider(manifest)
-      );
-      if (_v1.$ === "Just") {
-        var provider = _v1.a;
-        return _Utils_Tuple2(
-          $author$project$View$ManifestInfoModal$providerLogo(provider),
-          $author$project$View$ManifestInfoModal$providerHomepage(provider)
+  var $author$project$View$ManifestInfoModal$viewLogoBlock = F2(
+    function(language, manifest) {
+      var _v0 = (function() {
+        var _v1 = A2(
+          $elm$core$Maybe$andThen,
+          $elm$core$List$head,
+          $rism_digital$elm_iiif$IIIF$Presentation$toProvider(manifest)
         );
-      } else {
-        return _Utils_Tuple2(
-          $elm$core$Maybe$Nothing,
-          A2(
-            $elm$core$Maybe$andThen,
-            $elm$core$List$head,
-            $rism_digital$elm_iiif$IIIF$Presentation$toHomepage(manifest)
-          )
-        );
-      }
-    })();
-    var providerLogoImage = _v0.a;
-    var homepageLink = _v0.b;
-    var logoUrl = (function() {
-      if (providerLogoImage.$ === "Just") {
-        var logo = providerLogoImage.a;
-        return $author$project$View$ManifestInfoModal$logoIiifUrl(logo);
-      } else {
-        return A2(
-          $elm$core$Maybe$map,
-          A2(
-            $elm$core$Basics$composeR,
-            function($) {
-              return $.id;
-            },
+        if (_v1.$ === "Just") {
+          var provider = _v1.a;
+          return _Utils_Tuple2(
+            $author$project$View$ManifestInfoModal$providerLogo(provider),
+            $author$project$View$ManifestInfoModal$providerHomepage(provider)
+          );
+        } else {
+          return _Utils_Tuple2(
+            $elm$core$Maybe$Nothing,
+            A2(
+              $elm$core$Maybe$andThen,
+              $elm$core$List$head,
+              $rism_digital$elm_iiif$IIIF$Presentation$toHomepage(manifest)
+            )
+          );
+        }
+      })();
+      var providerLogoImage = _v0.a;
+      var homepageLink = _v0.b;
+      var logoUrl = (function() {
+        if (providerLogoImage.$ === "Just") {
+          var logo = providerLogoImage.a;
+          return $author$project$View$ManifestInfoModal$logoIiifUrl(logo);
+        } else {
+          return A2(
+            $elm$core$Maybe$map,
             A2(
               $elm$core$Basics$composeR,
-              $rism_digital$elm_iiif$IIIF$Image$setImageUriSize(
-                $rism_digital$elm_iiif$IIIF$Image$WidthOnlySize(256)
-              ),
-              $rism_digital$elm_iiif$IIIF$Image$createImageAddress
-            )
-          ),
-          $rism_digital$elm_iiif$IIIF$Presentation$toLogo(manifest)
-        );
-      }
-    })();
-    return A2(
-      $author$project$View$Helpers$viewIf,
-      A2(
-        $elm$html$Html$div,
-        _List_Nil,
-        _List_fromArray(
-          [
-            A2(
-              $author$project$View$Helpers$viewMaybe,
-              function(url) {
-                return A2(
-                  $elm$html$Html$img,
-                  _List_fromArray(
-                    [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("manifest-info-logo", true)
-                          ]
-                        )
-                      ),
-                      $elm$html$Html$Attributes$src(url),
-                      $elm$html$Html$Attributes$alt("Manifest logo")
-                    ]
-                  ),
-                  _List_Nil
-                );
+              function($) {
+                return $.id;
               },
-              logoUrl
+              A2(
+                $elm$core$Basics$composeR,
+                $rism_digital$elm_iiif$IIIF$Image$setImageUriSize(
+                  $rism_digital$elm_iiif$IIIF$Image$WidthOnlySize(256)
+                ),
+                $rism_digital$elm_iiif$IIIF$Image$createImageAddress
+              )
             ),
-            A2(
-              $author$project$View$Helpers$viewMaybe,
-              function(page) {
-                var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, $rism_digital$elm_iiif$IIIF$Language$Default, page.label);
-                return A2(
-                  $elm$html$Html$a,
-                  _List_fromArray(
-                    [
-                      $elm$html$Html$Attributes$href(page.id),
-                      $elm$html$Html$Attributes$target("_blank"),
-                      $elm$html$Html$Attributes$rel("noopener noreferrer")
-                    ]
-                  ),
-                  _List_fromArray(
-                    [
-                      $elm$html$Html$text(labelText)
-                    ]
-                  )
-                );
-              },
-              homepageLink
-            )
-          ]
-        )
-      ),
-      !_Utils_eq(logoUrl, $elm$core$Maybe$Nothing) || !_Utils_eq(homepageLink, $elm$core$Maybe$Nothing)
-    );
-  };
+            $rism_digital$elm_iiif$IIIF$Presentation$toLogo(manifest)
+          );
+        }
+      })();
+      return A2(
+        $author$project$View$Helpers$viewIf,
+        A2(
+          $elm$html$Html$div,
+          _List_Nil,
+          _List_fromArray(
+            [
+              A2(
+                $author$project$View$Helpers$viewMaybe,
+                function(url) {
+                  return A2(
+                    $elm$html$Html$img,
+                    _List_fromArray(
+                      [
+                        $elm$html$Html$Attributes$classList(
+                          _List_fromArray(
+                            [
+                              _Utils_Tuple2("manifest-info-logo", true)
+                            ]
+                          )
+                        ),
+                        $elm$html$Html$Attributes$src(url),
+                        $elm$html$Html$Attributes$alt("Manifest logo")
+                      ]
+                    ),
+                    _List_Nil
+                  );
+                },
+                logoUrl
+              ),
+              A2(
+                $author$project$View$Helpers$viewMaybe,
+                function(page) {
+                  var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, language, page.label);
+                  return A2(
+                    $elm$html$Html$a,
+                    _List_fromArray(
+                      [
+                        $elm$html$Html$Attributes$href(page.id),
+                        $elm$html$Html$Attributes$target("_blank"),
+                        $elm$html$Html$Attributes$rel("noopener noreferrer")
+                      ]
+                    ),
+                    _List_fromArray(
+                      [
+                        $elm$html$Html$text(labelText)
+                      ]
+                    )
+                  );
+                },
+                homepageLink
+              )
+            ]
+          )
+        ),
+        !_Utils_eq(logoUrl, $elm$core$Maybe$Nothing) || !_Utils_eq(homepageLink, $elm$core$Maybe$Nothing)
+      );
+    }
+  );
   var $author$project$View$ManifestInfoModal$viewRow = function(_v0) {
     var labelText = _v0.a;
     var valueNode = _v0.b;
@@ -22977,7 +22981,11 @@
           maybeManifest
         )
       );
-      var logoBlock = A2($author$project$View$Helpers$viewMaybe, $author$project$View$ManifestInfoModal$viewLogoBlock, maybeManifest);
+      var logoBlock = A2(
+        $author$project$View$Helpers$viewMaybe,
+        $author$project$View$ManifestInfoModal$viewLogoBlock(model.detectedLanguage),
+        maybeManifest
+      );
       return A2(
         $elm$html$Html$div,
         _List_fromArray(
@@ -23092,7 +23100,8 @@
             _List_fromArray(
               [
                 _Utils_Tuple2("canvas-toolbar-button", true),
-                _Utils_Tuple2("is-disabled", isDisabled)
+                _Utils_Tuple2("is-disabled", isDisabled),
+                _Utils_Tuple2("is-fullscreen", config.isFullscreen)
               ]
             )
           ),
@@ -23213,13 +23222,31 @@
             ),
             _List_fromArray(
               [
-                $author$project$View$Helpers$viewButton(
-                  {
-                    icon: $author$project$View$Icons$close,
-                    isFullscreen: fullscreen,
-                    label: "Close",
-                    onClickMsg: $elm$core$Maybe$Just($author$project$Msg$UserClickedCloseManifestInfo)
-                  }
+                A2(
+                  $elm$html$Html$div,
+                  _List_fromArray(
+                    [
+                      $elm$html$Html$Attributes$classList(
+                        _List_fromArray(
+                          [
+                            _Utils_Tuple2("modal-close-action", true)
+                          ]
+                        )
+                      )
+                    ]
+                  ),
+                  _List_fromArray(
+                    [
+                      $author$project$View$Helpers$viewButton(
+                        {
+                          icon: $author$project$View$Icons$close,
+                          isFullscreen: fullscreen,
+                          label: "",
+                          onClickMsg: $elm$core$Maybe$Just($author$project$Msg$UserClickedCloseManifestInfo)
+                        }
+                      )
+                    ]
+                  )
                 )
               ]
             )
@@ -23291,7 +23318,7 @@
         function(manifest) {
           var labelText = A2(
             $rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap,
-            $rism_digital$elm_iiif$IIIF$Language$Default,
+            model.detectedLanguage,
             $rism_digital$elm_iiif$IIIF$Presentation$toLabel(manifest)
           );
           return A2(
@@ -25469,7 +25496,7 @@
         function(m) {
           return A2(
             $rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap,
-            $rism_digital$elm_iiif$IIIF$Language$Default,
+            model.detectedLanguage,
             $rism_digital$elm_iiif$IIIF$Presentation$toLabel(m)
           );
         },
@@ -25520,7 +25547,7 @@
           $elm$svg$Svg$path,
           _List_fromArray(
             [
-              $elm$svg$Svg$Attributes$d("M288 80V432H64c-8.8 0-16-7.2-16-16V96c0-8.8 7.2-16 16-16H288zM512 96c0-35.3-28.7-64-64-64H64C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V96zm-64 24c0 13.3-10.7 24-24 24H376c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24zm-24 72c13.3 0 24 10.7 24 24s-10.7 24-24 24H376c-13.3 0-24-10.7-24-24s10.7-24 24-24h48zm24 120c0 13.3-10.7 24-24 24H376c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24z")
+              $elm$svg$Svg$Attributes$d("M295 401L167 273c-9.4-9.4-9.4-24.6 0-33.9L295 111c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-87 87L488 232c13.3 0 24 10.7 24 24s-10.7 24-24 24l-246.1 0 87 87c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0zM168 80L88 80c-22.1 0-40 17.9-40 40l0 272c0 22.1 17.9 40 40 40l80 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-80 0c-48.6 0-88-39.4-88-88L0 120C0 71.4 39.4 32 88 32l80 0c13.3 0 24 10.7 24 24s-10.7 24-24 24z")
             ]
           ),
           _List_Nil
@@ -25726,13 +25753,31 @@
                     onClickMsg: $elm$core$Maybe$Just($author$project$Msg$UserToggledPageViewFullscreen)
                   }
                 ),
-                $author$project$View$Helpers$viewButton(
-                  {
-                    icon: $author$project$View$Icons$close,
-                    isFullscreen: model.fullscreen,
-                    label: "Close",
-                    onClickMsg: $elm$core$Maybe$Just($author$project$Msg$UserClickedClosePageView)
-                  }
+                A2(
+                  $elm$html$Html$div,
+                  _List_fromArray(
+                    [
+                      $elm$html$Html$Attributes$classList(
+                        _List_fromArray(
+                          [
+                            _Utils_Tuple2("modal-close-action", true)
+                          ]
+                        )
+                      )
+                    ]
+                  ),
+                  _List_fromArray(
+                    [
+                      $author$project$View$Helpers$viewButton(
+                        {
+                          icon: $author$project$View$Icons$close,
+                          isFullscreen: model.fullscreen,
+                          label: "",
+                          onClickMsg: $elm$core$Maybe$Just($author$project$Msg$UserClickedClosePageView)
+                        }
+                      )
+                    ]
+                  )
                 )
               ]
             )
@@ -25800,7 +25845,7 @@
         return A2(
           $author$project$View$Helpers$viewMaybe,
           function(statement) {
-            var valueText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, $rism_digital$elm_iiif$IIIF$Language$Default, statement.value);
+            var valueText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, statement.value);
             return A2(
               $author$project$View$Helpers$viewIf,
               A2(
@@ -25877,85 +25922,93 @@
       return { $: "UserClickedRange", a, b };
     }
   );
-  var $author$project$View$Sidebar$metadataEntry = function(entry) {
-    return A2(
-      $elm$html$Html$div,
-      _List_fromArray(
-        [
-          $elm$html$Html$Attributes$classList(
-            _List_fromArray(
-              [
-                _Utils_Tuple2("metadata-item", true)
-              ]
-            )
-          )
-        ]
-      ),
-      _List_fromArray(
-        [
-          A2(
-            $elm$html$Html$div,
-            _List_fromArray(
-              [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("metadata-label", true)
-                    ]
-                  )
-                )
-              ]
-            ),
-            _List_fromArray(
-              [
-                $elm$html$Html$text(
-                  A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, $rism_digital$elm_iiif$IIIF$Language$Default, entry.label)
-                )
-              ]
-            )
-          ),
-          A2(
-            $elm$html$Html$div,
-            _List_fromArray(
-              [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("metadata-value", true)
-                    ]
-                  )
-                )
-              ]
-            ),
-            $author$project$View$HtmlRenderer$renderHtml(
-              A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, $rism_digital$elm_iiif$IIIF$Language$Default, entry.value)
-            )
-          )
-        ]
-      )
-    );
-  };
-  var $author$project$View$Sidebar$viewRangeMetadata = function(metadata) {
-    return $elm$core$List$isEmpty(metadata) ? _List_Nil : _List_fromArray(
-      [
-        A2(
-          $elm$html$Html$div,
-          _List_fromArray(
-            [
-              $elm$html$Html$Attributes$classList(
-                _List_fromArray(
-                  [
-                    _Utils_Tuple2("contents-meta", true)
-                  ]
-                )
+  var $author$project$View$Sidebar$metadataEntry = F2(
+    function(language, entry) {
+      return A2(
+        $elm$html$Html$div,
+        _List_fromArray(
+          [
+            $elm$html$Html$Attributes$classList(
+              _List_fromArray(
+                [
+                  _Utils_Tuple2("metadata-item", true)
+                ]
               )
-            ]
-          ),
-          A2($elm$core$List$map, $author$project$View$Sidebar$metadataEntry, metadata)
+            )
+          ]
+        ),
+        _List_fromArray(
+          [
+            A2(
+              $elm$html$Html$div,
+              _List_fromArray(
+                [
+                  $elm$html$Html$Attributes$classList(
+                    _List_fromArray(
+                      [
+                        _Utils_Tuple2("metadata-label", true)
+                      ]
+                    )
+                  )
+                ]
+              ),
+              _List_fromArray(
+                [
+                  $elm$html$Html$text(
+                    A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, language, entry.label)
+                  )
+                ]
+              )
+            ),
+            A2(
+              $elm$html$Html$div,
+              _List_fromArray(
+                [
+                  $elm$html$Html$Attributes$classList(
+                    _List_fromArray(
+                      [
+                        _Utils_Tuple2("metadata-value", true)
+                      ]
+                    )
+                  )
+                ]
+              ),
+              $author$project$View$HtmlRenderer$renderHtml(
+                A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, language, entry.value)
+              )
+            )
+          ]
         )
-      ]
-    );
-  };
+      );
+    }
+  );
+  var $author$project$View$Sidebar$viewRangeMetadata = F2(
+    function(language, metadata) {
+      return $elm$core$List$isEmpty(metadata) ? _List_Nil : _List_fromArray(
+        [
+          A2(
+            $elm$html$Html$div,
+            _List_fromArray(
+              [
+                $elm$html$Html$Attributes$classList(
+                  _List_fromArray(
+                    [
+                      _Utils_Tuple2("contents-meta", true)
+                    ]
+                  )
+                )
+              ]
+            ),
+            A2(
+              $elm$core$List$map,
+              $author$project$View$Sidebar$metadataEntry(language),
+              metadata
+            )
+          )
+        ]
+      );
+    }
+  );
   var $author$project$View$Sidebar$viewRangeItems = F3(
     function(model, rangeIndexMap, items) {
       var rendered = A2(
@@ -25999,13 +26052,13 @@
       var metadataBlock = _Utils_eq(
         model.selectedRangeId,
         $elm$core$Maybe$Just(range.id)
-      ) ? $author$project$View$Sidebar$viewRangeMetadata(range.metadata) : _List_Nil;
+      ) ? A2($author$project$View$Sidebar$viewRangeMetadata, model.detectedLanguage, range.metadata) : _List_Nil;
       var maybeIndex = A2(
         $elm$core$Maybe$withDefault,
         $elm$core$Maybe$Nothing,
         A2($elm$core$Dict$get, range.id, rangeIndexMap)
       );
-      var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, $rism_digital$elm_iiif$IIIF$Language$Default, range.label);
+      var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, range.label);
       var labelNode = (function() {
         if (maybeIndex.$ === "Just") {
           var index = maybeIndex.a;
@@ -26357,13 +26410,13 @@
   );
   var $author$project$View$Sidebar$viewOtpRangeItem = F3(
     function(model, canvasLabelMap, range) {
-      var metadataBlock = $author$project$View$Sidebar$viewRangeMetadata(range.metadata);
+      var metadataBlock = A2($author$project$View$Sidebar$viewRangeMetadata, model.detectedLanguage, range.metadata);
       var maybeIndex = A2(
         $elm$core$Maybe$withDefault,
         $elm$core$Maybe$Nothing,
         A2($elm$core$Dict$get, range.id, model.rangeIndexMap)
       );
-      var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, $rism_digital$elm_iiif$IIIF$Language$Default, range.label);
+      var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, range.label);
       var canvasLabels = A2($author$project$View$Sidebar$rangeCanvasLabels, canvasLabelMap, range);
       var firstLabel = $elm$core$List$head(canvasLabels);
       var lastLabel = $elm$core$List$head(
@@ -26589,104 +26642,114 @@
       )
     );
   };
-  var $author$project$View$Sidebar$homepageLinkBlock = function(page) {
-    return A2(
-      $elm$html$Html$div,
-      _List_Nil,
-      _List_fromArray(
-        [
-          A2(
-            $elm$html$Html$a,
-            _List_fromArray(
-              [
-                $elm$html$Html$Attributes$href(page.id),
-                $elm$html$Html$Attributes$target("_blank"),
-                $elm$html$Html$Attributes$rel("noopener noreferrer")
-              ]
-            ),
-            _List_fromArray(
-              [
-                $elm$html$Html$text(
-                  A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, $rism_digital$elm_iiif$IIIF$Language$Default, page.label)
-                )
-              ]
-            )
-          )
-        ]
-      )
-    );
-  };
-  var $author$project$View$Sidebar$homepageEntries = function(manifest) {
-    var _v0 = $rism_digital$elm_iiif$IIIF$Presentation$toHomepage(manifest);
-    if (_v0.$ === "Just") {
-      var links = _v0.a;
-      return $elm$core$List$isEmpty(links) ? _List_Nil : _List_fromArray(
-        [
-          A2(
-            $elm$html$Html$div,
-            _List_fromArray(
-              [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("metadata-item", true)
-                    ]
+  var $author$project$View$Sidebar$homepageLinkBlock = F2(
+    function(language, page) {
+      return A2(
+        $elm$html$Html$div,
+        _List_Nil,
+        _List_fromArray(
+          [
+            A2(
+              $elm$html$Html$a,
+              _List_fromArray(
+                [
+                  $elm$html$Html$Attributes$href(page.id),
+                  $elm$html$Html$Attributes$target("_blank"),
+                  $elm$html$Html$Attributes$rel("noopener noreferrer")
+                ]
+              ),
+              _List_fromArray(
+                [
+                  $elm$html$Html$text(
+                    A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, language, page.label)
                   )
-                )
-              ]
-            ),
-            _List_fromArray(
-              [
-                A2(
-                  $elm$html$Html$div,
-                  _List_fromArray(
-                    [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("metadata-label", true)
-                          ]
-                        )
-                      )
-                    ]
-                  ),
-                  _List_fromArray(
-                    [
-                      $elm$html$Html$text("Homepage")
-                    ]
-                  )
-                ),
-                A2(
-                  $elm$html$Html$div,
-                  _List_fromArray(
-                    [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("metadata-value", true)
-                          ]
-                        )
-                      )
-                    ]
-                  ),
-                  A2($elm$core$List$map, $author$project$View$Sidebar$homepageLinkBlock, links)
-                )
-              ]
+                ]
+              )
             )
-          )
-        ]
+          ]
+        )
       );
-    } else {
-      return _List_Nil;
     }
-  };
-  var $author$project$View$Sidebar$metadataEntries = function(manifest) {
-    return A2(
-      $elm$core$List$map,
-      $author$project$View$Sidebar$metadataEntry,
-      $rism_digital$elm_iiif$IIIF$Presentation$toMetadata(manifest)
-    );
-  };
+  );
+  var $author$project$View$Sidebar$homepageEntries = F2(
+    function(language, manifest) {
+      var _v0 = $rism_digital$elm_iiif$IIIF$Presentation$toHomepage(manifest);
+      if (_v0.$ === "Just") {
+        var links = _v0.a;
+        return $elm$core$List$isEmpty(links) ? _List_Nil : _List_fromArray(
+          [
+            A2(
+              $elm$html$Html$div,
+              _List_fromArray(
+                [
+                  $elm$html$Html$Attributes$classList(
+                    _List_fromArray(
+                      [
+                        _Utils_Tuple2("metadata-item", true)
+                      ]
+                    )
+                  )
+                ]
+              ),
+              _List_fromArray(
+                [
+                  A2(
+                    $elm$html$Html$div,
+                    _List_fromArray(
+                      [
+                        $elm$html$Html$Attributes$classList(
+                          _List_fromArray(
+                            [
+                              _Utils_Tuple2("metadata-label", true)
+                            ]
+                          )
+                        )
+                      ]
+                    ),
+                    _List_fromArray(
+                      [
+                        $elm$html$Html$text("Homepage")
+                      ]
+                    )
+                  ),
+                  A2(
+                    $elm$html$Html$div,
+                    _List_fromArray(
+                      [
+                        $elm$html$Html$Attributes$classList(
+                          _List_fromArray(
+                            [
+                              _Utils_Tuple2("metadata-value", true)
+                            ]
+                          )
+                        )
+                      ]
+                    ),
+                    A2(
+                      $elm$core$List$map,
+                      $author$project$View$Sidebar$homepageLinkBlock(language),
+                      links
+                    )
+                  )
+                ]
+              )
+            )
+          ]
+        );
+      } else {
+        return _List_Nil;
+      }
+    }
+  );
+  var $author$project$View$Sidebar$metadataEntries = F2(
+    function(language, manifest) {
+      return A2(
+        $elm$core$List$map,
+        $author$project$View$Sidebar$metadataEntry(language),
+        $rism_digital$elm_iiif$IIIF$Presentation$toMetadata(manifest)
+      );
+    }
+  );
   var $author$project$View$Sidebar$viewMetadataContent = function(model) {
     return A2(
       $elm$html$Html$div,
@@ -26721,8 +26784,8 @@
                   ]
                 ),
                 _Utils_ap(
-                  $author$project$View$Sidebar$metadataEntries(manifest),
-                  $author$project$View$Sidebar$homepageEntries(manifest)
+                  A2($author$project$View$Sidebar$metadataEntries, model.detectedLanguage, manifest),
+                  A2($author$project$View$Sidebar$homepageEntries, model.detectedLanguage, manifest)
                 )
               )
             ]
@@ -27236,14 +27299,14 @@
   );
   var $author$project$View$Icons$shiftLeft = A2(
     $author$project$View$Icons$icon,
-    "0 0 512 512",
+    "0 0 640 512",
     _List_fromArray(
       [
         A2(
           $elm$svg$Svg$path,
           _List_fromArray(
             [
-              $elm$svg$Svg$Attributes$d("M7 273c-9.4-9.4-9.4-24.6 0-33.9L135 111c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-87 87L328 232c13.3 0 24 10.7 24 24s-10.7 24-24 24L81.9 280l87 87c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0L7 273zM344 80c-13.3 0-24-10.7-24-24s10.7-24 24-24l80 0c48.6 0 88 39.4 88 88l0 272c0 48.6-39.4 88-88 88l-80 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l80 0c22.1 0 40-17.9 40-40l0-272c0-22.1-17.9-40-40-40l-80 0z")
+              $elm$svg$Svg$Attributes$d("M 283.05 111 C 292.45 101.6 307.65 101.6 316.95 111 C 326.25 120.4 326.35 135.6 316.95 144.9 L 277.95 183.9 L 556.05 183.9 C 569.35 183.9 580.05 194.6 580.05 207.9 C 580.05 221.2 569.35 231.9 556.05 231.9 L 277.95 231.9 L 316.95 270.9 C 326.35 280.3 326.35 295.5 316.95 304.8 C 307.55 314.1 292.35 314.2 283.05 304.8 L 203.05 224.8 C 193.65 215.4 193.65 200.2 203.05 190.9 L 283.05 110.9 L 283.05 111 Z M 392 0 C 422.9 0 448 25.1 448 56 L 448 128 L 400 128 L 400 56 C 400 51.6 396.4 48 392 48 L 88 48 C 65.9 48 48 65.9 48 88 L 48 358.7 C 57.8 354.4 68.6 352 80 352 L 392 352 C 396.4 352 400 348.4 400 344 L 400 288 L 448 288 L 448 344 C 448 366.3 434.9 385.6 416 394.6 L 416 464 L 424 464 C 437.3 464 448 474.7 448 488 C 448 501.3 437.3 512 424 512 L 80 512 C 35.8 512 0 476.2 0 432 C 0 429.3 0.1 426.6 0.4 424 L 0 424 L 0 88 C 0 39.4 39.4 0 88 0 L 392 0 Z M 80 400 C 62.3 400 48 414.3 48 432 C 48 449.7 62.3 464 80 464 L 368 464 L 368 400 L 80 400 Z")
             ]
           ),
           _List_Nil
@@ -27253,14 +27316,14 @@
   );
   var $author$project$View$Icons$shiftRight = A2(
     $author$project$View$Icons$icon,
-    "0 0 512 512",
+    "0 0 640 512",
     _List_fromArray(
       [
         A2(
           $elm$svg$Svg$path,
           _List_fromArray(
             [
-              $elm$svg$Svg$Attributes$d("M505 273c9.4-9.4 9.4-24.6 0-33.9L377 111c-9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l87 87L184 232c-13.3 0-24 10.7-24 24s10.7 24 24 24l246.1 0-87 87c-9.4 9.4-9.4 24.6 0 33.9s24.6 9.4 33.9 0L505 273zM168 80c13.3 0 24-10.7 24-24s-10.7-24-24-24L88 32C39.4 32 0 71.4 0 120L0 392c0 48.6 39.4 88 88 88l80 0c13.3 0 24-10.7 24-24s-10.7-24-24-24l-80 0c-22.1 0-40-17.9-40-40l0-272c0-22.1 17.9-40 40-40l80 0z")
+              $elm$svg$Svg$Attributes$d("M88 0C39.4 0 0 39.4 0 88V424H.4c-.3 2.6-.4 5.3-.4 8c0 44.2 35.8 80 80 80H424c13.3 0 24-10.7 24-24s-10.7-24-24-24h-8V394.6c18.9-9 32-28.3 32-50.6V288H400v56c0 4.4-3.6 8-8 8H80c-11.4 0-22.2 2.4-32 6.7V88c0-22.1 17.9-40 40-40H392c4.4 0 8 3.6 8 8v72h48V56c0-30.9-25.1-56-56-56H88zM368 400v64H80c-17.7 0-32-14.3-32-32s14.3-32 32-32H368zM553 111c-9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l39 39H280c-13.3 0-24 10.7-24 24s10.7 24 24 24H558.1l-39 39c-9.4 9.4-9.4 24.6 0 33.9s24.6 9.4 33.9 0l80-80c9.4-9.4 9.4-24.6 0-33.9l-80-80z")
             ]
           ),
           _List_Nil
@@ -27268,13 +27331,33 @@
       ]
     )
   );
+  var $author$project$View$Toolbar$truncateLabel = F2(
+    function(maxLength, label) {
+      return _Utils_cmp(
+        $elm$core$String$length(label),
+        maxLength
+      ) > 0 ? A2($elm$core$String$left, maxLength - 3, label) + "..." : label;
+    }
+  );
   var $author$project$View$Toolbar$viewCurrentLabel = function(model) {
-    var labelText = (function() {
+    var fullLabelText = (function() {
       var _v0 = model.selectedIndex;
       if (_v0.$ === "Just") {
         var index = _v0.a;
         var _v1 = model.viewMode;
         if (_v1.$ === "OneUp") {
+          return A2(
+            $elm$core$Maybe$withDefault,
+            "",
+            A2(
+              $elm$core$Maybe$map,
+              function($) {
+                return $.label;
+              },
+              A2($author$project$Model$getPageAt, index, model.pages)
+            )
+          );
+        } else {
           var startIndex = A3($author$project$Model$pageViewStartIndex, model.viewMode, model.shiftByOne, index);
           var secondLabel = A2(
             $elm$core$Maybe$map,
@@ -27306,23 +27389,12 @@
           } else {
             return "";
           }
-        } else {
-          return A2(
-            $elm$core$Maybe$withDefault,
-            "",
-            A2(
-              $elm$core$Maybe$map,
-              function($) {
-                return $.label;
-              },
-              A2($author$project$Model$getPageAt, index, model.pages)
-            )
-          );
         }
       } else {
         return "";
       }
     })();
+    var labelText = A2($author$project$View$Toolbar$truncateLabel, 140, fullLabelText);
     return A2(
       $elm$html$Html$div,
       _List_fromArray(
@@ -27561,7 +27633,7 @@
           $elm$html$Html$Attributes$classList(
             _List_fromArray(
               [
-                _Utils_Tuple2("canvas-toolbar", true)
+                _Utils_Tuple2("canvas-toolbar-stack", true)
               ]
             )
           )
@@ -27576,7 +27648,7 @@
                 $elm$html$Html$Attributes$classList(
                   _List_fromArray(
                     [
-                      _Utils_Tuple2("canvas-toolbar-section", true)
+                      _Utils_Tuple2("canvas-toolbar", true)
                     ]
                   )
                 )
@@ -27584,101 +27656,119 @@
             ),
             _List_fromArray(
               [
-                $author$project$View$Helpers$viewButton(
-                  {
-                    icon: $author$project$View$Icons$zoomOut,
-                    isFullscreen: model.fullscreen,
-                    label: "Zoom Out",
-                    onClickMsg: A2($author$project$Utilites$disabledIf, controlsDisabled, $author$project$Msg$UserClickedZoomOut)
-                  }
+                A2(
+                  $elm$html$Html$div,
+                  _List_fromArray(
+                    [
+                      $elm$html$Html$Attributes$classList(
+                        _List_fromArray(
+                          [
+                            _Utils_Tuple2("canvas-toolbar-section", true)
+                          ]
+                        )
+                      )
+                    ]
+                  ),
+                  _List_fromArray(
+                    [
+                      $author$project$View$Helpers$viewButton(
+                        {
+                          icon: $author$project$View$Icons$zoomOut,
+                          isFullscreen: model.fullscreen,
+                          label: "Zoom Out",
+                          onClickMsg: A2($author$project$Utilites$disabledIf, controlsDisabled, $author$project$Msg$UserClickedZoomOut)
+                        }
+                      ),
+                      $author$project$View$Helpers$viewButton(
+                        {
+                          icon: $author$project$View$Icons$zoomIn,
+                          isFullscreen: model.fullscreen,
+                          label: "Zoom In",
+                          onClickMsg: A2($author$project$Utilites$disabledIf, controlsDisabled, $author$project$Msg$UserClickedZoomIn)
+                        }
+                      )
+                    ]
+                  )
                 ),
-                $author$project$View$Helpers$viewButton(
-                  {
-                    icon: $author$project$View$Icons$zoomIn,
-                    isFullscreen: model.fullscreen,
-                    label: "Zoom In",
-                    onClickMsg: A2($author$project$Utilites$disabledIf, controlsDisabled, $author$project$Msg$UserClickedZoomIn)
-                  }
+                A2(
+                  $elm$html$Html$div,
+                  _List_fromArray(
+                    [
+                      $elm$html$Html$Attributes$classList(
+                        _List_fromArray(
+                          [
+                            _Utils_Tuple2("canvas-toolbar-section", true),
+                            _Utils_Tuple2("is-right", true)
+                          ]
+                        )
+                      )
+                    ]
+                  ),
+                  _List_fromArray(
+                    [
+                      $author$project$View$Toolbar$viewStatus(model),
+                      $author$project$View$Helpers$viewButton(
+                        {
+                          icon: $author$project$View$Icons$pageViewOpen,
+                          isFullscreen: model.fullscreen,
+                          label: "Page View",
+                          onClickMsg: A2($author$project$Utilites$disabledIf, controlsDisabled, $author$project$Msg$UserClickedOpenPageView)
+                        }
+                      ),
+                      $author$project$View$Helpers$viewButton(
+                        {
+                          icon: $author$project$View$Icons$info,
+                          isFullscreen: model.fullscreen,
+                          label: "Manifest Info",
+                          onClickMsg: A2($author$project$Utilites$disabledIf, controlsDisabled, $author$project$Msg$UserClickedOpenManifestInfo)
+                        }
+                      ),
+                      $author$project$View$Helpers$viewButton(
+                        {
+                          icon: _Utils_eq(model.viewMode, $author$project$Model$OneUp) ? $author$project$View$Icons$openingPageView : $author$project$View$Icons$scrollingPageView,
+                          isFullscreen: model.fullscreen,
+                          label: _Utils_eq(model.viewMode, $author$project$Model$OneUp) ? "Two Page" : "One Page",
+                          onClickMsg: A2($author$project$Utilites$disabledIf, controlsDisabled, $author$project$Msg$UserToggledTwoUp)
+                        }
+                      ),
+                      $author$project$View$Helpers$viewButton(
+                        {
+                          icon: model.shiftByOne ? $author$project$View$Icons$shiftLeft : $author$project$View$Icons$shiftRight,
+                          isFullscreen: model.fullscreen,
+                          label: "Shift Page",
+                          onClickMsg: A2(
+                            $author$project$Utilites$disabledIf,
+                            controlsDisabled || _Utils_eq(model.viewMode, $author$project$Model$OneUp),
+                            $author$project$Msg$UserToggledShiftByOne
+                          )
+                        }
+                      ),
+                      $author$project$View$Helpers$viewButton(
+                        (function() {
+                          var sidebarVisible = model.isMobile ? model.mobileSidebarOpen : !_Utils_eq(model.sidebarState, $author$project$Model$SidebarHidden);
+                          return {
+                            icon: sidebarVisible ? $author$project$View$Icons$hideSidebar : $author$project$View$Icons$showSidebar,
+                            isFullscreen: model.fullscreen,
+                            label: sidebarVisible ? "Hide Sidebar" : "Show Sidebar",
+                            onClickMsg: A2($author$project$Utilites$disabledIf, controlsDisabled, $author$project$Msg$UserToggledSidebar)
+                          };
+                        })()
+                      ),
+                      $author$project$View$Helpers$viewButton(
+                        {
+                          icon: model.fullscreen ? $author$project$View$Icons$fromFullscreen : $author$project$View$Icons$toFullscreen,
+                          isFullscreen: model.fullscreen,
+                          label: model.fullscreen ? "Exit Full" : "Fullscreen",
+                          onClickMsg: $elm$core$Maybe$Just($author$project$Msg$UserToggledFullscreen)
+                        }
+                      )
+                    ]
+                  )
                 )
               ]
             )
           ),
-          A2(
-            $elm$html$Html$div,
-            _List_fromArray(
-              [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("canvas-toolbar-section", true),
-                      _Utils_Tuple2("is-right", true)
-                    ]
-                  )
-                )
-              ]
-            ),
-            _List_fromArray(
-              [
-                $author$project$View$Toolbar$viewStatus(model),
-                $author$project$View$Toolbar$viewCurrentLabel(model),
-                $author$project$View$Helpers$viewButton(
-                  {
-                    icon: $author$project$View$Icons$pageViewOpen,
-                    isFullscreen: model.fullscreen,
-                    label: "Page View",
-                    onClickMsg: A2($author$project$Utilites$disabledIf, controlsDisabled, $author$project$Msg$UserClickedOpenPageView)
-                  }
-                ),
-                $author$project$View$Helpers$viewButton(
-                  {
-                    icon: $author$project$View$Icons$info,
-                    isFullscreen: model.fullscreen,
-                    label: "Manifest Info",
-                    onClickMsg: A2($author$project$Utilites$disabledIf, controlsDisabled, $author$project$Msg$UserClickedOpenManifestInfo)
-                  }
-                ),
-                $author$project$View$Helpers$viewButton(
-                  {
-                    icon: _Utils_eq(model.viewMode, $author$project$Model$OneUp) ? $author$project$View$Icons$openingPageView : $author$project$View$Icons$scrollingPageView,
-                    isFullscreen: model.fullscreen,
-                    label: _Utils_eq(model.viewMode, $author$project$Model$OneUp) ? "Two Page" : "One Page",
-                    onClickMsg: A2($author$project$Utilites$disabledIf, controlsDisabled, $author$project$Msg$UserToggledTwoUp)
-                  }
-                ),
-                $author$project$View$Helpers$viewButton(
-                  {
-                    icon: model.shiftByOne ? $author$project$View$Icons$shiftLeft : $author$project$View$Icons$shiftRight,
-                    isFullscreen: model.fullscreen,
-                    label: "Shift Page",
-                    onClickMsg: A2(
-                      $author$project$Utilites$disabledIf,
-                      controlsDisabled || _Utils_eq(model.viewMode, $author$project$Model$OneUp),
-                      $author$project$Msg$UserToggledShiftByOne
-                    )
-                  }
-                ),
-                $author$project$View$Helpers$viewButton(
-                  (function() {
-                    var sidebarVisible = model.isMobile ? model.mobileSidebarOpen : !_Utils_eq(model.sidebarState, $author$project$Model$SidebarHidden);
-                    return {
-                      icon: sidebarVisible ? $author$project$View$Icons$hideSidebar : $author$project$View$Icons$showSidebar,
-                      isFullscreen: model.fullscreen,
-                      label: sidebarVisible ? "Hide Sidebar" : "Show Sidebar",
-                      onClickMsg: A2($author$project$Utilites$disabledIf, controlsDisabled, $author$project$Msg$UserToggledSidebar)
-                    };
-                  })()
-                ),
-                $author$project$View$Helpers$viewButton(
-                  {
-                    icon: model.fullscreen ? $author$project$View$Icons$fromFullscreen : $author$project$View$Icons$toFullscreen,
-                    isFullscreen: model.fullscreen,
-                    label: model.fullscreen ? "Exit Full" : "Fullscreen",
-                    onClickMsg: $elm$core$Maybe$Just($author$project$Msg$UserToggledFullscreen)
-                  }
-                )
-              ]
-            )
-          )
+          $author$project$View$Toolbar$viewCurrentLabel(model)
         ]
       )
     );

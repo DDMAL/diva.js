@@ -42,12 +42,15 @@ viewHeader { fullscreen } =
             [ text "Manifest Info" ]
         , div
             [ classList [ ( "modal-actions", True ) ] ]
-            [ viewButton
-                { label = "Close"
-                , icon = Icons.close
-                , onClickMsg = Just UserClickedCloseManifestInfo
-                , isFullscreen = fullscreen
-                }
+            [ div
+                [ classList [ ( "modal-close-action", True ) ] ]
+                [ viewButton
+                    { label = ""
+                    , icon = Icons.close
+                    , onClickMsg = Just UserClickedCloseManifestInfo
+                    , isFullscreen = fullscreen
+                    }
+                ]
             ]
         ]
 
@@ -60,7 +63,7 @@ viewBody model maybeManifest =
                 |> Maybe.withDefault [ ( "Manifest", text "Not loaded" ) ]
 
         logoBlock =
-            viewMaybe viewLogoBlock maybeManifest
+            viewMaybe (viewLogoBlock model.detectedLanguage) maybeManifest
     in
     div
         [ classList
@@ -120,7 +123,7 @@ buildRows model manifest =
 
         summaryText =
             innerManifest.summary
-                |> Maybe.map (extractLabelFromLanguageMap Default)
+                |> Maybe.map (extractLabelFromLanguageMap model.detectedLanguage)
                 |> Maybe.withDefault "None"
 
         canvasCount =
@@ -181,8 +184,8 @@ languageLabel language =
             "default"
 
 
-viewLogoBlock : IIIFManifest -> Html Msg
-viewLogoBlock manifest =
+viewLogoBlock : Language -> IIIFManifest -> Html Msg
+viewLogoBlock language manifest =
     let
         ( providerLogoImage, homepageLink ) =
             case toProvider manifest |> Maybe.andThen List.head of
@@ -221,7 +224,7 @@ viewLogoBlock manifest =
                 (\page ->
                     let
                         labelText =
-                            extractLabelFromLanguageMap Default page.label
+                            extractLabelFromLanguageMap language page.label
                     in
                     a
                         [ href page.id

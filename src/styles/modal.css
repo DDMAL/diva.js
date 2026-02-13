@@ -54,6 +54,33 @@
   gap: 8px;
 }
 
+.modal-close-action .canvas-toolbar-button {
+  background-color: transparent;
+  color: var(--diva-danger);
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  width: auto;
+  height: auto;
+  padding: 2px;
+}
+
+.modal-close-action .canvas-toolbar-button:hover {
+  background-color: rgb(211 47 47 / 12%);
+  border-color: transparent;
+}
+
+.modal-close-action .canvas-toolbar-item {
+  width: 32px;
+  gap: 2px;
+}
+
+.modal-close-action .canvas-toolbar-label {
+  font-size: var(--diva-font-xs);
+  min-height: auto;
+}
+
 .modal-title-stack {
   display: flex;
   flex-direction: column;

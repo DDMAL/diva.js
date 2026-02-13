@@ -16,9 +16,23 @@
   --diva-text-muted: rgba(92, 90, 85, 1);
   --diva-text-muted-on-dark: rgba(255, 255, 255, 0.7);
   --diva-text-primary: rgba(27, 27, 27, 1);
+  --diva-toolbar-button-bg: rgb(82 88 98 / 42%);
+  --diva-toolbar-button-bg-hover: rgb(92 99 110 / 52%);
+  --diva-toolbar-button-bg-fullscreen: rgb(82 88 98 / 52%);
+  --diva-toolbar-button-bg-fullscreen-hover: rgb(96 104 116 / 62%);
+  --diva-toolbar-button-border: rgb(255 255 255 / 35%);
+  --diva-toolbar-button-border-hover: rgb(255 255 255 / 45%);
+  --diva-toolbar-button-border-fullscreen-hover: rgb(255 255 255 / 60%);
+  --diva-toolbar-button-icon: rgba(44, 45, 51, 1);
+  --diva-toolbar-button-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 55%),
+    inset 0 -1px 0 rgb(255 255 255 / 18%);
+  --diva-toolbar-button-shadow-hover:
+    inset 0 1px 0 rgb(255 255 255 / 70%),
+    inset 0 -1px 0 rgb(255 255 255 / 24%);
   --diva-white: rgba(255, 255, 255, 1);
   --diva-font-lg: 16px;
-  --diva-font-md: 12px;
+  --diva-font-md: 13px;
   --diva-font-sm: 11px;
   --diva-font-xs: 10px;
   --diva-font-xl: 20px;

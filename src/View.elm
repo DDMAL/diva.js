@@ -63,7 +63,7 @@ viewManifestTitle model =
                 let
                     labelText =
                         toLabel manifest
-                            |> extractLabelFromLanguageMap Default
+                            |> extractLabelFromLanguageMap model.detectedLanguage
                 in
                 viewIf
                     (h1
@@ -89,7 +89,7 @@ viewRequiredStatement model =
                 (\statement ->
                     let
                         valueText =
-                            extractLabelFromLanguageMap Default statement.value
+                            extractLabelFromLanguageMap model.detectedLanguage statement.value
                     in
                     viewIf
                         (div
