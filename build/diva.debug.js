@@ -11579,9 +11579,14 @@
       )
     )
   );
+  var $rism_digital$elm_iiif$IIIF$Language$v2LanguageValueObjectListDecoder = A2(
+    $elm$json$Json$Decode$map,
+    $elm$core$List$concat,
+    $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Language$v2LanguageValueObjectDecoder)
+  );
   var $rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
-      [$rism_digital$elm_iiif$IIIF$Language$v2LanguageValueObjectDecoder, $rism_digital$elm_iiif$IIIF$Language$stringToLanguageMapLabelDecoder, $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder]
+      [$rism_digital$elm_iiif$IIIF$Language$v2LanguageValueObjectDecoder, $rism_digital$elm_iiif$IIIF$Language$v2LanguageValueObjectListDecoder, $rism_digital$elm_iiif$IIIF$Language$stringToLanguageMapLabelDecoder, $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder]
     )
   );
   var $elm$core$List$singleton = function(value) {
