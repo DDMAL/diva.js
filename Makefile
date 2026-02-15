@@ -12,8 +12,13 @@ DIVA_DEBUG := build/diva.debug.js
 DIVA_JS := build/diva.js
 ELM_ESM_SCRIPT := scripts/elm-esm.sh
 ELM_FLAGS ?= --optimize
+VERSION ?= $(shell node -p "require('./package.json').version")
+RELEASE_PREFIX := diva.js-$(VERSION)
+RELEASE_DIR := release
+RELEASE_TAR := $(RELEASE_DIR)/$(RELEASE_PREFIX).tar.gz
+RELEASE_ZIP := $(RELEASE_DIR)/$(RELEASE_PREFIX).zip
 
-.PHONY: all build build-dev clean clean-cache
+.PHONY: all build build-dev clean clean-cache release
 
 all: build
 
@@ -52,3 +57,15 @@ clean:
 
 clean-cache:
 	rm -f cache/*
+
+release: clean build build-dev
+	mkdir -p $(RELEASE_DIR)
+	@LICENSE_FILE=$$(ls LICENSE* 2>/dev/null | head -n 1); \
+	if [ -z "$$LICENSE_FILE" ]; then \
+		echo "Error: no LICENSE file found in project root."; \
+		exit 1; \
+	fi; \
+	tar -czf "$(RELEASE_TAR)" build README.md "$$LICENSE_FILE"; \
+	zip -rq "$(RELEASE_ZIP)" build README.md "$$LICENSE_FILE"; \
+	echo "Created $(RELEASE_TAR)"; \
+	echo "Created $(RELEASE_ZIP)"
