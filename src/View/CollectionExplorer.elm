@@ -1,7 +1,7 @@
 module View.CollectionExplorer exposing (viewCollectionResizer, viewCollectionSidebar)
 
 import Html exposing (Html, button, div, li, text, ul)
-import Html.Attributes as Attr exposing (classList, type_)
+import Html.Attributes as HA exposing (classList, type_)
 import Html.Events as Events
 import Html.Lazy as Lazy
 import IIIF.Language exposing (Language(..), extractLabelFromLanguageMap)
@@ -46,7 +46,7 @@ viewCollectionPanel model collectionState =
             , ( "is-fullscreen", model.fullscreen )
             , ( "is-hidden", not model.collectionSidebarVisible )
             ]
-        , Attr.style "width"
+        , HA.style "width"
             (if model.collectionSidebarVisible then
                 String.fromInt model.collectionSidebarWidth ++ "px"
 
@@ -55,20 +55,20 @@ viewCollectionPanel model collectionState =
             )
         ]
         [ div
-            [ classList [ ( "collection-header", True ) ] ]
-            [ div [ classList [ ( "collection-title", True ) ] ] [ text labelText ]
+            [ HA.class "collection-header" ]
+            [ div [ HA.class "collection-title" ] [ text labelText ]
             , viewMaybe
                 (\summary ->
-                    div [ classList [ ( "collection-summary", True ) ] ] [ text summary ]
+                    div [ HA.class "collection-summary" ] [ text summary ]
                 )
                 summaryText
             ]
         , div
-            [ classList [ ( "sidebar-content", True ) ] ]
-                [ div
-                    [ classList [ ( "sidebar-pane", True ), ( "is-scroll", True ) ] ]
-                    [ viewCollectionTree model.detectedLanguage collectionState collection.items ]
-                ]
+            [ HA.class "sidebar-content" ]
+            [ div
+                [ classList [ ( "sidebar-pane", True ), ( "is-scroll", True ) ] ]
+                [ viewCollectionTree model.detectedLanguage collectionState collection.items ]
+            ]
         ]
 
 
@@ -113,7 +113,7 @@ viewNestedCollection language collectionState collection =
 
                     loadingView =
                         if isLoading then
-                            [ div [ classList [ ( "contents-empty", True ) ] ] [ text "Loading…" ] ]
+                            [ div [ HA.class "contents-empty" ] [ text "Loading…" ] ]
 
                         else
                             []
@@ -124,13 +124,13 @@ viewNestedCollection language collectionState collection =
                 []
     in
     li
-        [ classList [ ( "collection-tree-item", True ) ] ]
+        [ HA.class "collection-tree-item" ]
         (button
             [ classList [ ( "collection-node-button", True ), ( "ui-button", True ) ]
             , type_ "button"
             , Events.onClick (UserClickedCollectionItem collection.id)
             ]
-            [ div [ classList [ ( "collection-expand-icon", True ) ] ] [ text expandIcon ]
+            [ div [ HA.class "collection-expand-icon" ] [ text expandIcon ]
             , text labelText
             ]
             :: childrenView

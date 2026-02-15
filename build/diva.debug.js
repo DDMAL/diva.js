@@ -18138,13 +18138,7 @@
       $elm$html$Html$div,
       _List_fromArray(
         [
-          $elm$html$Html$Attributes$classList(
-            _List_fromArray(
-              [
-                _Utils_Tuple2("throbber-overlay", true)
-              ]
-            )
-          )
+          $elm$html$Html$Attributes$class("throbber-overlay")
         ]
       ),
       _List_fromArray(
@@ -18153,13 +18147,7 @@
             $elm$html$Html$div,
             _List_fromArray(
               [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("throbber", true)
-                    ]
-                  )
-                )
+                $elm$html$Html$Attributes$class("throbber")
               ]
             ),
             A2(
@@ -18169,13 +18157,7 @@
                   $elm$html$Html$div,
                   _List_fromArray(
                     [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("throbber-cube", true)
-                          ]
-                        )
-                      ),
+                      $elm$html$Html$Attributes$class("throbber-cube"),
                       A2(
                         $elm$html$Html$Attributes$style,
                         "animation-delay",
@@ -18199,13 +18181,7 @@
         $elm$html$Html$div,
         _List_fromArray(
           [
-            $elm$html$Html$Attributes$classList(
-              _List_fromArray(
-                [
-                  _Utils_Tuple2("diva-canvas-wrapper", true)
-                ]
-              )
-            )
+            $elm$html$Html$Attributes$class("diva-canvas-wrapper")
           ]
         ),
         _List_fromArray(
@@ -18400,13 +18376,7 @@
                 $elm$html$Html$div,
                 _List_fromArray(
                   [
-                    $elm$html$Html$Attributes$classList(
-                      _List_fromArray(
-                        [
-                          _Utils_Tuple2("contents-empty", true)
-                        ]
-                      )
-                    )
+                    $elm$html$Html$Attributes$class("contents-empty")
                   ]
                 ),
                 _List_fromArray(
@@ -18430,13 +18400,7 @@
         $elm$html$Html$li,
         _List_fromArray(
           [
-            $elm$html$Html$Attributes$classList(
-              _List_fromArray(
-                [
-                  _Utils_Tuple2("collection-tree-item", true)
-                ]
-              )
-            )
+            $elm$html$Html$Attributes$class("collection-tree-item")
           ]
         ),
         A2(
@@ -18465,13 +18429,7 @@
                   $elm$html$Html$div,
                   _List_fromArray(
                     [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("collection-expand-icon", true)
-                          ]
-                        )
-                      )
+                      $elm$html$Html$Attributes$class("collection-expand-icon")
                     ]
                   ),
                   _List_fromArray(
@@ -18525,13 +18483,7 @@
               $elm$html$Html$div,
               _List_fromArray(
                 [
-                  $elm$html$Html$Attributes$classList(
-                    _List_fromArray(
-                      [
-                        _Utils_Tuple2("collection-header", true)
-                      ]
-                    )
-                  )
+                  $elm$html$Html$Attributes$class("collection-header")
                 ]
               ),
               _List_fromArray(
@@ -18540,13 +18492,7 @@
                     $elm$html$Html$div,
                     _List_fromArray(
                       [
-                        $elm$html$Html$Attributes$classList(
-                          _List_fromArray(
-                            [
-                              _Utils_Tuple2("collection-title", true)
-                            ]
-                          )
-                        )
+                        $elm$html$Html$Attributes$class("collection-title")
                       ]
                     ),
                     _List_fromArray(
@@ -18562,13 +18508,7 @@
                         $elm$html$Html$div,
                         _List_fromArray(
                           [
-                            $elm$html$Html$Attributes$classList(
-                              _List_fromArray(
-                                [
-                                  _Utils_Tuple2("collection-summary", true)
-                                ]
-                              )
-                            )
+                            $elm$html$Html$Attributes$class("collection-summary")
                           ]
                         ),
                         _List_fromArray(
@@ -18587,13 +18527,7 @@
               $elm$html$Html$div,
               _List_fromArray(
                 [
-                  $elm$html$Html$Attributes$classList(
-                    _List_fromArray(
-                      [
-                        _Utils_Tuple2("sidebar-content", true)
-                      ]
-                    )
-                  )
+                  $elm$html$Html$Attributes$class("sidebar-content")
                 ]
               ),
               _List_fromArray(
@@ -22860,13 +22794,7 @@
                     $elm$html$Html$img,
                     _List_fromArray(
                       [
-                        $elm$html$Html$Attributes$classList(
-                          _List_fromArray(
-                            [
-                              _Utils_Tuple2("manifest-info-logo", true)
-                            ]
-                          )
-                        ),
+                        $elm$html$Html$Attributes$class("manifest-info-logo"),
                         $elm$html$Html$Attributes$src(url),
                         $elm$html$Html$Attributes$alt("Manifest logo")
                       ]
@@ -22912,13 +22840,7 @@
       $elm$html$Html$div,
       _List_fromArray(
         [
-          $elm$html$Html$Attributes$classList(
-            _List_fromArray(
-              [
-                _Utils_Tuple2("metadata-item", true)
-              ]
-            )
-          )
+          $elm$html$Html$Attributes$class("metadata-item")
         ]
       ),
       _List_fromArray(
@@ -22927,13 +22849,7 @@
             $elm$html$Html$div,
             _List_fromArray(
               [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("metadata-label", true)
-                    ]
-                  )
-                )
+                $elm$html$Html$Attributes$class("metadata-label")
               ]
             ),
             _List_fromArray(
@@ -22946,13 +22862,7 @@
             $elm$html$Html$div,
             _List_fromArray(
               [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("metadata-value", true)
-                    ]
-                  )
-                )
+                $elm$html$Html$Attributes$class("metadata-value")
               ]
             ),
             _List_fromArray(
@@ -23006,13 +22916,7 @@
               $elm$html$Html$div,
               _List_fromArray(
                 [
-                  $elm$html$Html$Attributes$classList(
-                    _List_fromArray(
-                      [
-                        _Utils_Tuple2("metadata-body", true)
-                      ]
-                    )
-                  )
+                  $elm$html$Html$Attributes$class("metadata-body")
                 ]
               ),
               A2($elm$core$List$map, $author$project$View$ManifestInfoModal$viewRow, rows)
@@ -23021,13 +22925,7 @@
               $elm$html$Html$div,
               _List_fromArray(
                 [
-                  $elm$html$Html$Attributes$classList(
-                    _List_fromArray(
-                      [
-                        _Utils_Tuple2("manifest-info-logo-wrap", true)
-                      ]
-                    )
-                  )
+                  $elm$html$Html$Attributes$class("manifest-info-logo-wrap")
                 ]
               ),
               _List_fromArray(
@@ -23092,8 +22990,8 @@
   );
   var $elm$html$Html$Attributes$disabled = $elm$html$Html$Attributes$boolProperty("disabled");
   var $author$project$View$Helpers$viewButton = function(config) {
-    var isDisabled = _Utils_eq(config.onClickMsg, $elm$core$Maybe$Nothing);
     var buttonAttrs = (function() {
+      var isDisabled = _Utils_eq(config.onClickMsg, $elm$core$Maybe$Nothing);
       var baseAttrs = _List_fromArray(
         [
           $elm$html$Html$Attributes$classList(
@@ -23129,13 +23027,7 @@
       $elm$html$Html$div,
       _List_fromArray(
         [
-          $elm$html$Html$Attributes$classList(
-            _List_fromArray(
-              [
-                _Utils_Tuple2("canvas-toolbar-item", true)
-              ]
-            )
-          )
+          $elm$html$Html$Attributes$class("canvas-toolbar-item")
         ]
       ),
       _List_fromArray(
@@ -23177,13 +23069,7 @@
       $elm$html$Html$div,
       _List_fromArray(
         [
-          $elm$html$Html$Attributes$classList(
-            _List_fromArray(
-              [
-                _Utils_Tuple2("modal-header", true)
-              ]
-            )
-          )
+          $elm$html$Html$Attributes$class("modal-header")
         ]
       ),
       _List_fromArray(
@@ -23192,13 +23078,7 @@
             $elm$html$Html$div,
             _List_fromArray(
               [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("modal-title", true)
-                    ]
-                  )
-                )
+                $elm$html$Html$Attributes$class("modal-title")
               ]
             ),
             _List_fromArray(
@@ -23211,13 +23091,7 @@
             $elm$html$Html$div,
             _List_fromArray(
               [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("modal-actions", true)
-                    ]
-                  )
-                )
+                $elm$html$Html$Attributes$class("modal-actions")
               ]
             ),
             _List_fromArray(
@@ -23226,13 +23100,7 @@
                   $elm$html$Html$div,
                   _List_fromArray(
                     [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("modal-close-action", true)
-                          ]
-                        )
-                      )
+                      $elm$html$Html$Attributes$class("modal-close-action")
                     ]
                   ),
                   _List_fromArray(
@@ -23262,13 +23130,7 @@
         $elm$html$Html$div,
         _List_fromArray(
           [
-            $elm$html$Html$Attributes$classList(
-              _List_fromArray(
-                [
-                  _Utils_Tuple2("modal-overlay", true)
-                ]
-              )
-            )
+            $elm$html$Html$Attributes$class("modal-overlay")
           ]
         ),
         _List_fromArray(
@@ -23383,13 +23245,7 @@
               $elm$html$Html$img,
               _List_fromArray(
                 [
-                  $elm$html$Html$Attributes$classList(
-                    _List_fromArray(
-                      [
-                        _Utils_Tuple2("page-view-choice-thumb", true)
-                      ]
-                    )
-                  ),
+                  $elm$html$Html$Attributes$class("page-view-choice-thumb"),
                   $elm$html$Html$Attributes$src(image.thumbUrl),
                   $elm$html$Html$Attributes$alt(image.label)
                 ]
@@ -23400,13 +23256,7 @@
               $elm$html$Html$span,
               _List_fromArray(
                 [
-                  $elm$html$Html$Attributes$classList(
-                    _List_fromArray(
-                      [
-                        _Utils_Tuple2("page-view-choice-label", true)
-                      ]
-                    )
-                  )
+                  $elm$html$Html$Attributes$class("page-view-choice-label")
                 ]
               ),
               _List_fromArray(
@@ -23426,13 +23276,7 @@
         $elm$html$Html$div,
         _List_fromArray(
           [
-            $elm$html$Html$Attributes$classList(
-              _List_fromArray(
-                [
-                  _Utils_Tuple2("page-view-choices", true)
-                ]
-              )
-            )
+            $elm$html$Html$Attributes$class("page-view-choices")
           ]
         ),
         A2(
@@ -23490,13 +23334,7 @@
         $elm$html$Html$div,
         _List_fromArray(
           [
-            $elm$html$Html$Attributes$classList(
-              _List_fromArray(
-                [
-                  _Utils_Tuple2("filter-group", true)
-                ]
-              )
-            )
+            $elm$html$Html$Attributes$class("filter-group")
           ]
         ),
         A2(
@@ -23558,13 +23396,7 @@
       $elm$html$Html$div,
       _List_fromArray(
         [
-          $elm$html$Html$Attributes$classList(
-            _List_fromArray(
-              [
-                _Utils_Tuple2("filter-row", true)
-              ]
-            )
-          )
+          $elm$html$Html$Attributes$class("filter-row")
         ]
       ),
       items
@@ -23600,13 +23432,7 @@
         $elm$html$Html$input,
         A2(
           $elm$core$List$cons,
-          $elm$html$Html$Attributes$classList(
-            _List_fromArray(
-              [
-                _Utils_Tuple2("filter-range-input", true)
-              ]
-            )
-          ),
+          $elm$html$Html$Attributes$class("filter-range-input"),
           attrs
         ),
         _List_Nil
@@ -23618,13 +23444,7 @@
       $elm$html$Html$div,
       _List_fromArray(
         [
-          $elm$html$Html$Attributes$classList(
-            _List_fromArray(
-              [
-                _Utils_Tuple2("filter-range-group", true)
-              ]
-            )
-          )
+          $elm$html$Html$Attributes$class("filter-range-group")
         ]
       ),
       _List_fromArray(
@@ -23633,13 +23453,7 @@
             $elm$html$Html$div,
             _List_fromArray(
               [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("filter-range-header", true)
-                    ]
-                  )
-                )
+                $elm$html$Html$Attributes$class("filter-range-header")
               ]
             ),
             _List_fromArray(
@@ -23648,13 +23462,7 @@
                   $elm$html$Html$span,
                   _List_fromArray(
                     [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("filter-label", true)
-                          ]
-                        )
-                      )
+                      $elm$html$Html$Attributes$class("filter-label")
                     ]
                   ),
                   _List_fromArray(
@@ -23667,13 +23475,7 @@
                   $elm$html$Html$span,
                   _List_fromArray(
                     [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("filter-value", true)
-                          ]
-                        )
-                      )
+                      $elm$html$Html$Attributes$class("filter-value")
                     ]
                   ),
                   _List_fromArray(
@@ -23716,13 +23518,7 @@
       $elm$html$Html$div,
       _List_fromArray(
         [
-          $elm$html$Html$Attributes$classList(
-            _List_fromArray(
-              [
-                _Utils_Tuple2("filter-range-group", true)
-              ]
-            )
-          )
+          $elm$html$Html$Attributes$class("filter-range-group")
         ]
       ),
       _List_fromArray(
@@ -23731,13 +23527,7 @@
             $elm$html$Html$div,
             _List_fromArray(
               [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("filter-range-header", true)
-                    ]
-                  )
-                )
+                $elm$html$Html$Attributes$class("filter-range-header")
               ]
             ),
             _List_fromArray(
@@ -23779,13 +23569,7 @@
                   $elm$html$Html$span,
                   _List_fromArray(
                     [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("filter-value", true)
-                          ]
-                        )
-                      )
+                      $elm$html$Html$Attributes$class("filter-value")
                     ]
                   ),
                   _List_fromArray(
@@ -23817,13 +23601,7 @@
                   $elm$html$Html$button,
                   _List_fromArray(
                     [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("filter-reset", true)
-                          ]
-                        )
-                      ),
+                      $elm$html$Html$Attributes$class("filter-reset"),
                       $elm$html$Html$Attributes$type_("button"),
                       $elm$html$Html$Events$onClick($author$project$Msg$UserResetAltColourAdjust)
                     ]
@@ -24230,13 +24008,7 @@
         $elm$html$Html$select,
         _List_fromArray(
           [
-            $elm$html$Html$Attributes$classList(
-              _List_fromArray(
-                [
-                  _Utils_Tuple2("filter-select", true)
-                ]
-              )
-            ),
+            $elm$html$Html$Attributes$class("filter-select"),
             $elm$html$Html$Events$onInput(onChange),
             $elm$html$Html$Attributes$value(currentValue)
           ]
@@ -24251,13 +24023,7 @@
         $elm$html$Html$label,
         _List_fromArray(
           [
-            $elm$html$Html$Attributes$classList(
-              _List_fromArray(
-                [
-                  _Utils_Tuple2("filter-toggle", true)
-                ]
-              )
-            )
+            $elm$html$Html$Attributes$class("filter-toggle")
           ]
         ),
         _List_fromArray(
@@ -24507,13 +24273,7 @@
                   $elm$html$Html$button,
                   _List_fromArray(
                     [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("filter-reset", true)
-                          ]
-                        )
-                      ),
+                      $elm$html$Html$Attributes$class("filter-reset"),
                       $elm$html$Html$Attributes$type_("button"),
                       $elm$html$Html$Events$onClick($author$project$Msg$UserCopiedFilterJson)
                     ]
@@ -24528,13 +24288,7 @@
                   $elm$html$Html$button,
                   _List_fromArray(
                     [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("filter-reset", true)
-                          ]
-                        )
-                      ),
+                      $elm$html$Html$Attributes$class("filter-reset"),
                       $elm$html$Html$Attributes$type_("button"),
                       $elm$html$Html$Events$onClick($author$project$Msg$UserAppliedFilterJson)
                     ]
@@ -24552,13 +24306,7 @@
             $elm$html$Html$textarea,
             _List_fromArray(
               [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("filter-json", true)
-                    ]
-                  )
-                ),
+                $elm$html$Html$Attributes$class("filter-json"),
                 $elm$html$Html$Attributes$value(model.filtersJsonInput),
                 $elm$html$Html$Events$onInput($author$project$Msg$UserUpdatedFilterJsonInput),
                 $elm$html$Html$Attributes$rows(6)
@@ -24574,13 +24322,7 @@
                 $elm$html$Html$div,
                 _List_fromArray(
                   [
-                    $elm$html$Html$Attributes$classList(
-                      _List_fromArray(
-                        [
-                          _Utils_Tuple2("filter-json-error", true)
-                        ]
-                      )
-                    )
+                    $elm$html$Html$Attributes$class("filter-json-error")
                   ]
                 ),
                 _List_fromArray(
@@ -24886,13 +24628,7 @@
         $elm$html$Html$input,
         _List_fromArray(
           [
-            $elm$html$Html$Attributes$classList(
-              _List_fromArray(
-                [
-                  _Utils_Tuple2("filter-color-input", true)
-                ]
-              )
-            ),
+            $elm$html$Html$Attributes$class("filter-color-input"),
             $elm$html$Html$Attributes$type_("color"),
             $elm$html$Html$Attributes$value(colourValue),
             $elm$html$Html$Events$onInput(onChange)
@@ -24970,13 +24706,7 @@
                   $elm$html$Html$span,
                   _List_fromArray(
                     [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("filter-label", true)
-                          ]
-                        )
-                      )
+                      $elm$html$Html$Attributes$class("filter-label")
                     ]
                   ),
                   _List_fromArray(
@@ -24994,13 +24724,7 @@
                   $elm$html$Html$span,
                   _List_fromArray(
                     [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("filter-label", true)
-                          ]
-                        )
-                      )
+                      $elm$html$Html$Attributes$class("filter-label")
                     ]
                   ),
                   _List_fromArray(
@@ -25122,13 +24846,7 @@
       $elm$html$Html$div,
       _List_fromArray(
         [
-          $elm$html$Html$Attributes$classList(
-            _List_fromArray(
-              [
-                _Utils_Tuple2("filter-range-group", true)
-              ]
-            )
-          )
+          $elm$html$Html$Attributes$class("filter-range-group")
         ]
       ),
       _List_fromArray(
@@ -25137,13 +24855,7 @@
             $elm$html$Html$div,
             _List_fromArray(
               [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("filter-range-header", true)
-                    ]
-                  )
-                )
+                $elm$html$Html$Attributes$class("filter-range-header")
               ]
             ),
             _List_fromArray(
@@ -25152,13 +24864,7 @@
                   $elm$html$Html$span,
                   _List_fromArray(
                     [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("filter-label", true)
-                          ]
-                        )
-                      )
+                      $elm$html$Html$Attributes$class("filter-label")
                     ]
                   ),
                   _List_fromArray(
@@ -25171,13 +24877,7 @@
                   $elm$html$Html$span,
                   _List_fromArray(
                     [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("filter-range-header-right", true)
-                          ]
-                        )
-                      )
+                      $elm$html$Html$Attributes$class("filter-range-header-right")
                     ]
                   ),
                   _List_fromArray(
@@ -25186,13 +24886,7 @@
                         $elm$html$Html$span,
                         _List_fromArray(
                           [
-                            $elm$html$Html$Attributes$classList(
-                              _List_fromArray(
-                                [
-                                  _Utils_Tuple2("filter-value", true)
-                                ]
-                              )
-                            )
+                            $elm$html$Html$Attributes$class("filter-value")
                           ]
                         ),
                         _List_fromArray(
@@ -25207,13 +24901,7 @@
                         $elm$html$Html$button,
                         _List_fromArray(
                           [
-                            $elm$html$Html$Attributes$classList(
-                              _List_fromArray(
-                                [
-                                  _Utils_Tuple2("filter-reset", true)
-                                ]
-                              )
-                            ),
+                            $elm$html$Html$Attributes$class("filter-reset"),
                             $elm$html$Html$Attributes$type_("button"),
                             $elm$html$Html$Events$onClick(
                               A2($author$project$Msg$UserUpdatedFilterInt, $author$project$Filters$IntRotation, "0")
@@ -25263,13 +24951,7 @@
       $elm$html$Html$div,
       _List_fromArray(
         [
-          $elm$html$Html$Attributes$classList(
-            _List_fromArray(
-              [
-                _Utils_Tuple2("modal-sidebar", true)
-              ]
-            )
-          )
+          $elm$html$Html$Attributes$class("modal-sidebar")
         ]
       ),
       _List_fromArray(
@@ -25312,13 +24994,7 @@
               $elm$html$Html$div,
               _List_fromArray(
                 [
-                  $elm$html$Html$Attributes$classList(
-                    _List_fromArray(
-                      [
-                        _Utils_Tuple2("modal-canvas", true)
-                      ]
-                    )
-                  ),
+                  $elm$html$Html$Attributes$class("modal-canvas"),
                   $elm$html$Html$Attributes$id("filter-viewer")
                 ]
               ),
@@ -25602,13 +25278,7 @@
       $elm$html$Html$div,
       _List_fromArray(
         [
-          $elm$html$Html$Attributes$classList(
-            _List_fromArray(
-              [
-                _Utils_Tuple2("modal-header", true)
-              ]
-            )
-          )
+          $elm$html$Html$Attributes$class("modal-header")
         ]
       ),
       _List_fromArray(
@@ -25617,13 +25287,7 @@
             $elm$html$Html$div,
             _List_fromArray(
               [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("modal-title-stack", true)
-                    ]
-                  )
-                )
+                $elm$html$Html$Attributes$class("modal-title-stack")
               ]
             ),
             A2(
@@ -25632,13 +25296,7 @@
                 $elm$html$Html$div,
                 _List_fromArray(
                   [
-                    $elm$html$Html$Attributes$classList(
-                      _List_fromArray(
-                        [
-                          _Utils_Tuple2("modal-title", true)
-                        ]
-                      )
-                    )
+                    $elm$html$Html$Attributes$class("modal-title")
                   ]
                 ),
                 _List_fromArray(
@@ -25654,13 +25312,7 @@
                       $elm$html$Html$div,
                       _List_fromArray(
                         [
-                          $elm$html$Html$Attributes$classList(
-                            _List_fromArray(
-                              [
-                                _Utils_Tuple2("modal-subtitle", true)
-                              ]
-                            )
-                          )
+                          $elm$html$Html$Attributes$class("modal-subtitle")
                         ]
                       ),
                       _List_fromArray(
@@ -25702,13 +25354,7 @@
             $elm$html$Html$div,
             _List_fromArray(
               [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("modal-actions", true)
-                    ]
-                  )
-                )
+                $elm$html$Html$Attributes$class("modal-actions")
               ]
             ),
             _List_fromArray(
@@ -25757,13 +25403,7 @@
                   $elm$html$Html$div,
                   _List_fromArray(
                     [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("modal-close-action", true)
-                          ]
-                        )
-                      )
+                      $elm$html$Html$Attributes$class("modal-close-action")
                     ]
                   ),
                   _List_fromArray(
@@ -25852,13 +25492,7 @@
                 $elm$html$Html$div,
                 _List_fromArray(
                   [
-                    $elm$html$Html$Attributes$classList(
-                      _List_fromArray(
-                        [
-                          _Utils_Tuple2("required-statement", true)
-                        ]
-                      )
-                    )
+                    $elm$html$Html$Attributes$class("required-statement")
                   ]
                 ),
                 $author$project$View$HtmlRenderer$renderHtml(valueText)
@@ -25902,13 +25536,7 @@
     $elm$html$Html$div,
     _List_fromArray(
       [
-        $elm$html$Html$Attributes$classList(
-          _List_fromArray(
-            [
-              _Utils_Tuple2("contents-empty", true)
-            ]
-          )
-        )
+        $elm$html$Html$Attributes$class("contents-empty")
       ]
     ),
     _List_fromArray(
@@ -25928,13 +25556,7 @@
         $elm$html$Html$div,
         _List_fromArray(
           [
-            $elm$html$Html$Attributes$classList(
-              _List_fromArray(
-                [
-                  _Utils_Tuple2("metadata-item", true)
-                ]
-              )
-            )
+            $elm$html$Html$Attributes$class("metadata-item")
           ]
         ),
         _List_fromArray(
@@ -25943,13 +25565,7 @@
               $elm$html$Html$div,
               _List_fromArray(
                 [
-                  $elm$html$Html$Attributes$classList(
-                    _List_fromArray(
-                      [
-                        _Utils_Tuple2("metadata-label", true)
-                      ]
-                    )
-                  )
+                  $elm$html$Html$Attributes$class("metadata-label")
                 ]
               ),
               _List_fromArray(
@@ -25964,13 +25580,7 @@
               $elm$html$Html$div,
               _List_fromArray(
                 [
-                  $elm$html$Html$Attributes$classList(
-                    _List_fromArray(
-                      [
-                        _Utils_Tuple2("metadata-value", true)
-                      ]
-                    )
-                  )
+                  $elm$html$Html$Attributes$class("metadata-value")
                 ]
               ),
               $author$project$View$HtmlRenderer$renderHtml(
@@ -25990,13 +25600,7 @@
             $elm$html$Html$div,
             _List_fromArray(
               [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("contents-meta", true)
-                    ]
-                  )
-                )
+                $elm$html$Html$Attributes$class("contents-meta")
               ]
             ),
             A2(
@@ -26126,13 +25730,7 @@
         $elm$html$Html$li,
         _List_fromArray(
           [
-            $elm$html$Html$Attributes$classList(
-              _List_fromArray(
-                [
-                  _Utils_Tuple2("contents-item", true)
-                ]
-              )
-            )
+            $elm$html$Html$Attributes$class("contents-item")
           ]
         ),
         A2(
@@ -26186,13 +25784,7 @@
         $elm$html$Html$div,
         _List_fromArray(
           [
-            $elm$html$Html$Attributes$classList(
-              _List_fromArray(
-                [
-                  _Utils_Tuple2("contents-view-tabs", true)
-                ]
-              )
-            )
+            $elm$html$Html$Attributes$class("contents-view-tabs")
           ]
         ),
         _List_fromArray(
@@ -26333,13 +25925,7 @@
     $elm$html$Html$div,
     _List_fromArray(
       [
-        $elm$html$Html$Attributes$classList(
-          _List_fromArray(
-            [
-              _Utils_Tuple2("contents-empty", true)
-            ]
-          )
-        )
+        $elm$html$Html$Attributes$class("contents-empty")
       ]
     ),
     _List_fromArray(
@@ -26510,13 +26096,7 @@
         $elm$html$Html$li,
         _List_fromArray(
           [
-            $elm$html$Html$Attributes$classList(
-              _List_fromArray(
-                [
-                  _Utils_Tuple2("contents-item", true)
-                ]
-              )
-            )
+            $elm$html$Html$Attributes$class("contents-item")
           ]
         ),
         A2($elm$core$List$cons, labelNode, metadataBlock)
@@ -26606,13 +26186,7 @@
       $elm$html$Html$div,
       _List_fromArray(
         [
-          $elm$html$Html$Attributes$classList(
-            _List_fromArray(
-              [
-                _Utils_Tuple2("contents-panel", true)
-              ]
-            )
-          )
+          $elm$html$Html$Attributes$class("contents-panel")
         ]
       ),
       _List_fromArray(
@@ -26621,13 +26195,7 @@
             $elm$html$Html$div,
             _List_fromArray(
               [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("contents-title", true)
-                    ]
-                  )
-                )
+                $elm$html$Html$Attributes$class("contents-title")
               ]
             ),
             _List_fromArray(
@@ -26682,13 +26250,7 @@
               $elm$html$Html$div,
               _List_fromArray(
                 [
-                  $elm$html$Html$Attributes$classList(
-                    _List_fromArray(
-                      [
-                        _Utils_Tuple2("metadata-item", true)
-                      ]
-                    )
-                  )
+                  $elm$html$Html$Attributes$class("metadata-item")
                 ]
               ),
               _List_fromArray(
@@ -26697,13 +26259,7 @@
                     $elm$html$Html$div,
                     _List_fromArray(
                       [
-                        $elm$html$Html$Attributes$classList(
-                          _List_fromArray(
-                            [
-                              _Utils_Tuple2("metadata-label", true)
-                            ]
-                          )
-                        )
+                        $elm$html$Html$Attributes$class("metadata-label")
                       ]
                     ),
                     _List_fromArray(
@@ -26716,13 +26272,7 @@
                     $elm$html$Html$div,
                     _List_fromArray(
                       [
-                        $elm$html$Html$Attributes$classList(
-                          _List_fromArray(
-                            [
-                              _Utils_Tuple2("metadata-value", true)
-                            ]
-                          )
-                        )
+                        $elm$html$Html$Attributes$class("metadata-value")
                       ]
                     ),
                     A2(
@@ -26755,13 +26305,7 @@
       $elm$html$Html$div,
       _List_fromArray(
         [
-          $elm$html$Html$Attributes$classList(
-            _List_fromArray(
-              [
-                _Utils_Tuple2("metadata-panel", true)
-              ]
-            )
-          )
+          $elm$html$Html$Attributes$class("metadata-panel")
         ]
       ),
       (function() {
@@ -26774,13 +26318,7 @@
                 $elm$html$Html$div,
                 _List_fromArray(
                   [
-                    $elm$html$Html$Attributes$classList(
-                      _List_fromArray(
-                        [
-                          _Utils_Tuple2("metadata-body", true)
-                        ]
-                      )
-                    )
+                    $elm$html$Html$Attributes$class("metadata-body")
                   ]
                 ),
                 _Utils_ap(
@@ -26797,13 +26335,7 @@
                 $elm$html$Html$div,
                 _List_fromArray(
                   [
-                    $elm$html$Html$Attributes$classList(
-                      _List_fromArray(
-                        [
-                          _Utils_Tuple2("metadata-body", true)
-                        ]
-                      )
-                    )
+                    $elm$html$Html$Attributes$class("metadata-body")
                   ]
                 ),
                 _List_fromArray(
@@ -26957,13 +26489,7 @@
               $elm$html$Html$img,
               _List_fromArray(
                 [
-                  $elm$html$Html$Attributes$classList(
-                    _List_fromArray(
-                      [
-                        _Utils_Tuple2("thumbs-image", true)
-                      ]
-                    )
-                  ),
+                  $elm$html$Html$Attributes$class("thumbs-image"),
                   $elm$html$Html$Attributes$src(thumbUrl),
                   $elm$html$Html$Attributes$alt(
                     "Page " + $elm$core$String$fromInt(index + 1)
@@ -27126,13 +26652,7 @@
             $elm$html$Html$div,
             _List_fromArray(
               [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("sidebar-tabs", true)
-                    ]
-                  )
-                )
+                $elm$html$Html$Attributes$class("sidebar-tabs")
               ]
             ),
             A2(
@@ -27145,13 +26665,7 @@
             $elm$html$Html$div,
             _List_fromArray(
               [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("sidebar-content", true)
-                    ]
-                  )
-                )
+                $elm$html$Html$Attributes$class("sidebar-content")
               ]
             ),
             A2(
@@ -27428,13 +26942,7 @@
               $elm$html$Html$div,
               _List_fromArray(
                 [
-                  $elm$html$Html$Attributes$classList(
-                    _List_fromArray(
-                      [
-                        _Utils_Tuple2("status", true)
-                      ]
-                    )
-                  )
+                  $elm$html$Html$Attributes$class("status")
                 ]
               ),
               _List_fromArray(
@@ -27450,13 +26958,7 @@
               $elm$html$Html$div,
               _List_fromArray(
                 [
-                  $elm$html$Html$Attributes$classList(
-                    _List_fromArray(
-                      [
-                        _Utils_Tuple2("status", true)
-                      ]
-                    )
-                  )
+                  $elm$html$Html$Attributes$class("status")
                 ]
               ),
               _List_fromArray(
@@ -27475,13 +26977,7 @@
                   $elm$html$Html$div,
                   _List_fromArray(
                     [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("status", true)
-                          ]
-                        )
-                      )
+                      $elm$html$Html$Attributes$class("status")
                     ]
                   ),
                   _List_fromArray(
@@ -27497,13 +26993,7 @@
                   $elm$html$Html$div,
                   _List_fromArray(
                     [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("status", true)
-                          ]
-                        )
-                      )
+                      $elm$html$Html$Attributes$class("status")
                     ]
                   ),
                   _List_fromArray(
@@ -27519,13 +27009,7 @@
                   $elm$html$Html$div,
                   _List_fromArray(
                     [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("status", true)
-                          ]
-                        )
-                      )
+                      $elm$html$Html$Attributes$class("status")
                     ]
                   ),
                   _List_fromArray(
@@ -27630,13 +27114,7 @@
       $elm$html$Html$div,
       _List_fromArray(
         [
-          $elm$html$Html$Attributes$classList(
-            _List_fromArray(
-              [
-                _Utils_Tuple2("canvas-toolbar-stack", true)
-              ]
-            )
-          )
+          $elm$html$Html$Attributes$class("canvas-toolbar-stack")
         ]
       ),
       _List_fromArray(
@@ -27645,13 +27123,7 @@
             $elm$html$Html$div,
             _List_fromArray(
               [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("canvas-toolbar", true)
-                    ]
-                  )
-                )
+                $elm$html$Html$Attributes$class("canvas-toolbar")
               ]
             ),
             _List_fromArray(
@@ -27660,13 +27132,7 @@
                   $elm$html$Html$div,
                   _List_fromArray(
                     [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("canvas-toolbar-section", true)
-                          ]
-                        )
-                      )
+                      $elm$html$Html$Attributes$class("canvas-toolbar-section")
                     ]
                   ),
                   _List_fromArray(
@@ -27804,13 +27270,7 @@
                   $elm$html$Html$div,
                   _List_fromArray(
                     [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("diva-app-header", true)
-                          ]
-                        )
-                      )
+                      $elm$html$Html$Attributes$class("diva-app-header")
                     ]
                   ),
                   _List_fromArray(
@@ -27871,13 +27331,7 @@
                   $elm$html$Html$div,
                   _List_fromArray(
                     [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("required-statement-dock", true)
-                          ]
-                        )
-                      )
+                      $elm$html$Html$Attributes$class("required-statement-dock")
                     ]
                   ),
                   _List_fromArray(

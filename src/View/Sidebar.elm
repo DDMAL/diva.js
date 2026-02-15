@@ -2,7 +2,7 @@ module View.Sidebar exposing (viewSidebarPanel, viewSidebarResizer)
 
 import Dict exposing (Dict)
 import Html exposing (Html, a, button, div, img, li, text, ul)
-import Html.Attributes as Attr exposing (alt, attribute, classList, id, src, type_)
+import Html.Attributes as HA exposing (alt, attribute, classList, id, src, type_)
 import Html.Events as Events
 import Html.Lazy as Lazy
 import IIIF.Language exposing (LabelValue, Language(..), extractLabelFromLanguageMap)
@@ -75,7 +75,7 @@ viewSidebarPanel model =
     in
     div
         [ classList panelClasses
-        , Attr.style "width"
+        , HA.style "width"
             (if isSidebarVisible model.sidebarState then
                 String.fromInt model.sidebarWidth ++ "px"
 
@@ -84,13 +84,13 @@ viewSidebarPanel model =
             )
         ]
         [ div
-            [ classList [ ( "sidebar-tabs", True ) ] ]
+            [ HA.class "sidebar-tabs" ]
             (viewSidebarTab model.sidebarState SidebarThumbnails "Thumbnails" UserToggledThumbnails
                 :: metadataTab
                 ++ contentsTab
             )
         , div
-            [ classList [ ( "sidebar-content", True ) ] ]
+            [ HA.class "sidebar-content" ]
             (viewSidebarPane model.sidebarState
                 SidebarThumbnails
                 (viewThumbnails
@@ -173,14 +173,14 @@ viewThumbnails { fullscreen, selectedIndex, shiftByOne, thumbsInstantScroll, vie
             , ( "is-fullscreen", fullscreen )
             ]
         , id "thumbs"
-        , Attr.style "scroll-behavior"
+        , HA.style "scroll-behavior"
             (if thumbsInstantScroll then
                 "auto"
 
              else
                 "smooth"
             )
-        , Attr.style "direction"
+        , HA.style "direction"
             (if viewingDirection == RightToLeft then
                 "rtl"
 
@@ -222,7 +222,7 @@ viewThumbnail viewMode shiftByOne selectedIndex ( index, page ) =
     in
     button attrs
         [ img
-            [ classList [ ( "thumbs-image", True ) ]
+            [ HA.class "thumbs-image"
             , src thumbUrl
             , alt ("Page " ++ String.fromInt (index + 1))
             ]
@@ -270,11 +270,11 @@ isThumbnailActive viewMode shiftByOne selectedIndex index =
 viewMetadataContent : Model -> Html Msg
 viewMetadataContent model =
     div
-        [ classList [ ( "metadata-panel", True ) ] ]
+        [ HA.class "metadata-panel" ]
         (case currentManifest model of
             Just manifest ->
                 [ div
-                    [ classList [ ( "metadata-body", True ) ] ]
+                    [ HA.class "metadata-body" ]
                     (metadataEntries model.detectedLanguage manifest
                         ++ homepageEntries model.detectedLanguage manifest
                     )
@@ -282,7 +282,7 @@ viewMetadataContent model =
 
             Nothing ->
                 [ div
-                    [ classList [ ( "metadata-body", True ) ] ]
+                    [ HA.class "metadata-body" ]
                     [ text "No metadata available." ]
                 ]
         )
@@ -303,12 +303,12 @@ homepageEntries language manifest =
 
             else
                 [ div
-                    [ classList [ ( "metadata-item", True ) ] ]
+                    [ HA.class "metadata-item" ]
                     [ div
-                        [ classList [ ( "metadata-label", True ) ] ]
+                        [ HA.class "metadata-label" ]
                         [ text "Homepage" ]
                     , div
-                        [ classList [ ( "metadata-value", True ) ] ]
+                        [ HA.class "metadata-value" ]
                         (List.map (homepageLinkBlock language) links)
                     ]
                 ]
@@ -339,18 +339,18 @@ hasManifestMetadata manifest =
 homepageLinkBlock :
     Language
     ->
-    { id : String
-    , label : IIIF.Language.LanguageMap
-    , format : MediaFormats
-    , type_ : ResourceTypes
-    }
+        { id : String
+        , label : IIIF.Language.LanguageMap
+        , format : MediaFormats
+        , type_ : ResourceTypes
+        }
     -> Html Msg
 homepageLinkBlock language page =
     div []
         [ a
-            [ Attr.href page.id
-            , Attr.target "_blank"
-            , Attr.rel "noopener noreferrer"
+            [ HA.href page.id
+            , HA.target "_blank"
+            , HA.rel "noopener noreferrer"
             ]
             [ extractLabelFromLanguageMap language page.label
                 |> text
@@ -379,8 +379,8 @@ viewContentsContent model =
                     viewOnThisPageEmptyBody
     in
     div
-        [ classList [ ( "contents-panel", True ) ] ]
-        [ div [ classList [ ( "contents-title", True ) ] ] [ text "Contents" ]
+        [ HA.class "contents-panel" ]
+        [ div [ HA.class "contents-title" ] [ text "Contents" ]
         , viewContentsToggle model.viewMode model.contentsView
         , body
         ]
@@ -389,7 +389,7 @@ viewContentsContent model =
 viewContentsToggle : ViewMode -> ContentsView -> Html Msg
 viewContentsToggle viewMode contentsView =
     div
-        [ classList [ ( "contents-view-tabs", True ) ] ]
+        [ HA.class "contents-view-tabs" ]
         [ button
             [ classList
                 [ ( "contents-view-button", True )
@@ -436,7 +436,7 @@ viewContentsIndexBody model manifest =
 viewContentsEmptyBody : Html Msg
 viewContentsEmptyBody =
     div
-        [ classList [ ( "contents-empty", True ) ] ]
+        [ HA.class "contents-empty" ]
         [ text "No contents available." ]
 
 
@@ -474,7 +474,7 @@ viewOnThisPageBody model manifest =
 viewOnThisPageEmptyBody : Html Msg
 viewOnThisPageEmptyBody =
     div
-        [ classList [ ( "contents-empty", True ) ] ]
+        [ HA.class "contents-empty" ]
         [ text "No ranges for this page." ]
 
 
@@ -551,7 +551,7 @@ viewOtpRangeItem model canvasLabelMap range =
             viewRangeMetadata model.detectedLanguage range.metadata
     in
     li
-        [ classList [ ( "contents-item", True ) ] ]
+        [ HA.class "contents-item" ]
         (labelNode :: metadataBlock)
 
 
@@ -615,7 +615,7 @@ viewRangeNode model rangeIndexMap range =
             viewRangeItems model rangeIndexMap range.items
     in
     li
-        [ classList [ ( "contents-item", True ) ] ]
+        [ HA.class "contents-item" ]
         (labelNode :: metadataBlock ++ children)
 
 
@@ -648,7 +648,7 @@ viewRangeMetadata language metadata =
 
     else
         [ div
-            [ classList [ ( "contents-meta", True ) ] ]
+            [ HA.class "contents-meta" ]
             (List.map (metadataEntry language) metadata)
         ]
 
@@ -733,11 +733,11 @@ rangeCanvasIds items =
 metadataEntry : Language -> LabelValue -> Html Msg
 metadataEntry language entry =
     div
-        [ classList [ ( "metadata-item", True ) ] ]
+        [ HA.class "metadata-item" ]
         [ div
-            [ classList [ ( "metadata-label", True ) ] ]
+            [ HA.class "metadata-label" ]
             [ extractLabelFromLanguageMap language entry.label |> text ]
         , div
-            [ classList [ ( "metadata-value", True ) ] ]
+            [ HA.class "metadata-value" ]
             (extractLabelFromLanguageMap language entry.value |> renderHtml)
         ]

@@ -2,7 +2,7 @@ module View.PageViewModal exposing (viewPageViewModal)
 
 import Filters exposing (FilterFloatValue(..), FilterIntValue(..), FilterStringValue(..), FilterToggle(..))
 import Html exposing (Html, button, div, img, input, label, option, select, span, text, textarea)
-import Html.Attributes as Attr exposing (alt, checked, classList, id, rows, src, type_, value)
+import Html.Attributes as HA exposing (alt, checked, classList, id, rows, src, type_, value)
 import Html.Events exposing (onCheck, onClick, onInput)
 import Html.Lazy as Lazy
 import IIIF.Language exposing (Language(..), extractLabelFromLanguageMap)
@@ -99,15 +99,15 @@ viewModalHeader model =
                 ( Icons.showSidebar, "Show filters" )
     in
     div
-        [ classList [ ( "modal-header", True ) ] ]
+        [ HA.class "modal-header" ]
         [ div
-            [ classList [ ( "modal-title-stack", True ) ] ]
-            (div [ classList [ ( "modal-title", True ) ] ] [ text "Page View" ]
+            [ HA.class "modal-title-stack" ]
+            (div [ HA.class "modal-title" ] [ text "Page View" ]
                 :: (if String.isEmpty manifestTitle then
                         []
 
                     else
-                        [ div [ classList [ ( "modal-subtitle", True ) ] ] [ text manifestTitle ] ]
+                        [ div [ HA.class "modal-subtitle" ] [ text manifestTitle ] ]
                    )
                 ++ (if String.isEmpty pageLabel then
                         []
@@ -117,7 +117,7 @@ viewModalHeader model =
                    )
             )
         , div
-            [ classList [ ( "modal-actions", True ) ] ]
+            [ HA.class "modal-actions" ]
             [ viewButton
                 { label = "Previous Page"
                 , icon = Icons.prevPage
@@ -149,7 +149,7 @@ viewModalHeader model =
                 , isFullscreen = model.fullscreen
                 }
             , div
-                [ classList [ ( "modal-close-action", True ) ] ]
+                [ HA.class "modal-close-action" ]
                 [ viewButton
                     { label = ""
                     , icon = Icons.close
@@ -230,7 +230,7 @@ viewModalViewer fullscreen isOuterLeft =
             ]
         ]
         [ div
-            [ classList [ ( "modal-canvas", True ) ]
+            [ HA.class "modal-canvas"
             , id "filter-viewer"
             ]
             []
@@ -240,7 +240,7 @@ viewModalViewer fullscreen isOuterLeft =
 viewModalSidebar : Model -> Html Msg
 viewModalSidebar model =
     div
-        [ classList [ ( "modal-sidebar", True ) ] ]
+        [ HA.class "modal-sidebar" ]
         [ Lazy.lazy viewTransformGroup model
         , Lazy.lazy viewToneGroup model
         , Lazy.lazy viewColourAdjustGroup model
@@ -293,7 +293,7 @@ viewAdvancedColourAdjustGroup model =
         "Advanced colour adjust"
         [ viewFilterRow
             [ button
-                [ classList [ ( "filter-reset", True ) ]
+                [ HA.class "filter-reset"
                 , type_ "button"
                 , onClick UserResetAltColourAdjust
                 ]
@@ -546,9 +546,9 @@ viewPseudoColourGroup model =
         , viewFilterRow
             [ viewToggle "Replace Colour" model.filters.colourReplaceEnabled ToggleColourReplace ]
         , viewFilterRow
-            [ span [ classList [ ( "filter-label", True ) ] ] [ text "Source" ]
+            [ span [ HA.class "filter-label" ] [ text "Source" ]
             , viewColourInput model.filters.colourReplaceSource (UserUpdatedFilterString StringColourReplaceSource)
-            , span [ classList [ ( "filter-label", True ) ] ] [ text "Target" ]
+            , span [ HA.class "filter-label" ] [ text "Target" ]
             , viewColourInput model.filters.colourReplaceTarget (UserUpdatedFilterString StringColourReplaceTarget)
             ]
         , viewRangeRow
@@ -603,20 +603,20 @@ viewFilterJsonGroup model =
         "Import / Export Filter Settings"
         [ viewFilterRow
             [ button
-                [ classList [ ( "filter-reset", True ) ]
+                [ HA.class "filter-reset"
                 , type_ "button"
                 , onClick UserCopiedFilterJson
                 ]
                 [ text "Show JSON" ]
             , button
-                [ classList [ ( "filter-reset", True ) ]
+                [ HA.class "filter-reset"
                 , type_ "button"
                 , onClick UserAppliedFilterJson
                 ]
                 [ text "Apply" ]
             ]
         , textarea
-            [ classList [ ( "filter-json", True ) ]
+            [ HA.class "filter-json"
             , value model.filtersJsonInput
             , onInput UserUpdatedFilterJsonInput
             , rows 6
@@ -624,7 +624,7 @@ viewFilterJsonGroup model =
             []
         , case model.filtersJsonError of
             Just err ->
-                div [ classList [ ( "filter-json-error", True ) ] ] [ text err ]
+                div [ HA.class "filter-json-error" ] [ text err ]
 
             Nothing ->
                 text ""
@@ -633,14 +633,14 @@ viewFilterJsonGroup model =
 
 viewRotationRow : Model -> Html Msg
 viewRotationRow model =
-    div [ classList [ ( "filter-range-group", True ) ] ]
-        [ div [ classList [ ( "filter-range-header", True ) ] ]
-            [ span [ classList [ ( "filter-label", True ) ] ] [ text "Rotation" ]
-            , span [ classList [ ( "filter-range-header-right", True ) ] ]
-                [ span [ classList [ ( "filter-value", True ) ] ]
+    div [ HA.class "filter-range-group" ]
+        [ div [ HA.class "filter-range-header" ]
+            [ span [ HA.class "filter-label" ] [ text "Rotation" ]
+            , span [ HA.class "filter-range-header-right" ]
+                [ span [ HA.class "filter-value" ]
                     [ text (String.fromInt model.filters.rotation ++ "°") ]
                 , button
-                    [ classList [ ( "filter-reset", True ) ]
+                    [ HA.class "filter-reset"
                     , type_ "button"
                     , onClick (UserUpdatedFilterInt IntRotation "0")
                     ]
@@ -885,7 +885,7 @@ viewFilterGroup model groupId title items =
         isExpanded =
             Set.member groupId model.filterGroupExpanded
     in
-    div [ classList [ ( "filter-group", True ) ] ]
+    div [ HA.class "filter-group" ]
         (button
             [ classList
                 [ ( "filter-title-button", True )
@@ -913,12 +913,12 @@ viewFilterGroup model groupId title items =
 
 viewFilterRow : List (Html Msg) -> Html Msg
 viewFilterRow items =
-    div [ classList [ ( "filter-row", True ) ] ] items
+    div [ HA.class "filter-row" ] items
 
 
 viewToggle : String -> Bool -> FilterToggle -> Html Msg
 viewToggle labelText isChecked toggle =
-    label [ classList [ ( "filter-toggle", True ) ] ]
+    label [ HA.class "filter-toggle" ]
         [ input
             [ type_ "checkbox"
             , checked isChecked
@@ -931,10 +931,10 @@ viewToggle labelText isChecked toggle =
 
 viewRangeRow : RangeRowConfig -> Html Msg
 viewRangeRow config =
-    div [ classList [ ( "filter-range-group", True ) ] ]
-        [ div [ classList [ ( "filter-range-header", True ) ] ]
-            [ span [ classList [ ( "filter-label", True ) ] ] [ text config.label ]
-            , span [ classList [ ( "filter-value", True ) ] ] [ text config.display ]
+    div [ HA.class "filter-range-group" ]
+        [ div [ HA.class "filter-range-header" ]
+            [ span [ HA.class "filter-label" ] [ text config.label ]
+            , span [ HA.class "filter-value" ] [ text config.display ]
             ]
         , viewRangeInput config.min config.max config.step config.value config.onInput
         ]
@@ -942,8 +942,8 @@ viewRangeRow config =
 
 viewToggleRangeRow : ToggleRangeRowConfig -> Html Msg
 viewToggleRangeRow config =
-    div [ classList [ ( "filter-range-group", True ) ] ]
-        [ div [ classList [ ( "filter-range-header", True ) ] ]
+    div [ HA.class "filter-range-group" ]
+        [ div [ HA.class "filter-range-header" ]
             [ label [ classList [ ( "filter-toggle", True ), ( "is-inline", True ) ] ]
                 [ input
                     [ type_ "checkbox"
@@ -953,7 +953,7 @@ viewToggleRangeRow config =
                     []
                 , text config.label
                 ]
-            , span [ classList [ ( "filter-value", True ) ] ] [ text config.display ]
+            , span [ HA.class "filter-value" ] [ text config.display ]
             ]
         , viewRangeInput config.min config.max config.step config.value config.onInput
         ]
@@ -964,8 +964,8 @@ viewRangeInput minValue maxValue stepValue currentValue onChange =
     let
         baseAttrs =
             [ type_ "range"
-            , Attr.min minValue
-            , Attr.max maxValue
+            , HA.min minValue
+            , HA.max maxValue
             , value currentValue
             , onInput onChange
             ]
@@ -973,18 +973,18 @@ viewRangeInput minValue maxValue stepValue currentValue onChange =
         attrs =
             case stepValue of
                 Just stepSize ->
-                    Attr.step stepSize :: baseAttrs
+                    HA.step stepSize :: baseAttrs
 
                 Nothing ->
                     baseAttrs
     in
-    input (classList [ ( "filter-range-input", True ) ] :: attrs) []
+    input (HA.class "filter-range-input" :: attrs) []
 
 
 viewColourInput : String -> (String -> Msg) -> Html Msg
 viewColourInput colourValue onChange =
     input
-        [ classList [ ( "filter-color-input", True ) ]
+        [ HA.class "filter-color-input"
         , type_ "color"
         , value colourValue
         , onInput onChange
@@ -995,7 +995,7 @@ viewColourInput colourValue onChange =
 viewSelect : String -> (String -> Msg) -> List (Html Msg) -> Html Msg
 viewSelect currentValue onChange options =
     select
-        [ classList [ ( "filter-select", True ) ]
+        [ HA.class "filter-select"
         , onInput onChange
         , value currentValue
         ]
@@ -1005,7 +1005,7 @@ viewSelect currentValue onChange options =
 viewImageChoicesSidebar : List PageImage -> Int -> Html Msg
 viewImageChoicesSidebar images selectedIndex =
     div
-        [ classList [ ( "page-view-choices", True ) ] ]
+        [ HA.class "page-view-choices" ]
         (List.indexedMap (\index image -> Lazy.lazy3 viewImageChoiceItem selectedIndex index image) images)
 
 
@@ -1026,12 +1026,12 @@ viewImageChoiceItem selectedIndex index image =
         , onClick (UserClickedPageViewImageChoice index)
         ]
         [ img
-            [ classList [ ( "page-view-choice-thumb", True ) ]
+            [ HA.class "page-view-choice-thumb"
             , src image.thumbUrl
             , alt image.label
             ]
             []
         , span
-            [ classList [ ( "page-view-choice-label", True ) ] ]
+            [ HA.class "page-view-choice-label" ]
             [ text image.label ]
         ]

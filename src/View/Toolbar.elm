@@ -1,7 +1,7 @@
 module View.Toolbar exposing (viewToolbar)
 
 import Html exposing (Html, div, text)
-import Html.Attributes as Attr exposing (classList)
+import Html.Attributes as HA exposing (classList)
 import Model exposing (Model, ResourceResponse(..), Response(..), SidebarState(..), ViewMode(..), currentManifest, getPageAt, pageViewStartIndex)
 import Msg exposing (Msg(..))
 import String
@@ -16,9 +16,9 @@ viewToolbar model =
         controlsDisabled =
             currentManifest model |> isNothing
     in
-    div [ classList [ ( "canvas-toolbar-stack", True ) ] ]
-        [ div [ classList [ ( "canvas-toolbar", True ) ] ]
-            [ div [ classList [ ( "canvas-toolbar-section", True ) ] ]
+    div [ HA.class "canvas-toolbar-stack" ]
+        [ div [ HA.class "canvas-toolbar" ]
+            [ div [ HA.class "canvas-toolbar-section" ]
                 [ viewButton
                     { label = "Zoom Out"
                     , icon = Icons.zoomOut
@@ -35,85 +35,85 @@ viewToolbar model =
             , div [ classList [ ( "canvas-toolbar-section", True ), ( "is-right", True ) ] ]
                 [ viewStatus model
                 , viewButton
-                { label = "Page View"
-                , icon = Icons.pageViewOpen
-                , onClickMsg = disabledIf controlsDisabled UserClickedOpenPageView
-                , isFullscreen = model.fullscreen
-                }
-            , viewButton
-                { label = "Manifest Info"
-                , icon = Icons.info
-                , onClickMsg = disabledIf controlsDisabled UserClickedOpenManifestInfo
-                , isFullscreen = model.fullscreen
-                }
-            , viewButton
-                { label =
-                    if model.viewMode == OneUp then
-                        "Two Page"
-
-                    else
-                        "One Page"
-                , icon =
-                    if model.viewMode == OneUp then
-                        Icons.openingPageView
-
-                    else
-                        Icons.scrollingPageView
-                , onClickMsg = disabledIf controlsDisabled UserToggledTwoUp
-                , isFullscreen = model.fullscreen
-                }
-            , viewButton
-                { label = "Shift Page"
-                , icon =
-                    if model.shiftByOne then
-                        Icons.shiftLeft
-
-                    else
-                        Icons.shiftRight
-                , onClickMsg = disabledIf (controlsDisabled || model.viewMode == OneUp) UserToggledShiftByOne
-                , isFullscreen = model.fullscreen
-                }
-            , viewButton
-                (let
-                    sidebarVisible =
-                        if model.isMobile then
-                            model.mobileSidebarOpen
+                    { label = "Page View"
+                    , icon = Icons.pageViewOpen
+                    , onClickMsg = disabledIf controlsDisabled UserClickedOpenPageView
+                    , isFullscreen = model.fullscreen
+                    }
+                , viewButton
+                    { label = "Manifest Info"
+                    , icon = Icons.info
+                    , onClickMsg = disabledIf controlsDisabled UserClickedOpenManifestInfo
+                    , isFullscreen = model.fullscreen
+                    }
+                , viewButton
+                    { label =
+                        if model.viewMode == OneUp then
+                            "Two Page"
 
                         else
-                            model.sidebarState /= SidebarHidden
-                 in
-                 { label =
-                    if sidebarVisible then
-                        "Hide Sidebar"
+                            "One Page"
+                    , icon =
+                        if model.viewMode == OneUp then
+                            Icons.openingPageView
 
-                    else
-                        "Show Sidebar"
-                 , icon =
-                    if sidebarVisible then
-                        Icons.hideSidebar
+                        else
+                            Icons.scrollingPageView
+                    , onClickMsg = disabledIf controlsDisabled UserToggledTwoUp
+                    , isFullscreen = model.fullscreen
+                    }
+                , viewButton
+                    { label = "Shift Page"
+                    , icon =
+                        if model.shiftByOne then
+                            Icons.shiftLeft
 
-                    else
-                        Icons.showSidebar
-                 , onClickMsg = disabledIf controlsDisabled UserToggledSidebar
-                 , isFullscreen = model.fullscreen
-                 }
-                )
-            , viewButton
-                { label =
-                    if model.fullscreen then
-                        "Exit Full"
+                        else
+                            Icons.shiftRight
+                    , onClickMsg = disabledIf (controlsDisabled || model.viewMode == OneUp) UserToggledShiftByOne
+                    , isFullscreen = model.fullscreen
+                    }
+                , viewButton
+                    (let
+                        sidebarVisible =
+                            if model.isMobile then
+                                model.mobileSidebarOpen
 
-                    else
-                        "Fullscreen"
-                , icon =
-                    if model.fullscreen then
-                        Icons.fromFullscreen
+                            else
+                                model.sidebarState /= SidebarHidden
+                     in
+                     { label =
+                        if sidebarVisible then
+                            "Hide Sidebar"
 
-                    else
-                        Icons.toFullscreen
-                , onClickMsg = Just UserToggledFullscreen
-                , isFullscreen = model.fullscreen
-                }
+                        else
+                            "Show Sidebar"
+                     , icon =
+                        if sidebarVisible then
+                            Icons.hideSidebar
+
+                        else
+                            Icons.showSidebar
+                     , onClickMsg = disabledIf controlsDisabled UserToggledSidebar
+                     , isFullscreen = model.fullscreen
+                     }
+                    )
+                , viewButton
+                    { label =
+                        if model.fullscreen then
+                            "Exit Full"
+
+                        else
+                            "Fullscreen"
+                    , icon =
+                        if model.fullscreen then
+                            Icons.fromFullscreen
+
+                        else
+                            Icons.toFullscreen
+                    , onClickMsg = Just UserToggledFullscreen
+                    , isFullscreen = model.fullscreen
+                    }
                 ]
             ]
         , viewCurrentLabel model
@@ -196,7 +196,7 @@ viewStatus model =
                 ResourceLoading ->
                     Just
                         (div
-                            [ classList [ ( "status", True ) ] ]
+                            [ HA.class "status" ]
                             [ text "Loading..." ]
                         )
 
@@ -204,7 +204,7 @@ viewStatus model =
                     if List.isEmpty model.tileSources then
                         Just
                             (div
-                                [ classList [ ( "status", True ) ] ]
+                                [ HA.class "status" ]
                                 [ text "No canvases found in this manifest." ]
                             )
 
@@ -216,14 +216,14 @@ viewStatus model =
                         NotRequested ->
                             Just
                                 (div
-                                    [ classList [ ( "status", True ) ] ]
+                                    [ HA.class "status" ]
                                     [ text "Select a manifest from the collection to view." ]
                                 )
 
                         Loading ->
                             Just
                                 (div
-                                    [ classList [ ( "status", True ) ] ]
+                                    [ HA.class "status" ]
                                     [ text "Select a manifest from the collection to view." ]
                                 )
 
@@ -231,7 +231,7 @@ viewStatus model =
                             if List.isEmpty model.tileSources then
                                 Just
                                     (div
-                                        [ classList [ ( "status", True ) ] ]
+                                        [ HA.class "status" ]
                                         [ text "Select a manifest from the collection to view." ]
                                     )
 

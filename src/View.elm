@@ -1,7 +1,7 @@
 module View exposing (view)
 
 import Html exposing (Html, div, h1, node, text)
-import Html.Attributes as Attr exposing (classList, id, style)
+import Html.Attributes as HA exposing (classList, id)
 import IIIF.Language exposing (Language(..), extractLabelFromLanguageMap)
 import IIIF.Presentation exposing (toLabel, toRequiredStatement)
 import Model exposing (Model, ResourceResponse(..), Response(..), SidebarState(..), ViewMode(..), currentManifest)
@@ -25,7 +25,7 @@ view model =
                 ]
             ]
             [ viewManifestTitle model
-            , div [ classList [ ( "diva-app-header", True ) ] ]
+            , div [ HA.class "diva-app-header" ]
                 [ viewToolbar model
                 ]
             , div
@@ -47,7 +47,7 @@ view model =
                 , View.Sidebar.viewSidebarResizer model
                 , View.Sidebar.viewSidebarPanel model
                 ]
-            , div [ classList [ ( "required-statement-dock", True ) ] ]
+            , div [ HA.class "required-statement-dock" ]
                 [ viewRequiredStatement model ]
             , View.PageViewModal.viewPageViewModal model
             , View.ManifestInfoModal.viewManifestInfoModal model
@@ -93,7 +93,7 @@ viewRequiredStatement model =
                     in
                     viewIf
                         (div
-                            [ classList [ ( "required-statement", True ) ] ]
+                            [ HA.class "required-statement" ]
                             (HtmlRenderer.renderHtml valueText)
                         )
                         (not (String.isEmpty valueText))
@@ -105,7 +105,7 @@ viewRequiredStatement model =
 
 viewCanvas : Bool -> Bool -> Bool -> Html Msg
 viewCanvas fullscreen isLoading showCollectionSidebar =
-    div [ classList [ ( "diva-canvas-wrapper", True ) ] ]
+    div [ HA.class "diva-canvas-wrapper" ]
         [ node "osd-viewer"
             [ classList
                 [ ( "diva-canvas", True )
@@ -135,20 +135,21 @@ viewThrobber =
             ]
     in
     div
-        [ classList [ ( "throbber-overlay", True ) ] ]
+        [ HA.class "throbber-overlay" ]
         [ div
-            [ classList [ ( "throbber", True ) ] ]
+            [ HA.class "throbber" ]
             (List.map
                 (\delay ->
                     div
-                        [ classList [ ( "throbber-cube", True ) ]
-                        , Attr.style "animation-delay" (String.fromFloat delay ++ "s")
+                        [ HA.class "throbber-cube"
+                        , HA.style "animation-delay" (String.fromFloat delay ++ "s")
                         ]
                         []
                 )
                 delays
             )
         ]
+
 
 hasCollectionSidebar : Model -> Bool
 hasCollectionSidebar model =
