@@ -657,6 +657,7 @@ class Diva
 type FilterMapping = {
     enabled: keyof FilterSettings; filter : keyof typeof filterFunctions;
     args?: (keyof FilterSettings)[];
+    defaults?: number[];
 };
 
 const filterFunctions = {
@@ -673,7 +674,20 @@ const filterFunctions = {
     GREYSCALE : Filters.GREYSCALE,
     INVERT : Filters.INVERT,
     BACKGROUND_NORMALIZE : Filters.BACKGROUND_NORMALIZE,
-    UNSHARP_MASK : Filters.UNSHARP_MASK
+    UNSHARP_MASK : Filters.UNSHARP_MASK,
+    ALT_RED_GAMMA : Filters.ALT_RED_GAMMA,
+    ALT_GREEN_GAMMA : Filters.ALT_GREEN_GAMMA,
+    ALT_BLUE_GAMMA : Filters.ALT_BLUE_GAMMA,
+    ALT_RED_SIGMOID : Filters.ALT_RED_SIGMOID,
+    ALT_GREEN_SIGMOID : Filters.ALT_GREEN_SIGMOID,
+    ALT_BLUE_SIGMOID : Filters.ALT_BLUE_SIGMOID,
+    ALT_RED_HUE : Filters.ALT_RED_HUE,
+    ALT_GREEN_HUE : Filters.ALT_GREEN_HUE,
+    ALT_BLUE_HUE : Filters.ALT_BLUE_HUE,
+    ALT_RED_VIBRANCE : Filters.ALT_RED_VIBRANCE,
+    ALT_GREEN_VIBRANCE : Filters.ALT_GREEN_VIBRANCE,
+    ALT_BLUE_VIBRANCE : Filters.ALT_BLUE_VIBRANCE,
+    ADAPTIVE_THRESHOLD : Filters.ADAPTIVE_THRESHOLD
 };
 
 const simpleFilterMappings: FilterMapping[] = [
@@ -693,6 +707,22 @@ const simpleFilterMappings: FilterMapping[] = [
     {enabled : "unsharpEnabled", filter : "UNSHARP_MASK", args : [ "unsharpAmount" ]},
 ];
 
+const altFilterMappings: FilterMapping[] = [
+    {enabled : "altRedGammaEnabled", filter : "ALT_RED_GAMMA", args : [ "altRedGamma" ]},
+    {enabled : "altGreenGammaEnabled", filter : "ALT_GREEN_GAMMA", args : [ "altGreenGamma" ]},
+    {enabled : "altBlueGammaEnabled", filter : "ALT_BLUE_GAMMA", args : [ "altBlueGamma" ]},
+    {enabled : "altRedSigmoidEnabled", filter : "ALT_RED_SIGMOID", args : [ "altRedSigmoid" ]},
+    {enabled : "altGreenSigmoidEnabled", filter : "ALT_GREEN_SIGMOID", args : [ "altGreenSigmoid" ]},
+    {enabled : "altBlueSigmoidEnabled", filter : "ALT_BLUE_SIGMOID", args : [ "altBlueSigmoid" ]},
+    {enabled : "altRedHueEnabled", filter : "ALT_RED_HUE", args : [ "altRedHue", "altRedHueWindow" ], defaults : [ 0, 8 ]},
+    {enabled : "altGreenHueEnabled", filter : "ALT_GREEN_HUE", args : [ "altGreenHue", "altGreenHueWindow" ], defaults : [ 0, 8 ]},
+    {enabled : "altBlueHueEnabled", filter : "ALT_BLUE_HUE", args : [ "altBlueHue", "altBlueHueWindow" ], defaults : [ 0, 8 ]},
+    {enabled : "altRedVibranceEnabled", filter : "ALT_RED_VIBRANCE", args : [ "altRedVibrance" ]},
+    {enabled : "altGreenVibranceEnabled", filter : "ALT_GREEN_VIBRANCE", args : [ "altGreenVibrance" ]},
+    {enabled : "altBlueVibranceEnabled", filter : "ALT_BLUE_VIBRANCE", args : [ "altBlueVibrance" ]},
+    {enabled : "adaptiveEnabled", filter : "ADAPTIVE_THRESHOLD", args : [ "adaptiveWindow", "adaptiveOffset" ], defaults : [ 15, 10 ]},
+];
+
 const buildFilterOptions = (filters: FilterSettings|null): any => {
     if (!filters)
     {
@@ -705,7 +735,7 @@ const buildFilterOptions = (filters: FilterSettings|null): any => {
     {
         if (filters[mapping.enabled])
         {
-            const filterArgs = mapping.args?.map(key => filters[key] ?? 0) ?? [];
+            const filterArgs = mapping.args?.map((key, i) => filters[key] ?? (mapping.defaults?.[i] ?? 0)) ?? [];
             const filterFn = filterFunctions[mapping.filter] as (...args: any[]) => any;
             processors.push(filterFn(...(filterArgs as any[])));
         }
@@ -755,72 +785,14 @@ const buildFilterOptions = (filters: FilterSettings|null): any => {
             filters.colourReplacePreserveLum ?? false));
     }
 
-    if (filters.altRedGammaEnabled)
+    for (const mapping of altFilterMappings)
     {
-        processors.push(Filters.ALT_RED_GAMMA(filters.altRedGamma ?? 0));
-    }
-
-    if (filters.altGreenGammaEnabled)
-    {
-        processors.push(Filters.ALT_GREEN_GAMMA(filters.altGreenGamma ?? 0));
-    }
-
-    if (filters.altBlueGammaEnabled)
-    {
-        processors.push(Filters.ALT_BLUE_GAMMA(filters.altBlueGamma ?? 0));
-    }
-
-    if (filters.altRedSigmoidEnabled)
-    {
-        processors.push(Filters.ALT_RED_SIGMOID(filters.altRedSigmoid ?? 0));
-    }
-
-    if (filters.altGreenSigmoidEnabled)
-    {
-        processors.push(Filters.ALT_GREEN_SIGMOID(filters.altGreenSigmoid ?? 0));
-    }
-
-    if (filters.altBlueSigmoidEnabled)
-    {
-        processors.push(Filters.ALT_BLUE_SIGMOID(filters.altBlueSigmoid ?? 0));
-    }
-
-    if (filters.altRedHueEnabled)
-    {
-        processors.push(Filters.ALT_RED_HUE(filters.altRedHue ?? 0, filters.altRedHueWindow ?? 8));
-    }
-
-    if (filters.altGreenHueEnabled)
-    {
-        processors.push(
-            Filters.ALT_GREEN_HUE(filters.altGreenHue ?? 0, filters.altGreenHueWindow ?? 8));
-    }
-
-    if (filters.altBlueHueEnabled)
-    {
-        processors.push(
-            Filters.ALT_BLUE_HUE(filters.altBlueHue ?? 0, filters.altBlueHueWindow ?? 8));
-    }
-
-    if (filters.altRedVibranceEnabled)
-    {
-        processors.push(Filters.ALT_RED_VIBRANCE(filters.altRedVibrance ?? 0));
-    }
-
-    if (filters.altGreenVibranceEnabled)
-    {
-        processors.push(Filters.ALT_GREEN_VIBRANCE(filters.altGreenVibrance ?? 0));
-    }
-
-    if (filters.altBlueVibranceEnabled)
-    {
-        processors.push(Filters.ALT_BLUE_VIBRANCE(filters.altBlueVibrance ?? 0));
-    }
-
-    if (filters.adaptiveEnabled)
-    {
-        processors.push(
-            Filters.ADAPTIVE_THRESHOLD(filters.adaptiveWindow ?? 15, filters.adaptiveOffset ?? 10));
+        if (filters[mapping.enabled])
+        {
+            const filterArgs = mapping.args?.map((key, i) => filters[key] ?? (mapping.defaults?.[i] ?? 0)) ?? [];
+            const filterFn = filterFunctions[mapping.filter] as (...args: any[]) => any;
+            processors.push(filterFn(...(filterArgs as any[])));
+        }
     }
 
     if (processors.length === 0)

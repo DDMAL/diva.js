@@ -891,6 +891,235 @@ function applyPcaColor(imgData: ImageData, mode: string): void
     }
 }
 
+const noopFilter: FilterProcessor = (_context, callback) => { callback(); };
+
+function rgbToHSV(r: number, g: number, b: number): {h: number; s: number; v: number}
+{
+    const rr = r / 255;
+    const gg = g / 255;
+    const bb = b / 255;
+    const maxValue = Math.max(rr, gg, bb);
+    const minValue = Math.min(rr, gg, bb);
+    const v = maxValue;
+    const d = maxValue - minValue;
+
+    const s = maxValue === 0 ? 0 : d / maxValue;
+    let h = 0;
+    if (maxValue !== minValue)
+    {
+        switch (maxValue)
+        {
+        case rr:
+            h = (gg - bb) / d + (gg < bb ? 6 : 0);
+            break;
+        case gg:
+            h = (bb - rr) / d + 2;
+            break;
+        default:
+            h = (rr - gg) / d + 4;
+        }
+        h /= 6;
+    }
+    return {h, s, v};
+}
+
+function hsvToRGB(h: number, s: number, v: number): {r: number; g: number; b: number}
+{
+    let r = 0;
+    let g = 0;
+    let b = 0;
+    const i = Math.floor(h * 6);
+    const f = h * 6 - i;
+    const p = v * (1 - s);
+    const q = v * (1 - f * s);
+    const t = v * (1 - (1 - f) * s);
+
+    switch (i % 6)
+    {
+    case 0:
+        r = v;
+        g = t;
+        b = p;
+        break;
+    case 1:
+        r = q;
+        g = v;
+        b = p;
+        break;
+    case 2:
+        r = p;
+        g = v;
+        b = t;
+        break;
+    case 3:
+        r = p;
+        g = q;
+        b = v;
+        break;
+    case 4:
+        r = t;
+        g = p;
+        b = v;
+        break;
+    default:
+        r = v;
+        g = p;
+        b = q;
+    }
+
+    return {r : Math.floor(r * 255), g : Math.floor(g * 255), b : Math.floor(b * 255)};
+}
+
+function applyChannelLUT(channel: number, lut: number[]): FilterProcessor
+{
+    if (channel === 0)
+    {
+        return applyPixelTransformInPlace(
+            (r: number, g: number, b: number, a: number, out: number[]) => {
+                out[0] = lut[r];
+                out[1] = g;
+                out[2] = b;
+                out[3] = a;
+            });
+    }
+    if (channel === 1)
+    {
+        return applyPixelTransformInPlace(
+            (r: number, g: number, b: number, a: number, out: number[]) => {
+                out[0] = r;
+                out[1] = lut[g];
+                out[2] = b;
+                out[3] = a;
+            });
+    }
+    return applyPixelTransformInPlace(
+        (r: number, g: number, b: number, a: number, out: number[]) => {
+            out[0] = r;
+            out[1] = g;
+            out[2] = lut[b];
+            out[3] = a;
+        });
+}
+
+function ccChannel(channel: number, adjustment: number): FilterProcessor
+{
+    const adj = adjustment / 100;
+    const absAdj = Math.abs(adj);
+    const transform = (ch: number) => adj > 0 ? ch + (255 - ch) * adj : ch - ch * absAdj;
+    if (channel === 0)
+    {
+        return applyPixelTransformInPlace(
+            (r: number, g: number, b: number, a: number, out: number[]) => {
+                out[0] = transform(r);
+                out[1] = g;
+                out[2] = b;
+                out[3] = a;
+            });
+    }
+    if (channel === 1)
+    {
+        return applyPixelTransformInPlace(
+            (r: number, g: number, b: number, a: number, out: number[]) => {
+                out[0] = r;
+                out[1] = transform(g);
+                out[2] = b;
+                out[3] = a;
+            });
+    }
+    return applyPixelTransformInPlace(
+        (r: number, g: number, b: number, a: number, out: number[]) => {
+            out[0] = r;
+            out[1] = g;
+            out[2] = transform(b);
+            out[3] = a;
+        });
+}
+
+function altChannelGamma(channel: number, amount: number): FilterProcessor
+{
+    const strength = Math.max(0, Math.min(100, amount || 0));
+    if (strength === 0)
+    {
+        return noopFilter;
+    }
+    const exponent = 1 - (strength / 100) * 0.8;
+    const lut: number[] = [];
+    for (let i = 0; i < 256; i += 1)
+    {
+        lut[i] = clampByte(Math.pow(i / 255, exponent) * 255);
+    }
+    return applyChannelLUT(channel, lut);
+}
+
+function altChannelSigmoid(channel: number, amount: number): FilterProcessor
+{
+    const strength = Math.max(0, Math.min(100, amount || 0)) / 100;
+    if (strength === 0)
+    {
+        return noopFilter;
+    }
+    const a = 8;
+    const lut: number[] = [];
+    for (let i = 0; i < 256; i += 1)
+    {
+        const sig = 1 / (1 + Math.exp(-a * (i / 255 - 0.5)));
+        const target = sig * 255;
+        lut[i] = clampByte(i + (target - i) * strength);
+    }
+    return applyChannelLUT(channel, lut);
+}
+
+function altChannelHue(hueTarget: number, amount: number, window?: number): FilterProcessor
+{
+    const strength = Math.max(-100, Math.min(100, amount || 0)) / 100;
+    if (strength === 0)
+    {
+        return noopFilter;
+    }
+    const windowSize = Math.max(0.02, Math.min(0.3, (window === undefined ? 8 : window) / 100));
+    return applyPixelTransformInPlace(
+        (r: number, g: number, b: number, aPx: number, out: number[]) => {
+            const hsv = rgbToHSV(r, g, b);
+            const hueDist = hueTarget === 0
+                ? Math.min(Math.abs(hsv.h), Math.abs(1 - hsv.h))
+                : Math.abs(hsv.h - hueTarget);
+            const hueWeight = clamp01(1 - hueDist / windowSize);
+            const weight = hueWeight * Math.abs(strength);
+            if (weight <= 0)
+            {
+                out[0] = r;
+                out[1] = g;
+                out[2] = b;
+                out[3] = aPx;
+                return;
+            }
+            const sign = strength >= 0 ? 1 : -1;
+            const nextS = clamp01(hsv.s + sign * (1 - hsv.s) * weight);
+            const nextV = clamp01(hsv.v + sign * hsv.v * weight * 0.2);
+            const rgb = hsvToRGB(hsv.h, nextS, nextV);
+            out[0] = rgb.r;
+            out[1] = rgb.g;
+            out[2] = rgb.b;
+            out[3] = aPx;
+        });
+}
+
+function altChannelVibrance(channel: number, amount: number): FilterProcessor
+{
+    const strength = Math.max(0, Math.min(100, amount || 0)) / 100;
+    if (strength === 0)
+    {
+        return noopFilter;
+    }
+    const lut: number[] = [];
+    for (let i = 0; i < 256; i += 1)
+    {
+        const weight = (i / 255) * (i / 255) * strength;
+        lut[i] = clampByte(i + (255 - i) * weight);
+    }
+    return applyChannelLUT(channel, lut);
+}
+
 export const Filters = {
     _scratch : null as Uint8ClampedArray | null,
     _scratchCanvas : null as HTMLCanvasElement | null,
@@ -950,79 +1179,8 @@ export const Filters = {
         context.clearRect(0, 0, width, height);
         context.drawImage(this._scratchCanvas as HTMLCanvasElement, 0, 0);
     },
-    _rgbToHSV : function(r: number, g: number, b: number) : {h : number; s : number; v : number} {
-        let rr = r / 255;
-        let gg = g / 255;
-        let bb = b / 255;
-        const maxValue = Math.max(rr, gg, bb);
-        const minValue = Math.min(rr, gg, bb);
-        const v = maxValue;
-        const d = maxValue - minValue;
-
-        const s = maxValue === 0 ? 0 : d / maxValue;
-        let h = 0;
-        if (maxValue !== minValue)
-        {
-            switch (maxValue)
-            {
-            case rr:
-                h = (gg - bb) / d + (gg < bb ? 6 : 0);
-                break;
-            case gg:
-                h = (bb - rr) / d + 2;
-                break;
-            default:
-                h = (rr - gg) / d + 4;
-            }
-            h /= 6;
-        }
-        return {h, s, v};
-    },
-    _hsvToRGB : function(h: number, s: number, v: number) : {r : number; g : number; b : number} {
-        let r = 0;
-        let g = 0;
-        let b = 0;
-        const i = Math.floor(h * 6);
-        const f = h * 6 - i;
-        const p = v * (1 - s);
-        const q = v * (1 - f * s);
-        const t = v * (1 - (1 - f) * s);
-
-        switch (i % 6)
-        {
-        case 0:
-            r = v;
-            g = t;
-            b = p;
-            break;
-        case 1:
-            r = q;
-            g = v;
-            b = p;
-            break;
-        case 2:
-            r = p;
-            g = v;
-            b = t;
-            break;
-        case 3:
-            r = p;
-            g = q;
-            b = v;
-            break;
-        case 4:
-            r = t;
-            g = p;
-            b = v;
-            break;
-        default:
-            r = v;
-            g = p;
-            b = q;
-        }
-
-        return {r : Math.floor(r * 255), g : Math.floor(g * 255), b : Math.floor(b * 255)};
-    },
+    _rgbToHSV : rgbToHSV,
+    _hsvToRGB : hsvToRGB,
     THRESHOLDING : function(threshold: number) : FilterProcessor {
         if (threshold < 0 || threshold > 255)
         {
@@ -1111,39 +1269,9 @@ export const Filters = {
                 out[3] = a;
             });
     },
-    CC_RED : function(adjustment: number) : FilterProcessor {
-        const adj = adjustment / 100;
-        const absAdj = Math.abs(adj);
-        return applyPixelTransformInPlace(
-            (r: number, g: number, b: number, a: number, out: number[]) => {
-                out[0] = adj > 0 ? r + (255 - r) * adj : r - r * absAdj;
-                out[1] = g;
-                out[2] = b;
-                out[3] = a;
-            });
-    },
-    CC_GREEN : function(adjustment: number) : FilterProcessor {
-        const adj = adjustment / 100;
-        const absAdj = Math.abs(adj);
-        return applyPixelTransformInPlace(
-            (r: number, g: number, b: number, a: number, out: number[]) => {
-                out[0] = r;
-                out[1] = adj > 0 ? g + (255 - g) * adj : g - g * absAdj;
-                out[2] = b;
-                out[3] = a;
-            });
-    },
-    CC_BLUE : function(adjustment: number) : FilterProcessor {
-        const adj = adjustment / 100;
-        const absAdj = Math.abs(adj);
-        return applyPixelTransformInPlace(
-            (r: number, g: number, b: number, a: number, out: number[]) => {
-                out[0] = r;
-                out[1] = g;
-                out[2] = adj > 0 ? b + (255 - b) * adj : b - b * absAdj;
-                out[3] = a;
-            });
-    },
+    CC_RED : function(adjustment: number) : FilterProcessor { return ccChannel(0, adjustment); },
+    CC_GREEN : function(adjustment: number) : FilterProcessor { return ccChannel(1, adjustment); },
+    CC_BLUE : function(adjustment: number) : FilterProcessor { return ccChannel(2, adjustment); },
     CONTRAST : function(adjustment: number) : FilterProcessor {
         if (adjustment < 0)
         {
@@ -1396,12 +1524,11 @@ export const Filters = {
         const dst = hexToRgb(target);
         if (!src || !dst)
         {
-            return function(_: CanvasRenderingContext2D,
-                            callback: () => void): void { callback(); };
+            return noopFilter;
         }
         const tol = Math.max(0, Math.min(255, tolerance === undefined ? 0 : tolerance));
         const strength = Math.max(0, Math.min(1, blend === undefined ? 1 : blend));
-        const targetHsv = Filters._rgbToHSV(dst[0], dst[1], dst[2]);
+        const targetHsv = rgbToHSV(dst[0], dst[1], dst[2]);
         return applyPixelTransformInPlace(
             (r: number, g: number, b: number, a: number, out: number[]) => {
                 const dr = r - src[0];
@@ -1432,7 +1559,7 @@ export const Filters = {
                 if (preserveLum)
                 {
                     const luma = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-                    const rgb = Filters._hsvToRGB(targetHsv.h, targetHsv.s, luma);
+                    const rgb = hsvToRGB(targetHsv.h, targetHsv.s, luma);
                     tr = rgb.r;
                     tg = rgb.g;
                     tb = rgb.b;
@@ -1443,298 +1570,24 @@ export const Filters = {
                 out[3] = a;
             });
     },
-    ALT_RED_GAMMA : function(amount: number) : FilterProcessor {
-        const strength = Math.max(0, Math.min(100, amount || 0));
-        if (strength === 0)
-        {
-            return function(_context: CanvasRenderingContext2D,
-                            callback: () => void): void { callback(); };
-        }
-        const exponent = 1 - (strength / 100) * 0.8;
-        const precomputed: number[] = [];
-        for (let i = 0; i < 256; i += 1)
-        {
-            precomputed[i] = clampByte(Math.pow(i / 255, exponent) * 255);
-        }
-        return applyPixelTransformInPlace(
-            (r: number, g: number, b: number, a: number, out: number[]) => {
-                out[0] = precomputed[r];
-                out[1] = g;
-                out[2] = b;
-                out[3] = a;
-            });
-    },
-    ALT_GREEN_GAMMA : function(amount: number) : FilterProcessor {
-        const strength = Math.max(0, Math.min(100, amount || 0));
-        if (strength === 0)
-        {
-            return function(_context: CanvasRenderingContext2D,
-                            callback: () => void): void { callback(); };
-        }
-        const exponent = 1 - (strength / 100) * 0.8;
-        const precomputed: number[] = [];
-        for (let i = 0; i < 256; i += 1)
-        {
-            precomputed[i] = clampByte(Math.pow(i / 255, exponent) * 255);
-        }
-        return applyPixelTransformInPlace(
-            (r: number, g: number, b: number, a: number, out: number[]) => {
-                out[0] = r;
-                out[1] = precomputed[g];
-                out[2] = b;
-                out[3] = a;
-            });
-    },
-    ALT_BLUE_GAMMA : function(amount: number) : FilterProcessor {
-        const strength = Math.max(0, Math.min(100, amount || 0));
-        if (strength === 0)
-        {
-            return function(_context: CanvasRenderingContext2D,
-                            callback: () => void): void { callback(); };
-        }
-        const exponent = 1 - (strength / 100) * 0.8;
-        const precomputed: number[] = [];
-        for (let i = 0; i < 256; i += 1)
-        {
-            precomputed[i] = clampByte(Math.pow(i / 255, exponent) * 255);
-        }
-        return applyPixelTransformInPlace(
-            (r: number, g: number, b: number, a: number, out: number[]) => {
-                out[0] = r;
-                out[1] = g;
-                out[2] = precomputed[b];
-                out[3] = a;
-            });
-    },
-    ALT_RED_SIGMOID : function(amount: number) : FilterProcessor {
-        const strength = Math.max(0, Math.min(100, amount || 0)) / 100;
-        if (strength === 0)
-        {
-            return function(_context: CanvasRenderingContext2D,
-                            callback: () => void): void { callback(); };
-        }
-        const a = 8;
-        const precomputed: number[] = [];
-        for (let i = 0; i < 256; i += 1)
-        {
-            const sig = 1 / (1 + Math.exp(-a * (i / 255 - 0.5)));
-            const target = sig * 255;
-            precomputed[i] = clampByte(i + (target - i) * strength);
-        }
-        return applyPixelTransformInPlace(
-            (r: number, g: number, b: number, aPx: number, out: number[]) => {
-                out[0] = precomputed[r];
-                out[1] = g;
-                out[2] = b;
-                out[3] = aPx;
-            });
-    },
-    ALT_GREEN_SIGMOID : function(amount: number) : FilterProcessor {
-        const strength = Math.max(0, Math.min(100, amount || 0)) / 100;
-        if (strength === 0)
-        {
-            return function(_context: CanvasRenderingContext2D,
-                            callback: () => void): void { callback(); };
-        }
-        const a = 8;
-        const precomputed: number[] = [];
-        for (let i = 0; i < 256; i += 1)
-        {
-            const sig = 1 / (1 + Math.exp(-a * (i / 255 - 0.5)));
-            const target = sig * 255;
-            precomputed[i] = clampByte(i + (target - i) * strength);
-        }
-        return applyPixelTransformInPlace(
-            (r: number, g: number, b: number, aPx: number, out: number[]) => {
-                out[0] = r;
-                out[1] = precomputed[g];
-                out[2] = b;
-                out[3] = aPx;
-            });
-    },
-    ALT_BLUE_SIGMOID : function(amount: number) : FilterProcessor {
-        const strength = Math.max(0, Math.min(100, amount || 0)) / 100;
-        if (strength === 0)
-        {
-            return function(_context: CanvasRenderingContext2D,
-                            callback: () => void): void { callback(); };
-        }
-        const a = 8;
-        const precomputed: number[] = [];
-        for (let i = 0; i < 256; i += 1)
-        {
-            const sig = 1 / (1 + Math.exp(-a * (i / 255 - 0.5)));
-            const target = sig * 255;
-            precomputed[i] = clampByte(i + (target - i) * strength);
-        }
-        return applyPixelTransformInPlace(
-            (r: number, g: number, b: number, aPx: number, out: number[]) => {
-                out[0] = r;
-                out[1] = g;
-                out[2] = precomputed[b];
-                out[3] = aPx;
-            });
-    },
+    ALT_RED_GAMMA : function(amount: number) : FilterProcessor { return altChannelGamma(0, amount); },
+    ALT_GREEN_GAMMA : function(amount: number) : FilterProcessor { return altChannelGamma(1, amount); },
+    ALT_BLUE_GAMMA : function(amount: number) : FilterProcessor { return altChannelGamma(2, amount); },
+    ALT_RED_SIGMOID : function(amount: number) : FilterProcessor { return altChannelSigmoid(0, amount); },
+    ALT_GREEN_SIGMOID : function(amount: number) : FilterProcessor { return altChannelSigmoid(1, amount); },
+    ALT_BLUE_SIGMOID : function(amount: number) : FilterProcessor { return altChannelSigmoid(2, amount); },
     ALT_RED_HUE : function(amount: number, window?: number) : FilterProcessor {
-        const strength = Math.max(-100, Math.min(100, amount || 0)) / 100;
-        if (strength === 0)
-        {
-            return function(_context: CanvasRenderingContext2D,
-                            callback: () => void): void { callback(); };
-        }
-        const windowSize = Math.max(0.02, Math.min(0.3, (window === undefined ? 8 : window) / 100));
-        return applyPixelTransformInPlace(
-            (r: number, g: number, b: number, aPx: number, out: number[]) => {
-                const hsv = Filters._rgbToHSV(r, g, b);
-                const hue = hsv.h;
-                const hueDist = Math.min(Math.abs(hue), Math.abs(1 - hue));
-                const hueWeight = clamp01(1 - hueDist / windowSize);
-                const weight = hueWeight * Math.abs(strength);
-                if (weight <= 0)
-                {
-                    out[0] = r;
-                    out[1] = g;
-                    out[2] = b;
-                    out[3] = aPx;
-                    return;
-                }
-                const sign = strength >= 0 ? 1 : -1;
-                const nextS = clamp01(hsv.s + sign * (1 - hsv.s) * weight);
-                const nextV = clamp01(hsv.v + sign * hsv.v * weight * 0.2);
-                const rgb = Filters._hsvToRGB(hsv.h, nextS, nextV);
-                out[0] = rgb.r;
-                out[1] = rgb.g;
-                out[2] = rgb.b;
-                out[3] = aPx;
-            });
+        return altChannelHue(0, amount, window);
     },
     ALT_GREEN_HUE : function(amount: number, window?: number) : FilterProcessor {
-        const strength = Math.max(-100, Math.min(100, amount || 0)) / 100;
-        if (strength === 0)
-        {
-            return function(_context: CanvasRenderingContext2D,
-                            callback: () => void): void { callback(); };
-        }
-        const windowSize = Math.max(0.02, Math.min(0.3, (window === undefined ? 8 : window) / 100));
-        return applyPixelTransformInPlace(
-            (r: number, g: number, b: number, aPx: number, out: number[]) => {
-                const hsv = Filters._rgbToHSV(r, g, b);
-                const hueDist = Math.abs(hsv.h - (1 / 3));
-                const hueWeight = clamp01(1 - hueDist / windowSize);
-                const weight = hueWeight * Math.abs(strength);
-                if (weight <= 0)
-                {
-                    out[0] = r;
-                    out[1] = g;
-                    out[2] = b;
-                    out[3] = aPx;
-                    return;
-                }
-                const sign = strength >= 0 ? 1 : -1;
-                const nextS = clamp01(hsv.s + sign * (1 - hsv.s) * weight);
-                const nextV = clamp01(hsv.v + sign * hsv.v * weight * 0.2);
-                const rgb = Filters._hsvToRGB(hsv.h, nextS, nextV);
-                out[0] = rgb.r;
-                out[1] = rgb.g;
-                out[2] = rgb.b;
-                out[3] = aPx;
-            });
+        return altChannelHue(1 / 3, amount, window);
     },
     ALT_BLUE_HUE : function(amount: number, window?: number) : FilterProcessor {
-        const strength = Math.max(-100, Math.min(100, amount || 0)) / 100;
-        if (strength === 0)
-        {
-            return function(_context: CanvasRenderingContext2D,
-                            callback: () => void): void { callback(); };
-        }
-        const windowSize = Math.max(0.02, Math.min(0.3, (window === undefined ? 8 : window) / 100));
-        return applyPixelTransformInPlace(
-            (r: number, g: number, b: number, aPx: number, out: number[]) => {
-                const hsv = Filters._rgbToHSV(r, g, b);
-                const hueDist = Math.abs(hsv.h - (2 / 3));
-                const hueWeight = clamp01(1 - hueDist / windowSize);
-                const weight = hueWeight * Math.abs(strength);
-                if (weight <= 0)
-                {
-                    out[0] = r;
-                    out[1] = g;
-                    out[2] = b;
-                    out[3] = aPx;
-                    return;
-                }
-                const sign = strength >= 0 ? 1 : -1;
-                const nextS = clamp01(hsv.s + sign * (1 - hsv.s) * weight);
-                const nextV = clamp01(hsv.v + sign * hsv.v * weight * 0.2);
-                const rgb = Filters._hsvToRGB(hsv.h, nextS, nextV);
-                out[0] = rgb.r;
-                out[1] = rgb.g;
-                out[2] = rgb.b;
-                out[3] = aPx;
-            });
+        return altChannelHue(2 / 3, amount, window);
     },
-    ALT_RED_VIBRANCE : function(amount: number) : FilterProcessor {
-        const strength = Math.max(0, Math.min(100, amount || 0)) / 100;
-        if (strength === 0)
-        {
-            return function(_context: CanvasRenderingContext2D,
-                            callback: () => void): void { callback(); };
-        }
-        const precomputed: number[] = [];
-        for (let i = 0; i < 256; i += 1)
-        {
-            const weight = (i / 255) * (i / 255) * strength;
-            precomputed[i] = clampByte(i + (255 - i) * weight);
-        }
-        return applyPixelTransformInPlace(
-            (r: number, g: number, b: number, aPx: number, out: number[]) => {
-                out[0] = precomputed[r];
-                out[1] = g;
-                out[2] = b;
-                out[3] = aPx;
-            });
-    },
-    ALT_GREEN_VIBRANCE : function(amount: number) : FilterProcessor {
-        const strength = Math.max(0, Math.min(100, amount || 0)) / 100;
-        if (strength === 0)
-        {
-            return function(_context: CanvasRenderingContext2D,
-                            callback: () => void): void { callback(); };
-        }
-        const precomputed: number[] = [];
-        for (let i = 0; i < 256; i += 1)
-        {
-            const weight = (i / 255) * (i / 255) * strength;
-            precomputed[i] = clampByte(i + (255 - i) * weight);
-        }
-        return applyPixelTransformInPlace(
-            (r: number, g: number, b: number, aPx: number, out: number[]) => {
-                out[0] = r;
-                out[1] = precomputed[g];
-                out[2] = b;
-                out[3] = aPx;
-            });
-    },
-    ALT_BLUE_VIBRANCE : function(amount: number) : FilterProcessor {
-        const strength = Math.max(0, Math.min(100, amount || 0)) / 100;
-        if (strength === 0)
-        {
-            return function(_context: CanvasRenderingContext2D,
-                            callback: () => void): void { callback(); };
-        }
-        const precomputed: number[] = [];
-        for (let i = 0; i < 256; i += 1)
-        {
-            const weight = (i / 255) * (i / 255) * strength;
-            precomputed[i] = clampByte(i + (255 - i) * weight);
-        }
-        return applyPixelTransformInPlace(
-            (r: number, g: number, b: number, aPx: number, out: number[]) => {
-                out[0] = r;
-                out[1] = g;
-                out[2] = precomputed[b];
-                out[3] = aPx;
-            });
-    },
+    ALT_RED_VIBRANCE : function(amount: number) : FilterProcessor { return altChannelVibrance(0, amount); },
+    ALT_GREEN_VIBRANCE : function(amount: number) : FilterProcessor { return altChannelVibrance(1, amount); },
+    ALT_BLUE_VIBRANCE : function(amount: number) : FilterProcessor { return altChannelVibrance(2, amount); },
     PCA_COLOR : function(mode: string) : FilterProcessor {
         const normalized = (mode || "").toLowerCase();
         return function(context: CanvasRenderingContext2D, callback: () => void): void {

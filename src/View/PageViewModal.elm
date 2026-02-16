@@ -795,7 +795,7 @@ enhancementToggleRanges model =
       , display = String.fromFloat model.filters.unsharpAmount
       , onInput = UserUpdatedFilterFloat FloatUnsharpAmount
       }
-    , { label = "Adaptive"
+    , { label = "Adaptive Threshold"
       , checked = model.filters.adaptiveEnabled
       , onToggle = ToggleAdaptive
       , min = "3"

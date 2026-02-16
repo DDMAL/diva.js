@@ -34,6 +34,8 @@
       this.scrollbarTrack = null;
       this.scrollbarThumb = null;
       this.isScrollbarDragging = false;
+      this.scrollbarMouseMove = null;
+      this.scrollbarMouseUp = null;
       this.handleWheelBound = this.handleWheel.bind(this);
       this.handleDoubleClickBound = this.handleDoubleClick.bind(this);
       this.handleViewportChangeBound = this.handleViewportChange.bind(this);
@@ -64,6 +66,14 @@
       if (this.container) {
         this.container.removeEventListener("wheel", this.handleWheelBound);
         this.container.removeEventListener("dblclick", this.handleDoubleClickBound);
+      }
+      if (this.scrollbarMouseMove) {
+        document.removeEventListener("mousemove", this.scrollbarMouseMove);
+        this.scrollbarMouseMove = null;
+      }
+      if (this.scrollbarMouseUp) {
+        document.removeEventListener("mouseup", this.scrollbarMouseUp);
+        this.scrollbarMouseUp = null;
       }
       if (this.viewer) {
         this.viewer.destroy();
@@ -144,7 +154,11 @@
       if (!this.viewer) {
         return;
       }
-      this.viewer.world.removeAll();
+      if (typeof this.viewer.close === "function") {
+        this.viewer.close();
+      } else {
+        this.viewer.world.removeAll();
+      }
       this.loadToken += 1;
       this.tileSources = tileSources;
       this.hasFitFirstPage = false;
@@ -362,8 +376,7 @@
       if (!this.viewer || this.pageOffsets.length === 0) {
         return;
       }
-      const lastIndex = this.pageOffsets.length - 1;
-      const totalHeight = this.pageOffsets[lastIndex] + (this.pageRowHeights[lastIndex] || 1);
+      const totalHeight = this.getTotalHeight();
       const layoutWidth = this.isSpreadMode() ? 2 : 1;
       if (this.scrollPlaneItem) {
         this.scrollPlaneItem.setPosition(new OpenSeadragon.Point(0, 0), true);
@@ -574,8 +587,7 @@
       if (this.pageOffsets.length === 0) {
         return;
       }
-      const lastIndex = this.pageOffsets.length - 1;
-      const totalHeight = this.pageOffsets[lastIndex] + (this.pageRowHeights[lastIndex] || 1);
+      const totalHeight = this.getTotalHeight();
       const bounds = vp.getBounds(true);
       const containerHeight = ((_b = this.container) == null ? void 0 : _b.getBoundingClientRect().height) || 1;
       const paddingViewport = 20 / containerHeight * bounds.height;
@@ -595,7 +607,7 @@
       if (this.suppressPageChange || this.isScrollbarDragging) {
         return;
       }
-      if (this.pageOffsets.length == 0) {
+      if (this.pageOffsets.length === 0) {
         return;
       }
       const vp = viewport != null ? viewport : (_a = this.viewer) == null ? void 0 : _a.viewport;
@@ -604,7 +616,7 @@
       }
       const center = vp.getCenter(true);
       const index = this.findIndexForOffset(center.y);
-      if (this.lastReportedIndex == index) {
+      if (this.lastReportedIndex === index) {
         return;
       }
       this.lastReportedIndex = index;
@@ -625,7 +637,7 @@
       this.emitCustomEvent("diva-page-change", { index, instant: true });
     }
     flushInitialPageChange() {
-      if (this.pageOffsets.length == 0) {
+      if (this.pageOffsets.length === 0) {
         this.suppressPageChange = false;
         return;
       }
@@ -735,6 +747,10 @@
     getCenterX() {
       return this.isSpreadMode() ? 1 : 0.5;
     }
+    getTotalHeight() {
+      const lastIndex = this.pageOffsets.length - 1;
+      return this.pageOffsets[lastIndex] + (this.pageRowHeights[lastIndex] || 1);
+    }
     getRowBounds(index) {
       const yOffset = this.pageOffsets[index] || 0;
       const rowHeight = this.pageRowHeights[index] || this.pageHeights[index] || 1;
@@ -749,10 +765,10 @@
         return index;
       }
       if (this.layoutMode === "spread-shift") {
-        if (index == 0) {
+        if (index === 0) {
           return 0;
         }
-        return index % 2 == 1 ? index : index - 1;
+        return index % 2 === 1 ? index : index - 1;
       }
       return index - index % 2;
     }
@@ -761,7 +777,7 @@
       if (!this.isSpreadMode()) {
         return startIndex;
       }
-      if (this.layoutMode === "spread-shift" && startIndex == 0) {
+      if (this.layoutMode === "spread-shift" && startIndex === 0) {
         return 0;
       }
       return Math.min(startIndex + 1, maxIndex);
@@ -788,8 +804,7 @@
       }
       const bounds = this.viewer.viewport.getBounds(true);
       const trackHeight = this.scrollbarTrack.clientHeight;
-      const lastIndex = this.pageOffsets.length - 1;
-      const totalHeight = this.pageOffsets[lastIndex] + (this.pageRowHeights[lastIndex] || 1);
+      const totalHeight = this.getTotalHeight();
       const viewportHeight = bounds.height;
       const scrollTop = bounds.y;
       const thumbHeight = Math.max(30, viewportHeight / totalHeight * trackHeight);
@@ -825,8 +840,7 @@
         const thumbHeight = this.scrollbarThumb.clientHeight;
         const clampedThumbTop = Math.max(0, Math.min(newThumbTop, trackHeight - thumbHeight));
         const scrollProgress = trackHeight - thumbHeight > 0 ? clampedThumbTop / (trackHeight - thumbHeight) : 0;
-        const lastIndex = this.pageOffsets.length - 1;
-        const totalHeight = this.pageOffsets[lastIndex] + (this.pageRowHeights[lastIndex] || 1);
+        const totalHeight = this.getTotalHeight();
         const viewportHeight = this.viewer.viewport.getBounds(true).height;
         const maxScroll = totalHeight - viewportHeight;
         const newScrollY = scrollProgress * maxScroll;
@@ -839,6 +853,8 @@
           this.emitPageChangeInstant();
         }
       };
+      this.scrollbarMouseMove = onMouseMove;
+      this.scrollbarMouseUp = onMouseUp;
       this.scrollbarThumb.addEventListener("mousedown", onMouseDown);
       document.addEventListener("mousemove", onMouseMove);
       document.addEventListener("mouseup", onMouseUp);
@@ -848,7 +864,7 @@
         return;
       }
       this.scrollbarTrack.addEventListener("click", (e) => {
-        var _a, _b;
+        var _a;
         if (e.target === this.scrollbarThumb || !this.viewer) {
           return;
         }
@@ -858,10 +874,8 @@
         }
         const clickY = e.clientY - rect.top;
         const trackHeight = rect.height;
-        const thumbHeight = ((_b = this.scrollbarThumb) == null ? void 0 : _b.clientHeight) || 30;
         const scrollProgress = Math.max(0, Math.min(1, clickY / trackHeight));
-        const lastIndex = this.pageOffsets.length - 1;
-        const totalHeight = this.pageOffsets[lastIndex] + (this.pageRowHeights[lastIndex] || 1);
+        const totalHeight = this.getTotalHeight();
         const viewportHeight = this.viewer.viewport.getBounds(true).height;
         const maxScroll = totalHeight - viewportHeight;
         const newScrollY = scrollProgress * maxScroll;
@@ -872,7 +886,7 @@
   customElements.define("osd-viewer", OsdViewer);
 
   // cache/diva.css
-  var diva_default = ":root{--diva-accent:#5a6bff;--diva-accent-light:#9aa4ff;--diva-border:#d9d4ce;--diva-danger:#d32f2f;--diva-dark-bg:#1c1d22;--diva-dark-border:#2c2d33;--diva-overlay-bg:#10111499;--diva-page-bg:#f7f5f1;--diva-shadow-dark:#00000026;--diva-shadow-focus:#9aa4ff59;--diva-shadow-modal:#00000040;--diva-surface:#e6e1dc;--diva-text-muted:#5c5a55;--diva-text-muted-on-dark:#ffffffb3;--diva-text-primary:#1b1b1b;--diva-toolbar-button-bg:#5258626b;--diva-toolbar-button-bg-hover:#5c636e85;--diva-toolbar-button-bg-fullscreen:#52586285;--diva-toolbar-button-bg-fullscreen-hover:#6068749e;--diva-toolbar-button-border:#ffffff59;--diva-toolbar-button-border-hover:#ffffff73;--diva-toolbar-button-border-fullscreen-hover:#fff9;--diva-toolbar-button-icon:#2c2d33;--diva-toolbar-button-shadow:inset 0 1px 0 #ffffff8c, inset 0 -1px 0 #ffffff2e;--diva-toolbar-button-shadow-hover:inset 0 1px 0 #ffffffb3, inset 0 -1px 0 #ffffff3d;--diva-white:#fff;--diva-font-lg:16px;--diva-font-md:13px;--diva-font-sm:11px;--diva-font-xs:10px;--diva-font-xl:20px;color-scheme:light}*{box-sizing:border-box}.list-reset{margin:0;padding:0;list-style:none}.ui-button{text-align:left;cursor:pointer;color:var(--diva-text-primary);font-size:var(--diva-font-lg);background-color:#0000;border:none;padding:0}.ui-button:hover{background-color:var(--diva-surface)}.ui-card{cursor:pointer;border-radius:6px;width:100%;padding:6px}.ui-card--dark{background-color:var(--diva-dark-bg)}.diva-app{flex-direction:column;flex:1;height:100%;min-height:0;padding:24px;display:flex}.diva-app.is-fullscreen{height:100vh;min-height:100vh;padding:0}.diva-app-header{font-size:var(--diva-font-lg);align-items:center;gap:12px;margin-bottom:16px;font-weight:600;display:flex}.diva-app-title{font-size:var(--diva-font-xl);text-align:left;color:var(--diva-text-primary);margin-bottom:12px;font-weight:600}.diva-app-title.is-fullscreen{color:var(--diva-white)}.diva-app-body{flex:1;align-items:stretch;gap:0;height:100%;min-height:0;display:flex;position:relative}.diva-app-body.is-fullscreen{flex:1;min-height:0}.diva-canvas-column{flex-direction:column;flex:1;gap:24px;min-height:0;display:flex}.diva-canvas-column.is-fullscreen{flex:1;height:100%;min-height:0}.diva-canvas-wrapper{flex:1;min-height:0;position:relative}.diva-canvas{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);border-radius:6px 0 0 6px;width:100%;height:100%;overflow:hidden}.diva-canvas.is-fullscreen{border-radius:0;flex:1;height:100%}.diva-canvas.has-collection{border-radius:0}.metadata-panel{height:100%;padding:12px;overflow:auto}.metadata-body{flex-direction:column;gap:10px;display:flex}.metadata-item{flex-direction:column;gap:4px;display:flex}.metadata-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}.metadata-value{font-size:var(--diva-font-lg);color:var(--diva-text-muted);line-height:1.4}.contents-empty{font-size:var(--diva-font-lg);color:var(--diva-text-muted);padding-left:12px}.sidebar-resizer,.collection-resizer{width:12px;font-size:var(--diva-font-xl);color:var(--diva-white);background-color:var(--diva-text-muted);cursor:ew-resize;user-select:none;touch-action:none;flex:0 0 12px;justify-content:center;align-self:stretch;align-items:center;line-height:1;display:flex}.sidebar-resizer.is-hidden,.collection-resizer.is-hidden{display:none}.sidebar-panel.is-fullscreen,.collection-panel.is-fullscreen{border-radius:0;height:100%}.sidebar-panel.is-hidden,.collection-panel.is-hidden{opacity:0;pointer-events:none;border-width:0;padding:0;overflow:hidden}.required-statement-dock{justify-content:flex-end;width:100%;margin-top:12px;padding-right:8px;display:flex}.required-statement{font-size:var(--diva-font-md);color:var(--diva-text-muted);text-align:right;max-width:20vw;line-height:1.4}.diva-scrollbar-track{background:var(--diva-surface);border:1px solid var(--diva-border);z-index:100;border-radius:6px;width:12px;position:absolute;top:4px;bottom:4px;right:4px}.diva-scrollbar-thumb{background:var(--diva-text-muted);cursor:pointer;border-radius:5px;min-height:30px;position:absolute;left:1px;right:1px}.diva-scrollbar-thumb:hover{background:var(--diva-text-primary)}.diva-scrollbar-thumb:active{background:var(--diva-dark-border)}.throbber-overlay{pointer-events:none;justify-content:center;align-items:center;display:flex;position:absolute;inset:0}.throbber{background-color:var(--diva-white);width:64px;height:64px;box-shadow:0 8px 16px var(--diva-shadow-dark);border-radius:8px;flex-wrap:wrap;padding:8px;display:flex}.throbber-cube{background-color:var(--diva-accent);width:16px;height:16px;animation-name:diva-cube-grid;animation-duration:1.3s;animation-timing-function:ease-in-out;animation-iteration-count:infinite}@keyframes diva-cube-grid{0%{transform:scale(1)}35%{transform:scale(0)}70%{transform:scale(1)}to{transform:scale(1)}}@media (width<=720px){.diva-app{padding:12px}.diva-app-body{flex-direction:column;gap:12px}.sidebar-resizer,.collection-resizer{display:none}}.sidebar-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0 6px 6px 0;flex-direction:column;width:320px;height:100%;min-height:0;display:flex;overflow:hidden}.sidebar-tabs{border:1px solid var(--diva-surface);background-color:var(--diva-surface);border-radius:0 6px 0 0;display:flex}.sidebar-tab-button{font-size:var(--diva-font-md);text-transform:uppercase;cursor:pointer;color:var(--diva-text-muted);background-color:#0000;border:none;flex:1;padding:10px 12px}.sidebar-tab-button.is-active{background-color:var(--diva-white);font-weight:600}.sidebar-content{background-color:var(--diva-page-bg);flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}.sidebar-pane{flex:1;width:100%;min-height:0}.sidebar-pane.is-hidden{display:none}.thumbs{scroll-behavior:smooth;background-color:var(--diva-dark-bg);flex:1;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:10px;width:100%;height:100%;min-height:0;padding:12px;display:grid;overflow-y:auto}.thumbs.is-fullscreen{height:100%}.thumbs-item{border:1px solid var(--diva-dark-border);text-align:left;flex-direction:column;justify-content:flex-start;align-items:stretch;max-width:none;display:flex}.thumbs-item:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.thumbs-item.is-active{border-color:var(--diva-accent-light);box-shadow:0 0 0 var(--diva-shadow-focus);background-color:var(--diva-dark-bg);outline:2px solid var(--diva-accent-light);outline-offset:2px}.thumbs-image{border-radius:3px;width:100%;height:auto;display:block}.thumbs-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted-on-dark);margin-top:6px;line-height:1.3}.thumbs-label.is-active{color:var(--diva-white)}.contents-panel{height:100%;padding:12px;overflow:auto}.contents-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:10px;font-weight:600}.contents-view-tabs{gap:8px;margin-bottom:12px;display:flex}.contents-view-button{background-color:var(--diva-surface);border:1px solid var(--diva-border);font-size:var(--diva-font-sm);color:var(--diva-text-muted);cursor:pointer;border-radius:6px;padding:4px 10px}.contents-view-button.is-active{background-color:var(--diva-white);border-color:var(--diva-accent);color:var(--diva-text-primary)}.contents-list-nested{margin-top:6px;padding-left:16px}.contents-item{margin-bottom:6px}.contents-meta{border:1px solid var(--diva-dark-border);margin-top:6px;padding:8px}.contents-button:hover{color:var(--diva-accent)}@media (width<=720px){.sidebar-panel{border-radius:6px;height:auto;width:100%!important}.sidebar-panel.is-overlay{z-index:100;width:100%;height:100%;box-shadow:0 12px 24px var(--diva-shadow-dark);border-radius:0;position:absolute;inset:0}.sidebar-panel.is-mobile-hidden{display:none}.thumbs{grid-template-columns:repeat(3,minmax(0,1fr));width:100%;height:auto;overflow:auto hidden}.thumbs-item{min-width:120px}}.canvas-toolbar-stack{flex-direction:column;gap:6px;width:100%;min-width:0;display:flex}.canvas-toolbar{align-items:center;width:100%;margin-bottom:0;display:flex}.canvas-toolbar-section{flex:none;align-items:center;gap:12px;min-width:0;display:flex}.canvas-toolbar-section.is-right{flex:none;margin-left:auto}.canvas-toolbar-item{flex-direction:column;flex:none;align-items:center;gap:6px;width:80px;display:flex}.canvas-toolbar-button{background-color:var(--diva-toolbar-button-bg);color:var(--diva-toolbar-button-icon);border:2px solid var(--diva-toolbar-button-icon);box-shadow:var(--diva-toolbar-button-shadow);-webkit-backdrop-filter:blur(10px)saturate(140%);cursor:pointer;border-radius:6px;align-items:center;width:80%;height:46px;padding:4px 6px;display:flex}.canvas-toolbar-button:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.canvas-toolbar-button:hover{background-color:var(--diva-toolbar-button-bg-hover);border-color:var(--diva-toolbar-button-icon);box-shadow:var(--diva-toolbar-button-shadow-hover)}.canvas-toolbar-button.is-fullscreen{color:var(--diva-white);background-color:var(--diva-toolbar-button-bg-fullscreen);border-color:var(--diva-toolbar-button-border-hover)}.canvas-toolbar-button.is-fullscreen:hover{background-color:var(--diva-toolbar-button-bg-fullscreen-hover);border-color:var(--diva-toolbar-button-border-fullscreen-hover)}.canvas-toolbar-button.is-disabled{opacity:.4;cursor:not-allowed}.canvas-toolbar-button.is-disabled:hover{background-color:var(--diva-toolbar-button-bg);border-color:var(--diva-toolbar-button-icon);box-shadow:var(--diva-toolbar-button-shadow)}.canvas-toolbar-button.is-fullscreen.is-disabled:hover{background-color:var(--diva-toolbar-button-bg-fullscreen);border-color:var(--diva-toolbar-button-border-hover);box-shadow:var(--diva-toolbar-button-shadow)}.canvas-toolbar-label{font-size:var(--diva-font-sm);color:var(--diva-text-primary);white-space:normal;text-overflow:ellipsis;text-align:center;text-transform:uppercase;word-break:break-word;min-height:2.2em;font-weight:500;line-height:1.1;overflow:hidden}.canvas-toolbar-label.is-fullscreen{color:var(--diva-white)}.canvas-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-align:left;white-space:normal;overflow-wrap:anywhere;word-break:break-word;width:100%}.canvas-label.is-fullscreen{color:var(--diva-white)}.status{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:0}.status.is-error{color:var(--diva-danger)}@media (width<=720px){.canvas-toolbar{flex-wrap:wrap;gap:8px}.canvas-toolbar-item{width:64px}.canvas-label,.status{display:none}}.modal-overlay{background-color:var(--diva-overlay-bg);z-index:100;justify-content:center;align-items:center;padding:24px;display:flex;position:fixed;inset:0}.modal-overlay.is-fullscreen{padding:0}.modal{background-color:var(--diva-page-bg);color:var(--diva-text-primary);width:min(1440px,96vw);max-height:90vh;box-shadow:0 20px 40px var(--diva-shadow-modal);border-radius:10px;flex-direction:column;display:flex}.modal.is-narrow{width:min(960px,94vw)}.modal.is-page-view{height:80vh;max-height:80vh}.modal.is-fullscreen{border-radius:0;width:100vw;height:100vh;max-height:100vh}.modal-header{justify-content:space-between;align-items:center;padding:16px 20px 0;display:flex}.modal-actions{gap:8px;display:flex}.modal-close-action .canvas-toolbar-button{color:var(--diva-danger);box-shadow:none;-webkit-backdrop-filter:none;background-color:#0000;border:none;width:auto;height:auto;padding:2px}.modal-close-action .canvas-toolbar-button:hover{background-color:#d32f2f1f;border-color:#0000}.modal-close-action .canvas-toolbar-item{gap:2px;width:32px}.modal-close-action .canvas-toolbar-label{font-size:var(--diva-font-xs);min-height:auto}.modal-title-stack{flex-direction:column;gap:4px;display:flex}.modal-title{font-size:var(--diva-font-lg);font-weight:600}.modal-subtitle{font-size:var(--diva-font-lg);color:var(--diva-text-primary)}.modal-subtitle.is-muted{font-size:var(--diva-font-md)}.modal-body{flex:1;grid-template-columns:minmax(0,1fr) 240px;gap:16px;min-height:0;padding:16px 20px 20px;display:grid}.modal-body.is-no-gap{gap:0}.modal-body.is-two-column{grid-template-columns:minmax(0,1fr) 200px;align-items:start}.modal-body.is-no-sidebar{grid-template-columns:minmax(0,1fr)}.modal-body.is-fullscreen{flex:1;min-height:0}.modal-body.is-with-choices{grid-template-columns:120px minmax(0,1fr) 240px}.modal-body.is-with-choices-no-sidebar{grid-template-columns:120px minmax(0,1fr)}.modal-viewer{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);height:100%;overflow:hidden}.modal-viewer.is-fullscreen{border-radius:0;height:100%}.modal-viewer.is-outer-left{border-radius:6px 0 0 6px}.modal-canvas{width:100%;height:100%;display:block}.modal-sidebar{background-color:var(--diva-white);border-top:1px solid var(--diva-border);border-right:1px solid var(--diva-border);border-bottom:1px solid var(--diva-border);border-radius:0 6px 6px 0;padding:16px;overflow:auto}.manifest-info-logo-wrap{text-align:center;flex-direction:column;align-items:center;gap:8px;display:flex}.manifest-info-logo{width:100%;max-width:180px;height:auto}.page-view-choices{background-color:var(--diva-dark-bg);border-radius:6px 0 0 6px;flex-direction:column;gap:8px;padding:8px;display:flex;overflow:auto}.page-view-choice{border:2px solid #0000;flex-direction:column;gap:4px;display:flex}.page-view-choice:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.page-view-choice:hover{background-color:var(--diva-dark-bg)}.page-view-choice.is-active{border-color:var(--diva-accent-light);background-color:var(--diva-dark-bg)}.page-view-choice-thumb{border-radius:3px;width:100%;height:auto;display:block}.page-view-choice-label{font-size:var(--diva-font-xs);color:var(--diva-text-muted);text-overflow:ellipsis;white-space:nowrap;line-height:1.2;overflow:hidden}.filter-group{border-bottom:1px solid var(--diva-border);margin-bottom:12px;padding-bottom:12px}.filter-title-button{text-align:left;cursor:pointer;width:100%;font-size:var(--diva-font-sm);text-transform:uppercase;letter-spacing:.08em;color:var(--diva-text-muted);background-color:#0000;border:none;align-items:center;gap:8px;margin-bottom:8px;padding:0;font-weight:600;display:flex}.filter-title-button.is-collapsed{margin-bottom:0}.filter-title-icon{border-top:4px solid #0000;border-bottom:4px solid #0000;border-left:6px solid var(--diva-text-muted);width:0;height:0;transition:transform .15s;display:inline-block}.filter-title-icon.is-expanded{transform:rotate(90deg)}.filter-row{flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle{font-size:var(--diva-font-md);align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle.is-inline{margin-bottom:0}.filter-range-group{flex-direction:column;gap:6px;margin-bottom:10px;display:flex}.filter-range-header{justify-content:space-between;align-items:center;gap:8px;display:flex}.filter-range-header-right{align-items:center;gap:8px;display:flex}.filter-range-input{width:100%}.filter-value{font-size:var(--diva-font-sm);color:var(--diva-text-muted);text-align:right;width:40px}.filter-reset{font-size:var(--diva-font-xs);background-color:var(--diva-surface);border:1px solid var(--diva-border);cursor:pointer;color:var(--diva-text-muted);border-radius:3px;padding:2px 6px}.filter-reset:hover{background-color:var(--diva-border)}.filter-json{width:100%;min-height:120px;font-size:var(--diva-font-sm);border:1px solid var(--diva-border);background-color:var(--diva-white);resize:vertical;border-radius:4px;padding:6px 8px;font-family:Menlo,Monaco,Consolas,Liberation Mono,monospace}.filter-json-error{font-size:var(--diva-font-sm);color:var(--diva-danger);margin-top:4px}.filter-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted)}.filter-select{border:1px solid var(--diva-border);background-color:var(--diva-white);font-size:var(--diva-font-sm);border-radius:4px;padding:4px 6px}.filter-color-input{border:1px solid var(--diva-border);background-color:var(--diva-white);border-radius:4px;width:42px;height:28px;padding:0}.collection-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:6px 0 0 6px;flex-direction:column;height:70vh;display:flex;overflow:hidden}.collection-header{background-color:var(--diva-surface);border-bottom:1px solid var(--diva-border);border-radius:6px 0 0;padding:12px}.collection-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:4px;font-weight:600}.collection-summary{font-size:var(--diva-font-md);color:var(--diva-text-muted);line-height:1.4}.collection-tree-item{padding-left:12px}.collection-node-button{align-items:center;gap:6px;width:100%;padding:6px 8px;display:flex}.collection-expand-icon{flex-shrink:0;justify-content:center;align-items:center;width:16px;height:16px;display:flex}.manifest-tree-item{padding:6px 8px 6px 30px}.manifest-tree-item.is-active{background-color:var(--diva-border);font-weight:600}.sidebar-pane.is-scroll{overflow-y:auto}@media (width<=720px){.collection-panel{border-radius:6px;width:100%;height:auto}}";
+  var diva_default = ":root{--diva-accent:#5a6bff;--diva-accent-light:#9aa4ff;--diva-border:#d9d4ce;--diva-danger:#d32f2f;--diva-dark-bg:#1c1d22;--diva-dark-border:#2c2d33;--diva-overlay-bg:#10111499;--diva-page-bg:#f7f5f1;--diva-shadow-dark:#00000026;--diva-shadow-focus:#9aa4ff59;--diva-shadow-modal:#00000040;--diva-surface:#e6e1dc;--diva-text-muted:#5c5a55;--diva-text-muted-on-dark:#ffffffb3;--diva-text-primary:#1b1b1b;--diva-toolbar-button-bg:#5258626b;--diva-toolbar-button-bg-hover:#5c636e85;--diva-toolbar-button-bg-fullscreen:#52586285;--diva-toolbar-button-bg-fullscreen-hover:#6068749e;--diva-toolbar-button-border:#ffffff59;--diva-toolbar-button-border-hover:#ffffff73;--diva-toolbar-button-border-fullscreen-hover:#fff9;--diva-toolbar-button-icon:#2c2d33;--diva-toolbar-button-shadow:inset 0 1px 0 #ffffff8c, inset 0 -1px 0 #ffffff2e;--diva-toolbar-button-shadow-hover:inset 0 1px 0 #ffffffb3, inset 0 -1px 0 #ffffff3d;--diva-white:#fff;--diva-font-lg:16px;--diva-font-md:13px;--diva-font-sm:11px;--diva-font-xs:10px;--diva-font-xl:20px;color-scheme:light}*{box-sizing:border-box}.list-reset{margin:0;padding:0;list-style:none}.ui-button{text-align:left;cursor:pointer;color:var(--diva-text-primary);font-size:var(--diva-font-lg);background-color:#0000;border:none;padding:0}.ui-button:hover{background-color:var(--diva-surface)}.ui-card{cursor:pointer;border-radius:6px;width:100%;padding:6px}.ui-card--dark{background-color:var(--diva-dark-bg)}.diva-app{flex-direction:column;flex:1;height:100%;min-height:0;padding:24px;display:flex}.diva-app.is-fullscreen{height:100vh;min-height:100vh;padding:0}.diva-app-header{font-size:var(--diva-font-lg);align-items:center;gap:12px;margin-bottom:16px;font-weight:600;display:flex}.diva-app-title{font-size:var(--diva-font-xl);text-align:left;color:var(--diva-text-primary);margin-bottom:12px;font-weight:600}.diva-app-title.is-fullscreen{color:var(--diva-white)}.diva-app-body{flex:1;align-items:stretch;gap:0;height:100%;min-height:0;display:flex;position:relative}.diva-app-body.is-fullscreen{flex:1;min-height:0}.diva-canvas-column{flex-direction:column;flex:1;gap:24px;min-height:0;display:flex}.diva-canvas-column.is-fullscreen{flex:1;height:100%;min-height:0}.diva-canvas-wrapper{flex:1;min-height:0;position:relative}.diva-canvas{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);border-radius:6px 0 0 6px;width:100%;height:100%;overflow:hidden}.diva-canvas.is-fullscreen{border-radius:0;flex:1;height:100%}.diva-canvas.has-collection{border-radius:0}.metadata-panel{height:100%;padding:12px;overflow:auto}.metadata-body{flex-direction:column;gap:10px;display:flex}.metadata-item{flex-direction:column;gap:4px;display:flex}.metadata-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}.metadata-value{font-size:var(--diva-font-lg);color:var(--diva-text-muted);line-height:1.4}.contents-empty{font-size:var(--diva-font-lg);color:var(--diva-text-muted);padding-left:12px}.sidebar-resizer,.collection-resizer{width:12px;font-size:var(--diva-font-xl);color:var(--diva-white);background-color:var(--diva-text-muted);cursor:ew-resize;user-select:none;touch-action:none;flex:0 0 12px;justify-content:center;align-self:stretch;align-items:center;line-height:1;display:flex}.sidebar-resizer.is-hidden,.collection-resizer.is-hidden{display:none}.sidebar-panel.is-fullscreen,.collection-panel.is-fullscreen{border-radius:0;height:100%}.sidebar-panel.is-hidden,.collection-panel.is-hidden{opacity:0;pointer-events:none;border-width:0;padding:0;overflow:hidden}.required-statement-dock{justify-content:flex-end;width:100%;margin-top:12px;padding-right:8px;display:flex}.required-statement{font-size:var(--diva-font-md);color:var(--diva-text-muted);text-align:right;min-width:250px;max-width:20vw;line-height:1.4}.diva-scrollbar-track{background:var(--diva-surface);border:1px solid var(--diva-border);z-index:100;border-radius:6px;width:12px;position:absolute;top:4px;bottom:4px;right:4px}.diva-scrollbar-thumb{background:var(--diva-text-muted);cursor:pointer;border-radius:5px;min-height:30px;position:absolute;left:1px;right:1px}.diva-scrollbar-thumb:hover{background:var(--diva-text-primary)}.diva-scrollbar-thumb:active{background:var(--diva-dark-border)}.throbber-overlay{pointer-events:none;justify-content:center;align-items:center;display:flex;position:absolute;inset:0}.throbber{background-color:var(--diva-white);width:64px;height:64px;box-shadow:0 8px 16px var(--diva-shadow-dark);border-radius:8px;flex-wrap:wrap;padding:8px;display:flex}.throbber-cube{background-color:var(--diva-accent);width:16px;height:16px;animation-name:diva-cube-grid;animation-duration:1.3s;animation-timing-function:ease-in-out;animation-iteration-count:infinite}@keyframes diva-cube-grid{0%{transform:scale(1)}35%{transform:scale(0)}70%{transform:scale(1)}to{transform:scale(1)}}@media (width<=720px){.diva-app{padding:12px}.diva-app-body{flex-direction:column;gap:12px}.sidebar-resizer,.collection-resizer{display:none}}.sidebar-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0 6px 6px 0;flex-direction:column;width:320px;height:100%;min-height:0;display:flex;overflow:hidden}.sidebar-tabs{border:1px solid var(--diva-surface);background-color:var(--diva-surface);border-radius:0 6px 0 0;display:flex}.sidebar-tab-button{font-size:var(--diva-font-md);text-transform:uppercase;cursor:pointer;color:var(--diva-text-muted);background-color:#0000;border:none;flex:1;padding:10px 12px}.sidebar-tab-button.is-active{background-color:var(--diva-white);font-weight:600}.sidebar-content{background-color:var(--diva-page-bg);flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}.sidebar-pane{flex:1;width:100%;min-height:0}.sidebar-pane.is-hidden{display:none}.thumbs{scroll-behavior:smooth;background-color:var(--diva-dark-bg);flex:1;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:10px;width:100%;height:100%;min-height:0;padding:12px;display:grid;overflow-y:auto}.thumbs.is-fullscreen{height:100%}.thumbs-item{border:1px solid var(--diva-dark-border);text-align:left;flex-direction:column;justify-content:flex-start;align-items:stretch;max-width:none;display:flex}.thumbs-item:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.thumbs-item.is-active{border-color:var(--diva-accent-light);box-shadow:0 0 0 var(--diva-shadow-focus);background-color:var(--diva-dark-bg);outline:2px solid var(--diva-accent-light);outline-offset:2px}.thumbs-image{border-radius:3px;width:100%;height:auto;display:block}.thumbs-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted-on-dark);margin-top:6px;line-height:1.3}.thumbs-label.is-active{color:var(--diva-white)}.contents-panel{height:100%;padding:12px;overflow:auto}.contents-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:10px;font-weight:600}.contents-view-tabs{gap:8px;margin-bottom:12px;display:flex}.contents-view-button{background-color:var(--diva-surface);border:1px solid var(--diva-border);font-size:var(--diva-font-sm);color:var(--diva-text-muted);cursor:pointer;border-radius:6px;padding:4px 10px}.contents-view-button.is-active{background-color:var(--diva-white);border-color:var(--diva-accent);color:var(--diva-text-primary)}.contents-list-nested{margin-top:6px;padding-left:16px}.contents-item{margin-bottom:6px}.contents-meta{border:1px solid var(--diva-dark-border);margin-top:6px;padding:8px}.contents-button:hover{color:var(--diva-accent)}@media (width<=720px){.sidebar-panel{border-radius:6px;height:auto;width:100%!important}.sidebar-panel.is-overlay{z-index:100;width:100%;height:100%;box-shadow:0 12px 24px var(--diva-shadow-dark);border-radius:0;position:absolute;inset:0}.sidebar-panel.is-mobile-hidden{display:none}.thumbs{grid-template-columns:repeat(3,minmax(0,1fr));width:100%;height:auto;overflow:auto hidden}.thumbs-item{min-width:120px}}.canvas-toolbar-stack{flex-direction:column;gap:6px;width:100%;min-width:0;display:flex}.canvas-toolbar{align-items:center;width:100%;margin-bottom:0;display:flex}.canvas-toolbar-section{flex:none;align-items:center;gap:12px;min-width:0;display:flex}.canvas-toolbar-section.is-right{flex:none;margin-left:auto}.canvas-toolbar-item{flex-direction:column;flex:none;align-items:center;gap:6px;width:80px;display:flex}.canvas-toolbar-button{background-color:var(--diva-toolbar-button-bg);color:var(--diva-toolbar-button-icon);border:2px solid var(--diva-toolbar-button-icon);box-shadow:var(--diva-toolbar-button-shadow);-webkit-backdrop-filter:blur(10px)saturate(140%);cursor:pointer;border-radius:6px;align-items:center;width:80%;height:46px;padding:4px 6px;display:flex}.canvas-toolbar-button:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.canvas-toolbar-button:hover{background-color:var(--diva-toolbar-button-bg-hover);border-color:var(--diva-toolbar-button-icon);box-shadow:var(--diva-toolbar-button-shadow-hover)}.canvas-toolbar-button.is-fullscreen{color:var(--diva-white);background-color:var(--diva-toolbar-button-bg-fullscreen);border-color:var(--diva-toolbar-button-border-hover)}.canvas-toolbar-button.is-fullscreen:hover{background-color:var(--diva-toolbar-button-bg-fullscreen-hover);border-color:var(--diva-toolbar-button-border-fullscreen-hover)}.canvas-toolbar-button.is-disabled{opacity:.4;cursor:not-allowed}.canvas-toolbar-button.is-disabled:hover{background-color:var(--diva-toolbar-button-bg);border-color:var(--diva-toolbar-button-icon);box-shadow:var(--diva-toolbar-button-shadow)}.canvas-toolbar-button.is-fullscreen.is-disabled:hover{background-color:var(--diva-toolbar-button-bg-fullscreen);border-color:var(--diva-toolbar-button-border-hover);box-shadow:var(--diva-toolbar-button-shadow)}.canvas-toolbar-label{font-size:var(--diva-font-sm);color:var(--diva-text-primary);white-space:normal;text-overflow:ellipsis;text-align:center;text-transform:uppercase;word-break:break-word;min-height:2.2em;font-weight:500;line-height:1.1;overflow:hidden}.canvas-toolbar-label.is-fullscreen{color:var(--diva-white)}.canvas-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-align:left;white-space:normal;overflow-wrap:anywhere;word-break:break-word;width:100%}.canvas-label.is-fullscreen{color:var(--diva-white)}.status{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:0}.status.is-error{color:var(--diva-danger)}@media (width<=720px){.canvas-toolbar{flex-wrap:wrap;gap:8px}.canvas-toolbar-item{width:64px}.canvas-label,.status{display:none}}.modal-overlay{background-color:var(--diva-overlay-bg);z-index:100;justify-content:center;align-items:center;padding:24px;display:flex;position:fixed;inset:0}.modal-overlay.is-fullscreen{padding:0}.modal{background-color:var(--diva-page-bg);color:var(--diva-text-primary);width:min(1440px,96vw);max-height:90vh;box-shadow:0 20px 40px var(--diva-shadow-modal);border-radius:10px;flex-direction:column;display:flex}.modal.is-narrow{width:min(960px,94vw)}.modal.is-page-view{height:80vh;max-height:80vh}.modal.is-fullscreen{border-radius:0;width:100vw;height:100vh;max-height:100vh}.modal-header{justify-content:space-between;align-items:center;padding:16px 20px 0;display:flex}.modal-actions{gap:8px;display:flex}.modal-close-action .canvas-toolbar-button{color:var(--diva-danger);box-shadow:none;-webkit-backdrop-filter:none;background-color:#0000;border:none;width:auto;height:auto;padding:2px}.modal-close-action .canvas-toolbar-button:hover{background-color:#d32f2f1f;border-color:#0000}.modal-close-action .canvas-toolbar-item{gap:2px;width:32px}.modal-close-action .canvas-toolbar-label{font-size:var(--diva-font-xs);min-height:auto}.modal-title-stack{flex-direction:column;gap:4px;display:flex}.modal-title{font-size:var(--diva-font-lg);font-weight:600}.modal-subtitle{font-size:var(--diva-font-lg);color:var(--diva-text-primary)}.modal-subtitle.is-muted{font-size:var(--diva-font-md)}.modal-body{flex:1;grid-template-columns:minmax(0,1fr) 240px;gap:16px;min-height:0;padding:16px 20px 20px;display:grid}.modal-body.is-no-gap{gap:0}.modal-body.is-two-column{grid-template-columns:minmax(0,1fr) 200px;align-items:start}.modal-body.is-no-sidebar{grid-template-columns:minmax(0,1fr)}.modal-body.is-fullscreen{flex:1;min-height:0}.modal-body.is-with-choices{grid-template-columns:120px minmax(0,1fr) 240px}.modal-body.is-with-choices-no-sidebar{grid-template-columns:120px minmax(0,1fr)}.modal-viewer{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);height:100%;overflow:hidden}.modal-viewer.is-fullscreen{border-radius:0;height:100%}.modal-viewer.is-outer-left{border-radius:6px 0 0 6px}.modal-canvas{width:100%;height:100%;display:block}.modal-sidebar{background-color:var(--diva-white);border-top:1px solid var(--diva-border);border-right:1px solid var(--diva-border);border-bottom:1px solid var(--diva-border);border-radius:0 6px 6px 0;padding:16px;overflow:auto}.manifest-info-logo-wrap{text-align:center;flex-direction:column;align-items:center;gap:8px;display:flex}.manifest-info-logo{width:100%;max-width:180px;height:auto}.page-view-choices{background-color:var(--diva-dark-bg);border-radius:6px 0 0 6px;flex-direction:column;gap:8px;padding:8px;display:flex;overflow:auto}.page-view-choice{border:2px solid #0000;flex-direction:column;gap:4px;display:flex}.page-view-choice:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.page-view-choice:hover{background-color:var(--diva-dark-bg)}.page-view-choice.is-active{border-color:var(--diva-accent-light);background-color:var(--diva-dark-bg)}.page-view-choice-thumb{border-radius:3px;width:100%;height:auto;display:block}.page-view-choice-label{font-size:var(--diva-font-xs);color:var(--diva-text-muted);text-overflow:ellipsis;white-space:nowrap;line-height:1.2;overflow:hidden}.filter-group{border-bottom:1px solid var(--diva-border);margin-bottom:12px;padding-bottom:12px}.filter-title-button{text-align:left;cursor:pointer;width:100%;font-size:var(--diva-font-sm);text-transform:uppercase;letter-spacing:.08em;color:var(--diva-text-muted);background-color:#0000;border:none;align-items:center;gap:8px;margin-bottom:8px;padding:0;font-weight:600;display:flex}.filter-title-button.is-collapsed{margin-bottom:0}.filter-title-icon{border-top:4px solid #0000;border-bottom:4px solid #0000;border-left:6px solid var(--diva-text-muted);width:0;height:0;transition:transform .15s;display:inline-block}.filter-title-icon.is-expanded{transform:rotate(90deg)}.filter-row{flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle{font-size:var(--diva-font-md);align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle.is-inline{margin-bottom:0}.filter-range-group{flex-direction:column;gap:6px;margin-bottom:10px;display:flex}.filter-range-header{justify-content:space-between;align-items:center;gap:8px;display:flex}.filter-range-header-right{align-items:center;gap:8px;display:flex}.filter-range-input{width:100%}.filter-value{font-size:var(--diva-font-sm);color:var(--diva-text-muted);text-align:right;width:40px}.filter-reset{font-size:var(--diva-font-xs);background-color:var(--diva-surface);border:1px solid var(--diva-border);cursor:pointer;color:var(--diva-text-muted);border-radius:3px;padding:2px 6px}.filter-reset:hover{background-color:var(--diva-border)}.filter-json{width:100%;min-height:120px;font-size:var(--diva-font-sm);border:1px solid var(--diva-border);background-color:var(--diva-white);resize:vertical;border-radius:4px;padding:6px 8px;font-family:Menlo,Monaco,Consolas,Liberation Mono,monospace}.filter-json-error{font-size:var(--diva-font-sm);color:var(--diva-danger);margin-top:4px}.filter-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted)}.filter-select{border:1px solid var(--diva-border);background-color:var(--diva-white);font-size:var(--diva-font-sm);border-radius:4px;padding:4px 6px}.filter-color-input{border:1px solid var(--diva-border);background-color:var(--diva-white);border-radius:4px;width:42px;height:28px;padding:0}.collection-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:6px 0 0 6px;flex-direction:column;height:70vh;display:flex;overflow:hidden}.collection-header{background-color:var(--diva-surface);border-bottom:1px solid var(--diva-border);border-radius:6px 0 0;padding:12px}.collection-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:4px;font-weight:600}.collection-summary{font-size:var(--diva-font-md);color:var(--diva-text-muted);line-height:1.4}.collection-tree-item{padding-left:12px}.collection-node-button{align-items:center;gap:6px;width:100%;padding:6px 8px;display:flex}.collection-expand-icon{flex-shrink:0;justify-content:center;align-items:center;width:16px;height:16px;display:flex}.manifest-tree-item{padding:6px 8px 6px 30px}.manifest-tree-item.is-active{background-color:var(--diva-border);font-weight:600}.sidebar-pane.is-scroll{overflow-y:auto}@media (width<=720px){.collection-panel{border-radius:6px;width:100%;height:auto}}";
 
   // cache/elm-esm.js
   function F(arity, fun, wrapper) {
@@ -16186,7 +16200,7 @@
       return $rism_digital$elm_iiif$IIIF$Image$createImageUri(params);
     }
   };
-  var $author$project$Utilites$find = F2(
+  var $author$project$Utilities$find = F2(
     function(predicate, list) {
       find:
         while (true) {
@@ -16207,15 +16221,15 @@
         }
     }
   );
-  var $author$project$Utilites$isJust = function(maybeVal) {
+  var $author$project$Utilities$isJust = function(maybeVal) {
     if (maybeVal.$ === "Just") {
       return true;
     } else {
       return false;
     }
   };
-  var $author$project$Utilites$isNothing = function(maybeVal) {
-    return !$author$project$Utilites$isJust(maybeVal);
+  var $author$project$Utilities$isNothing = function(maybeVal) {
+    return !$author$project$Utilities$isJust(maybeVal);
   };
   var $rism_digital$elm_iiif$IIIF$Image$imageServerToImageRequest = function(_v0) {
     var host = _v0.host;
@@ -16277,9 +16291,9 @@
           image.label
         )
       );
-      var isPrimaryImage = $author$project$Utilites$isNothing(
+      var isPrimaryImage = $author$project$Utilities$isNothing(
         A2(
-          $author$project$Utilites$find,
+          $author$project$Utilities$find,
           function(img) {
             return _Utils_eq(img.imageType, $rism_digital$elm_iiif$IIIF$Presentation$PrimaryImage);
           },
@@ -16344,7 +16358,7 @@
     "pageAspectsUpdated",
     $elm$json$Json$Encode$list($elm$json$Json$Encode$float)
   );
-  var $author$project$Utilites$orElse = F2(
+  var $author$project$Utilities$orElse = F2(
     function(ma, mb) {
       if (mb.$ === "Just") {
         return mb;
@@ -16355,10 +16369,10 @@
   );
   var $author$project$Model$primaryImage = function(page) {
     return A2(
-      $author$project$Utilites$orElse,
+      $author$project$Utilities$orElse,
       $elm$core$List$head(page.images),
       A2(
-        $author$project$Utilites$find,
+        $author$project$Utilities$find,
         function($) {
           return $.isPrimary;
         },
@@ -16475,204 +16489,6 @@
       );
     }
   );
-  var $author$project$Main$httpErrorToString = function(err) {
-    switch (err.$) {
-      case "BadUrl":
-        var url = err.a;
-        return "Bad URL: " + url;
-      case "Timeout":
-        return "Request timed out.";
-      case "NetworkError":
-        return "Network error.";
-      case "BadStatus":
-        var statusCode = err.a;
-        return "HTTP error: " + $elm$core$String$fromInt(statusCode);
-      default:
-        var message = err.a;
-        return "Bad response body: " + message;
-    }
-  };
-  var $author$project$Main$layoutModeUpdated = _Platform_outgoingPort("layoutModeUpdated", $elm$json$Json$Encode$string);
-  var $author$project$Main$replaceCollectionById = F3(
-    function(collectionId, replacement, collection) {
-      var rebuildUp = F2(
-        function(updatedChild, stack) {
-          rebuildUp:
-            while (true) {
-              if (!stack.b) {
-                return updatedChild;
-              } else {
-                var frame = stack.a;
-                var rest = stack.b;
-                var baseCollection = frame.collection;
-                var $temp$updatedChild = _Utils_update(
-                  baseCollection,
-                  {
-                    items: _Utils_ap(
-                      $elm$core$List$reverse(
-                        A2(
-                          $elm$core$List$cons,
-                          $rism_digital$elm_iiif$IIIF$Presentation$NestedCollection(updatedChild),
-                          frame.beforeRev
-                        )
-                      ),
-                      frame.rest
-                    )
-                  }
-                ), $temp$stack = rest;
-                updatedChild = $temp$updatedChild;
-                stack = $temp$stack;
-                continue rebuildUp;
-              }
-            }
-        }
-      );
-      var continueSearch = F2(
-        function(updatedChild, stack) {
-          if (!stack.b) {
-            return updatedChild;
-          } else {
-            var frame = stack.a;
-            var rest = stack.b;
-            return A2(
-              loopSearch,
-              {
-                beforeRev: A2(
-                  $elm$core$List$cons,
-                  $rism_digital$elm_iiif$IIIF$Presentation$NestedCollection(updatedChild),
-                  frame.beforeRev
-                ),
-                collection: frame.collection,
-                rest: frame.rest
-              },
-              rest
-            );
-          }
-        }
-      );
-      var loopSearch = F2(
-        function(state, stack) {
-          if (_Utils_eq(state.collection.id, collectionId)) {
-            return A2(rebuildUp, replacement, stack);
-          } else {
-            var _v1 = state.rest;
-            if (!_v1.b) {
-              var baseCollection = state.collection;
-              return A2(
-                continueSearch,
-                _Utils_update(
-                  baseCollection,
-                  {
-                    items: $elm$core$List$reverse(state.beforeRev)
-                  }
-                ),
-                stack
-              );
-            } else {
-              var item = _v1.a;
-              var rest = _v1.b;
-              if (item.$ === "NestedCollection") {
-                var nested = item.a;
-                return A2(
-                  loopSearch,
-                  { beforeRev: _List_Nil, collection: nested, rest: nested.items },
-                  A2(
-                    $elm$core$List$cons,
-                    { beforeRev: state.beforeRev, collection: state.collection, rest },
-                    stack
-                  )
-                );
-              } else {
-                return A2(
-                  loopSearch,
-                  _Utils_update(
-                    state,
-                    {
-                      beforeRev: A2($elm$core$List$cons, item, state.beforeRev),
-                      rest
-                    }
-                  ),
-                  stack
-                );
-              }
-            }
-          }
-        }
-      );
-      return A2(
-        loopSearch,
-        { beforeRev: _List_Nil, collection, rest: collection.items },
-        _List_Nil
-      );
-    }
-  );
-  var $rism_digital$elm_iiif$IIIF$Internal$CoreDecoders$contextListDecoder = function(contextValues) {
-    return A2($elm$core$List$member, $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV3PresentationContextString, contextValues) ? A2(
-      $elm$json$Json$Decode$map,
-      $rism_digital$elm_iiif$IIIF$Presentation$IIIFManifest($rism_digital$elm_iiif$IIIF$Version$IIIFV3),
-      $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3iiifManifestDecoder
-    ) : A2($elm$core$List$member, $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV2PresentationContextString, contextValues) ? A2(
-      $elm$json$Json$Decode$map,
-      $rism_digital$elm_iiif$IIIF$Presentation$IIIFManifest($rism_digital$elm_iiif$IIIF$Version$IIIFV2),
-      $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2iiifManifestDecoder
-    ) : $elm$json$Json$Decode$fail(
-      "Unknown IIIF Version in context values: " + A2($elm$core$String$join, ", ", contextValues)
-    );
-  };
-  var $rism_digital$elm_iiif$IIIF$Internal$CoreDecoders$contextStringDecoder = function(contextValue) {
-    return _Utils_eq(contextValue, $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV3PresentationContextString) ? A2(
-      $elm$json$Json$Decode$map,
-      $rism_digital$elm_iiif$IIIF$Presentation$IIIFManifest($rism_digital$elm_iiif$IIIF$Version$IIIFV3),
-      $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3iiifManifestDecoder
-    ) : _Utils_eq(contextValue, $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV2PresentationContextString) ? A2(
-      $elm$json$Json$Decode$map,
-      $rism_digital$elm_iiif$IIIF$Presentation$IIIFManifest($rism_digital$elm_iiif$IIIF$Version$IIIFV2),
-      $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2iiifManifestDecoder
-    ) : $elm$json$Json$Decode$fail("Unknown IIIF Version: " + contextValue);
-  };
-  var $rism_digital$elm_iiif$IIIF$Decoders$manifestDecoder = $elm$json$Json$Decode$oneOf(
-    _List_fromArray(
-      [
-        A2(
-          $elm$json$Json$Decode$andThen,
-          $rism_digital$elm_iiif$IIIF$Internal$CoreDecoders$contextStringDecoder,
-          A2($elm$json$Json$Decode$field, "@context", $elm$json$Json$Decode$string)
-        ),
-        A2(
-          $elm$json$Json$Decode$andThen,
-          $rism_digital$elm_iiif$IIIF$Internal$CoreDecoders$contextListDecoder,
-          A2(
-            $elm$json$Json$Decode$field,
-            "@context",
-            $elm$json$Json$Decode$list($elm$json$Json$Decode$string)
-          )
-        )
-      ]
-    )
-  );
-  var $rism_digital$elm_iiif$IIIF$requestManifest = F3(
-    function(responseMsg, acceptHeaders, manifest) {
-      return A3(
-        $rism_digital$elm_iiif$IIIF$Internal$Request$request,
-        acceptHeaders,
-        A2($elm$http$Http$expectJson, responseMsg, $rism_digital$elm_iiif$IIIF$Decoders$manifestDecoder),
-        manifest
-      );
-    }
-  );
-  var $author$project$Filters$resetAltColourAdjust = function(filters) {
-    return _Utils_update(
-      filters,
-      { altBlueGamma: 0, altBlueGammaEnabled: false, altBlueHue: 0, altBlueHueEnabled: false, altBlueHueWindow: 8, altBlueSigmoid: 0, altBlueSigmoidEnabled: false, altBlueVibrance: 0, altBlueVibranceEnabled: false, altGreenGamma: 0, altGreenGammaEnabled: false, altGreenHue: 0, altGreenHueEnabled: false, altGreenHueWindow: 8, altGreenSigmoid: 0, altGreenSigmoidEnabled: false, altGreenVibrance: 0, altGreenVibranceEnabled: false, altRedGamma: 0, altRedGammaEnabled: false, altRedHue: 0, altRedHueEnabled: false, altRedHueWindow: 8, altRedSigmoid: 0, altRedSigmoidEnabled: false, altRedVibrance: 0, altRedVibranceEnabled: false }
-    );
-  };
-  var $elm$json$Json$Encode$null = _Json_encodeNull;
-  var $author$project$Main$saveFilteredImage = _Platform_outgoingPort(
-    "saveFilteredImage",
-    function($) {
-      return $elm$json$Json$Encode$null;
-    }
-  );
   var $author$project$Msg$ClientNotifiedScrollThumbs = function(a) {
     return { $: "ClientNotifiedScrollThumbs", a };
   };
@@ -16767,7 +16583,6 @@
       }
     }
   );
-  var $author$project$Main$scrollToIndex = _Platform_outgoingPort("scrollToIndex", $elm$json$Json$Encode$int);
   var $author$project$Main$filterPreviewUpdated = _Platform_outgoingPort(
     "filterPreviewUpdated",
     function($) {
@@ -17150,6 +16965,274 @@
       )
     ) : $elm$core$Platform$Cmd$none;
   };
+  var $author$project$Main$handlePageChanged = F3(
+    function(instant, index, model) {
+      var nextModel = _Utils_update(
+        model,
+        {
+          pageViewImageIndex: 0,
+          selectedIndex: $elm$core$Maybe$Just(index),
+          thumbsInstantScroll: instant
+        }
+      );
+      return _Utils_Tuple2(
+        nextModel,
+        $elm$core$Platform$Cmd$batch(
+          _List_fromArray(
+            [
+              A2(
+                $author$project$Main$scrollThumbsToIndex,
+                _Utils_eq(nextModel.sidebarState, $author$project$Model$SidebarThumbnails),
+                index
+              ),
+              $author$project$Main$sendPageViewPreview(nextModel)
+            ]
+          )
+        )
+      );
+    }
+  );
+  var $author$project$Main$scrollToIndex = _Platform_outgoingPort("scrollToIndex", $elm$json$Json$Encode$int);
+  var $author$project$Main$handlePageViewStep = F2(
+    function(delta, model) {
+      var _v0 = model.selectedIndex;
+      if (_v0.$ === "Just") {
+        var index = _v0.a;
+        var nextIndex = index + delta;
+        if (nextIndex >= 0 && _Utils_cmp(
+          nextIndex,
+          $elm$core$List$length(model.pages)
+        ) < 0) {
+          var nextModel = _Utils_update(
+            model,
+            {
+              pageViewImageIndex: 0,
+              selectedIndex: $elm$core$Maybe$Just(nextIndex),
+              thumbsInstantScroll: false
+            }
+          );
+          return _Utils_Tuple2(
+            nextModel,
+            $elm$core$Platform$Cmd$batch(
+              _List_fromArray(
+                [
+                  $author$project$Main$scrollToIndex(nextIndex),
+                  A2(
+                    $author$project$Main$scrollThumbsToIndex,
+                    _Utils_eq(nextModel.sidebarState, $author$project$Model$SidebarThumbnails),
+                    nextIndex
+                  ),
+                  $author$project$Main$sendPageViewPreview(nextModel)
+                ]
+              )
+            )
+          );
+        } else {
+          return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+        }
+      } else {
+        return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+      }
+    }
+  );
+  var $author$project$Main$httpErrorToString = function(err) {
+    switch (err.$) {
+      case "BadUrl":
+        var url = err.a;
+        return "Bad URL: " + url;
+      case "Timeout":
+        return "Request timed out.";
+      case "NetworkError":
+        return "Network error.";
+      case "BadStatus":
+        var statusCode = err.a;
+        return "HTTP error: " + $elm$core$String$fromInt(statusCode);
+      default:
+        var message = err.a;
+        return "Bad response body: " + message;
+    }
+  };
+  var $author$project$Main$layoutModeUpdated = _Platform_outgoingPort("layoutModeUpdated", $elm$json$Json$Encode$string);
+  var $author$project$Main$replaceCollectionById = F3(
+    function(collectionId, replacement, collection) {
+      var rebuildUp = F2(
+        function(updatedChild, stack) {
+          rebuildUp:
+            while (true) {
+              if (!stack.b) {
+                return updatedChild;
+              } else {
+                var frame = stack.a;
+                var rest = stack.b;
+                var baseCollection = frame.collection;
+                var $temp$updatedChild = _Utils_update(
+                  baseCollection,
+                  {
+                    items: _Utils_ap(
+                      $elm$core$List$reverse(
+                        A2(
+                          $elm$core$List$cons,
+                          $rism_digital$elm_iiif$IIIF$Presentation$NestedCollection(updatedChild),
+                          frame.beforeRev
+                        )
+                      ),
+                      frame.rest
+                    )
+                  }
+                ), $temp$stack = rest;
+                updatedChild = $temp$updatedChild;
+                stack = $temp$stack;
+                continue rebuildUp;
+              }
+            }
+        }
+      );
+      var continueSearch = F2(
+        function(updatedChild, stack) {
+          if (!stack.b) {
+            return updatedChild;
+          } else {
+            var frame = stack.a;
+            var rest = stack.b;
+            return A2(
+              loopSearch,
+              {
+                beforeRev: A2(
+                  $elm$core$List$cons,
+                  $rism_digital$elm_iiif$IIIF$Presentation$NestedCollection(updatedChild),
+                  frame.beforeRev
+                ),
+                collection: frame.collection,
+                rest: frame.rest
+              },
+              rest
+            );
+          }
+        }
+      );
+      var loopSearch = F2(
+        function(state, stack) {
+          if (_Utils_eq(state.collection.id, collectionId)) {
+            return A2(rebuildUp, replacement, stack);
+          } else {
+            var _v1 = state.rest;
+            if (!_v1.b) {
+              var baseCollection = state.collection;
+              return A2(
+                continueSearch,
+                _Utils_update(
+                  baseCollection,
+                  {
+                    items: $elm$core$List$reverse(state.beforeRev)
+                  }
+                ),
+                stack
+              );
+            } else {
+              var item = _v1.a;
+              var rest = _v1.b;
+              if (item.$ === "NestedCollection") {
+                var nested = item.a;
+                return A2(
+                  loopSearch,
+                  { beforeRev: _List_Nil, collection: nested, rest: nested.items },
+                  A2(
+                    $elm$core$List$cons,
+                    { beforeRev: state.beforeRev, collection: state.collection, rest },
+                    stack
+                  )
+                );
+              } else {
+                return A2(
+                  loopSearch,
+                  _Utils_update(
+                    state,
+                    {
+                      beforeRev: A2($elm$core$List$cons, item, state.beforeRev),
+                      rest
+                    }
+                  ),
+                  stack
+                );
+              }
+            }
+          }
+        }
+      );
+      return A2(
+        loopSearch,
+        { beforeRev: _List_Nil, collection, rest: collection.items },
+        _List_Nil
+      );
+    }
+  );
+  var $rism_digital$elm_iiif$IIIF$Internal$CoreDecoders$contextListDecoder = function(contextValues) {
+    return A2($elm$core$List$member, $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV3PresentationContextString, contextValues) ? A2(
+      $elm$json$Json$Decode$map,
+      $rism_digital$elm_iiif$IIIF$Presentation$IIIFManifest($rism_digital$elm_iiif$IIIF$Version$IIIFV3),
+      $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3iiifManifestDecoder
+    ) : A2($elm$core$List$member, $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV2PresentationContextString, contextValues) ? A2(
+      $elm$json$Json$Decode$map,
+      $rism_digital$elm_iiif$IIIF$Presentation$IIIFManifest($rism_digital$elm_iiif$IIIF$Version$IIIFV2),
+      $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2iiifManifestDecoder
+    ) : $elm$json$Json$Decode$fail(
+      "Unknown IIIF Version in context values: " + A2($elm$core$String$join, ", ", contextValues)
+    );
+  };
+  var $rism_digital$elm_iiif$IIIF$Internal$CoreDecoders$contextStringDecoder = function(contextValue) {
+    return _Utils_eq(contextValue, $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV3PresentationContextString) ? A2(
+      $elm$json$Json$Decode$map,
+      $rism_digital$elm_iiif$IIIF$Presentation$IIIFManifest($rism_digital$elm_iiif$IIIF$Version$IIIFV3),
+      $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3iiifManifestDecoder
+    ) : _Utils_eq(contextValue, $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV2PresentationContextString) ? A2(
+      $elm$json$Json$Decode$map,
+      $rism_digital$elm_iiif$IIIF$Presentation$IIIFManifest($rism_digital$elm_iiif$IIIF$Version$IIIFV2),
+      $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2iiifManifestDecoder
+    ) : $elm$json$Json$Decode$fail("Unknown IIIF Version: " + contextValue);
+  };
+  var $rism_digital$elm_iiif$IIIF$Decoders$manifestDecoder = $elm$json$Json$Decode$oneOf(
+    _List_fromArray(
+      [
+        A2(
+          $elm$json$Json$Decode$andThen,
+          $rism_digital$elm_iiif$IIIF$Internal$CoreDecoders$contextStringDecoder,
+          A2($elm$json$Json$Decode$field, "@context", $elm$json$Json$Decode$string)
+        ),
+        A2(
+          $elm$json$Json$Decode$andThen,
+          $rism_digital$elm_iiif$IIIF$Internal$CoreDecoders$contextListDecoder,
+          A2(
+            $elm$json$Json$Decode$field,
+            "@context",
+            $elm$json$Json$Decode$list($elm$json$Json$Decode$string)
+          )
+        )
+      ]
+    )
+  );
+  var $rism_digital$elm_iiif$IIIF$requestManifest = F3(
+    function(responseMsg, acceptHeaders, manifest) {
+      return A3(
+        $rism_digital$elm_iiif$IIIF$Internal$Request$request,
+        acceptHeaders,
+        A2($elm$http$Http$expectJson, responseMsg, $rism_digital$elm_iiif$IIIF$Decoders$manifestDecoder),
+        manifest
+      );
+    }
+  );
+  var $author$project$Filters$resetAltColourAdjust = function(filters) {
+    return _Utils_update(
+      filters,
+      { altBlueGamma: 0, altBlueGammaEnabled: false, altBlueHue: 0, altBlueHueEnabled: false, altBlueHueWindow: 8, altBlueSigmoid: 0, altBlueSigmoidEnabled: false, altBlueVibrance: 0, altBlueVibranceEnabled: false, altGreenGamma: 0, altGreenGammaEnabled: false, altGreenHue: 0, altGreenHueEnabled: false, altGreenHueWindow: 8, altGreenSigmoid: 0, altGreenSigmoidEnabled: false, altGreenVibrance: 0, altGreenVibranceEnabled: false, altRedGamma: 0, altRedGammaEnabled: false, altRedHue: 0, altRedHueEnabled: false, altRedHueWindow: 8, altRedSigmoid: 0, altRedSigmoidEnabled: false, altRedVibrance: 0, altRedVibranceEnabled: false }
+    );
+  };
+  var $elm$json$Json$Encode$null = _Json_encodeNull;
+  var $author$project$Main$saveFilteredImage = _Platform_outgoingPort(
+    "saveFilteredImage",
+    function($) {
+      return $elm$json$Json$Encode$null;
+    }
+  );
   var $author$project$Main$setFullscreen = _Platform_outgoingPort("setFullscreen", $elm$json$Json$Encode$bool);
   var $author$project$Filters$updateFilters = F2(
     function(updater, model) {
@@ -17475,54 +17558,10 @@
           );
         case "ClientNotifiedPageChanged":
           var index = msg.a;
-          var nextModel = _Utils_update(
-            model,
-            {
-              pageViewImageIndex: 0,
-              selectedIndex: $elm$core$Maybe$Just(index),
-              thumbsInstantScroll: false
-            }
-          );
-          return _Utils_Tuple2(
-            nextModel,
-            $elm$core$Platform$Cmd$batch(
-              _List_fromArray(
-                [
-                  A2(
-                    $author$project$Main$scrollThumbsToIndex,
-                    _Utils_eq(nextModel.sidebarState, $author$project$Model$SidebarThumbnails),
-                    index
-                  ),
-                  $author$project$Main$sendPageViewPreview(nextModel)
-                ]
-              )
-            )
-          );
+          return A3($author$project$Main$handlePageChanged, false, index, model);
         case "ClientNotifiedPageChangedInstant":
           var index = msg.a;
-          var nextModel = _Utils_update(
-            model,
-            {
-              pageViewImageIndex: 0,
-              selectedIndex: $elm$core$Maybe$Just(index),
-              thumbsInstantScroll: true
-            }
-          );
-          return _Utils_Tuple2(
-            nextModel,
-            $elm$core$Platform$Cmd$batch(
-              _List_fromArray(
-                [
-                  A2(
-                    $author$project$Main$scrollThumbsToIndex,
-                    _Utils_eq(nextModel.sidebarState, $author$project$Model$SidebarThumbnails),
-                    index
-                  ),
-                  $author$project$Main$sendPageViewPreview(nextModel)
-                ]
-              )
-            )
-          );
+          return A3($author$project$Main$handlePageChanged, true, index, model);
         case "ClientNotifiedScrollThumbs":
           return _Utils_Tuple2(
             _Utils_update(
@@ -17669,78 +17708,9 @@
             $elm$core$Platform$Cmd$none
           );
         case "UserClickedPageViewPrev":
-          var _v16 = model.selectedIndex;
-          if (_v16.$ === "Just") {
-            var index = _v16.a;
-            if (index > 0) {
-              var nextIndex = index - 1;
-              var nextModel = _Utils_update(
-                model,
-                {
-                  pageViewImageIndex: 0,
-                  selectedIndex: $elm$core$Maybe$Just(nextIndex),
-                  thumbsInstantScroll: false
-                }
-              );
-              return _Utils_Tuple2(
-                nextModel,
-                $elm$core$Platform$Cmd$batch(
-                  _List_fromArray(
-                    [
-                      $author$project$Main$scrollToIndex(nextIndex),
-                      A2(
-                        $author$project$Main$scrollThumbsToIndex,
-                        _Utils_eq(nextModel.sidebarState, $author$project$Model$SidebarThumbnails),
-                        nextIndex
-                      ),
-                      $author$project$Main$sendPageViewPreview(nextModel)
-                    ]
-                  )
-                )
-              );
-            } else {
-              return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-            }
-          } else {
-            return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-          }
+          return A2($author$project$Main$handlePageViewStep, -1, model);
         case "UserClickedPageViewNext":
-          var _v17 = model.selectedIndex;
-          if (_v17.$ === "Just") {
-            var index = _v17.a;
-            var lastIndex = $elm$core$List$length(model.pages) - 1;
-            if (_Utils_cmp(index, lastIndex) < 0) {
-              var nextIndex = index + 1;
-              var nextModel = _Utils_update(
-                model,
-                {
-                  pageViewImageIndex: 0,
-                  selectedIndex: $elm$core$Maybe$Just(nextIndex),
-                  thumbsInstantScroll: false
-                }
-              );
-              return _Utils_Tuple2(
-                nextModel,
-                $elm$core$Platform$Cmd$batch(
-                  _List_fromArray(
-                    [
-                      $author$project$Main$scrollToIndex(nextIndex),
-                      A2(
-                        $author$project$Main$scrollThumbsToIndex,
-                        _Utils_eq(nextModel.sidebarState, $author$project$Model$SidebarThumbnails),
-                        nextIndex
-                      ),
-                      $author$project$Main$sendPageViewPreview(nextModel)
-                    ]
-                  )
-                )
-              );
-            } else {
-              return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-            }
-          } else {
-            return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-          }
+          return A2($author$project$Main$handlePageViewStep, 1, model);
         case "UserResetAltColourAdjust":
           var nextModel = A2($author$project$Filters$updateFilters, $author$project$Filters$resetAltColourAdjust, model);
           return _Utils_Tuple2(
@@ -17849,8 +17819,8 @@
             $elm$core$Platform$Cmd$none
           );
         case "UserToggledShiftByOne":
-          var _v20 = model.viewMode;
-          if (_v20.$ === "OneUp") {
+          var _v18 = model.viewMode;
+          if (_v18.$ === "OneUp") {
             return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
           } else {
             var nextShift = !model.shiftByOne;
@@ -17866,14 +17836,14 @@
           }
         case "UserToggledThumbnails":
           var thumbCmd = (function() {
-            var _v22 = _Utils_Tuple2(model.pendingThumbScroll, model.selectedIndex);
-            if (_v22.a.$ === "Just") {
-              var index2 = _v22.a.a;
+            var _v20 = _Utils_Tuple2(model.pendingThumbScroll, model.selectedIndex);
+            if (_v20.a.$ === "Just") {
+              var index2 = _v20.a.a;
               return A2($author$project$Main$scrollThumbsToIndex, true, index2);
             } else {
-              if (_v22.b.$ === "Just") {
-                var _v23 = _v22.a;
-                var index2 = _v22.b.a;
+              if (_v20.b.$ === "Just") {
+                var _v21 = _v20.a;
+                var index2 = _v20.b.a;
                 return A2($author$project$Main$scrollThumbsToIndex, true, index2);
               } else {
                 return $elm$core$Platform$Cmd$none;
@@ -17885,8 +17855,8 @@
             { sidebarState: $author$project$Model$SidebarThumbnails }
           );
           var nextInstant = (function() {
-            var _v21 = model.pendingThumbScroll;
-            if (_v21.$ === "Just") {
+            var _v19 = model.pendingThumbScroll;
+            if (_v19.$ === "Just") {
               return true;
             } else {
               return false;
@@ -17901,8 +17871,8 @@
           );
         case "UserToggledTwoUp":
           var nextMode = (function() {
-            var _v24 = model.viewMode;
-            if (_v24.$ === "OneUp") {
+            var _v22 = model.viewMode;
+            if (_v22.$ === "OneUp") {
               return $author$project$Model$TwoUp;
             } else {
               return $author$project$Model$OneUp;
@@ -17963,9 +17933,9 @@
             $elm$core$Platform$Cmd$none
           );
         case "UserAppliedFilterJson":
-          var _v25 = $author$project$Filters$decodeFilterJson(model.filtersJsonInput);
-          if (_v25.$ === "Ok") {
-            var filters = _v25.a;
+          var _v23 = $author$project$Filters$decodeFilterJson(model.filtersJsonInput);
+          if (_v23.$ === "Ok") {
+            var filters = _v23.a;
             var json = $author$project$Filters$encodeActiveFilters(filters);
             var nextModel = _Utils_update(
               model,
@@ -17976,7 +17946,7 @@
               $author$project$Main$sendPageViewPreview(nextModel)
             );
           } else {
-            var err = _v25.a;
+            var err = _v23.a;
             return _Utils_Tuple2(
               _Utils_update(
                 model,
@@ -18007,9 +17977,9 @@
           );
         case "UserDraggedSidebarResize":
           var clientX = msg.a;
-          var _v26 = model.sidebarDrag;
-          if (_v26.$ === "Just") {
-            var drag = _v26.a;
+          var _v24 = model.sidebarDrag;
+          if (_v24.$ === "Just") {
+            var drag = _v24.a;
             var delta = drag.startX - clientX;
             var nextWidth = A3($elm$core$Basics$clamp, 220, 520, drag.startWidth + delta);
             return _Utils_Tuple2(
@@ -18111,7 +18081,7 @@
       return false;
     }
   };
-  var $author$project$Utilites$choose = F3(
+  var $author$project$Utilities$choose = F3(
     function(predicate, isTrue, isFalse) {
       return predicate ? isTrue(_Utils_Tuple0) : isFalse(_Utils_Tuple0);
     }
@@ -18119,7 +18089,7 @@
   var $author$project$View$Helpers$viewIf = F2(
     function(viewFunc, condition) {
       return A3(
-        $author$project$Utilites$choose,
+        $author$project$Utilities$choose,
         condition,
         function(_v0) {
           return viewFunc;
@@ -18214,7 +18184,7 @@
   var $author$project$Msg$UserStartedCollectionSidebarResize = function(a) {
     return { $: "UserStartedCollectionSidebarResize", a };
   };
-  var $author$project$Utilites$unpack = F3(
+  var $author$project$Utilities$unpack = F3(
     function(_default, f, m) {
       if (m.$ === "Just") {
         var a = m.a;
@@ -18227,7 +18197,7 @@
   var $author$project$View$Helpers$viewMaybe = F2(
     function(viewFunc, maybeBody) {
       return A3(
-        $author$project$Utilites$unpack,
+        $author$project$Utilities$unpack,
         function(_v0) {
           return $elm$html$Html$text("");
         },
@@ -23291,117 +23261,48 @@
       );
     }
   );
+  var $author$project$Msg$UserResetAltColourAdjust = { $: "UserResetAltColourAdjust" };
   var $author$project$Filters$IntAltBlueGamma = { $: "IntAltBlueGamma" };
   var $author$project$Filters$IntAltBlueHue = { $: "IntAltBlueHue" };
   var $author$project$Filters$IntAltBlueHueWindow = { $: "IntAltBlueHueWindow" };
   var $author$project$Filters$IntAltBlueSigmoid = { $: "IntAltBlueSigmoid" };
   var $author$project$Filters$IntAltBlueVibrance = { $: "IntAltBlueVibrance" };
+  var $author$project$Filters$ToggleAltBlueGamma = { $: "ToggleAltBlueGamma" };
+  var $author$project$Filters$ToggleAltBlueHue = { $: "ToggleAltBlueHue" };
+  var $author$project$Filters$ToggleAltBlueSigmoid = { $: "ToggleAltBlueSigmoid" };
+  var $author$project$Filters$ToggleAltBlueVibrance = { $: "ToggleAltBlueVibrance" };
+  var $author$project$View$PageViewModal$blueChannelConfig = function(model) {
+    return { gamma: model.filters.altBlueGamma, gammaEnabled: model.filters.altBlueGammaEnabled, gammaInput: $author$project$Filters$IntAltBlueGamma, gammaToggle: $author$project$Filters$ToggleAltBlueGamma, hue: model.filters.altBlueHue, hueEnabled: model.filters.altBlueHueEnabled, hueInput: $author$project$Filters$IntAltBlueHue, hueToggle: $author$project$Filters$ToggleAltBlueHue, hueWindow: model.filters.altBlueHueWindow, hueWindowInput: $author$project$Filters$IntAltBlueHueWindow, sigmoid: model.filters.altBlueSigmoid, sigmoidEnabled: model.filters.altBlueSigmoidEnabled, sigmoidInput: $author$project$Filters$IntAltBlueSigmoid, sigmoidToggle: $author$project$Filters$ToggleAltBlueSigmoid, vibrance: model.filters.altBlueVibrance, vibranceEnabled: model.filters.altBlueVibranceEnabled, vibranceInput: $author$project$Filters$IntAltBlueVibrance, vibranceToggle: $author$project$Filters$ToggleAltBlueVibrance };
+  };
   var $author$project$Filters$IntAltGreenGamma = { $: "IntAltGreenGamma" };
   var $author$project$Filters$IntAltGreenHue = { $: "IntAltGreenHue" };
   var $author$project$Filters$IntAltGreenHueWindow = { $: "IntAltGreenHueWindow" };
   var $author$project$Filters$IntAltGreenSigmoid = { $: "IntAltGreenSigmoid" };
   var $author$project$Filters$IntAltGreenVibrance = { $: "IntAltGreenVibrance" };
+  var $author$project$Filters$ToggleAltGreenGamma = { $: "ToggleAltGreenGamma" };
+  var $author$project$Filters$ToggleAltGreenHue = { $: "ToggleAltGreenHue" };
+  var $author$project$Filters$ToggleAltGreenSigmoid = { $: "ToggleAltGreenSigmoid" };
+  var $author$project$Filters$ToggleAltGreenVibrance = { $: "ToggleAltGreenVibrance" };
+  var $author$project$View$PageViewModal$greenChannelConfig = function(model) {
+    return { gamma: model.filters.altGreenGamma, gammaEnabled: model.filters.altGreenGammaEnabled, gammaInput: $author$project$Filters$IntAltGreenGamma, gammaToggle: $author$project$Filters$ToggleAltGreenGamma, hue: model.filters.altGreenHue, hueEnabled: model.filters.altGreenHueEnabled, hueInput: $author$project$Filters$IntAltGreenHue, hueToggle: $author$project$Filters$ToggleAltGreenHue, hueWindow: model.filters.altGreenHueWindow, hueWindowInput: $author$project$Filters$IntAltGreenHueWindow, sigmoid: model.filters.altGreenSigmoid, sigmoidEnabled: model.filters.altGreenSigmoidEnabled, sigmoidInput: $author$project$Filters$IntAltGreenSigmoid, sigmoidToggle: $author$project$Filters$ToggleAltGreenSigmoid, vibrance: model.filters.altGreenVibrance, vibranceEnabled: model.filters.altGreenVibranceEnabled, vibranceInput: $author$project$Filters$IntAltGreenVibrance, vibranceToggle: $author$project$Filters$ToggleAltGreenVibrance };
+  };
   var $author$project$Filters$IntAltRedGamma = { $: "IntAltRedGamma" };
   var $author$project$Filters$IntAltRedHue = { $: "IntAltRedHue" };
   var $author$project$Filters$IntAltRedHueWindow = { $: "IntAltRedHueWindow" };
   var $author$project$Filters$IntAltRedSigmoid = { $: "IntAltRedSigmoid" };
   var $author$project$Filters$IntAltRedVibrance = { $: "IntAltRedVibrance" };
-  var $author$project$Filters$ToggleAltBlueGamma = { $: "ToggleAltBlueGamma" };
-  var $author$project$Filters$ToggleAltBlueHue = { $: "ToggleAltBlueHue" };
-  var $author$project$Filters$ToggleAltBlueSigmoid = { $: "ToggleAltBlueSigmoid" };
-  var $author$project$Filters$ToggleAltBlueVibrance = { $: "ToggleAltBlueVibrance" };
-  var $author$project$Filters$ToggleAltGreenGamma = { $: "ToggleAltGreenGamma" };
-  var $author$project$Filters$ToggleAltGreenHue = { $: "ToggleAltGreenHue" };
-  var $author$project$Filters$ToggleAltGreenSigmoid = { $: "ToggleAltGreenSigmoid" };
-  var $author$project$Filters$ToggleAltGreenVibrance = { $: "ToggleAltGreenVibrance" };
   var $author$project$Filters$ToggleAltRedGamma = { $: "ToggleAltRedGamma" };
   var $author$project$Filters$ToggleAltRedHue = { $: "ToggleAltRedHue" };
   var $author$project$Filters$ToggleAltRedSigmoid = { $: "ToggleAltRedSigmoid" };
   var $author$project$Filters$ToggleAltRedVibrance = { $: "ToggleAltRedVibrance" };
-  var $author$project$Msg$UserResetAltColourAdjust = { $: "UserResetAltColourAdjust" };
+  var $author$project$View$PageViewModal$redChannelConfig = function(model) {
+    return { gamma: model.filters.altRedGamma, gammaEnabled: model.filters.altRedGammaEnabled, gammaInput: $author$project$Filters$IntAltRedGamma, gammaToggle: $author$project$Filters$ToggleAltRedGamma, hue: model.filters.altRedHue, hueEnabled: model.filters.altRedHueEnabled, hueInput: $author$project$Filters$IntAltRedHue, hueToggle: $author$project$Filters$ToggleAltRedHue, hueWindow: model.filters.altRedHueWindow, hueWindowInput: $author$project$Filters$IntAltRedHueWindow, sigmoid: model.filters.altRedSigmoid, sigmoidEnabled: model.filters.altRedSigmoidEnabled, sigmoidInput: $author$project$Filters$IntAltRedSigmoid, sigmoidToggle: $author$project$Filters$ToggleAltRedSigmoid, vibrance: model.filters.altRedVibrance, vibranceEnabled: model.filters.altRedVibranceEnabled, vibranceInput: $author$project$Filters$IntAltRedVibrance, vibranceToggle: $author$project$Filters$ToggleAltRedVibrance };
+  };
   var $author$project$Msg$UserUpdatedFilterInt = F2(
     function(a, b) {
       return { $: "UserUpdatedFilterInt", a, b };
     }
   );
-  var $author$project$Msg$UserToggledFilterGroup = function(a) {
-    return { $: "UserToggledFilterGroup", a };
-  };
-  var $author$project$View$PageViewModal$viewFilterGroup = F4(
-    function(model, groupId, title, items) {
-      var isExpanded = A2($elm$core$Set$member, groupId, model.filterGroupExpanded);
-      return A2(
-        $elm$html$Html$div,
-        _List_fromArray(
-          [
-            $elm$html$Html$Attributes$class("filter-group")
-          ]
-        ),
-        A2(
-          $elm$core$List$cons,
-          A2(
-            $elm$html$Html$button,
-            _List_fromArray(
-              [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("filter-title-button", true),
-                      _Utils_Tuple2("is-collapsed", !isExpanded)
-                    ]
-                  )
-                ),
-                $elm$html$Html$Events$onClick(
-                  $author$project$Msg$UserToggledFilterGroup(groupId)
-                )
-              ]
-            ),
-            _List_fromArray(
-              [
-                A2(
-                  $elm$html$Html$span,
-                  _List_fromArray(
-                    [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("filter-title-icon", true),
-                            _Utils_Tuple2("is-expanded", isExpanded)
-                          ]
-                        )
-                      )
-                    ]
-                  ),
-                  _List_Nil
-                ),
-                A2(
-                  $elm$html$Html$span,
-                  _List_Nil,
-                  _List_fromArray(
-                    [
-                      $elm$html$Html$text(title)
-                    ]
-                  )
-                )
-              ]
-            )
-          ),
-          isExpanded ? items : _List_Nil
-        )
-      );
-    }
-  );
-  var $author$project$View$PageViewModal$viewFilterRow = function(items) {
-    return A2(
-      $elm$html$Html$div,
-      _List_fromArray(
-        [
-          $elm$html$Html$Attributes$class("filter-row")
-        ]
-      ),
-      items
-    );
-  };
   var $elm$html$Html$Attributes$step = function(n) {
     return A2(_VirtualDom_attribute, "step", n);
   };
@@ -23586,225 +23487,203 @@
       )
     );
   };
-  var $author$project$View$PageViewModal$viewAdvancedColourAdjustGroup = function(model) {
-    return A4(
-      $author$project$View$PageViewModal$viewFilterGroup,
-      model,
-      "advanced-colour-adjust",
-      "Advanced colour adjust",
-      _List_fromArray(
+  var $author$project$View$PageViewModal$viewChannelRows = F2(
+    function(channelName, config) {
+      return _List_fromArray(
         [
-          $author$project$View$PageViewModal$viewFilterRow(
+          $author$project$View$PageViewModal$viewToggleRangeRow(
+            {
+              checked: config.gammaEnabled,
+              display: $elm$core$String$fromInt(config.gamma),
+              label: channelName + " Gamma",
+              max: "100",
+              min: "0",
+              onInput: $author$project$Msg$UserUpdatedFilterInt(config.gammaInput),
+              onToggle: config.gammaToggle,
+              step: $elm$core$Maybe$Just("1"),
+              value: $elm$core$String$fromInt(config.gamma)
+            }
+          ),
+          $author$project$View$PageViewModal$viewToggleRangeRow(
+            {
+              checked: config.sigmoidEnabled,
+              display: $elm$core$String$fromInt(config.sigmoid),
+              label: channelName + " Sigmoid",
+              max: "100",
+              min: "0",
+              onInput: $author$project$Msg$UserUpdatedFilterInt(config.sigmoidInput),
+              onToggle: config.sigmoidToggle,
+              step: $elm$core$Maybe$Just("1"),
+              value: $elm$core$String$fromInt(config.sigmoid)
+            }
+          ),
+          $author$project$View$PageViewModal$viewToggleRangeRow(
+            {
+              checked: config.hueEnabled,
+              display: $elm$core$String$fromInt(config.hue),
+              label: channelName + " Hue Boost",
+              max: "100",
+              min: "-100",
+              onInput: $author$project$Msg$UserUpdatedFilterInt(config.hueInput),
+              onToggle: config.hueToggle,
+              step: $elm$core$Maybe$Just("1"),
+              value: $elm$core$String$fromInt(config.hue)
+            }
+          ),
+          $author$project$View$PageViewModal$viewRangeRow(
+            {
+              display: $elm$core$String$fromInt(config.hueWindow),
+              label: channelName + " Hue Window",
+              max: "30",
+              min: "2",
+              onInput: $author$project$Msg$UserUpdatedFilterInt(config.hueWindowInput),
+              step: $elm$core$Maybe$Just("1"),
+              value: $elm$core$String$fromInt(config.hueWindow)
+            }
+          ),
+          $author$project$View$PageViewModal$viewToggleRangeRow(
+            {
+              checked: config.vibranceEnabled,
+              display: $elm$core$String$fromInt(config.vibrance),
+              label: channelName + " Vibrance",
+              max: "100",
+              min: "0",
+              onInput: $author$project$Msg$UserUpdatedFilterInt(config.vibranceInput),
+              onToggle: config.vibranceToggle,
+              step: $elm$core$Maybe$Just("1"),
+              value: $elm$core$String$fromInt(config.vibrance)
+            }
+          )
+        ]
+      );
+    }
+  );
+  var $author$project$Msg$UserToggledFilterGroup = function(a) {
+    return { $: "UserToggledFilterGroup", a };
+  };
+  var $author$project$View$PageViewModal$viewFilterGroup = F4(
+    function(model, groupId, title, items) {
+      var isExpanded = A2($elm$core$Set$member, groupId, model.filterGroupExpanded);
+      return A2(
+        $elm$html$Html$div,
+        _List_fromArray(
+          [
+            $elm$html$Html$Attributes$class("filter-group")
+          ]
+        ),
+        A2(
+          $elm$core$List$cons,
+          A2(
+            $elm$html$Html$button,
+            _List_fromArray(
+              [
+                $elm$html$Html$Attributes$classList(
+                  _List_fromArray(
+                    [
+                      _Utils_Tuple2("filter-title-button", true),
+                      _Utils_Tuple2("is-collapsed", !isExpanded)
+                    ]
+                  )
+                ),
+                $elm$html$Html$Events$onClick(
+                  $author$project$Msg$UserToggledFilterGroup(groupId)
+                )
+              ]
+            ),
             _List_fromArray(
               [
                 A2(
-                  $elm$html$Html$button,
+                  $elm$html$Html$span,
                   _List_fromArray(
                     [
-                      $elm$html$Html$Attributes$class("filter-reset"),
-                      $elm$html$Html$Attributes$type_("button"),
-                      $elm$html$Html$Events$onClick($author$project$Msg$UserResetAltColourAdjust)
+                      $elm$html$Html$Attributes$classList(
+                        _List_fromArray(
+                          [
+                            _Utils_Tuple2("filter-title-icon", true),
+                            _Utils_Tuple2("is-expanded", isExpanded)
+                          ]
+                        )
+                      )
                     ]
                   ),
+                  _List_Nil
+                ),
+                A2(
+                  $elm$html$Html$span,
+                  _List_Nil,
                   _List_fromArray(
                     [
-                      $elm$html$Html$text("Reset sliders")
+                      $elm$html$Html$text(title)
                     ]
                   )
                 )
               ]
             )
           ),
-          $author$project$View$PageViewModal$viewToggleRangeRow(
-            {
-              checked: model.filters.altRedGammaEnabled,
-              display: $elm$core$String$fromInt(model.filters.altRedGamma),
-              label: "Red Gamma",
-              max: "100",
-              min: "0",
-              onInput: $author$project$Msg$UserUpdatedFilterInt($author$project$Filters$IntAltRedGamma),
-              onToggle: $author$project$Filters$ToggleAltRedGamma,
-              step: $elm$core$Maybe$Just("1"),
-              value: $elm$core$String$fromInt(model.filters.altRedGamma)
-            }
-          ),
-          $author$project$View$PageViewModal$viewToggleRangeRow(
-            {
-              checked: model.filters.altRedSigmoidEnabled,
-              display: $elm$core$String$fromInt(model.filters.altRedSigmoid),
-              label: "Red Sigmoid",
-              max: "100",
-              min: "0",
-              onInput: $author$project$Msg$UserUpdatedFilterInt($author$project$Filters$IntAltRedSigmoid),
-              onToggle: $author$project$Filters$ToggleAltRedSigmoid,
-              step: $elm$core$Maybe$Just("1"),
-              value: $elm$core$String$fromInt(model.filters.altRedSigmoid)
-            }
-          ),
-          $author$project$View$PageViewModal$viewToggleRangeRow(
-            {
-              checked: model.filters.altRedHueEnabled,
-              display: $elm$core$String$fromInt(model.filters.altRedHue),
-              label: "Red Hue Boost",
-              max: "100",
-              min: "-100",
-              onInput: $author$project$Msg$UserUpdatedFilterInt($author$project$Filters$IntAltRedHue),
-              onToggle: $author$project$Filters$ToggleAltRedHue,
-              step: $elm$core$Maybe$Just("1"),
-              value: $elm$core$String$fromInt(model.filters.altRedHue)
-            }
-          ),
-          $author$project$View$PageViewModal$viewRangeRow(
-            {
-              display: $elm$core$String$fromInt(model.filters.altRedHueWindow),
-              label: "Red Hue Window",
-              max: "30",
-              min: "2",
-              onInput: $author$project$Msg$UserUpdatedFilterInt($author$project$Filters$IntAltRedHueWindow),
-              step: $elm$core$Maybe$Just("1"),
-              value: $elm$core$String$fromInt(model.filters.altRedHueWindow)
-            }
-          ),
-          $author$project$View$PageViewModal$viewToggleRangeRow(
-            {
-              checked: model.filters.altRedVibranceEnabled,
-              display: $elm$core$String$fromInt(model.filters.altRedVibrance),
-              label: "Red Vibrance",
-              max: "100",
-              min: "0",
-              onInput: $author$project$Msg$UserUpdatedFilterInt($author$project$Filters$IntAltRedVibrance),
-              onToggle: $author$project$Filters$ToggleAltRedVibrance,
-              step: $elm$core$Maybe$Just("1"),
-              value: $elm$core$String$fromInt(model.filters.altRedVibrance)
-            }
-          ),
-          $author$project$View$PageViewModal$viewToggleRangeRow(
-            {
-              checked: model.filters.altGreenGammaEnabled,
-              display: $elm$core$String$fromInt(model.filters.altGreenGamma),
-              label: "Green Gamma",
-              max: "100",
-              min: "0",
-              onInput: $author$project$Msg$UserUpdatedFilterInt($author$project$Filters$IntAltGreenGamma),
-              onToggle: $author$project$Filters$ToggleAltGreenGamma,
-              step: $elm$core$Maybe$Just("1"),
-              value: $elm$core$String$fromInt(model.filters.altGreenGamma)
-            }
-          ),
-          $author$project$View$PageViewModal$viewToggleRangeRow(
-            {
-              checked: model.filters.altGreenSigmoidEnabled,
-              display: $elm$core$String$fromInt(model.filters.altGreenSigmoid),
-              label: "Green Sigmoid",
-              max: "100",
-              min: "0",
-              onInput: $author$project$Msg$UserUpdatedFilterInt($author$project$Filters$IntAltGreenSigmoid),
-              onToggle: $author$project$Filters$ToggleAltGreenSigmoid,
-              step: $elm$core$Maybe$Just("1"),
-              value: $elm$core$String$fromInt(model.filters.altGreenSigmoid)
-            }
-          ),
-          $author$project$View$PageViewModal$viewToggleRangeRow(
-            {
-              checked: model.filters.altGreenHueEnabled,
-              display: $elm$core$String$fromInt(model.filters.altGreenHue),
-              label: "Green Hue Boost",
-              max: "100",
-              min: "-100",
-              onInput: $author$project$Msg$UserUpdatedFilterInt($author$project$Filters$IntAltGreenHue),
-              onToggle: $author$project$Filters$ToggleAltGreenHue,
-              step: $elm$core$Maybe$Just("1"),
-              value: $elm$core$String$fromInt(model.filters.altGreenHue)
-            }
-          ),
-          $author$project$View$PageViewModal$viewRangeRow(
-            {
-              display: $elm$core$String$fromInt(model.filters.altGreenHueWindow),
-              label: "Green Hue Window",
-              max: "30",
-              min: "2",
-              onInput: $author$project$Msg$UserUpdatedFilterInt($author$project$Filters$IntAltGreenHueWindow),
-              step: $elm$core$Maybe$Just("1"),
-              value: $elm$core$String$fromInt(model.filters.altGreenHueWindow)
-            }
-          ),
-          $author$project$View$PageViewModal$viewToggleRangeRow(
-            {
-              checked: model.filters.altGreenVibranceEnabled,
-              display: $elm$core$String$fromInt(model.filters.altGreenVibrance),
-              label: "Green Vibrance",
-              max: "100",
-              min: "0",
-              onInput: $author$project$Msg$UserUpdatedFilterInt($author$project$Filters$IntAltGreenVibrance),
-              onToggle: $author$project$Filters$ToggleAltGreenVibrance,
-              step: $elm$core$Maybe$Just("1"),
-              value: $elm$core$String$fromInt(model.filters.altGreenVibrance)
-            }
-          ),
-          $author$project$View$PageViewModal$viewToggleRangeRow(
-            {
-              checked: model.filters.altBlueGammaEnabled,
-              display: $elm$core$String$fromInt(model.filters.altBlueGamma),
-              label: "Blue Gamma",
-              max: "100",
-              min: "0",
-              onInput: $author$project$Msg$UserUpdatedFilterInt($author$project$Filters$IntAltBlueGamma),
-              onToggle: $author$project$Filters$ToggleAltBlueGamma,
-              step: $elm$core$Maybe$Just("1"),
-              value: $elm$core$String$fromInt(model.filters.altBlueGamma)
-            }
-          ),
-          $author$project$View$PageViewModal$viewToggleRangeRow(
-            {
-              checked: model.filters.altBlueSigmoidEnabled,
-              display: $elm$core$String$fromInt(model.filters.altBlueSigmoid),
-              label: "Blue Sigmoid",
-              max: "100",
-              min: "0",
-              onInput: $author$project$Msg$UserUpdatedFilterInt($author$project$Filters$IntAltBlueSigmoid),
-              onToggle: $author$project$Filters$ToggleAltBlueSigmoid,
-              step: $elm$core$Maybe$Just("1"),
-              value: $elm$core$String$fromInt(model.filters.altBlueSigmoid)
-            }
-          ),
-          $author$project$View$PageViewModal$viewToggleRangeRow(
-            {
-              checked: model.filters.altBlueHueEnabled,
-              display: $elm$core$String$fromInt(model.filters.altBlueHue),
-              label: "Blue Hue Boost",
-              max: "100",
-              min: "-100",
-              onInput: $author$project$Msg$UserUpdatedFilterInt($author$project$Filters$IntAltBlueHue),
-              onToggle: $author$project$Filters$ToggleAltBlueHue,
-              step: $elm$core$Maybe$Just("1"),
-              value: $elm$core$String$fromInt(model.filters.altBlueHue)
-            }
-          ),
-          $author$project$View$PageViewModal$viewRangeRow(
-            {
-              display: $elm$core$String$fromInt(model.filters.altBlueHueWindow),
-              label: "Blue Hue Window",
-              max: "30",
-              min: "2",
-              onInput: $author$project$Msg$UserUpdatedFilterInt($author$project$Filters$IntAltBlueHueWindow),
-              step: $elm$core$Maybe$Just("1"),
-              value: $elm$core$String$fromInt(model.filters.altBlueHueWindow)
-            }
-          ),
-          $author$project$View$PageViewModal$viewToggleRangeRow(
-            {
-              checked: model.filters.altBlueVibranceEnabled,
-              display: $elm$core$String$fromInt(model.filters.altBlueVibrance),
-              label: "Blue Vibrance",
-              max: "100",
-              min: "0",
-              onInput: $author$project$Msg$UserUpdatedFilterInt($author$project$Filters$IntAltBlueVibrance),
-              onToggle: $author$project$Filters$ToggleAltBlueVibrance,
-              step: $elm$core$Maybe$Just("1"),
-              value: $elm$core$String$fromInt(model.filters.altBlueVibrance)
-            }
-          )
+          isExpanded ? items : _List_Nil
+        )
+      );
+    }
+  );
+  var $author$project$View$PageViewModal$viewFilterRow = function(items) {
+    return A2(
+      $elm$html$Html$div,
+      _List_fromArray(
+        [
+          $elm$html$Html$Attributes$class("filter-row")
         ]
+      ),
+      items
+    );
+  };
+  var $author$project$View$PageViewModal$viewAdvancedColourAdjustGroup = function(model) {
+    return A4(
+      $author$project$View$PageViewModal$viewFilterGroup,
+      model,
+      "advanced-colour-adjust",
+      "Advanced colour adjust",
+      A2(
+        $elm$core$List$cons,
+        $author$project$View$PageViewModal$viewFilterRow(
+          _List_fromArray(
+            [
+              A2(
+                $elm$html$Html$button,
+                _List_fromArray(
+                  [
+                    $elm$html$Html$Attributes$class("filter-reset"),
+                    $elm$html$Html$Attributes$type_("button"),
+                    $elm$html$Html$Events$onClick($author$project$Msg$UserResetAltColourAdjust)
+                  ]
+                ),
+                _List_fromArray(
+                  [
+                    $elm$html$Html$text("Reset sliders")
+                  ]
+                )
+              )
+            ]
+          )
+        ),
+        _Utils_ap(
+          A2(
+            $author$project$View$PageViewModal$viewChannelRows,
+            "Red",
+            $author$project$View$PageViewModal$redChannelConfig(model)
+          ),
+          _Utils_ap(
+            A2(
+              $author$project$View$PageViewModal$viewChannelRows,
+              "Green",
+              $author$project$View$PageViewModal$greenChannelConfig(model)
+            ),
+            A2(
+              $author$project$View$PageViewModal$viewChannelRows,
+              "Blue",
+              $author$project$View$PageViewModal$blueChannelConfig(model)
+            )
+          )
+        )
       )
     );
   };
@@ -24212,7 +24091,7 @@
         {
           checked: model.filters.adaptiveEnabled,
           display: $elm$core$String$fromInt(model.filters.adaptiveWindow),
-          label: "Adaptive",
+          label: "Adaptive Threshold",
           max: "51",
           min: "3",
           onInput: $author$project$Msg$UserUpdatedFilterInt($author$project$Filters$IntAdaptiveWindow),
@@ -25107,7 +24986,7 @@
       )
     );
   };
-  var $author$project$Utilites$disabledIf = F2(
+  var $author$project$Utilities$disabledIf = F2(
     function(disabled, msg) {
       return disabled ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(msg);
     }
@@ -25364,7 +25243,7 @@
                     icon: $author$project$View$Icons$prevPage,
                     isFullscreen: model.fullscreen,
                     label: "Previous Page",
-                    onClickMsg: A2($author$project$Utilites$disabledIf, prevDisabled, $author$project$Msg$UserClickedPageViewPrev)
+                    onClickMsg: A2($author$project$Utilities$disabledIf, prevDisabled, $author$project$Msg$UserClickedPageViewPrev)
                   }
                 ),
                 $author$project$View$Helpers$viewButton(
@@ -25372,7 +25251,7 @@
                     icon: $author$project$View$Icons$nextPage,
                     isFullscreen: model.fullscreen,
                     label: "Next Page",
-                    onClickMsg: A2($author$project$Utilites$disabledIf, nextDisabled, $author$project$Msg$UserClickedPageViewNext)
+                    onClickMsg: A2($author$project$Utilities$disabledIf, nextDisabled, $author$project$Msg$UserClickedPageViewNext)
                   }
                 ),
                 $author$project$View$Helpers$viewButton(
@@ -25663,68 +25542,32 @@
         A2($elm$core$Dict$get, range.id, rangeIndexMap)
       );
       var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, range.label);
-      var labelNode = (function() {
-        if (maybeIndex.$ === "Just") {
-          var index = maybeIndex.a;
-          return A2(
-            $elm$html$Html$button,
-            _List_fromArray(
-              [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("contents-button", true),
-                      _Utils_Tuple2("ui-button", true)
-                    ]
-                  )
-                ),
-                $elm$html$Html$Attributes$type_("button"),
-                $elm$html$Html$Events$onClick(
-                  A2(
-                    $author$project$Msg$UserClickedRange,
-                    range.id,
-                    $elm$core$Maybe$Just(index)
-                  )
-                )
-              ]
+      var labelNode = A2(
+        $elm$html$Html$button,
+        _List_fromArray(
+          [
+            $elm$html$Html$Attributes$classList(
+              _List_fromArray(
+                [
+                  _Utils_Tuple2("contents-button", true),
+                  _Utils_Tuple2("ui-button", true)
+                ]
+              )
             ),
-            _List_fromArray(
-              [
-                $elm$html$Html$text(
-                  $elm$core$String$isEmpty(labelText) ? "[Untitled range]" : labelText
-                )
-              ]
+            $elm$html$Html$Attributes$type_("button"),
+            $elm$html$Html$Events$onClick(
+              A2($author$project$Msg$UserClickedRange, range.id, maybeIndex)
             )
-          );
-        } else {
-          return A2(
-            $elm$html$Html$button,
-            _List_fromArray(
-              [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("contents-button", true),
-                      _Utils_Tuple2("ui-button", true)
-                    ]
-                  )
-                ),
-                $elm$html$Html$Attributes$type_("button"),
-                $elm$html$Html$Events$onClick(
-                  A2($author$project$Msg$UserClickedRange, range.id, $elm$core$Maybe$Nothing)
-                )
-              ]
-            ),
-            _List_fromArray(
-              [
-                $elm$html$Html$text(
-                  $elm$core$String$isEmpty(labelText) ? "[Untitled range]" : labelText
-                )
-              ]
+          ]
+        ),
+        _List_fromArray(
+          [
+            $elm$html$Html$text(
+              $elm$core$String$isEmpty(labelText) ? "[Untitled range]" : labelText
             )
-          );
-        }
-      })();
+          ]
+        )
+      );
       var children = A3($author$project$View$Sidebar$viewRangeItems, model, rangeIndexMap, range.items);
       return A2(
         $elm$html$Html$li,
@@ -26009,89 +25852,53 @@
         $elm$core$List$reverse(canvasLabels)
       );
       var rangePrefix = (function() {
-        var _v1 = _Utils_Tuple2(firstLabel, lastLabel);
-        if (_v1.a.$ === "Just") {
-          if (_v1.b.$ === "Just") {
-            var first = _v1.a.a;
-            var last = _v1.b.a;
+        var _v0 = _Utils_Tuple2(firstLabel, lastLabel);
+        if (_v0.a.$ === "Just") {
+          if (_v0.b.$ === "Just") {
+            var first = _v0.a.a;
+            var last = _v0.b.a;
             return _Utils_eq(first, last) ? "[" + (first + "] ") : "[" + (first + ("-" + (last + "] ")));
           } else {
-            var first = _v1.a.a;
-            var _v2 = _v1.b;
+            var first = _v0.a.a;
+            var _v1 = _v0.b;
             return "[" + (first + "] ");
           }
         } else {
-          if (_v1.b.$ === "Just") {
-            var _v3 = _v1.a;
-            var last = _v1.b.a;
+          if (_v0.b.$ === "Just") {
+            var _v2 = _v0.a;
+            var last = _v0.b.a;
             return "[" + (last + "] ");
           } else {
             return "";
           }
         }
       })();
-      var labelNode = (function() {
-        if (maybeIndex.$ === "Just") {
-          var index = maybeIndex.a;
-          return A2(
-            $elm$html$Html$button,
-            _List_fromArray(
-              [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("contents-button", true),
-                      _Utils_Tuple2("ui-button", true)
-                    ]
-                  )
-                ),
-                $elm$html$Html$Attributes$type_("button"),
-                $elm$html$Html$Events$onClick(
-                  A2(
-                    $author$project$Msg$UserClickedRange,
-                    range.id,
-                    $elm$core$Maybe$Just(index)
-                  )
-                )
-              ]
+      var labelNode = A2(
+        $elm$html$Html$button,
+        _List_fromArray(
+          [
+            $elm$html$Html$Attributes$classList(
+              _List_fromArray(
+                [
+                  _Utils_Tuple2("contents-button", true),
+                  _Utils_Tuple2("ui-button", true)
+                ]
+              )
             ),
-            _List_fromArray(
-              [
-                $elm$html$Html$text(
-                  $elm$core$String$isEmpty(labelText) ? rangePrefix + "[Untitled range]" : _Utils_ap(rangePrefix, labelText)
-                )
-              ]
+            $elm$html$Html$Attributes$type_("button"),
+            $elm$html$Html$Events$onClick(
+              A2($author$project$Msg$UserClickedRange, range.id, maybeIndex)
             )
-          );
-        } else {
-          return A2(
-            $elm$html$Html$button,
-            _List_fromArray(
-              [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("contents-button", true),
-                      _Utils_Tuple2("ui-button", true)
-                    ]
-                  )
-                ),
-                $elm$html$Html$Attributes$type_("button"),
-                $elm$html$Html$Events$onClick(
-                  A2($author$project$Msg$UserClickedRange, range.id, $elm$core$Maybe$Nothing)
-                )
-              ]
-            ),
-            _List_fromArray(
-              [
-                $elm$html$Html$text(
-                  $elm$core$String$isEmpty(labelText) ? rangePrefix + "[Untitled range]" : _Utils_ap(rangePrefix, labelText)
-                )
-              ]
+          ]
+        ),
+        _List_fromArray(
+          [
+            $elm$html$Html$text(
+              $elm$core$String$isEmpty(labelText) ? rangePrefix + "[Untitled range]" : _Utils_ap(rangePrefix, labelText)
             )
-          );
-        }
-      })();
+          ]
+        )
+      );
       return A2(
         $elm$html$Html$li,
         _List_fromArray(
@@ -26970,79 +26777,46 @@
           ) : $elm$core$Maybe$Nothing;
         case "ResourceLoadedCollection":
           var _v1 = model.response;
-          switch (_v1.$) {
-            case "NotRequested":
-              return $elm$core$Maybe$Just(
-                A2(
-                  $elm$html$Html$div,
-                  _List_fromArray(
-                    [
-                      $elm$html$Html$Attributes$class("status")
-                    ]
-                  ),
-                  _List_fromArray(
-                    [
-                      $elm$html$Html$text("Select a manifest from the collection to view.")
-                    ]
-                  )
-                )
-              );
-            case "Loading":
-              return $elm$core$Maybe$Just(
-                A2(
-                  $elm$html$Html$div,
-                  _List_fromArray(
-                    [
-                      $elm$html$Html$Attributes$class("status")
-                    ]
-                  ),
-                  _List_fromArray(
-                    [
-                      $elm$html$Html$text("Select a manifest from the collection to view.")
-                    ]
-                  )
-                )
-              );
-            case "Loaded":
-              return $elm$core$List$isEmpty(model.tileSources) ? $elm$core$Maybe$Just(
-                A2(
-                  $elm$html$Html$div,
-                  _List_fromArray(
-                    [
-                      $elm$html$Html$Attributes$class("status")
-                    ]
-                  ),
-                  _List_fromArray(
-                    [
-                      $elm$html$Html$text("Select a manifest from the collection to view.")
-                    ]
-                  )
-                )
-              ) : $elm$core$Maybe$Nothing;
-            default:
-              var message = _v1.a;
-              return $elm$core$Maybe$Just(
-                A2(
-                  $elm$html$Html$div,
-                  _List_fromArray(
-                    [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("status", true),
-                            _Utils_Tuple2("is-error", true)
-                          ]
-                        )
+          if (_v1.$ === "Failed") {
+            var message = _v1.a;
+            return $elm$core$Maybe$Just(
+              A2(
+                $elm$html$Html$div,
+                _List_fromArray(
+                  [
+                    $elm$html$Html$Attributes$classList(
+                      _List_fromArray(
+                        [
+                          _Utils_Tuple2("status", true),
+                          _Utils_Tuple2("is-error", true)
+                        ]
                       )
-                    ]
-                  ),
-                  _List_fromArray(
-                    [
-                      $elm$html$Html$text(message)
-                    ]
-                  )
+                    )
+                  ]
+                ),
+                _List_fromArray(
+                  [
+                    $elm$html$Html$text(message)
+                  ]
                 )
-              );
+              )
+            );
+          } else {
+            return $elm$core$List$isEmpty(model.tileSources) ? $elm$core$Maybe$Just(
+              A2(
+                $elm$html$Html$div,
+                _List_fromArray(
+                  [
+                    $elm$html$Html$Attributes$class("status")
+                  ]
+                ),
+                _List_fromArray(
+                  [
+                    $elm$html$Html$text("Select a manifest from the collection to view.")
+                  ]
+                )
+              )
+            ) : $elm$core$Maybe$Nothing;
           }
         default:
           var message = _v0.a;
@@ -27107,7 +26881,7 @@
     )
   );
   var $author$project$View$Toolbar$viewToolbar = function(model) {
-    var controlsDisabled = $author$project$Utilites$isNothing(
+    var controlsDisabled = $author$project$Utilities$isNothing(
       $author$project$Model$currentManifest(model)
     );
     return A2(
@@ -27142,7 +26916,7 @@
                           icon: $author$project$View$Icons$zoomOut,
                           isFullscreen: model.fullscreen,
                           label: "Zoom Out",
-                          onClickMsg: A2($author$project$Utilites$disabledIf, controlsDisabled, $author$project$Msg$UserClickedZoomOut)
+                          onClickMsg: A2($author$project$Utilities$disabledIf, controlsDisabled, $author$project$Msg$UserClickedZoomOut)
                         }
                       ),
                       $author$project$View$Helpers$viewButton(
@@ -27150,7 +26924,7 @@
                           icon: $author$project$View$Icons$zoomIn,
                           isFullscreen: model.fullscreen,
                           label: "Zoom In",
-                          onClickMsg: A2($author$project$Utilites$disabledIf, controlsDisabled, $author$project$Msg$UserClickedZoomIn)
+                          onClickMsg: A2($author$project$Utilities$disabledIf, controlsDisabled, $author$project$Msg$UserClickedZoomIn)
                         }
                       )
                     ]
@@ -27178,7 +26952,7 @@
                           icon: $author$project$View$Icons$pageViewOpen,
                           isFullscreen: model.fullscreen,
                           label: "Page View",
-                          onClickMsg: A2($author$project$Utilites$disabledIf, controlsDisabled, $author$project$Msg$UserClickedOpenPageView)
+                          onClickMsg: A2($author$project$Utilities$disabledIf, controlsDisabled, $author$project$Msg$UserClickedOpenPageView)
                         }
                       ),
                       $author$project$View$Helpers$viewButton(
@@ -27186,7 +26960,7 @@
                           icon: $author$project$View$Icons$info,
                           isFullscreen: model.fullscreen,
                           label: "Manifest Info",
-                          onClickMsg: A2($author$project$Utilites$disabledIf, controlsDisabled, $author$project$Msg$UserClickedOpenManifestInfo)
+                          onClickMsg: A2($author$project$Utilities$disabledIf, controlsDisabled, $author$project$Msg$UserClickedOpenManifestInfo)
                         }
                       ),
                       $author$project$View$Helpers$viewButton(
@@ -27194,7 +26968,7 @@
                           icon: _Utils_eq(model.viewMode, $author$project$Model$OneUp) ? $author$project$View$Icons$openingPageView : $author$project$View$Icons$scrollingPageView,
                           isFullscreen: model.fullscreen,
                           label: _Utils_eq(model.viewMode, $author$project$Model$OneUp) ? "Two Page" : "One Page",
-                          onClickMsg: A2($author$project$Utilites$disabledIf, controlsDisabled, $author$project$Msg$UserToggledTwoUp)
+                          onClickMsg: A2($author$project$Utilities$disabledIf, controlsDisabled, $author$project$Msg$UserToggledTwoUp)
                         }
                       ),
                       $author$project$View$Helpers$viewButton(
@@ -27203,7 +26977,7 @@
                           isFullscreen: model.fullscreen,
                           label: "Shift Page",
                           onClickMsg: A2(
-                            $author$project$Utilites$disabledIf,
+                            $author$project$Utilities$disabledIf,
                             controlsDisabled || _Utils_eq(model.viewMode, $author$project$Model$OneUp),
                             $author$project$Msg$UserToggledShiftByOne
                           )
@@ -27216,7 +26990,7 @@
                             icon: sidebarVisible ? $author$project$View$Icons$hideSidebar : $author$project$View$Icons$showSidebar,
                             isFullscreen: model.fullscreen,
                             label: sidebarVisible ? "Hide Sidebar" : "Show Sidebar",
-                            onClickMsg: A2($author$project$Utilites$disabledIf, controlsDisabled, $author$project$Msg$UserToggledSidebar)
+                            onClickMsg: A2($author$project$Utilities$disabledIf, controlsDisabled, $author$project$Msg$UserToggledSidebar)
                           };
                         })()
                       ),
@@ -28064,6 +27838,207 @@
       }
     }
   }
+  var noopFilter = (_context, callback) => {
+    callback();
+  };
+  function rgbToHSV(r, g, b) {
+    const rr = r / 255;
+    const gg = g / 255;
+    const bb = b / 255;
+    const maxValue = Math.max(rr, gg, bb);
+    const minValue = Math.min(rr, gg, bb);
+    const v = maxValue;
+    const d = maxValue - minValue;
+    const s = maxValue === 0 ? 0 : d / maxValue;
+    let h = 0;
+    if (maxValue !== minValue) {
+      switch (maxValue) {
+        case rr:
+          h = (gg - bb) / d + (gg < bb ? 6 : 0);
+          break;
+        case gg:
+          h = (bb - rr) / d + 2;
+          break;
+        default:
+          h = (rr - gg) / d + 4;
+      }
+      h /= 6;
+    }
+    return { h, s, v };
+  }
+  function hsvToRGB(h, s, v) {
+    let r = 0;
+    let g = 0;
+    let b = 0;
+    const i = Math.floor(h * 6);
+    const f = h * 6 - i;
+    const p = v * (1 - s);
+    const q = v * (1 - f * s);
+    const t = v * (1 - (1 - f) * s);
+    switch (i % 6) {
+      case 0:
+        r = v;
+        g = t;
+        b = p;
+        break;
+      case 1:
+        r = q;
+        g = v;
+        b = p;
+        break;
+      case 2:
+        r = p;
+        g = v;
+        b = t;
+        break;
+      case 3:
+        r = p;
+        g = q;
+        b = v;
+        break;
+      case 4:
+        r = t;
+        g = p;
+        b = v;
+        break;
+      default:
+        r = v;
+        g = p;
+        b = q;
+    }
+    return { r: Math.floor(r * 255), g: Math.floor(g * 255), b: Math.floor(b * 255) };
+  }
+  function applyChannelLUT(channel, lut) {
+    if (channel === 0) {
+      return applyPixelTransformInPlace(
+        (r, g, b, a, out) => {
+          out[0] = lut[r];
+          out[1] = g;
+          out[2] = b;
+          out[3] = a;
+        }
+      );
+    }
+    if (channel === 1) {
+      return applyPixelTransformInPlace(
+        (r, g, b, a, out) => {
+          out[0] = r;
+          out[1] = lut[g];
+          out[2] = b;
+          out[3] = a;
+        }
+      );
+    }
+    return applyPixelTransformInPlace(
+      (r, g, b, a, out) => {
+        out[0] = r;
+        out[1] = g;
+        out[2] = lut[b];
+        out[3] = a;
+      }
+    );
+  }
+  function ccChannel(channel, adjustment) {
+    const adj = adjustment / 100;
+    const absAdj = Math.abs(adj);
+    const transform = (ch) => adj > 0 ? ch + (255 - ch) * adj : ch - ch * absAdj;
+    if (channel === 0) {
+      return applyPixelTransformInPlace(
+        (r, g, b, a, out) => {
+          out[0] = transform(r);
+          out[1] = g;
+          out[2] = b;
+          out[3] = a;
+        }
+      );
+    }
+    if (channel === 1) {
+      return applyPixelTransformInPlace(
+        (r, g, b, a, out) => {
+          out[0] = r;
+          out[1] = transform(g);
+          out[2] = b;
+          out[3] = a;
+        }
+      );
+    }
+    return applyPixelTransformInPlace(
+      (r, g, b, a, out) => {
+        out[0] = r;
+        out[1] = g;
+        out[2] = transform(b);
+        out[3] = a;
+      }
+    );
+  }
+  function altChannelGamma(channel, amount) {
+    const strength = Math.max(0, Math.min(100, amount || 0));
+    if (strength === 0) {
+      return noopFilter;
+    }
+    const exponent = 1 - strength / 100 * 0.8;
+    const lut = [];
+    for (let i = 0; i < 256; i += 1) {
+      lut[i] = clampByte(Math.pow(i / 255, exponent) * 255);
+    }
+    return applyChannelLUT(channel, lut);
+  }
+  function altChannelSigmoid(channel, amount) {
+    const strength = Math.max(0, Math.min(100, amount || 0)) / 100;
+    if (strength === 0) {
+      return noopFilter;
+    }
+    const a = 8;
+    const lut = [];
+    for (let i = 0; i < 256; i += 1) {
+      const sig = 1 / (1 + Math.exp(-a * (i / 255 - 0.5)));
+      const target = sig * 255;
+      lut[i] = clampByte(i + (target - i) * strength);
+    }
+    return applyChannelLUT(channel, lut);
+  }
+  function altChannelHue(hueTarget, amount, window2) {
+    const strength = Math.max(-100, Math.min(100, amount || 0)) / 100;
+    if (strength === 0) {
+      return noopFilter;
+    }
+    const windowSize = Math.max(0.02, Math.min(0.3, (window2 === void 0 ? 8 : window2) / 100));
+    return applyPixelTransformInPlace(
+      (r, g, b, aPx, out) => {
+        const hsv = rgbToHSV(r, g, b);
+        const hueDist = hueTarget === 0 ? Math.min(Math.abs(hsv.h), Math.abs(1 - hsv.h)) : Math.abs(hsv.h - hueTarget);
+        const hueWeight = clamp01(1 - hueDist / windowSize);
+        const weight = hueWeight * Math.abs(strength);
+        if (weight <= 0) {
+          out[0] = r;
+          out[1] = g;
+          out[2] = b;
+          out[3] = aPx;
+          return;
+        }
+        const sign = strength >= 0 ? 1 : -1;
+        const nextS = clamp01(hsv.s + sign * (1 - hsv.s) * weight);
+        const nextV = clamp01(hsv.v + sign * hsv.v * weight * 0.2);
+        const rgb = hsvToRGB(hsv.h, nextS, nextV);
+        out[0] = rgb.r;
+        out[1] = rgb.g;
+        out[2] = rgb.b;
+        out[3] = aPx;
+      }
+    );
+  }
+  function altChannelVibrance(channel, amount) {
+    const strength = Math.max(0, Math.min(100, amount || 0)) / 100;
+    if (strength === 0) {
+      return noopFilter;
+    }
+    const lut = [];
+    for (let i = 0; i < 256; i += 1) {
+      const weight = i / 255 * (i / 255) * strength;
+      lut[i] = clampByte(i + (255 - i) * weight);
+    }
+    return applyChannelLUT(channel, lut);
+  }
   var Filters = {
     _scratch: null,
     _scratchCanvas: null,
@@ -28114,73 +28089,8 @@
       context.clearRect(0, 0, width, height);
       context.drawImage(this._scratchCanvas, 0, 0);
     },
-    _rgbToHSV: function(r, g, b) {
-      let rr = r / 255;
-      let gg = g / 255;
-      let bb = b / 255;
-      const maxValue = Math.max(rr, gg, bb);
-      const minValue = Math.min(rr, gg, bb);
-      const v = maxValue;
-      const d = maxValue - minValue;
-      const s = maxValue === 0 ? 0 : d / maxValue;
-      let h = 0;
-      if (maxValue !== minValue) {
-        switch (maxValue) {
-          case rr:
-            h = (gg - bb) / d + (gg < bb ? 6 : 0);
-            break;
-          case gg:
-            h = (bb - rr) / d + 2;
-            break;
-          default:
-            h = (rr - gg) / d + 4;
-        }
-        h /= 6;
-      }
-      return { h, s, v };
-    },
-    _hsvToRGB: function(h, s, v) {
-      let r = 0;
-      let g = 0;
-      let b = 0;
-      const i = Math.floor(h * 6);
-      const f = h * 6 - i;
-      const p = v * (1 - s);
-      const q = v * (1 - f * s);
-      const t = v * (1 - (1 - f) * s);
-      switch (i % 6) {
-        case 0:
-          r = v;
-          g = t;
-          b = p;
-          break;
-        case 1:
-          r = q;
-          g = v;
-          b = p;
-          break;
-        case 2:
-          r = p;
-          g = v;
-          b = t;
-          break;
-        case 3:
-          r = p;
-          g = q;
-          b = v;
-          break;
-        case 4:
-          r = t;
-          g = p;
-          b = v;
-          break;
-        default:
-          r = v;
-          g = p;
-          b = q;
-      }
-      return { r: Math.floor(r * 255), g: Math.floor(g * 255), b: Math.floor(b * 255) };
-    },
+    _rgbToHSV: rgbToHSV,
+    _hsvToRGB: hsvToRGB,
     THRESHOLDING: function(threshold) {
       if (threshold < 0 || threshold > 255) {
         throw new Error("Threshold must be between 0 and 255.");
@@ -28263,40 +28173,13 @@
       );
     },
     CC_RED: function(adjustment) {
-      const adj = adjustment / 100;
-      const absAdj = Math.abs(adj);
-      return applyPixelTransformInPlace(
-        (r, g, b, a, out) => {
-          out[0] = adj > 0 ? r + (255 - r) * adj : r - r * absAdj;
-          out[1] = g;
-          out[2] = b;
-          out[3] = a;
-        }
-      );
+      return ccChannel(0, adjustment);
     },
     CC_GREEN: function(adjustment) {
-      const adj = adjustment / 100;
-      const absAdj = Math.abs(adj);
-      return applyPixelTransformInPlace(
-        (r, g, b, a, out) => {
-          out[0] = r;
-          out[1] = adj > 0 ? g + (255 - g) * adj : g - g * absAdj;
-          out[2] = b;
-          out[3] = a;
-        }
-      );
+      return ccChannel(1, adjustment);
     },
     CC_BLUE: function(adjustment) {
-      const adj = adjustment / 100;
-      const absAdj = Math.abs(adj);
-      return applyPixelTransformInPlace(
-        (r, g, b, a, out) => {
-          out[0] = r;
-          out[1] = g;
-          out[2] = adj > 0 ? b + (255 - b) * adj : b - b * absAdj;
-          out[3] = a;
-        }
-      );
+      return ccChannel(2, adjustment);
     },
     CONTRAST: function(adjustment) {
       if (adjustment < 0) {
@@ -28538,13 +28421,11 @@
       const src = hexToRgb(source);
       const dst = hexToRgb(target);
       if (!src || !dst) {
-        return function(_, callback) {
-          callback();
-        };
+        return noopFilter;
       }
       const tol = Math.max(0, Math.min(255, tolerance === void 0 ? 0 : tolerance));
       const strength = Math.max(0, Math.min(1, blend === void 0 ? 1 : blend));
-      const targetHsv = Filters._rgbToHSV(dst[0], dst[1], dst[2]);
+      const targetHsv = rgbToHSV(dst[0], dst[1], dst[2]);
       return applyPixelTransformInPlace(
         (r, g, b, a, out) => {
           const dr = r - src[0];
@@ -28570,7 +28451,7 @@
           let tb = dst[2];
           if (preserveLum) {
             const luma = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-            const rgb = Filters._hsvToRGB(targetHsv.h, targetHsv.s, luma);
+            const rgb = hsvToRGB(targetHsv.h, targetHsv.s, luma);
             tr = rgb.r;
             tg = rgb.g;
             tb = rgb.b;
@@ -28583,296 +28464,40 @@
       );
     },
     ALT_RED_GAMMA: function(amount) {
-      const strength = Math.max(0, Math.min(100, amount || 0));
-      if (strength === 0) {
-        return function(_context, callback) {
-          callback();
-        };
-      }
-      const exponent = 1 - strength / 100 * 0.8;
-      const precomputed = [];
-      for (let i = 0; i < 256; i += 1) {
-        precomputed[i] = clampByte(Math.pow(i / 255, exponent) * 255);
-      }
-      return applyPixelTransformInPlace(
-        (r, g, b, a, out) => {
-          out[0] = precomputed[r];
-          out[1] = g;
-          out[2] = b;
-          out[3] = a;
-        }
-      );
+      return altChannelGamma(0, amount);
     },
     ALT_GREEN_GAMMA: function(amount) {
-      const strength = Math.max(0, Math.min(100, amount || 0));
-      if (strength === 0) {
-        return function(_context, callback) {
-          callback();
-        };
-      }
-      const exponent = 1 - strength / 100 * 0.8;
-      const precomputed = [];
-      for (let i = 0; i < 256; i += 1) {
-        precomputed[i] = clampByte(Math.pow(i / 255, exponent) * 255);
-      }
-      return applyPixelTransformInPlace(
-        (r, g, b, a, out) => {
-          out[0] = r;
-          out[1] = precomputed[g];
-          out[2] = b;
-          out[3] = a;
-        }
-      );
+      return altChannelGamma(1, amount);
     },
     ALT_BLUE_GAMMA: function(amount) {
-      const strength = Math.max(0, Math.min(100, amount || 0));
-      if (strength === 0) {
-        return function(_context, callback) {
-          callback();
-        };
-      }
-      const exponent = 1 - strength / 100 * 0.8;
-      const precomputed = [];
-      for (let i = 0; i < 256; i += 1) {
-        precomputed[i] = clampByte(Math.pow(i / 255, exponent) * 255);
-      }
-      return applyPixelTransformInPlace(
-        (r, g, b, a, out) => {
-          out[0] = r;
-          out[1] = g;
-          out[2] = precomputed[b];
-          out[3] = a;
-        }
-      );
+      return altChannelGamma(2, amount);
     },
     ALT_RED_SIGMOID: function(amount) {
-      const strength = Math.max(0, Math.min(100, amount || 0)) / 100;
-      if (strength === 0) {
-        return function(_context, callback) {
-          callback();
-        };
-      }
-      const a = 8;
-      const precomputed = [];
-      for (let i = 0; i < 256; i += 1) {
-        const sig = 1 / (1 + Math.exp(-a * (i / 255 - 0.5)));
-        const target = sig * 255;
-        precomputed[i] = clampByte(i + (target - i) * strength);
-      }
-      return applyPixelTransformInPlace(
-        (r, g, b, aPx, out) => {
-          out[0] = precomputed[r];
-          out[1] = g;
-          out[2] = b;
-          out[3] = aPx;
-        }
-      );
+      return altChannelSigmoid(0, amount);
     },
     ALT_GREEN_SIGMOID: function(amount) {
-      const strength = Math.max(0, Math.min(100, amount || 0)) / 100;
-      if (strength === 0) {
-        return function(_context, callback) {
-          callback();
-        };
-      }
-      const a = 8;
-      const precomputed = [];
-      for (let i = 0; i < 256; i += 1) {
-        const sig = 1 / (1 + Math.exp(-a * (i / 255 - 0.5)));
-        const target = sig * 255;
-        precomputed[i] = clampByte(i + (target - i) * strength);
-      }
-      return applyPixelTransformInPlace(
-        (r, g, b, aPx, out) => {
-          out[0] = r;
-          out[1] = precomputed[g];
-          out[2] = b;
-          out[3] = aPx;
-        }
-      );
+      return altChannelSigmoid(1, amount);
     },
     ALT_BLUE_SIGMOID: function(amount) {
-      const strength = Math.max(0, Math.min(100, amount || 0)) / 100;
-      if (strength === 0) {
-        return function(_context, callback) {
-          callback();
-        };
-      }
-      const a = 8;
-      const precomputed = [];
-      for (let i = 0; i < 256; i += 1) {
-        const sig = 1 / (1 + Math.exp(-a * (i / 255 - 0.5)));
-        const target = sig * 255;
-        precomputed[i] = clampByte(i + (target - i) * strength);
-      }
-      return applyPixelTransformInPlace(
-        (r, g, b, aPx, out) => {
-          out[0] = r;
-          out[1] = g;
-          out[2] = precomputed[b];
-          out[3] = aPx;
-        }
-      );
+      return altChannelSigmoid(2, amount);
     },
     ALT_RED_HUE: function(amount, window2) {
-      const strength = Math.max(-100, Math.min(100, amount || 0)) / 100;
-      if (strength === 0) {
-        return function(_context, callback) {
-          callback();
-        };
-      }
-      const windowSize = Math.max(0.02, Math.min(0.3, (window2 === void 0 ? 8 : window2) / 100));
-      return applyPixelTransformInPlace(
-        (r, g, b, aPx, out) => {
-          const hsv = Filters._rgbToHSV(r, g, b);
-          const hue = hsv.h;
-          const hueDist = Math.min(Math.abs(hue), Math.abs(1 - hue));
-          const hueWeight = clamp01(1 - hueDist / windowSize);
-          const weight = hueWeight * Math.abs(strength);
-          if (weight <= 0) {
-            out[0] = r;
-            out[1] = g;
-            out[2] = b;
-            out[3] = aPx;
-            return;
-          }
-          const sign = strength >= 0 ? 1 : -1;
-          const nextS = clamp01(hsv.s + sign * (1 - hsv.s) * weight);
-          const nextV = clamp01(hsv.v + sign * hsv.v * weight * 0.2);
-          const rgb = Filters._hsvToRGB(hsv.h, nextS, nextV);
-          out[0] = rgb.r;
-          out[1] = rgb.g;
-          out[2] = rgb.b;
-          out[3] = aPx;
-        }
-      );
+      return altChannelHue(0, amount, window2);
     },
     ALT_GREEN_HUE: function(amount, window2) {
-      const strength = Math.max(-100, Math.min(100, amount || 0)) / 100;
-      if (strength === 0) {
-        return function(_context, callback) {
-          callback();
-        };
-      }
-      const windowSize = Math.max(0.02, Math.min(0.3, (window2 === void 0 ? 8 : window2) / 100));
-      return applyPixelTransformInPlace(
-        (r, g, b, aPx, out) => {
-          const hsv = Filters._rgbToHSV(r, g, b);
-          const hueDist = Math.abs(hsv.h - 1 / 3);
-          const hueWeight = clamp01(1 - hueDist / windowSize);
-          const weight = hueWeight * Math.abs(strength);
-          if (weight <= 0) {
-            out[0] = r;
-            out[1] = g;
-            out[2] = b;
-            out[3] = aPx;
-            return;
-          }
-          const sign = strength >= 0 ? 1 : -1;
-          const nextS = clamp01(hsv.s + sign * (1 - hsv.s) * weight);
-          const nextV = clamp01(hsv.v + sign * hsv.v * weight * 0.2);
-          const rgb = Filters._hsvToRGB(hsv.h, nextS, nextV);
-          out[0] = rgb.r;
-          out[1] = rgb.g;
-          out[2] = rgb.b;
-          out[3] = aPx;
-        }
-      );
+      return altChannelHue(1 / 3, amount, window2);
     },
     ALT_BLUE_HUE: function(amount, window2) {
-      const strength = Math.max(-100, Math.min(100, amount || 0)) / 100;
-      if (strength === 0) {
-        return function(_context, callback) {
-          callback();
-        };
-      }
-      const windowSize = Math.max(0.02, Math.min(0.3, (window2 === void 0 ? 8 : window2) / 100));
-      return applyPixelTransformInPlace(
-        (r, g, b, aPx, out) => {
-          const hsv = Filters._rgbToHSV(r, g, b);
-          const hueDist = Math.abs(hsv.h - 2 / 3);
-          const hueWeight = clamp01(1 - hueDist / windowSize);
-          const weight = hueWeight * Math.abs(strength);
-          if (weight <= 0) {
-            out[0] = r;
-            out[1] = g;
-            out[2] = b;
-            out[3] = aPx;
-            return;
-          }
-          const sign = strength >= 0 ? 1 : -1;
-          const nextS = clamp01(hsv.s + sign * (1 - hsv.s) * weight);
-          const nextV = clamp01(hsv.v + sign * hsv.v * weight * 0.2);
-          const rgb = Filters._hsvToRGB(hsv.h, nextS, nextV);
-          out[0] = rgb.r;
-          out[1] = rgb.g;
-          out[2] = rgb.b;
-          out[3] = aPx;
-        }
-      );
+      return altChannelHue(2 / 3, amount, window2);
     },
     ALT_RED_VIBRANCE: function(amount) {
-      const strength = Math.max(0, Math.min(100, amount || 0)) / 100;
-      if (strength === 0) {
-        return function(_context, callback) {
-          callback();
-        };
-      }
-      const precomputed = [];
-      for (let i = 0; i < 256; i += 1) {
-        const weight = i / 255 * (i / 255) * strength;
-        precomputed[i] = clampByte(i + (255 - i) * weight);
-      }
-      return applyPixelTransformInPlace(
-        (r, g, b, aPx, out) => {
-          out[0] = precomputed[r];
-          out[1] = g;
-          out[2] = b;
-          out[3] = aPx;
-        }
-      );
+      return altChannelVibrance(0, amount);
     },
     ALT_GREEN_VIBRANCE: function(amount) {
-      const strength = Math.max(0, Math.min(100, amount || 0)) / 100;
-      if (strength === 0) {
-        return function(_context, callback) {
-          callback();
-        };
-      }
-      const precomputed = [];
-      for (let i = 0; i < 256; i += 1) {
-        const weight = i / 255 * (i / 255) * strength;
-        precomputed[i] = clampByte(i + (255 - i) * weight);
-      }
-      return applyPixelTransformInPlace(
-        (r, g, b, aPx, out) => {
-          out[0] = r;
-          out[1] = precomputed[g];
-          out[2] = b;
-          out[3] = aPx;
-        }
-      );
+      return altChannelVibrance(1, amount);
     },
     ALT_BLUE_VIBRANCE: function(amount) {
-      const strength = Math.max(0, Math.min(100, amount || 0)) / 100;
-      if (strength === 0) {
-        return function(_context, callback) {
-          callback();
-        };
-      }
-      const precomputed = [];
-      for (let i = 0; i < 256; i += 1) {
-        const weight = i / 255 * (i / 255) * strength;
-        precomputed[i] = clampByte(i + (255 - i) * weight);
-      }
-      return applyPixelTransformInPlace(
-        (r, g, b, aPx, out) => {
-          out[0] = r;
-          out[1] = g;
-          out[2] = precomputed[b];
-          out[3] = aPx;
-        }
-      );
+      return altChannelVibrance(2, amount);
     },
     PCA_COLOR: function(mode) {
       const normalized = (mode || "").toLowerCase();
@@ -29369,7 +28994,20 @@
     GREYSCALE: Filters.GREYSCALE,
     INVERT: Filters.INVERT,
     BACKGROUND_NORMALIZE: Filters.BACKGROUND_NORMALIZE,
-    UNSHARP_MASK: Filters.UNSHARP_MASK
+    UNSHARP_MASK: Filters.UNSHARP_MASK,
+    ALT_RED_GAMMA: Filters.ALT_RED_GAMMA,
+    ALT_GREEN_GAMMA: Filters.ALT_GREEN_GAMMA,
+    ALT_BLUE_GAMMA: Filters.ALT_BLUE_GAMMA,
+    ALT_RED_SIGMOID: Filters.ALT_RED_SIGMOID,
+    ALT_GREEN_SIGMOID: Filters.ALT_GREEN_SIGMOID,
+    ALT_BLUE_SIGMOID: Filters.ALT_BLUE_SIGMOID,
+    ALT_RED_HUE: Filters.ALT_RED_HUE,
+    ALT_GREEN_HUE: Filters.ALT_GREEN_HUE,
+    ALT_BLUE_HUE: Filters.ALT_BLUE_HUE,
+    ALT_RED_VIBRANCE: Filters.ALT_RED_VIBRANCE,
+    ALT_GREEN_VIBRANCE: Filters.ALT_GREEN_VIBRANCE,
+    ALT_BLUE_VIBRANCE: Filters.ALT_BLUE_VIBRANCE,
+    ADAPTIVE_THRESHOLD: Filters.ADAPTIVE_THRESHOLD
   };
   var simpleFilterMappings = [
     { enabled: "thresholdEnabled", filter: "THRESHOLDING", args: ["threshold"] },
@@ -29387,17 +29025,32 @@
     { enabled: "normalizeEnabled", filter: "BACKGROUND_NORMALIZE", args: ["normalizeStrength"] },
     { enabled: "unsharpEnabled", filter: "UNSHARP_MASK", args: ["unsharpAmount"] }
   ];
+  var altFilterMappings = [
+    { enabled: "altRedGammaEnabled", filter: "ALT_RED_GAMMA", args: ["altRedGamma"] },
+    { enabled: "altGreenGammaEnabled", filter: "ALT_GREEN_GAMMA", args: ["altGreenGamma"] },
+    { enabled: "altBlueGammaEnabled", filter: "ALT_BLUE_GAMMA", args: ["altBlueGamma"] },
+    { enabled: "altRedSigmoidEnabled", filter: "ALT_RED_SIGMOID", args: ["altRedSigmoid"] },
+    { enabled: "altGreenSigmoidEnabled", filter: "ALT_GREEN_SIGMOID", args: ["altGreenSigmoid"] },
+    { enabled: "altBlueSigmoidEnabled", filter: "ALT_BLUE_SIGMOID", args: ["altBlueSigmoid"] },
+    { enabled: "altRedHueEnabled", filter: "ALT_RED_HUE", args: ["altRedHue", "altRedHueWindow"], defaults: [0, 8] },
+    { enabled: "altGreenHueEnabled", filter: "ALT_GREEN_HUE", args: ["altGreenHue", "altGreenHueWindow"], defaults: [0, 8] },
+    { enabled: "altBlueHueEnabled", filter: "ALT_BLUE_HUE", args: ["altBlueHue", "altBlueHueWindow"], defaults: [0, 8] },
+    { enabled: "altRedVibranceEnabled", filter: "ALT_RED_VIBRANCE", args: ["altRedVibrance"] },
+    { enabled: "altGreenVibranceEnabled", filter: "ALT_GREEN_VIBRANCE", args: ["altGreenVibrance"] },
+    { enabled: "altBlueVibranceEnabled", filter: "ALT_BLUE_VIBRANCE", args: ["altBlueVibrance"] },
+    { enabled: "adaptiveEnabled", filter: "ADAPTIVE_THRESHOLD", args: ["adaptiveWindow", "adaptiveOffset"], defaults: [15, 10] }
+  ];
   var buildFilterOptions = (filters) => {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _A;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l;
     if (!filters) {
       return { filters: [], loadMode: "sync" };
     }
     const processors = [];
     for (const mapping of simpleFilterMappings) {
       if (filters[mapping.enabled]) {
-        const filterArgs = (_b = (_a = mapping.args) == null ? void 0 : _a.map((key) => {
-          var _a2;
-          return (_a2 = filters[key]) != null ? _a2 : 0;
+        const filterArgs = (_b = (_a = mapping.args) == null ? void 0 : _a.map((key, i) => {
+          var _a2, _b2, _c2;
+          return (_c2 = filters[key]) != null ? _c2 : (_b2 = (_a2 = mapping.defaults) == null ? void 0 : _a2[i]) != null ? _b2 : 0;
         })) != null ? _b : [];
         const filterFn = filterFunctions[mapping.filter];
         processors.push(filterFn(...filterArgs));
@@ -29441,50 +29094,15 @@
         (_j = filters.colourReplacePreserveLum) != null ? _j : false
       ));
     }
-    if (filters.altRedGammaEnabled) {
-      processors.push(Filters.ALT_RED_GAMMA((_k = filters.altRedGamma) != null ? _k : 0));
-    }
-    if (filters.altGreenGammaEnabled) {
-      processors.push(Filters.ALT_GREEN_GAMMA((_l = filters.altGreenGamma) != null ? _l : 0));
-    }
-    if (filters.altBlueGammaEnabled) {
-      processors.push(Filters.ALT_BLUE_GAMMA((_m = filters.altBlueGamma) != null ? _m : 0));
-    }
-    if (filters.altRedSigmoidEnabled) {
-      processors.push(Filters.ALT_RED_SIGMOID((_n = filters.altRedSigmoid) != null ? _n : 0));
-    }
-    if (filters.altGreenSigmoidEnabled) {
-      processors.push(Filters.ALT_GREEN_SIGMOID((_o = filters.altGreenSigmoid) != null ? _o : 0));
-    }
-    if (filters.altBlueSigmoidEnabled) {
-      processors.push(Filters.ALT_BLUE_SIGMOID((_p = filters.altBlueSigmoid) != null ? _p : 0));
-    }
-    if (filters.altRedHueEnabled) {
-      processors.push(Filters.ALT_RED_HUE((_q = filters.altRedHue) != null ? _q : 0, (_r = filters.altRedHueWindow) != null ? _r : 8));
-    }
-    if (filters.altGreenHueEnabled) {
-      processors.push(
-        Filters.ALT_GREEN_HUE((_s = filters.altGreenHue) != null ? _s : 0, (_t = filters.altGreenHueWindow) != null ? _t : 8)
-      );
-    }
-    if (filters.altBlueHueEnabled) {
-      processors.push(
-        Filters.ALT_BLUE_HUE((_u = filters.altBlueHue) != null ? _u : 0, (_v = filters.altBlueHueWindow) != null ? _v : 8)
-      );
-    }
-    if (filters.altRedVibranceEnabled) {
-      processors.push(Filters.ALT_RED_VIBRANCE((_w = filters.altRedVibrance) != null ? _w : 0));
-    }
-    if (filters.altGreenVibranceEnabled) {
-      processors.push(Filters.ALT_GREEN_VIBRANCE((_x = filters.altGreenVibrance) != null ? _x : 0));
-    }
-    if (filters.altBlueVibranceEnabled) {
-      processors.push(Filters.ALT_BLUE_VIBRANCE((_y = filters.altBlueVibrance) != null ? _y : 0));
-    }
-    if (filters.adaptiveEnabled) {
-      processors.push(
-        Filters.ADAPTIVE_THRESHOLD((_z = filters.adaptiveWindow) != null ? _z : 15, (_A = filters.adaptiveOffset) != null ? _A : 10)
-      );
+    for (const mapping of altFilterMappings) {
+      if (filters[mapping.enabled]) {
+        const filterArgs = (_l = (_k = mapping.args) == null ? void 0 : _k.map((key, i) => {
+          var _a2, _b2, _c2;
+          return (_c2 = filters[key]) != null ? _c2 : (_b2 = (_a2 = mapping.defaults) == null ? void 0 : _a2[i]) != null ? _b2 : 0;
+        })) != null ? _l : [];
+        const filterFn = filterFunctions[mapping.filter];
+        processors.push(filterFn(...filterArgs));
+      }
     }
     if (processors.length === 0) {
       return { filters: [], loadMode: "sync" };

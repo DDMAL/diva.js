@@ -38,6 +38,8 @@ class OsdViewer extends HTMLElement
     private scrollbarTrack: HTMLDivElement|null = null;
     private scrollbarThumb: HTMLDivElement|null = null;
     private isScrollbarDragging = false;
+    private scrollbarMouseMove: ((e: MouseEvent) => void)|null = null;
+    private scrollbarMouseUp: (() => void)|null = null;
 
     constructor()
     {
@@ -77,6 +79,16 @@ class OsdViewer extends HTMLElement
         {
             this.container.removeEventListener("wheel", this.handleWheelBound);
             this.container.removeEventListener("dblclick", this.handleDoubleClickBound);
+        }
+        if (this.scrollbarMouseMove)
+        {
+            document.removeEventListener("mousemove", this.scrollbarMouseMove);
+            this.scrollbarMouseMove = null;
+        }
+        if (this.scrollbarMouseUp)
+        {
+            document.removeEventListener("mouseup", this.scrollbarMouseUp);
+            this.scrollbarMouseUp = null;
         }
         if (this.viewer)
         {
@@ -177,7 +189,15 @@ class OsdViewer extends HTMLElement
         {
             return;
         }
-        this.viewer.world.removeAll();
+        // OSD 6 keeps more internal loader/cache state; close() clears world + queues safely.
+        if (typeof this.viewer.close === "function")
+        {
+            this.viewer.close();
+        }
+        else
+        {
+            this.viewer.world.removeAll();
+        }
         this.loadToken += 1;
         this.tileSources = tileSources;
         this.hasFitFirstPage = false;
@@ -463,8 +483,7 @@ class OsdViewer extends HTMLElement
             return;
         }
 
-        const lastIndex = this.pageOffsets.length - 1;
-        const totalHeight = this.pageOffsets[lastIndex] + (this.pageRowHeights[lastIndex] || 1);
+        const totalHeight = this.getTotalHeight();
         const layoutWidth = this.isSpreadMode() ? 2 : 1;
         if (this.scrollPlaneItem)
         {
@@ -755,8 +774,7 @@ class OsdViewer extends HTMLElement
             return;
         }
 
-        const lastIndex = this.pageOffsets.length - 1;
-        const totalHeight = this.pageOffsets[lastIndex] + (this.pageRowHeights[lastIndex] || 1);
+        const totalHeight = this.getTotalHeight();
 
         const bounds = vp.getBounds(true);
         const containerHeight = this.container?.getBoundingClientRect().height || 1;
@@ -783,7 +801,7 @@ class OsdViewer extends HTMLElement
         {
             return;
         }
-        if (this.pageOffsets.length == 0)
+        if (this.pageOffsets.length === 0)
         {
             return;
         }
@@ -796,7 +814,7 @@ class OsdViewer extends HTMLElement
 
         const center = vp.getCenter(true);
         const index = this.findIndexForOffset(center.y);
-        if (this.lastReportedIndex == index)
+        if (this.lastReportedIndex === index)
         {
             return;
         }
@@ -826,7 +844,7 @@ class OsdViewer extends HTMLElement
 
     private flushInitialPageChange(): void
     {
-        if (this.pageOffsets.length == 0)
+        if (this.pageOffsets.length === 0)
         {
             this.suppressPageChange = false;
             return;
@@ -975,6 +993,12 @@ class OsdViewer extends HTMLElement
 
     private getCenterX(): number { return this.isSpreadMode() ? 1 : 0.5; }
 
+    private getTotalHeight(): number
+    {
+        const lastIndex = this.pageOffsets.length - 1;
+        return this.pageOffsets[lastIndex] + (this.pageRowHeights[lastIndex] || 1);
+    }
+
     private getRowBounds(index: number): OpenSeadragonType.Rect
     {
         const yOffset = this.pageOffsets[index] || 0;
@@ -994,11 +1018,11 @@ class OsdViewer extends HTMLElement
 
         if (this.layoutMode === "spread-shift")
         {
-            if (index == 0)
+            if (index === 0)
             {
                 return 0;
             }
-            return index % 2 == 1 ? index : index - 1;
+            return index % 2 === 1 ? index : index - 1;
         }
 
         return index - (index % 2);
@@ -1012,7 +1036,7 @@ class OsdViewer extends HTMLElement
             return startIndex;
         }
 
-        if (this.layoutMode === "spread-shift" && startIndex == 0)
+        if (this.layoutMode === "spread-shift" && startIndex === 0)
         {
             return 0;
         }
@@ -1055,8 +1079,7 @@ class OsdViewer extends HTMLElement
         const bounds = this.viewer.viewport.getBounds(true);
         const trackHeight = this.scrollbarTrack.clientHeight;
 
-        const lastIndex = this.pageOffsets.length - 1;
-        const totalHeight = this.pageOffsets[lastIndex] + (this.pageRowHeights[lastIndex] || 1);
+        const totalHeight = this.getTotalHeight();
         const viewportHeight = bounds.height;
         const scrollTop = bounds.y;
 
@@ -1105,8 +1128,7 @@ class OsdViewer extends HTMLElement
             const scrollProgress =
                 (trackHeight - thumbHeight) > 0 ? clampedThumbTop / (trackHeight - thumbHeight) : 0;
 
-            const lastIndex = this.pageOffsets.length - 1;
-            const totalHeight = this.pageOffsets[lastIndex] + (this.pageRowHeights[lastIndex] || 1);
+            const totalHeight = this.getTotalHeight();
             const viewportHeight = this.viewer.viewport.getBounds(true).height;
             const maxScroll = totalHeight - viewportHeight;
             const newScrollY = scrollProgress * maxScroll;
@@ -1123,6 +1145,8 @@ class OsdViewer extends HTMLElement
             }
         };
 
+        this.scrollbarMouseMove = onMouseMove;
+        this.scrollbarMouseUp = onMouseUp;
         this.scrollbarThumb.addEventListener("mousedown", onMouseDown);
         document.addEventListener("mousemove", onMouseMove);
         document.addEventListener("mouseup", onMouseUp);
@@ -1149,12 +1173,10 @@ class OsdViewer extends HTMLElement
 
             const clickY = e.clientY - rect.top;
             const trackHeight = rect.height;
-            const thumbHeight = this.scrollbarThumb?.clientHeight || 30;
 
             const scrollProgress = Math.max(0, Math.min(1, clickY / trackHeight));
 
-            const lastIndex = this.pageOffsets.length - 1;
-            const totalHeight = this.pageOffsets[lastIndex] + (this.pageRowHeights[lastIndex] || 1);
+            const totalHeight = this.getTotalHeight();
             const viewportHeight = this.viewer.viewport.getBounds(true).height;
             const maxScroll = totalHeight - viewportHeight;
             const newScrollY = scrollProgress * maxScroll;
