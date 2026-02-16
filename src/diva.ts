@@ -153,6 +153,11 @@ type DivaFlags = {
     setLanguage?: string;
 };
 
+type DivaRoot = HTMLElement & {
+    elmTree?: unknown;
+    __divaInstance?: Diva;
+};
+
 class Diva
 {
     private readonly root: HTMLElement;
@@ -177,17 +182,14 @@ class Diva
         {
             throw new Error(`Missing root element: ${rootId}`);
         }
-        const rootAny = root as unknown as
-        {
-            elmTree?: unknown;
-            __divaInstance?: Diva;
-        };
+        const rootAny = root as DivaRoot;
 
         if (rootAny.__divaInstance)
         {
             rootAny.__divaInstance.destroy();
         }
 
+        // if an elmTree instance is already defined on this element, destroy it.
         if (rootAny.elmTree)
         {
             delete rootAny.elmTree;
@@ -392,11 +394,7 @@ class Diva
 
         if (this.root)
         {
-            const rootAny = this.root as unknown as
-            {
-                elmTree?: unknown;
-                __divaInstance?: Diva;
-            };
+            const rootAny = this.root as DivaRoot;
             if (rootAny.__divaInstance === this)
             {
                 delete rootAny.__divaInstance;
@@ -413,19 +411,11 @@ class Diva
     {
         if (enabled)
         {
-            if (document.fullscreenElement)
+            if (document.fullscreenElement || !document.fullscreenEnabled)
             {
                 return;
             }
-            if (!document.fullscreenEnabled)
-            {
-                return;
-            }
-            const request = this.root.requestFullscreen();
-            if (request && typeof request.catch === "function")
-            {
-                request.catch(() => {});
-            }
+            this.root.requestFullscreen().catch(() => {});
             return;
         }
 
@@ -433,11 +423,7 @@ class Diva
         {
             return;
         }
-        const exit = document.exitFullscreen();
-        if (exit && typeof exit.catch === "function")
-        {
-            exit.catch(() => {});
-        }
+        document.exitFullscreen().catch(() => {});
     }
 
     private handlePageChange(event: Event): void
