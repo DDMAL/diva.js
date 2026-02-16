@@ -10861,9 +10861,9 @@
   var $rism_digital$elm_iiif$IIIF$Presentation$ResourceRange = function(a) {
     return { $: "ResourceRange", a };
   };
-  var $rism_digital$elm_iiif$IIIF$Presentation$Canvas = F5(
-    function(id, label, width, height, images) {
-      return { height, id, images, label, width };
+  var $rism_digital$elm_iiif$IIIF$Presentation$Canvas = F6(
+    function(id, label, width, height, images, viewingLayout) {
+      return { height, id, images, label, viewingLayout, width };
     }
   );
   var $elm$json$Json$Decode$maybe = function(decoder) {
@@ -11745,28 +11745,77 @@
       ]
     )
   );
-  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CanvasDecoder = A3(
-    $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
-    "images",
-    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2AnnotationListDecoder,
-    A3(
-      $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
-      "height",
-      $elm$json$Json$Decode$maybe($elm$json$Json$Decode$int),
-      A3(
-        $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
-        "width",
+  var $rism_digital$elm_iiif$IIIF$Presentation$LayoutV2 = function(a) {
+    return { $: "LayoutV2", a };
+  };
+  var $rism_digital$elm_iiif$IIIF$Presentation$ContinuousHint = { $: "ContinuousHint" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$FacingPagesHint = { $: "FacingPagesHint" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$IndividualsHint = { $: "IndividualsHint" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$MultiPartHint = { $: "MultiPartHint" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$NonPagedHint = { $: "NonPagedHint" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$PagedHint = { $: "PagedHint" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$TopHint = { $: "TopHint" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$stringToViewingHint = function(hint) {
+    switch (hint) {
+      case "continuous":
+        return $rism_digital$elm_iiif$IIIF$Presentation$ContinuousHint;
+      case "facing-pages":
+        return $rism_digital$elm_iiif$IIIF$Presentation$FacingPagesHint;
+      case "individuals":
+        return $rism_digital$elm_iiif$IIIF$Presentation$IndividualsHint;
+      case "multi-part":
+        return $rism_digital$elm_iiif$IIIF$Presentation$MultiPartHint;
+      case "non-paged":
+        return $rism_digital$elm_iiif$IIIF$Presentation$NonPagedHint;
+      case "paged":
+        return $rism_digital$elm_iiif$IIIF$Presentation$PagedHint;
+      case "top":
+        return $rism_digital$elm_iiif$IIIF$Presentation$TopHint;
+      default:
+        return $rism_digital$elm_iiif$IIIF$Presentation$PagedHint;
+    }
+  };
+  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingHintValueConverter = function(hint) {
+    return $elm$json$Json$Decode$succeed(
+      $rism_digital$elm_iiif$IIIF$Presentation$stringToViewingHint(hint)
+    );
+  };
+  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingHintDecoder = A2(
+    $elm$json$Json$Decode$map,
+    $rism_digital$elm_iiif$IIIF$Presentation$LayoutV2,
+    A2($elm$json$Json$Decode$andThen, $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingHintValueConverter, $elm$json$Json$Decode$string)
+  );
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CanvasDecoder = A4(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
+    "viewingHint",
+    $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingHintDecoder),
+    $elm$core$Maybe$Nothing,
+    A4(
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
+      "images",
+      $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2AnnotationListDecoder,
+      _List_Nil,
+      A4(
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
+        "height",
         $elm$json$Json$Decode$maybe($elm$json$Json$Decode$int),
+        $elm$core$Maybe$Nothing,
         A4(
           $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
-          "label",
-          $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder),
+          "width",
+          $elm$json$Json$Decode$maybe($elm$json$Json$Decode$int),
           $elm$core$Maybe$Nothing,
-          A3(
-            $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
-            "@id",
-            $elm$json$Json$Decode$string,
-            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Canvas)
+          A4(
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
+            "label",
+            $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder),
+            $elm$core$Maybe$Nothing,
+            A3(
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
+              "@id",
+              $elm$json$Json$Decode$string,
+              $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Canvas)
+            )
           )
         )
       )
@@ -11921,10 +11970,6 @@
   };
   var $rism_digital$elm_iiif$IIIF$Presentation$NestedCollection = function(a) {
     return { $: "NestedCollection", a };
-  };
-  var $rism_digital$elm_iiif$IIIF$Presentation$IndividualsHint = { $: "IndividualsHint" };
-  var $rism_digital$elm_iiif$IIIF$Presentation$LayoutV2 = function(a) {
-    return { $: "LayoutV2", a };
   };
   var $rism_digital$elm_iiif$IIIF$Presentation$LeftToRight = { $: "LeftToRight" };
   var $rism_digital$elm_iiif$IIIF$Presentation$Manifest = function(id) {
@@ -12286,42 +12331,6 @@
     );
   };
   var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingDirectionDecoder = A2($elm$json$Json$Decode$andThen, $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingDirectionValueConverter, $elm$json$Json$Decode$string);
-  var $rism_digital$elm_iiif$IIIF$Presentation$ContinuousHint = { $: "ContinuousHint" };
-  var $rism_digital$elm_iiif$IIIF$Presentation$FacingPagesHint = { $: "FacingPagesHint" };
-  var $rism_digital$elm_iiif$IIIF$Presentation$MultiPartHint = { $: "MultiPartHint" };
-  var $rism_digital$elm_iiif$IIIF$Presentation$NonPagedHint = { $: "NonPagedHint" };
-  var $rism_digital$elm_iiif$IIIF$Presentation$PagedHint = { $: "PagedHint" };
-  var $rism_digital$elm_iiif$IIIF$Presentation$TopHint = { $: "TopHint" };
-  var $rism_digital$elm_iiif$IIIF$Presentation$stringToViewingHint = function(hint) {
-    switch (hint) {
-      case "continuous":
-        return $rism_digital$elm_iiif$IIIF$Presentation$ContinuousHint;
-      case "facing-pages":
-        return $rism_digital$elm_iiif$IIIF$Presentation$FacingPagesHint;
-      case "individuals":
-        return $rism_digital$elm_iiif$IIIF$Presentation$IndividualsHint;
-      case "multi-part":
-        return $rism_digital$elm_iiif$IIIF$Presentation$MultiPartHint;
-      case "non-paged":
-        return $rism_digital$elm_iiif$IIIF$Presentation$NonPagedHint;
-      case "paged":
-        return $rism_digital$elm_iiif$IIIF$Presentation$PagedHint;
-      case "top":
-        return $rism_digital$elm_iiif$IIIF$Presentation$TopHint;
-      default:
-        return $rism_digital$elm_iiif$IIIF$Presentation$PagedHint;
-    }
-  };
-  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingHintValueConverter = function(hint) {
-    return $elm$json$Json$Decode$succeed(
-      $rism_digital$elm_iiif$IIIF$Presentation$stringToViewingHint(hint)
-    );
-  };
-  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingHintDecoder = A2(
-    $elm$json$Json$Decode$map,
-    $rism_digital$elm_iiif$IIIF$Presentation$LayoutV2,
-    A2($elm$json$Json$Decode$andThen, $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingHintValueConverter, $elm$json$Json$Decode$string)
-  );
   var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2iiifManifestDecoder = A4(
     $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
     "attribution",
@@ -12450,6 +12459,75 @@
     A2($elm$json$Json$Decode$field, "@type", $elm$json$Json$Decode$string)
   );
   var $rism_digital$elm_iiif$IIIF$Version$IIIFV3 = { $: "IIIFV3" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$LayoutV3 = function(a) {
+    return { $: "LayoutV3", a };
+  };
+  var $rism_digital$elm_iiif$IIIF$Presentation$AutoAdvanceBehavior = { $: "AutoAdvanceBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$ContinuousBehavior = { $: "ContinuousBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$FacingPagesBehavior = { $: "FacingPagesBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$HiddenBehavior = { $: "HiddenBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$IndividualsBehavior = { $: "IndividualsBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$MultiPartBehavior = { $: "MultiPartBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$NoAutoAdvanceBehavior = { $: "NoAutoAdvanceBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$NoNavBehavior = { $: "NoNavBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$NoRepeatBehavior = { $: "NoRepeatBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$NonPagedBehavior = { $: "NonPagedBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$PagedBehavior = { $: "PagedBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$RepeatBehavior = { $: "RepeatBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$SequenceBehavior = { $: "SequenceBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$ThumbnailNavBehavior = { $: "ThumbnailNavBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$TogetherBehavior = { $: "TogetherBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$UnorderedBehavior = { $: "UnorderedBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$stringToBehavior = function(behavior) {
+    switch (behavior) {
+      case "auto-advance":
+        return $rism_digital$elm_iiif$IIIF$Presentation$AutoAdvanceBehavior;
+      case "continuous":
+        return $rism_digital$elm_iiif$IIIF$Presentation$ContinuousBehavior;
+      case "facing-pages":
+        return $rism_digital$elm_iiif$IIIF$Presentation$FacingPagesBehavior;
+      case "hidden":
+        return $rism_digital$elm_iiif$IIIF$Presentation$HiddenBehavior;
+      case "individuals":
+        return $rism_digital$elm_iiif$IIIF$Presentation$IndividualsBehavior;
+      case "multi-part":
+        return $rism_digital$elm_iiif$IIIF$Presentation$MultiPartBehavior;
+      case "no-auto-advance":
+        return $rism_digital$elm_iiif$IIIF$Presentation$NoAutoAdvanceBehavior;
+      case "no-nav":
+        return $rism_digital$elm_iiif$IIIF$Presentation$NoNavBehavior;
+      case "no-repeat":
+        return $rism_digital$elm_iiif$IIIF$Presentation$NoRepeatBehavior;
+      case "non-paged":
+        return $rism_digital$elm_iiif$IIIF$Presentation$NonPagedBehavior;
+      case "paged":
+        return $rism_digital$elm_iiif$IIIF$Presentation$PagedBehavior;
+      case "repeat":
+        return $rism_digital$elm_iiif$IIIF$Presentation$RepeatBehavior;
+      case "sequence":
+        return $rism_digital$elm_iiif$IIIF$Presentation$SequenceBehavior;
+      case "thumbnail-nav":
+        return $rism_digital$elm_iiif$IIIF$Presentation$ThumbnailNavBehavior;
+      case "together":
+        return $rism_digital$elm_iiif$IIIF$Presentation$TogetherBehavior;
+      case "unordered":
+        return $rism_digital$elm_iiif$IIIF$Presentation$UnorderedBehavior;
+      default:
+        return $rism_digital$elm_iiif$IIIF$Presentation$PagedBehavior;
+    }
+  };
+  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$behaviourValueConverter = function(behavior) {
+    return $elm$json$Json$Decode$succeed(
+      $rism_digital$elm_iiif$IIIF$Presentation$stringToBehavior(behavior)
+    );
+  };
+  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$behaviourDecoder = A2(
+    $elm$json$Json$Decode$map,
+    $rism_digital$elm_iiif$IIIF$Presentation$LayoutV3,
+    $elm$json$Json$Decode$list(
+      A2($elm$json$Json$Decode$andThen, $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$behaviourValueConverter, $elm$json$Json$Decode$string)
+    )
+  );
   var $rism_digital$elm_iiif$IIIF$Image$imageUriToInfoUri = function(inp) {
     if (inp.$ === "InfoUri") {
       return inp;
@@ -12645,28 +12723,34 @@
     ),
     A2($elm$json$Json$Decode$index, 0, $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3AnnotationBodyDecoder)
   );
-  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CanvasDecoder = A3(
-    $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
-    "items",
-    A2($elm$json$Json$Decode$index, 0, $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3AnnotationPageDecoder),
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CanvasDecoder = A4(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
+    "behavior",
+    $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$behaviourDecoder),
+    $elm$core$Maybe$Nothing,
     A3(
       $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
-      "height",
-      $elm$json$Json$Decode$maybe($elm$json$Json$Decode$int),
+      "items",
+      A2($elm$json$Json$Decode$index, 0, $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3AnnotationPageDecoder),
       A3(
         $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
-        "width",
+        "height",
         $elm$json$Json$Decode$maybe($elm$json$Json$Decode$int),
-        A4(
-          $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
-          "label",
-          $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
-          $elm$core$Maybe$Nothing,
-          A3(
-            $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
-            "id",
-            $elm$json$Json$Decode$string,
-            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Canvas)
+        A3(
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
+          "width",
+          $elm$json$Json$Decode$maybe($elm$json$Json$Decode$int),
+          A4(
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
+            "label",
+            $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
+            $elm$core$Maybe$Nothing,
+            A3(
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
+              "id",
+              $elm$json$Json$Decode$string,
+              $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Canvas)
+            )
           )
         )
       )
@@ -12750,10 +12834,6 @@
   }
   var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3RangeDecoder;
   var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3RangeItemDecoder;
-  var $rism_digital$elm_iiif$IIIF$Presentation$IndividualsBehavior = { $: "IndividualsBehavior" };
-  var $rism_digital$elm_iiif$IIIF$Presentation$LayoutV3 = function(a) {
-    return { $: "LayoutV3", a };
-  };
   var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3HomePageDecoder = A4(
     $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
     "type",
@@ -12977,71 +13057,6 @@
   var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3iiifCollectionDecoder;
   var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CollectionItemsDecoder;
   var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CollectionItemDecoder;
-  var $rism_digital$elm_iiif$IIIF$Presentation$AutoAdvanceBehavior = { $: "AutoAdvanceBehavior" };
-  var $rism_digital$elm_iiif$IIIF$Presentation$ContinuousBehavior = { $: "ContinuousBehavior" };
-  var $rism_digital$elm_iiif$IIIF$Presentation$FacingPagesBehavior = { $: "FacingPagesBehavior" };
-  var $rism_digital$elm_iiif$IIIF$Presentation$HiddenBehavior = { $: "HiddenBehavior" };
-  var $rism_digital$elm_iiif$IIIF$Presentation$MultiPartBehavior = { $: "MultiPartBehavior" };
-  var $rism_digital$elm_iiif$IIIF$Presentation$NoAutoAdvanceBehavior = { $: "NoAutoAdvanceBehavior" };
-  var $rism_digital$elm_iiif$IIIF$Presentation$NoNavBehavior = { $: "NoNavBehavior" };
-  var $rism_digital$elm_iiif$IIIF$Presentation$NoRepeatBehavior = { $: "NoRepeatBehavior" };
-  var $rism_digital$elm_iiif$IIIF$Presentation$NonPagedBehavior = { $: "NonPagedBehavior" };
-  var $rism_digital$elm_iiif$IIIF$Presentation$PagedBehavior = { $: "PagedBehavior" };
-  var $rism_digital$elm_iiif$IIIF$Presentation$RepeatBehavior = { $: "RepeatBehavior" };
-  var $rism_digital$elm_iiif$IIIF$Presentation$SequenceBehavior = { $: "SequenceBehavior" };
-  var $rism_digital$elm_iiif$IIIF$Presentation$ThumbnailNavBehavior = { $: "ThumbnailNavBehavior" };
-  var $rism_digital$elm_iiif$IIIF$Presentation$TogetherBehavior = { $: "TogetherBehavior" };
-  var $rism_digital$elm_iiif$IIIF$Presentation$UnorderedBehavior = { $: "UnorderedBehavior" };
-  var $rism_digital$elm_iiif$IIIF$Presentation$stringToBehavior = function(behavior) {
-    switch (behavior) {
-      case "auto-advance":
-        return $rism_digital$elm_iiif$IIIF$Presentation$AutoAdvanceBehavior;
-      case "continuous":
-        return $rism_digital$elm_iiif$IIIF$Presentation$ContinuousBehavior;
-      case "facing-pages":
-        return $rism_digital$elm_iiif$IIIF$Presentation$FacingPagesBehavior;
-      case "hidden":
-        return $rism_digital$elm_iiif$IIIF$Presentation$HiddenBehavior;
-      case "individuals":
-        return $rism_digital$elm_iiif$IIIF$Presentation$IndividualsBehavior;
-      case "multi-part":
-        return $rism_digital$elm_iiif$IIIF$Presentation$MultiPartBehavior;
-      case "no-auto-advance":
-        return $rism_digital$elm_iiif$IIIF$Presentation$NoAutoAdvanceBehavior;
-      case "no-nav":
-        return $rism_digital$elm_iiif$IIIF$Presentation$NoNavBehavior;
-      case "no-repeat":
-        return $rism_digital$elm_iiif$IIIF$Presentation$NoRepeatBehavior;
-      case "non-paged":
-        return $rism_digital$elm_iiif$IIIF$Presentation$NonPagedBehavior;
-      case "paged":
-        return $rism_digital$elm_iiif$IIIF$Presentation$PagedBehavior;
-      case "repeat":
-        return $rism_digital$elm_iiif$IIIF$Presentation$RepeatBehavior;
-      case "sequence":
-        return $rism_digital$elm_iiif$IIIF$Presentation$SequenceBehavior;
-      case "thumbnail-nav":
-        return $rism_digital$elm_iiif$IIIF$Presentation$ThumbnailNavBehavior;
-      case "together":
-        return $rism_digital$elm_iiif$IIIF$Presentation$TogetherBehavior;
-      case "unordered":
-        return $rism_digital$elm_iiif$IIIF$Presentation$UnorderedBehavior;
-      default:
-        return $rism_digital$elm_iiif$IIIF$Presentation$PagedBehavior;
-    }
-  };
-  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$behaviourValueConverter = function(behavior) {
-    return $elm$json$Json$Decode$succeed(
-      $rism_digital$elm_iiif$IIIF$Presentation$stringToBehavior(behavior)
-    );
-  };
-  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$behaviourDecoder = A2(
-    $elm$json$Json$Decode$map,
-    $rism_digital$elm_iiif$IIIF$Presentation$LayoutV3,
-    $elm$json$Json$Decode$list(
-      A2($elm$json$Json$Decode$andThen, $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$behaviourValueConverter, $elm$json$Json$Decode$string)
-    )
-  );
   var $rism_digital$elm_iiif$IIIF$Presentation$Provider = F6(
     function(id, label, type_, homepage, logo, seeAlso) {
       return { homepage, id, label, logo, seeAlso, type_ };
@@ -27170,7 +27185,7 @@
       },
       A2($elm$json$Json$Decode$field, "userLanguage", $elm$json$Json$Decode$string)
     )
-  )({ "versions": { "elm": "0.19.1" }, "types": { "message": "Msg.Msg", "aliases": { "IIIF.Presentation.Canvas": { "args": [], "type": "{ id : String.String, label : Maybe.Maybe IIIF.Language.LanguageMap, width : Maybe.Maybe Basics.Int, height : Maybe.Maybe Basics.Int, images : List.List IIIF.Presentation.Image }" }, "IIIF.Presentation.HomePage": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.Image": { "args": [], "type": "{ id : IIIF.Image.ImageUri, label : Maybe.Maybe IIIF.Language.LanguageMap, imageType : IIIF.Presentation.ImageType, service : List.List IIIF.Presentation.ServiceTypes }" }, "IIIF.Language.LabelValue": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Language.LanguageMap": { "args": [], "type": "List.List IIIF.Language.LanguageValues" }, "IIIF.Presentation.Logo": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes, width : Basics.Int, height : Basics.Int, service : Maybe.Maybe (List.List IIIF.Presentation.ServiceObject) }" }, "IIIF.Presentation.Manifest": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, metadata : List.List IIIF.Language.LabelValue, viewingDirection : IIIF.Presentation.ViewingDirection, summary : Maybe.Maybe IIIF.Language.LanguageMap, viewingLayout : IIIF.Presentation.ViewingLayout, canvases : List.List IIIF.Presentation.Canvas, ranges : Maybe.Maybe (List.List IIIF.Presentation.Range), homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe IIIF.Presentation.Image, provider : Maybe.Maybe (List.List IIIF.Presentation.Provider), thumbnail : Maybe.Maybe IIIF.Presentation.Image, requiredStatement : Maybe.Maybe IIIF.Presentation.RequiredStatement }" }, "IIIF.Presentation.Provider": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, type_ : IIIF.Presentation.ResourceTypes, homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe (List.List IIIF.Presentation.Logo), seeAlso : Maybe.Maybe (List.List IIIF.Presentation.SeeAlso) }" }, "IIIF.Presentation.Range": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.RangeItem, metadata : List.List IIIF.Language.LabelValue }" }, "IIIF.Presentation.RequiredStatement": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Presentation.SeeAlso": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.ServiceObject": { "args": [], "type": "{ id : String.String, serviceType : IIIF.Presentation.ServiceTypes }" }, "IIIF.Presentation.Collection": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, summary : Maybe.Maybe IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.CollectionItem }" }, "IIIF.Image.ImageRequestParameters": { "args": [], "type": "{ host : String.String, prefix : String.String, region : IIIF.Image.ImageRegion, size : IIIF.Image.ImageSize, rotation : IIIF.Image.ImageRotation, quality : IIIF.Image.ImageQuality, format : IIIF.Image.ImageFormat }" }, "IIIF.Image.ImageServerParameters": { "args": [], "type": "{ host : String.String, prefix : String.String }" } }, "unions": { "Msg.Msg": { "args": [], "tags": { "ClientNotifiedFullscreenChanged": ["Basics.Bool"], "ServerRespondedWithManifest": ["Result.Result Http.Error IIIF.Presentation.IIIFManifest"], "ServerRespondedWithResource": ["Result.Result Http.Error IIIF.Presentation.IIIFResource"], "UserClickedCollectionItem": ["String.String"], "ServerRespondedWithCollectionItem": ["String.String", "Result.Result Http.Error IIIF.Presentation.IIIFResource"], "UserClickedManifestItem": ["String.String", "String.String"], "ServerRespondedWithManifestFromCollection": ["Result.Result Http.Error IIIF.Presentation.IIIFManifest"], "UserToggledCollectionSidebar": [], "UserStartedCollectionSidebarResize": ["Basics.Int"], "UserDraggedCollectionSidebarResize": ["Basics.Int"], "UserEndedCollectionSidebarResize": [], "ClientNotifiedPageChanged": ["Basics.Int"], "ClientNotifiedPageChangedInstant": ["Basics.Int"], "ClientNotifiedScrollThumbs": ["Result.Result Browser.Dom.Error ()"], "SetResponseLoading": [], "UserClickedThumbnail": ["Basics.Int"], "UserToggledFilter": ["Filters.FilterToggle", "Basics.Bool"], "UserToggledContents": [], "UserClickedOpenPageView": [], "UserClickedClosePageView": [], "UserClickedSaveFilteredImage": [], "UserToggledPageViewFullscreen": [], "UserToggledPageViewSidebar": [], "UserClickedOpenManifestInfo": [], "UserClickedCloseManifestInfo": [], "UserToggledMobileSidebar": [], "UserClosedMobileSidebar": [], "UserClickedPageViewPrev": [], "UserClickedPageViewNext": [], "UserResetAltColourAdjust": [], "UserToggledFullscreen": [], "UserClickedRange": ["String.String", "Maybe.Maybe Basics.Int"], "UserToggledMetadata": [], "UserSelectedContentsIndex": [], "UserSelectedContentsPages": [], "UserToggledSidebar": [], "UserToggledShiftByOne": [], "UserToggledThumbnails": [], "UserToggledTwoUp": [], "UserUpdatedFilterInt": ["Filters.FilterIntValue", "String.String"], "UserUpdatedFilterFloat": ["Filters.FilterFloatValue", "String.String"], "UserUpdatedFilterString": ["Filters.FilterStringValue", "String.String"], "UserUpdatedFilterJsonInput": ["String.String"], "UserAppliedFilterJson": [], "UserCopiedFilterJson": [], "ViewerLoadingChanged": ["Basics.Bool"], "UserDraggedSidebarResize": ["Basics.Int"], "UserEndedSidebarResize": [], "UserStartedSidebarResize": ["Basics.Int"], "UserChangedZoomLevel": ["Basics.Float"], "ViewportChanged": ["Basics.Int", "Basics.Int"], "UserClickedZoomIn": [], "UserClickedZoomOut": [], "UserClickedPageViewImageChoice": ["Basics.Int"], "UserToggledFilterGroup": ["String.String"] } }, "Basics.Bool": { "args": [], "tags": { "True": [], "False": [] } }, "Browser.Dom.Error": { "args": [], "tags": { "NotFound": ["String.String"] } }, "Http.Error": { "args": [], "tags": { "BadUrl": ["String.String"], "Timeout": [], "NetworkError": [], "BadStatus": ["Basics.Int"], "BadBody": ["String.String"] } }, "Filters.FilterFloatValue": { "args": [], "tags": { "FloatColourReplaceBlend": [], "FloatContrast": [], "FloatGamma": [], "FloatNormalizeStrength": [], "FloatPseudoColourBlue": [], "FloatPseudoColourGreen": [], "FloatPseudoColourRed": [], "FloatUnsharpAmount": [] } }, "Filters.FilterIntValue": { "args": [], "tags": { "IntAdaptiveOffset": [], "IntAdaptiveWindow": [], "IntAltRedGamma": [], "IntAltRedSigmoid": [], "IntAltRedVibrance": [], "IntAltRedHue": [], "IntAltRedHueWindow": [], "IntAltGreenGamma": [], "IntAltGreenSigmoid": [], "IntAltGreenHue": [], "IntAltGreenHueWindow": [], "IntAltGreenVibrance": [], "IntAltBlueGamma": [], "IntAltBlueSigmoid": [], "IntAltBlueHue": [], "IntAltBlueHueWindow": [], "IntAltBlueVibrance": [], "IntBrightness": [], "IntCcBlue": [], "IntCcGreen": [], "IntCcRed": [], "IntColourmapCenter": [], "IntColourReplaceTolerance": [], "IntHue": [], "IntMorphKernel": [], "IntRotation": [], "IntSaturation": [], "IntThreshold": [], "IntVibrance": [] } }, "Filters.FilterStringValue": { "args": [], "tags": { "StringColourmapPreset": [], "StringColourReplaceSource": [], "StringColourReplaceTarget": [], "StringConvolutionPreset": [], "StringMorphOperation": [], "StringPcaMode": [], "StringPseudoColourMode": [] } }, "Filters.FilterToggle": { "args": [], "tags": { "ToggleAdaptive": [], "ToggleAltBlueGamma": [], "ToggleAltBlueHue": [], "ToggleAltBlueSigmoid": [], "ToggleAltBlueVibrance": [], "ToggleAltGreenGamma": [], "ToggleAltGreenHue": [], "ToggleAltGreenSigmoid": [], "ToggleAltGreenVibrance": [], "ToggleAltRedGamma": [], "ToggleAltRedHue": [], "ToggleAltRedSigmoid": [], "ToggleAltRedVibrance": [], "ToggleBrightness": [], "ToggleCcBlue": [], "ToggleCcGreen": [], "ToggleCcRed": [], "ToggleColourmap": [], "ToggleColourReplace": [], "ToggleColourReplacePreserveLum": [], "ToggleContrast": [], "ToggleConvolution": [], "ToggleFlip": [], "ToggleGamma": [], "ToggleGrayscale": [], "ToggleHue": [], "ToggleInvert": [], "ToggleMorph": [], "ToggleNormalize": [], "TogglePca": [], "TogglePseudoColour": [], "ToggleSaturation": [], "ToggleThreshold": [], "ToggleUnsharp": [], "ToggleVibrance": [] } }, "Basics.Float": { "args": [], "tags": { "Float": [] } }, "IIIF.Presentation.IIIFManifest": { "args": [], "tags": { "IIIFManifest": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Manifest"] } }, "IIIF.Presentation.IIIFResource": { "args": [], "tags": { "ResourceManifest": ["IIIF.Presentation.IIIFManifest"], "ResourceCollection": ["IIIF.Presentation.IIIFCollection"], "ResourceCanvas": ["IIIF.Presentation.IIIFCanvas"], "ResourceRange": ["IIIF.Presentation.IIIFRange"] } }, "Basics.Int": { "args": [], "tags": { "Int": [] } }, "Maybe.Maybe": { "args": ["a"], "tags": { "Just": ["a"], "Nothing": [] } }, "Result.Result": { "args": ["error", "value"], "tags": { "Ok": ["value"], "Err": ["error"] } }, "String.String": { "args": [], "tags": { "String": [] } }, "IIIF.Presentation.IIIFCanvas": { "args": [], "tags": { "IIIFCanvas": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Canvas"] } }, "IIIF.Presentation.IIIFCollection": { "args": [], "tags": { "IIIFCollection": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Collection"] } }, "IIIF.Presentation.IIIFRange": { "args": [], "tags": { "IIIFRange": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Range"] } }, "IIIF.Version.IIIFVersion": { "args": [], "tags": { "IIIFV2": [], "IIIFV3": [] } }, "IIIF.Presentation.ImageType": { "args": [], "tags": { "PrimaryImage": [], "ChoiceImage": [] } }, "IIIF.Image.ImageUri": { "args": [], "tags": { "InfoUri": ["IIIF.Image.ImageServerParameters"], "ImageUri": ["IIIF.Image.ImageRequestParameters"] } }, "IIIF.Language.LanguageValues": { "args": [], "tags": { "LanguageValues": ["IIIF.Language.Language", "List.List String.String"] } }, "List.List": { "args": ["a"], "tags": {} }, "IIIF.Presentation.MediaFormats": { "args": [], "tags": { "ImageJpeg": [], "OtherFormat": ["String.String"] } }, "IIIF.Presentation.RangeItem": { "args": [], "tags": { "RangeCanvas": ["String.String"], "RangeRange": ["IIIF.Presentation.Range"] } }, "IIIF.Presentation.ResourceTypes": { "args": [], "tags": { "Video": [], "OtherResource": ["String.String"] } }, "IIIF.Presentation.ServiceTypes": { "args": [], "tags": { "ImageService1": [], "ImageService2": [], "ImageService3": [], "SearchService1": [], "AutoCompleteService1": [], "AuthTokenService1": [], "AuthLogoutService1": [], "UnknownService": [] } }, "IIIF.Presentation.ViewingDirection": { "args": [], "tags": { "LeftToRight": [], "RightToLeft": [], "TopToBottom": [], "BottomToTop": [] } }, "IIIF.Presentation.ViewingLayout": { "args": [], "tags": { "LayoutV2": ["IIIF.Presentation.ViewingHint"], "LayoutV3": ["List.List IIIF.Presentation.Behavior"] } }, "IIIF.Presentation.Behavior": { "args": [], "tags": { "AutoAdvanceBehavior": [], "NoAutoAdvanceBehavior": [], "RepeatBehavior": [], "NoRepeatBehavior": [], "UnorderedBehavior": [], "IndividualsBehavior": [], "ContinuousBehavior": [], "PagedBehavior": [], "FacingPagesBehavior": [], "NonPagedBehavior": [], "MultiPartBehavior": [], "TogetherBehavior": [], "SequenceBehavior": [], "ThumbnailNavBehavior": [], "NoNavBehavior": [], "HiddenBehavior": [] } }, "IIIF.Presentation.CollectionItem": { "args": [], "tags": { "NestedCollection": ["IIIF.Presentation.Collection"], "ManifestItem": ["IIIF.Presentation.Manifest"] } }, "IIIF.Image.ImageFormat": { "args": [], "tags": { "JpegFormat": [], "TiffFormat": [], "PngFormat": [], "Jp2Format": [], "GifFormat": [], "PdfFormat": [], "WebpFormat": [] } }, "IIIF.Image.ImageQuality": { "args": [], "tags": { "ColorQuality": [], "GrayQuality": [], "BiTonalQuality": [], "DefaultQuality": [], "NativeQuality": [] } }, "IIIF.Image.ImageRegion": { "args": [], "tags": { "FullRegion": [], "SquareRegion": [], "SizeRegion": ["{ x : Basics.Int, y : Basics.Int, w : Basics.Int, h : Basics.Int }"], "PctSizeRegion": ["{ x : Basics.Float, y : Basics.Float, w : Basics.Float, h : Basics.Float }"] } }, "IIIF.Image.ImageRotation": { "args": [], "tags": { "NormalRotation": ["Basics.Float"], "MirroredRotation": ["Basics.Float"] } }, "IIIF.Image.ImageSize": { "args": [], "tags": { "MaxSize": [], "ExactMaxSize": [], "WidthOnlySize": ["Basics.Int"], "ExactWidthOnlySize": ["Basics.Int"], "HeightOnlySize": ["Basics.Int"], "ExactHeightOnlySize": ["Basics.Int"], "PercentSize": ["Basics.Float"], "ExactPercentSize": ["Basics.Float"], "WidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"] } }, "IIIF.Language.Language": { "args": [], "tags": { "LanguageCode": ["String.String"], "None": [], "Default": [] } }, "IIIF.Presentation.ViewingHint": { "args": [], "tags": { "PagedHint": [], "IndividualsHint": [], "ContinuousHint": [], "MultiPartHint": [], "NonPagedHint": [], "TopHint": [], "FacingPagesHint": [] } } } } }) } };
+  )({ "versions": { "elm": "0.19.1" }, "types": { "message": "Msg.Msg", "aliases": { "IIIF.Presentation.Canvas": { "args": [], "type": "{ id : String.String, label : Maybe.Maybe IIIF.Language.LanguageMap, width : Maybe.Maybe Basics.Int, height : Maybe.Maybe Basics.Int, images : List.List IIIF.Presentation.Image, viewingLayout : Maybe.Maybe IIIF.Presentation.ViewingLayout }" }, "IIIF.Presentation.HomePage": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.Image": { "args": [], "type": "{ id : IIIF.Image.ImageUri, label : Maybe.Maybe IIIF.Language.LanguageMap, imageType : IIIF.Presentation.ImageType, service : List.List IIIF.Presentation.ServiceTypes }" }, "IIIF.Language.LabelValue": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Language.LanguageMap": { "args": [], "type": "List.List IIIF.Language.LanguageValues" }, "IIIF.Presentation.Logo": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes, width : Basics.Int, height : Basics.Int, service : Maybe.Maybe (List.List IIIF.Presentation.ServiceObject) }" }, "IIIF.Presentation.Manifest": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, metadata : List.List IIIF.Language.LabelValue, viewingDirection : IIIF.Presentation.ViewingDirection, summary : Maybe.Maybe IIIF.Language.LanguageMap, viewingLayout : IIIF.Presentation.ViewingLayout, canvases : List.List IIIF.Presentation.Canvas, ranges : Maybe.Maybe (List.List IIIF.Presentation.Range), homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe IIIF.Presentation.Image, provider : Maybe.Maybe (List.List IIIF.Presentation.Provider), thumbnail : Maybe.Maybe IIIF.Presentation.Image, requiredStatement : Maybe.Maybe IIIF.Presentation.RequiredStatement }" }, "IIIF.Presentation.Provider": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, type_ : IIIF.Presentation.ResourceTypes, homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe (List.List IIIF.Presentation.Logo), seeAlso : Maybe.Maybe (List.List IIIF.Presentation.SeeAlso) }" }, "IIIF.Presentation.Range": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.RangeItem, metadata : List.List IIIF.Language.LabelValue }" }, "IIIF.Presentation.RequiredStatement": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Presentation.SeeAlso": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.ServiceObject": { "args": [], "type": "{ id : String.String, serviceType : IIIF.Presentation.ServiceTypes }" }, "IIIF.Presentation.Collection": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, summary : Maybe.Maybe IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.CollectionItem }" }, "IIIF.Image.ImageRequestParameters": { "args": [], "type": "{ host : String.String, prefix : String.String, region : IIIF.Image.ImageRegion, size : IIIF.Image.ImageSize, rotation : IIIF.Image.ImageRotation, quality : IIIF.Image.ImageQuality, format : IIIF.Image.ImageFormat }" }, "IIIF.Image.ImageServerParameters": { "args": [], "type": "{ host : String.String, prefix : String.String }" } }, "unions": { "Msg.Msg": { "args": [], "tags": { "ClientNotifiedFullscreenChanged": ["Basics.Bool"], "ServerRespondedWithManifest": ["Result.Result Http.Error IIIF.Presentation.IIIFManifest"], "ServerRespondedWithResource": ["Result.Result Http.Error IIIF.Presentation.IIIFResource"], "UserClickedCollectionItem": ["String.String"], "ServerRespondedWithCollectionItem": ["String.String", "Result.Result Http.Error IIIF.Presentation.IIIFResource"], "UserClickedManifestItem": ["String.String", "String.String"], "ServerRespondedWithManifestFromCollection": ["Result.Result Http.Error IIIF.Presentation.IIIFManifest"], "UserToggledCollectionSidebar": [], "UserStartedCollectionSidebarResize": ["Basics.Int"], "UserDraggedCollectionSidebarResize": ["Basics.Int"], "UserEndedCollectionSidebarResize": [], "ClientNotifiedPageChanged": ["Basics.Int"], "ClientNotifiedPageChangedInstant": ["Basics.Int"], "ClientNotifiedScrollThumbs": ["Result.Result Browser.Dom.Error ()"], "SetResponseLoading": [], "UserClickedThumbnail": ["Basics.Int"], "UserToggledFilter": ["Filters.FilterToggle", "Basics.Bool"], "UserToggledContents": [], "UserClickedOpenPageView": [], "UserClickedClosePageView": [], "UserClickedSaveFilteredImage": [], "UserToggledPageViewFullscreen": [], "UserToggledPageViewSidebar": [], "UserClickedOpenManifestInfo": [], "UserClickedCloseManifestInfo": [], "UserToggledMobileSidebar": [], "UserClosedMobileSidebar": [], "UserClickedPageViewPrev": [], "UserClickedPageViewNext": [], "UserResetAltColourAdjust": [], "UserToggledFullscreen": [], "UserClickedRange": ["String.String", "Maybe.Maybe Basics.Int"], "UserToggledMetadata": [], "UserSelectedContentsIndex": [], "UserSelectedContentsPages": [], "UserToggledSidebar": [], "UserToggledShiftByOne": [], "UserToggledThumbnails": [], "UserToggledTwoUp": [], "UserUpdatedFilterInt": ["Filters.FilterIntValue", "String.String"], "UserUpdatedFilterFloat": ["Filters.FilterFloatValue", "String.String"], "UserUpdatedFilterString": ["Filters.FilterStringValue", "String.String"], "UserUpdatedFilterJsonInput": ["String.String"], "UserAppliedFilterJson": [], "UserCopiedFilterJson": [], "ViewerLoadingChanged": ["Basics.Bool"], "UserDraggedSidebarResize": ["Basics.Int"], "UserEndedSidebarResize": [], "UserStartedSidebarResize": ["Basics.Int"], "UserChangedZoomLevel": ["Basics.Float"], "ViewportChanged": ["Basics.Int", "Basics.Int"], "UserClickedZoomIn": [], "UserClickedZoomOut": [], "UserClickedPageViewImageChoice": ["Basics.Int"], "UserToggledFilterGroup": ["String.String"] } }, "Basics.Bool": { "args": [], "tags": { "True": [], "False": [] } }, "Browser.Dom.Error": { "args": [], "tags": { "NotFound": ["String.String"] } }, "Http.Error": { "args": [], "tags": { "BadUrl": ["String.String"], "Timeout": [], "NetworkError": [], "BadStatus": ["Basics.Int"], "BadBody": ["String.String"] } }, "Filters.FilterFloatValue": { "args": [], "tags": { "FloatColourReplaceBlend": [], "FloatContrast": [], "FloatGamma": [], "FloatNormalizeStrength": [], "FloatPseudoColourBlue": [], "FloatPseudoColourGreen": [], "FloatPseudoColourRed": [], "FloatUnsharpAmount": [] } }, "Filters.FilterIntValue": { "args": [], "tags": { "IntAdaptiveOffset": [], "IntAdaptiveWindow": [], "IntAltRedGamma": [], "IntAltRedSigmoid": [], "IntAltRedVibrance": [], "IntAltRedHue": [], "IntAltRedHueWindow": [], "IntAltGreenGamma": [], "IntAltGreenSigmoid": [], "IntAltGreenHue": [], "IntAltGreenHueWindow": [], "IntAltGreenVibrance": [], "IntAltBlueGamma": [], "IntAltBlueSigmoid": [], "IntAltBlueHue": [], "IntAltBlueHueWindow": [], "IntAltBlueVibrance": [], "IntBrightness": [], "IntCcBlue": [], "IntCcGreen": [], "IntCcRed": [], "IntColourmapCenter": [], "IntColourReplaceTolerance": [], "IntHue": [], "IntMorphKernel": [], "IntRotation": [], "IntSaturation": [], "IntThreshold": [], "IntVibrance": [] } }, "Filters.FilterStringValue": { "args": [], "tags": { "StringColourmapPreset": [], "StringColourReplaceSource": [], "StringColourReplaceTarget": [], "StringConvolutionPreset": [], "StringMorphOperation": [], "StringPcaMode": [], "StringPseudoColourMode": [] } }, "Filters.FilterToggle": { "args": [], "tags": { "ToggleAdaptive": [], "ToggleAltBlueGamma": [], "ToggleAltBlueHue": [], "ToggleAltBlueSigmoid": [], "ToggleAltBlueVibrance": [], "ToggleAltGreenGamma": [], "ToggleAltGreenHue": [], "ToggleAltGreenSigmoid": [], "ToggleAltGreenVibrance": [], "ToggleAltRedGamma": [], "ToggleAltRedHue": [], "ToggleAltRedSigmoid": [], "ToggleAltRedVibrance": [], "ToggleBrightness": [], "ToggleCcBlue": [], "ToggleCcGreen": [], "ToggleCcRed": [], "ToggleColourmap": [], "ToggleColourReplace": [], "ToggleColourReplacePreserveLum": [], "ToggleContrast": [], "ToggleConvolution": [], "ToggleFlip": [], "ToggleGamma": [], "ToggleGrayscale": [], "ToggleHue": [], "ToggleInvert": [], "ToggleMorph": [], "ToggleNormalize": [], "TogglePca": [], "TogglePseudoColour": [], "ToggleSaturation": [], "ToggleThreshold": [], "ToggleUnsharp": [], "ToggleVibrance": [] } }, "Basics.Float": { "args": [], "tags": { "Float": [] } }, "IIIF.Presentation.IIIFManifest": { "args": [], "tags": { "IIIFManifest": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Manifest"] } }, "IIIF.Presentation.IIIFResource": { "args": [], "tags": { "ResourceManifest": ["IIIF.Presentation.IIIFManifest"], "ResourceCollection": ["IIIF.Presentation.IIIFCollection"], "ResourceCanvas": ["IIIF.Presentation.IIIFCanvas"], "ResourceRange": ["IIIF.Presentation.IIIFRange"] } }, "Basics.Int": { "args": [], "tags": { "Int": [] } }, "Maybe.Maybe": { "args": ["a"], "tags": { "Just": ["a"], "Nothing": [] } }, "Result.Result": { "args": ["error", "value"], "tags": { "Ok": ["value"], "Err": ["error"] } }, "String.String": { "args": [], "tags": { "String": [] } }, "IIIF.Presentation.IIIFCanvas": { "args": [], "tags": { "IIIFCanvas": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Canvas"] } }, "IIIF.Presentation.IIIFCollection": { "args": [], "tags": { "IIIFCollection": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Collection"] } }, "IIIF.Presentation.IIIFRange": { "args": [], "tags": { "IIIFRange": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Range"] } }, "IIIF.Version.IIIFVersion": { "args": [], "tags": { "IIIFV2": [], "IIIFV3": [] } }, "IIIF.Presentation.ImageType": { "args": [], "tags": { "PrimaryImage": [], "ChoiceImage": [] } }, "IIIF.Image.ImageUri": { "args": [], "tags": { "InfoUri": ["IIIF.Image.ImageServerParameters"], "ImageUri": ["IIIF.Image.ImageRequestParameters"] } }, "IIIF.Language.LanguageValues": { "args": [], "tags": { "LanguageValues": ["IIIF.Language.Language", "List.List String.String"] } }, "List.List": { "args": ["a"], "tags": {} }, "IIIF.Presentation.MediaFormats": { "args": [], "tags": { "ImageJpeg": [], "OtherFormat": ["String.String"] } }, "IIIF.Presentation.RangeItem": { "args": [], "tags": { "RangeCanvas": ["String.String"], "RangeRange": ["IIIF.Presentation.Range"] } }, "IIIF.Presentation.ResourceTypes": { "args": [], "tags": { "Video": [], "OtherResource": ["String.String"] } }, "IIIF.Presentation.ServiceTypes": { "args": [], "tags": { "ImageService1": [], "ImageService2": [], "ImageService3": [], "SearchService1": [], "AutoCompleteService1": [], "AuthTokenService1": [], "AuthLogoutService1": [], "UnknownService": [] } }, "IIIF.Presentation.ViewingDirection": { "args": [], "tags": { "LeftToRight": [], "RightToLeft": [], "TopToBottom": [], "BottomToTop": [] } }, "IIIF.Presentation.ViewingLayout": { "args": [], "tags": { "LayoutV2": ["IIIF.Presentation.ViewingHint"], "LayoutV3": ["List.List IIIF.Presentation.Behavior"] } }, "IIIF.Presentation.Behavior": { "args": [], "tags": { "AutoAdvanceBehavior": [], "NoAutoAdvanceBehavior": [], "RepeatBehavior": [], "NoRepeatBehavior": [], "UnorderedBehavior": [], "IndividualsBehavior": [], "ContinuousBehavior": [], "PagedBehavior": [], "FacingPagesBehavior": [], "NonPagedBehavior": [], "MultiPartBehavior": [], "TogetherBehavior": [], "SequenceBehavior": [], "ThumbnailNavBehavior": [], "NoNavBehavior": [], "HiddenBehavior": [] } }, "IIIF.Presentation.CollectionItem": { "args": [], "tags": { "NestedCollection": ["IIIF.Presentation.Collection"], "ManifestItem": ["IIIF.Presentation.Manifest"] } }, "IIIF.Image.ImageFormat": { "args": [], "tags": { "JpegFormat": [], "TiffFormat": [], "PngFormat": [], "Jp2Format": [], "GifFormat": [], "PdfFormat": [], "WebpFormat": [] } }, "IIIF.Image.ImageQuality": { "args": [], "tags": { "ColorQuality": [], "GrayQuality": [], "BiTonalQuality": [], "DefaultQuality": [], "NativeQuality": [] } }, "IIIF.Image.ImageRegion": { "args": [], "tags": { "FullRegion": [], "SquareRegion": [], "SizeRegion": ["{ x : Basics.Int, y : Basics.Int, w : Basics.Int, h : Basics.Int }"], "PctSizeRegion": ["{ x : Basics.Float, y : Basics.Float, w : Basics.Float, h : Basics.Float }"] } }, "IIIF.Image.ImageRotation": { "args": [], "tags": { "NormalRotation": ["Basics.Float"], "MirroredRotation": ["Basics.Float"] } }, "IIIF.Image.ImageSize": { "args": [], "tags": { "MaxSize": [], "ExactMaxSize": [], "WidthOnlySize": ["Basics.Int"], "ExactWidthOnlySize": ["Basics.Int"], "HeightOnlySize": ["Basics.Int"], "ExactHeightOnlySize": ["Basics.Int"], "PercentSize": ["Basics.Float"], "ExactPercentSize": ["Basics.Float"], "WidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"] } }, "IIIF.Language.Language": { "args": [], "tags": { "LanguageCode": ["String.String"], "None": [], "Default": [] } }, "IIIF.Presentation.ViewingHint": { "args": [], "tags": { "PagedHint": [], "IndividualsHint": [], "ContinuousHint": [], "MultiPartHint": [], "NonPagedHint": [], "TopHint": [], "FacingPagesHint": [] } } } } }) } };
 
   // src/filters.ts
   function setFilterOptions(viewer, options) {
