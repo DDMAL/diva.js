@@ -47,11 +47,7 @@
         this.container.className = "osd-container";
         this.container.style.width = "100%";
         this.container.style.height = "100%";
-        this.container.addEventListener(
-          "wheel",
-          this.handleWheelBound,
-          { passive: false, capture: true }
-        );
+        this.container.addEventListener("wheel", this.handleWheelBound, { passive: false, capture: true });
         this.container.addEventListener("dblclick", this.handleDoubleClickBound);
         this.appendChild(this.container);
         this.createScrollbar();
@@ -104,18 +100,8 @@
           crossOriginPolicy: "Anonymous",
           loadTilesWithAjax: true,
           ajaxWithCredentials: false,
-          gestureSettingsTrackpad: {
-            pinchToZoom: true,
-            scrollToZoom: false,
-            flickEnabled: true,
-            dragToPan: true
-          },
-          gestureSettingsMouse: {
-            scrollToZoom: false,
-            clickToZoom: false,
-            dblClickToZoom: false,
-            dragToPan: true
-          },
+          gestureSettingsTrackpad: { pinchToZoom: true, scrollToZoom: false, flickEnabled: true, dragToPan: true },
+          gestureSettingsMouse: { scrollToZoom: false, clickToZoom: false, dblClickToZoom: false, dragToPan: true },
           gestureSettingsTouch: { pinchToZoom: false, dragToPan: true }
         };
         this.viewer = OpenSeadragon(options);
@@ -27411,9 +27397,7 @@
         break;
       case "gray":
       case "":
-        result = buildColormap(
-          [{ stop: 0, color: [0, 0, 0] }, { stop: 1, color: [255, 255, 255] }]
-        );
+        result = buildColormap([{ stop: 0, color: [0, 0, 0] }, { stop: 1, color: [255, 255, 255] }]);
         break;
       default:
         return null;
@@ -27925,66 +27909,54 @@
   }
   function applyChannelLUT(channel, lut) {
     if (channel === 0) {
-      return applyPixelTransformInPlace(
-        (r, g, b, a, out) => {
-          out[0] = lut[r];
-          out[1] = g;
-          out[2] = b;
-          out[3] = a;
-        }
-      );
+      return applyPixelTransformInPlace((r, g, b, a, out) => {
+        out[0] = lut[r];
+        out[1] = g;
+        out[2] = b;
+        out[3] = a;
+      });
     }
     if (channel === 1) {
-      return applyPixelTransformInPlace(
-        (r, g, b, a, out) => {
-          out[0] = r;
-          out[1] = lut[g];
-          out[2] = b;
-          out[3] = a;
-        }
-      );
-    }
-    return applyPixelTransformInPlace(
-      (r, g, b, a, out) => {
+      return applyPixelTransformInPlace((r, g, b, a, out) => {
         out[0] = r;
-        out[1] = g;
-        out[2] = lut[b];
+        out[1] = lut[g];
+        out[2] = b;
         out[3] = a;
-      }
-    );
+      });
+    }
+    return applyPixelTransformInPlace((r, g, b, a, out) => {
+      out[0] = r;
+      out[1] = g;
+      out[2] = lut[b];
+      out[3] = a;
+    });
   }
   function ccChannel(channel, adjustment) {
     const adj = adjustment / 100;
     const absAdj = Math.abs(adj);
     const transform = (ch) => adj > 0 ? ch + (255 - ch) * adj : ch - ch * absAdj;
     if (channel === 0) {
-      return applyPixelTransformInPlace(
-        (r, g, b, a, out) => {
-          out[0] = transform(r);
-          out[1] = g;
-          out[2] = b;
-          out[3] = a;
-        }
-      );
+      return applyPixelTransformInPlace((r, g, b, a, out) => {
+        out[0] = transform(r);
+        out[1] = g;
+        out[2] = b;
+        out[3] = a;
+      });
     }
     if (channel === 1) {
-      return applyPixelTransformInPlace(
-        (r, g, b, a, out) => {
-          out[0] = r;
-          out[1] = transform(g);
-          out[2] = b;
-          out[3] = a;
-        }
-      );
-    }
-    return applyPixelTransformInPlace(
-      (r, g, b, a, out) => {
+      return applyPixelTransformInPlace((r, g, b, a, out) => {
         out[0] = r;
-        out[1] = g;
-        out[2] = transform(b);
+        out[1] = transform(g);
+        out[2] = b;
         out[3] = a;
-      }
-    );
+      });
+    }
+    return applyPixelTransformInPlace((r, g, b, a, out) => {
+      out[0] = r;
+      out[1] = g;
+      out[2] = transform(b);
+      out[3] = a;
+    });
   }
   function altChannelGamma(channel, amount) {
     const strength = Math.max(0, Math.min(100, amount || 0));
@@ -28018,29 +27990,27 @@
       return noopFilter;
     }
     const windowSize = Math.max(0.02, Math.min(0.3, (window2 === void 0 ? 8 : window2) / 100));
-    return applyPixelTransformInPlace(
-      (r, g, b, aPx, out) => {
-        const hsv = rgbToHSV(r, g, b);
-        const hueDist = hueTarget === 0 ? Math.min(Math.abs(hsv.h), Math.abs(1 - hsv.h)) : Math.abs(hsv.h - hueTarget);
-        const hueWeight = clamp01(1 - hueDist / windowSize);
-        const weight = hueWeight * Math.abs(strength);
-        if (weight <= 0) {
-          out[0] = r;
-          out[1] = g;
-          out[2] = b;
-          out[3] = aPx;
-          return;
-        }
-        const sign = strength >= 0 ? 1 : -1;
-        const nextS = clamp01(hsv.s + sign * (1 - hsv.s) * weight);
-        const nextV = clamp01(hsv.v + sign * hsv.v * weight * 0.2);
-        const rgb = hsvToRGB(hsv.h, nextS, nextV);
-        out[0] = rgb.r;
-        out[1] = rgb.g;
-        out[2] = rgb.b;
+    return applyPixelTransformInPlace((r, g, b, aPx, out) => {
+      const hsv = rgbToHSV(r, g, b);
+      const hueDist = hueTarget === 0 ? Math.min(Math.abs(hsv.h), Math.abs(1 - hsv.h)) : Math.abs(hsv.h - hueTarget);
+      const hueWeight = clamp01(1 - hueDist / windowSize);
+      const weight = hueWeight * Math.abs(strength);
+      if (weight <= 0) {
+        out[0] = r;
+        out[1] = g;
+        out[2] = b;
         out[3] = aPx;
+        return;
       }
-    );
+      const sign = strength >= 0 ? 1 : -1;
+      const nextS = clamp01(hsv.s + sign * (1 - hsv.s) * weight);
+      const nextV = clamp01(hsv.v + sign * hsv.v * weight * 0.2);
+      const rgb = hsvToRGB(hsv.h, nextS, nextV);
+      out[0] = rgb.r;
+      out[1] = rgb.g;
+      out[2] = rgb.b;
+      out[3] = aPx;
+    });
   }
   function altChannelVibrance(channel, amount) {
     const strength = Math.max(0, Math.min(100, amount || 0)) / 100;
@@ -28110,41 +28080,35 @@
       if (threshold < 0 || threshold > 255) {
         throw new Error("Threshold must be between 0 and 255.");
       }
-      return applyPixelTransformInPlace(
-        (r, g, b, _a, out) => {
-          const v = 54 * r + 183 * g + 19 * b >> 8 >= threshold ? 255 : 0;
-          out[0] = v;
-          out[1] = v;
-          out[2] = v;
-          out[3] = 255;
-        }
-      );
+      return applyPixelTransformInPlace((r, g, b, _a, out) => {
+        const v = 54 * r + 183 * g + 19 * b >> 8 >= threshold ? 255 : 0;
+        out[0] = v;
+        out[1] = v;
+        out[2] = v;
+        out[3] = 255;
+      });
     },
     SATURATION: function(adjustment) {
       const adj = adjustment * -0.01;
-      return applyPixelTransformInPlace(
-        (r, g, b, a, out) => {
-          const maxValue = Math.max(r, g, b);
-          out[0] = r !== maxValue ? r + (maxValue - r) * adj : r;
-          out[1] = g !== maxValue ? g + (maxValue - g) * adj : g;
-          out[2] = b !== maxValue ? b + (maxValue - b) * adj : b;
-          out[3] = a;
-        }
-      );
+      return applyPixelTransformInPlace((r, g, b, a, out) => {
+        const maxValue = Math.max(r, g, b);
+        out[0] = r !== maxValue ? r + (maxValue - r) * adj : r;
+        out[1] = g !== maxValue ? g + (maxValue - g) * adj : g;
+        out[2] = b !== maxValue ? b + (maxValue - b) * adj : b;
+        out[3] = a;
+      });
     },
     VIBRANCE: function(adjustment) {
       const adj = adjustment * -1;
-      return applyPixelTransformInPlace(
-        (r, g, b, a, out) => {
-          const maxValue = Math.max(r, g, b);
-          const avg = (r + g + b) / 3;
-          const amt = Math.abs(maxValue - avg) * 2 / 255 * adj / 100;
-          out[0] = r !== maxValue ? r + (maxValue - r) * amt : r;
-          out[1] = g !== maxValue ? g + (maxValue - g) * amt : g;
-          out[2] = b !== maxValue ? b + (maxValue - b) * amt : b;
-          out[3] = a;
-        }
-      );
+      return applyPixelTransformInPlace((r, g, b, a, out) => {
+        const maxValue = Math.max(r, g, b);
+        const avg = (r + g + b) / 3;
+        const amt = Math.abs(maxValue - avg) * 2 / 255 * adj / 100;
+        out[0] = r !== maxValue ? r + (maxValue - r) * amt : r;
+        out[1] = g !== maxValue ? g + (maxValue - g) * amt : g;
+        out[2] = b !== maxValue ? b + (maxValue - b) * amt : b;
+        out[3] = a;
+      });
     },
     HUE: function(adjustment) {
       const angle = Math.abs(adjustment) / 100 * 2 * Math.PI;
@@ -28161,14 +28125,12 @@
       const m20 = oneThird * (1 - cosA) - sqrt1_3 * sinA;
       const m21 = oneThird * (1 - cosA) + sqrt1_3 * sinA;
       const m22 = cosA + (1 - cosA) * oneThird;
-      return applyPixelTransformInPlace(
-        (r, g, b, a, out) => {
-          out[0] = clampByte(m00 * r + m01 * g + m02 * b);
-          out[1] = clampByte(m10 * r + m11 * g + m12 * b);
-          out[2] = clampByte(m20 * r + m21 * g + m22 * b);
-          out[3] = a;
-        }
-      );
+      return applyPixelTransformInPlace((r, g, b, a, out) => {
+        out[0] = clampByte(m00 * r + m01 * g + m02 * b);
+        out[1] = clampByte(m10 * r + m11 * g + m12 * b);
+        out[2] = clampByte(m20 * r + m21 * g + m22 * b);
+        out[3] = a;
+      });
     },
     BRIGHTNESS: function(adjustment) {
       if (adjustment < -255 || adjustment > 255) {
@@ -28178,14 +28140,12 @@
       for (let i = 0; i < 256; i += 1) {
         precomputedBrightness[i] = i + adjustment;
       }
-      return applyPixelTransformInPlace(
-        (r, g, b, a, out) => {
-          out[0] = precomputedBrightness[r];
-          out[1] = precomputedBrightness[g];
-          out[2] = precomputedBrightness[b];
-          out[3] = a;
-        }
-      );
+      return applyPixelTransformInPlace((r, g, b, a, out) => {
+        out[0] = precomputedBrightness[r];
+        out[1] = precomputedBrightness[g];
+        out[2] = precomputedBrightness[b];
+        out[3] = a;
+      });
     },
     CC_RED: function(adjustment) {
       return ccChannel(0, adjustment);
@@ -28204,14 +28164,12 @@
       for (let i = 0; i < 256; i += 1) {
         precomputedContrast[i] = i * adjustment;
       }
-      return applyPixelTransformInPlace(
-        (r, g, b, a, out) => {
-          out[0] = precomputedContrast[r];
-          out[1] = precomputedContrast[g];
-          out[2] = precomputedContrast[b];
-          out[3] = a;
-        }
-      );
+      return applyPixelTransformInPlace((r, g, b, a, out) => {
+        out[0] = precomputedContrast[r];
+        out[1] = precomputedContrast[g];
+        out[2] = precomputedContrast[b];
+        out[3] = a;
+      });
     },
     GAMMA: function(adjustment) {
       if (adjustment < 0) {
@@ -28221,39 +28179,33 @@
       for (let i = 0; i < 256; i += 1) {
         precomputedGamma[i] = Math.pow(i / 255, adjustment) * 255;
       }
-      return applyPixelTransformInPlace(
-        (r, g, b, a, out) => {
-          out[0] = precomputedGamma[r];
-          out[1] = precomputedGamma[g];
-          out[2] = precomputedGamma[b];
-          out[3] = a;
-        }
-      );
+      return applyPixelTransformInPlace((r, g, b, a, out) => {
+        out[0] = precomputedGamma[r];
+        out[1] = precomputedGamma[g];
+        out[2] = precomputedGamma[b];
+        out[3] = a;
+      });
     },
     GREYSCALE: function() {
-      return applyPixelTransformInPlace(
-        (r, g, b, _a, out) => {
-          const val = 77 * r + 150 * g + 29 * b >> 8;
-          out[0] = val;
-          out[1] = val;
-          out[2] = val;
-          out[3] = 255;
-        }
-      );
+      return applyPixelTransformInPlace((r, g, b, _a, out) => {
+        const val = 77 * r + 150 * g + 29 * b >> 8;
+        out[0] = val;
+        out[1] = val;
+        out[2] = val;
+        out[3] = 255;
+      });
     },
     INVERT: function() {
       const precomputedInvert = [];
       for (let i = 0; i < 256; i += 1) {
         precomputedInvert[i] = 255 - i;
       }
-      return applyPixelTransformInPlace(
-        (r, g, b, a, out) => {
-          out[0] = precomputedInvert[r];
-          out[1] = precomputedInvert[g];
-          out[2] = precomputedInvert[b];
-          out[3] = a;
-        }
-      );
+      return applyPixelTransformInPlace((r, g, b, a, out) => {
+        out[0] = precomputedInvert[r];
+        out[1] = precomputedInvert[g];
+        out[2] = precomputedInvert[b];
+        out[3] = a;
+      });
     },
     MORPHOLOGICAL_OPERATION: function(kernelSize, comparator) {
       if (kernelSize % 2 === 0) {
@@ -28269,15 +28221,7 @@
           const height = imgData.height;
           const originalPixels = Filters._ensureScratch(imgData.data.length);
           originalPixels.set(imgData.data);
-          morphPixels(
-            originalPixels,
-            imgData.data,
-            width,
-            height,
-            kernelSize,
-            kernelHalfSize,
-            comparator
-          );
+          morphPixels(originalPixels, imgData.data, width, height, kernelSize, kernelHalfSize, comparator);
           return true;
         });
         callback();
@@ -28298,15 +28242,7 @@
           const height = imgData.height;
           const originalPixels = Filters._ensureScratch(imgData.data.length);
           originalPixels.set(imgData.data);
-          convolvePixels(
-            originalPixels,
-            imgData.data,
-            width,
-            height,
-            kernel,
-            kernelSize,
-            kernelHalfSize
-          );
+          convolvePixels(originalPixels, imgData.data, width, height, kernel, kernelSize, kernelHalfSize);
           return true;
         });
         callback();
@@ -28324,16 +28260,14 @@
         }
         resampledCmap[i] = cmap[position];
       }
-      return applyPixelTransformInPlace(
-        (r, g, b, _a, out) => {
-          const v = (r + g + b) / 3 | 0;
-          const c = resampledCmap[v];
-          out[0] = c[0];
-          out[1] = c[1];
-          out[2] = c[2];
-          out[3] = 255;
-        }
-      );
+      return applyPixelTransformInPlace((r, g, b, _a, out) => {
+        const v = (r + g + b) / 3 | 0;
+        const c = resampledCmap[v];
+        out[0] = c[0];
+        out[1] = c[1];
+        out[2] = c[2];
+        out[3] = 255;
+      });
     },
     COLORMAP_PRESET: function(preset) {
       return getColormap(preset || "");
@@ -28441,42 +28375,40 @@
       const tol = Math.max(0, Math.min(255, tolerance === void 0 ? 0 : tolerance));
       const strength = Math.max(0, Math.min(1, blend === void 0 ? 1 : blend));
       const targetHsv = rgbToHSV(dst[0], dst[1], dst[2]);
-      return applyPixelTransformInPlace(
-        (r, g, b, a, out) => {
-          const dr = r - src[0];
-          const dg = g - src[1];
-          const db = b - src[2];
-          const dist = Math.sqrt(dr * dr + dg * dg + db * db);
-          let weight = 0;
-          if (tol <= 0) {
-            weight = dist === 0 ? 1 : 0;
-          } else {
-            weight = 1 - Math.min(1, dist / tol);
-          }
-          weight *= strength;
-          if (weight <= 0) {
-            out[0] = r;
-            out[1] = g;
-            out[2] = b;
-            out[3] = a;
-            return;
-          }
-          let tr = dst[0];
-          let tg = dst[1];
-          let tb = dst[2];
-          if (preserveLum) {
-            const luma = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-            const rgb = hsvToRGB(targetHsv.h, targetHsv.s, luma);
-            tr = rgb.r;
-            tg = rgb.g;
-            tb = rgb.b;
-          }
-          out[0] = clampByte(r + (tr - r) * weight);
-          out[1] = clampByte(g + (tg - g) * weight);
-          out[2] = clampByte(b + (tb - b) * weight);
-          out[3] = a;
+      return applyPixelTransformInPlace((r, g, b, a, out) => {
+        const dr = r - src[0];
+        const dg = g - src[1];
+        const db = b - src[2];
+        const dist = Math.sqrt(dr * dr + dg * dg + db * db);
+        let weight = 0;
+        if (tol <= 0) {
+          weight = dist === 0 ? 1 : 0;
+        } else {
+          weight = 1 - Math.min(1, dist / tol);
         }
-      );
+        weight *= strength;
+        if (weight <= 0) {
+          out[0] = r;
+          out[1] = g;
+          out[2] = b;
+          out[3] = a;
+          return;
+        }
+        let tr = dst[0];
+        let tg = dst[1];
+        let tb = dst[2];
+        if (preserveLum) {
+          const luma = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+          const rgb = hsvToRGB(targetHsv.h, targetHsv.s, luma);
+          tr = rgb.r;
+          tg = rgb.g;
+          tb = rgb.b;
+        }
+        out[0] = clampByte(r + (tr - r) * weight);
+        out[1] = clampByte(g + (tg - g) * weight);
+        out[2] = clampByte(b + (tb - b) * weight);
+        out[3] = a;
+      });
     },
     ALT_RED_GAMMA: function(amount) {
       return altChannelGamma(0, amount);
@@ -28681,19 +28613,15 @@
       this.getPort("tileSourcesUpdated").subscribe((tileSources) => {
         this.callViewerMethod("setTileSources", tileSources);
       });
-      this.getPort("pageAspectsUpdated").subscribe(
-        (aspects) => {
-          this.callViewerMethod("setPageAspects", aspects);
-        }
-      );
+      this.getPort("pageAspectsUpdated").subscribe((aspects) => {
+        this.callViewerMethod("setPageAspects", aspects);
+      });
       this.getPort("zoomLevelUpdated").subscribe((zoom) => {
         this.callViewerMethod("setZoomLevel", zoom);
       });
-      this.getPort("zoomBy").subscribe(
-        (factor) => {
-          this.callViewerMethod("zoomBy", factor);
-        }
-      );
+      this.getPort("zoomBy").subscribe((factor) => {
+        this.callViewerMethod("zoomBy", factor);
+      });
       this.getPort("scrollToIndex").subscribe((index) => {
         this.callViewerMethod("scrollToIndex", index);
       });
@@ -28759,11 +28687,9 @@
     }
     copyToClipboard(text) {
       if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
-        navigator.clipboard.writeText(text).catch(
-          () => {
-            this.copyToClipboardFallback(text);
-          }
-        );
+        navigator.clipboard.writeText(text).catch(() => {
+          this.copyToClipboardFallback(text);
+        });
         return;
       }
       this.copyToClipboardFallback(text);
@@ -28797,10 +28723,7 @@
     destroy() {
       this.removeViewerEvent("diva-page-change", this.handlePageChangeBound);
       this.removeViewerEvent("diva-zoom-change", this.handleZoomChangeBound);
-      this.removeViewerEvent(
-        "diva-loading-change",
-        this.handleLoadingChangeBound
-      );
+      this.removeViewerEvent("diva-loading-change", this.handleLoadingChangeBound);
       document.removeEventListener("fullscreenchange", this.handleFullscreenChangeBound);
       if (this.root) {
         const rootAny = this.root;
@@ -29038,13 +28961,33 @@
     { enabled: "altRedSigmoidEnabled", filter: "ALT_RED_SIGMOID", args: ["altRedSigmoid"] },
     { enabled: "altGreenSigmoidEnabled", filter: "ALT_GREEN_SIGMOID", args: ["altGreenSigmoid"] },
     { enabled: "altBlueSigmoidEnabled", filter: "ALT_BLUE_SIGMOID", args: ["altBlueSigmoid"] },
-    { enabled: "altRedHueEnabled", filter: "ALT_RED_HUE", args: ["altRedHue", "altRedHueWindow"], defaults: [0, 8] },
-    { enabled: "altGreenHueEnabled", filter: "ALT_GREEN_HUE", args: ["altGreenHue", "altGreenHueWindow"], defaults: [0, 8] },
-    { enabled: "altBlueHueEnabled", filter: "ALT_BLUE_HUE", args: ["altBlueHue", "altBlueHueWindow"], defaults: [0, 8] },
+    {
+      enabled: "altRedHueEnabled",
+      filter: "ALT_RED_HUE",
+      args: ["altRedHue", "altRedHueWindow"],
+      defaults: [0, 8]
+    },
+    {
+      enabled: "altGreenHueEnabled",
+      filter: "ALT_GREEN_HUE",
+      args: ["altGreenHue", "altGreenHueWindow"],
+      defaults: [0, 8]
+    },
+    {
+      enabled: "altBlueHueEnabled",
+      filter: "ALT_BLUE_HUE",
+      args: ["altBlueHue", "altBlueHueWindow"],
+      defaults: [0, 8]
+    },
     { enabled: "altRedVibranceEnabled", filter: "ALT_RED_VIBRANCE", args: ["altRedVibrance"] },
     { enabled: "altGreenVibranceEnabled", filter: "ALT_GREEN_VIBRANCE", args: ["altGreenVibrance"] },
     { enabled: "altBlueVibranceEnabled", filter: "ALT_BLUE_VIBRANCE", args: ["altBlueVibrance"] },
-    { enabled: "adaptiveEnabled", filter: "ADAPTIVE_THRESHOLD", args: ["adaptiveWindow", "adaptiveOffset"], defaults: [15, 10] }
+    {
+      enabled: "adaptiveEnabled",
+      filter: "ADAPTIVE_THRESHOLD",
+      args: ["adaptiveWindow", "adaptiveOffset"],
+      defaults: [15, 10]
+    }
   ];
   var buildFilterOptions = (filters) => {
     var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l;
@@ -29079,14 +29022,12 @@
       }
     }
     if (filters.pseudoColourEnabled) {
-      processors.push(
-        Filters.PSEUDOCOLOR(
-          filters.pseudoColourMode || "",
-          (_e = filters.pseudoColourRed) != null ? _e : 1,
-          (_f = filters.pseudoColourGreen) != null ? _f : 1,
-          (_g = filters.pseudoColourBlue) != null ? _g : 1
-        )
-      );
+      processors.push(Filters.PSEUDOCOLOR(
+        filters.pseudoColourMode || "",
+        (_e = filters.pseudoColourRed) != null ? _e : 1,
+        (_f = filters.pseudoColourGreen) != null ? _f : 1,
+        (_g = filters.pseudoColourBlue) != null ? _g : 1
+      ));
     }
     if (filters.pcaEnabled) {
       processors.push(Filters.PCA_COLOR(filters.pcaMode || ""));

@@ -58,8 +58,7 @@ class OsdViewer extends HTMLElement
             this.container.className = "osd-container";
             this.container.style.width = "100%";
             this.container.style.height = "100%";
-            this.container.addEventListener("wheel", this.handleWheelBound,
-                                            {passive : false, capture : true});
+            this.container.addEventListener("wheel", this.handleWheelBound, {passive : false, capture : true});
             this.container.addEventListener("dblclick", this.handleDoubleClickBound);
             this.appendChild(this.container);
 
@@ -125,18 +124,10 @@ class OsdViewer extends HTMLElement
                 crossOriginPolicy : "Anonymous",
                 loadTilesWithAjax : true,
                 ajaxWithCredentials : false,
-                gestureSettingsTrackpad : {
-                    pinchToZoom : true,
-                    scrollToZoom : false,
-                    flickEnabled : true,
-                    dragToPan : true
-                },
-                gestureSettingsMouse : {
-                    scrollToZoom : false,
-                    clickToZoom : false,
-                    dblClickToZoom : false,
-                    dragToPan : true
-                },
+                gestureSettingsTrackpad :
+                    {pinchToZoom : true, scrollToZoom : false, flickEnabled : true, dragToPan : true},
+                gestureSettingsMouse :
+                    {scrollToZoom : false, clickToZoom : false, dblClickToZoom : false, dragToPan : true},
                 gestureSettingsTouch : {pinchToZoom : false, dragToPan : true}
             } as any;
             this.viewer = OpenSeadragon(options);
@@ -189,7 +180,8 @@ class OsdViewer extends HTMLElement
         {
             return;
         }
-        // OSD 6 keeps more internal loader/cache state; close() clears world + queues safely.
+        // OSD 6 keeps more internal loader/cache state; close() clears world +
+        // queues safely.
         if (typeof this.viewer.close === "function")
         {
             this.viewer.close();
@@ -330,8 +322,7 @@ class OsdViewer extends HTMLElement
                     {
                         return;
                     }
-                    const bounds =
-                        this.isSpreadMode() ? this.getRowBounds(index) : item.getBounds();
+                    const bounds = this.isSpreadMode() ? this.getRowBounds(index) : item.getBounds();
                     viewer.viewport.fitBounds(bounds, true);
                     viewer.viewport.zoomBy(0.95, viewer.viewport.getCenter(true), true);
                     viewer.viewport.applyConstraints();
@@ -376,8 +367,7 @@ class OsdViewer extends HTMLElement
 
     private buildOffsets(): void
     {
-        const count =
-            this.tileSources.length > 0 ? this.tileSources.length : this.pageAspects.length;
+        const count = this.tileSources.length > 0 ? this.tileSources.length : this.pageAspects.length;
         this.pageOffsets = new Array(count);
         this.pageHeights = new Array(count);
         this.pageRowHeights = new Array(count);
@@ -435,8 +425,7 @@ class OsdViewer extends HTMLElement
         {
             const leftHeight = this.pageAspects[index] || fallback;
             const rightIndex = index + 1;
-            const rightHeight =
-                rightIndex < count ? this.pageAspects[rightIndex] || leftHeight : leftHeight;
+            const rightHeight = rightIndex < count ? this.pageAspects[rightIndex] || leftHeight : leftHeight;
             fallback = rightHeight;
 
             const rowHeight = Math.max(leftHeight, rightHeight);
@@ -967,8 +956,7 @@ class OsdViewer extends HTMLElement
         }
     }
 
-    private applyLayoutChange(
-        next: {mode?: "single"|"spread"|"spread-shift"; direction?: "ltr" | "rtl"}): void
+    private applyLayoutChange(next: {mode?: "single"|"spread"|"spread-shift"; direction?: "ltr" | "rtl"}): void
     {
         const nextMode = next.mode ?? this.layoutMode;
         const nextDirection = next.direction ?? this.viewingDirection;
@@ -1125,8 +1113,7 @@ class OsdViewer extends HTMLElement
             const thumbHeight = this.scrollbarThumb.clientHeight;
 
             const clampedThumbTop = Math.max(0, Math.min(newThumbTop, trackHeight - thumbHeight));
-            const scrollProgress =
-                (trackHeight - thumbHeight) > 0 ? clampedThumbTop / (trackHeight - thumbHeight) : 0;
+            const scrollProgress = (trackHeight - thumbHeight) > 0 ? clampedThumbTop / (trackHeight - thumbHeight) : 0;
 
             const totalHeight = this.getTotalHeight();
             const viewportHeight = this.viewer.viewport.getBounds(true).height;
