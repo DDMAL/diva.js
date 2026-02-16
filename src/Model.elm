@@ -6,7 +6,7 @@ import IIIF.Image exposing (createImageAddress, thumbnailUrlFromInfo)
 import IIIF.Language exposing (Language(..), extractLabelFromLanguageMap)
 import IIIF.Presentation exposing (Canvas, IIIFCollection, IIIFManifest, Image, ImageType(..), canvasAspect, canvasLabel, toCanvases)
 import Set exposing (Set)
-import Utilites exposing (find, isNothing, orElse)
+import Utilities exposing (find, isNothing, orElse)
 
 
 type Response

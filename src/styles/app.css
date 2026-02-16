@@ -218,7 +218,9 @@
   line-height: 1.4;
   text-align: right;
   max-width: 20vw;
+  min-width: 250px;
 }
+
 
 .diva-scrollbar-track {
   position: absolute;

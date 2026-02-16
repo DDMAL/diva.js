@@ -516,36 +516,19 @@ viewOtpRangeItem model canvasLabelMap range =
                     ""
 
         labelNode =
-            case maybeIndex of
-                Just index ->
-                    button
-                        [ classList [ ( "contents-button", True ), ( "ui-button", True ) ]
-                        , type_ "button"
-                        , Events.onClick (UserClickedRange range.id (Just index))
-                        ]
-                        [ text
-                            (if String.isEmpty labelText then
-                                rangePrefix ++ "[Untitled range]"
+            button
+                [ classList [ ( "contents-button", True ), ( "ui-button", True ) ]
+                , type_ "button"
+                , Events.onClick (UserClickedRange range.id maybeIndex)
+                ]
+                [ text
+                    (if String.isEmpty labelText then
+                        rangePrefix ++ "[Untitled range]"
 
-                             else
-                                rangePrefix ++ labelText
-                            )
-                        ]
-
-                Nothing ->
-                    button
-                        [ classList [ ( "contents-button", True ), ( "ui-button", True ) ]
-                        , type_ "button"
-                        , Events.onClick (UserClickedRange range.id Nothing)
-                        ]
-                        [ text
-                            (if String.isEmpty labelText then
-                                rangePrefix ++ "[Untitled range]"
-
-                             else
-                                rangePrefix ++ labelText
-                            )
-                        ]
+                     else
+                        rangePrefix ++ labelText
+                    )
+                ]
 
         metadataBlock =
             viewRangeMetadata model.detectedLanguage range.metadata
@@ -573,36 +556,19 @@ viewRangeNode model rangeIndexMap range =
                 |> Maybe.withDefault Nothing
 
         labelNode =
-            case maybeIndex of
-                Just index ->
-                    button
-                        [ classList [ ( "contents-button", True ), ( "ui-button", True ) ]
-                        , type_ "button"
-                        , Events.onClick (UserClickedRange range.id (Just index))
-                        ]
-                        [ text
-                            (if String.isEmpty labelText then
-                                "[Untitled range]"
+            button
+                [ classList [ ( "contents-button", True ), ( "ui-button", True ) ]
+                , type_ "button"
+                , Events.onClick (UserClickedRange range.id maybeIndex)
+                ]
+                [ text
+                    (if String.isEmpty labelText then
+                        "[Untitled range]"
 
-                             else
-                                labelText
-                            )
-                        ]
-
-                Nothing ->
-                    button
-                        [ classList [ ( "contents-button", True ), ( "ui-button", True ) ]
-                        , type_ "button"
-                        , Events.onClick (UserClickedRange range.id Nothing)
-                        ]
-                        [ text
-                            (if String.isEmpty labelText then
-                                "[Untitled range]"
-
-                             else
-                                labelText
-                            )
-                        ]
+                     else
+                        labelText
+                    )
+                ]
 
         metadataBlock =
             if model.selectedRangeId == Just range.id then

@@ -5,7 +5,7 @@ import Html.Attributes as HA exposing (classList)
 import Model exposing (Model, ResourceResponse(..), Response(..), SidebarState(..), ViewMode(..), currentManifest, getPageAt, pageViewStartIndex)
 import Msg exposing (Msg(..))
 import String
-import Utilites exposing (disabledIf, isNothing)
+import Utilities exposing (disabledIf, isNothing)
 import View.Helpers exposing (viewButton, viewMaybe)
 import View.Icons as Icons
 
@@ -213,21 +213,14 @@ viewStatus model =
 
                 ResourceLoadedCollection _ ->
                     case model.response of
-                        NotRequested ->
+                        Failed message ->
                             Just
                                 (div
-                                    [ HA.class "status" ]
-                                    [ text "Select a manifest from the collection to view." ]
+                                    [ classList [ ( "status", True ), ( "is-error", True ) ] ]
+                                    [ text message ]
                                 )
 
-                        Loading ->
-                            Just
-                                (div
-                                    [ HA.class "status" ]
-                                    [ text "Select a manifest from the collection to view." ]
-                                )
-
-                        Loaded _ ->
+                        _ ->
                             if List.isEmpty model.tileSources then
                                 Just
                                     (div
@@ -237,13 +230,6 @@ viewStatus model =
 
                             else
                                 Nothing
-
-                        Failed message ->
-                            Just
-                                (div
-                                    [ classList [ ( "status", True ), ( "is-error", True ) ] ]
-                                    [ text message ]
-                                )
 
                 ResourceFailed message ->
                     Just

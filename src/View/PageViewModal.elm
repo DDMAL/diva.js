@@ -10,7 +10,7 @@ import IIIF.Presentation exposing (toLabel)
 import Model exposing (Model, PageImage, ResourceResponse(..), Response(..), currentManifest, getPageAt)
 import Msg exposing (Msg(..))
 import Set
-import Utilites exposing (disabledIf)
+import Utilities exposing (disabledIf)
 import View.Helpers exposing (viewButton, viewIf)
 import View.Icons as Icons
 
@@ -36,6 +36,28 @@ type alias ToggleRangeRowConfig =
     , value : String
     , display : String
     , onInput : String -> Msg
+    }
+
+
+type alias ChannelConfig =
+    { gammaEnabled : Bool
+    , gamma : Int
+    , gammaToggle : FilterToggle
+    , gammaInput : FilterIntValue
+    , sigmoidEnabled : Bool
+    , sigmoid : Int
+    , sigmoidToggle : FilterToggle
+    , sigmoidInput : FilterIntValue
+    , hueEnabled : Bool
+    , hue : Int
+    , hueToggle : FilterToggle
+    , hueInput : FilterIntValue
+    , hueWindow : Int
+    , hueWindowInput : FilterIntValue
+    , vibranceEnabled : Bool
+    , vibrance : Int
+    , vibranceToggle : FilterToggle
+    , vibranceInput : FilterIntValue
     }
 
 
@@ -291,7 +313,7 @@ viewAdvancedColourAdjustGroup model =
     viewFilterGroup model
         "advanced-colour-adjust"
         "Advanced colour adjust"
-        [ viewFilterRow
+        (viewFilterRow
             [ button
                 [ HA.class "filter-reset"
                 , type_ "button"
@@ -299,166 +321,137 @@ viewAdvancedColourAdjustGroup model =
                 ]
                 [ text "Reset sliders" ]
             ]
-        , viewToggleRangeRow
-            { label = "Red Gamma"
-            , checked = model.filters.altRedGammaEnabled
-            , onToggle = ToggleAltRedGamma
-            , min = "0"
-            , max = "100"
-            , step = Just "1"
-            , value = String.fromInt model.filters.altRedGamma
-            , display = String.fromInt model.filters.altRedGamma
-            , onInput = UserUpdatedFilterInt IntAltRedGamma
-            }
-        , viewToggleRangeRow
-            { label = "Red Sigmoid"
-            , checked = model.filters.altRedSigmoidEnabled
-            , onToggle = ToggleAltRedSigmoid
-            , min = "0"
-            , max = "100"
-            , step = Just "1"
-            , value = String.fromInt model.filters.altRedSigmoid
-            , display = String.fromInt model.filters.altRedSigmoid
-            , onInput = UserUpdatedFilterInt IntAltRedSigmoid
-            }
-        , viewToggleRangeRow
-            { label = "Red Hue Boost"
-            , checked = model.filters.altRedHueEnabled
-            , onToggle = ToggleAltRedHue
-            , min = "-100"
-            , max = "100"
-            , step = Just "1"
-            , value = String.fromInt model.filters.altRedHue
-            , display = String.fromInt model.filters.altRedHue
-            , onInput = UserUpdatedFilterInt IntAltRedHue
-            }
-        , viewRangeRow
-            { label = "Red Hue Window"
-            , min = "2"
-            , max = "30"
-            , step = Just "1"
-            , value = String.fromInt model.filters.altRedHueWindow
-            , display = String.fromInt model.filters.altRedHueWindow
-            , onInput = UserUpdatedFilterInt IntAltRedHueWindow
-            }
-        , viewToggleRangeRow
-            { label = "Red Vibrance"
-            , checked = model.filters.altRedVibranceEnabled
-            , onToggle = ToggleAltRedVibrance
-            , min = "0"
-            , max = "100"
-            , step = Just "1"
-            , value = String.fromInt model.filters.altRedVibrance
-            , display = String.fromInt model.filters.altRedVibrance
-            , onInput = UserUpdatedFilterInt IntAltRedVibrance
-            }
-        , viewToggleRangeRow
-            { label = "Green Gamma"
-            , checked = model.filters.altGreenGammaEnabled
-            , onToggle = ToggleAltGreenGamma
-            , min = "0"
-            , max = "100"
-            , step = Just "1"
-            , value = String.fromInt model.filters.altGreenGamma
-            , display = String.fromInt model.filters.altGreenGamma
-            , onInput = UserUpdatedFilterInt IntAltGreenGamma
-            }
-        , viewToggleRangeRow
-            { label = "Green Sigmoid"
-            , checked = model.filters.altGreenSigmoidEnabled
-            , onToggle = ToggleAltGreenSigmoid
-            , min = "0"
-            , max = "100"
-            , step = Just "1"
-            , value = String.fromInt model.filters.altGreenSigmoid
-            , display = String.fromInt model.filters.altGreenSigmoid
-            , onInput = UserUpdatedFilterInt IntAltGreenSigmoid
-            }
-        , viewToggleRangeRow
-            { label = "Green Hue Boost"
-            , checked = model.filters.altGreenHueEnabled
-            , onToggle = ToggleAltGreenHue
-            , min = "-100"
-            , max = "100"
-            , step = Just "1"
-            , value = String.fromInt model.filters.altGreenHue
-            , display = String.fromInt model.filters.altGreenHue
-            , onInput = UserUpdatedFilterInt IntAltGreenHue
-            }
-        , viewRangeRow
-            { label = "Green Hue Window"
-            , min = "2"
-            , max = "30"
-            , step = Just "1"
-            , value = String.fromInt model.filters.altGreenHueWindow
-            , display = String.fromInt model.filters.altGreenHueWindow
-            , onInput = UserUpdatedFilterInt IntAltGreenHueWindow
-            }
-        , viewToggleRangeRow
-            { label = "Green Vibrance"
-            , checked = model.filters.altGreenVibranceEnabled
-            , onToggle = ToggleAltGreenVibrance
-            , min = "0"
-            , max = "100"
-            , step = Just "1"
-            , value = String.fromInt model.filters.altGreenVibrance
-            , display = String.fromInt model.filters.altGreenVibrance
-            , onInput = UserUpdatedFilterInt IntAltGreenVibrance
-            }
-        , viewToggleRangeRow
-            { label = "Blue Gamma"
-            , checked = model.filters.altBlueGammaEnabled
-            , onToggle = ToggleAltBlueGamma
-            , min = "0"
-            , max = "100"
-            , step = Just "1"
-            , value = String.fromInt model.filters.altBlueGamma
-            , display = String.fromInt model.filters.altBlueGamma
-            , onInput = UserUpdatedFilterInt IntAltBlueGamma
-            }
-        , viewToggleRangeRow
-            { label = "Blue Sigmoid"
-            , checked = model.filters.altBlueSigmoidEnabled
-            , onToggle = ToggleAltBlueSigmoid
-            , min = "0"
-            , max = "100"
-            , step = Just "1"
-            , value = String.fromInt model.filters.altBlueSigmoid
-            , display = String.fromInt model.filters.altBlueSigmoid
-            , onInput = UserUpdatedFilterInt IntAltBlueSigmoid
-            }
-        , viewToggleRangeRow
-            { label = "Blue Hue Boost"
-            , checked = model.filters.altBlueHueEnabled
-            , onToggle = ToggleAltBlueHue
-            , min = "-100"
-            , max = "100"
-            , step = Just "1"
-            , value = String.fromInt model.filters.altBlueHue
-            , display = String.fromInt model.filters.altBlueHue
-            , onInput = UserUpdatedFilterInt IntAltBlueHue
-            }
-        , viewRangeRow
-            { label = "Blue Hue Window"
-            , min = "2"
-            , max = "30"
-            , step = Just "1"
-            , value = String.fromInt model.filters.altBlueHueWindow
-            , display = String.fromInt model.filters.altBlueHueWindow
-            , onInput = UserUpdatedFilterInt IntAltBlueHueWindow
-            }
-        , viewToggleRangeRow
-            { label = "Blue Vibrance"
-            , checked = model.filters.altBlueVibranceEnabled
-            , onToggle = ToggleAltBlueVibrance
-            , min = "0"
-            , max = "100"
-            , step = Just "1"
-            , value = String.fromInt model.filters.altBlueVibrance
-            , display = String.fromInt model.filters.altBlueVibrance
-            , onInput = UserUpdatedFilterInt IntAltBlueVibrance
-            }
-        ]
+            :: viewChannelRows "Red" (redChannelConfig model)
+            ++ viewChannelRows "Green" (greenChannelConfig model)
+            ++ viewChannelRows "Blue" (blueChannelConfig model)
+        )
+
+
+viewChannelRows : String -> ChannelConfig -> List (Html Msg)
+viewChannelRows channelName config =
+    [ viewToggleRangeRow
+        { label = channelName ++ " Gamma"
+        , checked = config.gammaEnabled
+        , onToggle = config.gammaToggle
+        , min = "0"
+        , max = "100"
+        , step = Just "1"
+        , value = String.fromInt config.gamma
+        , display = String.fromInt config.gamma
+        , onInput = UserUpdatedFilterInt config.gammaInput
+        }
+    , viewToggleRangeRow
+        { label = channelName ++ " Sigmoid"
+        , checked = config.sigmoidEnabled
+        , onToggle = config.sigmoidToggle
+        , min = "0"
+        , max = "100"
+        , step = Just "1"
+        , value = String.fromInt config.sigmoid
+        , display = String.fromInt config.sigmoid
+        , onInput = UserUpdatedFilterInt config.sigmoidInput
+        }
+    , viewToggleRangeRow
+        { label = channelName ++ " Hue Boost"
+        , checked = config.hueEnabled
+        , onToggle = config.hueToggle
+        , min = "-100"
+        , max = "100"
+        , step = Just "1"
+        , value = String.fromInt config.hue
+        , display = String.fromInt config.hue
+        , onInput = UserUpdatedFilterInt config.hueInput
+        }
+    , viewRangeRow
+        { label = channelName ++ " Hue Window"
+        , min = "2"
+        , max = "30"
+        , step = Just "1"
+        , value = String.fromInt config.hueWindow
+        , display = String.fromInt config.hueWindow
+        , onInput = UserUpdatedFilterInt config.hueWindowInput
+        }
+    , viewToggleRangeRow
+        { label = channelName ++ " Vibrance"
+        , checked = config.vibranceEnabled
+        , onToggle = config.vibranceToggle
+        , min = "0"
+        , max = "100"
+        , step = Just "1"
+        , value = String.fromInt config.vibrance
+        , display = String.fromInt config.vibrance
+        , onInput = UserUpdatedFilterInt config.vibranceInput
+        }
+    ]
+
+
+redChannelConfig : Model -> ChannelConfig
+redChannelConfig model =
+    { gammaEnabled = model.filters.altRedGammaEnabled
+    , gamma = model.filters.altRedGamma
+    , gammaToggle = ToggleAltRedGamma
+    , gammaInput = IntAltRedGamma
+    , sigmoidEnabled = model.filters.altRedSigmoidEnabled
+    , sigmoid = model.filters.altRedSigmoid
+    , sigmoidToggle = ToggleAltRedSigmoid
+    , sigmoidInput = IntAltRedSigmoid
+    , hueEnabled = model.filters.altRedHueEnabled
+    , hue = model.filters.altRedHue
+    , hueToggle = ToggleAltRedHue
+    , hueInput = IntAltRedHue
+    , hueWindow = model.filters.altRedHueWindow
+    , hueWindowInput = IntAltRedHueWindow
+    , vibranceEnabled = model.filters.altRedVibranceEnabled
+    , vibrance = model.filters.altRedVibrance
+    , vibranceToggle = ToggleAltRedVibrance
+    , vibranceInput = IntAltRedVibrance
+    }
+
+
+greenChannelConfig : Model -> ChannelConfig
+greenChannelConfig model =
+    { gammaEnabled = model.filters.altGreenGammaEnabled
+    , gamma = model.filters.altGreenGamma
+    , gammaToggle = ToggleAltGreenGamma
+    , gammaInput = IntAltGreenGamma
+    , sigmoidEnabled = model.filters.altGreenSigmoidEnabled
+    , sigmoid = model.filters.altGreenSigmoid
+    , sigmoidToggle = ToggleAltGreenSigmoid
+    , sigmoidInput = IntAltGreenSigmoid
+    , hueEnabled = model.filters.altGreenHueEnabled
+    , hue = model.filters.altGreenHue
+    , hueToggle = ToggleAltGreenHue
+    , hueInput = IntAltGreenHue
+    , hueWindow = model.filters.altGreenHueWindow
+    , hueWindowInput = IntAltGreenHueWindow
+    , vibranceEnabled = model.filters.altGreenVibranceEnabled
+    , vibrance = model.filters.altGreenVibrance
+    , vibranceToggle = ToggleAltGreenVibrance
+    , vibranceInput = IntAltGreenVibrance
+    }
+
+
+blueChannelConfig : Model -> ChannelConfig
+blueChannelConfig model =
+    { gammaEnabled = model.filters.altBlueGammaEnabled
+    , gamma = model.filters.altBlueGamma
+    , gammaToggle = ToggleAltBlueGamma
+    , gammaInput = IntAltBlueGamma
+    , sigmoidEnabled = model.filters.altBlueSigmoidEnabled
+    , sigmoid = model.filters.altBlueSigmoid
+    , sigmoidToggle = ToggleAltBlueSigmoid
+    , sigmoidInput = IntAltBlueSigmoid
+    , hueEnabled = model.filters.altBlueHueEnabled
+    , hue = model.filters.altBlueHue
+    , hueToggle = ToggleAltBlueHue
+    , hueInput = IntAltBlueHue
+    , hueWindow = model.filters.altBlueHueWindow
+    , hueWindowInput = IntAltBlueHueWindow
+    , vibranceEnabled = model.filters.altBlueVibranceEnabled
+    , vibrance = model.filters.altBlueVibrance
+    , vibranceToggle = ToggleAltBlueVibrance
+    , vibranceInput = IntAltBlueVibrance
+    }
 
 
 viewMorphologyGroup : Model -> Html Msg

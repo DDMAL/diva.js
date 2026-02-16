@@ -3,7 +3,7 @@ module View.Helpers exposing (ButtonConfig, viewButton, viewIf, viewMaybe)
 import Html exposing (Html, button, div, text)
 import Html.Attributes as HA exposing (classList, type_)
 import Html.Events as Events
-import Utilites exposing (choose, unpack)
+import Utilities exposing (choose, unpack)
 
 
 type alias ButtonConfig msg =
