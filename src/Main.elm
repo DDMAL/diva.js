@@ -109,7 +109,6 @@ init flags =
             LanguageCode flags.userLanguage
     in
     ( { acceptHeaders = flags.acceptHeaders
-      , canvasIndexMap = Dict.empty
       , collectionSidebarDrag = Nothing
       , collectionSidebarVisible = True
       , collectionSidebarWidth = 400
@@ -867,8 +866,7 @@ handleManifestLoaded model manifest =
                 |> Maybe.withDefault Dict.empty
     in
     ( { model
-        | canvasIndexMap = canvasIndexMap
-        , filters = resetFilters
+        | filters = resetFilters
         , isViewerLoading = False
         , pages = pages
         , rangeIndexMap = rangeIndexMap

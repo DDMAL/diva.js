@@ -72,7 +72,6 @@ type alias Model =
     , pages : List Page
     , selectedIndex : Maybe Int
     , selectedRangeId : Maybe String
-    , canvasIndexMap : Dict String Int
     , rangeIndexMap : Dict String (Maybe Int)
     , thumbsInstantScroll : Bool
     , pendingThumbScroll : Maybe Int
