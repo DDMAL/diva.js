@@ -136,7 +136,7 @@ viewModalHeader model =
                         []
 
                     else
-                        [ div [ classList [ ( "modal-subtitle", True ), ( "is-muted", True ) ] ] [ text pageLabel ] ]
+                        [ div [ HA.class "modal-subtitle is-muted" ] [ text pageLabel ] ]
                    )
             )
         , div
@@ -944,7 +944,7 @@ viewToggleRangeRow : ToggleRangeRowConfig -> Html Msg
 viewToggleRangeRow config =
     div [ HA.class "filter-range-group" ]
         [ div [ HA.class "filter-range-header" ]
-            [ label [ classList [ ( "filter-toggle", True ), ( "is-inline", True ) ] ]
+            [ label [ HA.class "filter-toggle is-inline" ]
                 [ input
                     [ type_ "checkbox"
                     , checked config.checked

@@ -485,7 +485,7 @@ viewOnThisPageBody model manifest =
                                     |> Dict.fromList
                         in
                         ul
-                            [ classList [ ( "contents-list", True ), ( "list-reset", True ) ] ]
+                            [ HA.class "contents-list list-reset" ]
                             (List.map (viewOtpRangeItem model canvasLabelMap) matches)
 
                 Nothing ->
@@ -541,7 +541,7 @@ viewOtpRangeItem model canvasLabelMap range =
 
         labelNode =
             button
-                [ classList [ ( "contents-button", True ), ( "ui-button", True ) ]
+                [ HA.class "contents-button ui-button"
                 , type_ "button"
                 , Events.onClick (UserClickedRange range.id maybeIndex)
                 ]
@@ -565,7 +565,7 @@ viewOtpRangeItem model canvasLabelMap range =
 viewRangeList : Model -> Dict String (Maybe Int) -> List Range -> Html Msg
 viewRangeList model rangeIndexMap ranges =
     ul
-        [ classList [ ( "contents-list", True ), ( "list-reset", True ) ] ]
+        [ HA.class "contents-list list-reset" ]
         (List.map (Lazy.lazy3 viewRangeNode model rangeIndexMap) ranges)
 
 
@@ -581,7 +581,7 @@ viewRangeNode model rangeIndexMap range =
 
         labelNode =
             button
-                [ classList [ ( "contents-button", True ), ( "ui-button", True ) ]
+                [ HA.class "contents-button ui-button"
                 , type_ "button"
                 , Events.onClick (UserClickedRange range.id maybeIndex)
                 ]
@@ -628,7 +628,7 @@ viewRangeItems model rangeIndexMap items =
         []
 
     else
-        [ ul [ classList [ ( "contents-list-nested", True ), ( "list-reset", True ) ] ] rendered ]
+        [ ul [ HA.class "contents-list-nested list-reset" ] rendered ]
 
 
 viewRangeMetadata : Language -> List LabelValue -> List (Html Msg)

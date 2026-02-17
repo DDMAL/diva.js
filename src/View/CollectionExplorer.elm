@@ -66,7 +66,7 @@ viewCollectionPanel model collectionState =
         , div
             [ HA.class "sidebar-content" ]
             [ div
-                [ classList [ ( "sidebar-pane", True ), ( "is-scroll", True ) ] ]
+                [ HA.class "sidebar-pane is-scroll" ]
                 [ viewCollectionTree model.detectedLanguage collectionState collection.items ]
             ]
         ]
@@ -75,7 +75,7 @@ viewCollectionPanel model collectionState =
 viewCollectionTree : Language -> CollectionState -> List CollectionItem -> Html Msg
 viewCollectionTree language collectionState items =
     ul
-        [ classList [ ( "collection-list", True ), ( "list-reset", True ) ] ]
+        [ HA.class "collection-list list-reset" ]
         (List.map (Lazy.lazy3 viewCollectionItem language collectionState) items)
 
 
@@ -126,7 +126,7 @@ viewNestedCollection language collectionState collection =
     li
         [ HA.class "collection-tree-item" ]
         (button
-            [ classList [ ( "collection-node-button", True ), ( "ui-button", True ) ]
+            [ HA.class "collection-node-button ui-button"
             , type_ "button"
             , Events.onClick (UserClickedCollectionItem collection.id)
             ]

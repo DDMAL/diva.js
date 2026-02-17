@@ -180,12 +180,12 @@ viewViewerStatusModal ( titleText, message, isError ) =
     div
         [ HA.class "viewer-status-overlay" ]
         [ div
-            [ classList [ ( "modal", True ), ( "is-narrow", True ) ] ]
+            [ HA.class "modal is-narrow" ]
             [ div
                 [ HA.class "modal-header" ]
                 [ div [ HA.class "modal-title" ] [ text titleText ] ]
             , div
-                [ classList [ ( "modal-body", True ), ( "is-no-sidebar", True ) ] ]
+                [ HA.class "modal-body is-no-sidebar" ]
                 [ div
                     [ classList [ ( "status", True ), ( "is-error", isError ) ] ]
                     [ text message ]

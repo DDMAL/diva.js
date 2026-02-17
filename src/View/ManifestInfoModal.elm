@@ -19,11 +19,7 @@ viewManifestInfoModal model =
         div
             [ HA.class "modal-overlay" ]
             [ div
-                [ classList
-                    [ ( "modal", True )
-                    , ( "is-narrow", True )
-                    ]
-                ]
+                [ HA.class "model is-narrow" ]
                 [ viewHeader model
                 , currentManifest model
                     |> viewBody model
@@ -67,11 +63,7 @@ viewBody model maybeManifest =
             viewMaybe (viewLogoBlock model.detectedLanguage) maybeManifest
     in
     div
-        [ classList
-            [ ( "modal-body", True )
-            , ( "is-two-column", True )
-            ]
-        ]
+        [ HA.class "modal-body is-two-column" ]
         [ div
             [ HA.class "metadata-body" ]
             (List.map viewRow rows)
