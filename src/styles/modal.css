@@ -11,6 +11,17 @@
   z-index: 100;
 }
 
+.viewer-status-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  inset: 0;
+  background-color: var(--diva-overlay-bg);
+  padding: 24px;
+  z-index: 40;
+}
+
 .modal-overlay.is-fullscreen {
   padding: 0;
 }

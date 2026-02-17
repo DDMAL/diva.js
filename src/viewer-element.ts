@@ -964,13 +964,37 @@ class OsdViewer extends HTMLElement
         {
             return;
         }
+
+        let anchorIndex: number|null = null;
+        const viewport = this.viewer?.viewport;
+        if (viewport && this.pageOffsets.length > 0)
+        {
+            const bounds = viewport.getBounds(true);
+            const anchorOffset = bounds.y + (bounds.height * 0.5);
+            anchorIndex = this.findIndexForOffset(anchorOffset);
+        }
+        else if (this.lastReportedIndex !== null)
+        {
+            anchorIndex = this.lastReportedIndex;
+        }
+
         this.layoutMode = nextMode;
         this.viewingDirection = nextDirection;
         this.buildOffsets();
         this.updateLoadedItemPositions();
         this.ensureScrollPlane();
-        this.lockHorizontalPan();
-        this.recenterAfterFit();
+
+        if (anchorIndex !== null)
+        {
+            const clampedAnchor = Math.max(0, Math.min(anchorIndex, this.pageOffsets.length - 1));
+            this.scrollToIndex(clampedAnchor);
+        }
+        else
+        {
+            this.lockHorizontalPan();
+            this.recenterAfterFit();
+        }
+
         this.maybeLoadMore();
     }
 

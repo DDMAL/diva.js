@@ -2,11 +2,11 @@ module View.Toolbar exposing (viewToolbar)
 
 import Html exposing (Html, div, text)
 import Html.Attributes as HA exposing (classList)
-import Model exposing (Model, ResourceResponse(..), Response(..), SidebarState(..), ViewMode(..), currentManifest, getPageAt, pageViewStartIndex)
+import Model exposing (Model, SidebarState(..), ViewMode(..), currentManifest, getPageAt, pageViewStartIndex)
 import Msg exposing (Msg(..))
 import String
 import Utilities exposing (disabledIf, isNothing)
-import View.Helpers exposing (viewButton, viewMaybe)
+import View.Helpers exposing (viewButton)
 import View.Icons as Icons
 
 
@@ -33,8 +33,7 @@ viewToolbar model =
                     }
                 ]
             , div [ classList [ ( "canvas-toolbar-section", True ), ( "is-right", True ) ] ]
-                [ viewStatus model
-                , viewButton
+                [ viewButton
                     { label = "Page View"
                     , icon = Icons.pageViewOpen
                     , onClickMsg = disabledIf controlsDisabled UserClickedOpenPageView
@@ -183,59 +182,3 @@ truncateLabel maxLength label =
 
     else
         label
-
-
-viewStatus : Model -> Html Msg
-viewStatus model =
-    let
-        maybeStatus =
-            case model.resourceResponse of
-                ResourceNotRequested ->
-                    Nothing
-
-                ResourceLoading ->
-                    Just
-                        (div
-                            [ HA.class "status" ]
-                            [ text "Loading..." ]
-                        )
-
-                ResourceLoadedManifest _ ->
-                    if List.isEmpty model.tileSources then
-                        Just
-                            (div
-                                [ HA.class "status" ]
-                                [ text "No canvases found in this manifest." ]
-                            )
-
-                    else
-                        Nothing
-
-                ResourceLoadedCollection _ ->
-                    case model.response of
-                        Failed message ->
-                            Just
-                                (div
-                                    [ classList [ ( "status", True ), ( "is-error", True ) ] ]
-                                    [ text message ]
-                                )
-
-                        _ ->
-                            if List.isEmpty model.tileSources then
-                                Just
-                                    (div
-                                        [ HA.class "status" ]
-                                        [ text "Select a manifest from the collection to view." ]
-                                    )
-
-                            else
-                                Nothing
-
-                ResourceFailed message ->
-                    Just
-                        (div
-                            [ classList [ ( "status", True ), ( "is-error", True ) ] ]
-                            [ text message ]
-                        )
-    in
-    viewMaybe identity maybeStatus

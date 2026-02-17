@@ -42,7 +42,12 @@ view model =
                         , ( "is-fullscreen", model.fullscreen )
                         ]
                     ]
-                    [ viewCanvas model.fullscreen model.isViewerLoading (hasCollectionSidebar model)
+                    [ viewCanvas
+                        { fullscreen = model.fullscreen
+                        , isLoading = isCanvasLoading model
+                        , showCollectionSidebar = hasCollectionSidebar model
+                        , maybeStatus = viewerStatus model
+                        }
                     ]
                 , View.Sidebar.viewSidebarResizer model
                 , View.Sidebar.viewSidebarPanel model
@@ -103,8 +108,14 @@ viewRequiredStatement model =
         (currentManifest model)
 
 
-viewCanvas : Bool -> Bool -> Bool -> Html Msg
-viewCanvas fullscreen isLoading showCollectionSidebar =
+viewCanvas :
+    { fullscreen : Bool
+    , isLoading : Bool
+    , showCollectionSidebar : Bool
+    , maybeStatus : Maybe ( String, String, Bool )
+    }
+    -> Html Msg
+viewCanvas { fullscreen, isLoading, showCollectionSidebar, maybeStatus } =
     div [ HA.class "diva-canvas-wrapper" ]
         [ node "osd-viewer"
             [ classList
@@ -116,6 +127,7 @@ viewCanvas fullscreen isLoading showCollectionSidebar =
             ]
             []
         , viewIf viewThrobber isLoading
+        , viewMaybe viewViewerStatusModal maybeStatus
         ]
 
 
@@ -159,3 +171,60 @@ hasCollectionSidebar model =
 
         _ ->
             False
+
+
+isCanvasLoading : Model -> Bool
+isCanvasLoading model =
+    model.isViewerLoading
+        || model.resourceResponse
+        == ResourceLoading
+        || model.response
+        == Loading
+
+
+viewViewerStatusModal : ( String, String, Bool ) -> Html Msg
+viewViewerStatusModal ( titleText, message, isError ) =
+    div
+        [ HA.class "viewer-status-overlay" ]
+        [ div
+            [ classList [ ( "modal", True ), ( "is-narrow", True ) ] ]
+            [ div
+                [ HA.class "modal-header" ]
+                [ div [ HA.class "modal-title" ] [ text titleText ] ]
+            , div
+                [ classList [ ( "modal-body", True ), ( "is-no-sidebar", True ) ] ]
+                [ div
+                    [ classList [ ( "status", True ), ( "is-error", isError ) ] ]
+                    [ text message ]
+                ]
+            ]
+        ]
+
+
+viewerStatus : Model -> Maybe ( String, String, Bool )
+viewerStatus model =
+    case model.resourceResponse of
+        ResourceFailed message ->
+            Just ( "Unable to load manifest", message, True )
+
+        ResourceLoadedManifest _ ->
+            if List.isEmpty model.tileSources then
+                Just ( "Unable to display manifest", "No canvases found in this manifest.", False )
+
+            else
+                Nothing
+
+        ResourceLoadedCollection _ ->
+            case model.response of
+                Failed message ->
+                    Just ( "Unable to load manifest", message, True )
+
+                _ ->
+                    if List.isEmpty model.tileSources then
+                        Just ( "No Manifest Selected", "Select a manifest from the collection to view.", False )
+
+                    else
+                        Nothing
+
+        _ ->
+            Nothing
