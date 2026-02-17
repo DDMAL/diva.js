@@ -26,8 +26,7 @@ const injectStyles = (cssText: string) => {
     styleEl.id = DIVA_STYLE_ID;
     styleEl.textContent = cssText;
 
-    const target =
-        document.head || document.getElementsByTagName("head")[0] || document.documentElement;
+    const target = document.head || document.getElementsByTagName("head")[0] || document.documentElement;
     target.appendChild(styleEl);
 };
 
@@ -126,13 +125,11 @@ type ElmPorts = {
     zoomLevelUpdated : {subscribe : (callback: (zoom: number) => void) => void};
     zoomBy : {subscribe : (callback: (factor: number) => void) => void};
     scrollToIndex : {subscribe : (callback: (index: number) => void) => void};
-    filterPreviewUpdated :
-        {subscribe : (callback: (payload: FilterPreviewPayload|null) => void) => void};
+    filterPreviewUpdated : {subscribe : (callback: (payload: FilterPreviewPayload|null) => void) => void};
     setFullscreen : {subscribe : (callback: (enabled: boolean) => void) => void};
     saveFilteredImage : {subscribe : (callback: () => void) => void};
     layoutModeUpdated : {subscribe : (callback: (mode: string) => void) => void};
-    layoutConfigUpdated :
-        {subscribe : (callback: (config: {mode: string; direction : string}) => void) => void};
+    layoutConfigUpdated : {subscribe : (callback: (config: {mode: string; direction : string}) => void) => void};
     pageIndexChanged : {send : (index: number) => void};
     pageIndexChangedInstant : {send : (index: number) => void};
     fullscreenChanged : {send : (enabled: boolean) => void};
@@ -151,6 +148,12 @@ type DivaFlags = {
     showSidebar?: boolean;
     showTitle?: boolean;
     setLanguage?: string;
+};
+
+type DivaRoot = HTMLElement&
+{
+    elmTree?: unknown;
+    __divaInstance?: Diva;
 };
 
 class Diva
@@ -177,17 +180,15 @@ class Diva
         {
             throw new Error(`Missing root element: ${rootId}`);
         }
-        const rootAny = root as unknown as
-        {
-            elmTree?: unknown;
-            __divaInstance?: Diva;
-        };
+        const rootAny = root as DivaRoot;
 
         if (rootAny.__divaInstance)
         {
             rootAny.__divaInstance.destroy();
         }
 
+        // if an elmTree instance is already defined on this element, destroy
+        // it.
         if (rootAny.elmTree)
         {
             delete rootAny.elmTree;
@@ -229,29 +230,21 @@ class Diva
      *
      * @returns {string}
      */
-    private detectLanguage(): string
-    {
-        return navigator.language.split("-")[0];
-    }
+    private detectLanguage(): string { return navigator.language.split("-")[0]; }
 
     private bindPorts(): void
     {
-        this.getPort("tileSourcesUpdated").subscribe((tileSources: string[]) => {
-            this.callViewerMethod("setTileSources", tileSources);
-        });
+        this.getPort("tileSourcesUpdated")
+            .subscribe((tileSources: string[]) => { this.callViewerMethod("setTileSources", tileSources); });
 
         this.getPort("pageAspectsUpdated")
-            .subscribe(
-                (aspects: number[]) => { this.callViewerMethod("setPageAspects", aspects); });
+            .subscribe((aspects: number[]) => { this.callViewerMethod("setPageAspects", aspects); });
 
-        this.getPort("zoomLevelUpdated")
-            .subscribe((zoom: number) => { this.callViewerMethod("setZoomLevel", zoom); });
+        this.getPort("zoomLevelUpdated").subscribe((zoom: number) => { this.callViewerMethod("setZoomLevel", zoom); });
 
-        this.getPort("zoomBy").subscribe(
-            (factor: number) => { this.callViewerMethod("zoomBy", factor); });
+        this.getPort("zoomBy").subscribe((factor: number) => { this.callViewerMethod("zoomBy", factor); });
 
-        this.getPort("scrollToIndex")
-            .subscribe((index: number) => { this.callViewerMethod("scrollToIndex", index); });
+        this.getPort("scrollToIndex").subscribe((index: number) => { this.callViewerMethod("scrollToIndex", index); });
 
         this.getPort("filterPreviewUpdated").subscribe((payload: FilterPreviewPayload|null) => {
             if (!payload)
@@ -262,14 +255,11 @@ class Diva
             this.applyFilterPreview();
         });
 
-        this.getPort("setFullscreen")
-            .subscribe((enabled: boolean) => { this.setFullscreen(enabled); });
+        this.getPort("setFullscreen").subscribe((enabled: boolean) => { this.setFullscreen(enabled); });
 
         this.getPort("saveFilteredImage").subscribe(() => { this.saveFilteredImage(); });
 
-        this.getPort("layoutConfigUpdated").subscribe((config: {
-                                                          mode: string; direction : string
-                                                      }) => {
+        this.getPort("layoutConfigUpdated").subscribe((config: {mode: string; direction : string}) => {
             if (this.callViewerMethod("setLayoutConfig", config.mode, config.direction))
             {
                 return;
@@ -281,8 +271,7 @@ class Diva
         this.getPort("layoutModeUpdated")
             .subscribe((mode: string) => { this.callViewerMethod("setLayoutMode", mode); });
 
-        this.getPort("copyToClipboard")
-            .subscribe((text: string) => { this.copyToClipboard(text); });
+        this.getPort("copyToClipboard").subscribe((text: string) => { this.copyToClipboard(text); });
     }
 
     private ensureMainViewer(): any
@@ -335,8 +324,7 @@ class Diva
     {
         if (navigator.clipboard && typeof navigator.clipboard.writeText === "function")
         {
-            navigator.clipboard.writeText(text).catch(
-                () => { this.copyToClipboardFallback(text); });
+            navigator.clipboard.writeText(text).catch(() => { this.copyToClipboardFallback(text); });
             return;
         }
         this.copyToClipboardFallback(text);
@@ -357,7 +345,8 @@ class Diva
         }
         catch (_err)
         {
-            // Ignore copy failures; user can still manually copy from the text area in the UI.
+            // Ignore copy failures; user can still manually copy from the text
+            // area in the UI.
         }
         document.body.removeChild(textarea);
     }
@@ -386,17 +375,12 @@ class Diva
     {
         this.removeViewerEvent("diva-page-change", this.handlePageChangeBound as EventListener);
         this.removeViewerEvent("diva-zoom-change", this.handleZoomChangeBound as EventListener);
-        this.removeViewerEvent("diva-loading-change",
-                               this.handleLoadingChangeBound as EventListener);
+        this.removeViewerEvent("diva-loading-change", this.handleLoadingChangeBound as EventListener);
         document.removeEventListener("fullscreenchange", this.handleFullscreenChangeBound);
 
         if (this.root)
         {
-            const rootAny = this.root as unknown as
-            {
-                elmTree?: unknown;
-                __divaInstance?: Diva;
-            };
+            const rootAny = this.root as DivaRoot;
             if (rootAny.__divaInstance === this)
             {
                 delete rootAny.__divaInstance;
@@ -413,19 +397,11 @@ class Diva
     {
         if (enabled)
         {
-            if (document.fullscreenElement)
+            if (document.fullscreenElement || !document.fullscreenEnabled)
             {
                 return;
             }
-            if (!document.fullscreenEnabled)
-            {
-                return;
-            }
-            const request = this.root.requestFullscreen();
-            if (request && typeof request.catch === "function")
-            {
-                request.catch(() => {});
-            }
+            this.root.requestFullscreen().catch(() => {});
             return;
         }
 
@@ -433,11 +409,7 @@ class Diva
         {
             return;
         }
-        const exit = document.exitFullscreen();
-        if (exit && typeof exit.catch === "function")
-        {
-            exit.catch(() => {});
-        }
+        document.exitFullscreen().catch(() => {});
     }
 
     private handlePageChange(event: Event): void
@@ -657,6 +629,7 @@ class Diva
 type FilterMapping = {
     enabled: keyof FilterSettings; filter : keyof typeof filterFunctions;
     args?: (keyof FilterSettings)[];
+    defaults?: number[];
 };
 
 const filterFunctions = {
@@ -673,7 +646,20 @@ const filterFunctions = {
     GREYSCALE : Filters.GREYSCALE,
     INVERT : Filters.INVERT,
     BACKGROUND_NORMALIZE : Filters.BACKGROUND_NORMALIZE,
-    UNSHARP_MASK : Filters.UNSHARP_MASK
+    UNSHARP_MASK : Filters.UNSHARP_MASK,
+    ALT_RED_GAMMA : Filters.ALT_RED_GAMMA,
+    ALT_GREEN_GAMMA : Filters.ALT_GREEN_GAMMA,
+    ALT_BLUE_GAMMA : Filters.ALT_BLUE_GAMMA,
+    ALT_RED_SIGMOID : Filters.ALT_RED_SIGMOID,
+    ALT_GREEN_SIGMOID : Filters.ALT_GREEN_SIGMOID,
+    ALT_BLUE_SIGMOID : Filters.ALT_BLUE_SIGMOID,
+    ALT_RED_HUE : Filters.ALT_RED_HUE,
+    ALT_GREEN_HUE : Filters.ALT_GREEN_HUE,
+    ALT_BLUE_HUE : Filters.ALT_BLUE_HUE,
+    ALT_RED_VIBRANCE : Filters.ALT_RED_VIBRANCE,
+    ALT_GREEN_VIBRANCE : Filters.ALT_GREEN_VIBRANCE,
+    ALT_BLUE_VIBRANCE : Filters.ALT_BLUE_VIBRANCE,
+    ADAPTIVE_THRESHOLD : Filters.ADAPTIVE_THRESHOLD
 };
 
 const simpleFilterMappings: FilterMapping[] = [
@@ -693,6 +679,42 @@ const simpleFilterMappings: FilterMapping[] = [
     {enabled : "unsharpEnabled", filter : "UNSHARP_MASK", args : [ "unsharpAmount" ]},
 ];
 
+const altFilterMappings: FilterMapping[] = [
+    {enabled : "altRedGammaEnabled", filter : "ALT_RED_GAMMA", args : [ "altRedGamma" ]},
+    {enabled : "altGreenGammaEnabled", filter : "ALT_GREEN_GAMMA", args : [ "altGreenGamma" ]},
+    {enabled : "altBlueGammaEnabled", filter : "ALT_BLUE_GAMMA", args : [ "altBlueGamma" ]},
+    {enabled : "altRedSigmoidEnabled", filter : "ALT_RED_SIGMOID", args : [ "altRedSigmoid" ]},
+    {enabled : "altGreenSigmoidEnabled", filter : "ALT_GREEN_SIGMOID", args : [ "altGreenSigmoid" ]},
+    {enabled : "altBlueSigmoidEnabled", filter : "ALT_BLUE_SIGMOID", args : [ "altBlueSigmoid" ]},
+    {
+        enabled : "altRedHueEnabled",
+        filter : "ALT_RED_HUE",
+        args : [ "altRedHue", "altRedHueWindow" ],
+        defaults : [ 0, 8 ]
+    },
+    {
+        enabled : "altGreenHueEnabled",
+        filter : "ALT_GREEN_HUE",
+        args : [ "altGreenHue", "altGreenHueWindow" ],
+        defaults : [ 0, 8 ]
+    },
+    {
+        enabled : "altBlueHueEnabled",
+        filter : "ALT_BLUE_HUE",
+        args : [ "altBlueHue", "altBlueHueWindow" ],
+        defaults : [ 0, 8 ]
+    },
+    {enabled : "altRedVibranceEnabled", filter : "ALT_RED_VIBRANCE", args : [ "altRedVibrance" ]},
+    {enabled : "altGreenVibranceEnabled", filter : "ALT_GREEN_VIBRANCE", args : [ "altGreenVibrance" ]},
+    {enabled : "altBlueVibranceEnabled", filter : "ALT_BLUE_VIBRANCE", args : [ "altBlueVibrance" ]},
+    {
+        enabled : "adaptiveEnabled",
+        filter : "ADAPTIVE_THRESHOLD",
+        args : [ "adaptiveWindow", "adaptiveOffset" ],
+        defaults : [ 15, 10 ]
+    },
+];
+
 const buildFilterOptions = (filters: FilterSettings|null): any => {
     if (!filters)
     {
@@ -705,7 +727,7 @@ const buildFilterOptions = (filters: FilterSettings|null): any => {
     {
         if (filters[mapping.enabled])
         {
-            const filterArgs = mapping.args?.map(key => filters[key] ?? 0) ?? [];
+            const filterArgs = mapping.args?.map((key, i) => filters[key] ?? (mapping.defaults?.[i] ?? 0)) ?? [];
             const filterFn = filterFunctions[mapping.filter] as (...args: any[]) => any;
             processors.push(filterFn(...(filterArgs as any[])));
         }
@@ -737,9 +759,8 @@ const buildFilterOptions = (filters: FilterSettings|null): any => {
 
     if (filters.pseudoColourEnabled)
     {
-        processors.push(
-            Filters.PSEUDOCOLOR(filters.pseudoColourMode || "", filters.pseudoColourRed ?? 1,
-                                filters.pseudoColourGreen ?? 1, filters.pseudoColourBlue ?? 1));
+        processors.push(Filters.PSEUDOCOLOR(filters.pseudoColourMode || "", filters.pseudoColourRed ?? 1,
+                                            filters.pseudoColourGreen ?? 1, filters.pseudoColourBlue ?? 1));
     }
 
     if (filters.pcaEnabled)
@@ -749,78 +770,20 @@ const buildFilterOptions = (filters: FilterSettings|null): any => {
 
     if (filters.colourReplaceEnabled)
     {
-        processors.push(Filters.COLOR_REPLACE(
-            filters.colourReplaceSource || "#ffffff", filters.colourReplaceTarget || "#ffffff",
-            filters.colourReplaceTolerance ?? 24, filters.colourReplaceBlend ?? 1,
-            filters.colourReplacePreserveLum ?? false));
+        processors.push(Filters.COLOR_REPLACE(filters.colourReplaceSource || "#ffffff",
+                                              filters.colourReplaceTarget || "#ffffff",
+                                              filters.colourReplaceTolerance ?? 24, filters.colourReplaceBlend ?? 1,
+                                              filters.colourReplacePreserveLum ?? false));
     }
 
-    if (filters.altRedGammaEnabled)
+    for (const mapping of altFilterMappings)
     {
-        processors.push(Filters.ALT_RED_GAMMA(filters.altRedGamma ?? 0));
-    }
-
-    if (filters.altGreenGammaEnabled)
-    {
-        processors.push(Filters.ALT_GREEN_GAMMA(filters.altGreenGamma ?? 0));
-    }
-
-    if (filters.altBlueGammaEnabled)
-    {
-        processors.push(Filters.ALT_BLUE_GAMMA(filters.altBlueGamma ?? 0));
-    }
-
-    if (filters.altRedSigmoidEnabled)
-    {
-        processors.push(Filters.ALT_RED_SIGMOID(filters.altRedSigmoid ?? 0));
-    }
-
-    if (filters.altGreenSigmoidEnabled)
-    {
-        processors.push(Filters.ALT_GREEN_SIGMOID(filters.altGreenSigmoid ?? 0));
-    }
-
-    if (filters.altBlueSigmoidEnabled)
-    {
-        processors.push(Filters.ALT_BLUE_SIGMOID(filters.altBlueSigmoid ?? 0));
-    }
-
-    if (filters.altRedHueEnabled)
-    {
-        processors.push(Filters.ALT_RED_HUE(filters.altRedHue ?? 0, filters.altRedHueWindow ?? 8));
-    }
-
-    if (filters.altGreenHueEnabled)
-    {
-        processors.push(
-            Filters.ALT_GREEN_HUE(filters.altGreenHue ?? 0, filters.altGreenHueWindow ?? 8));
-    }
-
-    if (filters.altBlueHueEnabled)
-    {
-        processors.push(
-            Filters.ALT_BLUE_HUE(filters.altBlueHue ?? 0, filters.altBlueHueWindow ?? 8));
-    }
-
-    if (filters.altRedVibranceEnabled)
-    {
-        processors.push(Filters.ALT_RED_VIBRANCE(filters.altRedVibrance ?? 0));
-    }
-
-    if (filters.altGreenVibranceEnabled)
-    {
-        processors.push(Filters.ALT_GREEN_VIBRANCE(filters.altGreenVibrance ?? 0));
-    }
-
-    if (filters.altBlueVibranceEnabled)
-    {
-        processors.push(Filters.ALT_BLUE_VIBRANCE(filters.altBlueVibrance ?? 0));
-    }
-
-    if (filters.adaptiveEnabled)
-    {
-        processors.push(
-            Filters.ADAPTIVE_THRESHOLD(filters.adaptiveWindow ?? 15, filters.adaptiveOffset ?? 10));
+        if (filters[mapping.enabled])
+        {
+            const filterArgs = mapping.args?.map((key, i) => filters[key] ?? (mapping.defaults?.[i] ?? 0)) ?? [];
+            const filterFn = filterFunctions[mapping.filter] as (...args: any[]) => any;
+            processors.push(filterFn(...(filterArgs as any[])));
+        }
     }
 
     if (processors.length === 0)

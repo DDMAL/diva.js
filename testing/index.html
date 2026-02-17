@@ -24,17 +24,15 @@
   <body>
 
     <div id="diva-wrapper"></div>
-
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/5.0.1/openseadragon.min.js"></script>
 <!--    <script src="vendor/openseadragon.js"></script>-->
-    <script src="../build/diva.js"></script>
+    <script src="../build/diva.debug.js"></script>
     <script>
       const params = new URLSearchParams(window.location.search);
       const manifestParam = params.get("manifest");
       const objectData = manifestParam && manifestParam.trim()
         ? manifestParam.trim()
-        : "https://iiif.bodleian.ox.ac.uk/iiif/manifest/748a9d50-5a3a-440e-ab9d-567dd68b6abb.json";
+        : "https://iiif.bodleian.ox.ac.uk/iiif/manifest/e32a277e-91e2-4a6d-8ba6-cc4bad230410.json";
 
       new Diva("diva-wrapper", {
         setLanguage: "ar",

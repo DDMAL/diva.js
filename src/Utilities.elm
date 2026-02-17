@@ -1,4 +1,4 @@
-module Utilites exposing (choose, disabledIf, find, isNothing, orElse, unpack)
+module Utilities exposing (choose, disabledIf, find, isJust, isNothing, orElse, unpack)
 
 
 choose : Bool -> (() -> a) -> (() -> a) -> a

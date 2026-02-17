@@ -40,7 +40,7 @@
 }
 
 .diva-app {
-  padding: 24px;
+  padding: 12px 24px;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -57,7 +57,7 @@
 .diva-app-header {
   font-size: var(--diva-font-lg);
   font-weight: 600;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -66,7 +66,7 @@
 .diva-app-title {
   font-size: var(--diva-font-xl);
   font-weight: 600;
-  margin-bottom: 12px;
+  margin-bottom: 6px;
   text-align: left;
   color: var(--diva-text-primary);
 }
@@ -218,7 +218,9 @@
   line-height: 1.4;
   text-align: right;
   max-width: 20vw;
+  min-width: 250px;
 }
+
 
 .diva-scrollbar-track {
   position: absolute;

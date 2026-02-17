@@ -12,25 +12,21 @@
             "elm/http": "2.0.0",
             "elm/json": "1.1.4",
             "elm/svg": "1.0.1",
-            "elm/url": "1.0.0",
             "hecrj/html-parser": "2.4.0",
-            "rism-digital/elm-iiif": "1.0.0"
+            "rism-digital/elm-iiif": "1.0.2"
         },
         "indirect": {
             "elm/bytes": "1.0.8",
             "elm/file": "1.0.5",
             "elm/parser": "1.1.0",
             "elm/time": "1.0.0",
+            "elm/url": "1.0.0",
             "elm/virtual-dom": "1.0.5",
             "rtfeldman/elm-hex": "1.0.0"
         }
     },
     "test-dependencies": {
-        "direct": {
-            "elm-explorations/test": "2.2.1"
-        },
-        "indirect": {
-            "elm/random": "1.0.0"
-        }
+        "direct": {},
+        "indirect": {}
     }
 }

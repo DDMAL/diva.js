@@ -1,7 +1,7 @@
 module View.ManifestInfoModal exposing (viewManifestInfoModal)
 
 import Html exposing (Html, a, div, img, text)
-import Html.Attributes exposing (alt, classList, href, rel, src, target)
+import Html.Attributes as HA exposing (alt, classList, href, rel, src, target)
 import IIIF.Image exposing (ImageSize(..), createImageAddress, parseImageAddress, setImageUriSize)
 import IIIF.Language exposing (Language(..), extractLabelFromLanguageMap)
 import IIIF.Presentation exposing (Behavior(..), HomePage, IIIFManifest(..), Logo, Provider, ViewingDirection(..), ViewingHint(..), ViewingLayout(..), toCanvases, toHomepage, toLogo, toProvider, toRanges)
@@ -17,7 +17,7 @@ viewManifestInfoModal : Model -> Html Msg
 viewManifestInfoModal model =
     viewIf
         (div
-            [ classList [ ( "modal-overlay", True ) ] ]
+            [ HA.class "modal-overlay" ]
             [ div
                 [ classList
                     [ ( "modal", True )
@@ -36,18 +36,21 @@ viewManifestInfoModal model =
 viewHeader : { a | fullscreen : Bool } -> Html Msg
 viewHeader { fullscreen } =
     div
-        [ classList [ ( "modal-header", True ) ] ]
+        [ HA.class "modal-header" ]
         [ div
-            [ classList [ ( "modal-title", True ) ] ]
+            [ HA.class "modal-title" ]
             [ text "Manifest Info" ]
         , div
-            [ classList [ ( "modal-actions", True ) ] ]
-            [ viewButton
-                { label = "Close"
-                , icon = Icons.close
-                , onClickMsg = Just UserClickedCloseManifestInfo
-                , isFullscreen = fullscreen
-                }
+            [ HA.class "modal-actions" ]
+            [ div
+                [ HA.class "modal-close-action" ]
+                [ viewButton
+                    { label = ""
+                    , icon = Icons.close
+                    , onClickMsg = Just UserClickedCloseManifestInfo
+                    , isFullscreen = fullscreen
+                    }
+                ]
             ]
         ]
 
@@ -60,7 +63,7 @@ viewBody model maybeManifest =
                 |> Maybe.withDefault [ ( "Manifest", text "Not loaded" ) ]
 
         logoBlock =
-            viewMaybe viewLogoBlock maybeManifest
+            viewMaybe (viewLogoBlock model.detectedLanguage) maybeManifest
     in
     div
         [ classList
@@ -69,10 +72,10 @@ viewBody model maybeManifest =
             ]
         ]
         [ div
-            [ classList [ ( "metadata-body", True ) ] ]
+            [ HA.class "metadata-body" ]
             (List.map viewRow rows)
         , div
-            [ classList [ ( "manifest-info-logo-wrap", True ) ] ]
+            [ HA.class "manifest-info-logo-wrap" ]
             [ logoBlock ]
         ]
 
@@ -80,9 +83,9 @@ viewBody model maybeManifest =
 viewRow : ( String, Html Msg ) -> Html Msg
 viewRow ( labelText, valueNode ) =
     div
-        [ classList [ ( "metadata-item", True ) ] ]
-        [ div [ classList [ ( "metadata-label", True ) ] ] [ text labelText ]
-        , div [ classList [ ( "metadata-value", True ) ] ] [ valueNode ]
+        [ HA.class "metadata-item" ]
+        [ div [ HA.class "metadata-label" ] [ text labelText ]
+        , div [ HA.class "metadata-value" ] [ valueNode ]
         ]
 
 
@@ -120,7 +123,7 @@ buildRows model manifest =
 
         summaryText =
             innerManifest.summary
-                |> Maybe.map (extractLabelFromLanguageMap Default)
+                |> Maybe.map (extractLabelFromLanguageMap model.detectedLanguage)
                 |> Maybe.withDefault "None"
 
         canvasCount =
@@ -181,8 +184,8 @@ languageLabel language =
             "default"
 
 
-viewLogoBlock : IIIFManifest -> Html Msg
-viewLogoBlock manifest =
+viewLogoBlock : Language -> IIIFManifest -> Html Msg
+viewLogoBlock language manifest =
     let
         ( providerLogoImage, homepageLink ) =
             case toProvider manifest |> Maybe.andThen List.head of
@@ -210,7 +213,7 @@ viewLogoBlock manifest =
             [ viewMaybe
                 (\url ->
                     img
-                        [ classList [ ( "manifest-info-logo", True ) ]
+                        [ HA.class "manifest-info-logo"
                         , src url
                         , alt "Manifest logo"
                         ]
@@ -221,7 +224,7 @@ viewLogoBlock manifest =
                 (\page ->
                     let
                         labelText =
-                            extractLabelFromLanguageMap Default page.label
+                            extractLabelFromLanguageMap language page.label
                     in
                     a
                         [ href page.id

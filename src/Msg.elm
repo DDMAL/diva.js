@@ -36,6 +36,7 @@ type Msg
     | UserClosedMobileSidebar
     | UserClickedPageViewPrev
     | UserClickedPageViewNext
+    | UserResetAllFilters
     | UserResetAltColourAdjust
     | UserToggledFullscreen
     | UserClickedRange String (Maybe Int)

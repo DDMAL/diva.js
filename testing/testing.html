@@ -80,6 +80,13 @@
           <option value="v2">IIIF v2</option>
           <option value="v3">IIIF v3</option>
         </select>
+        <label for="language-select">Language</label>
+        <select id="language-select">
+          <option value="auto">auto</option>
+          <option value="en">en</option>
+          <option value="de">de</option>
+          <option value="zh">zh</option>
+        </select>
       </div>
       <div class="controls-row" id="list-row">
         <label for="manifest-select">Manifest</label>
@@ -104,7 +111,7 @@
 
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/5.0.1/openseadragon.min.js"></script>
-    <script src="../build/diva.js"></script>
+    <script src="../build/diva.debug.js"></script>
     <script>
       const manifests = [
         { label: "GB-Ob MS Bodl. 264", url: "https://iiif.bodleian.ox.ac.uk/iiif/manifest/ae9f6cca-ae5c-4149-8fe4-95e6eca1f73c.json" },
@@ -127,11 +134,13 @@
         { label: "Durham Breviary", url: "https://iiif.durham.ac.uk/manifests/trifle/32150/t2/m7/w6/t2m7w62f844z/manifest" },
         { label: "Qatar Digital Library MS", url: "https://www.qdl.qa/en/iiif/81055/vdc_100098983347.0x000001/manifest" },
         { label: "U of T Manifest", url: "https://iiif.library.utoronto.ca/presentation/v2/fisherbooks:F10083/manifest" },
+        { label: "BSB Manifest", url: "https://api.digitale-sammlungen.de/iiif/presentation/v2/bsb00087481/manifest" },
       ];
 
       const selectEl = document.getElementById("manifest-select");
       const urlInput = document.getElementById("manifest-url");
       const versionSelect = document.getElementById("version-select");
+      const languageSelect = document.getElementById("language-select");
       const listRow = document.getElementById("list-row");
       const urlRow = document.getElementById("url-row");
       const goButton = document.getElementById("manifest-go");
@@ -190,10 +199,14 @@
           viewerWrap.innerHTML = '<div id="diva-wrapper"></div>';
           wrapper = document.getElementById("diva-wrapper");
         }
-        currentInstance = new Diva("diva-wrapper", {
+        const config = {
           objectData: url,
           acceptHeaders: buildAcceptHeaders(),
-        });
+        };
+        if (languageSelect.value !== "auto") {
+          config.setLanguage = languageSelect.value;
+        }
+        currentInstance = new Diva("diva-wrapper", config);
       }
 
       document.addEventListener("change", (event) => {

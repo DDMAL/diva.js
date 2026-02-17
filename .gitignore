@@ -17,3 +17,6 @@ tags
 /coverage/
 cache
 elm-stuff
+.hugo_build.lock
+public
+release

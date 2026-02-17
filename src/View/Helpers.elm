@@ -1,9 +1,9 @@
 module View.Helpers exposing (ButtonConfig, viewButton, viewIf, viewMaybe)
 
 import Html exposing (Html, button, div, text)
-import Html.Attributes as Attr exposing (classList, type_)
+import Html.Attributes as HA exposing (classList, type_)
 import Html.Events as Events
-import Utilites exposing (choose, unpack)
+import Utilities exposing (choose, unpack)
 
 
 type alias ButtonConfig msg =
@@ -38,18 +38,19 @@ viewMaybe viewFunc maybeBody =
 viewButton : ButtonConfig msg -> Html msg
 viewButton config =
     let
-        isDisabled =
-            config.onClickMsg == Nothing
-
         buttonAttrs =
             let
+                isDisabled =
+                    config.onClickMsg == Nothing
+
                 baseAttrs =
                     [ classList
                         [ ( "canvas-toolbar-button", True )
                         , ( "is-disabled", isDisabled )
+                        , ( "is-fullscreen", config.isFullscreen )
                         ]
                     , type_ "button"
-                    , Attr.title config.label
+                    , HA.title config.label
                     ]
             in
             case config.onClickMsg of
@@ -57,10 +58,10 @@ viewButton config =
                     Events.onClick msg :: baseAttrs
 
                 Nothing ->
-                    Attr.disabled True :: baseAttrs
+                    HA.disabled True :: baseAttrs
     in
     div
-        [ classList [ ( "canvas-toolbar-item", True ) ] ]
+        [ HA.class "canvas-toolbar-item" ]
         [ button buttonAttrs [ config.icon ]
         , div
             [ classList

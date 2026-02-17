@@ -389,28 +389,10 @@ update msg model =
             ( { model | collectionSidebarDrag = Nothing }, Cmd.none )
 
         ClientNotifiedPageChanged index ->
-            let
-                nextModel =
-                    { model | pageViewImageIndex = 0, selectedIndex = Just index, thumbsInstantScroll = False }
-            in
-            ( nextModel
-            , Cmd.batch
-                [ scrollThumbsToIndex (nextModel.sidebarState == SidebarThumbnails) index
-                , sendPageViewPreview nextModel
-                ]
-            )
+            handlePageChanged False index model
 
         ClientNotifiedPageChangedInstant index ->
-            let
-                nextModel =
-                    { model | pageViewImageIndex = 0, selectedIndex = Just index, thumbsInstantScroll = True }
-            in
-            ( nextModel
-            , Cmd.batch
-                [ scrollThumbsToIndex (nextModel.sidebarState == SidebarThumbnails) index
-                , sendPageViewPreview nextModel
-                ]
-            )
+            handlePageChanged True index model
 
         ClientNotifiedScrollThumbs _ ->
             ( { model | thumbsInstantScroll = False }, Cmd.none )
@@ -515,66 +497,20 @@ update msg model =
             )
 
         UserClickedPageViewPrev ->
-            case model.selectedIndex of
-                Just index ->
-                    if index > 0 then
-                        let
-                            nextIndex =
-                                index - 1
-
-                            nextModel =
-                                { model
-                                    | pageViewImageIndex = 0
-                                    , selectedIndex = Just nextIndex
-                                    , thumbsInstantScroll = False
-                                }
-                        in
-                        ( nextModel
-                        , Cmd.batch
-                            [ scrollToIndex nextIndex
-                            , scrollThumbsToIndex (nextModel.sidebarState == SidebarThumbnails) nextIndex
-                            , sendPageViewPreview nextModel
-                            ]
-                        )
-
-                    else
-                        ( model, Cmd.none )
-
-                Nothing ->
-                    ( model, Cmd.none )
+            handlePageViewStep -1 model
 
         UserClickedPageViewNext ->
-            case model.selectedIndex of
-                Just index ->
-                    let
-                        lastIndex =
-                            List.length model.pages - 1
-                    in
-                    if index < lastIndex then
-                        let
-                            nextIndex =
-                                index + 1
+            handlePageViewStep 1 model
 
-                            nextModel =
-                                { model
-                                    | pageViewImageIndex = 0
-                                    , selectedIndex = Just nextIndex
-                                    , thumbsInstantScroll = False
-                                }
-                        in
-                        ( nextModel
-                        , Cmd.batch
-                            [ scrollToIndex nextIndex
-                            , scrollThumbsToIndex (nextModel.sidebarState == SidebarThumbnails) nextIndex
-                            , sendPageViewPreview nextModel
-                            ]
-                        )
-
-                    else
-                        ( model, Cmd.none )
-
-                Nothing ->
-                    ( model, Cmd.none )
+        UserResetAllFilters ->
+            let
+                nextModel =
+                    { model
+                        | filters = resetFilters
+                        , filtersJsonError = Nothing
+                    }
+            in
+            ( nextModel, sendPageViewPreview nextModel )
 
         UserResetAltColourAdjust ->
             let
@@ -843,6 +779,52 @@ update msg model =
             ( { model | filterGroupExpanded = nextExpanded }, Cmd.none )
 
 
+handlePageChanged : Bool -> Int -> Model -> ( Model, Cmd Msg )
+handlePageChanged instant index model =
+    let
+        nextModel =
+            { model | pageViewImageIndex = 0, selectedIndex = Just index, thumbsInstantScroll = instant }
+    in
+    ( nextModel
+    , Cmd.batch
+        [ scrollThumbsToIndex (nextModel.sidebarState == SidebarThumbnails) index
+        , sendPageViewPreview nextModel
+        ]
+    )
+
+
+handlePageViewStep : Int -> Model -> ( Model, Cmd Msg )
+handlePageViewStep delta model =
+    case model.selectedIndex of
+        Just index ->
+            let
+                nextIndex =
+                    index + delta
+            in
+            if nextIndex >= 0 && nextIndex < List.length model.pages then
+                let
+                    nextModel =
+                        { model
+                            | pageViewImageIndex = 0
+                            , selectedIndex = Just nextIndex
+                            , thumbsInstantScroll = False
+                        }
+                in
+                ( nextModel
+                , Cmd.batch
+                    [ scrollToIndex nextIndex
+                    , scrollThumbsToIndex (nextModel.sidebarState == SidebarThumbnails) nextIndex
+                    , sendPageViewPreview nextModel
+                    ]
+                )
+
+            else
+                ( model, Cmd.none )
+
+        Nothing ->
+            ( model, Cmd.none )
+
+
 handleManifestLoaded : Model -> IIIFManifest -> ( Model, Cmd Msg )
 handleManifestLoaded model manifest =
     let
@@ -854,7 +836,7 @@ handleManifestLoaded model manifest =
             toViewingDirection manifest
 
         pages =
-            manifestToPages manifest
+            manifestToPages model.detectedLanguage manifest
 
         tileSources =
             List.filterMap (primaryImage >> Maybe.map .tileSource) pages

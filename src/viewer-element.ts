@@ -38,6 +38,8 @@ class OsdViewer extends HTMLElement
     private scrollbarTrack: HTMLDivElement|null = null;
     private scrollbarThumb: HTMLDivElement|null = null;
     private isScrollbarDragging = false;
+    private scrollbarMouseMove: ((e: MouseEvent) => void)|null = null;
+    private scrollbarMouseUp: (() => void)|null = null;
 
     constructor()
     {
@@ -56,8 +58,7 @@ class OsdViewer extends HTMLElement
             this.container.className = "osd-container";
             this.container.style.width = "100%";
             this.container.style.height = "100%";
-            this.container.addEventListener("wheel", this.handleWheelBound,
-                                            {passive : false, capture : true});
+            this.container.addEventListener("wheel", this.handleWheelBound, {passive : false, capture : true});
             this.container.addEventListener("dblclick", this.handleDoubleClickBound);
             this.appendChild(this.container);
 
@@ -77,6 +78,16 @@ class OsdViewer extends HTMLElement
         {
             this.container.removeEventListener("wheel", this.handleWheelBound);
             this.container.removeEventListener("dblclick", this.handleDoubleClickBound);
+        }
+        if (this.scrollbarMouseMove)
+        {
+            document.removeEventListener("mousemove", this.scrollbarMouseMove);
+            this.scrollbarMouseMove = null;
+        }
+        if (this.scrollbarMouseUp)
+        {
+            document.removeEventListener("mouseup", this.scrollbarMouseUp);
+            this.scrollbarMouseUp = null;
         }
         if (this.viewer)
         {
@@ -113,18 +124,10 @@ class OsdViewer extends HTMLElement
                 crossOriginPolicy : "Anonymous",
                 loadTilesWithAjax : true,
                 ajaxWithCredentials : false,
-                gestureSettingsTrackpad : {
-                    pinchToZoom : true,
-                    scrollToZoom : false,
-                    flickEnabled : true,
-                    dragToPan : true
-                },
-                gestureSettingsMouse : {
-                    scrollToZoom : false,
-                    clickToZoom : false,
-                    dblClickToZoom : false,
-                    dragToPan : true
-                },
+                gestureSettingsTrackpad :
+                    {pinchToZoom : true, scrollToZoom : false, flickEnabled : true, dragToPan : true},
+                gestureSettingsMouse :
+                    {scrollToZoom : false, clickToZoom : false, dblClickToZoom : false, dragToPan : true},
                 gestureSettingsTouch : {pinchToZoom : false, dragToPan : true}
             } as any;
             this.viewer = OpenSeadragon(options);
@@ -177,7 +180,16 @@ class OsdViewer extends HTMLElement
         {
             return;
         }
-        this.viewer.world.removeAll();
+        // OSD 6 keeps more internal loader/cache state; close() clears world +
+        // queues safely.
+        if (typeof this.viewer.close === "function")
+        {
+            this.viewer.close();
+        }
+        else
+        {
+            this.viewer.world.removeAll();
+        }
         this.loadToken += 1;
         this.tileSources = tileSources;
         this.hasFitFirstPage = false;
@@ -310,8 +322,7 @@ class OsdViewer extends HTMLElement
                     {
                         return;
                     }
-                    const bounds =
-                        this.isSpreadMode() ? this.getRowBounds(index) : item.getBounds();
+                    const bounds = this.isSpreadMode() ? this.getRowBounds(index) : item.getBounds();
                     viewer.viewport.fitBounds(bounds, true);
                     viewer.viewport.zoomBy(0.95, viewer.viewport.getCenter(true), true);
                     viewer.viewport.applyConstraints();
@@ -356,8 +367,7 @@ class OsdViewer extends HTMLElement
 
     private buildOffsets(): void
     {
-        const count =
-            this.tileSources.length > 0 ? this.tileSources.length : this.pageAspects.length;
+        const count = this.tileSources.length > 0 ? this.tileSources.length : this.pageAspects.length;
         this.pageOffsets = new Array(count);
         this.pageHeights = new Array(count);
         this.pageRowHeights = new Array(count);
@@ -415,8 +425,7 @@ class OsdViewer extends HTMLElement
         {
             const leftHeight = this.pageAspects[index] || fallback;
             const rightIndex = index + 1;
-            const rightHeight =
-                rightIndex < count ? this.pageAspects[rightIndex] || leftHeight : leftHeight;
+            const rightHeight = rightIndex < count ? this.pageAspects[rightIndex] || leftHeight : leftHeight;
             fallback = rightHeight;
 
             const rowHeight = Math.max(leftHeight, rightHeight);
@@ -463,8 +472,7 @@ class OsdViewer extends HTMLElement
             return;
         }
 
-        const lastIndex = this.pageOffsets.length - 1;
-        const totalHeight = this.pageOffsets[lastIndex] + (this.pageRowHeights[lastIndex] || 1);
+        const totalHeight = this.getTotalHeight();
         const layoutWidth = this.isSpreadMode() ? 2 : 1;
         if (this.scrollPlaneItem)
         {
@@ -755,8 +763,7 @@ class OsdViewer extends HTMLElement
             return;
         }
 
-        const lastIndex = this.pageOffsets.length - 1;
-        const totalHeight = this.pageOffsets[lastIndex] + (this.pageRowHeights[lastIndex] || 1);
+        const totalHeight = this.getTotalHeight();
 
         const bounds = vp.getBounds(true);
         const containerHeight = this.container?.getBoundingClientRect().height || 1;
@@ -783,7 +790,7 @@ class OsdViewer extends HTMLElement
         {
             return;
         }
-        if (this.pageOffsets.length == 0)
+        if (this.pageOffsets.length === 0)
         {
             return;
         }
@@ -796,7 +803,7 @@ class OsdViewer extends HTMLElement
 
         const center = vp.getCenter(true);
         const index = this.findIndexForOffset(center.y);
-        if (this.lastReportedIndex == index)
+        if (this.lastReportedIndex === index)
         {
             return;
         }
@@ -826,7 +833,7 @@ class OsdViewer extends HTMLElement
 
     private flushInitialPageChange(): void
     {
-        if (this.pageOffsets.length == 0)
+        if (this.pageOffsets.length === 0)
         {
             this.suppressPageChange = false;
             return;
@@ -949,8 +956,7 @@ class OsdViewer extends HTMLElement
         }
     }
 
-    private applyLayoutChange(
-        next: {mode?: "single"|"spread"|"spread-shift"; direction?: "ltr" | "rtl"}): void
+    private applyLayoutChange(next: {mode?: "single"|"spread"|"spread-shift"; direction?: "ltr" | "rtl"}): void
     {
         const nextMode = next.mode ?? this.layoutMode;
         const nextDirection = next.direction ?? this.viewingDirection;
@@ -958,13 +964,37 @@ class OsdViewer extends HTMLElement
         {
             return;
         }
+
+        let anchorIndex: number|null = null;
+        const viewport = this.viewer?.viewport;
+        if (viewport && this.pageOffsets.length > 0)
+        {
+            const bounds = viewport.getBounds(true);
+            const anchorOffset = bounds.y + (bounds.height * 0.5);
+            anchorIndex = this.findIndexForOffset(anchorOffset);
+        }
+        else if (this.lastReportedIndex !== null)
+        {
+            anchorIndex = this.lastReportedIndex;
+        }
+
         this.layoutMode = nextMode;
         this.viewingDirection = nextDirection;
         this.buildOffsets();
         this.updateLoadedItemPositions();
         this.ensureScrollPlane();
-        this.lockHorizontalPan();
-        this.recenterAfterFit();
+
+        if (anchorIndex !== null)
+        {
+            const clampedAnchor = Math.max(0, Math.min(anchorIndex, this.pageOffsets.length - 1));
+            this.scrollToIndex(clampedAnchor);
+        }
+        else
+        {
+            this.lockHorizontalPan();
+            this.recenterAfterFit();
+        }
+
         this.maybeLoadMore();
     }
 
@@ -974,6 +1004,12 @@ class OsdViewer extends HTMLElement
     }
 
     private getCenterX(): number { return this.isSpreadMode() ? 1 : 0.5; }
+
+    private getTotalHeight(): number
+    {
+        const lastIndex = this.pageOffsets.length - 1;
+        return this.pageOffsets[lastIndex] + (this.pageRowHeights[lastIndex] || 1);
+    }
 
     private getRowBounds(index: number): OpenSeadragonType.Rect
     {
@@ -994,11 +1030,11 @@ class OsdViewer extends HTMLElement
 
         if (this.layoutMode === "spread-shift")
         {
-            if (index == 0)
+            if (index === 0)
             {
                 return 0;
             }
-            return index % 2 == 1 ? index : index - 1;
+            return index % 2 === 1 ? index : index - 1;
         }
 
         return index - (index % 2);
@@ -1012,7 +1048,7 @@ class OsdViewer extends HTMLElement
             return startIndex;
         }
 
-        if (this.layoutMode === "spread-shift" && startIndex == 0)
+        if (this.layoutMode === "spread-shift" && startIndex === 0)
         {
             return 0;
         }
@@ -1055,8 +1091,7 @@ class OsdViewer extends HTMLElement
         const bounds = this.viewer.viewport.getBounds(true);
         const trackHeight = this.scrollbarTrack.clientHeight;
 
-        const lastIndex = this.pageOffsets.length - 1;
-        const totalHeight = this.pageOffsets[lastIndex] + (this.pageRowHeights[lastIndex] || 1);
+        const totalHeight = this.getTotalHeight();
         const viewportHeight = bounds.height;
         const scrollTop = bounds.y;
 
@@ -1102,11 +1137,9 @@ class OsdViewer extends HTMLElement
             const thumbHeight = this.scrollbarThumb.clientHeight;
 
             const clampedThumbTop = Math.max(0, Math.min(newThumbTop, trackHeight - thumbHeight));
-            const scrollProgress =
-                (trackHeight - thumbHeight) > 0 ? clampedThumbTop / (trackHeight - thumbHeight) : 0;
+            const scrollProgress = (trackHeight - thumbHeight) > 0 ? clampedThumbTop / (trackHeight - thumbHeight) : 0;
 
-            const lastIndex = this.pageOffsets.length - 1;
-            const totalHeight = this.pageOffsets[lastIndex] + (this.pageRowHeights[lastIndex] || 1);
+            const totalHeight = this.getTotalHeight();
             const viewportHeight = this.viewer.viewport.getBounds(true).height;
             const maxScroll = totalHeight - viewportHeight;
             const newScrollY = scrollProgress * maxScroll;
@@ -1123,6 +1156,8 @@ class OsdViewer extends HTMLElement
             }
         };
 
+        this.scrollbarMouseMove = onMouseMove;
+        this.scrollbarMouseUp = onMouseUp;
         this.scrollbarThumb.addEventListener("mousedown", onMouseDown);
         document.addEventListener("mousemove", onMouseMove);
         document.addEventListener("mouseup", onMouseUp);
@@ -1149,12 +1184,10 @@ class OsdViewer extends HTMLElement
 
             const clickY = e.clientY - rect.top;
             const trackHeight = rect.height;
-            const thumbHeight = this.scrollbarThumb?.clientHeight || 30;
 
             const scrollProgress = Math.max(0, Math.min(1, clickY / trackHeight));
 
-            const lastIndex = this.pageOffsets.length - 1;
-            const totalHeight = this.pageOffsets[lastIndex] + (this.pageRowHeights[lastIndex] || 1);
+            const totalHeight = this.getTotalHeight();
             const viewportHeight = this.viewer.viewport.getBounds(true).height;
             const maxScroll = totalHeight - viewportHeight;
             const newScrollY = scrollProgress * maxScroll;
