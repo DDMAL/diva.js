@@ -131,8 +131,8 @@ init flags =
       , pages = []
       , pendingThumbScroll = Nothing
       , rangeIndexMap = Dict.empty
-      , resourceResponse = ResourceNotRequested
-      , response = NotRequested
+      , resourceResponse = ResourceLoading
+      , response = Loading
       , rootElementId = flags.rootElementId
       , selectedIndex = Nothing
       , selectedRangeId = Nothing
@@ -149,7 +149,6 @@ init flags =
       }
     , Cmd.batch
         [ IIIF.requestResource ServerRespondedWithResource flags.acceptHeaders manifestUrl
-        , Task.perform (\_ -> SetResponseLoading) (Task.succeed ())
         , Task.perform (\viewport -> ViewportChanged (round viewport.viewport.width) (round viewport.viewport.height)) Dom.getViewport
         ]
     )
@@ -396,9 +395,6 @@ update msg model =
 
         ClientNotifiedScrollThumbs _ ->
             ( { model | thumbsInstantScroll = False }, Cmd.none )
-
-        SetResponseLoading ->
-            ( { model | resourceResponse = ResourceLoading, response = Loading }, Cmd.none )
 
         UserClickedThumbnail index ->
             let

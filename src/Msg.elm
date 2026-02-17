@@ -21,7 +21,6 @@ type Msg
     | ClientNotifiedPageChanged Int
     | ClientNotifiedPageChangedInstant Int
     | ClientNotifiedScrollThumbs (Result Dom.Error ())
-    | SetResponseLoading
     | UserClickedThumbnail Int
     | UserToggledFilter FilterToggle Bool
     | UserToggledContents

@@ -26,8 +26,7 @@ type alias CollectionState =
 
 
 type ResourceResponse
-    = ResourceNotRequested
-    | ResourceLoading
+    = ResourceLoading
     | ResourceLoadedManifest IIIFManifest
     | ResourceLoadedCollection CollectionState
     | ResourceFailed String
