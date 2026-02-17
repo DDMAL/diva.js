@@ -1,4 +1,4 @@
-module Utilities exposing (choose, disabledIf, find, isJust, isNothing, orElse, unpack)
+module Utilities exposing (choose, disabledIf, find, isJust, isNothing, orElse)
 
 
 choose : Bool -> (() -> a) -> (() -> a) -> a
@@ -8,16 +8,6 @@ choose predicate isTrue isFalse =
 
     else
         isFalse ()
-
-
-unpack : (() -> b) -> (a -> b) -> Maybe a -> b
-unpack default f m =
-    case m of
-        Just a ->
-            f a
-
-        Nothing ->
-            default ()
 
 
 isJust : Maybe a -> Bool

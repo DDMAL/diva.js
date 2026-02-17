@@ -3,7 +3,7 @@ module View.Helpers exposing (ButtonConfig, emptyHtml, viewButton, viewIf, viewM
 import Html exposing (Html, button, div, text)
 import Html.Attributes as HA exposing (classList, type_)
 import Html.Events as Events
-import Utilities exposing (choose, unpack)
+import Utilities exposing (choose)
 
 
 type alias ButtonConfig msg =
@@ -37,7 +37,12 @@ emptyHtml =
 -}
 viewMaybe : (a -> Html msg) -> Maybe a -> Html msg
 viewMaybe viewFunc maybeBody =
-    unpack (\() -> emptyHtml) viewFunc maybeBody
+    case maybeBody of
+        Just a ->
+            viewFunc a
+
+        Nothing ->
+            emptyHtml
 
 
 viewButton : ButtonConfig msg -> Html msg
