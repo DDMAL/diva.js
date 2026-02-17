@@ -143,7 +143,6 @@ init flags =
       , thumbsInstantScroll = False
       , hasTileSources = False
       , viewMode = OneUp
-      , zoom = 1
       , detectedLanguage = userLanguage
       }
     , Cmd.batch
@@ -725,8 +724,8 @@ update msg model =
             , Cmd.none
             )
 
-        UserChangedZoomLevel zoom ->
-            ( { model | zoom = zoom }, Cmd.none )
+        UserChangedZoomLevel _ ->
+            ( model, Cmd.none )
 
         ViewportChanged width _ ->
             let

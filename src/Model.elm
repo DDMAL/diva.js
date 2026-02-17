@@ -83,7 +83,6 @@ type alias Model =
     , filters : Filters
     , filtersJsonInput : String
     , filtersJsonError : Maybe String
-    , zoom : Float
     , fullscreen : Bool
     , viewMode : ViewMode
     , shiftByOne : Bool
