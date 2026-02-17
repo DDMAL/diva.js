@@ -162,6 +162,17 @@ viewThumbnails :
     -> List Page
     -> Html Msg
 viewThumbnails { fullscreen, selectedIndex, shiftByOne, thumbsInstantScroll, viewMode, viewingDirection } pages =
+    let
+        indexedPages =
+            List.indexedMap Tuple.pair pages
+
+        orderedPages =
+            if viewingDirection == RightToLeft then
+                reverseInRows 3 indexedPages
+
+            else
+                indexedPages
+    in
     div
         [ classList
             [ ( "thumbs", True )
@@ -175,17 +186,35 @@ viewThumbnails { fullscreen, selectedIndex, shiftByOne, thumbsInstantScroll, vie
              else
                 "smooth"
             )
-        , HA.style "direction"
-            (if viewingDirection == RightToLeft then
-                "rtl"
-
-             else
-                "ltr"
-            )
         ]
-        (List.indexedMap Tuple.pair pages
+        (orderedPages
             |> List.map (Lazy.lazy4 viewThumbnail viewMode shiftByOne selectedIndex)
         )
+
+
+reverseInRows : Int -> List a -> List a
+reverseInRows rowSize items =
+    if rowSize <= 1 then
+        items
+
+    else
+        items
+            |> chunk rowSize
+            |> List.concatMap List.reverse
+
+
+chunk : Int -> List a -> List (List a)
+chunk size items =
+    if size <= 0 then
+        []
+
+    else
+        case items of
+            [] ->
+                []
+
+            _ ->
+                List.take size items :: chunk size (List.drop size items)
 
 
 viewThumbnail : ViewMode -> Bool -> Maybe Int -> ( Int, Page ) -> Html Msg
