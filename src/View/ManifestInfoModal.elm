@@ -8,15 +8,15 @@ import IIIF.Presentation exposing (Behavior(..), HomePage, IIIFManifest(..), Log
 import IIIF.Version exposing (IIIFVersion(..))
 import Model exposing (Model, ResourceResponse(..), Response(..), currentManifest)
 import Msg exposing (Msg(..))
-import View.Helpers exposing (viewButton, viewIf, viewMaybe)
+import View.Helpers exposing (emptyHtml, viewButton, viewIf, viewMaybe)
 import View.HtmlRenderer as HtmlRenderer
 import View.Icons as Icons
 
 
 viewManifestInfoModal : Model -> Html Msg
 viewManifestInfoModal model =
-    viewIf
-        (div
+    if model.manifestInfoOpen then
+        div
             [ HA.class "modal-overlay" ]
             [ div
                 [ classList
@@ -29,8 +29,9 @@ viewManifestInfoModal model =
                     |> viewBody model
                 ]
             ]
-        )
-        model.manifestInfoOpen
+
+    else
+        emptyHtml
 
 
 viewHeader : { a | fullscreen : Bool } -> Html Msg
