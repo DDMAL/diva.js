@@ -29,11 +29,10 @@ view model =
                 , ( "is-fullscreen", model.fullscreen )
                 ]
             ]
-            [ Lazy.lazy viewManifestTitle
-                { showTitle = model.showTitle
-                , fullscreen = model.fullscreen
-                , title = manifestTitleFor model
-                }
+            [ Lazy.lazy3 viewManifestTitle
+                model.showTitle
+                model.fullscreen
+                (manifestTitleFor model)
             , div [ HA.class "diva-app-header" ]
                 [ viewToolbar model
                 ]
@@ -69,13 +68,8 @@ view model =
         ]
 
 
-viewManifestTitle :
-    { showTitle : Bool
-    , fullscreen : Bool
-    , title : String
-    }
-    -> Html Msg
-viewManifestTitle { showTitle, fullscreen, title } =
+viewManifestTitle : Bool -> Bool -> String -> Html Msg
+viewManifestTitle showTitle fullscreen title =
     viewIf
         (viewIf
             (h1
