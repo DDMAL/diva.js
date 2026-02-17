@@ -3,7 +3,6 @@ module View.Helpers exposing (ButtonConfig, emptyHtml, viewButton, viewIf, viewM
 import Html exposing (Html, button, div, text)
 import Html.Attributes as HA exposing (classList, type_)
 import Html.Events as Events
-import Utilities exposing (choose)
 
 
 type alias ButtonConfig msg =
@@ -15,8 +14,12 @@ type alias ButtonConfig msg =
 
 
 viewIf : Html msg -> Bool -> Html msg
-viewIf viewFunc condition =
-    choose condition (\() -> viewFunc) (\() -> emptyHtml)
+viewIf view condition =
+    if condition then
+        view
+
+    else
+        emptyHtml
 
 
 emptyHtml : Html msg

@@ -1,13 +1,4 @@
-module Utilities exposing (choose, disabledIf, find, isJust, isNothing, orElse)
-
-
-choose : Bool -> (() -> a) -> (() -> a) -> a
-choose predicate isTrue isFalse =
-    if predicate then
-        isTrue ()
-
-    else
-        isFalse ()
+module Utilities exposing (disabledIf, find, isJust, isNothing, orElse)
 
 
 isJust : Maybe a -> Bool
