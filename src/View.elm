@@ -60,7 +60,7 @@ view model =
                 , View.Sidebar.viewSidebarPanel model
                 ]
             , div [ HA.class "required-statement-dock" ]
-                [ Lazy.lazy viewRequiredStatement (requiredStatementTextFor model) ]
+                [ viewMaybe (Lazy.lazy viewRequiredStatement) (requiredStatementTextFor model) ]
             , View.PageViewModal.viewPageViewModal model
             , View.ManifestInfoModal.viewManifestInfoModal model
             ]
@@ -84,18 +84,14 @@ viewManifestTitle showTitle fullscreen title =
         showTitle
 
 
-viewRequiredStatement : Maybe String -> Html Msg
-viewRequiredStatement maybeValueText =
-    viewMaybe
-        (\valueText ->
-            viewIf
-                (div
-                    [ HA.class "required-statement" ]
-                    (HtmlRenderer.renderHtml valueText)
-                )
-                (not (String.isEmpty valueText))
+viewRequiredStatement : String -> Html Msg
+viewRequiredStatement valueText =
+    viewIf
+        (div
+            [ HA.class "required-statement" ]
+            (HtmlRenderer.renderHtml valueText)
         )
-        maybeValueText
+        (not (String.isEmpty valueText))
 
 
 viewCanvas : Bool -> Bool -> Bool -> Maybe ( String, String, Bool ) -> Html Msg
