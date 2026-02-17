@@ -68,7 +68,7 @@ type alias Model =
     { rootElementId : String
     , manifestUrl : String
     , acceptHeaders : List String
-    , tileSources : List String
+    , hasTileSources : Bool
     , pages : List Page
     , selectedIndex : Maybe Int
     , selectedRangeId : Maybe String

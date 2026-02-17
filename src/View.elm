@@ -201,11 +201,11 @@ viewerStatus model =
             Just ( "Unable to load manifest", message, True )
 
         ResourceLoadedManifest _ ->
-            if List.isEmpty model.tileSources then
-                Just ( "Unable to display manifest", "No canvases found in this manifest.", False )
+            if model.hasTileSources then
+                Nothing
 
             else
-                Nothing
+                Just ( "Unable to display manifest", "No canvases found in this manifest.", False )
 
         ResourceLoadedCollection _ ->
             case model.response of
@@ -213,11 +213,11 @@ viewerStatus model =
                     Just ( "Unable to load manifest", message, True )
 
                 _ ->
-                    if List.isEmpty model.tileSources then
-                        Just ( "No Manifest Selected", "Select a manifest from the collection to view.", False )
+                    if model.hasTileSources then
+                        Nothing
 
                     else
-                        Nothing
+                        Just ( "No Manifest Selected", "Select a manifest from the collection to view.", False )
 
         _ ->
             Nothing

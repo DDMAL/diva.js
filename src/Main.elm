@@ -142,7 +142,7 @@ init flags =
       , sidebarState = sidebarState
       , sidebarWidth = 320
       , thumbsInstantScroll = False
-      , tileSources = []
+      , hasTileSources = False
       , viewMode = OneUp
       , zoom = 1
       , detectedLanguage = userLanguage
@@ -880,7 +880,7 @@ handleManifestLoaded model manifest =
             else
                 Just 0
         , shiftByOne = shiftByOne
-        , tileSources = tileSources
+        , hasTileSources = not (List.isEmpty tileSources)
         , viewMode = viewMode
       }
     , Cmd.batch
