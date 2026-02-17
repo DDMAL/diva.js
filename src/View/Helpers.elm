@@ -1,4 +1,4 @@
-module View.Helpers exposing (ButtonConfig, viewButton, viewIf, viewMaybe)
+module View.Helpers exposing (ButtonConfig, emptyHtml, viewButton, viewIf, viewMaybe)
 
 import Html exposing (Html, button, div, text)
 import Html.Attributes as HA exposing (classList, type_)
@@ -16,7 +16,12 @@ type alias ButtonConfig msg =
 
 viewIf : Html msg -> Bool -> Html msg
 viewIf viewFunc condition =
-    choose condition (\() -> viewFunc) (\() -> text "")
+    choose condition (\() -> viewFunc) (\() -> emptyHtml)
+
+
+emptyHtml : Html msg
+emptyHtml =
+    text ""
 
 
 {-|
@@ -32,7 +37,7 @@ viewIf viewFunc condition =
 -}
 viewMaybe : (a -> Html msg) -> Maybe a -> Html msg
 viewMaybe viewFunc maybeBody =
-    unpack (\() -> text "") viewFunc maybeBody
+    unpack (\() -> emptyHtml) viewFunc maybeBody
 
 
 viewButton : ButtonConfig msg -> Html msg

@@ -8,7 +8,7 @@ import IIIF.Presentation exposing (toLabel, toRequiredStatement)
 import Model exposing (Model, ResourceResponse(..), Response(..), currentManifest)
 import Msg exposing (Msg(..))
 import View.CollectionExplorer
-import View.Helpers exposing (viewIf, viewMaybe)
+import View.Helpers exposing (emptyHtml, viewIf, viewMaybe)
 import View.HtmlRenderer as HtmlRenderer
 import View.ManifestInfoModal
 import View.PageViewModal
@@ -86,12 +86,13 @@ viewManifestTitle showTitle fullscreen title =
 
 viewRequiredStatement : String -> Html Msg
 viewRequiredStatement valueText =
-    viewIf
-        (div
+    if String.isEmpty valueText then
+        emptyHtml
+
+    else
+        div
             [ HA.class "required-statement" ]
             (HtmlRenderer.renderHtml valueText)
-        )
-        (not (String.isEmpty valueText))
 
 
 viewCanvas : Bool -> Bool -> Bool -> Maybe ( String, String, Bool ) -> Html Msg
