@@ -8,7 +8,7 @@ import IIIF.Presentation exposing (Behavior(..), HomePage, IIIFManifest(..), Log
 import IIIF.Version exposing (IIIFVersion(..))
 import Model exposing (Model, ResourceResponse(..), Response(..), currentManifest)
 import Msg exposing (Msg(..))
-import View.Helpers exposing (emptyHtml, viewButton, viewIf, viewMaybe)
+import View.Helpers exposing (emptyHtml, viewButton, viewMaybe)
 import View.HtmlRenderer as HtmlRenderer
 import View.Icons as Icons
 
@@ -209,8 +209,8 @@ viewLogoBlock language manifest =
                     toLogo manifest
                         |> Maybe.map (.id >> setImageUriSize (WidthOnlySize 256) >> createImageAddress)
     in
-    viewIf
-        (div []
+    if logoUrl /= Nothing || homepageLink /= Nothing then
+        div []
             [ viewMaybe
                 (\url ->
                     img
@@ -236,8 +236,9 @@ viewLogoBlock language manifest =
                 )
                 homepageLink
             ]
-        )
-        (logoUrl /= Nothing || homepageLink /= Nothing)
+
+    else
+        emptyHtml
 
 
 providerLogo : Provider -> Maybe Logo
