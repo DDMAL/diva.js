@@ -10,32 +10,26 @@ import IIIF.Presentation exposing (IIIFManifest, MediaFormats, Range, RangeItem(
 import Json.Decode as Decode
 import Model exposing (ContentsView(..), Model, Page, ResourceResponse(..), Response(..), SidebarState(..), ViewMode(..), currentManifest, pageViewStartIndex, primaryImage)
 import Msg exposing (Msg(..))
+import View.Helpers exposing (viewMaybe)
 import View.HtmlRenderer exposing (renderHtml)
 
 
 viewSidebarPanel : Model -> Html Msg
 viewSidebarPanel model =
+    currentManifest model
+        |> viewMaybe (viewSidebarPanelWithManifest model)
+
+
+viewSidebarPanelWithManifest : Model -> IIIFManifest -> Html Msg
+viewSidebarPanelWithManifest model manifest =
     let
         hasContents =
-            case maybeManifest of
-                Just manifest ->
-                    toRanges manifest
-                        |> Maybe.map (List.isEmpty >> not)
-                        |> Maybe.withDefault False
-
-                Nothing ->
-                    False
+            toRanges manifest
+                |> Maybe.map (List.isEmpty >> not)
+                |> Maybe.withDefault False
 
         hasMetadata =
-            case maybeManifest of
-                Just manifest ->
-                    hasManifestMetadata manifest
-
-                Nothing ->
-                    False
-
-        maybeManifest =
-            currentManifest model
+            hasManifestMetadata manifest
 
         panelClasses =
             [ ( "sidebar-panel", True )
@@ -99,10 +93,7 @@ viewSidebarPanel model =
                     , shiftByOne = model.shiftByOne
                     , thumbsInstantScroll = model.thumbsInstantScroll
                     , viewMode = model.viewMode
-                    , viewingDirection =
-                        maybeManifest
-                            |> Maybe.map toViewingDirection
-                            |> Maybe.withDefault LeftToRight
+                    , viewingDirection = toViewingDirection manifest
                     }
                     model.pages
                 )
@@ -114,17 +105,21 @@ viewSidebarPanel model =
 
 viewSidebarResizer : Model -> Html Msg
 viewSidebarResizer model =
-    div
-        [ classList
-            [ ( "sidebar-resizer", True )
-            , ( "is-hidden", not (isSidebarVisible model.sidebarState) )
-            ]
-        , Events.on "mousedown"
-            (Decode.field "clientX" Decode.int
-                |> Decode.map UserStartedSidebarResize
-            )
-        ]
-        [ text "⋮" ]
+    viewMaybe
+        (\_ ->
+            div
+                [ classList
+                    [ ( "sidebar-resizer", True )
+                    , ( "is-hidden", not (isSidebarVisible model.sidebarState) )
+                    ]
+                , Events.on "mousedown"
+                    (Decode.field "clientX" Decode.int
+                        |> Decode.map UserStartedSidebarResize
+                    )
+                ]
+                [ text "⋮" ]
+        )
+        (currentManifest model)
 
 
 isSidebarVisible : SidebarState -> Bool
