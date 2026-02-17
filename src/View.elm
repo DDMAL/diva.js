@@ -70,18 +70,15 @@ view model =
 viewManifestTitle : Bool -> Bool -> String -> Html Msg
 viewManifestTitle showTitle fullscreen title =
     viewIf
-        (viewIf
-            (h1
-                [ classList
-                    [ ( "diva-app-title", True )
-                    , ( "is-fullscreen", fullscreen )
-                    ]
+        (h1
+            [ classList
+                [ ( "diva-app-title", True )
+                , ( "is-fullscreen", fullscreen )
                 ]
-                [ text title ]
-            )
-            (not (String.isEmpty title))
+            ]
+            [ text title ]
         )
-        showTitle
+        (showTitle && not (String.isEmpty title))
 
 
 viewRequiredStatement : String -> Html Msg
