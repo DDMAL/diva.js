@@ -159,6 +159,12 @@ viewModalHeader model =
                 , isFullscreen = model.fullscreen
                 }
             , viewButton
+                { label = "Reset Filters"
+                , icon = Icons.reset
+                , onClickMsg = Just UserResetAllFilters
+                , isFullscreen = model.fullscreen
+                }
+            , viewButton
                 { label = sidebarLabel
                 , icon = sidebarIcon
                 , onClickMsg = Just UserToggledPageViewSidebar

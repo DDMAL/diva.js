@@ -502,6 +502,16 @@ update msg model =
         UserClickedPageViewNext ->
             handlePageViewStep 1 model
 
+        UserResetAllFilters ->
+            let
+                nextModel =
+                    { model
+                        | filters = resetFilters
+                        , filtersJsonError = Nothing
+                    }
+            in
+            ( nextModel, sendPageViewPreview nextModel )
+
         UserResetAltColourAdjust ->
             let
                 nextModel =
