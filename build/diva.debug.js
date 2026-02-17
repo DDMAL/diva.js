@@ -712,19 +712,33 @@
       }
     }
     applyLayoutChange(next) {
-      var _a, _b;
+      var _a, _b, _c;
       const nextMode = (_a = next.mode) != null ? _a : this.layoutMode;
       const nextDirection = (_b = next.direction) != null ? _b : this.viewingDirection;
       if (this.layoutMode === nextMode && this.viewingDirection === nextDirection) {
         return;
+      }
+      let anchorIndex = null;
+      const viewport = (_c = this.viewer) == null ? void 0 : _c.viewport;
+      if (viewport && this.pageOffsets.length > 0) {
+        const bounds = viewport.getBounds(true);
+        const anchorOffset = bounds.y + bounds.height * 0.5;
+        anchorIndex = this.findIndexForOffset(anchorOffset);
+      } else if (this.lastReportedIndex !== null) {
+        anchorIndex = this.lastReportedIndex;
       }
       this.layoutMode = nextMode;
       this.viewingDirection = nextDirection;
       this.buildOffsets();
       this.updateLoadedItemPositions();
       this.ensureScrollPlane();
-      this.lockHorizontalPan();
-      this.recenterAfterFit();
+      if (anchorIndex !== null) {
+        const clampedAnchor = Math.max(0, Math.min(anchorIndex, this.pageOffsets.length - 1));
+        this.scrollToIndex(clampedAnchor);
+      } else {
+        this.lockHorizontalPan();
+        this.recenterAfterFit();
+      }
       this.maybeLoadMore();
     }
     emitCustomEvent(name, detail) {
@@ -872,7 +886,7 @@
   customElements.define("osd-viewer", OsdViewer);
 
   // cache/diva.css
-  var diva_default = ":root{--diva-accent:#5a6bff;--diva-accent-light:#9aa4ff;--diva-border:#d9d4ce;--diva-danger:#d32f2f;--diva-dark-bg:#1c1d22;--diva-dark-border:#2c2d33;--diva-overlay-bg:#10111499;--diva-page-bg:#f7f5f1;--diva-shadow-dark:#00000026;--diva-shadow-focus:#9aa4ff59;--diva-shadow-modal:#00000040;--diva-surface:#e6e1dc;--diva-text-muted:#5c5a55;--diva-text-muted-on-dark:#ffffffb3;--diva-text-primary:#1b1b1b;--diva-toolbar-button-bg:#5258626b;--diva-toolbar-button-bg-hover:#5c636e85;--diva-toolbar-button-bg-fullscreen:#52586285;--diva-toolbar-button-bg-fullscreen-hover:#6068749e;--diva-toolbar-button-border:#ffffff59;--diva-toolbar-button-border-hover:#ffffff73;--diva-toolbar-button-border-fullscreen-hover:#fff9;--diva-toolbar-button-icon:#2c2d33;--diva-toolbar-button-shadow:inset 0 1px 0 #ffffff8c, inset 0 -1px 0 #ffffff2e;--diva-toolbar-button-shadow-hover:inset 0 1px 0 #ffffffb3, inset 0 -1px 0 #ffffff3d;--diva-white:#fff;--diva-font-lg:16px;--diva-font-md:13px;--diva-font-sm:11px;--diva-font-xs:10px;--diva-font-xl:20px;color-scheme:light}*{box-sizing:border-box}.list-reset{margin:0;padding:0;list-style:none}.ui-button{text-align:left;cursor:pointer;color:var(--diva-text-primary);font-size:var(--diva-font-lg);background-color:#0000;border:none;padding:0}.ui-button:hover{background-color:var(--diva-surface)}.ui-card{cursor:pointer;border-radius:6px;width:100%;padding:6px}.ui-card--dark{background-color:var(--diva-dark-bg)}.diva-app{flex-direction:column;flex:1;height:100%;min-height:0;padding:12px 24px;display:flex}.diva-app.is-fullscreen{height:100vh;min-height:100vh;padding:0}.diva-app-header{font-size:var(--diva-font-lg);align-items:center;gap:12px;margin-bottom:8px;font-weight:600;display:flex}.diva-app-title{font-size:var(--diva-font-xl);text-align:left;color:var(--diva-text-primary);margin-bottom:6px;font-weight:600}.diva-app-title.is-fullscreen{color:var(--diva-white)}.diva-app-body{flex:1;align-items:stretch;gap:0;height:100%;min-height:0;display:flex;position:relative}.diva-app-body.is-fullscreen{flex:1;min-height:0}.diva-canvas-column{flex-direction:column;flex:1;gap:24px;min-height:0;display:flex}.diva-canvas-column.is-fullscreen{flex:1;height:100%;min-height:0}.diva-canvas-wrapper{flex:1;min-height:0;position:relative}.diva-canvas{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);border-radius:6px 0 0 6px;width:100%;height:100%;overflow:hidden}.diva-canvas.is-fullscreen{border-radius:0;flex:1;height:100%}.diva-canvas.has-collection{border-radius:0}.metadata-panel{height:100%;padding:12px;overflow:auto}.metadata-body{flex-direction:column;gap:10px;display:flex}.metadata-item{flex-direction:column;gap:4px;display:flex}.metadata-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}.metadata-value{font-size:var(--diva-font-lg);color:var(--diva-text-muted);line-height:1.4}.contents-empty{font-size:var(--diva-font-lg);color:var(--diva-text-muted);padding-left:12px}.sidebar-resizer,.collection-resizer{width:12px;font-size:var(--diva-font-xl);color:var(--diva-white);background-color:var(--diva-text-muted);cursor:ew-resize;user-select:none;touch-action:none;flex:0 0 12px;justify-content:center;align-self:stretch;align-items:center;line-height:1;display:flex}.sidebar-resizer.is-hidden,.collection-resizer.is-hidden{display:none}.sidebar-panel.is-fullscreen,.collection-panel.is-fullscreen{border-radius:0;height:100%}.sidebar-panel.is-hidden,.collection-panel.is-hidden{opacity:0;pointer-events:none;border-width:0;padding:0;overflow:hidden}.required-statement-dock{justify-content:flex-end;width:100%;margin-top:12px;padding-right:8px;display:flex}.required-statement{font-size:var(--diva-font-md);color:var(--diva-text-muted);text-align:right;min-width:250px;max-width:20vw;line-height:1.4}.diva-scrollbar-track{background:var(--diva-surface);border:1px solid var(--diva-border);z-index:100;border-radius:6px;width:12px;position:absolute;top:4px;bottom:4px;right:4px}.diva-scrollbar-thumb{background:var(--diva-text-muted);cursor:pointer;border-radius:5px;min-height:30px;position:absolute;left:1px;right:1px}.diva-scrollbar-thumb:hover{background:var(--diva-text-primary)}.diva-scrollbar-thumb:active{background:var(--diva-dark-border)}.throbber-overlay{pointer-events:none;justify-content:center;align-items:center;display:flex;position:absolute;inset:0}.throbber{background-color:var(--diva-white);width:64px;height:64px;box-shadow:0 8px 16px var(--diva-shadow-dark);border-radius:8px;flex-wrap:wrap;padding:8px;display:flex}.throbber-cube{background-color:var(--diva-accent);width:16px;height:16px;animation-name:diva-cube-grid;animation-duration:1.3s;animation-timing-function:ease-in-out;animation-iteration-count:infinite}@keyframes diva-cube-grid{0%{transform:scale(1)}35%{transform:scale(0)}70%{transform:scale(1)}to{transform:scale(1)}}@media (width<=720px){.diva-app{padding:12px}.diva-app-body{flex-direction:column;gap:12px}.sidebar-resizer,.collection-resizer{display:none}}.sidebar-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0 6px 6px 0;flex-direction:column;width:320px;height:100%;min-height:0;display:flex;overflow:hidden}.sidebar-tabs{border:1px solid var(--diva-surface);background-color:var(--diva-surface);border-radius:0 6px 0 0;display:flex}.sidebar-tab-button{font-size:var(--diva-font-md);text-transform:uppercase;cursor:pointer;color:var(--diva-text-muted);background-color:#0000;border:none;flex:1;padding:10px 12px}.sidebar-tab-button.is-active{background-color:var(--diva-white);font-weight:600}.sidebar-content{background-color:var(--diva-page-bg);flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}.sidebar-pane{flex:1;width:100%;min-height:0}.sidebar-pane.is-hidden{display:none}.thumbs{scroll-behavior:smooth;background-color:var(--diva-dark-bg);flex:1;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:10px;width:100%;height:100%;min-height:0;padding:12px;display:grid;overflow-y:auto}.thumbs.is-fullscreen{height:100%}.thumbs-item{border:1px solid var(--diva-dark-border);text-align:left;flex-direction:column;justify-content:flex-start;align-items:stretch;max-width:none;display:flex}.thumbs-item:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.thumbs-item.is-active{border-color:var(--diva-accent-light);box-shadow:0 0 0 var(--diva-shadow-focus);background-color:var(--diva-dark-bg);outline:2px solid var(--diva-accent-light);outline-offset:2px}.thumbs-image{border-radius:3px;width:100%;height:auto;display:block}.thumbs-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted-on-dark);margin-top:6px;line-height:1.3}.thumbs-label.is-active{color:var(--diva-white)}.contents-panel{height:100%;padding:12px;overflow:auto}.contents-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:10px;font-weight:600}.contents-view-tabs{gap:8px;margin-bottom:12px;display:flex}.contents-view-button{background-color:var(--diva-surface);border:1px solid var(--diva-border);font-size:var(--diva-font-sm);color:var(--diva-text-muted);cursor:pointer;border-radius:6px;padding:4px 10px}.contents-view-button.is-active{background-color:var(--diva-white);border-color:var(--diva-accent);color:var(--diva-text-primary)}.contents-list-nested{margin-top:6px;padding-left:16px}.contents-item{margin-bottom:6px}.contents-meta{border:1px solid var(--diva-dark-border);margin-top:6px;padding:8px}.contents-button:hover{color:var(--diva-accent)}@media (width<=720px){.sidebar-panel{border-radius:6px;height:auto;width:100%!important}.sidebar-panel.is-overlay{z-index:100;width:100%;height:100%;box-shadow:0 12px 24px var(--diva-shadow-dark);border-radius:0;position:absolute;inset:0}.sidebar-panel.is-mobile-hidden{display:none}.thumbs{grid-template-columns:repeat(3,minmax(0,1fr));width:100%;height:auto;overflow:auto hidden}.thumbs-item{min-width:120px}}.canvas-toolbar-stack{flex-direction:column;gap:2px;width:100%;min-width:0;display:flex}.canvas-toolbar{align-items:flex-start;width:100%;margin-bottom:0;display:flex}.canvas-toolbar-section{flex:none;align-items:flex-start;gap:8px;min-width:0;display:flex}.canvas-toolbar-section.is-right{flex:none;margin-left:auto}.canvas-toolbar-item{flex-direction:column;flex:none;align-items:center;gap:6px;width:80px;display:flex}.canvas-toolbar-button{background-color:var(--diva-toolbar-button-bg);color:var(--diva-toolbar-button-icon);border:2px solid var(--diva-toolbar-button-icon);box-shadow:var(--diva-toolbar-button-shadow);-webkit-backdrop-filter:blur(10px)saturate(140%);cursor:pointer;border-radius:6px;align-items:center;width:80%;height:36px;padding:4px 6px;display:flex}.canvas-toolbar-button:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.canvas-toolbar-button:hover{background-color:var(--diva-toolbar-button-bg-hover);border-color:var(--diva-toolbar-button-icon);box-shadow:var(--diva-toolbar-button-shadow-hover)}.canvas-toolbar-button.is-fullscreen{color:var(--diva-white);background-color:var(--diva-toolbar-button-bg-fullscreen);border-color:var(--diva-toolbar-button-border-hover)}.canvas-toolbar-button.is-fullscreen:hover{background-color:var(--diva-toolbar-button-bg-fullscreen-hover);border-color:var(--diva-toolbar-button-border-fullscreen-hover)}.canvas-toolbar-button.is-disabled{opacity:.4;cursor:not-allowed}.canvas-toolbar-button.is-disabled:hover{background-color:var(--diva-toolbar-button-bg);border-color:var(--diva-toolbar-button-icon);box-shadow:var(--diva-toolbar-button-shadow)}.canvas-toolbar-button.is-fullscreen.is-disabled:hover{background-color:var(--diva-toolbar-button-bg-fullscreen);border-color:var(--diva-toolbar-button-border-hover);box-shadow:var(--diva-toolbar-button-shadow)}.canvas-toolbar-label{font-size:var(--diva-font-sm);color:var(--diva-text-primary);white-space:normal;text-overflow:ellipsis;text-align:center;text-transform:uppercase;word-break:break-word;min-height:1.4em;font-weight:500;line-height:1;overflow:hidden}.canvas-toolbar-label.is-fullscreen{color:var(--diva-white)}.canvas-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-align:left;white-space:normal;overflow-wrap:anywhere;word-break:break-word;width:100%}.canvas-label.is-fullscreen{color:var(--diva-white)}.status{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:0}.status.is-error{color:var(--diva-danger)}@media (width<=720px){.canvas-toolbar{flex-wrap:wrap;gap:8px}.canvas-toolbar-item{width:64px}.canvas-label,.status{display:none}}.modal-overlay{background-color:var(--diva-overlay-bg);z-index:100;justify-content:center;align-items:center;padding:24px;display:flex;position:fixed;inset:0}.modal-overlay.is-fullscreen{padding:0}.modal{background-color:var(--diva-page-bg);color:var(--diva-text-primary);width:min(1440px,96vw);max-height:90vh;box-shadow:0 20px 40px var(--diva-shadow-modal);border-radius:10px;flex-direction:column;display:flex}.modal.is-narrow{width:min(960px,94vw)}.modal.is-page-view{height:80vh;max-height:80vh}.modal.is-fullscreen{border-radius:0;width:100vw;height:100vh;max-height:100vh}.modal-header{justify-content:space-between;align-items:center;padding:16px 20px 0;display:flex}.modal-actions{gap:8px;display:flex}.modal-close-action .canvas-toolbar-button{color:var(--diva-danger);box-shadow:none;-webkit-backdrop-filter:none;background-color:#0000;border:none;width:auto;height:auto;padding:2px}.modal-close-action .canvas-toolbar-button:hover{background-color:#d32f2f1f;border-color:#0000}.modal-close-action .canvas-toolbar-item{gap:2px;width:32px}.modal-close-action .canvas-toolbar-label{font-size:var(--diva-font-xs);min-height:auto}.modal-title-stack{flex-direction:column;gap:4px;display:flex}.modal-title{font-size:var(--diva-font-lg);font-weight:600}.modal-subtitle{font-size:var(--diva-font-lg);color:var(--diva-text-primary)}.modal-subtitle.is-muted{font-size:var(--diva-font-md)}.modal-body{flex:1;grid-template-columns:minmax(0,1fr) 240px;gap:16px;min-height:0;padding:16px 20px 20px;display:grid}.modal-body.is-no-gap{gap:0}.modal-body.is-two-column{grid-template-columns:minmax(0,1fr) 200px;align-items:start}.modal-body.is-no-sidebar{grid-template-columns:minmax(0,1fr)}.modal-body.is-fullscreen{flex:1;min-height:0}.modal-body.is-with-choices{grid-template-columns:120px minmax(0,1fr) 240px}.modal-body.is-with-choices-no-sidebar{grid-template-columns:120px minmax(0,1fr)}.modal-viewer{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);height:100%;overflow:hidden}.modal-viewer.is-fullscreen{border-radius:0;height:100%}.modal-viewer.is-outer-left{border-radius:6px 0 0 6px}.modal-canvas{width:100%;height:100%;display:block}.modal-sidebar{background-color:var(--diva-white);border-top:1px solid var(--diva-border);border-right:1px solid var(--diva-border);border-bottom:1px solid var(--diva-border);border-radius:0 6px 6px 0;padding:16px;overflow:auto}.manifest-info-logo-wrap{text-align:center;flex-direction:column;align-items:center;gap:8px;display:flex}.manifest-info-logo{width:100%;max-width:180px;height:auto}.page-view-choices{background-color:var(--diva-dark-bg);border-radius:6px 0 0 6px;flex-direction:column;gap:8px;padding:8px;display:flex;overflow:auto}.page-view-choice{border:2px solid #0000;flex-direction:column;gap:4px;display:flex}.page-view-choice:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.page-view-choice:hover{background-color:var(--diva-dark-bg)}.page-view-choice.is-active{border-color:var(--diva-accent-light);background-color:var(--diva-dark-bg)}.page-view-choice-thumb{border-radius:3px;width:100%;height:auto;display:block}.page-view-choice-label{font-size:var(--diva-font-xs);color:var(--diva-text-muted);text-overflow:ellipsis;white-space:nowrap;line-height:1.2;overflow:hidden}.filter-group{border-bottom:1px solid var(--diva-border);margin-bottom:12px;padding-bottom:12px}.filter-title-button{text-align:left;cursor:pointer;width:100%;font-size:var(--diva-font-sm);text-transform:uppercase;letter-spacing:.08em;color:var(--diva-text-muted);background-color:#0000;border:none;align-items:center;gap:8px;margin-bottom:8px;padding:0;font-weight:600;display:flex}.filter-title-button.is-collapsed{margin-bottom:0}.filter-title-icon{border-top:4px solid #0000;border-bottom:4px solid #0000;border-left:6px solid var(--diva-text-muted);width:0;height:0;transition:transform .15s;display:inline-block}.filter-title-icon.is-expanded{transform:rotate(90deg)}.filter-row{flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle{font-size:var(--diva-font-md);align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle.is-inline{margin-bottom:0}.filter-range-group{flex-direction:column;gap:6px;margin-bottom:10px;display:flex}.filter-range-header{justify-content:space-between;align-items:center;gap:8px;display:flex}.filter-range-header-right{align-items:center;gap:8px;display:flex}.filter-range-input{width:100%}.filter-value{font-size:var(--diva-font-sm);color:var(--diva-text-muted);text-align:right;width:40px}.filter-reset{font-size:var(--diva-font-xs);background-color:var(--diva-surface);border:1px solid var(--diva-border);cursor:pointer;color:var(--diva-text-muted);border-radius:3px;padding:2px 6px}.filter-reset:hover{background-color:var(--diva-border)}.filter-json{width:100%;min-height:120px;font-size:var(--diva-font-sm);border:1px solid var(--diva-border);background-color:var(--diva-white);resize:vertical;border-radius:4px;padding:6px 8px;font-family:Menlo,Monaco,Consolas,Liberation Mono,monospace}.filter-json-error{font-size:var(--diva-font-sm);color:var(--diva-danger);margin-top:4px}.filter-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted)}.filter-select{border:1px solid var(--diva-border);background-color:var(--diva-white);font-size:var(--diva-font-sm);border-radius:4px;padding:4px 6px}.filter-color-input{border:1px solid var(--diva-border);background-color:var(--diva-white);border-radius:4px;width:42px;height:28px;padding:0}.collection-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:6px 0 0 6px;flex-direction:column;height:70vh;display:flex;overflow:hidden}.collection-header{background-color:var(--diva-surface);border-bottom:1px solid var(--diva-border);border-radius:6px 0 0;padding:12px}.collection-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:4px;font-weight:600}.collection-summary{font-size:var(--diva-font-md);color:var(--diva-text-muted);line-height:1.4}.collection-tree-item{padding-left:12px}.collection-node-button{align-items:center;gap:6px;width:100%;padding:6px 8px;display:flex}.collection-expand-icon{flex-shrink:0;justify-content:center;align-items:center;width:16px;height:16px;display:flex}.manifest-tree-item{padding:6px 8px 6px 30px}.manifest-tree-item.is-active{background-color:var(--diva-border);font-weight:600}.sidebar-pane.is-scroll{overflow-y:auto}@media (width<=720px){.collection-panel{border-radius:6px;width:100%;height:auto}}";
+  var diva_default = ":root{--diva-accent:#5a6bff;--diva-accent-light:#9aa4ff;--diva-border:#d9d4ce;--diva-danger:#d32f2f;--diva-dark-bg:#1c1d22;--diva-dark-border:#2c2d33;--diva-overlay-bg:#10111499;--diva-page-bg:#f7f5f1;--diva-shadow-dark:#00000026;--diva-shadow-focus:#9aa4ff59;--diva-shadow-modal:#00000040;--diva-surface:#e6e1dc;--diva-text-muted:#5c5a55;--diva-text-muted-on-dark:#ffffffb3;--diva-text-primary:#1b1b1b;--diva-toolbar-button-bg:#5258626b;--diva-toolbar-button-bg-hover:#5c636e85;--diva-toolbar-button-bg-fullscreen:#52586285;--diva-toolbar-button-bg-fullscreen-hover:#6068749e;--diva-toolbar-button-border:#ffffff59;--diva-toolbar-button-border-hover:#ffffff73;--diva-toolbar-button-border-fullscreen-hover:#fff9;--diva-toolbar-button-icon:#2c2d33;--diva-toolbar-button-shadow:inset 0 1px 0 #ffffff8c, inset 0 -1px 0 #ffffff2e;--diva-toolbar-button-shadow-hover:inset 0 1px 0 #ffffffb3, inset 0 -1px 0 #ffffff3d;--diva-white:#fff;--diva-font-lg:16px;--diva-font-md:13px;--diva-font-sm:11px;--diva-font-xs:10px;--diva-font-xl:20px;color-scheme:light}*{box-sizing:border-box}.list-reset{margin:0;padding:0;list-style:none}.ui-button{text-align:left;cursor:pointer;color:var(--diva-text-primary);font-size:var(--diva-font-lg);background-color:#0000;border:none;padding:0}.ui-button:hover{background-color:var(--diva-surface)}.ui-card{cursor:pointer;border-radius:6px;width:100%;padding:6px}.ui-card--dark{background-color:var(--diva-dark-bg)}.diva-app{flex-direction:column;flex:1;height:100%;min-height:0;padding:12px 24px;display:flex}.diva-app.is-fullscreen{height:100vh;min-height:100vh;padding:0}.diva-app-header{font-size:var(--diva-font-lg);align-items:center;gap:12px;margin-bottom:8px;font-weight:600;display:flex}.diva-app-title{font-size:var(--diva-font-xl);text-align:left;color:var(--diva-text-primary);margin-bottom:6px;font-weight:600}.diva-app-title.is-fullscreen{color:var(--diva-white)}.diva-app-body{flex:1;align-items:stretch;gap:0;height:100%;min-height:0;display:flex;position:relative}.diva-app-body.is-fullscreen{flex:1;min-height:0}.diva-canvas-column{flex-direction:column;flex:1;gap:24px;min-height:0;display:flex}.diva-canvas-column.is-fullscreen{flex:1;height:100%;min-height:0}.diva-canvas-wrapper{flex:1;min-height:0;position:relative}.diva-canvas{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);border-radius:6px 0 0 6px;width:100%;height:100%;overflow:hidden}.diva-canvas.is-fullscreen{border-radius:0;flex:1;height:100%}.diva-canvas.has-collection{border-radius:0}.metadata-panel{height:100%;padding:12px;overflow:auto}.metadata-body{flex-direction:column;gap:10px;display:flex}.metadata-item{flex-direction:column;gap:4px;display:flex}.metadata-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}.metadata-value{font-size:var(--diva-font-lg);color:var(--diva-text-muted);line-height:1.4}.contents-empty{font-size:var(--diva-font-lg);color:var(--diva-text-muted);padding-left:12px}.sidebar-resizer,.collection-resizer{width:12px;font-size:var(--diva-font-xl);color:var(--diva-white);background-color:var(--diva-text-muted);cursor:ew-resize;user-select:none;touch-action:none;flex:0 0 12px;justify-content:center;align-self:stretch;align-items:center;line-height:1;display:flex}.sidebar-resizer.is-hidden,.collection-resizer.is-hidden{display:none}.sidebar-panel.is-fullscreen,.collection-panel.is-fullscreen{border-radius:0;height:100%}.sidebar-panel.is-hidden,.collection-panel.is-hidden{opacity:0;pointer-events:none;border-width:0;padding:0;overflow:hidden}.required-statement-dock{justify-content:flex-end;width:100%;margin-top:12px;padding-right:8px;display:flex}.required-statement{font-size:var(--diva-font-md);color:var(--diva-text-muted);text-align:right;min-width:250px;max-width:20vw;line-height:1.4}.diva-scrollbar-track{background:var(--diva-surface);border:1px solid var(--diva-border);z-index:100;border-radius:6px;width:12px;position:absolute;top:4px;bottom:4px;right:4px}.diva-scrollbar-thumb{background:var(--diva-text-muted);cursor:pointer;border-radius:5px;min-height:30px;position:absolute;left:1px;right:1px}.diva-scrollbar-thumb:hover{background:var(--diva-text-primary)}.diva-scrollbar-thumb:active{background:var(--diva-dark-border)}.throbber-overlay{pointer-events:none;justify-content:center;align-items:center;display:flex;position:absolute;inset:0}.throbber{background-color:var(--diva-white);width:64px;height:64px;box-shadow:0 8px 16px var(--diva-shadow-dark);border-radius:8px;flex-wrap:wrap;padding:8px;display:flex}.throbber-cube{background-color:var(--diva-accent);width:16px;height:16px;animation-name:diva-cube-grid;animation-duration:1.3s;animation-timing-function:ease-in-out;animation-iteration-count:infinite}@keyframes diva-cube-grid{0%{transform:scale(1)}35%{transform:scale(0)}70%{transform:scale(1)}to{transform:scale(1)}}@media (width<=720px){.diva-app{padding:12px}.diva-app-body{flex-direction:column;gap:12px}.sidebar-resizer,.collection-resizer{display:none}}.sidebar-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0 6px 6px 0;flex-direction:column;width:320px;height:100%;min-height:0;display:flex;overflow:hidden}.sidebar-tabs{border:1px solid var(--diva-surface);background-color:var(--diva-surface);border-radius:0 6px 0 0;display:flex}.sidebar-tab-button{font-size:var(--diva-font-md);text-transform:uppercase;cursor:pointer;color:var(--diva-text-muted);background-color:#0000;border:none;flex:1;padding:10px 12px}.sidebar-tab-button.is-active{background-color:var(--diva-white);font-weight:600}.sidebar-content{background-color:var(--diva-page-bg);flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}.sidebar-pane{flex:1;width:100%;min-height:0}.sidebar-pane.is-hidden{display:none}.thumbs{scroll-behavior:smooth;background-color:var(--diva-dark-bg);flex:1;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:10px;width:100%;height:100%;min-height:0;padding:12px;display:grid;overflow-y:auto}.thumbs.is-fullscreen{height:100%}.thumbs-item{border:1px solid var(--diva-dark-border);text-align:left;flex-direction:column;justify-content:flex-start;align-items:stretch;max-width:none;display:flex}.thumbs-item:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.thumbs-item.is-active{border-color:var(--diva-accent-light);box-shadow:0 0 0 var(--diva-shadow-focus);background-color:var(--diva-dark-bg);outline:2px solid var(--diva-accent-light);outline-offset:2px}.thumbs-image{border-radius:3px;width:100%;height:auto;display:block}.thumbs-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted-on-dark);margin-top:6px;line-height:1.3}.thumbs-label.is-active{color:var(--diva-white)}.contents-panel{height:100%;padding:12px;overflow:auto}.contents-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:10px;font-weight:600}.contents-view-tabs{gap:8px;margin-bottom:12px;display:flex}.contents-view-button{background-color:var(--diva-surface);border:1px solid var(--diva-border);font-size:var(--diva-font-sm);color:var(--diva-text-muted);cursor:pointer;border-radius:6px;padding:4px 10px}.contents-view-button.is-active{background-color:var(--diva-white);border-color:var(--diva-accent);color:var(--diva-text-primary)}.contents-list-nested{margin-top:6px;padding-left:16px}.contents-item{margin-bottom:6px}.contents-meta{border:1px solid var(--diva-dark-border);margin-top:6px;padding:8px}.contents-button:hover{color:var(--diva-accent)}@media (width<=720px){.sidebar-panel{border-radius:6px;height:auto;width:100%!important}.sidebar-panel.is-overlay{z-index:100;width:100%;height:100%;box-shadow:0 12px 24px var(--diva-shadow-dark);border-radius:0;position:absolute;inset:0}.sidebar-panel.is-mobile-hidden{display:none}.thumbs{grid-template-columns:repeat(3,minmax(0,1fr));width:100%;height:auto;overflow:auto hidden}.thumbs-item{min-width:120px}}.canvas-toolbar-stack{flex-direction:column;gap:2px;width:100%;min-width:0;display:flex}.canvas-toolbar{align-items:flex-start;width:100%;margin-bottom:0;display:flex}.canvas-toolbar-section{flex:none;align-items:flex-start;gap:8px;min-width:0;display:flex}.canvas-toolbar-section.is-right{flex:none;margin-left:auto}.canvas-toolbar-item{flex-direction:column;flex:none;align-items:center;gap:6px;width:80px;display:flex}.canvas-toolbar-button{background-color:var(--diva-toolbar-button-bg);color:var(--diva-toolbar-button-icon);border:2px solid var(--diva-toolbar-button-icon);box-shadow:var(--diva-toolbar-button-shadow);-webkit-backdrop-filter:blur(10px)saturate(140%);cursor:pointer;border-radius:6px;align-items:center;width:80%;height:36px;padding:4px 6px;display:flex}.canvas-toolbar-button:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.canvas-toolbar-button:hover{background-color:var(--diva-toolbar-button-bg-hover);border-color:var(--diva-toolbar-button-icon);box-shadow:var(--diva-toolbar-button-shadow-hover)}.canvas-toolbar-button.is-fullscreen{color:var(--diva-white);background-color:var(--diva-toolbar-button-bg-fullscreen);border-color:var(--diva-toolbar-button-border-hover)}.canvas-toolbar-button.is-fullscreen:hover{background-color:var(--diva-toolbar-button-bg-fullscreen-hover);border-color:var(--diva-toolbar-button-border-fullscreen-hover)}.canvas-toolbar-button.is-disabled{opacity:.4;cursor:not-allowed}.canvas-toolbar-button.is-disabled:hover{background-color:var(--diva-toolbar-button-bg);border-color:var(--diva-toolbar-button-icon);box-shadow:var(--diva-toolbar-button-shadow)}.canvas-toolbar-button.is-fullscreen.is-disabled:hover{background-color:var(--diva-toolbar-button-bg-fullscreen);border-color:var(--diva-toolbar-button-border-hover);box-shadow:var(--diva-toolbar-button-shadow)}.canvas-toolbar-label{font-size:var(--diva-font-sm);color:var(--diva-text-primary);white-space:normal;text-overflow:ellipsis;text-align:center;text-transform:uppercase;word-break:break-word;min-height:1.4em;font-weight:500;line-height:1;overflow:hidden}.canvas-toolbar-label.is-fullscreen{color:var(--diva-white)}.canvas-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-align:left;white-space:normal;overflow-wrap:anywhere;word-break:break-word;width:100%}.canvas-label.is-fullscreen{color:var(--diva-white)}.status{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:0}.status.is-error{color:var(--diva-danger)}@media (width<=720px){.canvas-toolbar{flex-wrap:wrap;gap:8px}.canvas-toolbar-item{width:64px}.canvas-label,.status{display:none}}.modal-overlay{background-color:var(--diva-overlay-bg);z-index:100;justify-content:center;align-items:center;padding:24px;display:flex;position:fixed;inset:0}.viewer-status-overlay{background-color:var(--diva-overlay-bg);z-index:40;justify-content:center;align-items:center;padding:24px;display:flex;position:absolute;inset:0}.modal-overlay.is-fullscreen{padding:0}.modal{background-color:var(--diva-page-bg);color:var(--diva-text-primary);width:min(1440px,96vw);max-height:90vh;box-shadow:0 20px 40px var(--diva-shadow-modal);border-radius:10px;flex-direction:column;display:flex}.modal.is-narrow{width:min(960px,94vw)}.modal.is-page-view{height:80vh;max-height:80vh}.modal.is-fullscreen{border-radius:0;width:100vw;height:100vh;max-height:100vh}.modal-header{justify-content:space-between;align-items:center;padding:16px 20px 0;display:flex}.modal-actions{gap:8px;display:flex}.modal-close-action .canvas-toolbar-button{color:var(--diva-danger);box-shadow:none;-webkit-backdrop-filter:none;background-color:#0000;border:none;width:auto;height:auto;padding:2px}.modal-close-action .canvas-toolbar-button:hover{background-color:#d32f2f1f;border-color:#0000}.modal-close-action .canvas-toolbar-item{gap:2px;width:32px}.modal-close-action .canvas-toolbar-label{font-size:var(--diva-font-xs);min-height:auto}.modal-title-stack{flex-direction:column;gap:4px;display:flex}.modal-title{font-size:var(--diva-font-lg);font-weight:600}.modal-subtitle{font-size:var(--diva-font-lg);color:var(--diva-text-primary)}.modal-subtitle.is-muted{font-size:var(--diva-font-md)}.modal-body{flex:1;grid-template-columns:minmax(0,1fr) 240px;gap:16px;min-height:0;padding:16px 20px 20px;display:grid}.modal-body.is-no-gap{gap:0}.modal-body.is-two-column{grid-template-columns:minmax(0,1fr) 200px;align-items:start}.modal-body.is-no-sidebar{grid-template-columns:minmax(0,1fr)}.modal-body.is-fullscreen{flex:1;min-height:0}.modal-body.is-with-choices{grid-template-columns:120px minmax(0,1fr) 240px}.modal-body.is-with-choices-no-sidebar{grid-template-columns:120px minmax(0,1fr)}.modal-viewer{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);height:100%;overflow:hidden}.modal-viewer.is-fullscreen{border-radius:0;height:100%}.modal-viewer.is-outer-left{border-radius:6px 0 0 6px}.modal-canvas{width:100%;height:100%;display:block}.modal-sidebar{background-color:var(--diva-white);border-top:1px solid var(--diva-border);border-right:1px solid var(--diva-border);border-bottom:1px solid var(--diva-border);border-radius:0 6px 6px 0;padding:16px;overflow:auto}.manifest-info-logo-wrap{text-align:center;flex-direction:column;align-items:center;gap:8px;display:flex}.manifest-info-logo{width:100%;max-width:180px;height:auto}.page-view-choices{background-color:var(--diva-dark-bg);border-radius:6px 0 0 6px;flex-direction:column;gap:8px;padding:8px;display:flex;overflow:auto}.page-view-choice{border:2px solid #0000;flex-direction:column;gap:4px;display:flex}.page-view-choice:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.page-view-choice:hover{background-color:var(--diva-dark-bg)}.page-view-choice.is-active{border-color:var(--diva-accent-light);background-color:var(--diva-dark-bg)}.page-view-choice-thumb{border-radius:3px;width:100%;height:auto;display:block}.page-view-choice-label{font-size:var(--diva-font-xs);color:var(--diva-text-muted);text-overflow:ellipsis;white-space:nowrap;line-height:1.2;overflow:hidden}.filter-group{border-bottom:1px solid var(--diva-border);margin-bottom:12px;padding-bottom:12px}.filter-title-button{text-align:left;cursor:pointer;width:100%;font-size:var(--diva-font-sm);text-transform:uppercase;letter-spacing:.08em;color:var(--diva-text-muted);background-color:#0000;border:none;align-items:center;gap:8px;margin-bottom:8px;padding:0;font-weight:600;display:flex}.filter-title-button.is-collapsed{margin-bottom:0}.filter-title-icon{border-top:4px solid #0000;border-bottom:4px solid #0000;border-left:6px solid var(--diva-text-muted);width:0;height:0;transition:transform .15s;display:inline-block}.filter-title-icon.is-expanded{transform:rotate(90deg)}.filter-row{flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle{font-size:var(--diva-font-md);align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle.is-inline{margin-bottom:0}.filter-range-group{flex-direction:column;gap:6px;margin-bottom:10px;display:flex}.filter-range-header{justify-content:space-between;align-items:center;gap:8px;display:flex}.filter-range-header-right{align-items:center;gap:8px;display:flex}.filter-range-input{width:100%}.filter-value{font-size:var(--diva-font-sm);color:var(--diva-text-muted);text-align:right;width:40px}.filter-reset{font-size:var(--diva-font-xs);background-color:var(--diva-surface);border:1px solid var(--diva-border);cursor:pointer;color:var(--diva-text-muted);border-radius:3px;padding:2px 6px}.filter-reset:hover{background-color:var(--diva-border)}.filter-json{width:100%;min-height:120px;font-size:var(--diva-font-sm);border:1px solid var(--diva-border);background-color:var(--diva-white);resize:vertical;border-radius:4px;padding:6px 8px;font-family:Menlo,Monaco,Consolas,Liberation Mono,monospace}.filter-json-error{font-size:var(--diva-font-sm);color:var(--diva-danger);margin-top:4px}.filter-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted)}.filter-select{border:1px solid var(--diva-border);background-color:var(--diva-white);font-size:var(--diva-font-sm);border-radius:4px;padding:4px 6px}.filter-color-input{border:1px solid var(--diva-border);background-color:var(--diva-white);border-radius:4px;width:42px;height:28px;padding:0}.collection-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:6px 0 0 6px;flex-direction:column;height:100%;min-height:0;display:flex;overflow:hidden}.collection-header{background-color:var(--diva-surface);border-bottom:1px solid var(--diva-border);border-radius:6px 0 0;padding:12px}.collection-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:4px;font-weight:600}.collection-summary{font-size:var(--diva-font-md);color:var(--diva-text-muted);line-height:1.4}.collection-tree-item{padding-left:12px}.collection-node-button{align-items:center;gap:6px;width:100%;padding:6px 8px;display:flex}.collection-expand-icon{flex-shrink:0;justify-content:center;align-items:center;width:16px;height:16px;display:flex}.manifest-tree-item{padding:6px 8px 6px 30px}.manifest-tree-item.is-active{background-color:var(--diva-border);font-weight:600}.sidebar-pane.is-scroll{overflow-y:auto}@media (width<=720px){.collection-panel{border-radius:6px;width:100%;height:auto}}";
 
   // cache/elm-esm.js
   function F(arity, fun, wrapper) {
@@ -17712,6 +17726,15 @@
           return A2($author$project$Main$handlePageViewStep, -1, model);
         case "UserClickedPageViewNext":
           return A2($author$project$Main$handlePageViewStep, 1, model);
+        case "UserResetAllFilters":
+          var nextModel = _Utils_update(
+            model,
+            { filters: $author$project$Filters$resetFilters, filtersJsonError: $elm$core$Maybe$Nothing }
+          );
+          return _Utils_Tuple2(
+            nextModel,
+            $author$project$Main$sendPageViewPreview(nextModel)
+          );
         case "UserResetAltColourAdjust":
           var nextModel = A2($author$project$Filters$updateFilters, $author$project$Filters$resetAltColourAdjust, model);
           return _Utils_Tuple2(
@@ -18082,6 +18105,67 @@
       return false;
     }
   };
+  var $author$project$View$isCanvasLoading = function(model) {
+    return model.isViewerLoading || (_Utils_eq(model.resourceResponse, $author$project$Model$ResourceLoading) || _Utils_eq(model.response, $author$project$Model$Loading));
+  };
+  var $author$project$Model$currentManifest = function(model) {
+    var _v0 = model.resourceResponse;
+    switch (_v0.$) {
+      case "ResourceLoadedManifest":
+        var manifest = _v0.a;
+        return $elm$core$Maybe$Just(manifest);
+      case "ResourceLoadedCollection":
+        var _v1 = model.response;
+        if (_v1.$ === "Loaded") {
+          var manifest = _v1.a;
+          return $elm$core$Maybe$Just(manifest);
+        } else {
+          return $elm$core$Maybe$Nothing;
+        }
+      default:
+        return $elm$core$Maybe$Nothing;
+    }
+  };
+  var $rism_digital$elm_iiif$IIIF$Presentation$toLabel = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
+    function($) {
+      return $.label;
+    }
+  );
+  var $author$project$View$manifestTitleFor = function(model) {
+    return A2(
+      $elm$core$Maybe$withDefault,
+      "",
+      A2(
+        $elm$core$Maybe$map,
+        function(manifest) {
+          return A2(
+            $rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap,
+            model.detectedLanguage,
+            $rism_digital$elm_iiif$IIIF$Presentation$toLabel(manifest)
+          );
+        },
+        $author$project$Model$currentManifest(model)
+      )
+    );
+  };
+  var $rism_digital$elm_iiif$IIIF$Presentation$toRequiredStatement = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
+    function($) {
+      return $.requiredStatement;
+    }
+  );
+  var $author$project$View$requiredStatementTextFor = function(model) {
+    return A2(
+      $elm$core$Maybe$map,
+      function(statement) {
+        return A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, statement.value);
+      },
+      A2(
+        $elm$core$Maybe$andThen,
+        $rism_digital$elm_iiif$IIIF$Presentation$toRequiredStatement,
+        $author$project$Model$currentManifest(model)
+      )
+    );
+  };
   var $author$project$Utilities$choose = F3(
     function(predicate, isTrue, isFalse) {
       return predicate ? isTrue(_Utils_Tuple0) : isFalse(_Utils_Tuple0);
@@ -18098,6 +18182,28 @@
         function(_v1) {
           return $elm$html$Html$text("");
         }
+      );
+    }
+  );
+  var $author$project$Utilities$unpack = F3(
+    function(_default, f, m) {
+      if (m.$ === "Just") {
+        var a = m.a;
+        return f(a);
+      } else {
+        return _default(_Utils_Tuple0);
+      }
+    }
+  );
+  var $author$project$View$Helpers$viewMaybe = F2(
+    function(viewFunc, maybeBody) {
+      return A3(
+        $author$project$Utilities$unpack,
+        function(_v0) {
+          return $elm$html$Html$text("");
+        },
+        viewFunc,
+        maybeBody
       );
     }
   );
@@ -18146,67 +18252,148 @@
       )
     );
   })();
-  var $author$project$View$viewCanvas = F3(
-    function(fullscreen, isLoading, showCollectionSidebar) {
-      return A2(
-        $elm$html$Html$div,
-        _List_fromArray(
-          [
-            $elm$html$Html$Attributes$class("diva-canvas-wrapper")
-          ]
-        ),
-        _List_fromArray(
-          [
-            A3(
-              $elm$html$Html$node,
-              "osd-viewer",
-              _List_fromArray(
-                [
-                  $elm$html$Html$Attributes$classList(
-                    _List_fromArray(
-                      [
-                        _Utils_Tuple2("diva-canvas", true),
-                        _Utils_Tuple2("is-fullscreen", fullscreen),
-                        _Utils_Tuple2("has-collection", showCollectionSidebar)
-                      ]
-                    )
-                  ),
-                  $elm$html$Html$Attributes$id("main-viewer")
-                ]
-              ),
-              _List_Nil
+  var $author$project$View$viewViewerStatusModal = function(_v0) {
+    var titleText = _v0.a;
+    var message = _v0.b;
+    var isError = _v0.c;
+    return A2(
+      $elm$html$Html$div,
+      _List_fromArray(
+        [
+          $elm$html$Html$Attributes$class("viewer-status-overlay")
+        ]
+      ),
+      _List_fromArray(
+        [
+          A2(
+            $elm$html$Html$div,
+            _List_fromArray(
+              [
+                $elm$html$Html$Attributes$classList(
+                  _List_fromArray(
+                    [
+                      _Utils_Tuple2("modal", true),
+                      _Utils_Tuple2("is-narrow", true)
+                    ]
+                  )
+                )
+              ]
             ),
-            A2($author$project$View$Helpers$viewIf, $author$project$View$viewThrobber, isLoading)
-          ]
-        )
-      );
-    }
-  );
+            _List_fromArray(
+              [
+                A2(
+                  $elm$html$Html$div,
+                  _List_fromArray(
+                    [
+                      $elm$html$Html$Attributes$class("modal-header")
+                    ]
+                  ),
+                  _List_fromArray(
+                    [
+                      A2(
+                        $elm$html$Html$div,
+                        _List_fromArray(
+                          [
+                            $elm$html$Html$Attributes$class("modal-title")
+                          ]
+                        ),
+                        _List_fromArray(
+                          [
+                            $elm$html$Html$text(titleText)
+                          ]
+                        )
+                      )
+                    ]
+                  )
+                ),
+                A2(
+                  $elm$html$Html$div,
+                  _List_fromArray(
+                    [
+                      $elm$html$Html$Attributes$classList(
+                        _List_fromArray(
+                          [
+                            _Utils_Tuple2("modal-body", true),
+                            _Utils_Tuple2("is-no-sidebar", true)
+                          ]
+                        )
+                      )
+                    ]
+                  ),
+                  _List_fromArray(
+                    [
+                      A2(
+                        $elm$html$Html$div,
+                        _List_fromArray(
+                          [
+                            $elm$html$Html$Attributes$classList(
+                              _List_fromArray(
+                                [
+                                  _Utils_Tuple2("status", true),
+                                  _Utils_Tuple2("is-error", isError)
+                                ]
+                              )
+                            )
+                          ]
+                        ),
+                        _List_fromArray(
+                          [
+                            $elm$html$Html$text(message)
+                          ]
+                        )
+                      )
+                    ]
+                  )
+                )
+              ]
+            )
+          )
+        ]
+      )
+    );
+  };
+  var $author$project$View$viewCanvas = function(_v0) {
+    var fullscreen = _v0.fullscreen;
+    var isLoading = _v0.isLoading;
+    var showCollectionSidebar = _v0.showCollectionSidebar;
+    var maybeStatus = _v0.maybeStatus;
+    return A2(
+      $elm$html$Html$div,
+      _List_fromArray(
+        [
+          $elm$html$Html$Attributes$class("diva-canvas-wrapper")
+        ]
+      ),
+      _List_fromArray(
+        [
+          A3(
+            $elm$html$Html$node,
+            "osd-viewer",
+            _List_fromArray(
+              [
+                $elm$html$Html$Attributes$classList(
+                  _List_fromArray(
+                    [
+                      _Utils_Tuple2("diva-canvas", true),
+                      _Utils_Tuple2("is-fullscreen", fullscreen),
+                      _Utils_Tuple2("has-collection", showCollectionSidebar)
+                    ]
+                  )
+                ),
+                $elm$html$Html$Attributes$id("main-viewer")
+              ]
+            ),
+            _List_Nil
+          ),
+          A2($author$project$View$Helpers$viewIf, $author$project$View$viewThrobber, isLoading),
+          A2($author$project$View$Helpers$viewMaybe, $author$project$View$viewViewerStatusModal, maybeStatus)
+        ]
+      )
+    );
+  };
   var $author$project$Msg$UserStartedCollectionSidebarResize = function(a) {
     return { $: "UserStartedCollectionSidebarResize", a };
   };
-  var $author$project$Utilities$unpack = F3(
-    function(_default, f, m) {
-      if (m.$ === "Just") {
-        var a = m.a;
-        return f(a);
-      } else {
-        return _default(_Utils_Tuple0);
-      }
-    }
-  );
-  var $author$project$View$Helpers$viewMaybe = F2(
-    function(viewFunc, maybeBody) {
-      return A3(
-        $author$project$Utilities$unpack,
-        function(_v0) {
-          return $elm$html$Html$text("");
-        },
-        viewFunc,
-        maybeBody
-      );
-    }
-  );
   var $author$project$View$CollectionExplorer$viewCollectionResizer = function(model) {
     var maybeResizer = (function() {
       var _v0 = model.resourceResponse;
@@ -18546,24 +18733,6 @@
       $author$project$View$CollectionExplorer$viewCollectionPanel(model),
       maybeCollectionState
     );
-  };
-  var $author$project$Model$currentManifest = function(model) {
-    var _v0 = model.resourceResponse;
-    switch (_v0.$) {
-      case "ResourceLoadedManifest":
-        var manifest = _v0.a;
-        return $elm$core$Maybe$Just(manifest);
-      case "ResourceLoadedCollection":
-        var _v1 = model.response;
-        if (_v1.$ === "Loaded") {
-          var manifest = _v1.a;
-          return $elm$core$Maybe$Just(manifest);
-        } else {
-          return $elm$core$Maybe$Nothing;
-        }
-      default:
-        return $elm$core$Maybe$Nothing;
-    }
   };
   var $author$project$View$ManifestInfoModal$languageLabel = function(language) {
     switch (language.$) {
@@ -23138,50 +23307,37 @@
     );
   };
   var $elm$html$Html$h1 = _VirtualDom_node("h1");
-  var $rism_digital$elm_iiif$IIIF$Presentation$toLabel = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
-    function($) {
-      return $.label;
-    }
-  );
-  var $author$project$View$viewManifestTitle = function(model) {
+  var $author$project$View$viewManifestTitle = function(_v0) {
+    var showTitle = _v0.showTitle;
+    var fullscreen = _v0.fullscreen;
+    var title = _v0.title;
     return A2(
       $author$project$View$Helpers$viewIf,
       A2(
-        $author$project$View$Helpers$viewMaybe,
-        function(manifest) {
-          var labelText = A2(
-            $rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap,
-            model.detectedLanguage,
-            $rism_digital$elm_iiif$IIIF$Presentation$toLabel(manifest)
-          );
-          return A2(
-            $author$project$View$Helpers$viewIf,
-            A2(
-              $elm$html$Html$h1,
-              _List_fromArray(
-                [
-                  $elm$html$Html$Attributes$classList(
-                    _List_fromArray(
-                      [
-                        _Utils_Tuple2("diva-app-title", true),
-                        _Utils_Tuple2("is-fullscreen", model.fullscreen)
-                      ]
-                    )
-                  )
-                ]
-              ),
-              _List_fromArray(
-                [
-                  $elm$html$Html$text(labelText)
-                ]
+        $author$project$View$Helpers$viewIf,
+        A2(
+          $elm$html$Html$h1,
+          _List_fromArray(
+            [
+              $elm$html$Html$Attributes$classList(
+                _List_fromArray(
+                  [
+                    _Utils_Tuple2("diva-app-title", true),
+                    _Utils_Tuple2("is-fullscreen", fullscreen)
+                  ]
+                )
               )
-            ),
-            !$elm$core$String$isEmpty(labelText)
-          );
-        },
-        $author$project$Model$currentManifest(model)
+            ]
+          ),
+          _List_fromArray(
+            [
+              $elm$html$Html$text(title)
+            ]
+          )
+        ),
+        !$elm$core$String$isEmpty(title)
       ),
-      model.showTitle
+      showTitle
     );
   };
   var $author$project$Msg$UserClickedPageViewImageChoice = function(a) {
@@ -24966,6 +25122,7 @@
   var $author$project$Msg$UserClickedPageViewNext = { $: "UserClickedPageViewNext" };
   var $author$project$Msg$UserClickedPageViewPrev = { $: "UserClickedPageViewPrev" };
   var $author$project$Msg$UserClickedSaveFilteredImage = { $: "UserClickedSaveFilteredImage" };
+  var $author$project$Msg$UserResetAllFilters = { $: "UserResetAllFilters" };
   var $author$project$Msg$UserToggledPageViewFullscreen = { $: "UserToggledPageViewFullscreen" };
   var $author$project$Msg$UserToggledPageViewSidebar = { $: "UserToggledPageViewSidebar" };
   var $author$project$View$PageViewModal$currentPageLabelFor = function(model) {
@@ -25087,6 +25244,23 @@
           _List_fromArray(
             [
               $elm$svg$Svg$Attributes$d("M15.41 7.41L14 6L8 12L14 18L15.41 16.59L10.83 12L15.41 7.41z")
+            ]
+          ),
+          _List_Nil
+        )
+      ]
+    )
+  );
+  var $author$project$View$Icons$reset = A2(
+    $author$project$View$Icons$icon,
+    "0 0 512 512",
+    _List_fromArray(
+      [
+        A2(
+          $elm$svg$Svg$path,
+          _List_fromArray(
+            [
+              $elm$svg$Svg$Attributes$d("M256 80c-72.7 0-135.2 44.1-162 107.1c-5.2 12.2-19.3 17.9-31.5 12.7s-17.9-19.3-12.7-31.5C83.9 88.2 163.4 32 256 32c52.5 0 102.8 20.8 139.9 57.9L448 142.1V88c0-13.3 10.7-24 24-24s24 10.7 24 24V200c0 13.3-10.7 24-24 24H360c-13.3 0-24-10.7-24-24s10.7-24 24-24h54.1l-52.1-52.1C333.8 95.8 295.7 80 256 80zM449.4 312.6c12.2 5.2 17.8 19.3 12.6 31.5C427.8 424 348.5 480 256 480c-52.5 0-102.8-20.8-139.9-57.9L64 369.9V424c0 13.3-10.7 24-24 24s-24-10.7-24-24V312c0-13.3 10.7-24 24-24H152c13.3 0 24 10.7 24 24s-10.7 24-24 24H97.9l52.1 52.1C178.2 416.2 216.3 432 256 432c72.6 0 135-43.9 161.9-106.8c5.2-12.2 19.3-17.8 31.5-12.6zM256 128c13.3 0 24 10.7 24 24V264c0 13.3-10.7 24-24 24s-24-10.7-24-24V152c0-13.3 10.7-24 24-24zM224 352a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z")
             ]
           ),
           _List_Nil
@@ -25265,6 +25439,14 @@
                 ),
                 $author$project$View$Helpers$viewButton(
                   {
+                    icon: $author$project$View$Icons$reset,
+                    isFullscreen: model.fullscreen,
+                    label: "Reset Filters",
+                    onClickMsg: $elm$core$Maybe$Just($author$project$Msg$UserResetAllFilters)
+                  }
+                ),
+                $author$project$View$Helpers$viewButton(
+                  {
                     icon: sidebarIcon,
                     isFullscreen: model.fullscreen,
                     label: sidebarLabel,
@@ -25353,37 +25535,25 @@
       model.pageViewOpen
     );
   };
-  var $rism_digital$elm_iiif$IIIF$Presentation$toRequiredStatement = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
-    function($) {
-      return $.requiredStatement;
-    }
-  );
-  var $author$project$View$viewRequiredStatement = function(model) {
+  var $author$project$View$viewRequiredStatement = function(maybeValueText) {
     return A2(
       $author$project$View$Helpers$viewMaybe,
-      function(manifest) {
+      function(valueText) {
         return A2(
-          $author$project$View$Helpers$viewMaybe,
-          function(statement) {
-            var valueText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, statement.value);
-            return A2(
-              $author$project$View$Helpers$viewIf,
-              A2(
-                $elm$html$Html$div,
-                _List_fromArray(
-                  [
-                    $elm$html$Html$Attributes$class("required-statement")
-                  ]
-                ),
-                $author$project$View$HtmlRenderer$renderHtml(valueText)
-              ),
-              !$elm$core$String$isEmpty(valueText)
-            );
-          },
-          $rism_digital$elm_iiif$IIIF$Presentation$toRequiredStatement(manifest)
+          $author$project$View$Helpers$viewIf,
+          A2(
+            $elm$html$Html$div,
+            _List_fromArray(
+              [
+                $elm$html$Html$Attributes$class("required-statement")
+              ]
+            ),
+            $author$project$View$HtmlRenderer$renderHtml(valueText)
+          ),
+          !$elm$core$String$isEmpty(valueText)
         );
       },
-      $author$project$Model$currentManifest(model)
+      maybeValueText
     );
   };
   var $author$project$Msg$UserToggledContents = { $: "UserToggledContents" };
@@ -26214,6 +26384,176 @@
   );
   var $elm$virtual_dom$VirtualDom$lazy4 = _VirtualDom_lazy4;
   var $elm$html$Html$Lazy$lazy4 = $elm$virtual_dom$VirtualDom$lazy4;
+  var $elm$core$List$takeReverse = F3(
+    function(n, list, kept) {
+      takeReverse:
+        while (true) {
+          if (n <= 0) {
+            return kept;
+          } else {
+            if (!list.b) {
+              return kept;
+            } else {
+              var x = list.a;
+              var xs = list.b;
+              var $temp$n = n - 1, $temp$list = xs, $temp$kept = A2($elm$core$List$cons, x, kept);
+              n = $temp$n;
+              list = $temp$list;
+              kept = $temp$kept;
+              continue takeReverse;
+            }
+          }
+        }
+    }
+  );
+  var $elm$core$List$takeTailRec = F2(
+    function(n, list) {
+      return $elm$core$List$reverse(
+        A3($elm$core$List$takeReverse, n, list, _List_Nil)
+      );
+    }
+  );
+  var $elm$core$List$takeFast = F3(
+    function(ctr, n, list) {
+      if (n <= 0) {
+        return _List_Nil;
+      } else {
+        var _v0 = _Utils_Tuple2(n, list);
+        _v0$1:
+          while (true) {
+            _v0$5:
+              while (true) {
+                if (!_v0.b.b) {
+                  return list;
+                } else {
+                  if (_v0.b.b.b) {
+                    switch (_v0.a) {
+                      case 1:
+                        break _v0$1;
+                      case 2:
+                        var _v2 = _v0.b;
+                        var x = _v2.a;
+                        var _v3 = _v2.b;
+                        var y = _v3.a;
+                        return _List_fromArray(
+                          [x, y]
+                        );
+                      case 3:
+                        if (_v0.b.b.b.b) {
+                          var _v4 = _v0.b;
+                          var x = _v4.a;
+                          var _v5 = _v4.b;
+                          var y = _v5.a;
+                          var _v6 = _v5.b;
+                          var z = _v6.a;
+                          return _List_fromArray(
+                            [x, y, z]
+                          );
+                        } else {
+                          break _v0$5;
+                        }
+                      default:
+                        if (_v0.b.b.b.b && _v0.b.b.b.b.b) {
+                          var _v7 = _v0.b;
+                          var x = _v7.a;
+                          var _v8 = _v7.b;
+                          var y = _v8.a;
+                          var _v9 = _v8.b;
+                          var z = _v9.a;
+                          var _v10 = _v9.b;
+                          var w = _v10.a;
+                          var tl = _v10.b;
+                          return ctr > 1e3 ? A2(
+                            $elm$core$List$cons,
+                            x,
+                            A2(
+                              $elm$core$List$cons,
+                              y,
+                              A2(
+                                $elm$core$List$cons,
+                                z,
+                                A2(
+                                  $elm$core$List$cons,
+                                  w,
+                                  A2($elm$core$List$takeTailRec, n - 4, tl)
+                                )
+                              )
+                            )
+                          ) : A2(
+                            $elm$core$List$cons,
+                            x,
+                            A2(
+                              $elm$core$List$cons,
+                              y,
+                              A2(
+                                $elm$core$List$cons,
+                                z,
+                                A2(
+                                  $elm$core$List$cons,
+                                  w,
+                                  A3($elm$core$List$takeFast, ctr + 1, n - 4, tl)
+                                )
+                              )
+                            )
+                          );
+                        } else {
+                          break _v0$5;
+                        }
+                    }
+                  } else {
+                    if (_v0.a === 1) {
+                      break _v0$1;
+                    } else {
+                      break _v0$5;
+                    }
+                  }
+                }
+              }
+            return list;
+          }
+        var _v1 = _v0.b;
+        var x = _v1.a;
+        return _List_fromArray(
+          [x]
+        );
+      }
+    }
+  );
+  var $elm$core$List$take = F2(
+    function(n, list) {
+      return A3($elm$core$List$takeFast, 0, n, list);
+    }
+  );
+  var $author$project$View$Sidebar$chunk = F2(
+    function(size, items) {
+      if (size <= 0) {
+        return _List_Nil;
+      } else {
+        if (!items.b) {
+          return _List_Nil;
+        } else {
+          return A2(
+            $elm$core$List$cons,
+            A2($elm$core$List$take, size, items),
+            A2(
+              $author$project$View$Sidebar$chunk,
+              size,
+              A2($elm$core$List$drop, size, items)
+            )
+          );
+        }
+      }
+    }
+  );
+  var $author$project$View$Sidebar$reverseInRows = F2(
+    function(rowSize, items) {
+      return rowSize <= 1 ? items : A2(
+        $elm$core$List$concatMap,
+        $elm$core$List$reverse,
+        A2($author$project$View$Sidebar$chunk, rowSize, items)
+      );
+    }
+  );
   var $author$project$Msg$UserClickedThumbnail = function(a) {
     return { $: "UserClickedThumbnail", a };
   };
@@ -26341,6 +26681,8 @@
       var thumbsInstantScroll = _v0.thumbsInstantScroll;
       var viewMode = _v0.viewMode;
       var viewingDirection = _v0.viewingDirection;
+      var indexedPages = A2($elm$core$List$indexedMap, $elm$core$Tuple$pair, pages);
+      var orderedPages = _Utils_eq(viewingDirection, $rism_digital$elm_iiif$IIIF$Presentation$RightToLeft) ? A2($author$project$View$Sidebar$reverseInRows, 3, indexedPages) : indexedPages;
       return A2(
         $elm$html$Html$div,
         _List_fromArray(
@@ -26358,152 +26700,137 @@
               $elm$html$Html$Attributes$style,
               "scroll-behavior",
               thumbsInstantScroll ? "auto" : "smooth"
-            ),
-            A2(
-              $elm$html$Html$Attributes$style,
-              "direction",
-              _Utils_eq(viewingDirection, $rism_digital$elm_iiif$IIIF$Presentation$RightToLeft) ? "rtl" : "ltr"
             )
           ]
         ),
         A2(
           $elm$core$List$map,
           A4($elm$html$Html$Lazy$lazy4, $author$project$View$Sidebar$viewThumbnail, viewMode, shiftByOne, selectedIndex),
-          A2($elm$core$List$indexedMap, $elm$core$Tuple$pair, pages)
+          orderedPages
+        )
+      );
+    }
+  );
+  var $author$project$View$Sidebar$viewSidebarPanelWithManifest = F2(
+    function(model, manifest) {
+      var panelClasses = _List_fromArray(
+        [
+          _Utils_Tuple2("sidebar-panel", true),
+          _Utils_Tuple2("is-fullscreen", model.fullscreen),
+          _Utils_Tuple2(
+            "is-hidden",
+            !$author$project$View$Sidebar$isSidebarVisible(model.sidebarState)
+          ),
+          _Utils_Tuple2("is-overlay", model.mobileSidebarOpen),
+          _Utils_Tuple2("is-mobile-hidden", !model.mobileSidebarOpen)
+        ]
+      );
+      var hasMetadata = $author$project$View$Sidebar$hasManifestMetadata(manifest);
+      var metadataPane = hasMetadata ? _List_fromArray(
+        [
+          A3(
+            $author$project$View$Sidebar$viewSidebarPane,
+            model.sidebarState,
+            $author$project$Model$SidebarMetadata,
+            $author$project$View$Sidebar$viewMetadataContent(model)
+          )
+        ]
+      ) : _List_Nil;
+      var metadataTab = hasMetadata ? _List_fromArray(
+        [
+          A4($author$project$View$Sidebar$viewSidebarTab, model.sidebarState, $author$project$Model$SidebarMetadata, "Metadata", $author$project$Msg$UserToggledMetadata)
+        ]
+      ) : _List_Nil;
+      var hasContents = A2(
+        $elm$core$Maybe$withDefault,
+        false,
+        A2(
+          $elm$core$Maybe$map,
+          A2($elm$core$Basics$composeR, $elm$core$List$isEmpty, $elm$core$Basics$not),
+          $rism_digital$elm_iiif$IIIF$Presentation$toRanges(manifest)
+        )
+      );
+      var contentsTab = hasContents ? _List_fromArray(
+        [
+          A4($author$project$View$Sidebar$viewSidebarTab, model.sidebarState, $author$project$Model$SidebarContents, "Contents", $author$project$Msg$UserToggledContents)
+        ]
+      ) : _List_Nil;
+      var contentsPane = hasContents ? _List_fromArray(
+        [
+          A3(
+            $author$project$View$Sidebar$viewSidebarPane,
+            model.sidebarState,
+            $author$project$Model$SidebarContents,
+            $author$project$View$Sidebar$viewContentsContent(model)
+          )
+        ]
+      ) : _List_Nil;
+      return A2(
+        $elm$html$Html$div,
+        _List_fromArray(
+          [
+            $elm$html$Html$Attributes$classList(panelClasses),
+            A2(
+              $elm$html$Html$Attributes$style,
+              "width",
+              $author$project$View$Sidebar$isSidebarVisible(model.sidebarState) ? $elm$core$String$fromInt(model.sidebarWidth) + "px" : "0px"
+            )
+          ]
+        ),
+        _List_fromArray(
+          [
+            A2(
+              $elm$html$Html$div,
+              _List_fromArray(
+                [
+                  $elm$html$Html$Attributes$class("sidebar-tabs")
+                ]
+              ),
+              A2(
+                $elm$core$List$cons,
+                A4($author$project$View$Sidebar$viewSidebarTab, model.sidebarState, $author$project$Model$SidebarThumbnails, "Thumbnails", $author$project$Msg$UserToggledThumbnails),
+                _Utils_ap(metadataTab, contentsTab)
+              )
+            ),
+            A2(
+              $elm$html$Html$div,
+              _List_fromArray(
+                [
+                  $elm$html$Html$Attributes$class("sidebar-content")
+                ]
+              ),
+              A2(
+                $elm$core$List$cons,
+                A3(
+                  $author$project$View$Sidebar$viewSidebarPane,
+                  model.sidebarState,
+                  $author$project$Model$SidebarThumbnails,
+                  A2(
+                    $author$project$View$Sidebar$viewThumbnails,
+                    {
+                      fullscreen: model.fullscreen,
+                      selectedIndex: model.selectedIndex,
+                      shiftByOne: model.shiftByOne,
+                      thumbsInstantScroll: model.thumbsInstantScroll,
+                      viewMode: model.viewMode,
+                      viewingDirection: $rism_digital$elm_iiif$IIIF$Presentation$toViewingDirection(manifest)
+                    },
+                    model.pages
+                  )
+                ),
+                _Utils_ap(metadataPane, contentsPane)
+              )
+            )
+          ]
         )
       );
     }
   );
   var $author$project$View$Sidebar$viewSidebarPanel = function(model) {
-    var panelClasses = _List_fromArray(
-      [
-        _Utils_Tuple2("sidebar-panel", true),
-        _Utils_Tuple2("is-fullscreen", model.fullscreen),
-        _Utils_Tuple2(
-          "is-hidden",
-          !$author$project$View$Sidebar$isSidebarVisible(model.sidebarState)
-        ),
-        _Utils_Tuple2("is-overlay", model.mobileSidebarOpen),
-        _Utils_Tuple2("is-mobile-hidden", !model.mobileSidebarOpen)
-      ]
-    );
-    var maybeManifest = $author$project$Model$currentManifest(model);
-    var hasMetadata = (function() {
-      if (maybeManifest.$ === "Just") {
-        var manifest = maybeManifest.a;
-        return $author$project$View$Sidebar$hasManifestMetadata(manifest);
-      } else {
-        return false;
-      }
-    })();
-    var metadataPane = hasMetadata ? _List_fromArray(
-      [
-        A3(
-          $author$project$View$Sidebar$viewSidebarPane,
-          model.sidebarState,
-          $author$project$Model$SidebarMetadata,
-          $author$project$View$Sidebar$viewMetadataContent(model)
-        )
-      ]
-    ) : _List_Nil;
-    var metadataTab = hasMetadata ? _List_fromArray(
-      [
-        A4($author$project$View$Sidebar$viewSidebarTab, model.sidebarState, $author$project$Model$SidebarMetadata, "Metadata", $author$project$Msg$UserToggledMetadata)
-      ]
-    ) : _List_Nil;
-    var hasContents = (function() {
-      if (maybeManifest.$ === "Just") {
-        var manifest = maybeManifest.a;
-        return A2(
-          $elm$core$Maybe$withDefault,
-          false,
-          A2(
-            $elm$core$Maybe$map,
-            A2($elm$core$Basics$composeR, $elm$core$List$isEmpty, $elm$core$Basics$not),
-            $rism_digital$elm_iiif$IIIF$Presentation$toRanges(manifest)
-          )
-        );
-      } else {
-        return false;
-      }
-    })();
-    var contentsTab = hasContents ? _List_fromArray(
-      [
-        A4($author$project$View$Sidebar$viewSidebarTab, model.sidebarState, $author$project$Model$SidebarContents, "Contents", $author$project$Msg$UserToggledContents)
-      ]
-    ) : _List_Nil;
-    var contentsPane = hasContents ? _List_fromArray(
-      [
-        A3(
-          $author$project$View$Sidebar$viewSidebarPane,
-          model.sidebarState,
-          $author$project$Model$SidebarContents,
-          $author$project$View$Sidebar$viewContentsContent(model)
-        )
-      ]
-    ) : _List_Nil;
     return A2(
-      $elm$html$Html$div,
-      _List_fromArray(
-        [
-          $elm$html$Html$Attributes$classList(panelClasses),
-          A2(
-            $elm$html$Html$Attributes$style,
-            "width",
-            $author$project$View$Sidebar$isSidebarVisible(model.sidebarState) ? $elm$core$String$fromInt(model.sidebarWidth) + "px" : "0px"
-          )
-        ]
-      ),
-      _List_fromArray(
-        [
-          A2(
-            $elm$html$Html$div,
-            _List_fromArray(
-              [
-                $elm$html$Html$Attributes$class("sidebar-tabs")
-              ]
-            ),
-            A2(
-              $elm$core$List$cons,
-              A4($author$project$View$Sidebar$viewSidebarTab, model.sidebarState, $author$project$Model$SidebarThumbnails, "Thumbnails", $author$project$Msg$UserToggledThumbnails),
-              _Utils_ap(metadataTab, contentsTab)
-            )
-          ),
-          A2(
-            $elm$html$Html$div,
-            _List_fromArray(
-              [
-                $elm$html$Html$Attributes$class("sidebar-content")
-              ]
-            ),
-            A2(
-              $elm$core$List$cons,
-              A3(
-                $author$project$View$Sidebar$viewSidebarPane,
-                model.sidebarState,
-                $author$project$Model$SidebarThumbnails,
-                A2(
-                  $author$project$View$Sidebar$viewThumbnails,
-                  {
-                    fullscreen: model.fullscreen,
-                    selectedIndex: model.selectedIndex,
-                    shiftByOne: model.shiftByOne,
-                    thumbsInstantScroll: model.thumbsInstantScroll,
-                    viewMode: model.viewMode,
-                    viewingDirection: A2(
-                      $elm$core$Maybe$withDefault,
-                      $rism_digital$elm_iiif$IIIF$Presentation$LeftToRight,
-                      A2($elm$core$Maybe$map, $rism_digital$elm_iiif$IIIF$Presentation$toViewingDirection, maybeManifest)
-                    )
-                  },
-                  model.pages
-                )
-              ),
-              _Utils_ap(metadataPane, contentsPane)
-            )
-          )
-        ]
-      )
+      $author$project$View$Helpers$viewMaybe,
+      $author$project$View$Sidebar$viewSidebarPanelWithManifest(model),
+      $author$project$Model$currentManifest(model)
     );
   };
   var $author$project$Msg$UserStartedSidebarResize = function(a) {
@@ -26511,36 +26838,42 @@
   };
   var $author$project$View$Sidebar$viewSidebarResizer = function(model) {
     return A2(
-      $elm$html$Html$div,
-      _List_fromArray(
-        [
-          $elm$html$Html$Attributes$classList(
-            _List_fromArray(
-              [
-                _Utils_Tuple2("sidebar-resizer", true),
-                _Utils_Tuple2(
-                  "is-hidden",
-                  !$author$project$View$Sidebar$isSidebarVisible(model.sidebarState)
+      $author$project$View$Helpers$viewMaybe,
+      function(_v0) {
+        return A2(
+          $elm$html$Html$div,
+          _List_fromArray(
+            [
+              $elm$html$Html$Attributes$classList(
+                _List_fromArray(
+                  [
+                    _Utils_Tuple2("sidebar-resizer", true),
+                    _Utils_Tuple2(
+                      "is-hidden",
+                      !$author$project$View$Sidebar$isSidebarVisible(model.sidebarState)
+                    )
+                  ]
                 )
-              ]
-            )
+              ),
+              A2(
+                $elm$html$Html$Events$on,
+                "mousedown",
+                A2(
+                  $elm$json$Json$Decode$map,
+                  $author$project$Msg$UserStartedSidebarResize,
+                  A2($elm$json$Json$Decode$field, "clientX", $elm$json$Json$Decode$int)
+                )
+              )
+            ]
           ),
-          A2(
-            $elm$html$Html$Events$on,
-            "mousedown",
-            A2(
-              $elm$json$Json$Decode$map,
-              $author$project$Msg$UserStartedSidebarResize,
-              A2($elm$json$Json$Decode$field, "clientX", $elm$json$Json$Decode$int)
-            )
+          _List_fromArray(
+            [
+              $elm$html$Html$text("\u22EE")
+            ]
           )
-        ]
-      ),
-      _List_fromArray(
-        [
-          $elm$html$Html$text("\u22EE")
-        ]
-      )
+        );
+      },
+      $author$project$Model$currentManifest(model)
     );
   };
   var $author$project$Msg$UserClickedOpenManifestInfo = { $: "UserClickedOpenManifestInfo" };
@@ -26551,6 +26884,71 @@
   var $author$project$Msg$UserToggledShiftByOne = { $: "UserToggledShiftByOne" };
   var $author$project$Msg$UserToggledSidebar = { $: "UserToggledSidebar" };
   var $author$project$Msg$UserToggledTwoUp = { $: "UserToggledTwoUp" };
+  var $author$project$View$Toolbar$truncateLabel = F2(
+    function(maxLength, label) {
+      return _Utils_cmp(
+        $elm$core$String$length(label),
+        maxLength
+      ) > 0 ? A2($elm$core$String$left, maxLength - 3, label) + "..." : label;
+    }
+  );
+  var $author$project$View$Toolbar$currentLabelFor = function(model) {
+    var fullLabelText = (function() {
+      var _v0 = model.selectedIndex;
+      if (_v0.$ === "Just") {
+        var index = _v0.a;
+        var _v1 = model.viewMode;
+        if (_v1.$ === "OneUp") {
+          return A2(
+            $elm$core$Maybe$withDefault,
+            "",
+            A2(
+              $elm$core$Maybe$map,
+              function($) {
+                return $.label;
+              },
+              A2($author$project$Model$getPageAt, index, model.pages)
+            )
+          );
+        } else {
+          var startIndex = A3($author$project$Model$pageViewStartIndex, model.viewMode, model.shiftByOne, index);
+          var secondLabel = A2(
+            $elm$core$Maybe$map,
+            function($) {
+              return $.label;
+            },
+            A2($author$project$Model$getPageAt, startIndex + 1, model.pages)
+          );
+          var firstLabel = A2(
+            $elm$core$Maybe$map,
+            function($) {
+              return $.label;
+            },
+            A2($author$project$Model$getPageAt, startIndex, model.pages)
+          );
+          var _v2 = _Utils_Tuple2(firstLabel, secondLabel);
+          if (_v2.a.$ === "Just") {
+            var left = _v2.a.a;
+            if (model.shiftByOne && !startIndex) {
+              return left;
+            } else {
+              if (secondLabel.$ === "Just") {
+                var right = secondLabel.a;
+                return left + (" / " + right);
+              } else {
+                return left;
+              }
+            }
+          } else {
+            return "";
+          }
+        }
+      } else {
+        return "";
+      }
+    })();
+    return A2($author$project$View$Toolbar$truncateLabel, 140, fullLabelText);
+  };
   var $author$project$View$Icons$info = A2(
     $author$project$View$Icons$icon,
     "0 0 512 512",
@@ -26568,6 +26966,8 @@
       ]
     )
   );
+  var $elm$virtual_dom$VirtualDom$lazy2 = _VirtualDom_lazy2;
+  var $elm$html$Html$Lazy$lazy2 = $elm$virtual_dom$VirtualDom$lazy2;
   var $author$project$View$Icons$openingPageView = A2(
     $author$project$View$Icons$icon,
     "0 0 576 512",
@@ -26653,200 +27053,30 @@
       ]
     )
   );
-  var $author$project$View$Toolbar$truncateLabel = F2(
-    function(maxLength, label) {
-      return _Utils_cmp(
-        $elm$core$String$length(label),
-        maxLength
-      ) > 0 ? A2($elm$core$String$left, maxLength - 3, label) + "..." : label;
+  var $author$project$View$Toolbar$viewCurrentLabel = F2(
+    function(fullscreen, labelText) {
+      return A2(
+        $elm$html$Html$div,
+        _List_fromArray(
+          [
+            $elm$html$Html$Attributes$classList(
+              _List_fromArray(
+                [
+                  _Utils_Tuple2("canvas-label", true),
+                  _Utils_Tuple2("is-fullscreen", fullscreen)
+                ]
+              )
+            )
+          ]
+        ),
+        _List_fromArray(
+          [
+            $elm$html$Html$text(labelText)
+          ]
+        )
+      );
     }
   );
-  var $author$project$View$Toolbar$viewCurrentLabel = function(model) {
-    var fullLabelText = (function() {
-      var _v0 = model.selectedIndex;
-      if (_v0.$ === "Just") {
-        var index = _v0.a;
-        var _v1 = model.viewMode;
-        if (_v1.$ === "OneUp") {
-          return A2(
-            $elm$core$Maybe$withDefault,
-            "",
-            A2(
-              $elm$core$Maybe$map,
-              function($) {
-                return $.label;
-              },
-              A2($author$project$Model$getPageAt, index, model.pages)
-            )
-          );
-        } else {
-          var startIndex = A3($author$project$Model$pageViewStartIndex, model.viewMode, model.shiftByOne, index);
-          var secondLabel = A2(
-            $elm$core$Maybe$map,
-            function($) {
-              return $.label;
-            },
-            A2($author$project$Model$getPageAt, startIndex + 1, model.pages)
-          );
-          var firstLabel = A2(
-            $elm$core$Maybe$map,
-            function($) {
-              return $.label;
-            },
-            A2($author$project$Model$getPageAt, startIndex, model.pages)
-          );
-          var _v2 = _Utils_Tuple2(firstLabel, secondLabel);
-          if (_v2.a.$ === "Just") {
-            var left = _v2.a.a;
-            if (model.shiftByOne && !startIndex) {
-              return left;
-            } else {
-              if (secondLabel.$ === "Just") {
-                var right = secondLabel.a;
-                return left + (" / " + right);
-              } else {
-                return left;
-              }
-            }
-          } else {
-            return "";
-          }
-        }
-      } else {
-        return "";
-      }
-    })();
-    var labelText = A2($author$project$View$Toolbar$truncateLabel, 140, fullLabelText);
-    return A2(
-      $elm$html$Html$div,
-      _List_fromArray(
-        [
-          $elm$html$Html$Attributes$classList(
-            _List_fromArray(
-              [
-                _Utils_Tuple2("canvas-label", true),
-                _Utils_Tuple2("is-fullscreen", model.fullscreen)
-              ]
-            )
-          )
-        ]
-      ),
-      _List_fromArray(
-        [
-          $elm$html$Html$text(labelText)
-        ]
-      )
-    );
-  };
-  var $author$project$View$Toolbar$viewStatus = function(model) {
-    var maybeStatus = (function() {
-      var _v0 = model.resourceResponse;
-      switch (_v0.$) {
-        case "ResourceNotRequested":
-          return $elm$core$Maybe$Nothing;
-        case "ResourceLoading":
-          return $elm$core$Maybe$Just(
-            A2(
-              $elm$html$Html$div,
-              _List_fromArray(
-                [
-                  $elm$html$Html$Attributes$class("status")
-                ]
-              ),
-              _List_fromArray(
-                [
-                  $elm$html$Html$text("Loading...")
-                ]
-              )
-            )
-          );
-        case "ResourceLoadedManifest":
-          return $elm$core$List$isEmpty(model.tileSources) ? $elm$core$Maybe$Just(
-            A2(
-              $elm$html$Html$div,
-              _List_fromArray(
-                [
-                  $elm$html$Html$Attributes$class("status")
-                ]
-              ),
-              _List_fromArray(
-                [
-                  $elm$html$Html$text("No canvases found in this manifest.")
-                ]
-              )
-            )
-          ) : $elm$core$Maybe$Nothing;
-        case "ResourceLoadedCollection":
-          var _v1 = model.response;
-          if (_v1.$ === "Failed") {
-            var message = _v1.a;
-            return $elm$core$Maybe$Just(
-              A2(
-                $elm$html$Html$div,
-                _List_fromArray(
-                  [
-                    $elm$html$Html$Attributes$classList(
-                      _List_fromArray(
-                        [
-                          _Utils_Tuple2("status", true),
-                          _Utils_Tuple2("is-error", true)
-                        ]
-                      )
-                    )
-                  ]
-                ),
-                _List_fromArray(
-                  [
-                    $elm$html$Html$text(message)
-                  ]
-                )
-              )
-            );
-          } else {
-            return $elm$core$List$isEmpty(model.tileSources) ? $elm$core$Maybe$Just(
-              A2(
-                $elm$html$Html$div,
-                _List_fromArray(
-                  [
-                    $elm$html$Html$Attributes$class("status")
-                  ]
-                ),
-                _List_fromArray(
-                  [
-                    $elm$html$Html$text("Select a manifest from the collection to view.")
-                  ]
-                )
-              )
-            ) : $elm$core$Maybe$Nothing;
-          }
-        default:
-          var message = _v0.a;
-          return $elm$core$Maybe$Just(
-            A2(
-              $elm$html$Html$div,
-              _List_fromArray(
-                [
-                  $elm$html$Html$Attributes$classList(
-                    _List_fromArray(
-                      [
-                        _Utils_Tuple2("status", true),
-                        _Utils_Tuple2("is-error", true)
-                      ]
-                    )
-                  )
-                ]
-              ),
-              _List_fromArray(
-                [
-                  $elm$html$Html$text(message)
-                ]
-              )
-            )
-          );
-      }
-    })();
-    return A2($author$project$View$Helpers$viewMaybe, $elm$core$Basics$identity, maybeStatus);
-  };
   var $author$project$View$Icons$zoomIn = A2(
     $author$project$View$Icons$icon,
     "0 0 512 512",
@@ -26882,6 +27112,7 @@
     )
   );
   var $author$project$View$Toolbar$viewToolbar = function(model) {
+    var currentLabelText = $author$project$View$Toolbar$currentLabelFor(model);
     var controlsDisabled = $author$project$Utilities$isNothing(
       $author$project$Model$currentManifest(model)
     );
@@ -26947,7 +27178,6 @@
                   ),
                   _List_fromArray(
                     [
-                      $author$project$View$Toolbar$viewStatus(model),
                       $author$project$View$Helpers$viewButton(
                         {
                           icon: $author$project$View$Icons$pageViewOpen,
@@ -27009,12 +27239,41 @@
               ]
             )
           ),
-          $author$project$View$Toolbar$viewCurrentLabel(model)
+          A3($elm$html$Html$Lazy$lazy2, $author$project$View$Toolbar$viewCurrentLabel, model.fullscreen, currentLabelText)
         ]
       )
     );
   };
+  var $author$project$View$viewerStatus = function(model) {
+    var _v0 = model.resourceResponse;
+    switch (_v0.$) {
+      case "ResourceFailed":
+        var message = _v0.a;
+        return $elm$core$Maybe$Just(
+          _Utils_Tuple3("Unable to load manifest", message, true)
+        );
+      case "ResourceLoadedManifest":
+        return $elm$core$List$isEmpty(model.tileSources) ? $elm$core$Maybe$Just(
+          _Utils_Tuple3("Unable to display manifest", "No canvases found in this manifest.", false)
+        ) : $elm$core$Maybe$Nothing;
+      case "ResourceLoadedCollection":
+        var _v1 = model.response;
+        if (_v1.$ === "Failed") {
+          var message = _v1.a;
+          return $elm$core$Maybe$Just(
+            _Utils_Tuple3("Unable to load manifest", message, true)
+          );
+        } else {
+          return $elm$core$List$isEmpty(model.tileSources) ? $elm$core$Maybe$Just(
+            _Utils_Tuple3("No Manifest Selected", "Select a manifest from the collection to view.", false)
+          ) : $elm$core$Maybe$Nothing;
+        }
+      default:
+        return $elm$core$Maybe$Nothing;
+    }
+  };
   var $author$project$View$view = function(model) {
+    var maybeStatus = $author$project$View$viewerStatus(model);
     return A2(
       $elm$html$Html$div,
       _List_fromArray(
@@ -27040,7 +27299,15 @@
             ),
             _List_fromArray(
               [
-                $author$project$View$viewManifestTitle(model),
+                A2(
+                  $elm$html$Html$Lazy$lazy,
+                  $author$project$View$viewManifestTitle,
+                  {
+                    fullscreen: model.fullscreen,
+                    showTitle: model.showTitle,
+                    title: $author$project$View$manifestTitleFor(model)
+                  }
+                ),
                 A2(
                   $elm$html$Html$div,
                   _List_fromArray(
@@ -27088,11 +27355,15 @@
                         ),
                         _List_fromArray(
                           [
-                            A3(
+                            A2(
+                              $elm$html$Html$Lazy$lazy,
                               $author$project$View$viewCanvas,
-                              model.fullscreen,
-                              model.isViewerLoading,
-                              $author$project$View$hasCollectionSidebar(model)
+                              {
+                                fullscreen: model.fullscreen,
+                                isLoading: $author$project$View$isCanvasLoading(model),
+                                maybeStatus,
+                                showCollectionSidebar: $author$project$View$hasCollectionSidebar(model)
+                              }
                             )
                           ]
                         )
@@ -27111,7 +27382,11 @@
                   ),
                   _List_fromArray(
                     [
-                      $author$project$View$viewRequiredStatement(model)
+                      A2(
+                        $elm$html$Html$Lazy$lazy,
+                        $author$project$View$viewRequiredStatement,
+                        $author$project$View$requiredStatementTextFor(model)
+                      )
                     ]
                   )
                 ),
@@ -27171,7 +27446,7 @@
       },
       A2($elm$json$Json$Decode$field, "userLanguage", $elm$json$Json$Decode$string)
     )
-  )({ "versions": { "elm": "0.19.1" }, "types": { "message": "Msg.Msg", "aliases": { "IIIF.Presentation.Canvas": { "args": [], "type": "{ id : String.String, label : Maybe.Maybe IIIF.Language.LanguageMap, width : Maybe.Maybe Basics.Int, height : Maybe.Maybe Basics.Int, images : List.List IIIF.Presentation.Image, viewingLayout : Maybe.Maybe IIIF.Presentation.ViewingLayout }" }, "IIIF.Presentation.HomePage": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.Image": { "args": [], "type": "{ id : IIIF.Image.ImageUri, label : Maybe.Maybe IIIF.Language.LanguageMap, imageType : IIIF.Presentation.ImageType, service : List.List IIIF.Presentation.ServiceTypes }" }, "IIIF.Language.LabelValue": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Language.LanguageMap": { "args": [], "type": "List.List IIIF.Language.LanguageValues" }, "IIIF.Presentation.Logo": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes, width : Basics.Int, height : Basics.Int, service : Maybe.Maybe (List.List IIIF.Presentation.ServiceObject) }" }, "IIIF.Presentation.Manifest": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, metadata : List.List IIIF.Language.LabelValue, viewingDirection : IIIF.Presentation.ViewingDirection, summary : Maybe.Maybe IIIF.Language.LanguageMap, viewingLayout : IIIF.Presentation.ViewingLayout, canvases : List.List IIIF.Presentation.Canvas, ranges : Maybe.Maybe (List.List IIIF.Presentation.Range), homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe IIIF.Presentation.Image, provider : Maybe.Maybe (List.List IIIF.Presentation.Provider), thumbnail : Maybe.Maybe IIIF.Presentation.Image, requiredStatement : Maybe.Maybe IIIF.Presentation.RequiredStatement }" }, "IIIF.Presentation.Provider": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, type_ : IIIF.Presentation.ResourceTypes, homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe (List.List IIIF.Presentation.Logo), seeAlso : Maybe.Maybe (List.List IIIF.Presentation.SeeAlso) }" }, "IIIF.Presentation.Range": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.RangeItem, metadata : List.List IIIF.Language.LabelValue }" }, "IIIF.Presentation.RequiredStatement": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Presentation.SeeAlso": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.ServiceObject": { "args": [], "type": "{ id : String.String, serviceType : IIIF.Presentation.ServiceTypes }" }, "IIIF.Presentation.Collection": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, summary : Maybe.Maybe IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.CollectionItem }" }, "IIIF.Image.ImageRequestParameters": { "args": [], "type": "{ host : String.String, prefix : String.String, region : IIIF.Image.ImageRegion, size : IIIF.Image.ImageSize, rotation : IIIF.Image.ImageRotation, quality : IIIF.Image.ImageQuality, format : IIIF.Image.ImageFormat }" }, "IIIF.Image.ImageServerParameters": { "args": [], "type": "{ host : String.String, prefix : String.String }" } }, "unions": { "Msg.Msg": { "args": [], "tags": { "ClientNotifiedFullscreenChanged": ["Basics.Bool"], "ServerRespondedWithManifest": ["Result.Result Http.Error IIIF.Presentation.IIIFManifest"], "ServerRespondedWithResource": ["Result.Result Http.Error IIIF.Presentation.IIIFResource"], "UserClickedCollectionItem": ["String.String"], "ServerRespondedWithCollectionItem": ["String.String", "Result.Result Http.Error IIIF.Presentation.IIIFResource"], "UserClickedManifestItem": ["String.String", "String.String"], "ServerRespondedWithManifestFromCollection": ["Result.Result Http.Error IIIF.Presentation.IIIFManifest"], "UserToggledCollectionSidebar": [], "UserStartedCollectionSidebarResize": ["Basics.Int"], "UserDraggedCollectionSidebarResize": ["Basics.Int"], "UserEndedCollectionSidebarResize": [], "ClientNotifiedPageChanged": ["Basics.Int"], "ClientNotifiedPageChangedInstant": ["Basics.Int"], "ClientNotifiedScrollThumbs": ["Result.Result Browser.Dom.Error ()"], "SetResponseLoading": [], "UserClickedThumbnail": ["Basics.Int"], "UserToggledFilter": ["Filters.FilterToggle", "Basics.Bool"], "UserToggledContents": [], "UserClickedOpenPageView": [], "UserClickedClosePageView": [], "UserClickedSaveFilteredImage": [], "UserToggledPageViewFullscreen": [], "UserToggledPageViewSidebar": [], "UserClickedOpenManifestInfo": [], "UserClickedCloseManifestInfo": [], "UserToggledMobileSidebar": [], "UserClosedMobileSidebar": [], "UserClickedPageViewPrev": [], "UserClickedPageViewNext": [], "UserResetAltColourAdjust": [], "UserToggledFullscreen": [], "UserClickedRange": ["String.String", "Maybe.Maybe Basics.Int"], "UserToggledMetadata": [], "UserSelectedContentsIndex": [], "UserSelectedContentsPages": [], "UserToggledSidebar": [], "UserToggledShiftByOne": [], "UserToggledThumbnails": [], "UserToggledTwoUp": [], "UserUpdatedFilterInt": ["Filters.FilterIntValue", "String.String"], "UserUpdatedFilterFloat": ["Filters.FilterFloatValue", "String.String"], "UserUpdatedFilterString": ["Filters.FilterStringValue", "String.String"], "UserUpdatedFilterJsonInput": ["String.String"], "UserAppliedFilterJson": [], "UserCopiedFilterJson": [], "ViewerLoadingChanged": ["Basics.Bool"], "UserDraggedSidebarResize": ["Basics.Int"], "UserEndedSidebarResize": [], "UserStartedSidebarResize": ["Basics.Int"], "UserChangedZoomLevel": ["Basics.Float"], "ViewportChanged": ["Basics.Int", "Basics.Int"], "UserClickedZoomIn": [], "UserClickedZoomOut": [], "UserClickedPageViewImageChoice": ["Basics.Int"], "UserToggledFilterGroup": ["String.String"] } }, "Basics.Bool": { "args": [], "tags": { "True": [], "False": [] } }, "Browser.Dom.Error": { "args": [], "tags": { "NotFound": ["String.String"] } }, "Http.Error": { "args": [], "tags": { "BadUrl": ["String.String"], "Timeout": [], "NetworkError": [], "BadStatus": ["Basics.Int"], "BadBody": ["String.String"] } }, "Filters.FilterFloatValue": { "args": [], "tags": { "FloatColourReplaceBlend": [], "FloatContrast": [], "FloatGamma": [], "FloatNormalizeStrength": [], "FloatPseudoColourBlue": [], "FloatPseudoColourGreen": [], "FloatPseudoColourRed": [], "FloatUnsharpAmount": [] } }, "Filters.FilterIntValue": { "args": [], "tags": { "IntAdaptiveOffset": [], "IntAdaptiveWindow": [], "IntAltRedGamma": [], "IntAltRedSigmoid": [], "IntAltRedVibrance": [], "IntAltRedHue": [], "IntAltRedHueWindow": [], "IntAltGreenGamma": [], "IntAltGreenSigmoid": [], "IntAltGreenHue": [], "IntAltGreenHueWindow": [], "IntAltGreenVibrance": [], "IntAltBlueGamma": [], "IntAltBlueSigmoid": [], "IntAltBlueHue": [], "IntAltBlueHueWindow": [], "IntAltBlueVibrance": [], "IntBrightness": [], "IntCcBlue": [], "IntCcGreen": [], "IntCcRed": [], "IntColourmapCenter": [], "IntColourReplaceTolerance": [], "IntHue": [], "IntMorphKernel": [], "IntRotation": [], "IntSaturation": [], "IntThreshold": [], "IntVibrance": [] } }, "Filters.FilterStringValue": { "args": [], "tags": { "StringColourmapPreset": [], "StringColourReplaceSource": [], "StringColourReplaceTarget": [], "StringConvolutionPreset": [], "StringMorphOperation": [], "StringPcaMode": [], "StringPseudoColourMode": [] } }, "Filters.FilterToggle": { "args": [], "tags": { "ToggleAdaptive": [], "ToggleAltBlueGamma": [], "ToggleAltBlueHue": [], "ToggleAltBlueSigmoid": [], "ToggleAltBlueVibrance": [], "ToggleAltGreenGamma": [], "ToggleAltGreenHue": [], "ToggleAltGreenSigmoid": [], "ToggleAltGreenVibrance": [], "ToggleAltRedGamma": [], "ToggleAltRedHue": [], "ToggleAltRedSigmoid": [], "ToggleAltRedVibrance": [], "ToggleBrightness": [], "ToggleCcBlue": [], "ToggleCcGreen": [], "ToggleCcRed": [], "ToggleColourmap": [], "ToggleColourReplace": [], "ToggleColourReplacePreserveLum": [], "ToggleContrast": [], "ToggleConvolution": [], "ToggleFlip": [], "ToggleGamma": [], "ToggleGrayscale": [], "ToggleHue": [], "ToggleInvert": [], "ToggleMorph": [], "ToggleNormalize": [], "TogglePca": [], "TogglePseudoColour": [], "ToggleSaturation": [], "ToggleThreshold": [], "ToggleUnsharp": [], "ToggleVibrance": [] } }, "Basics.Float": { "args": [], "tags": { "Float": [] } }, "IIIF.Presentation.IIIFManifest": { "args": [], "tags": { "IIIFManifest": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Manifest"] } }, "IIIF.Presentation.IIIFResource": { "args": [], "tags": { "ResourceManifest": ["IIIF.Presentation.IIIFManifest"], "ResourceCollection": ["IIIF.Presentation.IIIFCollection"], "ResourceCanvas": ["IIIF.Presentation.IIIFCanvas"], "ResourceRange": ["IIIF.Presentation.IIIFRange"] } }, "Basics.Int": { "args": [], "tags": { "Int": [] } }, "Maybe.Maybe": { "args": ["a"], "tags": { "Just": ["a"], "Nothing": [] } }, "Result.Result": { "args": ["error", "value"], "tags": { "Ok": ["value"], "Err": ["error"] } }, "String.String": { "args": [], "tags": { "String": [] } }, "IIIF.Presentation.IIIFCanvas": { "args": [], "tags": { "IIIFCanvas": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Canvas"] } }, "IIIF.Presentation.IIIFCollection": { "args": [], "tags": { "IIIFCollection": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Collection"] } }, "IIIF.Presentation.IIIFRange": { "args": [], "tags": { "IIIFRange": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Range"] } }, "IIIF.Version.IIIFVersion": { "args": [], "tags": { "IIIFV2": [], "IIIFV3": [] } }, "IIIF.Presentation.ImageType": { "args": [], "tags": { "PrimaryImage": [], "ChoiceImage": [] } }, "IIIF.Image.ImageUri": { "args": [], "tags": { "InfoUri": ["IIIF.Image.ImageServerParameters"], "ImageUri": ["IIIF.Image.ImageRequestParameters"] } }, "IIIF.Language.LanguageValues": { "args": [], "tags": { "LanguageValues": ["IIIF.Language.Language", "List.List String.String"] } }, "List.List": { "args": ["a"], "tags": {} }, "IIIF.Presentation.MediaFormats": { "args": [], "tags": { "ImageJpeg": [], "OtherFormat": ["String.String"] } }, "IIIF.Presentation.RangeItem": { "args": [], "tags": { "RangeCanvas": ["String.String"], "RangeRange": ["IIIF.Presentation.Range"] } }, "IIIF.Presentation.ResourceTypes": { "args": [], "tags": { "Video": [], "OtherResource": ["String.String"] } }, "IIIF.Presentation.ServiceTypes": { "args": [], "tags": { "ImageService1": [], "ImageService2": [], "ImageService3": [], "SearchService1": [], "AutoCompleteService1": [], "AuthTokenService1": [], "AuthLogoutService1": [], "UnknownService": [] } }, "IIIF.Presentation.ViewingDirection": { "args": [], "tags": { "LeftToRight": [], "RightToLeft": [], "TopToBottom": [], "BottomToTop": [] } }, "IIIF.Presentation.ViewingLayout": { "args": [], "tags": { "LayoutV2": ["IIIF.Presentation.ViewingHint"], "LayoutV3": ["List.List IIIF.Presentation.Behavior"] } }, "IIIF.Presentation.Behavior": { "args": [], "tags": { "AutoAdvanceBehavior": [], "NoAutoAdvanceBehavior": [], "RepeatBehavior": [], "NoRepeatBehavior": [], "UnorderedBehavior": [], "IndividualsBehavior": [], "ContinuousBehavior": [], "PagedBehavior": [], "FacingPagesBehavior": [], "NonPagedBehavior": [], "MultiPartBehavior": [], "TogetherBehavior": [], "SequenceBehavior": [], "ThumbnailNavBehavior": [], "NoNavBehavior": [], "HiddenBehavior": [] } }, "IIIF.Presentation.CollectionItem": { "args": [], "tags": { "NestedCollection": ["IIIF.Presentation.Collection"], "ManifestItem": ["IIIF.Presentation.Manifest"] } }, "IIIF.Image.ImageFormat": { "args": [], "tags": { "JpegFormat": [], "TiffFormat": [], "PngFormat": [], "Jp2Format": [], "GifFormat": [], "PdfFormat": [], "WebpFormat": [] } }, "IIIF.Image.ImageQuality": { "args": [], "tags": { "ColorQuality": [], "GrayQuality": [], "BiTonalQuality": [], "DefaultQuality": [], "NativeQuality": [] } }, "IIIF.Image.ImageRegion": { "args": [], "tags": { "FullRegion": [], "SquareRegion": [], "SizeRegion": ["{ x : Basics.Int, y : Basics.Int, w : Basics.Int, h : Basics.Int }"], "PctSizeRegion": ["{ x : Basics.Float, y : Basics.Float, w : Basics.Float, h : Basics.Float }"] } }, "IIIF.Image.ImageRotation": { "args": [], "tags": { "NormalRotation": ["Basics.Float"], "MirroredRotation": ["Basics.Float"] } }, "IIIF.Image.ImageSize": { "args": [], "tags": { "MaxSize": [], "ExactMaxSize": [], "WidthOnlySize": ["Basics.Int"], "ExactWidthOnlySize": ["Basics.Int"], "HeightOnlySize": ["Basics.Int"], "ExactHeightOnlySize": ["Basics.Int"], "PercentSize": ["Basics.Float"], "ExactPercentSize": ["Basics.Float"], "WidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"] } }, "IIIF.Language.Language": { "args": [], "tags": { "LanguageCode": ["String.String"], "None": [], "Default": [] } }, "IIIF.Presentation.ViewingHint": { "args": [], "tags": { "PagedHint": [], "IndividualsHint": [], "ContinuousHint": [], "MultiPartHint": [], "NonPagedHint": [], "TopHint": [], "FacingPagesHint": [] } } } } }) } };
+  )({ "versions": { "elm": "0.19.1" }, "types": { "message": "Msg.Msg", "aliases": { "IIIF.Presentation.Canvas": { "args": [], "type": "{ id : String.String, label : Maybe.Maybe IIIF.Language.LanguageMap, width : Maybe.Maybe Basics.Int, height : Maybe.Maybe Basics.Int, images : List.List IIIF.Presentation.Image, viewingLayout : Maybe.Maybe IIIF.Presentation.ViewingLayout }" }, "IIIF.Presentation.HomePage": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.Image": { "args": [], "type": "{ id : IIIF.Image.ImageUri, label : Maybe.Maybe IIIF.Language.LanguageMap, imageType : IIIF.Presentation.ImageType, service : List.List IIIF.Presentation.ServiceTypes }" }, "IIIF.Language.LabelValue": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Language.LanguageMap": { "args": [], "type": "List.List IIIF.Language.LanguageValues" }, "IIIF.Presentation.Logo": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes, width : Basics.Int, height : Basics.Int, service : Maybe.Maybe (List.List IIIF.Presentation.ServiceObject) }" }, "IIIF.Presentation.Manifest": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, metadata : List.List IIIF.Language.LabelValue, viewingDirection : IIIF.Presentation.ViewingDirection, summary : Maybe.Maybe IIIF.Language.LanguageMap, viewingLayout : IIIF.Presentation.ViewingLayout, canvases : List.List IIIF.Presentation.Canvas, ranges : Maybe.Maybe (List.List IIIF.Presentation.Range), homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe IIIF.Presentation.Image, provider : Maybe.Maybe (List.List IIIF.Presentation.Provider), thumbnail : Maybe.Maybe IIIF.Presentation.Image, requiredStatement : Maybe.Maybe IIIF.Presentation.RequiredStatement }" }, "IIIF.Presentation.Provider": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, type_ : IIIF.Presentation.ResourceTypes, homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe (List.List IIIF.Presentation.Logo), seeAlso : Maybe.Maybe (List.List IIIF.Presentation.SeeAlso) }" }, "IIIF.Presentation.Range": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.RangeItem, metadata : List.List IIIF.Language.LabelValue }" }, "IIIF.Presentation.RequiredStatement": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Presentation.SeeAlso": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.ServiceObject": { "args": [], "type": "{ id : String.String, serviceType : IIIF.Presentation.ServiceTypes }" }, "IIIF.Presentation.Collection": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, summary : Maybe.Maybe IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.CollectionItem }" }, "IIIF.Image.ImageRequestParameters": { "args": [], "type": "{ host : String.String, prefix : String.String, region : IIIF.Image.ImageRegion, size : IIIF.Image.ImageSize, rotation : IIIF.Image.ImageRotation, quality : IIIF.Image.ImageQuality, format : IIIF.Image.ImageFormat }" }, "IIIF.Image.ImageServerParameters": { "args": [], "type": "{ host : String.String, prefix : String.String }" } }, "unions": { "Msg.Msg": { "args": [], "tags": { "ClientNotifiedFullscreenChanged": ["Basics.Bool"], "ServerRespondedWithManifest": ["Result.Result Http.Error IIIF.Presentation.IIIFManifest"], "ServerRespondedWithResource": ["Result.Result Http.Error IIIF.Presentation.IIIFResource"], "UserClickedCollectionItem": ["String.String"], "ServerRespondedWithCollectionItem": ["String.String", "Result.Result Http.Error IIIF.Presentation.IIIFResource"], "UserClickedManifestItem": ["String.String", "String.String"], "ServerRespondedWithManifestFromCollection": ["Result.Result Http.Error IIIF.Presentation.IIIFManifest"], "UserToggledCollectionSidebar": [], "UserStartedCollectionSidebarResize": ["Basics.Int"], "UserDraggedCollectionSidebarResize": ["Basics.Int"], "UserEndedCollectionSidebarResize": [], "ClientNotifiedPageChanged": ["Basics.Int"], "ClientNotifiedPageChangedInstant": ["Basics.Int"], "ClientNotifiedScrollThumbs": ["Result.Result Browser.Dom.Error ()"], "SetResponseLoading": [], "UserClickedThumbnail": ["Basics.Int"], "UserToggledFilter": ["Filters.FilterToggle", "Basics.Bool"], "UserToggledContents": [], "UserClickedOpenPageView": [], "UserClickedClosePageView": [], "UserClickedSaveFilteredImage": [], "UserToggledPageViewFullscreen": [], "UserToggledPageViewSidebar": [], "UserClickedOpenManifestInfo": [], "UserClickedCloseManifestInfo": [], "UserToggledMobileSidebar": [], "UserClosedMobileSidebar": [], "UserClickedPageViewPrev": [], "UserClickedPageViewNext": [], "UserResetAllFilters": [], "UserResetAltColourAdjust": [], "UserToggledFullscreen": [], "UserClickedRange": ["String.String", "Maybe.Maybe Basics.Int"], "UserToggledMetadata": [], "UserSelectedContentsIndex": [], "UserSelectedContentsPages": [], "UserToggledSidebar": [], "UserToggledShiftByOne": [], "UserToggledThumbnails": [], "UserToggledTwoUp": [], "UserUpdatedFilterInt": ["Filters.FilterIntValue", "String.String"], "UserUpdatedFilterFloat": ["Filters.FilterFloatValue", "String.String"], "UserUpdatedFilterString": ["Filters.FilterStringValue", "String.String"], "UserUpdatedFilterJsonInput": ["String.String"], "UserAppliedFilterJson": [], "UserCopiedFilterJson": [], "ViewerLoadingChanged": ["Basics.Bool"], "UserDraggedSidebarResize": ["Basics.Int"], "UserEndedSidebarResize": [], "UserStartedSidebarResize": ["Basics.Int"], "UserChangedZoomLevel": ["Basics.Float"], "ViewportChanged": ["Basics.Int", "Basics.Int"], "UserClickedZoomIn": [], "UserClickedZoomOut": [], "UserClickedPageViewImageChoice": ["Basics.Int"], "UserToggledFilterGroup": ["String.String"] } }, "Basics.Bool": { "args": [], "tags": { "True": [], "False": [] } }, "Browser.Dom.Error": { "args": [], "tags": { "NotFound": ["String.String"] } }, "Http.Error": { "args": [], "tags": { "BadUrl": ["String.String"], "Timeout": [], "NetworkError": [], "BadStatus": ["Basics.Int"], "BadBody": ["String.String"] } }, "Filters.FilterFloatValue": { "args": [], "tags": { "FloatColourReplaceBlend": [], "FloatContrast": [], "FloatGamma": [], "FloatNormalizeStrength": [], "FloatPseudoColourBlue": [], "FloatPseudoColourGreen": [], "FloatPseudoColourRed": [], "FloatUnsharpAmount": [] } }, "Filters.FilterIntValue": { "args": [], "tags": { "IntAdaptiveOffset": [], "IntAdaptiveWindow": [], "IntAltRedGamma": [], "IntAltRedSigmoid": [], "IntAltRedVibrance": [], "IntAltRedHue": [], "IntAltRedHueWindow": [], "IntAltGreenGamma": [], "IntAltGreenSigmoid": [], "IntAltGreenHue": [], "IntAltGreenHueWindow": [], "IntAltGreenVibrance": [], "IntAltBlueGamma": [], "IntAltBlueSigmoid": [], "IntAltBlueHue": [], "IntAltBlueHueWindow": [], "IntAltBlueVibrance": [], "IntBrightness": [], "IntCcBlue": [], "IntCcGreen": [], "IntCcRed": [], "IntColourmapCenter": [], "IntColourReplaceTolerance": [], "IntHue": [], "IntMorphKernel": [], "IntRotation": [], "IntSaturation": [], "IntThreshold": [], "IntVibrance": [] } }, "Filters.FilterStringValue": { "args": [], "tags": { "StringColourmapPreset": [], "StringColourReplaceSource": [], "StringColourReplaceTarget": [], "StringConvolutionPreset": [], "StringMorphOperation": [], "StringPcaMode": [], "StringPseudoColourMode": [] } }, "Filters.FilterToggle": { "args": [], "tags": { "ToggleAdaptive": [], "ToggleAltBlueGamma": [], "ToggleAltBlueHue": [], "ToggleAltBlueSigmoid": [], "ToggleAltBlueVibrance": [], "ToggleAltGreenGamma": [], "ToggleAltGreenHue": [], "ToggleAltGreenSigmoid": [], "ToggleAltGreenVibrance": [], "ToggleAltRedGamma": [], "ToggleAltRedHue": [], "ToggleAltRedSigmoid": [], "ToggleAltRedVibrance": [], "ToggleBrightness": [], "ToggleCcBlue": [], "ToggleCcGreen": [], "ToggleCcRed": [], "ToggleColourmap": [], "ToggleColourReplace": [], "ToggleColourReplacePreserveLum": [], "ToggleContrast": [], "ToggleConvolution": [], "ToggleFlip": [], "ToggleGamma": [], "ToggleGrayscale": [], "ToggleHue": [], "ToggleInvert": [], "ToggleMorph": [], "ToggleNormalize": [], "TogglePca": [], "TogglePseudoColour": [], "ToggleSaturation": [], "ToggleThreshold": [], "ToggleUnsharp": [], "ToggleVibrance": [] } }, "Basics.Float": { "args": [], "tags": { "Float": [] } }, "IIIF.Presentation.IIIFManifest": { "args": [], "tags": { "IIIFManifest": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Manifest"] } }, "IIIF.Presentation.IIIFResource": { "args": [], "tags": { "ResourceManifest": ["IIIF.Presentation.IIIFManifest"], "ResourceCollection": ["IIIF.Presentation.IIIFCollection"], "ResourceCanvas": ["IIIF.Presentation.IIIFCanvas"], "ResourceRange": ["IIIF.Presentation.IIIFRange"] } }, "Basics.Int": { "args": [], "tags": { "Int": [] } }, "Maybe.Maybe": { "args": ["a"], "tags": { "Just": ["a"], "Nothing": [] } }, "Result.Result": { "args": ["error", "value"], "tags": { "Ok": ["value"], "Err": ["error"] } }, "String.String": { "args": [], "tags": { "String": [] } }, "IIIF.Presentation.IIIFCanvas": { "args": [], "tags": { "IIIFCanvas": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Canvas"] } }, "IIIF.Presentation.IIIFCollection": { "args": [], "tags": { "IIIFCollection": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Collection"] } }, "IIIF.Presentation.IIIFRange": { "args": [], "tags": { "IIIFRange": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Range"] } }, "IIIF.Version.IIIFVersion": { "args": [], "tags": { "IIIFV2": [], "IIIFV3": [] } }, "IIIF.Presentation.ImageType": { "args": [], "tags": { "PrimaryImage": [], "ChoiceImage": [] } }, "IIIF.Image.ImageUri": { "args": [], "tags": { "InfoUri": ["IIIF.Image.ImageServerParameters"], "ImageUri": ["IIIF.Image.ImageRequestParameters"] } }, "IIIF.Language.LanguageValues": { "args": [], "tags": { "LanguageValues": ["IIIF.Language.Language", "List.List String.String"] } }, "List.List": { "args": ["a"], "tags": {} }, "IIIF.Presentation.MediaFormats": { "args": [], "tags": { "ImageJpeg": [], "OtherFormat": ["String.String"] } }, "IIIF.Presentation.RangeItem": { "args": [], "tags": { "RangeCanvas": ["String.String"], "RangeRange": ["IIIF.Presentation.Range"] } }, "IIIF.Presentation.ResourceTypes": { "args": [], "tags": { "Video": [], "OtherResource": ["String.String"] } }, "IIIF.Presentation.ServiceTypes": { "args": [], "tags": { "ImageService1": [], "ImageService2": [], "ImageService3": [], "SearchService1": [], "AutoCompleteService1": [], "AuthTokenService1": [], "AuthLogoutService1": [], "UnknownService": [] } }, "IIIF.Presentation.ViewingDirection": { "args": [], "tags": { "LeftToRight": [], "RightToLeft": [], "TopToBottom": [], "BottomToTop": [] } }, "IIIF.Presentation.ViewingLayout": { "args": [], "tags": { "LayoutV2": ["IIIF.Presentation.ViewingHint"], "LayoutV3": ["List.List IIIF.Presentation.Behavior"] } }, "IIIF.Presentation.Behavior": { "args": [], "tags": { "AutoAdvanceBehavior": [], "NoAutoAdvanceBehavior": [], "RepeatBehavior": [], "NoRepeatBehavior": [], "UnorderedBehavior": [], "IndividualsBehavior": [], "ContinuousBehavior": [], "PagedBehavior": [], "FacingPagesBehavior": [], "NonPagedBehavior": [], "MultiPartBehavior": [], "TogetherBehavior": [], "SequenceBehavior": [], "ThumbnailNavBehavior": [], "NoNavBehavior": [], "HiddenBehavior": [] } }, "IIIF.Presentation.CollectionItem": { "args": [], "tags": { "NestedCollection": ["IIIF.Presentation.Collection"], "ManifestItem": ["IIIF.Presentation.Manifest"] } }, "IIIF.Image.ImageFormat": { "args": [], "tags": { "JpegFormat": [], "TiffFormat": [], "PngFormat": [], "Jp2Format": [], "GifFormat": [], "PdfFormat": [], "WebpFormat": [] } }, "IIIF.Image.ImageQuality": { "args": [], "tags": { "ColorQuality": [], "GrayQuality": [], "BiTonalQuality": [], "DefaultQuality": [], "NativeQuality": [] } }, "IIIF.Image.ImageRegion": { "args": [], "tags": { "FullRegion": [], "SquareRegion": [], "SizeRegion": ["{ x : Basics.Int, y : Basics.Int, w : Basics.Int, h : Basics.Int }"], "PctSizeRegion": ["{ x : Basics.Float, y : Basics.Float, w : Basics.Float, h : Basics.Float }"] } }, "IIIF.Image.ImageRotation": { "args": [], "tags": { "NormalRotation": ["Basics.Float"], "MirroredRotation": ["Basics.Float"] } }, "IIIF.Image.ImageSize": { "args": [], "tags": { "MaxSize": [], "ExactMaxSize": [], "WidthOnlySize": ["Basics.Int"], "ExactWidthOnlySize": ["Basics.Int"], "HeightOnlySize": ["Basics.Int"], "ExactHeightOnlySize": ["Basics.Int"], "PercentSize": ["Basics.Float"], "ExactPercentSize": ["Basics.Float"], "WidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"] } }, "IIIF.Language.Language": { "args": [], "tags": { "LanguageCode": ["String.String"], "None": [], "Default": [] } }, "IIIF.Presentation.ViewingHint": { "args": [], "tags": { "PagedHint": [], "IndividualsHint": [], "ContinuousHint": [], "MultiPartHint": [], "NonPagedHint": [], "TopHint": [], "FacingPagesHint": [] } } } } }) } };
 
   // src/filters.ts
   function setFilterOptions(viewer, options) {
