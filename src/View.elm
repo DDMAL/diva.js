@@ -2,9 +2,10 @@ module View exposing (view)
 
 import Html exposing (Html, div, h1, node, text)
 import Html.Attributes as HA exposing (classList, id)
-import IIIF.Language exposing (Language(..), extractLabelFromLanguageMap)
+import Html.Lazy as Lazy
+import IIIF.Language exposing (extractLabelFromLanguageMap)
 import IIIF.Presentation exposing (toLabel, toRequiredStatement)
-import Model exposing (Model, ResourceResponse(..), Response(..), SidebarState(..), ViewMode(..), currentManifest)
+import Model exposing (Model, ResourceResponse(..), Response(..), currentManifest)
 import Msg exposing (Msg(..))
 import View.CollectionExplorer
 import View.Helpers exposing (viewIf, viewMaybe)
@@ -17,6 +18,10 @@ import View.Toolbar exposing (viewToolbar)
 
 view : Model -> Html Msg
 view model =
+    let
+        maybeStatus =
+            viewerStatus model
+    in
     div [ id model.rootElementId ]
         [ div
             [ classList
@@ -24,7 +29,11 @@ view model =
                 , ( "is-fullscreen", model.fullscreen )
                 ]
             ]
-            [ viewManifestTitle model
+            [ Lazy.lazy viewManifestTitle
+                { showTitle = model.showTitle
+                , fullscreen = model.fullscreen
+                , title = manifestTitleFor model
+                }
             , div [ HA.class "diva-app-header" ]
                 [ viewToolbar model
                 ]
@@ -42,70 +51,58 @@ view model =
                         , ( "is-fullscreen", model.fullscreen )
                         ]
                     ]
-                    [ viewCanvas
+                    [ Lazy.lazy viewCanvas
                         { fullscreen = model.fullscreen
                         , isLoading = isCanvasLoading model
                         , showCollectionSidebar = hasCollectionSidebar model
-                        , maybeStatus = viewerStatus model
+                        , maybeStatus = maybeStatus
                         }
                     ]
                 , View.Sidebar.viewSidebarResizer model
                 , View.Sidebar.viewSidebarPanel model
                 ]
             , div [ HA.class "required-statement-dock" ]
-                [ viewRequiredStatement model ]
+                [ Lazy.lazy viewRequiredStatement (requiredStatementTextFor model) ]
             , View.PageViewModal.viewPageViewModal model
             , View.ManifestInfoModal.viewManifestInfoModal model
             ]
         ]
 
 
-viewManifestTitle : Model -> Html Msg
-viewManifestTitle model =
+viewManifestTitle :
+    { showTitle : Bool
+    , fullscreen : Bool
+    , title : String
+    }
+    -> Html Msg
+viewManifestTitle { showTitle, fullscreen, title } =
     viewIf
-        (viewMaybe
-            (\manifest ->
-                let
-                    labelText =
-                        toLabel manifest
-                            |> extractLabelFromLanguageMap model.detectedLanguage
-                in
-                viewIf
-                    (h1
-                        [ classList
-                            [ ( "diva-app-title", True )
-                            , ( "is-fullscreen", model.fullscreen )
-                            ]
-                        ]
-                        [ text labelText ]
-                    )
-                    (not (String.isEmpty labelText))
+        (viewIf
+            (h1
+                [ classList
+                    [ ( "diva-app-title", True )
+                    , ( "is-fullscreen", fullscreen )
+                    ]
+                ]
+                [ text title ]
             )
-            (currentManifest model)
+            (not (String.isEmpty title))
         )
-        model.showTitle
+        showTitle
 
 
-viewRequiredStatement : Model -> Html Msg
-viewRequiredStatement model =
+viewRequiredStatement : Maybe String -> Html Msg
+viewRequiredStatement maybeValueText =
     viewMaybe
-        (\manifest ->
-            viewMaybe
-                (\statement ->
-                    let
-                        valueText =
-                            extractLabelFromLanguageMap model.detectedLanguage statement.value
-                    in
-                    viewIf
-                        (div
-                            [ HA.class "required-statement" ]
-                            (HtmlRenderer.renderHtml valueText)
-                        )
-                        (not (String.isEmpty valueText))
+        (\valueText ->
+            viewIf
+                (div
+                    [ HA.class "required-statement" ]
+                    (HtmlRenderer.renderHtml valueText)
                 )
-                (toRequiredStatement manifest)
+                (not (String.isEmpty valueText))
         )
-        (currentManifest model)
+        maybeValueText
 
 
 viewCanvas :
@@ -129,6 +126,20 @@ viewCanvas { fullscreen, isLoading, showCollectionSidebar, maybeStatus } =
         , viewIf viewThrobber isLoading
         , viewMaybe viewViewerStatusModal maybeStatus
         ]
+
+
+manifestTitleFor : Model -> String
+manifestTitleFor model =
+    currentManifest model
+        |> Maybe.map (\manifest -> toLabel manifest |> extractLabelFromLanguageMap model.detectedLanguage)
+        |> Maybe.withDefault ""
+
+
+requiredStatementTextFor : Model -> Maybe String
+requiredStatementTextFor model =
+    currentManifest model
+        |> Maybe.andThen toRequiredStatement
+        |> Maybe.map (\statement -> extractLabelFromLanguageMap model.detectedLanguage statement.value)
 
 
 viewThrobber : Html Msg

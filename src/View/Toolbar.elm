@@ -2,6 +2,7 @@ module View.Toolbar exposing (viewToolbar)
 
 import Html exposing (Html, div, text)
 import Html.Attributes as HA exposing (classList)
+import Html.Lazy as Lazy
 import Model exposing (Model, SidebarState(..), ViewMode(..), currentManifest, getPageAt, pageViewStartIndex)
 import Msg exposing (Msg(..))
 import String
@@ -15,6 +16,9 @@ viewToolbar model =
     let
         controlsDisabled =
             currentManifest model |> isNothing
+
+        currentLabelText =
+            currentLabelFor model
     in
     div [ HA.class "canvas-toolbar-stack" ]
         [ div [ HA.class "canvas-toolbar" ]
@@ -115,12 +119,23 @@ viewToolbar model =
                     }
                 ]
             ]
-        , viewCurrentLabel model
+        , Lazy.lazy2 viewCurrentLabel model.fullscreen currentLabelText
         ]
 
 
-viewCurrentLabel : Model -> Html Msg
-viewCurrentLabel model =
+viewCurrentLabel : Bool -> String -> Html Msg
+viewCurrentLabel fullscreen labelText =
+    div
+        [ classList
+            [ ( "canvas-label", True )
+            , ( "is-fullscreen", fullscreen )
+            ]
+        ]
+        [ text labelText ]
+
+
+currentLabelFor : Model -> String
+currentLabelFor model =
     let
         fullLabelText =
             case model.selectedIndex of
@@ -162,17 +177,8 @@ viewCurrentLabel model =
 
                 Nothing ->
                     ""
-
-        labelText =
-            truncateLabel 140 fullLabelText
     in
-    div
-        [ classList
-            [ ( "canvas-label", True )
-            , ( "is-fullscreen", model.fullscreen )
-            ]
-        ]
-        [ text labelText ]
+    truncateLabel 140 fullLabelText
 
 
 truncateLabel : Int -> String -> String
