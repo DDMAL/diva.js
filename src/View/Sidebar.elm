@@ -188,7 +188,7 @@ viewThumbnails { fullscreen, selectedIndex, shiftByOne, thumbsInstantScroll, vie
             )
         ]
         (orderedPages
-            |> List.map (Lazy.lazy4 viewThumbnail viewMode shiftByOne selectedIndex)
+            |> List.map (\( index, page ) -> Lazy.lazy5 viewThumbnail viewMode shiftByOne selectedIndex index page)
         )
 
 
@@ -217,8 +217,8 @@ chunk size items =
                 List.take size items :: chunk size (List.drop size items)
 
 
-viewThumbnail : ViewMode -> Bool -> Maybe Int -> ( Int, Page ) -> Html Msg
-viewThumbnail viewMode shiftByOne selectedIndex ( index, page ) =
+viewThumbnail : ViewMode -> Bool -> Maybe Int -> Int -> Page -> Html Msg
+viewThumbnail viewMode shiftByOne selectedIndex index page =
     let
         isActive =
             isThumbnailActive viewMode shiftByOne selectedIndex index
