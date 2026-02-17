@@ -50,12 +50,11 @@ view model =
                         , ( "is-fullscreen", model.fullscreen )
                         ]
                     ]
-                    [ Lazy.lazy viewCanvas
-                        { fullscreen = model.fullscreen
-                        , isLoading = isCanvasLoading model
-                        , showCollectionSidebar = hasCollectionSidebar model
-                        , maybeStatus = maybeStatus
-                        }
+                    [ Lazy.lazy4 viewCanvas
+                        model.fullscreen
+                        (isCanvasLoading model)
+                        (hasCollectionSidebar model)
+                        maybeStatus
                     ]
                 , View.Sidebar.viewSidebarResizer model
                 , View.Sidebar.viewSidebarPanel model
@@ -99,14 +98,8 @@ viewRequiredStatement maybeValueText =
         maybeValueText
 
 
-viewCanvas :
-    { fullscreen : Bool
-    , isLoading : Bool
-    , showCollectionSidebar : Bool
-    , maybeStatus : Maybe ( String, String, Bool )
-    }
-    -> Html Msg
-viewCanvas { fullscreen, isLoading, showCollectionSidebar, maybeStatus } =
+viewCanvas : Bool -> Bool -> Bool -> Maybe ( String, String, Bool ) -> Html Msg
+viewCanvas fullscreen isLoading showCollectionSidebar maybeStatus =
     div [ HA.class "diva-canvas-wrapper" ]
         [ node "osd-viewer"
             [ classList
