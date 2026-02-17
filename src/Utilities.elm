@@ -1,4 +1,4 @@
-module Utilities exposing (disabledIf, find, isJust, isNothing, orElse)
+module Utilities exposing (disabledIf, find, isJust, isNothing)
 
 
 isJust : Maybe a -> Bool
@@ -44,27 +44,3 @@ find predicate list =
 
             else
                 find predicate rest
-
-
-{-| Piping-friendly version of [`or`](#or).
-
-    Just 5
-        |> orElse (Just 4)
-    --> Just 5
-
-    orElse (Just 4) (Just 5)
-    --> Just 5
-
-    List.head []
-        |> orElse (List.head [ 4 ])
-    --> Just 4
-
--}
-orElse : Maybe a -> Maybe a -> Maybe a
-orElse ma mb =
-    case mb of
-        Just _ ->
-            mb
-
-        Nothing ->
-            ma

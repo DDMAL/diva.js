@@ -6,7 +6,7 @@ import IIIF.Image exposing (createImageAddress, thumbnailUrlFromInfo)
 import IIIF.Language exposing (Language(..), extractLabelFromLanguageMap)
 import IIIF.Presentation exposing (Canvas, IIIFCollection, IIIFManifest, Image, ImageType(..), canvasAspect, canvasLabel, toCanvases)
 import Set exposing (Set)
-import Utilities exposing (find, isNothing, orElse)
+import Utilities exposing (find, isNothing)
 
 
 type Response
@@ -161,8 +161,12 @@ iiifImageToPageImage language allImages image =
 
 primaryImage : Page -> Maybe PageImage
 primaryImage page =
-    find .isPrimary page.images
-        |> orElse (List.head page.images)
+    case find .isPrimary page.images of
+        Just image ->
+            Just image
+
+        Nothing ->
+            List.head page.images
 
 
 pageViewStartIndex : ViewMode -> Bool -> Int -> Int
