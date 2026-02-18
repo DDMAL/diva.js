@@ -169,6 +169,12 @@ isThumbnailActive viewMode shiftByOne selectedIndex index =
             False
 
 
+lookupRangeIndex : Dict String (Maybe Int) -> String -> Maybe Int
+lookupRangeIndex rangeIndexMap rangeId =
+    Dict.get rangeId rangeIndexMap
+        |> Maybe.withDefault Nothing
+
+
 metadataEntries : Language -> IIIFManifest -> List (Html Msg)
 metadataEntries language manifest =
     toMetadata manifest
@@ -306,11 +312,16 @@ viewContentsContent model =
         ]
 
 
-viewContentsEmptyBody : Html Msg
-viewContentsEmptyBody =
+viewContentsEmpty : String -> Html Msg
+viewContentsEmpty message =
     div
         [ HA.class "contents-empty" ]
-        [ text "No contents available." ]
+        [ text message ]
+
+
+viewContentsEmptyBody : Html Msg
+viewContentsEmptyBody =
+    viewContentsEmpty "No contents available."
 
 
 viewContentsIndexBody : Model -> IIIFManifest -> Html Msg
@@ -414,9 +425,7 @@ viewOnThisPageBody model manifest =
 
 viewOnThisPageEmptyBody : Html Msg
 viewOnThisPageEmptyBody =
-    div
-        [ HA.class "contents-empty" ]
-        [ text "No ranges for this page." ]
+    viewContentsEmpty "No ranges for this page."
 
 
 viewOtpRangeItem : Model -> Dict String String -> Range -> Html Msg
@@ -425,12 +434,11 @@ viewOtpRangeItem model canvasLabelMap range =
         canvasLabels =
             rangeCanvasLabels canvasLabelMap range
 
+        maybeIndex =
+            lookupRangeIndex model.rangeIndexMap range.id
+
         labelText =
             extractLabelFromLanguageMap model.detectedLanguage range.label
-
-        maybeIndex =
-            Dict.get range.id model.rangeIndexMap
-                |> Maybe.withDefault Nothing
 
         firstLabel =
             List.head canvasLabels
@@ -456,20 +464,15 @@ viewOtpRangeItem model canvasLabelMap range =
                 _ ->
                     ""
 
-        labelNode =
-            button
-                [ HA.class "contents-button ui-button"
-                , type_ "button"
-                , Events.onClick (UserClickedRange range.id maybeIndex)
-                ]
-                [ text
-                    (if String.isEmpty labelText then
-                        rangePrefix ++ "[Untitled range]"
+        resolvedLabel =
+            if String.isEmpty labelText then
+                rangePrefix ++ "[Untitled range]"
 
-                     else
-                        rangePrefix ++ labelText
-                    )
-                ]
+            else
+                rangePrefix ++ labelText
+
+        labelNode =
+            viewRangeButton range.id maybeIndex resolvedLabel
 
         metadataBlock =
             viewRangeMetadata model.detectedLanguage range.metadata
@@ -477,6 +480,16 @@ viewOtpRangeItem model canvasLabelMap range =
     li
         [ HA.class "contents-item" ]
         (labelNode :: metadataBlock)
+
+
+viewRangeButton : String -> Maybe Int -> String -> Html Msg
+viewRangeButton rangeId maybeIndex labelText =
+    button
+        [ HA.class "contents-button ui-button"
+        , type_ "button"
+        , Events.onClick (UserClickedRange rangeId maybeIndex)
+        ]
+        [ text labelText ]
 
 
 viewRangeItems : Model -> Dict String (Maybe Int) -> List RangeItem -> List (Html Msg)
@@ -523,27 +536,21 @@ viewRangeMetadata language metadata =
 viewRangeNode : Model -> Dict String (Maybe Int) -> Range -> Html Msg
 viewRangeNode model rangeIndexMap range =
     let
+        maybeIndex =
+            lookupRangeIndex rangeIndexMap range.id
+
         labelText =
             extractLabelFromLanguageMap model.detectedLanguage range.label
 
-        maybeIndex =
-            Dict.get range.id rangeIndexMap
-                |> Maybe.withDefault Nothing
+        resolvedLabel =
+            if String.isEmpty labelText then
+                "[Untitled range]"
+
+            else
+                labelText
 
         labelNode =
-            button
-                [ HA.class "contents-button ui-button"
-                , type_ "button"
-                , Events.onClick (UserClickedRange range.id maybeIndex)
-                ]
-                [ text
-                    (if String.isEmpty labelText then
-                        "[Untitled range]"
-
-                     else
-                        labelText
-                    )
-                ]
+            viewRangeButton range.id maybeIndex resolvedLabel
 
         metadataBlock =
             if model.selectedRangeId == Just range.id then
