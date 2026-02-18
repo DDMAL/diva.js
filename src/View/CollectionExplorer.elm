@@ -10,21 +10,17 @@ import Json.Decode as Decode
 import Model exposing (CollectionState, Model, ResourceResponse(..))
 import Msg exposing (Msg(..))
 import Set
-import View.Helpers exposing (viewMaybe)
+import View.Helpers exposing (emptyHtml, viewMaybe)
 
 
 viewCollectionSidebar : Model -> Html Msg
 viewCollectionSidebar model =
-    let
-        maybeCollectionState =
-            case model.resourceResponse of
-                ResourceLoadedCollection collectionState ->
-                    Just collectionState
+    case model.resourceResponse of
+        ResourceLoadedCollection collectionState ->
+            viewCollectionPanel model collectionState
 
-                _ ->
-                    Nothing
-    in
-    viewMaybe (viewCollectionPanel model) maybeCollectionState
+        _ ->
+            emptyHtml
 
 
 viewCollectionPanel : Model -> CollectionState -> Html Msg
