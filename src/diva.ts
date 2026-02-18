@@ -122,6 +122,7 @@ type FilterPreviewPayload = {
 type ElmPorts = {
     tileSourcesUpdated: {subscribe: (callback: (tileSources: string[]) => void) => void};
     pageAspectsUpdated : {subscribe : (callback: (aspects: number[]) => void) => void};
+    pageLabelsUpdated : {subscribe : (callback: (labels: string[]) => void) => void};
     zoomLevelUpdated : {subscribe : (callback: (zoom: number) => void) => void};
     zoomBy : {subscribe : (callback: (factor: number) => void) => void};
     scrollToIndex : {subscribe : (callback: (index: number) => void) => void};
@@ -239,6 +240,9 @@ class Diva
 
         this.getPort("pageAspectsUpdated")
             .subscribe((aspects: number[]) => { this.callViewerMethod("setPageAspects", aspects); });
+
+        this.getPort("pageLabelsUpdated")
+            .subscribe((labels: string[]) => { this.callViewerMethod("setPageLabels", labels); });
 
         this.getPort("zoomLevelUpdated").subscribe((zoom: number) => { this.callViewerMethod("setZoomLevel", zoom); });
 

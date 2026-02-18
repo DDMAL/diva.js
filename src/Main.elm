@@ -41,6 +41,9 @@ port layoutModeUpdated : String -> Cmd msg
 port pageAspectsUpdated : List Float -> Cmd msg
 
 
+port pageLabelsUpdated : List String -> Cmd msg
+
+
 port pageIndexChanged : (Int -> msg) -> Sub msg
 
 
@@ -209,6 +212,7 @@ handleManifestLoaded model manifest =
     , Cmd.batch
         [ tileSourcesUpdated tileSources
         , pageAspectsUpdated pageAspects
+        , pageLabelsUpdated (List.map .label pages)
         , zoomLevelUpdated 1
         , layoutConfigUpdated { direction = direction, mode = layoutMode }
         ]
