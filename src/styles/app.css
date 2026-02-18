@@ -261,6 +261,20 @@
   pointer-events: none;
 }
 
+.viewer-zoom-indicator {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 30;
+  pointer-events: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: var(--diva-font-sm);
+  font-weight: 600;
+  color: var(--diva-white);
+  background-color: rgb(0 0 0 / 55%);
+}
+
 .throbber {
   width: 64px;
   height: 64px;

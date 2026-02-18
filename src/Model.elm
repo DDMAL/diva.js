@@ -3,17 +3,10 @@ module Model exposing (CollectionState, ContentsView(..), Model, Page, PageImage
 import Dict exposing (Dict)
 import Filters exposing (Filters)
 import IIIF.Image exposing (createImageAddress, thumbnailUrlFromInfo)
-import IIIF.Language exposing (Language(..), extractLabelFromLanguageMap)
+import IIIF.Language exposing (Language, extractLabelFromLanguageMap)
 import IIIF.Presentation exposing (Canvas, IIIFCollection, IIIFManifest, Image, ImageType(..), canvasAspect, canvasLabel, toCanvases)
 import Set exposing (Set)
-import Utilities exposing (find, isNothing, orElse)
-
-
-type Response
-    = NotRequested
-    | Loading
-    | Loaded IIIFManifest
-    | Failed String
+import Utilities exposing (find, isNothing)
 
 
 type alias CollectionState =
@@ -25,55 +18,21 @@ type alias CollectionState =
     }
 
 
-type ResourceResponse
-    = ResourceNotRequested
-    | ResourceLoading
-    | ResourceLoadedManifest IIIFManifest
-    | ResourceLoadedCollection CollectionState
-    | ResourceFailed String
-
-
-type alias PageImage =
-    { tileSource : String
-    , thumbUrl : String
-    , label : String
-    , isPrimary : Bool
-    }
-
-
-type alias Page =
-    { aspect : Float
-    , label : String
-    , images : List PageImage
-    }
-
-
-type SidebarState
-    = SidebarHidden
-    | SidebarThumbnails
-    | SidebarMetadata
-    | SidebarContents
-
-
 type ContentsView
     = ContentsIndex
     | ContentsPages
-
-
-type ViewMode
-    = OneUp
-    | TwoUp
 
 
 type alias Model =
     { rootElementId : String
     , manifestUrl : String
     , acceptHeaders : List String
-    , tileSources : List String
+    , initialZoom : Maybe Float
+    , currentZoom : Maybe Float
+    , hasTileSources : Bool
     , pages : List Page
     , selectedIndex : Maybe Int
     , selectedRangeId : Maybe String
-    , canvasIndexMap : Dict String Int
     , rangeIndexMap : Dict String (Maybe Int)
     , thumbsInstantScroll : Bool
     , pendingThumbScroll : Maybe Int
@@ -85,7 +44,6 @@ type alias Model =
     , filters : Filters
     , filtersJsonInput : String
     , filtersJsonError : Maybe String
-    , zoom : Float
     , fullscreen : Bool
     , viewMode : ViewMode
     , shiftByOne : Bool
@@ -107,10 +65,105 @@ type alias Model =
     }
 
 
+type alias Page =
+    { aspect : Float
+    , label : String
+    , images : List PageImage
+    }
+
+
+type alias PageImage =
+    { tileSource : String
+    , thumbUrl : String
+    , label : String
+    , isPrimary : Bool
+    }
+
+
+type ResourceResponse
+    = ResourceLoading
+    | ResourceLoadedManifest IIIFManifest
+    | ResourceLoadedCollection CollectionState
+    | ResourceFailed String
+
+
+type Response
+    = NotRequested
+    | Loading
+    | Loaded IIIFManifest
+    | Failed String
+
+
+type SidebarState
+    = SidebarHidden
+    | SidebarThumbnails
+    | SidebarMetadata
+    | SidebarContents
+
+
+type ViewMode
+    = OneUp
+    | TwoUp
+
+
+currentManifest : Model -> Maybe IIIFManifest
+currentManifest model =
+    case model.resourceResponse of
+        ResourceLoadedManifest manifest ->
+            Just manifest
+
+        ResourceLoadedCollection _ ->
+            case model.response of
+                Loaded manifest ->
+                    Just manifest
+
+                _ ->
+                    Nothing
+
+        _ ->
+            Nothing
+
+
+getPageAt : Int -> List Page -> Maybe Page
+getPageAt index pageList =
+    List.drop index pageList |> List.head
+
+
 manifestToPages : Language -> IIIFManifest -> List Page
 manifestToPages language iiifManifest =
     toCanvases iiifManifest
         |> List.filterMap (canvasToPage language)
+
+
+pageViewStartIndex : ViewMode -> Bool -> Int -> Int
+pageViewStartIndex viewMode shiftByOne index =
+    case viewMode of
+        OneUp ->
+            index
+
+        TwoUp ->
+            if shiftByOne then
+                if index == 0 then
+                    0
+
+                else if modBy 2 index == 1 then
+                    index
+
+                else
+                    index - 1
+
+            else
+                index - modBy 2 index
+
+
+primaryImage : Page -> Maybe PageImage
+primaryImage page =
+    case find .isPrimary page.images of
+        Just image ->
+            Just image
+
+        Nothing ->
+            List.head page.images
 
 
 canvasToPage : Language -> Canvas -> Maybe Page
@@ -158,53 +211,3 @@ iiifImageToPageImage language allImages image =
     , label = label
     , isPrimary = isPrimary
     }
-
-
-primaryImage : Page -> Maybe PageImage
-primaryImage page =
-    find .isPrimary page.images
-        |> orElse (List.head page.images)
-
-
-pageViewStartIndex : ViewMode -> Bool -> Int -> Int
-pageViewStartIndex viewMode shiftByOne index =
-    case viewMode of
-        OneUp ->
-            index
-
-        TwoUp ->
-            if shiftByOne then
-                if index == 0 then
-                    0
-
-                else if modBy 2 index == 1 then
-                    index
-
-                else
-                    index - 1
-
-            else
-                index - modBy 2 index
-
-
-currentManifest : Model -> Maybe IIIFManifest
-currentManifest model =
-    case model.resourceResponse of
-        ResourceLoadedManifest manifest ->
-            Just manifest
-
-        ResourceLoadedCollection _ ->
-            case model.response of
-                Loaded manifest ->
-                    Just manifest
-
-                _ ->
-                    Nothing
-
-        _ ->
-            Nothing
-
-
-getPageAt : Int -> List Page -> Maybe Page
-getPageAt index pageList =
-    List.drop index pageList |> List.head

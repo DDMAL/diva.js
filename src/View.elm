@@ -6,9 +6,9 @@ import Html.Lazy as Lazy
 import IIIF.Language exposing (extractLabelFromLanguageMap)
 import IIIF.Presentation exposing (toLabel, toRequiredStatement)
 import Model exposing (Model, ResourceResponse(..), Response(..), currentManifest)
-import Msg exposing (Msg(..))
+import Msg exposing (Msg)
 import View.CollectionExplorer
-import View.Helpers exposing (viewIf, viewMaybe)
+import View.Helpers exposing (emptyHtml, viewIf, viewMaybe)
 import View.HtmlRenderer as HtmlRenderer
 import View.ManifestInfoModal
 import View.PageViewModal
@@ -29,11 +29,10 @@ view model =
                 , ( "is-fullscreen", model.fullscreen )
                 ]
             ]
-            [ Lazy.lazy viewManifestTitle
-                { showTitle = model.showTitle
-                , fullscreen = model.fullscreen
-                , title = manifestTitleFor model
-                }
+            [ Lazy.lazy3 viewManifestTitle
+                model.showTitle
+                model.fullscreen
+                (manifestTitleFor model)
             , div [ HA.class "diva-app-header" ]
                 [ viewToolbar model
                 ]
@@ -51,81 +50,37 @@ view model =
                         , ( "is-fullscreen", model.fullscreen )
                         ]
                     ]
-                    [ Lazy.lazy viewCanvas
-                        { fullscreen = model.fullscreen
-                        , isLoading = isCanvasLoading model
-                        , showCollectionSidebar = hasCollectionSidebar model
-                        , maybeStatus = maybeStatus
-                        }
+                    [ Lazy.lazy5 viewCanvas
+                        model.fullscreen
+                        (isCanvasLoading model)
+                        (hasCollectionSidebar model)
+                        maybeStatus
+                        (zoomPercentageLabel model)
                     ]
                 , View.Sidebar.viewSidebarResizer model
                 , View.Sidebar.viewSidebarPanel model
                 ]
             , div [ HA.class "required-statement-dock" ]
-                [ Lazy.lazy viewRequiredStatement (requiredStatementTextFor model) ]
+                [ viewMaybe (Lazy.lazy viewRequiredStatement) (requiredStatementTextFor model) ]
             , View.PageViewModal.viewPageViewModal model
             , View.ManifestInfoModal.viewManifestInfoModal model
             ]
         ]
 
 
-viewManifestTitle :
-    { showTitle : Bool
-    , fullscreen : Bool
-    , title : String
-    }
-    -> Html Msg
-viewManifestTitle { showTitle, fullscreen, title } =
-    viewIf
-        (viewIf
-            (h1
-                [ classList
-                    [ ( "diva-app-title", True )
-                    , ( "is-fullscreen", fullscreen )
-                    ]
-                ]
-                [ text title ]
-            )
-            (not (String.isEmpty title))
-        )
-        showTitle
+hasCollectionSidebar : Model -> Bool
+hasCollectionSidebar model =
+    case model.resourceResponse of
+        ResourceLoadedCollection _ ->
+            model.collectionSidebarVisible
+
+        _ ->
+            False
 
 
-viewRequiredStatement : Maybe String -> Html Msg
-viewRequiredStatement maybeValueText =
-    viewMaybe
-        (\valueText ->
-            viewIf
-                (div
-                    [ HA.class "required-statement" ]
-                    (HtmlRenderer.renderHtml valueText)
-                )
-                (not (String.isEmpty valueText))
-        )
-        maybeValueText
-
-
-viewCanvas :
-    { fullscreen : Bool
-    , isLoading : Bool
-    , showCollectionSidebar : Bool
-    , maybeStatus : Maybe ( String, String, Bool )
-    }
-    -> Html Msg
-viewCanvas { fullscreen, isLoading, showCollectionSidebar, maybeStatus } =
-    div [ HA.class "diva-canvas-wrapper" ]
-        [ node "osd-viewer"
-            [ classList
-                [ ( "diva-canvas", True )
-                , ( "is-fullscreen", fullscreen )
-                , ( "has-collection", showCollectionSidebar )
-                ]
-            , id "main-viewer"
-            ]
-            []
-        , viewIf viewThrobber isLoading
-        , viewMaybe viewViewerStatusModal maybeStatus
-        ]
+isCanvasLoading : Model -> Bool
+isCanvasLoading model =
+    (model.isViewerLoading || model.resourceResponse == ResourceLoading) || (model.response == Loading)
 
 
 manifestTitleFor : Model -> String
@@ -140,6 +95,50 @@ requiredStatementTextFor model =
     currentManifest model
         |> Maybe.andThen toRequiredStatement
         |> Maybe.map (\statement -> extractLabelFromLanguageMap model.detectedLanguage statement.value)
+
+
+viewCanvas : Bool -> Bool -> Bool -> Maybe ( String, String, Bool ) -> Maybe String -> Html Msg
+viewCanvas fullscreen isLoading showCollectionSidebar maybeStatus maybeZoomLabel =
+    div [ HA.class "diva-canvas-wrapper" ]
+        [ node "osd-viewer"
+            [ classList
+                [ ( "diva-canvas", True )
+                , ( "is-fullscreen", fullscreen )
+                , ( "has-collection", showCollectionSidebar )
+                ]
+            , id "main-viewer"
+            ]
+            []
+        , viewIf viewThrobber isLoading
+        , viewMaybe viewViewerStatusModal maybeStatus
+        , viewMaybe viewZoomIndicator maybeZoomLabel
+        ]
+
+
+viewManifestTitle : Bool -> Bool -> String -> Html Msg
+viewManifestTitle showTitle fullscreen title =
+    if showTitle && not (String.isEmpty title) then
+        h1
+            [ classList
+                [ ( "diva-app-title", True )
+                , ( "is-fullscreen", fullscreen )
+                ]
+            ]
+            [ text title ]
+
+    else
+        emptyHtml
+
+
+viewRequiredStatement : String -> Html Msg
+viewRequiredStatement valueText =
+    if String.isEmpty valueText then
+        emptyHtml
+
+    else
+        div
+            [ HA.class "required-statement" ]
+            (HtmlRenderer.renderHtml valueText)
 
 
 viewThrobber : Html Msg
@@ -174,36 +173,17 @@ viewThrobber =
         ]
 
 
-hasCollectionSidebar : Model -> Bool
-hasCollectionSidebar model =
-    case model.resourceResponse of
-        ResourceLoadedCollection _ ->
-            model.collectionSidebarVisible
-
-        _ ->
-            False
-
-
-isCanvasLoading : Model -> Bool
-isCanvasLoading model =
-    model.isViewerLoading
-        || model.resourceResponse
-        == ResourceLoading
-        || model.response
-        == Loading
-
-
 viewViewerStatusModal : ( String, String, Bool ) -> Html Msg
 viewViewerStatusModal ( titleText, message, isError ) =
     div
         [ HA.class "viewer-status-overlay" ]
         [ div
-            [ classList [ ( "modal", True ), ( "is-narrow", True ) ] ]
+            [ HA.class "modal is-narrow" ]
             [ div
                 [ HA.class "modal-header" ]
                 [ div [ HA.class "modal-title" ] [ text titleText ] ]
             , div
-                [ classList [ ( "modal-body", True ), ( "is-no-sidebar", True ) ] ]
+                [ HA.class "modal-body is-no-sidebar" ]
                 [ div
                     [ classList [ ( "status", True ), ( "is-error", isError ) ] ]
                     [ text message ]
@@ -212,18 +192,20 @@ viewViewerStatusModal ( titleText, message, isError ) =
         ]
 
 
+viewZoomIndicator : String -> Html Msg
+viewZoomIndicator zoomText =
+    div [ HA.class "viewer-zoom-indicator" ] [ text zoomText ]
+
+
 viewerStatus : Model -> Maybe ( String, String, Bool )
 viewerStatus model =
     case model.resourceResponse of
-        ResourceFailed message ->
-            Just ( "Unable to load manifest", message, True )
-
         ResourceLoadedManifest _ ->
-            if List.isEmpty model.tileSources then
-                Just ( "Unable to display manifest", "No canvases found in this manifest.", False )
+            if model.hasTileSources then
+                Nothing
 
             else
-                Nothing
+                Just ( "Unable to display manifest", "No canvases found in this manifest.", False )
 
         ResourceLoadedCollection _ ->
             case model.response of
@@ -231,11 +213,32 @@ viewerStatus model =
                     Just ( "Unable to load manifest", message, True )
 
                 _ ->
-                    if List.isEmpty model.tileSources then
-                        Just ( "No Manifest Selected", "Select a manifest from the collection to view.", False )
+                    if model.hasTileSources then
+                        Nothing
 
                     else
-                        Nothing
+                        Just ( "No Manifest Selected", "Select a manifest from the collection to view.", False )
+
+        ResourceFailed message ->
+            Just ( "Unable to load manifest", message, True )
+
+        _ ->
+            Nothing
+
+
+zoomPercentageLabel : Model -> Maybe String
+zoomPercentageLabel model =
+    case ( model.initialZoom, model.currentZoom ) of
+        ( Just initialZoom, Just currentZoom ) ->
+            if initialZoom > 0 then
+                let
+                    percent =
+                        (currentZoom / initialZoom) * 100
+                in
+                Just (String.fromInt (round percent) ++ "%")
+
+            else
+                Nothing
 
         _ ->
             Nothing

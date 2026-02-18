@@ -5,31 +5,609 @@ import Html exposing (Html, a, button, div, img, li, text, ul)
 import Html.Attributes as HA exposing (alt, attribute, classList, id, src, type_)
 import Html.Events as Events
 import Html.Lazy as Lazy
-import IIIF.Language exposing (LabelValue, Language(..), extractLabelFromLanguageMap)
+import IIIF.Language exposing (LabelValue, Language, extractLabelFromLanguageMap)
 import IIIF.Presentation exposing (IIIFManifest, MediaFormats, Range, RangeItem(..), ResourceTypes, ViewingDirection(..), canvasLabel, toCanvases, toHomepage, toMetadata, toRanges, toViewingDirection)
 import Json.Decode as Decode
-import Model exposing (ContentsView(..), Model, Page, ResourceResponse(..), Response(..), SidebarState(..), ViewMode(..), currentManifest, pageViewStartIndex, primaryImage)
+import Model exposing (ContentsView(..), Model, Page, ResourceResponse(..), SidebarState(..), ViewMode(..), currentManifest, pageViewStartIndex, primaryImage)
 import Msg exposing (Msg(..))
-import View.Helpers exposing (viewMaybe)
+import View.Helpers exposing (emptyHtml, viewMaybe)
 import View.HtmlRenderer exposing (renderHtml)
 
 
 viewSidebarPanel : Model -> Html Msg
 viewSidebarPanel model =
-    currentManifest model
-        |> viewMaybe (viewSidebarPanelWithManifest model)
+    case model.resourceResponse of
+        ResourceLoadedCollection _ ->
+            viewSidebarPanelWithMaybeManifest model (currentManifest model)
+
+        _ ->
+            currentManifest model
+                |> viewMaybe (viewSidebarPanelWithManifest model)
+
+
+viewSidebarResizer : Model -> Html Msg
+viewSidebarResizer model =
+    if shouldRenderSidebarShell model then
+        div
+            [ classList
+                [ ( "sidebar-resizer", True )
+                , ( "is-hidden", not (isSidebarVisible model.sidebarState) )
+                ]
+            , Events.on "mousedown"
+                (Decode.field "clientX" Decode.int
+                    |> Decode.map UserStartedSidebarResize
+                )
+            ]
+            [ text "⋮" ]
+
+    else
+        emptyHtml
+
+
+chunk : Int -> List a -> List (List a)
+chunk size items =
+    if size <= 0 then
+        []
+
+    else
+        chunkHelp size items []
+
+
+chunkHelp : Int -> List a -> List (List a) -> List (List a)
+chunkHelp size remaining acc =
+    case remaining of
+        [] ->
+            List.reverse acc
+
+        _ ->
+            let
+                nextChunk =
+                    List.take size remaining
+
+                rest =
+                    List.drop size remaining
+            in
+            chunkHelp size rest (nextChunk :: acc)
+
+
+currentCanvasId : Model -> IIIFManifest -> Maybe String
+currentCanvasId model manifest =
+    model.selectedIndex
+        |> Maybe.andThen (\index -> List.drop index (toCanvases manifest) |> List.head)
+        |> Maybe.map .id
+
+
+hasManifestMetadata : IIIFManifest -> Bool
+hasManifestMetadata manifest =
+    let
+        hasMetadataEntries =
+            toMetadata manifest
+                |> List.isEmpty
+                |> not
+
+        hasHomepageEntries =
+            case toHomepage manifest of
+                Just links ->
+                    not (List.isEmpty links)
+
+                Nothing ->
+                    False
+    in
+    hasMetadataEntries || hasHomepageEntries
+
+
+homepageEntries : Language -> IIIFManifest -> List (Html Msg)
+homepageEntries language manifest =
+    case toHomepage manifest of
+        Just links ->
+            if List.isEmpty links then
+                []
+
+            else
+                [ div
+                    [ HA.class "metadata-item" ]
+                    [ div
+                        [ HA.class "metadata-label" ]
+                        [ text "Homepage" ]
+                    , div
+                        [ HA.class "metadata-value" ]
+                        (List.map (homepageLinkBlock language) links)
+                    ]
+                ]
+
+        Nothing ->
+            []
+
+
+homepageLinkBlock :
+    Language
+    ->
+        { id : String
+        , label : IIIF.Language.LanguageMap
+        , format : MediaFormats
+        , type_ : ResourceTypes
+        }
+    -> Html Msg
+homepageLinkBlock language page =
+    div []
+        [ a
+            [ HA.href page.id
+            , HA.target "_blank"
+            , HA.rel "noopener noreferrer"
+            ]
+            [ extractLabelFromLanguageMap language page.label
+                |> text
+            ]
+        ]
+
+
+isSidebarVisible : SidebarState -> Bool
+isSidebarVisible state =
+    state /= SidebarHidden
+
+
+isThumbnailActive : ViewMode -> Bool -> Maybe Int -> Int -> Bool
+isThumbnailActive viewMode shiftByOne selectedIndex index =
+    case selectedIndex of
+        Just selected ->
+            case viewMode of
+                OneUp ->
+                    selected == index
+
+                TwoUp ->
+                    if shiftByOne && selected == 0 then
+                        index == 0
+
+                    else
+                        let
+                            startIndex =
+                                pageViewStartIndex TwoUp shiftByOne selected
+                        in
+                        index == startIndex || index == startIndex + 1
+
+        Nothing ->
+            False
+
+
+lookupRangeIndex : Dict String (Maybe Int) -> String -> Maybe Int
+lookupRangeIndex rangeIndexMap rangeId =
+    Dict.get rangeId rangeIndexMap
+        |> Maybe.withDefault Nothing
+
+
+metadataEntries : Language -> IIIFManifest -> List (Html Msg)
+metadataEntries language manifest =
+    toMetadata manifest
+        |> List.map (metadataEntry language)
+
+
+metadataEntry : Language -> LabelValue -> Html Msg
+metadataEntry language entry =
+    div
+        [ HA.class "metadata-item" ]
+        [ div
+            [ HA.class "metadata-label" ]
+            [ extractLabelFromLanguageMap language entry.label |> text ]
+        , div
+            [ HA.class "metadata-value" ]
+            (extractLabelFromLanguageMap language entry.value |> renderHtml)
+        ]
+
+
+rangeCanvasIds : List RangeItem -> List String
+rangeCanvasIds items =
+    let
+        step pending acc =
+            case pending of
+                [] ->
+                    List.reverse acc
+
+                [] :: restStacks ->
+                    step restStacks acc
+
+                (item :: rest) :: restStacks ->
+                    case item of
+                        RangeCanvas idValue ->
+                            step (rest :: restStacks) (idValue :: acc)
+
+                        RangeRange range ->
+                            step (range.items :: rest :: restStacks) acc
+    in
+    step [ items ] []
+
+
+rangeCanvasLabels : Dict String String -> Range -> List String
+rangeCanvasLabels canvasLabelMap range =
+    rangeCanvasIds range.items
+        |> List.filterMap (\idValue -> Dict.get idValue canvasLabelMap)
+
+
+rangeContainsCanvas : String -> Range -> Bool
+rangeContainsCanvas canvasId range =
+    List.any (rangeItemContainsCanvas canvasId) range.items
+
+
+rangeItemContainsCanvas : String -> RangeItem -> Bool
+rangeItemContainsCanvas canvasId item =
+    case item of
+        RangeCanvas idValue ->
+            idValue == canvasId
+
+        RangeRange range ->
+            rangeContainsCanvas canvasId range
+
+
+rangesForCanvas : String -> List Range -> List Range
+rangesForCanvas canvasId ranges =
+    List.concatMap (rangesForCanvasInRange canvasId) ranges
+
+
+rangesForCanvasInRange : String -> Range -> List Range
+rangesForCanvasInRange canvasId range =
+    let
+        nested =
+            List.concatMap
+                (\item ->
+                    case item of
+                        RangeCanvas _ ->
+                            []
+
+                        RangeRange child ->
+                            rangesForCanvasInRange canvasId child
+                )
+                range.items
+    in
+    if rangeContainsCanvas canvasId range then
+        range :: nested
+
+    else
+        nested
+
+
+reverseInRows : Int -> List a -> List a
+reverseInRows rowSize items =
+    if rowSize <= 1 then
+        items
+
+    else
+        chunk rowSize items
+            |> List.concatMap List.reverse
+
+
+shouldRenderSidebarShell : Model -> Bool
+shouldRenderSidebarShell model =
+    case model.resourceResponse of
+        ResourceLoadedCollection _ ->
+            True
+
+        _ ->
+            currentManifest model /= Nothing
+
+
+viewContentsContent : Model -> Html Msg
+viewContentsContent model =
+    let
+        maybeManifest =
+            currentManifest model
+
+        body =
+            case ( model.contentsView, maybeManifest ) of
+                ( ContentsIndex, Just manifest ) ->
+                    viewContentsIndexBody model manifest
+
+                ( ContentsIndex, Nothing ) ->
+                    viewContentsEmptyBody
+
+                ( ContentsPages, Just manifest ) ->
+                    viewOnThisPageBody model manifest
+
+                ( ContentsPages, Nothing ) ->
+                    viewOnThisPageEmptyBody
+    in
+    div
+        [ HA.class "contents-panel" ]
+        [ div [ HA.class "contents-title" ] [ text "Contents" ]
+        , viewContentsToggle model.viewMode model.contentsView
+        , body
+        ]
+
+
+viewContentsEmpty : String -> Html Msg
+viewContentsEmpty message =
+    div
+        [ HA.class "contents-empty" ]
+        [ text message ]
+
+
+viewContentsEmptyBody : Html Msg
+viewContentsEmptyBody =
+    viewContentsEmpty "No contents available."
+
+
+viewContentsIndexBody : Model -> IIIFManifest -> Html Msg
+viewContentsIndexBody model manifest =
+    case toRanges manifest of
+        Just list ->
+            if List.isEmpty list then
+                viewContentsEmptyBody
+
+            else
+                viewRangeList model model.rangeIndexMap list
+
+        Nothing ->
+            viewContentsEmptyBody
+
+
+viewContentsToggle : ViewMode -> ContentsView -> Html Msg
+viewContentsToggle viewMode contentsView =
+    div
+        [ HA.class "contents-view-tabs" ]
+        [ button
+            [ classList
+                [ ( "contents-view-button", True )
+                , ( "is-active", contentsView == ContentsIndex )
+                ]
+            , type_ "button"
+            , Events.onClick UserSelectedContentsIndex
+            ]
+            [ text "Index" ]
+        , button
+            [ classList
+                [ ( "contents-view-button", True )
+                , ( "is-active", contentsView == ContentsPages )
+                ]
+            , type_ "button"
+            , Events.onClick UserSelectedContentsPages
+            ]
+            [ text
+                (case viewMode of
+                    OneUp ->
+                        "On this page"
+
+                    TwoUp ->
+                        "On these pages"
+                )
+            ]
+        ]
+
+
+viewMetadataContent : Model -> Html Msg
+viewMetadataContent model =
+    div
+        [ HA.class "metadata-panel" ]
+        (case currentManifest model of
+            Just manifest ->
+                [ div
+                    [ HA.class "metadata-body" ]
+                    (metadataEntries model.detectedLanguage manifest
+                        ++ homepageEntries model.detectedLanguage manifest
+                    )
+                ]
+
+            Nothing ->
+                [ div
+                    [ HA.class "metadata-body" ]
+                    [ text "No metadata available." ]
+                ]
+        )
+
+
+viewOnThisPageBody : Model -> IIIFManifest -> Html Msg
+viewOnThisPageBody model manifest =
+    case currentCanvasId model manifest of
+        Just canvasId ->
+            case toRanges manifest of
+                Just list ->
+                    let
+                        matches =
+                            rangesForCanvas canvasId list
+                    in
+                    if List.isEmpty matches then
+                        viewOnThisPageEmptyBody
+
+                    else
+                        let
+                            canvasLabelMap =
+                                toCanvases manifest
+                                    |> List.map (\canvas -> ( canvas.id, canvasLabel canvas ))
+                                    |> Dict.fromList
+                        in
+                        ul
+                            [ HA.class "contents-list list-reset" ]
+                            (List.map (viewOtpRangeItem model canvasLabelMap) matches)
+
+                Nothing ->
+                    viewOnThisPageEmptyBody
+
+        Nothing ->
+            viewOnThisPageEmptyBody
+
+
+viewOnThisPageEmptyBody : Html Msg
+viewOnThisPageEmptyBody =
+    viewContentsEmpty "No ranges for this page."
+
+
+viewOtpRangeItem : Model -> Dict String String -> Range -> Html Msg
+viewOtpRangeItem model canvasLabelMap range =
+    let
+        canvasLabels =
+            rangeCanvasLabels canvasLabelMap range
+
+        maybeIndex =
+            lookupRangeIndex model.rangeIndexMap range.id
+
+        labelText =
+            extractLabelFromLanguageMap model.detectedLanguage range.label
+
+        firstLabel =
+            List.head canvasLabels
+
+        lastLabel =
+            List.reverse canvasLabels |> List.head
+
+        rangePrefix =
+            case ( firstLabel, lastLabel ) of
+                ( Just first, Just last ) ->
+                    if first == last then
+                        "[" ++ first ++ "] "
+
+                    else
+                        "[" ++ first ++ "-" ++ last ++ "] "
+
+                ( Just first, Nothing ) ->
+                    "[" ++ first ++ "] "
+
+                ( Nothing, Just last ) ->
+                    "[" ++ last ++ "] "
+
+                _ ->
+                    ""
+
+        resolvedLabel =
+            if String.isEmpty labelText then
+                rangePrefix ++ "[Untitled range]"
+
+            else
+                rangePrefix ++ labelText
+
+        labelNode =
+            viewRangeButton range.id maybeIndex resolvedLabel
+
+        metadataBlock =
+            viewRangeMetadata model.detectedLanguage range.metadata
+    in
+    li
+        [ HA.class "contents-item" ]
+        (labelNode :: metadataBlock)
+
+
+viewRangeButton : String -> Maybe Int -> String -> Html Msg
+viewRangeButton rangeId maybeIndex labelText =
+    button
+        [ HA.class "contents-button ui-button"
+        , type_ "button"
+        , Events.onClick (UserClickedRange rangeId maybeIndex)
+        ]
+        [ text labelText ]
+
+
+viewRangeItems : Model -> Dict String (Maybe Int) -> List RangeItem -> List (Html Msg)
+viewRangeItems model rangeIndexMap items =
+    let
+        rendered =
+            List.filterMap
+                (\item ->
+                    case item of
+                        RangeCanvas _ ->
+                            Nothing
+
+                        RangeRange range ->
+                            Just (Lazy.lazy3 viewRangeNode model rangeIndexMap range)
+                )
+                items
+    in
+    if List.isEmpty rendered then
+        []
+
+    else
+        [ ul [ HA.class "contents-list-nested list-reset" ] rendered ]
+
+
+viewRangeList : Model -> Dict String (Maybe Int) -> List Range -> Html Msg
+viewRangeList model rangeIndexMap ranges =
+    ul
+        [ HA.class "contents-list list-reset" ]
+        (List.map (Lazy.lazy3 viewRangeNode model rangeIndexMap) ranges)
+
+
+viewRangeMetadata : Language -> List LabelValue -> List (Html Msg)
+viewRangeMetadata language metadata =
+    if List.isEmpty metadata then
+        []
+
+    else
+        [ div
+            [ HA.class "contents-meta" ]
+            (List.map (metadataEntry language) metadata)
+        ]
+
+
+viewRangeNode : Model -> Dict String (Maybe Int) -> Range -> Html Msg
+viewRangeNode model rangeIndexMap range =
+    let
+        maybeIndex =
+            lookupRangeIndex rangeIndexMap range.id
+
+        labelText =
+            extractLabelFromLanguageMap model.detectedLanguage range.label
+
+        resolvedLabel =
+            if String.isEmpty labelText then
+                "[Untitled range]"
+
+            else
+                labelText
+
+        labelNode =
+            viewRangeButton range.id maybeIndex resolvedLabel
+
+        metadataBlock =
+            if model.selectedRangeId == Just range.id then
+                viewRangeMetadata model.detectedLanguage range.metadata
+
+            else
+                []
+
+        children =
+            viewRangeItems model rangeIndexMap range.items
+    in
+    li
+        [ HA.class "contents-item" ]
+        (labelNode :: metadataBlock ++ children)
+
+
+viewSidebarPane : SidebarState -> SidebarState -> Html Msg -> Html Msg
+viewSidebarPane current target content =
+    div
+        [ classList
+            [ ( "sidebar-pane", True )
+            , ( "is-hidden", current /= target )
+            ]
+        ]
+        [ content ]
 
 
 viewSidebarPanelWithManifest : Model -> IIIFManifest -> Html Msg
 viewSidebarPanelWithManifest model manifest =
+    viewSidebarPanelWithMaybeManifest model (Just manifest)
+
+
+viewSidebarPanelWithMaybeManifest : Model -> Maybe IIIFManifest -> Html Msg
+viewSidebarPanelWithMaybeManifest model maybeManifest =
     let
         hasContents =
-            toRanges manifest
+            maybeManifest
+                |> Maybe.andThen toRanges
                 |> Maybe.map (List.isEmpty >> not)
                 |> Maybe.withDefault False
 
         hasMetadata =
-            hasManifestMetadata manifest
+            maybeManifest
+                |> Maybe.map hasManifestMetadata
+                |> Maybe.withDefault False
+
+        viewingDirection =
+            maybeManifest
+                |> Maybe.map toViewingDirection
+                |> Maybe.withDefault LeftToRight
+
+        thumbnailPages =
+            if model.isViewerLoading then
+                []
+
+            else
+                model.pages
 
         panelClasses =
             [ ( "sidebar-panel", True )
@@ -93,38 +671,14 @@ viewSidebarPanelWithManifest model manifest =
                     , shiftByOne = model.shiftByOne
                     , thumbsInstantScroll = model.thumbsInstantScroll
                     , viewMode = model.viewMode
-                    , viewingDirection = toViewingDirection manifest
+                    , viewingDirection = viewingDirection
                     }
-                    model.pages
+                    thumbnailPages
                 )
                 :: metadataPane
                 ++ contentsPane
             )
         ]
-
-
-viewSidebarResizer : Model -> Html Msg
-viewSidebarResizer model =
-    viewMaybe
-        (\_ ->
-            div
-                [ classList
-                    [ ( "sidebar-resizer", True )
-                    , ( "is-hidden", not (isSidebarVisible model.sidebarState) )
-                    ]
-                , Events.on "mousedown"
-                    (Decode.field "clientX" Decode.int
-                        |> Decode.map UserStartedSidebarResize
-                    )
-                ]
-                [ text "⋮" ]
-        )
-        (currentManifest model)
-
-
-isSidebarVisible : SidebarState -> Bool
-isSidebarVisible state =
-    state /= SidebarHidden
 
 
 viewSidebarTab : SidebarState -> SidebarState -> String -> Msg -> Html Msg
@@ -140,85 +694,8 @@ viewSidebarTab current target label msg =
         [ text label ]
 
 
-viewSidebarPane : SidebarState -> SidebarState -> Html Msg -> Html Msg
-viewSidebarPane current target content =
-    div
-        [ classList
-            [ ( "sidebar-pane", True )
-            , ( "is-hidden", current /= target )
-            ]
-        ]
-        [ content ]
-
-
-viewThumbnails :
-    { fullscreen : Bool
-    , selectedIndex : Maybe Int
-    , shiftByOne : Bool
-    , thumbsInstantScroll : Bool
-    , viewMode : ViewMode
-    , viewingDirection : ViewingDirection
-    }
-    -> List Page
-    -> Html Msg
-viewThumbnails { fullscreen, selectedIndex, shiftByOne, thumbsInstantScroll, viewMode, viewingDirection } pages =
-    let
-        indexedPages =
-            List.indexedMap Tuple.pair pages
-
-        orderedPages =
-            if viewingDirection == RightToLeft then
-                reverseInRows 3 indexedPages
-
-            else
-                indexedPages
-    in
-    div
-        [ classList
-            [ ( "thumbs", True )
-            , ( "is-fullscreen", fullscreen )
-            ]
-        , id "thumbs"
-        , HA.style "scroll-behavior"
-            (if thumbsInstantScroll then
-                "auto"
-
-             else
-                "smooth"
-            )
-        ]
-        (orderedPages
-            |> List.map (Lazy.lazy4 viewThumbnail viewMode shiftByOne selectedIndex)
-        )
-
-
-reverseInRows : Int -> List a -> List a
-reverseInRows rowSize items =
-    if rowSize <= 1 then
-        items
-
-    else
-        items
-            |> chunk rowSize
-            |> List.concatMap List.reverse
-
-
-chunk : Int -> List a -> List (List a)
-chunk size items =
-    if size <= 0 then
-        []
-
-    else
-        case items of
-            [] ->
-                []
-
-            _ ->
-                List.take size items :: chunk size (List.drop size items)
-
-
-viewThumbnail : ViewMode -> Bool -> Maybe Int -> ( Int, Page ) -> Html Msg
-viewThumbnail viewMode shiftByOne selectedIndex ( index, page ) =
+viewThumbnail : ViewMode -> Bool -> Maybe Int -> Int -> Page -> Html Msg
+viewThumbnail viewMode shiftByOne selectedIndex index page =
     let
         isActive =
             isThumbnailActive viewMode shiftByOne selectedIndex index
@@ -268,466 +745,42 @@ viewThumbnail viewMode shiftByOne selectedIndex ( index, page ) =
         ]
 
 
-isThumbnailActive : ViewMode -> Bool -> Maybe Int -> Int -> Bool
-isThumbnailActive viewMode shiftByOne selectedIndex index =
-    case selectedIndex of
-        Just selected ->
-            case viewMode of
-                OneUp ->
-                    selected == index
-
-                TwoUp ->
-                    if shiftByOne && selected == 0 then
-                        index == 0
-
-                    else
-                        let
-                            startIndex =
-                                pageViewStartIndex TwoUp shiftByOne selected
-                        in
-                        index == startIndex || index == startIndex + 1
-
-        Nothing ->
-            False
-
-
-viewMetadataContent : Model -> Html Msg
-viewMetadataContent model =
-    div
-        [ HA.class "metadata-panel" ]
-        (case currentManifest model of
-            Just manifest ->
-                [ div
-                    [ HA.class "metadata-body" ]
-                    (metadataEntries model.detectedLanguage manifest
-                        ++ homepageEntries model.detectedLanguage manifest
-                    )
-                ]
-
-            Nothing ->
-                [ div
-                    [ HA.class "metadata-body" ]
-                    [ text "No metadata available." ]
-                ]
-        )
-
-
-metadataEntries : Language -> IIIFManifest -> List (Html Msg)
-metadataEntries language manifest =
-    toMetadata manifest
-        |> List.map (metadataEntry language)
-
-
-homepageEntries : Language -> IIIFManifest -> List (Html Msg)
-homepageEntries language manifest =
-    case toHomepage manifest of
-        Just links ->
-            if List.isEmpty links then
-                []
-
-            else
-                [ div
-                    [ HA.class "metadata-item" ]
-                    [ div
-                        [ HA.class "metadata-label" ]
-                        [ text "Homepage" ]
-                    , div
-                        [ HA.class "metadata-value" ]
-                        (List.map (homepageLinkBlock language) links)
-                    ]
-                ]
-
-        Nothing ->
-            []
-
-
-hasManifestMetadata : IIIFManifest -> Bool
-hasManifestMetadata manifest =
-    let
-        hasMetadataEntries =
-            toMetadata manifest
-                |> List.isEmpty
-                |> not
-
-        hasHomepageEntries =
-            case toHomepage manifest of
-                Just links ->
-                    not (List.isEmpty links)
-
-                Nothing ->
-                    False
-    in
-    hasMetadataEntries || hasHomepageEntries
-
-
-homepageLinkBlock :
-    Language
-    ->
-        { id : String
-        , label : IIIF.Language.LanguageMap
-        , format : MediaFormats
-        , type_ : ResourceTypes
-        }
+viewThumbnails :
+    { fullscreen : Bool
+    , selectedIndex : Maybe Int
+    , shiftByOne : Bool
+    , thumbsInstantScroll : Bool
+    , viewMode : ViewMode
+    , viewingDirection : ViewingDirection
+    }
+    -> List Page
     -> Html Msg
-homepageLinkBlock language page =
-    div []
-        [ a
-            [ HA.href page.id
-            , HA.target "_blank"
-            , HA.rel "noopener noreferrer"
-            ]
-            [ extractLabelFromLanguageMap language page.label
-                |> text
-            ]
-        ]
-
-
-viewContentsContent : Model -> Html Msg
-viewContentsContent model =
+viewThumbnails { fullscreen, selectedIndex, shiftByOne, thumbsInstantScroll, viewMode, viewingDirection } pages =
     let
-        maybeManifest =
-            currentManifest model
+        indexedPages =
+            List.indexedMap Tuple.pair pages
 
-        body =
-            case ( model.contentsView, maybeManifest ) of
-                ( ContentsIndex, Just manifest ) ->
-                    viewContentsIndexBody model manifest
-
-                ( ContentsIndex, Nothing ) ->
-                    viewContentsEmptyBody
-
-                ( ContentsPages, Just manifest ) ->
-                    viewOnThisPageBody model manifest
-
-                ( ContentsPages, Nothing ) ->
-                    viewOnThisPageEmptyBody
-    in
-    div
-        [ HA.class "contents-panel" ]
-        [ div [ HA.class "contents-title" ] [ text "Contents" ]
-        , viewContentsToggle model.viewMode model.contentsView
-        , body
-        ]
-
-
-viewContentsToggle : ViewMode -> ContentsView -> Html Msg
-viewContentsToggle viewMode contentsView =
-    div
-        [ HA.class "contents-view-tabs" ]
-        [ button
-            [ classList
-                [ ( "contents-view-button", True )
-                , ( "is-active", contentsView == ContentsIndex )
-                ]
-            , type_ "button"
-            , Events.onClick UserSelectedContentsIndex
-            ]
-            [ text "Index" ]
-        , button
-            [ classList
-                [ ( "contents-view-button", True )
-                , ( "is-active", contentsView == ContentsPages )
-                ]
-            , type_ "button"
-            , Events.onClick UserSelectedContentsPages
-            ]
-            [ text
-                (case viewMode of
-                    OneUp ->
-                        "On this page"
-
-                    TwoUp ->
-                        "On these pages"
-                )
-            ]
-        ]
-
-
-viewContentsIndexBody : Model -> IIIFManifest -> Html Msg
-viewContentsIndexBody model manifest =
-    case toRanges manifest of
-        Just list ->
-            if List.isEmpty list then
-                viewContentsEmptyBody
+        orderedPages =
+            if viewingDirection == RightToLeft then
+                reverseInRows 3 indexedPages
 
             else
-                viewRangeList model model.rangeIndexMap list
-
-        Nothing ->
-            viewContentsEmptyBody
-
-
-viewContentsEmptyBody : Html Msg
-viewContentsEmptyBody =
+                indexedPages
+    in
     div
-        [ HA.class "contents-empty" ]
-        [ text "No contents available." ]
+        [ classList
+            [ ( "thumbs", True )
+            , ( "is-fullscreen", fullscreen )
+            ]
+        , id "thumbs"
+        , HA.style "scroll-behavior"
+            (if thumbsInstantScroll then
+                "auto"
 
-
-viewOnThisPageBody : Model -> IIIFManifest -> Html Msg
-viewOnThisPageBody model manifest =
-    case currentCanvasId model manifest of
-        Just canvasId ->
-            case toRanges manifest of
-                Just list ->
-                    let
-                        matches =
-                            rangesForCanvas canvasId list
-                    in
-                    if List.isEmpty matches then
-                        viewOnThisPageEmptyBody
-
-                    else
-                        let
-                            canvasLabelMap =
-                                toCanvases manifest
-                                    |> List.map (\canvas -> ( canvas.id, canvasLabel canvas ))
-                                    |> Dict.fromList
-                        in
-                        ul
-                            [ classList [ ( "contents-list", True ), ( "list-reset", True ) ] ]
-                            (List.map (viewOtpRangeItem model canvasLabelMap) matches)
-
-                Nothing ->
-                    viewOnThisPageEmptyBody
-
-        Nothing ->
-            viewOnThisPageEmptyBody
-
-
-viewOnThisPageEmptyBody : Html Msg
-viewOnThisPageEmptyBody =
-    div
-        [ HA.class "contents-empty" ]
-        [ text "No ranges for this page." ]
-
-
-viewOtpRangeItem : Model -> Dict String String -> Range -> Html Msg
-viewOtpRangeItem model canvasLabelMap range =
-    let
-        canvasLabels =
-            rangeCanvasLabels canvasLabelMap range
-
-        labelText =
-            extractLabelFromLanguageMap model.detectedLanguage range.label
-
-        maybeIndex =
-            Dict.get range.id model.rangeIndexMap
-                |> Maybe.withDefault Nothing
-
-        firstLabel =
-            List.head canvasLabels
-
-        lastLabel =
-            List.reverse canvasLabels |> List.head
-
-        rangePrefix =
-            case ( firstLabel, lastLabel ) of
-                ( Just first, Just last ) ->
-                    if first == last then
-                        "[" ++ first ++ "] "
-
-                    else
-                        "[" ++ first ++ "-" ++ last ++ "] "
-
-                ( Just first, Nothing ) ->
-                    "[" ++ first ++ "] "
-
-                ( Nothing, Just last ) ->
-                    "[" ++ last ++ "] "
-
-                _ ->
-                    ""
-
-        labelNode =
-            button
-                [ classList [ ( "contents-button", True ), ( "ui-button", True ) ]
-                , type_ "button"
-                , Events.onClick (UserClickedRange range.id maybeIndex)
-                ]
-                [ text
-                    (if String.isEmpty labelText then
-                        rangePrefix ++ "[Untitled range]"
-
-                     else
-                        rangePrefix ++ labelText
-                    )
-                ]
-
-        metadataBlock =
-            viewRangeMetadata model.detectedLanguage range.metadata
-    in
-    li
-        [ HA.class "contents-item" ]
-        (labelNode :: metadataBlock)
-
-
-viewRangeList : Model -> Dict String (Maybe Int) -> List Range -> Html Msg
-viewRangeList model rangeIndexMap ranges =
-    ul
-        [ classList [ ( "contents-list", True ), ( "list-reset", True ) ] ]
-        (List.map (Lazy.lazy3 viewRangeNode model rangeIndexMap) ranges)
-
-
-viewRangeNode : Model -> Dict String (Maybe Int) -> Range -> Html Msg
-viewRangeNode model rangeIndexMap range =
-    let
-        labelText =
-            extractLabelFromLanguageMap model.detectedLanguage range.label
-
-        maybeIndex =
-            Dict.get range.id rangeIndexMap
-                |> Maybe.withDefault Nothing
-
-        labelNode =
-            button
-                [ classList [ ( "contents-button", True ), ( "ui-button", True ) ]
-                , type_ "button"
-                , Events.onClick (UserClickedRange range.id maybeIndex)
-                ]
-                [ text
-                    (if String.isEmpty labelText then
-                        "[Untitled range]"
-
-                     else
-                        labelText
-                    )
-                ]
-
-        metadataBlock =
-            if model.selectedRangeId == Just range.id then
-                viewRangeMetadata model.detectedLanguage range.metadata
-
-            else
-                []
-
-        children =
-            viewRangeItems model rangeIndexMap range.items
-    in
-    li
-        [ HA.class "contents-item" ]
-        (labelNode :: metadataBlock ++ children)
-
-
-viewRangeItems : Model -> Dict String (Maybe Int) -> List RangeItem -> List (Html Msg)
-viewRangeItems model rangeIndexMap items =
-    let
-        rendered =
-            List.filterMap
-                (\item ->
-                    case item of
-                        RangeCanvas _ ->
-                            Nothing
-
-                        RangeRange range ->
-                            Just (Lazy.lazy3 viewRangeNode model rangeIndexMap range)
-                )
-                items
-    in
-    if List.isEmpty rendered then
-        []
-
-    else
-        [ ul [ classList [ ( "contents-list-nested", True ), ( "list-reset", True ) ] ] rendered ]
-
-
-viewRangeMetadata : Language -> List LabelValue -> List (Html Msg)
-viewRangeMetadata language metadata =
-    if List.isEmpty metadata then
-        []
-
-    else
-        [ div
-            [ HA.class "contents-meta" ]
-            (List.map (metadataEntry language) metadata)
+             else
+                "smooth"
+            )
         ]
-
-
-currentCanvasId : Model -> IIIFManifest -> Maybe String
-currentCanvasId model manifest =
-    model.selectedIndex
-        |> Maybe.andThen (\index -> List.drop index (toCanvases manifest) |> List.head)
-        |> Maybe.map .id
-
-
-rangesForCanvas : String -> List Range -> List Range
-rangesForCanvas canvasId ranges =
-    List.concatMap (rangesForCanvasInRange canvasId) ranges
-
-
-rangesForCanvasInRange : String -> Range -> List Range
-rangesForCanvasInRange canvasId range =
-    let
-        nested =
-            List.concatMap
-                (\item ->
-                    case item of
-                        RangeCanvas _ ->
-                            []
-
-                        RangeRange child ->
-                            rangesForCanvasInRange canvasId child
-                )
-                range.items
-    in
-    if rangeContainsCanvas canvasId range then
-        range :: nested
-
-    else
-        nested
-
-
-rangeContainsCanvas : String -> Range -> Bool
-rangeContainsCanvas canvasId range =
-    List.any (rangeItemContainsCanvas canvasId) range.items
-
-
-rangeItemContainsCanvas : String -> RangeItem -> Bool
-rangeItemContainsCanvas canvasId item =
-    case item of
-        RangeCanvas idValue ->
-            idValue == canvasId
-
-        RangeRange range ->
-            rangeContainsCanvas canvasId range
-
-
-rangeCanvasLabels : Dict String String -> Range -> List String
-rangeCanvasLabels canvasLabelMap range =
-    rangeCanvasIds range.items
-        |> List.filterMap (\idValue -> Dict.get idValue canvasLabelMap)
-
-
-rangeCanvasIds : List RangeItem -> List String
-rangeCanvasIds items =
-    let
-        step pending acc =
-            case pending of
-                [] ->
-                    List.reverse acc
-
-                [] :: restStacks ->
-                    step restStacks acc
-
-                (item :: rest) :: restStacks ->
-                    case item of
-                        RangeCanvas idValue ->
-                            step (rest :: restStacks) (idValue :: acc)
-
-                        RangeRange range ->
-                            step (range.items :: rest :: restStacks) acc
-    in
-    step [ items ] []
-
-
-metadataEntry : Language -> LabelValue -> Html Msg
-metadataEntry language entry =
-    div
-        [ HA.class "metadata-item" ]
-        [ div
-            [ HA.class "metadata-label" ]
-            [ extractLabelFromLanguageMap language entry.label |> text ]
-        , div
-            [ HA.class "metadata-value" ]
-            (extractLabelFromLanguageMap language entry.value |> renderHtml)
-        ]
+        (orderedPages
+            |> List.map (\( index, page ) -> Lazy.lazy5 viewThumbnail viewMode shiftByOne selectedIndex index page)
+        )

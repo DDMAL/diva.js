@@ -39,6 +39,7 @@
       this.handleWheelBound = this.handleWheel.bind(this);
       this.handleDoubleClickBound = this.handleDoubleClick.bind(this);
       this.handleViewportChangeBound = this.handleViewportChange.bind(this);
+      this.handleAnimationFinishBound = this.handleAnimationFinish.bind(this);
     }
     connectedCallback() {
       this.style.display = "block";
@@ -113,7 +114,7 @@
         viewer.addHandler("zoom", this.handleViewportChangeBound);
         viewer.addHandler("pan", () => this.updateScrollbar());
         viewer.addHandler("zoom", () => this.updateScrollbar());
-        viewer.addHandler("animation-finish", () => this.updateScrollbar());
+        viewer.addHandler("animation-finish", this.handleAnimationFinishBound);
       }
     }
     setLayoutMode(mode) {
@@ -172,9 +173,12 @@
       }
       this.maybeLoadMore(viewport);
       this.maybeEmitPageChange(viewport);
-      this.maybeEmitZoomChange(viewport);
       this.clampTop(viewport);
       this.clampBottom(viewport);
+    }
+    handleAnimationFinish() {
+      this.updateScrollbar();
+      this.maybeEmitZoomChange();
     }
     maybeLoadMore(viewport) {
       var _a;
@@ -886,7 +890,7 @@
   customElements.define("osd-viewer", OsdViewer);
 
   // cache/diva.css
-  var diva_default = ":root{--diva-accent:#5a6bff;--diva-accent-light:#9aa4ff;--diva-border:#d9d4ce;--diva-danger:#d32f2f;--diva-dark-bg:#1c1d22;--diva-dark-border:#2c2d33;--diva-overlay-bg:#10111499;--diva-page-bg:#f7f5f1;--diva-shadow-dark:#00000026;--diva-shadow-focus:#9aa4ff59;--diva-shadow-modal:#00000040;--diva-surface:#e6e1dc;--diva-text-muted:#5c5a55;--diva-text-muted-on-dark:#ffffffb3;--diva-text-primary:#1b1b1b;--diva-toolbar-button-bg:#5258626b;--diva-toolbar-button-bg-hover:#5c636e85;--diva-toolbar-button-bg-fullscreen:#52586285;--diva-toolbar-button-bg-fullscreen-hover:#6068749e;--diva-toolbar-button-border:#ffffff59;--diva-toolbar-button-border-hover:#ffffff73;--diva-toolbar-button-border-fullscreen-hover:#fff9;--diva-toolbar-button-icon:#2c2d33;--diva-toolbar-button-shadow:inset 0 1px 0 #ffffff8c, inset 0 -1px 0 #ffffff2e;--diva-toolbar-button-shadow-hover:inset 0 1px 0 #ffffffb3, inset 0 -1px 0 #ffffff3d;--diva-white:#fff;--diva-font-lg:16px;--diva-font-md:13px;--diva-font-sm:11px;--diva-font-xs:10px;--diva-font-xl:20px;color-scheme:light}*{box-sizing:border-box}.list-reset{margin:0;padding:0;list-style:none}.ui-button{text-align:left;cursor:pointer;color:var(--diva-text-primary);font-size:var(--diva-font-lg);background-color:#0000;border:none;padding:0}.ui-button:hover{background-color:var(--diva-surface)}.ui-card{cursor:pointer;border-radius:6px;width:100%;padding:6px}.ui-card--dark{background-color:var(--diva-dark-bg)}.diva-app{flex-direction:column;flex:1;height:100%;min-height:0;padding:12px 24px;display:flex}.diva-app.is-fullscreen{height:100vh;min-height:100vh;padding:0}.diva-app-header{font-size:var(--diva-font-lg);align-items:center;gap:12px;margin-bottom:8px;font-weight:600;display:flex}.diva-app-title{font-size:var(--diva-font-xl);text-align:left;color:var(--diva-text-primary);margin-bottom:6px;font-weight:600}.diva-app-title.is-fullscreen{color:var(--diva-white)}.diva-app-body{flex:1;align-items:stretch;gap:0;height:100%;min-height:0;display:flex;position:relative}.diva-app-body.is-fullscreen{flex:1;min-height:0}.diva-canvas-column{flex-direction:column;flex:1;gap:24px;min-height:0;display:flex}.diva-canvas-column.is-fullscreen{flex:1;height:100%;min-height:0}.diva-canvas-wrapper{flex:1;min-height:0;position:relative}.diva-canvas{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);border-radius:6px 0 0 6px;width:100%;height:100%;overflow:hidden}.diva-canvas.is-fullscreen{border-radius:0;flex:1;height:100%}.diva-canvas.has-collection{border-radius:0}.metadata-panel{height:100%;padding:12px;overflow:auto}.metadata-body{flex-direction:column;gap:10px;display:flex}.metadata-item{flex-direction:column;gap:4px;display:flex}.metadata-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}.metadata-value{font-size:var(--diva-font-lg);color:var(--diva-text-muted);line-height:1.4}.contents-empty{font-size:var(--diva-font-lg);color:var(--diva-text-muted);padding-left:12px}.sidebar-resizer,.collection-resizer{width:12px;font-size:var(--diva-font-xl);color:var(--diva-white);background-color:var(--diva-text-muted);cursor:ew-resize;user-select:none;touch-action:none;flex:0 0 12px;justify-content:center;align-self:stretch;align-items:center;line-height:1;display:flex}.sidebar-resizer.is-hidden,.collection-resizer.is-hidden{display:none}.sidebar-panel.is-fullscreen,.collection-panel.is-fullscreen{border-radius:0;height:100%}.sidebar-panel.is-hidden,.collection-panel.is-hidden{opacity:0;pointer-events:none;border-width:0;padding:0;overflow:hidden}.required-statement-dock{justify-content:flex-end;width:100%;margin-top:12px;padding-right:8px;display:flex}.required-statement{font-size:var(--diva-font-md);color:var(--diva-text-muted);text-align:right;min-width:250px;max-width:20vw;line-height:1.4}.diva-scrollbar-track{background:var(--diva-surface);border:1px solid var(--diva-border);z-index:100;border-radius:6px;width:12px;position:absolute;top:4px;bottom:4px;right:4px}.diva-scrollbar-thumb{background:var(--diva-text-muted);cursor:pointer;border-radius:5px;min-height:30px;position:absolute;left:1px;right:1px}.diva-scrollbar-thumb:hover{background:var(--diva-text-primary)}.diva-scrollbar-thumb:active{background:var(--diva-dark-border)}.throbber-overlay{pointer-events:none;justify-content:center;align-items:center;display:flex;position:absolute;inset:0}.throbber{background-color:var(--diva-white);width:64px;height:64px;box-shadow:0 8px 16px var(--diva-shadow-dark);border-radius:8px;flex-wrap:wrap;padding:8px;display:flex}.throbber-cube{background-color:var(--diva-accent);width:16px;height:16px;animation-name:diva-cube-grid;animation-duration:1.3s;animation-timing-function:ease-in-out;animation-iteration-count:infinite}@keyframes diva-cube-grid{0%{transform:scale(1)}35%{transform:scale(0)}70%{transform:scale(1)}to{transform:scale(1)}}@media (width<=720px){.diva-app{padding:12px}.diva-app-body{flex-direction:column;gap:12px}.sidebar-resizer,.collection-resizer{display:none}}.sidebar-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0 6px 6px 0;flex-direction:column;width:320px;height:100%;min-height:0;display:flex;overflow:hidden}.sidebar-tabs{border:1px solid var(--diva-surface);background-color:var(--diva-surface);border-radius:0 6px 0 0;display:flex}.sidebar-tab-button{font-size:var(--diva-font-md);text-transform:uppercase;cursor:pointer;color:var(--diva-text-muted);background-color:#0000;border:none;flex:1;padding:10px 12px}.sidebar-tab-button.is-active{background-color:var(--diva-white);font-weight:600}.sidebar-content{background-color:var(--diva-page-bg);flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}.sidebar-pane{flex:1;width:100%;min-height:0}.sidebar-pane.is-hidden{display:none}.thumbs{scroll-behavior:smooth;background-color:var(--diva-dark-bg);flex:1;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:10px;width:100%;height:100%;min-height:0;padding:12px;display:grid;overflow-y:auto}.thumbs.is-fullscreen{height:100%}.thumbs-item{border:1px solid var(--diva-dark-border);text-align:left;flex-direction:column;justify-content:flex-start;align-items:stretch;max-width:none;display:flex}.thumbs-item:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.thumbs-item.is-active{border-color:var(--diva-accent-light);box-shadow:0 0 0 var(--diva-shadow-focus);background-color:var(--diva-dark-bg);outline:2px solid var(--diva-accent-light);outline-offset:2px}.thumbs-image{border-radius:3px;width:100%;height:auto;display:block}.thumbs-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted-on-dark);margin-top:6px;line-height:1.3}.thumbs-label.is-active{color:var(--diva-white)}.contents-panel{height:100%;padding:12px;overflow:auto}.contents-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:10px;font-weight:600}.contents-view-tabs{gap:8px;margin-bottom:12px;display:flex}.contents-view-button{background-color:var(--diva-surface);border:1px solid var(--diva-border);font-size:var(--diva-font-sm);color:var(--diva-text-muted);cursor:pointer;border-radius:6px;padding:4px 10px}.contents-view-button.is-active{background-color:var(--diva-white);border-color:var(--diva-accent);color:var(--diva-text-primary)}.contents-list-nested{margin-top:6px;padding-left:16px}.contents-item{margin-bottom:6px}.contents-meta{border:1px solid var(--diva-dark-border);margin-top:6px;padding:8px}.contents-button:hover{color:var(--diva-accent)}@media (width<=720px){.sidebar-panel{border-radius:6px;height:auto;width:100%!important}.sidebar-panel.is-overlay{z-index:100;width:100%;height:100%;box-shadow:0 12px 24px var(--diva-shadow-dark);border-radius:0;position:absolute;inset:0}.sidebar-panel.is-mobile-hidden{display:none}.thumbs{grid-template-columns:repeat(3,minmax(0,1fr));width:100%;height:auto;overflow:auto hidden}.thumbs-item{min-width:120px}}.canvas-toolbar-stack{flex-direction:column;gap:2px;width:100%;min-width:0;display:flex}.canvas-toolbar{align-items:flex-start;width:100%;margin-bottom:0;display:flex}.canvas-toolbar-section{flex:none;align-items:flex-start;gap:8px;min-width:0;display:flex}.canvas-toolbar-section.is-right{flex:none;margin-left:auto}.canvas-toolbar-item{flex-direction:column;flex:none;align-items:center;gap:6px;width:80px;display:flex}.canvas-toolbar-button{background-color:var(--diva-toolbar-button-bg);color:var(--diva-toolbar-button-icon);border:2px solid var(--diva-toolbar-button-icon);box-shadow:var(--diva-toolbar-button-shadow);-webkit-backdrop-filter:blur(10px)saturate(140%);cursor:pointer;border-radius:6px;align-items:center;width:80%;height:36px;padding:4px 6px;display:flex}.canvas-toolbar-button:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.canvas-toolbar-button:hover{background-color:var(--diva-toolbar-button-bg-hover);border-color:var(--diva-toolbar-button-icon);box-shadow:var(--diva-toolbar-button-shadow-hover)}.canvas-toolbar-button.is-fullscreen{color:var(--diva-white);background-color:var(--diva-toolbar-button-bg-fullscreen);border-color:var(--diva-toolbar-button-border-hover)}.canvas-toolbar-button.is-fullscreen:hover{background-color:var(--diva-toolbar-button-bg-fullscreen-hover);border-color:var(--diva-toolbar-button-border-fullscreen-hover)}.canvas-toolbar-button.is-disabled{opacity:.4;cursor:not-allowed}.canvas-toolbar-button.is-disabled:hover{background-color:var(--diva-toolbar-button-bg);border-color:var(--diva-toolbar-button-icon);box-shadow:var(--diva-toolbar-button-shadow)}.canvas-toolbar-button.is-fullscreen.is-disabled:hover{background-color:var(--diva-toolbar-button-bg-fullscreen);border-color:var(--diva-toolbar-button-border-hover);box-shadow:var(--diva-toolbar-button-shadow)}.canvas-toolbar-label{font-size:var(--diva-font-sm);color:var(--diva-text-primary);white-space:normal;text-overflow:ellipsis;text-align:center;text-transform:uppercase;word-break:break-word;min-height:1.4em;font-weight:500;line-height:1;overflow:hidden}.canvas-toolbar-label.is-fullscreen{color:var(--diva-white)}.canvas-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-align:left;white-space:normal;overflow-wrap:anywhere;word-break:break-word;width:100%}.canvas-label.is-fullscreen{color:var(--diva-white)}.status{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:0}.status.is-error{color:var(--diva-danger)}@media (width<=720px){.canvas-toolbar{flex-wrap:wrap;gap:8px}.canvas-toolbar-item{width:64px}.canvas-label,.status{display:none}}.modal-overlay{background-color:var(--diva-overlay-bg);z-index:100;justify-content:center;align-items:center;padding:24px;display:flex;position:fixed;inset:0}.viewer-status-overlay{background-color:var(--diva-overlay-bg);z-index:40;justify-content:center;align-items:center;padding:24px;display:flex;position:absolute;inset:0}.modal-overlay.is-fullscreen{padding:0}.modal{background-color:var(--diva-page-bg);color:var(--diva-text-primary);width:min(1440px,96vw);max-height:90vh;box-shadow:0 20px 40px var(--diva-shadow-modal);border-radius:10px;flex-direction:column;display:flex}.modal.is-narrow{width:min(960px,94vw)}.modal.is-page-view{height:80vh;max-height:80vh}.modal.is-fullscreen{border-radius:0;width:100vw;height:100vh;max-height:100vh}.modal-header{justify-content:space-between;align-items:center;padding:16px 20px 0;display:flex}.modal-actions{gap:8px;display:flex}.modal-close-action .canvas-toolbar-button{color:var(--diva-danger);box-shadow:none;-webkit-backdrop-filter:none;background-color:#0000;border:none;width:auto;height:auto;padding:2px}.modal-close-action .canvas-toolbar-button:hover{background-color:#d32f2f1f;border-color:#0000}.modal-close-action .canvas-toolbar-item{gap:2px;width:32px}.modal-close-action .canvas-toolbar-label{font-size:var(--diva-font-xs);min-height:auto}.modal-title-stack{flex-direction:column;gap:4px;display:flex}.modal-title{font-size:var(--diva-font-lg);font-weight:600}.modal-subtitle{font-size:var(--diva-font-lg);color:var(--diva-text-primary)}.modal-subtitle.is-muted{font-size:var(--diva-font-md)}.modal-body{flex:1;grid-template-columns:minmax(0,1fr) 240px;gap:16px;min-height:0;padding:16px 20px 20px;display:grid}.modal-body.is-no-gap{gap:0}.modal-body.is-two-column{grid-template-columns:minmax(0,1fr) 200px;align-items:start}.modal-body.is-no-sidebar{grid-template-columns:minmax(0,1fr)}.modal-body.is-fullscreen{flex:1;min-height:0}.modal-body.is-with-choices{grid-template-columns:120px minmax(0,1fr) 240px}.modal-body.is-with-choices-no-sidebar{grid-template-columns:120px minmax(0,1fr)}.modal-viewer{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);height:100%;overflow:hidden}.modal-viewer.is-fullscreen{border-radius:0;height:100%}.modal-viewer.is-outer-left{border-radius:6px 0 0 6px}.modal-canvas{width:100%;height:100%;display:block}.modal-sidebar{background-color:var(--diva-white);border-top:1px solid var(--diva-border);border-right:1px solid var(--diva-border);border-bottom:1px solid var(--diva-border);border-radius:0 6px 6px 0;padding:16px;overflow:auto}.manifest-info-logo-wrap{text-align:center;flex-direction:column;align-items:center;gap:8px;display:flex}.manifest-info-logo{width:100%;max-width:180px;height:auto}.page-view-choices{background-color:var(--diva-dark-bg);border-radius:6px 0 0 6px;flex-direction:column;gap:8px;padding:8px;display:flex;overflow:auto}.page-view-choice{border:2px solid #0000;flex-direction:column;gap:4px;display:flex}.page-view-choice:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.page-view-choice:hover{background-color:var(--diva-dark-bg)}.page-view-choice.is-active{border-color:var(--diva-accent-light);background-color:var(--diva-dark-bg)}.page-view-choice-thumb{border-radius:3px;width:100%;height:auto;display:block}.page-view-choice-label{font-size:var(--diva-font-xs);color:var(--diva-text-muted);text-overflow:ellipsis;white-space:nowrap;line-height:1.2;overflow:hidden}.filter-group{border-bottom:1px solid var(--diva-border);margin-bottom:12px;padding-bottom:12px}.filter-title-button{text-align:left;cursor:pointer;width:100%;font-size:var(--diva-font-sm);text-transform:uppercase;letter-spacing:.08em;color:var(--diva-text-muted);background-color:#0000;border:none;align-items:center;gap:8px;margin-bottom:8px;padding:0;font-weight:600;display:flex}.filter-title-button.is-collapsed{margin-bottom:0}.filter-title-icon{border-top:4px solid #0000;border-bottom:4px solid #0000;border-left:6px solid var(--diva-text-muted);width:0;height:0;transition:transform .15s;display:inline-block}.filter-title-icon.is-expanded{transform:rotate(90deg)}.filter-row{flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle{font-size:var(--diva-font-md);align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle.is-inline{margin-bottom:0}.filter-range-group{flex-direction:column;gap:6px;margin-bottom:10px;display:flex}.filter-range-header{justify-content:space-between;align-items:center;gap:8px;display:flex}.filter-range-header-right{align-items:center;gap:8px;display:flex}.filter-range-input{width:100%}.filter-value{font-size:var(--diva-font-sm);color:var(--diva-text-muted);text-align:right;width:40px}.filter-reset{font-size:var(--diva-font-xs);background-color:var(--diva-surface);border:1px solid var(--diva-border);cursor:pointer;color:var(--diva-text-muted);border-radius:3px;padding:2px 6px}.filter-reset:hover{background-color:var(--diva-border)}.filter-json{width:100%;min-height:120px;font-size:var(--diva-font-sm);border:1px solid var(--diva-border);background-color:var(--diva-white);resize:vertical;border-radius:4px;padding:6px 8px;font-family:Menlo,Monaco,Consolas,Liberation Mono,monospace}.filter-json-error{font-size:var(--diva-font-sm);color:var(--diva-danger);margin-top:4px}.filter-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted)}.filter-select{border:1px solid var(--diva-border);background-color:var(--diva-white);font-size:var(--diva-font-sm);border-radius:4px;padding:4px 6px}.filter-color-input{border:1px solid var(--diva-border);background-color:var(--diva-white);border-radius:4px;width:42px;height:28px;padding:0}.collection-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:6px 0 0 6px;flex-direction:column;height:100%;min-height:0;display:flex;overflow:hidden}.collection-header{background-color:var(--diva-surface);border-bottom:1px solid var(--diva-border);border-radius:6px 0 0;padding:12px}.collection-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:4px;font-weight:600}.collection-summary{font-size:var(--diva-font-md);color:var(--diva-text-muted);line-height:1.4}.collection-tree-item{padding-left:12px}.collection-node-button{align-items:center;gap:6px;width:100%;padding:6px 8px;display:flex}.collection-expand-icon{flex-shrink:0;justify-content:center;align-items:center;width:16px;height:16px;display:flex}.manifest-tree-item{padding:6px 8px 6px 30px}.manifest-tree-item.is-active{background-color:var(--diva-border);font-weight:600}.sidebar-pane.is-scroll{overflow-y:auto}@media (width<=720px){.collection-panel{border-radius:6px;width:100%;height:auto}}";
+  var diva_default = ":root{--diva-accent:#5a6bff;--diva-accent-light:#9aa4ff;--diva-border:#d9d4ce;--diva-danger:#d32f2f;--diva-dark-bg:#1c1d22;--diva-dark-border:#2c2d33;--diva-overlay-bg:#10111499;--diva-page-bg:#f7f5f1;--diva-shadow-dark:#00000026;--diva-shadow-focus:#9aa4ff59;--diva-shadow-modal:#00000040;--diva-surface:#e6e1dc;--diva-text-muted:#5c5a55;--diva-text-muted-on-dark:#ffffffb3;--diva-text-primary:#1b1b1b;--diva-toolbar-button-bg:#5258626b;--diva-toolbar-button-bg-hover:#5c636e85;--diva-toolbar-button-bg-fullscreen:#52586285;--diva-toolbar-button-bg-fullscreen-hover:#6068749e;--diva-toolbar-button-border:#ffffff59;--diva-toolbar-button-border-hover:#ffffff73;--diva-toolbar-button-border-fullscreen-hover:#fff9;--diva-toolbar-button-icon:#2c2d33;--diva-toolbar-button-shadow:inset 0 1px 0 #ffffff8c, inset 0 -1px 0 #ffffff2e;--diva-toolbar-button-shadow-hover:inset 0 1px 0 #ffffffb3, inset 0 -1px 0 #ffffff3d;--diva-white:#fff;--diva-font-lg:16px;--diva-font-md:13px;--diva-font-sm:11px;--diva-font-xs:10px;--diva-font-xl:20px;color-scheme:light}*{box-sizing:border-box}.list-reset{margin:0;padding:0;list-style:none}.ui-button{text-align:left;cursor:pointer;color:var(--diva-text-primary);font-size:var(--diva-font-lg);background-color:#0000;border:none;padding:0}.ui-button:hover{background-color:var(--diva-surface)}.ui-card{cursor:pointer;border-radius:6px;width:100%;padding:6px}.ui-card--dark{background-color:var(--diva-dark-bg)}.diva-app{flex-direction:column;flex:1;height:100%;min-height:0;padding:12px 24px;display:flex}.diva-app.is-fullscreen{height:100vh;min-height:100vh;padding:0}.diva-app-header{font-size:var(--diva-font-lg);align-items:center;gap:12px;margin-bottom:8px;font-weight:600;display:flex}.diva-app-title{font-size:var(--diva-font-xl);text-align:left;color:var(--diva-text-primary);margin-bottom:6px;font-weight:600}.diva-app-title.is-fullscreen{color:var(--diva-white)}.diva-app-body{flex:1;align-items:stretch;gap:0;height:100%;min-height:0;display:flex;position:relative}.diva-app-body.is-fullscreen{flex:1;min-height:0}.diva-canvas-column{flex-direction:column;flex:1;gap:24px;min-height:0;display:flex}.diva-canvas-column.is-fullscreen{flex:1;height:100%;min-height:0}.diva-canvas-wrapper{flex:1;min-height:0;position:relative}.diva-canvas{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);border-radius:6px 0 0 6px;width:100%;height:100%;overflow:hidden}.diva-canvas.is-fullscreen{border-radius:0;flex:1;height:100%}.diva-canvas.has-collection{border-radius:0}.metadata-panel{height:100%;padding:12px;overflow:auto}.metadata-body{flex-direction:column;gap:10px;display:flex}.metadata-item{flex-direction:column;gap:4px;display:flex}.metadata-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}.metadata-value{font-size:var(--diva-font-lg);color:var(--diva-text-muted);line-height:1.4}.contents-empty{font-size:var(--diva-font-lg);color:var(--diva-text-muted);padding-left:12px}.sidebar-resizer,.collection-resizer{width:12px;font-size:var(--diva-font-xl);color:var(--diva-white);background-color:var(--diva-text-muted);cursor:ew-resize;user-select:none;touch-action:none;flex:0 0 12px;justify-content:center;align-self:stretch;align-items:center;line-height:1;display:flex}.sidebar-resizer.is-hidden,.collection-resizer.is-hidden{display:none}.sidebar-panel.is-fullscreen,.collection-panel.is-fullscreen{border-radius:0;height:100%}.sidebar-panel.is-hidden,.collection-panel.is-hidden{opacity:0;pointer-events:none;border-width:0;padding:0;overflow:hidden}.required-statement-dock{justify-content:flex-end;width:100%;margin-top:12px;padding-right:8px;display:flex}.required-statement{font-size:var(--diva-font-md);color:var(--diva-text-muted);text-align:right;min-width:250px;max-width:20vw;line-height:1.4}.diva-scrollbar-track{background:var(--diva-surface);border:1px solid var(--diva-border);z-index:100;border-radius:6px;width:12px;position:absolute;top:4px;bottom:4px;right:4px}.diva-scrollbar-thumb{background:var(--diva-text-muted);cursor:pointer;border-radius:5px;min-height:30px;position:absolute;left:1px;right:1px}.diva-scrollbar-thumb:hover{background:var(--diva-text-primary)}.diva-scrollbar-thumb:active{background:var(--diva-dark-border)}.throbber-overlay{pointer-events:none;justify-content:center;align-items:center;display:flex;position:absolute;inset:0}.viewer-zoom-indicator{z-index:30;pointer-events:none;font-size:var(--diva-font-sm);color:var(--diva-white);background-color:#0000008c;border-radius:6px;padding:4px 8px;font-weight:600;position:absolute;bottom:12px;left:12px}.throbber{background-color:var(--diva-white);width:64px;height:64px;box-shadow:0 8px 16px var(--diva-shadow-dark);border-radius:8px;flex-wrap:wrap;padding:8px;display:flex}.throbber-cube{background-color:var(--diva-accent);width:16px;height:16px;animation-name:diva-cube-grid;animation-duration:1.3s;animation-timing-function:ease-in-out;animation-iteration-count:infinite}@keyframes diva-cube-grid{0%{transform:scale(1)}35%{transform:scale(0)}70%{transform:scale(1)}to{transform:scale(1)}}@media (width<=720px){.diva-app{padding:12px}.diva-app-body{flex-direction:column;gap:12px}.sidebar-resizer,.collection-resizer{display:none}}.sidebar-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0 6px 6px 0;flex-direction:column;width:320px;height:100%;min-height:0;display:flex;overflow:hidden}.sidebar-tabs{border:1px solid var(--diva-surface);background-color:var(--diva-surface);border-radius:0 6px 0 0;display:flex}.sidebar-tab-button{font-size:var(--diva-font-md);text-transform:uppercase;cursor:pointer;color:var(--diva-text-muted);background-color:#0000;border:none;flex:1;padding:10px 12px}.sidebar-tab-button.is-active{background-color:var(--diva-white);font-weight:600}.sidebar-content{background-color:var(--diva-page-bg);flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}.sidebar-pane{flex:1;width:100%;min-height:0}.sidebar-pane.is-hidden{display:none}.thumbs{scroll-behavior:smooth;background-color:var(--diva-dark-bg);flex:1;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:10px;width:100%;height:100%;min-height:0;padding:12px;display:grid;overflow-y:auto}.thumbs.is-fullscreen{height:100%}.thumbs-item{border:1px solid var(--diva-dark-border);text-align:left;flex-direction:column;justify-content:flex-start;align-items:stretch;max-width:none;display:flex}.thumbs-item:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.thumbs-item.is-active{border-color:var(--diva-accent-light);box-shadow:0 0 0 var(--diva-shadow-focus);background-color:var(--diva-dark-bg);outline:2px solid var(--diva-accent-light);outline-offset:2px}.thumbs-image{border-radius:3px;width:100%;height:auto;display:block}.thumbs-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted-on-dark);margin-top:6px;line-height:1.3}.thumbs-label.is-active{color:var(--diva-white)}.contents-panel{height:100%;padding:12px;overflow:auto}.contents-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:10px;font-weight:600}.contents-view-tabs{gap:8px;margin-bottom:12px;display:flex}.contents-view-button{background-color:var(--diva-surface);border:1px solid var(--diva-border);font-size:var(--diva-font-sm);color:var(--diva-text-muted);cursor:pointer;border-radius:6px;padding:4px 10px}.contents-view-button.is-active{background-color:var(--diva-white);border-color:var(--diva-accent);color:var(--diva-text-primary)}.contents-list-nested{margin-top:6px;padding-left:16px}.contents-item{margin-bottom:6px}.contents-meta{border:1px solid var(--diva-dark-border);margin-top:6px;padding:8px}.contents-button:hover{color:var(--diva-accent)}@media (width<=720px){.sidebar-panel{border-radius:6px;height:auto;width:100%!important}.sidebar-panel.is-overlay{z-index:100;width:100%;height:100%;box-shadow:0 12px 24px var(--diva-shadow-dark);border-radius:0;position:absolute;inset:0}.sidebar-panel.is-mobile-hidden{display:none}.thumbs{grid-template-columns:repeat(3,minmax(0,1fr));width:100%;height:auto;overflow:auto hidden}.thumbs-item{min-width:120px}}.canvas-toolbar-stack{flex-direction:column;gap:2px;width:100%;min-width:0;display:flex}.canvas-toolbar{align-items:flex-start;width:100%;margin-bottom:0;display:flex}.canvas-toolbar-section{flex:none;align-items:flex-start;gap:8px;min-width:0;display:flex}.canvas-toolbar-section.is-right{flex:none;margin-left:auto}.canvas-toolbar-item{flex-direction:column;flex:none;align-items:center;gap:6px;width:80px;display:flex}.canvas-toolbar-button{background-color:var(--diva-toolbar-button-bg);color:var(--diva-toolbar-button-icon);border:2px solid var(--diva-toolbar-button-icon);box-shadow:var(--diva-toolbar-button-shadow);-webkit-backdrop-filter:blur(10px)saturate(140%);cursor:pointer;border-radius:6px;align-items:center;width:80%;height:36px;padding:4px 6px;display:flex}.canvas-toolbar-button:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.canvas-toolbar-button:hover{background-color:var(--diva-toolbar-button-bg-hover);border-color:var(--diva-toolbar-button-icon);box-shadow:var(--diva-toolbar-button-shadow-hover)}.canvas-toolbar-button.is-fullscreen{color:var(--diva-white);background-color:var(--diva-toolbar-button-bg-fullscreen);border-color:var(--diva-toolbar-button-border-hover)}.canvas-toolbar-button.is-fullscreen:hover{background-color:var(--diva-toolbar-button-bg-fullscreen-hover);border-color:var(--diva-toolbar-button-border-fullscreen-hover)}.canvas-toolbar-button.is-disabled{opacity:.4;cursor:not-allowed}.canvas-toolbar-button.is-disabled:hover{background-color:var(--diva-toolbar-button-bg);border-color:var(--diva-toolbar-button-icon);box-shadow:var(--diva-toolbar-button-shadow)}.canvas-toolbar-button.is-fullscreen.is-disabled:hover{background-color:var(--diva-toolbar-button-bg-fullscreen);border-color:var(--diva-toolbar-button-border-hover);box-shadow:var(--diva-toolbar-button-shadow)}.canvas-toolbar-label{font-size:var(--diva-font-sm);color:var(--diva-text-primary);white-space:normal;text-overflow:ellipsis;text-align:center;text-transform:uppercase;word-break:break-word;min-height:1.4em;font-weight:500;line-height:1;overflow:hidden}.canvas-toolbar-label.is-fullscreen{color:var(--diva-white)}.canvas-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-align:left;white-space:normal;overflow-wrap:anywhere;word-break:break-word;width:100%}.canvas-label.is-fullscreen{color:var(--diva-white)}.status{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:0}.status.is-error{color:var(--diva-danger)}@media (width<=720px){.canvas-toolbar{flex-wrap:wrap;gap:8px}.canvas-toolbar-item{width:64px}.canvas-label,.status{display:none}}.modal-overlay{background-color:var(--diva-overlay-bg);z-index:100;justify-content:center;align-items:center;padding:24px;display:flex;position:fixed;inset:0}.viewer-status-overlay{background-color:var(--diva-overlay-bg);z-index:40;justify-content:center;align-items:center;padding:24px;display:flex;position:absolute;inset:0}.modal-overlay.is-fullscreen{padding:0}.modal{background-color:var(--diva-page-bg);color:var(--diva-text-primary);width:min(1440px,96vw);max-height:90vh;box-shadow:0 20px 40px var(--diva-shadow-modal);border-radius:10px;flex-direction:column;display:flex}.modal.is-narrow{width:min(960px,94vw)}.modal.is-page-view{height:80vh;max-height:80vh}.modal.is-fullscreen{border-radius:0;width:100vw;height:100vh;max-height:100vh}.modal-header{justify-content:space-between;align-items:center;padding:16px 20px 0;display:flex}.modal-actions{gap:8px;display:flex}.modal-close-action .canvas-toolbar-button{color:var(--diva-danger);box-shadow:none;-webkit-backdrop-filter:none;background-color:#0000;border:none;width:auto;height:auto;padding:2px}.modal-close-action .canvas-toolbar-button:hover{background-color:#d32f2f1f;border-color:#0000}.modal-close-action .canvas-toolbar-item{gap:2px;width:32px}.modal-close-action .canvas-toolbar-label{font-size:var(--diva-font-xs);min-height:auto}.modal-title-stack{flex-direction:column;gap:4px;display:flex}.modal-title{font-size:var(--diva-font-lg);font-weight:600}.modal-subtitle{font-size:var(--diva-font-lg);color:var(--diva-text-primary)}.modal-subtitle.is-muted{font-size:var(--diva-font-md)}.modal-body{flex:1;grid-template-columns:minmax(0,1fr) 240px;gap:16px;min-height:0;padding:16px 20px 20px;display:grid}.modal-body.is-no-gap{gap:0}.modal-body.is-two-column{grid-template-columns:minmax(0,1fr) 200px;align-items:start}.modal-body.is-no-sidebar{grid-template-columns:minmax(0,1fr)}.modal-body.is-fullscreen{flex:1;min-height:0}.modal-body.is-with-choices{grid-template-columns:120px minmax(0,1fr) 240px}.modal-body.is-with-choices-no-sidebar{grid-template-columns:120px minmax(0,1fr)}.modal-viewer{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);height:100%;overflow:hidden}.modal-viewer.is-fullscreen{border-radius:0;height:100%}.modal-viewer.is-outer-left{border-radius:6px 0 0 6px}.modal-canvas{width:100%;height:100%;display:block}.modal-sidebar{background-color:var(--diva-white);border-top:1px solid var(--diva-border);border-right:1px solid var(--diva-border);border-bottom:1px solid var(--diva-border);border-radius:0 6px 6px 0;padding:16px;overflow:auto}.manifest-info-logo-wrap{text-align:center;flex-direction:column;align-items:center;gap:8px;display:flex}.manifest-info-logo{width:100%;max-width:180px;height:auto}.page-view-choices{background-color:var(--diva-dark-bg);border-radius:6px 0 0 6px;flex-direction:column;gap:8px;padding:8px;display:flex;overflow:auto}.page-view-choice{border:2px solid #0000;flex-direction:column;gap:4px;display:flex}.page-view-choice:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.page-view-choice:hover{background-color:var(--diva-dark-bg)}.page-view-choice.is-active{border-color:var(--diva-accent-light);background-color:var(--diva-dark-bg)}.page-view-choice-thumb{border-radius:3px;width:100%;height:auto;display:block}.page-view-choice-label{font-size:var(--diva-font-xs);color:var(--diva-text-muted);text-overflow:ellipsis;white-space:nowrap;line-height:1.2;overflow:hidden}.filter-group{border-bottom:1px solid var(--diva-border);margin-bottom:12px;padding-bottom:12px}.filter-title-button{text-align:left;cursor:pointer;width:100%;font-size:var(--diva-font-sm);text-transform:uppercase;letter-spacing:.08em;color:var(--diva-text-muted);background-color:#0000;border:none;align-items:center;gap:8px;margin-bottom:8px;padding:0;font-weight:600;display:flex}.filter-title-button.is-collapsed{margin-bottom:0}.filter-title-icon{border-top:4px solid #0000;border-bottom:4px solid #0000;border-left:6px solid var(--diva-text-muted);width:0;height:0;transition:transform .15s;display:inline-block}.filter-title-icon.is-expanded{transform:rotate(90deg)}.filter-row{flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle{font-size:var(--diva-font-md);align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle.is-inline{margin-bottom:0}.filter-range-group{flex-direction:column;gap:6px;margin-bottom:10px;display:flex}.filter-range-header{justify-content:space-between;align-items:center;gap:8px;display:flex}.filter-range-header-right{align-items:center;gap:8px;display:flex}.filter-range-input{width:100%}.filter-value{font-size:var(--diva-font-sm);color:var(--diva-text-muted);text-align:right;width:40px}.filter-reset{font-size:var(--diva-font-xs);background-color:var(--diva-surface);border:1px solid var(--diva-border);cursor:pointer;color:var(--diva-text-muted);border-radius:3px;padding:2px 6px}.filter-reset:hover{background-color:var(--diva-border)}.filter-json{width:100%;min-height:120px;font-size:var(--diva-font-sm);border:1px solid var(--diva-border);background-color:var(--diva-white);resize:vertical;border-radius:4px;padding:6px 8px;font-family:Menlo,Monaco,Consolas,Liberation Mono,monospace}.filter-json-error{font-size:var(--diva-font-sm);color:var(--diva-danger);margin-top:4px}.filter-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted)}.filter-select{border:1px solid var(--diva-border);background-color:var(--diva-white);font-size:var(--diva-font-sm);border-radius:4px;padding:4px 6px}.filter-color-input{border:1px solid var(--diva-border);background-color:var(--diva-white);border-radius:4px;width:42px;height:28px;padding:0}.collection-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:6px 0 0 6px;flex-direction:column;height:100%;min-height:0;display:flex;overflow:hidden}.collection-header{background-color:var(--diva-surface);border-bottom:1px solid var(--diva-border);border-radius:6px 0 0;padding:12px}.collection-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:4px;font-weight:600}.collection-summary{font-size:var(--diva-font-md);color:var(--diva-text-muted);line-height:1.4}.collection-tree-item{padding-left:12px}.collection-node-button{align-items:center;gap:6px;width:100%;padding:6px 8px;display:flex}.collection-expand-icon{flex-shrink:0;justify-content:center;align-items:center;width:16px;height:16px;display:flex}.manifest-tree-item{padding:6px 8px 6px 30px}.manifest-tree-item.is-active{background-color:var(--diva-border);font-weight:600}.sidebar-pane.is-scroll{overflow-y:auto}@media (width<=720px){.collection-panel{border-radius:6px;width:100%;height:auto}}";
 
   // cache/elm-esm.js
   function F(arity, fun, wrapper) {
@@ -10469,13 +10473,12 @@
   var $rism_digital$elm_iiif$IIIF$Language$LanguageCode = function(a) {
     return { $: "LanguageCode", a };
   };
-  var $author$project$Model$NotRequested = { $: "NotRequested" };
+  var $author$project$Model$Loading = { $: "Loading" };
   var $author$project$Model$OneUp = { $: "OneUp" };
-  var $author$project$Model$ResourceNotRequested = { $: "ResourceNotRequested" };
+  var $author$project$Model$ResourceLoading = { $: "ResourceLoading" };
   var $author$project$Msg$ServerRespondedWithResource = function(a) {
     return { $: "ServerRespondedWithResource", a };
   };
-  var $author$project$Msg$SetResponseLoading = { $: "SetResponseLoading" };
   var $author$project$Model$SidebarHidden = { $: "SidebarHidden" };
   var $author$project$Model$SidebarThumbnails = { $: "SidebarThumbnails" };
   var $author$project$Msg$ViewportChanged = F2(
@@ -13372,18 +13375,11 @@
     var sidebarState = flags.showSidebar ? $author$project$Model$SidebarThumbnails : $author$project$Model$SidebarHidden;
     var manifestUrl = flags.objectData;
     return _Utils_Tuple2(
-      { acceptHeaders: flags.acceptHeaders, canvasIndexMap: $elm$core$Dict$empty, collectionSidebarDrag: $elm$core$Maybe$Nothing, collectionSidebarVisible: true, collectionSidebarWidth: 400, contentsView: $author$project$Model$ContentsIndex, detectedLanguage: userLanguage, filterGroupExpanded: $elm$core$Set$empty, filters: $author$project$Filters$resetFilters, filtersJsonError: $elm$core$Maybe$Nothing, filtersJsonInput: "", fullscreen: false, isMobile: false, isViewerLoading: false, manifestInfoOpen: false, manifestUrl, mobileSidebarOpen: false, pageViewFullscreen: false, pageViewImageIndex: 0, pageViewOpen: false, pageViewSidebarVisible: true, pages: _List_Nil, pendingThumbScroll: $elm$core$Maybe$Nothing, rangeIndexMap: $elm$core$Dict$empty, resourceResponse: $author$project$Model$ResourceNotRequested, response: $author$project$Model$NotRequested, rootElementId: flags.rootElementId, selectedIndex: $elm$core$Maybe$Nothing, selectedRangeId: $elm$core$Maybe$Nothing, shiftByOne: false, showTitle: flags.showTitle, sidebarDrag: $elm$core$Maybe$Nothing, sidebarState, sidebarWidth: 320, thumbsInstantScroll: false, tileSources: _List_Nil, viewMode: $author$project$Model$OneUp, zoom: 1 },
+      { acceptHeaders: flags.acceptHeaders, collectionSidebarDrag: $elm$core$Maybe$Nothing, collectionSidebarVisible: true, collectionSidebarWidth: 400, contentsView: $author$project$Model$ContentsIndex, currentZoom: $elm$core$Maybe$Nothing, detectedLanguage: userLanguage, filterGroupExpanded: $elm$core$Set$empty, filters: $author$project$Filters$resetFilters, filtersJsonError: $elm$core$Maybe$Nothing, filtersJsonInput: "", fullscreen: false, hasTileSources: false, initialZoom: $elm$core$Maybe$Nothing, isMobile: false, isViewerLoading: false, manifestInfoOpen: false, manifestUrl, mobileSidebarOpen: false, pageViewFullscreen: false, pageViewImageIndex: 0, pageViewOpen: false, pageViewSidebarVisible: true, pages: _List_Nil, pendingThumbScroll: $elm$core$Maybe$Nothing, rangeIndexMap: $elm$core$Dict$empty, resourceResponse: $author$project$Model$ResourceLoading, response: $author$project$Model$Loading, rootElementId: flags.rootElementId, selectedIndex: $elm$core$Maybe$Nothing, selectedRangeId: $elm$core$Maybe$Nothing, shiftByOne: false, showTitle: flags.showTitle, sidebarDrag: $elm$core$Maybe$Nothing, sidebarState, sidebarWidth: 320, thumbsInstantScroll: false, viewMode: $author$project$Model$OneUp },
       $elm$core$Platform$Cmd$batch(
         _List_fromArray(
           [
             A3($rism_digital$elm_iiif$IIIF$requestResource, $author$project$Msg$ServerRespondedWithResource, flags.acceptHeaders, manifestUrl),
-            A2(
-              $elm$core$Task$perform,
-              function(_v0) {
-                return $author$project$Msg$SetResponseLoading;
-              },
-              $elm$core$Task$succeed(_Utils_Tuple0)
-            ),
             A2(
               $elm$core$Task$perform,
               function(viewport) {
@@ -13719,7 +13715,7 @@
   var $author$project$Model$Failed = function(a) {
     return { $: "Failed", a };
   };
-  var $author$project$Model$Loading = { $: "Loading" };
+  var $author$project$Model$NotRequested = { $: "NotRequested" };
   var $author$project$Model$ResourceFailed = function(a) {
     return { $: "ResourceFailed", a };
   };
@@ -13729,15 +13725,16 @@
   var $author$project$Model$ResourceLoadedManifest = function(a) {
     return { $: "ResourceLoadedManifest", a };
   };
-  var $author$project$Model$ResourceLoading = { $: "ResourceLoading" };
   var $author$project$Msg$ServerRespondedWithCollectionItem = F2(
     function(a, b) {
       return { $: "ServerRespondedWithCollectionItem", a, b };
     }
   );
-  var $author$project$Msg$ServerRespondedWithManifestFromCollection = function(a) {
-    return { $: "ServerRespondedWithManifestFromCollection", a };
-  };
+  var $author$project$Msg$ServerRespondedWithManifestFromCollection = F2(
+    function(a, b) {
+      return { $: "ServerRespondedWithManifestFromCollection", a, b };
+    }
+  );
   var $author$project$Model$SidebarContents = { $: "SidebarContents" };
   var $author$project$Model$SidebarMetadata = { $: "SidebarMetadata" };
   var $author$project$Model$TwoUp = { $: "TwoUp" };
@@ -16373,27 +16370,20 @@
     "pageAspectsUpdated",
     $elm$json$Json$Encode$list($elm$json$Json$Encode$float)
   );
-  var $author$project$Utilities$orElse = F2(
-    function(ma, mb) {
-      if (mb.$ === "Just") {
-        return mb;
-      } else {
-        return ma;
-      }
-    }
-  );
   var $author$project$Model$primaryImage = function(page) {
-    return A2(
-      $author$project$Utilities$orElse,
-      $elm$core$List$head(page.images),
-      A2(
-        $author$project$Utilities$find,
-        function($) {
-          return $.isPrimary;
-        },
-        page.images
-      )
+    var _v0 = A2(
+      $author$project$Utilities$find,
+      function($) {
+        return $.isPrimary;
+      },
+      page.images
     );
+    if (_v0.$ === "Just") {
+      var image = _v0.a;
+      return $elm$core$Maybe$Just(image);
+    } else {
+      return $elm$core$List$head(page.images);
+    }
   };
   var $author$project$Main$tileSourcesUpdated = _Platform_outgoingPort(
     "tileSourcesUpdated",
@@ -16477,15 +16467,16 @@
         _Utils_update(
           model,
           {
-            canvasIndexMap,
+            currentZoom: $elm$core$Maybe$Nothing,
             filters: $author$project$Filters$resetFilters,
+            hasTileSources: !$elm$core$List$isEmpty(tileSources),
+            initialZoom: $elm$core$Maybe$Nothing,
             isViewerLoading: false,
             pages,
             rangeIndexMap,
             response: $author$project$Model$Loaded(manifest),
             selectedIndex: $elm$core$List$isEmpty(pages) ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(0),
             shiftByOne,
-            tileSources,
             viewMode
           }
         ),
@@ -16504,9 +16495,7 @@
       );
     }
   );
-  var $author$project$Msg$ClientNotifiedScrollThumbs = function(a) {
-    return { $: "ClientNotifiedScrollThumbs", a };
-  };
+  var $author$project$Msg$ClientNotifiedScrollThumbs = { $: "ClientNotifiedScrollThumbs" };
   var $elm$core$Task$onError = _Scheduler_onError;
   var $elm$core$Task$attempt = F2(
     function(resultToMessage, task) {
@@ -16567,7 +16556,7 @@
       if (showThumbs) {
         var delayedTask = A2(
           $elm$core$Task$andThen,
-          function(_v0) {
+          function(_v1) {
             var thumbId = "thumb-" + $elm$core$String$fromInt(index);
             return A2(
               $elm$core$Task$andThen,
@@ -16592,7 +16581,13 @@
           },
           $elm$core$Process$sleep(0)
         );
-        return A2($elm$core$Task$attempt, $author$project$Msg$ClientNotifiedScrollThumbs, delayedTask);
+        return A2(
+          $elm$core$Task$attempt,
+          function(_v0) {
+            return $author$project$Msg$ClientNotifiedScrollThumbs;
+          },
+          delayedTask
+        );
       } else {
         return $elm$core$Platform$Cmd$none;
       }
@@ -17068,6 +17063,12 @@
     }
   };
   var $author$project$Main$layoutModeUpdated = _Platform_outgoingPort("layoutModeUpdated", $elm$json$Json$Encode$string);
+  var $elm$core$Basics$min = F2(
+    function(x, y) {
+      return _Utils_cmp(x, y) < 0 ? x : y;
+    }
+  );
+  var $author$project$Main$mobileShortSideBreakpoint = 720;
   var $author$project$Main$replaceCollectionById = F3(
     function(collectionId, replacement, collection) {
       var rebuildUp = F2(
@@ -17282,150 +17283,35 @@
             ),
             $elm$core$Platform$Cmd$none
           );
-        case "ServerRespondedWithManifest":
-          var result = msg.a;
-          if (result.$ === "Ok") {
-            var manifest = result.a;
-            return A2($author$project$Main$handleManifestLoaded, model, manifest);
-          } else {
-            var err = result.a;
-            return _Utils_Tuple2(
-              _Utils_update(
-                model,
-                {
-                  isViewerLoading: false,
-                  response: $author$project$Model$Failed(
-                    $author$project$Main$httpErrorToString(err)
-                  )
-                }
-              ),
-              $elm$core$Platform$Cmd$none
-            );
-          }
-        case "ServerRespondedWithResource":
-          var result = msg.a;
-          if (result.$ === "Ok") {
-            var resource = result.a;
-            switch (resource.$) {
-              case "ResourceManifest":
-                var manifest = resource.a;
-                var _v4 = A2($author$project$Main$handleManifestLoaded, model, manifest);
-                var nextModel = _v4.a;
-                var cmd = _v4.b;
-                return _Utils_Tuple2(
-                  _Utils_update(
-                    nextModel,
-                    {
-                      collectionSidebarVisible: false,
-                      resourceResponse: $author$project$Model$ResourceLoadedManifest(manifest)
-                    }
-                  ),
-                  cmd
-                );
-              case "ResourceCollection":
-                var _v5 = resource.a;
-                var version = _v5.a;
-                var collection = _v5.b;
-                return _Utils_Tuple2(
-                  _Utils_update(
-                    model,
-                    {
-                      collectionSidebarVisible: true,
-                      isViewerLoading: false,
-                      resourceResponse: $author$project$Model$ResourceLoadedCollection(
-                        {
-                          collection: A2($rism_digital$elm_iiif$IIIF$Presentation$IIIFCollection, version, collection),
-                          expandedIds: $elm$core$Set$empty,
-                          loadedCollectionIds: $elm$core$Set$empty,
-                          loadingCollectionIds: $elm$core$Set$empty,
-                          selectedManifestId: $elm$core$Maybe$Nothing
-                        }
-                      ),
-                      response: $author$project$Model$NotRequested
-                    }
-                  ),
-                  $elm$core$Platform$Cmd$none
-                );
-              default:
-                return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-            }
-          } else {
-            var err = result.a;
-            return _Utils_Tuple2(
-              _Utils_update(
-                model,
-                {
-                  isViewerLoading: false,
-                  resourceResponse: $author$project$Model$ResourceFailed(
-                    $author$project$Main$httpErrorToString(err)
-                  )
-                }
-              ),
-              $elm$core$Platform$Cmd$none
-            );
-          }
-        case "UserClickedCollectionItem":
-          var collectionId = msg.a;
-          var _v6 = model.resourceResponse;
-          if (_v6.$ === "ResourceLoadedCollection") {
-            var collectionState = _v6.a;
-            var isExpanded = A2($elm$core$Set$member, collectionId, collectionState.expandedIds);
-            var nextExpandedIds = isExpanded ? A2($elm$core$Set$remove, collectionId, collectionState.expandedIds) : A2($elm$core$Set$insert, collectionId, collectionState.expandedIds);
-            var _v7 = collectionState.collection;
-            var rootCollection = _v7.b;
-            var isItemsEmpty = A2(
-              $elm$core$Maybe$withDefault,
-              true,
-              A2(
-                $elm$core$Maybe$map,
-                A2(
-                  $elm$core$Basics$composeR,
-                  function($) {
-                    return $.items;
-                  },
-                  $elm$core$List$isEmpty
-                ),
-                A2($author$project$Main$findCollectionById, collectionId, rootCollection)
-              )
-            );
-            var shouldRequest = isItemsEmpty && (!A2($elm$core$Set$member, collectionId, collectionState.loadedCollectionIds) && !A2($elm$core$Set$member, collectionId, collectionState.loadingCollectionIds));
-            var nextLoadingIds = shouldRequest ? A2($elm$core$Set$insert, collectionId, collectionState.loadingCollectionIds) : collectionState.loadingCollectionIds;
-            var nextState = _Utils_update(
-              collectionState,
-              { expandedIds: nextExpandedIds, loadingCollectionIds: nextLoadingIds }
-            );
-            return _Utils_Tuple2(
-              _Utils_update(
-                model,
-                {
-                  resourceResponse: $author$project$Model$ResourceLoadedCollection(nextState)
-                }
-              ),
-              shouldRequest ? A3(
-                $rism_digital$elm_iiif$IIIF$requestResource,
-                $author$project$Msg$ServerRespondedWithCollectionItem(collectionId),
-                model.acceptHeaders,
-                collectionId
-              ) : $elm$core$Platform$Cmd$none
-            );
-          } else {
-            return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-          }
+        case "ClientNotifiedPageChanged":
+          var index = msg.a;
+          return A3($author$project$Main$handlePageChanged, false, index, model);
+        case "ClientNotifiedPageChangedInstant":
+          var index = msg.a;
+          return A3($author$project$Main$handlePageChanged, true, index, model);
+        case "ClientNotifiedScrollThumbs":
+          return _Utils_Tuple2(
+            _Utils_update(
+              model,
+              { thumbsInstantScroll: false }
+            ),
+            $elm$core$Platform$Cmd$none
+          );
         case "ServerRespondedWithCollectionItem":
           var collectionId = msg.a;
           var result = msg.b;
-          var _v8 = model.resourceResponse;
-          if (_v8.$ === "ResourceLoadedCollection") {
-            var collectionState = _v8.a;
+          var _v1 = model.resourceResponse;
+          if (_v1.$ === "ResourceLoadedCollection") {
+            var collectionState = _v1.a;
             var nextLoadingIds = A2($elm$core$Set$remove, collectionId, collectionState.loadingCollectionIds);
             if (result.$ === "Ok") {
               var resource = result.a;
               if (resource.$ === "ResourceCollection") {
-                var _v11 = resource.a;
-                var fetchedCollection = _v11.b;
-                var _v12 = collectionState.collection;
-                var rootVersion = _v12.a;
-                var rootCollection = _v12.b;
+                var _v4 = resource.a;
+                var fetchedCollection = _v4.b;
+                var _v5 = collectionState.collection;
+                var rootVersion = _v5.a;
+                var rootCollection = _v5.b;
                 var nextCollection = A3($author$project$Main$replaceCollectionById, collectionId, fetchedCollection, rootCollection);
                 var nextState = _Utils_update(
                   collectionState,
@@ -17479,12 +17365,215 @@
           } else {
             return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
           }
+        case "ServerRespondedWithManifestFromCollection":
+          var manifestId = msg.a;
+          var result = msg.b;
+          var _v6 = model.resourceResponse;
+          if (_v6.$ === "ResourceLoadedCollection") {
+            var collectionState = _v6.a;
+            if (!_Utils_eq(
+              collectionState.selectedManifestId,
+              $elm$core$Maybe$Just(manifestId)
+            )) {
+              return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+            } else {
+              if (result.$ === "Ok") {
+                var manifest = result.a;
+                return A2($author$project$Main$handleManifestLoaded, model, manifest);
+              } else {
+                var err = result.a;
+                return _Utils_Tuple2(
+                  _Utils_update(
+                    model,
+                    {
+                      isViewerLoading: false,
+                      response: $author$project$Model$Failed(
+                        $author$project$Main$httpErrorToString(err)
+                      )
+                    }
+                  ),
+                  $elm$core$Platform$Cmd$none
+                );
+              }
+            }
+          } else {
+            return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+          }
+        case "ServerRespondedWithResource":
+          var result = msg.a;
+          if (result.$ === "Ok") {
+            var resource = result.a;
+            switch (resource.$) {
+              case "ResourceManifest":
+                var manifest = resource.a;
+                var _v10 = A2($author$project$Main$handleManifestLoaded, model, manifest);
+                var nextModel = _v10.a;
+                var cmd = _v10.b;
+                return _Utils_Tuple2(
+                  _Utils_update(
+                    nextModel,
+                    {
+                      collectionSidebarVisible: false,
+                      resourceResponse: $author$project$Model$ResourceLoadedManifest(manifest)
+                    }
+                  ),
+                  cmd
+                );
+              case "ResourceCollection":
+                var _v11 = resource.a;
+                var version = _v11.a;
+                var collection = _v11.b;
+                return _Utils_Tuple2(
+                  _Utils_update(
+                    model,
+                    {
+                      collectionSidebarVisible: true,
+                      isViewerLoading: false,
+                      resourceResponse: $author$project$Model$ResourceLoadedCollection(
+                        {
+                          collection: A2($rism_digital$elm_iiif$IIIF$Presentation$IIIFCollection, version, collection),
+                          expandedIds: $elm$core$Set$empty,
+                          loadedCollectionIds: $elm$core$Set$empty,
+                          loadingCollectionIds: $elm$core$Set$empty,
+                          selectedManifestId: $elm$core$Maybe$Nothing
+                        }
+                      ),
+                      response: $author$project$Model$NotRequested
+                    }
+                  ),
+                  $elm$core$Platform$Cmd$none
+                );
+              default:
+                return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+            }
+          } else {
+            var err = result.a;
+            return _Utils_Tuple2(
+              _Utils_update(
+                model,
+                {
+                  isViewerLoading: false,
+                  resourceResponse: $author$project$Model$ResourceFailed(
+                    $author$project$Main$httpErrorToString(err)
+                  )
+                }
+              ),
+              $elm$core$Platform$Cmd$none
+            );
+          }
+        case "UserAppliedFilterJson":
+          var _v12 = $author$project$Filters$decodeFilterJson(model.filtersJsonInput);
+          if (_v12.$ === "Ok") {
+            var filters = _v12.a;
+            var json = $author$project$Filters$encodeActiveFilters(filters);
+            var nextModel = _Utils_update(
+              model,
+              { filters, filtersJsonError: $elm$core$Maybe$Nothing, filtersJsonInput: json }
+            );
+            return _Utils_Tuple2(
+              nextModel,
+              $author$project$Main$sendPageViewPreview(nextModel)
+            );
+          } else {
+            var err = _v12.a;
+            return _Utils_Tuple2(
+              _Utils_update(
+                model,
+                {
+                  filtersJsonError: $elm$core$Maybe$Just(err)
+                }
+              ),
+              $elm$core$Platform$Cmd$none
+            );
+          }
+        case "UserChangedZoomLevel":
+          var zoom = msg.a;
+          var nextInitialZoom = (function() {
+            var _v13 = model.initialZoom;
+            if (_v13.$ === "Just") {
+              var initialZoom = _v13.a;
+              return $elm$core$Maybe$Just(initialZoom);
+            } else {
+              return $elm$core$Maybe$Just(zoom);
+            }
+          })();
+          return _Utils_Tuple2(
+            _Utils_update(
+              model,
+              {
+                currentZoom: $elm$core$Maybe$Just(zoom),
+                initialZoom: nextInitialZoom
+              }
+            ),
+            $elm$core$Platform$Cmd$none
+          );
+        case "UserClickedCloseManifestInfo":
+          return _Utils_Tuple2(
+            _Utils_update(
+              model,
+              { manifestInfoOpen: false }
+            ),
+            $elm$core$Platform$Cmd$none
+          );
+        case "UserClickedClosePageView":
+          var nextModel = _Utils_update(
+            model,
+            { filters: $author$project$Filters$resetFilters, pageViewFullscreen: false, pageViewImageIndex: 0, pageViewOpen: false }
+          );
+          return _Utils_Tuple2(nextModel, $elm$core$Platform$Cmd$none);
+        case "UserClickedCollectionItem":
+          var collectionId = msg.a;
+          var _v14 = model.resourceResponse;
+          if (_v14.$ === "ResourceLoadedCollection") {
+            var collectionState = _v14.a;
+            var isExpanded = A2($elm$core$Set$member, collectionId, collectionState.expandedIds);
+            var nextExpandedIds = isExpanded ? A2($elm$core$Set$remove, collectionId, collectionState.expandedIds) : A2($elm$core$Set$insert, collectionId, collectionState.expandedIds);
+            var _v15 = collectionState.collection;
+            var rootCollection = _v15.b;
+            var isItemsEmpty = A2(
+              $elm$core$Maybe$withDefault,
+              true,
+              A2(
+                $elm$core$Maybe$map,
+                A2(
+                  $elm$core$Basics$composeR,
+                  function($) {
+                    return $.items;
+                  },
+                  $elm$core$List$isEmpty
+                ),
+                A2($author$project$Main$findCollectionById, collectionId, rootCollection)
+              )
+            );
+            var shouldRequest = isItemsEmpty && (!A2($elm$core$Set$member, collectionId, collectionState.loadedCollectionIds) && !A2($elm$core$Set$member, collectionId, collectionState.loadingCollectionIds));
+            var nextLoadingIds = shouldRequest ? A2($elm$core$Set$insert, collectionId, collectionState.loadingCollectionIds) : collectionState.loadingCollectionIds;
+            var nextState = _Utils_update(
+              collectionState,
+              { expandedIds: nextExpandedIds, loadingCollectionIds: nextLoadingIds }
+            );
+            return _Utils_Tuple2(
+              _Utils_update(
+                model,
+                {
+                  resourceResponse: $author$project$Model$ResourceLoadedCollection(nextState)
+                }
+              ),
+              shouldRequest ? A3(
+                $rism_digital$elm_iiif$IIIF$requestResource,
+                $author$project$Msg$ServerRespondedWithCollectionItem(collectionId),
+                model.acceptHeaders,
+                collectionId
+              ) : $elm$core$Platform$Cmd$none
+            );
+          } else {
+            return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+          }
         case "UserClickedManifestItem":
           var manifestId = msg.a;
           var manifestUrl = msg.b;
-          var _v13 = model.resourceResponse;
-          if (_v13.$ === "ResourceLoadedCollection") {
-            var collectionState = _v13.a;
+          var _v16 = model.resourceResponse;
+          if (_v16.$ === "ResourceLoadedCollection") {
+            var collectionState = _v16.a;
             return _Utils_Tuple2(
               _Utils_update(
                 model,
@@ -17497,146 +17586,24 @@
                         selectedManifestId: $elm$core$Maybe$Just(manifestId)
                       }
                     )
-                  ),
-                  response: $author$project$Model$Loading
-                }
-              ),
-              A3($rism_digital$elm_iiif$IIIF$requestManifest, $author$project$Msg$ServerRespondedWithManifestFromCollection, model.acceptHeaders, manifestUrl)
-            );
-          } else {
-            return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-          }
-        case "ServerRespondedWithManifestFromCollection":
-          var result = msg.a;
-          if (result.$ === "Ok") {
-            var manifest = result.a;
-            return A2($author$project$Main$handleManifestLoaded, model, manifest);
-          } else {
-            var err = result.a;
-            return _Utils_Tuple2(
-              _Utils_update(
-                model,
-                {
-                  isViewerLoading: false,
-                  response: $author$project$Model$Failed(
-                    $author$project$Main$httpErrorToString(err)
                   )
                 }
               ),
-              $elm$core$Platform$Cmd$none
-            );
-          }
-        case "UserToggledCollectionSidebar":
-          return _Utils_Tuple2(
-            _Utils_update(
-              model,
-              { collectionSidebarVisible: !model.collectionSidebarVisible }
-            ),
-            $elm$core$Platform$Cmd$none
-          );
-        case "UserStartedCollectionSidebarResize":
-          var clientX = msg.a;
-          return _Utils_Tuple2(
-            _Utils_update(
-              model,
-              {
-                collectionSidebarDrag: $elm$core$Maybe$Just(
-                  { startWidth: model.collectionSidebarWidth, startX: clientX }
-                )
-              }
-            ),
-            $elm$core$Platform$Cmd$none
-          );
-        case "UserDraggedCollectionSidebarResize":
-          var clientX = msg.a;
-          var _v15 = model.collectionSidebarDrag;
-          if (_v15.$ === "Just") {
-            var drag = _v15.a;
-            var nextWidth = A3($elm$core$Basics$clamp, 240, 480, drag.startWidth + (clientX - drag.startX));
-            return _Utils_Tuple2(
-              _Utils_update(
-                model,
-                { collectionSidebarWidth: nextWidth }
-              ),
-              $elm$core$Platform$Cmd$none
+              A3(
+                $rism_digital$elm_iiif$IIIF$requestManifest,
+                $author$project$Msg$ServerRespondedWithManifestFromCollection(manifestId),
+                model.acceptHeaders,
+                manifestUrl
+              )
             );
           } else {
             return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
           }
-        case "UserEndedCollectionSidebarResize":
+        case "UserClickedOpenManifestInfo":
           return _Utils_Tuple2(
             _Utils_update(
               model,
-              { collectionSidebarDrag: $elm$core$Maybe$Nothing }
-            ),
-            $elm$core$Platform$Cmd$none
-          );
-        case "ClientNotifiedPageChanged":
-          var index = msg.a;
-          return A3($author$project$Main$handlePageChanged, false, index, model);
-        case "ClientNotifiedPageChangedInstant":
-          var index = msg.a;
-          return A3($author$project$Main$handlePageChanged, true, index, model);
-        case "ClientNotifiedScrollThumbs":
-          return _Utils_Tuple2(
-            _Utils_update(
-              model,
-              { thumbsInstantScroll: false }
-            ),
-            $elm$core$Platform$Cmd$none
-          );
-        case "SetResponseLoading":
-          return _Utils_Tuple2(
-            _Utils_update(
-              model,
-              { resourceResponse: $author$project$Model$ResourceLoading, response: $author$project$Model$Loading }
-            ),
-            $elm$core$Platform$Cmd$none
-          );
-        case "UserClickedThumbnail":
-          var index = msg.a;
-          var nextModel = _Utils_update(
-            model,
-            {
-              pageViewImageIndex: 0,
-              selectedIndex: $elm$core$Maybe$Just(index),
-              sidebarState: $author$project$Main$ensureSidebarVisible(model.sidebarState),
-              thumbsInstantScroll: false
-            }
-          );
-          return _Utils_Tuple2(
-            nextModel,
-            $elm$core$Platform$Cmd$batch(
-              _List_fromArray(
-                [
-                  $author$project$Main$scrollToIndex(index),
-                  A2(
-                    $author$project$Main$scrollThumbsToIndex,
-                    _Utils_eq(nextModel.sidebarState, $author$project$Model$SidebarThumbnails),
-                    index
-                  ),
-                  $author$project$Main$sendPageViewPreview(nextModel)
-                ]
-              )
-            )
-          );
-        case "UserToggledFilter":
-          var toggle = msg.a;
-          var enabled = msg.b;
-          var nextModel = A2(
-            $author$project$Filters$updateFilters,
-            A2($author$project$Filters$applyFilterToggle, toggle, enabled),
-            model
-          );
-          return _Utils_Tuple2(
-            nextModel,
-            $author$project$Main$sendPageViewPreview(nextModel)
-          );
-        case "UserToggledContents":
-          return _Utils_Tuple2(
-            _Utils_update(
-              model,
-              { sidebarState: $author$project$Model$SidebarContents }
+              { manifestInfoOpen: true }
             ),
             $elm$core$Platform$Cmd$none
           );
@@ -17654,102 +17621,20 @@
             nextModel,
             $author$project$Main$sendPageViewPreview(nextModel)
           );
-        case "UserClickedClosePageView":
+        case "UserClickedPageViewImageChoice":
+          var index = msg.a;
           var nextModel = _Utils_update(
             model,
-            { filters: $author$project$Filters$resetFilters, pageViewFullscreen: false, pageViewImageIndex: 0, pageViewOpen: false }
+            { pageViewImageIndex: index }
           );
-          return _Utils_Tuple2(nextModel, $elm$core$Platform$Cmd$none);
-        case "UserClickedSaveFilteredImage":
           return _Utils_Tuple2(
-            model,
-            $author$project$Main$saveFilteredImage(_Utils_Tuple0)
+            nextModel,
+            $author$project$Main$sendPageViewPreview(nextModel)
           );
-        case "UserToggledPageViewFullscreen":
-          return _Utils_Tuple2(
-            _Utils_update(
-              model,
-              { pageViewFullscreen: !model.pageViewFullscreen }
-            ),
-            $elm$core$Platform$Cmd$none
-          );
-        case "UserToggledPageViewSidebar":
-          return _Utils_Tuple2(
-            _Utils_update(
-              model,
-              { pageViewSidebarVisible: !model.pageViewSidebarVisible }
-            ),
-            $elm$core$Platform$Cmd$none
-          );
-        case "UserClickedOpenManifestInfo":
-          return _Utils_Tuple2(
-            _Utils_update(
-              model,
-              { manifestInfoOpen: true }
-            ),
-            $elm$core$Platform$Cmd$none
-          );
-        case "UserClickedCloseManifestInfo":
-          return _Utils_Tuple2(
-            _Utils_update(
-              model,
-              { manifestInfoOpen: false }
-            ),
-            $elm$core$Platform$Cmd$none
-          );
-        case "UserToggledMobileSidebar":
-          return model.mobileSidebarOpen ? _Utils_Tuple2(
-            _Utils_update(
-              model,
-              { mobileSidebarOpen: false, sidebarState: $author$project$Model$SidebarHidden }
-            ),
-            $elm$core$Platform$Cmd$none
-          ) : _Utils_Tuple2(
-            _Utils_update(
-              model,
-              {
-                mobileSidebarOpen: true,
-                sidebarState: $author$project$Main$ensureSidebarVisible(model.sidebarState)
-              }
-            ),
-            $elm$core$Platform$Cmd$none
-          );
-        case "UserClosedMobileSidebar":
-          return _Utils_Tuple2(
-            _Utils_update(
-              model,
-              { mobileSidebarOpen: false, sidebarState: $author$project$Model$SidebarHidden }
-            ),
-            $elm$core$Platform$Cmd$none
-          );
-        case "UserClickedPageViewPrev":
-          return A2($author$project$Main$handlePageViewStep, -1, model);
         case "UserClickedPageViewNext":
           return A2($author$project$Main$handlePageViewStep, 1, model);
-        case "UserResetAllFilters":
-          var nextModel = _Utils_update(
-            model,
-            { filters: $author$project$Filters$resetFilters, filtersJsonError: $elm$core$Maybe$Nothing }
-          );
-          return _Utils_Tuple2(
-            nextModel,
-            $author$project$Main$sendPageViewPreview(nextModel)
-          );
-        case "UserResetAltColourAdjust":
-          var nextModel = A2($author$project$Filters$updateFilters, $author$project$Filters$resetAltColourAdjust, model);
-          return _Utils_Tuple2(
-            nextModel,
-            $author$project$Main$sendPageViewPreview(nextModel)
-          );
-        case "UserToggledFullscreen":
-          var nextFullscreen = !model.fullscreen;
-          return _Utils_Tuple2(
-            _Utils_update(
-              model,
-              { fullscreen: nextFullscreen }
-            ),
-            $author$project$Main$setFullscreen(nextFullscreen)
-          );
+        case "UserClickedPageViewPrev":
+          return A2($author$project$Main$handlePageViewStep, -1, model);
         case "UserClickedRange":
           var rangeId = msg.a;
           var maybeIndex = msg.b;
@@ -17789,13 +17674,114 @@
               )
             )
           );
-        case "UserToggledMetadata":
+        case "UserClickedSaveFilteredImage":
+          return _Utils_Tuple2(
+            model,
+            $author$project$Main$saveFilteredImage(_Utils_Tuple0)
+          );
+        case "UserClickedThumbnail":
+          var index = msg.a;
+          var nextModel = _Utils_update(
+            model,
+            {
+              pageViewImageIndex: 0,
+              selectedIndex: $elm$core$Maybe$Just(index),
+              sidebarState: $author$project$Main$ensureSidebarVisible(model.sidebarState),
+              thumbsInstantScroll: false
+            }
+          );
+          return _Utils_Tuple2(
+            nextModel,
+            $elm$core$Platform$Cmd$batch(
+              _List_fromArray(
+                [
+                  $author$project$Main$scrollToIndex(index),
+                  A2(
+                    $author$project$Main$scrollThumbsToIndex,
+                    _Utils_eq(nextModel.sidebarState, $author$project$Model$SidebarThumbnails),
+                    index
+                  ),
+                  $author$project$Main$sendPageViewPreview(nextModel)
+                ]
+              )
+            )
+          );
+        case "UserClickedZoomIn":
+          return A2($author$project$Main$updateZoom, model, $author$project$Main$zoomInFactor);
+        case "UserClickedZoomOut":
+          return A2($author$project$Main$updateZoom, model, $author$project$Main$zoomOutFactor);
+        case "UserCopiedFilterJson":
+          var json = $author$project$Filters$encodeActiveFilters(model.filters);
           return _Utils_Tuple2(
             _Utils_update(
               model,
-              { sidebarState: $author$project$Model$SidebarMetadata }
+              { filtersJsonError: $elm$core$Maybe$Nothing, filtersJsonInput: json }
+            ),
+            $author$project$Main$copyToClipboard(json)
+          );
+        case "UserDraggedCollectionSidebarResize":
+          var clientX = msg.a;
+          var _v19 = model.collectionSidebarDrag;
+          if (_v19.$ === "Just") {
+            var drag = _v19.a;
+            var nextWidth = A3($elm$core$Basics$clamp, 240, 480, drag.startWidth + (clientX - drag.startX));
+            return _Utils_Tuple2(
+              _Utils_update(
+                model,
+                { collectionSidebarWidth: nextWidth }
+              ),
+              $elm$core$Platform$Cmd$none
+            );
+          } else {
+            return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+          }
+        case "UserDraggedSidebarResize":
+          var clientX = msg.a;
+          var _v20 = model.sidebarDrag;
+          if (_v20.$ === "Just") {
+            var drag = _v20.a;
+            var delta = drag.startX - clientX;
+            var nextWidth = A3($elm$core$Basics$clamp, 220, 520, drag.startWidth + delta);
+            return _Utils_Tuple2(
+              _Utils_update(
+                model,
+                { sidebarWidth: nextWidth }
+              ),
+              $elm$core$Platform$Cmd$none
+            );
+          } else {
+            return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+          }
+        case "UserEndedCollectionSidebarResize":
+          return _Utils_Tuple2(
+            _Utils_update(
+              model,
+              { collectionSidebarDrag: $elm$core$Maybe$Nothing }
             ),
             $elm$core$Platform$Cmd$none
+          );
+        case "UserEndedSidebarResize":
+          return _Utils_Tuple2(
+            _Utils_update(
+              model,
+              { sidebarDrag: $elm$core$Maybe$Nothing }
+            ),
+            $elm$core$Platform$Cmd$none
+          );
+        case "UserResetAllFilters":
+          var nextModel = _Utils_update(
+            model,
+            { filters: $author$project$Filters$resetFilters, filtersJsonError: $elm$core$Maybe$Nothing }
+          );
+          return _Utils_Tuple2(
+            nextModel,
+            $author$project$Main$sendPageViewPreview(nextModel)
+          );
+        case "UserResetAltColourAdjust":
+          var nextModel = A2($author$project$Filters$updateFilters, $author$project$Filters$resetAltColourAdjust, model);
+          return _Utils_Tuple2(
+            nextModel,
+            $author$project$Main$sendPageViewPreview(nextModel)
           );
         case "UserSelectedContentsIndex":
           return _Utils_Tuple2(
@@ -17813,6 +17799,111 @@
             ),
             $elm$core$Platform$Cmd$none
           );
+        case "UserStartedCollectionSidebarResize":
+          var clientX = msg.a;
+          return _Utils_Tuple2(
+            _Utils_update(
+              model,
+              {
+                collectionSidebarDrag: $elm$core$Maybe$Just(
+                  { startWidth: model.collectionSidebarWidth, startX: clientX }
+                )
+              }
+            ),
+            $elm$core$Platform$Cmd$none
+          );
+        case "UserStartedSidebarResize":
+          var clientX = msg.a;
+          return _Utils_Tuple2(
+            _Utils_update(
+              model,
+              {
+                sidebarDrag: $elm$core$Maybe$Just(
+                  { startWidth: model.sidebarWidth, startX: clientX }
+                )
+              }
+            ),
+            $elm$core$Platform$Cmd$none
+          );
+        case "UserToggledContents":
+          return _Utils_Tuple2(
+            _Utils_update(
+              model,
+              { sidebarState: $author$project$Model$SidebarContents }
+            ),
+            $elm$core$Platform$Cmd$none
+          );
+        case "UserToggledFilter":
+          var toggle = msg.a;
+          var enabled = msg.b;
+          var nextModel = A2(
+            $author$project$Filters$updateFilters,
+            A2($author$project$Filters$applyFilterToggle, toggle, enabled),
+            model
+          );
+          return _Utils_Tuple2(
+            nextModel,
+            $author$project$Main$sendPageViewPreview(nextModel)
+          );
+        case "UserToggledFilterGroup":
+          var groupId = msg.a;
+          var nextExpanded = A2($elm$core$Set$member, groupId, model.filterGroupExpanded) ? A2($elm$core$Set$remove, groupId, model.filterGroupExpanded) : A2($elm$core$Set$insert, groupId, model.filterGroupExpanded);
+          return _Utils_Tuple2(
+            _Utils_update(
+              model,
+              { filterGroupExpanded: nextExpanded }
+            ),
+            $elm$core$Platform$Cmd$none
+          );
+        case "UserToggledFullscreen":
+          var nextFullscreen = !model.fullscreen;
+          return _Utils_Tuple2(
+            _Utils_update(
+              model,
+              { fullscreen: nextFullscreen }
+            ),
+            $author$project$Main$setFullscreen(nextFullscreen)
+          );
+        case "UserToggledMetadata":
+          return _Utils_Tuple2(
+            _Utils_update(
+              model,
+              { sidebarState: $author$project$Model$SidebarMetadata }
+            ),
+            $elm$core$Platform$Cmd$none
+          );
+        case "UserToggledPageViewFullscreen":
+          return _Utils_Tuple2(
+            _Utils_update(
+              model,
+              { pageViewFullscreen: !model.pageViewFullscreen }
+            ),
+            $elm$core$Platform$Cmd$none
+          );
+        case "UserToggledPageViewSidebar":
+          return _Utils_Tuple2(
+            _Utils_update(
+              model,
+              { pageViewSidebarVisible: !model.pageViewSidebarVisible }
+            ),
+            $elm$core$Platform$Cmd$none
+          );
+        case "UserToggledShiftByOne":
+          var _v21 = model.viewMode;
+          if (_v21.$ === "OneUp") {
+            return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+          } else {
+            var nextShift = !model.shiftByOne;
+            return _Utils_Tuple2(
+              _Utils_update(
+                model,
+                { shiftByOne: nextShift }
+              ),
+              $author$project$Main$layoutModeUpdated(
+                A2($author$project$Main$layoutModeToString, $author$project$Model$TwoUp, nextShift)
+              )
+            );
+          }
         case "UserToggledSidebar":
           return model.isMobile ? model.mobileSidebarOpen ? _Utils_Tuple2(
             _Utils_update(
@@ -17842,32 +17933,16 @@
             ),
             $elm$core$Platform$Cmd$none
           );
-        case "UserToggledShiftByOne":
-          var _v18 = model.viewMode;
-          if (_v18.$ === "OneUp") {
-            return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-          } else {
-            var nextShift = !model.shiftByOne;
-            return _Utils_Tuple2(
-              _Utils_update(
-                model,
-                { shiftByOne: nextShift }
-              ),
-              $author$project$Main$layoutModeUpdated(
-                A2($author$project$Main$layoutModeToString, $author$project$Model$TwoUp, nextShift)
-              )
-            );
-          }
         case "UserToggledThumbnails":
           var thumbCmd = (function() {
-            var _v20 = _Utils_Tuple2(model.pendingThumbScroll, model.selectedIndex);
-            if (_v20.a.$ === "Just") {
-              var index2 = _v20.a.a;
+            var _v23 = _Utils_Tuple2(model.pendingThumbScroll, model.selectedIndex);
+            if (_v23.a.$ === "Just") {
+              var index2 = _v23.a.a;
               return A2($author$project$Main$scrollThumbsToIndex, true, index2);
             } else {
-              if (_v20.b.$ === "Just") {
-                var _v21 = _v20.a;
-                var index2 = _v20.b.a;
+              if (_v23.b.$ === "Just") {
+                var _v24 = _v23.a;
+                var index2 = _v23.b.a;
                 return A2($author$project$Main$scrollThumbsToIndex, true, index2);
               } else {
                 return $elm$core$Platform$Cmd$none;
@@ -17879,8 +17954,8 @@
             { sidebarState: $author$project$Model$SidebarThumbnails }
           );
           var nextInstant = (function() {
-            var _v19 = model.pendingThumbScroll;
-            if (_v19.$ === "Just") {
+            var _v22 = model.pendingThumbScroll;
+            if (_v22.$ === "Just") {
               return true;
             } else {
               return false;
@@ -17895,8 +17970,8 @@
           );
         case "UserToggledTwoUp":
           var nextMode = (function() {
-            var _v22 = model.viewMode;
-            if (_v22.$ === "OneUp") {
+            var _v25 = model.viewMode;
+            if (_v25.$ === "OneUp") {
               return $author$project$Model$TwoUp;
             } else {
               return $author$project$Model$OneUp;
@@ -17911,18 +17986,6 @@
               A2($author$project$Main$layoutModeToString, nextMode, model.shiftByOne)
             )
           );
-        case "UserUpdatedFilterInt":
-          var intFilter = msg.a;
-          var raw = msg.b;
-          var nextModel = A2(
-            $author$project$Filters$updateFilters,
-            A2($author$project$Filters$applyIntFilter, intFilter, raw),
-            model
-          );
-          return _Utils_Tuple2(
-            nextModel,
-            $author$project$Main$sendPageViewPreview(nextModel)
-          );
         case "UserUpdatedFilterFloat":
           var floatFilter = msg.a;
           var raw = msg.b;
@@ -17935,12 +17998,12 @@
             nextModel,
             $author$project$Main$sendPageViewPreview(nextModel)
           );
-        case "UserUpdatedFilterString":
-          var stringFilter = msg.a;
+        case "UserUpdatedFilterInt":
+          var intFilter = msg.a;
           var raw = msg.b;
           var nextModel = A2(
             $author$project$Filters$updateFilters,
-            A2($author$project$Filters$applyStringFilter, stringFilter, raw),
+            A2($author$project$Filters$applyIntFilter, intFilter, raw),
             model
           );
           return _Utils_Tuple2(
@@ -17956,39 +18019,17 @@
             ),
             $elm$core$Platform$Cmd$none
           );
-        case "UserAppliedFilterJson":
-          var _v23 = $author$project$Filters$decodeFilterJson(model.filtersJsonInput);
-          if (_v23.$ === "Ok") {
-            var filters = _v23.a;
-            var json = $author$project$Filters$encodeActiveFilters(filters);
-            var nextModel = _Utils_update(
-              model,
-              { filters, filtersJsonError: $elm$core$Maybe$Nothing, filtersJsonInput: json }
-            );
-            return _Utils_Tuple2(
-              nextModel,
-              $author$project$Main$sendPageViewPreview(nextModel)
-            );
-          } else {
-            var err = _v23.a;
-            return _Utils_Tuple2(
-              _Utils_update(
-                model,
-                {
-                  filtersJsonError: $elm$core$Maybe$Just(err)
-                }
-              ),
-              $elm$core$Platform$Cmd$none
-            );
-          }
-        case "UserCopiedFilterJson":
-          var json = $author$project$Filters$encodeActiveFilters(model.filters);
+        case "UserUpdatedFilterString":
+          var stringFilter = msg.a;
+          var raw = msg.b;
+          var nextModel = A2(
+            $author$project$Filters$updateFilters,
+            A2($author$project$Filters$applyStringFilter, stringFilter, raw),
+            model
+          );
           return _Utils_Tuple2(
-            _Utils_update(
-              model,
-              { filtersJsonError: $elm$core$Maybe$Nothing, filtersJsonInput: json }
-            ),
-            $author$project$Main$copyToClipboard(json)
+            nextModel,
+            $author$project$Main$sendPageViewPreview(nextModel)
           );
         case "ViewerLoadingChanged":
           var isLoading = msg.a;
@@ -17999,56 +18040,11 @@
             ),
             $elm$core$Platform$Cmd$none
           );
-        case "UserDraggedSidebarResize":
-          var clientX = msg.a;
-          var _v24 = model.sidebarDrag;
-          if (_v24.$ === "Just") {
-            var drag = _v24.a;
-            var delta = drag.startX - clientX;
-            var nextWidth = A3($elm$core$Basics$clamp, 220, 520, drag.startWidth + delta);
-            return _Utils_Tuple2(
-              _Utils_update(
-                model,
-                { sidebarWidth: nextWidth }
-              ),
-              $elm$core$Platform$Cmd$none
-            );
-          } else {
-            return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-          }
-        case "UserEndedSidebarResize":
-          return _Utils_Tuple2(
-            _Utils_update(
-              model,
-              { sidebarDrag: $elm$core$Maybe$Nothing }
-            ),
-            $elm$core$Platform$Cmd$none
-          );
-        case "UserStartedSidebarResize":
-          var clientX = msg.a;
-          return _Utils_Tuple2(
-            _Utils_update(
-              model,
-              {
-                sidebarDrag: $elm$core$Maybe$Just(
-                  { startWidth: model.sidebarWidth, startX: clientX }
-                )
-              }
-            ),
-            $elm$core$Platform$Cmd$none
-          );
-        case "UserChangedZoomLevel":
-          var zoom = msg.a;
-          return _Utils_Tuple2(
-            _Utils_update(
-              model,
-              { zoom }
-            ),
-            $elm$core$Platform$Cmd$none
-          );
-        case "ViewportChanged":
+        default:
           var width = msg.a;
-          var nextIsMobile = width <= 720;
+          var height = msg.b;
+          var shortSide = A2($elm$core$Basics$min, width, height);
+          var nextIsMobile = _Utils_cmp(shortSide, $author$project$Main$mobileShortSideBreakpoint) < 1;
           var nextModel = nextIsMobile ? _Utils_update(
             model,
             { isMobile: true, mobileSidebarOpen: false, sidebarState: $author$project$Model$SidebarHidden }
@@ -18057,30 +18053,6 @@
             { isMobile: false, mobileSidebarOpen: false }
           );
           return _Utils_Tuple2(nextModel, $elm$core$Platform$Cmd$none);
-        case "UserClickedZoomIn":
-          return A2($author$project$Main$updateZoom, model, $author$project$Main$zoomInFactor);
-        case "UserClickedZoomOut":
-          return A2($author$project$Main$updateZoom, model, $author$project$Main$zoomOutFactor);
-        case "UserClickedPageViewImageChoice":
-          var index = msg.a;
-          var nextModel = _Utils_update(
-            model,
-            { pageViewImageIndex: index }
-          );
-          return _Utils_Tuple2(
-            nextModel,
-            $author$project$Main$sendPageViewPreview(nextModel)
-          );
-        default:
-          var groupId = msg.a;
-          var nextExpanded = A2($elm$core$Set$member, groupId, model.filterGroupExpanded) ? A2($elm$core$Set$remove, groupId, model.filterGroupExpanded) : A2($elm$core$Set$insert, groupId, model.filterGroupExpanded);
-          return _Utils_Tuple2(
-            _Utils_update(
-              model,
-              { filterGroupExpanded: nextExpanded }
-            ),
-            $elm$core$Platform$Cmd$none
-          );
       }
     }
   );
@@ -18106,8 +18078,10 @@
     }
   };
   var $author$project$View$isCanvasLoading = function(model) {
-    return model.isViewerLoading || (_Utils_eq(model.resourceResponse, $author$project$Model$ResourceLoading) || _Utils_eq(model.response, $author$project$Model$Loading));
+    return model.isViewerLoading || _Utils_eq(model.resourceResponse, $author$project$Model$ResourceLoading) || _Utils_eq(model.response, $author$project$Model$Loading);
   };
+  var $elm$virtual_dom$VirtualDom$lazy5 = _VirtualDom_lazy5;
+  var $elm$html$Html$Lazy$lazy5 = $elm$virtual_dom$VirtualDom$lazy5;
   var $author$project$Model$currentManifest = function(model) {
     var _v0 = model.resourceResponse;
     switch (_v0.$) {
@@ -18166,45 +18140,20 @@
       )
     );
   };
-  var $author$project$Utilities$choose = F3(
-    function(predicate, isTrue, isFalse) {
-      return predicate ? isTrue(_Utils_Tuple0) : isFalse(_Utils_Tuple0);
-    }
-  );
+  var $author$project$View$Helpers$emptyHtml = $elm$html$Html$text("");
   var $author$project$View$Helpers$viewIf = F2(
-    function(viewFunc, condition) {
-      return A3(
-        $author$project$Utilities$choose,
-        condition,
-        function(_v0) {
-          return viewFunc;
-        },
-        function(_v1) {
-          return $elm$html$Html$text("");
-        }
-      );
-    }
-  );
-  var $author$project$Utilities$unpack = F3(
-    function(_default, f, m) {
-      if (m.$ === "Just") {
-        var a = m.a;
-        return f(a);
-      } else {
-        return _default(_Utils_Tuple0);
-      }
+    function(view, condition) {
+      return condition ? view : $author$project$View$Helpers$emptyHtml;
     }
   );
   var $author$project$View$Helpers$viewMaybe = F2(
     function(viewFunc, maybeBody) {
-      return A3(
-        $author$project$Utilities$unpack,
-        function(_v0) {
-          return $elm$html$Html$text("");
-        },
-        viewFunc,
-        maybeBody
-      );
+      if (maybeBody.$ === "Just") {
+        var a = maybeBody.a;
+        return viewFunc(a);
+      } else {
+        return $author$project$View$Helpers$emptyHtml;
+      }
     }
   );
   var $author$project$View$viewThrobber = (function() {
@@ -18269,14 +18218,7 @@
             $elm$html$Html$div,
             _List_fromArray(
               [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("modal", true),
-                      _Utils_Tuple2("is-narrow", true)
-                    ]
-                  )
-                )
+                $elm$html$Html$Attributes$class("modal is-narrow")
               ]
             ),
             _List_fromArray(
@@ -18310,14 +18252,7 @@
                   $elm$html$Html$div,
                   _List_fromArray(
                     [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("modal-body", true),
-                            _Utils_Tuple2("is-no-sidebar", true)
-                          ]
-                        )
-                      )
+                      $elm$html$Html$Attributes$class("modal-body is-no-sidebar")
                     ]
                   ),
                   _List_fromArray(
@@ -18352,88 +18287,97 @@
       )
     );
   };
-  var $author$project$View$viewCanvas = function(_v0) {
-    var fullscreen = _v0.fullscreen;
-    var isLoading = _v0.isLoading;
-    var showCollectionSidebar = _v0.showCollectionSidebar;
-    var maybeStatus = _v0.maybeStatus;
+  var $author$project$View$viewZoomIndicator = function(zoomText) {
     return A2(
       $elm$html$Html$div,
       _List_fromArray(
         [
-          $elm$html$Html$Attributes$class("diva-canvas-wrapper")
+          $elm$html$Html$Attributes$class("viewer-zoom-indicator")
         ]
       ),
       _List_fromArray(
         [
-          A3(
-            $elm$html$Html$node,
-            "osd-viewer",
-            _List_fromArray(
-              [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("diva-canvas", true),
-                      _Utils_Tuple2("is-fullscreen", fullscreen),
-                      _Utils_Tuple2("has-collection", showCollectionSidebar)
-                    ]
-                  )
-                ),
-                $elm$html$Html$Attributes$id("main-viewer")
-              ]
-            ),
-            _List_Nil
-          ),
-          A2($author$project$View$Helpers$viewIf, $author$project$View$viewThrobber, isLoading),
-          A2($author$project$View$Helpers$viewMaybe, $author$project$View$viewViewerStatusModal, maybeStatus)
+          $elm$html$Html$text(zoomText)
         ]
       )
     );
   };
+  var $author$project$View$viewCanvas = F5(
+    function(fullscreen, isLoading, showCollectionSidebar, maybeStatus, maybeZoomLabel) {
+      return A2(
+        $elm$html$Html$div,
+        _List_fromArray(
+          [
+            $elm$html$Html$Attributes$class("diva-canvas-wrapper")
+          ]
+        ),
+        _List_fromArray(
+          [
+            A3(
+              $elm$html$Html$node,
+              "osd-viewer",
+              _List_fromArray(
+                [
+                  $elm$html$Html$Attributes$classList(
+                    _List_fromArray(
+                      [
+                        _Utils_Tuple2("diva-canvas", true),
+                        _Utils_Tuple2("is-fullscreen", fullscreen),
+                        _Utils_Tuple2("has-collection", showCollectionSidebar)
+                      ]
+                    )
+                  ),
+                  $elm$html$Html$Attributes$id("main-viewer")
+                ]
+              ),
+              _List_Nil
+            ),
+            A2($author$project$View$Helpers$viewIf, $author$project$View$viewThrobber, isLoading),
+            A2($author$project$View$Helpers$viewMaybe, $author$project$View$viewViewerStatusModal, maybeStatus),
+            A2($author$project$View$Helpers$viewMaybe, $author$project$View$viewZoomIndicator, maybeZoomLabel)
+          ]
+        )
+      );
+    }
+  );
   var $author$project$Msg$UserStartedCollectionSidebarResize = function(a) {
     return { $: "UserStartedCollectionSidebarResize", a };
   };
   var $author$project$View$CollectionExplorer$viewCollectionResizer = function(model) {
-    var maybeResizer = (function() {
-      var _v0 = model.resourceResponse;
-      if (_v0.$ === "ResourceLoadedCollection") {
-        return $elm$core$Maybe$Just(
-          A2(
-            $elm$html$Html$div,
-            _List_fromArray(
-              [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("collection-resizer", true),
-                      _Utils_Tuple2("is-hidden", !model.collectionSidebarVisible)
-                    ]
-                  )
-                ),
-                A2(
-                  $elm$html$Html$Events$on,
-                  "mousedown",
-                  A2(
-                    $elm$json$Json$Decode$map,
-                    $author$project$Msg$UserStartedCollectionSidebarResize,
-                    A2($elm$json$Json$Decode$field, "clientX", $elm$json$Json$Decode$int)
-                  )
-                )
-              ]
+    var _v0 = model.resourceResponse;
+    if (_v0.$ === "ResourceLoadedCollection") {
+      return A2(
+        $elm$html$Html$div,
+        _List_fromArray(
+          [
+            $elm$html$Html$Attributes$classList(
+              _List_fromArray(
+                [
+                  _Utils_Tuple2("collection-resizer", true),
+                  _Utils_Tuple2("is-hidden", !model.collectionSidebarVisible)
+                ]
+              )
             ),
-            _List_fromArray(
-              [
-                $elm$html$Html$text("\u22EE")
-              ]
+            A2(
+              $elm$html$Html$Events$on,
+              "mousedown",
+              A2(
+                $elm$json$Json$Decode$map,
+                $author$project$Msg$UserStartedCollectionSidebarResize,
+                A2($elm$json$Json$Decode$field, "clientX", $elm$json$Json$Decode$int)
+              )
             )
-          )
-        );
-      } else {
-        return $elm$core$Maybe$Nothing;
-      }
-    })();
-    return A2($author$project$View$Helpers$viewMaybe, $elm$core$Basics$identity, maybeResizer);
+          ]
+        ),
+        _List_fromArray(
+          [
+            $elm$html$Html$text("\u22EE")
+          ]
+        )
+      );
+    } else {
+      return $author$project$View$Helpers$emptyHtml;
+    }
   };
   var $author$project$Msg$UserClickedCollectionItem = function(a) {
     return { $: "UserClickedCollectionItem", a };
@@ -18502,14 +18446,7 @@
         $elm$html$Html$ul,
         _List_fromArray(
           [
-            $elm$html$Html$Attributes$classList(
-              _List_fromArray(
-                [
-                  _Utils_Tuple2("collection-list", true),
-                  _Utils_Tuple2("list-reset", true)
-                ]
-              )
-            )
+            $elm$html$Html$Attributes$class("collection-list list-reset")
           ]
         ),
         A2(
@@ -18567,14 +18504,7 @@
             $elm$html$Html$button,
             _List_fromArray(
               [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("collection-node-button", true),
-                      _Utils_Tuple2("ui-button", true)
-                    ]
-                  )
-                ),
+                $elm$html$Html$Attributes$class("collection-node-button ui-button"),
                 $elm$html$Html$Attributes$type_("button"),
                 $elm$html$Html$Events$onClick(
                   $author$project$Msg$UserClickedCollectionItem(collection.id)
@@ -18610,11 +18540,6 @@
       var _v0 = collectionState.collection;
       var collection = _v0.b;
       var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, collection.label);
-      var summaryText = A2(
-        $elm$core$Maybe$map,
-        $rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap(model.detectedLanguage),
-        collection.summary
-      );
       return A2(
         $elm$html$Html$div,
         _List_fromArray(
@@ -18671,12 +18596,14 @@
                         ),
                         _List_fromArray(
                           [
-                            $elm$html$Html$text(summary)
+                            $elm$html$Html$text(
+                              A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, summary)
+                            )
                           ]
                         )
                       );
                     },
-                    summaryText
+                    collection.summary
                   )
                 ]
               )
@@ -18694,14 +18621,7 @@
                     $elm$html$Html$div,
                     _List_fromArray(
                       [
-                        $elm$html$Html$Attributes$classList(
-                          _List_fromArray(
-                            [
-                              _Utils_Tuple2("sidebar-pane", true),
-                              _Utils_Tuple2("is-scroll", true)
-                            ]
-                          )
-                        )
+                        $elm$html$Html$Attributes$class("sidebar-pane is-scroll")
                       ]
                     ),
                     _List_fromArray(
@@ -18719,20 +18639,13 @@
     }
   );
   var $author$project$View$CollectionExplorer$viewCollectionSidebar = function(model) {
-    var maybeCollectionState = (function() {
-      var _v0 = model.resourceResponse;
-      if (_v0.$ === "ResourceLoadedCollection") {
-        var collectionState = _v0.a;
-        return $elm$core$Maybe$Just(collectionState);
-      } else {
-        return $elm$core$Maybe$Nothing;
-      }
-    })();
-    return A2(
-      $author$project$View$Helpers$viewMaybe,
-      $author$project$View$CollectionExplorer$viewCollectionPanel(model),
-      maybeCollectionState
-    );
+    var _v0 = model.resourceResponse;
+    if (_v0.$ === "ResourceLoadedCollection") {
+      var collectionState = _v0.a;
+      return A2($author$project$View$CollectionExplorer$viewCollectionPanel, model, collectionState);
+    } else {
+      return $author$project$View$Helpers$emptyHtml;
+    }
   };
   var $author$project$View$ManifestInfoModal$languageLabel = function(language) {
     switch (language.$) {
@@ -22920,57 +22833,53 @@
           );
         }
       })();
-      return A2(
-        $author$project$View$Helpers$viewIf,
-        A2(
-          $elm$html$Html$div,
-          _List_Nil,
-          _List_fromArray(
-            [
-              A2(
-                $author$project$View$Helpers$viewMaybe,
-                function(url) {
-                  return A2(
-                    $elm$html$Html$img,
-                    _List_fromArray(
-                      [
-                        $elm$html$Html$Attributes$class("manifest-info-logo"),
-                        $elm$html$Html$Attributes$src(url),
-                        $elm$html$Html$Attributes$alt("Manifest logo")
-                      ]
-                    ),
-                    _List_Nil
-                  );
-                },
-                logoUrl
-              ),
-              A2(
-                $author$project$View$Helpers$viewMaybe,
-                function(page) {
-                  var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, language, page.label);
-                  return A2(
-                    $elm$html$Html$a,
-                    _List_fromArray(
-                      [
-                        $elm$html$Html$Attributes$href(page.id),
-                        $elm$html$Html$Attributes$target("_blank"),
-                        $elm$html$Html$Attributes$rel("noopener noreferrer")
-                      ]
-                    ),
-                    _List_fromArray(
-                      [
-                        $elm$html$Html$text(labelText)
-                      ]
-                    )
-                  );
-                },
-                homepageLink
-              )
-            ]
-          )
-        ),
-        !_Utils_eq(logoUrl, $elm$core$Maybe$Nothing) || !_Utils_eq(homepageLink, $elm$core$Maybe$Nothing)
-      );
+      return !_Utils_eq(logoUrl, $elm$core$Maybe$Nothing) || !_Utils_eq(homepageLink, $elm$core$Maybe$Nothing) ? A2(
+        $elm$html$Html$div,
+        _List_Nil,
+        _List_fromArray(
+          [
+            A2(
+              $author$project$View$Helpers$viewMaybe,
+              function(url) {
+                return A2(
+                  $elm$html$Html$img,
+                  _List_fromArray(
+                    [
+                      $elm$html$Html$Attributes$class("manifest-info-logo"),
+                      $elm$html$Html$Attributes$src(url),
+                      $elm$html$Html$Attributes$alt("Manifest logo")
+                    ]
+                  ),
+                  _List_Nil
+                );
+              },
+              logoUrl
+            ),
+            A2(
+              $author$project$View$Helpers$viewMaybe,
+              function(page) {
+                var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, language, page.label);
+                return A2(
+                  $elm$html$Html$a,
+                  _List_fromArray(
+                    [
+                      $elm$html$Html$Attributes$href(page.id),
+                      $elm$html$Html$Attributes$target("_blank"),
+                      $elm$html$Html$Attributes$rel("noopener noreferrer")
+                    ]
+                  ),
+                  _List_fromArray(
+                    [
+                      $elm$html$Html$text(labelText)
+                    ]
+                  )
+                );
+              },
+              homepageLink
+            )
+          ]
+        )
+      ) : $author$project$View$Helpers$emptyHtml;
     }
   );
   var $author$project$View$ManifestInfoModal$viewRow = function(_v0) {
@@ -23040,14 +22949,7 @@
         $elm$html$Html$div,
         _List_fromArray(
           [
-            $elm$html$Html$Attributes$classList(
-              _List_fromArray(
-                [
-                  _Utils_Tuple2("modal-body", true),
-                  _Utils_Tuple2("is-two-column", true)
-                ]
-              )
-            )
+            $elm$html$Html$Attributes$class("modal-body is-two-column")
           ]
         ),
         _List_fromArray(
@@ -23082,42 +22984,38 @@
   var $elm$svg$Svg$Attributes$fill = _VirtualDom_attribute("fill");
   var $elm$svg$Svg$Attributes$height = _VirtualDom_attribute("height");
   var $elm$svg$Svg$trustedNode = _VirtualDom_nodeNS("http://www.w3.org/2000/svg");
+  var $elm$svg$Svg$path = $elm$svg$Svg$trustedNode("path");
   var $elm$svg$Svg$svg = $elm$svg$Svg$trustedNode("svg");
   var $elm$svg$Svg$Attributes$viewBox = _VirtualDom_attribute("viewBox");
   var $elm$svg$Svg$Attributes$width = _VirtualDom_attribute("width");
-  var $author$project$View$Icons$icon = F2(
-    function(viewBoxValue, children) {
-      return A2(
-        $elm$svg$Svg$svg,
-        _List_fromArray(
-          [
-            $elm$svg$Svg$Attributes$viewBox(viewBoxValue),
-            $elm$svg$Svg$Attributes$width("100%"),
-            $elm$svg$Svg$Attributes$height("100%"),
-            $elm$svg$Svg$Attributes$fill("currentColor")
-          ]
-        ),
-        children
-      );
-    }
-  );
-  var $elm$svg$Svg$path = $elm$svg$Svg$trustedNode("path");
-  var $author$project$View$Icons$close = A2(
-    $author$project$View$Icons$icon,
-    "0 0 512 512",
-    _List_fromArray(
-      [
-        A2(
-          $elm$svg$Svg$path,
-          _List_fromArray(
-            [
-              $elm$svg$Svg$Attributes$d("M64 80c-8.8 0-16 7.2-16 16V416c0 8.8 7.2 16 16 16H448c8.8 0 16-7.2 16-16V96c0-8.8-7.2-16-16-16H64zM0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zm175 79c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z")
-            ]
-          ),
-          _List_Nil
-        )
-      ]
-    )
+  var $author$project$View$Icons$makeSvgIcon = function(details) {
+    return A2(
+      $elm$svg$Svg$svg,
+      _List_fromArray(
+        [
+          $elm$svg$Svg$Attributes$viewBox(details.viewBox),
+          $elm$svg$Svg$Attributes$width("100%"),
+          $elm$svg$Svg$Attributes$height("100%"),
+          $elm$svg$Svg$Attributes$fill("currentColor")
+        ]
+      ),
+      _List_fromArray(
+        [
+          A2(
+            $elm$svg$Svg$path,
+            _List_fromArray(
+              [
+                $elm$svg$Svg$Attributes$d(details.path)
+              ]
+            ),
+            _List_Nil
+          )
+        ]
+      )
+    );
+  };
+  var $author$project$View$Icons$close = $author$project$View$Icons$makeSvgIcon(
+    { path: "M64 80c-8.8 0-16 7.2-16 16V416c0 8.8 7.2 16 16 16H448c8.8 0 16-7.2 16-16V96c0-8.8-7.2-16-16-16H64zM0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zm175 79c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z", viewBox: "0 0 512 512" }
   );
   var $elm$html$Html$Attributes$boolProperty = F2(
     function(key, bool) {
@@ -23264,82 +23162,62 @@
     );
   };
   var $author$project$View$ManifestInfoModal$viewManifestInfoModal = function(model) {
-    return A2(
-      $author$project$View$Helpers$viewIf,
-      A2(
-        $elm$html$Html$div,
+    return model.manifestInfoOpen ? A2(
+      $elm$html$Html$div,
+      _List_fromArray(
+        [
+          $elm$html$Html$Attributes$class("modal-overlay")
+        ]
+      ),
+      _List_fromArray(
+        [
+          A2(
+            $elm$html$Html$div,
+            _List_fromArray(
+              [
+                $elm$html$Html$Attributes$class("model is-narrow")
+              ]
+            ),
+            _List_fromArray(
+              [
+                $author$project$View$ManifestInfoModal$viewHeader(model),
+                A2(
+                  $author$project$View$ManifestInfoModal$viewBody,
+                  model,
+                  $author$project$Model$currentManifest(model)
+                )
+              ]
+            )
+          )
+        ]
+      )
+    ) : $author$project$View$Helpers$emptyHtml;
+  };
+  var $elm$html$Html$h1 = _VirtualDom_node("h1");
+  var $author$project$View$viewManifestTitle = F3(
+    function(showTitle, fullscreen, title) {
+      return showTitle && !$elm$core$String$isEmpty(title) ? A2(
+        $elm$html$Html$h1,
         _List_fromArray(
           [
-            $elm$html$Html$Attributes$class("modal-overlay")
-          ]
-        ),
-        _List_fromArray(
-          [
-            A2(
-              $elm$html$Html$div,
+            $elm$html$Html$Attributes$classList(
               _List_fromArray(
                 [
-                  $elm$html$Html$Attributes$classList(
-                    _List_fromArray(
-                      [
-                        _Utils_Tuple2("modal", true),
-                        _Utils_Tuple2("is-narrow", true)
-                      ]
-                    )
-                  )
-                ]
-              ),
-              _List_fromArray(
-                [
-                  $author$project$View$ManifestInfoModal$viewHeader(model),
-                  A2(
-                    $author$project$View$ManifestInfoModal$viewBody,
-                    model,
-                    $author$project$Model$currentManifest(model)
-                  )
+                  _Utils_Tuple2("diva-app-title", true),
+                  _Utils_Tuple2("is-fullscreen", fullscreen)
                 ]
               )
             )
           ]
-        )
-      ),
-      model.manifestInfoOpen
-    );
-  };
-  var $elm$html$Html$h1 = _VirtualDom_node("h1");
-  var $author$project$View$viewManifestTitle = function(_v0) {
-    var showTitle = _v0.showTitle;
-    var fullscreen = _v0.fullscreen;
-    var title = _v0.title;
-    return A2(
-      $author$project$View$Helpers$viewIf,
-      A2(
-        $author$project$View$Helpers$viewIf,
-        A2(
-          $elm$html$Html$h1,
-          _List_fromArray(
-            [
-              $elm$html$Html$Attributes$classList(
-                _List_fromArray(
-                  [
-                    _Utils_Tuple2("diva-app-title", true),
-                    _Utils_Tuple2("is-fullscreen", fullscreen)
-                  ]
-                )
-              )
-            ]
-          ),
-          _List_fromArray(
-            [
-              $elm$html$Html$text(title)
-            ]
-          )
         ),
-        !$elm$core$String$isEmpty(title)
-      ),
-      showTitle
-    );
-  };
+        _List_fromArray(
+          [
+            $elm$html$Html$text(title)
+          ]
+        )
+      ) : $author$project$View$Helpers$emptyHtml;
+    }
+  );
   var $author$project$Msg$UserClickedPageViewImageChoice = function(a) {
     return { $: "UserClickedPageViewImageChoice", a };
   };
@@ -23594,14 +23472,7 @@
                   $elm$html$Html$label,
                   _List_fromArray(
                     [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("filter-toggle", true),
-                            _Utils_Tuple2("is-inline", true)
-                          ]
-                        )
-                      )
+                      $elm$html$Html$Attributes$class("filter-toggle is-inline")
                     ]
                   ),
                   _List_fromArray(
@@ -24368,7 +24239,7 @@
                 )
               );
             } else {
-              return $elm$html$Html$text("");
+              return $author$project$View$Helpers$emptyHtml;
             }
           })()
         ]
@@ -25149,56 +25020,14 @@
       return disabled ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(msg);
     }
   );
-  var $author$project$View$Icons$downloadSelection = A2(
-    $author$project$View$Icons$icon,
-    "0 0 448 512",
-    _List_fromArray(
-      [
-        A2(
-          $elm$svg$Svg$path,
-          _List_fromArray(
-            [
-              $elm$svg$Svg$Attributes$d("M114.2 320L224 430 333.8 320H280c-13.3 0-24-10.7-24-24V176H192V296c0 13.3-10.7 24-24 24H114.2zM224 480c-11.5 0-22.5-4.6-30.6-12.7L77.6 351.2C68.9 342.5 64 330.7 64 318.4c0-25.6 20.8-46.4 46.4-46.4H144V176c0-26.5 21.5-48 48-48h64c26.5 0 48 21.5 48 48v96h33.6c25.6 0 46.4 20.8 46.4 46.4c0 12.3-4.9 24.1-13.6 32.8L254.6 467.3c-8.1 8.1-19.1 12.7-30.6 12.7zM32 96a32 32 0 1 1 0-64 32 32 0 1 1 0 64zm96 0a32 32 0 1 1 0-64 32 32 0 1 1 0 64zm64-32a32 32 0 1 1 64 0 32 32 0 1 1 -64 0zM320 96a32 32 0 1 1 0-64 32 32 0 1 1 0 64zm64-32a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z")
-            ]
-          ),
-          _List_Nil
-        )
-      ]
-    )
+  var $author$project$View$Icons$downloadSelection = $author$project$View$Icons$makeSvgIcon(
+    { path: "M114.2 320L224 430 333.8 320H280c-13.3 0-24-10.7-24-24V176H192V296c0 13.3-10.7 24-24 24H114.2zM224 480c-11.5 0-22.5-4.6-30.6-12.7L77.6 351.2C68.9 342.5 64 330.7 64 318.4c0-25.6 20.8-46.4 46.4-46.4H144V176c0-26.5 21.5-48 48-48h64c26.5 0 48 21.5 48 48v96h33.6c25.6 0 46.4 20.8 46.4 46.4c0 12.3-4.9 24.1-13.6 32.8L254.6 467.3c-8.1 8.1-19.1 12.7-30.6 12.7zM32 96a32 32 0 1 1 0-64 32 32 0 1 1 0 64zm96 0a32 32 0 1 1 0-64 32 32 0 1 1 0 64zm64-32a32 32 0 1 1 64 0 32 32 0 1 1 -64 0zM320 96a32 32 0 1 1 0-64 32 32 0 1 1 0 64zm64-32a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z", viewBox: "0 0 448 512" }
   );
-  var $author$project$View$Icons$fromFullscreen = A2(
-    $author$project$View$Icons$icon,
-    "0 0 512 512",
-    _List_fromArray(
-      [
-        A2(
-          $elm$svg$Svg$path,
-          _List_fromArray(
-            [
-              $elm$svg$Svg$Attributes$d("M7 7C-2.3 16.4-2.3 31.6 7 41l80 80L41.4 166.6c-6 6-9.4 14.1-9.4 22.6V192c0 17.7 14.3 32 32 32H192c17.7 0 32-14.3 32-32V64c0-17.7-14.3-32-32-32h-2.7c-8.5 0-16.6 3.4-22.6 9.4L121 87 41 7C31.6-2.3 16.4-2.3 7 7zM505 41c9.4-9.4 9.4-24.6 0-33.9s-24.6-9.4-33.9 0L391 87 345.4 41.4c-6-6-14.1-9.4-22.6-9.4H320c-17.7 0-32 14.3-32 32V192c0 17.7 14.3 32 32 32H448c17.7 0 32-14.3 32-32v-2.7c0-8.5-3.4-16.6-9.4-22.6L425 121l80-80zM505 471l-80-80 45.7-45.7c6-6 9.4-14.1 9.4-22.6V320c0-17.7-14.3-32-32-32H320c-17.7 0-32 14.3-32 32V448c0 17.7 14.3 32 32 32h2.7c8.5 0 16.6-3.4 22.6-9.4L391 425l80 80c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9zM7 471c-9.4 9.4-9.4 24.6 0 33.9s24.6 9.4 33.9 0l80-80 45.7 45.7c6 6 14.1 9.4 22.6 9.4H192c17.7 0 32-14.3 32-32V320c0-17.7-14.3-32-32-32H64c-17.7 0-32 14.3-32 32v2.7c0 8.5 3.4 16.6 9.4 22.6L87 391 7 471zM412.1 176H336V99.9L412.1 176zM336 412.1V336h76.1L336 412.1zM99.9 176L176 99.9V176H99.9zM176 412.1L99.9 336H176v76.1z")
-            ]
-          ),
-          _List_Nil
-        )
-      ]
-    )
+  var $author$project$View$Icons$fromFullscreen = $author$project$View$Icons$makeSvgIcon(
+    { path: "M7 7C-2.3 16.4-2.3 31.6 7 41l80 80L41.4 166.6c-6 6-9.4 14.1-9.4 22.6V192c0 17.7 14.3 32 32 32H192c17.7 0 32-14.3 32-32V64c0-17.7-14.3-32-32-32h-2.7c-8.5 0-16.6 3.4-22.6 9.4L121 87 41 7C31.6-2.3 16.4-2.3 7 7zM505 41c9.4-9.4 9.4-24.6 0-33.9s-24.6-9.4-33.9 0L391 87 345.4 41.4c-6-6-14.1-9.4-22.6-9.4H320c-17.7 0-32 14.3-32 32V192c0 17.7 14.3 32 32 32H448c17.7 0 32-14.3 32-32v-2.7c0-8.5-3.4-16.6-9.4-22.6L425 121l80-80zM505 471l-80-80 45.7-45.7c6-6 9.4-14.1 9.4-22.6V320c0-17.7-14.3-32-32-32H320c-17.7 0-32 14.3-32 32V448c0 17.7 14.3 32 32 32h2.7c8.5 0 16.6-3.4 22.6-9.4L391 425l80 80c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9zM7 471c-9.4 9.4-9.4 24.6 0 33.9s24.6 9.4 33.9 0l80-80 45.7 45.7c6 6 14.1 9.4 22.6 9.4H192c17.7 0 32-14.3 32-32V320c0-17.7-14.3-32-32-32H64c-17.7 0-32 14.3-32 32v2.7c0 8.5 3.4 16.6 9.4 22.6L87 391 7 471zM412.1 176H336V99.9L412.1 176zM336 412.1V336h76.1L336 412.1zM99.9 176L176 99.9V176H99.9zM176 412.1L99.9 336H176v76.1z", viewBox: "0 0 512 512" }
   );
-  var $author$project$View$Icons$hideSidebar = A2(
-    $author$project$View$Icons$icon,
-    "0 0 640 512",
-    _List_fromArray(
-      [
-        A2(
-          $elm$svg$Svg$path,
-          _List_fromArray(
-            [
-              $elm$svg$Svg$Attributes$d("M24 64c13.3 0 24 10.7 24 24l0 336c0 13.3-10.7 24-24 24s-24-10.7-24-24L0 88C0 74.7 10.7 64 24 64zm217 71c9.4 9.4 9.4 24.6 0 33.9l-63 63 284.1 0-63-63c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0L537 239c9.4 9.4 9.4 24.6 0 33.9L433 377c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l63-63-284.1 0 63 63c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0L103 273c-9.4-9.4-9.4-24.6 0-33.9L207 135c9.4-9.4 24.6-9.4 33.9 0zM640 88V424c0 13.3-10.7 24-24 24s-24-10.7-24-24V88c0-13.3 10.7-24 24-24s24 10.7 24 24z")
-            ]
-          ),
-          _List_Nil
-        )
-      ]
-    )
+  var $author$project$View$Icons$hideSidebar = $author$project$View$Icons$makeSvgIcon(
+    { path: "M24 64c13.3 0 24 10.7 24 24l0 336c0 13.3-10.7 24-24 24s-24-10.7-24-24L0 88C0 74.7 10.7 64 24 64zm217 71c9.4 9.4 9.4 24.6 0 33.9l-63 63 284.1 0-63-63c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0L537 239c9.4 9.4 9.4 24.6 0 33.9L433 377c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l63-63-284.1 0 63 63c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0L103 273c-9.4-9.4-9.4-24.6 0-33.9L207 135c9.4-9.4 24.6-9.4 33.9 0zM640 88V424c0 13.3-10.7 24-24 24s-24-10.7-24-24V88c0-13.3 10.7-24 24-24s24 10.7 24 24z", viewBox: "0 0 640 512" }
   );
   var $author$project$View$PageViewModal$manifestTitleFor = function(model) {
     return A2(
@@ -25217,90 +25046,20 @@
       )
     );
   };
-  var $author$project$View$Icons$nextPage = A2(
-    $author$project$View$Icons$icon,
-    "0 0 24 24",
-    _List_fromArray(
-      [
-        A2(
-          $elm$svg$Svg$path,
-          _List_fromArray(
-            [
-              $elm$svg$Svg$Attributes$d("M8.59 16.59L10 18L16 12L10 6L8.59 7.41L13.17 12L8.59 16.59z")
-            ]
-          ),
-          _List_Nil
-        )
-      ]
-    )
+  var $author$project$View$Icons$nextPage = $author$project$View$Icons$makeSvgIcon(
+    { path: "M8.59 16.59L10 18L16 12L10 6L8.59 7.41L13.17 12L8.59 16.59z", viewBox: "0 0 24 24" }
   );
-  var $author$project$View$Icons$prevPage = A2(
-    $author$project$View$Icons$icon,
-    "0 0 24 24",
-    _List_fromArray(
-      [
-        A2(
-          $elm$svg$Svg$path,
-          _List_fromArray(
-            [
-              $elm$svg$Svg$Attributes$d("M15.41 7.41L14 6L8 12L14 18L15.41 16.59L10.83 12L15.41 7.41z")
-            ]
-          ),
-          _List_Nil
-        )
-      ]
-    )
+  var $author$project$View$Icons$prevPage = $author$project$View$Icons$makeSvgIcon(
+    { path: "M15.41 7.41L14 6L8 12L14 18L15.41 16.59L10.83 12L15.41 7.41z", viewBox: "0 0 24 24" }
   );
-  var $author$project$View$Icons$reset = A2(
-    $author$project$View$Icons$icon,
-    "0 0 512 512",
-    _List_fromArray(
-      [
-        A2(
-          $elm$svg$Svg$path,
-          _List_fromArray(
-            [
-              $elm$svg$Svg$Attributes$d("M256 80c-72.7 0-135.2 44.1-162 107.1c-5.2 12.2-19.3 17.9-31.5 12.7s-17.9-19.3-12.7-31.5C83.9 88.2 163.4 32 256 32c52.5 0 102.8 20.8 139.9 57.9L448 142.1V88c0-13.3 10.7-24 24-24s24 10.7 24 24V200c0 13.3-10.7 24-24 24H360c-13.3 0-24-10.7-24-24s10.7-24 24-24h54.1l-52.1-52.1C333.8 95.8 295.7 80 256 80zM449.4 312.6c12.2 5.2 17.8 19.3 12.6 31.5C427.8 424 348.5 480 256 480c-52.5 0-102.8-20.8-139.9-57.9L64 369.9V424c0 13.3-10.7 24-24 24s-24-10.7-24-24V312c0-13.3 10.7-24 24-24H152c13.3 0 24 10.7 24 24s-10.7 24-24 24H97.9l52.1 52.1C178.2 416.2 216.3 432 256 432c72.6 0 135-43.9 161.9-106.8c5.2-12.2 19.3-17.8 31.5-12.6zM256 128c13.3 0 24 10.7 24 24V264c0 13.3-10.7 24-24 24s-24-10.7-24-24V152c0-13.3 10.7-24 24-24zM224 352a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z")
-            ]
-          ),
-          _List_Nil
-        )
-      ]
-    )
+  var $author$project$View$Icons$reset = $author$project$View$Icons$makeSvgIcon(
+    { path: "M256 80c-72.7 0-135.2 44.1-162 107.1c-5.2 12.2-19.3 17.9-31.5 12.7s-17.9-19.3-12.7-31.5C83.9 88.2 163.4 32 256 32c52.5 0 102.8 20.8 139.9 57.9L448 142.1V88c0-13.3 10.7-24 24-24s24 10.7 24 24V200c0 13.3-10.7 24-24 24H360c-13.3 0-24-10.7-24-24s10.7-24 24-24h54.1l-52.1-52.1C333.8 95.8 295.7 80 256 80zM449.4 312.6c12.2 5.2 17.8 19.3 12.6 31.5C427.8 424 348.5 480 256 480c-52.5 0-102.8-20.8-139.9-57.9L64 369.9V424c0 13.3-10.7 24-24 24s-24-10.7-24-24V312c0-13.3 10.7-24 24-24H152c13.3 0 24 10.7 24 24s-10.7 24-24 24H97.9l52.1 52.1C178.2 416.2 216.3 432 256 432c72.6 0 135-43.9 161.9-106.8c5.2-12.2 19.3-17.8 31.5-12.6zM256 128c13.3 0 24 10.7 24 24V264c0 13.3-10.7 24-24 24s-24-10.7-24-24V152c0-13.3 10.7-24 24-24zM224 352a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z", viewBox: "0 0 512 512" }
   );
-  var $author$project$View$Icons$showSidebar = A2(
-    $author$project$View$Icons$icon,
-    "0 0 512 512",
-    _List_fromArray(
-      [
-        A2(
-          $elm$svg$Svg$path,
-          _List_fromArray(
-            [
-              $elm$svg$Svg$Attributes$d("M295 401L167 273c-9.4-9.4-9.4-24.6 0-33.9L295 111c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-87 87L488 232c13.3 0 24 10.7 24 24s-10.7 24-24 24l-246.1 0 87 87c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0zM168 80L88 80c-22.1 0-40 17.9-40 40l0 272c0 22.1 17.9 40 40 40l80 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-80 0c-48.6 0-88-39.4-88-88L0 120C0 71.4 39.4 32 88 32l80 0c13.3 0 24 10.7 24 24s-10.7 24-24 24z")
-            ]
-          ),
-          _List_Nil
-        )
-      ]
-    )
+  var $author$project$View$Icons$showSidebar = $author$project$View$Icons$makeSvgIcon(
+    { path: "M295 401L167 273c-9.4-9.4-9.4-24.6 0-33.9L295 111c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-87 87L488 232c13.3 0 24 10.7 24 24s-10.7 24-24 24l-246.1 0 87 87c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0zM168 80L88 80c-22.1 0-40 17.9-40 40l0 272c0 22.1 17.9 40 40 40l80 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-80 0c-48.6 0-88-39.4-88-88L0 120C0 71.4 39.4 32 88 32l80 0c13.3 0 24 10.7 24 24s-10.7 24-24 24z", viewBox: "0 0 512 512" }
   );
-  var $author$project$View$Icons$toFullscreen = A2(
-    $author$project$View$Icons$icon,
-    "0 0 512 512",
-    _List_fromArray(
-      [
-        A2(
-          $elm$svg$Svg$path,
-          _List_fromArray(
-            [
-              $elm$svg$Svg$Attributes$d("M156.1 80H80v76.1L156.1 80zM32 192V64c0-17.7 14.3-32 32-32H192c17.7 0 32 14.3 32 32v2.7c0 8.5-3.4 16.6-9.4 22.6L169 135l87 87 87-87L297.4 89.4c-6-6-9.4-14.1-9.4-22.6V64c0-17.7 14.3-32 32-32H448c17.7 0 32 14.3 32 32V192c0 17.7-14.3 32-32 32h-2.7c-8.5 0-16.6-3.4-22.6-9.4L377 169l-87 87 87 87 45.7-45.7c6-6 14.1-9.4 22.6-9.4H448c17.7 0 32 14.3 32 32V448c0 17.7-14.3 32-32 32H320c-17.7 0-32-14.3-32-32v-2.7c0-8.5 3.4-16.6 9.4-22.6L343 377l-87-87-87 87 45.7 45.7c6 6 9.4 14.1 9.4 22.6V448c0 17.7-14.3 32-32 32H64c-17.7 0-32-14.3-32-32V320c0-17.7 14.3-32 32-32h2.7c8.5 0 16.6 3.4 22.6 9.4L135 343l87-87-87-87L89.4 214.6c-6 6-14.1 9.4-22.6 9.4H64c-17.7 0-32-14.3-32-32zM355.9 432H432V355.9L355.9 432zM80 355.9V432h76.1L80 355.9zM355.9 80L432 156.1V80H355.9z")
-            ]
-          ),
-          _List_Nil
-        )
-      ]
-    )
+  var $author$project$View$Icons$toFullscreen = $author$project$View$Icons$makeSvgIcon(
+    { path: "M156.1 80H80v76.1L156.1 80zM32 192V64c0-17.7 14.3-32 32-32H192c17.7 0 32 14.3 32 32v2.7c0 8.5-3.4 16.6-9.4 22.6L169 135l87 87 87-87L297.4 89.4c-6-6-9.4-14.1-9.4-22.6V64c0-17.7 14.3-32 32-32H448c17.7 0 32 14.3 32 32V192c0 17.7-14.3 32-32 32h-2.7c-8.5 0-16.6-3.4-22.6-9.4L377 169l-87 87 87 87 45.7-45.7c6-6 14.1-9.4 22.6-9.4H448c17.7 0 32 14.3 32 32V448c0 17.7-14.3 32-32 32H320c-17.7 0-32-14.3-32-32v-2.7c0-8.5 3.4-16.6 9.4-22.6L343 377l-87-87-87 87 45.7 45.7c6 6 9.4 14.1 9.4 22.6V448c0 17.7-14.3 32-32 32H64c-17.7 0-32-14.3-32-32V320c0-17.7 14.3-32 32-32h2.7c8.5 0 16.6 3.4 22.6 9.4L135 343l87-87-87-87L89.4 214.6c-6 6-14.1 9.4-22.6 9.4H64c-17.7 0-32-14.3-32-32zM355.9 432H432V355.9L355.9 432zM80 355.9V432h76.1L80 355.9zM355.9 80L432 156.1V80H355.9z", viewBox: "0 0 512 512" }
   );
   var $author$project$View$PageViewModal$viewModalHeader = function(model) {
     var pageLabel = $author$project$View$PageViewModal$currentPageLabelFor(model);
@@ -25383,14 +25142,7 @@
                       $elm$html$Html$div,
                       _List_fromArray(
                         [
-                          $elm$html$Html$Attributes$classList(
-                            _List_fromArray(
-                              [
-                                _Utils_Tuple2("modal-subtitle", true),
-                                _Utils_Tuple2("is-muted", true)
-                              ]
-                            )
-                          )
+                          $elm$html$Html$Attributes$class("modal-subtitle is-muted")
                         ]
                       ),
                       _List_fromArray(
@@ -25489,71 +25241,57 @@
     );
   };
   var $author$project$View$PageViewModal$viewPageViewModal = function(model) {
-    return A2(
-      $author$project$View$Helpers$viewIf,
-      A2(
-        $elm$html$Html$div,
-        _List_fromArray(
-          [
-            $elm$html$Html$Attributes$classList(
-              _List_fromArray(
-                [
-                  _Utils_Tuple2("modal-overlay", true),
-                  _Utils_Tuple2("is-fullscreen", model.pageViewFullscreen)
-                ]
-              )
+    return model.pageViewOpen ? A2(
+      $elm$html$Html$div,
+      _List_fromArray(
+        [
+          $elm$html$Html$Attributes$classList(
+            _List_fromArray(
+              [
+                _Utils_Tuple2("modal-overlay", true),
+                _Utils_Tuple2("is-fullscreen", model.pageViewFullscreen)
+              ]
             )
-          ]
-        ),
-        _List_fromArray(
-          [
-            A2(
-              $elm$html$Html$div,
-              _List_fromArray(
-                [
-                  $elm$html$Html$Attributes$classList(
-                    _List_fromArray(
-                      [
-                        _Utils_Tuple2("modal", true),
-                        _Utils_Tuple2("is-fullscreen", model.pageViewFullscreen),
-                        _Utils_Tuple2("is-page-view", !model.pageViewFullscreen)
-                      ]
-                    )
-                  )
-                ]
-              ),
-              _List_fromArray(
-                [
-                  $author$project$View$PageViewModal$viewModalHeader(model),
-                  $author$project$View$PageViewModal$viewModalBody(model)
-                ]
-              )
-            )
-          ]
-        )
+          )
+        ]
       ),
-      model.pageViewOpen
-    );
-  };
-  var $author$project$View$viewRequiredStatement = function(maybeValueText) {
-    return A2(
-      $author$project$View$Helpers$viewMaybe,
-      function(valueText) {
-        return A2(
-          $author$project$View$Helpers$viewIf,
+      _List_fromArray(
+        [
           A2(
             $elm$html$Html$div,
             _List_fromArray(
               [
-                $elm$html$Html$Attributes$class("required-statement")
+                $elm$html$Html$Attributes$classList(
+                  _List_fromArray(
+                    [
+                      _Utils_Tuple2("modal", true),
+                      _Utils_Tuple2("is-fullscreen", model.pageViewFullscreen),
+                      _Utils_Tuple2("is-page-view", !model.pageViewFullscreen)
+                    ]
+                  )
+                )
               ]
             ),
-            $author$project$View$HtmlRenderer$renderHtml(valueText)
-          ),
-          !$elm$core$String$isEmpty(valueText)
-        );
-      },
-      maybeValueText
+            _List_fromArray(
+              [
+                $author$project$View$PageViewModal$viewModalHeader(model),
+                $author$project$View$PageViewModal$viewModalBody(model)
+              ]
+            )
+          )
+        ]
+      )
+    ) : $author$project$View$Helpers$emptyHtml;
+  };
+  var $author$project$View$viewRequiredStatement = function(valueText) {
+    return $elm$core$String$isEmpty(valueText) ? $author$project$View$Helpers$emptyHtml : A2(
+      $elm$html$Html$div,
+      _List_fromArray(
+        [
+          $elm$html$Html$Attributes$class("required-statement")
+        ]
+      ),
+      $author$project$View$HtmlRenderer$renderHtml(valueText)
     );
   };
   var $author$project$Msg$UserToggledContents = { $: "UserToggledContents" };
@@ -25582,22 +25320,55 @@
   var $author$project$View$Sidebar$isSidebarVisible = function(state) {
     return !_Utils_eq(state, $author$project$Model$SidebarHidden);
   };
-  var $author$project$View$Sidebar$viewContentsEmptyBody = A2(
-    $elm$html$Html$div,
-    _List_fromArray(
-      [
-        $elm$html$Html$Attributes$class("contents-empty")
-      ]
-    ),
-    _List_fromArray(
-      [
-        $elm$html$Html$text("No contents available.")
-      ]
-    )
+  var $author$project$View$Sidebar$viewContentsEmpty = function(message) {
+    return A2(
+      $elm$html$Html$div,
+      _List_fromArray(
+        [
+          $elm$html$Html$Attributes$class("contents-empty")
+        ]
+      ),
+      _List_fromArray(
+        [
+          $elm$html$Html$text(message)
+        ]
+      )
+    );
+  };
+  var $author$project$View$Sidebar$viewContentsEmptyBody = $author$project$View$Sidebar$viewContentsEmpty("No contents available.");
+  var $author$project$View$Sidebar$lookupRangeIndex = F2(
+    function(rangeIndexMap, rangeId) {
+      return A2(
+        $elm$core$Maybe$withDefault,
+        $elm$core$Maybe$Nothing,
+        A2($elm$core$Dict$get, rangeId, rangeIndexMap)
+      );
+    }
   );
   var $author$project$Msg$UserClickedRange = F2(
     function(a, b) {
       return { $: "UserClickedRange", a, b };
+    }
+  );
+  var $author$project$View$Sidebar$viewRangeButton = F3(
+    function(rangeId, maybeIndex, labelText) {
+      return A2(
+        $elm$html$Html$button,
+        _List_fromArray(
+          [
+            $elm$html$Html$Attributes$class("contents-button ui-button"),
+            $elm$html$Html$Attributes$type_("button"),
+            $elm$html$Html$Events$onClick(
+              A2($author$project$Msg$UserClickedRange, rangeId, maybeIndex)
+            )
+          ]
+        ),
+        _List_fromArray(
+          [
+            $elm$html$Html$text(labelText)
+          ]
+        )
+      );
     }
   );
   var $author$project$View$Sidebar$metadataEntry = F2(
@@ -25685,14 +25456,7 @@
             $elm$html$Html$ul,
             _List_fromArray(
               [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("contents-list-nested", true),
-                      _Utils_Tuple2("list-reset", true)
-                    ]
-                  )
-                )
+                $elm$html$Html$Attributes$class("contents-list-nested list-reset")
               ]
             ),
             rendered
@@ -25707,38 +25471,10 @@
         model.selectedRangeId,
         $elm$core$Maybe$Just(range.id)
       ) ? A2($author$project$View$Sidebar$viewRangeMetadata, model.detectedLanguage, range.metadata) : _List_Nil;
-      var maybeIndex = A2(
-        $elm$core$Maybe$withDefault,
-        $elm$core$Maybe$Nothing,
-        A2($elm$core$Dict$get, range.id, rangeIndexMap)
-      );
+      var maybeIndex = A2($author$project$View$Sidebar$lookupRangeIndex, rangeIndexMap, range.id);
       var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, range.label);
-      var labelNode = A2(
-        $elm$html$Html$button,
-        _List_fromArray(
-          [
-            $elm$html$Html$Attributes$classList(
-              _List_fromArray(
-                [
-                  _Utils_Tuple2("contents-button", true),
-                  _Utils_Tuple2("ui-button", true)
-                ]
-              )
-            ),
-            $elm$html$Html$Attributes$type_("button"),
-            $elm$html$Html$Events$onClick(
-              A2($author$project$Msg$UserClickedRange, range.id, maybeIndex)
-            )
-          ]
-        ),
-        _List_fromArray(
-          [
-            $elm$html$Html$text(
-              $elm$core$String$isEmpty(labelText) ? "[Untitled range]" : labelText
-            )
-          ]
-        )
-      );
+      var resolvedLabel = $elm$core$String$isEmpty(labelText) ? "[Untitled range]" : labelText;
+      var labelNode = A3($author$project$View$Sidebar$viewRangeButton, range.id, maybeIndex, resolvedLabel);
       var children = A3($author$project$View$Sidebar$viewRangeItems, model, rangeIndexMap, range.items);
       return A2(
         $elm$html$Html$li,
@@ -25761,14 +25497,7 @@
         $elm$html$Html$ul,
         _List_fromArray(
           [
-            $elm$html$Html$Attributes$classList(
-              _List_fromArray(
-                [
-                  _Utils_Tuple2("contents-list", true),
-                  _Utils_Tuple2("list-reset", true)
-                ]
-              )
-            )
+            $elm$html$Html$Attributes$class("contents-list list-reset")
           ]
         ),
         A2(
@@ -25935,19 +25664,7 @@
       );
     }
   );
-  var $author$project$View$Sidebar$viewOnThisPageEmptyBody = A2(
-    $elm$html$Html$div,
-    _List_fromArray(
-      [
-        $elm$html$Html$Attributes$class("contents-empty")
-      ]
-    ),
-    _List_fromArray(
-      [
-        $elm$html$Html$text("No ranges for this page.")
-      ]
-    )
-  );
+  var $author$project$View$Sidebar$viewOnThisPageEmptyBody = $author$project$View$Sidebar$viewContentsEmpty("No ranges for this page.");
   var $author$project$View$Sidebar$rangeCanvasIds = function(items) {
     var step = F2(
       function(pending, acc) {
@@ -26011,11 +25728,7 @@
   var $author$project$View$Sidebar$viewOtpRangeItem = F3(
     function(model, canvasLabelMap, range) {
       var metadataBlock = A2($author$project$View$Sidebar$viewRangeMetadata, model.detectedLanguage, range.metadata);
-      var maybeIndex = A2(
-        $elm$core$Maybe$withDefault,
-        $elm$core$Maybe$Nothing,
-        A2($elm$core$Dict$get, range.id, model.rangeIndexMap)
-      );
+      var maybeIndex = A2($author$project$View$Sidebar$lookupRangeIndex, model.rangeIndexMap, range.id);
       var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, range.label);
       var canvasLabels = A2($author$project$View$Sidebar$rangeCanvasLabels, canvasLabelMap, range);
       var firstLabel = $elm$core$List$head(canvasLabels);
@@ -26044,32 +25757,8 @@
           }
         }
       })();
-      var labelNode = A2(
-        $elm$html$Html$button,
-        _List_fromArray(
-          [
-            $elm$html$Html$Attributes$classList(
-              _List_fromArray(
-                [
-                  _Utils_Tuple2("contents-button", true),
-                  _Utils_Tuple2("ui-button", true)
-                ]
-              )
-            ),
-            $elm$html$Html$Attributes$type_("button"),
-            $elm$html$Html$Events$onClick(
-              A2($author$project$Msg$UserClickedRange, range.id, maybeIndex)
-            )
-          ]
-        ),
-        _List_fromArray(
-          [
-            $elm$html$Html$text(
-              $elm$core$String$isEmpty(labelText) ? rangePrefix + "[Untitled range]" : _Utils_ap(rangePrefix, labelText)
-            )
-          ]
-        )
-      );
+      var resolvedLabel = $elm$core$String$isEmpty(labelText) ? rangePrefix + "[Untitled range]" : _Utils_ap(rangePrefix, labelText);
+      var labelNode = A3($author$project$View$Sidebar$viewRangeButton, range.id, maybeIndex, resolvedLabel);
       return A2(
         $elm$html$Html$li,
         _List_fromArray(
@@ -26109,14 +25798,7 @@
               $elm$html$Html$ul,
               _List_fromArray(
                 [
-                  $elm$html$Html$Attributes$classList(
-                    _List_fromArray(
-                      [
-                        _Utils_Tuple2("contents-list", true),
-                        _Utils_Tuple2("list-reset", true)
-                      ]
-                    )
-                  )
+                  $elm$html$Html$Attributes$class("contents-list list-reset")
                 ]
               ),
               A2(
@@ -26382,8 +26064,6 @@
       );
     }
   );
-  var $elm$virtual_dom$VirtualDom$lazy4 = _VirtualDom_lazy4;
-  var $elm$html$Html$Lazy$lazy4 = $elm$virtual_dom$VirtualDom$lazy4;
   var $elm$core$List$takeReverse = F3(
     function(n, list, kept) {
       takeReverse:
@@ -26524,25 +26204,27 @@
       return A3($elm$core$List$takeFast, 0, n, list);
     }
   );
+  var $author$project$View$Sidebar$chunkHelp = F3(
+    function(size, remaining, acc) {
+      chunkHelp:
+        while (true) {
+          if (!remaining.b) {
+            return $elm$core$List$reverse(acc);
+          } else {
+            var rest = A2($elm$core$List$drop, size, remaining);
+            var nextChunk = A2($elm$core$List$take, size, remaining);
+            var $temp$size = size, $temp$remaining = rest, $temp$acc = A2($elm$core$List$cons, nextChunk, acc);
+            size = $temp$size;
+            remaining = $temp$remaining;
+            acc = $temp$acc;
+            continue chunkHelp;
+          }
+        }
+    }
+  );
   var $author$project$View$Sidebar$chunk = F2(
     function(size, items) {
-      if (size <= 0) {
-        return _List_Nil;
-      } else {
-        if (!items.b) {
-          return _List_Nil;
-        } else {
-          return A2(
-            $elm$core$List$cons,
-            A2($elm$core$List$take, size, items),
-            A2(
-              $author$project$View$Sidebar$chunk,
-              size,
-              A2($elm$core$List$drop, size, items)
-            )
-          );
-        }
-      }
+      return size <= 0 ? _List_Nil : A3($author$project$View$Sidebar$chunkHelp, size, items, _List_Nil);
     }
   );
   var $author$project$View$Sidebar$reverseInRows = F2(
@@ -26585,10 +26267,8 @@
       }
     }
   );
-  var $author$project$View$Sidebar$viewThumbnail = F4(
-    function(viewMode, shiftByOne, selectedIndex, _v0) {
-      var index = _v0.a;
-      var page = _v0.b;
+  var $author$project$View$Sidebar$viewThumbnail = F5(
+    function(viewMode, shiftByOne, selectedIndex, index, page) {
       var thumbUrl = A2(
         $elm$core$Maybe$withDefault,
         "",
@@ -26705,14 +26385,24 @@
         ),
         A2(
           $elm$core$List$map,
-          A4($elm$html$Html$Lazy$lazy4, $author$project$View$Sidebar$viewThumbnail, viewMode, shiftByOne, selectedIndex),
+          function(_v1) {
+            var index = _v1.a;
+            var page = _v1.b;
+            return A6($elm$html$Html$Lazy$lazy5, $author$project$View$Sidebar$viewThumbnail, viewMode, shiftByOne, selectedIndex, index, page);
+          },
           orderedPages
         )
       );
     }
   );
-  var $author$project$View$Sidebar$viewSidebarPanelWithManifest = F2(
-    function(model, manifest) {
+  var $author$project$View$Sidebar$viewSidebarPanelWithMaybeManifest = F2(
+    function(model, maybeManifest) {
+      var viewingDirection = A2(
+        $elm$core$Maybe$withDefault,
+        $rism_digital$elm_iiif$IIIF$Presentation$LeftToRight,
+        A2($elm$core$Maybe$map, $rism_digital$elm_iiif$IIIF$Presentation$toViewingDirection, maybeManifest)
+      );
+      var thumbnailPages = model.isViewerLoading ? _List_Nil : model.pages;
       var panelClasses = _List_fromArray(
         [
           _Utils_Tuple2("sidebar-panel", true),
@@ -26725,7 +26415,11 @@
           _Utils_Tuple2("is-mobile-hidden", !model.mobileSidebarOpen)
         ]
       );
-      var hasMetadata = $author$project$View$Sidebar$hasManifestMetadata(manifest);
+      var hasMetadata = A2(
+        $elm$core$Maybe$withDefault,
+        false,
+        A2($elm$core$Maybe$map, $author$project$View$Sidebar$hasManifestMetadata, maybeManifest)
+      );
       var metadataPane = hasMetadata ? _List_fromArray(
         [
           A3(
@@ -26747,7 +26441,7 @@
         A2(
           $elm$core$Maybe$map,
           A2($elm$core$Basics$composeR, $elm$core$List$isEmpty, $elm$core$Basics$not),
-          $rism_digital$elm_iiif$IIIF$Presentation$toRanges(manifest)
+          A2($elm$core$Maybe$andThen, $rism_digital$elm_iiif$IIIF$Presentation$toRanges, maybeManifest)
         )
       );
       var contentsTab = hasContents ? _List_fromArray(
@@ -26807,15 +26501,8 @@
                   $author$project$Model$SidebarThumbnails,
                   A2(
                     $author$project$View$Sidebar$viewThumbnails,
-                    {
-                      fullscreen: model.fullscreen,
-                      selectedIndex: model.selectedIndex,
-                      shiftByOne: model.shiftByOne,
-                      thumbsInstantScroll: model.thumbsInstantScroll,
-                      viewMode: model.viewMode,
-                      viewingDirection: $rism_digital$elm_iiif$IIIF$Presentation$toViewingDirection(manifest)
-                    },
-                    model.pages
+                    { fullscreen: model.fullscreen, selectedIndex: model.selectedIndex, shiftByOne: model.shiftByOne, thumbsInstantScroll: model.thumbsInstantScroll, viewMode: model.viewMode, viewingDirection },
+                    thumbnailPages
                   )
                 ),
                 _Utils_ap(metadataPane, contentsPane)
@@ -26826,55 +26513,78 @@
       );
     }
   );
+  var $author$project$View$Sidebar$viewSidebarPanelWithManifest = F2(
+    function(model, manifest) {
+      return A2(
+        $author$project$View$Sidebar$viewSidebarPanelWithMaybeManifest,
+        model,
+        $elm$core$Maybe$Just(manifest)
+      );
+    }
+  );
   var $author$project$View$Sidebar$viewSidebarPanel = function(model) {
-    return A2(
-      $author$project$View$Helpers$viewMaybe,
-      $author$project$View$Sidebar$viewSidebarPanelWithManifest(model),
-      $author$project$Model$currentManifest(model)
-    );
+    var _v0 = model.resourceResponse;
+    if (_v0.$ === "ResourceLoadedCollection") {
+      return A2(
+        $author$project$View$Sidebar$viewSidebarPanelWithMaybeManifest,
+        model,
+        $author$project$Model$currentManifest(model)
+      );
+    } else {
+      return A2(
+        $author$project$View$Helpers$viewMaybe,
+        $author$project$View$Sidebar$viewSidebarPanelWithManifest(model),
+        $author$project$Model$currentManifest(model)
+      );
+    }
   };
   var $author$project$Msg$UserStartedSidebarResize = function(a) {
     return { $: "UserStartedSidebarResize", a };
   };
+  var $author$project$View$Sidebar$shouldRenderSidebarShell = function(model) {
+    var _v0 = model.resourceResponse;
+    if (_v0.$ === "ResourceLoadedCollection") {
+      return true;
+    } else {
+      return !_Utils_eq(
+        $author$project$Model$currentManifest(model),
+        $elm$core$Maybe$Nothing
+      );
+    }
+  };
   var $author$project$View$Sidebar$viewSidebarResizer = function(model) {
-    return A2(
-      $author$project$View$Helpers$viewMaybe,
-      function(_v0) {
-        return A2(
-          $elm$html$Html$div,
-          _List_fromArray(
-            [
-              $elm$html$Html$Attributes$classList(
-                _List_fromArray(
-                  [
-                    _Utils_Tuple2("sidebar-resizer", true),
-                    _Utils_Tuple2(
-                      "is-hidden",
-                      !$author$project$View$Sidebar$isSidebarVisible(model.sidebarState)
-                    )
-                  ]
+    return $author$project$View$Sidebar$shouldRenderSidebarShell(model) ? A2(
+      $elm$html$Html$div,
+      _List_fromArray(
+        [
+          $elm$html$Html$Attributes$classList(
+            _List_fromArray(
+              [
+                _Utils_Tuple2("sidebar-resizer", true),
+                _Utils_Tuple2(
+                  "is-hidden",
+                  !$author$project$View$Sidebar$isSidebarVisible(model.sidebarState)
                 )
-              ),
-              A2(
-                $elm$html$Html$Events$on,
-                "mousedown",
-                A2(
-                  $elm$json$Json$Decode$map,
-                  $author$project$Msg$UserStartedSidebarResize,
-                  A2($elm$json$Json$Decode$field, "clientX", $elm$json$Json$Decode$int)
-                )
-              )
-            ]
+              ]
+            )
           ),
-          _List_fromArray(
-            [
-              $elm$html$Html$text("\u22EE")
-            ]
+          A2(
+            $elm$html$Html$Events$on,
+            "mousedown",
+            A2(
+              $elm$json$Json$Decode$map,
+              $author$project$Msg$UserStartedSidebarResize,
+              A2($elm$json$Json$Decode$field, "clientX", $elm$json$Json$Decode$int)
+            )
           )
-        );
-      },
-      $author$project$Model$currentManifest(model)
-    );
+        ]
+      ),
+      _List_fromArray(
+        [
+          $elm$html$Html$text("\u22EE")
+        ]
+      )
+    ) : $author$project$View$Helpers$emptyHtml;
   };
   var $author$project$Msg$UserClickedOpenManifestInfo = { $: "UserClickedOpenManifestInfo" };
   var $author$project$Msg$UserClickedOpenPageView = { $: "UserClickedOpenPageView" };
@@ -26949,109 +26659,25 @@
     })();
     return A2($author$project$View$Toolbar$truncateLabel, 140, fullLabelText);
   };
-  var $author$project$View$Icons$info = A2(
-    $author$project$View$Icons$icon,
-    "0 0 512 512",
-    _List_fromArray(
-      [
-        A2(
-          $elm$svg$Svg$path,
-          _List_fromArray(
-            [
-              $elm$svg$Svg$Attributes$d("M256 48a208 208 0 1 1 0 416 208 208 0 1 1 0-416zm0 464A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336c-13.3 0-24 10.7-24 24s10.7 24 24 24h80c13.3 0 24-10.7 24-24s-10.7-24-24-24h-8V248c0-13.3-10.7-24-24-24H216c-13.3 0-24 10.7-24 24s10.7 24 24 24h24v64H216zm40-144a32 32 0 1 0 0-64 32 32 0 1 0 0 64z")
-            ]
-          ),
-          _List_Nil
-        )
-      ]
-    )
+  var $author$project$View$Icons$info = $author$project$View$Icons$makeSvgIcon(
+    { path: "M256 48a208 208 0 1 1 0 416 208 208 0 1 1 0-416zm0 464A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336c-13.3 0-24 10.7-24 24s10.7 24 24 24h80c13.3 0 24-10.7 24-24s-10.7-24-24-24h-8V248c0-13.3-10.7-24-24-24H216c-13.3 0-24 10.7-24 24s10.7 24 24 24h24v64H216zm40-144a32 32 0 1 0 0-64 32 32 0 1 0 0 64z", viewBox: "0 0 512 512" }
   );
   var $elm$virtual_dom$VirtualDom$lazy2 = _VirtualDom_lazy2;
   var $elm$html$Html$Lazy$lazy2 = $elm$virtual_dom$VirtualDom$lazy2;
-  var $author$project$View$Icons$openingPageView = A2(
-    $author$project$View$Icons$icon,
-    "0 0 576 512",
-    _List_fromArray(
-      [
-        A2(
-          $elm$svg$Svg$path,
-          _List_fromArray(
-            [
-              $elm$svg$Svg$Attributes$d("M156 32C100.6 32 48.8 46.6 27.1 53.6C10.3 59 0 74.5 0 91.1V403.5c0 26.1 24 44.2 48 40.2c19.8-3.3 54.8-7.7 100-7.7c54 0 97.5 25.5 112.5 35.6c7.5 5 16.8 8.4 27 8.4c11.5 0 21.6-4.2 29.3-9.9C330.2 460.3 369.1 436 428 436c47.7 0 80.5 4 99 7.2c23.9 4.1 49-13.8 49-40.6V91.1c0-16.5-10.3-32.1-27.1-37.5C527.2 46.6 475.4 32 420 32c-36.8 0-71.8 6.4-97.4 12.7c-12.8 3.2-23.5 6.3-30.9 8.7c-1.3 .4-2.6 .8-3.7 1.2c-1.1-.4-2.4-.8-3.7-1.2c-7.5-2.4-18.1-5.5-30.9-8.7C227.8 38.4 192.8 32 156 32zM264 97.3V417.9C238 404.2 196.8 388 148 388c-42.9 0-77.4 3.7-100 7.1V97.3C70.3 90.6 112.4 80 156 80c31.6 0 62.6 5.6 85.9 11.3c8.6 2.1 16.1 4.2 22.1 6zm48 319.2V97.3c6-1.8 13.5-3.9 22.1-6C357.4 85.6 388.4 80 420 80c43.6 0 85.7 10.6 108 17.3V394.7c-21.7-3.3-54.9-6.7-100-6.7c-51.4 0-90.8 15-116 28.6z")
-            ]
-          ),
-          _List_Nil
-        )
-      ]
-    )
+  var $author$project$View$Icons$openingPageView = $author$project$View$Icons$makeSvgIcon(
+    { path: "M156 32C100.6 32 48.8 46.6 27.1 53.6C10.3 59 0 74.5 0 91.1V403.5c0 26.1 24 44.2 48 40.2c19.8-3.3 54.8-7.7 100-7.7c54 0 97.5 25.5 112.5 35.6c7.5 5 16.8 8.4 27 8.4c11.5 0 21.6-4.2 29.3-9.9C330.2 460.3 369.1 436 428 436c47.7 0 80.5 4 99 7.2c23.9 4.1 49-13.8 49-40.6V91.1c0-16.5-10.3-32.1-27.1-37.5C527.2 46.6 475.4 32 420 32c-36.8 0-71.8 6.4-97.4 12.7c-12.8 3.2-23.5 6.3-30.9 8.7c-1.3 .4-2.6 .8-3.7 1.2c-1.1-.4-2.4-.8-3.7-1.2c-7.5-2.4-18.1-5.5-30.9-8.7C227.8 38.4 192.8 32 156 32zM264 97.3V417.9C238 404.2 196.8 388 148 388c-42.9 0-77.4 3.7-100 7.1V97.3C70.3 90.6 112.4 80 156 80c31.6 0 62.6 5.6 85.9 11.3c8.6 2.1 16.1 4.2 22.1 6zm48 319.2V97.3c6-1.8 13.5-3.9 22.1-6C357.4 85.6 388.4 80 420 80c43.6 0 85.7 10.6 108 17.3V394.7c-21.7-3.3-54.9-6.7-100-6.7c-51.4 0-90.8 15-116 28.6z", viewBox: "0 0 576 512" }
   );
-  var $author$project$View$Icons$pageViewOpen = A2(
-    $author$project$View$Icons$icon,
-    "0 0 384 512",
-    _List_fromArray(
-      [
-        A2(
-          $elm$svg$Svg$path,
-          _List_fromArray(
-            [
-              $elm$svg$Svg$Attributes$d("M64 464c-8.8 0-16-7.2-16-16V64c0-8.8 7.2-16 16-16H224v80c0 17.7 14.3 32 32 32h80V448c0 8.8-7.2 16-16 16H64zM64 0C28.7 0 0 28.7 0 64V448c0 35.3 28.7 64 64 64H320c35.3 0 64-28.7 64-64V154.5c0-17-6.7-33.3-18.7-45.3L274.7 18.7C262.7 6.7 246.5 0 229.5 0H64zM272 304c0-53-43-96-96-96s-96 43-96 96s43 96 96 96c17.8 0 34.4-4.8 48.7-13.2L263 425.1c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-38.3-38.3c8.5-14.3 13.3-31 13.3-48.9zm-96-48a48 48 0 1 1 0 96 48 48 0 1 1 0-96z")
-            ]
-          ),
-          _List_Nil
-        )
-      ]
-    )
+  var $author$project$View$Icons$pageViewOpen = $author$project$View$Icons$makeSvgIcon(
+    { path: "M64 464c-8.8 0-16-7.2-16-16V64c0-8.8 7.2-16 16-16H224v80c0 17.7 14.3 32 32 32h80V448c0 8.8-7.2 16-16 16H64zM64 0C28.7 0 0 28.7 0 64V448c0 35.3 28.7 64 64 64H320c35.3 0 64-28.7 64-64V154.5c0-17-6.7-33.3-18.7-45.3L274.7 18.7C262.7 6.7 246.5 0 229.5 0H64zM272 304c0-53-43-96-96-96s-96 43-96 96s43 96 96 96c17.8 0 34.4-4.8 48.7-13.2L263 425.1c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-38.3-38.3c8.5-14.3 13.3-31 13.3-48.9zm-96-48a48 48 0 1 1 0 96 48 48 0 1 1 0-96z", viewBox: "0 0 384 512" }
   );
-  var $author$project$View$Icons$scrollingPageView = A2(
-    $author$project$View$Icons$icon,
-    "0 0 384 512",
-    _List_fromArray(
-      [
-        A2(
-          $elm$svg$Svg$path,
-          _List_fromArray(
-            [
-              $elm$svg$Svg$Attributes$d("M64 48c-8.8 0-16 7.2-16 16V448c0 8.8 7.2 16 16 16H320c8.8 0 16-7.2 16-16V64c0-8.8-7.2-16-16-16H64zM0 64C0 28.7 28.7 0 64 0H320c35.3 0 64 28.7 64 64V448c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V64zm120 64H264c13.3 0 24 10.7 24 24s-10.7 24-24 24H120c-13.3 0-24-10.7-24-24s10.7-24 24-24zm0 96H264c13.3 0 24 10.7 24 24s-10.7 24-24 24H120c-13.3 0-24-10.7-24-24s10.7-24 24-24zm0 96h48c13.3 0 24 10.7 24 24s-10.7 24-24 24H120c-13.3 0-24-10.7-24-24s10.7-24 24-24z")
-            ]
-          ),
-          _List_Nil
-        )
-      ]
-    )
+  var $author$project$View$Icons$scrollingPageView = $author$project$View$Icons$makeSvgIcon(
+    { path: "M64 48c-8.8 0-16 7.2-16 16V448c0 8.8 7.2 16 16 16H320c8.8 0 16-7.2 16-16V64c0-8.8-7.2-16-16-16H64zM0 64C0 28.7 28.7 0 64 0H320c35.3 0 64 28.7 64 64V448c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V64zm120 64H264c13.3 0 24 10.7 24 24s-10.7 24-24 24H120c-13.3 0-24-10.7-24-24s10.7-24 24-24zm0 96H264c13.3 0 24 10.7 24 24s-10.7 24-24 24H120c-13.3 0-24-10.7-24-24s10.7-24 24-24zm0 96h48c13.3 0 24 10.7 24 24s-10.7 24-24 24H120c-13.3 0-24-10.7-24-24s10.7-24 24-24z", viewBox: "0 0 384 512" }
   );
-  var $author$project$View$Icons$shiftLeft = A2(
-    $author$project$View$Icons$icon,
-    "0 0 640 512",
-    _List_fromArray(
-      [
-        A2(
-          $elm$svg$Svg$path,
-          _List_fromArray(
-            [
-              $elm$svg$Svg$Attributes$d("M 283.05 111 C 292.45 101.6 307.65 101.6 316.95 111 C 326.25 120.4 326.35 135.6 316.95 144.9 L 277.95 183.9 L 556.05 183.9 C 569.35 183.9 580.05 194.6 580.05 207.9 C 580.05 221.2 569.35 231.9 556.05 231.9 L 277.95 231.9 L 316.95 270.9 C 326.35 280.3 326.35 295.5 316.95 304.8 C 307.55 314.1 292.35 314.2 283.05 304.8 L 203.05 224.8 C 193.65 215.4 193.65 200.2 203.05 190.9 L 283.05 110.9 L 283.05 111 Z M 392 0 C 422.9 0 448 25.1 448 56 L 448 128 L 400 128 L 400 56 C 400 51.6 396.4 48 392 48 L 88 48 C 65.9 48 48 65.9 48 88 L 48 358.7 C 57.8 354.4 68.6 352 80 352 L 392 352 C 396.4 352 400 348.4 400 344 L 400 288 L 448 288 L 448 344 C 448 366.3 434.9 385.6 416 394.6 L 416 464 L 424 464 C 437.3 464 448 474.7 448 488 C 448 501.3 437.3 512 424 512 L 80 512 C 35.8 512 0 476.2 0 432 C 0 429.3 0.1 426.6 0.4 424 L 0 424 L 0 88 C 0 39.4 39.4 0 88 0 L 392 0 Z M 80 400 C 62.3 400 48 414.3 48 432 C 48 449.7 62.3 464 80 464 L 368 464 L 368 400 L 80 400 Z")
-            ]
-          ),
-          _List_Nil
-        )
-      ]
-    )
+  var $author$project$View$Icons$shiftLeft = $author$project$View$Icons$makeSvgIcon(
+    { path: "M 283.05 111 C 292.45 101.6 307.65 101.6 316.95 111 C 326.25 120.4 326.35 135.6 316.95 144.9 L 277.95 183.9 L 556.05 183.9 C 569.35 183.9 580.05 194.6 580.05 207.9 C 580.05 221.2 569.35 231.9 556.05 231.9 L 277.95 231.9 L 316.95 270.9 C 326.35 280.3 326.35 295.5 316.95 304.8 C 307.55 314.1 292.35 314.2 283.05 304.8 L 203.05 224.8 C 193.65 215.4 193.65 200.2 203.05 190.9 L 283.05 110.9 L 283.05 111 Z M 392 0 C 422.9 0 448 25.1 448 56 L 448 128 L 400 128 L 400 56 C 400 51.6 396.4 48 392 48 L 88 48 C 65.9 48 48 65.9 48 88 L 48 358.7 C 57.8 354.4 68.6 352 80 352 L 392 352 C 396.4 352 400 348.4 400 344 L 400 288 L 448 288 L 448 344 C 448 366.3 434.9 385.6 416 394.6 L 416 464 L 424 464 C 437.3 464 448 474.7 448 488 C 448 501.3 437.3 512 424 512 L 80 512 C 35.8 512 0 476.2 0 432 C 0 429.3 0.1 426.6 0.4 424 L 0 424 L 0 88 C 0 39.4 39.4 0 88 0 L 392 0 Z M 80 400 C 62.3 400 48 414.3 48 432 C 48 449.7 62.3 464 80 464 L 368 464 L 368 400 L 80 400 Z", viewBox: "0 0 640 512" }
   );
-  var $author$project$View$Icons$shiftRight = A2(
-    $author$project$View$Icons$icon,
-    "0 0 640 512",
-    _List_fromArray(
-      [
-        A2(
-          $elm$svg$Svg$path,
-          _List_fromArray(
-            [
-              $elm$svg$Svg$Attributes$d("M88 0C39.4 0 0 39.4 0 88V424H.4c-.3 2.6-.4 5.3-.4 8c0 44.2 35.8 80 80 80H424c13.3 0 24-10.7 24-24s-10.7-24-24-24h-8V394.6c18.9-9 32-28.3 32-50.6V288H400v56c0 4.4-3.6 8-8 8H80c-11.4 0-22.2 2.4-32 6.7V88c0-22.1 17.9-40 40-40H392c4.4 0 8 3.6 8 8v72h48V56c0-30.9-25.1-56-56-56H88zM368 400v64H80c-17.7 0-32-14.3-32-32s14.3-32 32-32H368zM553 111c-9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l39 39H280c-13.3 0-24 10.7-24 24s10.7 24 24 24H558.1l-39 39c-9.4 9.4-9.4 24.6 0 33.9s24.6 9.4 33.9 0l80-80c9.4-9.4 9.4-24.6 0-33.9l-80-80z")
-            ]
-          ),
-          _List_Nil
-        )
-      ]
-    )
+  var $author$project$View$Icons$shiftRight = $author$project$View$Icons$makeSvgIcon(
+    { path: "M88 0C39.4 0 0 39.4 0 88V424H.4c-.3 2.6-.4 5.3-.4 8c0 44.2 35.8 80 80 80H424c13.3 0 24-10.7 24-24s-10.7-24-24-24h-8V394.6c18.9-9 32-28.3 32-50.6V288H400v56c0 4.4-3.6 8-8 8H80c-11.4 0-22.2 2.4-32 6.7V88c0-22.1 17.9-40 40-40H392c4.4 0 8 3.6 8 8v72h48V56c0-30.9-25.1-56-56-56H88zM368 400v64H80c-17.7 0-32-14.3-32-32s14.3-32 32-32H368zM553 111c-9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l39 39H280c-13.3 0-24 10.7-24 24s10.7 24 24 24H558.1l-39 39c-9.4 9.4-9.4 24.6 0 33.9s24.6 9.4 33.9 0l80-80c9.4-9.4 9.4-24.6 0-33.9l-80-80z", viewBox: "0 0 640 512" }
   );
   var $author$project$View$Toolbar$viewCurrentLabel = F2(
     function(fullscreen, labelText) {
@@ -27077,39 +26703,11 @@
       );
     }
   );
-  var $author$project$View$Icons$zoomIn = A2(
-    $author$project$View$Icons$icon,
-    "0 0 512 512",
-    _List_fromArray(
-      [
-        A2(
-          $elm$svg$Svg$path,
-          _List_fromArray(
-            [
-              $elm$svg$Svg$Attributes$d("M208 48a160 160 0 1 1 0 320 160 160 0 1 1 0-320zm0 368c48.8 0 93.7-16.8 129.1-44.9L471 505c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9L371.1 337.1C399.2 301.7 416 256.8 416 208C416 93.1 322.9 0 208 0S0 93.1 0 208S93.1 416 208 416zM184 296c0 13.3 10.7 24 24 24s24-10.7 24-24V232h64c13.3 0 24-10.7 24-24s-10.7-24-24-24H232V120c0-13.3-10.7-24-24-24s-24 10.7-24 24v64H120c-13.3 0-24 10.7-24 24s10.7 24 24 24h64v64z")
-            ]
-          ),
-          _List_Nil
-        )
-      ]
-    )
+  var $author$project$View$Icons$zoomIn = $author$project$View$Icons$makeSvgIcon(
+    { path: "M208 48a160 160 0 1 1 0 320 160 160 0 1 1 0-320zm0 368c48.8 0 93.7-16.8 129.1-44.9L471 505c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9L371.1 337.1C399.2 301.7 416 256.8 416 208C416 93.1 322.9 0 208 0S0 93.1 0 208S93.1 416 208 416zM184 296c0 13.3 10.7 24 24 24s24-10.7 24-24V232h64c13.3 0 24-10.7 24-24s-10.7-24-24-24H232V120c0-13.3-10.7-24-24-24s-24 10.7-24 24v64H120c-13.3 0-24 10.7-24 24s10.7 24 24 24h64v64z", viewBox: "0 0 512 512" }
   );
-  var $author$project$View$Icons$zoomOut = A2(
-    $author$project$View$Icons$icon,
-    "0 0 512 512",
-    _List_fromArray(
-      [
-        A2(
-          $elm$svg$Svg$path,
-          _List_fromArray(
-            [
-              $elm$svg$Svg$Attributes$d("M208 48a160 160 0 1 1 0 320 160 160 0 1 1 0-320zm0 368c48.8 0 93.7-16.8 129.1-44.9L471 505c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9L371.1 337.1C399.2 301.7 416 256.8 416 208C416 93.1 322.9 0 208 0S0 93.1 0 208S93.1 416 208 416zM136 184c-13.3 0-24 10.7-24 24s10.7 24 24 24H280c13.3 0 24-10.7 24-24s-10.7-24-24-24H136z")
-            ]
-          ),
-          _List_Nil
-        )
-      ]
-    )
+  var $author$project$View$Icons$zoomOut = $author$project$View$Icons$makeSvgIcon(
+    { path: "M208 48a160 160 0 1 1 0 320 160 160 0 1 1 0-320zm0 368c48.8 0 93.7-16.8 129.1-44.9L471 505c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9L371.1 337.1C399.2 301.7 416 256.8 416 208C416 93.1 322.9 0 208 0S0 93.1 0 208S93.1 416 208 416zM136 184c-13.3 0-24 10.7-24 24s10.7 24 24 24H280c13.3 0 24-10.7 24-24s-10.7-24-24-24H136z", viewBox: "0 0 512 512" }
   );
   var $author$project$View$Toolbar$viewToolbar = function(model) {
     var currentLabelText = $author$project$View$Toolbar$currentLabelFor(model);
@@ -27166,14 +26764,7 @@
                   $elm$html$Html$div,
                   _List_fromArray(
                     [
-                      $elm$html$Html$Attributes$classList(
-                        _List_fromArray(
-                          [
-                            _Utils_Tuple2("canvas-toolbar-section", true),
-                            _Utils_Tuple2("is-right", true)
-                          ]
-                        )
-                      )
+                      $elm$html$Html$Attributes$class("canvas-toolbar-section is-right")
                     ]
                   ),
                   _List_fromArray(
@@ -27247,15 +26838,10 @@
   var $author$project$View$viewerStatus = function(model) {
     var _v0 = model.resourceResponse;
     switch (_v0.$) {
-      case "ResourceFailed":
-        var message = _v0.a;
-        return $elm$core$Maybe$Just(
-          _Utils_Tuple3("Unable to load manifest", message, true)
-        );
       case "ResourceLoadedManifest":
-        return $elm$core$List$isEmpty(model.tileSources) ? $elm$core$Maybe$Just(
+        return model.hasTileSources ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(
           _Utils_Tuple3("Unable to display manifest", "No canvases found in this manifest.", false)
-        ) : $elm$core$Maybe$Nothing;
+        );
       case "ResourceLoadedCollection":
         var _v1 = model.response;
         if (_v1.$ === "Failed") {
@@ -27264,12 +26850,36 @@
             _Utils_Tuple3("Unable to load manifest", message, true)
           );
         } else {
-          return $elm$core$List$isEmpty(model.tileSources) ? $elm$core$Maybe$Just(
+          return model.hasTileSources ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(
             _Utils_Tuple3("No Manifest Selected", "Select a manifest from the collection to view.", false)
-          ) : $elm$core$Maybe$Nothing;
+          );
         }
+      case "ResourceFailed":
+        var message = _v0.a;
+        return $elm$core$Maybe$Just(
+          _Utils_Tuple3("Unable to load manifest", message, true)
+        );
       default:
         return $elm$core$Maybe$Nothing;
+    }
+  };
+  var $author$project$View$zoomPercentageLabel = function(model) {
+    var _v0 = _Utils_Tuple2(model.initialZoom, model.currentZoom);
+    if (_v0.a.$ === "Just" && _v0.b.$ === "Just") {
+      var initialZoom = _v0.a.a;
+      var currentZoom = _v0.b.a;
+      if (initialZoom > 0) {
+        var percent = currentZoom / initialZoom * 100;
+        return $elm$core$Maybe$Just(
+          $elm$core$String$fromInt(
+            $elm$core$Basics$round(percent)
+          ) + "%"
+        );
+      } else {
+        return $elm$core$Maybe$Nothing;
+      }
+    } else {
+      return $elm$core$Maybe$Nothing;
     }
   };
   var $author$project$View$view = function(model) {
@@ -27299,14 +26909,12 @@
             ),
             _List_fromArray(
               [
-                A2(
-                  $elm$html$Html$Lazy$lazy,
+                A4(
+                  $elm$html$Html$Lazy$lazy3,
                   $author$project$View$viewManifestTitle,
-                  {
-                    fullscreen: model.fullscreen,
-                    showTitle: model.showTitle,
-                    title: $author$project$View$manifestTitleFor(model)
-                  }
+                  model.showTitle,
+                  model.fullscreen,
+                  $author$project$View$manifestTitleFor(model)
                 ),
                 A2(
                   $elm$html$Html$div,
@@ -27355,15 +26963,14 @@
                         ),
                         _List_fromArray(
                           [
-                            A2(
-                              $elm$html$Html$Lazy$lazy,
+                            A6(
+                              $elm$html$Html$Lazy$lazy5,
                               $author$project$View$viewCanvas,
-                              {
-                                fullscreen: model.fullscreen,
-                                isLoading: $author$project$View$isCanvasLoading(model),
-                                maybeStatus,
-                                showCollectionSidebar: $author$project$View$hasCollectionSidebar(model)
-                              }
+                              model.fullscreen,
+                              $author$project$View$isCanvasLoading(model),
+                              $author$project$View$hasCollectionSidebar(model),
+                              maybeStatus,
+                              $author$project$View$zoomPercentageLabel(model)
                             )
                           ]
                         )
@@ -27383,8 +26990,8 @@
                   _List_fromArray(
                     [
                       A2(
-                        $elm$html$Html$Lazy$lazy,
-                        $author$project$View$viewRequiredStatement,
+                        $author$project$View$Helpers$viewMaybe,
+                        $elm$html$Html$Lazy$lazy($author$project$View$viewRequiredStatement),
                         $author$project$View$requiredStatementTextFor(model)
                       )
                     ]
@@ -27446,7 +27053,7 @@
       },
       A2($elm$json$Json$Decode$field, "userLanguage", $elm$json$Json$Decode$string)
     )
-  )({ "versions": { "elm": "0.19.1" }, "types": { "message": "Msg.Msg", "aliases": { "IIIF.Presentation.Canvas": { "args": [], "type": "{ id : String.String, label : Maybe.Maybe IIIF.Language.LanguageMap, width : Maybe.Maybe Basics.Int, height : Maybe.Maybe Basics.Int, images : List.List IIIF.Presentation.Image, viewingLayout : Maybe.Maybe IIIF.Presentation.ViewingLayout }" }, "IIIF.Presentation.HomePage": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.Image": { "args": [], "type": "{ id : IIIF.Image.ImageUri, label : Maybe.Maybe IIIF.Language.LanguageMap, imageType : IIIF.Presentation.ImageType, service : List.List IIIF.Presentation.ServiceTypes }" }, "IIIF.Language.LabelValue": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Language.LanguageMap": { "args": [], "type": "List.List IIIF.Language.LanguageValues" }, "IIIF.Presentation.Logo": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes, width : Basics.Int, height : Basics.Int, service : Maybe.Maybe (List.List IIIF.Presentation.ServiceObject) }" }, "IIIF.Presentation.Manifest": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, metadata : List.List IIIF.Language.LabelValue, viewingDirection : IIIF.Presentation.ViewingDirection, summary : Maybe.Maybe IIIF.Language.LanguageMap, viewingLayout : IIIF.Presentation.ViewingLayout, canvases : List.List IIIF.Presentation.Canvas, ranges : Maybe.Maybe (List.List IIIF.Presentation.Range), homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe IIIF.Presentation.Image, provider : Maybe.Maybe (List.List IIIF.Presentation.Provider), thumbnail : Maybe.Maybe IIIF.Presentation.Image, requiredStatement : Maybe.Maybe IIIF.Presentation.RequiredStatement }" }, "IIIF.Presentation.Provider": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, type_ : IIIF.Presentation.ResourceTypes, homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe (List.List IIIF.Presentation.Logo), seeAlso : Maybe.Maybe (List.List IIIF.Presentation.SeeAlso) }" }, "IIIF.Presentation.Range": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.RangeItem, metadata : List.List IIIF.Language.LabelValue }" }, "IIIF.Presentation.RequiredStatement": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Presentation.SeeAlso": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.ServiceObject": { "args": [], "type": "{ id : String.String, serviceType : IIIF.Presentation.ServiceTypes }" }, "IIIF.Presentation.Collection": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, summary : Maybe.Maybe IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.CollectionItem }" }, "IIIF.Image.ImageRequestParameters": { "args": [], "type": "{ host : String.String, prefix : String.String, region : IIIF.Image.ImageRegion, size : IIIF.Image.ImageSize, rotation : IIIF.Image.ImageRotation, quality : IIIF.Image.ImageQuality, format : IIIF.Image.ImageFormat }" }, "IIIF.Image.ImageServerParameters": { "args": [], "type": "{ host : String.String, prefix : String.String }" } }, "unions": { "Msg.Msg": { "args": [], "tags": { "ClientNotifiedFullscreenChanged": ["Basics.Bool"], "ServerRespondedWithManifest": ["Result.Result Http.Error IIIF.Presentation.IIIFManifest"], "ServerRespondedWithResource": ["Result.Result Http.Error IIIF.Presentation.IIIFResource"], "UserClickedCollectionItem": ["String.String"], "ServerRespondedWithCollectionItem": ["String.String", "Result.Result Http.Error IIIF.Presentation.IIIFResource"], "UserClickedManifestItem": ["String.String", "String.String"], "ServerRespondedWithManifestFromCollection": ["Result.Result Http.Error IIIF.Presentation.IIIFManifest"], "UserToggledCollectionSidebar": [], "UserStartedCollectionSidebarResize": ["Basics.Int"], "UserDraggedCollectionSidebarResize": ["Basics.Int"], "UserEndedCollectionSidebarResize": [], "ClientNotifiedPageChanged": ["Basics.Int"], "ClientNotifiedPageChangedInstant": ["Basics.Int"], "ClientNotifiedScrollThumbs": ["Result.Result Browser.Dom.Error ()"], "SetResponseLoading": [], "UserClickedThumbnail": ["Basics.Int"], "UserToggledFilter": ["Filters.FilterToggle", "Basics.Bool"], "UserToggledContents": [], "UserClickedOpenPageView": [], "UserClickedClosePageView": [], "UserClickedSaveFilteredImage": [], "UserToggledPageViewFullscreen": [], "UserToggledPageViewSidebar": [], "UserClickedOpenManifestInfo": [], "UserClickedCloseManifestInfo": [], "UserToggledMobileSidebar": [], "UserClosedMobileSidebar": [], "UserClickedPageViewPrev": [], "UserClickedPageViewNext": [], "UserResetAllFilters": [], "UserResetAltColourAdjust": [], "UserToggledFullscreen": [], "UserClickedRange": ["String.String", "Maybe.Maybe Basics.Int"], "UserToggledMetadata": [], "UserSelectedContentsIndex": [], "UserSelectedContentsPages": [], "UserToggledSidebar": [], "UserToggledShiftByOne": [], "UserToggledThumbnails": [], "UserToggledTwoUp": [], "UserUpdatedFilterInt": ["Filters.FilterIntValue", "String.String"], "UserUpdatedFilterFloat": ["Filters.FilterFloatValue", "String.String"], "UserUpdatedFilterString": ["Filters.FilterStringValue", "String.String"], "UserUpdatedFilterJsonInput": ["String.String"], "UserAppliedFilterJson": [], "UserCopiedFilterJson": [], "ViewerLoadingChanged": ["Basics.Bool"], "UserDraggedSidebarResize": ["Basics.Int"], "UserEndedSidebarResize": [], "UserStartedSidebarResize": ["Basics.Int"], "UserChangedZoomLevel": ["Basics.Float"], "ViewportChanged": ["Basics.Int", "Basics.Int"], "UserClickedZoomIn": [], "UserClickedZoomOut": [], "UserClickedPageViewImageChoice": ["Basics.Int"], "UserToggledFilterGroup": ["String.String"] } }, "Basics.Bool": { "args": [], "tags": { "True": [], "False": [] } }, "Browser.Dom.Error": { "args": [], "tags": { "NotFound": ["String.String"] } }, "Http.Error": { "args": [], "tags": { "BadUrl": ["String.String"], "Timeout": [], "NetworkError": [], "BadStatus": ["Basics.Int"], "BadBody": ["String.String"] } }, "Filters.FilterFloatValue": { "args": [], "tags": { "FloatColourReplaceBlend": [], "FloatContrast": [], "FloatGamma": [], "FloatNormalizeStrength": [], "FloatPseudoColourBlue": [], "FloatPseudoColourGreen": [], "FloatPseudoColourRed": [], "FloatUnsharpAmount": [] } }, "Filters.FilterIntValue": { "args": [], "tags": { "IntAdaptiveOffset": [], "IntAdaptiveWindow": [], "IntAltRedGamma": [], "IntAltRedSigmoid": [], "IntAltRedVibrance": [], "IntAltRedHue": [], "IntAltRedHueWindow": [], "IntAltGreenGamma": [], "IntAltGreenSigmoid": [], "IntAltGreenHue": [], "IntAltGreenHueWindow": [], "IntAltGreenVibrance": [], "IntAltBlueGamma": [], "IntAltBlueSigmoid": [], "IntAltBlueHue": [], "IntAltBlueHueWindow": [], "IntAltBlueVibrance": [], "IntBrightness": [], "IntCcBlue": [], "IntCcGreen": [], "IntCcRed": [], "IntColourmapCenter": [], "IntColourReplaceTolerance": [], "IntHue": [], "IntMorphKernel": [], "IntRotation": [], "IntSaturation": [], "IntThreshold": [], "IntVibrance": [] } }, "Filters.FilterStringValue": { "args": [], "tags": { "StringColourmapPreset": [], "StringColourReplaceSource": [], "StringColourReplaceTarget": [], "StringConvolutionPreset": [], "StringMorphOperation": [], "StringPcaMode": [], "StringPseudoColourMode": [] } }, "Filters.FilterToggle": { "args": [], "tags": { "ToggleAdaptive": [], "ToggleAltBlueGamma": [], "ToggleAltBlueHue": [], "ToggleAltBlueSigmoid": [], "ToggleAltBlueVibrance": [], "ToggleAltGreenGamma": [], "ToggleAltGreenHue": [], "ToggleAltGreenSigmoid": [], "ToggleAltGreenVibrance": [], "ToggleAltRedGamma": [], "ToggleAltRedHue": [], "ToggleAltRedSigmoid": [], "ToggleAltRedVibrance": [], "ToggleBrightness": [], "ToggleCcBlue": [], "ToggleCcGreen": [], "ToggleCcRed": [], "ToggleColourmap": [], "ToggleColourReplace": [], "ToggleColourReplacePreserveLum": [], "ToggleContrast": [], "ToggleConvolution": [], "ToggleFlip": [], "ToggleGamma": [], "ToggleGrayscale": [], "ToggleHue": [], "ToggleInvert": [], "ToggleMorph": [], "ToggleNormalize": [], "TogglePca": [], "TogglePseudoColour": [], "ToggleSaturation": [], "ToggleThreshold": [], "ToggleUnsharp": [], "ToggleVibrance": [] } }, "Basics.Float": { "args": [], "tags": { "Float": [] } }, "IIIF.Presentation.IIIFManifest": { "args": [], "tags": { "IIIFManifest": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Manifest"] } }, "IIIF.Presentation.IIIFResource": { "args": [], "tags": { "ResourceManifest": ["IIIF.Presentation.IIIFManifest"], "ResourceCollection": ["IIIF.Presentation.IIIFCollection"], "ResourceCanvas": ["IIIF.Presentation.IIIFCanvas"], "ResourceRange": ["IIIF.Presentation.IIIFRange"] } }, "Basics.Int": { "args": [], "tags": { "Int": [] } }, "Maybe.Maybe": { "args": ["a"], "tags": { "Just": ["a"], "Nothing": [] } }, "Result.Result": { "args": ["error", "value"], "tags": { "Ok": ["value"], "Err": ["error"] } }, "String.String": { "args": [], "tags": { "String": [] } }, "IIIF.Presentation.IIIFCanvas": { "args": [], "tags": { "IIIFCanvas": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Canvas"] } }, "IIIF.Presentation.IIIFCollection": { "args": [], "tags": { "IIIFCollection": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Collection"] } }, "IIIF.Presentation.IIIFRange": { "args": [], "tags": { "IIIFRange": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Range"] } }, "IIIF.Version.IIIFVersion": { "args": [], "tags": { "IIIFV2": [], "IIIFV3": [] } }, "IIIF.Presentation.ImageType": { "args": [], "tags": { "PrimaryImage": [], "ChoiceImage": [] } }, "IIIF.Image.ImageUri": { "args": [], "tags": { "InfoUri": ["IIIF.Image.ImageServerParameters"], "ImageUri": ["IIIF.Image.ImageRequestParameters"] } }, "IIIF.Language.LanguageValues": { "args": [], "tags": { "LanguageValues": ["IIIF.Language.Language", "List.List String.String"] } }, "List.List": { "args": ["a"], "tags": {} }, "IIIF.Presentation.MediaFormats": { "args": [], "tags": { "ImageJpeg": [], "OtherFormat": ["String.String"] } }, "IIIF.Presentation.RangeItem": { "args": [], "tags": { "RangeCanvas": ["String.String"], "RangeRange": ["IIIF.Presentation.Range"] } }, "IIIF.Presentation.ResourceTypes": { "args": [], "tags": { "Video": [], "OtherResource": ["String.String"] } }, "IIIF.Presentation.ServiceTypes": { "args": [], "tags": { "ImageService1": [], "ImageService2": [], "ImageService3": [], "SearchService1": [], "AutoCompleteService1": [], "AuthTokenService1": [], "AuthLogoutService1": [], "UnknownService": [] } }, "IIIF.Presentation.ViewingDirection": { "args": [], "tags": { "LeftToRight": [], "RightToLeft": [], "TopToBottom": [], "BottomToTop": [] } }, "IIIF.Presentation.ViewingLayout": { "args": [], "tags": { "LayoutV2": ["IIIF.Presentation.ViewingHint"], "LayoutV3": ["List.List IIIF.Presentation.Behavior"] } }, "IIIF.Presentation.Behavior": { "args": [], "tags": { "AutoAdvanceBehavior": [], "NoAutoAdvanceBehavior": [], "RepeatBehavior": [], "NoRepeatBehavior": [], "UnorderedBehavior": [], "IndividualsBehavior": [], "ContinuousBehavior": [], "PagedBehavior": [], "FacingPagesBehavior": [], "NonPagedBehavior": [], "MultiPartBehavior": [], "TogetherBehavior": [], "SequenceBehavior": [], "ThumbnailNavBehavior": [], "NoNavBehavior": [], "HiddenBehavior": [] } }, "IIIF.Presentation.CollectionItem": { "args": [], "tags": { "NestedCollection": ["IIIF.Presentation.Collection"], "ManifestItem": ["IIIF.Presentation.Manifest"] } }, "IIIF.Image.ImageFormat": { "args": [], "tags": { "JpegFormat": [], "TiffFormat": [], "PngFormat": [], "Jp2Format": [], "GifFormat": [], "PdfFormat": [], "WebpFormat": [] } }, "IIIF.Image.ImageQuality": { "args": [], "tags": { "ColorQuality": [], "GrayQuality": [], "BiTonalQuality": [], "DefaultQuality": [], "NativeQuality": [] } }, "IIIF.Image.ImageRegion": { "args": [], "tags": { "FullRegion": [], "SquareRegion": [], "SizeRegion": ["{ x : Basics.Int, y : Basics.Int, w : Basics.Int, h : Basics.Int }"], "PctSizeRegion": ["{ x : Basics.Float, y : Basics.Float, w : Basics.Float, h : Basics.Float }"] } }, "IIIF.Image.ImageRotation": { "args": [], "tags": { "NormalRotation": ["Basics.Float"], "MirroredRotation": ["Basics.Float"] } }, "IIIF.Image.ImageSize": { "args": [], "tags": { "MaxSize": [], "ExactMaxSize": [], "WidthOnlySize": ["Basics.Int"], "ExactWidthOnlySize": ["Basics.Int"], "HeightOnlySize": ["Basics.Int"], "ExactHeightOnlySize": ["Basics.Int"], "PercentSize": ["Basics.Float"], "ExactPercentSize": ["Basics.Float"], "WidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"] } }, "IIIF.Language.Language": { "args": [], "tags": { "LanguageCode": ["String.String"], "None": [], "Default": [] } }, "IIIF.Presentation.ViewingHint": { "args": [], "tags": { "PagedHint": [], "IndividualsHint": [], "ContinuousHint": [], "MultiPartHint": [], "NonPagedHint": [], "TopHint": [], "FacingPagesHint": [] } } } } }) } };
+  )({ "versions": { "elm": "0.19.1" }, "types": { "message": "Msg.Msg", "aliases": { "IIIF.Presentation.Canvas": { "args": [], "type": "{ id : String.String, label : Maybe.Maybe IIIF.Language.LanguageMap, width : Maybe.Maybe Basics.Int, height : Maybe.Maybe Basics.Int, images : List.List IIIF.Presentation.Image, viewingLayout : Maybe.Maybe IIIF.Presentation.ViewingLayout }" }, "IIIF.Presentation.HomePage": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.Image": { "args": [], "type": "{ id : IIIF.Image.ImageUri, label : Maybe.Maybe IIIF.Language.LanguageMap, imageType : IIIF.Presentation.ImageType, service : List.List IIIF.Presentation.ServiceTypes }" }, "IIIF.Language.LabelValue": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Language.LanguageMap": { "args": [], "type": "List.List IIIF.Language.LanguageValues" }, "IIIF.Presentation.Logo": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes, width : Basics.Int, height : Basics.Int, service : Maybe.Maybe (List.List IIIF.Presentation.ServiceObject) }" }, "IIIF.Presentation.Manifest": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, metadata : List.List IIIF.Language.LabelValue, viewingDirection : IIIF.Presentation.ViewingDirection, summary : Maybe.Maybe IIIF.Language.LanguageMap, viewingLayout : IIIF.Presentation.ViewingLayout, canvases : List.List IIIF.Presentation.Canvas, ranges : Maybe.Maybe (List.List IIIF.Presentation.Range), homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe IIIF.Presentation.Image, provider : Maybe.Maybe (List.List IIIF.Presentation.Provider), thumbnail : Maybe.Maybe IIIF.Presentation.Image, requiredStatement : Maybe.Maybe IIIF.Presentation.RequiredStatement }" }, "IIIF.Presentation.Provider": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, type_ : IIIF.Presentation.ResourceTypes, homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe (List.List IIIF.Presentation.Logo), seeAlso : Maybe.Maybe (List.List IIIF.Presentation.SeeAlso) }" }, "IIIF.Presentation.Range": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.RangeItem, metadata : List.List IIIF.Language.LabelValue }" }, "IIIF.Presentation.RequiredStatement": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Presentation.SeeAlso": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.ServiceObject": { "args": [], "type": "{ id : String.String, serviceType : IIIF.Presentation.ServiceTypes }" }, "IIIF.Presentation.Collection": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, summary : Maybe.Maybe IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.CollectionItem }" }, "IIIF.Image.ImageRequestParameters": { "args": [], "type": "{ host : String.String, prefix : String.String, region : IIIF.Image.ImageRegion, size : IIIF.Image.ImageSize, rotation : IIIF.Image.ImageRotation, quality : IIIF.Image.ImageQuality, format : IIIF.Image.ImageFormat }" }, "IIIF.Image.ImageServerParameters": { "args": [], "type": "{ host : String.String, prefix : String.String }" } }, "unions": { "Msg.Msg": { "args": [], "tags": { "ClientNotifiedFullscreenChanged": ["Basics.Bool"], "ClientNotifiedPageChanged": ["Basics.Int"], "ClientNotifiedPageChangedInstant": ["Basics.Int"], "ClientNotifiedScrollThumbs": [], "ServerRespondedWithCollectionItem": ["String.String", "Result.Result Http.Error IIIF.Presentation.IIIFResource"], "ServerRespondedWithManifestFromCollection": ["String.String", "Result.Result Http.Error IIIF.Presentation.IIIFManifest"], "ServerRespondedWithResource": ["Result.Result Http.Error IIIF.Presentation.IIIFResource"], "UserAppliedFilterJson": [], "UserChangedZoomLevel": ["Basics.Float"], "UserClickedCloseManifestInfo": [], "UserClickedClosePageView": [], "UserClickedCollectionItem": ["String.String"], "UserClickedManifestItem": ["String.String", "String.String"], "UserClickedOpenManifestInfo": [], "UserClickedOpenPageView": [], "UserClickedPageViewImageChoice": ["Basics.Int"], "UserClickedPageViewNext": [], "UserClickedPageViewPrev": [], "UserClickedRange": ["String.String", "Maybe.Maybe Basics.Int"], "UserClickedSaveFilteredImage": [], "UserClickedThumbnail": ["Basics.Int"], "UserClickedZoomIn": [], "UserClickedZoomOut": [], "UserCopiedFilterJson": [], "UserDraggedCollectionSidebarResize": ["Basics.Int"], "UserDraggedSidebarResize": ["Basics.Int"], "UserEndedCollectionSidebarResize": [], "UserEndedSidebarResize": [], "UserResetAllFilters": [], "UserResetAltColourAdjust": [], "UserSelectedContentsIndex": [], "UserSelectedContentsPages": [], "UserStartedCollectionSidebarResize": ["Basics.Int"], "UserStartedSidebarResize": ["Basics.Int"], "UserToggledContents": [], "UserToggledFilter": ["Filters.FilterToggle", "Basics.Bool"], "UserToggledFilterGroup": ["String.String"], "UserToggledFullscreen": [], "UserToggledMetadata": [], "UserToggledPageViewFullscreen": [], "UserToggledPageViewSidebar": [], "UserToggledShiftByOne": [], "UserToggledSidebar": [], "UserToggledThumbnails": [], "UserToggledTwoUp": [], "UserUpdatedFilterFloat": ["Filters.FilterFloatValue", "String.String"], "UserUpdatedFilterInt": ["Filters.FilterIntValue", "String.String"], "UserUpdatedFilterJsonInput": ["String.String"], "UserUpdatedFilterString": ["Filters.FilterStringValue", "String.String"], "ViewerLoadingChanged": ["Basics.Bool"], "ViewportChanged": ["Basics.Int", "Basics.Int"] } }, "Basics.Bool": { "args": [], "tags": { "True": [], "False": [] } }, "Http.Error": { "args": [], "tags": { "BadUrl": ["String.String"], "Timeout": [], "NetworkError": [], "BadStatus": ["Basics.Int"], "BadBody": ["String.String"] } }, "Filters.FilterFloatValue": { "args": [], "tags": { "FloatColourReplaceBlend": [], "FloatContrast": [], "FloatGamma": [], "FloatNormalizeStrength": [], "FloatPseudoColourBlue": [], "FloatPseudoColourGreen": [], "FloatPseudoColourRed": [], "FloatUnsharpAmount": [] } }, "Filters.FilterIntValue": { "args": [], "tags": { "IntAdaptiveOffset": [], "IntAdaptiveWindow": [], "IntAltRedGamma": [], "IntAltRedSigmoid": [], "IntAltRedVibrance": [], "IntAltRedHue": [], "IntAltRedHueWindow": [], "IntAltGreenGamma": [], "IntAltGreenSigmoid": [], "IntAltGreenHue": [], "IntAltGreenHueWindow": [], "IntAltGreenVibrance": [], "IntAltBlueGamma": [], "IntAltBlueSigmoid": [], "IntAltBlueHue": [], "IntAltBlueHueWindow": [], "IntAltBlueVibrance": [], "IntBrightness": [], "IntCcBlue": [], "IntCcGreen": [], "IntCcRed": [], "IntColourmapCenter": [], "IntColourReplaceTolerance": [], "IntHue": [], "IntMorphKernel": [], "IntRotation": [], "IntSaturation": [], "IntThreshold": [], "IntVibrance": [] } }, "Filters.FilterStringValue": { "args": [], "tags": { "StringColourmapPreset": [], "StringColourReplaceSource": [], "StringColourReplaceTarget": [], "StringConvolutionPreset": [], "StringMorphOperation": [], "StringPcaMode": [], "StringPseudoColourMode": [] } }, "Filters.FilterToggle": { "args": [], "tags": { "ToggleAdaptive": [], "ToggleAltBlueGamma": [], "ToggleAltBlueHue": [], "ToggleAltBlueSigmoid": [], "ToggleAltBlueVibrance": [], "ToggleAltGreenGamma": [], "ToggleAltGreenHue": [], "ToggleAltGreenSigmoid": [], "ToggleAltGreenVibrance": [], "ToggleAltRedGamma": [], "ToggleAltRedHue": [], "ToggleAltRedSigmoid": [], "ToggleAltRedVibrance": [], "ToggleBrightness": [], "ToggleCcBlue": [], "ToggleCcGreen": [], "ToggleCcRed": [], "ToggleColourmap": [], "ToggleColourReplace": [], "ToggleColourReplacePreserveLum": [], "ToggleContrast": [], "ToggleConvolution": [], "ToggleFlip": [], "ToggleGamma": [], "ToggleGrayscale": [], "ToggleHue": [], "ToggleInvert": [], "ToggleMorph": [], "ToggleNormalize": [], "TogglePca": [], "TogglePseudoColour": [], "ToggleSaturation": [], "ToggleThreshold": [], "ToggleUnsharp": [], "ToggleVibrance": [] } }, "Basics.Float": { "args": [], "tags": { "Float": [] } }, "IIIF.Presentation.IIIFManifest": { "args": [], "tags": { "IIIFManifest": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Manifest"] } }, "IIIF.Presentation.IIIFResource": { "args": [], "tags": { "ResourceManifest": ["IIIF.Presentation.IIIFManifest"], "ResourceCollection": ["IIIF.Presentation.IIIFCollection"], "ResourceCanvas": ["IIIF.Presentation.IIIFCanvas"], "ResourceRange": ["IIIF.Presentation.IIIFRange"] } }, "Basics.Int": { "args": [], "tags": { "Int": [] } }, "Maybe.Maybe": { "args": ["a"], "tags": { "Just": ["a"], "Nothing": [] } }, "Result.Result": { "args": ["error", "value"], "tags": { "Ok": ["value"], "Err": ["error"] } }, "String.String": { "args": [], "tags": { "String": [] } }, "IIIF.Presentation.IIIFCanvas": { "args": [], "tags": { "IIIFCanvas": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Canvas"] } }, "IIIF.Presentation.IIIFCollection": { "args": [], "tags": { "IIIFCollection": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Collection"] } }, "IIIF.Presentation.IIIFRange": { "args": [], "tags": { "IIIFRange": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Range"] } }, "IIIF.Version.IIIFVersion": { "args": [], "tags": { "IIIFV2": [], "IIIFV3": [] } }, "IIIF.Presentation.ImageType": { "args": [], "tags": { "PrimaryImage": [], "ChoiceImage": [] } }, "IIIF.Image.ImageUri": { "args": [], "tags": { "InfoUri": ["IIIF.Image.ImageServerParameters"], "ImageUri": ["IIIF.Image.ImageRequestParameters"] } }, "IIIF.Language.LanguageValues": { "args": [], "tags": { "LanguageValues": ["IIIF.Language.Language", "List.List String.String"] } }, "List.List": { "args": ["a"], "tags": {} }, "IIIF.Presentation.MediaFormats": { "args": [], "tags": { "ImageJpeg": [], "OtherFormat": ["String.String"] } }, "IIIF.Presentation.RangeItem": { "args": [], "tags": { "RangeCanvas": ["String.String"], "RangeRange": ["IIIF.Presentation.Range"] } }, "IIIF.Presentation.ResourceTypes": { "args": [], "tags": { "Video": [], "OtherResource": ["String.String"] } }, "IIIF.Presentation.ServiceTypes": { "args": [], "tags": { "ImageService1": [], "ImageService2": [], "ImageService3": [], "SearchService1": [], "AutoCompleteService1": [], "AuthTokenService1": [], "AuthLogoutService1": [], "UnknownService": [] } }, "IIIF.Presentation.ViewingDirection": { "args": [], "tags": { "LeftToRight": [], "RightToLeft": [], "TopToBottom": [], "BottomToTop": [] } }, "IIIF.Presentation.ViewingLayout": { "args": [], "tags": { "LayoutV2": ["IIIF.Presentation.ViewingHint"], "LayoutV3": ["List.List IIIF.Presentation.Behavior"] } }, "IIIF.Presentation.Behavior": { "args": [], "tags": { "AutoAdvanceBehavior": [], "NoAutoAdvanceBehavior": [], "RepeatBehavior": [], "NoRepeatBehavior": [], "UnorderedBehavior": [], "IndividualsBehavior": [], "ContinuousBehavior": [], "PagedBehavior": [], "FacingPagesBehavior": [], "NonPagedBehavior": [], "MultiPartBehavior": [], "TogetherBehavior": [], "SequenceBehavior": [], "ThumbnailNavBehavior": [], "NoNavBehavior": [], "HiddenBehavior": [] } }, "IIIF.Presentation.CollectionItem": { "args": [], "tags": { "NestedCollection": ["IIIF.Presentation.Collection"], "ManifestItem": ["IIIF.Presentation.Manifest"] } }, "IIIF.Image.ImageFormat": { "args": [], "tags": { "JpegFormat": [], "TiffFormat": [], "PngFormat": [], "Jp2Format": [], "GifFormat": [], "PdfFormat": [], "WebpFormat": [] } }, "IIIF.Image.ImageQuality": { "args": [], "tags": { "ColorQuality": [], "GrayQuality": [], "BiTonalQuality": [], "DefaultQuality": [], "NativeQuality": [] } }, "IIIF.Image.ImageRegion": { "args": [], "tags": { "FullRegion": [], "SquareRegion": [], "SizeRegion": ["{ x : Basics.Int, y : Basics.Int, w : Basics.Int, h : Basics.Int }"], "PctSizeRegion": ["{ x : Basics.Float, y : Basics.Float, w : Basics.Float, h : Basics.Float }"] } }, "IIIF.Image.ImageRotation": { "args": [], "tags": { "NormalRotation": ["Basics.Float"], "MirroredRotation": ["Basics.Float"] } }, "IIIF.Image.ImageSize": { "args": [], "tags": { "MaxSize": [], "ExactMaxSize": [], "WidthOnlySize": ["Basics.Int"], "ExactWidthOnlySize": ["Basics.Int"], "HeightOnlySize": ["Basics.Int"], "ExactHeightOnlySize": ["Basics.Int"], "PercentSize": ["Basics.Float"], "ExactPercentSize": ["Basics.Float"], "WidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"] } }, "IIIF.Language.Language": { "args": [], "tags": { "LanguageCode": ["String.String"], "None": [], "Default": [] } }, "IIIF.Presentation.ViewingHint": { "args": [], "tags": { "PagedHint": [], "IndividualsHint": [], "ContinuousHint": [], "MultiPartHint": [], "NonPagedHint": [], "TopHint": [], "FacingPagesHint": [] } } } } }) } };
 
   // src/filters.ts
   function setFilterOptions(viewer, options) {

@@ -28,6 +28,7 @@ import NoUnoptimizedRecursion
 import NoUnsortedCases
 import NoUnsortedLetDeclarations
 import NoUnsortedRecords
+import NoUnsortedTopLevelDeclarations
 import NoUnused.CustomTypeConstructorArgs
 import NoUnused.CustomTypeConstructors
 import NoUnused.Dependencies
@@ -51,15 +52,13 @@ config =
     , NoMissingTypeExpose.rule
     , NoSimpleLetBody.rule
     , NoPrematureLetComputation.rule
-
-    --, NoUnused.CustomTypeConstructors.rule []
-    --, NoUnused.CustomTypeConstructorArgs.rule
+    , NoUnused.CustomTypeConstructors.rule []
+    , NoUnused.CustomTypeConstructorArgs.rule
     , NoUnused.Dependencies.rule
     , NoUnused.Exports.rule
     , NoUnused.Parameters.rule
     , NoUnused.Patterns.rule
-
-    --, NoUnused.Variables.rule
+    , NoUnused.Variables.rule
     , Simplify.rule Simplify.defaults
     , NoSinglePatternCase.rule NoSinglePatternCase.fixInArgument
 
@@ -68,9 +67,14 @@ config =
         (NoUnsortedLetDeclarations.sortLetDeclarations
             |> NoUnsortedLetDeclarations.usedInExpressionLast
             |> NoUnsortedLetDeclarations.glueHelpersBefore
-         --|> NoUnsortedLetDeclarations.alphabetically
         )
     , NoUnsortedCases.rule NoUnsortedCases.defaults
+    , NoUnsortedTopLevelDeclarations.rule
+        (NoUnsortedTopLevelDeclarations.sortTopLevelDeclarations
+            |> NoUnsortedTopLevelDeclarations.portsFirst
+            |> NoUnsortedTopLevelDeclarations.exposedOrderWithPrivateLast
+            |> NoUnsortedTopLevelDeclarations.alphabetically
+        )
     , NoInconsistentAliases.config
         [ ( "Html.Attributes", "HA" )
         , ( "Json.Decode", "Decode" )

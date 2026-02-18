@@ -1,38 +1,4 @@
-module Utilities exposing (choose, disabledIf, find, isJust, isNothing, orElse, unpack)
-
-
-choose : Bool -> (() -> a) -> (() -> a) -> a
-choose predicate isTrue isFalse =
-    if predicate then
-        isTrue ()
-
-    else
-        isFalse ()
-
-
-unpack : (() -> b) -> (a -> b) -> Maybe a -> b
-unpack default f m =
-    case m of
-        Just a ->
-            f a
-
-        Nothing ->
-            default ()
-
-
-isJust : Maybe a -> Bool
-isJust maybeVal =
-    case maybeVal of
-        Just _ ->
-            True
-
-        Nothing ->
-            False
-
-
-isNothing : Maybe a -> Bool
-isNothing maybeVal =
-    isJust maybeVal |> not
+module Utilities exposing (disabledIf, find, isNothing)
 
 
 disabledIf : Bool -> msg -> Maybe msg
@@ -65,25 +31,16 @@ find predicate list =
                 find predicate rest
 
 
-{-| Piping-friendly version of [`or`](#or).
+isNothing : Maybe a -> Bool
+isNothing maybeVal =
+    isJust maybeVal |> not
 
-    Just 5
-        |> orElse (Just 4)
-    --> Just 5
 
-    orElse (Just 4) (Just 5)
-    --> Just 5
-
-    List.head []
-        |> orElse (List.head [ 4 ])
-    --> Just 4
-
--}
-orElse : Maybe a -> Maybe a -> Maybe a
-orElse ma mb =
-    case mb of
+isJust : Maybe a -> Bool
+isJust maybeVal =
+    case maybeVal of
         Just _ ->
-            mb
+            True
 
         Nothing ->
-            ma
+            False

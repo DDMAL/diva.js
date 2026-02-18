@@ -1,9 +1,8 @@
-module View.Helpers exposing (ButtonConfig, viewButton, viewIf, viewMaybe)
+module View.Helpers exposing (ButtonConfig, emptyHtml, viewButton, viewIf, viewMaybe)
 
 import Html exposing (Html, button, div, text)
 import Html.Attributes as HA exposing (classList, type_)
 import Html.Events as Events
-import Utilities exposing (choose, unpack)
 
 
 type alias ButtonConfig msg =
@@ -14,25 +13,9 @@ type alias ButtonConfig msg =
     }
 
 
-viewIf : Html msg -> Bool -> Html msg
-viewIf viewFunc condition =
-    choose condition (\() -> viewFunc) (\() -> text "")
-
-
-{-|
-
-    A view helper that will either render the value of
-    'body' with a given `viewFunc`, or return `Element.none`
-    indicating nothing should be rendered.
-
-    `viewFunc` can be partially applied with a `language` value
-    allowing the body to be rendered in response to the user's
-    selected language parameter.
-
--}
-viewMaybe : (a -> Html msg) -> Maybe a -> Html msg
-viewMaybe viewFunc maybeBody =
-    unpack (\() -> text "") viewFunc maybeBody
+emptyHtml : Html msg
+emptyHtml =
+    text ""
 
 
 viewButton : ButtonConfig msg -> Html msg
@@ -71,3 +54,33 @@ viewButton config =
             ]
             [ text config.label ]
         ]
+
+
+viewIf : Html msg -> Bool -> Html msg
+viewIf view condition =
+    if condition then
+        view
+
+    else
+        emptyHtml
+
+
+{-|
+
+    A view helper that will either render the value of
+    'body' with a given `viewFunc`, or return `Element.none`
+    indicating nothing should be rendered.
+
+    `viewFunc` can be partially applied with a `language` value
+    allowing the body to be rendered in response to the user's
+    selected language parameter.
+
+-}
+viewMaybe : (a -> Html msg) -> Maybe a -> Html msg
+viewMaybe viewFunc maybeBody =
+    case maybeBody of
+        Just a ->
+            viewFunc a
+
+        Nothing ->
+            emptyHtml
