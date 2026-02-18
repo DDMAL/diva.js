@@ -581,7 +581,7 @@ viewFilterJsonGroup model =
                 div [ HA.class "filter-json-error" ] [ text err ]
 
             Nothing ->
-                text ""
+                emptyHtml
         ]
 
 
