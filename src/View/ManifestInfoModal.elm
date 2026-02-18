@@ -8,29 +8,26 @@ import IIIF.Presentation exposing (Behavior(..), HomePage, IIIFManifest(..), Log
 import IIIF.Version exposing (IIIFVersion(..))
 import Model exposing (Model, ResourceResponse(..), Response(..), currentManifest)
 import Msg exposing (Msg(..))
-import View.Helpers exposing (viewButton, viewIf, viewMaybe)
+import View.Helpers exposing (emptyHtml, viewButton, viewMaybe)
 import View.HtmlRenderer as HtmlRenderer
 import View.Icons as Icons
 
 
 viewManifestInfoModal : Model -> Html Msg
 viewManifestInfoModal model =
-    viewIf
-        (div
+    if model.manifestInfoOpen then
+        div
             [ HA.class "modal-overlay" ]
             [ div
-                [ classList
-                    [ ( "modal", True )
-                    , ( "is-narrow", True )
-                    ]
-                ]
+                [ HA.class "model is-narrow" ]
                 [ viewHeader model
                 , currentManifest model
                     |> viewBody model
                 ]
             ]
-        )
-        model.manifestInfoOpen
+
+    else
+        emptyHtml
 
 
 viewHeader : { a | fullscreen : Bool } -> Html Msg
@@ -66,11 +63,7 @@ viewBody model maybeManifest =
             viewMaybe (viewLogoBlock model.detectedLanguage) maybeManifest
     in
     div
-        [ classList
-            [ ( "modal-body", True )
-            , ( "is-two-column", True )
-            ]
-        ]
+        [ HA.class "modal-body is-two-column" ]
         [ div
             [ HA.class "metadata-body" ]
             (List.map viewRow rows)
@@ -208,8 +201,8 @@ viewLogoBlock language manifest =
                     toLogo manifest
                         |> Maybe.map (.id >> setImageUriSize (WidthOnlySize 256) >> createImageAddress)
     in
-    viewIf
-        (div []
+    if logoUrl /= Nothing || homepageLink /= Nothing then
+        div []
             [ viewMaybe
                 (\url ->
                     img
@@ -235,8 +228,9 @@ viewLogoBlock language manifest =
                 )
                 homepageLink
             ]
-        )
-        (logoUrl /= Nothing || homepageLink /= Nothing)
+
+    else
+        emptyHtml
 
 
 providerLogo : Provider -> Maybe Logo

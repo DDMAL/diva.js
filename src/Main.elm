@@ -109,7 +109,6 @@ init flags =
             LanguageCode flags.userLanguage
     in
     ( { acceptHeaders = flags.acceptHeaders
-      , canvasIndexMap = Dict.empty
       , collectionSidebarDrag = Nothing
       , collectionSidebarVisible = True
       , collectionSidebarWidth = 400
@@ -131,8 +130,8 @@ init flags =
       , pages = []
       , pendingThumbScroll = Nothing
       , rangeIndexMap = Dict.empty
-      , resourceResponse = ResourceNotRequested
-      , response = NotRequested
+      , resourceResponse = ResourceLoading
+      , response = Loading
       , rootElementId = flags.rootElementId
       , selectedIndex = Nothing
       , selectedRangeId = Nothing
@@ -142,14 +141,12 @@ init flags =
       , sidebarState = sidebarState
       , sidebarWidth = 320
       , thumbsInstantScroll = False
-      , tileSources = []
+      , hasTileSources = False
       , viewMode = OneUp
-      , zoom = 1
       , detectedLanguage = userLanguage
       }
     , Cmd.batch
         [ IIIF.requestResource ServerRespondedWithResource flags.acceptHeaders manifestUrl
-        , Task.perform (\_ -> SetResponseLoading) (Task.succeed ())
         , Task.perform (\viewport -> ViewportChanged (round viewport.viewport.width) (round viewport.viewport.height)) Dom.getViewport
         ]
     )
@@ -396,9 +393,6 @@ update msg model =
 
         ClientNotifiedScrollThumbs _ ->
             ( { model | thumbsInstantScroll = False }, Cmd.none )
-
-        SetResponseLoading ->
-            ( { model | resourceResponse = ResourceLoading, response = Loading }, Cmd.none )
 
         UserClickedThumbnail index ->
             let
@@ -730,8 +724,8 @@ update msg model =
             , Cmd.none
             )
 
-        UserChangedZoomLevel zoom ->
-            ( { model | zoom = zoom }, Cmd.none )
+        UserChangedZoomLevel _ ->
+            ( model, Cmd.none )
 
         ViewportChanged width _ ->
             let
@@ -871,8 +865,7 @@ handleManifestLoaded model manifest =
                 |> Maybe.withDefault Dict.empty
     in
     ( { model
-        | canvasIndexMap = canvasIndexMap
-        , filters = resetFilters
+        | filters = resetFilters
         , isViewerLoading = False
         , pages = pages
         , rangeIndexMap = rangeIndexMap
@@ -884,7 +877,7 @@ handleManifestLoaded model manifest =
             else
                 Just 0
         , shiftByOne = shiftByOne
-        , tileSources = tileSources
+        , hasTileSources = not (List.isEmpty tileSources)
         , viewMode = viewMode
       }
     , Cmd.batch

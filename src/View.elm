@@ -8,7 +8,7 @@ import IIIF.Presentation exposing (toLabel, toRequiredStatement)
 import Model exposing (Model, ResourceResponse(..), Response(..), currentManifest)
 import Msg exposing (Msg(..))
 import View.CollectionExplorer
-import View.Helpers exposing (viewIf, viewMaybe)
+import View.Helpers exposing (emptyHtml, viewIf, viewMaybe)
 import View.HtmlRenderer as HtmlRenderer
 import View.ManifestInfoModal
 import View.PageViewModal
@@ -29,11 +29,10 @@ view model =
                 , ( "is-fullscreen", model.fullscreen )
                 ]
             ]
-            [ Lazy.lazy viewManifestTitle
-                { showTitle = model.showTitle
-                , fullscreen = model.fullscreen
-                , title = manifestTitleFor model
-                }
+            [ Lazy.lazy3 viewManifestTitle
+                model.showTitle
+                model.fullscreen
+                (manifestTitleFor model)
             , div [ HA.class "diva-app-header" ]
                 [ viewToolbar model
                 ]
@@ -51,68 +50,51 @@ view model =
                         , ( "is-fullscreen", model.fullscreen )
                         ]
                     ]
-                    [ Lazy.lazy viewCanvas
-                        { fullscreen = model.fullscreen
-                        , isLoading = isCanvasLoading model
-                        , showCollectionSidebar = hasCollectionSidebar model
-                        , maybeStatus = maybeStatus
-                        }
+                    [ Lazy.lazy4 viewCanvas
+                        model.fullscreen
+                        (isCanvasLoading model)
+                        (hasCollectionSidebar model)
+                        maybeStatus
                     ]
                 , View.Sidebar.viewSidebarResizer model
                 , View.Sidebar.viewSidebarPanel model
                 ]
             , div [ HA.class "required-statement-dock" ]
-                [ Lazy.lazy viewRequiredStatement (requiredStatementTextFor model) ]
+                [ viewMaybe (Lazy.lazy viewRequiredStatement) (requiredStatementTextFor model) ]
             , View.PageViewModal.viewPageViewModal model
             , View.ManifestInfoModal.viewManifestInfoModal model
             ]
         ]
 
 
-viewManifestTitle :
-    { showTitle : Bool
-    , fullscreen : Bool
-    , title : String
-    }
-    -> Html Msg
-viewManifestTitle { showTitle, fullscreen, title } =
-    viewIf
-        (viewIf
-            (h1
-                [ classList
-                    [ ( "diva-app-title", True )
-                    , ( "is-fullscreen", fullscreen )
-                    ]
+viewManifestTitle : Bool -> Bool -> String -> Html Msg
+viewManifestTitle showTitle fullscreen title =
+    if showTitle && not (String.isEmpty title) then
+        h1
+            [ classList
+                [ ( "diva-app-title", True )
+                , ( "is-fullscreen", fullscreen )
                 ]
-                [ text title ]
-            )
-            (not (String.isEmpty title))
-        )
-        showTitle
+            ]
+            [ text title ]
+
+    else
+        emptyHtml
 
 
-viewRequiredStatement : Maybe String -> Html Msg
-viewRequiredStatement maybeValueText =
-    viewMaybe
-        (\valueText ->
-            viewIf
-                (div
-                    [ HA.class "required-statement" ]
-                    (HtmlRenderer.renderHtml valueText)
-                )
-                (not (String.isEmpty valueText))
-        )
-        maybeValueText
+viewRequiredStatement : String -> Html Msg
+viewRequiredStatement valueText =
+    if String.isEmpty valueText then
+        emptyHtml
+
+    else
+        div
+            [ HA.class "required-statement" ]
+            (HtmlRenderer.renderHtml valueText)
 
 
-viewCanvas :
-    { fullscreen : Bool
-    , isLoading : Bool
-    , showCollectionSidebar : Bool
-    , maybeStatus : Maybe ( String, String, Bool )
-    }
-    -> Html Msg
-viewCanvas { fullscreen, isLoading, showCollectionSidebar, maybeStatus } =
+viewCanvas : Bool -> Bool -> Bool -> Maybe ( String, String, Bool ) -> Html Msg
+viewCanvas fullscreen isLoading showCollectionSidebar maybeStatus =
     div [ HA.class "diva-canvas-wrapper" ]
         [ node "osd-viewer"
             [ classList
@@ -198,12 +180,12 @@ viewViewerStatusModal ( titleText, message, isError ) =
     div
         [ HA.class "viewer-status-overlay" ]
         [ div
-            [ classList [ ( "modal", True ), ( "is-narrow", True ) ] ]
+            [ HA.class "modal is-narrow" ]
             [ div
                 [ HA.class "modal-header" ]
                 [ div [ HA.class "modal-title" ] [ text titleText ] ]
             , div
-                [ classList [ ( "modal-body", True ), ( "is-no-sidebar", True ) ] ]
+                [ HA.class "modal-body is-no-sidebar" ]
                 [ div
                     [ classList [ ( "status", True ), ( "is-error", isError ) ] ]
                     [ text message ]
@@ -219,11 +201,11 @@ viewerStatus model =
             Just ( "Unable to load manifest", message, True )
 
         ResourceLoadedManifest _ ->
-            if List.isEmpty model.tileSources then
-                Just ( "Unable to display manifest", "No canvases found in this manifest.", False )
+            if model.hasTileSources then
+                Nothing
 
             else
-                Nothing
+                Just ( "Unable to display manifest", "No canvases found in this manifest.", False )
 
         ResourceLoadedCollection _ ->
             case model.response of
@@ -231,11 +213,11 @@ viewerStatus model =
                     Just ( "Unable to load manifest", message, True )
 
                 _ ->
-                    if List.isEmpty model.tileSources then
-                        Just ( "No Manifest Selected", "Select a manifest from the collection to view.", False )
+                    if model.hasTileSources then
+                        Nothing
 
                     else
-                        Nothing
+                        Just ( "No Manifest Selected", "Select a manifest from the collection to view.", False )
 
         _ ->
             Nothing

@@ -36,7 +36,7 @@ viewToolbar model =
                     , isFullscreen = model.fullscreen
                     }
                 ]
-            , div [ classList [ ( "canvas-toolbar-section", True ), ( "is-right", True ) ] ]
+            , div [ HA.class "canvas-toolbar-section is-right" ]
                 [ viewButton
                     { label = "Page View"
                     , icon = Icons.pageViewOpen

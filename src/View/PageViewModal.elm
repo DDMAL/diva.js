@@ -11,7 +11,7 @@ import Model exposing (Model, PageImage, ResourceResponse(..), Response(..), cur
 import Msg exposing (Msg(..))
 import Set
 import Utilities exposing (disabledIf)
-import View.Helpers exposing (viewButton, viewIf)
+import View.Helpers exposing (emptyHtml, viewButton)
 import View.Icons as Icons
 
 
@@ -63,8 +63,8 @@ type alias ChannelConfig =
 
 viewPageViewModal : Model -> Html Msg
 viewPageViewModal model =
-    viewIf
-        (div
+    if model.pageViewOpen then
+        div
             [ classList
                 [ ( "modal-overlay", True )
                 , ( "is-fullscreen", model.pageViewFullscreen )
@@ -81,8 +81,9 @@ viewPageViewModal model =
                 , viewModalBody model
                 ]
             ]
-        )
-        model.pageViewOpen
+
+    else
+        emptyHtml
 
 
 viewModalHeader : Model -> Html Msg
@@ -135,7 +136,7 @@ viewModalHeader model =
                         []
 
                     else
-                        [ div [ classList [ ( "modal-subtitle", True ), ( "is-muted", True ) ] ] [ text pageLabel ] ]
+                        [ div [ HA.class "modal-subtitle is-muted" ] [ text pageLabel ] ]
                    )
             )
         , div
@@ -943,7 +944,7 @@ viewToggleRangeRow : ToggleRangeRowConfig -> Html Msg
 viewToggleRangeRow config =
     div [ HA.class "filter-range-group" ]
         [ div [ HA.class "filter-range-header" ]
-            [ label [ classList [ ( "filter-toggle", True ), ( "is-inline", True ) ] ]
+            [ label [ HA.class "filter-toggle is-inline" ]
                 [ input
                     [ type_ "checkbox"
                     , checked config.checked
