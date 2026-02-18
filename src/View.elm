@@ -50,11 +50,12 @@ view model =
                         , ( "is-fullscreen", model.fullscreen )
                         ]
                     ]
-                    [ Lazy.lazy4 viewCanvas
+                    [ Lazy.lazy5 viewCanvas
                         model.fullscreen
                         (isCanvasLoading model)
                         (hasCollectionSidebar model)
                         maybeStatus
+                        (zoomPercentageLabel model)
                     ]
                 , View.Sidebar.viewSidebarResizer model
                 , View.Sidebar.viewSidebarPanel model
@@ -194,12 +195,14 @@ viewViewerStatusModal ( titleText, message, isError ) =
         ]
 
 
+viewZoomIndicator : String -> Html Msg
+viewZoomIndicator zoomText =
+    div [ HA.class "viewer-zoom-indicator" ] [ text zoomText ]
+
+
 viewerStatus : Model -> Maybe ( String, String, Bool )
 viewerStatus model =
     case model.resourceResponse of
-        ResourceFailed message ->
-            Just ( "Unable to load manifest", message, True )
-
         ResourceLoadedManifest _ ->
             if model.hasTileSources then
                 Nothing

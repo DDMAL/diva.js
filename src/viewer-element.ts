@@ -35,6 +35,7 @@ class OsdViewer extends HTMLElement
     private readonly handleWheelBound: (event: WheelEvent) => void;
     private readonly handleDoubleClickBound: (event: MouseEvent) => void;
     private readonly handleViewportChangeBound: () => void;
+    private readonly handleAnimationFinishBound: () => void;
     private scrollbarTrack: HTMLDivElement|null = null;
     private scrollbarThumb: HTMLDivElement|null = null;
     private isScrollbarDragging = false;
@@ -47,6 +48,7 @@ class OsdViewer extends HTMLElement
         this.handleWheelBound = this.handleWheel.bind(this);
         this.handleDoubleClickBound = this.handleDoubleClick.bind(this);
         this.handleViewportChangeBound = this.handleViewportChange.bind(this);
+        this.handleAnimationFinishBound = this.handleAnimationFinish.bind(this);
     }
 
     connectedCallback(): void
@@ -140,7 +142,7 @@ class OsdViewer extends HTMLElement
             viewer.addHandler("zoom", this.handleViewportChangeBound);
             viewer.addHandler("pan", () => this.updateScrollbar());
             viewer.addHandler("zoom", () => this.updateScrollbar());
-            viewer.addHandler("animation-finish", () => this.updateScrollbar());
+            viewer.addHandler("animation-finish", this.handleAnimationFinishBound);
         }
     }
 
@@ -221,9 +223,14 @@ class OsdViewer extends HTMLElement
         }
         this.maybeLoadMore(viewport);
         this.maybeEmitPageChange(viewport);
-        this.maybeEmitZoomChange(viewport);
         this.clampTop(viewport);
         this.clampBottom(viewport);
+    }
+
+    private handleAnimationFinish(): void
+    {
+        this.updateScrollbar();
+        this.maybeEmitZoomChange();
     }
 
     private maybeLoadMore(viewport?: OpenSeadragonType.Viewport): void

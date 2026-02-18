@@ -68,6 +68,8 @@ type alias Model =
     { rootElementId : String
     , manifestUrl : String
     , acceptHeaders : List String
+    , initialZoom : Maybe Float
+    , currentZoom : Maybe Float
     , hasTileSources : Bool
     , pages : List Page
     , selectedIndex : Maybe Int
