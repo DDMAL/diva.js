@@ -31,10 +31,6 @@ viewCollectionPanel model collectionState =
 
         labelText =
             extractLabelFromLanguageMap model.detectedLanguage collection.label
-
-        summaryText =
-            collection.summary
-                |> Maybe.map (extractLabelFromLanguageMap model.detectedLanguage)
     in
     div
         [ classList
@@ -55,9 +51,9 @@ viewCollectionPanel model collectionState =
             [ div [ HA.class "collection-title" ] [ text labelText ]
             , viewMaybe
                 (\summary ->
-                    div [ HA.class "collection-summary" ] [ text summary ]
+                    div [ HA.class "collection-summary" ] [ text (extractLabelFromLanguageMap model.detectedLanguage summary) ]
                 )
-                summaryText
+                collection.summary
             ]
         , div
             [ HA.class "sidebar-content" ]
