@@ -1,19 +1,4 @@
-module Utilities exposing (disabledIf, find, isJust, isNothing)
-
-
-isJust : Maybe a -> Bool
-isJust maybeVal =
-    case maybeVal of
-        Just _ ->
-            True
-
-        Nothing ->
-            False
-
-
-isNothing : Maybe a -> Bool
-isNothing maybeVal =
-    isJust maybeVal |> not
+module Utilities exposing (disabledIf, find, isNothing)
 
 
 disabledIf : Bool -> msg -> Maybe msg
@@ -44,3 +29,18 @@ find predicate list =
 
             else
                 find predicate rest
+
+
+isNothing : Maybe a -> Bool
+isNothing maybeVal =
+    isJust maybeVal |> not
+
+
+isJust : Maybe a -> Bool
+isJust maybeVal =
+    case maybeVal of
+        Just _ ->
+            True
+
+        Nothing ->
+            False

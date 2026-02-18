@@ -23,6 +23,97 @@ import Json.Decode as Decode
 import Json.Encode as Encode
 
 
+type FilterFloatValue
+    = FloatColourReplaceBlend
+    | FloatContrast
+    | FloatGamma
+    | FloatNormalizeStrength
+    | FloatPseudoColourBlue
+    | FloatPseudoColourGreen
+    | FloatPseudoColourRed
+    | FloatUnsharpAmount
+
+
+type FilterIntValue
+    = IntAdaptiveOffset
+    | IntAdaptiveWindow
+    | IntAltRedGamma
+    | IntAltRedSigmoid
+    | IntAltRedVibrance
+    | IntAltRedHue
+    | IntAltRedHueWindow
+    | IntAltGreenGamma
+    | IntAltGreenSigmoid
+    | IntAltGreenHue
+    | IntAltGreenHueWindow
+    | IntAltGreenVibrance
+    | IntAltBlueGamma
+    | IntAltBlueSigmoid
+    | IntAltBlueHue
+    | IntAltBlueHueWindow
+    | IntAltBlueVibrance
+    | IntBrightness
+    | IntCcBlue
+    | IntCcGreen
+    | IntCcRed
+    | IntColourmapCenter
+    | IntColourReplaceTolerance
+    | IntHue
+    | IntMorphKernel
+    | IntRotation
+    | IntSaturation
+    | IntThreshold
+    | IntVibrance
+
+
+type FilterStringValue
+    = StringColourmapPreset
+    | StringColourReplaceSource
+    | StringColourReplaceTarget
+    | StringConvolutionPreset
+    | StringMorphOperation
+    | StringPcaMode
+    | StringPseudoColourMode
+
+
+type FilterToggle
+    = ToggleAdaptive
+    | ToggleAltBlueGamma
+    | ToggleAltBlueHue
+    | ToggleAltBlueSigmoid
+    | ToggleAltBlueVibrance
+    | ToggleAltGreenGamma
+    | ToggleAltGreenHue
+    | ToggleAltGreenSigmoid
+    | ToggleAltGreenVibrance
+    | ToggleAltRedGamma
+    | ToggleAltRedHue
+    | ToggleAltRedSigmoid
+    | ToggleAltRedVibrance
+    | ToggleBrightness
+    | ToggleCcBlue
+    | ToggleCcGreen
+    | ToggleCcRed
+    | ToggleColourmap
+    | ToggleColourReplace
+    | ToggleColourReplacePreserveLum
+    | ToggleContrast
+    | ToggleConvolution
+    | ToggleFlip
+    | ToggleGamma
+    | ToggleGrayscale
+    | ToggleHue
+    | ToggleInvert
+    | ToggleMorph
+    | ToggleNormalize
+    | TogglePca
+    | TogglePseudoColour
+    | ToggleSaturation
+    | ToggleThreshold
+    | ToggleUnsharp
+    | ToggleVibrance
+
+
 type alias Filters =
     { rotation : Int
     , flip : Bool
@@ -103,6 +194,305 @@ type alias Filters =
     , altBlueVibranceEnabled : Bool
     , altBlueVibrance : Int
     , altRedVibrance : Int
+    }
+
+
+type alias FloatFilterConfig =
+    { min : Float
+    , max : Float
+    , get : Filters -> Float
+    , set : Float -> Filters -> Filters
+    }
+
+
+type alias IntFilterConfig =
+    { min : Int
+    , max : Int
+    , get : Filters -> Int
+    , set : Int -> Filters -> Filters
+    , validate : Maybe (Int -> Int)
+    }
+
+
+type alias StringFilterConfig =
+    { get : Filters -> String
+    , set : String -> Filters -> Filters
+    , validate : String -> Bool
+    }
+
+
+applyFilterToggle : FilterToggle -> Bool -> Filters -> Filters
+applyFilterToggle toggle enabled filters =
+    case toggle of
+        ToggleAdaptive ->
+            { filters | adaptiveEnabled = enabled }
+
+        ToggleAltBlueGamma ->
+            { filters | altBlueGammaEnabled = enabled }
+
+        ToggleAltBlueHue ->
+            { filters | altBlueHueEnabled = enabled }
+
+        ToggleAltBlueSigmoid ->
+            { filters | altBlueSigmoidEnabled = enabled }
+
+        ToggleAltBlueVibrance ->
+            { filters | altBlueVibranceEnabled = enabled }
+
+        ToggleAltGreenGamma ->
+            { filters | altGreenGammaEnabled = enabled }
+
+        ToggleAltGreenHue ->
+            { filters | altGreenHueEnabled = enabled }
+
+        ToggleAltGreenSigmoid ->
+            { filters | altGreenSigmoidEnabled = enabled }
+
+        ToggleAltGreenVibrance ->
+            { filters | altGreenVibranceEnabled = enabled }
+
+        ToggleAltRedGamma ->
+            { filters | altRedGammaEnabled = enabled }
+
+        ToggleAltRedHue ->
+            { filters | altRedHueEnabled = enabled }
+
+        ToggleAltRedSigmoid ->
+            { filters | altRedSigmoidEnabled = enabled }
+
+        ToggleAltRedVibrance ->
+            { filters | altRedVibranceEnabled = enabled }
+
+        ToggleBrightness ->
+            { filters | brightnessEnabled = enabled }
+
+        ToggleCcBlue ->
+            { filters | ccBlueEnabled = enabled }
+
+        ToggleCcGreen ->
+            { filters | ccGreenEnabled = enabled }
+
+        ToggleCcRed ->
+            { filters | ccRedEnabled = enabled }
+
+        ToggleColourmap ->
+            { filters | colourmapEnabled = enabled }
+
+        ToggleColourReplace ->
+            { filters | colourReplaceEnabled = enabled }
+
+        ToggleColourReplacePreserveLum ->
+            { filters | colourReplacePreserveLum = enabled }
+
+        ToggleContrast ->
+            { filters | contrastEnabled = enabled }
+
+        ToggleConvolution ->
+            { filters | convolutionEnabled = enabled }
+
+        ToggleFlip ->
+            { filters | flip = enabled }
+
+        ToggleGamma ->
+            { filters | gammaEnabled = enabled }
+
+        ToggleGrayscale ->
+            { filters | grayscale = enabled }
+
+        ToggleHue ->
+            { filters | hueEnabled = enabled }
+
+        ToggleInvert ->
+            { filters | invert = enabled }
+
+        ToggleMorph ->
+            { filters | morphEnabled = enabled }
+
+        ToggleNormalize ->
+            { filters | normalizeEnabled = enabled }
+
+        TogglePca ->
+            { filters | pcaEnabled = enabled }
+
+        TogglePseudoColour ->
+            { filters | pseudoColourEnabled = enabled }
+
+        ToggleSaturation ->
+            { filters | saturationEnabled = enabled }
+
+        ToggleThreshold ->
+            { filters | thresholdEnabled = enabled }
+
+        ToggleUnsharp ->
+            { filters | unsharpEnabled = enabled }
+
+        ToggleVibrance ->
+            { filters | vibranceEnabled = enabled }
+
+
+applyFloatFilter : FilterFloatValue -> String -> Filters -> Filters
+applyFloatFilter filterValue raw filters =
+    let
+        config =
+            floatFilterConfig filterValue
+
+        parsed =
+            String.toFloat raw
+
+        nextValue =
+            Maybe.map (clamp config.min config.max) parsed
+                |> Maybe.withDefault (config.get filters)
+    in
+    config.set nextValue filters
+
+
+applyIntFilter : FilterIntValue -> String -> Filters -> Filters
+applyIntFilter filterValue raw filters =
+    let
+        config =
+            intFilterConfig filterValue
+
+        parsed =
+            String.toInt raw
+
+        nextValue =
+            case parsed of
+                Just v ->
+                    let
+                        clamped =
+                            clamp config.min config.max v
+                    in
+                    case config.validate of
+                        Just validator ->
+                            validator clamped
+
+                        Nothing ->
+                            clamped
+
+                Nothing ->
+                    config.get filters
+    in
+    config.set nextValue filters
+
+
+applyStringFilter : FilterStringValue -> String -> Filters -> Filters
+applyStringFilter filterValue raw filters =
+    let
+        config =
+            stringFilterConfig filterValue
+
+        nextValue =
+            if config.validate raw then
+                raw
+
+            else
+                config.get filters
+    in
+    config.set nextValue filters
+
+
+decodeFilterJson : String -> Result String Filters
+decodeFilterJson raw =
+    case Decode.decodeString (Decode.dict Decode.value) raw of
+        Ok dict ->
+            Ok (applyFilterPatch dict)
+
+        Err err ->
+            Err (Decode.errorToString err)
+
+
+encodeActiveFilters : Filters -> String
+encodeActiveFilters filters =
+    let
+        activeFields =
+            []
+                |> addIf (filters.rotation /= 0) "rotation" (Encode.int filters.rotation)
+                |> addIf filters.flip "flip" (Encode.bool True)
+                |> addIf filters.grayscale "grayscale" (Encode.bool True)
+                |> addIf filters.invert "invert" (Encode.bool True)
+                |> addIf filters.thresholdEnabled "threshold" (Encode.int filters.threshold)
+                |> addIf filters.brightnessEnabled "brightness" (Encode.int filters.brightness)
+                |> addIf filters.contrastEnabled "contrast" (Encode.float filters.contrast)
+                |> addIf filters.gammaEnabled "gamma" (Encode.float filters.gamma)
+                |> addIf filters.saturationEnabled "saturation" (Encode.int filters.saturation)
+                |> addIf filters.vibranceEnabled "vibrance" (Encode.int filters.vibrance)
+                |> addIf filters.hueEnabled "hue" (Encode.int filters.hue)
+                |> addIf filters.ccRedEnabled "ccRed" (Encode.int filters.ccRed)
+                |> addIf filters.ccGreenEnabled "ccGreen" (Encode.int filters.ccGreen)
+                |> addIf filters.ccBlueEnabled "ccBlue" (Encode.int filters.ccBlue)
+                |> addIf filters.morphEnabled "morphOperation" (Encode.string filters.morphOperation)
+                |> addIf filters.morphEnabled "morphKernel" (Encode.int filters.morphKernel)
+                |> addIf filters.convolutionEnabled "convolutionPreset" (Encode.string filters.convolutionPreset)
+                |> addIf filters.colourmapEnabled "colourmapPreset" (Encode.string filters.colourmapPreset)
+                |> addIf filters.colourmapEnabled "colourmapCenter" (Encode.int filters.colourmapCenter)
+                |> addIf filters.pseudoColourEnabled "pseudoColourMode" (Encode.string filters.pseudoColourMode)
+                |> addIf filters.pseudoColourEnabled "pseudoColourRed" (Encode.float filters.pseudoColourRed)
+                |> addIf filters.pseudoColourEnabled "pseudoColourGreen" (Encode.float filters.pseudoColourGreen)
+                |> addIf filters.pseudoColourEnabled "pseudoColourBlue" (Encode.float filters.pseudoColourBlue)
+                |> addIf filters.pcaEnabled "pcaMode" (Encode.string filters.pcaMode)
+                |> addIf filters.colourReplaceEnabled "colourReplaceSource" (Encode.string filters.colourReplaceSource)
+                |> addIf filters.colourReplaceEnabled "colourReplaceTarget" (Encode.string filters.colourReplaceTarget)
+                |> addIf filters.colourReplaceEnabled "colourReplaceTolerance" (Encode.int filters.colourReplaceTolerance)
+                |> addIf filters.colourReplaceEnabled "colourReplaceBlend" (Encode.float filters.colourReplaceBlend)
+                |> addIf filters.colourReplaceEnabled "colourReplacePreserveLum" (Encode.bool filters.colourReplacePreserveLum)
+                |> addIf filters.unsharpEnabled "unsharpAmount" (Encode.float filters.unsharpAmount)
+                |> addIf filters.normalizeEnabled "normalizeStrength" (Encode.float filters.normalizeStrength)
+                |> addIf filters.adaptiveEnabled "adaptiveWindow" (Encode.int filters.adaptiveWindow)
+                |> addIf filters.adaptiveEnabled "adaptiveOffset" (Encode.int filters.adaptiveOffset)
+                |> addIf filters.altRedGammaEnabled "altRedGamma" (Encode.int filters.altRedGamma)
+                |> addIf filters.altRedSigmoidEnabled "altRedSigmoid" (Encode.int filters.altRedSigmoid)
+                |> addIf filters.altRedHueEnabled "altRedHue" (Encode.int filters.altRedHue)
+                |> addIf filters.altRedHueEnabled "altRedHueWindow" (Encode.int filters.altRedHueWindow)
+                |> addIf filters.altRedVibranceEnabled "altRedVibrance" (Encode.int filters.altRedVibrance)
+                |> addIf filters.altGreenGammaEnabled "altGreenGamma" (Encode.int filters.altGreenGamma)
+                |> addIf filters.altGreenSigmoidEnabled "altGreenSigmoid" (Encode.int filters.altGreenSigmoid)
+                |> addIf filters.altGreenHueEnabled "altGreenHue" (Encode.int filters.altGreenHue)
+                |> addIf filters.altGreenHueEnabled "altGreenHueWindow" (Encode.int filters.altGreenHueWindow)
+                |> addIf filters.altGreenVibranceEnabled "altGreenVibrance" (Encode.int filters.altGreenVibrance)
+                |> addIf filters.altBlueGammaEnabled "altBlueGamma" (Encode.int filters.altBlueGamma)
+                |> addIf filters.altBlueSigmoidEnabled "altBlueSigmoid" (Encode.int filters.altBlueSigmoid)
+                |> addIf filters.altBlueHueEnabled "altBlueHue" (Encode.int filters.altBlueHue)
+                |> addIf filters.altBlueHueEnabled "altBlueHueWindow" (Encode.int filters.altBlueHueWindow)
+                |> addIf filters.altBlueVibranceEnabled "altBlueVibrance" (Encode.int filters.altBlueVibrance)
+    in
+    Encode.object activeFields
+        |> Encode.encode 2
+
+
+
+-- FILTER TOGGLE TYPES
+
+
+resetAltColourAdjust : Filters -> Filters
+resetAltColourAdjust filters =
+    { filters
+        | altRedGamma = 0
+        , altRedGammaEnabled = False
+        , altRedSigmoid = 0
+        , altRedSigmoidEnabled = False
+        , altRedHue = 0
+        , altRedHueEnabled = False
+        , altRedHueWindow = 8
+        , altRedVibranceEnabled = False
+        , altGreenGamma = 0
+        , altGreenGammaEnabled = False
+        , altGreenSigmoid = 0
+        , altGreenSigmoidEnabled = False
+        , altGreenHue = 0
+        , altGreenHueEnabled = False
+        , altGreenHueWindow = 8
+        , altGreenVibranceEnabled = False
+        , altGreenVibrance = 0
+        , altBlueGamma = 0
+        , altBlueGammaEnabled = False
+        , altBlueSigmoid = 0
+        , altBlueSigmoidEnabled = False
+        , altBlueHue = 0
+        , altBlueHueEnabled = False
+        , altBlueHueWindow = 8
+        , altBlueVibranceEnabled = False
+        , altBlueVibrance = 0
+        , altRedVibrance = 0
     }
 
 
@@ -190,110 +580,22 @@ resetFilters =
     }
 
 
+
+-- FILTER INT VALUE TYPES
+
+
 updateFilters : (Filters -> Filters) -> { model | filters : Filters } -> { model | filters : Filters }
 updateFilters updater model =
     { model | filters = updater model.filters }
 
 
-resetAltColourAdjust : Filters -> Filters
-resetAltColourAdjust filters =
-    { filters
-        | altRedGamma = 0
-        , altRedGammaEnabled = False
-        , altRedSigmoid = 0
-        , altRedSigmoidEnabled = False
-        , altRedHue = 0
-        , altRedHueEnabled = False
-        , altRedHueWindow = 8
-        , altRedVibranceEnabled = False
-        , altGreenGamma = 0
-        , altGreenGammaEnabled = False
-        , altGreenSigmoid = 0
-        , altGreenSigmoidEnabled = False
-        , altGreenHue = 0
-        , altGreenHueEnabled = False
-        , altGreenHueWindow = 8
-        , altGreenVibranceEnabled = False
-        , altGreenVibrance = 0
-        , altBlueGamma = 0
-        , altBlueGammaEnabled = False
-        , altBlueSigmoid = 0
-        , altBlueSigmoidEnabled = False
-        , altBlueHue = 0
-        , altBlueHueEnabled = False
-        , altBlueHueWindow = 8
-        , altBlueVibranceEnabled = False
-        , altBlueVibrance = 0
-        , altRedVibrance = 0
-    }
+addIf : Bool -> String -> Encode.Value -> List ( String, Encode.Value ) -> List ( String, Encode.Value )
+addIf condition key value acc =
+    if condition then
+        ( key, value ) :: acc
 
-
-encodeActiveFilters : Filters -> String
-encodeActiveFilters filters =
-    let
-        activeFields =
-            []
-                |> addIf (filters.rotation /= 0) "rotation" (Encode.int filters.rotation)
-                |> addIf filters.flip "flip" (Encode.bool True)
-                |> addIf filters.grayscale "grayscale" (Encode.bool True)
-                |> addIf filters.invert "invert" (Encode.bool True)
-                |> addIf filters.thresholdEnabled "threshold" (Encode.int filters.threshold)
-                |> addIf filters.brightnessEnabled "brightness" (Encode.int filters.brightness)
-                |> addIf filters.contrastEnabled "contrast" (Encode.float filters.contrast)
-                |> addIf filters.gammaEnabled "gamma" (Encode.float filters.gamma)
-                |> addIf filters.saturationEnabled "saturation" (Encode.int filters.saturation)
-                |> addIf filters.vibranceEnabled "vibrance" (Encode.int filters.vibrance)
-                |> addIf filters.hueEnabled "hue" (Encode.int filters.hue)
-                |> addIf filters.ccRedEnabled "ccRed" (Encode.int filters.ccRed)
-                |> addIf filters.ccGreenEnabled "ccGreen" (Encode.int filters.ccGreen)
-                |> addIf filters.ccBlueEnabled "ccBlue" (Encode.int filters.ccBlue)
-                |> addIf filters.morphEnabled "morphOperation" (Encode.string filters.morphOperation)
-                |> addIf filters.morphEnabled "morphKernel" (Encode.int filters.morphKernel)
-                |> addIf filters.convolutionEnabled "convolutionPreset" (Encode.string filters.convolutionPreset)
-                |> addIf filters.colourmapEnabled "colourmapPreset" (Encode.string filters.colourmapPreset)
-                |> addIf filters.colourmapEnabled "colourmapCenter" (Encode.int filters.colourmapCenter)
-                |> addIf filters.pseudoColourEnabled "pseudoColourMode" (Encode.string filters.pseudoColourMode)
-                |> addIf filters.pseudoColourEnabled "pseudoColourRed" (Encode.float filters.pseudoColourRed)
-                |> addIf filters.pseudoColourEnabled "pseudoColourGreen" (Encode.float filters.pseudoColourGreen)
-                |> addIf filters.pseudoColourEnabled "pseudoColourBlue" (Encode.float filters.pseudoColourBlue)
-                |> addIf filters.pcaEnabled "pcaMode" (Encode.string filters.pcaMode)
-                |> addIf filters.colourReplaceEnabled "colourReplaceSource" (Encode.string filters.colourReplaceSource)
-                |> addIf filters.colourReplaceEnabled "colourReplaceTarget" (Encode.string filters.colourReplaceTarget)
-                |> addIf filters.colourReplaceEnabled "colourReplaceTolerance" (Encode.int filters.colourReplaceTolerance)
-                |> addIf filters.colourReplaceEnabled "colourReplaceBlend" (Encode.float filters.colourReplaceBlend)
-                |> addIf filters.colourReplaceEnabled "colourReplacePreserveLum" (Encode.bool filters.colourReplacePreserveLum)
-                |> addIf filters.unsharpEnabled "unsharpAmount" (Encode.float filters.unsharpAmount)
-                |> addIf filters.normalizeEnabled "normalizeStrength" (Encode.float filters.normalizeStrength)
-                |> addIf filters.adaptiveEnabled "adaptiveWindow" (Encode.int filters.adaptiveWindow)
-                |> addIf filters.adaptiveEnabled "adaptiveOffset" (Encode.int filters.adaptiveOffset)
-                |> addIf filters.altRedGammaEnabled "altRedGamma" (Encode.int filters.altRedGamma)
-                |> addIf filters.altRedSigmoidEnabled "altRedSigmoid" (Encode.int filters.altRedSigmoid)
-                |> addIf filters.altRedHueEnabled "altRedHue" (Encode.int filters.altRedHue)
-                |> addIf filters.altRedHueEnabled "altRedHueWindow" (Encode.int filters.altRedHueWindow)
-                |> addIf filters.altRedVibranceEnabled "altRedVibrance" (Encode.int filters.altRedVibrance)
-                |> addIf filters.altGreenGammaEnabled "altGreenGamma" (Encode.int filters.altGreenGamma)
-                |> addIf filters.altGreenSigmoidEnabled "altGreenSigmoid" (Encode.int filters.altGreenSigmoid)
-                |> addIf filters.altGreenHueEnabled "altGreenHue" (Encode.int filters.altGreenHue)
-                |> addIf filters.altGreenHueEnabled "altGreenHueWindow" (Encode.int filters.altGreenHueWindow)
-                |> addIf filters.altGreenVibranceEnabled "altGreenVibrance" (Encode.int filters.altGreenVibrance)
-                |> addIf filters.altBlueGammaEnabled "altBlueGamma" (Encode.int filters.altBlueGamma)
-                |> addIf filters.altBlueSigmoidEnabled "altBlueSigmoid" (Encode.int filters.altBlueSigmoid)
-                |> addIf filters.altBlueHueEnabled "altBlueHue" (Encode.int filters.altBlueHue)
-                |> addIf filters.altBlueHueEnabled "altBlueHueWindow" (Encode.int filters.altBlueHueWindow)
-                |> addIf filters.altBlueVibranceEnabled "altBlueVibrance" (Encode.int filters.altBlueVibrance)
-    in
-    Encode.object activeFields
-        |> Encode.encode 2
-
-
-decodeFilterJson : String -> Result String Filters
-decodeFilterJson raw =
-    case Decode.decodeString (Decode.dict Decode.value) raw of
-        Ok dict ->
-            Ok (applyFilterPatch dict)
-
-        Err err ->
-            Err (Decode.errorToString err)
+    else
+        acc
 
 
 applyFilterPatch : Dict String Decode.Value -> Filters
@@ -497,9 +799,19 @@ applyFilterPatch dict =
         |> applyMaybe altBlueVibrance (\v f -> { f | altBlueVibranceEnabled = True, altBlueVibrance = v })
 
 
-decodeInt : String -> Dict String Decode.Value -> Maybe Int
-decodeInt key dict =
-    decodeMaybe Decode.int key dict
+applyMaybe : Maybe a -> (a -> Filters -> Filters) -> Filters -> Filters
+applyMaybe maybeValue updater filters =
+    case maybeValue of
+        Just value ->
+            updater value filters
+
+        Nothing ->
+            filters
+
+
+decodeBool : String -> Dict String Decode.Value -> Maybe Bool
+decodeBool key dict =
+    decodeMaybe Decode.bool key dict
 
 
 decodeFloat : String -> Dict String Decode.Value -> Maybe Float
@@ -514,14 +826,13 @@ decodeFloat key dict =
         dict
 
 
-decodeBool : String -> Dict String Decode.Value -> Maybe Bool
-decodeBool key dict =
-    decodeMaybe Decode.bool key dict
+
+-- FILTER FLOAT VALUE TYPES
 
 
-decodeString : String -> Dict String Decode.Value -> Maybe String
-decodeString key dict =
-    decodeMaybe Decode.string key dict
+decodeInt : String -> Dict String Decode.Value -> Maybe Int
+decodeInt key dict =
+    decodeMaybe Decode.int key dict
 
 
 decodeMaybe : Decode.Decoder a -> String -> Dict String Decode.Value -> Maybe a
@@ -530,219 +841,50 @@ decodeMaybe decoder key dict =
         |> Maybe.andThen (\value -> Decode.decodeValue decoder value |> Result.toMaybe)
 
 
-addIf : Bool -> String -> Encode.Value -> List ( String, Encode.Value ) -> List ( String, Encode.Value )
-addIf condition key value acc =
-    if condition then
-        ( key, value ) :: acc
+decodeString : String -> Dict String Decode.Value -> Maybe String
+decodeString key dict =
+    decodeMaybe Decode.string key dict
+
+
+ensureOdd : Int -> Int
+ensureOdd v =
+    if modBy 2 v == 0 then
+        v + 1
 
     else
-        acc
-
-
-applyMaybe : Maybe a -> (a -> Filters -> Filters) -> Filters -> Filters
-applyMaybe maybeValue updater filters =
-    case maybeValue of
-        Just value ->
-            updater value filters
-
-        Nothing ->
-            filters
+        v
 
 
 
--- FILTER TOGGLE TYPES
+-- FILTER STRING VALUE TYPES
 
 
-type FilterToggle
-    = ToggleAdaptive
-    | ToggleAltBlueGamma
-    | ToggleAltBlueHue
-    | ToggleAltBlueSigmoid
-    | ToggleAltBlueVibrance
-    | ToggleAltGreenGamma
-    | ToggleAltGreenHue
-    | ToggleAltGreenSigmoid
-    | ToggleAltGreenVibrance
-    | ToggleAltRedGamma
-    | ToggleAltRedHue
-    | ToggleAltRedSigmoid
-    | ToggleAltRedVibrance
-    | ToggleBrightness
-    | ToggleCcBlue
-    | ToggleCcGreen
-    | ToggleCcRed
-    | ToggleColourmap
-    | ToggleColourReplace
-    | ToggleColourReplacePreserveLum
-    | ToggleContrast
-    | ToggleConvolution
-    | ToggleFlip
-    | ToggleGamma
-    | ToggleGrayscale
-    | ToggleHue
-    | ToggleInvert
-    | ToggleMorph
-    | ToggleNormalize
-    | TogglePca
-    | TogglePseudoColour
-    | ToggleSaturation
-    | ToggleThreshold
-    | ToggleUnsharp
-    | ToggleVibrance
+floatFilterConfig : FilterFloatValue -> FloatFilterConfig
+floatFilterConfig value =
+    case value of
+        FloatColourReplaceBlend ->
+            { min = 0, max = 1, get = .colourReplaceBlend, set = \v f -> { f | colourReplaceBlend = v } }
 
+        FloatContrast ->
+            { min = 0, max = 4, get = .contrast, set = \v f -> { f | contrast = v } }
 
-applyFilterToggle : FilterToggle -> Bool -> Filters -> Filters
-applyFilterToggle toggle enabled filters =
-    case toggle of
-        ToggleAdaptive ->
-            { filters | adaptiveEnabled = enabled }
+        FloatGamma ->
+            { min = 0.1, max = 4, get = .gamma, set = \v f -> { f | gamma = v } }
 
-        ToggleAltBlueGamma ->
-            { filters | altBlueGammaEnabled = enabled }
+        FloatNormalizeStrength ->
+            { min = 0, max = 2, get = .normalizeStrength, set = \v f -> { f | normalizeStrength = v } }
 
-        ToggleAltBlueHue ->
-            { filters | altBlueHueEnabled = enabled }
+        FloatPseudoColourBlue ->
+            { min = 0, max = 2, get = .pseudoColourBlue, set = \v f -> { f | pseudoColourBlue = v } }
 
-        ToggleAltBlueSigmoid ->
-            { filters | altBlueSigmoidEnabled = enabled }
+        FloatPseudoColourGreen ->
+            { min = 0, max = 2, get = .pseudoColourGreen, set = \v f -> { f | pseudoColourGreen = v } }
 
-        ToggleAltBlueVibrance ->
-            { filters | altBlueVibranceEnabled = enabled }
+        FloatPseudoColourRed ->
+            { min = 0, max = 2, get = .pseudoColourRed, set = \v f -> { f | pseudoColourRed = v } }
 
-        ToggleAltGreenGamma ->
-            { filters | altGreenGammaEnabled = enabled }
-
-        ToggleAltGreenHue ->
-            { filters | altGreenHueEnabled = enabled }
-
-        ToggleAltGreenSigmoid ->
-            { filters | altGreenSigmoidEnabled = enabled }
-
-        ToggleAltGreenVibrance ->
-            { filters | altGreenVibranceEnabled = enabled }
-
-        ToggleAltRedGamma ->
-            { filters | altRedGammaEnabled = enabled }
-
-        ToggleAltRedHue ->
-            { filters | altRedHueEnabled = enabled }
-
-        ToggleAltRedSigmoid ->
-            { filters | altRedSigmoidEnabled = enabled }
-
-        ToggleAltRedVibrance ->
-            { filters | altRedVibranceEnabled = enabled }
-
-        ToggleBrightness ->
-            { filters | brightnessEnabled = enabled }
-
-        ToggleCcBlue ->
-            { filters | ccBlueEnabled = enabled }
-
-        ToggleCcGreen ->
-            { filters | ccGreenEnabled = enabled }
-
-        ToggleCcRed ->
-            { filters | ccRedEnabled = enabled }
-
-        ToggleColourmap ->
-            { filters | colourmapEnabled = enabled }
-
-        ToggleColourReplace ->
-            { filters | colourReplaceEnabled = enabled }
-
-        ToggleColourReplacePreserveLum ->
-            { filters | colourReplacePreserveLum = enabled }
-
-        ToggleContrast ->
-            { filters | contrastEnabled = enabled }
-
-        ToggleConvolution ->
-            { filters | convolutionEnabled = enabled }
-
-        ToggleFlip ->
-            { filters | flip = enabled }
-
-        ToggleGamma ->
-            { filters | gammaEnabled = enabled }
-
-        ToggleGrayscale ->
-            { filters | grayscale = enabled }
-
-        ToggleHue ->
-            { filters | hueEnabled = enabled }
-
-        ToggleInvert ->
-            { filters | invert = enabled }
-
-        ToggleMorph ->
-            { filters | morphEnabled = enabled }
-
-        ToggleNormalize ->
-            { filters | normalizeEnabled = enabled }
-
-        TogglePca ->
-            { filters | pcaEnabled = enabled }
-
-        TogglePseudoColour ->
-            { filters | pseudoColourEnabled = enabled }
-
-        ToggleSaturation ->
-            { filters | saturationEnabled = enabled }
-
-        ToggleThreshold ->
-            { filters | thresholdEnabled = enabled }
-
-        ToggleUnsharp ->
-            { filters | unsharpEnabled = enabled }
-
-        ToggleVibrance ->
-            { filters | vibranceEnabled = enabled }
-
-
-
--- FILTER INT VALUE TYPES
-
-
-type FilterIntValue
-    = IntAdaptiveOffset
-    | IntAdaptiveWindow
-    | IntAltRedGamma
-    | IntAltRedSigmoid
-    | IntAltRedVibrance
-    | IntAltRedHue
-    | IntAltRedHueWindow
-    | IntAltGreenGamma
-    | IntAltGreenSigmoid
-    | IntAltGreenHue
-    | IntAltGreenHueWindow
-    | IntAltGreenVibrance
-    | IntAltBlueGamma
-    | IntAltBlueSigmoid
-    | IntAltBlueHue
-    | IntAltBlueHueWindow
-    | IntAltBlueVibrance
-    | IntBrightness
-    | IntCcBlue
-    | IntCcGreen
-    | IntCcRed
-    | IntColourmapCenter
-    | IntColourReplaceTolerance
-    | IntHue
-    | IntMorphKernel
-    | IntRotation
-    | IntSaturation
-    | IntThreshold
-    | IntVibrance
-
-
-type alias IntFilterConfig =
-    { min : Int
-    , max : Int
-    , get : Filters -> Int
-    , set : Int -> Filters -> Filters
-    , validate : Maybe (Int -> Int)
-    }
+        FloatUnsharpAmount ->
+            { min = 0, max = 3, get = .unsharpAmount, set = \v f -> { f | unsharpAmount = v } }
 
 
 intFilterConfig : FilterIntValue -> IntFilterConfig
@@ -836,141 +978,6 @@ intFilterConfig value =
             { min = -100, max = 100, get = .vibrance, set = \v f -> { f | vibrance = v }, validate = Nothing }
 
 
-ensureOdd : Int -> Int
-ensureOdd v =
-    if modBy 2 v == 0 then
-        v + 1
-
-    else
-        v
-
-
-validateMorphKernel : Int -> Int
-validateMorphKernel v =
-    if v == 3 || v == 5 || v == 7 then
-        v
-
-    else
-        3
-
-
-applyIntFilter : FilterIntValue -> String -> Filters -> Filters
-applyIntFilter filterValue raw filters =
-    let
-        config =
-            intFilterConfig filterValue
-
-        parsed =
-            String.toInt raw
-
-        nextValue =
-            case parsed of
-                Just v ->
-                    let
-                        clamped =
-                            clamp config.min config.max v
-                    in
-                    case config.validate of
-                        Just validator ->
-                            validator clamped
-
-                        Nothing ->
-                            clamped
-
-                Nothing ->
-                    config.get filters
-    in
-    config.set nextValue filters
-
-
-
--- FILTER FLOAT VALUE TYPES
-
-
-type FilterFloatValue
-    = FloatColourReplaceBlend
-    | FloatContrast
-    | FloatGamma
-    | FloatNormalizeStrength
-    | FloatPseudoColourBlue
-    | FloatPseudoColourGreen
-    | FloatPseudoColourRed
-    | FloatUnsharpAmount
-
-
-type alias FloatFilterConfig =
-    { min : Float
-    , max : Float
-    , get : Filters -> Float
-    , set : Float -> Filters -> Filters
-    }
-
-
-floatFilterConfig : FilterFloatValue -> FloatFilterConfig
-floatFilterConfig value =
-    case value of
-        FloatColourReplaceBlend ->
-            { min = 0, max = 1, get = .colourReplaceBlend, set = \v f -> { f | colourReplaceBlend = v } }
-
-        FloatContrast ->
-            { min = 0, max = 4, get = .contrast, set = \v f -> { f | contrast = v } }
-
-        FloatGamma ->
-            { min = 0.1, max = 4, get = .gamma, set = \v f -> { f | gamma = v } }
-
-        FloatNormalizeStrength ->
-            { min = 0, max = 2, get = .normalizeStrength, set = \v f -> { f | normalizeStrength = v } }
-
-        FloatPseudoColourBlue ->
-            { min = 0, max = 2, get = .pseudoColourBlue, set = \v f -> { f | pseudoColourBlue = v } }
-
-        FloatPseudoColourGreen ->
-            { min = 0, max = 2, get = .pseudoColourGreen, set = \v f -> { f | pseudoColourGreen = v } }
-
-        FloatPseudoColourRed ->
-            { min = 0, max = 2, get = .pseudoColourRed, set = \v f -> { f | pseudoColourRed = v } }
-
-        FloatUnsharpAmount ->
-            { min = 0, max = 3, get = .unsharpAmount, set = \v f -> { f | unsharpAmount = v } }
-
-
-applyFloatFilter : FilterFloatValue -> String -> Filters -> Filters
-applyFloatFilter filterValue raw filters =
-    let
-        config =
-            floatFilterConfig filterValue
-
-        parsed =
-            String.toFloat raw
-
-        nextValue =
-            Maybe.map (clamp config.min config.max) parsed
-                |> Maybe.withDefault (config.get filters)
-    in
-    config.set nextValue filters
-
-
-
--- FILTER STRING VALUE TYPES
-
-
-type FilterStringValue
-    = StringColourmapPreset
-    | StringColourReplaceSource
-    | StringColourReplaceTarget
-    | StringConvolutionPreset
-    | StringMorphOperation
-    | StringPcaMode
-    | StringPseudoColourMode
-
-
-type alias StringFilterConfig =
-    { get : Filters -> String
-    , set : String -> Filters -> Filters
-    , validate : String -> Bool
-    }
-
-
 stringFilterConfig : FilterStringValue -> StringFilterConfig
 stringFilterConfig value =
     case value of
@@ -1017,17 +1024,10 @@ stringFilterConfig value =
             }
 
 
-applyStringFilter : FilterStringValue -> String -> Filters -> Filters
-applyStringFilter filterValue raw filters =
-    let
-        config =
-            stringFilterConfig filterValue
+validateMorphKernel : Int -> Int
+validateMorphKernel v =
+    if v == 3 || v == 5 || v == 7 then
+        v
 
-        nextValue =
-            if config.validate raw then
-                raw
-
-            else
-                config.get filters
-    in
-    config.set nextValue filters
+    else
+        3
