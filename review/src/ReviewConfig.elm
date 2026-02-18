@@ -61,7 +61,8 @@ config =
     , NoUnused.Variables.rule
     , Simplify.rule Simplify.defaults
     , NoSinglePatternCase.rule NoSinglePatternCase.fixInArgument
-    , NoUnsortedRecords.rule NoUnsortedRecords.defaults
+
+    --, NoUnsortedRecords.rule NoUnsortedRecords.defaults
     , NoUnsortedLetDeclarations.rule
         (NoUnsortedLetDeclarations.sortLetDeclarations
             |> NoUnsortedLetDeclarations.usedInExpressionLast
