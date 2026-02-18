@@ -5,7 +5,6 @@ import Html.Attributes as HA exposing (classList)
 import Html.Lazy as Lazy
 import Model exposing (Model, SidebarState(..), ViewMode(..), currentManifest, getPageAt, pageViewStartIndex)
 import Msg exposing (Msg(..))
-import String
 import Utilities exposing (disabledIf, isNothing)
 import View.Helpers exposing (viewButton)
 import View.Icons as Icons
@@ -123,17 +122,6 @@ viewToolbar model =
         ]
 
 
-viewCurrentLabel : Bool -> String -> Html Msg
-viewCurrentLabel fullscreen labelText =
-    div
-        [ classList
-            [ ( "canvas-label", True )
-            , ( "is-fullscreen", fullscreen )
-            ]
-        ]
-        [ text labelText ]
-
-
 currentLabelFor : Model -> String
 currentLabelFor model =
     let
@@ -188,3 +176,14 @@ truncateLabel maxLength label =
 
     else
         label
+
+
+viewCurrentLabel : Bool -> String -> Html Msg
+viewCurrentLabel fullscreen labelText =
+    div
+        [ classList
+            [ ( "canvas-label", True )
+            , ( "is-fullscreen", fullscreen )
+            ]
+        ]
+        [ text labelText ]

@@ -1,12 +1,12 @@
 module View.ManifestInfoModal exposing (viewManifestInfoModal)
 
 import Html exposing (Html, a, div, img, text)
-import Html.Attributes as HA exposing (alt, classList, href, rel, src, target)
+import Html.Attributes as HA exposing (alt, href, rel, src, target)
 import IIIF.Image exposing (ImageSize(..), createImageAddress, parseImageAddress, setImageUriSize)
 import IIIF.Language exposing (Language(..), extractLabelFromLanguageMap)
 import IIIF.Presentation exposing (Behavior(..), HomePage, IIIFManifest(..), Logo, Provider, ViewingDirection(..), ViewingHint(..), ViewingLayout(..), toCanvases, toHomepage, toLogo, toProvider, toRanges)
 import IIIF.Version exposing (IIIFVersion(..))
-import Model exposing (Model, ResourceResponse(..), Response(..), currentManifest)
+import Model exposing (Model, ResourceResponse(..), currentManifest)
 import Msg exposing (Msg(..))
 import View.Helpers exposing (emptyHtml, viewButton, viewMaybe)
 import View.HtmlRenderer as HtmlRenderer
@@ -30,56 +30,56 @@ viewManifestInfoModal model =
         emptyHtml
 
 
-viewHeader : { a | fullscreen : Bool } -> Html Msg
-viewHeader { fullscreen } =
-    div
-        [ HA.class "modal-header" ]
-        [ div
-            [ HA.class "modal-title" ]
-            [ text "Manifest Info" ]
-        , div
-            [ HA.class "modal-actions" ]
-            [ div
-                [ HA.class "modal-close-action" ]
-                [ viewButton
-                    { label = ""
-                    , icon = Icons.close
-                    , onClickMsg = Just UserClickedCloseManifestInfo
-                    , isFullscreen = fullscreen
-                    }
-                ]
-            ]
-        ]
+behaviorLabel : Behavior -> String
+behaviorLabel behavior =
+    case behavior of
+        AutoAdvanceBehavior ->
+            "Auto-advance"
 
+        NoAutoAdvanceBehavior ->
+            "No auto-advance"
 
-viewBody : Model -> Maybe IIIFManifest -> Html Msg
-viewBody model maybeManifest =
-    let
-        rows =
-            Maybe.map (buildRows model) maybeManifest
-                |> Maybe.withDefault [ ( "Manifest", text "Not loaded" ) ]
+        RepeatBehavior ->
+            "Repeat"
 
-        logoBlock =
-            viewMaybe (viewLogoBlock model.detectedLanguage) maybeManifest
-    in
-    div
-        [ HA.class "modal-body is-two-column" ]
-        [ div
-            [ HA.class "metadata-body" ]
-            (List.map viewRow rows)
-        , div
-            [ HA.class "manifest-info-logo-wrap" ]
-            [ logoBlock ]
-        ]
+        NoRepeatBehavior ->
+            "No repeat"
 
+        UnorderedBehavior ->
+            "Unordered"
 
-viewRow : ( String, Html Msg ) -> Html Msg
-viewRow ( labelText, valueNode ) =
-    div
-        [ HA.class "metadata-item" ]
-        [ div [ HA.class "metadata-label" ] [ text labelText ]
-        , div [ HA.class "metadata-value" ] [ valueNode ]
-        ]
+        IndividualsBehavior ->
+            "Individuals"
+
+        ContinuousBehavior ->
+            "Continuous"
+
+        PagedBehavior ->
+            "Paged"
+
+        FacingPagesBehavior ->
+            "Facing pages"
+
+        NonPagedBehavior ->
+            "Non-paged"
+
+        MultiPartBehavior ->
+            "Multi-part"
+
+        TogetherBehavior ->
+            "Together"
+
+        SequenceBehavior ->
+            "Sequence"
+
+        ThumbnailNavBehavior ->
+            "Thumbnail nav"
+
+        NoNavBehavior ->
+            "No nav"
+
+        HiddenBehavior ->
+            "Hidden"
 
 
 buildRows : Model -> IIIFManifest -> List ( String, Html Msg )
@@ -177,6 +177,72 @@ languageLabel language =
             "default"
 
 
+logoIiifUrl : Logo -> Maybe String
+logoIiifUrl logo =
+    case logo.service |> Maybe.andThen List.head of
+        Just service ->
+            parseImageAddress service.id
+                |> Maybe.map (setImageUriSize (WidthOnlySize 256) >> createImageAddress)
+
+        Nothing ->
+            Just logo.id
+
+
+providerHomepage : Provider -> Maybe HomePage
+providerHomepage provider =
+    provider.homepage
+        |> Maybe.andThen List.head
+
+
+providerLogo : Provider -> Maybe Logo
+providerLogo provider =
+    provider.logo
+        |> Maybe.andThen List.head
+
+
+viewBody : Model -> Maybe IIIFManifest -> Html Msg
+viewBody model maybeManifest =
+    let
+        rows =
+            Maybe.map (buildRows model) maybeManifest
+                |> Maybe.withDefault [ ( "Manifest", text "Not loaded" ) ]
+
+        logoBlock =
+            viewMaybe (viewLogoBlock model.detectedLanguage) maybeManifest
+    in
+    div
+        [ HA.class "modal-body is-two-column" ]
+        [ div
+            [ HA.class "metadata-body" ]
+            (List.map viewRow rows)
+        , div
+            [ HA.class "manifest-info-logo-wrap" ]
+            [ logoBlock ]
+        ]
+
+
+viewHeader : { a | fullscreen : Bool } -> Html Msg
+viewHeader { fullscreen } =
+    div
+        [ HA.class "modal-header" ]
+        [ div
+            [ HA.class "modal-title" ]
+            [ text "Manifest Info" ]
+        , div
+            [ HA.class "modal-actions" ]
+            [ div
+                [ HA.class "modal-close-action" ]
+                [ viewButton
+                    { label = ""
+                    , icon = Icons.close
+                    , onClickMsg = Just UserClickedCloseManifestInfo
+                    , isFullscreen = fullscreen
+                    }
+                ]
+            ]
+        ]
+
+
 viewLogoBlock : Language -> IIIFManifest -> Html Msg
 viewLogoBlock language manifest =
     let
@@ -233,27 +299,13 @@ viewLogoBlock language manifest =
         emptyHtml
 
 
-providerLogo : Provider -> Maybe Logo
-providerLogo provider =
-    provider.logo
-        |> Maybe.andThen List.head
-
-
-logoIiifUrl : Logo -> Maybe String
-logoIiifUrl logo =
-    case logo.service |> Maybe.andThen List.head of
-        Just service ->
-            parseImageAddress service.id
-                |> Maybe.map (setImageUriSize (WidthOnlySize 256) >> createImageAddress)
-
-        Nothing ->
-            Just logo.id
-
-
-providerHomepage : Provider -> Maybe HomePage
-providerHomepage provider =
-    provider.homepage
-        |> Maybe.andThen List.head
+viewRow : ( String, Html Msg ) -> Html Msg
+viewRow ( labelText, valueNode ) =
+    div
+        [ HA.class "metadata-item" ]
+        [ div [ HA.class "metadata-label" ] [ text labelText ]
+        , div [ HA.class "metadata-value" ] [ valueNode ]
+        ]
 
 
 viewingDirectionLabel : ViewingDirection -> String
@@ -270,20 +322,6 @@ viewingDirectionLabel direction =
 
         BottomToTop ->
             "Bottom to Top"
-
-
-viewingLayoutLabel : ViewingLayout -> String
-viewingLayoutLabel layout =
-    case layout of
-        LayoutV2 hint ->
-            "Hint: " ++ viewingHintLabel hint
-
-        LayoutV3 behaviors ->
-            if List.isEmpty behaviors then
-                "Behavior: None"
-
-            else
-                "Behavior: " ++ String.join ", " (List.map behaviorLabel behaviors)
 
 
 viewingHintLabel : ViewingHint -> String
@@ -311,53 +349,15 @@ viewingHintLabel hint =
             "Facing pages"
 
 
-behaviorLabel : Behavior -> String
-behaviorLabel behavior =
-    case behavior of
-        AutoAdvanceBehavior ->
-            "Auto-advance"
+viewingLayoutLabel : ViewingLayout -> String
+viewingLayoutLabel layout =
+    case layout of
+        LayoutV2 hint ->
+            "Hint: " ++ viewingHintLabel hint
 
-        NoAutoAdvanceBehavior ->
-            "No auto-advance"
+        LayoutV3 behaviors ->
+            if List.isEmpty behaviors then
+                "Behavior: None"
 
-        RepeatBehavior ->
-            "Repeat"
-
-        NoRepeatBehavior ->
-            "No repeat"
-
-        UnorderedBehavior ->
-            "Unordered"
-
-        IndividualsBehavior ->
-            "Individuals"
-
-        ContinuousBehavior ->
-            "Continuous"
-
-        PagedBehavior ->
-            "Paged"
-
-        FacingPagesBehavior ->
-            "Facing pages"
-
-        NonPagedBehavior ->
-            "Non-paged"
-
-        MultiPartBehavior ->
-            "Multi-part"
-
-        TogetherBehavior ->
-            "Together"
-
-        SequenceBehavior ->
-            "Sequence"
-
-        ThumbnailNavBehavior ->
-            "Thumbnail nav"
-
-        NoNavBehavior ->
-            "No nav"
-
-        HiddenBehavior ->
-            "Hidden"
+            else
+                "Behavior: " ++ String.join ", " (List.map behaviorLabel behaviors)

@@ -13,39 +13,9 @@ type alias ButtonConfig msg =
     }
 
 
-viewIf : Html msg -> Bool -> Html msg
-viewIf view condition =
-    if condition then
-        view
-
-    else
-        emptyHtml
-
-
 emptyHtml : Html msg
 emptyHtml =
     text ""
-
-
-{-|
-
-    A view helper that will either render the value of
-    'body' with a given `viewFunc`, or return `Element.none`
-    indicating nothing should be rendered.
-
-    `viewFunc` can be partially applied with a `language` value
-    allowing the body to be rendered in response to the user's
-    selected language parameter.
-
--}
-viewMaybe : (a -> Html msg) -> Maybe a -> Html msg
-viewMaybe viewFunc maybeBody =
-    case maybeBody of
-        Just a ->
-            viewFunc a
-
-        Nothing ->
-            emptyHtml
 
 
 viewButton : ButtonConfig msg -> Html msg
@@ -84,3 +54,33 @@ viewButton config =
             ]
             [ text config.label ]
         ]
+
+
+viewIf : Html msg -> Bool -> Html msg
+viewIf view condition =
+    if condition then
+        view
+
+    else
+        emptyHtml
+
+
+{-|
+
+    A view helper that will either render the value of
+    'body' with a given `viewFunc`, or return `Element.none`
+    indicating nothing should be rendered.
+
+    `viewFunc` can be partially applied with a `language` value
+    allowing the body to be rendered in response to the user's
+    selected language parameter.
+
+-}
+viewMaybe : (a -> Html msg) -> Maybe a -> Html msg
+viewMaybe viewFunc maybeBody =
+    case maybeBody of
+        Just a ->
+            viewFunc a
+
+        Nothing ->
+            emptyHtml

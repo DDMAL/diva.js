@@ -4,13 +4,33 @@ import Html exposing (Html, button, div, li, text, ul)
 import Html.Attributes as HA exposing (classList, type_)
 import Html.Events as Events
 import Html.Lazy as Lazy
-import IIIF.Language exposing (Language(..), extractLabelFromLanguageMap)
+import IIIF.Language exposing (Language, extractLabelFromLanguageMap)
 import IIIF.Presentation exposing (Collection, CollectionItem(..), IIIFCollection(..), Manifest)
 import Json.Decode as Decode
 import Model exposing (CollectionState, Model, ResourceResponse(..))
 import Msg exposing (Msg(..))
 import Set
 import View.Helpers exposing (emptyHtml, viewMaybe)
+
+
+viewCollectionResizer : Model -> Html Msg
+viewCollectionResizer model =
+    case model.resourceResponse of
+        ResourceLoadedCollection _ ->
+            div
+                [ classList
+                    [ ( "collection-resizer", True )
+                    , ( "is-hidden", not model.collectionSidebarVisible )
+                    ]
+                , Events.on "mousedown"
+                    (Decode.field "clientX" Decode.int
+                        |> Decode.map UserStartedCollectionSidebarResize
+                    )
+                ]
+                [ text "⋮" ]
+
+        _ ->
+            emptyHtml
 
 
 viewCollectionSidebar : Model -> Html Msg
@@ -21,6 +41,16 @@ viewCollectionSidebar model =
 
         _ ->
             emptyHtml
+
+
+viewCollectionItem : Language -> CollectionState -> CollectionItem -> Html Msg
+viewCollectionItem language collectionState item =
+    case item of
+        NestedCollection collection ->
+            viewNestedCollection language collectionState collection
+
+        ManifestItem manifest ->
+            viewManifestItem language collectionState manifest
 
 
 viewCollectionPanel : Model -> CollectionState -> Html Msg
@@ -71,14 +101,27 @@ viewCollectionTree language collectionState items =
         (List.map (Lazy.lazy3 viewCollectionItem language collectionState) items)
 
 
-viewCollectionItem : Language -> CollectionState -> CollectionItem -> Html Msg
-viewCollectionItem language collectionState item =
-    case item of
-        NestedCollection collection ->
-            viewNestedCollection language collectionState collection
+viewManifestItem : Language -> CollectionState -> Manifest -> Html Msg
+viewManifestItem language collectionState manifest =
+    let
+        labelText =
+            extractLabelFromLanguageMap language manifest.label
 
-        ManifestItem manifest ->
-            viewManifestItem language collectionState manifest
+        isActive =
+            collectionState.selectedManifestId == Just manifest.id
+    in
+    li []
+        [ button
+            [ classList
+                [ ( "manifest-tree-item", True )
+                , ( "ui-button", True )
+                , ( "is-active", isActive )
+                ]
+            , type_ "button"
+            , Events.onClick (UserClickedManifestItem manifest.id manifest.id)
+            ]
+            [ text labelText ]
+        ]
 
 
 viewNestedCollection : Language -> CollectionState -> Collection -> Html Msg
@@ -127,46 +170,3 @@ viewNestedCollection language collectionState collection =
             ]
             :: childrenView
         )
-
-
-viewManifestItem : Language -> CollectionState -> Manifest -> Html Msg
-viewManifestItem language collectionState manifest =
-    let
-        labelText =
-            extractLabelFromLanguageMap language manifest.label
-
-        isActive =
-            collectionState.selectedManifestId == Just manifest.id
-    in
-    li []
-        [ button
-            [ classList
-                [ ( "manifest-tree-item", True )
-                , ( "ui-button", True )
-                , ( "is-active", isActive )
-                ]
-            , type_ "button"
-            , Events.onClick (UserClickedManifestItem manifest.id manifest.id)
-            ]
-            [ text labelText ]
-        ]
-
-
-viewCollectionResizer : Model -> Html Msg
-viewCollectionResizer model =
-    case model.resourceResponse of
-        ResourceLoadedCollection _ ->
-            div
-                [ classList
-                    [ ( "collection-resizer", True )
-                    , ( "is-hidden", not model.collectionSidebarVisible )
-                    ]
-                , Events.on "mousedown"
-                    (Decode.field "clientX" Decode.int
-                        |> Decode.map UserStartedCollectionSidebarResize
-                    )
-                ]
-                [ text "⋮" ]
-
-        _ ->
-            emptyHtml
