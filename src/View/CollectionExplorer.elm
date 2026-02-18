@@ -154,25 +154,19 @@ viewManifestItem language collectionState manifest =
 
 viewCollectionResizer : Model -> Html Msg
 viewCollectionResizer model =
-    let
-        maybeResizer =
-            case model.resourceResponse of
-                ResourceLoadedCollection _ ->
-                    Just
-                        (div
-                            [ classList
-                                [ ( "collection-resizer", True )
-                                , ( "is-hidden", not model.collectionSidebarVisible )
-                                ]
-                            , Events.on "mousedown"
-                                (Decode.field "clientX" Decode.int
-                                    |> Decode.map UserStartedCollectionSidebarResize
-                                )
-                            ]
-                            [ text "⋮" ]
-                        )
+    case model.resourceResponse of
+        ResourceLoadedCollection _ ->
+            div
+                [ classList
+                    [ ( "collection-resizer", True )
+                    , ( "is-hidden", not model.collectionSidebarVisible )
+                    ]
+                , Events.on "mousedown"
+                    (Decode.field "clientX" Decode.int
+                        |> Decode.map UserStartedCollectionSidebarResize
+                    )
+                ]
+                [ text "⋮" ]
 
-                _ ->
-                    Nothing
-    in
-    viewMaybe identity maybeResizer
+        _ ->
+            emptyHtml
