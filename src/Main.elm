@@ -41,13 +41,13 @@ port layoutModeUpdated : String -> Cmd msg
 port pageAspectsUpdated : List Float -> Cmd msg
 
 
-port pageLabelsUpdated : List String -> Cmd msg
-
-
 port pageIndexChanged : (Int -> msg) -> Sub msg
 
 
 port pageIndexChangedInstant : (Int -> msg) -> Sub msg
+
+
+port pageLabelsUpdated : List String -> Cmd msg
 
 
 port saveFilteredImage : () -> Cmd msg

@@ -25,9 +25,10 @@
 
 export type FilterProcessor = (context: CanvasRenderingContext2D, callback: () => void) => void;
 type PixelTransformInPlace = (r: number, g: number, b: number, a: number, out: number[]) => void;
+type ResettableItem = {reset: () => void};
 
 export type FilterDefinition = {
-    items?: any|any[]; processors : FilterProcessor | FilterProcessor[];
+    items?: ResettableItem | ResettableItem[]; processors : FilterProcessor | FilterProcessor[];
 };
 
 export type FilterOptions = {
@@ -53,6 +54,16 @@ export function setFilterOptions(viewer: any, options: FilterOptions): void
     {
         setOptions(viewer.filterPluginInstance, options || {});
     }
+}
+
+function readImageDataFromContext(context: CanvasRenderingContext2D): ImageData
+{
+    const width = context.canvas.width;
+    const height = context.canvas.height;
+    const scratchContext = Filters._ensureScratchContext(width, height);
+    scratchContext.clearRect(0, 0, width, height);
+    scratchContext.drawImage(context.canvas, 0, 0);
+    return scratchContext.getImageData(0, 0, width, height);
 }
 
 function createFilterPlugin(viewer: any, options: FilterOptions): FilterPluginInstance
@@ -97,15 +108,13 @@ function createFilterPlugin(viewer: any, options: FilterOptions): FilterPluginIn
             const callbacks: Array<() => void> = [];
             for (let i = 0; i < filtersProcessors.length - 1; i += 1)
             {
-                ((index: number) => {
-                    callbacks[index] = () => {
-                        if (self.filterIncrement !== currentIncrement)
-                        {
-                            return;
-                        }
-                        filtersProcessors[index + 1](context, callbacks[index + 1]);
-                    };
-                })(i);
+                callbacks[i] = () => {
+                    if (self.filterIncrement !== currentIncrement)
+                    {
+                        return;
+                    }
+                    filtersProcessors[i + 1](context, callbacks[i + 1]);
+                };
             }
             callbacks[filtersProcessors.length - 1] = () => {
                 if (self.filterIncrement !== currentIncrement)
@@ -123,16 +132,6 @@ function createFilterPlugin(viewer: any, options: FilterOptions): FilterPluginIn
                 filtersProcessors[i](context, () => {});
             }
         }
-    }
-
-    function readImageDataFromContext(context: CanvasRenderingContext2D): ImageData
-    {
-        const width = context.canvas.width;
-        const height = context.canvas.height;
-        const scratchContext = Filters._ensureScratchContext(width, height);
-        scratchContext.clearRect(0, 0, width, height);
-        scratchContext.drawImage(context.canvas, 0, 0);
-        return scratchContext.getImageData(0, 0, width, height);
     }
 
     function tileDrawingHandler(event: any): void
@@ -187,7 +186,7 @@ function createFilterPlugin(viewer: any, options: FilterOptions): FilterPluginIn
 
 function setOptions(instance: FilterPluginInstance, options: FilterOptions): void
 {
-    const nextOptions = options || {};
+    const nextOptions = options;
     const filters = nextOptions.filters;
     instance.filters = !filters ? [] : Array.isArray(filters) ? filters : [ filters ];
     for (let i = 0; i < instance.filters.length; i += 1)
@@ -1108,6 +1107,8 @@ export const Filters = {
     _scratchCanvas : null as HTMLCanvasElement | null,
     _scratchContext : null as CanvasRenderingContext2D | null,
     _ensureScratch : function(length: number) : Uint8ClampedArray {
+        // Returns a shared mutable buffer. Callers should consume/copy the
+        // contents before the next _ensureScratch call, which may overwrite it.
         if (!this._scratch || this._scratch.length < length)
         {
             this._scratch = new Uint8ClampedArray(length);
@@ -1134,11 +1135,6 @@ export const Filters = {
         }
         return this._scratchContext;
     },
-    _resetScratch : function() : void {
-        this._scratch = null;
-        this._scratchCanvas = null;
-        this._scratchContext = null;
-    },
     _applyPixelTransformInPlace : function(context: CanvasRenderingContext2D, transform: PixelTransformInPlace) : void {
         const width = context.canvas.width;
         const height = context.canvas.height;
@@ -1160,8 +1156,6 @@ export const Filters = {
         context.clearRect(0, 0, width, height);
         context.drawImage(this._scratchCanvas as HTMLCanvasElement, 0, 0);
     },
-    _rgbToHSV : rgbToHSV,
-    _hsvToRGB : hsvToRGB,
     THRESHOLDING : function(threshold: number) : FilterProcessor {
         if (threshold < 0 || threshold > 255)
         {

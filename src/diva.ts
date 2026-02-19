@@ -161,14 +161,16 @@ class Diva
 {
     private readonly root: HTMLElement;
     private app: ElmApp;
-    private mainViewer: any = document.getElementById("main-viewer");
+    private mainViewer: any = null;
     private filterViewer: any = null;
-    private filterViewerElement: HTMLElement|null = document.getElementById("filter-viewer");
+    private filterViewerElement: HTMLElement|null = null;
     private filterOptions: FilterSettings|null = null;
     private filterViewerFlipped = false;
     private currentFilterTileSource: string|null = null;
     private pendingFilterPreview: FilterPreviewPayload|null = null;
     private filterPreviewRetries = 0;
+    private filterPreviewRafId: number|null = null;
+    private isDestroyed = false;
     private readonly handlePageChangeBound: (event: Event) => void;
     private readonly handleZoomChangeBound: (event: Event) => void;
     private readonly handleLoadingChangeBound: (event: Event) => void;
@@ -197,6 +199,7 @@ class Diva
         }
 
         this.root = root;
+        this.isDestroyed = false;
 
         this.handlePageChangeBound = this.handlePageChange.bind(this);
         this.handleZoomChangeBound = this.handleZoomChange.bind(this);
@@ -289,6 +292,10 @@ class Diva
 
     private applyFilterPreview(): void
     {
+        if (this.isDestroyed)
+        {
+            return;
+        }
         if (!this.pendingFilterPreview)
         {
             return;
@@ -299,7 +306,10 @@ class Diva
             if (this.filterPreviewRetries < 10)
             {
                 this.filterPreviewRetries += 1;
-                requestAnimationFrame(() => this.applyFilterPreview());
+                this.filterPreviewRafId = requestAnimationFrame(() => {
+                    this.filterPreviewRafId = null;
+                    this.applyFilterPreview();
+                });
             }
             return;
         }
@@ -328,31 +338,9 @@ class Diva
     {
         if (navigator.clipboard && typeof navigator.clipboard.writeText === "function")
         {
-            navigator.clipboard.writeText(text).catch(() => { this.copyToClipboardFallback(text); });
+            navigator.clipboard.writeText(text).catch(() => {});
             return;
         }
-        this.copyToClipboardFallback(text);
-    }
-
-    private copyToClipboardFallback(text: string): void
-    {
-        const textarea = document.createElement("textarea");
-        textarea.value = text;
-        textarea.setAttribute("readonly", "true");
-        textarea.style.position = "fixed";
-        textarea.style.left = "-9999px";
-        document.body.appendChild(textarea);
-        textarea.select();
-        try
-        {
-            document.execCommand("copy");
-        }
-        catch (_err)
-        {
-            // Ignore copy failures; user can still manually copy from the text
-            // area in the UI.
-        }
-        document.body.removeChild(textarea);
     }
 
     private bindPageChange(): void
@@ -377,10 +365,24 @@ class Diva
 
     public destroy(): void
     {
+        this.isDestroyed = true;
+        if (this.filterPreviewRafId !== null)
+        {
+            cancelAnimationFrame(this.filterPreviewRafId);
+            this.filterPreviewRafId = null;
+        }
         this.removeViewerEvent("diva-page-change", this.handlePageChangeBound as EventListener);
         this.removeViewerEvent("diva-zoom-change", this.handleZoomChangeBound as EventListener);
         this.removeViewerEvent("diva-loading-change", this.handleLoadingChangeBound as EventListener);
         document.removeEventListener("fullscreenchange", this.handleFullscreenChangeBound);
+        if (this.filterViewer && typeof this.filterViewer.destroy === "function")
+        {
+            this.filterViewer.destroy();
+        }
+        this.filterViewer = null;
+        this.filterViewerElement = null;
+        this.currentFilterTileSource = null;
+        this.pendingFilterPreview = null;
 
         if (this.root)
         {
@@ -506,7 +508,7 @@ class Diva
             return null;
         }
 
-        if (this.filterViewerElement !== element || !element.isConnected)
+        if (this.filterViewerElement !== element)
         {
             if (this.filterViewer && typeof this.filterViewer.destroy === "function")
             {
@@ -719,15 +721,8 @@ const altFilterMappings: FilterMapping[] = [
     },
 ];
 
-const buildFilterOptions = (filters: FilterSettings|null): any => {
-    if (!filters)
-    {
-        return {filters : [], loadMode : "sync"};
-    }
-
-    const processors: any[] = [];
-
-    for (const mapping of simpleFilterMappings)
+const appendMappedProcessors = (processors: any[], filters: FilterSettings, mappings: FilterMapping[]): void => {
+    for (const mapping of mappings)
     {
         if (filters[mapping.enabled])
         {
@@ -736,6 +731,18 @@ const buildFilterOptions = (filters: FilterSettings|null): any => {
             processors.push(filterFn(...(filterArgs as any[])));
         }
     }
+};
+
+const buildFilterOptions = (filters: FilterSettings|null): any => {
+    if (!filters)
+    {
+        return {filters : [], loadMode : "sync"};
+    }
+
+    const processors: any[] = [];
+
+    // Keep this order stable: simple -> special-case -> alt mappings.
+    appendMappedProcessors(processors, filters, simpleFilterMappings);
 
     if (filters.morphEnabled)
     {
@@ -780,15 +787,7 @@ const buildFilterOptions = (filters: FilterSettings|null): any => {
                                               filters.colourReplacePreserveLum ?? false));
     }
 
-    for (const mapping of altFilterMappings)
-    {
-        if (filters[mapping.enabled])
-        {
-            const filterArgs = mapping.args?.map((key, i) => filters[key] ?? (mapping.defaults?.[i] ?? 0)) ?? [];
-            const filterFn = filterFunctions[mapping.filter] as (...args: any[]) => any;
-            processors.push(filterFn(...(filterArgs as any[])));
-        }
-    }
+    appendMappedProcessors(processors, filters, altFilterMappings);
 
     if (processors.length === 0)
     {
