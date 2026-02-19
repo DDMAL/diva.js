@@ -13,7 +13,7 @@
             "elm/json": "1.1.4",
             "elm/svg": "1.0.1",
             "hecrj/html-parser": "2.4.0",
-            "rism-digital/elm-iiif": "1.0.2"
+            "rism-digital/elm-iiif": "1.0.3"
         },
         "indirect": {
             "elm/bytes": "1.0.8",
