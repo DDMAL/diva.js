@@ -139,10 +139,6 @@ class OsdViewer extends HTMLElement
             } as any;
             this.viewer = OpenSeadragon(options);
             const viewer = this.viewer;
-            if (!viewer)
-            {
-                return;
-            }
             viewer.addHandler("pan", this.handleViewportChangeBound);
             viewer.addHandler("zoom", this.handleViewportChangeBound);
             viewer.addHandler("pan", () => this.updateScrollbar());
@@ -501,24 +497,28 @@ class OsdViewer extends HTMLElement
         }
 
         let element = this.pageOverlayElements.get(index);
+        const isRightAligned = index % 2 === 0;
         if (!element)
         {
             element = document.createElement("div");
             element.className = "diva-page-overlay-label";
             element.style.pointerEvents = "none";
             element.style.color = "#ffffff";
-            element.style.background = "rgba(0, 0, 0, 0.45)";
-            element.style.padding = "2px 6px";
-            element.style.borderRadius = "4px";
+            element.style.background = "transparent";
+            element.style.padding = "0";
+            element.style.borderRadius = "0";
             element.style.fontSize = "12px";
             element.style.fontWeight = "600";
             element.style.lineHeight = "1.2";
             element.style.whiteSpace = "nowrap";
+            element.style.paddingBottom = "6px";
+            element.style.paddingLeft = isRightAligned ? "0" : "12px";
+            element.style.paddingRight = isRightAligned ? "12px" : "0";
             this.pageOverlayElements.set(index, element);
         }
         element.textContent = this.pageLabels[index] || `Page ${index + 1}`;
 
-        const xOffset = this.pageXOffsets[index] || 0;
+        const xOffset = (this.pageXOffsets[index] || 0) + (isRightAligned ? 1 : 0);
         const yOffset = this.pageOffsets[index] || 0;
         try
         {
@@ -531,7 +531,7 @@ class OsdViewer extends HTMLElement
         this.viewer.addOverlay({
             element,
             location : new OpenSeadragon.Point(xOffset, yOffset),
-            placement : OpenSeadragon.Placement.BOTTOM_LEFT
+            placement : isRightAligned ? OpenSeadragon.Placement.BOTTOM_RIGHT : OpenSeadragon.Placement.BOTTOM_LEFT
         });
     }
 
@@ -730,10 +730,7 @@ class OsdViewer extends HTMLElement
         }
         event.preventDefault();
         event.stopPropagation();
-        if (typeof event.stopImmediatePropagation == "function")
-        {
-            event.stopImmediatePropagation();
-        }
+        event.stopImmediatePropagation();
 
         const viewport = this.viewer?.viewport;
         if (!viewport)
