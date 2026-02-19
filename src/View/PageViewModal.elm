@@ -790,7 +790,7 @@ viewModalSidebar model =
         , Lazy.lazy viewConvolutionGroup model
         , Lazy.lazy viewColourmapGroup model
         , Lazy.lazy viewPseudoColourGroup model
-        , Lazy.lazy viewPcaGroup model
+        , Lazy.lazy viewGlobalPcaGroup model
         , Lazy.lazy viewAdvancedColourAdjustGroup model
         , Lazy.lazy viewEnhancementGroup model
         , Lazy.lazy viewFilterJsonGroup model
@@ -827,15 +827,24 @@ viewMorphologyGroup model =
         ]
 
 
-viewPcaGroup : Model -> Html Msg
-viewPcaGroup model =
+viewGlobalPcaGroup : Model -> Html Msg
+viewGlobalPcaGroup model =
     viewFilterGroup model
-        "pca"
-        "Principle Component Analysis"
+        "global-pca"
+        "Visible area PCA"
         [ viewFilterRow
-            [ viewToggle "PCA" model.filters.pcaEnabled TogglePca
-            , viewSelect model.filters.pcaMode (UserUpdatedFilterString StringPcaMode) pcaModes
+            [ viewToggle "Visible area PCA" model.filters.globalPcaEnabled ToggleGlobalPca
+            , viewSelect model.filters.globalPcaMode (UserUpdatedFilterString StringGlobalPcaMode) pcaModes
             ]
+        , viewRangeRow
+            { label = "Hue Rotation"
+            , min = "-180"
+            , max = "180"
+            , step = Just "1"
+            , value = String.fromInt model.filters.globalPcaHue
+            , display = String.fromInt model.filters.globalPcaHue ++ "deg"
+            , onInput = UserUpdatedFilterInt IntGlobalPcaHue
+            }
         ]
 
 

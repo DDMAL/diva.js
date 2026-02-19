@@ -70,8 +70,9 @@ type FilterSettings = {
     pseudoColourRed?: number;
     pseudoColourGreen?: number;
     pseudoColourBlue?: number;
-    pcaEnabled?: boolean;
-    pcaMode?: string;
+    globalPcaEnabled?: boolean;
+    globalPcaMode?: string;
+    globalPcaHue?: number;
     colourReplaceEnabled?: boolean;
     colourReplaceSource?: string;
     colourReplaceTarget?: string;
@@ -665,6 +666,7 @@ const filterFunctions = {
     ALT_RED_VIBRANCE : Filters.ALT_RED_VIBRANCE,
     ALT_GREEN_VIBRANCE : Filters.ALT_GREEN_VIBRANCE,
     ALT_BLUE_VIBRANCE : Filters.ALT_BLUE_VIBRANCE,
+    GLOBAL_PCA_COLOR : Filters.GLOBAL_PCA_COLOR,
     ADAPTIVE_THRESHOLD : Filters.ADAPTIVE_THRESHOLD
 };
 
@@ -774,9 +776,9 @@ const buildFilterOptions = (filters: FilterSettings|null): any => {
                                             filters.pseudoColourGreen ?? 1, filters.pseudoColourBlue ?? 1));
     }
 
-    if (filters.pcaEnabled)
+    if (filters.globalPcaEnabled)
     {
-        processors.push(Filters.PCA_COLOR(filters.pcaMode || ""));
+        processors.push(Filters.GLOBAL_PCA_COLOR(filters.globalPcaMode || "", filters.globalPcaHue ?? 0));
     }
 
     if (filters.colourReplaceEnabled)

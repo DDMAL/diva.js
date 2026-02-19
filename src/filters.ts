@@ -186,8 +186,7 @@ function createFilterPlugin(viewer: any, options: FilterOptions): FilterPluginIn
 
 function setOptions(instance: FilterPluginInstance, options: FilterOptions): void
 {
-    const nextOptions = options;
-    const filters = nextOptions.filters;
+    const filters = options.filters;
     instance.filters = !filters ? [] : Array.isArray(filters) ? filters : [ filters ];
     for (let i = 0; i < instance.filters.length; i += 1)
     {
@@ -200,7 +199,7 @@ function setOptions(instance: FilterPluginInstance, options: FilterOptions): voi
     }
     instance.filterIncrement += 1;
 
-    if (nextOptions.loadMode === "sync")
+    if (options.loadMode === "sync")
     {
         instance.viewer.forceRedraw();
     }
@@ -754,7 +753,38 @@ function powerIterEigen(m: number[][], iterations: number): {vector: number[]; v
     return {vector : v, value};
 }
 
-function computePcaVectors(data: Uint8ClampedArray): {mean: number[]; vectors : number[][]}
+type PcaBasis = {
+    mean: number[];
+    vectors: number[][];
+    values: number[];
+};
+
+type RunningPcaStats = {
+    count: number;
+    mean: number[];
+    m2: number[][];
+};
+
+function computePcaBasisFromCov(mean: number[], cov: number[][]): PcaBasis
+{
+    const eig1 = powerIterEigen(cov, 12);
+    const deflated = matSub(cov, scaleMat3(outer3(eig1.vector), eig1.value));
+    const eig2 = powerIterEigen(deflated, 12);
+    const eig3 = normalize3([
+        eig1.vector[1] * eig2.vector[2] - eig1.vector[2] * eig2.vector[1],
+        eig1.vector[2] * eig2.vector[0] - eig1.vector[0] * eig2.vector[2],
+        eig1.vector[0] * eig2.vector[1] - eig1.vector[1] * eig2.vector[0]
+    ]);
+    const eig3Value = dot3(eig3, matVec3(cov, eig3));
+
+    return {
+        mean,
+        vectors : [ eig1.vector, eig2.vector, eig3 ],
+        values : [ Math.max(0, eig1.value), Math.max(0, eig2.value), Math.max(0, eig3Value) ]
+    };
+}
+
+function computePcaVectors(data: Uint8ClampedArray): PcaBasis
 {
     const count = data.length / 4;
     let meanR = 0;
@@ -790,19 +820,10 @@ function computePcaVectors(data: Uint8ClampedArray): {mean: number[]; vectors : 
         [ c00 * inv, c01 * inv, c02 * inv ], [ c01 * inv, c11 * inv, c12 * inv ], [ c02 * inv, c12 * inv, c22 * inv ]
     ];
 
-    const eig1 = powerIterEigen(cov, 12);
-    const deflated = matSub(cov, scaleMat3(outer3(eig1.vector), eig1.value));
-    const eig2 = powerIterEigen(deflated, 12);
-    const eig3 = normalize3([
-        eig1.vector[1] * eig2.vector[2] - eig1.vector[2] * eig2.vector[1],
-        eig1.vector[2] * eig2.vector[0] - eig1.vector[0] * eig2.vector[2],
-        eig1.vector[0] * eig2.vector[1] - eig1.vector[1] * eig2.vector[0]
-    ]);
-
-    return {mean : [ meanR, meanG, meanB ], vectors : [ eig1.vector, eig2.vector, eig3 ]};
+    return computePcaBasisFromCov([ meanR, meanG, meanB ], cov);
 }
 
-function applyPcaColor(imgData: ImageData, mode: string): void
+function applyPcaColor(imgData: ImageData, mode: string, hueDegrees: number = 0): void
 {
     const data = imgData.data;
     const pca = computePcaVectors(data);
@@ -880,6 +901,175 @@ function applyPcaColor(imgData: ImageData, mode: string): void
             data[i + 2] = toByte(c3, min3, range3);
         }
     }
+
+    applyHueRotationInPlace(data, hueDegrees);
+}
+
+type HueRotationMatrix = {
+    m00: number; m01 : number; m02 : number;
+    m10: number; m11 : number; m12 : number;
+    m20: number; m21 : number; m22 : number;
+};
+
+function buildHueRotationMatrix(degrees: number): HueRotationMatrix
+{
+    const angle = (degrees * Math.PI) / 180;
+    const cosA = Math.cos(angle);
+    const sinA = Math.sin(angle);
+    const oneThird = 1 / 3;
+    const sqrt1_3 = Math.sqrt(oneThird);
+
+    return {
+        m00 : cosA + (1 - cosA) * oneThird,
+        m01 : oneThird * (1 - cosA) - sqrt1_3 * sinA,
+        m02 : oneThird * (1 - cosA) + sqrt1_3 * sinA,
+        m10 : oneThird * (1 - cosA) + sqrt1_3 * sinA,
+        m11 : cosA + (1 - cosA) * oneThird,
+        m12 : oneThird * (1 - cosA) - sqrt1_3 * sinA,
+        m20 : oneThird * (1 - cosA) - sqrt1_3 * sinA,
+        m21 : oneThird * (1 - cosA) + sqrt1_3 * sinA,
+        m22 : cosA + (1 - cosA) * oneThird
+    };
+}
+
+function applyHueRotationInPlace(data: Uint8ClampedArray, degrees: number): void
+{
+    if (degrees === 0)
+    {
+        return;
+    }
+    const matrix = buildHueRotationMatrix(degrees);
+
+    for (let i = 0; i < data.length; i += 4)
+    {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        data[i] = clampByte(matrix.m00 * r + matrix.m01 * g + matrix.m02 * b);
+        data[i + 1] = clampByte(matrix.m10 * r + matrix.m11 * g + matrix.m12 * b);
+        data[i + 2] = clampByte(matrix.m20 * r + matrix.m21 * g + matrix.m22 * b);
+    }
+}
+
+function createRunningPcaStats(): RunningPcaStats
+{
+    return {
+        count : 0,
+        mean : [ 0, 0, 0 ],
+        m2 : [
+            [ 0, 0, 0 ],
+            [ 0, 0, 0 ],
+            [ 0, 0, 0 ]
+        ]
+    };
+}
+
+function updateRunningPcaStats(stats: RunningPcaStats, data: Uint8ClampedArray): void
+{
+    const sampleStride = 16;
+    for (let i = 0; i < data.length; i += 4 * sampleStride)
+    {
+        const sample = [ data[i], data[i + 1], data[i + 2] ];
+        const nextCount = stats.count + 1;
+        const delta = [
+            sample[0] - stats.mean[0],
+            sample[1] - stats.mean[1],
+            sample[2] - stats.mean[2]
+        ];
+        const nextMean = [
+            stats.mean[0] + delta[0] / nextCount,
+            stats.mean[1] + delta[1] / nextCount,
+            stats.mean[2] + delta[2] / nextCount
+        ];
+        const delta2 = [
+            sample[0] - nextMean[0],
+            sample[1] - nextMean[1],
+            sample[2] - nextMean[2]
+        ];
+
+        stats.m2[0][0] += delta[0] * delta2[0];
+        stats.m2[0][1] += delta[0] * delta2[1];
+        stats.m2[0][2] += delta[0] * delta2[2];
+        stats.m2[1][0] += delta[1] * delta2[0];
+        stats.m2[1][1] += delta[1] * delta2[1];
+        stats.m2[1][2] += delta[1] * delta2[2];
+        stats.m2[2][0] += delta[2] * delta2[0];
+        stats.m2[2][1] += delta[2] * delta2[1];
+        stats.m2[2][2] += delta[2] * delta2[2];
+
+        stats.count = nextCount;
+        stats.mean = nextMean;
+    }
+}
+
+function basisFromRunningStats(stats: RunningPcaStats): PcaBasis|null
+{
+    if (stats.count < 2)
+    {
+        return null;
+    }
+    const inv = 1 / (stats.count - 1);
+    const cov = [
+        [ stats.m2[0][0] * inv, stats.m2[0][1] * inv, stats.m2[0][2] * inv ],
+        [ stats.m2[1][0] * inv, stats.m2[1][1] * inv, stats.m2[1][2] * inv ],
+        [ stats.m2[2][0] * inv, stats.m2[2][1] * inv, stats.m2[2][2] * inv ]
+    ];
+    return computePcaBasisFromCov(stats.mean, cov);
+}
+
+function applyPcaColorWithBasis(imgData: ImageData, mode: string, basis: PcaBasis, hueDegrees: number): void
+{
+    const data = imgData.data;
+    const mean = basis.mean;
+    const v1 = basis.vectors[0];
+    const v2 = basis.vectors[1];
+    const v3 = basis.vectors[2];
+    const sigma1 = Math.sqrt(Math.max(1e-6, basis.values[0]));
+    const sigma2 = Math.sqrt(Math.max(1e-6, basis.values[1]));
+    const sigma3 = Math.sqrt(Math.max(1e-6, basis.values[2]));
+    const scale = 3;
+
+    const toByte = (component: number, sigma: number) => clampByte(128 + (component / (scale * sigma)) * 127);
+
+    for (let i = 0; i < data.length; i += 4)
+    {
+        const r = data[i] - mean[0];
+        const g = data[i + 1] - mean[1];
+        const b = data[i + 2] - mean[2];
+        const c1 = r * v1[0] + g * v1[1] + b * v1[2];
+        const c2 = r * v2[0] + g * v2[1] + b * v2[2];
+        const c3 = r * v3[0] + g * v3[1] + b * v3[2];
+
+        if (mode === "pca1")
+        {
+            const v = toByte(c1, sigma1);
+            data[i] = v;
+            data[i + 1] = v;
+            data[i + 2] = v;
+        }
+        else if (mode === "pca2")
+        {
+            const v = toByte(c2, sigma2);
+            data[i] = v;
+            data[i + 1] = v;
+            data[i + 2] = v;
+        }
+        else if (mode === "pca3")
+        {
+            const v = toByte(c3, sigma3);
+            data[i] = v;
+            data[i + 1] = v;
+            data[i + 2] = v;
+        }
+        else
+        {
+            data[i] = toByte(c1, sigma1);
+            data[i + 1] = toByte(c2, sigma2);
+            data[i + 2] = toByte(c3, sigma3);
+        }
+    }
+
+    applyHueRotationInPlace(data, hueDegrees);
 }
 
 const noopFilter: FilterProcessor = (_context, callback) => { callback(); };
@@ -1194,31 +1384,13 @@ export const Filters = {
     HUE : function(adjustment: number) : FilterProcessor {
         // Use direct hue rotation matrix instead of RGB→HSV→RGB conversion
         // Hue rotation is a rotation around the (1,1,1) axis in RGB space
-        const angle = (Math.abs(adjustment) / 100) * 2 * Math.PI;
-        const cosA = Math.cos(angle);
-        const sinA = Math.sin(angle);
-
-        // Rodrigues' rotation formula for axis (1,1,1)/sqrt(3)
-        // Precompute matrix elements
-        const oneThird = 1 / 3;
-        const sqrt1_3 = Math.sqrt(oneThird);
-
-        // Matrix elements: M = I*cos(a) + K*sin(a) + (1-cos(a))*u⊗u
-        // where u = (1,1,1)/sqrt(3) and K is the cross-product matrix
-        const m00 = cosA + (1 - cosA) * oneThird;
-        const m01 = oneThird * (1 - cosA) - sqrt1_3 * sinA;
-        const m02 = oneThird * (1 - cosA) + sqrt1_3 * sinA;
-        const m10 = oneThird * (1 - cosA) + sqrt1_3 * sinA;
-        const m11 = cosA + (1 - cosA) * oneThird;
-        const m12 = oneThird * (1 - cosA) - sqrt1_3 * sinA;
-        const m20 = oneThird * (1 - cosA) - sqrt1_3 * sinA;
-        const m21 = oneThird * (1 - cosA) + sqrt1_3 * sinA;
-        const m22 = cosA + (1 - cosA) * oneThird;
+        const degrees = (Math.abs(adjustment) / 100) * 360;
+        const matrix = buildHueRotationMatrix(degrees);
 
         return applyPixelTransformInPlace((r: number, g: number, b: number, a: number, out: number[]) => {
-            out[0] = clampByte(m00 * r + m01 * g + m02 * b);
-            out[1] = clampByte(m10 * r + m11 * g + m12 * b);
-            out[2] = clampByte(m20 * r + m21 * g + m22 * b);
+            out[0] = clampByte(matrix.m00 * r + matrix.m01 * g + matrix.m02 * b);
+            out[1] = clampByte(matrix.m10 * r + matrix.m11 * g + matrix.m12 * b);
+            out[2] = clampByte(matrix.m20 * r + matrix.m21 * g + matrix.m22 * b);
             out[3] = a;
         });
     },
@@ -1543,11 +1715,37 @@ export const Filters = {
     ALT_RED_VIBRANCE : function(amount: number) : FilterProcessor { return altChannelVibrance(0, amount);},
     ALT_GREEN_VIBRANCE : function(amount: number) : FilterProcessor { return altChannelVibrance(1, amount);},
     ALT_BLUE_VIBRANCE : function(amount: number) : FilterProcessor { return altChannelVibrance(2, amount);},
-    PCA_COLOR : function(mode: string) : FilterProcessor {
+    GLOBAL_PCA_COLOR : function(mode: string, hueDegrees?: number) : FilterProcessor {
         const normalized = (mode || "").toLowerCase();
+        const hue = Math.max(-180, Math.min(180, hueDegrees ?? 0));
+        const runningStats = createRunningPcaStats();
+        // This basis is intentionally scoped to this processor instance.
+        // Caller assumption: filter rebuilds (new processor instance) occur
+        // when switching images/tile sources or changing filter settings.
+        // If that lifecycle changes, this basis should be explicitly reset.
+        let globalBasis: PcaBasis|null = null;
+        const minSamples = 2000;
+
         return function(context: CanvasRenderingContext2D, callback: () => void): void {
             withImageData(context, (imgData) => {
-                applyPcaColor(imgData, normalized);
+                const data = imgData.data;
+                if (!globalBasis)
+                {
+                    updateRunningPcaStats(runningStats, data);
+                    if (runningStats.count >= minSamples)
+                    {
+                        globalBasis = basisFromRunningStats(runningStats);
+                    }
+                }
+
+                if (globalBasis)
+                {
+                    applyPcaColorWithBasis(imgData, normalized, globalBasis, hue);
+                }
+                else
+                {
+                    applyPcaColor(imgData, normalized, hue);
+                }
                 return true;
             });
             callback();
