@@ -65,7 +65,7 @@ viewToolbar model =
                     , isFullscreen = model.fullscreen
                     }
                 , viewButton
-                    { label = "Shift Page"
+                    { label = "Shift Pages"
                     , icon =
                         if model.shiftByOne then
                             Icons.shiftLeft
