@@ -58,7 +58,7 @@ type FilterIntValue
     | IntCcRed
     | IntColourmapCenter
     | IntColourReplaceTolerance
-    | IntGlobalPcaHue
+    | IntPcaHue
     | IntHue
     | IntMorphKernel
     | IntRotation
@@ -72,7 +72,7 @@ type FilterStringValue
     | StringColourReplaceSource
     | StringColourReplaceTarget
     | StringConvolutionPreset
-    | StringGlobalPcaMode
+    | StringPcaMode
     | StringMorphOperation
     | StringPseudoColourMode
 
@@ -154,8 +154,8 @@ type alias Filters =
     , pseudoColourGreen : Float
     , pseudoColourBlue : Float
     , globalPcaEnabled : Bool
-    , globalPcaMode : String
-    , globalPcaHue : Int
+    , pcaMode : String
+    , pcaHue : Int
     , colourReplaceEnabled : Bool
     , colourReplaceSource : String
     , colourReplaceTarget : String
@@ -431,8 +431,8 @@ encodeActiveFilters filters =
                 |> addIf filters.pseudoColourEnabled "pseudoColourRed" (Encode.float filters.pseudoColourRed)
                 |> addIf filters.pseudoColourEnabled "pseudoColourGreen" (Encode.float filters.pseudoColourGreen)
                 |> addIf filters.pseudoColourEnabled "pseudoColourBlue" (Encode.float filters.pseudoColourBlue)
-                |> addIf filters.globalPcaEnabled "globalPcaMode" (Encode.string filters.globalPcaMode)
-                |> addIf filters.globalPcaEnabled "globalPcaHue" (Encode.int filters.globalPcaHue)
+                |> addIf filters.globalPcaEnabled "pcaMode" (Encode.string filters.pcaMode)
+                |> addIf filters.globalPcaEnabled "pcaHue" (Encode.int filters.pcaHue)
                 |> addIf filters.colourReplaceEnabled "colourReplaceSource" (Encode.string filters.colourReplaceSource)
                 |> addIf filters.colourReplaceEnabled "colourReplaceTarget" (Encode.string filters.colourReplaceTarget)
                 |> addIf filters.colourReplaceEnabled "colourReplaceTolerance" (Encode.int filters.colourReplaceTolerance)
@@ -539,8 +539,8 @@ resetFilters =
     , pseudoColourGreen = 1
     , pseudoColourBlue = 1
     , globalPcaEnabled = False
-    , globalPcaMode = "pca-rgb"
-    , globalPcaHue = 0
+    , pcaMode = "pca-rgb"
+    , pcaHue = 0
     , colourReplaceEnabled = False
     , colourReplaceSource = "#ffffff"
     , colourReplaceTarget = "#ffffff"
@@ -677,22 +677,11 @@ applyFilterPatch dict =
         pseudoColourBlue =
             decodeFloat "pseudoColourBlue" dict
 
-        globalPcaMode =
-            decodeString "globalPcaMode" dict
-
-        legacyPcaMode =
+        pcaMode =
             decodeString "pcaMode" dict
 
-        mergedGlobalPcaMode =
-            case globalPcaMode of
-                Just value ->
-                    Just value
-
-                Nothing ->
-                    legacyPcaMode
-
-        globalPcaHue =
-            decodeInt "globalPcaHue" dict
+        pcaHue =
+            decodeInt "pcaHue" dict
 
         colourReplaceSource =
             decodeString "colourReplaceSource" dict
@@ -790,8 +779,8 @@ applyFilterPatch dict =
         |> applyMaybe pseudoColourRed (\v f -> { f | pseudoColourEnabled = True, pseudoColourRed = v })
         |> applyMaybe pseudoColourGreen (\v f -> { f | pseudoColourEnabled = True, pseudoColourGreen = v })
         |> applyMaybe pseudoColourBlue (\v f -> { f | pseudoColourEnabled = True, pseudoColourBlue = v })
-        |> applyMaybe mergedGlobalPcaMode (\v f -> { f | globalPcaEnabled = True, globalPcaMode = v })
-        |> applyMaybe globalPcaHue (\v f -> { f | globalPcaEnabled = True, globalPcaHue = v })
+        |> applyMaybe pcaMode (\v f -> { f | globalPcaEnabled = True, pcaMode = v })
+        |> applyMaybe pcaHue (\v f -> { f | globalPcaEnabled = True, pcaHue = v })
         |> applyMaybe colourReplaceSource (\v f -> { f | colourReplaceEnabled = True, colourReplaceSource = v })
         |> applyMaybe colourReplaceTarget (\v f -> { f | colourReplaceEnabled = True, colourReplaceTarget = v })
         |> applyMaybe colourReplaceTolerance (\v f -> { f | colourReplaceEnabled = True, colourReplaceTolerance = v })
@@ -978,8 +967,8 @@ intFilterConfig value =
         IntColourReplaceTolerance ->
             { min = 0, max = 255, get = .colourReplaceTolerance, set = \v f -> { f | colourReplaceTolerance = v }, validate = Nothing }
 
-        IntGlobalPcaHue ->
-            { min = -180, max = 180, get = .globalPcaHue, set = \v f -> { f | globalPcaHue = v }, validate = Nothing }
+        IntPcaHue ->
+            { min = -180, max = 180, get = .pcaHue, set = \v f -> { f | pcaHue = v }, validate = Nothing }
 
         IntHue ->
             { min = -100, max = 100, get = .hue, set = \v f -> { f | hue = v }, validate = Nothing }
@@ -1027,9 +1016,9 @@ stringFilterConfig value =
             , validate = \v -> List.member v [ "sharpen", "blur", "edge", "emboss" ]
             }
 
-        StringGlobalPcaMode ->
-            { get = .globalPcaMode
-            , set = \v f -> { f | globalPcaMode = v }
+        StringPcaMode ->
+            { get = .pcaMode
+            , set = \v f -> { f | pcaMode = v }
             , validate = \v -> List.member v [ "pca-rgb", "pca1", "pca2", "pca3" ]
             }
 

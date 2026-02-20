@@ -71,8 +71,8 @@ type FilterSettings = {
     pseudoColourGreen?: number;
     pseudoColourBlue?: number;
     globalPcaEnabled?: boolean;
-    globalPcaMode?: string;
-    globalPcaHue?: number;
+    pcaMode?: string;
+    pcaHue?: number;
     colourReplaceEnabled?: boolean;
     colourReplaceSource?: string;
     colourReplaceTarget?: string;
@@ -778,7 +778,7 @@ const buildFilterOptions = (filters: FilterSettings|null): any => {
 
     if (filters.globalPcaEnabled)
     {
-        processors.push(Filters.GLOBAL_PCA_COLOR(filters.globalPcaMode || "", filters.globalPcaHue ?? 0));
+        processors.push(Filters.GLOBAL_PCA_COLOR(filters.pcaMode || "", filters.pcaHue ?? 0));
     }
 
     if (filters.colourReplaceEnabled)
