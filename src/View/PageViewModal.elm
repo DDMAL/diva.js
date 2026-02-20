@@ -590,27 +590,6 @@ viewFilterRow items =
     div [ HA.class "filter-row" ] items
 
 
-viewPcaGroup : Model -> Html Msg
-viewPcaGroup model =
-    viewFilterGroup model
-        "pca"
-        "Visible area PCA"
-        [ viewFilterRow
-            [ viewToggle "Visible area PCA" model.filters.globalPcaEnabled ToggleGlobalPca
-            , viewSelect model.filters.pcaMode (UserUpdatedFilterString StringPcaMode) pcaModes
-            ]
-        , viewRangeRow
-            { label = "Hue Rotation"
-            , min = "-180"
-            , max = "180"
-            , step = Just "1"
-            , value = String.fromInt model.filters.pcaHue
-            , display = String.fromInt model.filters.pcaHue ++ "deg"
-            , onInput = UserUpdatedFilterInt IntPcaHue
-            }
-        ]
-
-
 viewImageChoiceItem : Int -> Int -> PageImage -> Html Msg
 viewImageChoiceItem selectedIndex index image =
     let
@@ -845,6 +824,27 @@ viewMorphologyGroup model =
             , viewSelect model.filters.morphOperation (UserUpdatedFilterString StringMorphOperation) morphOperationOptions
             , viewSelect (String.fromInt model.filters.morphKernel) (UserUpdatedFilterInt IntMorphKernel) morphKernelOptions
             ]
+        ]
+
+
+viewPcaGroup : Model -> Html Msg
+viewPcaGroup model =
+    viewFilterGroup model
+        "pca"
+        "Visible area PCA"
+        [ viewFilterRow
+            [ viewToggle "Visible area PCA" model.filters.globalPcaEnabled ToggleGlobalPca
+            , viewSelect model.filters.pcaMode (UserUpdatedFilterString StringPcaMode) pcaModes
+            ]
+        , viewRangeRow
+            { label = "Hue Rotation"
+            , min = "-180"
+            , max = "180"
+            , step = Just "1"
+            , value = String.fromInt model.filters.pcaHue
+            , display = String.fromInt model.filters.pcaHue ++ "deg"
+            , onInput = UserUpdatedFilterInt IntPcaHue
+            }
         ]
 
 
