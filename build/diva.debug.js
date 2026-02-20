@@ -3,6 +3,8 @@
   // src/viewer-element.ts
   var ZOOM_IN_FACTOR = 1.6;
   var ZOOM_OUT_FACTOR = 1 / ZOOM_IN_FACTOR;
+  var PAGE_LABEL_TOP_PADDING_PX = 28;
+  var PAGE_GAP_VIEWPORT_UNITS = 0.06;
   var OsdViewer = class extends HTMLElement {
     constructor() {
       super();
@@ -10,6 +12,7 @@
       this.viewer = null;
       this.loadToken = 0;
       this.tileSources = [];
+      this.pageLabels = [];
       this.pageAspects = [];
       this.pageOffsets = [];
       this.pageHeights = [];
@@ -21,6 +24,7 @@
       this.loadedIndexes = /* @__PURE__ */ new Set();
       this.loadingIndexes = /* @__PURE__ */ new Set();
       this.loadedItems = /* @__PURE__ */ new Map();
+      this.pageOverlayElements = /* @__PURE__ */ new Map();
       this.targetIndex = null;
       this.scrollPlaneItem = null;
       this.isViewportInitialized = false;
@@ -73,6 +77,7 @@
         this.scrollbarMouseUp = null;
       }
       if (this.viewer) {
+        this.clearPageOverlays();
         this.viewer.destroy();
         this.viewer = null;
       }
@@ -107,9 +112,6 @@
         };
         this.viewer = OpenSeadragon(options);
         const viewer = this.viewer;
-        if (!viewer) {
-          return;
-        }
         viewer.addHandler("pan", this.handleViewportChangeBound);
         viewer.addHandler("zoom", this.handleViewportChangeBound);
         viewer.addHandler("pan", () => this.updateScrollbar());
@@ -137,6 +139,15 @@
       this.syncViewer();
       this.resetTileSources(tileSources);
     }
+    setPageLabels(labels) {
+      if (!Array.isArray(labels)) {
+        return;
+      }
+      this.pageLabels = labels;
+      this.pageOverlayElements.forEach((_element, index) => {
+        this.addOrUpdatePageOverlay(index);
+      });
+    }
     resetTileSources(tileSources) {
       if (!this.viewer) {
         return;
@@ -153,6 +164,7 @@
       this.loadedIndexes.clear();
       this.loadingIndexes.clear();
       this.loadedItems.clear();
+      this.clearPageOverlays();
       this.targetIndex = null;
       this.clearScrollPlane();
       this.buildOffsets();
@@ -243,6 +255,7 @@
           item.setHeight(height, true);
           this.loadedIndexes.add(index);
           this.loadedItems.set(index, item);
+          this.addOrUpdatePageOverlay(index);
           this.loadingIndexes.delete(index);
           this.updateLoadingState();
           if (!this.hasFitFirstPage) {
@@ -300,7 +313,7 @@
       }
     }
     buildSingleOffsets(count) {
-      const gap = 0.03;
+      const gap = PAGE_GAP_VIEWPORT_UNITS;
       let current = 0;
       let fallback = this.pageAspects[0] || 1;
       for (let index = 0; index < count; index += 1) {
@@ -314,7 +327,7 @@
       }
     }
     buildSpreadOffsets(count) {
-      const gap = 0.03;
+      const gap = PAGE_GAP_VIEWPORT_UNITS;
       const isRtl = this.viewingDirection === "rtl";
       let current = 0;
       let index = 0;
@@ -360,7 +373,57 @@
         item.setPosition(new OpenSeadragon.Point(xOffset, yOffset), true);
         item.setWidth(1, true);
         item.setHeight(height, true);
+        this.addOrUpdatePageOverlay(index);
       });
+    }
+    addOrUpdatePageOverlay(index) {
+      if (!this.viewer) {
+        return;
+      }
+      let element = this.pageOverlayElements.get(index);
+      const isRightAligned = index % 2 === 0;
+      if (!element) {
+        element = document.createElement("div");
+        element.className = "diva-page-overlay-label";
+        element.style.pointerEvents = "none";
+        element.style.color = "#ffffff";
+        element.style.background = "transparent";
+        element.style.padding = "0";
+        element.style.borderRadius = "0";
+        element.style.fontSize = "12px";
+        element.style.fontWeight = "600";
+        element.style.lineHeight = "1.2";
+        element.style.whiteSpace = "nowrap";
+        element.style.paddingBottom = "6px";
+        element.style.paddingLeft = isRightAligned ? "0" : "12px";
+        element.style.paddingRight = isRightAligned ? "12px" : "0";
+        this.pageOverlayElements.set(index, element);
+      }
+      element.textContent = this.pageLabels[index] || `Page ${index + 1}`;
+      const xOffset = (this.pageXOffsets[index] || 0) + (isRightAligned ? 1 : 0);
+      const yOffset = this.pageOffsets[index] || 0;
+      try {
+        this.viewer.removeOverlay(element);
+      } catch (_error) {
+      }
+      this.viewer.addOverlay({
+        element,
+        location: new OpenSeadragon.Point(xOffset, yOffset),
+        placement: isRightAligned ? OpenSeadragon.Placement.BOTTOM_RIGHT : OpenSeadragon.Placement.BOTTOM_LEFT
+      });
+    }
+    clearPageOverlays() {
+      if (this.viewer) {
+        this.pageOverlayElements.forEach((element) => {
+          var _a;
+          try {
+            (_a = this.viewer) == null ? void 0 : _a.removeOverlay(element);
+          } catch (_error) {
+          }
+          element.remove();
+        });
+      }
+      this.pageOverlayElements.clear();
     }
     ensureScrollPlane() {
       if (!this.viewer || this.pageOffsets.length === 0) {
@@ -490,9 +553,7 @@
       }
       event.preventDefault();
       event.stopPropagation();
-      if (typeof event.stopImmediatePropagation == "function") {
-        event.stopImmediatePropagation();
-      }
+      event.stopImmediatePropagation();
       const viewport = (_a = this.viewer) == null ? void 0 : _a.viewport;
       if (!viewport) {
         return;
@@ -559,10 +620,12 @@
         return;
       }
       const bounds = vp.getBounds(true);
-      if (bounds.y >= 0) {
+      const topPadding = this.getTopPaddingViewport(bounds.height);
+      const minTop = -topPadding;
+      if (bounds.y >= minTop) {
         return;
       }
-      const clampedCenterY = bounds.height / 2;
+      const clampedCenterY = bounds.height / 2 + minTop;
       this.isClamping = true;
       vp.panTo(new OpenSeadragon.Point(this.getCenterX(), clampedCenterY), true);
       vp.applyConstraints();
@@ -676,12 +739,19 @@
         return;
       }
       const bounds = viewport.getBounds(true);
-      if (bounds.y <= 0) {
+      const topPadding = this.getTopPaddingViewport(bounds.height);
+      const minTop = -topPadding;
+      if (bounds.y <= minTop) {
         return;
       }
       const center = viewport.getCenter(true);
-      viewport.panTo(new OpenSeadragon.Point(center.x, bounds.height / 2), true);
+      viewport.panTo(new OpenSeadragon.Point(center.x, bounds.height / 2 + minTop), true);
       viewport.applyConstraints();
+    }
+    getTopPaddingViewport(viewportHeight) {
+      var _a;
+      const containerHeight = ((_a = this.container) == null ? void 0 : _a.getBoundingClientRect().height) || 1;
+      return PAGE_LABEL_TOP_PADDING_PX / containerHeight * viewportHeight;
     }
     resetLoadingState() {
       if (this.loadingTimer !== null) {
@@ -10915,11 +10985,7 @@
       );
     }
   );
-  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$unwrapDecoderLists = function(lists) {
-    return $elm$json$Json$Decode$succeed(
-      $elm$core$List$concat(lists)
-    );
-  };
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$unwrapDecoderLists = $elm$core$List$concat;
   var $rism_digital$elm_iiif$IIIF$Presentation$ChoiceImage = { $: "ChoiceImage" };
   var $rism_digital$elm_iiif$IIIF$Presentation$Image = F4(
     function(id, label, imageType, service) {
@@ -11511,20 +11577,13 @@
   var $rism_digital$elm_iiif$IIIF$Language$parseLocaleToLanguage = function(locale) {
     return locale === "none" ? $rism_digital$elm_iiif$IIIF$Language$None : $rism_digital$elm_iiif$IIIF$Language$LanguageCode(locale);
   };
-  var $rism_digital$elm_iiif$IIIF$Language$languageDecoder = function(locale) {
-    return $elm$json$Json$Decode$succeed(
-      $rism_digital$elm_iiif$IIIF$Language$parseLocaleToLanguage(locale)
-    );
-  };
   var $rism_digital$elm_iiif$IIIF$Language$languageValuesDecoder = function(_v0) {
     var locale = _v0.a;
     var translations = _v0.b;
     return A2(
-      $elm$json$Json$Decode$map,
-      function(lang) {
-        return A2($rism_digital$elm_iiif$IIIF$Language$LanguageValues, lang, translations);
-      },
-      $rism_digital$elm_iiif$IIIF$Language$languageDecoder(locale)
+      $rism_digital$elm_iiif$IIIF$Language$LanguageValues,
+      $rism_digital$elm_iiif$IIIF$Language$parseLocaleToLanguage(locale),
+      translations
     );
   };
   var $rism_digital$elm_iiif$IIIF$Language$languageMapDecoder = function(json) {
@@ -11532,20 +11591,19 @@
       $elm$core$List$foldl,
       F2(
         function(map, maps) {
-          return A3(
-            $elm$json$Json$Decode$map2,
+          return A2(
             $elm$core$List$cons,
             $rism_digital$elm_iiif$IIIF$Language$languageValuesDecoder(map),
             maps
           );
         }
       ),
-      $elm$json$Json$Decode$succeed(_List_Nil),
+      _List_Nil,
       json
     );
   };
   var $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder = A2(
-    $elm$json$Json$Decode$andThen,
+    $elm$json$Json$Decode$map,
     $rism_digital$elm_iiif$IIIF$Language$languageMapDecoder,
     $elm$json$Json$Decode$keyValuePairs(
       $elm$json$Json$Decode$list($elm$json$Json$Decode$string)
@@ -11606,11 +11664,6 @@
       [$rism_digital$elm_iiif$IIIF$Language$v2LanguageValueObjectDecoder, $rism_digital$elm_iiif$IIIF$Language$v2LanguageValueObjectListDecoder, $rism_digital$elm_iiif$IIIF$Language$stringToLanguageMapLabelDecoder, $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder]
     )
   );
-  var $elm$core$List$singleton = function(value) {
-    return _List_fromArray(
-      [value]
-    );
-  };
   var $rism_digital$elm_iiif$IIIF$Presentation$AuthLogoutService1 = { $: "AuthLogoutService1" };
   var $rism_digital$elm_iiif$IIIF$Presentation$AuthTokenService1 = { $: "AuthTokenService1" };
   var $rism_digital$elm_iiif$IIIF$Presentation$AutoCompleteService1 = { $: "AutoCompleteService1" };
@@ -11644,10 +11697,10 @@
     }
   };
   var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ServiceTypeDecoder = function(stype) {
-    return $elm$json$Json$Decode$succeed(
-      $elm$core$List$singleton(
+    return _List_fromArray(
+      [
         $rism_digital$elm_iiif$IIIF$Presentation$stringToServiceType(stype)
-      )
+      ]
     );
   };
   var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageDecoder = A3(
@@ -11655,7 +11708,7 @@
     _List_fromArray(
       ["service", "@context"]
     ),
-    A2($elm$json$Json$Decode$andThen, $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ServiceTypeDecoder, $elm$json$Json$Decode$string),
+    A2($elm$json$Json$Decode$map, $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ServiceTypeDecoder, $elm$json$Json$Decode$string),
     A2(
       $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
       $rism_digital$elm_iiif$IIIF$Presentation$PrimaryImage,
@@ -11681,7 +11734,7 @@
       _List_fromArray(
         ["service", "@context"]
       ),
-      A2($elm$json$Json$Decode$andThen, $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ServiceTypeDecoder, $elm$json$Json$Decode$string),
+      A2($elm$json$Json$Decode$map, $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ServiceTypeDecoder, $elm$json$Json$Decode$string),
       A2(
         $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
         imgType,
@@ -11733,7 +11786,7 @@
           )
         ),
         A2(
-          $elm$json$Json$Decode$andThen,
+          $elm$json$Json$Decode$map,
           $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$unwrapDecoderLists,
           $elm$json$Json$Decode$list(
             A2(
@@ -11778,15 +11831,14 @@
         return $rism_digital$elm_iiif$IIIF$Presentation$PagedHint;
     }
   };
-  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingHintValueConverter = function(hint) {
-    return $elm$json$Json$Decode$succeed(
-      $rism_digital$elm_iiif$IIIF$Presentation$stringToViewingHint(hint)
-    );
-  };
   var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingHintDecoder = A2(
     $elm$json$Json$Decode$map,
-    $rism_digital$elm_iiif$IIIF$Presentation$LayoutV2,
-    A2($elm$json$Json$Decode$andThen, $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingHintValueConverter, $elm$json$Json$Decode$string)
+    function(str) {
+      return $rism_digital$elm_iiif$IIIF$Presentation$LayoutV2(
+        $rism_digital$elm_iiif$IIIF$Presentation$stringToViewingHint(str)
+      );
+    },
+    $elm$json$Json$Decode$string
   );
   var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CanvasDecoder = A4(
     $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
@@ -12001,6 +12053,11 @@
         };
       };
     };
+  };
+  var $elm$core$List$singleton = function(value) {
+    return _List_fromArray(
+      [value]
+    );
   };
   var $rism_digital$elm_iiif$IIIF$Presentation$HomePage = F4(
     function(id, label, format, type_) {
@@ -12328,12 +12385,7 @@
         return $rism_digital$elm_iiif$IIIF$Presentation$LeftToRight;
     }
   };
-  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingDirectionValueConverter = function(direction) {
-    return $elm$json$Json$Decode$succeed(
-      $rism_digital$elm_iiif$IIIF$Presentation$stringToViewingDirection(direction)
-    );
-  };
-  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingDirectionDecoder = A2($elm$json$Json$Decode$andThen, $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingDirectionValueConverter, $elm$json$Json$Decode$string);
+  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingDirectionDecoder = A2($elm$json$Json$Decode$map, $rism_digital$elm_iiif$IIIF$Presentation$stringToViewingDirection, $elm$json$Json$Decode$string);
   var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2iiifManifestDecoder = A4(
     $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
     "attribution",
@@ -12519,16 +12571,11 @@
         return $rism_digital$elm_iiif$IIIF$Presentation$PagedBehavior;
     }
   };
-  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$behaviourValueConverter = function(behavior) {
-    return $elm$json$Json$Decode$succeed(
-      $rism_digital$elm_iiif$IIIF$Presentation$stringToBehavior(behavior)
-    );
-  };
   var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$behaviourDecoder = A2(
     $elm$json$Json$Decode$map,
     $rism_digital$elm_iiif$IIIF$Presentation$LayoutV3,
     $elm$json$Json$Decode$list(
-      A2($elm$json$Json$Decode$andThen, $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$behaviourValueConverter, $elm$json$Json$Decode$string)
+      A2($elm$json$Json$Decode$map, $rism_digital$elm_iiif$IIIF$Presentation$stringToBehavior, $elm$json$Json$Decode$string)
     )
   );
   var $rism_digital$elm_iiif$IIIF$Image$imageUriToInfoUri = function(inp) {
@@ -12541,24 +12588,37 @@
       );
     }
   };
+  var $rism_digital$elm_iiif$IIIF$Internal$Utilities$find = F2(
+    function(predicate, items) {
+      find:
+        while (true) {
+          if (!items.b) {
+            return $elm$core$Maybe$Nothing;
+          } else {
+            var x = items.a;
+            var rest = items.b;
+            if (predicate(x)) {
+              return $elm$core$Maybe$Just(x);
+            } else {
+              var $temp$predicate = predicate, $temp$items = rest;
+              predicate = $temp$predicate;
+              items = $temp$items;
+              continue find;
+            }
+          }
+        }
+    }
+  );
   var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$selectServiceId = function(services) {
-    var imageService3Id = A2(
-      $elm$core$Maybe$map,
-      function($) {
-        return $.id;
+    var _v0 = A2(
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$find,
+      function(s) {
+        return _Utils_eq(s.serviceType, $rism_digital$elm_iiif$IIIF$Presentation$ImageService3);
       },
-      $elm$core$List$head(
-        A2(
-          $elm$core$List$filter,
-          function(s) {
-            return _Utils_eq(s.serviceType, $rism_digital$elm_iiif$IIIF$Presentation$ImageService3);
-          },
-          services
-        )
-      )
+      services
     );
-    if (imageService3Id.$ === "Just") {
-      var id = imageService3Id.a;
+    if (_v0.$ === "Just") {
+      var id = _v0.a.id;
       return $elm$core$Maybe$Just(id);
     } else {
       return A2(
@@ -12575,14 +12635,9 @@
       return { id, serviceType };
     }
   );
-  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$serviceTypeDecoder = function(val) {
-    return $elm$json$Json$Decode$succeed(
-      $rism_digital$elm_iiif$IIIF$Presentation$stringToServiceType(val)
-    );
-  };
   var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeDecoder = A2(
-    $elm$json$Json$Decode$andThen,
-    $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$serviceTypeDecoder,
+    $elm$json$Json$Decode$map,
+    $rism_digital$elm_iiif$IIIF$Presentation$stringToServiceType,
     $elm$json$Json$Decode$oneOf(
       _List_fromArray(
         [
@@ -13368,7 +13423,7 @@
       );
     }
   );
-  var $author$project$Filters$resetFilters = { adaptiveEnabled: false, adaptiveOffset: 10, adaptiveWindow: 15, altBlueGamma: 0, altBlueGammaEnabled: false, altBlueHue: 0, altBlueHueEnabled: false, altBlueHueWindow: 8, altBlueSigmoid: 0, altBlueSigmoidEnabled: false, altBlueVibrance: 0, altBlueVibranceEnabled: false, altGreenGamma: 0, altGreenGammaEnabled: false, altGreenHue: 0, altGreenHueEnabled: false, altGreenHueWindow: 8, altGreenSigmoid: 0, altGreenSigmoidEnabled: false, altGreenVibrance: 0, altGreenVibranceEnabled: false, altRedGamma: 0, altRedGammaEnabled: false, altRedHue: 0, altRedHueEnabled: false, altRedHueWindow: 8, altRedSigmoid: 0, altRedSigmoidEnabled: false, altRedVibrance: 0, altRedVibranceEnabled: false, brightness: 0, brightnessEnabled: false, ccBlue: 0, ccBlueEnabled: false, ccGreen: 0, ccGreenEnabled: false, ccRed: 0, ccRedEnabled: false, colourReplaceBlend: 1, colourReplaceEnabled: false, colourReplacePreserveLum: false, colourReplaceSource: "#ffffff", colourReplaceTarget: "#ffffff", colourReplaceTolerance: 24, colourmapCenter: 128, colourmapEnabled: false, colourmapPreset: "gray", contrast: 1, contrastEnabled: false, convolutionEnabled: false, convolutionPreset: "sharpen", flip: false, gamma: 1, gammaEnabled: false, grayscale: false, hue: 0, hueEnabled: false, invert: false, morphEnabled: false, morphKernel: 3, morphOperation: "erode", normalizeEnabled: false, normalizeStrength: 1, pcaEnabled: false, pcaMode: "pca-rgb", pseudoColourBlue: 1, pseudoColourEnabled: false, pseudoColourGreen: 1, pseudoColourMode: "rg", pseudoColourRed: 1, rotation: 0, saturation: 0, saturationEnabled: false, threshold: 128, thresholdEnabled: false, unsharpAmount: 1, unsharpEnabled: false, vibrance: 0, vibranceEnabled: false };
+  var $author$project$Filters$resetFilters = { adaptiveEnabled: false, adaptiveOffset: 10, adaptiveWindow: 15, altBlueGamma: 0, altBlueGammaEnabled: false, altBlueHue: 0, altBlueHueEnabled: false, altBlueHueWindow: 8, altBlueSigmoid: 0, altBlueSigmoidEnabled: false, altBlueVibrance: 0, altBlueVibranceEnabled: false, altGreenGamma: 0, altGreenGammaEnabled: false, altGreenHue: 0, altGreenHueEnabled: false, altGreenHueWindow: 8, altGreenSigmoid: 0, altGreenSigmoidEnabled: false, altGreenVibrance: 0, altGreenVibranceEnabled: false, altRedGamma: 0, altRedGammaEnabled: false, altRedHue: 0, altRedHueEnabled: false, altRedHueWindow: 8, altRedSigmoid: 0, altRedSigmoidEnabled: false, altRedVibrance: 0, altRedVibranceEnabled: false, brightness: 0, brightnessEnabled: false, ccBlue: 0, ccBlueEnabled: false, ccGreen: 0, ccGreenEnabled: false, ccRed: 0, ccRedEnabled: false, colourReplaceBlend: 1, colourReplaceEnabled: false, colourReplacePreserveLum: false, colourReplaceSource: "#ffffff", colourReplaceTarget: "#ffffff", colourReplaceTolerance: 24, colourmapCenter: 128, colourmapEnabled: false, colourmapPreset: "gray", contrast: 1, contrastEnabled: false, convolutionEnabled: false, convolutionPreset: "sharpen", flip: false, gamma: 1, gammaEnabled: false, globalPcaEnabled: false, grayscale: false, hue: 0, hueEnabled: false, invert: false, morphEnabled: false, morphKernel: 3, morphOperation: "erode", normalizeEnabled: false, normalizeStrength: 1, pcaHue: 0, pcaMode: "pca-rgb", pseudoColourBlue: 1, pseudoColourEnabled: false, pseudoColourGreen: 1, pseudoColourMode: "rg", pseudoColourRed: 1, rotation: 0, saturation: 0, saturationEnabled: false, threshold: 128, thresholdEnabled: false, unsharpAmount: 1, unsharpEnabled: false, vibrance: 0, vibranceEnabled: false };
   var $elm$core$Basics$round = _Basics_round;
   var $author$project$Main$init = function(flags) {
     var userLanguage = $rism_digital$elm_iiif$IIIF$Language$LanguageCode(flags.userLanguage);
@@ -13861,6 +13916,11 @@
             filters,
             { gammaEnabled: enabled }
           );
+        case "ToggleGlobalPca":
+          return _Utils_update(
+            filters,
+            { globalPcaEnabled: enabled }
+          );
         case "ToggleGrayscale":
           return _Utils_update(
             filters,
@@ -13885,11 +13945,6 @@
           return _Utils_update(
             filters,
             { normalizeEnabled: enabled }
-          );
-        case "TogglePca":
-          return _Utils_update(
-            filters,
-            { pcaEnabled: enabled }
           );
         case "TogglePseudoColour":
           return _Utils_update(
@@ -14472,6 +14527,23 @@
           ),
           validate: $elm$core$Maybe$Nothing
         };
+      case "IntPcaHue":
+        return {
+          get: function($) {
+            return $.pcaHue;
+          },
+          max: 180,
+          min: -180,
+          set: F2(
+            function(v, f) {
+              return _Utils_update(
+                f,
+                { pcaHue: v }
+              );
+            }
+          ),
+          validate: $elm$core$Maybe$Nothing
+        };
       case "IntHue":
         return {
           get: function($) {
@@ -14676,23 +14748,6 @@
             );
           }
         };
-      case "StringMorphOperation":
-        return {
-          get: function($) {
-            return $.morphOperation;
-          },
-          set: F2(
-            function(v, f) {
-              return _Utils_update(
-                f,
-                { morphOperation: v }
-              );
-            }
-          ),
-          validate: function(v) {
-            return v === "erode" || v === "dilate";
-          }
-        };
       case "StringPcaMode":
         return {
           get: function($) {
@@ -14714,6 +14769,23 @@
                 ["pca-rgb", "pca1", "pca2", "pca3"]
               )
             );
+          }
+        };
+      case "StringMorphOperation":
+        return {
+          get: function($) {
+            return $.morphOperation;
+          },
+          set: F2(
+            function(v, f) {
+              return _Utils_update(
+                f,
+                { morphOperation: v }
+              );
+            }
+          ),
+          validate: function(v) {
+            return v === "erode" || v === "dilate";
           }
         };
       default:
@@ -14823,6 +14895,7 @@
     var pseudoColourGreen = A2($author$project$Filters$decodeFloat, "pseudoColourGreen", dict);
     var pseudoColourBlue = A2($author$project$Filters$decodeFloat, "pseudoColourBlue", dict);
     var pcaMode = A2($author$project$Filters$decodeString, "pcaMode", dict);
+    var pcaHue = A2($author$project$Filters$decodeInt, "pcaHue", dict);
     var normalizeStrength = A2($author$project$Filters$decodeFloat, "normalizeStrength", dict);
     var morphOperation = A2($author$project$Filters$decodeString, "morphOperation", dict);
     var morphKernel = A2($author$project$Filters$decodeInt, "morphKernel", dict);
@@ -15128,269 +15201,281 @@
                                                     ),
                                                     A3(
                                                       $author$project$Filters$applyMaybe,
-                                                      pcaMode,
+                                                      pcaHue,
                                                       F2(
                                                         function(v, f) {
                                                           return _Utils_update(
                                                             f,
-                                                            { pcaEnabled: true, pcaMode: v }
+                                                            { globalPcaEnabled: true, pcaHue: v }
                                                           );
                                                         }
                                                       ),
                                                       A3(
                                                         $author$project$Filters$applyMaybe,
-                                                        pseudoColourBlue,
+                                                        pcaMode,
                                                         F2(
                                                           function(v, f) {
                                                             return _Utils_update(
                                                               f,
-                                                              { pseudoColourBlue: v, pseudoColourEnabled: true }
+                                                              { globalPcaEnabled: true, pcaMode: v }
                                                             );
                                                           }
                                                         ),
                                                         A3(
                                                           $author$project$Filters$applyMaybe,
-                                                          pseudoColourGreen,
+                                                          pseudoColourBlue,
                                                           F2(
                                                             function(v, f) {
                                                               return _Utils_update(
                                                                 f,
-                                                                { pseudoColourEnabled: true, pseudoColourGreen: v }
+                                                                { pseudoColourBlue: v, pseudoColourEnabled: true }
                                                               );
                                                             }
                                                           ),
                                                           A3(
                                                             $author$project$Filters$applyMaybe,
-                                                            pseudoColourRed,
+                                                            pseudoColourGreen,
                                                             F2(
                                                               function(v, f) {
                                                                 return _Utils_update(
                                                                   f,
-                                                                  { pseudoColourEnabled: true, pseudoColourRed: v }
+                                                                  { pseudoColourEnabled: true, pseudoColourGreen: v }
                                                                 );
                                                               }
                                                             ),
                                                             A3(
                                                               $author$project$Filters$applyMaybe,
-                                                              pseudoColourMode,
+                                                              pseudoColourRed,
                                                               F2(
                                                                 function(v, f) {
                                                                   return _Utils_update(
                                                                     f,
-                                                                    { pseudoColourEnabled: true, pseudoColourMode: v }
+                                                                    { pseudoColourEnabled: true, pseudoColourRed: v }
                                                                   );
                                                                 }
                                                               ),
                                                               A3(
                                                                 $author$project$Filters$applyMaybe,
-                                                                colourmapCenter,
+                                                                pseudoColourMode,
                                                                 F2(
                                                                   function(v, f) {
                                                                     return _Utils_update(
                                                                       f,
-                                                                      { colourmapCenter: v, colourmapEnabled: true }
+                                                                      { pseudoColourEnabled: true, pseudoColourMode: v }
                                                                     );
                                                                   }
                                                                 ),
                                                                 A3(
                                                                   $author$project$Filters$applyMaybe,
-                                                                  colourmapPreset,
+                                                                  colourmapCenter,
                                                                   F2(
                                                                     function(v, f) {
                                                                       return _Utils_update(
                                                                         f,
-                                                                        { colourmapEnabled: true, colourmapPreset: v }
+                                                                        { colourmapCenter: v, colourmapEnabled: true }
                                                                       );
                                                                     }
                                                                   ),
                                                                   A3(
                                                                     $author$project$Filters$applyMaybe,
-                                                                    convolutionPreset,
+                                                                    colourmapPreset,
                                                                     F2(
                                                                       function(v, f) {
                                                                         return _Utils_update(
                                                                           f,
-                                                                          { convolutionEnabled: true, convolutionPreset: v }
+                                                                          { colourmapEnabled: true, colourmapPreset: v }
                                                                         );
                                                                       }
                                                                     ),
                                                                     A3(
                                                                       $author$project$Filters$applyMaybe,
-                                                                      morphKernel,
+                                                                      convolutionPreset,
                                                                       F2(
                                                                         function(v, f) {
                                                                           return _Utils_update(
                                                                             f,
-                                                                            { morphEnabled: true, morphKernel: v }
+                                                                            { convolutionEnabled: true, convolutionPreset: v }
                                                                           );
                                                                         }
                                                                       ),
                                                                       A3(
                                                                         $author$project$Filters$applyMaybe,
-                                                                        morphOperation,
+                                                                        morphKernel,
                                                                         F2(
                                                                           function(v, f) {
                                                                             return _Utils_update(
                                                                               f,
-                                                                              { morphEnabled: true, morphOperation: v }
+                                                                              { morphEnabled: true, morphKernel: v }
                                                                             );
                                                                           }
                                                                         ),
                                                                         A3(
                                                                           $author$project$Filters$applyMaybe,
-                                                                          ccBlue,
+                                                                          morphOperation,
                                                                           F2(
                                                                             function(v, f) {
                                                                               return _Utils_update(
                                                                                 f,
-                                                                                { ccBlue: v, ccBlueEnabled: true }
+                                                                                { morphEnabled: true, morphOperation: v }
                                                                               );
                                                                             }
                                                                           ),
                                                                           A3(
                                                                             $author$project$Filters$applyMaybe,
-                                                                            ccGreen,
+                                                                            ccBlue,
                                                                             F2(
                                                                               function(v, f) {
                                                                                 return _Utils_update(
                                                                                   f,
-                                                                                  { ccGreen: v, ccGreenEnabled: true }
+                                                                                  { ccBlue: v, ccBlueEnabled: true }
                                                                                 );
                                                                               }
                                                                             ),
                                                                             A3(
                                                                               $author$project$Filters$applyMaybe,
-                                                                              ccRed,
+                                                                              ccGreen,
                                                                               F2(
                                                                                 function(v, f) {
                                                                                   return _Utils_update(
                                                                                     f,
-                                                                                    { ccRed: v, ccRedEnabled: true }
+                                                                                    { ccGreen: v, ccGreenEnabled: true }
                                                                                   );
                                                                                 }
                                                                               ),
                                                                               A3(
                                                                                 $author$project$Filters$applyMaybe,
-                                                                                hue,
+                                                                                ccRed,
                                                                                 F2(
                                                                                   function(v, f) {
                                                                                     return _Utils_update(
                                                                                       f,
-                                                                                      { hue: v, hueEnabled: true }
+                                                                                      { ccRed: v, ccRedEnabled: true }
                                                                                     );
                                                                                   }
                                                                                 ),
                                                                                 A3(
                                                                                   $author$project$Filters$applyMaybe,
-                                                                                  vibrance,
+                                                                                  hue,
                                                                                   F2(
                                                                                     function(v, f) {
                                                                                       return _Utils_update(
                                                                                         f,
-                                                                                        { vibrance: v, vibranceEnabled: true }
+                                                                                        { hue: v, hueEnabled: true }
                                                                                       );
                                                                                     }
                                                                                   ),
                                                                                   A3(
                                                                                     $author$project$Filters$applyMaybe,
-                                                                                    saturation,
+                                                                                    vibrance,
                                                                                     F2(
                                                                                       function(v, f) {
                                                                                         return _Utils_update(
                                                                                           f,
-                                                                                          { saturation: v, saturationEnabled: true }
+                                                                                          { vibrance: v, vibranceEnabled: true }
                                                                                         );
                                                                                       }
                                                                                     ),
                                                                                     A3(
                                                                                       $author$project$Filters$applyMaybe,
-                                                                                      gamma,
+                                                                                      saturation,
                                                                                       F2(
                                                                                         function(v, f) {
                                                                                           return _Utils_update(
                                                                                             f,
-                                                                                            { gamma: v, gammaEnabled: true }
+                                                                                            { saturation: v, saturationEnabled: true }
                                                                                           );
                                                                                         }
                                                                                       ),
                                                                                       A3(
                                                                                         $author$project$Filters$applyMaybe,
-                                                                                        contrast,
+                                                                                        gamma,
                                                                                         F2(
                                                                                           function(v, f) {
                                                                                             return _Utils_update(
                                                                                               f,
-                                                                                              { contrast: v, contrastEnabled: true }
+                                                                                              { gamma: v, gammaEnabled: true }
                                                                                             );
                                                                                           }
                                                                                         ),
                                                                                         A3(
                                                                                           $author$project$Filters$applyMaybe,
-                                                                                          brightness,
+                                                                                          contrast,
                                                                                           F2(
                                                                                             function(v, f) {
                                                                                               return _Utils_update(
                                                                                                 f,
-                                                                                                { brightness: v, brightnessEnabled: true }
+                                                                                                { contrast: v, contrastEnabled: true }
                                                                                               );
                                                                                             }
                                                                                           ),
                                                                                           A3(
                                                                                             $author$project$Filters$applyMaybe,
-                                                                                            threshold,
+                                                                                            brightness,
                                                                                             F2(
                                                                                               function(v, f) {
                                                                                                 return _Utils_update(
                                                                                                   f,
-                                                                                                  { threshold: v, thresholdEnabled: true }
+                                                                                                  { brightness: v, brightnessEnabled: true }
                                                                                                 );
                                                                                               }
                                                                                             ),
                                                                                             A3(
                                                                                               $author$project$Filters$applyMaybe,
-                                                                                              invert,
+                                                                                              threshold,
                                                                                               F2(
                                                                                                 function(v, f) {
                                                                                                   return _Utils_update(
                                                                                                     f,
-                                                                                                    { invert: v }
+                                                                                                    { threshold: v, thresholdEnabled: true }
                                                                                                   );
                                                                                                 }
                                                                                               ),
                                                                                               A3(
                                                                                                 $author$project$Filters$applyMaybe,
-                                                                                                grayscale,
+                                                                                                invert,
                                                                                                 F2(
                                                                                                   function(v, f) {
                                                                                                     return _Utils_update(
                                                                                                       f,
-                                                                                                      { grayscale: v }
+                                                                                                      { invert: v }
                                                                                                     );
                                                                                                   }
                                                                                                 ),
                                                                                                 A3(
                                                                                                   $author$project$Filters$applyMaybe,
-                                                                                                  flip,
+                                                                                                  grayscale,
                                                                                                   F2(
                                                                                                     function(v, f) {
                                                                                                       return _Utils_update(
                                                                                                         f,
-                                                                                                        { flip: v }
+                                                                                                        { grayscale: v }
                                                                                                       );
                                                                                                     }
                                                                                                   ),
                                                                                                   A3(
                                                                                                     $author$project$Filters$applyMaybe,
-                                                                                                    rotation,
+                                                                                                    flip,
                                                                                                     F2(
                                                                                                       function(v, f) {
                                                                                                         return _Utils_update(
                                                                                                           f,
-                                                                                                          { rotation: v }
+                                                                                                          { flip: v }
                                                                                                         );
                                                                                                       }
                                                                                                     ),
-                                                                                                    base
+                                                                                                    A3(
+                                                                                                      $author$project$Filters$applyMaybe,
+                                                                                                      rotation,
+                                                                                                      F2(
+                                                                                                        function(v, f) {
+                                                                                                          return _Utils_update(
+                                                                                                            f,
+                                                                                                            { rotation: v }
+                                                                                                          );
+                                                                                                        }
+                                                                                                      ),
+                                                                                                      base
+                                                                                                    )
                                                                                                   )
                                                                                                 )
                                                                                               )
@@ -15593,125 +15678,131 @@
                                                     $elm$json$Json$Encode$string(filters.colourReplaceSource),
                                                     A4(
                                                       $author$project$Filters$addIf,
-                                                      filters.pcaEnabled,
-                                                      "pcaMode",
-                                                      $elm$json$Json$Encode$string(filters.pcaMode),
+                                                      filters.globalPcaEnabled,
+                                                      "pcaHue",
+                                                      $elm$json$Json$Encode$int(filters.pcaHue),
                                                       A4(
                                                         $author$project$Filters$addIf,
-                                                        filters.pseudoColourEnabled,
-                                                        "pseudoColourBlue",
-                                                        $elm$json$Json$Encode$float(filters.pseudoColourBlue),
+                                                        filters.globalPcaEnabled,
+                                                        "pcaMode",
+                                                        $elm$json$Json$Encode$string(filters.pcaMode),
                                                         A4(
                                                           $author$project$Filters$addIf,
                                                           filters.pseudoColourEnabled,
-                                                          "pseudoColourGreen",
-                                                          $elm$json$Json$Encode$float(filters.pseudoColourGreen),
+                                                          "pseudoColourBlue",
+                                                          $elm$json$Json$Encode$float(filters.pseudoColourBlue),
                                                           A4(
                                                             $author$project$Filters$addIf,
                                                             filters.pseudoColourEnabled,
-                                                            "pseudoColourRed",
-                                                            $elm$json$Json$Encode$float(filters.pseudoColourRed),
+                                                            "pseudoColourGreen",
+                                                            $elm$json$Json$Encode$float(filters.pseudoColourGreen),
                                                             A4(
                                                               $author$project$Filters$addIf,
                                                               filters.pseudoColourEnabled,
-                                                              "pseudoColourMode",
-                                                              $elm$json$Json$Encode$string(filters.pseudoColourMode),
+                                                              "pseudoColourRed",
+                                                              $elm$json$Json$Encode$float(filters.pseudoColourRed),
                                                               A4(
                                                                 $author$project$Filters$addIf,
-                                                                filters.colourmapEnabled,
-                                                                "colourmapCenter",
-                                                                $elm$json$Json$Encode$int(filters.colourmapCenter),
+                                                                filters.pseudoColourEnabled,
+                                                                "pseudoColourMode",
+                                                                $elm$json$Json$Encode$string(filters.pseudoColourMode),
                                                                 A4(
                                                                   $author$project$Filters$addIf,
                                                                   filters.colourmapEnabled,
-                                                                  "colourmapPreset",
-                                                                  $elm$json$Json$Encode$string(filters.colourmapPreset),
+                                                                  "colourmapCenter",
+                                                                  $elm$json$Json$Encode$int(filters.colourmapCenter),
                                                                   A4(
                                                                     $author$project$Filters$addIf,
-                                                                    filters.convolutionEnabled,
-                                                                    "convolutionPreset",
-                                                                    $elm$json$Json$Encode$string(filters.convolutionPreset),
+                                                                    filters.colourmapEnabled,
+                                                                    "colourmapPreset",
+                                                                    $elm$json$Json$Encode$string(filters.colourmapPreset),
                                                                     A4(
                                                                       $author$project$Filters$addIf,
-                                                                      filters.morphEnabled,
-                                                                      "morphKernel",
-                                                                      $elm$json$Json$Encode$int(filters.morphKernel),
+                                                                      filters.convolutionEnabled,
+                                                                      "convolutionPreset",
+                                                                      $elm$json$Json$Encode$string(filters.convolutionPreset),
                                                                       A4(
                                                                         $author$project$Filters$addIf,
                                                                         filters.morphEnabled,
-                                                                        "morphOperation",
-                                                                        $elm$json$Json$Encode$string(filters.morphOperation),
+                                                                        "morphKernel",
+                                                                        $elm$json$Json$Encode$int(filters.morphKernel),
                                                                         A4(
                                                                           $author$project$Filters$addIf,
-                                                                          filters.ccBlueEnabled,
-                                                                          "ccBlue",
-                                                                          $elm$json$Json$Encode$int(filters.ccBlue),
+                                                                          filters.morphEnabled,
+                                                                          "morphOperation",
+                                                                          $elm$json$Json$Encode$string(filters.morphOperation),
                                                                           A4(
                                                                             $author$project$Filters$addIf,
-                                                                            filters.ccGreenEnabled,
-                                                                            "ccGreen",
-                                                                            $elm$json$Json$Encode$int(filters.ccGreen),
+                                                                            filters.ccBlueEnabled,
+                                                                            "ccBlue",
+                                                                            $elm$json$Json$Encode$int(filters.ccBlue),
                                                                             A4(
                                                                               $author$project$Filters$addIf,
-                                                                              filters.ccRedEnabled,
-                                                                              "ccRed",
-                                                                              $elm$json$Json$Encode$int(filters.ccRed),
+                                                                              filters.ccGreenEnabled,
+                                                                              "ccGreen",
+                                                                              $elm$json$Json$Encode$int(filters.ccGreen),
                                                                               A4(
                                                                                 $author$project$Filters$addIf,
-                                                                                filters.hueEnabled,
-                                                                                "hue",
-                                                                                $elm$json$Json$Encode$int(filters.hue),
+                                                                                filters.ccRedEnabled,
+                                                                                "ccRed",
+                                                                                $elm$json$Json$Encode$int(filters.ccRed),
                                                                                 A4(
                                                                                   $author$project$Filters$addIf,
-                                                                                  filters.vibranceEnabled,
-                                                                                  "vibrance",
-                                                                                  $elm$json$Json$Encode$int(filters.vibrance),
+                                                                                  filters.hueEnabled,
+                                                                                  "hue",
+                                                                                  $elm$json$Json$Encode$int(filters.hue),
                                                                                   A4(
                                                                                     $author$project$Filters$addIf,
-                                                                                    filters.saturationEnabled,
-                                                                                    "saturation",
-                                                                                    $elm$json$Json$Encode$int(filters.saturation),
+                                                                                    filters.vibranceEnabled,
+                                                                                    "vibrance",
+                                                                                    $elm$json$Json$Encode$int(filters.vibrance),
                                                                                     A4(
                                                                                       $author$project$Filters$addIf,
-                                                                                      filters.gammaEnabled,
-                                                                                      "gamma",
-                                                                                      $elm$json$Json$Encode$float(filters.gamma),
+                                                                                      filters.saturationEnabled,
+                                                                                      "saturation",
+                                                                                      $elm$json$Json$Encode$int(filters.saturation),
                                                                                       A4(
                                                                                         $author$project$Filters$addIf,
-                                                                                        filters.contrastEnabled,
-                                                                                        "contrast",
-                                                                                        $elm$json$Json$Encode$float(filters.contrast),
+                                                                                        filters.gammaEnabled,
+                                                                                        "gamma",
+                                                                                        $elm$json$Json$Encode$float(filters.gamma),
                                                                                         A4(
                                                                                           $author$project$Filters$addIf,
-                                                                                          filters.brightnessEnabled,
-                                                                                          "brightness",
-                                                                                          $elm$json$Json$Encode$int(filters.brightness),
+                                                                                          filters.contrastEnabled,
+                                                                                          "contrast",
+                                                                                          $elm$json$Json$Encode$float(filters.contrast),
                                                                                           A4(
                                                                                             $author$project$Filters$addIf,
-                                                                                            filters.thresholdEnabled,
-                                                                                            "threshold",
-                                                                                            $elm$json$Json$Encode$int(filters.threshold),
+                                                                                            filters.brightnessEnabled,
+                                                                                            "brightness",
+                                                                                            $elm$json$Json$Encode$int(filters.brightness),
                                                                                             A4(
                                                                                               $author$project$Filters$addIf,
-                                                                                              filters.invert,
-                                                                                              "invert",
-                                                                                              $elm$json$Json$Encode$bool(true),
+                                                                                              filters.thresholdEnabled,
+                                                                                              "threshold",
+                                                                                              $elm$json$Json$Encode$int(filters.threshold),
                                                                                               A4(
                                                                                                 $author$project$Filters$addIf,
-                                                                                                filters.grayscale,
-                                                                                                "grayscale",
+                                                                                                filters.invert,
+                                                                                                "invert",
                                                                                                 $elm$json$Json$Encode$bool(true),
                                                                                                 A4(
                                                                                                   $author$project$Filters$addIf,
-                                                                                                  filters.flip,
-                                                                                                  "flip",
+                                                                                                  filters.grayscale,
+                                                                                                  "grayscale",
                                                                                                   $elm$json$Json$Encode$bool(true),
                                                                                                   A4(
                                                                                                     $author$project$Filters$addIf,
-                                                                                                    !!filters.rotation,
-                                                                                                    "rotation",
-                                                                                                    $elm$json$Json$Encode$int(filters.rotation),
-                                                                                                    _List_Nil
+                                                                                                    filters.flip,
+                                                                                                    "flip",
+                                                                                                    $elm$json$Json$Encode$bool(true),
+                                                                                                    A4(
+                                                                                                      $author$project$Filters$addIf,
+                                                                                                      !!filters.rotation,
+                                                                                                      "rotation",
+                                                                                                      $elm$json$Json$Encode$int(filters.rotation),
+                                                                                                      _List_Nil
+                                                                                                    )
                                                                                                   )
                                                                                                 )
                                                                                               )
@@ -15952,27 +16043,6 @@
       return 1;
     }
   };
-  var $rism_digital$elm_iiif$IIIF$Internal$Utilities$find = F2(
-    function(predicate, items) {
-      find:
-        while (true) {
-          if (!items.b) {
-            return $elm$core$Maybe$Nothing;
-          } else {
-            var x = items.a;
-            var rest = items.b;
-            if (predicate(x)) {
-              return $elm$core$Maybe$Just(x);
-            } else {
-              var $temp$predicate = predicate, $temp$items = rest;
-              predicate = $temp$predicate;
-              items = $temp$items;
-              continue find;
-            }
-          }
-        }
-    }
-  );
   var $rism_digital$elm_iiif$IIIF$Language$extractTextFromLanguageMap = F2(
     function(lang, langMap) {
       return A2(
@@ -16370,6 +16440,10 @@
     "pageAspectsUpdated",
     $elm$json$Json$Encode$list($elm$json$Json$Encode$float)
   );
+  var $author$project$Main$pageLabelsUpdated = _Platform_outgoingPort(
+    "pageLabelsUpdated",
+    $elm$json$Json$Encode$list($elm$json$Json$Encode$string)
+  );
   var $author$project$Model$primaryImage = function(page) {
     var _v0 = A2(
       $author$project$Utilities$find,
@@ -16485,6 +16559,15 @@
             [
               $author$project$Main$tileSourcesUpdated(tileSources),
               $author$project$Main$pageAspectsUpdated(pageAspects),
+              $author$project$Main$pageLabelsUpdated(
+                A2(
+                  $elm$core$List$map,
+                  function($) {
+                    return $.label;
+                  },
+                  pages
+                )
+              ),
               $author$project$Main$zoomLevelUpdated(1),
               $author$project$Main$layoutConfigUpdated(
                 { direction, mode: layoutMode }
@@ -16826,6 +16909,10 @@
                         $elm$json$Json$Encode$bool($2.gammaEnabled)
                       ),
                       _Utils_Tuple2(
+                        "globalPcaEnabled",
+                        $elm$json$Json$Encode$bool($2.globalPcaEnabled)
+                      ),
+                      _Utils_Tuple2(
                         "grayscale",
                         $elm$json$Json$Encode$bool($2.grayscale)
                       ),
@@ -16862,8 +16949,8 @@
                         $elm$json$Json$Encode$float($2.normalizeStrength)
                       ),
                       _Utils_Tuple2(
-                        "pcaEnabled",
-                        $elm$json$Json$Encode$bool($2.pcaEnabled)
+                        "pcaHue",
+                        $elm$json$Json$Encode$int($2.pcaHue)
                       ),
                       _Utils_Tuple2(
                         "pcaMode",
@@ -17586,7 +17673,8 @@
                         selectedManifestId: $elm$core$Maybe$Just(manifestId)
                       }
                     )
-                  )
+                  ),
+                  response: $author$project$Model$Loading
                 }
               ),
               A3(
@@ -23175,7 +23263,7 @@
             $elm$html$Html$div,
             _List_fromArray(
               [
-                $elm$html$Html$Attributes$class("model is-narrow")
+                $elm$html$Html$Attributes$class("modal is-narrow")
               ]
             ),
             _List_fromArray(
@@ -24353,8 +24441,9 @@
       )
     );
   };
+  var $author$project$Filters$IntPcaHue = { $: "IntPcaHue" };
   var $author$project$Filters$StringPcaMode = { $: "StringPcaMode" };
-  var $author$project$Filters$TogglePca = { $: "TogglePca" };
+  var $author$project$Filters$ToggleGlobalPca = { $: "ToggleGlobalPca" };
   var $author$project$View$PageViewModal$pcaModes = _List_fromArray(
     [
       A2(
@@ -24416,13 +24505,13 @@
       $author$project$View$PageViewModal$viewFilterGroup,
       model,
       "pca",
-      "Principle Component Analysis",
+      "Visible area PCA",
       _List_fromArray(
         [
           $author$project$View$PageViewModal$viewFilterRow(
             _List_fromArray(
               [
-                A3($author$project$View$PageViewModal$viewToggle, "PCA", model.filters.pcaEnabled, $author$project$Filters$TogglePca),
+                A3($author$project$View$PageViewModal$viewToggle, "Visible area PCA", model.filters.globalPcaEnabled, $author$project$Filters$ToggleGlobalPca),
                 A3(
                   $author$project$View$PageViewModal$viewSelect,
                   model.filters.pcaMode,
@@ -24431,6 +24520,17 @@
                 )
               ]
             )
+          ),
+          $author$project$View$PageViewModal$viewRangeRow(
+            {
+              display: $elm$core$String$fromInt(model.filters.pcaHue) + "deg",
+              label: "Hue Rotation",
+              max: "180",
+              min: "-180",
+              onInput: $author$project$Msg$UserUpdatedFilterInt($author$project$Filters$IntPcaHue),
+              step: $elm$core$Maybe$Just("1"),
+              value: $elm$core$String$fromInt(model.filters.pcaHue)
+            }
           )
         ]
       )
@@ -26402,7 +26502,7 @@
         $rism_digital$elm_iiif$IIIF$Presentation$LeftToRight,
         A2($elm$core$Maybe$map, $rism_digital$elm_iiif$IIIF$Presentation$toViewingDirection, maybeManifest)
       );
-      var thumbnailPages = model.isViewerLoading ? _List_Nil : model.pages;
+      var thumbnailPages = _Utils_eq(model.resourceResponse, $author$project$Model$ResourceLoading) || _Utils_eq(model.response, $author$project$Model$Loading) ? _List_Nil : model.pages;
       var panelClasses = _List_fromArray(
         [
           _Utils_Tuple2("sidebar-panel", true),
@@ -26797,7 +26897,7 @@
                         {
                           icon: model.shiftByOne ? $author$project$View$Icons$shiftLeft : $author$project$View$Icons$shiftRight,
                           isFullscreen: model.fullscreen,
-                          label: "Shift Page",
+                          label: "Shift Pages",
                           onClickMsg: A2(
                             $author$project$Utilities$disabledIf,
                             controlsDisabled || _Utils_eq(model.viewMode, $author$project$Model$OneUp),
@@ -27053,7 +27153,7 @@
       },
       A2($elm$json$Json$Decode$field, "userLanguage", $elm$json$Json$Decode$string)
     )
-  )({ "versions": { "elm": "0.19.1" }, "types": { "message": "Msg.Msg", "aliases": { "IIIF.Presentation.Canvas": { "args": [], "type": "{ id : String.String, label : Maybe.Maybe IIIF.Language.LanguageMap, width : Maybe.Maybe Basics.Int, height : Maybe.Maybe Basics.Int, images : List.List IIIF.Presentation.Image, viewingLayout : Maybe.Maybe IIIF.Presentation.ViewingLayout }" }, "IIIF.Presentation.HomePage": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.Image": { "args": [], "type": "{ id : IIIF.Image.ImageUri, label : Maybe.Maybe IIIF.Language.LanguageMap, imageType : IIIF.Presentation.ImageType, service : List.List IIIF.Presentation.ServiceTypes }" }, "IIIF.Language.LabelValue": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Language.LanguageMap": { "args": [], "type": "List.List IIIF.Language.LanguageValues" }, "IIIF.Presentation.Logo": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes, width : Basics.Int, height : Basics.Int, service : Maybe.Maybe (List.List IIIF.Presentation.ServiceObject) }" }, "IIIF.Presentation.Manifest": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, metadata : List.List IIIF.Language.LabelValue, viewingDirection : IIIF.Presentation.ViewingDirection, summary : Maybe.Maybe IIIF.Language.LanguageMap, viewingLayout : IIIF.Presentation.ViewingLayout, canvases : List.List IIIF.Presentation.Canvas, ranges : Maybe.Maybe (List.List IIIF.Presentation.Range), homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe IIIF.Presentation.Image, provider : Maybe.Maybe (List.List IIIF.Presentation.Provider), thumbnail : Maybe.Maybe IIIF.Presentation.Image, requiredStatement : Maybe.Maybe IIIF.Presentation.RequiredStatement }" }, "IIIF.Presentation.Provider": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, type_ : IIIF.Presentation.ResourceTypes, homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe (List.List IIIF.Presentation.Logo), seeAlso : Maybe.Maybe (List.List IIIF.Presentation.SeeAlso) }" }, "IIIF.Presentation.Range": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.RangeItem, metadata : List.List IIIF.Language.LabelValue }" }, "IIIF.Presentation.RequiredStatement": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Presentation.SeeAlso": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.ServiceObject": { "args": [], "type": "{ id : String.String, serviceType : IIIF.Presentation.ServiceTypes }" }, "IIIF.Presentation.Collection": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, summary : Maybe.Maybe IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.CollectionItem }" }, "IIIF.Image.ImageRequestParameters": { "args": [], "type": "{ host : String.String, prefix : String.String, region : IIIF.Image.ImageRegion, size : IIIF.Image.ImageSize, rotation : IIIF.Image.ImageRotation, quality : IIIF.Image.ImageQuality, format : IIIF.Image.ImageFormat }" }, "IIIF.Image.ImageServerParameters": { "args": [], "type": "{ host : String.String, prefix : String.String }" } }, "unions": { "Msg.Msg": { "args": [], "tags": { "ClientNotifiedFullscreenChanged": ["Basics.Bool"], "ClientNotifiedPageChanged": ["Basics.Int"], "ClientNotifiedPageChangedInstant": ["Basics.Int"], "ClientNotifiedScrollThumbs": [], "ServerRespondedWithCollectionItem": ["String.String", "Result.Result Http.Error IIIF.Presentation.IIIFResource"], "ServerRespondedWithManifestFromCollection": ["String.String", "Result.Result Http.Error IIIF.Presentation.IIIFManifest"], "ServerRespondedWithResource": ["Result.Result Http.Error IIIF.Presentation.IIIFResource"], "UserAppliedFilterJson": [], "UserChangedZoomLevel": ["Basics.Float"], "UserClickedCloseManifestInfo": [], "UserClickedClosePageView": [], "UserClickedCollectionItem": ["String.String"], "UserClickedManifestItem": ["String.String", "String.String"], "UserClickedOpenManifestInfo": [], "UserClickedOpenPageView": [], "UserClickedPageViewImageChoice": ["Basics.Int"], "UserClickedPageViewNext": [], "UserClickedPageViewPrev": [], "UserClickedRange": ["String.String", "Maybe.Maybe Basics.Int"], "UserClickedSaveFilteredImage": [], "UserClickedThumbnail": ["Basics.Int"], "UserClickedZoomIn": [], "UserClickedZoomOut": [], "UserCopiedFilterJson": [], "UserDraggedCollectionSidebarResize": ["Basics.Int"], "UserDraggedSidebarResize": ["Basics.Int"], "UserEndedCollectionSidebarResize": [], "UserEndedSidebarResize": [], "UserResetAllFilters": [], "UserResetAltColourAdjust": [], "UserSelectedContentsIndex": [], "UserSelectedContentsPages": [], "UserStartedCollectionSidebarResize": ["Basics.Int"], "UserStartedSidebarResize": ["Basics.Int"], "UserToggledContents": [], "UserToggledFilter": ["Filters.FilterToggle", "Basics.Bool"], "UserToggledFilterGroup": ["String.String"], "UserToggledFullscreen": [], "UserToggledMetadata": [], "UserToggledPageViewFullscreen": [], "UserToggledPageViewSidebar": [], "UserToggledShiftByOne": [], "UserToggledSidebar": [], "UserToggledThumbnails": [], "UserToggledTwoUp": [], "UserUpdatedFilterFloat": ["Filters.FilterFloatValue", "String.String"], "UserUpdatedFilterInt": ["Filters.FilterIntValue", "String.String"], "UserUpdatedFilterJsonInput": ["String.String"], "UserUpdatedFilterString": ["Filters.FilterStringValue", "String.String"], "ViewerLoadingChanged": ["Basics.Bool"], "ViewportChanged": ["Basics.Int", "Basics.Int"] } }, "Basics.Bool": { "args": [], "tags": { "True": [], "False": [] } }, "Http.Error": { "args": [], "tags": { "BadUrl": ["String.String"], "Timeout": [], "NetworkError": [], "BadStatus": ["Basics.Int"], "BadBody": ["String.String"] } }, "Filters.FilterFloatValue": { "args": [], "tags": { "FloatColourReplaceBlend": [], "FloatContrast": [], "FloatGamma": [], "FloatNormalizeStrength": [], "FloatPseudoColourBlue": [], "FloatPseudoColourGreen": [], "FloatPseudoColourRed": [], "FloatUnsharpAmount": [] } }, "Filters.FilterIntValue": { "args": [], "tags": { "IntAdaptiveOffset": [], "IntAdaptiveWindow": [], "IntAltRedGamma": [], "IntAltRedSigmoid": [], "IntAltRedVibrance": [], "IntAltRedHue": [], "IntAltRedHueWindow": [], "IntAltGreenGamma": [], "IntAltGreenSigmoid": [], "IntAltGreenHue": [], "IntAltGreenHueWindow": [], "IntAltGreenVibrance": [], "IntAltBlueGamma": [], "IntAltBlueSigmoid": [], "IntAltBlueHue": [], "IntAltBlueHueWindow": [], "IntAltBlueVibrance": [], "IntBrightness": [], "IntCcBlue": [], "IntCcGreen": [], "IntCcRed": [], "IntColourmapCenter": [], "IntColourReplaceTolerance": [], "IntHue": [], "IntMorphKernel": [], "IntRotation": [], "IntSaturation": [], "IntThreshold": [], "IntVibrance": [] } }, "Filters.FilterStringValue": { "args": [], "tags": { "StringColourmapPreset": [], "StringColourReplaceSource": [], "StringColourReplaceTarget": [], "StringConvolutionPreset": [], "StringMorphOperation": [], "StringPcaMode": [], "StringPseudoColourMode": [] } }, "Filters.FilterToggle": { "args": [], "tags": { "ToggleAdaptive": [], "ToggleAltBlueGamma": [], "ToggleAltBlueHue": [], "ToggleAltBlueSigmoid": [], "ToggleAltBlueVibrance": [], "ToggleAltGreenGamma": [], "ToggleAltGreenHue": [], "ToggleAltGreenSigmoid": [], "ToggleAltGreenVibrance": [], "ToggleAltRedGamma": [], "ToggleAltRedHue": [], "ToggleAltRedSigmoid": [], "ToggleAltRedVibrance": [], "ToggleBrightness": [], "ToggleCcBlue": [], "ToggleCcGreen": [], "ToggleCcRed": [], "ToggleColourmap": [], "ToggleColourReplace": [], "ToggleColourReplacePreserveLum": [], "ToggleContrast": [], "ToggleConvolution": [], "ToggleFlip": [], "ToggleGamma": [], "ToggleGrayscale": [], "ToggleHue": [], "ToggleInvert": [], "ToggleMorph": [], "ToggleNormalize": [], "TogglePca": [], "TogglePseudoColour": [], "ToggleSaturation": [], "ToggleThreshold": [], "ToggleUnsharp": [], "ToggleVibrance": [] } }, "Basics.Float": { "args": [], "tags": { "Float": [] } }, "IIIF.Presentation.IIIFManifest": { "args": [], "tags": { "IIIFManifest": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Manifest"] } }, "IIIF.Presentation.IIIFResource": { "args": [], "tags": { "ResourceManifest": ["IIIF.Presentation.IIIFManifest"], "ResourceCollection": ["IIIF.Presentation.IIIFCollection"], "ResourceCanvas": ["IIIF.Presentation.IIIFCanvas"], "ResourceRange": ["IIIF.Presentation.IIIFRange"] } }, "Basics.Int": { "args": [], "tags": { "Int": [] } }, "Maybe.Maybe": { "args": ["a"], "tags": { "Just": ["a"], "Nothing": [] } }, "Result.Result": { "args": ["error", "value"], "tags": { "Ok": ["value"], "Err": ["error"] } }, "String.String": { "args": [], "tags": { "String": [] } }, "IIIF.Presentation.IIIFCanvas": { "args": [], "tags": { "IIIFCanvas": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Canvas"] } }, "IIIF.Presentation.IIIFCollection": { "args": [], "tags": { "IIIFCollection": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Collection"] } }, "IIIF.Presentation.IIIFRange": { "args": [], "tags": { "IIIFRange": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Range"] } }, "IIIF.Version.IIIFVersion": { "args": [], "tags": { "IIIFV2": [], "IIIFV3": [] } }, "IIIF.Presentation.ImageType": { "args": [], "tags": { "PrimaryImage": [], "ChoiceImage": [] } }, "IIIF.Image.ImageUri": { "args": [], "tags": { "InfoUri": ["IIIF.Image.ImageServerParameters"], "ImageUri": ["IIIF.Image.ImageRequestParameters"] } }, "IIIF.Language.LanguageValues": { "args": [], "tags": { "LanguageValues": ["IIIF.Language.Language", "List.List String.String"] } }, "List.List": { "args": ["a"], "tags": {} }, "IIIF.Presentation.MediaFormats": { "args": [], "tags": { "ImageJpeg": [], "OtherFormat": ["String.String"] } }, "IIIF.Presentation.RangeItem": { "args": [], "tags": { "RangeCanvas": ["String.String"], "RangeRange": ["IIIF.Presentation.Range"] } }, "IIIF.Presentation.ResourceTypes": { "args": [], "tags": { "Video": [], "OtherResource": ["String.String"] } }, "IIIF.Presentation.ServiceTypes": { "args": [], "tags": { "ImageService1": [], "ImageService2": [], "ImageService3": [], "SearchService1": [], "AutoCompleteService1": [], "AuthTokenService1": [], "AuthLogoutService1": [], "UnknownService": [] } }, "IIIF.Presentation.ViewingDirection": { "args": [], "tags": { "LeftToRight": [], "RightToLeft": [], "TopToBottom": [], "BottomToTop": [] } }, "IIIF.Presentation.ViewingLayout": { "args": [], "tags": { "LayoutV2": ["IIIF.Presentation.ViewingHint"], "LayoutV3": ["List.List IIIF.Presentation.Behavior"] } }, "IIIF.Presentation.Behavior": { "args": [], "tags": { "AutoAdvanceBehavior": [], "NoAutoAdvanceBehavior": [], "RepeatBehavior": [], "NoRepeatBehavior": [], "UnorderedBehavior": [], "IndividualsBehavior": [], "ContinuousBehavior": [], "PagedBehavior": [], "FacingPagesBehavior": [], "NonPagedBehavior": [], "MultiPartBehavior": [], "TogetherBehavior": [], "SequenceBehavior": [], "ThumbnailNavBehavior": [], "NoNavBehavior": [], "HiddenBehavior": [] } }, "IIIF.Presentation.CollectionItem": { "args": [], "tags": { "NestedCollection": ["IIIF.Presentation.Collection"], "ManifestItem": ["IIIF.Presentation.Manifest"] } }, "IIIF.Image.ImageFormat": { "args": [], "tags": { "JpegFormat": [], "TiffFormat": [], "PngFormat": [], "Jp2Format": [], "GifFormat": [], "PdfFormat": [], "WebpFormat": [] } }, "IIIF.Image.ImageQuality": { "args": [], "tags": { "ColorQuality": [], "GrayQuality": [], "BiTonalQuality": [], "DefaultQuality": [], "NativeQuality": [] } }, "IIIF.Image.ImageRegion": { "args": [], "tags": { "FullRegion": [], "SquareRegion": [], "SizeRegion": ["{ x : Basics.Int, y : Basics.Int, w : Basics.Int, h : Basics.Int }"], "PctSizeRegion": ["{ x : Basics.Float, y : Basics.Float, w : Basics.Float, h : Basics.Float }"] } }, "IIIF.Image.ImageRotation": { "args": [], "tags": { "NormalRotation": ["Basics.Float"], "MirroredRotation": ["Basics.Float"] } }, "IIIF.Image.ImageSize": { "args": [], "tags": { "MaxSize": [], "ExactMaxSize": [], "WidthOnlySize": ["Basics.Int"], "ExactWidthOnlySize": ["Basics.Int"], "HeightOnlySize": ["Basics.Int"], "ExactHeightOnlySize": ["Basics.Int"], "PercentSize": ["Basics.Float"], "ExactPercentSize": ["Basics.Float"], "WidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"] } }, "IIIF.Language.Language": { "args": [], "tags": { "LanguageCode": ["String.String"], "None": [], "Default": [] } }, "IIIF.Presentation.ViewingHint": { "args": [], "tags": { "PagedHint": [], "IndividualsHint": [], "ContinuousHint": [], "MultiPartHint": [], "NonPagedHint": [], "TopHint": [], "FacingPagesHint": [] } } } } }) } };
+  )({ "versions": { "elm": "0.19.1" }, "types": { "message": "Msg.Msg", "aliases": { "IIIF.Presentation.Canvas": { "args": [], "type": "{ id : String.String, label : Maybe.Maybe IIIF.Language.LanguageMap, width : Maybe.Maybe Basics.Int, height : Maybe.Maybe Basics.Int, images : List.List IIIF.Presentation.Image, viewingLayout : Maybe.Maybe IIIF.Presentation.ViewingLayout }" }, "IIIF.Presentation.HomePage": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.Image": { "args": [], "type": "{ id : IIIF.Image.ImageUri, label : Maybe.Maybe IIIF.Language.LanguageMap, imageType : IIIF.Presentation.ImageType, service : List.List IIIF.Presentation.ServiceTypes }" }, "IIIF.Language.LabelValue": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Language.LanguageMap": { "args": [], "type": "List.List IIIF.Language.LanguageValues" }, "IIIF.Presentation.Logo": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes, width : Basics.Int, height : Basics.Int, service : Maybe.Maybe (List.List IIIF.Presentation.ServiceObject) }" }, "IIIF.Presentation.Manifest": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, metadata : List.List IIIF.Language.LabelValue, viewingDirection : IIIF.Presentation.ViewingDirection, summary : Maybe.Maybe IIIF.Language.LanguageMap, viewingLayout : IIIF.Presentation.ViewingLayout, canvases : List.List IIIF.Presentation.Canvas, ranges : Maybe.Maybe (List.List IIIF.Presentation.Range), homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe IIIF.Presentation.Image, provider : Maybe.Maybe (List.List IIIF.Presentation.Provider), thumbnail : Maybe.Maybe IIIF.Presentation.Image, requiredStatement : Maybe.Maybe IIIF.Presentation.RequiredStatement }" }, "IIIF.Presentation.Provider": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, type_ : IIIF.Presentation.ResourceTypes, homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe (List.List IIIF.Presentation.Logo), seeAlso : Maybe.Maybe (List.List IIIF.Presentation.SeeAlso) }" }, "IIIF.Presentation.Range": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.RangeItem, metadata : List.List IIIF.Language.LabelValue }" }, "IIIF.Presentation.RequiredStatement": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Presentation.SeeAlso": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.ServiceObject": { "args": [], "type": "{ id : String.String, serviceType : IIIF.Presentation.ServiceTypes }" }, "IIIF.Presentation.Collection": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, summary : Maybe.Maybe IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.CollectionItem }" }, "IIIF.Image.ImageRequestParameters": { "args": [], "type": "{ host : String.String, prefix : String.String, region : IIIF.Image.ImageRegion, size : IIIF.Image.ImageSize, rotation : IIIF.Image.ImageRotation, quality : IIIF.Image.ImageQuality, format : IIIF.Image.ImageFormat }" }, "IIIF.Image.ImageServerParameters": { "args": [], "type": "{ host : String.String, prefix : String.String }" } }, "unions": { "Msg.Msg": { "args": [], "tags": { "ClientNotifiedFullscreenChanged": ["Basics.Bool"], "ClientNotifiedPageChanged": ["Basics.Int"], "ClientNotifiedPageChangedInstant": ["Basics.Int"], "ClientNotifiedScrollThumbs": [], "ServerRespondedWithCollectionItem": ["String.String", "Result.Result Http.Error IIIF.Presentation.IIIFResource"], "ServerRespondedWithManifestFromCollection": ["String.String", "Result.Result Http.Error IIIF.Presentation.IIIFManifest"], "ServerRespondedWithResource": ["Result.Result Http.Error IIIF.Presentation.IIIFResource"], "UserAppliedFilterJson": [], "UserChangedZoomLevel": ["Basics.Float"], "UserClickedCloseManifestInfo": [], "UserClickedClosePageView": [], "UserClickedCollectionItem": ["String.String"], "UserClickedManifestItem": ["String.String", "String.String"], "UserClickedOpenManifestInfo": [], "UserClickedOpenPageView": [], "UserClickedPageViewImageChoice": ["Basics.Int"], "UserClickedPageViewNext": [], "UserClickedPageViewPrev": [], "UserClickedRange": ["String.String", "Maybe.Maybe Basics.Int"], "UserClickedSaveFilteredImage": [], "UserClickedThumbnail": ["Basics.Int"], "UserClickedZoomIn": [], "UserClickedZoomOut": [], "UserCopiedFilterJson": [], "UserDraggedCollectionSidebarResize": ["Basics.Int"], "UserDraggedSidebarResize": ["Basics.Int"], "UserEndedCollectionSidebarResize": [], "UserEndedSidebarResize": [], "UserResetAllFilters": [], "UserResetAltColourAdjust": [], "UserSelectedContentsIndex": [], "UserSelectedContentsPages": [], "UserStartedCollectionSidebarResize": ["Basics.Int"], "UserStartedSidebarResize": ["Basics.Int"], "UserToggledContents": [], "UserToggledFilter": ["Filters.FilterToggle", "Basics.Bool"], "UserToggledFilterGroup": ["String.String"], "UserToggledFullscreen": [], "UserToggledMetadata": [], "UserToggledPageViewFullscreen": [], "UserToggledPageViewSidebar": [], "UserToggledShiftByOne": [], "UserToggledSidebar": [], "UserToggledThumbnails": [], "UserToggledTwoUp": [], "UserUpdatedFilterFloat": ["Filters.FilterFloatValue", "String.String"], "UserUpdatedFilterInt": ["Filters.FilterIntValue", "String.String"], "UserUpdatedFilterJsonInput": ["String.String"], "UserUpdatedFilterString": ["Filters.FilterStringValue", "String.String"], "ViewerLoadingChanged": ["Basics.Bool"], "ViewportChanged": ["Basics.Int", "Basics.Int"] } }, "Basics.Bool": { "args": [], "tags": { "True": [], "False": [] } }, "Http.Error": { "args": [], "tags": { "BadUrl": ["String.String"], "Timeout": [], "NetworkError": [], "BadStatus": ["Basics.Int"], "BadBody": ["String.String"] } }, "Filters.FilterFloatValue": { "args": [], "tags": { "FloatColourReplaceBlend": [], "FloatContrast": [], "FloatGamma": [], "FloatNormalizeStrength": [], "FloatPseudoColourBlue": [], "FloatPseudoColourGreen": [], "FloatPseudoColourRed": [], "FloatUnsharpAmount": [] } }, "Filters.FilterIntValue": { "args": [], "tags": { "IntAdaptiveOffset": [], "IntAdaptiveWindow": [], "IntAltRedGamma": [], "IntAltRedSigmoid": [], "IntAltRedVibrance": [], "IntAltRedHue": [], "IntAltRedHueWindow": [], "IntAltGreenGamma": [], "IntAltGreenSigmoid": [], "IntAltGreenHue": [], "IntAltGreenHueWindow": [], "IntAltGreenVibrance": [], "IntAltBlueGamma": [], "IntAltBlueSigmoid": [], "IntAltBlueHue": [], "IntAltBlueHueWindow": [], "IntAltBlueVibrance": [], "IntBrightness": [], "IntCcBlue": [], "IntCcGreen": [], "IntCcRed": [], "IntColourmapCenter": [], "IntColourReplaceTolerance": [], "IntPcaHue": [], "IntHue": [], "IntMorphKernel": [], "IntRotation": [], "IntSaturation": [], "IntThreshold": [], "IntVibrance": [] } }, "Filters.FilterStringValue": { "args": [], "tags": { "StringColourmapPreset": [], "StringColourReplaceSource": [], "StringColourReplaceTarget": [], "StringConvolutionPreset": [], "StringPcaMode": [], "StringMorphOperation": [], "StringPseudoColourMode": [] } }, "Filters.FilterToggle": { "args": [], "tags": { "ToggleAdaptive": [], "ToggleAltBlueGamma": [], "ToggleAltBlueHue": [], "ToggleAltBlueSigmoid": [], "ToggleAltBlueVibrance": [], "ToggleAltGreenGamma": [], "ToggleAltGreenHue": [], "ToggleAltGreenSigmoid": [], "ToggleAltGreenVibrance": [], "ToggleAltRedGamma": [], "ToggleAltRedHue": [], "ToggleAltRedSigmoid": [], "ToggleAltRedVibrance": [], "ToggleBrightness": [], "ToggleCcBlue": [], "ToggleCcGreen": [], "ToggleCcRed": [], "ToggleColourmap": [], "ToggleColourReplace": [], "ToggleColourReplacePreserveLum": [], "ToggleContrast": [], "ToggleConvolution": [], "ToggleFlip": [], "ToggleGamma": [], "ToggleGlobalPca": [], "ToggleGrayscale": [], "ToggleHue": [], "ToggleInvert": [], "ToggleMorph": [], "ToggleNormalize": [], "TogglePseudoColour": [], "ToggleSaturation": [], "ToggleThreshold": [], "ToggleUnsharp": [], "ToggleVibrance": [] } }, "Basics.Float": { "args": [], "tags": { "Float": [] } }, "IIIF.Presentation.IIIFManifest": { "args": [], "tags": { "IIIFManifest": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Manifest"] } }, "IIIF.Presentation.IIIFResource": { "args": [], "tags": { "ResourceManifest": ["IIIF.Presentation.IIIFManifest"], "ResourceCollection": ["IIIF.Presentation.IIIFCollection"], "ResourceCanvas": ["IIIF.Presentation.IIIFCanvas"], "ResourceRange": ["IIIF.Presentation.IIIFRange"] } }, "Basics.Int": { "args": [], "tags": { "Int": [] } }, "Maybe.Maybe": { "args": ["a"], "tags": { "Just": ["a"], "Nothing": [] } }, "Result.Result": { "args": ["error", "value"], "tags": { "Ok": ["value"], "Err": ["error"] } }, "String.String": { "args": [], "tags": { "String": [] } }, "IIIF.Presentation.IIIFCanvas": { "args": [], "tags": { "IIIFCanvas": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Canvas"] } }, "IIIF.Presentation.IIIFCollection": { "args": [], "tags": { "IIIFCollection": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Collection"] } }, "IIIF.Presentation.IIIFRange": { "args": [], "tags": { "IIIFRange": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Range"] } }, "IIIF.Version.IIIFVersion": { "args": [], "tags": { "IIIFV2": [], "IIIFV3": [] } }, "IIIF.Presentation.ImageType": { "args": [], "tags": { "PrimaryImage": [], "ChoiceImage": [] } }, "IIIF.Image.ImageUri": { "args": [], "tags": { "InfoUri": ["IIIF.Image.ImageServerParameters"], "ImageUri": ["IIIF.Image.ImageRequestParameters"] } }, "IIIF.Language.LanguageValues": { "args": [], "tags": { "LanguageValues": ["IIIF.Language.Language", "List.List String.String"] } }, "List.List": { "args": ["a"], "tags": {} }, "IIIF.Presentation.MediaFormats": { "args": [], "tags": { "ImageJpeg": [], "OtherFormat": ["String.String"] } }, "IIIF.Presentation.RangeItem": { "args": [], "tags": { "RangeCanvas": ["String.String"], "RangeRange": ["IIIF.Presentation.Range"] } }, "IIIF.Presentation.ResourceTypes": { "args": [], "tags": { "Video": [], "OtherResource": ["String.String"] } }, "IIIF.Presentation.ServiceTypes": { "args": [], "tags": { "ImageService1": [], "ImageService2": [], "ImageService3": [], "SearchService1": [], "AutoCompleteService1": [], "AuthTokenService1": [], "AuthLogoutService1": [], "UnknownService": [] } }, "IIIF.Presentation.ViewingDirection": { "args": [], "tags": { "LeftToRight": [], "RightToLeft": [], "TopToBottom": [], "BottomToTop": [] } }, "IIIF.Presentation.ViewingLayout": { "args": [], "tags": { "LayoutV2": ["IIIF.Presentation.ViewingHint"], "LayoutV3": ["List.List IIIF.Presentation.Behavior"] } }, "IIIF.Presentation.Behavior": { "args": [], "tags": { "AutoAdvanceBehavior": [], "NoAutoAdvanceBehavior": [], "RepeatBehavior": [], "NoRepeatBehavior": [], "UnorderedBehavior": [], "IndividualsBehavior": [], "ContinuousBehavior": [], "PagedBehavior": [], "FacingPagesBehavior": [], "NonPagedBehavior": [], "MultiPartBehavior": [], "TogetherBehavior": [], "SequenceBehavior": [], "ThumbnailNavBehavior": [], "NoNavBehavior": [], "HiddenBehavior": [] } }, "IIIF.Presentation.CollectionItem": { "args": [], "tags": { "NestedCollection": ["IIIF.Presentation.Collection"], "ManifestItem": ["IIIF.Presentation.Manifest"] } }, "IIIF.Image.ImageFormat": { "args": [], "tags": { "JpegFormat": [], "TiffFormat": [], "PngFormat": [], "Jp2Format": [], "GifFormat": [], "PdfFormat": [], "WebpFormat": [] } }, "IIIF.Image.ImageQuality": { "args": [], "tags": { "ColorQuality": [], "GrayQuality": [], "BiTonalQuality": [], "DefaultQuality": [], "NativeQuality": [] } }, "IIIF.Image.ImageRegion": { "args": [], "tags": { "FullRegion": [], "SquareRegion": [], "SizeRegion": ["{ x : Basics.Int, y : Basics.Int, w : Basics.Int, h : Basics.Int }"], "PctSizeRegion": ["{ x : Basics.Float, y : Basics.Float, w : Basics.Float, h : Basics.Float }"] } }, "IIIF.Image.ImageRotation": { "args": [], "tags": { "NormalRotation": ["Basics.Float"], "MirroredRotation": ["Basics.Float"] } }, "IIIF.Image.ImageSize": { "args": [], "tags": { "MaxSize": [], "ExactMaxSize": [], "WidthOnlySize": ["Basics.Int"], "ExactWidthOnlySize": ["Basics.Int"], "HeightOnlySize": ["Basics.Int"], "ExactHeightOnlySize": ["Basics.Int"], "PercentSize": ["Basics.Float"], "ExactPercentSize": ["Basics.Float"], "WidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"] } }, "IIIF.Language.Language": { "args": [], "tags": { "LanguageCode": ["String.String"], "None": [], "Default": [] } }, "IIIF.Presentation.ViewingHint": { "args": [], "tags": { "PagedHint": [], "IndividualsHint": [], "ContinuousHint": [], "MultiPartHint": [], "NonPagedHint": [], "TopHint": [], "FacingPagesHint": [] } } } } }) } };
 
   // src/filters.ts
   function setFilterOptions(viewer, options) {
@@ -27065,6 +27165,14 @@
     } else {
       setOptions(viewer.filterPluginInstance, options || {});
     }
+  }
+  function readImageDataFromContext(context) {
+    const width = context.canvas.width;
+    const height = context.canvas.height;
+    const scratchContext = Filters._ensureScratchContext(width, height);
+    scratchContext.clearRect(0, 0, width, height);
+    scratchContext.drawImage(context.canvas, 0, 0);
+    return scratchContext.getImageData(0, 0, width, height);
   }
   function createFilterPlugin(viewer, options) {
     const instance = { viewer, filters: [], filterIncrement: 0 };
@@ -27096,14 +27204,12 @@
         const currentIncrement = self.filterIncrement;
         const callbacks = [];
         for (let i = 0; i < filtersProcessors.length - 1; i += 1) {
-          ((index) => {
-            callbacks[index] = () => {
-              if (self.filterIncrement !== currentIncrement) {
-                return;
-              }
-              filtersProcessors[index + 1](context, callbacks[index + 1]);
-            };
-          })(i);
+          callbacks[i] = () => {
+            if (self.filterIncrement !== currentIncrement) {
+              return;
+            }
+            filtersProcessors[i + 1](context, callbacks[i + 1]);
+          };
         }
         callbacks[filtersProcessors.length - 1] = () => {
           if (self.filterIncrement !== currentIncrement) {
@@ -27118,14 +27224,6 @@
           });
         }
       }
-    }
-    function readImageDataFromContext(context) {
-      const width = context.canvas.width;
-      const height = context.canvas.height;
-      const scratchContext = Filters._ensureScratchContext(width, height);
-      scratchContext.clearRect(0, 0, width, height);
-      scratchContext.drawImage(context.canvas, 0, 0);
-      return scratchContext.getImageData(0, 0, width, height);
     }
     function tileDrawingHandler(event) {
       const tile = event.tile;
@@ -27165,8 +27263,7 @@
     return instance;
   }
   function setOptions(instance, options) {
-    const nextOptions = options || {};
-    const filters = nextOptions.filters;
+    const filters = options.filters;
     instance.filters = !filters ? [] : Array.isArray(filters) ? filters : [filters];
     for (let i = 0; i < instance.filters.length; i += 1) {
       const filter = instance.filters[i];
@@ -27176,7 +27273,7 @@
       filter.processors = Array.isArray(filter.processors) ? filter.processors : [filter.processors];
     }
     instance.filterIncrement += 1;
-    if (nextOptions.loadMode === "sync") {
+    if (options.loadMode === "sync") {
       instance.viewer.forceRedraw();
     } else {
       let itemsToReset = [];
@@ -27613,6 +27710,22 @@
     const value = dot3(v, mv);
     return { vector: v, value };
   }
+  function computePcaBasisFromCov(mean, cov) {
+    const eig1 = powerIterEigen(cov, 12);
+    const deflated = matSub(cov, scaleMat3(outer3(eig1.vector), eig1.value));
+    const eig2 = powerIterEigen(deflated, 12);
+    const eig3 = normalize3([
+      eig1.vector[1] * eig2.vector[2] - eig1.vector[2] * eig2.vector[1],
+      eig1.vector[2] * eig2.vector[0] - eig1.vector[0] * eig2.vector[2],
+      eig1.vector[0] * eig2.vector[1] - eig1.vector[1] * eig2.vector[0]
+    ]);
+    const eig3Value = dot3(eig3, matVec3(cov, eig3));
+    return {
+      mean,
+      vectors: [eig1.vector, eig2.vector, eig3],
+      values: [Math.max(0, eig1.value), Math.max(0, eig2.value), Math.max(0, eig3Value)]
+    };
+  }
   function computePcaVectors(data) {
     const count = data.length / 4;
     let meanR = 0;
@@ -27646,17 +27759,9 @@
       [c01 * inv, c11 * inv, c12 * inv],
       [c02 * inv, c12 * inv, c22 * inv]
     ];
-    const eig1 = powerIterEigen(cov, 12);
-    const deflated = matSub(cov, scaleMat3(outer3(eig1.vector), eig1.value));
-    const eig2 = powerIterEigen(deflated, 12);
-    const eig3 = normalize3([
-      eig1.vector[1] * eig2.vector[2] - eig1.vector[2] * eig2.vector[1],
-      eig1.vector[2] * eig2.vector[0] - eig1.vector[0] * eig2.vector[2],
-      eig1.vector[0] * eig2.vector[1] - eig1.vector[1] * eig2.vector[0]
-    ]);
-    return { mean: [meanR, meanG, meanB], vectors: [eig1.vector, eig2.vector, eig3] };
+    return computePcaBasisFromCov([meanR, meanG, meanB], cov);
   }
-  function applyPcaColor(imgData, mode) {
+  function applyPcaColor(imgData, mode, hueDegrees = 0) {
     const data = imgData.data;
     const pca = computePcaVectors(data);
     const mean = pca.mean;
@@ -27718,6 +27823,136 @@
         data[i + 2] = toByte(c3, min3, range3);
       }
     }
+    applyHueRotationInPlace(data, hueDegrees);
+  }
+  function buildHueRotationMatrix(degrees) {
+    const angle = degrees * Math.PI / 180;
+    const cosA = Math.cos(angle);
+    const sinA = Math.sin(angle);
+    const oneThird = 1 / 3;
+    const sqrt1_3 = Math.sqrt(oneThird);
+    return {
+      m00: cosA + (1 - cosA) * oneThird,
+      m01: oneThird * (1 - cosA) - sqrt1_3 * sinA,
+      m02: oneThird * (1 - cosA) + sqrt1_3 * sinA,
+      m10: oneThird * (1 - cosA) + sqrt1_3 * sinA,
+      m11: cosA + (1 - cosA) * oneThird,
+      m12: oneThird * (1 - cosA) - sqrt1_3 * sinA,
+      m20: oneThird * (1 - cosA) - sqrt1_3 * sinA,
+      m21: oneThird * (1 - cosA) + sqrt1_3 * sinA,
+      m22: cosA + (1 - cosA) * oneThird
+    };
+  }
+  function applyHueRotationInPlace(data, degrees) {
+    if (degrees === 0) {
+      return;
+    }
+    const matrix = buildHueRotationMatrix(degrees);
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      data[i] = clampByte(matrix.m00 * r + matrix.m01 * g + matrix.m02 * b);
+      data[i + 1] = clampByte(matrix.m10 * r + matrix.m11 * g + matrix.m12 * b);
+      data[i + 2] = clampByte(matrix.m20 * r + matrix.m21 * g + matrix.m22 * b);
+    }
+  }
+  function createRunningPcaStats() {
+    return {
+      count: 0,
+      mean: [0, 0, 0],
+      m2: [
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0]
+      ]
+    };
+  }
+  function updateRunningPcaStats(stats, data) {
+    const sampleStride = 16;
+    for (let i = 0; i < data.length; i += 4 * sampleStride) {
+      const sample = [data[i], data[i + 1], data[i + 2]];
+      const nextCount = stats.count + 1;
+      const delta = [
+        sample[0] - stats.mean[0],
+        sample[1] - stats.mean[1],
+        sample[2] - stats.mean[2]
+      ];
+      const nextMean = [
+        stats.mean[0] + delta[0] / nextCount,
+        stats.mean[1] + delta[1] / nextCount,
+        stats.mean[2] + delta[2] / nextCount
+      ];
+      const delta2 = [
+        sample[0] - nextMean[0],
+        sample[1] - nextMean[1],
+        sample[2] - nextMean[2]
+      ];
+      stats.m2[0][0] += delta[0] * delta2[0];
+      stats.m2[0][1] += delta[0] * delta2[1];
+      stats.m2[0][2] += delta[0] * delta2[2];
+      stats.m2[1][0] += delta[1] * delta2[0];
+      stats.m2[1][1] += delta[1] * delta2[1];
+      stats.m2[1][2] += delta[1] * delta2[2];
+      stats.m2[2][0] += delta[2] * delta2[0];
+      stats.m2[2][1] += delta[2] * delta2[1];
+      stats.m2[2][2] += delta[2] * delta2[2];
+      stats.count = nextCount;
+      stats.mean = nextMean;
+    }
+  }
+  function basisFromRunningStats(stats) {
+    if (stats.count < 2) {
+      return null;
+    }
+    const inv = 1 / (stats.count - 1);
+    const cov = [
+      [stats.m2[0][0] * inv, stats.m2[0][1] * inv, stats.m2[0][2] * inv],
+      [stats.m2[1][0] * inv, stats.m2[1][1] * inv, stats.m2[1][2] * inv],
+      [stats.m2[2][0] * inv, stats.m2[2][1] * inv, stats.m2[2][2] * inv]
+    ];
+    return computePcaBasisFromCov(stats.mean, cov);
+  }
+  function applyPcaColorWithBasis(imgData, mode, basis, hueDegrees) {
+    const data = imgData.data;
+    const mean = basis.mean;
+    const v1 = basis.vectors[0];
+    const v2 = basis.vectors[1];
+    const v3 = basis.vectors[2];
+    const sigma1 = Math.sqrt(Math.max(1e-6, basis.values[0]));
+    const sigma2 = Math.sqrt(Math.max(1e-6, basis.values[1]));
+    const sigma3 = Math.sqrt(Math.max(1e-6, basis.values[2]));
+    const scale = 3;
+    const toByte = (component, sigma) => clampByte(128 + component / (scale * sigma) * 127);
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i] - mean[0];
+      const g = data[i + 1] - mean[1];
+      const b = data[i + 2] - mean[2];
+      const c1 = r * v1[0] + g * v1[1] + b * v1[2];
+      const c2 = r * v2[0] + g * v2[1] + b * v2[2];
+      const c3 = r * v3[0] + g * v3[1] + b * v3[2];
+      if (mode === "pca1") {
+        const v = toByte(c1, sigma1);
+        data[i] = v;
+        data[i + 1] = v;
+        data[i + 2] = v;
+      } else if (mode === "pca2") {
+        const v = toByte(c2, sigma2);
+        data[i] = v;
+        data[i + 1] = v;
+        data[i + 2] = v;
+      } else if (mode === "pca3") {
+        const v = toByte(c3, sigma3);
+        data[i] = v;
+        data[i + 1] = v;
+        data[i + 2] = v;
+      } else {
+        data[i] = toByte(c1, sigma1);
+        data[i + 1] = toByte(c2, sigma2);
+        data[i + 2] = toByte(c3, sigma3);
+      }
+    }
+    applyHueRotationInPlace(data, hueDegrees);
   }
   var noopFilter = (_context, callback) => {
     callback();
@@ -27931,11 +28166,6 @@
       }
       return this._scratchContext;
     },
-    _resetScratch: function() {
-      this._scratch = null;
-      this._scratchCanvas = null;
-      this._scratchContext = null;
-    },
     _applyPixelTransformInPlace: function(context, transform) {
       const width = context.canvas.width;
       const height = context.canvas.height;
@@ -27956,8 +28186,6 @@
       context.clearRect(0, 0, width, height);
       context.drawImage(this._scratchCanvas, 0, 0);
     },
-    _rgbToHSV: rgbToHSV,
-    _hsvToRGB: hsvToRGB,
     THRESHOLDING: function(threshold) {
       if (threshold < 0 || threshold > 255) {
         throw new Error("Threshold must be between 0 and 255.");
@@ -27993,24 +28221,12 @@
       });
     },
     HUE: function(adjustment) {
-      const angle = Math.abs(adjustment) / 100 * 2 * Math.PI;
-      const cosA = Math.cos(angle);
-      const sinA = Math.sin(angle);
-      const oneThird = 1 / 3;
-      const sqrt1_3 = Math.sqrt(oneThird);
-      const m00 = cosA + (1 - cosA) * oneThird;
-      const m01 = oneThird * (1 - cosA) - sqrt1_3 * sinA;
-      const m02 = oneThird * (1 - cosA) + sqrt1_3 * sinA;
-      const m10 = oneThird * (1 - cosA) + sqrt1_3 * sinA;
-      const m11 = cosA + (1 - cosA) * oneThird;
-      const m12 = oneThird * (1 - cosA) - sqrt1_3 * sinA;
-      const m20 = oneThird * (1 - cosA) - sqrt1_3 * sinA;
-      const m21 = oneThird * (1 - cosA) + sqrt1_3 * sinA;
-      const m22 = cosA + (1 - cosA) * oneThird;
+      const degrees = Math.abs(adjustment) / 100 * 360;
+      const matrix = buildHueRotationMatrix(degrees);
       return applyPixelTransformInPlace((r, g, b, a, out) => {
-        out[0] = clampByte(m00 * r + m01 * g + m02 * b);
-        out[1] = clampByte(m10 * r + m11 * g + m12 * b);
-        out[2] = clampByte(m20 * r + m21 * g + m22 * b);
+        out[0] = clampByte(matrix.m00 * r + matrix.m01 * g + matrix.m02 * b);
+        out[1] = clampByte(matrix.m10 * r + matrix.m11 * g + matrix.m12 * b);
+        out[2] = clampByte(matrix.m20 * r + matrix.m21 * g + matrix.m22 * b);
         out[3] = a;
       });
     },
@@ -28328,11 +28544,26 @@
     ALT_BLUE_VIBRANCE: function(amount) {
       return altChannelVibrance(2, amount);
     },
-    PCA_COLOR: function(mode) {
+    GLOBAL_PCA_COLOR: function(mode, hueDegrees) {
       const normalized = (mode || "").toLowerCase();
+      const hue = Math.max(-180, Math.min(180, hueDegrees != null ? hueDegrees : 0));
+      const runningStats = createRunningPcaStats();
+      let globalBasis = null;
+      const minSamples = 2e3;
       return function(context, callback) {
         withImageData(context, (imgData) => {
-          applyPcaColor(imgData, normalized);
+          const data = imgData.data;
+          if (!globalBasis) {
+            updateRunningPcaStats(runningStats, data);
+            if (runningStats.count >= minSamples) {
+              globalBasis = basisFromRunningStats(runningStats);
+            }
+          }
+          if (globalBasis) {
+            applyPcaColorWithBasis(imgData, normalized, globalBasis, hue);
+          } else {
+            applyPcaColor(imgData, normalized, hue);
+          }
           return true;
         });
         callback();
@@ -28438,14 +28669,16 @@
   injectStyles(diva_default);
   var Diva = class {
     constructor(rootId, flags) {
-      this.mainViewer = document.getElementById("main-viewer");
+      this.mainViewer = null;
       this.filterViewer = null;
-      this.filterViewerElement = document.getElementById("filter-viewer");
+      this.filterViewerElement = null;
       this.filterOptions = null;
       this.filterViewerFlipped = false;
       this.currentFilterTileSource = null;
       this.pendingFilterPreview = null;
       this.filterPreviewRetries = 0;
+      this.filterPreviewRafId = null;
+      this.isDestroyed = false;
       const root = document.getElementById(rootId);
       if (!root) {
         throw new Error(`Missing root element: ${rootId}`);
@@ -28459,6 +28692,7 @@
         root.innerHTML = "";
       }
       this.root = root;
+      this.isDestroyed = false;
       this.handlePageChangeBound = this.handlePageChange.bind(this);
       this.handleZoomChangeBound = this.handleZoomChange.bind(this);
       this.handleLoadingChangeBound = this.handleLoadingChange.bind(this);
@@ -28497,6 +28731,9 @@
       });
       this.getPort("pageAspectsUpdated").subscribe((aspects) => {
         this.callViewerMethod("setPageAspects", aspects);
+      });
+      this.getPort("pageLabelsUpdated").subscribe((labels) => {
+        this.callViewerMethod("setPageLabels", labels);
       });
       this.getPort("zoomLevelUpdated").subscribe((zoom) => {
         this.callViewerMethod("setZoomLevel", zoom);
@@ -28541,6 +28778,9 @@
       return this.mainViewer;
     }
     applyFilterPreview() {
+      if (this.isDestroyed) {
+        return;
+      }
       if (!this.pendingFilterPreview) {
         return;
       }
@@ -28548,7 +28788,10 @@
       if (!element) {
         if (this.filterPreviewRetries < 10) {
           this.filterPreviewRetries += 1;
-          requestAnimationFrame(() => this.applyFilterPreview());
+          this.filterPreviewRafId = requestAnimationFrame(() => {
+            this.filterPreviewRafId = null;
+            this.applyFilterPreview();
+          });
         }
         return;
       }
@@ -28570,25 +28813,9 @@
     copyToClipboard(text) {
       if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
         navigator.clipboard.writeText(text).catch(() => {
-          this.copyToClipboardFallback(text);
         });
         return;
       }
-      this.copyToClipboardFallback(text);
-    }
-    copyToClipboardFallback(text) {
-      const textarea = document.createElement("textarea");
-      textarea.value = text;
-      textarea.setAttribute("readonly", "true");
-      textarea.style.position = "fixed";
-      textarea.style.left = "-9999px";
-      document.body.appendChild(textarea);
-      textarea.select();
-      try {
-        document.execCommand("copy");
-      } catch (_err) {
-      }
-      document.body.removeChild(textarea);
     }
     bindPageChange() {
       this.bindViewerEvent("diva-page-change", this.handlePageChangeBound);
@@ -28603,10 +28830,22 @@
       this.bindViewerEvent("diva-loading-change", this.handleLoadingChangeBound);
     }
     destroy() {
+      this.isDestroyed = true;
+      if (this.filterPreviewRafId !== null) {
+        cancelAnimationFrame(this.filterPreviewRafId);
+        this.filterPreviewRafId = null;
+      }
       this.removeViewerEvent("diva-page-change", this.handlePageChangeBound);
       this.removeViewerEvent("diva-zoom-change", this.handleZoomChangeBound);
       this.removeViewerEvent("diva-loading-change", this.handleLoadingChangeBound);
       document.removeEventListener("fullscreenchange", this.handleFullscreenChangeBound);
+      if (this.filterViewer && typeof this.filterViewer.destroy === "function") {
+        this.filterViewer.destroy();
+      }
+      this.filterViewer = null;
+      this.filterViewerElement = null;
+      this.currentFilterTileSource = null;
+      this.pendingFilterPreview = null;
       if (this.root) {
         const rootAny = this.root;
         if (rootAny.__divaInstance === this) {
@@ -28699,7 +28938,7 @@
         this.filterViewerElement = null;
         return null;
       }
-      if (this.filterViewerElement !== element || !element.isConnected) {
+      if (this.filterViewerElement !== element) {
         if (this.filterViewer && typeof this.filterViewer.destroy === "function") {
           this.filterViewer.destroy();
         }
@@ -28818,6 +29057,7 @@
     ALT_RED_VIBRANCE: Filters.ALT_RED_VIBRANCE,
     ALT_GREEN_VIBRANCE: Filters.ALT_GREEN_VIBRANCE,
     ALT_BLUE_VIBRANCE: Filters.ALT_BLUE_VIBRANCE,
+    GLOBAL_PCA_COLOR: Filters.GLOBAL_PCA_COLOR,
     ADAPTIVE_THRESHOLD: Filters.ADAPTIVE_THRESHOLD
   };
   var simpleFilterMappings = [
@@ -28871,25 +29111,29 @@
       defaults: [15, 10]
     }
   ];
-  var buildFilterOptions = (filters) => {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l;
-    if (!filters) {
-      return { filters: [], loadMode: "sync" };
-    }
-    const processors = [];
-    for (const mapping of simpleFilterMappings) {
+  var appendMappedProcessors = (processors, filters, mappings) => {
+    var _a, _b;
+    for (const mapping of mappings) {
       if (filters[mapping.enabled]) {
         const filterArgs = (_b = (_a = mapping.args) == null ? void 0 : _a.map((key, i) => {
-          var _a2, _b2, _c2;
-          return (_c2 = filters[key]) != null ? _c2 : (_b2 = (_a2 = mapping.defaults) == null ? void 0 : _a2[i]) != null ? _b2 : 0;
+          var _a2, _b2, _c;
+          return (_c = filters[key]) != null ? _c : (_b2 = (_a2 = mapping.defaults) == null ? void 0 : _a2[i]) != null ? _b2 : 0;
         })) != null ? _b : [];
         const filterFn = filterFunctions[mapping.filter];
         processors.push(filterFn(...filterArgs));
       }
     }
+  };
+  var buildFilterOptions = (filters) => {
+    var _a, _b, _c, _d, _e, _f, _g, _h, _i;
+    if (!filters) {
+      return { filters: [], loadMode: "sync" };
+    }
+    const processors = [];
+    appendMappedProcessors(processors, filters, simpleFilterMappings);
     if (filters.morphEnabled) {
       const comparator = filters.morphOperation === "dilate" ? Math.max : Math.min;
-      processors.push(Filters.MORPHOLOGICAL_OPERATION((_c = filters.morphKernel) != null ? _c : 3, comparator));
+      processors.push(Filters.MORPHOLOGICAL_OPERATION((_a = filters.morphKernel) != null ? _a : 3, comparator));
     }
     if (filters.convolutionEnabled) {
       const kernel = Filters.CONVOLUTION_PRESET(filters.convolutionPreset || "");
@@ -28900,39 +29144,30 @@
     if (filters.colourmapEnabled) {
       const colourmap = Filters.COLORMAP_PRESET(filters.colourmapPreset || "");
       if (colourmap) {
-        processors.push(Filters.COLORMAP(colourmap, (_d = filters.colourmapCenter) != null ? _d : 128));
+        processors.push(Filters.COLORMAP(colourmap, (_b = filters.colourmapCenter) != null ? _b : 128));
       }
     }
     if (filters.pseudoColourEnabled) {
       processors.push(Filters.PSEUDOCOLOR(
         filters.pseudoColourMode || "",
-        (_e = filters.pseudoColourRed) != null ? _e : 1,
-        (_f = filters.pseudoColourGreen) != null ? _f : 1,
-        (_g = filters.pseudoColourBlue) != null ? _g : 1
+        (_c = filters.pseudoColourRed) != null ? _c : 1,
+        (_d = filters.pseudoColourGreen) != null ? _d : 1,
+        (_e = filters.pseudoColourBlue) != null ? _e : 1
       ));
     }
-    if (filters.pcaEnabled) {
-      processors.push(Filters.PCA_COLOR(filters.pcaMode || ""));
+    if (filters.globalPcaEnabled) {
+      processors.push(Filters.GLOBAL_PCA_COLOR(filters.pcaMode || "", (_f = filters.pcaHue) != null ? _f : 0));
     }
     if (filters.colourReplaceEnabled) {
       processors.push(Filters.COLOR_REPLACE(
         filters.colourReplaceSource || "#ffffff",
         filters.colourReplaceTarget || "#ffffff",
-        (_h = filters.colourReplaceTolerance) != null ? _h : 24,
-        (_i = filters.colourReplaceBlend) != null ? _i : 1,
-        (_j = filters.colourReplacePreserveLum) != null ? _j : false
+        (_g = filters.colourReplaceTolerance) != null ? _g : 24,
+        (_h = filters.colourReplaceBlend) != null ? _h : 1,
+        (_i = filters.colourReplacePreserveLum) != null ? _i : false
       ));
     }
-    for (const mapping of altFilterMappings) {
-      if (filters[mapping.enabled]) {
-        const filterArgs = (_l = (_k = mapping.args) == null ? void 0 : _k.map((key, i) => {
-          var _a2, _b2, _c2;
-          return (_c2 = filters[key]) != null ? _c2 : (_b2 = (_a2 = mapping.defaults) == null ? void 0 : _a2[i]) != null ? _b2 : 0;
-        })) != null ? _l : [];
-        const filterFn = filterFunctions[mapping.filter];
-        processors.push(filterFn(...filterArgs));
-      }
-    }
+    appendMappedProcessors(processors, filters, altFilterMappings);
     if (processors.length === 0) {
       return { filters: [], loadMode: "sync" };
     }

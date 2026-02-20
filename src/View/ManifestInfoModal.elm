@@ -19,7 +19,7 @@ viewManifestInfoModal model =
         div
             [ HA.class "modal-overlay" ]
             [ div
-                [ HA.class "model is-narrow" ]
+                [ HA.class "modal is-narrow" ]
                 [ viewHeader model
                 , currentManifest model
                     |> viewBody model

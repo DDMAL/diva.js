@@ -47,6 +47,9 @@ port pageIndexChanged : (Int -> msg) -> Sub msg
 port pageIndexChangedInstant : (Int -> msg) -> Sub msg
 
 
+port pageLabelsUpdated : List String -> Cmd msg
+
+
 port saveFilteredImage : () -> Cmd msg
 
 
@@ -209,6 +212,7 @@ handleManifestLoaded model manifest =
     , Cmd.batch
         [ tileSourcesUpdated tileSources
         , pageAspectsUpdated pageAspects
+        , pageLabelsUpdated (List.map .label pages)
         , zoomLevelUpdated 1
         , layoutConfigUpdated { direction = direction, mode = layoutMode }
         ]
@@ -820,6 +824,7 @@ update msg model =
                 ResourceLoadedCollection collectionState ->
                     ( { model
                         | isViewerLoading = True
+                        , response = Loading
                         , resourceResponse =
                             ResourceLoadedCollection
                                 { collectionState | selectedManifestId = Just manifestId }

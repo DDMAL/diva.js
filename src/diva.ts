@@ -70,8 +70,9 @@ type FilterSettings = {
     pseudoColourRed?: number;
     pseudoColourGreen?: number;
     pseudoColourBlue?: number;
-    pcaEnabled?: boolean;
+    globalPcaEnabled?: boolean;
     pcaMode?: string;
+    pcaHue?: number;
     colourReplaceEnabled?: boolean;
     colourReplaceSource?: string;
     colourReplaceTarget?: string;
@@ -122,6 +123,7 @@ type FilterPreviewPayload = {
 type ElmPorts = {
     tileSourcesUpdated: {subscribe: (callback: (tileSources: string[]) => void) => void};
     pageAspectsUpdated : {subscribe : (callback: (aspects: number[]) => void) => void};
+    pageLabelsUpdated : {subscribe : (callback: (labels: string[]) => void) => void};
     zoomLevelUpdated : {subscribe : (callback: (zoom: number) => void) => void};
     zoomBy : {subscribe : (callback: (factor: number) => void) => void};
     scrollToIndex : {subscribe : (callback: (index: number) => void) => void};
@@ -160,14 +162,16 @@ class Diva
 {
     private readonly root: HTMLElement;
     private app: ElmApp;
-    private mainViewer: any = document.getElementById("main-viewer");
+    private mainViewer: any = null;
     private filterViewer: any = null;
-    private filterViewerElement: HTMLElement|null = document.getElementById("filter-viewer");
+    private filterViewerElement: HTMLElement|null = null;
     private filterOptions: FilterSettings|null = null;
     private filterViewerFlipped = false;
     private currentFilterTileSource: string|null = null;
     private pendingFilterPreview: FilterPreviewPayload|null = null;
     private filterPreviewRetries = 0;
+    private filterPreviewRafId: number|null = null;
+    private isDestroyed = false;
     private readonly handlePageChangeBound: (event: Event) => void;
     private readonly handleZoomChangeBound: (event: Event) => void;
     private readonly handleLoadingChangeBound: (event: Event) => void;
@@ -196,6 +200,7 @@ class Diva
         }
 
         this.root = root;
+        this.isDestroyed = false;
 
         this.handlePageChangeBound = this.handlePageChange.bind(this);
         this.handleZoomChangeBound = this.handleZoomChange.bind(this);
@@ -239,6 +244,9 @@ class Diva
 
         this.getPort("pageAspectsUpdated")
             .subscribe((aspects: number[]) => { this.callViewerMethod("setPageAspects", aspects); });
+
+        this.getPort("pageLabelsUpdated")
+            .subscribe((labels: string[]) => { this.callViewerMethod("setPageLabels", labels); });
 
         this.getPort("zoomLevelUpdated").subscribe((zoom: number) => { this.callViewerMethod("setZoomLevel", zoom); });
 
@@ -285,6 +293,10 @@ class Diva
 
     private applyFilterPreview(): void
     {
+        if (this.isDestroyed)
+        {
+            return;
+        }
         if (!this.pendingFilterPreview)
         {
             return;
@@ -295,7 +307,10 @@ class Diva
             if (this.filterPreviewRetries < 10)
             {
                 this.filterPreviewRetries += 1;
-                requestAnimationFrame(() => this.applyFilterPreview());
+                this.filterPreviewRafId = requestAnimationFrame(() => {
+                    this.filterPreviewRafId = null;
+                    this.applyFilterPreview();
+                });
             }
             return;
         }
@@ -324,31 +339,9 @@ class Diva
     {
         if (navigator.clipboard && typeof navigator.clipboard.writeText === "function")
         {
-            navigator.clipboard.writeText(text).catch(() => { this.copyToClipboardFallback(text); });
+            navigator.clipboard.writeText(text).catch(() => {});
             return;
         }
-        this.copyToClipboardFallback(text);
-    }
-
-    private copyToClipboardFallback(text: string): void
-    {
-        const textarea = document.createElement("textarea");
-        textarea.value = text;
-        textarea.setAttribute("readonly", "true");
-        textarea.style.position = "fixed";
-        textarea.style.left = "-9999px";
-        document.body.appendChild(textarea);
-        textarea.select();
-        try
-        {
-            document.execCommand("copy");
-        }
-        catch (_err)
-        {
-            // Ignore copy failures; user can still manually copy from the text
-            // area in the UI.
-        }
-        document.body.removeChild(textarea);
     }
 
     private bindPageChange(): void
@@ -373,10 +366,24 @@ class Diva
 
     public destroy(): void
     {
+        this.isDestroyed = true;
+        if (this.filterPreviewRafId !== null)
+        {
+            cancelAnimationFrame(this.filterPreviewRafId);
+            this.filterPreviewRafId = null;
+        }
         this.removeViewerEvent("diva-page-change", this.handlePageChangeBound as EventListener);
         this.removeViewerEvent("diva-zoom-change", this.handleZoomChangeBound as EventListener);
         this.removeViewerEvent("diva-loading-change", this.handleLoadingChangeBound as EventListener);
         document.removeEventListener("fullscreenchange", this.handleFullscreenChangeBound);
+        if (this.filterViewer && typeof this.filterViewer.destroy === "function")
+        {
+            this.filterViewer.destroy();
+        }
+        this.filterViewer = null;
+        this.filterViewerElement = null;
+        this.currentFilterTileSource = null;
+        this.pendingFilterPreview = null;
 
         if (this.root)
         {
@@ -502,7 +509,7 @@ class Diva
             return null;
         }
 
-        if (this.filterViewerElement !== element || !element.isConnected)
+        if (this.filterViewerElement !== element)
         {
             if (this.filterViewer && typeof this.filterViewer.destroy === "function")
             {
@@ -659,6 +666,7 @@ const filterFunctions = {
     ALT_RED_VIBRANCE : Filters.ALT_RED_VIBRANCE,
     ALT_GREEN_VIBRANCE : Filters.ALT_GREEN_VIBRANCE,
     ALT_BLUE_VIBRANCE : Filters.ALT_BLUE_VIBRANCE,
+    GLOBAL_PCA_COLOR : Filters.GLOBAL_PCA_COLOR,
     ADAPTIVE_THRESHOLD : Filters.ADAPTIVE_THRESHOLD
 };
 
@@ -715,15 +723,8 @@ const altFilterMappings: FilterMapping[] = [
     },
 ];
 
-const buildFilterOptions = (filters: FilterSettings|null): any => {
-    if (!filters)
-    {
-        return {filters : [], loadMode : "sync"};
-    }
-
-    const processors: any[] = [];
-
-    for (const mapping of simpleFilterMappings)
+const appendMappedProcessors = (processors: any[], filters: FilterSettings, mappings: FilterMapping[]): void => {
+    for (const mapping of mappings)
     {
         if (filters[mapping.enabled])
         {
@@ -732,6 +733,18 @@ const buildFilterOptions = (filters: FilterSettings|null): any => {
             processors.push(filterFn(...(filterArgs as any[])));
         }
     }
+};
+
+const buildFilterOptions = (filters: FilterSettings|null): any => {
+    if (!filters)
+    {
+        return {filters : [], loadMode : "sync"};
+    }
+
+    const processors: any[] = [];
+
+    // Keep this order stable: simple -> special-case -> alt mappings.
+    appendMappedProcessors(processors, filters, simpleFilterMappings);
 
     if (filters.morphEnabled)
     {
@@ -763,9 +776,9 @@ const buildFilterOptions = (filters: FilterSettings|null): any => {
                                             filters.pseudoColourGreen ?? 1, filters.pseudoColourBlue ?? 1));
     }
 
-    if (filters.pcaEnabled)
+    if (filters.globalPcaEnabled)
     {
-        processors.push(Filters.PCA_COLOR(filters.pcaMode || ""));
+        processors.push(Filters.GLOBAL_PCA_COLOR(filters.pcaMode || "", filters.pcaHue ?? 0));
     }
 
     if (filters.colourReplaceEnabled)
@@ -776,15 +789,7 @@ const buildFilterOptions = (filters: FilterSettings|null): any => {
                                               filters.colourReplacePreserveLum ?? false));
     }
 
-    for (const mapping of altFilterMappings)
-    {
-        if (filters[mapping.enabled])
-        {
-            const filterArgs = mapping.args?.map((key, i) => filters[key] ?? (mapping.defaults?.[i] ?? 0)) ?? [];
-            const filterFn = filterFunctions[mapping.filter] as (...args: any[]) => any;
-            processors.push(filterFn(...(filterArgs as any[])));
-        }
-    }
+    appendMappedProcessors(processors, filters, altFilterMappings);
 
     if (processors.length === 0)
     {

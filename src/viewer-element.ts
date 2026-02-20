@@ -4,6 +4,8 @@ declare const OpenSeadragon: typeof OpenSeadragonType;
 
 const ZOOM_IN_FACTOR = 1.6
 const ZOOM_OUT_FACTOR = 1 / ZOOM_IN_FACTOR
+const PAGE_LABEL_TOP_PADDING_PX = 28;
+const PAGE_GAP_VIEWPORT_UNITS = 0.06;
 
 class OsdViewer extends HTMLElement
 {
@@ -11,6 +13,7 @@ class OsdViewer extends HTMLElement
     private viewer: OpenSeadragonType.Viewer|null = null;
     private loadToken = 0;
     private tileSources: string[] = [];
+    private pageLabels: string[] = [];
     private pageAspects: number[] = [];
     private pageOffsets: number[] = [];
     private pageHeights: number[] = [];
@@ -22,6 +25,7 @@ class OsdViewer extends HTMLElement
     private loadedIndexes: Set<number> = new Set();
     private loadingIndexes: Set<number> = new Set();
     private loadedItems: Map<number, any> = new Map();
+    private pageOverlayElements: Map<number, HTMLDivElement> = new Map();
     private targetIndex: number|null = null;
     private scrollPlaneItem: any = null;
     private isViewportInitialized = false;
@@ -93,6 +97,7 @@ class OsdViewer extends HTMLElement
         }
         if (this.viewer)
         {
+            this.clearPageOverlays();
             this.viewer.destroy();
             this.viewer = null;
         }
@@ -134,10 +139,6 @@ class OsdViewer extends HTMLElement
             } as any;
             this.viewer = OpenSeadragon(options);
             const viewer = this.viewer;
-            if (!viewer)
-            {
-                return;
-            }
             viewer.addHandler("pan", this.handleViewportChangeBound);
             viewer.addHandler("zoom", this.handleViewportChangeBound);
             viewer.addHandler("pan", () => this.updateScrollbar());
@@ -176,6 +177,19 @@ class OsdViewer extends HTMLElement
         this.resetTileSources(tileSources);
     }
 
+    public setPageLabels(labels: string[]): void
+    {
+        if (!Array.isArray(labels))
+        {
+            return;
+        }
+
+        this.pageLabels = labels;
+        this.pageOverlayElements.forEach((_element, index) => {
+            this.addOrUpdatePageOverlay(index);
+        });
+    }
+
     private resetTileSources(tileSources: string[]): void
     {
         if (!this.viewer)
@@ -199,6 +213,7 @@ class OsdViewer extends HTMLElement
         this.loadedIndexes.clear();
         this.loadingIndexes.clear();
         this.loadedItems.clear();
+        this.clearPageOverlays();
         this.targetIndex = null;
         this.clearScrollPlane();
         this.buildOffsets();
@@ -319,6 +334,7 @@ class OsdViewer extends HTMLElement
                 item.setHeight(height, true);
                 this.loadedIndexes.add(index);
                 this.loadedItems.set(index, item);
+                this.addOrUpdatePageOverlay(index);
                 this.loadingIndexes.delete(index);
                 this.updateLoadingState();
                 if (!this.hasFitFirstPage)
@@ -392,7 +408,7 @@ class OsdViewer extends HTMLElement
 
     private buildSingleOffsets(count: number): void
     {
-        const gap = 0.03;
+        const gap = PAGE_GAP_VIEWPORT_UNITS;
         let current = 0;
         let fallback = this.pageAspects[0] || 1;
 
@@ -410,7 +426,7 @@ class OsdViewer extends HTMLElement
 
     private buildSpreadOffsets(count: number): void
     {
-        const gap = 0.03;
+        const gap = PAGE_GAP_VIEWPORT_UNITS;
         const isRtl = this.viewingDirection === "rtl";
         let current = 0;
         let index = 0;
@@ -469,7 +485,73 @@ class OsdViewer extends HTMLElement
             item.setPosition(new OpenSeadragon.Point(xOffset, yOffset), true);
             item.setWidth(1, true);
             item.setHeight(height, true);
+            this.addOrUpdatePageOverlay(index);
         });
+    }
+
+    private addOrUpdatePageOverlay(index: number): void
+    {
+        if (!this.viewer)
+        {
+            return;
+        }
+
+        let element = this.pageOverlayElements.get(index);
+        const isRightAligned = index % 2 === 0;
+        if (!element)
+        {
+            element = document.createElement("div");
+            element.className = "diva-page-overlay-label";
+            element.style.pointerEvents = "none";
+            element.style.color = "#ffffff";
+            element.style.background = "transparent";
+            element.style.padding = "0";
+            element.style.borderRadius = "0";
+            element.style.fontSize = "12px";
+            element.style.fontWeight = "600";
+            element.style.lineHeight = "1.2";
+            element.style.whiteSpace = "nowrap";
+            element.style.paddingBottom = "6px";
+            element.style.paddingLeft = isRightAligned ? "0" : "12px";
+            element.style.paddingRight = isRightAligned ? "12px" : "0";
+            this.pageOverlayElements.set(index, element);
+        }
+        element.textContent = this.pageLabels[index] || `Page ${index + 1}`;
+
+        const xOffset = (this.pageXOffsets[index] || 0) + (isRightAligned ? 1 : 0);
+        const yOffset = this.pageOffsets[index] || 0;
+        try
+        {
+            this.viewer.removeOverlay(element);
+        }
+        catch (_error)
+        {
+            // overlay may not yet exist in viewer; safe to ignore.
+        }
+        this.viewer.addOverlay({
+            element,
+            location : new OpenSeadragon.Point(xOffset, yOffset),
+            placement : isRightAligned ? OpenSeadragon.Placement.BOTTOM_RIGHT : OpenSeadragon.Placement.BOTTOM_LEFT
+        });
+    }
+
+    private clearPageOverlays(): void
+    {
+        if (this.viewer)
+        {
+            this.pageOverlayElements.forEach((element) => {
+                try
+                {
+                    this.viewer?.removeOverlay(element);
+                }
+                catch (_error)
+                {
+                    // ignore missing overlay errors during teardown/reset.
+                }
+                element.remove();
+            });
+        }
+        this.pageOverlayElements.clear();
     }
 
     private ensureScrollPlane(): void
@@ -648,10 +730,7 @@ class OsdViewer extends HTMLElement
         }
         event.preventDefault();
         event.stopPropagation();
-        if (typeof event.stopImmediatePropagation == "function")
-        {
-            event.stopImmediatePropagation();
-        }
+        event.stopImmediatePropagation();
 
         const viewport = this.viewer?.viewport;
         if (!viewport)
@@ -745,12 +824,14 @@ class OsdViewer extends HTMLElement
         }
 
         const bounds = vp.getBounds(true);
-        if (bounds.y >= 0)
+        const topPadding = this.getTopPaddingViewport(bounds.height);
+        const minTop = -topPadding;
+        if (bounds.y >= minTop)
         {
             return;
         }
 
-        const clampedCenterY = bounds.height / 2;
+        const clampedCenterY = (bounds.height / 2) + minTop;
         this.isClamping = true;
         vp.panTo(new OpenSeadragon.Point(this.getCenterX(), clampedCenterY), true);
         vp.applyConstraints();
@@ -908,14 +989,22 @@ class OsdViewer extends HTMLElement
         }
 
         const bounds = viewport.getBounds(true);
-        if (bounds.y <= 0)
+        const topPadding = this.getTopPaddingViewport(bounds.height);
+        const minTop = -topPadding;
+        if (bounds.y <= minTop)
         {
             return;
         }
 
         const center = viewport.getCenter(true);
-        viewport.panTo(new OpenSeadragon.Point(center.x, bounds.height / 2), true);
+        viewport.panTo(new OpenSeadragon.Point(center.x, (bounds.height / 2) + minTop), true);
         viewport.applyConstraints();
+    }
+
+    private getTopPaddingViewport(viewportHeight: number): number
+    {
+        const containerHeight = this.container?.getBoundingClientRect().height || 1;
+        return (PAGE_LABEL_TOP_PADDING_PX / containerHeight) * viewportHeight;
     }
 
     private resetLoadingState(): void

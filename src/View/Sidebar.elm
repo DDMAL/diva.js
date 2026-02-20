@@ -8,7 +8,7 @@ import Html.Lazy as Lazy
 import IIIF.Language exposing (LabelValue, Language, extractLabelFromLanguageMap)
 import IIIF.Presentation exposing (IIIFManifest, MediaFormats, Range, RangeItem(..), ResourceTypes, ViewingDirection(..), canvasLabel, toCanvases, toHomepage, toMetadata, toRanges, toViewingDirection)
 import Json.Decode as Decode
-import Model exposing (ContentsView(..), Model, Page, ResourceResponse(..), SidebarState(..), ViewMode(..), currentManifest, pageViewStartIndex, primaryImage)
+import Model exposing (ContentsView(..), Model, Page, ResourceResponse(..), Response(..), SidebarState(..), ViewMode(..), currentManifest, pageViewStartIndex, primaryImage)
 import Msg exposing (Msg(..))
 import View.Helpers exposing (emptyHtml, viewMaybe)
 import View.HtmlRenderer exposing (renderHtml)
@@ -603,7 +603,7 @@ viewSidebarPanelWithMaybeManifest model maybeManifest =
                 |> Maybe.withDefault LeftToRight
 
         thumbnailPages =
-            if model.isViewerLoading then
+            if model.resourceResponse == ResourceLoading || model.response == Loading then
                 []
 
             else
