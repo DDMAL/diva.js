@@ -824,6 +824,7 @@ update msg model =
                 ResourceLoadedCollection collectionState ->
                     ( { model
                         | isViewerLoading = True
+                        , response = Loading
                         , resourceResponse =
                             ResourceLoadedCollection
                                 { collectionState | selectedManifestId = Just manifestId }
