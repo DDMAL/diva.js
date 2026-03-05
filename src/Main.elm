@@ -156,6 +156,9 @@ handleManifestLoaded model manifest =
         viewingDirection =
             toViewingDirection manifest
 
+        isSingleCanvas =
+            List.length pages == 1
+
         pages =
             manifestToPages model.detectedLanguage manifest
 
@@ -166,14 +169,21 @@ handleManifestLoaded model manifest =
             List.map .aspect pages
 
         viewMode =
-            if pagedLayout then
+            if isSingleCanvas then
+                OneUp
+
+            else if pagedLayout then
                 TwoUp
 
             else
                 OneUp
 
         shiftByOne =
-            pagedLayout || viewingDirection == RightToLeft
+            if isSingleCanvas then
+                False
+
+            else
+                pagedLayout || viewingDirection == RightToLeft
 
         layoutMode =
             layoutModeToString viewMode shiftByOne
