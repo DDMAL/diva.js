@@ -264,11 +264,14 @@
             if (!viewer || !viewer.viewport) {
               return;
             }
-            const bounds = this.isSpreadMode() ? this.getRowBounds(index) : item.getBounds();
+            const isSingleCanvas = this.isSingleCanvasLayout();
+            const bounds = isSingleCanvas ? item.getBounds() : this.isSpreadMode() ? this.getRowBounds(index) : item.getBounds();
             viewer.viewport.fitBounds(bounds, true);
-            viewer.viewport.zoomBy(0.95, viewer.viewport.getCenter(true), true);
-            viewer.viewport.applyConstraints();
+            if (!isSingleCanvas) {
+              viewer.viewport.zoomBy(0.95, viewer.viewport.getCenter(true), true);
+            }
             this.alignTopAfterFit();
+            viewer.viewport.applyConstraints();
             this.isViewportInitialized = true;
             this.lockHorizontalPan();
             this.recenterAfterFit();
@@ -820,6 +823,9 @@
     }
     getCenterX() {
       return this.isSpreadMode() ? 1 : 0.5;
+    }
+    isSingleCanvasLayout() {
+      return this.tileSources.length === 1 && this.pageOffsets.length === 1;
     }
     getTotalHeight() {
       const lastIndex = this.pageOffsets.length - 1;
@@ -1376,17 +1382,6 @@
       x = $elm$core$Dict$toList(x);
       y = $elm$core$Dict$toList(y);
     }
-    if (typeof DataView === "function" && x instanceof DataView) {
-      var length = x.byteLength;
-      if (y.byteLength !== length) {
-        return false;
-      }
-      for (var i = 0; i < length; ++i) {
-        if (x.getUint8(i) !== y.getUint8(i)) {
-          return false;
-        }
-      }
-    }
     for (var key in x) {
       if (!_Utils_eqHelp(x[key], y[key], depth + 1, stack)) {
         return false;
@@ -1645,7 +1640,7 @@
   });
   var _String_foldr = F3(function(func, state, string) {
     var i = string.length;
-    while (i-- > 0) {
+    while (i--) {
       var char = string[i];
       var word = string.charCodeAt(i);
       if (56320 <= word && word <= 57343) {
@@ -1670,7 +1665,7 @@
   }
   var _String_any = F2(function(isGood, string) {
     var i = string.length;
-    while (i-- > 0) {
+    while (i--) {
       var char = string[i];
       var word = string.charCodeAt(i);
       if (56320 <= word && word <= 57343) {
@@ -1685,7 +1680,7 @@
   });
   var _String_all = F2(function(isGood, string) {
     var i = string.length;
-    while (i-- > 0) {
+    while (i--) {
       var char = string[i];
       var word = string.charCodeAt(i);
       if (56320 <= word && word <= 57343) {
@@ -1754,12 +1749,6 @@
     return _Utils_chr(
       code < 0 || 1114111 < code ? "\uFFFD" : code <= 65535 ? String.fromCharCode(code) : (code -= 65536, String.fromCharCode(Math.floor(code / 1024) + 55296, code % 1024 + 56320))
     );
-  }
-  function _Char_toUpper(char) {
-    return _Utils_chr(char.toUpperCase());
-  }
-  function _Char_toLower(char) {
-    return _Utils_chr(char.toLowerCase());
   }
   function _Json_errorToString(error) {
     return $elm$json$Json$Decode$errorToString(error);
@@ -1972,6 +1961,49 @@
   }
   function _Json_expecting(type, value) {
     return $elm$core$Result$Err(A2($elm$json$Json$Decode$Failure, "Expecting " + type, _Json_wrap(value)));
+  }
+  function _Json_equality(x, y) {
+    if (x === y) {
+      return true;
+    }
+    if (x.$ !== y.$) {
+      return false;
+    }
+    switch (x.$) {
+      case 0:
+      case 1:
+        return x.a === y.a;
+      case 2:
+        return x.b === y.b;
+      case 5:
+        return x.c === y.c;
+      case 3:
+      case 4:
+      case 8:
+        return _Json_equality(x.b, y.b);
+      case 6:
+        return x.d === y.d && _Json_equality(x.b, y.b);
+      case 7:
+        return x.e === y.e && _Json_equality(x.b, y.b);
+      case 9:
+        return x.f === y.f && _Json_listEquality(x.g, y.g);
+      case 10:
+        return x.h === y.h && _Json_equality(x.b, y.b);
+      case 11:
+        return _Json_listEquality(x.g, y.g);
+    }
+  }
+  function _Json_listEquality(aDecoders, bDecoders) {
+    var len = aDecoders.length;
+    if (len !== bDecoders.length) {
+      return false;
+    }
+    for (var i = 0; i < len; i++) {
+      if (!_Json_equality(aDecoders[i], bDecoders[i])) {
+        return false;
+      }
+    }
+    return true;
   }
   var _Json_encode = F2(function(indentLevel, value) {
     return JSON.stringify(_Json_unwrap(value), null, indentLevel) + "";
@@ -2333,9 +2365,6 @@
       return init;
     });
     function subscribe(callback) {
-      if (typeof callback !== "function") {
-        throw new Error("Trying to subscribe an invalid callback on port `" + name + "`");
-      }
       subs.push(callback);
     }
     function unsubscribe(callback) {
@@ -2383,52 +2412,16 @@
     }
     return { send };
   }
-  var _VirtualDom_everTranslated = false;
   var _VirtualDom_divertHrefToApp;
   var _VirtualDom_doc = typeof document !== "undefined" ? document : {};
   function _VirtualDom_appendChild(parent, child) {
     parent.appendChild(child);
   }
-  function _VirtualDom_insertBefore(parent, child, reference) {
-    if (!(child.parentNode === parent && child.nextSibling === reference)) {
-      parent.insertBefore(child, reference);
-    }
-  }
-  function _VirtualDom_insertAfter(parent, child, reference) {
-    if (!(child.parentNode === parent && child.previousSibling === reference)) {
-      parent.insertBefore(child, reference === null ? parent.firstChild : reference.nextSibling);
-    }
-  }
-  function _VirtualDom_moveBefore_(parent, child, reference) {
-    if (!(child.parentNode === parent && child.nextSibling === reference)) {
-      parent.moveBefore(child, reference);
-    }
-  }
-  function _VirtualDom_moveAfter_(parent, child, reference) {
-    if (!(child.parentNode === parent && child.previousSibling === reference)) {
-      parent.moveBefore(child, reference === null ? parent.firstChild : reference.nextSibling);
-    }
-  }
-  var _VirtualDom_supports_moveBefore = typeof Element !== "undefined" && typeof Element.prototype.moveBefore === "function";
-  var _VirtualDom_moveBefore = _VirtualDom_supports_moveBefore ? _VirtualDom_moveBefore_ : _VirtualDom_insertBefore;
-  var _VirtualDom_moveAfter = _VirtualDom_supports_moveBefore ? _VirtualDom_moveAfter_ : _VirtualDom_insertAfter;
-  function _VirtualDom_remove(domNode) {
-    var parentNode = domNode.parentNode;
-    if (parentNode) {
-      parentNode.removeChild(domNode);
-    }
-  }
-  function _VirtualDom_createTNode(domNode) {
-    return {
-      r: domNode,
-      s: /* @__PURE__ */ Object.create(null)
-    };
-  }
   var _VirtualDom_init = F4(function(virtualNode, flagDecoder, debugMetadata, args) {
     var node = args && args["node"] ? args["node"] : _Debug_crash(0);
     node.parentNode.replaceChild(
       _VirtualDom_render(virtualNode, function() {
-      }, _VirtualDom_createTNode(void 0)),
+      }),
       node
     );
     return {};
@@ -2441,51 +2434,38 @@
   }
   var _VirtualDom_nodeNS = F2(function(namespace, tag) {
     return F2(function(factList, kidList) {
-      for (var kids = []; kidList.b; kidList = kidList.b) {
-        kids.push(kidList.a);
+      for (var kids = [], descendantsCount = 0; kidList.b; kidList = kidList.b) {
+        var kid = kidList.a;
+        descendantsCount += kid.b || 0;
+        kids.push(kid);
       }
+      descendantsCount += kids.length;
       return {
         $: 1,
         c: tag,
         d: _VirtualDom_organizeFacts(factList),
         e: kids,
         f: namespace,
-        // Unused, only exists for backwards compatibility with:
-        // https://github.com/elm-explorations/test/blob/9669a27d84fc29175364c7a60d5d700771a2801e/src/Test/Html/Internal/ElmHtml/InternalTypes.elm#L279
-        // https://github.com/dillonkearns/elm-pages/blob/fa1d0347016e20917b412de5c3657c2e6e095087/src/Test/Html/Internal/ElmHtml/InternalTypes.elm#L281
-        b: 0
+        b: descendantsCount
       };
     });
   });
   var _VirtualDom_node = _VirtualDom_nodeNS(void 0);
   var _VirtualDom_keyedNodeNS = F2(function(namespace, tag) {
     return F2(function(factList, kidList) {
-      for (var kids = [], kidsMap = /* @__PURE__ */ Object.create(null); kidList.b; kidList = kidList.b) {
+      for (var kids = [], descendantsCount = 0; kidList.b; kidList = kidList.b) {
         var kid = kidList.a;
-        var key = kid.a;
-        while (key in kidsMap) {
-          key += _VirtualDom_POSTFIX;
-          kid = _Utils_Tuple2(key, kid.b);
-        }
+        descendantsCount += kid.b.b || 0;
         kids.push(kid);
-        kidsMap[key] = kid.b;
       }
+      descendantsCount += kids.length;
       return {
         $: 2,
         c: tag,
         d: _VirtualDom_organizeFacts(factList),
-        // e holds the order and length of the kids.
         e: kids,
-        // t is a dict from key to node.
-        // Note when iterating JavaScript objects, numeric-looking keys come first.
-        // So we need both e and t.
-        // Another reason is backwards compatibility with:
-        // https://github.com/elm-explorations/test/blob/d5eb84809de0f8bbf50303efd26889092c800609/src/Elm/Kernel/HtmlAsJson.js#L37
-        // https://github.com/dillonkearns/elm-pages/blob/fa1d0347016e20917b412de5c3657c2e6e095087/generator/src/build.js#L675
-        t: kidsMap,
         f: namespace,
-        b: 0
-        // See _VirtualDom_nodeNS.
+        b: descendantsCount
       };
     });
   });
@@ -2495,8 +2475,7 @@
       $: 4,
       j: tagger,
       k: node,
-      b: 0
-      // See _VirtualDom_nodeNS.
+      b: 1 + (node.b || 0)
     };
   });
   function _VirtualDom_thunk(refs, thunk) {
@@ -2631,11 +2610,8 @@
       preventDefault: record.preventDefault
     };
   });
-  var _VirtualDom_elmExplorationsTestBackwardsCompatibility = typeof _Test_runThunk === "function";
   function _VirtualDom_organizeFacts(factList) {
-    var facts = {};
-    facts[_VirtualDom_markerProperty] = true;
-    for (; factList.b; factList = factList.b) {
+    for (var facts = {}; factList.b; factList = factList.b) {
       var entry = factList.a;
       var tag = entry.$;
       var key = entry.n;
@@ -2645,7 +2621,7 @@
         continue;
       }
       var subFacts = facts[tag] || (facts[tag] = {});
-      tag === "a3" && key === "class" ? _VirtualDom_elmExplorationsTestBackwardsCompatibility ? _VirtualDom_addClass(facts, "className", value) : _VirtualDom_addClass(subFacts, key, value) : subFacts[key] = value;
+      tag === "a3" && key === "class" ? _VirtualDom_addClass(subFacts, key, value) : subFacts[key] = value;
     }
     return facts;
   }
@@ -2653,184 +2629,65 @@
     var classes = object[key];
     object[key] = classes ? classes + " " + newClass : newClass;
   }
-  function _VirtualDom_render(vNode, eventNode, tNode) {
+  function _VirtualDom_render(vNode, eventNode) {
     var tag = vNode.$;
     if (tag === 5) {
-      return _VirtualDom_render(vNode.k || (vNode.k = vNode.m()), eventNode, tNode);
-    }
-    if (tag === 4) {
-      return _VirtualDom_render(vNode.k, function(msg, isSync) {
-        return eventNode(vNode.j(msg), isSync);
-      }, tNode);
+      return _VirtualDom_render(vNode.k || (vNode.k = vNode.m()), eventNode);
     }
     if (tag === 0) {
-      var domNode = _VirtualDom_doc.createTextNode(vNode.a);
-      tNode.r = domNode;
+      return _VirtualDom_doc.createTextNode(vNode.a);
+    }
+    if (tag === 4) {
+      var subNode = vNode.k;
+      var tagger = vNode.j;
+      while (subNode.$ === 4) {
+        typeof tagger !== "object" ? tagger = [tagger, subNode.j] : tagger.push(subNode.j);
+        subNode = subNode.k;
+      }
+      var subEventRoot = { j: tagger, p: eventNode };
+      var domNode = _VirtualDom_render(subNode, subEventRoot);
+      domNode.elm_event_node_ref = subEventRoot;
       return domNode;
     }
     if (tag === 3) {
       var domNode = vNode.h(vNode.g);
-      _VirtualDom_applyFacts(domNode, eventNode, {}, vNode.d);
-      tNode.r = domNode;
+      _VirtualDom_applyFacts(domNode, eventNode, vNode.d);
       return domNode;
     }
     var domNode = vNode.f ? _VirtualDom_doc.createElementNS(vNode.f, vNode.c) : _VirtualDom_doc.createElement(vNode.c);
     if (_VirtualDom_divertHrefToApp && vNode.c == "a") {
       domNode.addEventListener("click", _VirtualDom_divertHrefToApp(domNode));
     }
-    _VirtualDom_applyFacts(domNode, eventNode, {}, vNode.d);
-    if (tag === 1) {
-      for (var kids = vNode.e, i = 0; i < kids.length; i++) {
-        var childTNode = _VirtualDom_createTNode(void 0);
-        var childDomNode = _VirtualDom_render(kids[i], eventNode, childTNode);
-        tNode.s[i] = childTNode;
-        _VirtualDom_appendChild(domNode, childDomNode);
-      }
-    } else {
-      for (var kids = vNode.e, i = 0; i < kids.length; i++) {
-        var kid = kids[i];
-        var childTNode = _VirtualDom_createTNode(void 0);
-        var childDomNode = _VirtualDom_render(kid.b, eventNode, childTNode);
-        tNode.s[kid.a] = childTNode;
-        _VirtualDom_appendChild(domNode, childDomNode);
-      }
+    _VirtualDom_applyFacts(domNode, eventNode, vNode.d);
+    for (var kids = vNode.e, i = 0; i < kids.length; i++) {
+      _VirtualDom_appendChild(domNode, _VirtualDom_render(tag === 1 ? kids[i] : kids[i].b, eventNode));
     }
-    tNode.r = domNode;
     return domNode;
   }
-  function _VirtualDom_renderTranslated(vNode, eventNode, tNode) {
-    var tag = vNode.$;
-    if (tag === 5) {
-      return _VirtualDom_renderTranslated(vNode.k, eventNode, tNode);
-    }
-    if (tag === 4) {
-      return _VirtualDom_renderTranslated(vNode.k, function(msg, isSync) {
-        return eventNode(vNode.j(msg), isSync);
-      }, tNode);
-    }
-    if (tag === 0) {
-      var newNode = _VirtualDom_doc.createTextNode(vNode.a);
-      tNode.r = newNode;
-      return newNode;
-    }
-    return tNode.r;
-  }
-  function _VirtualDom_applyFacts(domNode, eventNode, prevFacts, facts) {
-    if (prevFacts.a1 !== void 0) {
-      _VirtualDom_removeStyles(domNode, prevFacts.a1, facts.a1 || {});
-    }
-    _VirtualDom_removeProps(domNode, prevFacts, facts);
-    if (prevFacts.a3 !== void 0) {
-      _VirtualDom_removeAttrs(domNode, prevFacts.a3, facts.a3 || {});
-    }
-    if (prevFacts.a4 !== void 0) {
-      _VirtualDom_removeAttrsNS(domNode, prevFacts.a4, facts.a4 || {});
-    }
-    if (facts.a1 !== void 0) {
-      _VirtualDom_applyStyles(domNode, prevFacts.a1 || {}, facts.a1);
-    }
-    if (facts.a3 !== void 0) {
-      _VirtualDom_applyAttrs(domNode, prevFacts.a3 || {}, facts.a3);
-    }
-    if (facts.a4 !== void 0) {
-      _VirtualDom_applyAttrsNS(domNode, prevFacts.a4 || {}, facts.a4);
-    }
-    _VirtualDom_applyProps(domNode, facts);
-    if (facts.a0 !== void 0 || prevFacts.a0 !== void 0) {
-      _VirtualDom_applyEvents(domNode, eventNode, facts.a0 || {});
+  function _VirtualDom_applyFacts(domNode, eventNode, facts) {
+    for (var key in facts) {
+      var value = facts[key];
+      key === "a1" ? _VirtualDom_applyStyles(domNode, value) : key === "a0" ? _VirtualDom_applyEvents(domNode, eventNode, value) : key === "a3" ? _VirtualDom_applyAttrs(domNode, value) : key === "a4" ? _VirtualDom_applyAttrsNS(domNode, value) : (key !== "value" && key !== "checked" || domNode[key] !== value) && (domNode[key] = value);
     }
   }
-  function _VirtualDom_applyStyles(domNode, prevStyles, styles) {
+  function _VirtualDom_applyStyles(domNode, styles) {
+    var domNodeStyle = domNode.style;
     for (var key in styles) {
-      var value = styles[key];
-      if (value !== prevStyles[key]) {
-        if (key.charCodeAt(0) === 45) {
-          domNode.style.setProperty(key, value);
-        } else {
-          domNode.style[key] = value;
-        }
-      }
+      domNodeStyle[key] = styles[key];
     }
   }
-  function _VirtualDom_removeStyles(domNode, prevStyles, styles) {
-    for (var key in prevStyles) {
-      if (!(key in styles)) {
-        if (key.charCodeAt(0) === 45) {
-          domNode.style.removeProperty(key);
-        } else {
-          domNode.style[key] = "";
-        }
-      }
-    }
-  }
-  function _VirtualDom_applyProps(domNode, props) {
-    for (var key in props) {
-      if (key === "a0" || key === "a1" || key === "a3" || key === "a4" || key === _VirtualDom_markerProperty) {
-        continue;
-      }
-      var value = props[key];
-      if (value !== domNode[key]) {
-        domNode[key] = value;
-      }
-    }
-  }
-  function _VirtualDom_removeProps(domNode, prevProps, props) {
-    for (var key in prevProps) {
-      if (key === "a0" || key === "a1" || key === "a3" || key === "a4" || key === _VirtualDom_markerProperty) {
-        continue;
-      }
-      if (!(key in props)) {
-        var value = prevProps[key];
-        switch (typeof value) {
-          // Most string properties default to the empty string.
-          case "string":
-            domNode[key] = "";
-            break;
-          // Most boolean properties default to false.
-          case "boolean":
-            domNode[key] = false;
-            break;
-        }
-        delete domNode[key];
-      }
-    }
-  }
-  function _VirtualDom_applyAttrs(domNode, prevAttrs, attrs) {
+  function _VirtualDom_applyAttrs(domNode, attrs) {
     for (var key in attrs) {
       var value = attrs[key];
-      if (value !== prevAttrs[key]) {
-        domNode.setAttribute(key, value);
-      }
+      typeof value !== "undefined" ? domNode.setAttribute(key, value) : domNode.removeAttribute(key);
     }
   }
-  function _VirtualDom_removeAttrs(domNode, prevAttrs, attrs) {
-    for (var key in prevAttrs) {
-      if (!(key in attrs)) {
-        domNode.removeAttribute(key);
-      }
-    }
-  }
-  function _VirtualDom_applyAttrsNS(domNode, prevNsAttrs, nsAttrs) {
+  function _VirtualDom_applyAttrsNS(domNode, nsAttrs) {
     for (var key in nsAttrs) {
       var pair = nsAttrs[key];
       var namespace = pair.f;
       var value = pair.o;
-      var previous = prevNsAttrs[key];
-      if (!previous) {
-        domNode.setAttributeNS(namespace, key, value);
-      } else if (previous.f !== namespace) {
-        domNode.removeAttributeNS(previous.f, key);
-        domNode.setAttributeNS(namespace, key, value);
-      } else if (previous.o !== value) {
-        domNode.setAttributeNS(namespace, key, value);
-      }
-    }
-  }
-  function _VirtualDom_removeAttrsNS(domNode, prevNsAttrs, nsAttrs) {
-    for (var key in prevNsAttrs) {
-      if (!(key in nsAttrs)) {
-        domNode.removeAttributeNS(prevNsAttrs[key].f, key);
-      }
+      typeof value !== "undefined" ? domNode.setAttributeNS(namespace, key, value) : domNode.removeAttributeNS(namespace, key);
     }
   }
   function _VirtualDom_applyEvents(domNode, eventNode, events) {
@@ -2840,14 +2697,13 @@
       var oldCallback = allCallbacks[key];
       if (!newHandler) {
         domNode.removeEventListener(key, oldCallback);
-        delete allCallbacks[key];
+        allCallbacks[key] = void 0;
         continue;
       }
       if (oldCallback) {
-        var oldHandler = oldCallback.p;
+        var oldHandler = oldCallback.q;
         if (oldHandler.$ === newHandler.$) {
-          oldCallback.p = newHandler;
-          oldCallback.q = eventNode;
+          oldCallback.q = newHandler;
           continue;
         }
         domNode.removeEventListener(key, oldCallback);
@@ -2860,21 +2716,6 @@
       );
       allCallbacks[key] = oldCallback;
     }
-    for (key in allCallbacks) {
-      if (!(key in events)) {
-        domNode.removeEventListener(key, allCallbacks[key]);
-        delete allCallbacks[key];
-      }
-    }
-  }
-  function _VirtualDom_lazyUpdateEvents(domNode, eventNode) {
-    var allCallbacks = domNode.elmFs;
-    if (allCallbacks) {
-      for (var key in allCallbacks) {
-        var oldCallback = allCallbacks[key];
-        oldCallback.q = eventNode;
-      }
-    }
   }
   var _VirtualDom_passiveSupported;
   try {
@@ -2885,10 +2726,9 @@
     }));
   } catch (e) {
   }
-  function _VirtualDom_makeCallback(initialEventNode, initialHandler) {
+  function _VirtualDom_makeCallback(eventNode, initialHandler) {
     function callback(event) {
-      var handler = callback.p;
-      var eventNode = callback.q;
+      var handler = callback.q;
       var result = _Json_runHelp(handler.a, event);
       if (!$elm$core$Result$isOk(result)) {
         return;
@@ -2898,33 +2738,59 @@
       var message = !tag ? value : tag < 3 ? value.a : value.message;
       var stopPropagation = tag == 1 ? value.b : tag == 3 && value.stopPropagation;
       var currentEventNode = (stopPropagation && event.stopPropagation(), (tag == 2 ? value.b : tag == 3 && value.preventDefault) && event.preventDefault(), eventNode);
+      var tagger;
+      var i;
+      while (tagger = currentEventNode.j) {
+        if (typeof tagger == "function") {
+          message = tagger(message);
+        } else {
+          for (var i = tagger.length; i--; ) {
+            message = tagger[i](message);
+          }
+        }
+        currentEventNode = currentEventNode.p;
+      }
       currentEventNode(message, stopPropagation);
     }
-    callback.p = initialHandler;
-    callback.q = initialEventNode;
+    callback.q = initialHandler;
     return callback;
   }
-  function _VirtualDom_diff(_x, y) {
-    return y;
+  function _VirtualDom_equalEvents(x, y) {
+    return x.$ == y.$ && _Json_equality(x.a, y.a);
   }
-  function _VirtualDom_diffHelp(x, y, eventNode, tNode) {
+  function _VirtualDom_diff(x, y) {
+    var patches = [];
+    _VirtualDom_diffHelp(x, y, patches, 0);
+    return patches;
+  }
+  function _VirtualDom_pushPatch(patches, type, index, data) {
+    var patch = {
+      $: type,
+      r: index,
+      s: data,
+      t: void 0,
+      u: void 0
+    };
+    patches.push(patch);
+    return patch;
+  }
+  function _VirtualDom_diffHelp(x, y, patches, index) {
     if (x === y) {
-      return {
-        r: _VirtualDom_quickVisit(x, y, eventNode, tNode),
-        u: false,
-        v: false
-      };
+      return;
     }
-    while (x.$ === 4) {
-      x = x.k;
+    var xType = x.$;
+    var yType = y.$;
+    if (xType !== yType) {
+      if (xType === 1 && yType === 2) {
+        y = _VirtualDom_dekey(y);
+        yType = 1;
+      } else {
+        _VirtualDom_pushPatch(patches, 0, index, y);
+        return;
+      }
     }
-    if (y.$ === 4) {
-      return _VirtualDom_diffHelp(x, y.k, function(msg, isSync) {
-        return eventNode(y.j(msg), isSync);
-      }, tNode);
-    }
-    if (x.$ === 5) {
-      if (y.$ === 5) {
+    switch (yType) {
+      case 5:
         var xRefs = x.l;
         var yRefs = y.l;
         var i = xRefs.length;
@@ -2934,527 +2800,497 @@
         }
         if (same) {
           y.k = x.k;
-          return {
-            r: _VirtualDom_quickVisit(x, y, eventNode, tNode),
-            u: false,
-            v: false
-          };
+          return;
         }
         y.k = y.m();
-        return _VirtualDom_diffHelp(x.k, y.k, eventNode, tNode);
-      } else {
-        return _VirtualDom_diffHelp(x.k, y, eventNode, tNode);
-      }
-    }
-    if (y.$ === 5) {
-      return _VirtualDom_diffHelp(x, y.k || (y.k = y.m()), eventNode, tNode);
-    }
-    var domNode = tNode.r;
-    var xType = x.$;
-    var yType = y.$;
-    if (xType !== yType) {
-      if (xType === 1 && yType === 2) {
-        x = _VirtualDom_upkey(x, y, tNode);
-        xType = 2;
-      } else if (xType === 2 && yType === 1) {
-        x = _VirtualDom_dekey(x, tNode);
-        xType = 1;
-      } else {
-        return _VirtualDom_applyPatchRedraw(x, y, eventNode, tNode);
-      }
-    }
-    switch (yType) {
+        var subPatches = [];
+        _VirtualDom_diffHelp(x.k, y.k, subPatches, 0);
+        subPatches.length > 0 && _VirtualDom_pushPatch(patches, 1, index, subPatches);
+        return;
+      case 4:
+        var xTaggers = x.j;
+        var yTaggers = y.j;
+        var nesting = false;
+        var xSubNode = x.k;
+        while (xSubNode.$ === 4) {
+          nesting = true;
+          typeof xTaggers !== "object" ? xTaggers = [xTaggers, xSubNode.j] : xTaggers.push(xSubNode.j);
+          xSubNode = xSubNode.k;
+        }
+        var ySubNode = y.k;
+        while (ySubNode.$ === 4) {
+          nesting = true;
+          typeof yTaggers !== "object" ? yTaggers = [yTaggers, ySubNode.j] : yTaggers.push(ySubNode.j);
+          ySubNode = ySubNode.k;
+        }
+        if (nesting && xTaggers.length !== yTaggers.length) {
+          _VirtualDom_pushPatch(patches, 0, index, y);
+          return;
+        }
+        if (nesting ? !_VirtualDom_pairwiseRefEqual(xTaggers, yTaggers) : xTaggers !== yTaggers) {
+          _VirtualDom_pushPatch(patches, 2, index, yTaggers);
+        }
+        _VirtualDom_diffHelp(xSubNode, ySubNode, patches, index + 1);
+        return;
       case 0:
         if (x.a !== y.a) {
-          if (!domNode.parentNode || domNode.data !== x.a) {
-            return {
-              r: domNode,
-              u: true,
-              v: false
-            };
-          }
-          if (_VirtualDom_everTranslated) {
-            var newNode = _VirtualDom_doc.createTextNode(y.a);
-            tNode.r = newNode;
-            domNode.parentNode.replaceChild(newNode, domNode);
-            domNode = newNode;
-          } else {
-            domNode.data = y.a;
-          }
+          _VirtualDom_pushPatch(patches, 3, index, y.a);
         }
-        return {
-          r: domNode,
-          u: false,
-          v: false
-        };
+        return;
       case 1:
-        return _VirtualDom_diffNodes(domNode, x, y, eventNode, tNode, _VirtualDom_diffKids);
+        _VirtualDom_diffNodes(x, y, patches, index, _VirtualDom_diffKids);
+        return;
       case 2:
-        return _VirtualDom_diffNodes(domNode, x, y, eventNode, tNode, _VirtualDom_diffKeyedKids);
+        _VirtualDom_diffNodes(x, y, patches, index, _VirtualDom_diffKeyedKids);
+        return;
       case 3:
         if (x.h !== y.h) {
-          return _VirtualDom_applyPatchRedraw(x, y, eventNode, tNode);
+          _VirtualDom_pushPatch(patches, 0, index, y);
+          return;
         }
-        _VirtualDom_applyFacts(domNode, eventNode, x.d, y.d);
+        var factsDiff = _VirtualDom_diffFacts(x.d, y.d);
+        factsDiff && _VirtualDom_pushPatch(patches, 4, index, factsDiff);
         var patch = y.i(x.g, y.g);
-        patch && patch(domNode);
-        return {
-          r: domNode,
-          u: false,
-          v: false
-        };
+        patch && _VirtualDom_pushPatch(patches, 5, index, patch);
+        return;
     }
   }
-  function _VirtualDom_quickVisit(x, y, eventNode, tNode) {
-    switch (y.$) {
-      case 4:
-        return _VirtualDom_quickVisit(x.k, y.k, function(msg, isSync) {
-          return eventNode(y.j(msg), isSync);
-        }, tNode);
-      case 5:
-        return _VirtualDom_quickVisit(x.k, y.k, eventNode, tNode);
+  function _VirtualDom_pairwiseRefEqual(as, bs) {
+    for (var i = 0; i < as.length; i++) {
+      if (as[i] !== bs[i]) {
+        return false;
+      }
     }
-    var domNode = tNode.r;
-    switch (y.$) {
-      case 0:
-        return domNode;
-      case 1:
-        _VirtualDom_applyProps(domNode, y.d);
-        _VirtualDom_lazyUpdateEvents(domNode, eventNode);
-        for (var xKids = x.e, yKids = y.e, i = 0; i < yKids.length; i++) {
-          _VirtualDom_quickVisit(xKids[i], yKids[i], eventNode, tNode.s[i]);
-        }
-        return domNode;
-      case 2:
-        _VirtualDom_applyProps(domNode, y.d);
-        _VirtualDom_lazyUpdateEvents(domNode, eventNode);
-        for (var xKids = x.e, yKids = y.e, i = 0; i < yKids.length; i++) {
-          var xKid = xKids[i];
-          var yKid = yKids[i];
-          _VirtualDom_quickVisit(xKid.b, yKid.b, eventNode, tNode.s[yKid.a]);
-        }
-        return domNode;
-      case 3:
-        _VirtualDom_applyProps(domNode, y.d);
-        _VirtualDom_lazyUpdateEvents(domNode, eventNode);
-        return domNode;
-    }
+    return true;
   }
-  function _VirtualDom_diffNodes(domNode, x, y, eventNode, tNode, diffKids) {
+  function _VirtualDom_diffNodes(x, y, patches, index, diffKids) {
     if (x.c !== y.c || x.f !== y.f) {
-      return _VirtualDom_applyPatchRedraw(x, y, eventNode, tNode);
+      _VirtualDom_pushPatch(patches, 0, index, y);
+      return;
     }
-    _VirtualDom_applyFacts(domNode, eventNode, x.d, y.d);
-    var translated = diffKids(domNode, x, y, eventNode, tNode);
-    if (translated) {
-      _VirtualDom_everTranslated = true;
-      for (var current = null, kids = y.e, i = kids.length - 1, j = domNode.childNodes.length - 1; i >= 0; i--) {
-        var kid = kids[i];
-        var vNode = y.$ === 2 ? kid.b : kid;
-        var child = _VirtualDom_renderTranslated(vNode, eventNode, tNode.s[y.$ === 2 ? kid.a : i]);
-        if (child.parentNode === domNode) {
-          for (; j >= 0; j--) {
-            current = domNode.childNodes[j];
-            if (current === child) {
-              j--;
-              break;
-            }
-            if (current.nodeType === 3 || current.localName === "font") {
-              domNode.removeChild(current);
-            }
-          }
-        } else {
-          _VirtualDom_insertBefore(domNode, child, current);
-          current = child;
-        }
-      }
-      for (; j >= 0; j--) {
-        current = domNode.childNodes[j];
-        if (current.nodeType === 3 || current.localName === "font") {
-          domNode.removeChild(current);
-        }
-      }
-    }
-    return {
-      r: domNode,
-      u: false,
-      v: false
-    };
+    var factsDiff = _VirtualDom_diffFacts(x.d, y.d);
+    factsDiff && _VirtualDom_pushPatch(patches, 4, index, factsDiff);
+    diffKids(x, y, patches, index);
   }
-  function _VirtualDom_diffKids(parentDomNode, xParent, yParent, eventNode, tNode) {
+  function _VirtualDom_diffFacts(x, y, category) {
+    var diff;
+    for (var xKey in x) {
+      if (xKey === "a1" || xKey === "a0" || xKey === "a3" || xKey === "a4") {
+        var subDiff = _VirtualDom_diffFacts(x[xKey], y[xKey] || {}, xKey);
+        if (subDiff) {
+          diff = diff || {};
+          diff[xKey] = subDiff;
+        }
+        continue;
+      }
+      if (!(xKey in y)) {
+        diff = diff || {};
+        diff[xKey] = !category ? typeof x[xKey] === "string" ? "" : null : category === "a1" ? "" : category === "a0" || category === "a3" ? void 0 : { f: x[xKey].f, o: void 0 };
+        continue;
+      }
+      var xValue = x[xKey];
+      var yValue = y[xKey];
+      if (xValue === yValue && xKey !== "value" && xKey !== "checked" || category === "a0" && _VirtualDom_equalEvents(xValue, yValue)) {
+        continue;
+      }
+      diff = diff || {};
+      diff[xKey] = yValue;
+    }
+    for (var yKey in y) {
+      if (!(yKey in x)) {
+        diff = diff || {};
+        diff[yKey] = y[yKey];
+      }
+    }
+    return diff;
+  }
+  function _VirtualDom_diffKids(xParent, yParent, patches, index) {
     var xKids = xParent.e;
     var yKids = yParent.e;
     var xLen = xKids.length;
     var yLen = yKids.length;
-    var translated = false;
-    var previousSibling = null;
-    for (var minLen = xLen < yLen ? xLen : yLen, i = 0; i < minLen; i++) {
-      var diffReturn = _VirtualDom_diffHelp(xKids[i], yKids[i], eventNode, tNode.s[i]);
-      var domNode = diffReturn.r;
-      if (diffReturn.u) {
-        translated = true;
-      }
-      if (diffReturn.v) {
-        _VirtualDom_insertAfter(parentDomNode, domNode, previousSibling);
-        previousSibling = domNode;
-      } else if (domNode.parentNode === parentDomNode) {
-        previousSibling = domNode;
-      }
-    }
     if (xLen > yLen) {
-      for (var i = yLen; i < xLen; i++) {
-        _VirtualDom_remove(tNode.s[i].r);
-        delete tNode.s[i];
-      }
+      _VirtualDom_pushPatch(patches, 6, index, {
+        v: yLen,
+        i: xLen - yLen
+      });
     } else if (xLen < yLen) {
-      for (var i = xLen; i < yLen; i++) {
-        var y = yKids[i];
-        var childTNode = _VirtualDom_createTNode(void 0);
-        var domNode = _VirtualDom_render(y, eventNode, childTNode);
-        tNode.s[i] = childTNode;
-        _VirtualDom_appendChild(parentDomNode, domNode);
-      }
+      _VirtualDom_pushPatch(patches, 7, index, {
+        v: xLen,
+        e: yKids
+      });
     }
-    return translated;
+    for (var minLen = xLen < yLen ? xLen : yLen, i = 0; i < minLen; i++) {
+      var xKid = xKids[i];
+      _VirtualDom_diffHelp(xKid, yKids[i], patches, ++index);
+      index += xKid.b || 0;
+    }
   }
-  function _VirtualDom_diffKeyedKids(parentDomNode, xParent, yParent, eventNode, tNode) {
+  function _VirtualDom_diffKeyedKids(xParent, yParent, patches, rootIndex) {
+    var localPatches = [];
+    var changes = {};
+    var inserts = [];
     var xKids = xParent.e;
     var yKids = yParent.e;
-    var xKidsMap = xParent.t;
-    var yKidsMap = yParent.t;
-    var xIndexLower = 0;
-    var yIndexLower = 0;
-    var xIndexUpper = xKids.length - 1;
-    var yIndexUpper = yKids.length - 1;
-    var domNodeLower = null;
-    var domNodeUpper = null;
-    var translated = false;
-    var handleDiffReturn = function(diffReturn2, upper) {
-      var domNode2 = diffReturn2.r;
-      if (diffReturn2.u) {
-        translated = true;
+    var xLen = xKids.length;
+    var yLen = yKids.length;
+    var xIndex = 0;
+    var yIndex = 0;
+    var index = rootIndex;
+    while (xIndex < xLen && yIndex < yLen) {
+      var x = xKids[xIndex];
+      var y = yKids[yIndex];
+      var xKey = x.a;
+      var yKey = y.a;
+      var xNode = x.b;
+      var yNode = y.b;
+      var newMatch = void 0;
+      var oldMatch = void 0;
+      if (xKey === yKey) {
+        index++;
+        _VirtualDom_diffHelp(xNode, yNode, localPatches, index);
+        index += xNode.b || 0;
+        xIndex++;
+        yIndex++;
+        continue;
       }
-      if (diffReturn2.v) {
-        if (upper) {
-          _VirtualDom_insertBefore(parentDomNode, domNode2, domNodeUpper);
-          domNodeUpper = domNode2;
-        } else {
-          _VirtualDom_insertAfter(parentDomNode, domNode2, domNodeLower);
-          domNodeLower = domNode2;
-        }
-      } else if (domNode2.parentNode === parentDomNode) {
-        if (upper) {
-          domNodeUpper = domNode2;
-        } else {
-          domNodeLower = domNode2;
-        }
+      var xNext = xKids[xIndex + 1];
+      var yNext = yKids[yIndex + 1];
+      if (xNext) {
+        var xNextKey = xNext.a;
+        var xNextNode = xNext.b;
+        oldMatch = yKey === xNextKey;
       }
-    };
-    while (true) {
-      while (xIndexLower <= xIndexUpper && yIndexLower <= yIndexUpper) {
-        var xKid = xKids[xIndexLower];
-        var yKid = yKids[yIndexLower];
-        var xKey = xKid.a;
-        var yKey = yKid.a;
-        var x = xKid.b;
-        var y = yKid.b;
-        if (xKey === yKey) {
-          var diffReturn = _VirtualDom_diffHelp(x, y, eventNode, tNode.s[yKey]);
-          xIndexLower++;
-          yIndexLower++;
-          handleDiffReturn(diffReturn, false);
-          continue;
-        }
-        var xMoved = false;
-        if (xKey in yKidsMap) {
-          xMoved = true;
-        } else {
-          _VirtualDom_remove(tNode.s[xKey].r);
-          delete tNode.s[xKey];
-          xIndexLower++;
-        }
-        if (yKey in xKidsMap) {
-          if (xMoved) {
-            break;
-          }
-        } else {
-          var childTNode = _VirtualDom_createTNode(void 0);
-          var domNode = _VirtualDom_render(y, eventNode, childTNode);
-          tNode.s[yKey] = childTNode;
-          _VirtualDom_insertAfter(parentDomNode, domNode, domNodeLower);
-          yIndexLower++;
-          domNodeLower = domNode;
-        }
+      if (yNext) {
+        var yNextKey = yNext.a;
+        var yNextNode = yNext.b;
+        newMatch = xKey === yNextKey;
       }
-      while (xIndexUpper > xIndexLower && yIndexUpper > yIndexLower) {
-        var xKid = xKids[xIndexUpper];
-        var yKid = yKids[yIndexUpper];
-        var xKey = xKid.a;
-        var yKey = yKid.a;
-        var x = xKid.b;
-        var y = yKid.b;
-        if (xKey === yKey) {
-          var diffReturn = _VirtualDom_diffHelp(x, y, eventNode, tNode.s[yKey]);
-          xIndexUpper--;
-          yIndexUpper--;
-          handleDiffReturn(diffReturn, true);
-          continue;
-        }
-        var xMoved = false;
-        if (xKey in yKidsMap) {
-          xMoved = true;
-        } else {
-          _VirtualDom_remove(tNode.s[xKey].r);
-          delete tNode.s[xKey];
-          xIndexUpper--;
-        }
-        if (yKey in xKidsMap) {
-          if (xMoved) {
-            break;
-          }
-        } else {
-          var childTNode = _VirtualDom_createTNode(void 0);
-          var domNode = _VirtualDom_render(y, eventNode, childTNode);
-          tNode.s[yKey] = childTNode;
-          _VirtualDom_insertBefore(parentDomNode, domNode, domNodeUpper);
-          yIndexUpper--;
-          domNodeUpper = domNode;
-        }
+      if (newMatch && oldMatch) {
+        index++;
+        _VirtualDom_diffHelp(xNode, yNextNode, localPatches, index);
+        _VirtualDom_insertNode(changes, localPatches, xKey, yNode, yIndex, inserts);
+        index += xNode.b || 0;
+        index++;
+        _VirtualDom_removeNode(changes, localPatches, xKey, xNextNode, index);
+        index += xNextNode.b || 0;
+        xIndex += 2;
+        yIndex += 2;
+        continue;
       }
-      var swapped = false;
-      if (xIndexLower < xIndexUpper && yIndexLower < yIndexUpper) {
-        var xKidLower = xKids[xIndexLower];
-        var yKidLower = yKids[yIndexLower];
-        var xKidUpper = xKids[xIndexUpper];
-        var yKidUpper = yKids[yIndexUpper];
-        var xKeyLower = xKidLower.a;
-        var yKeyLower = yKidLower.a;
-        var xKeyUpper = xKidUpper.a;
-        var yKeyUpper = yKidUpper.a;
-        if (xKeyLower === yKeyUpper) {
-          var diffReturn = _VirtualDom_diffHelp(xKidLower.b, yKidUpper.b, eventNode, tNode.s[yKeyUpper]);
-          xIndexLower++;
-          yIndexUpper--;
-          _VirtualDom_moveBefore(parentDomNode, diffReturn.r, domNodeUpper);
-          handleDiffReturn(diffReturn, true);
-          swapped = true;
-        }
-        if (xKeyUpper === yKeyLower) {
-          var diffReturn = _VirtualDom_diffHelp(xKidUpper.b, yKidLower.b, eventNode, tNode.s[yKeyLower]);
-          yIndexLower++;
-          xIndexUpper--;
-          _VirtualDom_moveAfter(parentDomNode, diffReturn.r, domNodeLower);
-          handleDiffReturn(diffReturn, false);
-          swapped = true;
-        }
+      if (newMatch) {
+        index++;
+        _VirtualDom_insertNode(changes, localPatches, yKey, yNode, yIndex, inserts);
+        _VirtualDom_diffHelp(xNode, yNextNode, localPatches, index);
+        index += xNode.b || 0;
+        xIndex += 1;
+        yIndex += 2;
+        continue;
       }
-      if (!swapped) {
-        break;
+      if (oldMatch) {
+        index++;
+        _VirtualDom_removeNode(changes, localPatches, xKey, xNode, index);
+        index += xNode.b || 0;
+        index++;
+        _VirtualDom_diffHelp(xNextNode, yNode, localPatches, index);
+        index += xNextNode.b || 0;
+        xIndex += 2;
+        yIndex += 1;
+        continue;
       }
+      if (xNext && xNextKey === yNextKey) {
+        index++;
+        _VirtualDom_removeNode(changes, localPatches, xKey, xNode, index);
+        _VirtualDom_insertNode(changes, localPatches, yKey, yNode, yIndex, inserts);
+        index += xNode.b || 0;
+        index++;
+        _VirtualDom_diffHelp(xNextNode, yNextNode, localPatches, index);
+        index += xNextNode.b || 0;
+        xIndex += 2;
+        yIndex += 2;
+        continue;
+      }
+      break;
     }
-    for (; yIndexLower <= yIndexUpper; yIndexLower++) {
-      var yKid = yKids[yIndexLower];
-      var yKey = yKid.a;
-      var y = yKid.b;
-      if (yKey in xKidsMap) {
-        var x = xKidsMap[yKey];
-        var diffReturn = _VirtualDom_diffHelp(x, y, eventNode, tNode.s[yKey]);
-        _VirtualDom_moveAfter(parentDomNode, diffReturn.r, domNodeLower);
-        handleDiffReturn(diffReturn, false);
-      } else {
-        var childTNode = _VirtualDom_createTNode(void 0);
-        var domNode = _VirtualDom_render(y, eventNode, childTNode);
-        tNode.s[yKey] = childTNode;
-        _VirtualDom_insertAfter(parentDomNode, domNode, domNodeLower);
-        domNodeLower = domNode;
-      }
+    while (xIndex < xLen) {
+      index++;
+      var x = xKids[xIndex];
+      var xNode = x.b;
+      _VirtualDom_removeNode(changes, localPatches, x.a, xNode, index);
+      index += xNode.b || 0;
+      xIndex++;
     }
-    for (; xIndexLower <= xIndexUpper; xIndexLower++) {
-      var xKid = xKids[xIndexLower];
-      var xKey = xKid.a;
-      if (!(xKey in yKidsMap)) {
-        _VirtualDom_remove(tNode.s[xKid.a].r);
-        delete tNode.s[xKid.a];
-      }
+    while (yIndex < yLen) {
+      var endInserts = endInserts || [];
+      var y = yKids[yIndex];
+      _VirtualDom_insertNode(changes, localPatches, y.a, y.b, void 0, endInserts);
+      yIndex++;
     }
-    return translated;
+    if (localPatches.length > 0 || inserts.length > 0 || endInserts) {
+      _VirtualDom_pushPatch(patches, 8, rootIndex, {
+        w: localPatches,
+        x: inserts,
+        y: endInserts
+      });
+    }
   }
   var _VirtualDom_POSTFIX = "_elmW6BL";
-  function _VirtualDom_applyPatches(rootDomNode, oldVirtualNode, newVirtualNode, eventNode) {
-    var tNode = rootDomNode.elmTree;
-    var diffReturn = _VirtualDom_diffHelp(oldVirtualNode, newVirtualNode, eventNode, tNode);
-    var newDomNode = diffReturn.r;
-    if (newDomNode !== rootDomNode) {
-      delete rootDomNode.elmTree;
-      newDomNode.elmTree = tNode;
+  function _VirtualDom_insertNode(changes, localPatches, key, vnode, yIndex, inserts) {
+    var entry = changes[key];
+    if (!entry) {
+      entry = {
+        c: 0,
+        z: vnode,
+        r: yIndex,
+        s: void 0
+      };
+      inserts.push({ r: yIndex, A: entry });
+      changes[key] = entry;
+      return;
     }
-    return newDomNode;
+    if (entry.c === 1) {
+      inserts.push({ r: yIndex, A: entry });
+      entry.c = 2;
+      var subPatches = [];
+      _VirtualDom_diffHelp(entry.z, vnode, subPatches, entry.r);
+      entry.r = yIndex;
+      entry.s.s = {
+        w: subPatches,
+        A: entry
+      };
+      return;
+    }
+    _VirtualDom_insertNode(changes, localPatches, key + _VirtualDom_POSTFIX, vnode, yIndex, inserts);
   }
-  function _VirtualDom_applyPatchRedraw(x, y, eventNode, tNode) {
-    var domNode = tNode.r;
+  function _VirtualDom_removeNode(changes, localPatches, key, vnode, index) {
+    var entry = changes[key];
+    if (!entry) {
+      var patch = _VirtualDom_pushPatch(localPatches, 9, index, void 0);
+      changes[key] = {
+        c: 1,
+        z: vnode,
+        r: index,
+        s: patch
+      };
+      return;
+    }
+    if (entry.c === 0) {
+      entry.c = 2;
+      var subPatches = [];
+      _VirtualDom_diffHelp(vnode, entry.z, subPatches, index);
+      _VirtualDom_pushPatch(localPatches, 9, index, {
+        w: subPatches,
+        A: entry
+      });
+      return;
+    }
+    _VirtualDom_removeNode(changes, localPatches, key + _VirtualDom_POSTFIX, vnode, index);
+  }
+  function _VirtualDom_addDomNodes(domNode, vNode, patches, eventNode) {
+    _VirtualDom_addDomNodesHelp(domNode, vNode, patches, 0, 0, vNode.b, eventNode);
+  }
+  function _VirtualDom_addDomNodesHelp(domNode, vNode, patches, i, low, high, eventNode) {
+    var patch = patches[i];
+    var index = patch.r;
+    while (index === low) {
+      var patchType = patch.$;
+      if (patchType === 1) {
+        _VirtualDom_addDomNodes(domNode, vNode.k, patch.s, eventNode);
+      } else if (patchType === 8) {
+        patch.t = domNode;
+        patch.u = eventNode;
+        var subPatches = patch.s.w;
+        if (subPatches.length > 0) {
+          _VirtualDom_addDomNodesHelp(domNode, vNode, subPatches, 0, low, high, eventNode);
+        }
+      } else if (patchType === 9) {
+        patch.t = domNode;
+        patch.u = eventNode;
+        var data = patch.s;
+        if (data) {
+          data.A.s = domNode;
+          var subPatches = data.w;
+          if (subPatches.length > 0) {
+            _VirtualDom_addDomNodesHelp(domNode, vNode, subPatches, 0, low, high, eventNode);
+          }
+        }
+      } else {
+        patch.t = domNode;
+        patch.u = eventNode;
+      }
+      i++;
+      if (!(patch = patches[i]) || (index = patch.r) > high) {
+        return i;
+      }
+    }
+    var tag = vNode.$;
+    if (tag === 4) {
+      var subNode = vNode.k;
+      while (subNode.$ === 4) {
+        subNode = subNode.k;
+      }
+      return _VirtualDom_addDomNodesHelp(domNode, subNode, patches, i, low + 1, high, domNode.elm_event_node_ref);
+    }
+    var vKids = vNode.e;
+    var childNodes = domNode.childNodes;
+    for (var j = 0; j < vKids.length; j++) {
+      low++;
+      var vKid = tag === 1 ? vKids[j] : vKids[j].b;
+      var nextLow = low + (vKid.b || 0);
+      if (low <= index && index <= nextLow) {
+        i = _VirtualDom_addDomNodesHelp(childNodes[j], vKid, patches, i, low, nextLow, eventNode);
+        if (!(patch = patches[i]) || (index = patch.r) > high) {
+          return i;
+        }
+      }
+      low = nextLow;
+    }
+    return i;
+  }
+  function _VirtualDom_applyPatches(rootDomNode, oldVirtualNode, patches, eventNode) {
+    if (patches.length === 0) {
+      return rootDomNode;
+    }
+    _VirtualDom_addDomNodes(rootDomNode, oldVirtualNode, patches, eventNode);
+    return _VirtualDom_applyPatchesHelp(rootDomNode, patches);
+  }
+  function _VirtualDom_applyPatchesHelp(rootDomNode, patches) {
+    for (var i = 0; i < patches.length; i++) {
+      var patch = patches[i];
+      var localDomNode = patch.t;
+      var newNode = _VirtualDom_applyPatch(localDomNode, patch);
+      if (localDomNode === rootDomNode) {
+        rootDomNode = newNode;
+      }
+    }
+    return rootDomNode;
+  }
+  function _VirtualDom_applyPatch(domNode, patch) {
+    switch (patch.$) {
+      case 0:
+        return _VirtualDom_applyPatchRedraw(domNode, patch.s, patch.u);
+      case 4:
+        _VirtualDom_applyFacts(domNode, patch.u, patch.s);
+        return domNode;
+      case 3:
+        domNode.replaceData(0, domNode.length, patch.s);
+        return domNode;
+      case 1:
+        return _VirtualDom_applyPatchesHelp(domNode, patch.s);
+      case 2:
+        if (domNode.elm_event_node_ref) {
+          domNode.elm_event_node_ref.j = patch.s;
+        } else {
+          domNode.elm_event_node_ref = { j: patch.s, p: patch.u };
+        }
+        return domNode;
+      case 6:
+        var data = patch.s;
+        for (var i = 0; i < data.i; i++) {
+          domNode.removeChild(domNode.childNodes[data.v]);
+        }
+        return domNode;
+      case 7:
+        var data = patch.s;
+        var kids = data.e;
+        var i = data.v;
+        var theEnd = domNode.childNodes[i];
+        for (; i < kids.length; i++) {
+          domNode.insertBefore(_VirtualDom_render(kids[i], patch.u), theEnd);
+        }
+        return domNode;
+      case 9:
+        var data = patch.s;
+        if (!data) {
+          domNode.parentNode.removeChild(domNode);
+          return domNode;
+        }
+        var entry = data.A;
+        if (typeof entry.r !== "undefined") {
+          domNode.parentNode.removeChild(domNode);
+        }
+        entry.s = _VirtualDom_applyPatchesHelp(domNode, data.w);
+        return domNode;
+      case 8:
+        return _VirtualDom_applyPatchReorder(domNode, patch);
+      case 5:
+        return patch.s(domNode);
+      default:
+        _Debug_crash(10);
+    }
+  }
+  function _VirtualDom_applyPatchRedraw(domNode, vNode, eventNode) {
     var parentNode = domNode.parentNode;
-    var isTextNode = domNode.nodeType === 3;
-    var newNode = _VirtualDom_render(y, eventNode, tNode);
-    if (parentNode) {
+    var newNode = _VirtualDom_render(vNode, eventNode);
+    if (!newNode.elm_event_node_ref) {
+      newNode.elm_event_node_ref = domNode.elm_event_node_ref;
+    }
+    if (parentNode && newNode !== domNode) {
       parentNode.replaceChild(newNode, domNode);
-      return {
-        r: newNode,
-        u: isTextNode && domNode.data !== x.a,
-        v: false
-      };
-    } else {
-      return {
-        r: newNode,
-        u: isTextNode,
-        v: true
-      };
     }
+    return newNode;
   }
-  var _VirtualDom_camelCaseBoolProperties = {
-    novalidate: "noValidate",
-    readonly: "readOnly",
-    ismap: "isMap"
-  };
-  var _VirtualDom_markerProperty = "data-elm";
+  function _VirtualDom_applyPatchReorder(domNode, patch) {
+    var data = patch.s;
+    var frag = _VirtualDom_applyPatchReorderEndInsertsHelp(data.y, patch);
+    domNode = _VirtualDom_applyPatchesHelp(domNode, data.w);
+    var inserts = data.x;
+    for (var i = 0; i < inserts.length; i++) {
+      var insert = inserts[i];
+      var entry = insert.A;
+      var node = entry.c === 2 ? entry.s : _VirtualDom_render(entry.z, patch.u);
+      domNode.insertBefore(node, domNode.childNodes[insert.r]);
+    }
+    if (frag) {
+      _VirtualDom_appendChild(domNode, frag);
+    }
+    return domNode;
+  }
+  function _VirtualDom_applyPatchReorderEndInsertsHelp(endInserts, patch) {
+    if (!endInserts) {
+      return;
+    }
+    var frag = _VirtualDom_doc.createDocumentFragment();
+    for (var i = 0; i < endInserts.length; i++) {
+      var insert = endInserts[i];
+      var entry = insert.A;
+      _VirtualDom_appendChild(
+        frag,
+        entry.c === 2 ? entry.s : _VirtualDom_render(entry.z, patch.u)
+      );
+    }
+    return frag;
+  }
   function _VirtualDom_virtualize(node) {
-    if (node === _VirtualDom_doc) {
-      node = _VirtualDom_doc.body;
-    }
-    if (node.elmTree) {
-      console.error("node.elmTree already exists:", node.elmTree, node);
-      throw new Error("node.elmTree already exists!");
-    }
-    var tNode = _VirtualDom_createTNode(node);
-    var vNode = _VirtualDom_virtualizeHelp(node, tNode) || _VirtualDom_text("");
-    node.elmTree = tNode;
-    return vNode;
-  }
-  function _VirtualDom_virtualizeHelp(node, tNode) {
     if (node.nodeType === 3) {
       return _VirtualDom_text(node.textContent);
     }
     if (node.nodeType !== 1) {
-      return void 0;
+      return _VirtualDom_text("");
     }
-    var tag = node.localName;
     var attrList = _List_Nil;
     var attrs = node.attributes;
     for (var i = attrs.length; i--; ) {
       var attr = attrs[i];
       var name = attr.name;
       var value = attr.value;
-      if (name === "style") {
-        var parts = value.split(";");
-        for (var j = parts.length; j--; ) {
-          var part = parts[j];
-          var index = part.indexOf(":");
-          if (index !== -1) {
-            var cssKey = part.slice(0, index).trim();
-            var cssValue = part.slice(index + 1).trim();
-            attrList = _List_Cons(A2(_VirtualDom_style, cssKey, cssValue), attrList);
-          }
-        }
-        continue;
-      }
-      var namespaceURI = attr.namespaceURI;
-      var propertyName = _VirtualDom_camelCaseBoolProperties[name] || name;
-      var propertyValue = node[propertyName];
-      attrList = _List_Cons(
-        // `Html.Attributes.value` sets the `.value` property to a string, because that’s the
-        // only way to set the value of an input element. The `.value` property has no corresponding
-        // attribute; the `value` attribute maps to the `.defaultValue` property. But when serializing,
-        // the most likely way to do it is to serialize the `.value` property to the `value` attribute.
-        name === "value" ? A2(_VirtualDom_property, name, value) : (
-          // Try to guess if the attribute comes from one of the functions
-          // implemented using `boolProperty` in `Html.Attributes`.
-          // See `Html.Attributes.spellcheck` for that exception.
-          typeof propertyValue === "boolean" && name !== "spellcheck" ? A2(_VirtualDom_property, propertyName, propertyValue) : (
-            // Otherwise, guess that it is an attribute. The user might have used `Html.Attributes.property`,
-            // but there’s no way for us to know that.
-            namespaceURI ? A3(_VirtualDom_attributeNS, namespaceURI, name, value) : A2(_VirtualDom_attribute, name, value)
-          )
-        ),
-        attrList
-      );
+      attrList = _List_Cons(A2(_VirtualDom_attribute, name, value), attrList);
     }
-    var namespace = node.namespaceURI === "http://www.w3.org/1999/xhtml" ? void 0 : node.namespaceURI;
-    var kidList = [];
-    if (node.localName === "textarea") {
-      attrList = _List_Cons(
-        A2(_VirtualDom_property, "value", node.value),
-        attrList
-      );
-    } else {
-      for (var kids = node.childNodes, len = kids.length, i = 0; i < len; i++) {
-        var kid = kids[i];
-        if (kid.nodeType === 1 && !kid.hasAttribute(_VirtualDom_markerProperty)) {
-          continue;
-        }
-        var childTNode = _VirtualDom_createTNode(kid);
-        var kidNode = _VirtualDom_virtualizeHelp(kid, childTNode);
-        if (kidNode) {
-          var length = kidList.push(kidNode);
-          tNode.s[length - 1] = childTNode;
-        }
-      }
-      if (_VirtualDom_divertHrefToApp && node.localName === "a") {
-        node.addEventListener("click", _VirtualDom_divertHrefToApp(node));
-      }
+    var tag = node.tagName.toLowerCase();
+    var kidList = _List_Nil;
+    var kids = node.childNodes;
+    for (var i = kids.length; i--; ) {
+      kidList = _List_Cons(_VirtualDom_virtualize(kids[i]), kidList);
     }
-    return {
-      $: 1,
-      c: tag,
-      d: _VirtualDom_organizeFacts(attrList),
-      e: kidList,
-      f: namespace,
-      b: 0
-    };
+    return A3(_VirtualDom_node, tag, attrList, kidList);
   }
-  function _VirtualDom_upkey(node, keyedNode, tNode) {
-    var kids = node.e;
-    var keyedKids = keyedNode.e;
-    var len = kids.length;
-    var keyedLen = keyedKids.length;
-    var newKeyedKids = new Array(len);
-    var newKidsMap = /* @__PURE__ */ Object.create(null);
-    var newChildren = /* @__PURE__ */ Object.create(null);
-    for (var i = 0; i < len; i++) {
-      var kid = kids[i];
-      var key;
-      if (i < keyedLen) {
-        key = keyedKids[i].a;
-      } else {
-        key = i + _VirtualDom_POSTFIX;
-        while (key in newKidsMap) {
-          key += _VirtualDom_POSTFIX;
-        }
-      }
-      newKeyedKids[i] = _Utils_Tuple2(key, kid);
-      newKidsMap[key] = kid;
-      newChildren[key] = tNode.s[i];
-    }
-    tNode.s = newChildren;
-    return {
-      $: 2,
-      c: node.c,
-      d: node.d,
-      e: newKeyedKids,
-      t: newKidsMap,
-      f: node.f,
-      b: node.b
-    };
-  }
-  function _VirtualDom_dekey(keyedNode, tNode) {
+  function _VirtualDom_dekey(keyedNode) {
     var keyedKids = keyedNode.e;
     var len = keyedKids.length;
     var kids = new Array(len);
-    var newChildren = /* @__PURE__ */ Object.create(null);
     for (var i = 0; i < len; i++) {
-      var keyedKid = keyedKids[i];
-      kids[i] = keyedKid.b;
-      newChildren[i] = tNode.s[keyedKid.a];
+      kids[i] = keyedKids[i].b;
     }
-    tNode.s = newChildren;
     return {
       $: 1,
       c: keyedNode.c,
@@ -3494,6 +3330,7 @@
       $elm$browser$Debugger$Main$wrapSubs(impl.subscriptions),
       function(sendToApp, initialModel) {
         var view = impl.view;
+        var title = _VirtualDom_doc.title;
         var domNode = args && args["node"] ? args["node"] : _Debug_crash(0);
         var currNode = _VirtualDom_virtualize(domNode);
         var currBlocker = $elm$browser$Debugger$Main$toBlockerType(initialModel);
@@ -3519,7 +3356,7 @@
             return;
           }
           _VirtualDom_doc = model.popout.b;
-          currPopout || (currPopout = _VirtualDom_virtualize(model.popout.b.body));
+          currPopout || (currPopout = _VirtualDom_virtualize(model.popout.b));
           var nextPopout = $elm$browser$Debugger$Main$popoutView(model);
           var popoutPatches = _VirtualDom_diff(currPopout, nextPopout);
           _VirtualDom_applyPatches(model.popout.b.body, currPopout, popoutPatches, sendToApp);
@@ -3543,9 +3380,7 @@
         var view = impl.view;
         var title = _VirtualDom_doc.title;
         var bodyNode = _VirtualDom_doc.body;
-        _VirtualDom_divertHrefToApp = divertHrefToApp;
         var currNode = _VirtualDom_virtualize(bodyNode);
-        _VirtualDom_divertHrefToApp = 0;
         var currBlocker = $elm$browser$Debugger$Main$toBlockerType(initialModel);
         var currPopout;
         initialModel.popout.a = sendToApp;
@@ -3571,7 +3406,7 @@
             return;
           }
           _VirtualDom_doc = model.popout.b;
-          currPopout || (currPopout = _VirtualDom_virtualize(model.popout.b.body));
+          currPopout || (currPopout = _VirtualDom_virtualize(model.popout.b));
           var nextPopout = $elm$browser$Debugger$Main$popoutView(model);
           var popoutPatches = _VirtualDom_diff(currPopout, nextPopout);
           _VirtualDom_applyPatches(model.popout.b.body, currPopout, popoutPatches, sendToApp);
@@ -3719,7 +3554,7 @@
   }
   function _Debugger_init(value) {
     if (typeof value === "boolean") {
-      return A2($elm$browser$Debugger$Expando$Constructor, $elm$core$Maybe$Just(value ? "True" : "False"), _List_Nil);
+      return A3($elm$browser$Debugger$Expando$Constructor, $elm$core$Maybe$Just(value ? "True" : "False"), true, _List_Nil);
     }
     if (typeof value === "number") {
       return $elm$browser$Debugger$Expando$Primitive(value + "");
@@ -3733,43 +3568,68 @@
     if (typeof value === "object" && "$" in value) {
       var tag = value.$;
       if (tag === "::" || tag === "[]") {
-        return A2($elm$browser$Debugger$Expando$Sequence, $elm$browser$Debugger$Expando$ListSeq, value);
+        return A3(
+          $elm$browser$Debugger$Expando$Sequence,
+          $elm$browser$Debugger$Expando$ListSeq,
+          true,
+          A2($elm$core$List$map, _Debugger_init, value)
+        );
       }
       if (tag === "Set_elm_builtin") {
-        return A2($elm$browser$Debugger$Expando$Sequence, $elm$browser$Debugger$Expando$SetSeq, $elm$core$Set$toList(value));
+        return A3(
+          $elm$browser$Debugger$Expando$Sequence,
+          $elm$browser$Debugger$Expando$SetSeq,
+          true,
+          A3($elm$core$Set$foldr, _Debugger_initCons, _List_Nil, value)
+        );
       }
       if (tag === "RBNode_elm_builtin" || tag == "RBEmpty_elm_builtin") {
-        return $elm$browser$Debugger$Expando$Dictionary($elm$core$Dict$toList(value));
+        return A2(
+          $elm$browser$Debugger$Expando$Dictionary,
+          true,
+          A3($elm$core$Dict$foldr, _Debugger_initKeyValueCons, _List_Nil, value)
+        );
       }
       if (tag === "Array_elm_builtin") {
-        return A2($elm$browser$Debugger$Expando$Sequence, $elm$browser$Debugger$Expando$ArraySeq, $elm$core$Array$toList(value));
+        return A3(
+          $elm$browser$Debugger$Expando$Sequence,
+          $elm$browser$Debugger$Expando$ArraySeq,
+          true,
+          A3($elm$core$Array$foldr, _Debugger_initCons, _List_Nil, value)
+        );
       }
       if (typeof tag === "number") {
         return $elm$browser$Debugger$Expando$Primitive("<internals>");
       }
       var char = tag.charCodeAt(0);
-      if (
-        /* a */
-        97 <= char && char <= 122
-      ) {
-        return $elm$browser$Debugger$Expando$Primitive("<internals>");
+      if (char === 35 || 65 <= char && char <= 90) {
+        var list = _List_Nil;
+        for (var i in value) {
+          if (i === "$") continue;
+          list = _List_Cons(_Debugger_init(value[i]), list);
+        }
+        return A3($elm$browser$Debugger$Expando$Constructor, char === 35 ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(tag), true, $elm$core$List$reverse(list));
       }
-      var list = _List_Nil;
-      for (var i in value) {
-        if (i === "$") continue;
-        list = _List_Cons(value[i], list);
-      }
-      return A2($elm$browser$Debugger$Expando$Constructor, char === 35 ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(tag), $elm$core$List$reverse(list));
+      return $elm$browser$Debugger$Expando$Primitive("<internals>");
     }
     if (typeof value === "object") {
       var dict = $elm$core$Dict$empty;
       for (var i in value) {
-        dict = A3($elm$core$Dict$insert, i, value[i], dict);
+        dict = A3($elm$core$Dict$insert, i, _Debugger_init(value[i]), dict);
       }
-      return $elm$browser$Debugger$Expando$Record(dict);
+      return A2($elm$browser$Debugger$Expando$Record, true, dict);
     }
     return $elm$browser$Debugger$Expando$Primitive("<internals>");
   }
+  var _Debugger_initCons = F2(function initConsHelp(value, list) {
+    return _List_Cons(_Debugger_init(value), list);
+  });
+  var _Debugger_initKeyValueCons = F3(function(key, value, list) {
+    return _List_Cons(
+      _Utils_Tuple2(_Debugger_init(key), _Debugger_init(value)),
+      list
+    );
+  });
   function _Debugger_addSlashes(str, isChar) {
     var s = str.replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/\t/g, "\\t").replace(/\r/g, "\\r").replace(/\v/g, "\\v").replace(/\0/g, "\\0");
     if (isChar) {
@@ -3777,9 +3637,6 @@
     } else {
       return s.replace(/\"/g, '\\"');
     }
-  }
-  function _Debugger_toUnexpanded(value) {
-    return value;
   }
   function _Debugger_updateBlocker(oldBlocker, newBlocker) {
     if (oldBlocker === newBlocker) return;
@@ -3844,7 +3701,6 @@
     "blur"
   ];
   var _Debugger_allEvents = _Debugger_mostEvents.concat("wheel", "scroll");
-  console.info("Using elm-janitor/browser@e694a49 instead of elm/browser@1.0.2");
   var _Debugger_element;
   var _Browser_element = _Debugger_element || F4(function(impl, flagDecoder, debugMetadata, args) {
     return _Platform_initialize(
@@ -3879,9 +3735,7 @@
         var view = impl.view;
         var title = _VirtualDom_doc.title;
         var bodyNode = _VirtualDom_doc.body;
-        _VirtualDom_divertHrefToApp = divertHrefToApp;
         var currNode = _VirtualDom_virtualize(bodyNode);
-        _VirtualDom_divertHrefToApp = 0;
         return _Browser_makeAnimator(initialModel, function(model) {
           _VirtualDom_divertHrefToApp = divertHrefToApp;
           var doc = view(model);
@@ -3895,68 +3749,18 @@
       }
     );
   });
-  var _Browser_requestAnimationFrame_queue = {};
-  var _Browser_inAnimationFrame = false;
-  var _Browser_pendingAnimationFrame = false;
-  var _Browser_requestAnimationFrame_id = 0;
-  function _Browser_requestAnimationFrame(callback) {
-    var id = _Browser_requestAnimationFrame_id;
-    _Browser_requestAnimationFrame_id++;
-    _Browser_requestAnimationFrame_queue[id] = callback;
-    if (!_Browser_pendingAnimationFrame) {
-      _Browser_pendingAnimationFrame = true;
-      _Browser_requestAnimationFrame_raw(function() {
-        _Browser_pendingAnimationFrame = false;
-        _Browser_inAnimationFrame = true;
-        var maxId = _Browser_requestAnimationFrame_id;
-        for (var id2 in _Browser_requestAnimationFrame_queue) {
-          if (id2 >= maxId) {
-            break;
-          }
-          var callback2 = _Browser_requestAnimationFrame_queue[id2];
-          delete _Browser_requestAnimationFrame_queue[id2];
-          callback2();
-        }
-        _Browser_inAnimationFrame = false;
-      });
-    }
-    return id;
-  }
-  var _Browser_requestAnimationFrame_raw = typeof requestAnimationFrame !== "undefined" ? requestAnimationFrame : function(callback) {
+  var _Browser_requestAnimationFrame = typeof requestAnimationFrame !== "undefined" ? requestAnimationFrame : function(callback) {
     return setTimeout(callback, 1e3 / 60);
   };
   function _Browser_makeAnimator(model, draw) {
-    var drawing = false;
-    var pendingFrame = false;
-    var pendingSync = false;
-    function drawHelp() {
-      if (drawing) {
-        pendingSync = true;
-        return;
-      }
-      pendingFrame = false;
-      pendingSync = false;
-      drawing = true;
-      draw(model);
-      drawing = false;
-      if (pendingSync) {
-        drawHelp();
-      }
-    }
+    draw(model);
+    var state = 0;
     function updateIfNeeded() {
-      if (pendingFrame) {
-        drawHelp();
-      }
+      state = state === 1 ? 0 : (_Browser_requestAnimationFrame(updateIfNeeded), draw(model), 1);
     }
-    drawHelp();
     return function(nextModel, isSync) {
       model = nextModel;
-      if (isSync || _Browser_inAnimationFrame) {
-        drawHelp();
-      } else if (!pendingFrame) {
-        pendingFrame = true;
-        _Browser_requestAnimationFrame(updateIfNeeded);
-      }
+      isSync ? (draw(model), state === 2 && (state = 1)) : (state === 0 && _Browser_requestAnimationFrame(updateIfNeeded), state = 2);
     };
   }
   var _Browser_go = F2(function(key, n) {
@@ -4090,7 +3894,6 @@
       };
     });
   }
-  console.info("Using elm-janitor/browser@e694a49 instead of elm/browser@1.0.2");
   var _Http_toTask = F3(function(router, toTask, request) {
     return _Scheduler_binding(function(callback) {
       function done(response) {
@@ -4258,13 +4061,13 @@
     return _Utils_Tuple2(offset, total);
   });
   var _Parser_findSubString = F5(function(smallString, offset, row, col, bigString) {
-    var index = bigString.indexOf(smallString, offset);
-    var target = index < 0 ? bigString.length : index + smallString.length;
+    var newOffset = bigString.indexOf(smallString, offset);
+    var target = newOffset < 0 ? bigString.length : newOffset + smallString.length;
     while (offset < target) {
       var code = bigString.charCodeAt(offset++);
       code === 10 ? (col = 1, row++) : (col++, (code & 63488) === 55296 && offset++);
     }
-    return _Utils_Tuple3(index < 0 ? -1 : target, row, col);
+    return _Utils_Tuple3(newOffset, row, col);
   });
   var $elm$core$List$cons = _List_cons;
   var $elm$core$Elm$JsArray$foldr = _JsArray_foldr;
@@ -4474,32 +4277,18 @@
       );
     }
   );
-  var $elm$core$Basics$eq = _Utils_equal;
-  var $elm$core$Basics$neq = _Utils_notEqual;
-  var $elm$core$Char$toLower = _Char_toLower;
-  var $elm$core$Char$toUpper = _Char_toUpper;
+  var $elm$core$Char$toCode = _Char_toCode;
   var $elm$core$Char$isLower = function(_char) {
-    return _Utils_eq(
-      _char,
-      $elm$core$Char$toLower(_char)
-    ) && !_Utils_eq(
-      _char,
-      $elm$core$Char$toUpper(_char)
-    );
+    var code = $elm$core$Char$toCode(_char);
+    return 97 <= code && code <= 122;
   };
   var $elm$core$Char$isUpper = function(_char) {
-    return _Utils_eq(
-      _char,
-      $elm$core$Char$toUpper(_char)
-    ) && !_Utils_eq(
-      _char,
-      $elm$core$Char$toLower(_char)
-    );
+    var code = $elm$core$Char$toCode(_char);
+    return code <= 90 && 65 <= code;
   };
   var $elm$core$Char$isAlpha = function(_char) {
     return $elm$core$Char$isLower(_char) || $elm$core$Char$isUpper(_char);
   };
-  var $elm$core$Char$toCode = _Char_toCode;
   var $elm$core$Char$isDigit = function(_char) {
     var code = $elm$core$Char$toCode(_char);
     return code <= 57 && 48 <= code;
@@ -4653,6 +4442,7 @@
       return f(x);
     }
   );
+  var $elm$core$Basics$eq = _Utils_equal;
   var $elm$core$Basics$floor = _Basics_floor;
   var $elm$core$Elm$JsArray$length = _JsArray_length;
   var $elm$core$Basics$max = F2(
@@ -4798,29 +4588,33 @@
   var $elm$browser$Debugger$Expando$ArraySeq = { $: "ArraySeq" };
   var $elm$browser$Debugger$Overlay$BlockMost = { $: "BlockMost" };
   var $elm$browser$Debugger$Overlay$BlockNone = { $: "BlockNone" };
-  var $elm$browser$Debugger$Expando$Constructor = F2(
-    function(a, b) {
-      return { $: "Constructor", a, b };
+  var $elm$browser$Debugger$Expando$Constructor = F3(
+    function(a, b, c) {
+      return { $: "Constructor", a, b, c };
     }
   );
-  var $elm$browser$Debugger$Expando$Dictionary = function(a) {
-    return { $: "Dictionary", a };
-  };
+  var $elm$browser$Debugger$Expando$Dictionary = F2(
+    function(a, b) {
+      return { $: "Dictionary", a, b };
+    }
+  );
   var $elm$browser$Debugger$Main$Down = { $: "Down" };
   var $elm$browser$Debugger$Expando$ListSeq = { $: "ListSeq" };
   var $elm$browser$Debugger$Main$NoOp = { $: "NoOp" };
   var $elm$browser$Debugger$Expando$Primitive = function(a) {
     return { $: "Primitive", a };
   };
-  var $elm$browser$Debugger$Expando$Record = function(a) {
-    return { $: "Record", a };
-  };
+  var $elm$browser$Debugger$Expando$Record = F2(
+    function(a, b) {
+      return { $: "Record", a, b };
+    }
+  );
   var $elm$browser$Debugger$Expando$S = function(a) {
     return { $: "S", a };
   };
-  var $elm$browser$Debugger$Expando$Sequence = F2(
-    function(a, b) {
-      return { $: "Sequence", a, b };
+  var $elm$browser$Debugger$Expando$Sequence = F3(
+    function(a, b, c) {
+      return { $: "Sequence", a, b, c };
     }
   );
   var $elm$browser$Debugger$Expando$SetSeq = { $: "SetSeq" };
@@ -4854,7 +4648,17 @@
     }
   );
   var $elm$html$Html$div = _VirtualDom_node("div");
-  var $elm$html$Html$Attributes$id = _VirtualDom_attribute("id");
+  var $elm$json$Json$Encode$string = _Json_wrap;
+  var $elm$html$Html$Attributes$stringProperty = F2(
+    function(key, string) {
+      return A2(
+        _VirtualDom_property,
+        key,
+        $elm$json$Json$Encode$string(string)
+      );
+    }
+  );
+  var $elm$html$Html$Attributes$id = $elm$html$Html$Attributes$stringProperty("id");
   var $elm$virtual_dom$VirtualDom$Normal = function(a) {
     return { $: "Normal", a };
   };
@@ -4885,7 +4689,7 @@
   var $elm$browser$Debugger$Overlay$goodNews2 = "\nfunction can pattern match on that data and call whatever functions, JSON\ndecoders, etc. you need. This makes the code much more explicit and easy to\nfollow for other readers (or you in a few months!)\n";
   var $elm$html$Html$Attributes$href = function(url) {
     return A2(
-      _VirtualDom_attribute,
+      $elm$html$Html$Attributes$stringProperty,
       "href",
       _VirtualDom_noJavaScriptUri(url)
     );
@@ -5691,6 +5495,21 @@
   };
   var $elm$core$Dict$RBEmpty_elm_builtin = { $: "RBEmpty_elm_builtin" };
   var $elm$core$Dict$empty = $elm$core$Dict$RBEmpty_elm_builtin;
+  var $elm$core$Set$foldr = F3(
+    function(func, initialState, _v0) {
+      var dict = _v0.a;
+      return A3(
+        $elm$core$Dict$foldr,
+        F3(
+          function(key, _v1, state) {
+            return A2(func, key, state);
+          }
+        ),
+        initialState,
+        dict
+      );
+    }
+  );
   var $elm$browser$Debugger$Main$getCurrentModel = function(state) {
     if (state.$ === "Running") {
       var model = state.a;
@@ -6015,9 +5834,20 @@
       return "none";
     }
   };
-  var $elm$browser$Debugger$Expando$Toggle = function(a) {
-    return { $: "Toggle", a };
-  };
+  var $elm$browser$Debugger$Expando$Field = F2(
+    function(a, b) {
+      return { $: "Field", a, b };
+    }
+  );
+  var $elm$browser$Debugger$Expando$Index = F3(
+    function(a, b, c) {
+      return { $: "Index", a, b, c };
+    }
+  );
+  var $elm$browser$Debugger$Expando$Key = { $: "Key" };
+  var $elm$browser$Debugger$Expando$None = { $: "None" };
+  var $elm$browser$Debugger$Expando$Toggle = { $: "Toggle" };
+  var $elm$browser$Debugger$Expando$Value = { $: "Value" };
   var $elm$browser$Debugger$Expando$blue = A2($elm$html$Html$Attributes$style, "color", "rgb(28, 0, 207)");
   var $elm$core$Basics$composeL = F3(
     function(g, f, x) {
@@ -6026,15 +5856,6 @@
       );
     }
   );
-  var $elm$core$List$head = function(list) {
-    if (list.b) {
-      var x = list.a;
-      var xs = list.b;
-      return $elm$core$Maybe$Just(x);
-    } else {
-      return $elm$core$Maybe$Nothing;
-    }
-  };
   var $elm$browser$Debugger$Expando$leftPad = function(maybeKey) {
     if (maybeKey.$ === "Nothing") {
       return _List_Nil;
@@ -6108,72 +5929,6 @@
       }
     }
   );
-  var $elm$core$Dict$get = F2(
-    function(targetKey, dict) {
-      get:
-        while (true) {
-          if (dict.$ === "RBEmpty_elm_builtin") {
-            return $elm$core$Maybe$Nothing;
-          } else {
-            var key = dict.b;
-            var value = dict.c;
-            var left = dict.d;
-            var right = dict.e;
-            var _v1 = A2($elm$core$Basics$compare, targetKey, key);
-            switch (_v1.$) {
-              case "LT":
-                var $temp$targetKey = targetKey, $temp$dict = left;
-                targetKey = $temp$targetKey;
-                dict = $temp$dict;
-                continue get;
-              case "EQ":
-                return $elm$core$Maybe$Just(value);
-              default:
-                var $temp$targetKey = targetKey, $temp$dict = right;
-                targetKey = $temp$targetKey;
-                dict = $temp$dict;
-                continue get;
-            }
-          }
-        }
-    }
-  );
-  var $elm$core$Maybe$withDefault = F2(
-    function(_default, maybe) {
-      if (maybe.$ === "Just") {
-        var value = maybe.a;
-        return value;
-      } else {
-        return _default;
-      }
-    }
-  );
-  var $elm$browser$Debugger$Expando$maximumItemsToView = F2(
-    function(path, expando) {
-      return A2(
-        $elm$core$Maybe$withDefault,
-        1,
-        A2($elm$core$Dict$get, path, expando.viewMore)
-      ) * 100;
-    }
-  );
-  var $elm$core$Dict$member = F2(
-    function(key, dict) {
-      var _v0 = A2($elm$core$Dict$get, key, dict);
-      if (_v0.$ === "Just") {
-        return true;
-      } else {
-        return false;
-      }
-    }
-  );
-  var $elm$core$Set$member = F2(
-    function(key, _v0) {
-      var dict = _v0.a;
-      return A2($elm$core$Dict$member, key, dict);
-    }
-  );
-  var $elm$core$Basics$not = _Basics_not;
   var $elm$browser$Debugger$Expando$red = A2($elm$html$Html$Attributes$style, "color", "rgb(196, 26, 22)");
   var $elm$core$Tuple$second = function(_v0) {
     var y = _v0.b;
@@ -6281,10 +6036,19 @@
       )
     );
   };
+  var $elm$core$Maybe$withDefault = F2(
+    function(_default, maybe) {
+      if (maybe.$ === "Just") {
+        var value = maybe.a;
+        return value;
+      } else {
+        return _default;
+      }
+    }
+  );
   var $elm$browser$Debugger$Expando$viewExtraTiny = function(value) {
-    var _v6 = _Debugger_init(value);
-    if (_v6.$ === "Record") {
-      var record = _v6.a;
+    if (value.$ === "Record") {
+      var record = value.b;
       return A3(
         $elm$browser$Debugger$Expando$viewExtraTinyRecord,
         0,
@@ -6296,10 +6060,9 @@
     }
   };
   var $elm$browser$Debugger$Expando$viewTiny = function(value) {
-    var _v4 = _Debugger_init(value);
-    switch (_v4.$) {
+    switch (value.$) {
       case "S":
-        var stringRep = _v4.a;
+        var stringRep = value.a;
         var str = $elm$browser$Debugger$Expando$elideMiddle(stringRep);
         return _Utils_Tuple2(
           $elm$core$String$length(str),
@@ -6320,7 +6083,7 @@
           )
         );
       case "Primitive":
-        var stringRep = _v4.a;
+        var stringRep = value.a;
         return _Utils_Tuple2(
           $elm$core$String$length(stringRep),
           _List_fromArray(
@@ -6340,8 +6103,8 @@
           )
         );
       case "Sequence":
-        var seqType = _v4.a;
-        var valueList = _v4.b;
+        var seqType = value.a;
+        var valueList = value.c;
         return $elm$browser$Debugger$Expando$viewTinyHelp(
           A2(
             $elm$browser$Debugger$Expando$seqTypeToString,
@@ -6350,24 +6113,24 @@
           )
         );
       case "Dictionary":
-        var keyValuePairs = _v4.a;
+        var keyValuePairs = value.b;
         return $elm$browser$Debugger$Expando$viewTinyHelp(
           "Dict(" + ($elm$core$String$fromInt(
             $elm$core$List$length(keyValuePairs)
           ) + ")")
         );
       case "Record":
-        var record = _v4.a;
+        var record = value.b;
         return $elm$browser$Debugger$Expando$viewTinyRecord(record);
       default:
-        if (!_v4.b.b) {
-          var maybeName = _v4.a;
+        if (!value.c.b) {
+          var maybeName = value.a;
           return $elm$browser$Debugger$Expando$viewTinyHelp(
             A2($elm$core$Maybe$withDefault, "Unit", maybeName)
           );
         } else {
-          var maybeName = _v4.a;
-          var valueList = _v4.b;
+          var maybeName = value.a;
+          var valueList = value.c;
           return $elm$browser$Debugger$Expando$viewTinyHelp(
             (function() {
               if (maybeName.$ === "Nothing") {
@@ -6466,45 +6229,11 @@
       }
     }
   );
-  var $elm$browser$Debugger$Expando$ViewMore = function(a) {
-    return { $: "ViewMore", a };
-  };
-  var $elm$browser$Debugger$Expando$viewMoreButton = function(path) {
-    return A2(
-      $elm$html$Html$div,
-      $elm$browser$Debugger$Expando$leftPad(
-        $elm$core$List$head(path)
-      ),
-      _List_fromArray(
-        [
-          A2(
-            $elm$html$Html$div,
-            A2(
-              $elm$core$List$cons,
-              $elm$html$Html$Events$onClick(
-                $elm$browser$Debugger$Expando$ViewMore(path)
-              ),
-              $elm$browser$Debugger$Expando$leftPad(
-                $elm$core$Maybe$Just(_Utils_Tuple0)
-              )
-            ),
-            _List_fromArray(
-              [
-                $elm$html$Html$text("View more")
-              ]
-            )
-          )
-        ]
-      )
-    );
-  };
   var $elm$browser$Debugger$Expando$view = F2(
-    function(path, expando) {
-      var maybeKey = $elm$core$List$head(path);
-      var _v14 = _Debugger_init(expando.unexpanded);
-      switch (_v14.$) {
+    function(maybeKey, expando) {
+      switch (expando.$) {
         case "S":
-          var stringRep = _v14.a;
+          var stringRep = expando.a;
           return A2(
             $elm$html$Html$div,
             $elm$browser$Debugger$Expando$leftPad(maybeKey),
@@ -6530,7 +6259,7 @@
             )
           );
         case "Primitive":
-          var stringRep = _v14.a;
+          var stringRep = expando.a;
           return A2(
             $elm$html$Html$div,
             $elm$browser$Debugger$Expando$leftPad(maybeKey),
@@ -6556,46 +6285,48 @@
             )
           );
         case "Sequence":
-          var seqType = _v14.a;
-          var valueList = _v14.b;
-          return A4($elm$browser$Debugger$Expando$viewSequence, path, seqType, expando, valueList);
+          var seqType = expando.a;
+          var isClosed = expando.b;
+          var valueList = expando.c;
+          return A4($elm$browser$Debugger$Expando$viewSequence, maybeKey, seqType, isClosed, valueList);
         case "Dictionary":
-          var keyValuePairs = _v14.a;
-          return A3($elm$browser$Debugger$Expando$viewDictionary, path, expando, keyValuePairs);
+          var isClosed = expando.a;
+          var keyValuePairs = expando.b;
+          return A3($elm$browser$Debugger$Expando$viewDictionary, maybeKey, isClosed, keyValuePairs);
         case "Record":
-          var valueDict = _v14.a;
-          return A3($elm$browser$Debugger$Expando$viewRecord, path, expando, valueDict);
+          var isClosed = expando.a;
+          var valueDict = expando.b;
+          return A3($elm$browser$Debugger$Expando$viewRecord, maybeKey, isClosed, valueDict);
         default:
-          var maybeName = _v14.a;
-          var valueList = _v14.b;
-          return A4($elm$browser$Debugger$Expando$viewConstructor, path, maybeName, expando, valueList);
+          var maybeName = expando.a;
+          var isClosed = expando.b;
+          var valueList = expando.c;
+          return A4($elm$browser$Debugger$Expando$viewConstructor, maybeKey, maybeName, isClosed, valueList);
       }
     }
   );
   var $elm$browser$Debugger$Expando$viewConstructor = F4(
-    function(path, maybeName, expando, valueList) {
+    function(maybeKey, maybeName, isClosed, valueList) {
       var tinyArgs = A2(
         $elm$core$List$map,
         A2($elm$core$Basics$composeL, $elm$core$Tuple$second, $elm$browser$Debugger$Expando$viewExtraTiny),
         valueList
       );
-      var maybeKey = $elm$core$List$head(path);
-      var isClosed = !A2($elm$core$Set$member, path, expando.expanded);
       var description = (function() {
-        var _v9 = _Utils_Tuple2(maybeName, tinyArgs);
-        if (_v9.a.$ === "Nothing") {
-          if (!_v9.b.b) {
-            var _v10 = _v9.a;
+        var _v7 = _Utils_Tuple2(maybeName, tinyArgs);
+        if (_v7.a.$ === "Nothing") {
+          if (!_v7.b.b) {
+            var _v8 = _v7.a;
             return _List_fromArray(
               [
                 $elm$html$Html$text("()")
               ]
             );
           } else {
-            var _v11 = _v9.a;
-            var _v12 = _v9.b;
-            var x = _v12.a;
-            var xs = _v12.b;
+            var _v9 = _v7.a;
+            var _v10 = _v7.b;
+            var x = _v10.a;
+            var xs = _v10.b;
             return A2(
               $elm$core$List$cons,
               $elm$html$Html$text("( "),
@@ -6628,18 +6359,18 @@
             );
           }
         } else {
-          if (!_v9.b.b) {
-            var name = _v9.a.a;
+          if (!_v7.b.b) {
+            var name = _v7.a.a;
             return _List_fromArray(
               [
                 $elm$html$Html$text(name)
               ]
             );
           } else {
-            var name = _v9.a.a;
-            var _v13 = _v9.b;
-            var x = _v13.a;
-            var xs = _v13.b;
+            var name = _v7.a.a;
+            var _v11 = _v7.b;
+            var x = _v11.a;
+            var xs = _v11.b;
             return A2(
               $elm$core$List$cons,
               $elm$html$Html$text(name + " "),
@@ -6669,7 +6400,7 @@
           }
         }
       })();
-      var _v6 = (function() {
+      var _v4 = (function() {
         if (!valueList.b) {
           return _Utils_Tuple2(
             $elm$core$Maybe$Nothing,
@@ -6678,8 +6409,7 @@
         } else {
           if (!valueList.b.b) {
             var entry = valueList.a;
-            var _v8 = _Debugger_init(entry);
-            switch (_v8.$) {
+            switch (entry.$) {
               case "S":
                 return _Utils_Tuple2(
                   $elm$core$Maybe$Nothing,
@@ -6691,65 +6421,56 @@
                   A2($elm$html$Html$div, _List_Nil, _List_Nil)
                 );
               case "Sequence":
-                var subValueList = _v8.b;
+                var subValueList = entry.c;
                 return _Utils_Tuple2(
                   $elm$core$Maybe$Just(isClosed),
-                  isClosed ? A2($elm$html$Html$div, _List_Nil, _List_Nil) : A3(
-                    $elm$browser$Debugger$Expando$viewSequenceOpen,
-                    A2($elm$core$List$cons, "0", path),
-                    expando,
-                    subValueList
+                  isClosed ? A2($elm$html$Html$div, _List_Nil, _List_Nil) : A2(
+                    $elm$html$Html$map,
+                    A2($elm$browser$Debugger$Expando$Index, $elm$browser$Debugger$Expando$None, 0),
+                    $elm$browser$Debugger$Expando$viewSequenceOpen(subValueList)
                   )
                 );
               case "Dictionary":
-                var keyValuePairs = _v8.a;
+                var keyValuePairs = entry.b;
                 return _Utils_Tuple2(
                   $elm$core$Maybe$Just(isClosed),
-                  isClosed ? A2($elm$html$Html$div, _List_Nil, _List_Nil) : A3(
-                    $elm$browser$Debugger$Expando$viewDictionaryOpen,
-                    A2($elm$core$List$cons, "0", path),
-                    expando,
-                    keyValuePairs
+                  isClosed ? A2($elm$html$Html$div, _List_Nil, _List_Nil) : A2(
+                    $elm$html$Html$map,
+                    A2($elm$browser$Debugger$Expando$Index, $elm$browser$Debugger$Expando$None, 0),
+                    $elm$browser$Debugger$Expando$viewDictionaryOpen(keyValuePairs)
                   )
                 );
               case "Record":
-                var record = _v8.a;
+                var record = entry.b;
                 return _Utils_Tuple2(
                   $elm$core$Maybe$Just(isClosed),
-                  isClosed ? A2($elm$html$Html$div, _List_Nil, _List_Nil) : A3(
-                    $elm$browser$Debugger$Expando$viewRecordOpen,
-                    A2($elm$core$List$cons, "0", path),
-                    expando,
-                    record
+                  isClosed ? A2($elm$html$Html$div, _List_Nil, _List_Nil) : A2(
+                    $elm$html$Html$map,
+                    A2($elm$browser$Debugger$Expando$Index, $elm$browser$Debugger$Expando$None, 0),
+                    $elm$browser$Debugger$Expando$viewRecordOpen(record)
                   )
                 );
               default:
-                var subValueList = _v8.b;
+                var subValueList = entry.c;
                 return _Utils_Tuple2(
                   $elm$core$Maybe$Just(isClosed),
-                  isClosed ? A2($elm$html$Html$div, _List_Nil, _List_Nil) : A3(
-                    $elm$browser$Debugger$Expando$viewConstructorOpen,
-                    A2($elm$core$List$cons, "0", path),
-                    expando,
-                    subValueList
+                  isClosed ? A2($elm$html$Html$div, _List_Nil, _List_Nil) : A2(
+                    $elm$html$Html$map,
+                    A2($elm$browser$Debugger$Expando$Index, $elm$browser$Debugger$Expando$None, 0),
+                    $elm$browser$Debugger$Expando$viewConstructorOpen(subValueList)
                   )
                 );
             }
           } else {
             return _Utils_Tuple2(
               $elm$core$Maybe$Just(isClosed),
-              isClosed ? A2($elm$html$Html$div, _List_Nil, _List_Nil) : A3(
-                $elm$browser$Debugger$Expando$viewConstructorOpen,
-                A2($elm$core$List$cons, "0", path),
-                expando,
-                valueList
-              )
+              isClosed ? A2($elm$html$Html$div, _List_Nil, _List_Nil) : $elm$browser$Debugger$Expando$viewConstructorOpen(valueList)
             );
           }
         }
       })();
-      var maybeIsClosed = _v6.a;
-      var openHtml = _v6.b;
+      var maybeIsClosed = _v4.a;
+      var openHtml = _v4.b;
       return A2(
         $elm$html$Html$div,
         $elm$browser$Debugger$Expando$leftPad(maybeKey),
@@ -6759,9 +6480,7 @@
               $elm$html$Html$div,
               _List_fromArray(
                 [
-                  $elm$html$Html$Events$onClick(
-                    $elm$browser$Debugger$Expando$Toggle(path)
-                  )
+                  $elm$html$Html$Events$onClick($elm$browser$Debugger$Expando$Toggle)
                 ]
               ),
               A3($elm$browser$Debugger$Expando$lineStarter, maybeKey, maybeIsClosed, description)
@@ -6772,42 +6491,33 @@
       );
     }
   );
-  var $elm$browser$Debugger$Expando$viewConstructorEntry = F4(
-    function(path, expando, index, value) {
+  var $elm$browser$Debugger$Expando$viewConstructorEntry = F2(
+    function(index, value) {
       return A2(
-        $elm$browser$Debugger$Expando$view,
+        $elm$html$Html$map,
+        A2($elm$browser$Debugger$Expando$Index, $elm$browser$Debugger$Expando$None, index),
         A2(
-          $elm$core$List$cons,
-          $elm$core$String$fromInt(index),
-          path
-        ),
-        _Utils_update(
-          expando,
-          { unexpanded: value }
+          $elm$browser$Debugger$Expando$view,
+          $elm$core$Maybe$Just(
+            $elm$core$String$fromInt(index)
+          ),
+          value
         )
       );
     }
   );
-  var $elm$browser$Debugger$Expando$viewConstructorOpen = F3(
-    function(path, expando, valueList) {
-      return A2(
-        $elm$html$Html$div,
-        _List_Nil,
-        A2(
-          $elm$core$List$indexedMap,
-          A2($elm$browser$Debugger$Expando$viewConstructorEntry, path, expando),
-          valueList
-        )
-      );
-    }
-  );
+  var $elm$browser$Debugger$Expando$viewConstructorOpen = function(valueList) {
+    return A2(
+      $elm$html$Html$div,
+      _List_Nil,
+      A2($elm$core$List$indexedMap, $elm$browser$Debugger$Expando$viewConstructorEntry, valueList)
+    );
+  };
   var $elm$browser$Debugger$Expando$viewDictionary = F3(
-    function(path, expando, keyValuePairs) {
+    function(maybeKey, isClosed, keyValuePairs) {
       var starter = "Dict(" + ($elm$core$String$fromInt(
         $elm$core$List$length(keyValuePairs)
       ) + ")");
-      var maybeKey = $elm$core$List$head(path);
-      var isClosed = !A2($elm$core$Set$member, path, expando.expanded);
       return A2(
         $elm$html$Html$div,
         $elm$browser$Debugger$Expando$leftPad(maybeKey),
@@ -6817,9 +6527,7 @@
               $elm$html$Html$div,
               _List_fromArray(
                 [
-                  $elm$html$Html$Events$onClick(
-                    $elm$browser$Debugger$Expando$Toggle(path)
-                  )
+                  $elm$html$Html$Events$onClick($elm$browser$Debugger$Expando$Toggle)
                 ]
               ),
               A3(
@@ -6833,36 +6541,37 @@
                 )
               )
             ),
-            isClosed ? $elm$html$Html$text("") : A3($elm$browser$Debugger$Expando$viewDictionaryOpen, path, expando, keyValuePairs)
+            isClosed ? $elm$html$Html$text("") : $elm$browser$Debugger$Expando$viewDictionaryOpen(keyValuePairs)
           ]
         )
       );
     }
   );
-  var $elm$browser$Debugger$Expando$viewDictionaryEntry = F3(
-    function(path, expando, _v4) {
-      var key = _v4.a;
-      var value = _v4.b;
-      var _v5 = _Debugger_init(key);
-      switch (_v5.$) {
+  var $elm$browser$Debugger$Expando$viewDictionaryEntry = F2(
+    function(index, _v2) {
+      var key = _v2.a;
+      var value = _v2.b;
+      switch (key.$) {
         case "S":
-          var stringRep = _v5.a;
+          var stringRep = key.a;
           return A2(
-            $elm$browser$Debugger$Expando$view,
-            A2($elm$core$List$cons, stringRep, path),
-            _Utils_update(
-              expando,
-              { unexpanded: value }
+            $elm$html$Html$map,
+            A2($elm$browser$Debugger$Expando$Index, $elm$browser$Debugger$Expando$Value, index),
+            A2(
+              $elm$browser$Debugger$Expando$view,
+              $elm$core$Maybe$Just(stringRep),
+              value
             )
           );
         case "Primitive":
-          var stringRep = _v5.a;
+          var stringRep = key.a;
           return A2(
-            $elm$browser$Debugger$Expando$view,
-            A2($elm$core$List$cons, stringRep, path),
-            _Utils_update(
-              expando,
-              { unexpanded: value }
+            $elm$html$Html$map,
+            A2($elm$browser$Debugger$Expando$Index, $elm$browser$Debugger$Expando$Value, index),
+            A2(
+              $elm$browser$Debugger$Expando$view,
+              $elm$core$Maybe$Just(stringRep),
+              value
             )
           );
         default:
@@ -6872,19 +6581,21 @@
             _List_fromArray(
               [
                 A2(
-                  $elm$browser$Debugger$Expando$view,
-                  A2($elm$core$List$cons, "key", path),
-                  _Utils_update(
-                    expando,
-                    { unexpanded: key }
+                  $elm$html$Html$map,
+                  A2($elm$browser$Debugger$Expando$Index, $elm$browser$Debugger$Expando$Key, index),
+                  A2(
+                    $elm$browser$Debugger$Expando$view,
+                    $elm$core$Maybe$Just("key"),
+                    key
                   )
                 ),
                 A2(
-                  $elm$browser$Debugger$Expando$view,
-                  A2($elm$core$List$cons, "value", path),
-                  _Utils_update(
-                    expando,
-                    { unexpanded: value }
+                  $elm$html$Html$map,
+                  A2($elm$browser$Debugger$Expando$Index, $elm$browser$Debugger$Expando$Value, index),
+                  A2(
+                    $elm$browser$Debugger$Expando$view,
+                    $elm$core$Maybe$Just("value"),
+                    value
                   )
                 )
               ]
@@ -6893,65 +6604,16 @@
       }
     }
   );
-  var $elm$browser$Debugger$Expando$viewDictionaryOpen = F3(
-    function(path, expando, keyValuePairs) {
-      var max = A2($elm$browser$Debugger$Expando$maximumItemsToView, path, expando);
-      return A2(
-        $elm$html$Html$div,
-        _List_Nil,
-        A6($elm$browser$Debugger$Expando$viewDictionaryOpenHelp, path, expando, 0, max, keyValuePairs, _List_Nil)
-      );
-    }
-  );
-  var $elm$browser$Debugger$Expando$viewDictionaryOpenHelp = F6(
-    function(path, expando, index, max, keyValuePairs, acc) {
-      viewDictionaryOpenHelp:
-        while (true) {
-          if (_Utils_cmp(index, max) < 0) {
-            if (!keyValuePairs.b) {
-              return $elm$core$List$reverse(acc);
-            } else {
-              var keyValue = keyValuePairs.a;
-              var rest = keyValuePairs.b;
-              var $temp$path = path, $temp$expando = expando, $temp$index = index + 1, $temp$max = max, $temp$keyValuePairs = rest, $temp$acc = A2(
-                $elm$core$List$cons,
-                A3(
-                  $elm$browser$Debugger$Expando$viewDictionaryEntry,
-                  A2(
-                    $elm$core$List$cons,
-                    $elm$core$String$fromInt(index),
-                    path
-                  ),
-                  expando,
-                  keyValue
-                ),
-                acc
-              );
-              path = $temp$path;
-              expando = $temp$expando;
-              index = $temp$index;
-              max = $temp$max;
-              keyValuePairs = $temp$keyValuePairs;
-              acc = $temp$acc;
-              continue viewDictionaryOpenHelp;
-            }
-          } else {
-            return $elm$core$List$reverse(
-              A2(
-                $elm$core$List$cons,
-                $elm$browser$Debugger$Expando$viewMoreButton(path),
-                acc
-              )
-            );
-          }
-        }
-    }
-  );
+  var $elm$browser$Debugger$Expando$viewDictionaryOpen = function(keyValuePairs) {
+    return A2(
+      $elm$html$Html$div,
+      _List_Nil,
+      A2($elm$core$List$indexedMap, $elm$browser$Debugger$Expando$viewDictionaryEntry, keyValuePairs)
+    );
+  };
   var $elm$browser$Debugger$Expando$viewRecord = F3(
-    function(path, expando, record) {
-      var maybeKey = $elm$core$List$head(path);
-      var isClosed = !A2($elm$core$Set$member, path, expando.expanded);
-      var _v2 = isClosed ? _Utils_Tuple3(
+    function(maybeKey, isClosed, record) {
+      var _v1 = isClosed ? _Utils_Tuple3(
         $elm$browser$Debugger$Expando$viewTinyRecord(record).b,
         $elm$html$Html$text(""),
         $elm$html$Html$text("")
@@ -6961,7 +6623,7 @@
             $elm$html$Html$text("{")
           ]
         ),
-        A3($elm$browser$Debugger$Expando$viewRecordOpen, path, expando, record),
+        $elm$browser$Debugger$Expando$viewRecordOpen(record),
         A2(
           $elm$html$Html$div,
           $elm$browser$Debugger$Expando$leftPad(
@@ -6974,9 +6636,9 @@
           )
         )
       );
-      var start = _v2.a;
-      var middle = _v2.b;
-      var end = _v2.c;
+      var start = _v1.a;
+      var middle = _v1.b;
+      var end = _v1.c;
       return A2(
         $elm$html$Html$div,
         $elm$browser$Debugger$Expando$leftPad(maybeKey),
@@ -6986,9 +6648,7 @@
               $elm$html$Html$div,
               _List_fromArray(
                 [
-                  $elm$html$Html$Events$onClick(
-                    $elm$browser$Debugger$Expando$Toggle(path)
-                  )
+                  $elm$html$Html$Events$onClick($elm$browser$Debugger$Expando$Toggle)
                 ]
               ),
               A3(
@@ -7005,42 +6665,37 @@
       );
     }
   );
-  var $elm$browser$Debugger$Expando$viewRecordEntry = F3(
-    function(path, expando, _v1) {
-      var field = _v1.a;
-      var value = _v1.b;
-      return A2(
+  var $elm$browser$Debugger$Expando$viewRecordEntry = function(_v0) {
+    var field = _v0.a;
+    var value = _v0.b;
+    return A2(
+      $elm$html$Html$map,
+      $elm$browser$Debugger$Expando$Field(field),
+      A2(
         $elm$browser$Debugger$Expando$view,
-        A2($elm$core$List$cons, field, path),
-        _Utils_update(
-          expando,
-          { unexpanded: value }
-        )
-      );
-    }
-  );
-  var $elm$browser$Debugger$Expando$viewRecordOpen = F3(
-    function(path, expando, record) {
-      return A2(
-        $elm$html$Html$div,
-        _List_Nil,
-        A2(
-          $elm$core$List$map,
-          A2($elm$browser$Debugger$Expando$viewRecordEntry, path, expando),
-          $elm$core$Dict$toList(record)
-        )
-      );
-    }
-  );
+        $elm$core$Maybe$Just(field),
+        value
+      )
+    );
+  };
+  var $elm$browser$Debugger$Expando$viewRecordOpen = function(record) {
+    return A2(
+      $elm$html$Html$div,
+      _List_Nil,
+      A2(
+        $elm$core$List$map,
+        $elm$browser$Debugger$Expando$viewRecordEntry,
+        $elm$core$Dict$toList(record)
+      )
+    );
+  };
   var $elm$browser$Debugger$Expando$viewSequence = F4(
-    function(path, seqType, expando, valueList) {
+    function(maybeKey, seqType, isClosed, valueList) {
       var starter = A2(
         $elm$browser$Debugger$Expando$seqTypeToString,
         $elm$core$List$length(valueList),
         seqType
       );
-      var maybeKey = $elm$core$List$head(path);
-      var isClosed = !A2($elm$core$Set$member, path, expando.expanded);
       return A2(
         $elm$html$Html$div,
         $elm$browser$Debugger$Expando$leftPad(maybeKey),
@@ -7050,9 +6705,7 @@
               $elm$html$Html$div,
               _List_fromArray(
                 [
-                  $elm$html$Html$Events$onClick(
-                    $elm$browser$Debugger$Expando$Toggle(path)
-                  )
+                  $elm$html$Html$Events$onClick($elm$browser$Debugger$Expando$Toggle)
                 ]
               ),
               A3(
@@ -7066,57 +6719,19 @@
                 )
               )
             ),
-            isClosed ? $elm$html$Html$text("") : A3($elm$browser$Debugger$Expando$viewSequenceOpen, path, expando, valueList)
+            isClosed ? $elm$html$Html$text("") : $elm$browser$Debugger$Expando$viewSequenceOpen(valueList)
           ]
         )
       );
     }
   );
-  var $elm$browser$Debugger$Expando$viewSequenceOpen = F3(
-    function(path, expando, values) {
-      var max = A2($elm$browser$Debugger$Expando$maximumItemsToView, path, expando);
-      return A2(
-        $elm$html$Html$div,
-        _List_Nil,
-        A6($elm$browser$Debugger$Expando$viewSequenceOpenHelp, path, expando, 0, max, values, _List_Nil)
-      );
-    }
-  );
-  var $elm$browser$Debugger$Expando$viewSequenceOpenHelp = F6(
-    function(path, expando, index, max, values, acc) {
-      viewSequenceOpenHelp:
-        while (true) {
-          if (_Utils_cmp(index, max) < 0) {
-            if (!values.b) {
-              return $elm$core$List$reverse(acc);
-            } else {
-              var value = values.a;
-              var rest = values.b;
-              var $temp$path = path, $temp$expando = expando, $temp$index = index + 1, $temp$max = max, $temp$values = rest, $temp$acc = A2(
-                $elm$core$List$cons,
-                A4($elm$browser$Debugger$Expando$viewConstructorEntry, path, expando, index, value),
-                acc
-              );
-              path = $temp$path;
-              expando = $temp$expando;
-              index = $temp$index;
-              max = $temp$max;
-              values = $temp$values;
-              acc = $temp$acc;
-              continue viewSequenceOpenHelp;
-            }
-          } else {
-            return $elm$core$List$reverse(
-              A2(
-                $elm$core$List$cons,
-                $elm$browser$Debugger$Expando$viewMoreButton(path),
-                acc
-              )
-            );
-          }
-        }
-    }
-  );
+  var $elm$browser$Debugger$Expando$viewSequenceOpen = function(values) {
+    return A2(
+      $elm$html$Html$div,
+      _List_Nil,
+      A2($elm$core$List$indexedMap, $elm$browser$Debugger$Expando$viewConstructorEntry, values)
+    );
+  };
   var $elm$browser$Debugger$Main$viewExpando = F3(
     function(expandoMsg, expandoModel, layout) {
       var block = $elm$browser$Debugger$Main$toMouseBlocker(layout);
@@ -7159,7 +6774,7 @@
             A2(
               $elm$html$Html$map,
               $elm$browser$Debugger$Main$TweakExpandoMsg,
-              A2($elm$browser$Debugger$Expando$view, _List_Nil, expandoMsg)
+              A2($elm$browser$Debugger$Expando$view, $elm$core$Maybe$Nothing, expandoMsg)
             ),
             A2(
               $elm$html$Html$div,
@@ -7178,7 +6793,7 @@
             A2(
               $elm$html$Html$map,
               $elm$browser$Debugger$Main$TweakExpandoModel,
-              A2($elm$browser$Debugger$Expando$view, _List_Nil, expandoModel)
+              A2($elm$browser$Debugger$Expando$view, $elm$core$Maybe$Nothing, expandoModel)
             )
           ]
         )
@@ -7207,11 +6822,11 @@
   };
   var $elm$virtual_dom$VirtualDom$lazy3 = _VirtualDom_lazy3;
   var $elm$html$Html$Lazy$lazy3 = $elm$virtual_dom$VirtualDom$lazy3;
-  var $elm$html$Html$Attributes$class = _VirtualDom_attribute("class");
+  var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty("className");
   var $elm$browser$Debugger$History$idForMessageIndex = function(index) {
     return "msg-" + $elm$core$String$fromInt(index);
   };
-  var $elm$html$Html$Attributes$title = _VirtualDom_attribute("title");
+  var $elm$html$Html$Attributes$title = $elm$html$Html$Attributes$stringProperty("title");
   var $elm$browser$Debugger$History$viewMessage = F3(
     function(currentIndex, index, msg) {
       var messageName = _Debugger_messageToString(msg);
@@ -7284,6 +6899,7 @@
     var len = _v0.a;
     return len;
   };
+  var $elm$core$Basics$neq = _Utils_notEqual;
   var $elm$virtual_dom$VirtualDom$keyedNode = function(tag) {
     return _VirtualDom_keyedNode(
       _VirtualDom_noScript(tag)
@@ -7952,8 +7568,8 @@
       return false;
     }
   };
-  var $elm$html$Html$Attributes$max = _VirtualDom_attribute("max");
-  var $elm$html$Html$Attributes$min = _VirtualDom_attribute("min");
+  var $elm$html$Html$Attributes$max = $elm$html$Html$Attributes$stringProperty("max");
+  var $elm$html$Html$Attributes$min = $elm$html$Html$Attributes$stringProperty("min");
   var $elm$html$Html$Events$alwaysStop = function(x) {
     return _Utils_Tuple2(x, true);
   };
@@ -7989,16 +7605,8 @@
     );
   };
   var $elm$core$String$toInt = _String_toInt;
-  var $elm$html$Html$Attributes$type_ = _VirtualDom_attribute("type");
-  var $elm$json$Json$Encode$string = _Json_wrap;
-  var $elm$html$Html$Attributes$value = function(string) {
-    return A2(
-      _VirtualDom_property,
-      "value",
-      $elm$json$Json$Encode$string(string)
-    );
-  };
-  var $elm$browser$Debugger$Main$Pause = { $: "Pause" };
+  var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty("type");
+  var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty("value");
   var $elm$browser$Debugger$Main$viewPlayButton = function(playing) {
     return A2(
       $elm$html$Html$button,
@@ -8010,9 +7618,7 @@
           A2($elm$html$Html$Attributes$style, "cursor", "pointer"),
           A2($elm$html$Html$Attributes$style, "width", "36px"),
           A2($elm$html$Html$Attributes$style, "height", "36px"),
-          $elm$html$Html$Events$onClick(
-            playing ? $elm$browser$Debugger$Main$Pause : $elm$browser$Debugger$Main$Resume
-          )
+          $elm$html$Html$Events$onClick($elm$browser$Debugger$Main$Resume)
         ]
       ),
       _List_fromArray(
@@ -8138,7 +7744,6 @@
             A2($elm$html$Html$Attributes$style, "height", "100%"),
             A2($elm$html$Html$Attributes$style, "font-family", "monospace"),
             A2($elm$html$Html$Attributes$style, "display", "flex"),
-            A2($elm$html$Html$Attributes$style, "background-color", "white"),
             A2(
               $elm$html$Html$Attributes$style,
               "flex-direction",
@@ -8496,28 +8101,126 @@
       0
     );
   };
-  var $elm$core$Basics$identity = function(x) {
-    return x;
-  };
-  var $elm$core$Set$Set_elm_builtin = function(a) {
-    return { $: "Set_elm_builtin", a };
-  };
-  var $elm$core$Dict$singleton = F2(
-    function(key, value) {
-      return A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, key, value, $elm$core$Dict$RBEmpty_elm_builtin, $elm$core$Dict$RBEmpty_elm_builtin);
+  var $elm$core$Dict$map = F2(
+    function(func, dict) {
+      if (dict.$ === "RBEmpty_elm_builtin") {
+        return $elm$core$Dict$RBEmpty_elm_builtin;
+      } else {
+        var color = dict.a;
+        var key = dict.b;
+        var value = dict.c;
+        var left = dict.d;
+        var right = dict.e;
+        return A5(
+          $elm$core$Dict$RBNode_elm_builtin,
+          color,
+          key,
+          A2(func, key, value),
+          A2($elm$core$Dict$map, func, left),
+          A2($elm$core$Dict$map, func, right)
+        );
+      }
     }
   );
-  var $elm$core$Set$singleton = function(key) {
-    return $elm$core$Set$Set_elm_builtin(
-      A2($elm$core$Dict$singleton, key, _Utils_Tuple0)
-    );
+  var $elm$core$Dict$sizeHelp = F2(
+    function(n, dict) {
+      sizeHelp:
+        while (true) {
+          if (dict.$ === "RBEmpty_elm_builtin") {
+            return n;
+          } else {
+            var left = dict.d;
+            var right = dict.e;
+            var $temp$n = A2($elm$core$Dict$sizeHelp, n + 1, right), $temp$dict = left;
+            n = $temp$n;
+            dict = $temp$dict;
+            continue sizeHelp;
+          }
+        }
+    }
+  );
+  var $elm$core$Dict$size = function(dict) {
+    return A2($elm$core$Dict$sizeHelp, 0, dict);
   };
+  var $elm$browser$Debugger$Expando$initHelp = F2(
+    function(isOuter, expando) {
+      switch (expando.$) {
+        case "S":
+          return expando;
+        case "Primitive":
+          return expando;
+        case "Sequence":
+          var seqType = expando.a;
+          var isClosed = expando.b;
+          var items = expando.c;
+          return isOuter ? A3(
+            $elm$browser$Debugger$Expando$Sequence,
+            seqType,
+            false,
+            A2(
+              $elm$core$List$map,
+              $elm$browser$Debugger$Expando$initHelp(false),
+              items
+            )
+          ) : $elm$core$List$length(items) <= 8 ? A3($elm$browser$Debugger$Expando$Sequence, seqType, false, items) : expando;
+        case "Dictionary":
+          var isClosed = expando.a;
+          var keyValuePairs = expando.b;
+          return isOuter ? A2(
+            $elm$browser$Debugger$Expando$Dictionary,
+            false,
+            A2(
+              $elm$core$List$map,
+              function(_v1) {
+                var k = _v1.a;
+                var v = _v1.b;
+                return _Utils_Tuple2(
+                  k,
+                  A2($elm$browser$Debugger$Expando$initHelp, false, v)
+                );
+              },
+              keyValuePairs
+            )
+          ) : $elm$core$List$length(keyValuePairs) <= 8 ? A2($elm$browser$Debugger$Expando$Dictionary, false, keyValuePairs) : expando;
+        case "Record":
+          var isClosed = expando.a;
+          var entries = expando.b;
+          return isOuter ? A2(
+            $elm$browser$Debugger$Expando$Record,
+            false,
+            A2(
+              $elm$core$Dict$map,
+              F2(
+                function(_v2, v) {
+                  return A2($elm$browser$Debugger$Expando$initHelp, false, v);
+                }
+              ),
+              entries
+            )
+          ) : $elm$core$Dict$size(entries) <= 4 ? A2($elm$browser$Debugger$Expando$Record, false, entries) : expando;
+        default:
+          var maybeName = expando.a;
+          var isClosed = expando.b;
+          var args = expando.c;
+          return isOuter ? A3(
+            $elm$browser$Debugger$Expando$Constructor,
+            maybeName,
+            false,
+            A2(
+              $elm$core$List$map,
+              $elm$browser$Debugger$Expando$initHelp(false),
+              args
+            )
+          ) : $elm$core$List$length(args) <= 4 ? A3($elm$browser$Debugger$Expando$Constructor, maybeName, false, args) : expando;
+      }
+    }
+  );
   var $elm$browser$Debugger$Expando$init = function(value) {
-    return {
-      expanded: $elm$core$Set$singleton(_List_Nil),
-      unexpanded: _Debugger_toUnexpanded(value),
-      viewMore: $elm$core$Dict$empty
-    };
+    return A2(
+      $elm$browser$Debugger$Expando$initHelp,
+      true,
+      _Debugger_init(value)
+    );
   };
   var $elm$core$Platform$Cmd$map = _Platform_map;
   var $elm$browser$Debugger$Overlay$None = { $: "None" };
@@ -8926,6 +8629,7 @@
   var $elm$browser$Debugger$Report$Fine = { $: "Fine" };
   var $elm$browser$Debugger$Report$Impossible = { $: "Impossible" };
   var $elm$browser$Debugger$Report$Risky = { $: "Risky" };
+  var $elm$core$Basics$not = _Basics_not;
   var $elm$core$List$isEmpty = function(xs) {
     if (!xs.b) {
       return true;
@@ -9117,27 +8821,6 @@
       )
     );
   };
-  var $elm$core$Dict$map = F2(
-    function(func, dict) {
-      if (dict.$ === "RBEmpty_elm_builtin") {
-        return $elm$core$Dict$RBEmpty_elm_builtin;
-      } else {
-        var color = dict.a;
-        var key = dict.b;
-        var value = dict.c;
-        var left = dict.d;
-        var right = dict.e;
-        return A5(
-          $elm$core$Dict$RBNode_elm_builtin,
-          color,
-          key,
-          A2(func, key, value),
-          A2($elm$core$Dict$map, func, left),
-          A2($elm$core$Dict$map, func, right)
-        );
-      }
-    }
-  );
   var $elm$browser$Debugger$Metadata$encodeDict = F2(
     function(f, dict) {
       return $elm$json$Json$Encode$object(
@@ -9230,6 +8913,9 @@
         ]
       )
     );
+  };
+  var $elm$core$Basics$identity = function(x) {
+    return x;
   };
   var $elm$core$Task$Perform = function(a) {
     return { $: "Perform", a };
@@ -9476,13 +9162,155 @@
         }
       }
   };
+  var $elm$core$Dict$get = F2(
+    function(targetKey, dict) {
+      get:
+        while (true) {
+          if (dict.$ === "RBEmpty_elm_builtin") {
+            return $elm$core$Maybe$Nothing;
+          } else {
+            var key = dict.b;
+            var value = dict.c;
+            var left = dict.d;
+            var right = dict.e;
+            var _v1 = A2($elm$core$Basics$compare, targetKey, key);
+            switch (_v1.$) {
+              case "LT":
+                var $temp$targetKey = targetKey, $temp$dict = left;
+                targetKey = $temp$targetKey;
+                dict = $temp$dict;
+                continue get;
+              case "EQ":
+                return $elm$core$Maybe$Just(value);
+              default:
+                var $temp$targetKey = targetKey, $temp$dict = right;
+                targetKey = $temp$targetKey;
+                dict = $temp$dict;
+                continue get;
+            }
+          }
+        }
+    }
+  );
+  var $elm$browser$Debugger$Expando$mergeDictHelp = F3(
+    function(oldDict, key, value) {
+      var _v12 = A2($elm$core$Dict$get, key, oldDict);
+      if (_v12.$ === "Nothing") {
+        return value;
+      } else {
+        var oldValue = _v12.a;
+        return A2($elm$browser$Debugger$Expando$mergeHelp, oldValue, value);
+      }
+    }
+  );
+  var $elm$browser$Debugger$Expando$mergeHelp = F2(
+    function(old, _new) {
+      var _v3 = _Utils_Tuple2(old, _new);
+      _v3$6:
+        while (true) {
+          switch (_v3.b.$) {
+            case "S":
+              return _new;
+            case "Primitive":
+              return _new;
+            case "Sequence":
+              if (_v3.a.$ === "Sequence") {
+                var _v4 = _v3.a;
+                var isClosed = _v4.b;
+                var oldValues = _v4.c;
+                var _v5 = _v3.b;
+                var seqType = _v5.a;
+                var newValues = _v5.c;
+                return A3(
+                  $elm$browser$Debugger$Expando$Sequence,
+                  seqType,
+                  isClosed,
+                  A2($elm$browser$Debugger$Expando$mergeListHelp, oldValues, newValues)
+                );
+              } else {
+                break _v3$6;
+              }
+            case "Dictionary":
+              if (_v3.a.$ === "Dictionary") {
+                var _v6 = _v3.a;
+                var isClosed = _v6.a;
+                var _v7 = _v3.b;
+                var keyValuePairs = _v7.b;
+                return A2($elm$browser$Debugger$Expando$Dictionary, isClosed, keyValuePairs);
+              } else {
+                break _v3$6;
+              }
+            case "Record":
+              if (_v3.a.$ === "Record") {
+                var _v8 = _v3.a;
+                var isClosed = _v8.a;
+                var oldDict = _v8.b;
+                var _v9 = _v3.b;
+                var newDict = _v9.b;
+                return A2(
+                  $elm$browser$Debugger$Expando$Record,
+                  isClosed,
+                  A2(
+                    $elm$core$Dict$map,
+                    $elm$browser$Debugger$Expando$mergeDictHelp(oldDict),
+                    newDict
+                  )
+                );
+              } else {
+                break _v3$6;
+              }
+            default:
+              if (_v3.a.$ === "Constructor") {
+                var _v10 = _v3.a;
+                var isClosed = _v10.b;
+                var oldValues = _v10.c;
+                var _v11 = _v3.b;
+                var maybeName = _v11.a;
+                var newValues = _v11.c;
+                return A3(
+                  $elm$browser$Debugger$Expando$Constructor,
+                  maybeName,
+                  isClosed,
+                  A2($elm$browser$Debugger$Expando$mergeListHelp, oldValues, newValues)
+                );
+              } else {
+                break _v3$6;
+              }
+          }
+        }
+      return _new;
+    }
+  );
+  var $elm$browser$Debugger$Expando$mergeListHelp = F2(
+    function(olds, news) {
+      var _v0 = _Utils_Tuple2(olds, news);
+      if (!_v0.a.b) {
+        return news;
+      } else {
+        if (!_v0.b.b) {
+          return news;
+        } else {
+          var _v1 = _v0.a;
+          var x = _v1.a;
+          var xs = _v1.b;
+          var _v2 = _v0.b;
+          var y = _v2.a;
+          var ys = _v2.b;
+          return A2(
+            $elm$core$List$cons,
+            A2($elm$browser$Debugger$Expando$mergeHelp, x, y),
+            A2($elm$browser$Debugger$Expando$mergeListHelp, xs, ys)
+          );
+        }
+      }
+    }
+  );
   var $elm$browser$Debugger$Expando$merge = F2(
     function(value, expando) {
-      return _Utils_update(
+      return A2(
+        $elm$browser$Debugger$Expando$mergeHelp,
         expando,
-        {
-          unexpanded: _Debugger_toUnexpanded(value)
-        }
+        _Debugger_init(value)
       );
     }
   );
@@ -9630,14 +9458,6 @@
       return A3($elm$browser$Debugger$Main$Horizontal, s, x, y);
     }
   };
-  var $elm$core$Set$insert = F2(
-    function(key, _v0) {
-      var dict = _v0.a;
-      return $elm$core$Set$Set_elm_builtin(
-        A3($elm$core$Dict$insert, key, _Utils_Tuple0, dict)
-      );
-    }
-  );
   var $elm$core$Dict$getMin = function(dict) {
     getMin:
       while (true) {
@@ -10022,14 +9842,6 @@
       }
     }
   );
-  var $elm$core$Set$remove = F2(
-    function(key, _v0) {
-      var dict = _v0.a;
-      return $elm$core$Set$Set_elm_builtin(
-        A2($elm$core$Dict$remove, key, dict)
-      );
-    }
-  );
   var $elm$core$Dict$update = F3(
     function(targetKey, alter, dictionary) {
       var _v0 = alter(
@@ -10043,31 +9855,176 @@
       }
     }
   );
-  var $elm$browser$Debugger$Expando$updateViewMoreCount = function(maybeCount) {
-    if (maybeCount.$ === "Just") {
-      var count = maybeCount.a;
-      return $elm$core$Maybe$Just(count + 1);
-    } else {
-      return $elm$core$Maybe$Just(2);
-    }
-  };
-  var $elm$browser$Debugger$Expando$update = F2(
-    function(msg, expando) {
-      if (msg.$ === "Toggle") {
-        var path = msg.a;
-        return _Utils_update(
-          expando,
-          {
-            expanded: A2($elm$core$Set$member, path, expando.expanded) ? A2($elm$core$Set$remove, path, expando.expanded) : A2($elm$core$Set$insert, path, expando.expanded)
-          }
-        );
+  var $elm$browser$Debugger$Expando$updateIndex = F3(
+    function(n, func, list) {
+      if (!list.b) {
+        return _List_Nil;
       } else {
-        var path = msg.a;
-        return _Utils_update(
-          expando,
-          {
-            viewMore: A3($elm$core$Dict$update, path, $elm$browser$Debugger$Expando$updateViewMoreCount, expando.viewMore)
+        var x = list.a;
+        var xs = list.b;
+        return n <= 0 ? A2(
+          $elm$core$List$cons,
+          func(x),
+          xs
+        ) : A2(
+          $elm$core$List$cons,
+          x,
+          A3($elm$browser$Debugger$Expando$updateIndex, n - 1, func, xs)
+        );
+      }
+    }
+  );
+  var $elm$browser$Debugger$Expando$update = F2(
+    function(msg, value) {
+      switch (value.$) {
+        case "S":
+          return value;
+        case "Primitive":
+          return value;
+        case "Sequence":
+          var seqType = value.a;
+          var isClosed = value.b;
+          var valueList = value.c;
+          switch (msg.$) {
+            case "Toggle":
+              return A3($elm$browser$Debugger$Expando$Sequence, seqType, !isClosed, valueList);
+            case "Index":
+              if (msg.a.$ === "None") {
+                var _v3 = msg.a;
+                var index = msg.b;
+                var subMsg = msg.c;
+                return A3(
+                  $elm$browser$Debugger$Expando$Sequence,
+                  seqType,
+                  isClosed,
+                  A3(
+                    $elm$browser$Debugger$Expando$updateIndex,
+                    index,
+                    $elm$browser$Debugger$Expando$update(subMsg),
+                    valueList
+                  )
+                );
+              } else {
+                return value;
+              }
+            default:
+              return value;
           }
+        case "Dictionary":
+          var isClosed = value.a;
+          var keyValuePairs = value.b;
+          switch (msg.$) {
+            case "Toggle":
+              return A2($elm$browser$Debugger$Expando$Dictionary, !isClosed, keyValuePairs);
+            case "Index":
+              var redirect = msg.a;
+              var index = msg.b;
+              var subMsg = msg.c;
+              switch (redirect.$) {
+                case "None":
+                  return value;
+                case "Key":
+                  return A2(
+                    $elm$browser$Debugger$Expando$Dictionary,
+                    isClosed,
+                    A3(
+                      $elm$browser$Debugger$Expando$updateIndex,
+                      index,
+                      function(_v6) {
+                        var k = _v6.a;
+                        var v = _v6.b;
+                        return _Utils_Tuple2(
+                          A2($elm$browser$Debugger$Expando$update, subMsg, k),
+                          v
+                        );
+                      },
+                      keyValuePairs
+                    )
+                  );
+                default:
+                  return A2(
+                    $elm$browser$Debugger$Expando$Dictionary,
+                    isClosed,
+                    A3(
+                      $elm$browser$Debugger$Expando$updateIndex,
+                      index,
+                      function(_v7) {
+                        var k = _v7.a;
+                        var v = _v7.b;
+                        return _Utils_Tuple2(
+                          k,
+                          A2($elm$browser$Debugger$Expando$update, subMsg, v)
+                        );
+                      },
+                      keyValuePairs
+                    )
+                  );
+              }
+            default:
+              return value;
+          }
+        case "Record":
+          var isClosed = value.a;
+          var valueDict = value.b;
+          switch (msg.$) {
+            case "Toggle":
+              return A2($elm$browser$Debugger$Expando$Record, !isClosed, valueDict);
+            case "Index":
+              return value;
+            default:
+              var field = msg.a;
+              var subMsg = msg.b;
+              return A2(
+                $elm$browser$Debugger$Expando$Record,
+                isClosed,
+                A3(
+                  $elm$core$Dict$update,
+                  field,
+                  $elm$browser$Debugger$Expando$updateField(subMsg),
+                  valueDict
+                )
+              );
+          }
+        default:
+          var maybeName = value.a;
+          var isClosed = value.b;
+          var valueList = value.c;
+          switch (msg.$) {
+            case "Toggle":
+              return A3($elm$browser$Debugger$Expando$Constructor, maybeName, !isClosed, valueList);
+            case "Index":
+              if (msg.a.$ === "None") {
+                var _v10 = msg.a;
+                var index = msg.b;
+                var subMsg = msg.c;
+                return A3(
+                  $elm$browser$Debugger$Expando$Constructor,
+                  maybeName,
+                  isClosed,
+                  A3(
+                    $elm$browser$Debugger$Expando$updateIndex,
+                    index,
+                    $elm$browser$Debugger$Expando$update(subMsg),
+                    valueList
+                  )
+                );
+              } else {
+                return value;
+              }
+            default:
+              return value;
+          }
+      }
+    }
+  );
+  var $elm$browser$Debugger$Expando$updateField = F2(
+    function(msg, maybeExpando) {
+      if (maybeExpando.$ === "Nothing") {
+        return maybeExpando;
+      } else {
+        var expando = maybeExpando.a;
+        return $elm$core$Maybe$Just(
+          A2($elm$browser$Debugger$Expando$update, msg, expando)
         );
       }
     }
@@ -10179,26 +10136,13 @@
                 ),
                 $elm$core$Platform$Cmd$none
               );
-            case "Pause":
+            case "Resume":
               var _v3 = model.state;
               if (_v3.$ === "Running") {
-                var size = $elm$browser$Debugger$History$size(model.history);
-                return !size ? _Utils_Tuple2(model, $elm$core$Platform$Cmd$none) : _Utils_Tuple2(
-                  A3($elm$browser$Debugger$Main$jumpUpdate, update, size - 1, model),
-                  $elm$core$Platform$Cmd$none
-                );
+                return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
               } else {
                 var userModel = _v3.c;
                 var userMsg = _v3.d;
-                return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-              }
-            case "Resume":
-              var _v4 = model.state;
-              if (_v4.$ === "Running") {
-                return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-              } else {
-                var userModel = _v4.c;
-                var userMsg = _v4.d;
                 return _Utils_Tuple2(
                   _Utils_update(
                     model,
@@ -10237,12 +10181,12 @@
                 )
               );
             case "Up":
-              var _v5 = model.state;
-              if (_v5.$ === "Running") {
+              var _v4 = model.state;
+              if (_v4.$ === "Running") {
                 return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
               } else {
-                var i = _v5.a;
-                var history2 = _v5.e;
+                var i = _v4.a;
+                var history2 = _v4.e;
                 var targetIndex = i + 1;
                 if (_Utils_cmp(
                   targetIndex,
@@ -10262,8 +10206,8 @@
                 }
               }
             case "Down":
-              var _v6 = model.state;
-              if (_v6.$ === "Running") {
+              var _v5 = model.state;
+              if (_v5.$ === "Running") {
                 var $temp$update = update, $temp$msg = $elm$browser$Debugger$Main$Jump(
                   $elm$browser$Debugger$History$size(model.history) - 1
                 ), $temp$model = model;
@@ -10272,7 +10216,7 @@
                 model = $temp$model;
                 continue wrapUpdate;
               } else {
-                var index = _v6.a;
+                var index = _v5.a;
                 if (index > 0) {
                   var $temp$update = update, $temp$msg = $elm$browser$Debugger$Main$SliderJump(index - 1), $temp$model = model;
                   update = $temp$update;
@@ -10287,7 +10231,7 @@
               return A2(
                 $elm$browser$Debugger$Main$withGoodMetadata,
                 model,
-                function(_v7) {
+                function(_v6) {
                   return _Utils_Tuple2(
                     model,
                     $elm$browser$Debugger$Main$upload(model.popout)
@@ -10311,9 +10255,9 @@
                 $elm$browser$Debugger$Main$withGoodMetadata,
                 model,
                 function(metadata) {
-                  var _v8 = A2($elm$browser$Debugger$Overlay$assessImport, metadata, jsonString);
-                  if (_v8.$ === "Err") {
-                    var newOverlay = _v8.a;
+                  var _v7 = A2($elm$browser$Debugger$Overlay$assessImport, metadata, jsonString);
+                  if (_v7.$ === "Err") {
+                    var newOverlay = _v7.a;
                     return _Utils_Tuple2(
                       _Utils_update(
                         model,
@@ -10322,15 +10266,15 @@
                       $elm$core$Platform$Cmd$none
                     );
                   } else {
-                    var rawHistory2 = _v8.a;
+                    var rawHistory2 = _v7.a;
                     return A3($elm$browser$Debugger$Main$loadNewHistory, rawHistory2, update, model);
                   }
                 }
               );
             case "OverlayMsg":
               var overlayMsg = msg.a;
-              var _v9 = A2($elm$browser$Debugger$Overlay$close, overlayMsg, model.overlay);
-              if (_v9.$ === "Nothing") {
+              var _v8 = A2($elm$browser$Debugger$Overlay$close, overlayMsg, model.overlay);
+              if (_v8.$ === "Nothing") {
                 return _Utils_Tuple2(
                   _Utils_update(
                     model,
@@ -10339,7 +10283,7 @@
                   $elm$core$Platform$Cmd$none
                 );
               } else {
-                var rawHistory = _v9.a;
+                var rawHistory = _v8.a;
                 return A3($elm$browser$Debugger$Main$loadNewHistory, rawHistory, update, model);
               }
             case "SwapLayout":
@@ -10556,6 +10500,9 @@
       return { $: "ViewportChanged", a, b };
     }
   );
+  var $elm$core$Set$Set_elm_builtin = function(a) {
+    return { $: "Set_elm_builtin", a };
+  };
   var $elm$core$Set$empty = $elm$core$Set$Set_elm_builtin($elm$core$Dict$empty);
   var $elm$browser$Browser$Dom$getViewport = _Browser_withWindow(_Browser_getViewport);
   var $elm$http$Http$BadStatus_ = F2(
@@ -12609,6 +12556,15 @@
         }
     }
   );
+  var $elm$core$List$head = function(list) {
+    if (list.b) {
+      var x = list.a;
+      var xs = list.b;
+      return $elm$core$Maybe$Just(x);
+    } else {
+      return $elm$core$Maybe$Nothing;
+    }
+  };
   var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$selectServiceId = function(services) {
     var _v0 = A2(
       $rism_digital$elm_iiif$IIIF$Internal$Utilities$find,
@@ -16506,8 +16462,6 @@
       var pagedLayout = $rism_digital$elm_iiif$IIIF$Presentation$isPagedLayout(
         $rism_digital$elm_iiif$IIIF$Presentation$manifestViewingLayout(manifest)
       );
-      var shiftByOne = pagedLayout || _Utils_eq(viewingDirection, $rism_digital$elm_iiif$IIIF$Presentation$RightToLeft);
-      var viewMode = pagedLayout ? $author$project$Model$TwoUp : $author$project$Model$OneUp;
       var pageAspects = A2(
         $elm$core$List$map,
         function($) {
@@ -16515,6 +16469,9 @@
         },
         pages
       );
+      var isSingleCanvas = $elm$core$List$length(pages) === 1;
+      var shiftByOne = isSingleCanvas ? false : pagedLayout || _Utils_eq(viewingDirection, $rism_digital$elm_iiif$IIIF$Presentation$RightToLeft);
+      var viewMode = isSingleCanvas ? $author$project$Model$OneUp : pagedLayout ? $author$project$Model$TwoUp : $author$project$Model$OneUp;
       var layoutMode = A2($author$project$Main$layoutModeToString, viewMode, shiftByOne);
       var direction = $author$project$Main$viewingDirectionToString(viewingDirection);
       var canvasIndexMap = $elm$core$Dict$fromList(
@@ -17149,13 +17106,45 @@
         return "Bad response body: " + message;
     }
   };
+  var $elm$core$Set$insert = F2(
+    function(key, _v0) {
+      var dict = _v0.a;
+      return $elm$core$Set$Set_elm_builtin(
+        A3($elm$core$Dict$insert, key, _Utils_Tuple0, dict)
+      );
+    }
+  );
   var $author$project$Main$layoutModeUpdated = _Platform_outgoingPort("layoutModeUpdated", $elm$json$Json$Encode$string);
+  var $elm$core$Dict$member = F2(
+    function(key, dict) {
+      var _v0 = A2($elm$core$Dict$get, key, dict);
+      if (_v0.$ === "Just") {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  );
+  var $elm$core$Set$member = F2(
+    function(key, _v0) {
+      var dict = _v0.a;
+      return A2($elm$core$Dict$member, key, dict);
+    }
+  );
   var $elm$core$Basics$min = F2(
     function(x, y) {
       return _Utils_cmp(x, y) < 0 ? x : y;
     }
   );
   var $author$project$Main$mobileShortSideBreakpoint = 720;
+  var $elm$core$Set$remove = F2(
+    function(key, _v0) {
+      var dict = _v0.a;
+      return $elm$core$Set$Set_elm_builtin(
+        A2($elm$core$Dict$remove, key, dict)
+      );
+    }
+  );
   var $author$project$Main$replaceCollectionById = F3(
     function(collectionId, replacement, collection) {
       var rebuildUp = F2(
@@ -22612,7 +22601,7 @@
       }
     }
   };
-  var $elm$html$Html$Attributes$target = _VirtualDom_attribute("target");
+  var $elm$html$Html$Attributes$target = $elm$html$Html$Attributes$stringProperty("target");
   var $author$project$View$ManifestInfoModal$viewingDirectionLabel = function(direction) {
     switch (direction.$) {
       case "LeftToRight":
@@ -22821,7 +22810,7 @@
       );
     }
   );
-  var $elm$html$Html$Attributes$alt = _VirtualDom_attribute("alt");
+  var $elm$html$Html$Attributes$alt = $elm$html$Html$Attributes$stringProperty("alt");
   var $elm$html$Html$img = _VirtualDom_node("img");
   var $author$project$View$ManifestInfoModal$logoIiifUrl = function(logo) {
     var _v0 = A2($elm$core$Maybe$andThen, $elm$core$List$head, logo.service);
@@ -22850,7 +22839,7 @@
   };
   var $elm$html$Html$Attributes$src = function(url) {
     return A2(
-      _VirtualDom_attribute,
+      $elm$html$Html$Attributes$stringProperty,
       "src",
       _VirtualDom_noJavaScriptOrHtmlUri(url)
     );
@@ -23427,7 +23416,7 @@
     }
   );
   var $elm$html$Html$Attributes$step = function(n) {
-    return A2(_VirtualDom_attribute, "step", n);
+    return A2($elm$html$Html$Attributes$stringProperty, "step", n);
   };
   var $author$project$View$PageViewModal$viewRangeInput = F5(
     function(minValue, maxValue, stepValue, currentValue, onChange) {

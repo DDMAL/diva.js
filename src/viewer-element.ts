@@ -345,11 +345,17 @@ class OsdViewer extends HTMLElement
                     {
                         return;
                     }
-                    const bounds = this.isSpreadMode() ? this.getRowBounds(index) : item.getBounds();
+                    const isSingleCanvas = this.isSingleCanvasLayout();
+                    const bounds = isSingleCanvas
+                        ? item.getBounds()
+                        : (this.isSpreadMode() ? this.getRowBounds(index) : item.getBounds());
                     viewer.viewport.fitBounds(bounds, true);
-                    viewer.viewport.zoomBy(0.95, viewer.viewport.getCenter(true), true);
-                    viewer.viewport.applyConstraints();
+                    if (!isSingleCanvas)
+                    {
+                        viewer.viewport.zoomBy(0.95, viewer.viewport.getCenter(true), true);
+                    }
                     this.alignTopAfterFit();
+                    viewer.viewport.applyConstraints();
                     this.isViewportInitialized = true;
                     this.lockHorizontalPan();
                     this.recenterAfterFit();
@@ -1100,6 +1106,11 @@ class OsdViewer extends HTMLElement
     }
 
     private getCenterX(): number { return this.isSpreadMode() ? 1 : 0.5; }
+
+    private isSingleCanvasLayout(): boolean
+    {
+        return this.tileSources.length === 1 && this.pageOffsets.length === 1;
+    }
 
     private getTotalHeight(): number
     {
