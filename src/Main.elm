@@ -289,13 +289,13 @@ httpErrorToString err =
             "Request timed out."
 
         Http.NetworkError ->
-            "Network error."
+            "Network error. The resource may be unreachable or blocked by CORS."
 
         Http.BadStatus statusCode ->
             "HTTP error: " ++ String.fromInt statusCode
 
-        Http.BadBody message ->
-            "Bad response body: " ++ message
+        Http.BadBody _ ->
+            "Invalid IIIF response body. URL did not return a valid IIIF Manifest or Collection JSON."
 
 
 init : Flags -> ( Model, Cmd Msg )

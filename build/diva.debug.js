@@ -17097,13 +17097,12 @@
       case "Timeout":
         return "Request timed out.";
       case "NetworkError":
-        return "Network error.";
+        return "Network error. The resource may be unreachable or blocked by CORS.";
       case "BadStatus":
         var statusCode = err.a;
         return "HTTP error: " + $elm$core$String$fromInt(statusCode);
       default:
-        var message = err.a;
-        return "Bad response body: " + message;
+        return "Invalid IIIF response body. URL did not return a valid IIIF Manifest or Collection JSON.";
     }
   };
   var $elm$core$Set$insert = F2(

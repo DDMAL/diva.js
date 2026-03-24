@@ -1,6 +1,6 @@
 # Diva.js
 
-Version 7.0
+Version 7.2.2
 
 ## Build
 
