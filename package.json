@@ -1,6 +1,6 @@
 {
   "name": "diva.js",
-  "version": "7.2.1",
+  "version": "7.2.2",
   "license": "MIT",
   "scripts": {
     "format": "find src -name \"*.ts\" -print0 | xargs -0 clang-format -i",
