@@ -3,7 +3,6 @@ node_modules/
 yarn.lock
 
 # Build artifacts
-build/
 cache/
 
 # Elm files

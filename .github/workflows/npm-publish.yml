@@ -24,11 +24,12 @@ jobs:
       - name: Install Elm globally
         run: npm install -g elm
 
+      - name: Verify package version matches tag
+        run: >
+          node -e "const v=require('./package.json').version; const t=process.env.GITHUB_REF_NAME.replace(/^v/, ''); if (v !== t) { console.error('package.json version ' + v + ' does not match tag ' + process.env.GITHUB_REF_NAME); process.exit(1); }"
+
       - name: Build
         run: make build
-
-      - name: Copy build directory
-        run: cp -r build .
 
       - name: Publish to NPM
         run: npm publish

@@ -1,7 +1,21 @@
 {
   "name": "diva.js",
-  "version": "7.2.3",
+  "version": "7.2.6",
   "license": "MIT",
+  "main": "./build/diva.js",
+  "module": "./build/diva.esm.js",
+  "browser": "./build/diva.js",
+  "exports": {
+    ".": {
+      "import": "./build/diva.esm.js",
+      "default": "./build/diva.js"
+    }
+  },
+  "files": [
+    "build/",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "format": "find src -name \"*.ts\" -print0 | xargs -0 clang-format -i",
     "develop": "chokidar \"src/**/*\" \"scripts/elm-esm.sh\" \"Makefile\" -c \"make build-dev\"",
