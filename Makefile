@@ -69,3 +69,7 @@ release: clean build build-dev
 	zip -rq "$(RELEASE_ZIP)" build README.md "$$LICENSE_FILE"; \
 	echo "Created $(RELEASE_TAR)"; \
 	echo "Created $(RELEASE_ZIP)"
+
+publish: clean build
+	cp -r build .
+	npm publish
