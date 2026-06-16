@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+yarn.lock
+
+# Build artifacts
+build/
+cache/
+
+# Elm files
+elm-stuff/
+
+# Development
+.review/
+.testing/
+.idea/
+.clause/
+.DS_Store
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+osd-6-changelog
+AUTHORS
+
+# License (npm doesn't need this)
+LICENSE
