@@ -8,8 +8,7 @@
   },
   "scripts": {
     "format": "find src -name \"*.ts\" -print0 | xargs -0 clang-format -i",
-    "develop": "chokidar \"src/**/*\" \"scripts/elm-esm.sh\" \"Makefile\" -c \"make build-dev\"",
-    "publish": "npm publish"
+    "develop": "chokidar \"src/**/*\" \"scripts/elm-esm.sh\" \"Makefile\" -c \"make build-dev\""
   },
   "devDependencies": {
     "@types/openseadragon": "^5.0.2",
