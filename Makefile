@@ -12,6 +12,7 @@ ELM_ESM := cache/elm-esm.js
 DIVA_DEBUG := build/diva.debug.js
 DIVA_JS := build/diva.js
 DIVA_ESM := build/diva.esm.js
+MINIFIED_TARGETS := $(DIVA_JS) $(DIVA_ESM)
 ELM_ESM_SCRIPT := scripts/elm-esm.sh
 ELM_FLAGS ?= --optimize
 VERSION ?= $(shell node -p "require('./package.json').version")
@@ -19,12 +20,27 @@ RELEASE_PREFIX := diva.js-$(VERSION)
 RELEASE_DIR := release
 RELEASE_TAR := $(RELEASE_DIR)/$(RELEASE_PREFIX).tar.gz
 RELEASE_ZIP := $(RELEASE_DIR)/$(RELEASE_PREFIX).zip
+ESBUILD := yarn -s esbuild
+ESBUILD_COMMON_FLAGS := --bundle --platform=browser --target=es2019 --loader:.css=text
+ESBUILD_MINIFY_FLAGS := --minify --drop:console --pure:F2 --pure:F3 --pure:F4 --pure:F5 --pure:F6 --pure:F7 --pure:F8 --pure:F9 --pure:A2 --pure:A3 --pure:A4 --pure:A5 --pure:A6 --pure:A7 --pure:A8 --pure:A9
 
-.PHONY: all build build-dev clean clean-cache release
+define print_bundle_size
+	@bundle="$(1)"; \
+	MINIFIED_SIZE=$$(wc -c < "$$bundle"); \
+	GZIPPED_SIZE=$$(gzip -c "$$bundle" | wc -c); \
+	MINIFIED_HR=$$(numfmt --to=iec-i --suffix=B "$$MINIFIED_SIZE"); \
+	GZIPPED_HR=$$(numfmt --to=iec-i --suffix=B "$$GZIPPED_SIZE"); \
+	printf "%-18s %10s (%7s)  %s\n" "Minified size:" "$$MINIFIED_SIZE bytes" "$$MINIFIED_HR" "$$bundle"; \
+	printf "%-18s %10s (%7s)\n" "Gzipped size:" "$$GZIPPED_SIZE bytes" "$$GZIPPED_HR";
+endef
+
+.PHONY: all build build-dev clean clean-cache release report-build-sizes
 
 all: build
 
-build: clean-cache $(DIVA_JS) $(DIVA_ESM)
+build: clean-cache
+	$(MAKE) -j 2 $(MINIFIED_TARGETS)
+	@$(MAKE) report-build-sizes
 
 build-dev: ELM_FLAGS = --debug
 build-dev:
@@ -42,20 +58,17 @@ $(DIVA_CSS): $(CSS_SRC) scripts/minify-css.mjs
 
 $(DIVA_DEBUG): $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(DIVA_CSS) $(ELM_ESM)
 	mkdir -p public
-	yarn -s esbuild $(TS_SRC) --bundle --format=iife --platform=browser --target=es2019 --loader:.css=text --outfile=$(DIVA_DEBUG)
+	$(ESBUILD) $(TS_SRC) $(ESBUILD_COMMON_FLAGS) --format=iife --outfile=$(DIVA_DEBUG)
 
 $(DIVA_JS): $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(DIVA_CSS) $(ELM_ESM)
-	yarn -s esbuild $(TS_SRC) --bundle --format=iife --platform=browser --target=es2019 --loader:.css=text --minify --drop:console --pure:F2 --pure:F3 --pure:F4 --pure:F5 --pure:F6 --pure:F7 --pure:F8 --pure:F9 --pure:A2 --pure:A3 --pure:A4 --pure:A5 --pure:A6 --pure:A7 --pure:A8 --pure:A9 --outfile=$(DIVA_JS)
-	@min="$(DIVA_JS)"; \
-	MINIFIED_SIZE=$$(wc -c < "$$min"); \
-	GZIPPED_SIZE=$$(gzip -c "$$min" | wc -c); \
-	MINIFIED_HR=$$(numfmt --to=iec-i --suffix=B "$$MINIFIED_SIZE"); \
-	GZIPPED_HR=$$(numfmt --to=iec-i --suffix=B "$$GZIPPED_SIZE"); \
-	printf "%-18s %10s (%7s)  %s\n" "Minified size:" "$$MINIFIED_SIZE bytes" "$$MINIFIED_HR" "$$min"; \
-	printf "%-18s %10s (%7s)\n" "Gzipped size:" "$$GZIPPED_SIZE bytes" "$$GZIPPED_HR";
+	@$(ESBUILD) $(TS_SRC) $(ESBUILD_COMMON_FLAGS) --format=iife $(ESBUILD_MINIFY_FLAGS) --outfile=$(DIVA_JS)
 
 $(DIVA_ESM): $(TS_ESM_SRC) $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(DIVA_CSS) $(ELM_ESM)
-	yarn -s esbuild $(TS_ESM_SRC) --bundle --format=esm --platform=browser --target=es2019 --loader:.css=text --minify --drop:console --pure:F2 --pure:F3 --pure:F4 --pure:F5 --pure:F6 --pure:F7 --pure:F8 --pure:F9 --pure:A2 --pure:A3 --pure:A4 --pure:A5 --pure:A6 --pure:A7 --pure:A8 --pure:A9 --outfile=$(DIVA_ESM)
+	@$(ESBUILD) $(TS_ESM_SRC) $(ESBUILD_COMMON_FLAGS) --format=esm $(ESBUILD_MINIFY_FLAGS) --outfile=$(DIVA_ESM)
+
+report-build-sizes: $(MINIFIED_TARGETS)
+	$(call print_bundle_size,$(DIVA_JS))
+	$(call print_bundle_size,$(DIVA_ESM))
 
 clean:
 	rm -f $(ELM_OUT) $(ELM_ESM) $(DIVA_JS) $(DIVA_ESM) $(DIVA_DEBUG) $(DIVA_CSS) build/diva.css build/diva.min.css
