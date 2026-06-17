@@ -27,9 +27,6 @@ jobs:
       - name: Build
         run: make build
 
-      - name: Copy build directory
-        run: cp -r build .
-
       - name: Publish to NPM
         run: npm publish
         env:

@@ -2,6 +2,7 @@ SHELL := /bin/sh
 
 ELM_SRC := src/Main.elm
 TS_SRC := src/diva.ts
+TS_ESM_SRC := src/diva-esm.ts
 TS_VE_SRC := src/viewer-element.ts
 TS_FT_SRC := src/filters.ts
 CSS_SRC := $(wildcard src/styles/*.css)
@@ -10,6 +11,7 @@ ELM_OUT := cache/elm.js
 ELM_ESM := cache/elm-esm.js
 DIVA_DEBUG := build/diva.debug.js
 DIVA_JS := build/diva.js
+DIVA_ESM := build/diva.esm.js
 ELM_ESM_SCRIPT := scripts/elm-esm.sh
 ELM_FLAGS ?= --optimize
 VERSION ?= $(shell node -p "require('./package.json').version")
@@ -22,7 +24,7 @@ RELEASE_ZIP := $(RELEASE_DIR)/$(RELEASE_PREFIX).zip
 
 all: build
 
-build: clean-cache $(DIVA_JS)
+build: clean-cache $(DIVA_JS) $(DIVA_ESM)
 
 build-dev: ELM_FLAGS = --debug
 build-dev:
@@ -52,8 +54,11 @@ $(DIVA_JS): $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(DIVA_CSS) $(ELM_ESM)
 	printf "%-18s %10s (%7s)  %s\n" "Minified size:" "$$MINIFIED_SIZE bytes" "$$MINIFIED_HR" "$$min"; \
 	printf "%-18s %10s (%7s)\n" "Gzipped size:" "$$GZIPPED_SIZE bytes" "$$GZIPPED_HR";
 
+$(DIVA_ESM): $(TS_ESM_SRC) $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(DIVA_CSS) $(ELM_ESM)
+	yarn -s esbuild $(TS_ESM_SRC) --bundle --format=esm --platform=browser --target=es2019 --loader:.css=text --minify --drop:console --pure:F2 --pure:F3 --pure:F4 --pure:F5 --pure:F6 --pure:F7 --pure:F8 --pure:F9 --pure:A2 --pure:A3 --pure:A4 --pure:A5 --pure:A6 --pure:A7 --pure:A8 --pure:A9 --outfile=$(DIVA_ESM)
+
 clean:
-	rm -f $(ELM_OUT) $(ELM_ESM) $(DIVA_JS) $(DIVA_DEBUG) $(DIVA_CSS) build/diva.css build/diva.min.css
+	rm -f $(ELM_OUT) $(ELM_ESM) $(DIVA_JS) $(DIVA_ESM) $(DIVA_DEBUG) $(DIVA_CSS) build/diva.css build/diva.min.css
 
 clean-cache:
 	rm -f cache/*
@@ -71,5 +76,4 @@ release: clean build build-dev
 	echo "Created $(RELEASE_ZIP)"
 
 publish: clean build
-	cp -r build .
 	npm publish
