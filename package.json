@@ -2,6 +2,10 @@
   "name": "diva.js",
   "version": "7.2.6",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DDMAL/diva.js.git"
+  },
   "main": "./build/diva.js",
   "module": "./build/diva.esm.js",
   "browser": "./build/diva.js",
