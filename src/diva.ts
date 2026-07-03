@@ -116,12 +116,21 @@ type FilterSettings = {
 };
 
 type FilterPreviewPayload = {
-    tileSource: string; aspect : number;
+    tileSource: string; isStatic : boolean; aspect : number;
     filters?: FilterSettings;
 };
 
+type TileSourceEntry = { url: string; isStatic: boolean };
+
+/**
+ * A static image has no IIIF Image API, so OpenSeadragon must be told to treat
+ * it as a plain image rather than fetching it as an info.json tile pyramid.
+ */
+const toViewerTileSource = (url: string, isStatic: boolean): string | {type: string; url: string} =>
+    isStatic ? {type : "image", url} : url;
+
 type ElmPorts = {
-    tileSourcesUpdated: {subscribe: (callback: (tileSources: string[]) => void) => void};
+    tileSourcesUpdated: {subscribe: (callback: (tileSources: TileSourceEntry[]) => void) => void};
     pageAspectsUpdated : {subscribe : (callback: (aspects: number[]) => void) => void};
     pageLabelsUpdated : {subscribe : (callback: (labels: string[]) => void) => void};
     zoomLevelUpdated : {subscribe : (callback: (zoom: number) => void) => void};
@@ -240,7 +249,12 @@ class Diva
     private bindPorts(): void
     {
         this.getPort("tileSourcesUpdated")
-            .subscribe((tileSources: string[]) => { this.callViewerMethod("setTileSources", tileSources); });
+            .subscribe((tileSources: TileSourceEntry[]) => {
+                this.callViewerMethod(
+                    "setTileSources",
+                    tileSources.map((entry) => toViewerTileSource(entry.url, entry.isStatic))
+                );
+            });
 
         this.getPort("pageAspectsUpdated")
             .subscribe((aspects: number[]) => { this.callViewerMethod("setPageAspects", aspects); });
@@ -326,7 +340,7 @@ class Diva
             if (tileSourceChanged)
             {
                 this.currentFilterTileSource = payload.tileSource;
-                this.filterViewer.open(payload.tileSource);
+                this.filterViewer.open(toViewerTileSource(payload.tileSource, payload.isStatic));
             }
             else
             {

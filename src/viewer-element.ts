@@ -2,6 +2,8 @@ import type * as OpenSeadragonType from "openseadragon";
 
 declare const OpenSeadragon: typeof OpenSeadragonType;
 
+type ViewerTileSource = string | {type: string; url: string};
+
 const ZOOM_IN_FACTOR = 1.6
 const ZOOM_OUT_FACTOR = 1 / ZOOM_IN_FACTOR
 const PAGE_LABEL_TOP_PADDING_PX = 28;
@@ -12,7 +14,7 @@ class OsdViewer extends HTMLElement
     private container: HTMLDivElement|null = null;
     private viewer: OpenSeadragonType.Viewer|null = null;
     private loadToken = 0;
-    private tileSources: string[] = [];
+    private tileSources: ViewerTileSource[] = [];
     private pageLabels: string[] = [];
     private pageAspects: number[] = [];
     private pageOffsets: number[] = [];
@@ -166,7 +168,7 @@ class OsdViewer extends HTMLElement
         this.applyLayoutChange({mode : nextMode, direction : nextDirection});
     }
 
-    public setTileSources(tileSources: string[]): void
+    public setTileSources(tileSources: ViewerTileSource[]): void
     {
         if (!Array.isArray(tileSources) || tileSources.length === 0)
         {
@@ -190,7 +192,7 @@ class OsdViewer extends HTMLElement
         });
     }
 
-    private resetTileSources(tileSources: string[]): void
+    private resetTileSources(tileSources: ViewerTileSource[]): void
     {
         if (!this.viewer)
         {

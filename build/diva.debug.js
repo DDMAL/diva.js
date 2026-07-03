@@ -16421,7 +16421,6 @@
   var $author$project$Model$iiifImageToPageImage = F3(
     function(language, allImages, image) {
       var tileSource = $rism_digital$elm_iiif$IIIF$Image$createImageAddress(image.id);
-      var thumbUrl = $rism_digital$elm_iiif$IIIF$Image$thumbnailUrlFromInfo(tileSource);
       var label = A2(
         $elm$core$Maybe$withDefault,
         "Image",
@@ -16431,6 +16430,8 @@
           image.label
         )
       );
+      var isStatic = $elm$core$List$isEmpty(image.service);
+      var thumbUrl = isStatic ? tileSource : $rism_digital$elm_iiif$IIIF$Image$thumbnailUrlFromInfo(tileSource);
       var isPrimaryImage = $author$project$Utilities$isNothing(
         A2(
           $author$project$Utilities$find,
@@ -16445,7 +16446,7 @@
         $elm$core$List$head(allImages)
       );
       var isPrimary = _Utils_eq(image.imageType, $rism_digital$elm_iiif$IIIF$Presentation$PrimaryImage) || isPrimaryImage && isFirst;
-      return { isPrimary, label, thumbUrl, tileSource };
+      return { isPrimary, isStatic, label, thumbUrl, tileSource };
     }
   );
   var $author$project$Model$canvasToPage = F2(
@@ -16519,7 +16520,24 @@
   };
   var $author$project$Main$tileSourcesUpdated = _Platform_outgoingPort(
     "tileSourcesUpdated",
-    $elm$json$Json$Encode$list($elm$json$Json$Encode$string)
+    $elm$json$Json$Encode$list(
+      function($) {
+        return $elm$json$Json$Encode$object(
+          _List_fromArray(
+            [
+              _Utils_Tuple2(
+                "isStatic",
+                $elm$json$Json$Encode$bool($.isStatic)
+              ),
+              _Utils_Tuple2(
+                "url",
+                $elm$json$Json$Encode$string($.url)
+              )
+            ]
+          )
+        );
+      }
+    )
   );
   var $rism_digital$elm_iiif$IIIF$Presentation$toRanges = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
     function($) {
@@ -16554,8 +16572,8 @@
           $elm$core$Basics$composeR,
           $author$project$Model$primaryImage,
           $elm$core$Maybe$map(
-            function($) {
-              return $.tileSource;
+            function(image) {
+              return { isStatic: image.isStatic, url: image.tileSource };
             }
           )
         ),
@@ -17077,6 +17095,10 @@
               })($.filters)
             ),
             _Utils_Tuple2(
+              "isStatic",
+              $elm$json$Json$Encode$bool($.isStatic)
+            ),
+            _Utils_Tuple2(
               "tileSource",
               $elm$json$Json$Encode$string($.tileSource)
             )
@@ -17103,7 +17125,7 @@
             $elm$core$Maybe$map,
             function(image) {
               return $author$project$Main$filterPreviewUpdated(
-                { aspect: page.aspect, filters: model.filters, tileSource: image.tileSource }
+                { aspect: page.aspect, filters: model.filters, isStatic: image.isStatic, tileSource: image.tileSource }
               );
             },
             $elm$core$List$head(
@@ -28757,6 +28779,7 @@
     target.appendChild(styleEl);
   };
   injectStyles(diva_default);
+  var toViewerTileSource = (url, isStatic) => isStatic ? { type: "image", url } : url;
   var Diva = class {
     constructor(rootId, flags) {
       this.mainViewer = null;
@@ -28817,7 +28840,10 @@
     }
     bindPorts() {
       this.getPort("tileSourcesUpdated").subscribe((tileSources) => {
-        this.callViewerMethod("setTileSources", tileSources);
+        this.callViewerMethod(
+          "setTileSources",
+          tileSources.map((entry) => toViewerTileSource(entry.url, entry.isStatic))
+        );
       });
       this.getPort("pageAspectsUpdated").subscribe((aspects) => {
         this.callViewerMethod("setPageAspects", aspects);
@@ -28894,7 +28920,7 @@
         const tileSourceChanged = this.currentFilterTileSource !== payload.tileSource;
         if (tileSourceChanged) {
           this.currentFilterTileSource = payload.tileSource;
-          this.filterViewer.open(payload.tileSource);
+          this.filterViewer.open(toViewerTileSource(payload.tileSource, payload.isStatic));
         } else {
           this.applyFilterOptions();
         }

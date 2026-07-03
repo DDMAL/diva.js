@@ -23,6 +23,7 @@ port copyToClipboard : String -> Cmd msg
 
 port filterPreviewUpdated :
     { tileSource : String
+    , isStatic : Bool
     , aspect : Float
     , filters : Filters
     }
@@ -59,7 +60,7 @@ port scrollToIndex : Int -> Cmd msg
 port setFullscreen : Bool -> Cmd msg
 
 
-port tileSourcesUpdated : List String -> Cmd msg
+port tileSourcesUpdated : List { url : String, isStatic : Bool } -> Cmd msg
 
 
 port viewerLoadingChanged : (Bool -> msg) -> Sub msg
@@ -163,7 +164,9 @@ handleManifestLoaded model manifest =
             manifestToPages model.detectedLanguage manifest
 
         tileSources =
-            List.filterMap (primaryImage >> Maybe.map .tileSource) pages
+            List.filterMap
+                (primaryImage >> Maybe.map (\image -> { url = image.tileSource, isStatic = image.isStatic }))
+                pages
 
         pageAspects =
             List.map .aspect pages
@@ -549,6 +552,7 @@ sendPageViewPreview model =
                                     { aspect = page.aspect
                                     , filters = model.filters
                                     , tileSource = image.tileSource
+                                    , isStatic = image.isStatic
                                     }
                             )
                 )

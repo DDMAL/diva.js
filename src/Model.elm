@@ -77,6 +77,7 @@ type alias PageImage =
     , thumbUrl : String
     , label : String
     , isPrimary : Bool
+    , isStatic : Bool
     }
 
 
@@ -189,8 +190,17 @@ iiifImageToPageImage language allImages image =
         tileSource =
             createImageAddress image.id
 
+        isStatic =
+            List.isEmpty image.service
+
         thumbUrl =
-            thumbnailUrlFromInfo tileSource
+            if isStatic then
+                -- A static image has no Image API, so there is no derivative
+                -- URL to request; fall back to the full image itself.
+                tileSource
+
+            else
+                thumbnailUrlFromInfo tileSource
 
         label =
             Maybe.map (extractLabelFromLanguageMap language) image.label
@@ -210,4 +220,5 @@ iiifImageToPageImage language allImages image =
     , thumbUrl = thumbUrl
     , label = label
     , isPrimary = isPrimary
+    , isStatic = isStatic
     }
