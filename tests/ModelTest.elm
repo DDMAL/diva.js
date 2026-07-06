@@ -9,76 +9,6 @@ import Model exposing (Page, manifestToPages)
 import Test exposing (Test, describe, test)
 
 
-baseManifest : Maybe Image -> List Image -> IIIFManifest
-baseManifest thumbnail images =
-    IIIFManifest IIIFV3
-        { id = "https://example.org/manifest.json"
-        , label = []
-        , metadata = []
-        , viewingDirection = IIIF.Presentation.LeftToRight
-        , summary = Nothing
-        , viewingLayout = LayoutV3 []
-        , canvases =
-            [ { id = "https://example.org/canvas/1"
-              , label = Nothing
-              , width = Just 1200
-              , height = Just 1800
-              , images = images
-              , thumbnail = thumbnail
-              , viewingLayout = Nothing
-              }
-            ]
-        , ranges = Nothing
-        , homepage = Nothing
-        , logo = Nothing
-        , provider = Nothing
-        , thumbnail = Nothing
-        , requiredStatement = Nothing
-        }
-
-
-staticThumbnail : Image
-staticThumbnail =
-    { id = StaticImageUri { host = "https://thumbs.example.org", prefix = "/canvas-thumb.jpg" }
-    , label = Nothing
-    , imageType = PrimaryImage
-    , service = []
-    }
-
-
-imageApiImage : Image
-imageApiImage =
-    { id = InfoUri { host = "https://example.org", prefix = "/iiif/canvas-1" }
-    , label = Nothing
-    , imageType = PrimaryImage
-    , service = [ ImageService3 ]
-    }
-
-
-secondImageApiImage : Image
-secondImageApiImage =
-    { id = InfoUri { host = "https://example.org", prefix = "/iiif/canvas-1-alt" }
-    , label = Nothing
-    , imageType = ChoiceImage
-    , service = [ ImageService3 ]
-    }
-
-
-staticCanvasImage : Image
-staticCanvasImage =
-    { id = StaticImageUri { host = "https://example.org", prefix = "/images/canvas-1-full.jpg" }
-    , label = Nothing
-    , imageType = PrimaryImage
-    , service = []
-    }
-
-
-firstPage : IIIFManifest -> Maybe Page
-firstPage manifest =
-    manifestToPages Default manifest
-        |> List.head
-
-
 suite : Test
 suite =
     describe "manifestToPages thumbnail selection"
@@ -160,3 +90,73 @@ suite =
                     Nothing ->
                         Expect.fail "Expected a page"
         ]
+
+
+baseManifest : Maybe Image -> List Image -> IIIFManifest
+baseManifest thumbnail images =
+    IIIFManifest IIIFV3
+        { id = "https://example.org/manifest.json"
+        , label = []
+        , metadata = []
+        , viewingDirection = IIIF.Presentation.LeftToRight
+        , summary = Nothing
+        , viewingLayout = LayoutV3 []
+        , canvases =
+            [ { id = "https://example.org/canvas/1"
+              , label = Nothing
+              , width = Just 1200
+              , height = Just 1800
+              , images = images
+              , thumbnail = thumbnail
+              , viewingLayout = Nothing
+              }
+            ]
+        , ranges = Nothing
+        , homepage = Nothing
+        , logo = Nothing
+        , provider = Nothing
+        , thumbnail = Nothing
+        , requiredStatement = Nothing
+        }
+
+
+firstPage : IIIFManifest -> Maybe Page
+firstPage manifest =
+    manifestToPages Default manifest
+        |> List.head
+
+
+imageApiImage : Image
+imageApiImage =
+    { id = InfoUri { host = "https://example.org", prefix = "/iiif/canvas-1" }
+    , label = Nothing
+    , imageType = PrimaryImage
+    , service = [ ImageService3 ]
+    }
+
+
+secondImageApiImage : Image
+secondImageApiImage =
+    { id = InfoUri { host = "https://example.org", prefix = "/iiif/canvas-1-alt" }
+    , label = Nothing
+    , imageType = ChoiceImage
+    , service = [ ImageService3 ]
+    }
+
+
+staticCanvasImage : Image
+staticCanvasImage =
+    { id = StaticImageUri { host = "https://example.org", prefix = "/images/canvas-1-full.jpg" }
+    , label = Nothing
+    , imageType = PrimaryImage
+    , service = []
+    }
+
+
+staticThumbnail : Image
+staticThumbnail =
+    { id = StaticImageUri { host = "https://thumbs.example.org", prefix = "/canvas-thumb.jpg" }
+    , label = Nothing
+    , imageType = PrimaryImage
+    , service = []
+    }

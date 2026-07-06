@@ -8,7 +8,7 @@ import Html.Lazy as Lazy
 import IIIF.Language exposing (LabelValue, Language, extractLabelFromLanguageMap)
 import IIIF.Presentation exposing (IIIFManifest, MediaFormats, Range, RangeItem(..), ResourceTypes, ViewingDirection(..), canvasLabel, toCanvases, toHomepage, toMetadata, toRanges, toViewingDirection)
 import Json.Decode as Decode
-import Model exposing (ContentsView(..), Model, Page, ResourceResponse(..), Response(..), SidebarState(..), ViewMode(..), currentManifest, pageViewStartIndex, primaryImage)
+import Model exposing (ContentsView(..), Model, Page, ResourceResponse(..), Response(..), SidebarState(..), ViewMode(..), currentManifest, pageViewStartIndex)
 import Msg exposing (Msg(..))
 import View.Helpers exposing (emptyHtml, viewMaybe)
 import View.HtmlRenderer exposing (renderHtml)
@@ -713,18 +713,13 @@ viewThumbnail viewMode shiftByOne selectedIndex index page =
             , Events.onClick (UserClickedThumbnail index)
             ]
 
-        thumbUrl =
-            primaryImage page
-                |> Maybe.map .thumbUrl
-                |> Maybe.withDefault ""
-
         hasChoices =
             List.length page.images > 1
     in
     button attrs
         [ img
             [ HA.class "thumbs-image"
-            , src thumbUrl
+            , src page.thumbUrl
             , alt ("Page " ++ String.fromInt (index + 1))
             ]
             []

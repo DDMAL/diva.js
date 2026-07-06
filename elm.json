@@ -13,7 +13,7 @@
             "elm/json": "1.1.4",
             "elm/svg": "1.0.1",
             "hecrj/html-parser": "2.4.0",
-            "rism-digital/elm-iiif": "2.0.0"
+            "rism-digital/elm-iiif": "3.0.0"
         },
         "indirect": {
             "elm/bytes": "1.0.8",
@@ -26,7 +26,11 @@
         }
     },
     "test-dependencies": {
-        "direct": {},
-        "indirect": {}
+        "direct": {
+            "elm-explorations/test": "2.2.1"
+        },
+        "indirect": {
+            "elm/random": "1.0.0"
+        }
     }
 }

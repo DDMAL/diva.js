@@ -68,6 +68,7 @@ type alias Model =
 type alias Page =
     { aspect : Float
     , label : String
+    , thumbUrl : String
     , images : List PageImage
     }
 
@@ -77,6 +78,7 @@ type alias PageImage =
     , thumbUrl : String
     , label : String
     , isPrimary : Bool
+    , isStatic : Bool
     }
 
 
@@ -166,6 +168,26 @@ primaryImage page =
             List.head page.images
 
 
+canvasThumbnailUrl : List PageImage -> Canvas -> String
+canvasThumbnailUrl images canvas =
+    case canvas.thumbnail of
+        Just thumbnail ->
+            thumbnailUrlForImage thumbnail
+
+        Nothing ->
+            case List.filter .isPrimary images |> List.head of
+                Just image ->
+                    image.thumbUrl
+
+                Nothing ->
+                    case List.head images of
+                        Just image ->
+                            image.thumbUrl
+
+                        Nothing ->
+                            ""
+
+
 canvasToPage : Language -> Canvas -> Maybe Page
 canvasToPage language canvas =
     let
@@ -176,9 +198,14 @@ canvasToPage language canvas =
         Nothing
 
     else
+        let
+            thumbUrl =
+                canvasThumbnailUrl images canvas
+        in
         Just
             { aspect = canvasAspect canvas
             , label = canvasLabel canvas
+            , thumbUrl = thumbUrl
             , images = images
             }
 
@@ -189,8 +216,11 @@ iiifImageToPageImage language allImages image =
         tileSource =
             createImageAddress image.id
 
+        isStatic =
+            List.isEmpty image.service
+
         thumbUrl =
-            thumbnailUrlFromInfo tileSource
+            thumbnailUrlForImage image
 
         label =
             Maybe.map (extractLabelFromLanguageMap language) image.label
@@ -210,4 +240,18 @@ iiifImageToPageImage language allImages image =
     , thumbUrl = thumbUrl
     , label = label
     , isPrimary = isPrimary
+    , isStatic = isStatic
     }
+
+
+thumbnailUrlForImage : Image -> String
+thumbnailUrlForImage image =
+    let
+        url =
+            createImageAddress image.id
+    in
+    if List.isEmpty image.service then
+        url
+
+    else
+        thumbnailUrlFromInfo url
