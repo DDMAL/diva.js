@@ -110,7 +110,8 @@
     <div id="diva-wrapper"></div>
 
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/5.0.1/openseadragon.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/openseadragon@6.0.2/build/openseadragon/openseadragon.min.js"></script>
+<!--    <script src="./openseadragon.min.js"></script>-->
     <script src="../build/diva.debug.js"></script>
     <script>
       const manifests = [
@@ -135,6 +136,7 @@
         { label: "Qatar Digital Library MS", url: "https://www.qdl.qa/en/iiif/81055/vdc_100098983347.0x000001/manifest" },
         { label: "U of T Manifest", url: "https://iiif.library.utoronto.ca/presentation/v2/fisherbooks:F10083/manifest" },
         { label: "BSB Manifest", url: "https://api.digitale-sammlungen.de/iiif/presentation/v2/bsb00087481/manifest" },
+        { label: "Static Image Manifest Test", url: "/testing/local/static-canvas.json" },
       ];
 
       const selectEl = document.getElementById("manifest-select");
