@@ -1,0 +1,34 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Install Elm globally
+        run: npm install -g elm
+
+      - name: Run Elm tests
+        run: yarn test
+
+      - name: Build
+        run: make build build-dev

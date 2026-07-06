@@ -34,7 +34,7 @@ define print_bundle_size
 	printf "%-18s %10s (%7s)\n" "Gzipped size:" "$$GZIPPED_SIZE bytes" "$$GZIPPED_HR";
 endef
 
-.PHONY: all build build-dev clean clean-cache release report-build-sizes
+.PHONY: all build build-dev clean clean-cache release report-build-sizes test
 
 all: build
 
@@ -45,6 +45,9 @@ build: clean-cache
 build-dev: ELM_FLAGS = --debug
 build-dev:
 	$(MAKE) -B ELM_FLAGS=--debug clean-cache $(DIVA_DEBUG)
+
+test:
+	yarn test
 
 $(ELM_OUT): $(ELM_SRC)
 	mkdir -p build

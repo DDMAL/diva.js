@@ -132,6 +132,36 @@
   resolved "https://registry.yarnpkg.com/@esbuild/win32-x64/-/win32-x64-0.28.1.tgz#10064ee44f4347b90c9a02b446bbf80a91632b12"
   integrity sha512-bm4Mowrv+GXMlpWX++EcXw/iLyd1o3+bJkC2DkWXYVvgZCqD/bSj9ctZeAMC3cIxgjRVR2Dufaiu4YPxr5gW1A==
 
+"@mattpiz/elm-test-rs-darwin-arm64@3.0.2-0":
+  version "3.0.2-0"
+  resolved "https://registry.yarnpkg.com/@mattpiz/elm-test-rs-darwin-arm64/-/elm-test-rs-darwin-arm64-3.0.2-0.tgz#f57dd7a0e9ed9ee3a76de02c714f55ead4453475"
+  integrity sha512-Gb1f4L09fxF1QfpatoGc41+dfepfzZn7K1eVLU9Zh/ft15vivTg3Snk611dYDo8PdEm+dZ9Xf8GkqX3NTz4BzA==
+
+"@mattpiz/elm-test-rs-darwin-x64@3.0.2-0":
+  version "3.0.2-0"
+  resolved "https://registry.yarnpkg.com/@mattpiz/elm-test-rs-darwin-x64/-/elm-test-rs-darwin-x64-3.0.2-0.tgz#c16cdb1311b4e1511a578f6efa38ba571889d06b"
+  integrity sha512-ly9pcE0sthEeLigkDdzspKEKxVxLNRN7NaDhlV3zs8beKC+AJmFz5AtGIeDIQ8hfNK6QR0xRQxgevlOTYiWbOA==
+
+"@mattpiz/elm-test-rs-linux-arm64@3.0.2-0":
+  version "3.0.2-0"
+  resolved "https://registry.yarnpkg.com/@mattpiz/elm-test-rs-linux-arm64/-/elm-test-rs-linux-arm64-3.0.2-0.tgz#fb960cbf23e04169237d988b63fbd41581bf4371"
+  integrity sha512-SpZjVmeAlBSc46Ku3RefFK4LDwsfmVgPerhFgana95dzaTYoruHNrMWUpqU9MT6FOnbJXiJQHZrI+y4VjJ5lJA==
+
+"@mattpiz/elm-test-rs-linux-arm@3.0.2-0":
+  version "3.0.2-0"
+  resolved "https://registry.yarnpkg.com/@mattpiz/elm-test-rs-linux-arm/-/elm-test-rs-linux-arm-3.0.2-0.tgz#7d119905dcf694dac8953c572edcb70738158884"
+  integrity sha512-DRjK3rsO0rb0AuCMUcLkuuSJuxpBaMobrAyH5av8MrpPh7cwjZ3RhXzCCeweuhfizH1OP/idBeVlmN8hiqA2BQ==
+
+"@mattpiz/elm-test-rs-linux-x64@3.0.2-0":
+  version "3.0.2-0"
+  resolved "https://registry.yarnpkg.com/@mattpiz/elm-test-rs-linux-x64/-/elm-test-rs-linux-x64-3.0.2-0.tgz#550bccb91c0b71d65906936f6d8647580ae0807d"
+  integrity sha512-Ia8kayW/Aag6tEwJOEV5ZIr49KHekDYZjB/oItyYScySlRxII+VppVYmh47o6xlTz9ZO845UkEyngUMZc25Lkg==
+
+"@mattpiz/elm-test-rs-win32-x64@3.0.2-0":
+  version "3.0.2-0"
+  resolved "https://registry.yarnpkg.com/@mattpiz/elm-test-rs-win32-x64/-/elm-test-rs-win32-x64-3.0.2-0.tgz#787aa2ac392d07b199725986509a19aa969ca277"
+  integrity sha512-cxPybYCU0wXmhpc2eFTmxEvffWdXpUILlC+YnB4XG3ddTnMOIUGe6C2rK9DfT3o+9fmeq/OlroKcG5I4/cMxsQ==
+
 "@types/openseadragon@^5.0.2":
   version "5.0.2"
   resolved "https://registry.yarnpkg.com/@types/openseadragon/-/openseadragon-5.0.2.tgz#d60f652e0e864b95c4a06ef1e897792461362f01"
@@ -282,6 +312,18 @@ detect-libc@^2.0.3:
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/detect-libc/-/detect-libc-2.1.2.tgz#689c5dcdc1900ef5583a4cb9f6d7b473742074ad"
   integrity sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==
+
+elm-test-rs@^3.0.2-0:
+  version "3.0.2-0"
+  resolved "https://registry.yarnpkg.com/elm-test-rs/-/elm-test-rs-3.0.2-0.tgz#1fb3e9b02e811d178501c813d9110b7130e75d44"
+  integrity sha512-Rzk3PD4unWvuzdzYthUoMjFELL78oRHeYTXpF8KDp/fyHLbb+vxOzmDXHRt51ogvfKSTyiK8y0xa4F+q7lzyfQ==
+  optionalDependencies:
+    "@mattpiz/elm-test-rs-darwin-arm64" "3.0.2-0"
+    "@mattpiz/elm-test-rs-darwin-x64" "3.0.2-0"
+    "@mattpiz/elm-test-rs-linux-arm" "3.0.2-0"
+    "@mattpiz/elm-test-rs-linux-arm64" "3.0.2-0"
+    "@mattpiz/elm-test-rs-linux-x64" "3.0.2-0"
+    "@mattpiz/elm-test-rs-win32-x64" "3.0.2-0"
 
 emoji-regex@^7.0.1:
   version "7.0.3"
