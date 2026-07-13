@@ -6,14 +6,14 @@
   display: flex;
   flex-direction: column;
   border: 1px solid var(--diva-dark-border);
-  border-radius: 6px 0 0 6px;
+  border-radius: 0;
   background-color: var(--diva-page-bg);
   overflow: hidden;
 }
 
 .collection-header {
   padding: 12px;
-  border-radius: 6px 0 0 0;
+  border-radius: 0;
   background-color: var(--diva-surface);
   border-bottom: 1px solid var(--diva-border);
 }
@@ -69,7 +69,7 @@
   .collection-panel {
     width: 100%;
     height: auto;
-    border-radius: 6px;
+    border-radius: 0;
   }
 
 }
