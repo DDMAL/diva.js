@@ -23,6 +23,9 @@
       this.hasFitFirstPage = false;
       this.loadedIndexes = /* @__PURE__ */ new Set();
       this.loadingIndexes = /* @__PURE__ */ new Set();
+      this.unavailableIndexes = /* @__PURE__ */ new Map();
+      this.loadControllers = /* @__PURE__ */ new Map();
+      this.tileSourceResolver = async (source) => source.isStatic ? { type: "image", url: source.url, crossOriginPolicy: "Anonymous" } : source.url;
       this.loadedItems = /* @__PURE__ */ new Map();
       this.pageOverlayElements = /* @__PURE__ */ new Map();
       this.targetIndex = null;
@@ -60,6 +63,7 @@
       this.syncViewer();
     }
     disconnectedCallback() {
+      this.cancelLoads();
       if (this.loadingTimer !== null) {
         window.clearTimeout(this.loadingTimer);
         this.loadingTimer = null;
@@ -95,6 +99,8 @@
           animationTime: 0.8,
           showNavigationControl: false,
           preserveViewport: true,
+          tileRetryMax: 2,
+          tileRetryDelay: 500,
           visibilityRatio: 0,
           constrainDuringPan: false,
           minZoomLevel: 0.1,
@@ -139,6 +145,9 @@
       this.syncViewer();
       this.resetTileSources(tileSources);
     }
+    setTileSourceResolver(resolver) {
+      this.tileSourceResolver = resolver;
+    }
     setPageLabels(labels) {
       if (!Array.isArray(labels)) {
         return;
@@ -157,12 +166,13 @@
       } else {
         this.viewer.world.removeAll();
       }
-      this.loadToken += 1;
+      this.cancelLoads();
       this.tileSources = tileSources;
       this.hasFitFirstPage = false;
       this.isViewportInitialized = false;
       this.loadedIndexes.clear();
       this.loadingIndexes.clear();
+      this.unavailableIndexes.clear();
       this.loadedItems.clear();
       this.clearPageOverlays();
       this.targetIndex = null;
@@ -224,22 +234,39 @@
       if (index < 0 || index >= this.tileSources.length || index >= this.pageOffsets.length) {
         return;
       }
-      if (this.loadedIndexes.has(index) || this.loadingIndexes.has(index)) {
+      if (this.loadedIndexes.has(index) || this.loadingIndexes.has(index) || this.unavailableIndexes.has(index)) {
         return;
       }
-      this.loadTile(index);
+      void this.loadTile(index);
     }
-    loadTile(index) {
+    async loadTile(index) {
       if (!this.viewer) {
         return;
       }
       const token = this.loadToken;
-      const tileSource = this.tileSources[index];
+      const descriptor = this.tileSources[index];
+      const controller = new AbortController();
+      this.loadControllers.set(index, controller);
       this.loadingIndexes.add(index);
+      this.unavailableIndexes.delete(index);
+      this.removeUnavailableOverlay(index);
       this.updateLoadingState();
       const yOffset = this.pageOffsets[index] || 0;
       const xOffset = this.pageXOffsets[index] || 0;
       const height = this.pageHeights[index] || 1;
+      let tileSource;
+      try {
+        tileSource = await this.tileSourceResolver(descriptor, controller.signal);
+      } catch (error) {
+        if (token === this.loadToken && !controller.signal.aborted)
+          this.markUnavailable(index, error instanceof Error ? error.message : "This image is unavailable.");
+        this.finishLoad(index, controller);
+        return;
+      }
+      if (token !== this.loadToken || controller.signal.aborted || !this.viewer) {
+        this.finishLoad(index, controller);
+        return;
+      }
       this.viewer.addTiledImage({
         tileSource,
         x: xOffset,
@@ -257,6 +284,7 @@
           this.loadedItems.set(index, item);
           this.addOrUpdatePageOverlay(index);
           this.loadingIndexes.delete(index);
+          this.loadControllers.delete(index);
           this.updateLoadingState();
           if (!this.hasFitFirstPage) {
             this.hasFitFirstPage = true;
@@ -283,15 +311,58 @@
           }
           this.maybeLoadMore();
         },
-        error: () => {
+        error: (event) => {
           if (token !== this.loadToken) {
             return;
           }
-          this.loadingIndexes.delete(index);
-          this.updateLoadingState();
+          this.markUnavailable(index, (event == null ? void 0 : event.message) || "This image could not be loaded. Static images must allow CORS.");
+          this.finishLoad(index, controller);
           this.maybeLoadMore();
         }
       });
+    }
+    finishLoad(index, controller) {
+      if (this.loadControllers.get(index) === controller) this.loadControllers.delete(index);
+      this.loadingIndexes.delete(index);
+      this.updateLoadingState();
+    }
+    cancelLoads() {
+      this.loadToken += 1;
+      this.loadControllers.forEach((controller) => controller.abort());
+      this.loadControllers.clear();
+      this.loadingIndexes.clear();
+      this.resetLoadingState();
+    }
+    markUnavailable(index, message) {
+      this.unavailableIndexes.set(index, message);
+      this.addUnavailableOverlay(index, message);
+    }
+    addUnavailableOverlay(index, message) {
+      if (!this.viewer) return;
+      this.removeUnavailableOverlay(index);
+      const element = document.createElement("div");
+      element.className = "diva-image-unavailable";
+      element.dataset.index = String(index);
+      const text = document.createElement("p");
+      text.textContent = message;
+      const retry = document.createElement("button");
+      retry.type = "button";
+      retry.textContent = "Retry image";
+      retry.addEventListener("click", () => {
+        this.unavailableIndexes.delete(index);
+        this.removeUnavailableOverlay(index);
+        this.ensurePageLoaded(index);
+      });
+      element.append(text, retry);
+      this.viewer.addOverlay({
+        element,
+        location: new OpenSeadragon.Rect(this.pageXOffsets[index] || 0, this.pageOffsets[index] || 0, 1, this.pageHeights[index] || 1)
+      });
+    }
+    removeUnavailableOverlay(index) {
+      const element = this.querySelector(`.diva-image-unavailable[data-index="${index}"]`);
+      if (element && this.viewer) this.viewer.removeOverlay(element);
+      element == null ? void 0 : element.remove();
     }
     setPageAspects(aspects) {
       if (!Array.isArray(aspects)) {
@@ -966,7 +1037,7 @@
   customElements.define("osd-viewer", OsdViewer);
 
   // cache/diva.css
-  var diva_default = ":root{--diva-accent:#5a6bff;--diva-accent-light:#9aa4ff;--diva-border:#d9d4ce;--diva-danger:#d32f2f;--diva-dark-bg:#1c1d22;--diva-dark-border:#2c2d33;--diva-overlay-bg:#10111499;--diva-page-bg:#f7f5f1;--diva-shadow-dark:#00000026;--diva-shadow-focus:#9aa4ff59;--diva-shadow-modal:#00000040;--diva-surface:#e6e1dc;--diva-text-muted:#5c5a55;--diva-text-muted-on-dark:#ffffffb3;--diva-text-primary:#1b1b1b;--diva-toolbar-button-bg:#5258626b;--diva-toolbar-button-bg-hover:#5c636e85;--diva-toolbar-button-bg-fullscreen:#52586285;--diva-toolbar-button-bg-fullscreen-hover:#6068749e;--diva-toolbar-button-border:#ffffff59;--diva-toolbar-button-border-hover:#ffffff73;--diva-toolbar-button-border-fullscreen-hover:#fff9;--diva-toolbar-button-icon:#2c2d33;--diva-toolbar-button-shadow:inset 0 1px 0 #ffffff8c, inset 0 -1px 0 #ffffff2e;--diva-toolbar-button-shadow-hover:inset 0 1px 0 #ffffffb3, inset 0 -1px 0 #ffffff3d;--diva-white:#fff;--diva-font-lg:16px;--diva-font-md:13px;--diva-font-sm:11px;--diva-font-xs:10px;--diva-font-xl:20px;color-scheme:light}*{box-sizing:border-box}.list-reset{margin:0;padding:0;list-style:none}.ui-button{text-align:left;cursor:pointer;color:var(--diva-text-primary);font-size:var(--diva-font-lg);background-color:#0000;border:none;padding:0}.ui-button:hover{background-color:var(--diva-surface)}.ui-card{cursor:pointer;border-radius:6px;width:100%;padding:6px}.ui-card--dark{background-color:var(--diva-dark-bg)}.diva-app{flex-direction:column;flex:1;height:100%;min-height:0;padding:12px 24px;display:flex}.diva-app.is-fullscreen{height:100vh;min-height:100vh;padding:0}.diva-app-header{font-size:var(--diva-font-lg);align-items:center;gap:12px;margin-bottom:8px;font-weight:600;display:flex}.diva-app-title{font-size:var(--diva-font-xl);text-align:left;color:var(--diva-text-primary);margin-bottom:6px;font-weight:600}.diva-app-title.is-fullscreen{color:var(--diva-white)}.diva-app-body{flex:1;align-items:stretch;gap:0;height:100%;min-height:0;display:flex;position:relative}.diva-app-body.is-fullscreen{flex:1;min-height:0}.diva-canvas-column{flex-direction:column;flex:1;gap:24px;min-height:0;display:flex}.diva-canvas-column.is-fullscreen{flex:1;height:100%;min-height:0}.diva-canvas-wrapper{flex:1;min-height:0;position:relative}.diva-canvas{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);border-radius:6px 0 0 6px;width:100%;height:100%;overflow:hidden}.diva-canvas.is-fullscreen{border-radius:0;flex:1;height:100%}.diva-canvas.has-collection{border-radius:0}.metadata-panel{height:100%;padding:12px;overflow:auto}.metadata-body{flex-direction:column;gap:10px;display:flex}.metadata-item{flex-direction:column;gap:4px;display:flex}.metadata-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}.metadata-value{font-size:var(--diva-font-lg);color:var(--diva-text-muted);line-height:1.4}.contents-empty{font-size:var(--diva-font-lg);color:var(--diva-text-muted);padding-left:12px}.sidebar-resizer,.collection-resizer{width:12px;font-size:var(--diva-font-xl);color:var(--diva-white);background-color:var(--diva-text-muted);cursor:ew-resize;user-select:none;touch-action:none;flex:0 0 12px;justify-content:center;align-self:stretch;align-items:center;line-height:1;display:flex}.sidebar-resizer.is-hidden,.collection-resizer.is-hidden{display:none}.sidebar-panel.is-fullscreen,.collection-panel.is-fullscreen{border-radius:0;height:100%}.sidebar-panel.is-hidden,.collection-panel.is-hidden{opacity:0;pointer-events:none;border-width:0;padding:0;overflow:hidden}.required-statement-dock{justify-content:flex-end;width:100%;margin-top:12px;padding-right:8px;display:flex}.required-statement{font-size:var(--diva-font-md);color:var(--diva-text-muted);text-align:right;min-width:250px;max-width:20vw;line-height:1.4}.diva-scrollbar-track{background:var(--diva-surface);border:1px solid var(--diva-border);z-index:100;border-radius:6px;width:12px;position:absolute;top:4px;bottom:4px;right:4px}.diva-scrollbar-thumb{background:var(--diva-text-muted);cursor:pointer;border-radius:5px;min-height:30px;position:absolute;left:1px;right:1px}.diva-scrollbar-thumb:hover{background:var(--diva-text-primary)}.diva-scrollbar-thumb:active{background:var(--diva-dark-border)}.throbber-overlay{pointer-events:none;justify-content:center;align-items:center;display:flex;position:absolute;inset:0}.viewer-zoom-indicator{z-index:30;pointer-events:none;font-size:var(--diva-font-sm);color:var(--diva-white);background-color:#0000008c;border-radius:6px;padding:4px 8px;font-weight:600;position:absolute;bottom:12px;left:12px}.throbber{background-color:var(--diva-white);width:64px;height:64px;box-shadow:0 8px 16px var(--diva-shadow-dark);border-radius:8px;flex-wrap:wrap;padding:8px;display:flex}.throbber-cube{background-color:var(--diva-accent);width:16px;height:16px;animation-name:diva-cube-grid;animation-duration:1.3s;animation-timing-function:ease-in-out;animation-iteration-count:infinite}@keyframes diva-cube-grid{0%{transform:scale(1)}35%{transform:scale(0)}70%{transform:scale(1)}to{transform:scale(1)}}@media (width<=720px){.diva-app{padding:12px}.diva-app-body{flex-direction:column;gap:12px}.sidebar-resizer,.collection-resizer{display:none}}.sidebar-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0 6px 6px 0;flex-direction:column;width:320px;height:100%;min-height:0;display:flex;overflow:hidden}.sidebar-tabs{border:1px solid var(--diva-surface);background-color:var(--diva-surface);border-radius:0 6px 0 0;display:flex}.sidebar-tab-button{font-size:var(--diva-font-md);text-transform:uppercase;cursor:pointer;color:var(--diva-text-muted);background-color:#0000;border:none;flex:1;padding:10px 12px}.sidebar-tab-button.is-active{background-color:var(--diva-white);font-weight:600}.sidebar-content{background-color:var(--diva-page-bg);flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}.sidebar-pane{flex:1;width:100%;min-height:0}.sidebar-pane.is-hidden{display:none}.thumbs{scroll-behavior:smooth;background-color:var(--diva-dark-bg);flex:1;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:10px;width:100%;height:100%;min-height:0;padding:12px;display:grid;overflow-y:auto}.thumbs.is-fullscreen{height:100%}.thumbs-item{border:1px solid var(--diva-dark-border);text-align:left;flex-direction:column;justify-content:flex-start;align-items:stretch;max-width:none;display:flex}.thumbs-item:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.thumbs-item.is-active{border-color:var(--diva-accent-light);box-shadow:0 0 0 var(--diva-shadow-focus);background-color:var(--diva-dark-bg);outline:2px solid var(--diva-accent-light);outline-offset:2px}.thumbs-image{border-radius:3px;width:100%;height:auto;display:block}.thumbs-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted-on-dark);margin-top:6px;line-height:1.3}.thumbs-label.is-active{color:var(--diva-white)}.contents-panel{height:100%;padding:12px;overflow:auto}.contents-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:10px;font-weight:600}.contents-view-tabs{gap:8px;margin-bottom:12px;display:flex}.contents-view-button{background-color:var(--diva-surface);border:1px solid var(--diva-border);font-size:var(--diva-font-sm);color:var(--diva-text-muted);cursor:pointer;border-radius:6px;padding:4px 10px}.contents-view-button.is-active{background-color:var(--diva-white);border-color:var(--diva-accent);color:var(--diva-text-primary)}.contents-list-nested{margin-top:6px;padding-left:16px}.contents-item{margin-bottom:6px}.contents-meta{border:1px solid var(--diva-dark-border);margin-top:6px;padding:8px}.contents-button:hover{color:var(--diva-accent)}@media (width<=720px){.sidebar-panel{border-radius:6px;height:auto;width:100%!important}.sidebar-panel.is-overlay{z-index:100;width:100%;height:100%;box-shadow:0 12px 24px var(--diva-shadow-dark);border-radius:0;position:absolute;inset:0}.sidebar-panel.is-mobile-hidden{display:none}.thumbs{grid-template-columns:repeat(3,minmax(0,1fr));width:100%;height:auto;overflow:auto hidden}.thumbs-item{min-width:120px}}.canvas-toolbar-stack{flex-direction:column;gap:2px;width:100%;min-width:0;display:flex}.canvas-toolbar{align-items:flex-start;width:100%;margin-bottom:0;display:flex}.canvas-toolbar-section{flex:none;align-items:flex-start;gap:8px;min-width:0;display:flex}.canvas-toolbar-section.is-right{flex:none;margin-left:auto}.canvas-toolbar-item{flex-direction:column;flex:none;align-items:center;gap:6px;width:80px;display:flex}.canvas-toolbar-button{background-color:var(--diva-toolbar-button-bg);color:var(--diva-toolbar-button-icon);border:2px solid var(--diva-toolbar-button-icon);box-shadow:var(--diva-toolbar-button-shadow);-webkit-backdrop-filter:blur(10px)saturate(140%);cursor:pointer;border-radius:6px;align-items:center;width:80%;height:36px;padding:4px 6px;display:flex}.canvas-toolbar-button:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.canvas-toolbar-button:hover{background-color:var(--diva-toolbar-button-bg-hover);border-color:var(--diva-toolbar-button-icon);box-shadow:var(--diva-toolbar-button-shadow-hover)}.canvas-toolbar-button.is-fullscreen{color:var(--diva-white);background-color:var(--diva-toolbar-button-bg-fullscreen);border-color:var(--diva-toolbar-button-border-hover)}.canvas-toolbar-button.is-fullscreen:hover{background-color:var(--diva-toolbar-button-bg-fullscreen-hover);border-color:var(--diva-toolbar-button-border-fullscreen-hover)}.canvas-toolbar-button.is-disabled{opacity:.4;cursor:not-allowed}.canvas-toolbar-button.is-disabled:hover{background-color:var(--diva-toolbar-button-bg);border-color:var(--diva-toolbar-button-icon);box-shadow:var(--diva-toolbar-button-shadow)}.canvas-toolbar-button.is-fullscreen.is-disabled:hover{background-color:var(--diva-toolbar-button-bg-fullscreen);border-color:var(--diva-toolbar-button-border-hover);box-shadow:var(--diva-toolbar-button-shadow)}.canvas-toolbar-label{font-size:var(--diva-font-sm);color:var(--diva-text-primary);white-space:normal;text-overflow:ellipsis;text-align:center;text-transform:uppercase;word-break:break-word;min-height:1.4em;font-weight:500;line-height:1;overflow:hidden}.canvas-toolbar-label.is-fullscreen{color:var(--diva-white)}.canvas-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-align:left;white-space:normal;overflow-wrap:anywhere;word-break:break-word;width:100%}.canvas-label.is-fullscreen{color:var(--diva-white)}.status{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:0}.status.is-error{color:var(--diva-danger)}@media (width<=720px){.canvas-toolbar{flex-wrap:wrap;gap:8px}.canvas-toolbar-item{width:64px}.canvas-label,.status{display:none}}.modal-overlay{background-color:var(--diva-overlay-bg);z-index:100;justify-content:center;align-items:center;padding:24px;display:flex;position:fixed;inset:0}.viewer-status-overlay{background-color:var(--diva-overlay-bg);z-index:40;justify-content:center;align-items:center;padding:24px;display:flex;position:absolute;inset:0}.modal-overlay.is-fullscreen{padding:0}.modal{background-color:var(--diva-page-bg);color:var(--diva-text-primary);width:min(1440px,96vw);max-height:90vh;box-shadow:0 20px 40px var(--diva-shadow-modal);border-radius:10px;flex-direction:column;display:flex}.modal.is-narrow{width:min(960px,94vw)}.modal.is-page-view{height:80vh;max-height:80vh}.modal.is-fullscreen{border-radius:0;width:100vw;height:100vh;max-height:100vh}.modal-header{justify-content:space-between;align-items:center;padding:16px 20px 0;display:flex}.modal-actions{gap:8px;display:flex}.modal-close-action .canvas-toolbar-button{color:var(--diva-danger);box-shadow:none;-webkit-backdrop-filter:none;background-color:#0000;border:none;width:auto;height:auto;padding:2px}.modal-close-action .canvas-toolbar-button:hover{background-color:#d32f2f1f;border-color:#0000}.modal-close-action .canvas-toolbar-item{gap:2px;width:32px}.modal-close-action .canvas-toolbar-label{font-size:var(--diva-font-xs);min-height:auto}.modal-title-stack{flex-direction:column;gap:4px;display:flex}.modal-title{font-size:var(--diva-font-lg);font-weight:600}.modal-subtitle{font-size:var(--diva-font-lg);color:var(--diva-text-primary)}.modal-subtitle.is-muted{font-size:var(--diva-font-md)}.modal-body{flex:1;grid-template-columns:minmax(0,1fr) 240px;gap:16px;min-height:0;padding:16px 20px 20px;display:grid}.modal-body.is-no-gap{gap:0}.modal-body.is-two-column{grid-template-columns:minmax(0,1fr) 200px;align-items:start}.modal-body.is-no-sidebar{grid-template-columns:minmax(0,1fr)}.modal-body.is-fullscreen{flex:1;min-height:0}.modal-body.is-with-choices{grid-template-columns:120px minmax(0,1fr) 240px}.modal-body.is-with-choices-no-sidebar{grid-template-columns:120px minmax(0,1fr)}.modal-viewer{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);height:100%;overflow:hidden}.modal-viewer.is-fullscreen{border-radius:0;height:100%}.modal-viewer.is-outer-left{border-radius:6px 0 0 6px}.modal-canvas{width:100%;height:100%;display:block}.modal-sidebar{background-color:var(--diva-white);border-top:1px solid var(--diva-border);border-right:1px solid var(--diva-border);border-bottom:1px solid var(--diva-border);border-radius:0 6px 6px 0;padding:16px;overflow:auto}.manifest-info-logo-wrap{text-align:center;flex-direction:column;align-items:center;gap:8px;display:flex}.manifest-info-logo{width:100%;max-width:180px;height:auto}.page-view-choices{background-color:var(--diva-dark-bg);border-radius:6px 0 0 6px;flex-direction:column;gap:8px;padding:8px;display:flex;overflow:auto}.page-view-choice{border:2px solid #0000;flex-direction:column;gap:4px;display:flex}.page-view-choice:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.page-view-choice:hover{background-color:var(--diva-dark-bg)}.page-view-choice.is-active{border-color:var(--diva-accent-light);background-color:var(--diva-dark-bg)}.page-view-choice-thumb{border-radius:3px;width:100%;height:auto;display:block}.page-view-choice-label{font-size:var(--diva-font-xs);color:var(--diva-text-muted);text-overflow:ellipsis;white-space:nowrap;line-height:1.2;overflow:hidden}.filter-group{border-bottom:1px solid var(--diva-border);margin-bottom:12px;padding-bottom:12px}.filter-title-button{text-align:left;cursor:pointer;width:100%;font-size:var(--diva-font-sm);text-transform:uppercase;letter-spacing:.08em;color:var(--diva-text-muted);background-color:#0000;border:none;align-items:center;gap:8px;margin-bottom:8px;padding:0;font-weight:600;display:flex}.filter-title-button.is-collapsed{margin-bottom:0}.filter-title-icon{border-top:4px solid #0000;border-bottom:4px solid #0000;border-left:6px solid var(--diva-text-muted);width:0;height:0;transition:transform .15s;display:inline-block}.filter-title-icon.is-expanded{transform:rotate(90deg)}.filter-row{flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle{font-size:var(--diva-font-md);align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle.is-inline{margin-bottom:0}.filter-range-group{flex-direction:column;gap:6px;margin-bottom:10px;display:flex}.filter-range-header{justify-content:space-between;align-items:center;gap:8px;display:flex}.filter-range-header-right{align-items:center;gap:8px;display:flex}.filter-range-input{width:100%}.filter-value{font-size:var(--diva-font-sm);color:var(--diva-text-muted);text-align:right;width:40px}.filter-reset{font-size:var(--diva-font-xs);background-color:var(--diva-surface);border:1px solid var(--diva-border);cursor:pointer;color:var(--diva-text-muted);border-radius:3px;padding:2px 6px}.filter-reset:hover{background-color:var(--diva-border)}.filter-json{width:100%;min-height:120px;font-size:var(--diva-font-sm);border:1px solid var(--diva-border);background-color:var(--diva-white);resize:vertical;border-radius:4px;padding:6px 8px;font-family:Menlo,Monaco,Consolas,Liberation Mono,monospace}.filter-json-error{font-size:var(--diva-font-sm);color:var(--diva-danger);margin-top:4px}.filter-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted)}.filter-select{border:1px solid var(--diva-border);background-color:var(--diva-white);font-size:var(--diva-font-sm);border-radius:4px;padding:4px 6px}.filter-color-input{border:1px solid var(--diva-border);background-color:var(--diva-white);border-radius:4px;width:42px;height:28px;padding:0}.collection-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:6px 0 0 6px;flex-direction:column;height:100%;min-height:0;display:flex;overflow:hidden}.collection-header{background-color:var(--diva-surface);border-bottom:1px solid var(--diva-border);border-radius:6px 0 0;padding:12px}.collection-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:4px;font-weight:600}.collection-summary{font-size:var(--diva-font-md);color:var(--diva-text-muted);line-height:1.4}.collection-tree-item{padding-left:12px}.collection-node-button{align-items:center;gap:6px;width:100%;padding:6px 8px;display:flex}.collection-expand-icon{flex-shrink:0;justify-content:center;align-items:center;width:16px;height:16px;display:flex}.manifest-tree-item{padding:6px 8px 6px 30px}.manifest-tree-item.is-active{background-color:var(--diva-border);font-weight:600}.sidebar-pane.is-scroll{overflow-y:auto}@media (width<=720px){.collection-panel{border-radius:6px;width:100%;height:auto}}";
+  var diva_default = ":root{--diva-accent:#5a6bff;--diva-accent-light:#9aa4ff;--diva-border:#d9d4ce;--diva-danger:#d32f2f;--diva-dark-bg:#1c1d22;--diva-dark-border:#2c2d33;--diva-overlay-bg:#10111499;--diva-page-bg:#f7f5f1;--diva-shadow-dark:#00000026;--diva-shadow-focus:#9aa4ff59;--diva-shadow-modal:#00000040;--diva-surface:#e6e1dc;--diva-text-muted:#5c5a55;--diva-text-muted-on-dark:#ffffffb3;--diva-text-primary:#1b1b1b;--diva-toolbar-button-bg:#5258626b;--diva-toolbar-button-bg-hover:#5c636e85;--diva-toolbar-button-bg-fullscreen:#52586285;--diva-toolbar-button-bg-fullscreen-hover:#6068749e;--diva-toolbar-button-border:#ffffff59;--diva-toolbar-button-border-hover:#ffffff73;--diva-toolbar-button-border-fullscreen-hover:#fff9;--diva-toolbar-button-icon:#2c2d33;--diva-toolbar-button-shadow:inset 0 1px 0 #ffffff8c, inset 0 -1px 0 #ffffff2e;--diva-toolbar-button-shadow-hover:inset 0 1px 0 #ffffffb3, inset 0 -1px 0 #ffffff3d;--diva-white:#fff;--diva-font-lg:16px;--diva-font-md:13px;--diva-font-sm:11px;--diva-font-xs:10px;--diva-font-xl:20px;color-scheme:light}*{box-sizing:border-box}.list-reset{margin:0;padding:0;list-style:none}.ui-button{text-align:left;cursor:pointer;color:var(--diva-text-primary);font-size:var(--diva-font-lg);background-color:#0000;border:none;padding:0}.ui-button:hover{background-color:var(--diva-surface)}.ui-card{cursor:pointer;border-radius:0;width:100%;padding:6px}.ui-card--dark{background-color:var(--diva-dark-bg)}.diva-app{flex-direction:column;flex:1;height:100%;min-height:0;padding:12px 24px;display:flex}.diva-app.is-fullscreen{height:100vh;min-height:100vh;padding:0}.diva-app-header{font-size:var(--diva-font-lg);align-items:center;gap:12px;margin-bottom:8px;font-weight:600;display:flex}.diva-app-title{font-size:var(--diva-font-xl);text-align:left;color:var(--diva-text-primary);margin-bottom:6px;font-weight:600}.diva-app-title.is-fullscreen{color:var(--diva-white)}.diva-app-body{flex:1;align-items:stretch;gap:0;height:100%;min-height:0;display:flex;position:relative}.diva-app-body.is-fullscreen{flex:1;min-height:0}.diva-canvas-column{flex-direction:column;flex:1;gap:24px;min-height:0;display:flex}.diva-canvas-column.is-fullscreen{flex:1;height:100%;min-height:0}.diva-canvas-wrapper{flex:1;min-height:0;position:relative}.diva-canvas{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);border-radius:0;width:100%;height:100%;overflow:hidden}.diva-canvas.is-fullscreen{border-radius:0;flex:1;height:100%}.diva-canvas.has-collection{border-radius:0}.metadata-panel{height:100%;padding:12px;overflow:auto}.metadata-body{flex-direction:column;gap:10px;display:flex}.metadata-item{flex-direction:column;gap:4px;display:flex}.metadata-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}.metadata-value{font-size:var(--diva-font-lg);color:var(--diva-text-muted);line-height:1.4}.contents-empty{font-size:var(--diva-font-lg);color:var(--diva-text-muted);padding-left:12px}.sidebar-resizer,.collection-resizer{width:12px;font-size:var(--diva-font-xl);color:var(--diva-white);background-color:var(--diva-text-muted);cursor:ew-resize;user-select:none;touch-action:none;flex:0 0 12px;justify-content:center;align-self:stretch;align-items:center;line-height:1;display:flex}.sidebar-resizer.is-hidden,.collection-resizer.is-hidden{display:none}.sidebar-panel.is-fullscreen,.collection-panel.is-fullscreen{border-radius:0;height:100%}.sidebar-panel.is-hidden,.collection-panel.is-hidden{opacity:0;pointer-events:none;border-width:0;padding:0;overflow:hidden}.required-statement-dock{justify-content:flex-end;width:100%;margin-top:12px;padding-right:8px;display:flex}.required-statement{font-size:var(--diva-font-md);color:var(--diva-text-muted);text-align:right;min-width:250px;max-width:20vw;line-height:1.4}.diva-scrollbar-track{background:var(--diva-surface);border:1px solid var(--diva-border);z-index:100;border-radius:0;width:12px;position:absolute;top:4px;bottom:4px;right:4px}.diva-scrollbar-thumb{background:var(--diva-text-muted);cursor:pointer;border-radius:0;min-height:30px;position:absolute;left:1px;right:1px}.diva-scrollbar-thumb:hover{background:var(--diva-text-primary)}.diva-scrollbar-thumb:active{background:var(--diva-dark-border)}.throbber-overlay{pointer-events:none;justify-content:center;align-items:center;display:flex;position:absolute;inset:0}.viewer-zoom-indicator{z-index:30;pointer-events:none;font-size:var(--diva-font-sm);color:var(--diva-white);background-color:#0000008c;border-radius:0;padding:4px 8px;font-weight:600;position:absolute;bottom:12px;left:12px}.throbber{background-color:var(--diva-white);width:64px;height:64px;box-shadow:0 8px 16px var(--diva-shadow-dark);border-radius:0;flex-wrap:wrap;padding:8px;display:flex}.throbber-cube{background-color:var(--diva-accent);width:16px;height:16px;animation-name:diva-cube-grid;animation-duration:1.3s;animation-timing-function:ease-in-out;animation-iteration-count:infinite}@keyframes diva-cube-grid{0%{transform:scale(1)}35%{transform:scale(0)}70%{transform:scale(1)}to{transform:scale(1)}}@media (width<=720px){.diva-app{padding:12px}.diva-app-body{flex-direction:column;gap:12px}.sidebar-resizer,.collection-resizer{display:none}}.diva-image-unavailable{background:color-mix(in srgb, var(--diva-background-color,#fff) 92%, transparent);box-sizing:border-box;text-align:center;border:1px solid #999;flex-direction:column;justify-content:center;align-items:center;padding:1rem;display:flex}.diva-image-unavailable button{cursor:pointer}.sidebar-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0;flex-direction:column;width:320px;height:100%;min-height:0;display:flex;overflow:hidden}.sidebar-tabs{border:1px solid var(--diva-surface);background-color:var(--diva-surface);border-radius:0;display:flex}.sidebar-tab-button{font-size:var(--diva-font-md);text-transform:uppercase;cursor:pointer;color:var(--diva-text-muted);background-color:#0000;border:none;flex:1;padding:10px 12px}.sidebar-tab-button.is-active{background-color:var(--diva-white);font-weight:600}.sidebar-content{background-color:var(--diva-page-bg);flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}.sidebar-pane{flex:1;width:100%;min-height:0}.sidebar-pane.is-hidden{display:none}.thumbs{scroll-behavior:smooth;background-color:var(--diva-dark-bg);flex:1;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:10px;width:100%;height:100%;min-height:0;padding:12px;display:grid;overflow-y:auto}.thumbs.is-fullscreen{height:100%}.thumbs-item{border:1px solid var(--diva-dark-border);text-align:left;flex-direction:column;justify-content:flex-start;align-items:stretch;max-width:none;display:flex}.thumbs-item:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.thumbs-item.is-active{border-color:var(--diva-accent-light);box-shadow:0 0 0 var(--diva-shadow-focus);background-color:var(--diva-dark-bg);outline:2px solid var(--diva-accent-light);outline-offset:2px}.thumbs-image{border-radius:0;width:100%;height:auto;display:block}.thumbs-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted-on-dark);margin-top:6px;line-height:1.3}.thumbs-label.is-active{color:var(--diva-white)}.contents-panel{height:100%;padding:12px;overflow:auto}.contents-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:10px;font-weight:600}.contents-view-tabs{gap:8px;margin-bottom:12px;display:flex}.contents-view-button{background-color:var(--diva-surface);border:1px solid var(--diva-border);font-size:var(--diva-font-sm);color:var(--diva-text-muted);cursor:pointer;border-radius:0;padding:4px 10px}.contents-view-button.is-active{background-color:var(--diva-white);border-color:var(--diva-accent);color:var(--diva-text-primary)}.contents-list-nested{margin-top:6px;padding-left:16px}.contents-item{margin-bottom:6px}.contents-meta{border:1px solid var(--diva-dark-border);margin-top:6px;padding:8px}.contents-button:hover{color:var(--diva-accent)}@media (width<=720px){.sidebar-panel{border-radius:0;height:auto;width:100%!important}.sidebar-panel.is-overlay{z-index:100;width:100%;height:100%;box-shadow:0 12px 24px var(--diva-shadow-dark);border-radius:0;position:absolute;inset:0}.sidebar-panel.is-mobile-hidden{display:none}.thumbs{grid-template-columns:repeat(3,minmax(0,1fr));width:100%;height:auto;overflow:auto hidden}.thumbs-item{min-width:120px}}.canvas-toolbar-stack{flex-direction:column;gap:4px;width:100%;min-width:0;display:flex}.canvas-toolbar{align-items:center;width:100%;margin-bottom:0;display:flex}.canvas-toolbar-section{flex:none;align-items:center;gap:5px;min-width:0;display:flex}.canvas-toolbar-section.is-right{flex:none;margin-left:auto}.canvas-toolbar-end{align-items:center;gap:8px;min-width:0;margin-left:auto;display:flex}.canvas-toolbar-end .canvas-toolbar-section.is-right{margin-left:0}.canvas-toolbar-item{flex:none;justify-content:center;align-items:center;width:34px;height:34px;display:flex;position:relative}.canvas-toolbar-button{width:30px;height:30px;color:var(--diva-toolbar-button-icon);box-shadow:none;cursor:pointer;background-color:#e2e2e2f0;border:1px solid #2c2d3373;border-radius:0;justify-content:center;align-items:center;padding:6px;display:flex}.canvas-toolbar-button svg{flex:none;width:16px;height:16px}.canvas-toolbar-button:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.canvas-toolbar-button:hover{border-color:var(--diva-toolbar-button-icon);background-color:#d6d6d6fa}.canvas-toolbar-button.is-fullscreen{color:var(--diva-white);background-color:#52586294;border-color:#ffffff85}.canvas-toolbar-button.is-fullscreen:hover{border-color:var(--diva-white);background-color:#606874b8}.canvas-toolbar-button.is-disabled{opacity:.4;cursor:not-allowed}.canvas-toolbar-button.is-disabled:hover{background-color:#e2e2e2f0;border-color:#2c2d3373}.canvas-toolbar-button.is-fullscreen.is-disabled:hover{background-color:#52586294;border-color:#ffffff85}.canvas-toolbar-item:after{z-index:80;max-width:160px;color:var(--diva-white);content:attr(data-tooltip);font-size:var(--diva-font-xs);letter-spacing:.02em;opacity:0;pointer-events:none;text-align:center;visibility:hidden;white-space:normal;word-break:normal;background-color:#1c1d22f2;border:1px solid #ffffff2e;border-radius:0;width:max-content;padding:5px 7px;font-weight:600;line-height:1.2;transition:opacity .12s,transform .12s;position:absolute;top:calc(100% + 7px);left:50%;transform:translate(-50%,-3px);box-shadow:0 4px 10px #0003}.canvas-toolbar-item:hover:after,.canvas-toolbar-item:has(.canvas-toolbar-button:focus-visible):after{opacity:1;visibility:visible;transform:translate(-50%)}.canvas-toolbar-section.is-right .canvas-toolbar-item:last-child:after{left:auto;right:0;transform:translateY(-3px)}.canvas-toolbar-section.is-right .canvas-toolbar-item:last-child:hover:after,.canvas-toolbar-section.is-right .canvas-toolbar-item:last-child:has(.canvas-toolbar-button:focus-visible):after{transform:translate(0)}.canvas-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-align:left;white-space:normal;overflow-wrap:anywhere;word-break:break-word;width:100%}.canvas-toolbar-end .canvas-label{overflow-wrap:normal;text-align:right;white-space:nowrap;word-break:normal;flex:auto;width:auto;min-width:0;max-width:min(42vw,42rem);overflow:hidden}.canvas-label.is-fullscreen{color:var(--diva-white)}.status{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:0}.status.is-error{color:var(--diva-danger)}@media (width<=720px){.canvas-toolbar{flex-wrap:wrap;gap:5px}.canvas-toolbar-end{justify-content:flex-end;width:100%;margin-left:0}.canvas-toolbar-item{width:32px;height:32px}.canvas-toolbar-button{width:28px;height:28px;padding:6px}.canvas-toolbar-button svg{width:15px;height:15px}.canvas-label,.status{display:none}}.modal-overlay{background-color:var(--diva-overlay-bg);z-index:100;justify-content:center;align-items:center;padding:24px;display:flex;position:fixed;inset:0}.viewer-status-overlay{background-color:var(--diva-overlay-bg);z-index:40;justify-content:center;align-items:center;padding:24px;display:flex;position:absolute;inset:0}.modal-overlay.is-fullscreen{padding:0}.modal{background-color:var(--diva-page-bg);color:var(--diva-text-primary);width:min(1440px,96vw);max-height:90vh;box-shadow:0 20px 40px var(--diva-shadow-modal);border-radius:0;flex-direction:column;display:flex}.modal.is-narrow{width:min(960px,94vw)}.modal.is-page-view{height:80vh;max-height:80vh}.modal.is-fullscreen{border-radius:0;width:100vw;height:100vh;max-height:100vh}.modal-header{justify-content:space-between;align-items:center;padding:16px 20px 0;display:flex}.modal-actions{gap:8px;display:flex}.modal-close-action .canvas-toolbar-button{color:var(--diva-danger);box-shadow:none;-webkit-backdrop-filter:none;background-color:#0000;border:none;width:auto;height:auto;padding:2px}.modal-close-action .canvas-toolbar-button:hover{background-color:#d32f2f1f;border-color:#0000}.modal-close-action .canvas-toolbar-item{width:32px}.modal-title-stack{flex-direction:column;gap:4px;display:flex}.modal-title{font-size:var(--diva-font-lg);font-weight:600}.modal-subtitle{font-size:var(--diva-font-lg);color:var(--diva-text-primary)}.modal-subtitle.is-muted{font-size:var(--diva-font-md)}.modal-body{flex:1;grid-template-columns:minmax(0,1fr) 240px;gap:16px;min-height:0;padding:16px 20px 20px;display:grid}.modal-body.is-no-gap{gap:0}.modal-body.is-two-column{grid-template-columns:minmax(0,1fr) 200px;align-items:start}.modal-body.is-no-sidebar{grid-template-columns:minmax(0,1fr)}.modal-body.is-fullscreen{flex:1;min-height:0}.modal-body.is-with-choices{grid-template-columns:120px minmax(0,1fr) 240px}.modal-body.is-with-choices-no-sidebar{grid-template-columns:120px minmax(0,1fr)}.modal-viewer{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);height:100%;overflow:hidden}.modal-viewer.is-fullscreen{border-radius:0;height:100%}.modal-viewer.is-outer-left{border-radius:0}.modal-canvas{width:100%;height:100%;display:block}.modal-sidebar{background-color:var(--diva-white);border-top:1px solid var(--diva-border);border-right:1px solid var(--diva-border);border-bottom:1px solid var(--diva-border);border-radius:0;padding:16px;overflow:auto}.manifest-info-logo-wrap{text-align:center;flex-direction:column;align-items:center;gap:8px;display:flex}.manifest-info-logo{width:100%;max-width:180px;height:auto}.page-view-choices{background-color:var(--diva-dark-bg);border-radius:0;flex-direction:column;gap:8px;padding:8px;display:flex;overflow:auto}.page-view-choice{border:2px solid #0000;flex-direction:column;gap:4px;display:flex}.page-view-choice:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.page-view-choice:hover{background-color:var(--diva-dark-bg)}.page-view-choice.is-active{border-color:var(--diva-accent-light);background-color:var(--diva-dark-bg)}.page-view-choice-thumb{border-radius:0;width:100%;height:auto;display:block}.page-view-choice-label{font-size:var(--diva-font-xs);color:var(--diva-text-muted);text-overflow:ellipsis;white-space:nowrap;line-height:1.2;overflow:hidden}.filter-group{border-bottom:1px solid var(--diva-border);margin-bottom:12px;padding-bottom:12px}.filter-title-button{text-align:left;cursor:pointer;width:100%;font-size:var(--diva-font-sm);text-transform:uppercase;letter-spacing:.08em;color:var(--diva-text-muted);background-color:#0000;border:none;align-items:center;gap:8px;margin-bottom:8px;padding:0;font-weight:600;display:flex}.filter-title-button.is-collapsed{margin-bottom:0}.filter-title-icon{border-top:4px solid #0000;border-bottom:4px solid #0000;border-left:6px solid var(--diva-text-muted);width:0;height:0;transition:transform .15s;display:inline-block}.filter-title-icon.is-expanded{transform:rotate(90deg)}.filter-row{flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle{font-size:var(--diva-font-md);align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle.is-inline{margin-bottom:0}.filter-range-group{flex-direction:column;gap:6px;margin-bottom:10px;display:flex}.filter-range-header{justify-content:space-between;align-items:center;gap:8px;display:flex}.filter-range-header-right{align-items:center;gap:8px;display:flex}.filter-range-input{width:100%}.filter-value{font-size:var(--diva-font-sm);color:var(--diva-text-muted);text-align:right;width:40px}.filter-reset{font-size:var(--diva-font-xs);background-color:var(--diva-surface);border:1px solid var(--diva-border);cursor:pointer;color:var(--diva-text-muted);border-radius:0;padding:2px 6px}.filter-reset:hover{background-color:var(--diva-border)}.filter-json{width:100%;min-height:120px;font-size:var(--diva-font-sm);border:1px solid var(--diva-border);background-color:var(--diva-white);resize:vertical;border-radius:0;padding:6px 8px;font-family:Menlo,Monaco,Consolas,Liberation Mono,monospace}.filter-json-error{font-size:var(--diva-font-sm);color:var(--diva-danger);margin-top:4px}.filter-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted)}.filter-select{border:1px solid var(--diva-border);background-color:var(--diva-white);font-size:var(--diva-font-sm);border-radius:0;padding:4px 6px}.filter-color-input{border:1px solid var(--diva-border);background-color:var(--diva-white);border-radius:0;width:42px;height:28px;padding:0}.diva-auth-overlay{z-index:10000;background:#0000008c;place-items:center;display:grid;position:fixed;inset:0}.diva-auth-dialog{box-sizing:border-box;border:1px solid var(--diva-border,#aaa);background:var(--diva-background,#fff);width:min(30rem,100vw - 2rem);color:var(--diva-text-primary,#222);border-radius:0;padding:1.25rem}.diva-auth-dialog button{min-height:2.25rem;color:inherit;cursor:pointer;background:0 0;border:1px solid;border-radius:0;padding:.35rem .8rem}.diva-auth-dialog button:focus-visible{outline:2px solid var(--diva-accent,#1769aa);outline-offset:2px}.collection-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0;flex-direction:column;height:100%;min-height:0;display:flex;overflow:hidden}.collection-header{background-color:var(--diva-surface);border-bottom:1px solid var(--diva-border);border-radius:0;padding:12px}.collection-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:4px;font-weight:600}.collection-summary{font-size:var(--diva-font-md);color:var(--diva-text-muted);line-height:1.4}.collection-tree-item{padding-left:12px}.collection-node-button{align-items:center;gap:6px;width:100%;padding:6px 8px;display:flex}.collection-expand-icon{flex-shrink:0;justify-content:center;align-items:center;width:16px;height:16px;display:flex}.manifest-tree-item{padding:6px 8px 6px 30px}.manifest-tree-item.is-active{background-color:var(--diva-border);font-weight:600}.sidebar-pane.is-scroll{overflow-y:auto}@media (width<=720px){.collection-panel{border-radius:0;width:100%;height:auto}}";
 
   // cache/elm-esm.js
   function F(arity, fun, wrapper) {
@@ -10813,9 +10884,6 @@
     }
   );
   var $elm$json$Json$Decode$oneOf = _Json_oneOf;
-  var $elm$json$Json$Decode$fail = _Json_fail;
-  var $author$project$IIIF$Internal$Contexts$iiifV2PresentationContextString = "http://iiif.io/api/presentation/2/context.json";
-  var $author$project$IIIF$Internal$Contexts$iiifV3PresentationContextString = "http://iiif.io/api/presentation/3/context.json";
   var $elm$core$List$any = F2(
     function(isOkay, list) {
       any:
@@ -10837,17 +10905,26 @@
         }
     }
   );
-  var $elm$core$List$member = F2(
-    function(x, xs) {
+  var $elm$core$String$replace = F3(
+    function(before, after, string) {
       return A2(
-        $elm$core$List$any,
-        function(a) {
-          return _Utils_eq(a, x);
-        },
-        xs
+        $elm$core$String$join,
+        after,
+        A2($elm$core$String$split, before, string)
       );
     }
   );
+  var $author$project$IIIF$Internal$Contexts$contextMatches = F2(
+    function(expected, actual) {
+      return _Utils_eq(actual, expected) || _Utils_eq(
+        actual,
+        A3($elm$core$String$replace, "http://", "https://", expected)
+      );
+    }
+  );
+  var $elm$json$Json$Decode$fail = _Json_fail;
+  var $author$project$IIIF$Internal$Contexts$iiifV2PresentationContextString = "http://iiif.io/api/presentation/2/context.json";
+  var $author$project$IIIF$Internal$Contexts$iiifV3PresentationContextString = "http://iiif.io/api/presentation/3/context.json";
   var $author$project$IIIF$Presentation$IIIFCanvas = F2(
     function(a, b) {
       return { $: "IIIFCanvas", a, b };
@@ -10957,9 +11034,9 @@
   };
   var $author$project$IIIF$Internal$V2PresentationDecoders$unwrapDecoderLists = $elm$core$List$concat;
   var $author$project$IIIF$Presentation$ChoiceImage = { $: "ChoiceImage" };
-  var $author$project$IIIF$Presentation$Image = F4(
-    function(id, label, imageType, service) {
-      return { id, imageType, label, service };
+  var $author$project$IIIF$Presentation$Image = F5(
+    function(id, label, imageType, service, serviceObjects) {
+      return { id, imageType, label, service, serviceObjects };
     }
   );
   var $author$project$IIIF$Presentation$PrimaryImage = { $: "PrimaryImage" };
@@ -10977,21 +11054,8 @@
       );
     }
   );
-  var $author$project$IIIF$Image$InfoUri = function(a) {
-    return { $: "InfoUri", a };
-  };
-  var $author$project$IIIF$Image$imageUriToInfoUri = function(inp) {
-    switch (inp.$) {
-      case "InfoUri":
-        return inp;
-      case "ImageUri":
-        var params = inp.a;
-        return $author$project$IIIF$Image$InfoUri(
-          { host: params.host, prefix: params.prefix }
-        );
-      default:
-        return inp;
-    }
+  var $author$project$IIIF$Image$StaticImageUri = function(a) {
+    return { $: "StaticImageUri", a };
   };
   var $elm$core$Maybe$andThen = F2(
     function(callback, maybeValue) {
@@ -11459,6 +11523,9 @@
       }
     }
   );
+  var $author$project$IIIF$Image$InfoUri = function(a) {
+    return { $: "InfoUri", a };
+  };
   var $elm$core$List$filter = F2(
     function(isGood, list) {
       return A3(
@@ -11537,9 +11604,6 @@
       )
     );
   })();
-  var $author$project$IIIF$Image$StaticImageUri = function(a) {
-    return { $: "StaticImageUri", a };
-  };
   var $author$project$IIIF$Image$staticImageUriFromComponents = F2(
     function(host, path) {
       return $elm$core$Maybe$Just(
@@ -11571,6 +11635,30 @@
       $elm$url$Url$fromString(fullAddress)
     );
   };
+  var $author$project$IIIF$Internal$SharedDecoders$convertStaticImageIdToImageUri = function(idValue) {
+    var _v0 = $author$project$IIIF$Image$parseImageAddress(idValue);
+    if (_v0.$ === "Just" && _v0.a.$ === "StaticImageUri") {
+      var params = _v0.a.a;
+      return $elm$json$Json$Decode$succeed(
+        $author$project$IIIF$Image$StaticImageUri(params)
+      );
+    } else {
+      return $elm$json$Json$Decode$fail("Could not decode static image Url");
+    }
+  };
+  var $author$project$IIIF$Image$imageUriToInfoUri = function(inp) {
+    switch (inp.$) {
+      case "InfoUri":
+        return inp;
+      case "ImageUri":
+        var params = inp.a;
+        return $author$project$IIIF$Image$InfoUri(
+          { host: params.host, prefix: params.prefix }
+        );
+      default:
+        return inp;
+    }
+  };
   var $author$project$IIIF$Internal$SharedDecoders$convertImageIdToImageUri = function(idValue) {
     var _v0 = $author$project$IIIF$Image$parseImageAddress(idValue);
     if (_v0.$ === "Just") {
@@ -11589,51 +11677,16 @@
       return $elm$json$Json$Decode$fail("Could not decode image Url");
     }
   };
-  var $author$project$IIIF$Internal$SharedDecoders$convertStaticImageIdToImageUri = function(idValue) {
-    var _v0 = $author$project$IIIF$Image$parseImageAddress(idValue);
-    if (_v0.$ === "Just" && _v0.a.$ === "StaticImageUri") {
-      var params = _v0.a.a;
-      return $elm$json$Json$Decode$succeed(
-        $author$project$IIIF$Image$StaticImageUri(params)
-      );
-    } else {
-      return $elm$json$Json$Decode$fail("Could not decode static image Url");
-    }
-  };
-  var $author$project$IIIF$Internal$Utilities$requiredAt = F3(
-    function(path, decoder, pipeline) {
+  var $elm$core$List$member = F2(
+    function(x, xs) {
       return A2(
-        $author$project$IIIF$Internal$Utilities$applyDecoder,
-        A2($elm$json$Json$Decode$at, path, decoder),
-        pipeline
+        $elm$core$List$any,
+        function(a) {
+          return _Utils_eq(a, x);
+        },
+        xs
       );
     }
-  );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageIdDecoderWithServicePresence = function(maybeService) {
-    if (maybeService.$ === "Just") {
-      return A3(
-        $author$project$IIIF$Internal$Utilities$requiredAt,
-        _List_fromArray(
-          ["service", "@id"]
-        ),
-        A2($elm$json$Json$Decode$andThen, $author$project$IIIF$Internal$SharedDecoders$convertImageIdToImageUri, $elm$json$Json$Decode$string),
-        $elm$json$Json$Decode$succeed($elm$core$Basics$identity)
-      );
-    } else {
-      return A3(
-        $author$project$IIIF$Internal$Utilities$required,
-        "@id",
-        A2($elm$json$Json$Decode$andThen, $author$project$IIIF$Internal$SharedDecoders$convertStaticImageIdToImageUri, $elm$json$Json$Decode$string),
-        $elm$json$Json$Decode$succeed($elm$core$Basics$identity)
-      );
-    }
-  };
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageIdDecoder = A2(
-    $elm$json$Json$Decode$andThen,
-    $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageIdDecoderWithServicePresence,
-    $elm$json$Json$Decode$maybe(
-      A2($elm$json$Json$Decode$field, "service", $elm$json$Json$Decode$value)
-    )
   );
   var $author$project$IIIF$Presentation$AuthLogoutService1 = { $: "AuthLogoutService1" };
   var $author$project$IIIF$Presentation$AuthTokenService1 = { $: "AuthTokenService1" };
@@ -11643,56 +11696,169 @@
   var $author$project$IIIF$Presentation$ImageService3 = { $: "ImageService3" };
   var $author$project$IIIF$Presentation$SearchService1 = { $: "SearchService1" };
   var $author$project$IIIF$Presentation$UnknownService = { $: "UnknownService" };
+  var $author$project$IIIF$Internal$Contexts$iiifV2ImageContextString = "http://iiif.io/api/image/2/context.json";
+  var $author$project$IIIF$Internal$Contexts$iiifV3ImageContextString = "http://iiif.io/api/image/3/context.json";
   var $author$project$IIIF$Presentation$stringToServiceType = function(val) {
-    switch (val) {
-      case "AuthLogoutService1":
-        return $author$project$IIIF$Presentation$AuthLogoutService1;
-      case "AuthTokenService1":
-        return $author$project$IIIF$Presentation$AuthTokenService1;
-      case "AutoCompleteService1":
-        return $author$project$IIIF$Presentation$AutoCompleteService1;
-      case "ImageService1":
-        return $author$project$IIIF$Presentation$ImageService1;
-      case "ImageService2":
-        return $author$project$IIIF$Presentation$ImageService2;
-      case "ImageService3":
+    if (A2($author$project$IIIF$Internal$Contexts$contextMatches, $author$project$IIIF$Internal$Contexts$iiifV2ImageContextString, val)) {
+      return $author$project$IIIF$Presentation$ImageService2;
+    } else {
+      if (A2($author$project$IIIF$Internal$Contexts$contextMatches, $author$project$IIIF$Internal$Contexts$iiifV3ImageContextString, val)) {
         return $author$project$IIIF$Presentation$ImageService3;
-      case "SearchService1":
-        return $author$project$IIIF$Presentation$SearchService1;
-      case "http://iiif.io/api/image/2/context.json":
-        return $author$project$IIIF$Presentation$ImageService2;
-      case "http://iiif.io/api/image/3/context.json":
-        return $author$project$IIIF$Presentation$ImageService3;
-      default:
-        return $author$project$IIIF$Presentation$UnknownService;
+      } else {
+        switch (val) {
+          case "AuthLogoutService1":
+            return $author$project$IIIF$Presentation$AuthLogoutService1;
+          case "AuthTokenService1":
+            return $author$project$IIIF$Presentation$AuthTokenService1;
+          case "AutoCompleteService1":
+            return $author$project$IIIF$Presentation$AutoCompleteService1;
+          case "ImageService1":
+            return $author$project$IIIF$Presentation$ImageService1;
+          case "ImageService2":
+            return $author$project$IIIF$Presentation$ImageService2;
+          case "ImageService3":
+            return $author$project$IIIF$Presentation$ImageService3;
+          case "SearchService1":
+            return $author$project$IIIF$Presentation$SearchService1;
+          default:
+            return $author$project$IIIF$Presentation$UnknownService;
+        }
+      }
     }
   };
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ServiceTypeDecoder = function(stype) {
-    return _List_fromArray(
-      [
-        $author$project$IIIF$Presentation$stringToServiceType(stype)
-      ]
+  var $author$project$IIIF$Internal$V2PresentationDecoders$isImageService = function(serviceType) {
+    return A2(
+      $elm$core$List$member,
+      serviceType,
+      _List_fromArray(
+        [
+          $author$project$IIIF$Presentation$stringToServiceType("ImageService1"),
+          $author$project$IIIF$Presentation$stringToServiceType("ImageService2"),
+          $author$project$IIIF$Presentation$stringToServiceType("ImageService3")
+        ]
+      )
     );
   };
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceTypesDecoderWithServicePresence = function(maybeService) {
-    if (maybeService.$ === "Just") {
-      return A3(
-        $author$project$IIIF$Internal$Utilities$requiredAt,
-        _List_fromArray(
-          ["service", "@context"]
+  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ServiceTypeObjectDecoder = $elm$json$Json$Decode$oneOf(
+    _List_fromArray(
+      [
+        A2(
+          $elm$json$Json$Decode$map,
+          $author$project$IIIF$Presentation$stringToServiceType,
+          A2($elm$json$Json$Decode$field, "@type", $elm$json$Json$Decode$string)
         ),
-        A2($elm$json$Json$Decode$map, $author$project$IIIF$Internal$V2PresentationDecoders$v2ServiceTypeDecoder, $elm$json$Json$Decode$string),
-        $elm$json$Json$Decode$succeed($elm$core$Basics$identity)
-      );
-    } else {
-      return $elm$json$Json$Decode$succeed(_List_Nil);
-    }
-  };
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceTypesDecoder = A2(
+        A2(
+          $elm$json$Json$Decode$map,
+          $author$project$IIIF$Presentation$stringToServiceType,
+          A2($elm$json$Json$Decode$field, "type", $elm$json$Json$Decode$string)
+        ),
+        A2(
+          $elm$json$Json$Decode$map,
+          function(context) {
+            return A2($author$project$IIIF$Internal$Contexts$contextMatches, $author$project$IIIF$Internal$Contexts$iiifV2ImageContextString, context) ? $author$project$IIIF$Presentation$stringToServiceType("ImageService2") : $author$project$IIIF$Presentation$stringToServiceType(context);
+          },
+          A2($elm$json$Json$Decode$field, "@context", $elm$json$Json$Decode$string)
+        )
+      ]
+    )
+  );
+  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceIdDecoder = A2(
     $elm$json$Json$Decode$andThen,
-    $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceTypesDecoderWithServicePresence,
-    $elm$json$Json$Decode$maybe(
-      A2($elm$json$Json$Decode$field, "service", $elm$json$Json$Decode$value)
+    function(serviceType) {
+      return $author$project$IIIF$Internal$V2PresentationDecoders$isImageService(serviceType) ? A2($elm$json$Json$Decode$field, "@id", $elm$json$Json$Decode$string) : $elm$json$Json$Decode$fail("Not an Image API service");
+    },
+    $author$project$IIIF$Internal$V2PresentationDecoders$v2ServiceTypeObjectDecoder
+  );
+  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageIdFromServiceDecoder = A2(
+    $elm$json$Json$Decode$andThen,
+    function(maybeId) {
+      if (maybeId.$ === "Just") {
+        var id = maybeId.a;
+        return $author$project$IIIF$Internal$SharedDecoders$convertImageIdToImageUri(id);
+      } else {
+        return $elm$json$Json$Decode$fail("No Image API service ID found");
+      }
+    },
+    A2(
+      $elm$json$Json$Decode$field,
+      "service",
+      $elm$json$Json$Decode$oneOf(
+        _List_fromArray(
+          [
+            A2(
+              $elm$json$Json$Decode$map,
+              A2(
+                $elm$core$Basics$composeR,
+                $elm$core$List$filterMap($elm$core$Basics$identity),
+                $elm$core$List$head
+              ),
+              $elm$json$Json$Decode$list(
+                $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceIdDecoder)
+              )
+            ),
+            A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceIdDecoder)
+          ]
+        )
+      )
+    )
+  );
+  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageIdDecoder = $elm$json$Json$Decode$oneOf(
+    _List_fromArray(
+      [
+        $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageIdFromServiceDecoder,
+        A2(
+          $elm$json$Json$Decode$andThen,
+          $author$project$IIIF$Internal$SharedDecoders$convertStaticImageIdToImageUri,
+          A2($elm$json$Json$Decode$field, "@id", $elm$json$Json$Decode$string)
+        )
+      ]
+    )
+  );
+  var $elm$core$List$singleton = function(value) {
+    return _List_fromArray(
+      [value]
+    );
+  };
+  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceObjectsDecoder = $elm$json$Json$Decode$oneOf(
+    _List_fromArray(
+      [
+        A2(
+          $elm$json$Json$Decode$field,
+          "service",
+          $elm$json$Json$Decode$list($elm$json$Json$Decode$value)
+        ),
+        A2(
+          $elm$json$Json$Decode$field,
+          "service",
+          A2($elm$json$Json$Decode$map, $elm$core$List$singleton, $elm$json$Json$Decode$value)
+        ),
+        $elm$json$Json$Decode$succeed(_List_Nil)
+      ]
+    )
+  );
+  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceTypesDecoder = $elm$json$Json$Decode$oneOf(
+    _List_fromArray(
+      [
+        A2(
+          $elm$json$Json$Decode$field,
+          "service",
+          $elm$json$Json$Decode$oneOf(
+            _List_fromArray(
+              [
+                A2(
+                  $elm$json$Json$Decode$map,
+                  $elm$core$List$filterMap($elm$core$Basics$identity),
+                  $elm$json$Json$Decode$list(
+                    $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$V2PresentationDecoders$v2ServiceTypeObjectDecoder)
+                  )
+                ),
+                A2($elm$json$Json$Decode$map, $elm$core$List$singleton, $author$project$IIIF$Internal$V2PresentationDecoders$v2ServiceTypeObjectDecoder)
+              ]
+            )
+          )
+        ),
+        $elm$json$Json$Decode$succeed(_List_Nil)
+      ]
     )
   );
   var $author$project$IIIF$Language$LanguageValues = F2(
@@ -11793,30 +11959,13 @@
   );
   var $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageDecoder = A2(
     $author$project$IIIF$Internal$Utilities$custom,
-    $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceTypesDecoder,
+    $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceObjectsDecoder,
     A2(
-      $author$project$IIIF$Internal$Utilities$hardcoded,
-      $author$project$IIIF$Presentation$PrimaryImage,
-      A4(
-        $author$project$IIIF$Internal$Utilities$optional,
-        "label",
-        $elm$json$Json$Decode$maybe($author$project$IIIF$Language$v2LanguageMapLabelDecoder),
-        $elm$core$Maybe$Nothing,
-        A2(
-          $author$project$IIIF$Internal$Utilities$custom,
-          $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageIdDecoder,
-          $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Image)
-        )
-      )
-    )
-  );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageDecoderVaryingType = function(imgType) {
-    return A2(
       $author$project$IIIF$Internal$Utilities$custom,
       $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceTypesDecoder,
       A2(
         $author$project$IIIF$Internal$Utilities$hardcoded,
-        imgType,
+        $author$project$IIIF$Presentation$PrimaryImage,
         A4(
           $author$project$IIIF$Internal$Utilities$optional,
           "label",
@@ -11826,6 +11975,31 @@
             $author$project$IIIF$Internal$Utilities$custom,
             $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageIdDecoder,
             $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Image)
+          )
+        )
+      )
+    )
+  );
+  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageDecoderVaryingType = function(imgType) {
+    return A2(
+      $author$project$IIIF$Internal$Utilities$custom,
+      $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceObjectsDecoder,
+      A2(
+        $author$project$IIIF$Internal$Utilities$custom,
+        $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceTypesDecoder,
+        A2(
+          $author$project$IIIF$Internal$Utilities$hardcoded,
+          imgType,
+          A4(
+            $author$project$IIIF$Internal$Utilities$optional,
+            "label",
+            $elm$json$Json$Decode$maybe($author$project$IIIF$Language$v2LanguageMapLabelDecoder),
+            $elm$core$Maybe$Nothing,
+            A2(
+              $author$project$IIIF$Internal$Utilities$custom,
+              $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageIdDecoder,
+              $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Image)
+            )
           )
         )
       )
@@ -11898,47 +12072,37 @@
       return $elm$json$Json$Decode$fail("Could not decode static image Url");
     }
   };
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageIdDecoderWithServicePresence = function(maybeService) {
-    if (maybeService.$ === "Just") {
-      return A3(
-        $author$project$IIIF$Internal$Utilities$requiredAt,
-        _List_fromArray(
-          ["service", "@id"]
-        ),
-        A2($elm$json$Json$Decode$andThen, $author$project$IIIF$Internal$SharedDecoders$convertImageIdToImageUri, $elm$json$Json$Decode$string),
-        $elm$json$Json$Decode$succeed($elm$core$Basics$identity)
-      );
-    } else {
-      return A3(
-        $author$project$IIIF$Internal$Utilities$required,
-        "@id",
-        A2($elm$json$Json$Decode$andThen, $author$project$IIIF$Internal$SharedDecoders$convertThumbnailImageIdToImageUri, $elm$json$Json$Decode$string),
-        $elm$json$Json$Decode$succeed($elm$core$Basics$identity)
-      );
-    }
-  };
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageIdDecoder = A2(
-    $elm$json$Json$Decode$andThen,
-    $author$project$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageIdDecoderWithServicePresence,
-    $elm$json$Json$Decode$maybe(
-      A2($elm$json$Json$Decode$field, "service", $elm$json$Json$Decode$value)
+  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageIdDecoder = $elm$json$Json$Decode$oneOf(
+    _List_fromArray(
+      [
+        $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageIdFromServiceDecoder,
+        A2(
+          $elm$json$Json$Decode$andThen,
+          $author$project$IIIF$Internal$SharedDecoders$convertThumbnailImageIdToImageUri,
+          A2($elm$json$Json$Decode$field, "@id", $elm$json$Json$Decode$string)
+        )
+      ]
     )
   );
   var $author$project$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageDecoder = A2(
     $author$project$IIIF$Internal$Utilities$custom,
-    $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceTypesDecoder,
+    $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceObjectsDecoder,
     A2(
-      $author$project$IIIF$Internal$Utilities$hardcoded,
-      $author$project$IIIF$Presentation$PrimaryImage,
-      A4(
-        $author$project$IIIF$Internal$Utilities$optional,
-        "label",
-        $elm$json$Json$Decode$maybe($author$project$IIIF$Language$v2LanguageMapLabelDecoder),
-        $elm$core$Maybe$Nothing,
-        A2(
-          $author$project$IIIF$Internal$Utilities$custom,
-          $author$project$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageIdDecoder,
-          $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Image)
+      $author$project$IIIF$Internal$Utilities$custom,
+      $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceTypesDecoder,
+      A2(
+        $author$project$IIIF$Internal$Utilities$hardcoded,
+        $author$project$IIIF$Presentation$PrimaryImage,
+        A4(
+          $author$project$IIIF$Internal$Utilities$optional,
+          "label",
+          $elm$json$Json$Decode$maybe($author$project$IIIF$Language$v2LanguageMapLabelDecoder),
+          $elm$core$Maybe$Nothing,
+          A2(
+            $author$project$IIIF$Internal$Utilities$custom,
+            $author$project$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageIdDecoder,
+            $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Image)
+          )
         )
       )
     )
@@ -12196,11 +12360,6 @@
         };
       };
     };
-  };
-  var $elm$core$List$singleton = function(value) {
-    return _List_fromArray(
-      [value]
-    );
   };
   var $author$project$IIIF$Presentation$HomePage = F4(
     function(id, label, format, type_) {
@@ -12743,25 +12902,25 @@
     }
   );
   var $author$project$IIIF$Internal$V3PresentationDecoders$selectServiceId = function(services) {
-    var _v0 = A2(
-      $author$project$IIIF$Internal$Utilities$find,
-      function(s) {
-        return _Utils_eq(s.serviceType, $author$project$IIIF$Presentation$ImageService3);
+    return A2(
+      $elm$core$Maybe$map,
+      function($) {
+        return $.id;
       },
-      services
-    );
-    if (_v0.$ === "Just") {
-      var id = _v0.a.id;
-      return $elm$core$Maybe$Just(id);
-    } else {
-      return A2(
-        $elm$core$Maybe$map,
-        function($) {
-          return $.id;
+      A2(
+        $author$project$IIIF$Internal$Utilities$find,
+        function(service) {
+          return A2(
+            $elm$core$List$member,
+            service.serviceType,
+            _List_fromArray(
+              [$author$project$IIIF$Presentation$ImageService1, $author$project$IIIF$Presentation$ImageService2, $author$project$IIIF$Presentation$ImageService3]
+            )
+          );
         },
-        $elm$core$List$head(services)
-      );
-    }
+        services
+      )
+    );
   };
   var $author$project$IIIF$Presentation$ServiceObject = F2(
     function(id, serviceType) {
@@ -12821,27 +12980,29 @@
     },
     A2($elm$json$Json$Decode$field, "service", $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectListDecoder)
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageIdDecoderWithServicePresence = function(maybeService) {
-    if (maybeService.$ === "Just") {
-      return $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageIdFromServiceDecoder;
-    } else {
-      return A2(
-        $elm$json$Json$Decode$andThen,
-        $author$project$IIIF$Internal$SharedDecoders$convertStaticImageIdToImageUri,
-        A2($elm$json$Json$Decode$field, "id", $elm$json$Json$Decode$string)
-      );
-    }
-  };
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageIdDecoder = A2(
-    $elm$json$Json$Decode$andThen,
-    $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageIdDecoderWithServicePresence,
-    $elm$json$Json$Decode$maybe(
-      A2($elm$json$Json$Decode$field, "service", $elm$json$Json$Decode$value)
+  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageIdDecoder = $elm$json$Json$Decode$oneOf(
+    _List_fromArray(
+      [
+        $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageIdFromServiceDecoder,
+        A2(
+          $elm$json$Json$Decode$andThen,
+          $author$project$IIIF$Internal$SharedDecoders$convertStaticImageIdToImageUri,
+          A2($elm$json$Json$Decode$field, "id", $elm$json$Json$Decode$string)
+        )
+      ]
     )
   );
   var $author$project$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [$author$project$IIIF$Language$languageMapLabelDecoder, $author$project$IIIF$Language$stringToLanguageMapLabelDecoder]
+    )
+  );
+  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectValueListDecoder = $elm$json$Json$Decode$oneOf(
+    _List_fromArray(
+      [
+        $elm$json$Json$Decode$list($elm$json$Json$Decode$value),
+        A2($elm$json$Json$Decode$map, $elm$core$List$singleton, $elm$json$Json$Decode$value)
+      ]
     )
   );
   var $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeListDecoder = $elm$json$Json$Decode$oneOf(
@@ -12856,20 +13017,26 @@
     return A4(
       $author$project$IIIF$Internal$Utilities$optional,
       "service",
-      $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeListDecoder,
+      $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectValueListDecoder,
       _List_Nil,
-      A2(
-        $author$project$IIIF$Internal$Utilities$hardcoded,
-        imageType,
-        A4(
-          $author$project$IIIF$Internal$Utilities$optional,
-          "label",
-          $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder),
-          $elm$core$Maybe$Nothing,
-          A2(
-            $author$project$IIIF$Internal$Utilities$custom,
-            $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageIdDecoder,
-            $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Image)
+      A4(
+        $author$project$IIIF$Internal$Utilities$optional,
+        "service",
+        $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeListDecoder,
+        _List_Nil,
+        A2(
+          $author$project$IIIF$Internal$Utilities$hardcoded,
+          imageType,
+          A4(
+            $author$project$IIIF$Internal$Utilities$optional,
+            "label",
+            $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder),
+            $elm$core$Maybe$Nothing,
+            A2(
+              $author$project$IIIF$Internal$Utilities$custom,
+              $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageIdDecoder,
+              $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Image)
+            )
           )
         )
       )
@@ -12914,41 +13081,41 @@
     ),
     A2($elm$json$Json$Decode$index, 0, $author$project$IIIF$Internal$V3PresentationDecoders$v3AnnotationBodyDecoder)
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageIdDecoderWithServicePresence = function(maybeService) {
-    if (maybeService.$ === "Just") {
-      return $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageIdFromServiceDecoder;
-    } else {
-      return A2(
-        $elm$json$Json$Decode$andThen,
-        $author$project$IIIF$Internal$SharedDecoders$convertThumbnailImageIdToImageUri,
-        A2($elm$json$Json$Decode$field, "id", $elm$json$Json$Decode$string)
-      );
-    }
-  };
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageIdDecoder = A2(
-    $elm$json$Json$Decode$andThen,
-    $author$project$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageIdDecoderWithServicePresence,
-    $elm$json$Json$Decode$maybe(
-      A2($elm$json$Json$Decode$field, "service", $elm$json$Json$Decode$value)
+  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageIdDecoder = $elm$json$Json$Decode$oneOf(
+    _List_fromArray(
+      [
+        $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageIdFromServiceDecoder,
+        A2(
+          $elm$json$Json$Decode$andThen,
+          $author$project$IIIF$Internal$SharedDecoders$convertThumbnailImageIdToImageUri,
+          A2($elm$json$Json$Decode$field, "id", $elm$json$Json$Decode$string)
+        )
+      ]
     )
   );
   var $author$project$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageDecoder = A4(
     $author$project$IIIF$Internal$Utilities$optional,
     "service",
-    $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeListDecoder,
+    $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectValueListDecoder,
     _List_Nil,
-    A2(
-      $author$project$IIIF$Internal$Utilities$hardcoded,
-      $author$project$IIIF$Presentation$PrimaryImage,
-      A4(
-        $author$project$IIIF$Internal$Utilities$optional,
-        "label",
-        $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder),
-        $elm$core$Maybe$Nothing,
-        A2(
-          $author$project$IIIF$Internal$Utilities$custom,
-          $author$project$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageIdDecoder,
-          $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Image)
+    A4(
+      $author$project$IIIF$Internal$Utilities$optional,
+      "service",
+      $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeListDecoder,
+      _List_Nil,
+      A2(
+        $author$project$IIIF$Internal$Utilities$hardcoded,
+        $author$project$IIIF$Presentation$PrimaryImage,
+        A4(
+          $author$project$IIIF$Internal$Utilities$optional,
+          "label",
+          $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder),
+          $elm$core$Maybe$Nothing,
+          A2(
+            $author$project$IIIF$Internal$Utilities$custom,
+            $author$project$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageIdDecoder,
+            $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Image)
+          )
         )
       )
     )
@@ -13560,12 +13727,20 @@
     A2($elm$json$Json$Decode$field, "type", $elm$json$Json$Decode$string)
   );
   var $author$project$IIIF$Internal$CoreDecoders$resourceContextListDecoder = function(contextValues) {
-    return A2($elm$core$List$member, $author$project$IIIF$Internal$Contexts$iiifV3PresentationContextString, contextValues) ? $author$project$IIIF$Internal$V3PresentationDecoders$v3ResourceTypeDecoder : A2($elm$core$List$member, $author$project$IIIF$Internal$Contexts$iiifV2PresentationContextString, contextValues) ? $author$project$IIIF$Internal$V2PresentationDecoders$v2ResourceTypeDecoder : $elm$json$Json$Decode$fail(
+    return A2(
+      $elm$core$List$any,
+      $author$project$IIIF$Internal$Contexts$contextMatches($author$project$IIIF$Internal$Contexts$iiifV3PresentationContextString),
+      contextValues
+    ) ? $author$project$IIIF$Internal$V3PresentationDecoders$v3ResourceTypeDecoder : A2(
+      $elm$core$List$any,
+      $author$project$IIIF$Internal$Contexts$contextMatches($author$project$IIIF$Internal$Contexts$iiifV2PresentationContextString),
+      contextValues
+    ) ? $author$project$IIIF$Internal$V2PresentationDecoders$v2ResourceTypeDecoder : $elm$json$Json$Decode$fail(
       "Context values contain an unknown IIIF version: " + A2($elm$core$String$join, ", ", contextValues)
     );
   };
   var $author$project$IIIF$Internal$CoreDecoders$resourceContextStringDecoder = function(contextValue) {
-    return _Utils_eq(contextValue, $author$project$IIIF$Internal$Contexts$iiifV3PresentationContextString) ? $author$project$IIIF$Internal$V3PresentationDecoders$v3ResourceTypeDecoder : _Utils_eq(contextValue, $author$project$IIIF$Internal$Contexts$iiifV2PresentationContextString) ? $author$project$IIIF$Internal$V2PresentationDecoders$v2ResourceTypeDecoder : $elm$json$Json$Decode$fail("Unknown resource context value: " + contextValue);
+    return A2($author$project$IIIF$Internal$Contexts$contextMatches, $author$project$IIIF$Internal$Contexts$iiifV3PresentationContextString, contextValue) ? $author$project$IIIF$Internal$V3PresentationDecoders$v3ResourceTypeDecoder : A2($author$project$IIIF$Internal$Contexts$contextMatches, $author$project$IIIF$Internal$Contexts$iiifV2PresentationContextString, contextValue) ? $author$project$IIIF$Internal$V2PresentationDecoders$v2ResourceTypeDecoder : $elm$json$Json$Decode$fail("Unknown resource context value: " + contextValue);
   };
   var $author$project$IIIF$Decoders$resourceDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
@@ -16610,7 +16785,18 @@
         $elm$core$List$head(allImages)
       );
       var isPrimary = _Utils_eq(image.imageType, $author$project$IIIF$Presentation$PrimaryImage) || isPrimaryImage && isFirst;
-      return { isPrimary, isStatic, label, thumbUrl, tileSource };
+      return {
+        isPrimary,
+        isStatic,
+        label,
+        servicesJson: A2(
+          $elm$json$Json$Encode$encode,
+          0,
+          A2($elm$json$Json$Encode$list, $elm$core$Basics$identity, image.serviceObjects)
+        ),
+        thumbUrl,
+        tileSource
+      };
     }
   );
   var $author$project$Model$canvasToPage = F2(
@@ -16620,15 +16806,19 @@
         A2($author$project$Model$iiifImageToPageImage, language, canvas.images),
         canvas.images
       );
-      var thumbUrl = A2($author$project$Model$canvasThumbnailUrl, images, canvas);
-      return $elm$core$List$isEmpty(images) ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(
-        {
-          aspect: $author$project$IIIF$Presentation$canvasAspect(canvas),
-          images,
-          label: $author$project$IIIF$Presentation$canvasLabel(canvas),
-          thumbUrl
-        }
-      );
+      if ($elm$core$List$isEmpty(images)) {
+        return $elm$core$Maybe$Nothing;
+      } else {
+        var thumbUrl = A2($author$project$Model$canvasThumbnailUrl, images, canvas);
+        return $elm$core$Maybe$Just(
+          {
+            aspect: $author$project$IIIF$Presentation$canvasAspect(canvas),
+            images,
+            label: $author$project$IIIF$Presentation$canvasLabel(canvas),
+            thumbUrl
+          }
+        );
+      }
     }
   );
   var $author$project$IIIF$Presentation$toManifest = function(_v0) {
@@ -16696,6 +16886,10 @@
                 $elm$json$Json$Encode$bool($.isStatic)
               ),
               _Utils_Tuple2(
+                "servicesJson",
+                $elm$json$Json$Encode$string($.servicesJson)
+              ),
+              _Utils_Tuple2(
                 "url",
                 $elm$json$Json$Encode$string($.url)
               )
@@ -16739,7 +16933,7 @@
           $author$project$Model$primaryImage,
           $elm$core$Maybe$map(
             function(image) {
-              return { isStatic: image.isStatic, url: image.tileSource };
+              return { isStatic: image.isStatic, servicesJson: image.servicesJson, url: image.tileSource };
             }
           )
         ),
@@ -17265,6 +17459,10 @@
               $elm$json$Json$Encode$bool($.isStatic)
             ),
             _Utils_Tuple2(
+              "servicesJson",
+              $elm$json$Json$Encode$string($.servicesJson)
+            ),
+            _Utils_Tuple2(
               "tileSource",
               $elm$json$Json$Encode$string($.tileSource)
             )
@@ -17291,7 +17489,7 @@
             $elm$core$Maybe$map,
             function(image) {
               return $author$project$Main$filterPreviewUpdated(
-                { aspect: page.aspect, filters: model.filters, isStatic: image.isStatic, tileSource: image.tileSource }
+                { aspect: page.aspect, filters: model.filters, isStatic: image.isStatic, servicesJson: image.servicesJson, tileSource: image.tileSource }
               );
             },
             $elm$core$List$head(
@@ -17548,11 +17746,19 @@
     }
   );
   var $author$project$IIIF$Internal$CoreDecoders$contextListDecoder = function(contextValues) {
-    return A2($elm$core$List$member, $author$project$IIIF$Internal$Contexts$iiifV3PresentationContextString, contextValues) ? A2(
+    return A2(
+      $elm$core$List$any,
+      $author$project$IIIF$Internal$Contexts$contextMatches($author$project$IIIF$Internal$Contexts$iiifV3PresentationContextString),
+      contextValues
+    ) ? A2(
       $elm$json$Json$Decode$map,
       $author$project$IIIF$Presentation$IIIFManifest($author$project$IIIF$Version$IIIFV3),
       $author$project$IIIF$Internal$V3PresentationDecoders$v3iiifManifestDecoder
-    ) : A2($elm$core$List$member, $author$project$IIIF$Internal$Contexts$iiifV2PresentationContextString, contextValues) ? A2(
+    ) : A2(
+      $elm$core$List$any,
+      $author$project$IIIF$Internal$Contexts$contextMatches($author$project$IIIF$Internal$Contexts$iiifV2PresentationContextString),
+      contextValues
+    ) ? A2(
       $elm$json$Json$Decode$map,
       $author$project$IIIF$Presentation$IIIFManifest($author$project$IIIF$Version$IIIFV2),
       $author$project$IIIF$Internal$V2PresentationDecoders$v2iiifManifestDecoder
@@ -17561,11 +17767,11 @@
     );
   };
   var $author$project$IIIF$Internal$CoreDecoders$contextStringDecoder = function(contextValue) {
-    return _Utils_eq(contextValue, $author$project$IIIF$Internal$Contexts$iiifV3PresentationContextString) ? A2(
+    return A2($author$project$IIIF$Internal$Contexts$contextMatches, $author$project$IIIF$Internal$Contexts$iiifV3PresentationContextString, contextValue) ? A2(
       $elm$json$Json$Decode$map,
       $author$project$IIIF$Presentation$IIIFManifest($author$project$IIIF$Version$IIIFV3),
       $author$project$IIIF$Internal$V3PresentationDecoders$v3iiifManifestDecoder
-    ) : _Utils_eq(contextValue, $author$project$IIIF$Internal$Contexts$iiifV2PresentationContextString) ? A2(
+    ) : A2($author$project$IIIF$Internal$Contexts$contextMatches, $author$project$IIIF$Internal$Contexts$iiifV2PresentationContextString, contextValue) ? A2(
       $elm$json$Json$Decode$map,
       $author$project$IIIF$Presentation$IIIFManifest($author$project$IIIF$Version$IIIFV2),
       $author$project$IIIF$Internal$V2PresentationDecoders$v2iiifManifestDecoder
@@ -18199,6 +18405,19 @@
             ),
             $elm$core$Platform$Cmd$none
           );
+        case "UserToggledCollectionSidebar":
+          var _v21 = model.resourceResponse;
+          if (_v21.$ === "ResourceLoadedCollection") {
+            return _Utils_Tuple2(
+              _Utils_update(
+                model,
+                { collectionSidebarVisible: !model.collectionSidebarVisible }
+              ),
+              $elm$core$Platform$Cmd$none
+            );
+          } else {
+            return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+          }
         case "UserToggledFilter":
           var toggle = msg.a;
           var enabled = msg.b;
@@ -18255,8 +18474,8 @@
             $elm$core$Platform$Cmd$none
           );
         case "UserToggledShiftByOne":
-          var _v21 = model.viewMode;
-          if (_v21.$ === "OneUp") {
+          var _v22 = model.viewMode;
+          if (_v22.$ === "OneUp") {
             return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
           } else {
             var nextShift = !model.shiftByOne;
@@ -18301,14 +18520,14 @@
           );
         case "UserToggledThumbnails":
           var thumbCmd = (function() {
-            var _v23 = _Utils_Tuple2(model.pendingThumbScroll, model.selectedIndex);
-            if (_v23.a.$ === "Just") {
-              var index2 = _v23.a.a;
+            var _v24 = _Utils_Tuple2(model.pendingThumbScroll, model.selectedIndex);
+            if (_v24.a.$ === "Just") {
+              var index2 = _v24.a.a;
               return A2($author$project$Main$scrollThumbsToIndex, true, index2);
             } else {
-              if (_v23.b.$ === "Just") {
-                var _v24 = _v23.a;
-                var index2 = _v23.b.a;
+              if (_v24.b.$ === "Just") {
+                var _v25 = _v24.a;
+                var index2 = _v24.b.a;
                 return A2($author$project$Main$scrollThumbsToIndex, true, index2);
               } else {
                 return $elm$core$Platform$Cmd$none;
@@ -18320,8 +18539,8 @@
             { sidebarState: $author$project$Model$SidebarThumbnails }
           );
           var nextInstant = (function() {
-            var _v22 = model.pendingThumbScroll;
-            if (_v22.$ === "Just") {
+            var _v23 = model.pendingThumbScroll;
+            if (_v23.$ === "Just") {
               return true;
             } else {
               return false;
@@ -18336,8 +18555,8 @@
           );
         case "UserToggledTwoUp":
           var nextMode = (function() {
-            var _v25 = model.viewMode;
-            if (_v25.$ === "OneUp") {
+            var _v26 = model.viewMode;
+            if (_v26.$ === "OneUp") {
               return $author$project$Model$TwoUp;
             } else {
               return $author$project$Model$OneUp;
@@ -19025,15 +19244,6 @@
     }
   };
   var $elm$html$Html$Attributes$rel = _VirtualDom_attribute("rel");
-  var $elm$core$String$replace = F3(
-    function(before, after, string) {
-      return A2(
-        $elm$core$String$join,
-        after,
-        A2($elm$core$String$split, before, string)
-      );
-    }
-  );
   var $author$project$View$HtmlRenderer$normalizeHtml = function(rawHtml) {
     return A3(
       $elm$core$String$replace,
@@ -23393,79 +23603,65 @@
     }
   );
   var $elm$html$Html$Attributes$disabled = $elm$html$Html$Attributes$boolProperty("disabled");
-  var $author$project$View$Helpers$viewButton = function(config) {
-    var buttonAttrs = (function() {
-      var isDisabled = _Utils_eq(config.onClickMsg, $elm$core$Maybe$Nothing);
-      var baseAttrs = _List_fromArray(
-        [
-          $elm$html$Html$Attributes$classList(
-            _List_fromArray(
-              [
-                _Utils_Tuple2("canvas-toolbar-button", true),
-                _Utils_Tuple2("is-disabled", isDisabled),
-                _Utils_Tuple2("is-fullscreen", config.isFullscreen)
-              ]
-            )
-          ),
-          $elm$html$Html$Attributes$type_("button"),
-          $elm$html$Html$Attributes$title(config.label)
-        ]
-      );
-      var _v0 = config.onClickMsg;
-      if (_v0.$ === "Just") {
-        var msg = _v0.a;
-        return A2(
-          $elm$core$List$cons,
-          $elm$html$Html$Events$onClick(msg),
-          baseAttrs
-        );
-      } else {
-        return A2(
-          $elm$core$List$cons,
-          $elm$html$Html$Attributes$disabled(true),
-          baseAttrs
-        );
-      }
-    })();
-    return A2(
-      $elm$html$Html$div,
-      _List_fromArray(
-        [
-          $elm$html$Html$Attributes$class("canvas-toolbar-item")
-        ]
-      ),
-      _List_fromArray(
-        [
-          A2(
-            $elm$html$Html$button,
-            buttonAttrs,
-            _List_fromArray(
-              [config.icon]
-            )
-          ),
-          A2(
-            $elm$html$Html$div,
-            _List_fromArray(
-              [
-                $elm$html$Html$Attributes$classList(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2("canvas-toolbar-label", true),
-                      _Utils_Tuple2("is-fullscreen", config.isFullscreen)
-                    ]
-                  )
-                )
-              ]
+  var $author$project$View$Helpers$viewButtonWithAttributes = F2(
+    function(extraAttrs, config) {
+      var buttonAttrs = (function() {
+        var isDisabled = _Utils_eq(config.onClickMsg, $elm$core$Maybe$Nothing);
+        var baseAttrs = _List_fromArray(
+          [
+            $elm$html$Html$Attributes$classList(
+              _List_fromArray(
+                [
+                  _Utils_Tuple2("canvas-toolbar-button", true),
+                  _Utils_Tuple2("is-disabled", isDisabled),
+                  _Utils_Tuple2("is-fullscreen", config.isFullscreen)
+                ]
+              )
             ),
-            _List_fromArray(
-              [
-                $elm$html$Html$text(config.label)
-              ]
+            $elm$html$Html$Attributes$type_("button"),
+            A2($elm$html$Html$Attributes$attribute, "aria-label", config.label)
+          ]
+        );
+        var _v0 = config.onClickMsg;
+        if (_v0.$ === "Just") {
+          var msg = _v0.a;
+          return A2(
+            $elm$core$List$cons,
+            $elm$html$Html$Events$onClick(msg),
+            _Utils_ap(extraAttrs, baseAttrs)
+          );
+        } else {
+          return A2(
+            $elm$core$List$cons,
+            $elm$html$Html$Attributes$disabled(true),
+            _Utils_ap(extraAttrs, baseAttrs)
+          );
+        }
+      })();
+      return A2(
+        $elm$html$Html$div,
+        _List_fromArray(
+          [
+            $elm$html$Html$Attributes$class("canvas-toolbar-item"),
+            A2($elm$html$Html$Attributes$attribute, "data-tooltip", config.label)
+          ]
+        ),
+        _List_fromArray(
+          [
+            A2(
+              $elm$html$Html$button,
+              buttonAttrs,
+              _List_fromArray(
+                [config.icon]
+              )
             )
-          )
-        ]
-      )
-    );
+          ]
+        )
+      );
+    }
+  );
+  var $author$project$View$Helpers$viewButton = function(config) {
+    return A2($author$project$View$Helpers$viewButtonWithAttributes, _List_Nil, config);
   };
   var $author$project$View$ManifestInfoModal$viewHeader = function(_v0) {
     var fullscreen = _v0.fullscreen;
@@ -27046,6 +27242,22 @@
   var $author$project$View$Icons$shiftRight = $author$project$View$Icons$makeSvgIcon(
     { path: "M88 0C39.4 0 0 39.4 0 88V424H.4c-.3 2.6-.4 5.3-.4 8c0 44.2 35.8 80 80 80H424c13.3 0 24-10.7 24-24s-10.7-24-24-24h-8V394.6c18.9-9 32-28.3 32-50.6V288H400v56c0 4.4-3.6 8-8 8H80c-11.4 0-22.2 2.4-32 6.7V88c0-22.1 17.9-40 40-40H392c4.4 0 8 3.6 8 8v72h48V56c0-30.9-25.1-56-56-56H88zM368 400v64H80c-17.7 0-32-14.3-32-32s14.3-32 32-32H368zM553 111c-9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l39 39H280c-13.3 0-24 10.7-24 24s10.7 24 24 24H558.1l-39 39c-9.4 9.4-9.4 24.6 0 33.9s24.6 9.4 33.9 0l80-80c9.4-9.4 9.4-24.6 0-33.9l-80-80z", viewBox: "0 0 640 512" }
   );
+  var $author$project$Msg$UserToggledCollectionSidebar = { $: "UserToggledCollectionSidebar" };
+  var $author$project$View$Toolbar$viewCollectionSidebarButton = function(model) {
+    var _v0 = model.resourceResponse;
+    if (_v0.$ === "ResourceLoadedCollection") {
+      return $author$project$View$Helpers$viewButton(
+        {
+          icon: model.collectionSidebarVisible ? $author$project$View$Icons$hideSidebar : $author$project$View$Icons$showSidebar,
+          isFullscreen: model.fullscreen,
+          label: model.collectionSidebarVisible ? "Hide Collection" : "Show Collection",
+          onClickMsg: $elm$core$Maybe$Just($author$project$Msg$UserToggledCollectionSidebar)
+        }
+      );
+    } else {
+      return $author$project$View$Helpers$emptyHtml;
+    }
+  };
   var $author$project$View$Toolbar$viewCurrentLabel = F2(
     function(fullscreen, labelText) {
       return A2(
@@ -27131,73 +27343,92 @@
                   $elm$html$Html$div,
                   _List_fromArray(
                     [
-                      $elm$html$Html$Attributes$class("canvas-toolbar-section is-right")
+                      $elm$html$Html$Attributes$class("canvas-toolbar-end")
                     ]
                   ),
                   _List_fromArray(
                     [
-                      $author$project$View$Helpers$viewButton(
-                        {
-                          icon: $author$project$View$Icons$pageViewOpen,
-                          isFullscreen: model.fullscreen,
-                          label: "Page View",
-                          onClickMsg: A2($author$project$Utilities$disabledIf, controlsDisabled, $author$project$Msg$UserClickedOpenPageView)
-                        }
-                      ),
-                      $author$project$View$Helpers$viewButton(
-                        {
-                          icon: $author$project$View$Icons$info,
-                          isFullscreen: model.fullscreen,
-                          label: "Manifest Info",
-                          onClickMsg: A2($author$project$Utilities$disabledIf, controlsDisabled, $author$project$Msg$UserClickedOpenManifestInfo)
-                        }
-                      ),
-                      $author$project$View$Helpers$viewButton(
-                        {
-                          icon: _Utils_eq(model.viewMode, $author$project$Model$OneUp) ? $author$project$View$Icons$openingPageView : $author$project$View$Icons$scrollingPageView,
-                          isFullscreen: model.fullscreen,
-                          label: _Utils_eq(model.viewMode, $author$project$Model$OneUp) ? "Two Page" : "One Page",
-                          onClickMsg: A2($author$project$Utilities$disabledIf, controlsDisabled, $author$project$Msg$UserToggledTwoUp)
-                        }
-                      ),
-                      $author$project$View$Helpers$viewButton(
-                        {
-                          icon: model.shiftByOne ? $author$project$View$Icons$shiftLeft : $author$project$View$Icons$shiftRight,
-                          isFullscreen: model.fullscreen,
-                          label: "Shift Pages",
-                          onClickMsg: A2(
-                            $author$project$Utilities$disabledIf,
-                            controlsDisabled || _Utils_eq(model.viewMode, $author$project$Model$OneUp),
-                            $author$project$Msg$UserToggledShiftByOne
-                          )
-                        }
-                      ),
-                      $author$project$View$Helpers$viewButton(
-                        (function() {
-                          var sidebarVisible = model.isMobile ? model.mobileSidebarOpen : !_Utils_eq(model.sidebarState, $author$project$Model$SidebarHidden);
-                          return {
-                            icon: sidebarVisible ? $author$project$View$Icons$hideSidebar : $author$project$View$Icons$showSidebar,
-                            isFullscreen: model.fullscreen,
-                            label: sidebarVisible ? "Hide Sidebar" : "Show Sidebar",
-                            onClickMsg: A2($author$project$Utilities$disabledIf, controlsDisabled, $author$project$Msg$UserToggledSidebar)
-                          };
-                        })()
-                      ),
-                      $author$project$View$Helpers$viewButton(
-                        {
-                          icon: model.fullscreen ? $author$project$View$Icons$fromFullscreen : $author$project$View$Icons$toFullscreen,
-                          isFullscreen: model.fullscreen,
-                          label: model.fullscreen ? "Exit Full" : "Fullscreen",
-                          onClickMsg: $elm$core$Maybe$Just($author$project$Msg$UserToggledFullscreen)
-                        }
+                      A3($elm$html$Html$Lazy$lazy2, $author$project$View$Toolbar$viewCurrentLabel, model.fullscreen, currentLabelText),
+                      A2(
+                        $elm$html$Html$div,
+                        _List_fromArray(
+                          [
+                            $elm$html$Html$Attributes$class("canvas-toolbar-section is-right")
+                          ]
+                        ),
+                        _List_fromArray(
+                          [
+                            $author$project$View$Helpers$viewButton(
+                              {
+                                icon: $author$project$View$Icons$pageViewOpen,
+                                isFullscreen: model.fullscreen,
+                                label: "Page View",
+                                onClickMsg: A2($author$project$Utilities$disabledIf, controlsDisabled, $author$project$Msg$UserClickedOpenPageView)
+                              }
+                            ),
+                            $author$project$View$Helpers$viewButton(
+                              {
+                                icon: $author$project$View$Icons$info,
+                                isFullscreen: model.fullscreen,
+                                label: "Manifest Info",
+                                onClickMsg: A2($author$project$Utilities$disabledIf, controlsDisabled, $author$project$Msg$UserClickedOpenManifestInfo)
+                              }
+                            ),
+                            $author$project$View$Helpers$viewButton(
+                              {
+                                icon: _Utils_eq(model.viewMode, $author$project$Model$OneUp) ? $author$project$View$Icons$openingPageView : $author$project$View$Icons$scrollingPageView,
+                                isFullscreen: model.fullscreen,
+                                label: _Utils_eq(model.viewMode, $author$project$Model$OneUp) ? "Two Page" : "One Page",
+                                onClickMsg: A2($author$project$Utilities$disabledIf, controlsDisabled, $author$project$Msg$UserToggledTwoUp)
+                              }
+                            ),
+                            $author$project$View$Helpers$viewButton(
+                              {
+                                icon: model.shiftByOne ? $author$project$View$Icons$shiftLeft : $author$project$View$Icons$shiftRight,
+                                isFullscreen: model.fullscreen,
+                                label: "Shift Pages",
+                                onClickMsg: A2(
+                                  $author$project$Utilities$disabledIf,
+                                  controlsDisabled || _Utils_eq(model.viewMode, $author$project$Model$OneUp),
+                                  $author$project$Msg$UserToggledShiftByOne
+                                )
+                              }
+                            ),
+                            $author$project$View$Toolbar$viewCollectionSidebarButton(model),
+                            $author$project$View$Helpers$viewButton(
+                              (function() {
+                                var sidebarVisible = model.isMobile ? model.mobileSidebarOpen : !_Utils_eq(model.sidebarState, $author$project$Model$SidebarHidden);
+                                return {
+                                  icon: sidebarVisible ? $author$project$View$Icons$hideSidebar : $author$project$View$Icons$showSidebar,
+                                  isFullscreen: model.fullscreen,
+                                  label: sidebarVisible ? "Hide Sidebar" : "Show Sidebar",
+                                  onClickMsg: A2($author$project$Utilities$disabledIf, controlsDisabled, $author$project$Msg$UserToggledSidebar)
+                                };
+                              })()
+                            ),
+                            A2(
+                              $author$project$View$Helpers$viewButtonWithAttributes,
+                              _List_fromArray(
+                                [
+                                  A2($elm$html$Html$Attributes$attribute, "data-diva-action", "fullscreen")
+                                ]
+                              ),
+                              {
+                                icon: model.fullscreen ? $author$project$View$Icons$fromFullscreen : $author$project$View$Icons$toFullscreen,
+                                isFullscreen: model.fullscreen,
+                                label: model.fullscreen ? "Exit Full" : "Fullscreen",
+                                onClickMsg: $elm$core$Maybe$Just($author$project$Msg$UserToggledFullscreen)
+                              }
+                            )
+                          ]
+                        )
                       )
                     ]
                   )
                 )
               ]
             )
-          ),
-          A3($elm$html$Html$Lazy$lazy2, $author$project$View$Toolbar$viewCurrentLabel, model.fullscreen, currentLabelText)
+          )
         ]
       )
     );
@@ -27420,7 +27651,7 @@
       },
       A2($elm$json$Json$Decode$field, "userLanguage", $elm$json$Json$Decode$string)
     )
-  )({ "versions": { "elm": "0.19.1" }, "types": { "message": "Msg.Msg", "aliases": { "IIIF.Presentation.Canvas": { "args": [], "type": "{ id : String.String, label : Maybe.Maybe IIIF.Language.LanguageMap, width : Maybe.Maybe Basics.Int, height : Maybe.Maybe Basics.Int, images : List.List IIIF.Presentation.Image, thumbnail : Maybe.Maybe IIIF.Presentation.Image, viewingLayout : Maybe.Maybe IIIF.Presentation.ViewingLayout }" }, "IIIF.Presentation.HomePage": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.Image": { "args": [], "type": "{ id : IIIF.Image.ImageUri, label : Maybe.Maybe IIIF.Language.LanguageMap, imageType : IIIF.Presentation.ImageType, service : List.List IIIF.Presentation.ServiceTypes }" }, "IIIF.Language.LabelValue": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Language.LanguageMap": { "args": [], "type": "List.List IIIF.Language.LanguageValues" }, "IIIF.Presentation.Logo": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes, width : Basics.Int, height : Basics.Int, service : Maybe.Maybe (List.List IIIF.Presentation.ServiceObject) }" }, "IIIF.Presentation.Manifest": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, metadata : List.List IIIF.Language.LabelValue, viewingDirection : IIIF.Presentation.ViewingDirection, summary : Maybe.Maybe IIIF.Language.LanguageMap, viewingLayout : IIIF.Presentation.ViewingLayout, canvases : List.List IIIF.Presentation.Canvas, ranges : Maybe.Maybe (List.List IIIF.Presentation.Range), homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe IIIF.Presentation.Image, provider : Maybe.Maybe (List.List IIIF.Presentation.Provider), thumbnail : Maybe.Maybe IIIF.Presentation.Image, requiredStatement : Maybe.Maybe IIIF.Presentation.RequiredStatement }" }, "IIIF.Presentation.Provider": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, type_ : IIIF.Presentation.ResourceTypes, homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe (List.List IIIF.Presentation.Logo), seeAlso : Maybe.Maybe (List.List IIIF.Presentation.SeeAlso) }" }, "IIIF.Presentation.Range": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.RangeItem, metadata : List.List IIIF.Language.LabelValue }" }, "IIIF.Presentation.RequiredStatement": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Presentation.SeeAlso": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.ServiceObject": { "args": [], "type": "{ id : String.String, serviceType : IIIF.Presentation.ServiceTypes }" }, "IIIF.Presentation.Collection": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, summary : Maybe.Maybe IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.CollectionItem }" }, "IIIF.Image.ImageRequestParameters": { "args": [], "type": "{ host : String.String, prefix : String.String, region : IIIF.Image.ImageRegion, size : IIIF.Image.ImageSize, rotation : IIIF.Image.ImageRotation, quality : IIIF.Image.ImageQuality, format : IIIF.Image.ImageFormat }" }, "IIIF.Image.ImageServerParameters": { "args": [], "type": "{ host : String.String, prefix : String.String }" } }, "unions": { "Msg.Msg": { "args": [], "tags": { "ClientNotifiedFullscreenChanged": ["Basics.Bool"], "ClientNotifiedPageChanged": ["Basics.Int"], "ClientNotifiedPageChangedInstant": ["Basics.Int"], "ClientNotifiedScrollThumbs": [], "ServerRespondedWithCollectionItem": ["String.String", "Result.Result Http.Error IIIF.Presentation.IIIFResource"], "ServerRespondedWithManifestFromCollection": ["String.String", "Result.Result Http.Error IIIF.Presentation.IIIFManifest"], "ServerRespondedWithResource": ["Result.Result Http.Error IIIF.Presentation.IIIFResource"], "UserAppliedFilterJson": [], "UserChangedZoomLevel": ["Basics.Float"], "UserClickedCloseManifestInfo": [], "UserClickedClosePageView": [], "UserClickedCollectionItem": ["String.String"], "UserClickedManifestItem": ["String.String", "String.String"], "UserClickedOpenManifestInfo": [], "UserClickedOpenPageView": [], "UserClickedPageViewImageChoice": ["Basics.Int"], "UserClickedPageViewNext": [], "UserClickedPageViewPrev": [], "UserClickedRange": ["String.String", "Maybe.Maybe Basics.Int"], "UserClickedSaveFilteredImage": [], "UserClickedThumbnail": ["Basics.Int"], "UserClickedZoomIn": [], "UserClickedZoomOut": [], "UserCopiedFilterJson": [], "UserDraggedCollectionSidebarResize": ["Basics.Int"], "UserDraggedSidebarResize": ["Basics.Int"], "UserEndedCollectionSidebarResize": [], "UserEndedSidebarResize": [], "UserResetAllFilters": [], "UserResetAltColourAdjust": [], "UserSelectedContentsIndex": [], "UserSelectedContentsPages": [], "UserStartedCollectionSidebarResize": ["Basics.Int"], "UserStartedSidebarResize": ["Basics.Int"], "UserToggledContents": [], "UserToggledFilter": ["Filters.FilterToggle", "Basics.Bool"], "UserToggledFilterGroup": ["String.String"], "UserToggledFullscreen": [], "UserToggledMetadata": [], "UserToggledPageViewFullscreen": [], "UserToggledPageViewSidebar": [], "UserToggledShiftByOne": [], "UserToggledSidebar": [], "UserToggledThumbnails": [], "UserToggledTwoUp": [], "UserUpdatedFilterFloat": ["Filters.FilterFloatValue", "String.String"], "UserUpdatedFilterInt": ["Filters.FilterIntValue", "String.String"], "UserUpdatedFilterJsonInput": ["String.String"], "UserUpdatedFilterString": ["Filters.FilterStringValue", "String.String"], "ViewerLoadingChanged": ["Basics.Bool"], "ViewportChanged": ["Basics.Int", "Basics.Int"] } }, "Basics.Bool": { "args": [], "tags": { "True": [], "False": [] } }, "Http.Error": { "args": [], "tags": { "BadUrl": ["String.String"], "Timeout": [], "NetworkError": [], "BadStatus": ["Basics.Int"], "BadBody": ["String.String"] } }, "Filters.FilterFloatValue": { "args": [], "tags": { "FloatColourReplaceBlend": [], "FloatContrast": [], "FloatGamma": [], "FloatNormalizeStrength": [], "FloatPseudoColourBlue": [], "FloatPseudoColourGreen": [], "FloatPseudoColourRed": [], "FloatUnsharpAmount": [] } }, "Filters.FilterIntValue": { "args": [], "tags": { "IntAdaptiveOffset": [], "IntAdaptiveWindow": [], "IntAltRedGamma": [], "IntAltRedSigmoid": [], "IntAltRedVibrance": [], "IntAltRedHue": [], "IntAltRedHueWindow": [], "IntAltGreenGamma": [], "IntAltGreenSigmoid": [], "IntAltGreenHue": [], "IntAltGreenHueWindow": [], "IntAltGreenVibrance": [], "IntAltBlueGamma": [], "IntAltBlueSigmoid": [], "IntAltBlueHue": [], "IntAltBlueHueWindow": [], "IntAltBlueVibrance": [], "IntBrightness": [], "IntCcBlue": [], "IntCcGreen": [], "IntCcRed": [], "IntColourmapCenter": [], "IntColourReplaceTolerance": [], "IntPcaHue": [], "IntHue": [], "IntMorphKernel": [], "IntRotation": [], "IntSaturation": [], "IntThreshold": [], "IntVibrance": [] } }, "Filters.FilterStringValue": { "args": [], "tags": { "StringColourmapPreset": [], "StringColourReplaceSource": [], "StringColourReplaceTarget": [], "StringConvolutionPreset": [], "StringPcaMode": [], "StringMorphOperation": [], "StringPseudoColourMode": [] } }, "Filters.FilterToggle": { "args": [], "tags": { "ToggleAdaptive": [], "ToggleAltBlueGamma": [], "ToggleAltBlueHue": [], "ToggleAltBlueSigmoid": [], "ToggleAltBlueVibrance": [], "ToggleAltGreenGamma": [], "ToggleAltGreenHue": [], "ToggleAltGreenSigmoid": [], "ToggleAltGreenVibrance": [], "ToggleAltRedGamma": [], "ToggleAltRedHue": [], "ToggleAltRedSigmoid": [], "ToggleAltRedVibrance": [], "ToggleBrightness": [], "ToggleCcBlue": [], "ToggleCcGreen": [], "ToggleCcRed": [], "ToggleColourmap": [], "ToggleColourReplace": [], "ToggleColourReplacePreserveLum": [], "ToggleContrast": [], "ToggleConvolution": [], "ToggleFlip": [], "ToggleGamma": [], "ToggleGlobalPca": [], "ToggleGrayscale": [], "ToggleHue": [], "ToggleInvert": [], "ToggleMorph": [], "ToggleNormalize": [], "TogglePseudoColour": [], "ToggleSaturation": [], "ToggleThreshold": [], "ToggleUnsharp": [], "ToggleVibrance": [] } }, "Basics.Float": { "args": [], "tags": { "Float": [] } }, "IIIF.Presentation.IIIFManifest": { "args": [], "tags": { "IIIFManifest": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Manifest"] } }, "IIIF.Presentation.IIIFResource": { "args": [], "tags": { "ResourceManifest": ["IIIF.Presentation.IIIFManifest"], "ResourceCollection": ["IIIF.Presentation.IIIFCollection"], "ResourceCanvas": ["IIIF.Presentation.IIIFCanvas"], "ResourceRange": ["IIIF.Presentation.IIIFRange"] } }, "Basics.Int": { "args": [], "tags": { "Int": [] } }, "Maybe.Maybe": { "args": ["a"], "tags": { "Just": ["a"], "Nothing": [] } }, "Result.Result": { "args": ["error", "value"], "tags": { "Ok": ["value"], "Err": ["error"] } }, "String.String": { "args": [], "tags": { "String": [] } }, "IIIF.Presentation.IIIFCanvas": { "args": [], "tags": { "IIIFCanvas": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Canvas"] } }, "IIIF.Presentation.IIIFCollection": { "args": [], "tags": { "IIIFCollection": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Collection"] } }, "IIIF.Presentation.IIIFRange": { "args": [], "tags": { "IIIFRange": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Range"] } }, "IIIF.Version.IIIFVersion": { "args": [], "tags": { "IIIFV2": [], "IIIFV3": [] } }, "IIIF.Presentation.ImageType": { "args": [], "tags": { "PrimaryImage": [], "ChoiceImage": [] } }, "IIIF.Image.ImageUri": { "args": [], "tags": { "InfoUri": ["IIIF.Image.ImageServerParameters"], "ImageUri": ["IIIF.Image.ImageRequestParameters"], "StaticImageUri": ["IIIF.Image.ImageServerParameters"] } }, "IIIF.Language.LanguageValues": { "args": [], "tags": { "LanguageValues": ["IIIF.Language.Language", "List.List String.String"] } }, "List.List": { "args": ["a"], "tags": {} }, "IIIF.Presentation.MediaFormats": { "args": [], "tags": { "ImageJpeg": [], "OtherFormat": ["String.String"] } }, "IIIF.Presentation.RangeItem": { "args": [], "tags": { "RangeCanvas": ["String.String"], "RangeRange": ["IIIF.Presentation.Range"] } }, "IIIF.Presentation.ResourceTypes": { "args": [], "tags": { "Video": [], "OtherResource": ["String.String"] } }, "IIIF.Presentation.ServiceTypes": { "args": [], "tags": { "ImageService1": [], "ImageService2": [], "ImageService3": [], "SearchService1": [], "AutoCompleteService1": [], "AuthTokenService1": [], "AuthLogoutService1": [], "UnknownService": [] } }, "IIIF.Presentation.ViewingDirection": { "args": [], "tags": { "LeftToRight": [], "RightToLeft": [], "TopToBottom": [], "BottomToTop": [] } }, "IIIF.Presentation.ViewingLayout": { "args": [], "tags": { "LayoutV2": ["IIIF.Presentation.ViewingHint"], "LayoutV3": ["List.List IIIF.Presentation.Behavior"] } }, "IIIF.Presentation.Behavior": { "args": [], "tags": { "AutoAdvanceBehavior": [], "NoAutoAdvanceBehavior": [], "RepeatBehavior": [], "NoRepeatBehavior": [], "UnorderedBehavior": [], "IndividualsBehavior": [], "ContinuousBehavior": [], "PagedBehavior": [], "FacingPagesBehavior": [], "NonPagedBehavior": [], "MultiPartBehavior": [], "TogetherBehavior": [], "SequenceBehavior": [], "ThumbnailNavBehavior": [], "NoNavBehavior": [], "HiddenBehavior": [] } }, "IIIF.Presentation.CollectionItem": { "args": [], "tags": { "NestedCollection": ["IIIF.Presentation.Collection"], "ManifestItem": ["IIIF.Presentation.Manifest"] } }, "IIIF.Image.ImageFormat": { "args": [], "tags": { "JpegFormat": [], "TiffFormat": [], "PngFormat": [], "Jp2Format": [], "GifFormat": [], "PdfFormat": [], "WebpFormat": [] } }, "IIIF.Image.ImageQuality": { "args": [], "tags": { "ColorQuality": [], "GrayQuality": [], "BiTonalQuality": [], "DefaultQuality": [], "NativeQuality": [] } }, "IIIF.Image.ImageRegion": { "args": [], "tags": { "FullRegion": [], "SquareRegion": [], "SizeRegion": ["{ x : Basics.Int, y : Basics.Int, w : Basics.Int, h : Basics.Int }"], "PctSizeRegion": ["{ x : Basics.Float, y : Basics.Float, w : Basics.Float, h : Basics.Float }"] } }, "IIIF.Image.ImageRotation": { "args": [], "tags": { "NormalRotation": ["Basics.Float"], "MirroredRotation": ["Basics.Float"] } }, "IIIF.Image.ImageSize": { "args": [], "tags": { "MaxSize": [], "ExactMaxSize": [], "WidthOnlySize": ["Basics.Int"], "ExactWidthOnlySize": ["Basics.Int"], "HeightOnlySize": ["Basics.Int"], "ExactHeightOnlySize": ["Basics.Int"], "PercentSize": ["Basics.Float"], "ExactPercentSize": ["Basics.Float"], "WidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"] } }, "IIIF.Language.Language": { "args": [], "tags": { "LanguageCode": ["String.String"], "None": [], "Default": [] } }, "IIIF.Presentation.ViewingHint": { "args": [], "tags": { "PagedHint": [], "IndividualsHint": [], "ContinuousHint": [], "MultiPartHint": [], "NonPagedHint": [], "TopHint": [], "FacingPagesHint": [] } } } } }) } };
+  )({ "versions": { "elm": "0.19.1" }, "types": { "message": "Msg.Msg", "aliases": { "IIIF.Presentation.Canvas": { "args": [], "type": "{ id : String.String, label : Maybe.Maybe IIIF.Language.LanguageMap, width : Maybe.Maybe Basics.Int, height : Maybe.Maybe Basics.Int, images : List.List IIIF.Presentation.Image, thumbnail : Maybe.Maybe IIIF.Presentation.Image, viewingLayout : Maybe.Maybe IIIF.Presentation.ViewingLayout }" }, "IIIF.Presentation.HomePage": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.Image": { "args": [], "type": "{ id : IIIF.Image.ImageUri, label : Maybe.Maybe IIIF.Language.LanguageMap, imageType : IIIF.Presentation.ImageType, service : List.List IIIF.Presentation.ServiceTypes, serviceObjects : List.List Json.Decode.Value }" }, "IIIF.Language.LabelValue": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Language.LanguageMap": { "args": [], "type": "List.List IIIF.Language.LanguageValues" }, "IIIF.Presentation.Logo": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes, width : Basics.Int, height : Basics.Int, service : Maybe.Maybe (List.List IIIF.Presentation.ServiceObject) }" }, "IIIF.Presentation.Manifest": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, metadata : List.List IIIF.Language.LabelValue, viewingDirection : IIIF.Presentation.ViewingDirection, summary : Maybe.Maybe IIIF.Language.LanguageMap, viewingLayout : IIIF.Presentation.ViewingLayout, canvases : List.List IIIF.Presentation.Canvas, ranges : Maybe.Maybe (List.List IIIF.Presentation.Range), homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe IIIF.Presentation.Image, provider : Maybe.Maybe (List.List IIIF.Presentation.Provider), thumbnail : Maybe.Maybe IIIF.Presentation.Image, requiredStatement : Maybe.Maybe IIIF.Presentation.RequiredStatement }" }, "IIIF.Presentation.Provider": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, type_ : IIIF.Presentation.ResourceTypes, homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe (List.List IIIF.Presentation.Logo), seeAlso : Maybe.Maybe (List.List IIIF.Presentation.SeeAlso) }" }, "IIIF.Presentation.Range": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.RangeItem, metadata : List.List IIIF.Language.LabelValue }" }, "IIIF.Presentation.RequiredStatement": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Presentation.SeeAlso": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.ServiceObject": { "args": [], "type": "{ id : String.String, serviceType : IIIF.Presentation.ServiceTypes }" }, "Json.Decode.Value": { "args": [], "type": "Json.Encode.Value" }, "IIIF.Presentation.Collection": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, summary : Maybe.Maybe IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.CollectionItem }" }, "IIIF.Image.ImageRequestParameters": { "args": [], "type": "{ host : String.String, prefix : String.String, region : IIIF.Image.ImageRegion, size : IIIF.Image.ImageSize, rotation : IIIF.Image.ImageRotation, quality : IIIF.Image.ImageQuality, format : IIIF.Image.ImageFormat }" }, "IIIF.Image.ImageServerParameters": { "args": [], "type": "{ host : String.String, prefix : String.String }" } }, "unions": { "Msg.Msg": { "args": [], "tags": { "ClientNotifiedFullscreenChanged": ["Basics.Bool"], "ClientNotifiedPageChanged": ["Basics.Int"], "ClientNotifiedPageChangedInstant": ["Basics.Int"], "ClientNotifiedScrollThumbs": [], "ServerRespondedWithCollectionItem": ["String.String", "Result.Result Http.Error IIIF.Presentation.IIIFResource"], "ServerRespondedWithManifestFromCollection": ["String.String", "Result.Result Http.Error IIIF.Presentation.IIIFManifest"], "ServerRespondedWithResource": ["Result.Result Http.Error IIIF.Presentation.IIIFResource"], "UserAppliedFilterJson": [], "UserChangedZoomLevel": ["Basics.Float"], "UserClickedCloseManifestInfo": [], "UserClickedClosePageView": [], "UserClickedCollectionItem": ["String.String"], "UserClickedManifestItem": ["String.String", "String.String"], "UserClickedOpenManifestInfo": [], "UserClickedOpenPageView": [], "UserClickedPageViewImageChoice": ["Basics.Int"], "UserClickedPageViewNext": [], "UserClickedPageViewPrev": [], "UserClickedRange": ["String.String", "Maybe.Maybe Basics.Int"], "UserClickedSaveFilteredImage": [], "UserClickedThumbnail": ["Basics.Int"], "UserClickedZoomIn": [], "UserClickedZoomOut": [], "UserCopiedFilterJson": [], "UserDraggedCollectionSidebarResize": ["Basics.Int"], "UserDraggedSidebarResize": ["Basics.Int"], "UserEndedCollectionSidebarResize": [], "UserEndedSidebarResize": [], "UserResetAllFilters": [], "UserResetAltColourAdjust": [], "UserSelectedContentsIndex": [], "UserSelectedContentsPages": [], "UserStartedCollectionSidebarResize": ["Basics.Int"], "UserStartedSidebarResize": ["Basics.Int"], "UserToggledContents": [], "UserToggledCollectionSidebar": [], "UserToggledFilter": ["Filters.FilterToggle", "Basics.Bool"], "UserToggledFilterGroup": ["String.String"], "UserToggledFullscreen": [], "UserToggledMetadata": [], "UserToggledPageViewFullscreen": [], "UserToggledPageViewSidebar": [], "UserToggledShiftByOne": [], "UserToggledSidebar": [], "UserToggledThumbnails": [], "UserToggledTwoUp": [], "UserUpdatedFilterFloat": ["Filters.FilterFloatValue", "String.String"], "UserUpdatedFilterInt": ["Filters.FilterIntValue", "String.String"], "UserUpdatedFilterJsonInput": ["String.String"], "UserUpdatedFilterString": ["Filters.FilterStringValue", "String.String"], "ViewerLoadingChanged": ["Basics.Bool"], "ViewportChanged": ["Basics.Int", "Basics.Int"] } }, "Basics.Bool": { "args": [], "tags": { "True": [], "False": [] } }, "Http.Error": { "args": [], "tags": { "BadUrl": ["String.String"], "Timeout": [], "NetworkError": [], "BadStatus": ["Basics.Int"], "BadBody": ["String.String"] } }, "Filters.FilterFloatValue": { "args": [], "tags": { "FloatColourReplaceBlend": [], "FloatContrast": [], "FloatGamma": [], "FloatNormalizeStrength": [], "FloatPseudoColourBlue": [], "FloatPseudoColourGreen": [], "FloatPseudoColourRed": [], "FloatUnsharpAmount": [] } }, "Filters.FilterIntValue": { "args": [], "tags": { "IntAdaptiveOffset": [], "IntAdaptiveWindow": [], "IntAltRedGamma": [], "IntAltRedSigmoid": [], "IntAltRedVibrance": [], "IntAltRedHue": [], "IntAltRedHueWindow": [], "IntAltGreenGamma": [], "IntAltGreenSigmoid": [], "IntAltGreenHue": [], "IntAltGreenHueWindow": [], "IntAltGreenVibrance": [], "IntAltBlueGamma": [], "IntAltBlueSigmoid": [], "IntAltBlueHue": [], "IntAltBlueHueWindow": [], "IntAltBlueVibrance": [], "IntBrightness": [], "IntCcBlue": [], "IntCcGreen": [], "IntCcRed": [], "IntColourmapCenter": [], "IntColourReplaceTolerance": [], "IntPcaHue": [], "IntHue": [], "IntMorphKernel": [], "IntRotation": [], "IntSaturation": [], "IntThreshold": [], "IntVibrance": [] } }, "Filters.FilterStringValue": { "args": [], "tags": { "StringColourmapPreset": [], "StringColourReplaceSource": [], "StringColourReplaceTarget": [], "StringConvolutionPreset": [], "StringPcaMode": [], "StringMorphOperation": [], "StringPseudoColourMode": [] } }, "Filters.FilterToggle": { "args": [], "tags": { "ToggleAdaptive": [], "ToggleAltBlueGamma": [], "ToggleAltBlueHue": [], "ToggleAltBlueSigmoid": [], "ToggleAltBlueVibrance": [], "ToggleAltGreenGamma": [], "ToggleAltGreenHue": [], "ToggleAltGreenSigmoid": [], "ToggleAltGreenVibrance": [], "ToggleAltRedGamma": [], "ToggleAltRedHue": [], "ToggleAltRedSigmoid": [], "ToggleAltRedVibrance": [], "ToggleBrightness": [], "ToggleCcBlue": [], "ToggleCcGreen": [], "ToggleCcRed": [], "ToggleColourmap": [], "ToggleColourReplace": [], "ToggleColourReplacePreserveLum": [], "ToggleContrast": [], "ToggleConvolution": [], "ToggleFlip": [], "ToggleGamma": [], "ToggleGlobalPca": [], "ToggleGrayscale": [], "ToggleHue": [], "ToggleInvert": [], "ToggleMorph": [], "ToggleNormalize": [], "TogglePseudoColour": [], "ToggleSaturation": [], "ToggleThreshold": [], "ToggleUnsharp": [], "ToggleVibrance": [] } }, "Basics.Float": { "args": [], "tags": { "Float": [] } }, "IIIF.Presentation.IIIFManifest": { "args": [], "tags": { "IIIFManifest": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Manifest"] } }, "IIIF.Presentation.IIIFResource": { "args": [], "tags": { "ResourceManifest": ["IIIF.Presentation.IIIFManifest"], "ResourceCollection": ["IIIF.Presentation.IIIFCollection"], "ResourceCanvas": ["IIIF.Presentation.IIIFCanvas"], "ResourceRange": ["IIIF.Presentation.IIIFRange"] } }, "Basics.Int": { "args": [], "tags": { "Int": [] } }, "Maybe.Maybe": { "args": ["a"], "tags": { "Just": ["a"], "Nothing": [] } }, "Result.Result": { "args": ["error", "value"], "tags": { "Ok": ["value"], "Err": ["error"] } }, "String.String": { "args": [], "tags": { "String": [] } }, "IIIF.Presentation.IIIFCanvas": { "args": [], "tags": { "IIIFCanvas": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Canvas"] } }, "IIIF.Presentation.IIIFCollection": { "args": [], "tags": { "IIIFCollection": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Collection"] } }, "IIIF.Presentation.IIIFRange": { "args": [], "tags": { "IIIFRange": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Range"] } }, "IIIF.Version.IIIFVersion": { "args": [], "tags": { "IIIFV2": [], "IIIFV3": [] } }, "IIIF.Presentation.ImageType": { "args": [], "tags": { "PrimaryImage": [], "ChoiceImage": [] } }, "IIIF.Image.ImageUri": { "args": [], "tags": { "InfoUri": ["IIIF.Image.ImageServerParameters"], "ImageUri": ["IIIF.Image.ImageRequestParameters"], "StaticImageUri": ["IIIF.Image.ImageServerParameters"] } }, "IIIF.Language.LanguageValues": { "args": [], "tags": { "LanguageValues": ["IIIF.Language.Language", "List.List String.String"] } }, "List.List": { "args": ["a"], "tags": {} }, "IIIF.Presentation.MediaFormats": { "args": [], "tags": { "ImageJpeg": [], "OtherFormat": ["String.String"] } }, "IIIF.Presentation.RangeItem": { "args": [], "tags": { "RangeCanvas": ["String.String"], "RangeRange": ["IIIF.Presentation.Range"] } }, "IIIF.Presentation.ResourceTypes": { "args": [], "tags": { "Video": [], "OtherResource": ["String.String"] } }, "IIIF.Presentation.ServiceTypes": { "args": [], "tags": { "ImageService1": [], "ImageService2": [], "ImageService3": [], "SearchService1": [], "AutoCompleteService1": [], "AuthTokenService1": [], "AuthLogoutService1": [], "UnknownService": [] } }, "Json.Encode.Value": { "args": [], "tags": { "Value": [] } }, "IIIF.Presentation.ViewingDirection": { "args": [], "tags": { "LeftToRight": [], "RightToLeft": [], "TopToBottom": [], "BottomToTop": [] } }, "IIIF.Presentation.ViewingLayout": { "args": [], "tags": { "LayoutV2": ["IIIF.Presentation.ViewingHint"], "LayoutV3": ["List.List IIIF.Presentation.Behavior"] } }, "IIIF.Presentation.Behavior": { "args": [], "tags": { "AutoAdvanceBehavior": [], "NoAutoAdvanceBehavior": [], "RepeatBehavior": [], "NoRepeatBehavior": [], "UnorderedBehavior": [], "IndividualsBehavior": [], "ContinuousBehavior": [], "PagedBehavior": [], "FacingPagesBehavior": [], "NonPagedBehavior": [], "MultiPartBehavior": [], "TogetherBehavior": [], "SequenceBehavior": [], "ThumbnailNavBehavior": [], "NoNavBehavior": [], "HiddenBehavior": [] } }, "IIIF.Presentation.CollectionItem": { "args": [], "tags": { "NestedCollection": ["IIIF.Presentation.Collection"], "ManifestItem": ["IIIF.Presentation.Manifest"] } }, "IIIF.Image.ImageFormat": { "args": [], "tags": { "JpegFormat": [], "TiffFormat": [], "PngFormat": [], "Jp2Format": [], "GifFormat": [], "PdfFormat": [], "WebpFormat": [] } }, "IIIF.Image.ImageQuality": { "args": [], "tags": { "ColorQuality": [], "GrayQuality": [], "BiTonalQuality": [], "DefaultQuality": [], "NativeQuality": [] } }, "IIIF.Image.ImageRegion": { "args": [], "tags": { "FullRegion": [], "SquareRegion": [], "SizeRegion": ["{ x : Basics.Int, y : Basics.Int, w : Basics.Int, h : Basics.Int }"], "PctSizeRegion": ["{ x : Basics.Float, y : Basics.Float, w : Basics.Float, h : Basics.Float }"] } }, "IIIF.Image.ImageRotation": { "args": [], "tags": { "NormalRotation": ["Basics.Float"], "MirroredRotation": ["Basics.Float"] } }, "IIIF.Image.ImageSize": { "args": [], "tags": { "MaxSize": [], "ExactMaxSize": [], "WidthOnlySize": ["Basics.Int"], "ExactWidthOnlySize": ["Basics.Int"], "HeightOnlySize": ["Basics.Int"], "ExactHeightOnlySize": ["Basics.Int"], "PercentSize": ["Basics.Float"], "ExactPercentSize": ["Basics.Float"], "WidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"] } }, "IIIF.Language.Language": { "args": [], "tags": { "LanguageCode": ["String.String"], "None": [], "Default": [] } }, "IIIF.Presentation.ViewingHint": { "args": [], "tags": { "PagedHint": [], "IndividualsHint": [], "ContinuousHint": [], "MultiPartHint": [], "NonPagedHint": [], "TopHint": [], "FacingPagesHint": [] } } } } }) } };
 
   // src/filters.ts
   function setFilterOptions(viewer, options) {
@@ -28918,6 +29149,317 @@
     }
   };
 
+  // src/auth.ts
+  var AUTH_CONTEXTS = /* @__PURE__ */ new Set([
+    "http://iiif.io/api/auth/2/context.json",
+    "https://iiif.io/api/auth/2/context.json"
+  ]);
+  var STORAGE_PREFIX = "diva:iiif-auth2:";
+  var UNSUPPORTED_PROFILES = /* @__PURE__ */ new Set(["kiosk", "external"]);
+  var UNSUPPORTED_TYPES = ["AuthLogoutService2", "AuthAccessService1", "AuthTokenService1", "AuthCookieService1"];
+  var isObject = (value) => Boolean(value) && typeof value === "object";
+  var idOf = (value) => String(value.id || value["@id"] || "");
+  var typeOf = (value) => String(value.type || value["@type"] || "");
+  var profileOf = (value) => String(value.profile || "").toLowerCase();
+  var hasType = (service, suffix) => typeOf(service).toLowerCase().includes(suffix.toLowerCase());
+  var contextsOf = (value) => Array.isArray(value["@context"]) ? value["@context"] : [value["@context"] || value.context];
+  var hasContext = (value) => contextsOf(value).some((context) => AUTH_CONTEXTS.has(String(context)));
+  var servicesOf = (value) => {
+    const services = value.service;
+    return Array.isArray(services) ? services.filter(isObject) : isObject(services) ? [services] : [];
+  };
+  var localized = (value, fallback) => {
+    if (typeof value === "string") return value;
+    if (!isObject(value)) return fallback;
+    const language = typeof navigator === "undefined" ? "en" : navigator.language;
+    for (const key of [language, language.split("-")[0], "en", "none"]) {
+      const candidate = value[key];
+      if (Array.isArray(candidate) && typeof candidate[0] === "string") return candidate[0];
+    }
+    for (const candidate of Object.values(value))
+      if (Array.isArray(candidate) && typeof candidate[0] === "string") return candidate[0];
+    return fallback;
+  };
+  var errorText = (heading, note, fallback) => [localized(heading, ""), localized(note, "")].filter(Boolean).join(" ") || fallback;
+  var findAuthServices = (root) => {
+    const probes = [];
+    const findProbes = (value) => {
+      if (Array.isArray(value)) return value.forEach(findProbes);
+      if (!isObject(value)) return;
+      if (hasType(value, "AuthProbeService2")) probes.push(value);
+      servicesOf(value).forEach(findProbes);
+    };
+    findProbes(root);
+    for (const probe of probes) {
+      const result = { probe };
+      const visitAssociation = (value) => {
+        if (!result.access && hasType(value, "AuthAccessService2") && profileOf(value) === "active") result.access = value;
+        if (!result.token && hasType(value, "AuthAccessTokenService2")) result.token = value;
+        servicesOf(value).forEach(visitAssociation);
+      };
+      visitAssociation(probe);
+      if (result.access && result.token) return result;
+    }
+    return probes.length > 0 ? { probe: probes[0] } : {};
+  };
+  var rejectUnsupported = (root) => {
+    const visit = (value) => {
+      if (Array.isArray(value)) return value.forEach(visit);
+      if (!isObject(value)) return;
+      const profile = profileOf(value);
+      if (hasType(value, "AuthAccessService2") && UNSUPPORTED_PROFILES.has(profile))
+        throw new Error(`IIIF Auth 2 '${profile}' access is not supported; only the 'active' profile is supported.`);
+      const unsupported = UNSUPPORTED_TYPES.find((type) => hasType(value, type));
+      if (unsupported) throw new Error(`Unsupported authorization service: ${unsupported}.`);
+      if (value.location || value.substitute || value.items && hasType(value, "AuthProbeResult2"))
+        throw new Error("IIIF Auth redirect, substitute, and tiered access flows are not supported.");
+      servicesOf(value).forEach(visit);
+    };
+    visit(root);
+  };
+  var findResource = (root, sourceUrl) => {
+    const wanted = sourceUrl.replace(/\/info\.json(?:\?.*)?$/, "").replace(/\/$/, "");
+    let found = null;
+    const visit = (value) => {
+      if (found || !value) return;
+      if (Array.isArray(value)) return value.forEach(visit);
+      if (!isObject(value)) return;
+      const id = idOf(value).replace(/\/$/, "");
+      if (id === wanted || id === sourceUrl) {
+        found = value;
+        return;
+      }
+      Object.values(value).forEach(visit);
+    };
+    visit(root);
+    return found;
+  };
+  var parseServicesJson = (servicesJson) => {
+    if (!servicesJson) return null;
+    try {
+      return JSON.parse(servicesJson);
+    } catch (_) {
+      return null;
+    }
+  };
+  var associationKey = (services) => [services.probe, services.access, services.token].map((service) => service ? idOf(service) : "").join("|");
+  var tokenKey = (probe, token) => STORAGE_PREFIX + encodeURIComponent(`${idOf(probe)}|${idOf(token)}`);
+  var removeToken = (probe, token) => {
+    try {
+      sessionStorage.removeItem(tokenKey(probe, token));
+    } catch (_) {
+    }
+  };
+  var readToken = (probe, tokenService) => {
+    try {
+      const raw = sessionStorage.getItem(tokenKey(probe, tokenService));
+      if (!raw) return null;
+      const token = JSON.parse(raw);
+      if (!token.accessToken || token.expiresAt !== void 0 && token.expiresAt <= Date.now()) {
+        removeToken(probe, tokenService);
+        return null;
+      }
+      return token;
+    } catch (_) {
+      return null;
+    }
+  };
+  var regularSource = (source) => source.isStatic ? { type: "image", url: source.url, crossOriginPolicy: "Anonymous" } : source.url;
+  var abortError = () => new DOMException("The operation was cancelled.", "AbortError");
+  var throwIfAborted = (signal) => {
+    if (signal.aborted) throw abortError();
+  };
+  var requestProbe = async (service, signal, token) => {
+    const response = await fetch(idOf(service), {
+      mode: "cors",
+      credentials: "omit",
+      signal,
+      headers: token ? { Authorization: `Bearer ${token}` } : void 0
+    });
+    if (!response.ok) throw new Error(`Probe service failed (${response.status}).`);
+    const data = await response.json();
+    if (!isObject(data) || !hasContext(data) || typeOf(data) !== "AuthProbeResult2" || typeof data.status !== "number")
+      throw new Error("Probe service returned an invalid response.");
+    rejectUnsupported(data);
+    return { status: data.status, heading: data.heading, note: data.note };
+  };
+  var dialog = (access, signal, error) => new Promise((resolve, reject) => {
+    const overlay = document.createElement("div");
+    overlay.className = "diva-auth-overlay";
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+    const box = document.createElement("div");
+    box.className = "diva-auth-dialog";
+    const heading = document.createElement("h2");
+    heading.textContent = localized(access.heading, "Sign in required");
+    const note = document.createElement("p");
+    note.textContent = error || localized(access.note, "Sign in to view this image.");
+    const confirm = document.createElement("button");
+    confirm.type = "button";
+    confirm.textContent = error ? "Retry" : localized(access.confirmLabel || access.label, "Sign in");
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.textContent = "Cancel";
+    const finish = (cancelled) => {
+      signal.removeEventListener("abort", onAbort);
+      overlay.remove();
+      cancelled ? reject(abortError()) : resolve();
+    };
+    const onAbort = () => finish(true);
+    confirm.addEventListener("click", () => finish(false), { once: true });
+    cancel.addEventListener("click", () => finish(true), { once: true });
+    signal.addEventListener("abort", onAbort, { once: true });
+    box.append(heading, note, confirm, cancel);
+    overlay.append(box);
+    document.body.append(overlay);
+    confirm.focus();
+  });
+  var waitForPopup = (popup, signal) => new Promise((resolve, reject) => {
+    const started = Date.now();
+    const onAbort = () => {
+      popup.close();
+      finish(abortError());
+    };
+    const timer = window.setInterval(() => {
+      if (popup.closed) return finish();
+      if (Date.now() - started > 10 * 60 * 1e3) {
+        popup.close();
+        finish(new Error("Sign-in timed out."));
+      }
+    }, 250);
+    const finish = (error) => {
+      clearInterval(timer);
+      signal.removeEventListener("abort", onAbort);
+      error ? reject(error) : resolve();
+    };
+    signal.addEventListener("abort", onAbort, { once: true });
+  });
+  var requestToken = (service, signal) => new Promise((resolve, reject) => {
+    const url = new URL(idOf(service), location.href);
+    const messageId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+    url.searchParams.set("messageId", messageId);
+    url.searchParams.set("origin", location.origin);
+    const iframe = document.createElement("iframe");
+    iframe.hidden = true;
+    iframe.src = url.href;
+    const timeout = window.setTimeout(() => finish(new Error("The token service did not respond.")), 3e4);
+    const finish = (error, token) => {
+      clearTimeout(timeout);
+      signal.removeEventListener("abort", onAbort);
+      window.removeEventListener("message", receive);
+      iframe.remove();
+      error ? reject(error) : resolve(token);
+    };
+    const onAbort = () => finish(abortError());
+    const receive = (event) => {
+      if (event.source !== iframe.contentWindow || event.origin !== url.origin || !isObject(event.data)) return;
+      const data = event.data;
+      if (data.messageId !== messageId || !hasContext(data)) return;
+      if (typeOf(data) === "AuthAccessTokenError2")
+        return finish(new Error(errorText(
+          data.heading || service.errorHeading,
+          data.note || service.errorNote,
+          `The token service refused access (${String(data.profile || "unknown")}).`
+        )));
+      if (typeOf(data) !== "AuthAccessToken2" || typeof data.accessToken !== "string")
+        return finish(new Error("The token service returned an invalid message."));
+      const expiresIn = typeof data.expiresIn === "number" ? data.expiresIn : void 0;
+      finish(void 0, { accessToken: data.accessToken, expiresAt: expiresIn === void 0 ? void 0 : Date.now() + expiresIn * 1e3 });
+    };
+    signal.addEventListener("abort", onAbort, { once: true });
+    window.addEventListener("message", receive);
+    document.body.append(iframe);
+  });
+  var AuthCoordinator = class {
+    constructor(objectData) {
+      this.controller = new AbortController();
+      this.attempts = /* @__PURE__ */ new Map();
+      this.manifest = this.loadJson(objectData).catch(() => null);
+    }
+    destroy() {
+      this.controller.abort();
+      this.attempts.clear();
+      document.querySelectorAll(".diva-auth-overlay").forEach((element) => element.remove());
+    }
+    async loadJson(value) {
+      const trimmed = value.trim();
+      if (trimmed.startsWith("{") || trimmed.startsWith("[")) return JSON.parse(trimmed);
+      const response = await fetch(value, { headers: { Accept: "application/ld+json, application/json" }, signal: this.controller.signal });
+      if (!response.ok) throw new Error(`Request failed (${response.status})`);
+      return response.json();
+    }
+    async resolve(source, callerSignal) {
+      throwIfAborted(this.controller.signal);
+      if (callerSignal == null ? void 0 : callerSignal.aborted) throw abortError();
+      let info = null;
+      if (!source.isStatic) {
+        const response = await fetch(source.url, { mode: "cors", credentials: "omit", signal: callerSignal || this.controller.signal });
+        if (!response.ok && response.status !== 401 && response.status !== 403)
+          throw new Error(`Image information request failed (${response.status}).`);
+        try {
+          info = await response.json();
+        } catch (_) {
+          info = null;
+        }
+      }
+      const manifest = await this.manifest;
+      throwIfAborted(this.controller.signal);
+      const roots = [parseServicesJson(source.servicesJson), findResource(manifest, source.url), info];
+      rejectUnsupported(roots);
+      const services = findAuthServices(roots);
+      if (!services.probe) return regularSource(source);
+      const key = associationKey(services);
+      let attempt = this.attempts.get(key);
+      if (!attempt) {
+        attempt = this.authorize(services).finally(() => this.attempts.delete(key));
+        this.attempts.set(key, attempt);
+      }
+      const bearer = await attempt;
+      if (!bearer) return regularSource(source);
+      return source.isStatic ? { type: "image", url: source.url, crossOriginPolicy: "use-credentials", ajaxWithCredentials: true } : { url: source.url, crossOriginPolicy: "use-credentials", ajaxWithCredentials: true };
+    }
+    async authorize(services) {
+      const signal = this.controller.signal;
+      const probe = services.probe;
+      if ((await requestProbe(probe, signal)).status === 200) return null;
+      if (!services.access || !services.token)
+        throw new Error("No supported Auth 2 active sign-in service was provided.");
+      const cached = readToken(probe, services.token);
+      if (cached) {
+        if ((await requestProbe(probe, signal, cached.accessToken)).status === 200) return cached.accessToken;
+        removeToken(probe, services.token);
+      }
+      let previousError;
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          await dialog(services.access, signal, previousError);
+          previousError = void 0;
+          const accessUrl = new URL(idOf(services.access), location.href);
+          accessUrl.searchParams.set("origin", location.origin);
+          const popup = window.open(accessUrl.href, "_blank");
+          if (!popup) throw new Error("The sign-in window was blocked. Allow popups and retry.");
+          await waitForPopup(popup, signal);
+          const token = await requestToken(services.token, signal);
+          sessionStorage.setItem(tokenKey(probe, services.token), JSON.stringify(token));
+          const finalProbe = await requestProbe(probe, signal, token.accessToken);
+          if (finalProbe.status !== 200) {
+            removeToken(probe, services.token);
+            throw new Error(errorText(
+              finalProbe.heading || probe.errorHeading,
+              finalProbe.note || probe.errorNote,
+              `Access was not granted (${finalProbe.status}).`
+            ));
+          }
+          return token.accessToken;
+        } catch (error) {
+          if (error instanceof DOMException && error.name === "AbortError") throw error;
+          previousError = error instanceof Error ? error.message : "Authorization failed.";
+        }
+      }
+      throw new Error(previousError || "Authorization failed.");
+    }
+  };
+
   // src/diva.ts
   var DIVA_STYLE_ID = "diva-inline-styles";
   var injectStyles = (cssText) => {
@@ -28934,7 +29476,6 @@
     target.appendChild(styleEl);
   };
   injectStyles(diva_default);
-  var toViewerTileSource = (url, isStatic) => isStatic ? { type: "image", url } : url;
   var Diva = class {
     constructor(rootId, flags) {
       this.mainViewer = null;
@@ -28944,6 +29485,7 @@
       this.filterViewerFlipped = false;
       this.currentFilterTileSource = null;
       this.pendingFilterPreview = null;
+      this.filterPreviewVersion = 0;
       this.filterPreviewRetries = 0;
       this.filterPreviewRafId = null;
       this.isDestroyed = false;
@@ -28959,12 +29501,15 @@
         delete rootAny.elmTree;
         root.innerHTML = "";
       }
+      this.rootId = rootId;
       this.root = root;
+      this.auth = new AuthCoordinator(flags.objectData);
       this.isDestroyed = false;
       this.handlePageChangeBound = this.handlePageChange.bind(this);
       this.handleZoomChangeBound = this.handleZoomChange.bind(this);
       this.handleLoadingChangeBound = this.handleLoadingChange.bind(this);
       this.handleFullscreenChangeBound = this.handleFullscreenChange.bind(this);
+      this.handleRootClickBound = this.handleRootClick.bind(this);
       let langCode = this.detectLanguage();
       this.app = Elm.Main.init({
         node: root,
@@ -28977,8 +29522,12 @@
           userLanguage: flags.setLanguage || langCode
         }
       });
-      rootAny.__divaInstance = this;
+      this.root = this.getConnectedRoot();
+      const connectedRootAny = this.root;
+      connectedRootAny.__divaInstance = this;
       this.bindPorts();
+      this.callViewerMethod("setTileSourceResolver", (source, signal) => this.auth.resolve(source, signal));
+      this.bindRootClick();
       this.bindPageChange();
       this.bindFullscreenChange();
       this.bindZoomChange();
@@ -28993,12 +29542,16 @@
     detectLanguage() {
       return navigator.language.split("-")[0];
     }
+    getConnectedRoot() {
+      const root = document.getElementById(this.rootId);
+      if (root) {
+        return root;
+      }
+      return this.root;
+    }
     bindPorts() {
       this.getPort("tileSourcesUpdated").subscribe((tileSources) => {
-        this.callViewerMethod(
-          "setTileSources",
-          tileSources.map((entry) => toViewerTileSource(entry.url, entry.isStatic))
-        );
+        this.callViewerMethod("setTileSources", tileSources);
       });
       this.getPort("pageAspectsUpdated").subscribe((aspects) => {
         this.callViewerMethod("setPageAspects", aspects);
@@ -29020,7 +29573,7 @@
           return;
         }
         this.pendingFilterPreview = payload;
-        this.applyFilterPreview();
+        void this.applyFilterPreview();
       });
       this.getPort("setFullscreen").subscribe((enabled) => {
         this.setFullscreen(enabled);
@@ -29048,7 +29601,7 @@
       }
       return this.mainViewer;
     }
-    applyFilterPreview() {
+    async applyFilterPreview() {
       if (this.isDestroyed) {
         return;
       }
@@ -29061,7 +29614,7 @@
           this.filterPreviewRetries += 1;
           this.filterPreviewRafId = requestAnimationFrame(() => {
             this.filterPreviewRafId = null;
-            this.applyFilterPreview();
+            void this.applyFilterPreview();
           });
         }
         return;
@@ -29069,13 +29622,24 @@
       const payload = this.pendingFilterPreview;
       this.pendingFilterPreview = null;
       this.filterPreviewRetries = 0;
+      const version = this.filterPreviewVersion += 1;
       this.filterOptions = payload.filters || null;
       this.ensureFilterViewer();
       if (this.filterViewer) {
         const tileSourceChanged = this.currentFilterTileSource !== payload.tileSource;
         if (tileSourceChanged) {
+          let tileSource;
+          try {
+            tileSource = await this.auth.resolve({ url: payload.tileSource, isStatic: payload.isStatic, servicesJson: payload.servicesJson });
+          } catch (error) {
+            console.error("Unable to authorize filter preview source", error);
+            return;
+          }
+          if (this.isDestroyed || version !== this.filterPreviewVersion) {
+            return;
+          }
           this.currentFilterTileSource = payload.tileSource;
-          this.filterViewer.open(toViewerTileSource(payload.tileSource, payload.isStatic));
+          this.filterViewer.open(tileSource);
         } else {
           this.applyFilterOptions();
         }
@@ -29100,15 +29664,21 @@
     bindLoadingChange() {
       this.bindViewerEvent("diva-loading-change", this.handleLoadingChangeBound);
     }
+    bindRootClick() {
+      this.getConnectedRoot().addEventListener("click", this.handleRootClickBound, true);
+    }
     destroy() {
       this.isDestroyed = true;
+      this.auth.destroy();
       if (this.filterPreviewRafId !== null) {
         cancelAnimationFrame(this.filterPreviewRafId);
         this.filterPreviewRafId = null;
       }
+      const root = this.getConnectedRoot();
       this.removeViewerEvent("diva-page-change", this.handlePageChangeBound);
       this.removeViewerEvent("diva-zoom-change", this.handleZoomChangeBound);
       this.removeViewerEvent("diva-loading-change", this.handleLoadingChangeBound);
+      root.removeEventListener("click", this.handleRootClickBound, true);
       document.removeEventListener("fullscreenchange", this.handleFullscreenChangeBound);
       if (this.filterViewer && typeof this.filterViewer.destroy === "function") {
         this.filterViewer.destroy();
@@ -29117,23 +29687,24 @@
       this.filterViewerElement = null;
       this.currentFilterTileSource = null;
       this.pendingFilterPreview = null;
-      if (this.root) {
-        const rootAny = this.root;
+      if (root) {
+        const rootAny = root;
         if (rootAny.__divaInstance === this) {
           delete rootAny.__divaInstance;
         }
         if (rootAny.elmTree) {
           delete rootAny.elmTree;
         }
-        this.root.innerHTML = "";
+        root.innerHTML = "";
       }
     }
     setFullscreen(enabled) {
+      const root = this.getConnectedRoot();
       if (enabled) {
         if (document.fullscreenElement || !document.fullscreenEnabled) {
           return;
         }
-        this.root.requestFullscreen().catch(() => {
+        root.requestFullscreen().catch(() => {
         });
         return;
       }
@@ -29141,6 +29712,32 @@
         return;
       }
       document.exitFullscreen().catch(() => {
+      });
+    }
+    handleRootClick(event) {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+      const root = this.getConnectedRoot();
+      const fullscreenButton = target.closest("button[data-diva-action='fullscreen']");
+      if (!fullscreenButton || !root.contains(fullscreenButton)) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      this.toggleFullscreenFromUserActivation();
+    }
+    toggleFullscreenFromUserActivation() {
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {
+        });
+        return;
+      }
+      if (!document.fullscreenEnabled) {
+        return;
+      }
+      this.getConnectedRoot().requestFullscreen().catch(() => {
       });
     }
     handlePageChange(event) {
