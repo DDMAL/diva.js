@@ -112,6 +112,11 @@
   border-radius: 0;
 }
 
+.thumbs-image--protected {
+  min-height: 96px;
+  background: var(--diva-dark-bg);
+}
+
 .thumbs-label {
   margin-top: 6px;
   font-size: var(--diva-font-sm);

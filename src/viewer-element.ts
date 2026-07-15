@@ -1,8 +1,11 @@
 import type * as OpenSeadragonType from "openseadragon";
 
+import type {ResolvedTileSource, TileSourceDescriptor} from "./auth";
+
 declare const OpenSeadragon: typeof OpenSeadragonType;
 
-type ViewerTileSource = string | {type: string; url: string};
+type ViewerTileSource = TileSourceDescriptor;
+type TileSourceResolver = (source: TileSourceDescriptor, signal: AbortSignal) => Promise<ResolvedTileSource>;
 
 const ZOOM_IN_FACTOR = 1.6
 const ZOOM_OUT_FACTOR = 1 / ZOOM_IN_FACTOR
@@ -26,6 +29,10 @@ class OsdViewer extends HTMLElement
     private hasFitFirstPage = false;
     private loadedIndexes: Set<number> = new Set();
     private loadingIndexes: Set<number> = new Set();
+    private unavailableIndexes: Map<number, string> = new Map();
+    private loadControllers: Map<number, AbortController> = new Map();
+    private tileSourceResolver: TileSourceResolver = async (source) =>
+        source.isStatic ? {type : "image", url: source.url, crossOriginPolicy: "Anonymous"} : source.url;
     private loadedItems: Map<number, any> = new Map();
     private pageOverlayElements: Map<number, HTMLDivElement> = new Map();
     private targetIndex: number|null = null;
@@ -72,11 +79,17 @@ class OsdViewer extends HTMLElement
 
             this.createScrollbar();
         }
+        const hadViewer = Boolean(this.viewer);
         this.syncViewer();
+        if (!hadViewer && this.viewer && this.tileSources.length > 0)
+        {
+            this.resetTileSources(this.tileSources.slice());
+        }
     }
 
     disconnectedCallback(): void
     {
+        this.cancelLoads();
         if (this.loadingTimer !== null)
         {
             window.clearTimeout(this.loadingTimer);
@@ -122,6 +135,9 @@ class OsdViewer extends HTMLElement
                 animationTime : 0.8,
                 showNavigationControl : false,
                 preserveViewport : true,
+                maxImageCacheCount : 512,
+                tileRetryMax : 2,
+                tileRetryDelay : 500,
                 visibilityRatio : 0,
                 constrainDuringPan : false,
                 minZoomLevel : 0.1,
@@ -170,13 +186,34 @@ class OsdViewer extends HTMLElement
 
     public setTileSources(tileSources: ViewerTileSource[]): void
     {
-        if (!Array.isArray(tileSources) || tileSources.length === 0)
+        if (!Array.isArray(tileSources))
         {
             return;
         }
 
+        this.tileSources = tileSources.slice();
         this.syncViewer();
-        this.resetTileSources(tileSources);
+        if (!this.viewer)
+        {
+            this.buildOffsets();
+            return;
+        }
+        this.resetTileSources(this.tileSources.slice());
+    }
+
+    public setTileSourceResolver(resolver: TileSourceResolver): void
+    {
+        this.tileSourceResolver = resolver;
+    }
+
+    public invalidateTileSources(sourceIds: string[]): void
+    {
+        const affected = new Set(sourceIds);
+        if (affected.size === 0 || !this.tileSources.some((source) => affected.has(source.sourceId)))
+        {
+            return;
+        }
+        this.resetTileSources(this.tileSources.slice());
     }
 
     public setPageLabels(labels: string[]): void
@@ -208,12 +245,13 @@ class OsdViewer extends HTMLElement
         {
             this.viewer.world.removeAll();
         }
-        this.loadToken += 1;
+        this.cancelLoads();
         this.tileSources = tileSources;
         this.hasFitFirstPage = false;
         this.isViewportInitialized = false;
         this.loadedIndexes.clear();
         this.loadingIndexes.clear();
+        this.unavailableIndexes.clear();
         this.loadedItems.clear();
         this.clearPageOverlays();
         this.targetIndex = null;
@@ -296,15 +334,15 @@ class OsdViewer extends HTMLElement
             return;
         }
 
-        if (this.loadedIndexes.has(index) || this.loadingIndexes.has(index))
+        if (this.loadedIndexes.has(index) || this.loadingIndexes.has(index) || this.unavailableIndexes.has(index))
         {
             return;
         }
 
-        this.loadTile(index);
+        void this.loadTile(index);
     }
 
-    private loadTile(index: number): void
+    private async loadTile(index: number): Promise<void>
     {
         if (!this.viewer)
         {
@@ -312,16 +350,39 @@ class OsdViewer extends HTMLElement
         }
 
         const token = this.loadToken;
-        const tileSource = this.tileSources[index];
+        const descriptor = this.tileSources[index];
+        const controller = new AbortController();
+        this.loadControllers.set(index, controller);
 
         this.loadingIndexes.add(index);
+        this.unavailableIndexes.delete(index);
+        this.removeUnavailableOverlay(index);
         this.updateLoadingState();
         const yOffset = this.pageOffsets[index] || 0;
         const xOffset = this.pageXOffsets[index] || 0;
         const height = this.pageHeights[index] || 1;
 
+        let tileSource: ResolvedTileSource;
+        try
+        {
+            tileSource = await this.tileSourceResolver(descriptor, controller.signal);
+        }
+        catch (error)
+        {
+            if (token === this.loadToken && !controller.signal.aborted)
+                this.markUnavailable(index, error instanceof Error ? error.message : "This image is unavailable.");
+            this.finishLoad(index, controller);
+            return;
+        }
+        if (token !== this.loadToken || controller.signal.aborted || !this.viewer)
+        {
+            this.finishLoad(index, controller);
+            return;
+        }
+
         this.viewer.addTiledImage({
             tileSource,
+            ...this.tileRequestOptions(tileSource),
             x : xOffset,
             y : yOffset,
             width : 1,
@@ -338,6 +399,7 @@ class OsdViewer extends HTMLElement
                 this.loadedItems.set(index, item);
                 this.addOrUpdatePageOverlay(index);
                 this.loadingIndexes.delete(index);
+                this.loadControllers.delete(index);
                 this.updateLoadingState();
                 if (!this.hasFitFirstPage)
                 {
@@ -349,8 +411,8 @@ class OsdViewer extends HTMLElement
                     }
                     const isSingleCanvas = this.isSingleCanvasLayout();
                     const bounds = isSingleCanvas
-                        ? item.getBounds()
-                        : (this.isSpreadMode() ? this.getRowBounds(index) : item.getBounds());
+                                       ? item.getBounds()
+                                       : (this.isSpreadMode() ? this.getRowBounds(index) : item.getBounds());
                     viewer.viewport.fitBounds(bounds, true);
                     if (!isSingleCanvas)
                     {
@@ -370,16 +432,92 @@ class OsdViewer extends HTMLElement
                 }
                 this.maybeLoadMore();
             },
-            error : () => {
+            error : (event: any) => {
                 if (token !== this.loadToken)
                 {
                     return;
                 }
-                this.loadingIndexes.delete(index);
-                this.updateLoadingState();
+                this.markUnavailable(index, event?.message || "This image could not be loaded. Static images must allow CORS.");
+                this.finishLoad(index, controller);
                 this.maybeLoadMore();
             }
         });
+    }
+
+    private tileRequestOptions(tileSource: ResolvedTileSource): {ajaxWithCredentials?: boolean; crossOriginPolicy?: string | boolean}
+    {
+        if (!tileSource || typeof tileSource !== "object")
+        {
+            return {};
+        }
+
+        const source = tileSource as Record<string, unknown>;
+        const options: {ajaxWithCredentials?: boolean; crossOriginPolicy?: string | boolean} = {};
+        if (typeof source.ajaxWithCredentials === "boolean")
+        {
+            options.ajaxWithCredentials = source.ajaxWithCredentials;
+        }
+        if (typeof source.crossOriginPolicy === "string" || typeof source.crossOriginPolicy === "boolean")
+        {
+            options.crossOriginPolicy = source.crossOriginPolicy;
+        }
+        return options;
+    }
+
+    private finishLoad(index: number, controller: AbortController): void
+    {
+        if (this.loadControllers.get(index) === controller)
+            this.loadControllers.delete(index);
+        this.loadingIndexes.delete(index);
+        this.updateLoadingState();
+    }
+
+    private cancelLoads(): void
+    {
+        this.loadToken += 1;
+        this.loadControllers.forEach((controller) => controller.abort());
+        this.loadControllers.clear();
+        this.loadingIndexes.clear();
+        this.resetLoadingState();
+    }
+
+    private markUnavailable(index: number, message: string): void
+    {
+        this.unavailableIndexes.set(index, message);
+        this.addUnavailableOverlay(index, message);
+    }
+
+    private addUnavailableOverlay(index: number, message: string): void
+    {
+        if (!this.viewer)
+            return;
+        this.removeUnavailableOverlay(index);
+        const element = document.createElement("div");
+        element.className = "diva-image-unavailable";
+        element.dataset.index = String(index);
+        const text = document.createElement("p");
+        text.textContent = message;
+        const retry = document.createElement("button");
+        retry.type = "button";
+        retry.textContent = "Retry image";
+        retry.addEventListener("click", () => {
+            this.unavailableIndexes.delete(index);
+            this.removeUnavailableOverlay(index);
+            this.ensurePageLoaded(index);
+        });
+        element.append(text, retry);
+        this.viewer.addOverlay({
+            element,
+            location : new OpenSeadragon.Rect(this.pageXOffsets[index] || 0, this.pageOffsets[index] || 0, 1, this.pageHeights[index] || 1)
+        });
+    }
+
+    private removeUnavailableOverlay(index: number): void
+    {
+        const element = this.querySelector(`.diva-image-unavailable[data-index="${index}"]`);
+        if (element && this.viewer)
+            this.viewer.removeOverlay(element as HTMLElement);
+        element?.remove();
     }
 
     public setPageAspects(aspects: number[]): void

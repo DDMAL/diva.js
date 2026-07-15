@@ -1,12 +1,14 @@
 module View.Toolbar exposing (viewToolbar)
 
-import Html exposing (Html, div, text)
+import Auth
+import Html exposing (Html, button, div, text)
 import Html.Attributes as HA exposing (classList)
 import Html.Lazy as Lazy
-import Model exposing (Model, SidebarState(..), ViewMode(..), currentManifest, getPageAt, pageViewStartIndex)
+import IIIF.Language exposing (extractLabelFromLanguageMap)
+import Model exposing (Model, ResourceResponse(..), SidebarState(..), ViewMode(..), currentManifest, getPageAt, pageViewStartIndex)
 import Msg exposing (Msg(..))
 import Utilities exposing (disabledIf, isNothing)
-import View.Helpers exposing (viewButton)
+import View.Helpers exposing (emptyHtml, viewButton, viewButtonWithAttributes)
 import View.Icons as Icons
 
 
@@ -35,91 +37,132 @@ viewToolbar model =
                     , isFullscreen = model.fullscreen
                     }
                 ]
-            , div [ HA.class "canvas-toolbar-section is-right" ]
-                [ viewButton
-                    { label = "Page View"
-                    , icon = Icons.pageViewOpen
-                    , onClickMsg = disabledIf controlsDisabled UserClickedOpenPageView
-                    , isFullscreen = model.fullscreen
-                    }
-                , viewButton
-                    { label = "Manifest Info"
-                    , icon = Icons.info
-                    , onClickMsg = disabledIf controlsDisabled UserClickedOpenManifestInfo
-                    , isFullscreen = model.fullscreen
-                    }
-                , viewButton
-                    { label =
-                        if model.viewMode == OneUp then
-                            "Two Page"
+            , div [ HA.class "canvas-toolbar-end" ]
+                [ Lazy.lazy2 viewCurrentLabel model.fullscreen currentLabelText
+                , div [ HA.class "canvas-toolbar-section is-right" ]
+                    (viewLogoutActions model
+                        ++ [ viewButton
+                                { label = "Page View"
+                                , icon = Icons.pageViewOpen
+                                , onClickMsg = disabledIf controlsDisabled UserClickedOpenPageView
+                                , isFullscreen = model.fullscreen
+                                }
+                           , viewButton
+                                { label = "Manifest Info"
+                                , icon = Icons.info
+                                , onClickMsg = disabledIf controlsDisabled UserClickedOpenManifestInfo
+                                , isFullscreen = model.fullscreen
+                                }
+                           , viewButton
+                                { label =
+                                    if model.viewMode == OneUp then
+                                        "Two Page"
 
-                        else
-                            "One Page"
-                    , icon =
-                        if model.viewMode == OneUp then
-                            Icons.openingPageView
+                                    else
+                                        "One Page"
+                                , icon =
+                                    if model.viewMode == OneUp then
+                                        Icons.openingPageView
 
-                        else
-                            Icons.scrollingPageView
-                    , onClickMsg = disabledIf controlsDisabled UserToggledTwoUp
-                    , isFullscreen = model.fullscreen
-                    }
-                , viewButton
-                    { label = "Shift Pages"
-                    , icon =
-                        if model.shiftByOne then
-                            Icons.shiftLeft
+                                    else
+                                        Icons.scrollingPageView
+                                , onClickMsg = disabledIf controlsDisabled UserToggledTwoUp
+                                , isFullscreen = model.fullscreen
+                                }
+                           , viewButton
+                                { label = "Shift Pages"
+                                , icon =
+                                    if model.shiftByOne then
+                                        Icons.shiftLeft
 
-                        else
-                            Icons.shiftRight
-                    , onClickMsg = disabledIf (controlsDisabled || model.viewMode == OneUp) UserToggledShiftByOne
-                    , isFullscreen = model.fullscreen
-                    }
-                , viewButton
-                    (let
-                        sidebarVisible =
-                            if model.isMobile then
-                                model.mobileSidebarOpen
+                                    else
+                                        Icons.shiftRight
+                                , onClickMsg = disabledIf (controlsDisabled || model.viewMode == OneUp) UserToggledShiftByOne
+                                , isFullscreen = model.fullscreen
+                                }
+                           , viewCollectionSidebarButton model
+                           , viewButton
+                                (let
+                                    sidebarVisible =
+                                        if model.isMobile then
+                                            model.mobileSidebarOpen
 
-                            else
-                                model.sidebarState /= SidebarHidden
-                     in
-                     { label =
-                        if sidebarVisible then
-                            "Hide Sidebar"
+                                        else
+                                            model.sidebarState /= SidebarHidden
+                                 in
+                                 { label =
+                                    if sidebarVisible then
+                                        "Hide Sidebar"
 
-                        else
-                            "Show Sidebar"
-                     , icon =
-                        if sidebarVisible then
-                            Icons.hideSidebar
+                                    else
+                                        "Show Sidebar"
+                                 , icon =
+                                    if sidebarVisible then
+                                        Icons.hideSidebar
 
-                        else
-                            Icons.showSidebar
-                     , onClickMsg = disabledIf controlsDisabled UserToggledSidebar
-                     , isFullscreen = model.fullscreen
-                     }
+                                    else
+                                        Icons.showSidebar
+                                 , onClickMsg = disabledIf controlsDisabled UserToggledSidebar
+                                 , isFullscreen = model.fullscreen
+                                 }
+                                )
+                           , viewButtonWithAttributes
+                                [ HA.attribute "data-diva-action" "fullscreen" ]
+                                { label =
+                                    if model.fullscreen then
+                                        "Exit Full"
+
+                                    else
+                                        "Fullscreen"
+                                , icon =
+                                    if model.fullscreen then
+                                        Icons.fromFullscreen
+
+                                    else
+                                        Icons.toFullscreen
+                                , onClickMsg = Just UserToggledFullscreen
+                                , isFullscreen = model.fullscreen
+                                }
+                           ]
                     )
-                , viewButton
-                    { label =
-                        if model.fullscreen then
-                            "Exit Full"
-
-                        else
-                            "Fullscreen"
-                    , icon =
-                        if model.fullscreen then
-                            Icons.fromFullscreen
-
-                        else
-                            Icons.toFullscreen
-                    , onClickMsg = Just UserToggledFullscreen
-                    , isFullscreen = model.fullscreen
-                    }
                 ]
             ]
-        , Lazy.lazy2 viewCurrentLabel model.fullscreen currentLabelText
         ]
+
+
+viewLogoutActions : Model -> List (Html Msg)
+viewLogoutActions model =
+    Auth.logoutActions model.auth
+        |> List.map
+            (\action ->
+                let
+                    label =
+                        action.label
+                            |> Maybe.map (extractLabelFromLanguageMap model.detectedLanguage)
+                            |> Maybe.withDefault "Log out"
+
+                    displayLabel =
+                        case action.error of
+                            Just _ ->
+                                label ++ " (popup blocked)"
+
+                            Nothing ->
+                                label
+                in
+                div
+                    [ HA.class "canvas-toolbar-item"
+                    , HA.attribute "data-tooltip" displayLabel
+                    ]
+                    [ button
+                        [ HA.class "canvas-toolbar-button"
+                        , HA.type_ "button"
+                        , HA.attribute "aria-label" displayLabel
+                        , HA.attribute "data-diva-auth-logout" action.sessionId
+                        , HA.attribute "data-diva-auth-url" action.url
+                        ]
+                        [ Icons.shiftRight ]
+                    ]
+            )
 
 
 currentLabelFor : Model -> String
@@ -176,6 +219,31 @@ truncateLabel maxLength label =
 
     else
         label
+
+
+viewCollectionSidebarButton : Model -> Html Msg
+viewCollectionSidebarButton model =
+    case model.resourceResponse of
+        ResourceLoadedCollection _ ->
+            viewButton
+                { label =
+                    if model.collectionSidebarVisible then
+                        "Hide Collection"
+
+                    else
+                        "Show Collection"
+                , icon =
+                    if model.collectionSidebarVisible then
+                        Icons.hideSidebar
+
+                    else
+                        Icons.showSidebar
+                , onClickMsg = Just UserToggledCollectionSidebar
+                , isFullscreen = model.fullscreen
+                }
+
+        _ ->
+            emptyHtml
 
 
 viewCurrentLabel : Bool -> String -> Html Msg

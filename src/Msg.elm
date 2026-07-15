@@ -1,12 +1,14 @@
 module Msg exposing (Msg(..))
 
+import Auth
 import Filters exposing (FilterFloatValue, FilterIntValue, FilterStringValue, FilterToggle)
 import Http
 import IIIF.Presentation exposing (IIIFManifest, IIIFResource)
 
 
 type Msg
-    = ClientNotifiedFullscreenChanged Bool
+    = AuthEvent Auth.Event
+    | ClientNotifiedFullscreenChanged Bool
     | ClientNotifiedPageChanged Int
     | ClientNotifiedPageChangedInstant Int
     | ClientNotifiedScrollThumbs
@@ -41,6 +43,7 @@ type Msg
     | UserStartedCollectionSidebarResize Int
     | UserStartedSidebarResize Int
     | UserToggledContents
+    | UserToggledCollectionSidebar
     | UserToggledFilter FilterToggle Bool
     | UserToggledFilterGroup String
     | UserToggledFullscreen

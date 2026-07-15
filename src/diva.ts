@@ -5,7 +5,11 @@ import divaCss from "../cache/diva.css";
 // @ts-ignore
 import {Elm} from "../cache/elm-esm.js";
 
-import {Filters, setFilterOptions} from "./filters";
+import {AuthBrowser,
+        type ResolvedTileSource,
+        type TileSourceDescriptor} from "./auth";
+import {Filters,
+        setFilterOptions} from "./filters";
 
 declare const OpenSeadragon: any;
 
@@ -116,14 +120,16 @@ type FilterSettings = {
 };
 
 type FilterPreviewPayload = {
-    tileSource: string; isStatic : boolean; aspect : number;
+    sourceId: string; tileSource : string; isStatic : boolean;
+    aspect : number;
     filters?: FilterSettings;
 };
 
-type TileSourceEntry = { url: string; isStatic: boolean };
+type TileSourceEntry = {
+    sourceId: string; url : string; isStatic : boolean
+};
 
-const toViewerTileSource = (url: string, isStatic: boolean): string | {type: string; url: string} =>
-    isStatic ? {type : "image", url} : url;
+type TileSourceResolver = (source: TileSourceDescriptor, signal: AbortSignal) => Promise<ResolvedTileSource>;
 
 type ElmPorts = {
     tileSourcesUpdated: {subscribe: (callback: (tileSources: TileSourceEntry[]) => void) => void};
@@ -143,6 +149,24 @@ type ElmPorts = {
     zoomChanged : {send : (zoom: number) => void};
     viewerLoadingChanged : {send : (loading: boolean) => void};
     copyToClipboard : {subscribe : (callback: (text: string) => void) => void};
+    resolveTileSourceRequested : {send : (value: {requestId: string; sourceId : string}) => void};
+    resolveTileSourceCancelled : {send : (requestId: string) => void};
+    tileSourceResolutionSucceeded : {subscribe : (callback: (value: any) => void) => void};
+    tileSourceResolutionFailed : {subscribe : (callback: (value: any) => void) => void};
+    authHttpRequested : {subscribe : (callback: (value: any) => void) => void};
+    authHttpCancelled : {subscribe : (callback: (value: string) => void) => void};
+    authHttpResponded : {send : (value: any) => void};
+    authHttpFailed : {send : (value: any) => void};
+    authStorageRequested : {subscribe : (callback: (value: any) => void) => void};
+    authStorageResponded : {send : (value: any) => void};
+    authTokenFrameRequested : {subscribe : (callback: (value: any) => void) => void};
+    authTokenFrameCancelled : {subscribe : (callback: (value: string) => void) => void};
+    authTokenMessage : {send : (value: any) => void};
+    authTokenFailed : {send : (value: any) => void};
+    authPopupChanged : {send : (value: any) => void};
+    authLogoutChanged : {send : (value: any) => void};
+    authSourcesInvalidated : {subscribe : (callback: (value: string[]) => void) => void};
+    authDestroyed : {send : (value: null) => void};
 };
 
 type ElmApp = {
@@ -165,22 +189,31 @@ type DivaRoot = HTMLElement&
 
 class Diva
 {
-    private readonly root: HTMLElement;
+    private readonly rootId: string;
+    private root: HTMLElement;
+    private readonly auth: AuthBrowser;
     private app: ElmApp;
     private mainViewer: any = null;
+    private tileSourceResolver!: TileSourceResolver;
+    private readonly pendingViewerMethods: Map<string, any[]> = new Map();
+    private viewerMethodRafId: number|null = null;
+    private viewerMethodAttempts = 0;
     private filterViewer: any = null;
     private filterViewerElement: HTMLElement|null = null;
     private filterOptions: FilterSettings|null = null;
     private filterViewerFlipped = false;
-    private currentFilterTileSource: string|null = null;
+    private currentFilterSourceKey: string|null = null;
     private pendingFilterPreview: FilterPreviewPayload|null = null;
+    private filterPreviewVersion = 0;
     private filterPreviewRetries = 0;
     private filterPreviewRafId: number|null = null;
+    private filterPreviewController: AbortController|null = null;
     private isDestroyed = false;
     private readonly handlePageChangeBound: (event: Event) => void;
     private readonly handleZoomChangeBound: (event: Event) => void;
     private readonly handleLoadingChangeBound: (event: Event) => void;
     private readonly handleFullscreenChangeBound: () => void;
+    private readonly handleRootClickBound: (event: Event) => void;
 
     constructor(rootId: string, flags: DivaFlags)
     {
@@ -204,6 +237,7 @@ class Diva
             root.innerHTML = "";
         }
 
+        this.rootId = rootId;
         this.root = root;
         this.isDestroyed = false;
 
@@ -211,6 +245,7 @@ class Diva
         this.handleZoomChangeBound = this.handleZoomChange.bind(this);
         this.handleLoadingChangeBound = this.handleLoadingChange.bind(this);
         this.handleFullscreenChangeBound = this.handleFullscreenChange.bind(this);
+        this.handleRootClickBound = this.handleRootClick.bind(this);
 
         let langCode = this.detectLanguage();
 
@@ -225,9 +260,15 @@ class Diva
                 userLanguage : flags.setLanguage || langCode
             }
         });
-        rootAny.__divaInstance = this;
+        this.root = this.getConnectedRoot();
+        this.auth = new AuthBrowser(this.app.ports, this.root);
+        this.tileSourceResolver = (source: TileSourceDescriptor, signal: AbortSignal) => this.auth.resolve(source, signal);
+        const connectedRootAny = this.root as DivaRoot;
+        connectedRootAny.__divaInstance = this;
 
         this.bindPorts();
+        this.callViewerMethodWhenReady("setTileSourceResolver", this.tileSourceResolver);
+        this.bindRootClick();
         this.bindPageChange();
         this.bindFullscreenChange();
         this.bindZoomChange();
@@ -242,23 +283,33 @@ class Diva
      */
     private detectLanguage(): string { return navigator.language.split("-")[0]; }
 
+    private getConnectedRoot(): HTMLElement
+    {
+        const root = document.getElementById(this.rootId);
+        if (root)
+        {
+            return root;
+        }
+
+        return this.root;
+    }
+
     private bindPorts(): void
     {
         this.getPort("tileSourcesUpdated")
             .subscribe((tileSources: TileSourceEntry[]) => {
-                this.callViewerMethod(
-                    "setTileSources",
-                    tileSources.map((entry) => toViewerTileSource(entry.url, entry.isStatic))
-                );
+                this.auth.registerSources(tileSources);
+                this.callViewerMethodWhenReady("setTileSourceResolver", this.tileSourceResolver);
+                this.callViewerMethodWhenReady("setTileSources", tileSources);
             });
 
         this.getPort("pageAspectsUpdated")
-            .subscribe((aspects: number[]) => { this.callViewerMethod("setPageAspects", aspects); });
+            .subscribe((aspects: number[]) => { this.callViewerMethodWhenReady("setPageAspects", aspects); });
 
         this.getPort("pageLabelsUpdated")
-            .subscribe((labels: string[]) => { this.callViewerMethod("setPageLabels", labels); });
+            .subscribe((labels: string[]) => { this.callViewerMethodWhenReady("setPageLabels", labels); });
 
-        this.getPort("zoomLevelUpdated").subscribe((zoom: number) => { this.callViewerMethod("setZoomLevel", zoom); });
+        this.getPort("zoomLevelUpdated").subscribe((zoom: number) => { this.callViewerMethodWhenReady("setZoomLevel", zoom); });
 
         this.getPort("zoomBy").subscribe((factor: number) => { this.callViewerMethod("zoomBy", factor); });
 
@@ -267,10 +318,14 @@ class Diva
         this.getPort("filterPreviewUpdated").subscribe((payload: FilterPreviewPayload|null) => {
             if (!payload)
             {
+                this.closeFilterPreview();
                 return;
             }
+            this.filterPreviewVersion += 1;
+            this.filterPreviewController?.abort();
+            this.filterPreviewController = null;
             this.pendingFilterPreview = payload;
-            this.applyFilterPreview();
+            void this.applyFilterPreview();
         });
 
         this.getPort("setFullscreen").subscribe((enabled: boolean) => { this.setFullscreen(enabled); });
@@ -282,26 +337,32 @@ class Diva
             {
                 return;
             }
-            this.callViewerMethod("setViewingDirection", config.direction);
-            this.callViewerMethod("setLayoutMode", config.mode);
+            this.callViewerMethodWhenReady("setLayoutConfig", config.mode, config.direction);
         });
 
         this.getPort("layoutModeUpdated")
             .subscribe((mode: string) => { this.callViewerMethod("setLayoutMode", mode); });
 
         this.getPort("copyToClipboard").subscribe((text: string) => { this.copyToClipboard(text); });
+
+        this.getPort("authSourcesInvalidated")
+            .subscribe((sourceIds: string[]) => {
+                this.auth.invalidateSources(sourceIds);
+                this.callViewerMethodWhenReady("invalidateTileSources", sourceIds);
+            });
     }
 
     private ensureMainViewer(): any
     {
-        if (!this.mainViewer)
+        const current = document.getElementById("main-viewer");
+        if (current && current !== this.mainViewer)
         {
-            this.mainViewer = document.getElementById("main-viewer");
+            this.mainViewer = current;
         }
         return this.mainViewer;
     }
 
-    private applyFilterPreview(): void
+    private async applyFilterPreview(): Promise<void>
     {
         if (this.isDestroyed)
         {
@@ -317,10 +378,13 @@ class Diva
             if (this.filterPreviewRetries < 10)
             {
                 this.filterPreviewRetries += 1;
-                this.filterPreviewRafId = requestAnimationFrame(() => {
-                    this.filterPreviewRafId = null;
-                    this.applyFilterPreview();
-                });
+                if (this.filterPreviewRafId === null)
+                {
+                    this.filterPreviewRafId = requestAnimationFrame(() => {
+                        this.filterPreviewRafId = null;
+                        void this.applyFilterPreview();
+                    });
+                }
             }
             return;
         }
@@ -328,15 +392,43 @@ class Diva
         const payload = this.pendingFilterPreview;
         this.pendingFilterPreview = null;
         this.filterPreviewRetries = 0;
+        const version = this.filterPreviewVersion;
         this.filterOptions = payload.filters || null;
         this.ensureFilterViewer();
         if (this.filterViewer)
         {
-            const tileSourceChanged = this.currentFilterTileSource !== payload.tileSource;
+            const sourceKey = JSON.stringify([ payload.sourceId, payload.tileSource, payload.isStatic ]);
+            const tileSourceChanged = this.currentFilterSourceKey !== sourceKey;
             if (tileSourceChanged)
             {
-                this.currentFilterTileSource = payload.tileSource;
-                this.filterViewer.open(toViewerTileSource(payload.tileSource, payload.isStatic));
+                let tileSource: ResolvedTileSource;
+                const controller = new AbortController();
+                this.filterPreviewController = controller;
+                try
+                {
+                    tileSource = await this.auth.resolve({sourceId : payload.sourceId, url : payload.tileSource, isStatic : payload.isStatic}, controller.signal);
+                }
+                catch (error)
+                {
+                    if (!controller.signal.aborted && !this.isDestroyed && version === this.filterPreviewVersion)
+                    {
+                        console.error("Unable to authorize filter preview source", error);
+                    }
+                    return;
+                }
+                finally
+                {
+                    if (this.filterPreviewController === controller)
+                    {
+                        this.filterPreviewController = null;
+                    }
+                }
+                if (this.isDestroyed || version !== this.filterPreviewVersion)
+                {
+                    return;
+                }
+                this.currentFilterSourceKey = sourceKey;
+                this.filterViewer.open(tileSource);
             }
             else
             {
@@ -374,30 +466,31 @@ class Diva
         this.bindViewerEvent("diva-loading-change", this.handleLoadingChangeBound as EventListener);
     }
 
+    private bindRootClick(): void
+    {
+        this.getConnectedRoot().addEventListener("click", this.handleRootClickBound, true);
+    }
+
     public destroy(): void
     {
         this.isDestroyed = true;
-        if (this.filterPreviewRafId !== null)
+        this.closeFilterPreview();
+        this.auth.destroy();
+        if (this.viewerMethodRafId !== null)
         {
-            cancelAnimationFrame(this.filterPreviewRafId);
-            this.filterPreviewRafId = null;
+            cancelAnimationFrame(this.viewerMethodRafId);
+            this.viewerMethodRafId = null;
         }
+        this.pendingViewerMethods.clear();
+        const root = this.getConnectedRoot();
         this.removeViewerEvent("diva-page-change", this.handlePageChangeBound as EventListener);
         this.removeViewerEvent("diva-zoom-change", this.handleZoomChangeBound as EventListener);
         this.removeViewerEvent("diva-loading-change", this.handleLoadingChangeBound as EventListener);
+        root.removeEventListener("click", this.handleRootClickBound, true);
         document.removeEventListener("fullscreenchange", this.handleFullscreenChangeBound);
-        if (this.filterViewer && typeof this.filterViewer.destroy === "function")
+        if (root)
         {
-            this.filterViewer.destroy();
-        }
-        this.filterViewer = null;
-        this.filterViewerElement = null;
-        this.currentFilterTileSource = null;
-        this.pendingFilterPreview = null;
-
-        if (this.root)
-        {
-            const rootAny = this.root as DivaRoot;
+            const rootAny = root as DivaRoot;
             if (rootAny.__divaInstance === this)
             {
                 delete rootAny.__divaInstance;
@@ -406,19 +499,43 @@ class Diva
             {
                 delete rootAny.elmTree;
             }
-            this.root.innerHTML = "";
+            root.innerHTML = "";
         }
+    }
+
+    private closeFilterPreview(): void
+    {
+        this.filterPreviewVersion += 1;
+        this.filterPreviewController?.abort();
+        this.filterPreviewController = null;
+        if (this.filterPreviewRafId !== null)
+        {
+            cancelAnimationFrame(this.filterPreviewRafId);
+            this.filterPreviewRafId = null;
+        }
+        if (this.filterViewer && typeof this.filterViewer.destroy === "function")
+        {
+            this.filterViewer.destroy();
+        }
+        this.filterViewer = null;
+        this.filterViewerElement = null;
+        this.currentFilterSourceKey = null;
+        this.pendingFilterPreview = null;
+        this.filterOptions = null;
+        this.filterPreviewRetries = 0;
     }
 
     private setFullscreen(enabled: boolean): void
     {
+        const root = this.getConnectedRoot();
+
         if (enabled)
         {
             if (document.fullscreenElement || !document.fullscreenEnabled)
             {
                 return;
             }
-            this.root.requestFullscreen().catch(() => {});
+            root.requestFullscreen().catch(() => {});
             return;
         }
 
@@ -427,6 +544,42 @@ class Diva
             return;
         }
         document.exitFullscreen().catch(() => {});
+    }
+
+    private handleRootClick(event: Event): void
+    {
+        const target = event.target;
+        if (!(target instanceof Element))
+        {
+            return;
+        }
+
+        const root = this.getConnectedRoot();
+        const fullscreenButton = target.closest("button[data-diva-action='fullscreen']");
+        if (!fullscreenButton || !root.contains(fullscreenButton))
+        {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        this.toggleFullscreenFromUserActivation();
+    }
+
+    private toggleFullscreenFromUserActivation(): void
+    {
+        if (document.fullscreenElement)
+        {
+            document.exitFullscreen().catch(() => {});
+            return;
+        }
+
+        if (!document.fullscreenEnabled)
+        {
+            return;
+        }
+
+        this.getConnectedRoot().requestFullscreen().catch(() => {});
     }
 
     private handlePageChange(event: Event): void
@@ -526,7 +679,7 @@ class Diva
                 this.filterViewer.destroy();
             }
             this.filterViewer = null;
-            this.currentFilterTileSource = null;
+            this.currentFilterSourceKey = null;
             this.filterViewerFlipped = false;
             this.filterViewerElement = element;
         }
@@ -619,6 +772,59 @@ class Diva
         }
         method.apply(viewer, args);
         return true;
+    }
+
+    private callViewerMethodWhenReady(name: string, ...args: any[]): void
+    {
+        if (this.callViewerMethod(name, ...args))
+        {
+            this.viewerMethodAttempts = 0;
+            return;
+        }
+
+        this.pendingViewerMethods.set(name, args);
+        this.viewerMethodAttempts = 0;
+        this.scheduleViewerMethodFlush();
+    }
+
+    private scheduleViewerMethodFlush(): void
+    {
+        if (this.isDestroyed || this.viewerMethodRafId !== null)
+        {
+            return;
+        }
+        this.viewerMethodRafId = requestAnimationFrame(() => {
+            this.viewerMethodRafId = null;
+            this.flushPendingViewerMethods();
+        });
+    }
+
+    private flushPendingViewerMethods(): void
+    {
+        if (this.isDestroyed || this.pendingViewerMethods.size === 0)
+        {
+            return;
+        }
+
+        const pending = Array.from(this.pendingViewerMethods.entries());
+        this.pendingViewerMethods.clear();
+        pending.forEach(([ name, args ]) => {
+            if (!this.callViewerMethod(name, ...args))
+            {
+                this.pendingViewerMethods.set(name, args);
+            }
+        });
+
+        if (this.pendingViewerMethods.size === 0)
+        {
+            this.viewerMethodAttempts = 0;
+            return;
+        }
+        if (this.viewerMethodAttempts < 120)
+        {
+            this.viewerMethodAttempts += 1;
+            this.scheduleViewerMethodFlush();
+        }
     }
 
     private bindViewerEvent(name: string, handler: EventListener): void

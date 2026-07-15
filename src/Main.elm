@@ -1,5 +1,6 @@
 port module Main exposing (Flags, main)
 
+import Auth
 import Browser
 import Browser.Dom as Dom
 import Browser.Events
@@ -10,6 +11,7 @@ import IIIF
 import IIIF.Language exposing (Language(..))
 import IIIF.Presentation exposing (Collection, CollectionItem(..), IIIFCollection(..), IIIFManifest, IIIFResource(..), Range, RangeItem(..), ViewingDirection(..), isPagedLayout, manifestViewingLayout, toCanvases, toRanges, toViewingDirection)
 import Json.Decode as Decode
+import Json.Encode as Encode
 import Model exposing (ContentsView(..), Model, ResourceResponse(..), Response(..), SidebarState(..), ViewMode(..), getPageAt, manifestToPages, primaryImage)
 import Msg exposing (Msg(..))
 import Process
@@ -22,11 +24,13 @@ port copyToClipboard : String -> Cmd msg
 
 
 port filterPreviewUpdated :
-    { tileSource : String
-    , isStatic : Bool
-    , aspect : Float
-    , filters : Filters
-    }
+    Maybe
+        { sourceId : String
+        , tileSource : String
+        , isStatic : Bool
+        , aspect : Float
+        , filters : Filters
+        }
     -> Cmd msg
 
 
@@ -60,7 +64,61 @@ port scrollToIndex : Int -> Cmd msg
 port setFullscreen : Bool -> Cmd msg
 
 
-port tileSourcesUpdated : List { url : String, isStatic : Bool } -> Cmd msg
+port tileSourcesUpdated : List { sourceId : String, url : String, isStatic : Bool } -> Cmd msg
+
+
+port resolveTileSourceRequested : ({ requestId : String, sourceId : String } -> msg) -> Sub msg
+
+
+port resolveTileSourceCancelled : (String -> msg) -> Sub msg
+
+
+port tileSourceResolutionSucceeded : Encode.Value -> Cmd msg
+
+
+port tileSourceResolutionFailed : { requestId : String, message : String } -> Cmd msg
+
+
+port authHttpRequested : Encode.Value -> Cmd msg
+
+
+port authHttpCancelled : String -> Cmd msg
+
+
+port authHttpResponded : ({ id : String, status : Int, body : String } -> msg) -> Sub msg
+
+
+port authHttpFailed : ({ id : String, message : String } -> msg) -> Sub msg
+
+
+port authStorageRequested : Encode.Value -> Cmd msg
+
+
+port authStorageResponded : ({ flowId : String, now : Float, value : Maybe Decode.Value } -> msg) -> Sub msg
+
+
+port authTokenFrameRequested : Encode.Value -> Cmd msg
+
+
+port authTokenFrameCancelled : String -> Cmd msg
+
+
+port authTokenMessage : ({ flowId : String, now : Float, value : Decode.Value } -> msg) -> Sub msg
+
+
+port authTokenFailed : ({ flowId : String, message : String } -> msg) -> Sub msg
+
+
+port authPopupChanged : ({ flowId : String, status : String } -> msg) -> Sub msg
+
+
+port authLogoutChanged : ({ sessionId : String, status : String } -> msg) -> Sub msg
+
+
+port authSourcesInvalidated : List String -> Cmd msg
+
+
+port authDestroyed : (() -> msg) -> Sub msg
 
 
 port viewerLoadingChanged : (Bool -> msg) -> Sub msg
@@ -165,8 +223,20 @@ handleManifestLoaded model manifest =
 
         tileSources =
             List.filterMap
-                (primaryImage >> Maybe.map (\image -> { url = image.tileSource, isStatic = image.isStatic }))
+                (primaryImage >> Maybe.map (\image -> { sourceId = image.sourceId, url = image.tileSource, isStatic = image.isStatic }))
                 pages
+
+        authSources =
+            pages
+                |> List.concatMap .images
+                |> List.map
+                    (\image ->
+                        { id = image.sourceId
+                        , url = image.tileSource
+                        , isStatic = image.isStatic
+                        , auth = image.auth
+                        }
+                    )
 
         pageAspects =
             List.map .aspect pages
@@ -206,10 +276,12 @@ handleManifestLoaded model manifest =
     in
     ( { model
         | currentZoom = Nothing
+        , auth = Auth.registerSources authSources model.auth
         , filters = resetFilters
         , hasTileSources = not (List.isEmpty tileSources)
         , initialZoom = Nothing
         , isViewerLoading = False
+        , pageViewOpen = False
         , pages = pages
         , rangeIndexMap = rangeIndexMap
         , response = Loaded manifest
@@ -224,6 +296,7 @@ handleManifestLoaded model manifest =
       }
     , Cmd.batch
         [ tileSourcesUpdated tileSources
+        , filterPreviewUpdated Nothing
         , pageAspectsUpdated pageAspects
         , pageLabelsUpdated (List.map .label pages)
         , zoomLevelUpdated 1
@@ -318,6 +391,7 @@ init flags =
             LanguageCode flags.userLanguage
     in
     ( { acceptHeaders = flags.acceptHeaders
+      , auth = Auth.init
       , collectionSidebarDrag = Nothing
       , collectionSidebarVisible = True
       , collectionSidebarWidth = 400
@@ -549,11 +623,14 @@ sendPageViewPreview model =
                         |> Maybe.map
                             (\image ->
                                 filterPreviewUpdated
-                                    { aspect = page.aspect
-                                    , filters = model.filters
-                                    , isStatic = image.isStatic
-                                    , tileSource = image.tileSource
-                                    }
+                                    (Just
+                                        { aspect = page.aspect
+                                        , filters = model.filters
+                                        , isStatic = image.isStatic
+                                        , sourceId = image.sourceId
+                                        , tileSource = image.tileSource
+                                        }
+                                    )
                             )
                 )
             |> Maybe.withDefault Cmd.none
@@ -562,10 +639,132 @@ sendPageViewPreview model =
         Cmd.none
 
 
+runAuthEffects : List Auth.Effect -> Cmd Msg
+runAuthEffects effects =
+    effects
+        |> List.map runAuthEffect
+        |> Cmd.batch
+
+
+runAuthEffect : Auth.Effect -> Cmd Msg
+runAuthEffect effect =
+    case effect of
+        Auth.Fetch operationId url bearer withCredentials ->
+            authHttpRequested
+                (Encode.object
+                    [ ( "id", Encode.string operationId )
+                    , ( "url", Encode.string url )
+                    , ( "bearer", Maybe.map Encode.string bearer |> Maybe.withDefault Encode.null )
+                    , ( "withCredentials", Encode.bool withCredentials )
+                    ]
+                )
+
+        Auth.CancelFetch operationId ->
+            authHttpCancelled operationId
+
+        Auth.ReadToken flowId key ->
+            authStorageRequested
+                (Encode.object
+                    [ ( "action", Encode.string "read" )
+                    , ( "flowId", Encode.string flowId )
+                    , ( "key", Encode.string key )
+                    ]
+                )
+
+        Auth.WriteToken flowId key accessToken expiresAt ->
+            authStorageRequested
+                (Encode.object
+                    [ ( "action", Encode.string "write" )
+                    , ( "flowId", Encode.string flowId )
+                    , ( "key", Encode.string key )
+                    , ( "accessToken", Encode.string accessToken )
+                    , ( "expiresAt", Encode.float expiresAt )
+                    ]
+                )
+
+        Auth.RemoveToken flowId key ->
+            authStorageRequested
+                (Encode.object
+                    [ ( "action", Encode.string "remove" )
+                    , ( "flowId", Encode.string flowId )
+                    , ( "key", Encode.string key )
+                    ]
+                )
+
+        Auth.StartTokenFrame flowId url messageId ->
+            authTokenFrameRequested
+                (Encode.object
+                    [ ( "flowId", Encode.string flowId )
+                    , ( "url", Encode.string url )
+                    , ( "messageId", Encode.string messageId )
+                    ]
+                )
+
+        Auth.CancelTokenFrame flowId ->
+            authTokenFrameCancelled flowId
+
+        Auth.InvalidateSources sourceIds ->
+            authSourcesInvalidated sourceIds
+
+        Auth.Complete resolution ->
+            tileSourceResolutionSucceeded
+                (Encode.object
+                    [ ( "requestId", Encode.string resolution.requestId )
+                    , ( "url", Encode.string resolution.url )
+                    , ( "isStatic", Encode.bool resolution.isStatic )
+                    , ( "credentialed", Encode.bool resolution.credentialed )
+                    , ( "infoJson", Maybe.withDefault Encode.null resolution.infoJson )
+                    ]
+                )
+
+        Auth.Fail requestId message ->
+            tileSourceResolutionFailed { requestId = requestId, message = message }
+
+
+popupEvent : { flowId : String, status : String } -> Msg
+popupEvent change =
+    AuthEvent
+        (case change.status of
+            "opened" ->
+                Auth.PopupOpened change.flowId
+
+            "closed" ->
+                Auth.PopupClosed change.flowId
+
+            _ ->
+                Auth.PopupBlocked change.flowId
+        )
+
+
+logoutEvent : { sessionId : String, status : String } -> Msg
+logoutEvent change =
+    AuthEvent
+        (case change.status of
+            "opened" ->
+                Auth.LogoutOpened change.sessionId
+
+            "closed" ->
+                Auth.LogoutClosed change.sessionId
+
+            _ ->
+                Auth.LogoutBlocked change.sessionId
+        )
+
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ pageIndexChanged ClientNotifiedPageChanged
+        [ resolveTileSourceRequested (\request -> AuthEvent (Auth.Resolve request.requestId request.sourceId))
+        , resolveTileSourceCancelled (Auth.Cancel >> AuthEvent)
+        , authHttpResponded (\response -> AuthEvent (Auth.HttpSucceeded response.id response.status response.body))
+        , authHttpFailed (\response -> AuthEvent (Auth.HttpFailed response.id response.message))
+        , authStorageResponded (\response -> AuthEvent (Auth.StorageRead response.flowId response.now response.value))
+        , authTokenMessage (\response -> AuthEvent (Auth.TokenMessage response.flowId response.now response.value))
+        , authTokenFailed (\response -> AuthEvent (Auth.TokenFailed response.flowId response.message))
+        , authPopupChanged popupEvent
+        , authLogoutChanged logoutEvent
+        , authDestroyed (\_ -> AuthEvent Auth.Destroyed)
+        , pageIndexChanged ClientNotifiedPageChanged
         , pageIndexChangedInstant ClientNotifiedPageChangedInstant
         , fullscreenChanged ClientNotifiedFullscreenChanged
         , zoomChanged UserChangedZoomLevel
@@ -597,6 +796,13 @@ subscriptions model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        AuthEvent event ->
+            let
+                ( nextAuth, effects ) =
+                    Auth.update event model.auth
+            in
+            ( { model | auth = nextAuth }, runAuthEffects effects )
+
         ClientNotifiedFullscreenChanged enabled ->
             ( { model | fullscreen = enabled }, Cmd.none )
 
@@ -773,7 +979,7 @@ update msg model =
                         , pageViewOpen = False
                     }
             in
-            ( nextModel, Cmd.none )
+            ( nextModel, filterPreviewUpdated Nothing )
 
         UserClickedCollectionItem collectionId ->
             case model.resourceResponse of
@@ -1018,6 +1224,14 @@ update msg model =
               }
             , Cmd.none
             )
+
+        UserToggledCollectionSidebar ->
+            case model.resourceResponse of
+                ResourceLoadedCollection _ ->
+                    ( { model | collectionSidebarVisible = not model.collectionSidebarVisible }, Cmd.none )
+
+                _ ->
+                    ( model, Cmd.none )
 
         UserToggledFilter toggle enabled ->
             let

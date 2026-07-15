@@ -1,6 +1,6 @@
-module View.Helpers exposing (ButtonConfig, emptyHtml, viewButton, viewIf, viewMaybe)
+module View.Helpers exposing (ButtonConfig, emptyHtml, viewButton, viewButtonWithAttributes, viewIf, viewMaybe)
 
-import Html exposing (Html, button, div, text)
+import Html exposing (Attribute, Html, button, div, text)
 import Html.Attributes as HA exposing (classList, type_)
 import Html.Events as Events
 
@@ -20,6 +20,11 @@ emptyHtml =
 
 viewButton : ButtonConfig msg -> Html msg
 viewButton config =
+    viewButtonWithAttributes [] config
+
+
+viewButtonWithAttributes : List (Attribute msg) -> ButtonConfig msg -> Html msg
+viewButtonWithAttributes extraAttrs config =
     let
         buttonAttrs =
             let
@@ -33,26 +38,21 @@ viewButton config =
                         , ( "is-fullscreen", config.isFullscreen )
                         ]
                     , type_ "button"
-                    , HA.title config.label
+                    , HA.attribute "aria-label" config.label
                     ]
             in
             case config.onClickMsg of
                 Just msg ->
-                    Events.onClick msg :: baseAttrs
+                    Events.onClick msg :: (extraAttrs ++ baseAttrs)
 
                 Nothing ->
-                    HA.disabled True :: baseAttrs
+                    HA.disabled True :: (extraAttrs ++ baseAttrs)
     in
     div
-        [ HA.class "canvas-toolbar-item" ]
+        [ HA.class "canvas-toolbar-item"
+        , HA.attribute "data-tooltip" config.label
+        ]
         [ button buttonAttrs [ config.icon ]
-        , div
-            [ classList
-                [ ( "canvas-toolbar-label", True )
-                , ( "is-fullscreen", config.isFullscreen )
-                ]
-            ]
-            [ text config.label ]
         ]
 
 

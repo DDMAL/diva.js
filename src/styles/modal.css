@@ -225,6 +225,11 @@
   border-radius: 0;
 }
 
+.page-view-choice-thumb--protected {
+  min-height: 72px;
+  background: var(--diva-dark-bg);
+}
+
 .page-view-choice-label {
   font-size: var(--diva-font-xs);
   line-height: 1.2;

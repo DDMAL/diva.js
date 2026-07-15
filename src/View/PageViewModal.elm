@@ -1,5 +1,6 @@
 module View.PageViewModal exposing (viewPageViewModal)
 
+import Auth
 import Filters exposing (FilterFloatValue(..), FilterIntValue(..), FilterStringValue(..), FilterToggle(..))
 import Html exposing (Html, button, div, img, input, label, option, select, span, text, textarea)
 import Html.Attributes as HA exposing (alt, checked, classList, id, rows, src, type_, value)
@@ -590,8 +591,8 @@ viewFilterRow items =
     div [ HA.class "filter-row" ] items
 
 
-viewImageChoiceItem : Int -> Int -> PageImage -> Html Msg
-viewImageChoiceItem selectedIndex index image =
+viewImageChoiceItem : Auth.Model -> Int -> Int -> PageImage -> Html Msg
+viewImageChoiceItem auth selectedIndex index image =
     let
         isActive =
             index == selectedIndex
@@ -606,23 +607,34 @@ viewImageChoiceItem selectedIndex index image =
         , type_ "button"
         , onClick (UserClickedPageViewImageChoice index)
         ]
-        [ img
-            [ HA.class "page-view-choice-thumb"
-            , src image.thumbUrl
-            , alt image.label
-            ]
-            []
+        [ case Auth.thumbnailCrossOrigin image.sourceId auth of
+            Just crossOrigin ->
+                img
+                    [ HA.class "page-view-choice-thumb"
+                    , src image.thumbUrl
+                    , alt image.label
+                    , HA.attribute "loading" "lazy"
+                    , HA.attribute "crossorigin" crossOrigin
+                    ]
+                    []
+
+            Nothing ->
+                div
+                    [ HA.class "page-view-choice-thumb page-view-choice-thumb--protected"
+                    , HA.attribute "aria-label" "Protected image"
+                    ]
+                    []
         , span
             [ HA.class "page-view-choice-label" ]
             [ text image.label ]
         ]
 
 
-viewImageChoicesSidebar : List PageImage -> Int -> Html Msg
-viewImageChoicesSidebar images selectedIndex =
+viewImageChoicesSidebar : Auth.Model -> List PageImage -> Int -> Html Msg
+viewImageChoicesSidebar auth images selectedIndex =
     div
         [ HA.class "page-view-choices" ]
-        (List.indexedMap (\index image -> Lazy.lazy3 viewImageChoiceItem selectedIndex index image) images)
+        (List.indexedMap (\index image -> Lazy.lazy4 viewImageChoiceItem auth selectedIndex index image) images)
 
 
 viewMirrorRow : Model -> Html Msg
@@ -654,13 +666,13 @@ viewModalBody model =
         ]
         (case ( hasChoices, currentPage, model.pageViewSidebarVisible ) of
             ( True, Just page, True ) ->
-                [ viewImageChoicesSidebar page.images model.pageViewImageIndex
+                [ viewImageChoicesSidebar model.auth page.images model.pageViewImageIndex
                 , viewModalViewer model.pageViewFullscreen False
                 , viewModalSidebar model
                 ]
 
             ( True, Just page, False ) ->
-                [ viewImageChoicesSidebar page.images model.pageViewImageIndex
+                [ viewImageChoicesSidebar model.auth page.images model.pageViewImageIndex
                 , viewModalViewer model.pageViewFullscreen False
                 ]
 

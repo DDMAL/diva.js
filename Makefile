@@ -5,6 +5,7 @@ TS_SRC := src/diva.ts
 TS_ESM_SRC := src/diva-esm.ts
 TS_VE_SRC := src/viewer-element.ts
 TS_FT_SRC := src/filters.ts
+TS_AUTH_SRC := src/auth.ts
 CSS_SRC := $(wildcard src/styles/*.css)
 DIVA_CSS := cache/diva.css
 ELM_OUT := cache/elm.js
@@ -59,14 +60,14 @@ $(ELM_ESM): $(ELM_OUT) $(ELM_ESM_SCRIPT)
 $(DIVA_CSS): $(CSS_SRC) scripts/minify-css.mjs
 	node ./scripts/minify-css.mjs
 
-$(DIVA_DEBUG): $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(DIVA_CSS) $(ELM_ESM)
+$(DIVA_DEBUG): $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(TS_AUTH_SRC) $(DIVA_CSS) $(ELM_ESM)
 	mkdir -p public
 	$(ESBUILD) $(TS_SRC) $(ESBUILD_COMMON_FLAGS) --format=iife --outfile=$(DIVA_DEBUG)
 
-$(DIVA_JS): $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(DIVA_CSS) $(ELM_ESM)
+$(DIVA_JS): $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(TS_AUTH_SRC) $(DIVA_CSS) $(ELM_ESM)
 	@$(ESBUILD) $(TS_SRC) $(ESBUILD_COMMON_FLAGS) --format=iife $(ESBUILD_MINIFY_FLAGS) --outfile=$(DIVA_JS)
 
-$(DIVA_ESM): $(TS_ESM_SRC) $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(DIVA_CSS) $(ELM_ESM)
+$(DIVA_ESM): $(TS_ESM_SRC) $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(TS_AUTH_SRC) $(DIVA_CSS) $(ELM_ESM)
 	@$(ESBUILD) $(TS_ESM_SRC) $(ESBUILD_COMMON_FLAGS) --format=esm $(ESBUILD_MINIFY_FLAGS) --outfile=$(DIVA_ESM)
 
 report-build-sizes: $(MINIFIED_TARGETS)

@@ -132,6 +132,7 @@ imageApiImage =
     , label = Nothing
     , imageType = PrimaryImage
     , service = [ ImageService3 ]
+    , serviceObjects = []
     }
 
 
@@ -141,6 +142,7 @@ secondImageApiImage =
     , label = Nothing
     , imageType = ChoiceImage
     , service = [ ImageService3 ]
+    , serviceObjects = []
     }
 
 
@@ -150,6 +152,7 @@ staticCanvasImage =
     , label = Nothing
     , imageType = PrimaryImage
     , service = []
+    , serviceObjects = []
     }
 
 
@@ -159,4 +162,5 @@ staticThumbnail =
     , label = Nothing
     , imageType = PrimaryImage
     , service = []
+    , serviceObjects = []
     }

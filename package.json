@@ -23,15 +23,19 @@
   "scripts": {
     "format": "find src -name \"*.ts\" -print0 | xargs -0 clang-format -i",
     "develop": "chokidar \"src/**/*\" \"scripts/elm-esm.sh\" \"Makefile\" -c \"make build-dev\"",
-    "test": "elm-test-rs"
+    "test": "elm-test-rs",
+    "test:browser": "playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@types/openseadragon": "^5.0.2",
     "chokidar-cli": "^3.0.0",
     "concurrently": "^9.2.1",
     "elm-test-rs": "^3.0.2-0",
     "esbuild": "^0.28.1",
     "lightningcss": "^1.31.1",
+    "openseadragon": "^6.0.2",
+    "openseadragon5": "npm:openseadragon@5.0.1",
     "typescript": "^5.9.3"
   }
 }

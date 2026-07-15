@@ -1,10 +1,14 @@
 module Model exposing (CollectionState, ContentsView(..), Model, Page, PageImage, ResourceResponse(..), Response(..), SidebarState(..), ViewMode(..), currentManifest, getPageAt, manifestToPages, pageViewStartIndex, primaryImage)
 
+import Auth
 import Dict exposing (Dict)
 import Filters exposing (Filters)
+import IIIF.Auth as IIIFAuth
 import IIIF.Image exposing (createImageAddress, thumbnailUrlFromInfo)
 import IIIF.Language exposing (Language, extractLabelFromLanguageMap)
 import IIIF.Presentation exposing (Canvas, IIIFCollection, IIIFManifest, Image, ImageType(..), canvasAspect, canvasLabel, toCanvases)
+import Json.Decode as Decode
+import Json.Encode as Encode
 import Set exposing (Set)
 import Utilities exposing (find, isNothing)
 
@@ -24,7 +28,8 @@ type ContentsView
 
 
 type alias Model =
-    { rootElementId : String
+    { auth : Auth.Model
+    , rootElementId : String
     , manifestUrl : String
     , acceptHeaders : List String
     , initialZoom : Maybe Float
@@ -74,11 +79,13 @@ type alias Page =
 
 
 type alias PageImage =
-    { tileSource : String
+    { sourceId : String
+    , tileSource : String
     , thumbUrl : String
     , label : String
     , isPrimary : Bool
     , isStatic : Bool
+    , auth : Auth.SourceAuth
     }
 
 
@@ -236,11 +243,19 @@ iiifImageToPageImage language allImages image =
         isPrimary =
             image.imageType == PrimaryImage || (isPrimaryImage && isFirst)
     in
-    { tileSource = tileSource
+    { sourceId = tileSource
+    , tileSource = tileSource
     , thumbUrl = thumbUrl
     , label = label
     , isPrimary = isPrimary
     , isStatic = isStatic
+    , auth =
+        case Decode.decodeValue IIIFAuth.authServicesDecoder (Encode.list identity image.serviceObjects) of
+            Ok discovery ->
+                Auth.Discovered discovery
+
+            Err error ->
+                Auth.Invalid (Decode.errorToString error)
     }
 
 

@@ -6,6 +6,9 @@
 *.pyc
 *dev.html
 todo.md
+!TODO.md
+test-results/
+playwright-report/
 .DS_Store
 tags
 

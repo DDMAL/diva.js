@@ -1,5 +1,6 @@
 module View.Sidebar exposing (viewSidebarPanel, viewSidebarResizer)
 
+import Auth
 import Dict exposing (Dict)
 import Html exposing (Html, a, button, div, img, li, text, ul)
 import Html.Attributes as HA exposing (alt, attribute, classList, id, src, type_)
@@ -667,6 +668,7 @@ viewSidebarPanelWithMaybeManifest model maybeManifest =
                 SidebarThumbnails
                 (viewThumbnails
                     { fullscreen = model.fullscreen
+                    , auth = model.auth
                     , selectedIndex = model.selectedIndex
                     , shiftByOne = model.shiftByOne
                     , thumbsInstantScroll = model.thumbsInstantScroll
@@ -694,8 +696,8 @@ viewSidebarTab current target label msg =
         [ text label ]
 
 
-viewThumbnail : ViewMode -> Bool -> Maybe Int -> Int -> Page -> Html Msg
-viewThumbnail viewMode shiftByOne selectedIndex index page =
+viewThumbnail : Auth.Model -> ViewMode -> Bool -> Maybe Int -> Int -> Page -> Html Msg
+viewThumbnail auth viewMode shiftByOne selectedIndex index page =
     let
         isActive =
             isThumbnailActive viewMode shiftByOne selectedIndex index
@@ -715,14 +717,44 @@ viewThumbnail viewMode shiftByOne selectedIndex index page =
 
         hasChoices =
             List.length page.images > 1
+
+        primary =
+            page.images
+                |> List.filter .isPrimary
+                |> List.head
+                |> Maybe.withDefault (List.head page.images |> Maybe.withDefault fallbackImage)
+
+        fallbackImage =
+            { sourceId = ""
+            , tileSource = ""
+            , thumbUrl = ""
+            , label = ""
+            , isPrimary = False
+            , isStatic = True
+            , auth = Auth.Unknown
+            }
+
+        thumbnail =
+            case Auth.thumbnailCrossOrigin primary.sourceId auth of
+                Just crossOrigin ->
+                    img
+                        [ HA.class "thumbs-image"
+                        , src page.thumbUrl
+                        , alt ("Page " ++ String.fromInt (index + 1))
+                        , HA.attribute "loading" "lazy"
+                        , HA.attribute "crossorigin" crossOrigin
+                        ]
+                        []
+
+                Nothing ->
+                    div
+                        [ HA.class "thumbs-image thumbs-image--protected"
+                        , HA.attribute "aria-label" "Protected image"
+                        ]
+                        []
     in
     button attrs
-        [ img
-            [ HA.class "thumbs-image"
-            , src page.thumbUrl
-            , alt ("Page " ++ String.fromInt (index + 1))
-            ]
-            []
+        [ thumbnail
         , div
             [ classList
                 [ ( "thumbs-label", True )
@@ -742,6 +774,7 @@ viewThumbnail viewMode shiftByOne selectedIndex index page =
 
 viewThumbnails :
     { fullscreen : Bool
+    , auth : Auth.Model
     , selectedIndex : Maybe Int
     , shiftByOne : Bool
     , thumbsInstantScroll : Bool
@@ -750,7 +783,7 @@ viewThumbnails :
     }
     -> List Page
     -> Html Msg
-viewThumbnails { fullscreen, selectedIndex, shiftByOne, thumbsInstantScroll, viewMode, viewingDirection } pages =
+viewThumbnails { fullscreen, auth, selectedIndex, shiftByOne, thumbsInstantScroll, viewMode, viewingDirection } pages =
     let
         indexedPages =
             List.indexedMap Tuple.pair pages
@@ -777,5 +810,5 @@ viewThumbnails { fullscreen, selectedIndex, shiftByOne, thumbsInstantScroll, vie
             )
         ]
         (orderedPages
-            |> List.map (\( index, page ) -> Lazy.lazy5 viewThumbnail viewMode shiftByOne selectedIndex index page)
+            |> List.map (\( index, page ) -> Lazy.lazy6 viewThumbnail auth viewMode shiftByOne selectedIndex index page)
         )

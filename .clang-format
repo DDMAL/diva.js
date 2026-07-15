@@ -1,4 +1,4 @@
-BasedOnStyle: None
+BasedOnStyle: LLVM
 Language: JavaScript
 IndentWidth: 4
 TabWidth: 4

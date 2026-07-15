@@ -60,7 +60,11 @@
         this.appendChild(this.container);
         this.createScrollbar();
       }
+      const hadViewer = Boolean(this.viewer);
       this.syncViewer();
+      if (!hadViewer && this.viewer && this.tileSources.length > 0) {
+        this.resetTileSources(this.tileSources.slice());
+      }
     }
     disconnectedCallback() {
       this.cancelLoads();
@@ -99,6 +103,7 @@
           animationTime: 0.8,
           showNavigationControl: false,
           preserveViewport: true,
+          maxImageCacheCount: 512,
           tileRetryMax: 2,
           tileRetryDelay: 500,
           visibilityRatio: 0,
@@ -139,14 +144,26 @@
       this.applyLayoutChange({ mode: nextMode, direction: nextDirection });
     }
     setTileSources(tileSources) {
-      if (!Array.isArray(tileSources) || tileSources.length === 0) {
+      if (!Array.isArray(tileSources)) {
         return;
       }
+      this.tileSources = tileSources.slice();
       this.syncViewer();
-      this.resetTileSources(tileSources);
+      if (!this.viewer) {
+        this.buildOffsets();
+        return;
+      }
+      this.resetTileSources(this.tileSources.slice());
     }
     setTileSourceResolver(resolver) {
       this.tileSourceResolver = resolver;
+    }
+    invalidateTileSources(sourceIds) {
+      const affected = new Set(sourceIds);
+      if (affected.size === 0 || !this.tileSources.some((source) => affected.has(source.sourceId))) {
+        return;
+      }
+      this.resetTileSources(this.tileSources.slice());
     }
     setPageLabels(labels) {
       if (!Array.isArray(labels)) {
@@ -269,6 +286,7 @@
       }
       this.viewer.addTiledImage({
         tileSource,
+        ...this.tileRequestOptions(tileSource),
         x: xOffset,
         y: yOffset,
         width: 1,
@@ -321,8 +339,23 @@
         }
       });
     }
+    tileRequestOptions(tileSource) {
+      if (!tileSource || typeof tileSource !== "object") {
+        return {};
+      }
+      const source = tileSource;
+      const options = {};
+      if (typeof source.ajaxWithCredentials === "boolean") {
+        options.ajaxWithCredentials = source.ajaxWithCredentials;
+      }
+      if (typeof source.crossOriginPolicy === "string" || typeof source.crossOriginPolicy === "boolean") {
+        options.crossOriginPolicy = source.crossOriginPolicy;
+      }
+      return options;
+    }
     finishLoad(index, controller) {
-      if (this.loadControllers.get(index) === controller) this.loadControllers.delete(index);
+      if (this.loadControllers.get(index) === controller)
+        this.loadControllers.delete(index);
       this.loadingIndexes.delete(index);
       this.updateLoadingState();
     }
@@ -338,7 +371,8 @@
       this.addUnavailableOverlay(index, message);
     }
     addUnavailableOverlay(index, message) {
-      if (!this.viewer) return;
+      if (!this.viewer)
+        return;
       this.removeUnavailableOverlay(index);
       const element = document.createElement("div");
       element.className = "diva-image-unavailable";
@@ -361,7 +395,8 @@
     }
     removeUnavailableOverlay(index) {
       const element = this.querySelector(`.diva-image-unavailable[data-index="${index}"]`);
-      if (element && this.viewer) this.viewer.removeOverlay(element);
+      if (element && this.viewer)
+        this.viewer.removeOverlay(element);
       element == null ? void 0 : element.remove();
     }
     setPageAspects(aspects) {
@@ -1037,7 +1072,7 @@
   customElements.define("osd-viewer", OsdViewer);
 
   // cache/diva.css
-  var diva_default = ":root{--diva-accent:#5a6bff;--diva-accent-light:#9aa4ff;--diva-border:#d9d4ce;--diva-danger:#d32f2f;--diva-dark-bg:#1c1d22;--diva-dark-border:#2c2d33;--diva-overlay-bg:#10111499;--diva-page-bg:#f7f5f1;--diva-shadow-dark:#00000026;--diva-shadow-focus:#9aa4ff59;--diva-shadow-modal:#00000040;--diva-surface:#e6e1dc;--diva-text-muted:#5c5a55;--diva-text-muted-on-dark:#ffffffb3;--diva-text-primary:#1b1b1b;--diva-toolbar-button-bg:#5258626b;--diva-toolbar-button-bg-hover:#5c636e85;--diva-toolbar-button-bg-fullscreen:#52586285;--diva-toolbar-button-bg-fullscreen-hover:#6068749e;--diva-toolbar-button-border:#ffffff59;--diva-toolbar-button-border-hover:#ffffff73;--diva-toolbar-button-border-fullscreen-hover:#fff9;--diva-toolbar-button-icon:#2c2d33;--diva-toolbar-button-shadow:inset 0 1px 0 #ffffff8c, inset 0 -1px 0 #ffffff2e;--diva-toolbar-button-shadow-hover:inset 0 1px 0 #ffffffb3, inset 0 -1px 0 #ffffff3d;--diva-white:#fff;--diva-font-lg:16px;--diva-font-md:13px;--diva-font-sm:11px;--diva-font-xs:10px;--diva-font-xl:20px;color-scheme:light}*{box-sizing:border-box}.list-reset{margin:0;padding:0;list-style:none}.ui-button{text-align:left;cursor:pointer;color:var(--diva-text-primary);font-size:var(--diva-font-lg);background-color:#0000;border:none;padding:0}.ui-button:hover{background-color:var(--diva-surface)}.ui-card{cursor:pointer;border-radius:0;width:100%;padding:6px}.ui-card--dark{background-color:var(--diva-dark-bg)}.diva-app{flex-direction:column;flex:1;height:100%;min-height:0;padding:12px 24px;display:flex}.diva-app.is-fullscreen{height:100vh;min-height:100vh;padding:0}.diva-app-header{font-size:var(--diva-font-lg);align-items:center;gap:12px;margin-bottom:8px;font-weight:600;display:flex}.diva-app-title{font-size:var(--diva-font-xl);text-align:left;color:var(--diva-text-primary);margin-bottom:6px;font-weight:600}.diva-app-title.is-fullscreen{color:var(--diva-white)}.diva-app-body{flex:1;align-items:stretch;gap:0;height:100%;min-height:0;display:flex;position:relative}.diva-app-body.is-fullscreen{flex:1;min-height:0}.diva-canvas-column{flex-direction:column;flex:1;gap:24px;min-height:0;display:flex}.diva-canvas-column.is-fullscreen{flex:1;height:100%;min-height:0}.diva-canvas-wrapper{flex:1;min-height:0;position:relative}.diva-canvas{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);border-radius:0;width:100%;height:100%;overflow:hidden}.diva-canvas.is-fullscreen{border-radius:0;flex:1;height:100%}.diva-canvas.has-collection{border-radius:0}.metadata-panel{height:100%;padding:12px;overflow:auto}.metadata-body{flex-direction:column;gap:10px;display:flex}.metadata-item{flex-direction:column;gap:4px;display:flex}.metadata-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}.metadata-value{font-size:var(--diva-font-lg);color:var(--diva-text-muted);line-height:1.4}.contents-empty{font-size:var(--diva-font-lg);color:var(--diva-text-muted);padding-left:12px}.sidebar-resizer,.collection-resizer{width:12px;font-size:var(--diva-font-xl);color:var(--diva-white);background-color:var(--diva-text-muted);cursor:ew-resize;user-select:none;touch-action:none;flex:0 0 12px;justify-content:center;align-self:stretch;align-items:center;line-height:1;display:flex}.sidebar-resizer.is-hidden,.collection-resizer.is-hidden{display:none}.sidebar-panel.is-fullscreen,.collection-panel.is-fullscreen{border-radius:0;height:100%}.sidebar-panel.is-hidden,.collection-panel.is-hidden{opacity:0;pointer-events:none;border-width:0;padding:0;overflow:hidden}.required-statement-dock{justify-content:flex-end;width:100%;margin-top:12px;padding-right:8px;display:flex}.required-statement{font-size:var(--diva-font-md);color:var(--diva-text-muted);text-align:right;min-width:250px;max-width:20vw;line-height:1.4}.diva-scrollbar-track{background:var(--diva-surface);border:1px solid var(--diva-border);z-index:100;border-radius:0;width:12px;position:absolute;top:4px;bottom:4px;right:4px}.diva-scrollbar-thumb{background:var(--diva-text-muted);cursor:pointer;border-radius:0;min-height:30px;position:absolute;left:1px;right:1px}.diva-scrollbar-thumb:hover{background:var(--diva-text-primary)}.diva-scrollbar-thumb:active{background:var(--diva-dark-border)}.throbber-overlay{pointer-events:none;justify-content:center;align-items:center;display:flex;position:absolute;inset:0}.viewer-zoom-indicator{z-index:30;pointer-events:none;font-size:var(--diva-font-sm);color:var(--diva-white);background-color:#0000008c;border-radius:0;padding:4px 8px;font-weight:600;position:absolute;bottom:12px;left:12px}.throbber{background-color:var(--diva-white);width:64px;height:64px;box-shadow:0 8px 16px var(--diva-shadow-dark);border-radius:0;flex-wrap:wrap;padding:8px;display:flex}.throbber-cube{background-color:var(--diva-accent);width:16px;height:16px;animation-name:diva-cube-grid;animation-duration:1.3s;animation-timing-function:ease-in-out;animation-iteration-count:infinite}@keyframes diva-cube-grid{0%{transform:scale(1)}35%{transform:scale(0)}70%{transform:scale(1)}to{transform:scale(1)}}@media (width<=720px){.diva-app{padding:12px}.diva-app-body{flex-direction:column;gap:12px}.sidebar-resizer,.collection-resizer{display:none}}.diva-image-unavailable{background:color-mix(in srgb, var(--diva-background-color,#fff) 92%, transparent);box-sizing:border-box;text-align:center;border:1px solid #999;flex-direction:column;justify-content:center;align-items:center;padding:1rem;display:flex}.diva-image-unavailable button{cursor:pointer}.sidebar-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0;flex-direction:column;width:320px;height:100%;min-height:0;display:flex;overflow:hidden}.sidebar-tabs{border:1px solid var(--diva-surface);background-color:var(--diva-surface);border-radius:0;display:flex}.sidebar-tab-button{font-size:var(--diva-font-md);text-transform:uppercase;cursor:pointer;color:var(--diva-text-muted);background-color:#0000;border:none;flex:1;padding:10px 12px}.sidebar-tab-button.is-active{background-color:var(--diva-white);font-weight:600}.sidebar-content{background-color:var(--diva-page-bg);flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}.sidebar-pane{flex:1;width:100%;min-height:0}.sidebar-pane.is-hidden{display:none}.thumbs{scroll-behavior:smooth;background-color:var(--diva-dark-bg);flex:1;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:10px;width:100%;height:100%;min-height:0;padding:12px;display:grid;overflow-y:auto}.thumbs.is-fullscreen{height:100%}.thumbs-item{border:1px solid var(--diva-dark-border);text-align:left;flex-direction:column;justify-content:flex-start;align-items:stretch;max-width:none;display:flex}.thumbs-item:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.thumbs-item.is-active{border-color:var(--diva-accent-light);box-shadow:0 0 0 var(--diva-shadow-focus);background-color:var(--diva-dark-bg);outline:2px solid var(--diva-accent-light);outline-offset:2px}.thumbs-image{border-radius:0;width:100%;height:auto;display:block}.thumbs-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted-on-dark);margin-top:6px;line-height:1.3}.thumbs-label.is-active{color:var(--diva-white)}.contents-panel{height:100%;padding:12px;overflow:auto}.contents-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:10px;font-weight:600}.contents-view-tabs{gap:8px;margin-bottom:12px;display:flex}.contents-view-button{background-color:var(--diva-surface);border:1px solid var(--diva-border);font-size:var(--diva-font-sm);color:var(--diva-text-muted);cursor:pointer;border-radius:0;padding:4px 10px}.contents-view-button.is-active{background-color:var(--diva-white);border-color:var(--diva-accent);color:var(--diva-text-primary)}.contents-list-nested{margin-top:6px;padding-left:16px}.contents-item{margin-bottom:6px}.contents-meta{border:1px solid var(--diva-dark-border);margin-top:6px;padding:8px}.contents-button:hover{color:var(--diva-accent)}@media (width<=720px){.sidebar-panel{border-radius:0;height:auto;width:100%!important}.sidebar-panel.is-overlay{z-index:100;width:100%;height:100%;box-shadow:0 12px 24px var(--diva-shadow-dark);border-radius:0;position:absolute;inset:0}.sidebar-panel.is-mobile-hidden{display:none}.thumbs{grid-template-columns:repeat(3,minmax(0,1fr));width:100%;height:auto;overflow:auto hidden}.thumbs-item{min-width:120px}}.canvas-toolbar-stack{flex-direction:column;gap:4px;width:100%;min-width:0;display:flex}.canvas-toolbar{align-items:center;width:100%;margin-bottom:0;display:flex}.canvas-toolbar-section{flex:none;align-items:center;gap:5px;min-width:0;display:flex}.canvas-toolbar-section.is-right{flex:none;margin-left:auto}.canvas-toolbar-end{align-items:center;gap:8px;min-width:0;margin-left:auto;display:flex}.canvas-toolbar-end .canvas-toolbar-section.is-right{margin-left:0}.canvas-toolbar-item{flex:none;justify-content:center;align-items:center;width:34px;height:34px;display:flex;position:relative}.canvas-toolbar-button{width:30px;height:30px;color:var(--diva-toolbar-button-icon);box-shadow:none;cursor:pointer;background-color:#e2e2e2f0;border:1px solid #2c2d3373;border-radius:0;justify-content:center;align-items:center;padding:6px;display:flex}.canvas-toolbar-button svg{flex:none;width:16px;height:16px}.canvas-toolbar-button:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.canvas-toolbar-button:hover{border-color:var(--diva-toolbar-button-icon);background-color:#d6d6d6fa}.canvas-toolbar-button.is-fullscreen{color:var(--diva-white);background-color:#52586294;border-color:#ffffff85}.canvas-toolbar-button.is-fullscreen:hover{border-color:var(--diva-white);background-color:#606874b8}.canvas-toolbar-button.is-disabled{opacity:.4;cursor:not-allowed}.canvas-toolbar-button.is-disabled:hover{background-color:#e2e2e2f0;border-color:#2c2d3373}.canvas-toolbar-button.is-fullscreen.is-disabled:hover{background-color:#52586294;border-color:#ffffff85}.canvas-toolbar-item:after{z-index:80;max-width:160px;color:var(--diva-white);content:attr(data-tooltip);font-size:var(--diva-font-xs);letter-spacing:.02em;opacity:0;pointer-events:none;text-align:center;visibility:hidden;white-space:normal;word-break:normal;background-color:#1c1d22f2;border:1px solid #ffffff2e;border-radius:0;width:max-content;padding:5px 7px;font-weight:600;line-height:1.2;transition:opacity .12s,transform .12s;position:absolute;top:calc(100% + 7px);left:50%;transform:translate(-50%,-3px);box-shadow:0 4px 10px #0003}.canvas-toolbar-item:hover:after,.canvas-toolbar-item:has(.canvas-toolbar-button:focus-visible):after{opacity:1;visibility:visible;transform:translate(-50%)}.canvas-toolbar-section.is-right .canvas-toolbar-item:last-child:after{left:auto;right:0;transform:translateY(-3px)}.canvas-toolbar-section.is-right .canvas-toolbar-item:last-child:hover:after,.canvas-toolbar-section.is-right .canvas-toolbar-item:last-child:has(.canvas-toolbar-button:focus-visible):after{transform:translate(0)}.canvas-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-align:left;white-space:normal;overflow-wrap:anywhere;word-break:break-word;width:100%}.canvas-toolbar-end .canvas-label{overflow-wrap:normal;text-align:right;white-space:nowrap;word-break:normal;flex:auto;width:auto;min-width:0;max-width:min(42vw,42rem);overflow:hidden}.canvas-label.is-fullscreen{color:var(--diva-white)}.status{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:0}.status.is-error{color:var(--diva-danger)}@media (width<=720px){.canvas-toolbar{flex-wrap:wrap;gap:5px}.canvas-toolbar-end{justify-content:flex-end;width:100%;margin-left:0}.canvas-toolbar-item{width:32px;height:32px}.canvas-toolbar-button{width:28px;height:28px;padding:6px}.canvas-toolbar-button svg{width:15px;height:15px}.canvas-label,.status{display:none}}.modal-overlay{background-color:var(--diva-overlay-bg);z-index:100;justify-content:center;align-items:center;padding:24px;display:flex;position:fixed;inset:0}.viewer-status-overlay{background-color:var(--diva-overlay-bg);z-index:40;justify-content:center;align-items:center;padding:24px;display:flex;position:absolute;inset:0}.modal-overlay.is-fullscreen{padding:0}.modal{background-color:var(--diva-page-bg);color:var(--diva-text-primary);width:min(1440px,96vw);max-height:90vh;box-shadow:0 20px 40px var(--diva-shadow-modal);border-radius:0;flex-direction:column;display:flex}.modal.is-narrow{width:min(960px,94vw)}.modal.is-page-view{height:80vh;max-height:80vh}.modal.is-fullscreen{border-radius:0;width:100vw;height:100vh;max-height:100vh}.modal-header{justify-content:space-between;align-items:center;padding:16px 20px 0;display:flex}.modal-actions{gap:8px;display:flex}.modal-close-action .canvas-toolbar-button{color:var(--diva-danger);box-shadow:none;-webkit-backdrop-filter:none;background-color:#0000;border:none;width:auto;height:auto;padding:2px}.modal-close-action .canvas-toolbar-button:hover{background-color:#d32f2f1f;border-color:#0000}.modal-close-action .canvas-toolbar-item{width:32px}.modal-title-stack{flex-direction:column;gap:4px;display:flex}.modal-title{font-size:var(--diva-font-lg);font-weight:600}.modal-subtitle{font-size:var(--diva-font-lg);color:var(--diva-text-primary)}.modal-subtitle.is-muted{font-size:var(--diva-font-md)}.modal-body{flex:1;grid-template-columns:minmax(0,1fr) 240px;gap:16px;min-height:0;padding:16px 20px 20px;display:grid}.modal-body.is-no-gap{gap:0}.modal-body.is-two-column{grid-template-columns:minmax(0,1fr) 200px;align-items:start}.modal-body.is-no-sidebar{grid-template-columns:minmax(0,1fr)}.modal-body.is-fullscreen{flex:1;min-height:0}.modal-body.is-with-choices{grid-template-columns:120px minmax(0,1fr) 240px}.modal-body.is-with-choices-no-sidebar{grid-template-columns:120px minmax(0,1fr)}.modal-viewer{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);height:100%;overflow:hidden}.modal-viewer.is-fullscreen{border-radius:0;height:100%}.modal-viewer.is-outer-left{border-radius:0}.modal-canvas{width:100%;height:100%;display:block}.modal-sidebar{background-color:var(--diva-white);border-top:1px solid var(--diva-border);border-right:1px solid var(--diva-border);border-bottom:1px solid var(--diva-border);border-radius:0;padding:16px;overflow:auto}.manifest-info-logo-wrap{text-align:center;flex-direction:column;align-items:center;gap:8px;display:flex}.manifest-info-logo{width:100%;max-width:180px;height:auto}.page-view-choices{background-color:var(--diva-dark-bg);border-radius:0;flex-direction:column;gap:8px;padding:8px;display:flex;overflow:auto}.page-view-choice{border:2px solid #0000;flex-direction:column;gap:4px;display:flex}.page-view-choice:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.page-view-choice:hover{background-color:var(--diva-dark-bg)}.page-view-choice.is-active{border-color:var(--diva-accent-light);background-color:var(--diva-dark-bg)}.page-view-choice-thumb{border-radius:0;width:100%;height:auto;display:block}.page-view-choice-label{font-size:var(--diva-font-xs);color:var(--diva-text-muted);text-overflow:ellipsis;white-space:nowrap;line-height:1.2;overflow:hidden}.filter-group{border-bottom:1px solid var(--diva-border);margin-bottom:12px;padding-bottom:12px}.filter-title-button{text-align:left;cursor:pointer;width:100%;font-size:var(--diva-font-sm);text-transform:uppercase;letter-spacing:.08em;color:var(--diva-text-muted);background-color:#0000;border:none;align-items:center;gap:8px;margin-bottom:8px;padding:0;font-weight:600;display:flex}.filter-title-button.is-collapsed{margin-bottom:0}.filter-title-icon{border-top:4px solid #0000;border-bottom:4px solid #0000;border-left:6px solid var(--diva-text-muted);width:0;height:0;transition:transform .15s;display:inline-block}.filter-title-icon.is-expanded{transform:rotate(90deg)}.filter-row{flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle{font-size:var(--diva-font-md);align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle.is-inline{margin-bottom:0}.filter-range-group{flex-direction:column;gap:6px;margin-bottom:10px;display:flex}.filter-range-header{justify-content:space-between;align-items:center;gap:8px;display:flex}.filter-range-header-right{align-items:center;gap:8px;display:flex}.filter-range-input{width:100%}.filter-value{font-size:var(--diva-font-sm);color:var(--diva-text-muted);text-align:right;width:40px}.filter-reset{font-size:var(--diva-font-xs);background-color:var(--diva-surface);border:1px solid var(--diva-border);cursor:pointer;color:var(--diva-text-muted);border-radius:0;padding:2px 6px}.filter-reset:hover{background-color:var(--diva-border)}.filter-json{width:100%;min-height:120px;font-size:var(--diva-font-sm);border:1px solid var(--diva-border);background-color:var(--diva-white);resize:vertical;border-radius:0;padding:6px 8px;font-family:Menlo,Monaco,Consolas,Liberation Mono,monospace}.filter-json-error{font-size:var(--diva-font-sm);color:var(--diva-danger);margin-top:4px}.filter-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted)}.filter-select{border:1px solid var(--diva-border);background-color:var(--diva-white);font-size:var(--diva-font-sm);border-radius:0;padding:4px 6px}.filter-color-input{border:1px solid var(--diva-border);background-color:var(--diva-white);border-radius:0;width:42px;height:28px;padding:0}.diva-auth-overlay{z-index:10000;background:#0000008c;place-items:center;display:grid;position:fixed;inset:0}.diva-auth-dialog{box-sizing:border-box;border:1px solid var(--diva-border,#aaa);background:var(--diva-background,#fff);width:min(30rem,100vw - 2rem);color:var(--diva-text-primary,#222);border-radius:0;padding:1.25rem}.diva-auth-dialog button{min-height:2.25rem;color:inherit;cursor:pointer;background:0 0;border:1px solid;border-radius:0;padding:.35rem .8rem}.diva-auth-dialog button:focus-visible{outline:2px solid var(--diva-accent,#1769aa);outline-offset:2px}.collection-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0;flex-direction:column;height:100%;min-height:0;display:flex;overflow:hidden}.collection-header{background-color:var(--diva-surface);border-bottom:1px solid var(--diva-border);border-radius:0;padding:12px}.collection-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:4px;font-weight:600}.collection-summary{font-size:var(--diva-font-md);color:var(--diva-text-muted);line-height:1.4}.collection-tree-item{padding-left:12px}.collection-node-button{align-items:center;gap:6px;width:100%;padding:6px 8px;display:flex}.collection-expand-icon{flex-shrink:0;justify-content:center;align-items:center;width:16px;height:16px;display:flex}.manifest-tree-item{padding:6px 8px 6px 30px}.manifest-tree-item.is-active{background-color:var(--diva-border);font-weight:600}.sidebar-pane.is-scroll{overflow-y:auto}@media (width<=720px){.collection-panel{border-radius:0;width:100%;height:auto}}";
+  var diva_default = ":root{--diva-accent:#5a6bff;--diva-accent-light:#9aa4ff;--diva-border:#d9d4ce;--diva-danger:#d32f2f;--diva-dark-bg:#1c1d22;--diva-dark-border:#2c2d33;--diva-overlay-bg:#10111499;--diva-page-bg:#f7f5f1;--diva-shadow-dark:#00000026;--diva-shadow-focus:#9aa4ff59;--diva-shadow-modal:#00000040;--diva-surface:#e6e1dc;--diva-text-muted:#5c5a55;--diva-text-muted-on-dark:#ffffffb3;--diva-text-primary:#1b1b1b;--diva-toolbar-button-bg:#5258626b;--diva-toolbar-button-bg-hover:#5c636e85;--diva-toolbar-button-bg-fullscreen:#52586285;--diva-toolbar-button-bg-fullscreen-hover:#6068749e;--diva-toolbar-button-border:#ffffff59;--diva-toolbar-button-border-hover:#ffffff73;--diva-toolbar-button-border-fullscreen-hover:#fff9;--diva-toolbar-button-icon:#2c2d33;--diva-toolbar-button-shadow:inset 0 1px 0 #ffffff8c, inset 0 -1px 0 #ffffff2e;--diva-toolbar-button-shadow-hover:inset 0 1px 0 #ffffffb3, inset 0 -1px 0 #ffffff3d;--diva-white:#fff;--diva-font-lg:16px;--diva-font-md:13px;--diva-font-sm:11px;--diva-font-xs:10px;--diva-font-xl:20px;color-scheme:light}*{box-sizing:border-box}.list-reset{margin:0;padding:0;list-style:none}.ui-button{text-align:left;cursor:pointer;color:var(--diva-text-primary);font-size:var(--diva-font-lg);background-color:#0000;border:none;padding:0}.ui-button:hover{background-color:var(--diva-surface)}.ui-card{cursor:pointer;border-radius:0;width:100%;padding:6px}.ui-card--dark{background-color:var(--diva-dark-bg)}.diva-app{flex-direction:column;flex:1;height:100%;min-height:0;padding:12px 24px;display:flex}.diva-app.is-fullscreen{height:100vh;min-height:100vh;padding:0}.diva-app-header{font-size:var(--diva-font-lg);align-items:center;gap:12px;margin-bottom:8px;font-weight:600;display:flex}.diva-app-title{font-size:var(--diva-font-xl);text-align:left;color:var(--diva-text-primary);margin-bottom:6px;font-weight:600}.diva-app-title.is-fullscreen{color:var(--diva-white)}.diva-app-body{flex:1;align-items:stretch;gap:0;height:100%;min-height:0;display:flex;position:relative}.diva-app-body.is-fullscreen{flex:1;min-height:0}.diva-canvas-column{flex-direction:column;flex:1;gap:24px;min-height:0;display:flex}.diva-canvas-column.is-fullscreen{flex:1;height:100%;min-height:0}.diva-canvas-wrapper{flex:1;min-height:0;position:relative}.diva-canvas{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);border-radius:0;width:100%;height:100%;overflow:hidden}.diva-canvas.is-fullscreen{border-radius:0;flex:1;height:100%}.diva-canvas.has-collection{border-radius:0}.metadata-panel{height:100%;padding:12px;overflow:auto}.metadata-body{flex-direction:column;gap:10px;display:flex}.metadata-item{flex-direction:column;gap:4px;display:flex}.metadata-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}.metadata-value{font-size:var(--diva-font-lg);color:var(--diva-text-muted);line-height:1.4}.contents-empty{font-size:var(--diva-font-lg);color:var(--diva-text-muted);padding-left:12px}.sidebar-resizer,.collection-resizer{width:12px;font-size:var(--diva-font-xl);color:var(--diva-white);background-color:var(--diva-text-muted);cursor:ew-resize;user-select:none;touch-action:none;flex:0 0 12px;justify-content:center;align-self:stretch;align-items:center;line-height:1;display:flex}.sidebar-resizer.is-hidden,.collection-resizer.is-hidden{display:none}.sidebar-panel.is-fullscreen,.collection-panel.is-fullscreen{border-radius:0;height:100%}.sidebar-panel.is-hidden,.collection-panel.is-hidden{opacity:0;pointer-events:none;border-width:0;padding:0;overflow:hidden}.required-statement-dock{justify-content:flex-end;width:100%;margin-top:12px;padding-right:8px;display:flex}.required-statement{font-size:var(--diva-font-md);color:var(--diva-text-muted);text-align:right;min-width:250px;max-width:20vw;line-height:1.4}.diva-scrollbar-track{background:var(--diva-surface);border:1px solid var(--diva-border);z-index:100;border-radius:0;width:12px;position:absolute;top:4px;bottom:4px;right:4px}.diva-scrollbar-thumb{background:var(--diva-text-muted);cursor:pointer;border-radius:0;min-height:30px;position:absolute;left:1px;right:1px}.diva-scrollbar-thumb:hover{background:var(--diva-text-primary)}.diva-scrollbar-thumb:active{background:var(--diva-dark-border)}.throbber-overlay{pointer-events:none;justify-content:center;align-items:center;display:flex;position:absolute;inset:0}.viewer-zoom-indicator{z-index:30;pointer-events:none;font-size:var(--diva-font-sm);color:var(--diva-white);background-color:#0000008c;border-radius:0;padding:4px 8px;font-weight:600;position:absolute;bottom:12px;left:12px}.throbber{background-color:var(--diva-white);width:64px;height:64px;box-shadow:0 8px 16px var(--diva-shadow-dark);border-radius:0;flex-wrap:wrap;padding:8px;display:flex}.throbber-cube{background-color:var(--diva-accent);width:16px;height:16px;animation-name:diva-cube-grid;animation-duration:1.3s;animation-timing-function:ease-in-out;animation-iteration-count:infinite}@keyframes diva-cube-grid{0%{transform:scale(1)}35%{transform:scale(0)}70%{transform:scale(1)}to{transform:scale(1)}}@media (width<=720px){.diva-app{padding:12px}.diva-app-body{flex-direction:column;gap:12px}.sidebar-resizer,.collection-resizer{display:none}}.diva-image-unavailable{background:color-mix(in srgb, var(--diva-background-color,#fff) 92%, transparent);box-sizing:border-box;text-align:center;border:1px solid #999;flex-direction:column;justify-content:center;align-items:center;padding:1rem;display:flex}.diva-image-unavailable button{cursor:pointer}.sidebar-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0;flex-direction:column;width:320px;height:100%;min-height:0;display:flex;overflow:hidden}.sidebar-tabs{border:1px solid var(--diva-surface);background-color:var(--diva-surface);border-radius:0;display:flex}.sidebar-tab-button{font-size:var(--diva-font-md);text-transform:uppercase;cursor:pointer;color:var(--diva-text-muted);background-color:#0000;border:none;flex:1;padding:10px 12px}.sidebar-tab-button.is-active{background-color:var(--diva-white);font-weight:600}.sidebar-content{background-color:var(--diva-page-bg);flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}.sidebar-pane{flex:1;width:100%;min-height:0}.sidebar-pane.is-hidden{display:none}.thumbs{scroll-behavior:smooth;background-color:var(--diva-dark-bg);flex:1;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:10px;width:100%;height:100%;min-height:0;padding:12px;display:grid;overflow-y:auto}.thumbs.is-fullscreen{height:100%}.thumbs-item{border:1px solid var(--diva-dark-border);text-align:left;flex-direction:column;justify-content:flex-start;align-items:stretch;max-width:none;display:flex}.thumbs-item:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.thumbs-item.is-active{border-color:var(--diva-accent-light);box-shadow:0 0 0 var(--diva-shadow-focus);background-color:var(--diva-dark-bg);outline:2px solid var(--diva-accent-light);outline-offset:2px}.thumbs-image{border-radius:0;width:100%;height:auto;display:block}.thumbs-image--protected{background:var(--diva-dark-bg);min-height:96px}.thumbs-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted-on-dark);margin-top:6px;line-height:1.3}.thumbs-label.is-active{color:var(--diva-white)}.contents-panel{height:100%;padding:12px;overflow:auto}.contents-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:10px;font-weight:600}.contents-view-tabs{gap:8px;margin-bottom:12px;display:flex}.contents-view-button{background-color:var(--diva-surface);border:1px solid var(--diva-border);font-size:var(--diva-font-sm);color:var(--diva-text-muted);cursor:pointer;border-radius:0;padding:4px 10px}.contents-view-button.is-active{background-color:var(--diva-white);border-color:var(--diva-accent);color:var(--diva-text-primary)}.contents-list-nested{margin-top:6px;padding-left:16px}.contents-item{margin-bottom:6px}.contents-meta{border:1px solid var(--diva-dark-border);margin-top:6px;padding:8px}.contents-button:hover{color:var(--diva-accent)}@media (width<=720px){.sidebar-panel{border-radius:0;height:auto;width:100%!important}.sidebar-panel.is-overlay{z-index:100;width:100%;height:100%;box-shadow:0 12px 24px var(--diva-shadow-dark);border-radius:0;position:absolute;inset:0}.sidebar-panel.is-mobile-hidden{display:none}.thumbs{grid-template-columns:repeat(3,minmax(0,1fr));width:100%;height:auto;overflow:auto hidden}.thumbs-item{min-width:120px}}.canvas-toolbar-stack{flex-direction:column;gap:4px;width:100%;min-width:0;display:flex}.canvas-toolbar{align-items:center;width:100%;margin-bottom:0;display:flex}.canvas-toolbar-section{flex:none;align-items:center;gap:5px;min-width:0;display:flex}.canvas-toolbar-section.is-right{flex:none;margin-left:auto}.canvas-toolbar-end{align-items:center;gap:8px;min-width:0;margin-left:auto;display:flex}.canvas-toolbar-end .canvas-toolbar-section.is-right{margin-left:0}.canvas-toolbar-item{flex:none;justify-content:center;align-items:center;width:34px;height:34px;display:flex;position:relative}.canvas-toolbar-button{width:30px;height:30px;color:var(--diva-toolbar-button-icon);box-shadow:none;cursor:pointer;background-color:#e2e2e2f0;border:1px solid #2c2d3373;border-radius:0;justify-content:center;align-items:center;padding:6px;display:flex}.canvas-toolbar-button svg{flex:none;width:16px;height:16px}.canvas-toolbar-button:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.canvas-toolbar-button:hover{border-color:var(--diva-toolbar-button-icon);background-color:#d6d6d6fa}.canvas-toolbar-button.is-fullscreen{color:var(--diva-white);background-color:#52586294;border-color:#ffffff85}.canvas-toolbar-button.is-fullscreen:hover{border-color:var(--diva-white);background-color:#606874b8}.canvas-toolbar-button.is-disabled{opacity:.4;cursor:not-allowed}.canvas-toolbar-button.is-disabled:hover{background-color:#e2e2e2f0;border-color:#2c2d3373}.canvas-toolbar-button.is-fullscreen.is-disabled:hover{background-color:#52586294;border-color:#ffffff85}.canvas-toolbar-item:after{z-index:80;max-width:160px;color:var(--diva-white);content:attr(data-tooltip);font-size:var(--diva-font-xs);letter-spacing:.02em;opacity:0;pointer-events:none;text-align:center;visibility:hidden;white-space:normal;word-break:normal;background-color:#1c1d22f2;border:1px solid #ffffff2e;border-radius:0;width:max-content;padding:5px 7px;font-weight:600;line-height:1.2;transition:opacity .12s,transform .12s;position:absolute;top:calc(100% + 7px);left:50%;transform:translate(-50%,-3px);box-shadow:0 4px 10px #0003}.canvas-toolbar-item:hover:after,.canvas-toolbar-item:has(.canvas-toolbar-button:focus-visible):after{opacity:1;visibility:visible;transform:translate(-50%)}.canvas-toolbar-section.is-right .canvas-toolbar-item:last-child:after{left:auto;right:0;transform:translateY(-3px)}.canvas-toolbar-section.is-right .canvas-toolbar-item:last-child:hover:after,.canvas-toolbar-section.is-right .canvas-toolbar-item:last-child:has(.canvas-toolbar-button:focus-visible):after{transform:translate(0)}.canvas-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-align:left;white-space:normal;overflow-wrap:anywhere;word-break:break-word;width:100%}.canvas-toolbar-end .canvas-label{overflow-wrap:normal;text-align:right;white-space:nowrap;word-break:normal;flex:auto;width:auto;min-width:0;max-width:min(42vw,42rem);overflow:hidden}.canvas-label.is-fullscreen{color:var(--diva-white)}.status{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:0}.status.is-error{color:var(--diva-danger)}@media (width<=720px){.canvas-toolbar{flex-wrap:wrap;gap:5px}.canvas-toolbar-end{justify-content:flex-end;width:100%;margin-left:0}.canvas-toolbar-item{width:32px;height:32px}.canvas-toolbar-button{width:28px;height:28px;padding:6px}.canvas-toolbar-button svg{width:15px;height:15px}.canvas-label,.status{display:none}}.modal-overlay{background-color:var(--diva-overlay-bg);z-index:100;justify-content:center;align-items:center;padding:24px;display:flex;position:fixed;inset:0}.viewer-status-overlay{background-color:var(--diva-overlay-bg);z-index:40;justify-content:center;align-items:center;padding:24px;display:flex;position:absolute;inset:0}.modal-overlay.is-fullscreen{padding:0}.modal{background-color:var(--diva-page-bg);color:var(--diva-text-primary);width:min(1440px,96vw);max-height:90vh;box-shadow:0 20px 40px var(--diva-shadow-modal);border-radius:0;flex-direction:column;display:flex}.modal.is-narrow{width:min(960px,94vw)}.modal.is-page-view{height:80vh;max-height:80vh}.modal.is-fullscreen{border-radius:0;width:100vw;height:100vh;max-height:100vh}.modal-header{justify-content:space-between;align-items:center;padding:16px 20px 0;display:flex}.modal-actions{gap:8px;display:flex}.modal-close-action .canvas-toolbar-button{color:var(--diva-danger);box-shadow:none;-webkit-backdrop-filter:none;background-color:#0000;border:none;width:auto;height:auto;padding:2px}.modal-close-action .canvas-toolbar-button:hover{background-color:#d32f2f1f;border-color:#0000}.modal-close-action .canvas-toolbar-item{width:32px}.modal-title-stack{flex-direction:column;gap:4px;display:flex}.modal-title{font-size:var(--diva-font-lg);font-weight:600}.modal-subtitle{font-size:var(--diva-font-lg);color:var(--diva-text-primary)}.modal-subtitle.is-muted{font-size:var(--diva-font-md)}.modal-body{flex:1;grid-template-columns:minmax(0,1fr) 240px;gap:16px;min-height:0;padding:16px 20px 20px;display:grid}.modal-body.is-no-gap{gap:0}.modal-body.is-two-column{grid-template-columns:minmax(0,1fr) 200px;align-items:start}.modal-body.is-no-sidebar{grid-template-columns:minmax(0,1fr)}.modal-body.is-fullscreen{flex:1;min-height:0}.modal-body.is-with-choices{grid-template-columns:120px minmax(0,1fr) 240px}.modal-body.is-with-choices-no-sidebar{grid-template-columns:120px minmax(0,1fr)}.modal-viewer{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);height:100%;overflow:hidden}.modal-viewer.is-fullscreen{border-radius:0;height:100%}.modal-viewer.is-outer-left{border-radius:0}.modal-canvas{width:100%;height:100%;display:block}.modal-sidebar{background-color:var(--diva-white);border-top:1px solid var(--diva-border);border-right:1px solid var(--diva-border);border-bottom:1px solid var(--diva-border);border-radius:0;padding:16px;overflow:auto}.manifest-info-logo-wrap{text-align:center;flex-direction:column;align-items:center;gap:8px;display:flex}.manifest-info-logo{width:100%;max-width:180px;height:auto}.page-view-choices{background-color:var(--diva-dark-bg);border-radius:0;flex-direction:column;gap:8px;padding:8px;display:flex;overflow:auto}.page-view-choice{border:2px solid #0000;flex-direction:column;gap:4px;display:flex}.page-view-choice:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.page-view-choice:hover{background-color:var(--diva-dark-bg)}.page-view-choice.is-active{border-color:var(--diva-accent-light);background-color:var(--diva-dark-bg)}.page-view-choice-thumb{border-radius:0;width:100%;height:auto;display:block}.page-view-choice-thumb--protected{background:var(--diva-dark-bg);min-height:72px}.page-view-choice-label{font-size:var(--diva-font-xs);color:var(--diva-text-muted);text-overflow:ellipsis;white-space:nowrap;line-height:1.2;overflow:hidden}.filter-group{border-bottom:1px solid var(--diva-border);margin-bottom:12px;padding-bottom:12px}.filter-title-button{text-align:left;cursor:pointer;width:100%;font-size:var(--diva-font-sm);text-transform:uppercase;letter-spacing:.08em;color:var(--diva-text-muted);background-color:#0000;border:none;align-items:center;gap:8px;margin-bottom:8px;padding:0;font-weight:600;display:flex}.filter-title-button.is-collapsed{margin-bottom:0}.filter-title-icon{border-top:4px solid #0000;border-bottom:4px solid #0000;border-left:6px solid var(--diva-text-muted);width:0;height:0;transition:transform .15s;display:inline-block}.filter-title-icon.is-expanded{transform:rotate(90deg)}.filter-row{flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle{font-size:var(--diva-font-md);align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle.is-inline{margin-bottom:0}.filter-range-group{flex-direction:column;gap:6px;margin-bottom:10px;display:flex}.filter-range-header{justify-content:space-between;align-items:center;gap:8px;display:flex}.filter-range-header-right{align-items:center;gap:8px;display:flex}.filter-range-input{width:100%}.filter-value{font-size:var(--diva-font-sm);color:var(--diva-text-muted);text-align:right;width:40px}.filter-reset{font-size:var(--diva-font-xs);background-color:var(--diva-surface);border:1px solid var(--diva-border);cursor:pointer;color:var(--diva-text-muted);border-radius:0;padding:2px 6px}.filter-reset:hover{background-color:var(--diva-border)}.filter-json{width:100%;min-height:120px;font-size:var(--diva-font-sm);border:1px solid var(--diva-border);background-color:var(--diva-white);resize:vertical;border-radius:0;padding:6px 8px;font-family:Menlo,Monaco,Consolas,Liberation Mono,monospace}.filter-json-error{font-size:var(--diva-font-sm);color:var(--diva-danger);margin-top:4px}.filter-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted)}.filter-select{border:1px solid var(--diva-border);background-color:var(--diva-white);font-size:var(--diva-font-sm);border-radius:0;padding:4px 6px}.filter-color-input{border:1px solid var(--diva-border);background-color:var(--diva-white);border-radius:0;width:42px;height:28px;padding:0}.diva-auth-overlay{z-index:10000;background:#0000008c;place-items:center;display:grid;position:fixed;inset:0}.diva-auth-dialog{box-sizing:border-box;border:1px solid var(--diva-border,#aaa);background:var(--diva-background,#fff);width:min(30rem,100vw - 2rem);color:var(--diva-text-primary,#222);border-radius:0;padding:1.25rem}.diva-auth-dialog button{min-height:2.25rem;color:inherit;cursor:pointer;background:0 0;border:1px solid;border-radius:0;padding:.35rem .8rem}.diva-auth-dialog button:focus-visible{outline:2px solid var(--diva-accent,#1769aa);outline-offset:2px}.collection-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0;flex-direction:column;height:100%;min-height:0;display:flex;overflow:hidden}.collection-header{background-color:var(--diva-surface);border-bottom:1px solid var(--diva-border);border-radius:0;padding:12px}.collection-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:4px;font-weight:600}.collection-summary{font-size:var(--diva-font-md);color:var(--diva-text-muted);line-height:1.4}.collection-tree-item{padding-left:12px}.collection-node-button{align-items:center;gap:6px;width:100%;padding:6px 8px;display:flex}.collection-expand-icon{flex-shrink:0;justify-content:center;align-items:center;width:16px;height:16px;display:flex}.manifest-tree-item{padding:6px 8px 6px 30px}.manifest-tree-item.is-active{background-color:var(--diva-border);font-weight:600}.sidebar-pane.is-scroll{overflow-y:auto}@media (width<=720px){.collection-panel{border-radius:0;width:100%;height:auto}}";
 
   // cache/elm-esm.js
   function F(arity, fun, wrapper) {
@@ -1453,6 +1488,17 @@
       x = $elm$core$Dict$toList(x);
       y = $elm$core$Dict$toList(y);
     }
+    if (typeof DataView === "function" && x instanceof DataView) {
+      var length = x.byteLength;
+      if (y.byteLength !== length) {
+        return false;
+      }
+      for (var i = 0; i < length; ++i) {
+        if (x.getUint8(i) !== y.getUint8(i)) {
+          return false;
+        }
+      }
+    }
     for (var key in x) {
       if (!_Utils_eqHelp(x[key], y[key], depth + 1, stack)) {
         return false;
@@ -1711,7 +1757,7 @@
   });
   var _String_foldr = F3(function(func, state, string) {
     var i = string.length;
-    while (i--) {
+    while (i-- > 0) {
       var char = string[i];
       var word = string.charCodeAt(i);
       if (56320 <= word && word <= 57343) {
@@ -1736,7 +1782,7 @@
   }
   var _String_any = F2(function(isGood, string) {
     var i = string.length;
-    while (i--) {
+    while (i-- > 0) {
       var char = string[i];
       var word = string.charCodeAt(i);
       if (56320 <= word && word <= 57343) {
@@ -1751,7 +1797,7 @@
   });
   var _String_all = F2(function(isGood, string) {
     var i = string.length;
-    while (i--) {
+    while (i-- > 0) {
       var char = string[i];
       var word = string.charCodeAt(i);
       if (56320 <= word && word <= 57343) {
@@ -1809,6 +1855,9 @@
     var n = +s;
     return n === n ? $elm$core$Maybe$Just(n) : $elm$core$Maybe$Nothing;
   }
+  function _String_fromList(chars) {
+    return _List_toArray(chars).join("");
+  }
   function _Char_toCode(char) {
     var code = char.charCodeAt(0);
     if (55296 <= code && code <= 56319) {
@@ -1820,6 +1869,12 @@
     return _Utils_chr(
       code < 0 || 1114111 < code ? "\uFFFD" : code <= 65535 ? String.fromCharCode(code) : (code -= 65536, String.fromCharCode(Math.floor(code / 1024) + 55296, code % 1024 + 56320))
     );
+  }
+  function _Char_toUpper(char) {
+    return _Utils_chr(char.toUpperCase());
+  }
+  function _Char_toLower(char) {
+    return _Utils_chr(char.toLowerCase());
   }
   function _Json_errorToString(error) {
     return $elm$json$Json$Decode$errorToString(error);
@@ -1856,6 +1911,9 @@
   });
   function _Json_decodeList(decoder) {
     return { $: 3, b: decoder };
+  }
+  function _Json_decodeNull(value) {
+    return { $: 5, c: value };
   }
   var _Json_decodeField = F2(function(field, decoder) {
     return {
@@ -2032,49 +2090,6 @@
   }
   function _Json_expecting(type, value) {
     return $elm$core$Result$Err(A2($elm$json$Json$Decode$Failure, "Expecting " + type, _Json_wrap(value)));
-  }
-  function _Json_equality(x, y) {
-    if (x === y) {
-      return true;
-    }
-    if (x.$ !== y.$) {
-      return false;
-    }
-    switch (x.$) {
-      case 0:
-      case 1:
-        return x.a === y.a;
-      case 2:
-        return x.b === y.b;
-      case 5:
-        return x.c === y.c;
-      case 3:
-      case 4:
-      case 8:
-        return _Json_equality(x.b, y.b);
-      case 6:
-        return x.d === y.d && _Json_equality(x.b, y.b);
-      case 7:
-        return x.e === y.e && _Json_equality(x.b, y.b);
-      case 9:
-        return x.f === y.f && _Json_listEquality(x.g, y.g);
-      case 10:
-        return x.h === y.h && _Json_equality(x.b, y.b);
-      case 11:
-        return _Json_listEquality(x.g, y.g);
-    }
-  }
-  function _Json_listEquality(aDecoders, bDecoders) {
-    var len = aDecoders.length;
-    if (len !== bDecoders.length) {
-      return false;
-    }
-    for (var i = 0; i < len; i++) {
-      if (!_Json_equality(aDecoders[i], bDecoders[i])) {
-        return false;
-      }
-    }
-    return true;
   }
   var _Json_encode = F2(function(indentLevel, value) {
     return JSON.stringify(_Json_unwrap(value), null, indentLevel) + "";
@@ -2436,6 +2451,9 @@
       return init;
     });
     function subscribe(callback) {
+      if (typeof callback !== "function") {
+        throw new Error("Trying to subscribe an invalid callback on port `" + name + "`");
+      }
       subs.push(callback);
     }
     function unsubscribe(callback) {
@@ -2483,16 +2501,52 @@
     }
     return { send };
   }
+  var _VirtualDom_everTranslated = false;
   var _VirtualDom_divertHrefToApp;
   var _VirtualDom_doc = typeof document !== "undefined" ? document : {};
   function _VirtualDom_appendChild(parent, child) {
     parent.appendChild(child);
   }
+  function _VirtualDom_insertBefore(parent, child, reference) {
+    if (!(child.parentNode === parent && child.nextSibling === reference)) {
+      parent.insertBefore(child, reference);
+    }
+  }
+  function _VirtualDom_insertAfter(parent, child, reference) {
+    if (!(child.parentNode === parent && child.previousSibling === reference)) {
+      parent.insertBefore(child, reference === null ? parent.firstChild : reference.nextSibling);
+    }
+  }
+  function _VirtualDom_moveBefore_(parent, child, reference) {
+    if (!(child.parentNode === parent && child.nextSibling === reference)) {
+      parent.moveBefore(child, reference);
+    }
+  }
+  function _VirtualDom_moveAfter_(parent, child, reference) {
+    if (!(child.parentNode === parent && child.previousSibling === reference)) {
+      parent.moveBefore(child, reference === null ? parent.firstChild : reference.nextSibling);
+    }
+  }
+  var _VirtualDom_supports_moveBefore = typeof Element !== "undefined" && typeof Element.prototype.moveBefore === "function";
+  var _VirtualDom_moveBefore = _VirtualDom_supports_moveBefore ? _VirtualDom_moveBefore_ : _VirtualDom_insertBefore;
+  var _VirtualDom_moveAfter = _VirtualDom_supports_moveBefore ? _VirtualDom_moveAfter_ : _VirtualDom_insertAfter;
+  function _VirtualDom_remove(domNode) {
+    var parentNode = domNode.parentNode;
+    if (parentNode) {
+      parentNode.removeChild(domNode);
+    }
+  }
+  function _VirtualDom_createTNode(domNode) {
+    return {
+      r: domNode,
+      s: /* @__PURE__ */ Object.create(null)
+    };
+  }
   var _VirtualDom_init = F4(function(virtualNode, flagDecoder, debugMetadata, args) {
     var node = args && args["node"] ? args["node"] : _Debug_crash(0);
     node.parentNode.replaceChild(
       _VirtualDom_render(virtualNode, function() {
-      }),
+      }, _VirtualDom_createTNode(void 0)),
       node
     );
     return {};
@@ -2505,38 +2559,51 @@
   }
   var _VirtualDom_nodeNS = F2(function(namespace, tag) {
     return F2(function(factList, kidList) {
-      for (var kids = [], descendantsCount = 0; kidList.b; kidList = kidList.b) {
-        var kid = kidList.a;
-        descendantsCount += kid.b || 0;
-        kids.push(kid);
+      for (var kids = []; kidList.b; kidList = kidList.b) {
+        kids.push(kidList.a);
       }
-      descendantsCount += kids.length;
       return {
         $: 1,
         c: tag,
         d: _VirtualDom_organizeFacts(factList),
         e: kids,
         f: namespace,
-        b: descendantsCount
+        // Unused, only exists for backwards compatibility with:
+        // https://github.com/elm-explorations/test/blob/9669a27d84fc29175364c7a60d5d700771a2801e/src/Test/Html/Internal/ElmHtml/InternalTypes.elm#L279
+        // https://github.com/dillonkearns/elm-pages/blob/fa1d0347016e20917b412de5c3657c2e6e095087/src/Test/Html/Internal/ElmHtml/InternalTypes.elm#L281
+        b: 0
       };
     });
   });
   var _VirtualDom_node = _VirtualDom_nodeNS(void 0);
   var _VirtualDom_keyedNodeNS = F2(function(namespace, tag) {
     return F2(function(factList, kidList) {
-      for (var kids = [], descendantsCount = 0; kidList.b; kidList = kidList.b) {
+      for (var kids = [], kidsMap = /* @__PURE__ */ Object.create(null); kidList.b; kidList = kidList.b) {
         var kid = kidList.a;
-        descendantsCount += kid.b.b || 0;
+        var key = kid.a;
+        while (key in kidsMap) {
+          key += _VirtualDom_POSTFIX;
+          kid = _Utils_Tuple2(key, kid.b);
+        }
         kids.push(kid);
+        kidsMap[key] = kid.b;
       }
-      descendantsCount += kids.length;
       return {
         $: 2,
         c: tag,
         d: _VirtualDom_organizeFacts(factList),
+        // e holds the order and length of the kids.
         e: kids,
+        // t is a dict from key to node.
+        // Note when iterating JavaScript objects, numeric-looking keys come first.
+        // So we need both e and t.
+        // Another reason is backwards compatibility with:
+        // https://github.com/elm-explorations/test/blob/d5eb84809de0f8bbf50303efd26889092c800609/src/Elm/Kernel/HtmlAsJson.js#L37
+        // https://github.com/dillonkearns/elm-pages/blob/fa1d0347016e20917b412de5c3657c2e6e095087/generator/src/build.js#L675
+        t: kidsMap,
         f: namespace,
-        b: descendantsCount
+        b: 0
+        // See _VirtualDom_nodeNS.
       };
     });
   });
@@ -2546,7 +2613,8 @@
       $: 4,
       j: tagger,
       k: node,
-      b: 1 + (node.b || 0)
+      b: 0
+      // See _VirtualDom_nodeNS.
     };
   });
   function _VirtualDom_thunk(refs, thunk) {
@@ -2681,8 +2749,11 @@
       preventDefault: record.preventDefault
     };
   });
+  var _VirtualDom_elmExplorationsTestBackwardsCompatibility = typeof _Test_runThunk === "function";
   function _VirtualDom_organizeFacts(factList) {
-    for (var facts = {}; factList.b; factList = factList.b) {
+    var facts = {};
+    facts[_VirtualDom_markerProperty] = true;
+    for (; factList.b; factList = factList.b) {
       var entry = factList.a;
       var tag = entry.$;
       var key = entry.n;
@@ -2692,7 +2763,7 @@
         continue;
       }
       var subFacts = facts[tag] || (facts[tag] = {});
-      tag === "a3" && key === "class" ? _VirtualDom_addClass(subFacts, key, value) : subFacts[key] = value;
+      tag === "a3" && key === "class" ? _VirtualDom_elmExplorationsTestBackwardsCompatibility ? _VirtualDom_addClass(facts, "className", value) : _VirtualDom_addClass(subFacts, key, value) : subFacts[key] = value;
     }
     return facts;
   }
@@ -2700,65 +2771,184 @@
     var classes = object[key];
     object[key] = classes ? classes + " " + newClass : newClass;
   }
-  function _VirtualDom_render(vNode, eventNode) {
+  function _VirtualDom_render(vNode, eventNode, tNode) {
     var tag = vNode.$;
     if (tag === 5) {
-      return _VirtualDom_render(vNode.k || (vNode.k = vNode.m()), eventNode);
-    }
-    if (tag === 0) {
-      return _VirtualDom_doc.createTextNode(vNode.a);
+      return _VirtualDom_render(vNode.k || (vNode.k = vNode.m()), eventNode, tNode);
     }
     if (tag === 4) {
-      var subNode = vNode.k;
-      var tagger = vNode.j;
-      while (subNode.$ === 4) {
-        typeof tagger !== "object" ? tagger = [tagger, subNode.j] : tagger.push(subNode.j);
-        subNode = subNode.k;
-      }
-      var subEventRoot = { j: tagger, p: eventNode };
-      var domNode = _VirtualDom_render(subNode, subEventRoot);
-      domNode.elm_event_node_ref = subEventRoot;
+      return _VirtualDom_render(vNode.k, function(msg, isSync) {
+        return eventNode(vNode.j(msg), isSync);
+      }, tNode);
+    }
+    if (tag === 0) {
+      var domNode = _VirtualDom_doc.createTextNode(vNode.a);
+      tNode.r = domNode;
       return domNode;
     }
     if (tag === 3) {
       var domNode = vNode.h(vNode.g);
-      _VirtualDom_applyFacts(domNode, eventNode, vNode.d);
+      _VirtualDom_applyFacts(domNode, eventNode, {}, vNode.d);
+      tNode.r = domNode;
       return domNode;
     }
     var domNode = vNode.f ? _VirtualDom_doc.createElementNS(vNode.f, vNode.c) : _VirtualDom_doc.createElement(vNode.c);
     if (_VirtualDom_divertHrefToApp && vNode.c == "a") {
       domNode.addEventListener("click", _VirtualDom_divertHrefToApp(domNode));
     }
-    _VirtualDom_applyFacts(domNode, eventNode, vNode.d);
-    for (var kids = vNode.e, i = 0; i < kids.length; i++) {
-      _VirtualDom_appendChild(domNode, _VirtualDom_render(tag === 1 ? kids[i] : kids[i].b, eventNode));
+    _VirtualDom_applyFacts(domNode, eventNode, {}, vNode.d);
+    if (tag === 1) {
+      for (var kids = vNode.e, i = 0; i < kids.length; i++) {
+        var childTNode = _VirtualDom_createTNode(void 0);
+        var childDomNode = _VirtualDom_render(kids[i], eventNode, childTNode);
+        tNode.s[i] = childTNode;
+        _VirtualDom_appendChild(domNode, childDomNode);
+      }
+    } else {
+      for (var kids = vNode.e, i = 0; i < kids.length; i++) {
+        var kid = kids[i];
+        var childTNode = _VirtualDom_createTNode(void 0);
+        var childDomNode = _VirtualDom_render(kid.b, eventNode, childTNode);
+        tNode.s[kid.a] = childTNode;
+        _VirtualDom_appendChild(domNode, childDomNode);
+      }
     }
+    tNode.r = domNode;
     return domNode;
   }
-  function _VirtualDom_applyFacts(domNode, eventNode, facts) {
-    for (var key in facts) {
-      var value = facts[key];
-      key === "a1" ? _VirtualDom_applyStyles(domNode, value) : key === "a0" ? _VirtualDom_applyEvents(domNode, eventNode, value) : key === "a3" ? _VirtualDom_applyAttrs(domNode, value) : key === "a4" ? _VirtualDom_applyAttrsNS(domNode, value) : (key !== "value" && key !== "checked" || domNode[key] !== value) && (domNode[key] = value);
+  function _VirtualDom_renderTranslated(vNode, eventNode, tNode) {
+    var tag = vNode.$;
+    if (tag === 5) {
+      return _VirtualDom_renderTranslated(vNode.k, eventNode, tNode);
+    }
+    if (tag === 4) {
+      return _VirtualDom_renderTranslated(vNode.k, function(msg, isSync) {
+        return eventNode(vNode.j(msg), isSync);
+      }, tNode);
+    }
+    if (tag === 0) {
+      var newNode = _VirtualDom_doc.createTextNode(vNode.a);
+      tNode.r = newNode;
+      return newNode;
+    }
+    return tNode.r;
+  }
+  function _VirtualDom_applyFacts(domNode, eventNode, prevFacts, facts) {
+    if (prevFacts.a1 !== void 0) {
+      _VirtualDom_removeStyles(domNode, prevFacts.a1, facts.a1 || {});
+    }
+    _VirtualDom_removeProps(domNode, prevFacts, facts);
+    if (prevFacts.a3 !== void 0) {
+      _VirtualDom_removeAttrs(domNode, prevFacts.a3, facts.a3 || {});
+    }
+    if (prevFacts.a4 !== void 0) {
+      _VirtualDom_removeAttrsNS(domNode, prevFacts.a4, facts.a4 || {});
+    }
+    if (facts.a1 !== void 0) {
+      _VirtualDom_applyStyles(domNode, prevFacts.a1 || {}, facts.a1);
+    }
+    if (facts.a3 !== void 0) {
+      _VirtualDom_applyAttrs(domNode, prevFacts.a3 || {}, facts.a3);
+    }
+    if (facts.a4 !== void 0) {
+      _VirtualDom_applyAttrsNS(domNode, prevFacts.a4 || {}, facts.a4);
+    }
+    _VirtualDom_applyProps(domNode, facts);
+    if (facts.a0 !== void 0 || prevFacts.a0 !== void 0) {
+      _VirtualDom_applyEvents(domNode, eventNode, facts.a0 || {});
     }
   }
-  function _VirtualDom_applyStyles(domNode, styles) {
-    var domNodeStyle = domNode.style;
+  function _VirtualDom_applyStyles(domNode, prevStyles, styles) {
     for (var key in styles) {
-      domNodeStyle[key] = styles[key];
+      var value = styles[key];
+      if (value !== prevStyles[key]) {
+        if (key.charCodeAt(0) === 45) {
+          domNode.style.setProperty(key, value);
+        } else {
+          domNode.style[key] = value;
+        }
+      }
     }
   }
-  function _VirtualDom_applyAttrs(domNode, attrs) {
+  function _VirtualDom_removeStyles(domNode, prevStyles, styles) {
+    for (var key in prevStyles) {
+      if (!(key in styles)) {
+        if (key.charCodeAt(0) === 45) {
+          domNode.style.removeProperty(key);
+        } else {
+          domNode.style[key] = "";
+        }
+      }
+    }
+  }
+  function _VirtualDom_applyProps(domNode, props) {
+    for (var key in props) {
+      if (key === "a0" || key === "a1" || key === "a3" || key === "a4" || key === _VirtualDom_markerProperty) {
+        continue;
+      }
+      var value = props[key];
+      if (value !== domNode[key]) {
+        domNode[key] = value;
+      }
+    }
+  }
+  function _VirtualDom_removeProps(domNode, prevProps, props) {
+    for (var key in prevProps) {
+      if (key === "a0" || key === "a1" || key === "a3" || key === "a4" || key === _VirtualDom_markerProperty) {
+        continue;
+      }
+      if (!(key in props)) {
+        var value = prevProps[key];
+        switch (typeof value) {
+          // Most string properties default to the empty string.
+          case "string":
+            domNode[key] = "";
+            break;
+          // Most boolean properties default to false.
+          case "boolean":
+            domNode[key] = false;
+            break;
+        }
+        delete domNode[key];
+      }
+    }
+  }
+  function _VirtualDom_applyAttrs(domNode, prevAttrs, attrs) {
     for (var key in attrs) {
       var value = attrs[key];
-      typeof value !== "undefined" ? domNode.setAttribute(key, value) : domNode.removeAttribute(key);
+      if (value !== prevAttrs[key]) {
+        domNode.setAttribute(key, value);
+      }
     }
   }
-  function _VirtualDom_applyAttrsNS(domNode, nsAttrs) {
+  function _VirtualDom_removeAttrs(domNode, prevAttrs, attrs) {
+    for (var key in prevAttrs) {
+      if (!(key in attrs)) {
+        domNode.removeAttribute(key);
+      }
+    }
+  }
+  function _VirtualDom_applyAttrsNS(domNode, prevNsAttrs, nsAttrs) {
     for (var key in nsAttrs) {
       var pair = nsAttrs[key];
       var namespace = pair.f;
       var value = pair.o;
-      typeof value !== "undefined" ? domNode.setAttributeNS(namespace, key, value) : domNode.removeAttributeNS(namespace, key);
+      var previous = prevNsAttrs[key];
+      if (!previous) {
+        domNode.setAttributeNS(namespace, key, value);
+      } else if (previous.f !== namespace) {
+        domNode.removeAttributeNS(previous.f, key);
+        domNode.setAttributeNS(namespace, key, value);
+      } else if (previous.o !== value) {
+        domNode.setAttributeNS(namespace, key, value);
+      }
+    }
+  }
+  function _VirtualDom_removeAttrsNS(domNode, prevNsAttrs, nsAttrs) {
+    for (var key in prevNsAttrs) {
+      if (!(key in nsAttrs)) {
+        domNode.removeAttributeNS(prevNsAttrs[key].f, key);
+      }
     }
   }
   function _VirtualDom_applyEvents(domNode, eventNode, events) {
@@ -2768,13 +2958,14 @@
       var oldCallback = allCallbacks[key];
       if (!newHandler) {
         domNode.removeEventListener(key, oldCallback);
-        allCallbacks[key] = void 0;
+        delete allCallbacks[key];
         continue;
       }
       if (oldCallback) {
-        var oldHandler = oldCallback.q;
+        var oldHandler = oldCallback.p;
         if (oldHandler.$ === newHandler.$) {
-          oldCallback.q = newHandler;
+          oldCallback.p = newHandler;
+          oldCallback.q = eventNode;
           continue;
         }
         domNode.removeEventListener(key, oldCallback);
@@ -2787,6 +2978,21 @@
       );
       allCallbacks[key] = oldCallback;
     }
+    for (key in allCallbacks) {
+      if (!(key in events)) {
+        domNode.removeEventListener(key, allCallbacks[key]);
+        delete allCallbacks[key];
+      }
+    }
+  }
+  function _VirtualDom_lazyUpdateEvents(domNode, eventNode) {
+    var allCallbacks = domNode.elmFs;
+    if (allCallbacks) {
+      for (var key in allCallbacks) {
+        var oldCallback = allCallbacks[key];
+        oldCallback.q = eventNode;
+      }
+    }
   }
   var _VirtualDom_passiveSupported;
   try {
@@ -2797,9 +3003,10 @@
     }));
   } catch (e) {
   }
-  function _VirtualDom_makeCallback(eventNode, initialHandler) {
+  function _VirtualDom_makeCallback(initialEventNode, initialHandler) {
     function callback(event) {
-      var handler = callback.q;
+      var handler = callback.p;
+      var eventNode = callback.q;
       var result = _Json_runHelp(handler.a, event);
       if (!$elm$core$Result$isOk(result)) {
         return;
@@ -2809,59 +3016,33 @@
       var message = !tag ? value : tag < 3 ? value.a : value.message;
       var stopPropagation = tag == 1 ? value.b : tag == 3 && value.stopPropagation;
       var currentEventNode = (stopPropagation && event.stopPropagation(), (tag == 2 ? value.b : tag == 3 && value.preventDefault) && event.preventDefault(), eventNode);
-      var tagger;
-      var i;
-      while (tagger = currentEventNode.j) {
-        if (typeof tagger == "function") {
-          message = tagger(message);
-        } else {
-          for (var i = tagger.length; i--; ) {
-            message = tagger[i](message);
-          }
-        }
-        currentEventNode = currentEventNode.p;
-      }
       currentEventNode(message, stopPropagation);
     }
-    callback.q = initialHandler;
+    callback.p = initialHandler;
+    callback.q = initialEventNode;
     return callback;
   }
-  function _VirtualDom_equalEvents(x, y) {
-    return x.$ == y.$ && _Json_equality(x.a, y.a);
+  function _VirtualDom_diff(_x, y) {
+    return y;
   }
-  function _VirtualDom_diff(x, y) {
-    var patches = [];
-    _VirtualDom_diffHelp(x, y, patches, 0);
-    return patches;
-  }
-  function _VirtualDom_pushPatch(patches, type, index, data) {
-    var patch = {
-      $: type,
-      r: index,
-      s: data,
-      t: void 0,
-      u: void 0
-    };
-    patches.push(patch);
-    return patch;
-  }
-  function _VirtualDom_diffHelp(x, y, patches, index) {
+  function _VirtualDom_diffHelp(x, y, eventNode, tNode) {
     if (x === y) {
-      return;
+      return {
+        r: _VirtualDom_quickVisit(x, y, eventNode, tNode),
+        u: false,
+        v: false
+      };
     }
-    var xType = x.$;
-    var yType = y.$;
-    if (xType !== yType) {
-      if (xType === 1 && yType === 2) {
-        y = _VirtualDom_dekey(y);
-        yType = 1;
-      } else {
-        _VirtualDom_pushPatch(patches, 0, index, y);
-        return;
-      }
+    while (x.$ === 4) {
+      x = x.k;
     }
-    switch (yType) {
-      case 5:
+    if (y.$ === 4) {
+      return _VirtualDom_diffHelp(x, y.k, function(msg, isSync) {
+        return eventNode(y.j(msg), isSync);
+      }, tNode);
+    }
+    if (x.$ === 5) {
+      if (y.$ === 5) {
         var xRefs = x.l;
         var yRefs = y.l;
         var i = xRefs.length;
@@ -2871,497 +3052,527 @@
         }
         if (same) {
           y.k = x.k;
-          return;
+          return {
+            r: _VirtualDom_quickVisit(x, y, eventNode, tNode),
+            u: false,
+            v: false
+          };
         }
         y.k = y.m();
-        var subPatches = [];
-        _VirtualDom_diffHelp(x.k, y.k, subPatches, 0);
-        subPatches.length > 0 && _VirtualDom_pushPatch(patches, 1, index, subPatches);
-        return;
-      case 4:
-        var xTaggers = x.j;
-        var yTaggers = y.j;
-        var nesting = false;
-        var xSubNode = x.k;
-        while (xSubNode.$ === 4) {
-          nesting = true;
-          typeof xTaggers !== "object" ? xTaggers = [xTaggers, xSubNode.j] : xTaggers.push(xSubNode.j);
-          xSubNode = xSubNode.k;
-        }
-        var ySubNode = y.k;
-        while (ySubNode.$ === 4) {
-          nesting = true;
-          typeof yTaggers !== "object" ? yTaggers = [yTaggers, ySubNode.j] : yTaggers.push(ySubNode.j);
-          ySubNode = ySubNode.k;
-        }
-        if (nesting && xTaggers.length !== yTaggers.length) {
-          _VirtualDom_pushPatch(patches, 0, index, y);
-          return;
-        }
-        if (nesting ? !_VirtualDom_pairwiseRefEqual(xTaggers, yTaggers) : xTaggers !== yTaggers) {
-          _VirtualDom_pushPatch(patches, 2, index, yTaggers);
-        }
-        _VirtualDom_diffHelp(xSubNode, ySubNode, patches, index + 1);
-        return;
+        return _VirtualDom_diffHelp(x.k, y.k, eventNode, tNode);
+      } else {
+        return _VirtualDom_diffHelp(x.k, y, eventNode, tNode);
+      }
+    }
+    if (y.$ === 5) {
+      return _VirtualDom_diffHelp(x, y.k || (y.k = y.m()), eventNode, tNode);
+    }
+    var domNode = tNode.r;
+    var xType = x.$;
+    var yType = y.$;
+    if (xType !== yType) {
+      if (xType === 1 && yType === 2) {
+        x = _VirtualDom_upkey(x, y, tNode);
+        xType = 2;
+      } else if (xType === 2 && yType === 1) {
+        x = _VirtualDom_dekey(x, tNode);
+        xType = 1;
+      } else {
+        return _VirtualDom_applyPatchRedraw(x, y, eventNode, tNode);
+      }
+    }
+    switch (yType) {
       case 0:
         if (x.a !== y.a) {
-          _VirtualDom_pushPatch(patches, 3, index, y.a);
-        }
-        return;
-      case 1:
-        _VirtualDom_diffNodes(x, y, patches, index, _VirtualDom_diffKids);
-        return;
-      case 2:
-        _VirtualDom_diffNodes(x, y, patches, index, _VirtualDom_diffKeyedKids);
-        return;
-      case 3:
-        if (x.h !== y.h) {
-          _VirtualDom_pushPatch(patches, 0, index, y);
-          return;
-        }
-        var factsDiff = _VirtualDom_diffFacts(x.d, y.d);
-        factsDiff && _VirtualDom_pushPatch(patches, 4, index, factsDiff);
-        var patch = y.i(x.g, y.g);
-        patch && _VirtualDom_pushPatch(patches, 5, index, patch);
-        return;
-    }
-  }
-  function _VirtualDom_pairwiseRefEqual(as, bs) {
-    for (var i = 0; i < as.length; i++) {
-      if (as[i] !== bs[i]) {
-        return false;
-      }
-    }
-    return true;
-  }
-  function _VirtualDom_diffNodes(x, y, patches, index, diffKids) {
-    if (x.c !== y.c || x.f !== y.f) {
-      _VirtualDom_pushPatch(patches, 0, index, y);
-      return;
-    }
-    var factsDiff = _VirtualDom_diffFacts(x.d, y.d);
-    factsDiff && _VirtualDom_pushPatch(patches, 4, index, factsDiff);
-    diffKids(x, y, patches, index);
-  }
-  function _VirtualDom_diffFacts(x, y, category) {
-    var diff;
-    for (var xKey in x) {
-      if (xKey === "a1" || xKey === "a0" || xKey === "a3" || xKey === "a4") {
-        var subDiff = _VirtualDom_diffFacts(x[xKey], y[xKey] || {}, xKey);
-        if (subDiff) {
-          diff = diff || {};
-          diff[xKey] = subDiff;
-        }
-        continue;
-      }
-      if (!(xKey in y)) {
-        diff = diff || {};
-        diff[xKey] = !category ? typeof x[xKey] === "string" ? "" : null : category === "a1" ? "" : category === "a0" || category === "a3" ? void 0 : { f: x[xKey].f, o: void 0 };
-        continue;
-      }
-      var xValue = x[xKey];
-      var yValue = y[xKey];
-      if (xValue === yValue && xKey !== "value" && xKey !== "checked" || category === "a0" && _VirtualDom_equalEvents(xValue, yValue)) {
-        continue;
-      }
-      diff = diff || {};
-      diff[xKey] = yValue;
-    }
-    for (var yKey in y) {
-      if (!(yKey in x)) {
-        diff = diff || {};
-        diff[yKey] = y[yKey];
-      }
-    }
-    return diff;
-  }
-  function _VirtualDom_diffKids(xParent, yParent, patches, index) {
-    var xKids = xParent.e;
-    var yKids = yParent.e;
-    var xLen = xKids.length;
-    var yLen = yKids.length;
-    if (xLen > yLen) {
-      _VirtualDom_pushPatch(patches, 6, index, {
-        v: yLen,
-        i: xLen - yLen
-      });
-    } else if (xLen < yLen) {
-      _VirtualDom_pushPatch(patches, 7, index, {
-        v: xLen,
-        e: yKids
-      });
-    }
-    for (var minLen = xLen < yLen ? xLen : yLen, i = 0; i < minLen; i++) {
-      var xKid = xKids[i];
-      _VirtualDom_diffHelp(xKid, yKids[i], patches, ++index);
-      index += xKid.b || 0;
-    }
-  }
-  function _VirtualDom_diffKeyedKids(xParent, yParent, patches, rootIndex) {
-    var localPatches = [];
-    var changes = {};
-    var inserts = [];
-    var xKids = xParent.e;
-    var yKids = yParent.e;
-    var xLen = xKids.length;
-    var yLen = yKids.length;
-    var xIndex = 0;
-    var yIndex = 0;
-    var index = rootIndex;
-    while (xIndex < xLen && yIndex < yLen) {
-      var x = xKids[xIndex];
-      var y = yKids[yIndex];
-      var xKey = x.a;
-      var yKey = y.a;
-      var xNode = x.b;
-      var yNode = y.b;
-      var newMatch = void 0;
-      var oldMatch = void 0;
-      if (xKey === yKey) {
-        index++;
-        _VirtualDom_diffHelp(xNode, yNode, localPatches, index);
-        index += xNode.b || 0;
-        xIndex++;
-        yIndex++;
-        continue;
-      }
-      var xNext = xKids[xIndex + 1];
-      var yNext = yKids[yIndex + 1];
-      if (xNext) {
-        var xNextKey = xNext.a;
-        var xNextNode = xNext.b;
-        oldMatch = yKey === xNextKey;
-      }
-      if (yNext) {
-        var yNextKey = yNext.a;
-        var yNextNode = yNext.b;
-        newMatch = xKey === yNextKey;
-      }
-      if (newMatch && oldMatch) {
-        index++;
-        _VirtualDom_diffHelp(xNode, yNextNode, localPatches, index);
-        _VirtualDom_insertNode(changes, localPatches, xKey, yNode, yIndex, inserts);
-        index += xNode.b || 0;
-        index++;
-        _VirtualDom_removeNode(changes, localPatches, xKey, xNextNode, index);
-        index += xNextNode.b || 0;
-        xIndex += 2;
-        yIndex += 2;
-        continue;
-      }
-      if (newMatch) {
-        index++;
-        _VirtualDom_insertNode(changes, localPatches, yKey, yNode, yIndex, inserts);
-        _VirtualDom_diffHelp(xNode, yNextNode, localPatches, index);
-        index += xNode.b || 0;
-        xIndex += 1;
-        yIndex += 2;
-        continue;
-      }
-      if (oldMatch) {
-        index++;
-        _VirtualDom_removeNode(changes, localPatches, xKey, xNode, index);
-        index += xNode.b || 0;
-        index++;
-        _VirtualDom_diffHelp(xNextNode, yNode, localPatches, index);
-        index += xNextNode.b || 0;
-        xIndex += 2;
-        yIndex += 1;
-        continue;
-      }
-      if (xNext && xNextKey === yNextKey) {
-        index++;
-        _VirtualDom_removeNode(changes, localPatches, xKey, xNode, index);
-        _VirtualDom_insertNode(changes, localPatches, yKey, yNode, yIndex, inserts);
-        index += xNode.b || 0;
-        index++;
-        _VirtualDom_diffHelp(xNextNode, yNextNode, localPatches, index);
-        index += xNextNode.b || 0;
-        xIndex += 2;
-        yIndex += 2;
-        continue;
-      }
-      break;
-    }
-    while (xIndex < xLen) {
-      index++;
-      var x = xKids[xIndex];
-      var xNode = x.b;
-      _VirtualDom_removeNode(changes, localPatches, x.a, xNode, index);
-      index += xNode.b || 0;
-      xIndex++;
-    }
-    while (yIndex < yLen) {
-      var endInserts = endInserts || [];
-      var y = yKids[yIndex];
-      _VirtualDom_insertNode(changes, localPatches, y.a, y.b, void 0, endInserts);
-      yIndex++;
-    }
-    if (localPatches.length > 0 || inserts.length > 0 || endInserts) {
-      _VirtualDom_pushPatch(patches, 8, rootIndex, {
-        w: localPatches,
-        x: inserts,
-        y: endInserts
-      });
-    }
-  }
-  var _VirtualDom_POSTFIX = "_elmW6BL";
-  function _VirtualDom_insertNode(changes, localPatches, key, vnode, yIndex, inserts) {
-    var entry = changes[key];
-    if (!entry) {
-      entry = {
-        c: 0,
-        z: vnode,
-        r: yIndex,
-        s: void 0
-      };
-      inserts.push({ r: yIndex, A: entry });
-      changes[key] = entry;
-      return;
-    }
-    if (entry.c === 1) {
-      inserts.push({ r: yIndex, A: entry });
-      entry.c = 2;
-      var subPatches = [];
-      _VirtualDom_diffHelp(entry.z, vnode, subPatches, entry.r);
-      entry.r = yIndex;
-      entry.s.s = {
-        w: subPatches,
-        A: entry
-      };
-      return;
-    }
-    _VirtualDom_insertNode(changes, localPatches, key + _VirtualDom_POSTFIX, vnode, yIndex, inserts);
-  }
-  function _VirtualDom_removeNode(changes, localPatches, key, vnode, index) {
-    var entry = changes[key];
-    if (!entry) {
-      var patch = _VirtualDom_pushPatch(localPatches, 9, index, void 0);
-      changes[key] = {
-        c: 1,
-        z: vnode,
-        r: index,
-        s: patch
-      };
-      return;
-    }
-    if (entry.c === 0) {
-      entry.c = 2;
-      var subPatches = [];
-      _VirtualDom_diffHelp(vnode, entry.z, subPatches, index);
-      _VirtualDom_pushPatch(localPatches, 9, index, {
-        w: subPatches,
-        A: entry
-      });
-      return;
-    }
-    _VirtualDom_removeNode(changes, localPatches, key + _VirtualDom_POSTFIX, vnode, index);
-  }
-  function _VirtualDom_addDomNodes(domNode, vNode, patches, eventNode) {
-    _VirtualDom_addDomNodesHelp(domNode, vNode, patches, 0, 0, vNode.b, eventNode);
-  }
-  function _VirtualDom_addDomNodesHelp(domNode, vNode, patches, i, low, high, eventNode) {
-    var patch = patches[i];
-    var index = patch.r;
-    while (index === low) {
-      var patchType = patch.$;
-      if (patchType === 1) {
-        _VirtualDom_addDomNodes(domNode, vNode.k, patch.s, eventNode);
-      } else if (patchType === 8) {
-        patch.t = domNode;
-        patch.u = eventNode;
-        var subPatches = patch.s.w;
-        if (subPatches.length > 0) {
-          _VirtualDom_addDomNodesHelp(domNode, vNode, subPatches, 0, low, high, eventNode);
-        }
-      } else if (patchType === 9) {
-        patch.t = domNode;
-        patch.u = eventNode;
-        var data = patch.s;
-        if (data) {
-          data.A.s = domNode;
-          var subPatches = data.w;
-          if (subPatches.length > 0) {
-            _VirtualDom_addDomNodesHelp(domNode, vNode, subPatches, 0, low, high, eventNode);
+          if (!domNode.parentNode || domNode.data !== x.a) {
+            return {
+              r: domNode,
+              u: true,
+              v: false
+            };
+          }
+          if (_VirtualDom_everTranslated) {
+            var newNode = _VirtualDom_doc.createTextNode(y.a);
+            tNode.r = newNode;
+            domNode.parentNode.replaceChild(newNode, domNode);
+            domNode = newNode;
+          } else {
+            domNode.data = y.a;
           }
         }
-      } else {
-        patch.t = domNode;
-        patch.u = eventNode;
-      }
-      i++;
-      if (!(patch = patches[i]) || (index = patch.r) > high) {
-        return i;
-      }
-    }
-    var tag = vNode.$;
-    if (tag === 4) {
-      var subNode = vNode.k;
-      while (subNode.$ === 4) {
-        subNode = subNode.k;
-      }
-      return _VirtualDom_addDomNodesHelp(domNode, subNode, patches, i, low + 1, high, domNode.elm_event_node_ref);
-    }
-    var vKids = vNode.e;
-    var childNodes = domNode.childNodes;
-    for (var j = 0; j < vKids.length; j++) {
-      low++;
-      var vKid = tag === 1 ? vKids[j] : vKids[j].b;
-      var nextLow = low + (vKid.b || 0);
-      if (low <= index && index <= nextLow) {
-        i = _VirtualDom_addDomNodesHelp(childNodes[j], vKid, patches, i, low, nextLow, eventNode);
-        if (!(patch = patches[i]) || (index = patch.r) > high) {
-          return i;
-        }
-      }
-      low = nextLow;
-    }
-    return i;
-  }
-  function _VirtualDom_applyPatches(rootDomNode, oldVirtualNode, patches, eventNode) {
-    if (patches.length === 0) {
-      return rootDomNode;
-    }
-    _VirtualDom_addDomNodes(rootDomNode, oldVirtualNode, patches, eventNode);
-    return _VirtualDom_applyPatchesHelp(rootDomNode, patches);
-  }
-  function _VirtualDom_applyPatchesHelp(rootDomNode, patches) {
-    for (var i = 0; i < patches.length; i++) {
-      var patch = patches[i];
-      var localDomNode = patch.t;
-      var newNode = _VirtualDom_applyPatch(localDomNode, patch);
-      if (localDomNode === rootDomNode) {
-        rootDomNode = newNode;
-      }
-    }
-    return rootDomNode;
-  }
-  function _VirtualDom_applyPatch(domNode, patch) {
-    switch (patch.$) {
-      case 0:
-        return _VirtualDom_applyPatchRedraw(domNode, patch.s, patch.u);
-      case 4:
-        _VirtualDom_applyFacts(domNode, patch.u, patch.s);
-        return domNode;
+        return {
+          r: domNode,
+          u: false,
+          v: false
+        };
+      case 1:
+        return _VirtualDom_diffNodes(domNode, x, y, eventNode, tNode, _VirtualDom_diffKids);
+      case 2:
+        return _VirtualDom_diffNodes(domNode, x, y, eventNode, tNode, _VirtualDom_diffKeyedKids);
       case 3:
-        domNode.replaceData(0, domNode.length, patch.s);
+        if (x.h !== y.h) {
+          return _VirtualDom_applyPatchRedraw(x, y, eventNode, tNode);
+        }
+        _VirtualDom_applyFacts(domNode, eventNode, x.d, y.d);
+        var patch = y.i(x.g, y.g);
+        patch && patch(domNode);
+        return {
+          r: domNode,
+          u: false,
+          v: false
+        };
+    }
+  }
+  function _VirtualDom_quickVisit(x, y, eventNode, tNode) {
+    switch (y.$) {
+      case 4:
+        return _VirtualDom_quickVisit(x.k, y.k, function(msg, isSync) {
+          return eventNode(y.j(msg), isSync);
+        }, tNode);
+      case 5:
+        return _VirtualDom_quickVisit(x.k, y.k, eventNode, tNode);
+    }
+    var domNode = tNode.r;
+    switch (y.$) {
+      case 0:
         return domNode;
       case 1:
-        return _VirtualDom_applyPatchesHelp(domNode, patch.s);
+        _VirtualDom_applyProps(domNode, y.d);
+        _VirtualDom_lazyUpdateEvents(domNode, eventNode);
+        for (var xKids = x.e, yKids = y.e, i = 0; i < yKids.length; i++) {
+          _VirtualDom_quickVisit(xKids[i], yKids[i], eventNode, tNode.s[i]);
+        }
+        return domNode;
       case 2:
-        if (domNode.elm_event_node_ref) {
-          domNode.elm_event_node_ref.j = patch.s;
+        _VirtualDom_applyProps(domNode, y.d);
+        _VirtualDom_lazyUpdateEvents(domNode, eventNode);
+        for (var xKids = x.e, yKids = y.e, i = 0; i < yKids.length; i++) {
+          var xKid = xKids[i];
+          var yKid = yKids[i];
+          _VirtualDom_quickVisit(xKid.b, yKid.b, eventNode, tNode.s[yKid.a]);
+        }
+        return domNode;
+      case 3:
+        _VirtualDom_applyProps(domNode, y.d);
+        _VirtualDom_lazyUpdateEvents(domNode, eventNode);
+        return domNode;
+    }
+  }
+  function _VirtualDom_diffNodes(domNode, x, y, eventNode, tNode, diffKids) {
+    if (x.c !== y.c || x.f !== y.f) {
+      return _VirtualDom_applyPatchRedraw(x, y, eventNode, tNode);
+    }
+    _VirtualDom_applyFacts(domNode, eventNode, x.d, y.d);
+    var translated = diffKids(domNode, x, y, eventNode, tNode);
+    if (translated) {
+      _VirtualDom_everTranslated = true;
+      for (var current = null, kids = y.e, i = kids.length - 1, j = domNode.childNodes.length - 1; i >= 0; i--) {
+        var kid = kids[i];
+        var vNode = y.$ === 2 ? kid.b : kid;
+        var child = _VirtualDom_renderTranslated(vNode, eventNode, tNode.s[y.$ === 2 ? kid.a : i]);
+        if (child.parentNode === domNode) {
+          for (; j >= 0; j--) {
+            current = domNode.childNodes[j];
+            if (current === child) {
+              j--;
+              break;
+            }
+            if (current.nodeType === 3 || current.localName === "font") {
+              domNode.removeChild(current);
+            }
+          }
         } else {
-          domNode.elm_event_node_ref = { j: patch.s, p: patch.u };
+          _VirtualDom_insertBefore(domNode, child, current);
+          current = child;
         }
-        return domNode;
-      case 6:
-        var data = patch.s;
-        for (var i = 0; i < data.i; i++) {
-          domNode.removeChild(domNode.childNodes[data.v]);
+      }
+      for (; j >= 0; j--) {
+        current = domNode.childNodes[j];
+        if (current.nodeType === 3 || current.localName === "font") {
+          domNode.removeChild(current);
         }
-        return domNode;
-      case 7:
-        var data = patch.s;
-        var kids = data.e;
-        var i = data.v;
-        var theEnd = domNode.childNodes[i];
-        for (; i < kids.length; i++) {
-          domNode.insertBefore(_VirtualDom_render(kids[i], patch.u), theEnd);
-        }
-        return domNode;
-      case 9:
-        var data = patch.s;
-        if (!data) {
-          domNode.parentNode.removeChild(domNode);
-          return domNode;
-        }
-        var entry = data.A;
-        if (typeof entry.r !== "undefined") {
-          domNode.parentNode.removeChild(domNode);
-        }
-        entry.s = _VirtualDom_applyPatchesHelp(domNode, data.w);
-        return domNode;
-      case 8:
-        return _VirtualDom_applyPatchReorder(domNode, patch);
-      case 5:
-        return patch.s(domNode);
-      default:
-        _Debug_crash(10);
+      }
     }
+    return {
+      r: domNode,
+      u: false,
+      v: false
+    };
   }
-  function _VirtualDom_applyPatchRedraw(domNode, vNode, eventNode) {
+  function _VirtualDom_diffKids(parentDomNode, xParent, yParent, eventNode, tNode) {
+    var xKids = xParent.e;
+    var yKids = yParent.e;
+    var xLen = xKids.length;
+    var yLen = yKids.length;
+    var translated = false;
+    var previousSibling = null;
+    for (var minLen = xLen < yLen ? xLen : yLen, i = 0; i < minLen; i++) {
+      var diffReturn = _VirtualDom_diffHelp(xKids[i], yKids[i], eventNode, tNode.s[i]);
+      var domNode = diffReturn.r;
+      if (diffReturn.u) {
+        translated = true;
+      }
+      if (diffReturn.v) {
+        _VirtualDom_insertAfter(parentDomNode, domNode, previousSibling);
+        previousSibling = domNode;
+      } else if (domNode.parentNode === parentDomNode) {
+        previousSibling = domNode;
+      }
+    }
+    if (xLen > yLen) {
+      for (var i = yLen; i < xLen; i++) {
+        _VirtualDom_remove(tNode.s[i].r);
+        delete tNode.s[i];
+      }
+    } else if (xLen < yLen) {
+      for (var i = xLen; i < yLen; i++) {
+        var y = yKids[i];
+        var childTNode = _VirtualDom_createTNode(void 0);
+        var domNode = _VirtualDom_render(y, eventNode, childTNode);
+        tNode.s[i] = childTNode;
+        _VirtualDom_appendChild(parentDomNode, domNode);
+      }
+    }
+    return translated;
+  }
+  function _VirtualDom_diffKeyedKids(parentDomNode, xParent, yParent, eventNode, tNode) {
+    var xKids = xParent.e;
+    var yKids = yParent.e;
+    var xKidsMap = xParent.t;
+    var yKidsMap = yParent.t;
+    var xIndexLower = 0;
+    var yIndexLower = 0;
+    var xIndexUpper = xKids.length - 1;
+    var yIndexUpper = yKids.length - 1;
+    var domNodeLower = null;
+    var domNodeUpper = null;
+    var translated = false;
+    var handleDiffReturn = function(diffReturn2, upper) {
+      var domNode2 = diffReturn2.r;
+      if (diffReturn2.u) {
+        translated = true;
+      }
+      if (diffReturn2.v) {
+        if (upper) {
+          _VirtualDom_insertBefore(parentDomNode, domNode2, domNodeUpper);
+          domNodeUpper = domNode2;
+        } else {
+          _VirtualDom_insertAfter(parentDomNode, domNode2, domNodeLower);
+          domNodeLower = domNode2;
+        }
+      } else if (domNode2.parentNode === parentDomNode) {
+        if (upper) {
+          domNodeUpper = domNode2;
+        } else {
+          domNodeLower = domNode2;
+        }
+      }
+    };
+    while (true) {
+      while (xIndexLower <= xIndexUpper && yIndexLower <= yIndexUpper) {
+        var xKid = xKids[xIndexLower];
+        var yKid = yKids[yIndexLower];
+        var xKey = xKid.a;
+        var yKey = yKid.a;
+        var x = xKid.b;
+        var y = yKid.b;
+        if (xKey === yKey) {
+          var diffReturn = _VirtualDom_diffHelp(x, y, eventNode, tNode.s[yKey]);
+          xIndexLower++;
+          yIndexLower++;
+          handleDiffReturn(diffReturn, false);
+          continue;
+        }
+        var xMoved = false;
+        if (xKey in yKidsMap) {
+          xMoved = true;
+        } else {
+          _VirtualDom_remove(tNode.s[xKey].r);
+          delete tNode.s[xKey];
+          xIndexLower++;
+        }
+        if (yKey in xKidsMap) {
+          if (xMoved) {
+            break;
+          }
+        } else {
+          var childTNode = _VirtualDom_createTNode(void 0);
+          var domNode = _VirtualDom_render(y, eventNode, childTNode);
+          tNode.s[yKey] = childTNode;
+          _VirtualDom_insertAfter(parentDomNode, domNode, domNodeLower);
+          yIndexLower++;
+          domNodeLower = domNode;
+        }
+      }
+      while (xIndexUpper > xIndexLower && yIndexUpper > yIndexLower) {
+        var xKid = xKids[xIndexUpper];
+        var yKid = yKids[yIndexUpper];
+        var xKey = xKid.a;
+        var yKey = yKid.a;
+        var x = xKid.b;
+        var y = yKid.b;
+        if (xKey === yKey) {
+          var diffReturn = _VirtualDom_diffHelp(x, y, eventNode, tNode.s[yKey]);
+          xIndexUpper--;
+          yIndexUpper--;
+          handleDiffReturn(diffReturn, true);
+          continue;
+        }
+        var xMoved = false;
+        if (xKey in yKidsMap) {
+          xMoved = true;
+        } else {
+          _VirtualDom_remove(tNode.s[xKey].r);
+          delete tNode.s[xKey];
+          xIndexUpper--;
+        }
+        if (yKey in xKidsMap) {
+          if (xMoved) {
+            break;
+          }
+        } else {
+          var childTNode = _VirtualDom_createTNode(void 0);
+          var domNode = _VirtualDom_render(y, eventNode, childTNode);
+          tNode.s[yKey] = childTNode;
+          _VirtualDom_insertBefore(parentDomNode, domNode, domNodeUpper);
+          yIndexUpper--;
+          domNodeUpper = domNode;
+        }
+      }
+      var swapped = false;
+      if (xIndexLower < xIndexUpper && yIndexLower < yIndexUpper) {
+        var xKidLower = xKids[xIndexLower];
+        var yKidLower = yKids[yIndexLower];
+        var xKidUpper = xKids[xIndexUpper];
+        var yKidUpper = yKids[yIndexUpper];
+        var xKeyLower = xKidLower.a;
+        var yKeyLower = yKidLower.a;
+        var xKeyUpper = xKidUpper.a;
+        var yKeyUpper = yKidUpper.a;
+        if (xKeyLower === yKeyUpper) {
+          var diffReturn = _VirtualDom_diffHelp(xKidLower.b, yKidUpper.b, eventNode, tNode.s[yKeyUpper]);
+          xIndexLower++;
+          yIndexUpper--;
+          _VirtualDom_moveBefore(parentDomNode, diffReturn.r, domNodeUpper);
+          handleDiffReturn(diffReturn, true);
+          swapped = true;
+        }
+        if (xKeyUpper === yKeyLower) {
+          var diffReturn = _VirtualDom_diffHelp(xKidUpper.b, yKidLower.b, eventNode, tNode.s[yKeyLower]);
+          yIndexLower++;
+          xIndexUpper--;
+          _VirtualDom_moveAfter(parentDomNode, diffReturn.r, domNodeLower);
+          handleDiffReturn(diffReturn, false);
+          swapped = true;
+        }
+      }
+      if (!swapped) {
+        break;
+      }
+    }
+    for (; yIndexLower <= yIndexUpper; yIndexLower++) {
+      var yKid = yKids[yIndexLower];
+      var yKey = yKid.a;
+      var y = yKid.b;
+      if (yKey in xKidsMap) {
+        var x = xKidsMap[yKey];
+        var diffReturn = _VirtualDom_diffHelp(x, y, eventNode, tNode.s[yKey]);
+        _VirtualDom_moveAfter(parentDomNode, diffReturn.r, domNodeLower);
+        handleDiffReturn(diffReturn, false);
+      } else {
+        var childTNode = _VirtualDom_createTNode(void 0);
+        var domNode = _VirtualDom_render(y, eventNode, childTNode);
+        tNode.s[yKey] = childTNode;
+        _VirtualDom_insertAfter(parentDomNode, domNode, domNodeLower);
+        domNodeLower = domNode;
+      }
+    }
+    for (; xIndexLower <= xIndexUpper; xIndexLower++) {
+      var xKid = xKids[xIndexLower];
+      var xKey = xKid.a;
+      if (!(xKey in yKidsMap)) {
+        _VirtualDom_remove(tNode.s[xKid.a].r);
+        delete tNode.s[xKid.a];
+      }
+    }
+    return translated;
+  }
+  var _VirtualDom_POSTFIX = "_elmW6BL";
+  function _VirtualDom_applyPatches(rootDomNode, oldVirtualNode, newVirtualNode, eventNode) {
+    var tNode = rootDomNode.elmTree;
+    var diffReturn = _VirtualDom_diffHelp(oldVirtualNode, newVirtualNode, eventNode, tNode);
+    var newDomNode = diffReturn.r;
+    if (newDomNode !== rootDomNode) {
+      delete rootDomNode.elmTree;
+      newDomNode.elmTree = tNode;
+    }
+    return newDomNode;
+  }
+  function _VirtualDom_applyPatchRedraw(x, y, eventNode, tNode) {
+    var domNode = tNode.r;
     var parentNode = domNode.parentNode;
-    var newNode = _VirtualDom_render(vNode, eventNode);
-    if (!newNode.elm_event_node_ref) {
-      newNode.elm_event_node_ref = domNode.elm_event_node_ref;
-    }
-    if (parentNode && newNode !== domNode) {
+    var isTextNode = domNode.nodeType === 3;
+    var newNode = _VirtualDom_render(y, eventNode, tNode);
+    if (parentNode) {
       parentNode.replaceChild(newNode, domNode);
+      return {
+        r: newNode,
+        u: isTextNode && domNode.data !== x.a,
+        v: false
+      };
+    } else {
+      return {
+        r: newNode,
+        u: isTextNode,
+        v: true
+      };
     }
-    return newNode;
   }
-  function _VirtualDom_applyPatchReorder(domNode, patch) {
-    var data = patch.s;
-    var frag = _VirtualDom_applyPatchReorderEndInsertsHelp(data.y, patch);
-    domNode = _VirtualDom_applyPatchesHelp(domNode, data.w);
-    var inserts = data.x;
-    for (var i = 0; i < inserts.length; i++) {
-      var insert = inserts[i];
-      var entry = insert.A;
-      var node = entry.c === 2 ? entry.s : _VirtualDom_render(entry.z, patch.u);
-      domNode.insertBefore(node, domNode.childNodes[insert.r]);
-    }
-    if (frag) {
-      _VirtualDom_appendChild(domNode, frag);
-    }
-    return domNode;
-  }
-  function _VirtualDom_applyPatchReorderEndInsertsHelp(endInserts, patch) {
-    if (!endInserts) {
-      return;
-    }
-    var frag = _VirtualDom_doc.createDocumentFragment();
-    for (var i = 0; i < endInserts.length; i++) {
-      var insert = endInserts[i];
-      var entry = insert.A;
-      _VirtualDom_appendChild(
-        frag,
-        entry.c === 2 ? entry.s : _VirtualDom_render(entry.z, patch.u)
-      );
-    }
-    return frag;
-  }
+  var _VirtualDom_camelCaseBoolProperties = {
+    novalidate: "noValidate",
+    readonly: "readOnly",
+    ismap: "isMap"
+  };
+  var _VirtualDom_markerProperty = "data-elm";
   function _VirtualDom_virtualize(node) {
+    if (node === _VirtualDom_doc) {
+      node = _VirtualDom_doc.body;
+    }
+    if (node.elmTree) {
+      console.error("node.elmTree already exists:", node.elmTree, node);
+      throw new Error("node.elmTree already exists!");
+    }
+    var tNode = _VirtualDom_createTNode(node);
+    var vNode = _VirtualDom_virtualizeHelp(node, tNode) || _VirtualDom_text("");
+    node.elmTree = tNode;
+    return vNode;
+  }
+  function _VirtualDom_virtualizeHelp(node, tNode) {
     if (node.nodeType === 3) {
       return _VirtualDom_text(node.textContent);
     }
     if (node.nodeType !== 1) {
-      return _VirtualDom_text("");
+      return void 0;
     }
+    var tag = node.localName;
     var attrList = _List_Nil;
     var attrs = node.attributes;
     for (var i = attrs.length; i--; ) {
       var attr = attrs[i];
       var name = attr.name;
       var value = attr.value;
-      attrList = _List_Cons(A2(_VirtualDom_attribute, name, value), attrList);
+      if (name === "style") {
+        var parts = value.split(";");
+        for (var j = parts.length; j--; ) {
+          var part = parts[j];
+          var index = part.indexOf(":");
+          if (index !== -1) {
+            var cssKey = part.slice(0, index).trim();
+            var cssValue = part.slice(index + 1).trim();
+            attrList = _List_Cons(A2(_VirtualDom_style, cssKey, cssValue), attrList);
+          }
+        }
+        continue;
+      }
+      var namespaceURI = attr.namespaceURI;
+      var propertyName = _VirtualDom_camelCaseBoolProperties[name] || name;
+      var propertyValue = node[propertyName];
+      attrList = _List_Cons(
+        // `Html.Attributes.value` sets the `.value` property to a string, because that’s the
+        // only way to set the value of an input element. The `.value` property has no corresponding
+        // attribute; the `value` attribute maps to the `.defaultValue` property. But when serializing,
+        // the most likely way to do it is to serialize the `.value` property to the `value` attribute.
+        name === "value" ? A2(_VirtualDom_property, name, value) : (
+          // Try to guess if the attribute comes from one of the functions
+          // implemented using `boolProperty` in `Html.Attributes`.
+          // See `Html.Attributes.spellcheck` for that exception.
+          typeof propertyValue === "boolean" && name !== "spellcheck" ? A2(_VirtualDom_property, propertyName, propertyValue) : (
+            // Otherwise, guess that it is an attribute. The user might have used `Html.Attributes.property`,
+            // but there’s no way for us to know that.
+            namespaceURI ? A3(_VirtualDom_attributeNS, namespaceURI, name, value) : A2(_VirtualDom_attribute, name, value)
+          )
+        ),
+        attrList
+      );
     }
-    var tag = node.tagName.toLowerCase();
-    var kidList = _List_Nil;
-    var kids = node.childNodes;
-    for (var i = kids.length; i--; ) {
-      kidList = _List_Cons(_VirtualDom_virtualize(kids[i]), kidList);
+    var namespace = node.namespaceURI === "http://www.w3.org/1999/xhtml" ? void 0 : node.namespaceURI;
+    var kidList = [];
+    if (node.localName === "textarea") {
+      attrList = _List_Cons(
+        A2(_VirtualDom_property, "value", node.value),
+        attrList
+      );
+    } else {
+      for (var kids = node.childNodes, len = kids.length, i = 0; i < len; i++) {
+        var kid = kids[i];
+        if (kid.nodeType === 1 && !kid.hasAttribute(_VirtualDom_markerProperty)) {
+          continue;
+        }
+        var childTNode = _VirtualDom_createTNode(kid);
+        var kidNode = _VirtualDom_virtualizeHelp(kid, childTNode);
+        if (kidNode) {
+          var length = kidList.push(kidNode);
+          tNode.s[length - 1] = childTNode;
+        }
+      }
+      if (_VirtualDom_divertHrefToApp && node.localName === "a") {
+        node.addEventListener("click", _VirtualDom_divertHrefToApp(node));
+      }
     }
-    return A3(_VirtualDom_node, tag, attrList, kidList);
+    return {
+      $: 1,
+      c: tag,
+      d: _VirtualDom_organizeFacts(attrList),
+      e: kidList,
+      f: namespace,
+      b: 0
+    };
   }
-  function _VirtualDom_dekey(keyedNode) {
+  function _VirtualDom_upkey(node, keyedNode, tNode) {
+    var kids = node.e;
+    var keyedKids = keyedNode.e;
+    var len = kids.length;
+    var keyedLen = keyedKids.length;
+    var newKeyedKids = new Array(len);
+    var newKidsMap = /* @__PURE__ */ Object.create(null);
+    var newChildren = /* @__PURE__ */ Object.create(null);
+    for (var i = 0; i < len; i++) {
+      var kid = kids[i];
+      var key;
+      if (i < keyedLen) {
+        key = keyedKids[i].a;
+      } else {
+        key = i + _VirtualDom_POSTFIX;
+        while (key in newKidsMap) {
+          key += _VirtualDom_POSTFIX;
+        }
+      }
+      newKeyedKids[i] = _Utils_Tuple2(key, kid);
+      newKidsMap[key] = kid;
+      newChildren[key] = tNode.s[i];
+    }
+    tNode.s = newChildren;
+    return {
+      $: 2,
+      c: node.c,
+      d: node.d,
+      e: newKeyedKids,
+      t: newKidsMap,
+      f: node.f,
+      b: node.b
+    };
+  }
+  function _VirtualDom_dekey(keyedNode, tNode) {
     var keyedKids = keyedNode.e;
     var len = keyedKids.length;
     var kids = new Array(len);
+    var newChildren = /* @__PURE__ */ Object.create(null);
     for (var i = 0; i < len; i++) {
-      kids[i] = keyedKids[i].b;
+      var keyedKid = keyedKids[i];
+      kids[i] = keyedKid.b;
+      newChildren[i] = tNode.s[keyedKid.a];
     }
+    tNode.s = newChildren;
     return {
       $: 1,
       c: keyedNode.c,
@@ -3401,7 +3612,6 @@
       $elm$browser$Debugger$Main$wrapSubs(impl.subscriptions),
       function(sendToApp, initialModel) {
         var view = impl.view;
-        var title = _VirtualDom_doc.title;
         var domNode = args && args["node"] ? args["node"] : _Debug_crash(0);
         var currNode = _VirtualDom_virtualize(domNode);
         var currBlocker = $elm$browser$Debugger$Main$toBlockerType(initialModel);
@@ -3427,7 +3637,7 @@
             return;
           }
           _VirtualDom_doc = model.popout.b;
-          currPopout || (currPopout = _VirtualDom_virtualize(model.popout.b));
+          currPopout || (currPopout = _VirtualDom_virtualize(model.popout.b.body));
           var nextPopout = $elm$browser$Debugger$Main$popoutView(model);
           var popoutPatches = _VirtualDom_diff(currPopout, nextPopout);
           _VirtualDom_applyPatches(model.popout.b.body, currPopout, popoutPatches, sendToApp);
@@ -3451,7 +3661,9 @@
         var view = impl.view;
         var title = _VirtualDom_doc.title;
         var bodyNode = _VirtualDom_doc.body;
+        _VirtualDom_divertHrefToApp = divertHrefToApp;
         var currNode = _VirtualDom_virtualize(bodyNode);
+        _VirtualDom_divertHrefToApp = 0;
         var currBlocker = $elm$browser$Debugger$Main$toBlockerType(initialModel);
         var currPopout;
         initialModel.popout.a = sendToApp;
@@ -3477,7 +3689,7 @@
             return;
           }
           _VirtualDom_doc = model.popout.b;
-          currPopout || (currPopout = _VirtualDom_virtualize(model.popout.b));
+          currPopout || (currPopout = _VirtualDom_virtualize(model.popout.b.body));
           var nextPopout = $elm$browser$Debugger$Main$popoutView(model);
           var popoutPatches = _VirtualDom_diff(currPopout, nextPopout);
           _VirtualDom_applyPatches(model.popout.b.body, currPopout, popoutPatches, sendToApp);
@@ -3625,7 +3837,7 @@
   }
   function _Debugger_init(value) {
     if (typeof value === "boolean") {
-      return A3($elm$browser$Debugger$Expando$Constructor, $elm$core$Maybe$Just(value ? "True" : "False"), true, _List_Nil);
+      return A2($elm$browser$Debugger$Expando$Constructor, $elm$core$Maybe$Just(value ? "True" : "False"), _List_Nil);
     }
     if (typeof value === "number") {
       return $elm$browser$Debugger$Expando$Primitive(value + "");
@@ -3639,68 +3851,43 @@
     if (typeof value === "object" && "$" in value) {
       var tag = value.$;
       if (tag === "::" || tag === "[]") {
-        return A3(
-          $elm$browser$Debugger$Expando$Sequence,
-          $elm$browser$Debugger$Expando$ListSeq,
-          true,
-          A2($elm$core$List$map, _Debugger_init, value)
-        );
+        return A2($elm$browser$Debugger$Expando$Sequence, $elm$browser$Debugger$Expando$ListSeq, value);
       }
       if (tag === "Set_elm_builtin") {
-        return A3(
-          $elm$browser$Debugger$Expando$Sequence,
-          $elm$browser$Debugger$Expando$SetSeq,
-          true,
-          A3($elm$core$Set$foldr, _Debugger_initCons, _List_Nil, value)
-        );
+        return A2($elm$browser$Debugger$Expando$Sequence, $elm$browser$Debugger$Expando$SetSeq, $elm$core$Set$toList(value));
       }
       if (tag === "RBNode_elm_builtin" || tag == "RBEmpty_elm_builtin") {
-        return A2(
-          $elm$browser$Debugger$Expando$Dictionary,
-          true,
-          A3($elm$core$Dict$foldr, _Debugger_initKeyValueCons, _List_Nil, value)
-        );
+        return $elm$browser$Debugger$Expando$Dictionary($elm$core$Dict$toList(value));
       }
       if (tag === "Array_elm_builtin") {
-        return A3(
-          $elm$browser$Debugger$Expando$Sequence,
-          $elm$browser$Debugger$Expando$ArraySeq,
-          true,
-          A3($elm$core$Array$foldr, _Debugger_initCons, _List_Nil, value)
-        );
+        return A2($elm$browser$Debugger$Expando$Sequence, $elm$browser$Debugger$Expando$ArraySeq, $elm$core$Array$toList(value));
       }
       if (typeof tag === "number") {
         return $elm$browser$Debugger$Expando$Primitive("<internals>");
       }
       var char = tag.charCodeAt(0);
-      if (char === 35 || 65 <= char && char <= 90) {
-        var list = _List_Nil;
-        for (var i in value) {
-          if (i === "$") continue;
-          list = _List_Cons(_Debugger_init(value[i]), list);
-        }
-        return A3($elm$browser$Debugger$Expando$Constructor, char === 35 ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(tag), true, $elm$core$List$reverse(list));
+      if (
+        /* a */
+        97 <= char && char <= 122
+      ) {
+        return $elm$browser$Debugger$Expando$Primitive("<internals>");
       }
-      return $elm$browser$Debugger$Expando$Primitive("<internals>");
+      var list = _List_Nil;
+      for (var i in value) {
+        if (i === "$") continue;
+        list = _List_Cons(value[i], list);
+      }
+      return A2($elm$browser$Debugger$Expando$Constructor, char === 35 ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(tag), $elm$core$List$reverse(list));
     }
     if (typeof value === "object") {
       var dict = $elm$core$Dict$empty;
       for (var i in value) {
-        dict = A3($elm$core$Dict$insert, i, _Debugger_init(value[i]), dict);
+        dict = A3($elm$core$Dict$insert, i, value[i], dict);
       }
-      return A2($elm$browser$Debugger$Expando$Record, true, dict);
+      return $elm$browser$Debugger$Expando$Record(dict);
     }
     return $elm$browser$Debugger$Expando$Primitive("<internals>");
   }
-  var _Debugger_initCons = F2(function initConsHelp(value, list) {
-    return _List_Cons(_Debugger_init(value), list);
-  });
-  var _Debugger_initKeyValueCons = F3(function(key, value, list) {
-    return _List_Cons(
-      _Utils_Tuple2(_Debugger_init(key), _Debugger_init(value)),
-      list
-    );
-  });
   function _Debugger_addSlashes(str, isChar) {
     var s = str.replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/\t/g, "\\t").replace(/\r/g, "\\r").replace(/\v/g, "\\v").replace(/\0/g, "\\0");
     if (isChar) {
@@ -3708,6 +3895,9 @@
     } else {
       return s.replace(/\"/g, '\\"');
     }
+  }
+  function _Debugger_toUnexpanded(value) {
+    return value;
   }
   function _Debugger_updateBlocker(oldBlocker, newBlocker) {
     if (oldBlocker === newBlocker) return;
@@ -3806,7 +3996,9 @@
         var view = impl.view;
         var title = _VirtualDom_doc.title;
         var bodyNode = _VirtualDom_doc.body;
+        _VirtualDom_divertHrefToApp = divertHrefToApp;
         var currNode = _VirtualDom_virtualize(bodyNode);
+        _VirtualDom_divertHrefToApp = 0;
         return _Browser_makeAnimator(initialModel, function(model) {
           _VirtualDom_divertHrefToApp = divertHrefToApp;
           var doc = view(model);
@@ -3820,18 +4012,68 @@
       }
     );
   });
-  var _Browser_requestAnimationFrame = typeof requestAnimationFrame !== "undefined" ? requestAnimationFrame : function(callback) {
+  var _Browser_requestAnimationFrame_queue = {};
+  var _Browser_inAnimationFrame = false;
+  var _Browser_pendingAnimationFrame = false;
+  var _Browser_requestAnimationFrame_id = 0;
+  function _Browser_requestAnimationFrame(callback) {
+    var id = _Browser_requestAnimationFrame_id;
+    _Browser_requestAnimationFrame_id++;
+    _Browser_requestAnimationFrame_queue[id] = callback;
+    if (!_Browser_pendingAnimationFrame) {
+      _Browser_pendingAnimationFrame = true;
+      _Browser_requestAnimationFrame_raw(function() {
+        _Browser_pendingAnimationFrame = false;
+        _Browser_inAnimationFrame = true;
+        var maxId = _Browser_requestAnimationFrame_id;
+        for (var id2 in _Browser_requestAnimationFrame_queue) {
+          if (id2 >= maxId) {
+            break;
+          }
+          var callback2 = _Browser_requestAnimationFrame_queue[id2];
+          delete _Browser_requestAnimationFrame_queue[id2];
+          callback2();
+        }
+        _Browser_inAnimationFrame = false;
+      });
+    }
+    return id;
+  }
+  var _Browser_requestAnimationFrame_raw = typeof requestAnimationFrame !== "undefined" ? requestAnimationFrame : function(callback) {
     return setTimeout(callback, 1e3 / 60);
   };
   function _Browser_makeAnimator(model, draw) {
-    draw(model);
-    var state = 0;
-    function updateIfNeeded() {
-      state = state === 1 ? 0 : (_Browser_requestAnimationFrame(updateIfNeeded), draw(model), 1);
+    var drawing = false;
+    var pendingFrame = false;
+    var pendingSync = false;
+    function drawHelp() {
+      if (drawing) {
+        pendingSync = true;
+        return;
+      }
+      pendingFrame = false;
+      pendingSync = false;
+      drawing = true;
+      draw(model);
+      drawing = false;
+      if (pendingSync) {
+        drawHelp();
+      }
     }
+    function updateIfNeeded() {
+      if (pendingFrame) {
+        drawHelp();
+      }
+    }
+    drawHelp();
     return function(nextModel, isSync) {
       model = nextModel;
-      isSync ? (draw(model), state === 2 && (state = 1)) : (state === 0 && _Browser_requestAnimationFrame(updateIfNeeded), state = 2);
+      if (isSync || _Browser_inAnimationFrame) {
+        drawHelp();
+      } else if (!pendingFrame) {
+        pendingFrame = true;
+        _Browser_requestAnimationFrame(updateIfNeeded);
+      }
     };
   }
   var _Browser_go = F2(function(key, n) {
@@ -4132,13 +4374,13 @@
     return _Utils_Tuple2(offset, total);
   });
   var _Parser_findSubString = F5(function(smallString, offset, row, col, bigString) {
-    var newOffset = bigString.indexOf(smallString, offset);
-    var target = newOffset < 0 ? bigString.length : newOffset + smallString.length;
+    var index = bigString.indexOf(smallString, offset);
+    var target = index < 0 ? bigString.length : index + smallString.length;
     while (offset < target) {
       var code = bigString.charCodeAt(offset++);
       code === 10 ? (col = 1, row++) : (col++, (code & 63488) === 55296 && offset++);
     }
-    return _Utils_Tuple3(newOffset, row, col);
+    return _Utils_Tuple3(index < 0 ? -1 : target, row, col);
   });
   var $elm$core$List$cons = _List_cons;
   var $elm$core$Elm$JsArray$foldr = _JsArray_foldr;
@@ -4348,18 +4590,32 @@
       );
     }
   );
-  var $elm$core$Char$toCode = _Char_toCode;
+  var $elm$core$Basics$eq = _Utils_equal;
+  var $elm$core$Basics$neq = _Utils_notEqual;
+  var $elm$core$Char$toLower = _Char_toLower;
+  var $elm$core$Char$toUpper = _Char_toUpper;
   var $elm$core$Char$isLower = function(_char) {
-    var code = $elm$core$Char$toCode(_char);
-    return 97 <= code && code <= 122;
+    return _Utils_eq(
+      _char,
+      $elm$core$Char$toLower(_char)
+    ) && !_Utils_eq(
+      _char,
+      $elm$core$Char$toUpper(_char)
+    );
   };
   var $elm$core$Char$isUpper = function(_char) {
-    var code = $elm$core$Char$toCode(_char);
-    return code <= 90 && 65 <= code;
+    return _Utils_eq(
+      _char,
+      $elm$core$Char$toUpper(_char)
+    ) && !_Utils_eq(
+      _char,
+      $elm$core$Char$toLower(_char)
+    );
   };
   var $elm$core$Char$isAlpha = function(_char) {
     return $elm$core$Char$isLower(_char) || $elm$core$Char$isUpper(_char);
   };
+  var $elm$core$Char$toCode = _Char_toCode;
   var $elm$core$Char$isDigit = function(_char) {
     var code = $elm$core$Char$toCode(_char);
     return code <= 57 && 48 <= code;
@@ -4513,7 +4769,6 @@
       return f(x);
     }
   );
-  var $elm$core$Basics$eq = _Utils_equal;
   var $elm$core$Basics$floor = _Basics_floor;
   var $elm$core$Elm$JsArray$length = _JsArray_length;
   var $elm$core$Basics$max = F2(
@@ -4595,6 +4850,7 @@
       }
     }
   );
+  var $elm$core$Basics$lt = _Utils_lt;
   var $elm$core$Array$initializeHelp = F5(
     function(fn, fromIndex, len, nodeList, tail) {
       initializeHelp:
@@ -4659,33 +4915,29 @@
   var $elm$browser$Debugger$Expando$ArraySeq = { $: "ArraySeq" };
   var $elm$browser$Debugger$Overlay$BlockMost = { $: "BlockMost" };
   var $elm$browser$Debugger$Overlay$BlockNone = { $: "BlockNone" };
-  var $elm$browser$Debugger$Expando$Constructor = F3(
-    function(a, b, c) {
-      return { $: "Constructor", a, b, c };
-    }
-  );
-  var $elm$browser$Debugger$Expando$Dictionary = F2(
+  var $elm$browser$Debugger$Expando$Constructor = F2(
     function(a, b) {
-      return { $: "Dictionary", a, b };
+      return { $: "Constructor", a, b };
     }
   );
+  var $elm$browser$Debugger$Expando$Dictionary = function(a) {
+    return { $: "Dictionary", a };
+  };
   var $elm$browser$Debugger$Main$Down = { $: "Down" };
   var $elm$browser$Debugger$Expando$ListSeq = { $: "ListSeq" };
   var $elm$browser$Debugger$Main$NoOp = { $: "NoOp" };
   var $elm$browser$Debugger$Expando$Primitive = function(a) {
     return { $: "Primitive", a };
   };
-  var $elm$browser$Debugger$Expando$Record = F2(
-    function(a, b) {
-      return { $: "Record", a, b };
-    }
-  );
+  var $elm$browser$Debugger$Expando$Record = function(a) {
+    return { $: "Record", a };
+  };
   var $elm$browser$Debugger$Expando$S = function(a) {
     return { $: "S", a };
   };
-  var $elm$browser$Debugger$Expando$Sequence = F3(
-    function(a, b, c) {
-      return { $: "Sequence", a, b, c };
+  var $elm$browser$Debugger$Expando$Sequence = F2(
+    function(a, b) {
+      return { $: "Sequence", a, b };
     }
   );
   var $elm$browser$Debugger$Expando$SetSeq = { $: "SetSeq" };
@@ -5566,21 +5818,6 @@
   };
   var $elm$core$Dict$RBEmpty_elm_builtin = { $: "RBEmpty_elm_builtin" };
   var $elm$core$Dict$empty = $elm$core$Dict$RBEmpty_elm_builtin;
-  var $elm$core$Set$foldr = F3(
-    function(func, initialState, _v0) {
-      var dict = _v0.a;
-      return A3(
-        $elm$core$Dict$foldr,
-        F3(
-          function(key, _v1, state) {
-            return A2(func, key, state);
-          }
-        ),
-        initialState,
-        dict
-      );
-    }
-  );
   var $elm$browser$Debugger$Main$getCurrentModel = function(state) {
     if (state.$ === "Running") {
       var model = state.a;
@@ -5905,20 +6142,9 @@
       return "none";
     }
   };
-  var $elm$browser$Debugger$Expando$Field = F2(
-    function(a, b) {
-      return { $: "Field", a, b };
-    }
-  );
-  var $elm$browser$Debugger$Expando$Index = F3(
-    function(a, b, c) {
-      return { $: "Index", a, b, c };
-    }
-  );
-  var $elm$browser$Debugger$Expando$Key = { $: "Key" };
-  var $elm$browser$Debugger$Expando$None = { $: "None" };
-  var $elm$browser$Debugger$Expando$Toggle = { $: "Toggle" };
-  var $elm$browser$Debugger$Expando$Value = { $: "Value" };
+  var $elm$browser$Debugger$Expando$Toggle = function(a) {
+    return { $: "Toggle", a };
+  };
   var $elm$browser$Debugger$Expando$blue = A2($elm$html$Html$Attributes$style, "color", "rgb(28, 0, 207)");
   var $elm$core$Basics$composeL = F3(
     function(g, f, x) {
@@ -5927,6 +6153,15 @@
       );
     }
   );
+  var $elm$core$List$head = function(list) {
+    if (list.b) {
+      var x = list.a;
+      var xs = list.b;
+      return $elm$core$Maybe$Just(x);
+    } else {
+      return $elm$core$Maybe$Nothing;
+    }
+  };
   var $elm$browser$Debugger$Expando$leftPad = function(maybeKey) {
     if (maybeKey.$ === "Nothing") {
       return _List_Nil;
@@ -6000,6 +6235,72 @@
       }
     }
   );
+  var $elm$core$Dict$get = F2(
+    function(targetKey, dict) {
+      get:
+        while (true) {
+          if (dict.$ === "RBEmpty_elm_builtin") {
+            return $elm$core$Maybe$Nothing;
+          } else {
+            var key = dict.b;
+            var value = dict.c;
+            var left = dict.d;
+            var right = dict.e;
+            var _v1 = A2($elm$core$Basics$compare, targetKey, key);
+            switch (_v1.$) {
+              case "LT":
+                var $temp$targetKey = targetKey, $temp$dict = left;
+                targetKey = $temp$targetKey;
+                dict = $temp$dict;
+                continue get;
+              case "EQ":
+                return $elm$core$Maybe$Just(value);
+              default:
+                var $temp$targetKey = targetKey, $temp$dict = right;
+                targetKey = $temp$targetKey;
+                dict = $temp$dict;
+                continue get;
+            }
+          }
+        }
+    }
+  );
+  var $elm$core$Maybe$withDefault = F2(
+    function(_default, maybe) {
+      if (maybe.$ === "Just") {
+        var value = maybe.a;
+        return value;
+      } else {
+        return _default;
+      }
+    }
+  );
+  var $elm$browser$Debugger$Expando$maximumItemsToView = F2(
+    function(path, expando) {
+      return A2(
+        $elm$core$Maybe$withDefault,
+        1,
+        A2($elm$core$Dict$get, path, expando.viewMore)
+      ) * 100;
+    }
+  );
+  var $elm$core$Dict$member = F2(
+    function(key, dict) {
+      var _v0 = A2($elm$core$Dict$get, key, dict);
+      if (_v0.$ === "Just") {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  );
+  var $elm$core$Set$member = F2(
+    function(key, _v0) {
+      var dict = _v0.a;
+      return A2($elm$core$Dict$member, key, dict);
+    }
+  );
+  var $elm$core$Basics$not = _Basics_not;
   var $elm$browser$Debugger$Expando$red = A2($elm$html$Html$Attributes$style, "color", "rgb(196, 26, 22)");
   var $elm$core$Tuple$second = function(_v0) {
     var y = _v0.b;
@@ -6107,19 +6408,10 @@
       )
     );
   };
-  var $elm$core$Maybe$withDefault = F2(
-    function(_default, maybe) {
-      if (maybe.$ === "Just") {
-        var value = maybe.a;
-        return value;
-      } else {
-        return _default;
-      }
-    }
-  );
   var $elm$browser$Debugger$Expando$viewExtraTiny = function(value) {
-    if (value.$ === "Record") {
-      var record = value.b;
+    var _v6 = _Debugger_init(value);
+    if (_v6.$ === "Record") {
+      var record = _v6.a;
       return A3(
         $elm$browser$Debugger$Expando$viewExtraTinyRecord,
         0,
@@ -6131,9 +6423,10 @@
     }
   };
   var $elm$browser$Debugger$Expando$viewTiny = function(value) {
-    switch (value.$) {
+    var _v4 = _Debugger_init(value);
+    switch (_v4.$) {
       case "S":
-        var stringRep = value.a;
+        var stringRep = _v4.a;
         var str = $elm$browser$Debugger$Expando$elideMiddle(stringRep);
         return _Utils_Tuple2(
           $elm$core$String$length(str),
@@ -6154,7 +6447,7 @@
           )
         );
       case "Primitive":
-        var stringRep = value.a;
+        var stringRep = _v4.a;
         return _Utils_Tuple2(
           $elm$core$String$length(stringRep),
           _List_fromArray(
@@ -6174,8 +6467,8 @@
           )
         );
       case "Sequence":
-        var seqType = value.a;
-        var valueList = value.c;
+        var seqType = _v4.a;
+        var valueList = _v4.b;
         return $elm$browser$Debugger$Expando$viewTinyHelp(
           A2(
             $elm$browser$Debugger$Expando$seqTypeToString,
@@ -6184,24 +6477,24 @@
           )
         );
       case "Dictionary":
-        var keyValuePairs = value.b;
+        var keyValuePairs = _v4.a;
         return $elm$browser$Debugger$Expando$viewTinyHelp(
           "Dict(" + ($elm$core$String$fromInt(
             $elm$core$List$length(keyValuePairs)
           ) + ")")
         );
       case "Record":
-        var record = value.b;
+        var record = _v4.a;
         return $elm$browser$Debugger$Expando$viewTinyRecord(record);
       default:
-        if (!value.c.b) {
-          var maybeName = value.a;
+        if (!_v4.b.b) {
+          var maybeName = _v4.a;
           return $elm$browser$Debugger$Expando$viewTinyHelp(
             A2($elm$core$Maybe$withDefault, "Unit", maybeName)
           );
         } else {
-          var maybeName = value.a;
-          var valueList = value.c;
+          var maybeName = _v4.a;
+          var valueList = _v4.b;
           return $elm$browser$Debugger$Expando$viewTinyHelp(
             (function() {
               if (maybeName.$ === "Nothing") {
@@ -6300,11 +6593,45 @@
       }
     }
   );
+  var $elm$browser$Debugger$Expando$ViewMore = function(a) {
+    return { $: "ViewMore", a };
+  };
+  var $elm$browser$Debugger$Expando$viewMoreButton = function(path) {
+    return A2(
+      $elm$html$Html$div,
+      $elm$browser$Debugger$Expando$leftPad(
+        $elm$core$List$head(path)
+      ),
+      _List_fromArray(
+        [
+          A2(
+            $elm$html$Html$div,
+            A2(
+              $elm$core$List$cons,
+              $elm$html$Html$Events$onClick(
+                $elm$browser$Debugger$Expando$ViewMore(path)
+              ),
+              $elm$browser$Debugger$Expando$leftPad(
+                $elm$core$Maybe$Just(_Utils_Tuple0)
+              )
+            ),
+            _List_fromArray(
+              [
+                $elm$html$Html$text("View more")
+              ]
+            )
+          )
+        ]
+      )
+    );
+  };
   var $elm$browser$Debugger$Expando$view = F2(
-    function(maybeKey, expando) {
-      switch (expando.$) {
+    function(path, expando) {
+      var maybeKey = $elm$core$List$head(path);
+      var _v14 = _Debugger_init(expando.unexpanded);
+      switch (_v14.$) {
         case "S":
-          var stringRep = expando.a;
+          var stringRep = _v14.a;
           return A2(
             $elm$html$Html$div,
             $elm$browser$Debugger$Expando$leftPad(maybeKey),
@@ -6330,7 +6657,7 @@
             )
           );
         case "Primitive":
-          var stringRep = expando.a;
+          var stringRep = _v14.a;
           return A2(
             $elm$html$Html$div,
             $elm$browser$Debugger$Expando$leftPad(maybeKey),
@@ -6356,48 +6683,46 @@
             )
           );
         case "Sequence":
-          var seqType = expando.a;
-          var isClosed = expando.b;
-          var valueList = expando.c;
-          return A4($elm$browser$Debugger$Expando$viewSequence, maybeKey, seqType, isClosed, valueList);
+          var seqType = _v14.a;
+          var valueList = _v14.b;
+          return A4($elm$browser$Debugger$Expando$viewSequence, path, seqType, expando, valueList);
         case "Dictionary":
-          var isClosed = expando.a;
-          var keyValuePairs = expando.b;
-          return A3($elm$browser$Debugger$Expando$viewDictionary, maybeKey, isClosed, keyValuePairs);
+          var keyValuePairs = _v14.a;
+          return A3($elm$browser$Debugger$Expando$viewDictionary, path, expando, keyValuePairs);
         case "Record":
-          var isClosed = expando.a;
-          var valueDict = expando.b;
-          return A3($elm$browser$Debugger$Expando$viewRecord, maybeKey, isClosed, valueDict);
+          var valueDict = _v14.a;
+          return A3($elm$browser$Debugger$Expando$viewRecord, path, expando, valueDict);
         default:
-          var maybeName = expando.a;
-          var isClosed = expando.b;
-          var valueList = expando.c;
-          return A4($elm$browser$Debugger$Expando$viewConstructor, maybeKey, maybeName, isClosed, valueList);
+          var maybeName = _v14.a;
+          var valueList = _v14.b;
+          return A4($elm$browser$Debugger$Expando$viewConstructor, path, maybeName, expando, valueList);
       }
     }
   );
   var $elm$browser$Debugger$Expando$viewConstructor = F4(
-    function(maybeKey, maybeName, isClosed, valueList) {
+    function(path, maybeName, expando, valueList) {
       var tinyArgs = A2(
         $elm$core$List$map,
         A2($elm$core$Basics$composeL, $elm$core$Tuple$second, $elm$browser$Debugger$Expando$viewExtraTiny),
         valueList
       );
+      var maybeKey = $elm$core$List$head(path);
+      var isClosed = !A2($elm$core$Set$member, path, expando.expanded);
       var description = (function() {
-        var _v7 = _Utils_Tuple2(maybeName, tinyArgs);
-        if (_v7.a.$ === "Nothing") {
-          if (!_v7.b.b) {
-            var _v8 = _v7.a;
+        var _v9 = _Utils_Tuple2(maybeName, tinyArgs);
+        if (_v9.a.$ === "Nothing") {
+          if (!_v9.b.b) {
+            var _v10 = _v9.a;
             return _List_fromArray(
               [
                 $elm$html$Html$text("()")
               ]
             );
           } else {
-            var _v9 = _v7.a;
-            var _v10 = _v7.b;
-            var x = _v10.a;
-            var xs = _v10.b;
+            var _v11 = _v9.a;
+            var _v12 = _v9.b;
+            var x = _v12.a;
+            var xs = _v12.b;
             return A2(
               $elm$core$List$cons,
               $elm$html$Html$text("( "),
@@ -6430,18 +6755,18 @@
             );
           }
         } else {
-          if (!_v7.b.b) {
-            var name = _v7.a.a;
+          if (!_v9.b.b) {
+            var name = _v9.a.a;
             return _List_fromArray(
               [
                 $elm$html$Html$text(name)
               ]
             );
           } else {
-            var name = _v7.a.a;
-            var _v11 = _v7.b;
-            var x = _v11.a;
-            var xs = _v11.b;
+            var name = _v9.a.a;
+            var _v13 = _v9.b;
+            var x = _v13.a;
+            var xs = _v13.b;
             return A2(
               $elm$core$List$cons,
               $elm$html$Html$text(name + " "),
@@ -6471,7 +6796,7 @@
           }
         }
       })();
-      var _v4 = (function() {
+      var _v6 = (function() {
         if (!valueList.b) {
           return _Utils_Tuple2(
             $elm$core$Maybe$Nothing,
@@ -6480,7 +6805,8 @@
         } else {
           if (!valueList.b.b) {
             var entry = valueList.a;
-            switch (entry.$) {
+            var _v8 = _Debugger_init(entry);
+            switch (_v8.$) {
               case "S":
                 return _Utils_Tuple2(
                   $elm$core$Maybe$Nothing,
@@ -6492,56 +6818,65 @@
                   A2($elm$html$Html$div, _List_Nil, _List_Nil)
                 );
               case "Sequence":
-                var subValueList = entry.c;
+                var subValueList = _v8.b;
                 return _Utils_Tuple2(
                   $elm$core$Maybe$Just(isClosed),
-                  isClosed ? A2($elm$html$Html$div, _List_Nil, _List_Nil) : A2(
-                    $elm$html$Html$map,
-                    A2($elm$browser$Debugger$Expando$Index, $elm$browser$Debugger$Expando$None, 0),
-                    $elm$browser$Debugger$Expando$viewSequenceOpen(subValueList)
+                  isClosed ? A2($elm$html$Html$div, _List_Nil, _List_Nil) : A3(
+                    $elm$browser$Debugger$Expando$viewSequenceOpen,
+                    A2($elm$core$List$cons, "0", path),
+                    expando,
+                    subValueList
                   )
                 );
               case "Dictionary":
-                var keyValuePairs = entry.b;
+                var keyValuePairs = _v8.a;
                 return _Utils_Tuple2(
                   $elm$core$Maybe$Just(isClosed),
-                  isClosed ? A2($elm$html$Html$div, _List_Nil, _List_Nil) : A2(
-                    $elm$html$Html$map,
-                    A2($elm$browser$Debugger$Expando$Index, $elm$browser$Debugger$Expando$None, 0),
-                    $elm$browser$Debugger$Expando$viewDictionaryOpen(keyValuePairs)
+                  isClosed ? A2($elm$html$Html$div, _List_Nil, _List_Nil) : A3(
+                    $elm$browser$Debugger$Expando$viewDictionaryOpen,
+                    A2($elm$core$List$cons, "0", path),
+                    expando,
+                    keyValuePairs
                   )
                 );
               case "Record":
-                var record = entry.b;
+                var record = _v8.a;
                 return _Utils_Tuple2(
                   $elm$core$Maybe$Just(isClosed),
-                  isClosed ? A2($elm$html$Html$div, _List_Nil, _List_Nil) : A2(
-                    $elm$html$Html$map,
-                    A2($elm$browser$Debugger$Expando$Index, $elm$browser$Debugger$Expando$None, 0),
-                    $elm$browser$Debugger$Expando$viewRecordOpen(record)
+                  isClosed ? A2($elm$html$Html$div, _List_Nil, _List_Nil) : A3(
+                    $elm$browser$Debugger$Expando$viewRecordOpen,
+                    A2($elm$core$List$cons, "0", path),
+                    expando,
+                    record
                   )
                 );
               default:
-                var subValueList = entry.c;
+                var subValueList = _v8.b;
                 return _Utils_Tuple2(
                   $elm$core$Maybe$Just(isClosed),
-                  isClosed ? A2($elm$html$Html$div, _List_Nil, _List_Nil) : A2(
-                    $elm$html$Html$map,
-                    A2($elm$browser$Debugger$Expando$Index, $elm$browser$Debugger$Expando$None, 0),
-                    $elm$browser$Debugger$Expando$viewConstructorOpen(subValueList)
+                  isClosed ? A2($elm$html$Html$div, _List_Nil, _List_Nil) : A3(
+                    $elm$browser$Debugger$Expando$viewConstructorOpen,
+                    A2($elm$core$List$cons, "0", path),
+                    expando,
+                    subValueList
                   )
                 );
             }
           } else {
             return _Utils_Tuple2(
               $elm$core$Maybe$Just(isClosed),
-              isClosed ? A2($elm$html$Html$div, _List_Nil, _List_Nil) : $elm$browser$Debugger$Expando$viewConstructorOpen(valueList)
+              isClosed ? A2($elm$html$Html$div, _List_Nil, _List_Nil) : A3(
+                $elm$browser$Debugger$Expando$viewConstructorOpen,
+                A2($elm$core$List$cons, "0", path),
+                expando,
+                valueList
+              )
             );
           }
         }
       })();
-      var maybeIsClosed = _v4.a;
-      var openHtml = _v4.b;
+      var maybeIsClosed = _v6.a;
+      var openHtml = _v6.b;
       return A2(
         $elm$html$Html$div,
         $elm$browser$Debugger$Expando$leftPad(maybeKey),
@@ -6551,7 +6886,9 @@
               $elm$html$Html$div,
               _List_fromArray(
                 [
-                  $elm$html$Html$Events$onClick($elm$browser$Debugger$Expando$Toggle)
+                  $elm$html$Html$Events$onClick(
+                    $elm$browser$Debugger$Expando$Toggle(path)
+                  )
                 ]
               ),
               A3($elm$browser$Debugger$Expando$lineStarter, maybeKey, maybeIsClosed, description)
@@ -6562,33 +6899,42 @@
       );
     }
   );
-  var $elm$browser$Debugger$Expando$viewConstructorEntry = F2(
-    function(index, value) {
+  var $elm$browser$Debugger$Expando$viewConstructorEntry = F4(
+    function(path, expando, index, value) {
       return A2(
-        $elm$html$Html$map,
-        A2($elm$browser$Debugger$Expando$Index, $elm$browser$Debugger$Expando$None, index),
+        $elm$browser$Debugger$Expando$view,
         A2(
-          $elm$browser$Debugger$Expando$view,
-          $elm$core$Maybe$Just(
-            $elm$core$String$fromInt(index)
-          ),
-          value
+          $elm$core$List$cons,
+          $elm$core$String$fromInt(index),
+          path
+        ),
+        _Utils_update(
+          expando,
+          { unexpanded: value }
         )
       );
     }
   );
-  var $elm$browser$Debugger$Expando$viewConstructorOpen = function(valueList) {
-    return A2(
-      $elm$html$Html$div,
-      _List_Nil,
-      A2($elm$core$List$indexedMap, $elm$browser$Debugger$Expando$viewConstructorEntry, valueList)
-    );
-  };
+  var $elm$browser$Debugger$Expando$viewConstructorOpen = F3(
+    function(path, expando, valueList) {
+      return A2(
+        $elm$html$Html$div,
+        _List_Nil,
+        A2(
+          $elm$core$List$indexedMap,
+          A2($elm$browser$Debugger$Expando$viewConstructorEntry, path, expando),
+          valueList
+        )
+      );
+    }
+  );
   var $elm$browser$Debugger$Expando$viewDictionary = F3(
-    function(maybeKey, isClosed, keyValuePairs) {
+    function(path, expando, keyValuePairs) {
       var starter = "Dict(" + ($elm$core$String$fromInt(
         $elm$core$List$length(keyValuePairs)
       ) + ")");
+      var maybeKey = $elm$core$List$head(path);
+      var isClosed = !A2($elm$core$Set$member, path, expando.expanded);
       return A2(
         $elm$html$Html$div,
         $elm$browser$Debugger$Expando$leftPad(maybeKey),
@@ -6598,7 +6944,9 @@
               $elm$html$Html$div,
               _List_fromArray(
                 [
-                  $elm$html$Html$Events$onClick($elm$browser$Debugger$Expando$Toggle)
+                  $elm$html$Html$Events$onClick(
+                    $elm$browser$Debugger$Expando$Toggle(path)
+                  )
                 ]
               ),
               A3(
@@ -6612,37 +6960,36 @@
                 )
               )
             ),
-            isClosed ? $elm$html$Html$text("") : $elm$browser$Debugger$Expando$viewDictionaryOpen(keyValuePairs)
+            isClosed ? $elm$html$Html$text("") : A3($elm$browser$Debugger$Expando$viewDictionaryOpen, path, expando, keyValuePairs)
           ]
         )
       );
     }
   );
-  var $elm$browser$Debugger$Expando$viewDictionaryEntry = F2(
-    function(index, _v2) {
-      var key = _v2.a;
-      var value = _v2.b;
-      switch (key.$) {
+  var $elm$browser$Debugger$Expando$viewDictionaryEntry = F3(
+    function(path, expando, _v4) {
+      var key = _v4.a;
+      var value = _v4.b;
+      var _v5 = _Debugger_init(key);
+      switch (_v5.$) {
         case "S":
-          var stringRep = key.a;
+          var stringRep = _v5.a;
           return A2(
-            $elm$html$Html$map,
-            A2($elm$browser$Debugger$Expando$Index, $elm$browser$Debugger$Expando$Value, index),
-            A2(
-              $elm$browser$Debugger$Expando$view,
-              $elm$core$Maybe$Just(stringRep),
-              value
+            $elm$browser$Debugger$Expando$view,
+            A2($elm$core$List$cons, stringRep, path),
+            _Utils_update(
+              expando,
+              { unexpanded: value }
             )
           );
         case "Primitive":
-          var stringRep = key.a;
+          var stringRep = _v5.a;
           return A2(
-            $elm$html$Html$map,
-            A2($elm$browser$Debugger$Expando$Index, $elm$browser$Debugger$Expando$Value, index),
-            A2(
-              $elm$browser$Debugger$Expando$view,
-              $elm$core$Maybe$Just(stringRep),
-              value
+            $elm$browser$Debugger$Expando$view,
+            A2($elm$core$List$cons, stringRep, path),
+            _Utils_update(
+              expando,
+              { unexpanded: value }
             )
           );
         default:
@@ -6652,21 +6999,19 @@
             _List_fromArray(
               [
                 A2(
-                  $elm$html$Html$map,
-                  A2($elm$browser$Debugger$Expando$Index, $elm$browser$Debugger$Expando$Key, index),
-                  A2(
-                    $elm$browser$Debugger$Expando$view,
-                    $elm$core$Maybe$Just("key"),
-                    key
+                  $elm$browser$Debugger$Expando$view,
+                  A2($elm$core$List$cons, "key", path),
+                  _Utils_update(
+                    expando,
+                    { unexpanded: key }
                   )
                 ),
                 A2(
-                  $elm$html$Html$map,
-                  A2($elm$browser$Debugger$Expando$Index, $elm$browser$Debugger$Expando$Value, index),
-                  A2(
-                    $elm$browser$Debugger$Expando$view,
-                    $elm$core$Maybe$Just("value"),
-                    value
+                  $elm$browser$Debugger$Expando$view,
+                  A2($elm$core$List$cons, "value", path),
+                  _Utils_update(
+                    expando,
+                    { unexpanded: value }
                   )
                 )
               ]
@@ -6675,16 +7020,65 @@
       }
     }
   );
-  var $elm$browser$Debugger$Expando$viewDictionaryOpen = function(keyValuePairs) {
-    return A2(
-      $elm$html$Html$div,
-      _List_Nil,
-      A2($elm$core$List$indexedMap, $elm$browser$Debugger$Expando$viewDictionaryEntry, keyValuePairs)
-    );
-  };
+  var $elm$browser$Debugger$Expando$viewDictionaryOpen = F3(
+    function(path, expando, keyValuePairs) {
+      var max = A2($elm$browser$Debugger$Expando$maximumItemsToView, path, expando);
+      return A2(
+        $elm$html$Html$div,
+        _List_Nil,
+        A6($elm$browser$Debugger$Expando$viewDictionaryOpenHelp, path, expando, 0, max, keyValuePairs, _List_Nil)
+      );
+    }
+  );
+  var $elm$browser$Debugger$Expando$viewDictionaryOpenHelp = F6(
+    function(path, expando, index, max, keyValuePairs, acc) {
+      viewDictionaryOpenHelp:
+        while (true) {
+          if (_Utils_cmp(index, max) < 0) {
+            if (!keyValuePairs.b) {
+              return $elm$core$List$reverse(acc);
+            } else {
+              var keyValue = keyValuePairs.a;
+              var rest = keyValuePairs.b;
+              var $temp$path = path, $temp$expando = expando, $temp$index = index + 1, $temp$max = max, $temp$keyValuePairs = rest, $temp$acc = A2(
+                $elm$core$List$cons,
+                A3(
+                  $elm$browser$Debugger$Expando$viewDictionaryEntry,
+                  A2(
+                    $elm$core$List$cons,
+                    $elm$core$String$fromInt(index),
+                    path
+                  ),
+                  expando,
+                  keyValue
+                ),
+                acc
+              );
+              path = $temp$path;
+              expando = $temp$expando;
+              index = $temp$index;
+              max = $temp$max;
+              keyValuePairs = $temp$keyValuePairs;
+              acc = $temp$acc;
+              continue viewDictionaryOpenHelp;
+            }
+          } else {
+            return $elm$core$List$reverse(
+              A2(
+                $elm$core$List$cons,
+                $elm$browser$Debugger$Expando$viewMoreButton(path),
+                acc
+              )
+            );
+          }
+        }
+    }
+  );
   var $elm$browser$Debugger$Expando$viewRecord = F3(
-    function(maybeKey, isClosed, record) {
-      var _v1 = isClosed ? _Utils_Tuple3(
+    function(path, expando, record) {
+      var maybeKey = $elm$core$List$head(path);
+      var isClosed = !A2($elm$core$Set$member, path, expando.expanded);
+      var _v2 = isClosed ? _Utils_Tuple3(
         $elm$browser$Debugger$Expando$viewTinyRecord(record).b,
         $elm$html$Html$text(""),
         $elm$html$Html$text("")
@@ -6694,7 +7088,7 @@
             $elm$html$Html$text("{")
           ]
         ),
-        $elm$browser$Debugger$Expando$viewRecordOpen(record),
+        A3($elm$browser$Debugger$Expando$viewRecordOpen, path, expando, record),
         A2(
           $elm$html$Html$div,
           $elm$browser$Debugger$Expando$leftPad(
@@ -6707,9 +7101,9 @@
           )
         )
       );
-      var start = _v1.a;
-      var middle = _v1.b;
-      var end = _v1.c;
+      var start = _v2.a;
+      var middle = _v2.b;
+      var end = _v2.c;
       return A2(
         $elm$html$Html$div,
         $elm$browser$Debugger$Expando$leftPad(maybeKey),
@@ -6719,7 +7113,9 @@
               $elm$html$Html$div,
               _List_fromArray(
                 [
-                  $elm$html$Html$Events$onClick($elm$browser$Debugger$Expando$Toggle)
+                  $elm$html$Html$Events$onClick(
+                    $elm$browser$Debugger$Expando$Toggle(path)
+                  )
                 ]
               ),
               A3(
@@ -6736,37 +7132,42 @@
       );
     }
   );
-  var $elm$browser$Debugger$Expando$viewRecordEntry = function(_v0) {
-    var field = _v0.a;
-    var value = _v0.b;
-    return A2(
-      $elm$html$Html$map,
-      $elm$browser$Debugger$Expando$Field(field),
-      A2(
+  var $elm$browser$Debugger$Expando$viewRecordEntry = F3(
+    function(path, expando, _v1) {
+      var field = _v1.a;
+      var value = _v1.b;
+      return A2(
         $elm$browser$Debugger$Expando$view,
-        $elm$core$Maybe$Just(field),
-        value
-      )
-    );
-  };
-  var $elm$browser$Debugger$Expando$viewRecordOpen = function(record) {
-    return A2(
-      $elm$html$Html$div,
-      _List_Nil,
-      A2(
-        $elm$core$List$map,
-        $elm$browser$Debugger$Expando$viewRecordEntry,
-        $elm$core$Dict$toList(record)
-      )
-    );
-  };
+        A2($elm$core$List$cons, field, path),
+        _Utils_update(
+          expando,
+          { unexpanded: value }
+        )
+      );
+    }
+  );
+  var $elm$browser$Debugger$Expando$viewRecordOpen = F3(
+    function(path, expando, record) {
+      return A2(
+        $elm$html$Html$div,
+        _List_Nil,
+        A2(
+          $elm$core$List$map,
+          A2($elm$browser$Debugger$Expando$viewRecordEntry, path, expando),
+          $elm$core$Dict$toList(record)
+        )
+      );
+    }
+  );
   var $elm$browser$Debugger$Expando$viewSequence = F4(
-    function(maybeKey, seqType, isClosed, valueList) {
+    function(path, seqType, expando, valueList) {
       var starter = A2(
         $elm$browser$Debugger$Expando$seqTypeToString,
         $elm$core$List$length(valueList),
         seqType
       );
+      var maybeKey = $elm$core$List$head(path);
+      var isClosed = !A2($elm$core$Set$member, path, expando.expanded);
       return A2(
         $elm$html$Html$div,
         $elm$browser$Debugger$Expando$leftPad(maybeKey),
@@ -6776,7 +7177,9 @@
               $elm$html$Html$div,
               _List_fromArray(
                 [
-                  $elm$html$Html$Events$onClick($elm$browser$Debugger$Expando$Toggle)
+                  $elm$html$Html$Events$onClick(
+                    $elm$browser$Debugger$Expando$Toggle(path)
+                  )
                 ]
               ),
               A3(
@@ -6790,19 +7193,57 @@
                 )
               )
             ),
-            isClosed ? $elm$html$Html$text("") : $elm$browser$Debugger$Expando$viewSequenceOpen(valueList)
+            isClosed ? $elm$html$Html$text("") : A3($elm$browser$Debugger$Expando$viewSequenceOpen, path, expando, valueList)
           ]
         )
       );
     }
   );
-  var $elm$browser$Debugger$Expando$viewSequenceOpen = function(values) {
-    return A2(
-      $elm$html$Html$div,
-      _List_Nil,
-      A2($elm$core$List$indexedMap, $elm$browser$Debugger$Expando$viewConstructorEntry, values)
-    );
-  };
+  var $elm$browser$Debugger$Expando$viewSequenceOpen = F3(
+    function(path, expando, values) {
+      var max = A2($elm$browser$Debugger$Expando$maximumItemsToView, path, expando);
+      return A2(
+        $elm$html$Html$div,
+        _List_Nil,
+        A6($elm$browser$Debugger$Expando$viewSequenceOpenHelp, path, expando, 0, max, values, _List_Nil)
+      );
+    }
+  );
+  var $elm$browser$Debugger$Expando$viewSequenceOpenHelp = F6(
+    function(path, expando, index, max, values, acc) {
+      viewSequenceOpenHelp:
+        while (true) {
+          if (_Utils_cmp(index, max) < 0) {
+            if (!values.b) {
+              return $elm$core$List$reverse(acc);
+            } else {
+              var value = values.a;
+              var rest = values.b;
+              var $temp$path = path, $temp$expando = expando, $temp$index = index + 1, $temp$max = max, $temp$values = rest, $temp$acc = A2(
+                $elm$core$List$cons,
+                A4($elm$browser$Debugger$Expando$viewConstructorEntry, path, expando, index, value),
+                acc
+              );
+              path = $temp$path;
+              expando = $temp$expando;
+              index = $temp$index;
+              max = $temp$max;
+              values = $temp$values;
+              acc = $temp$acc;
+              continue viewSequenceOpenHelp;
+            }
+          } else {
+            return $elm$core$List$reverse(
+              A2(
+                $elm$core$List$cons,
+                $elm$browser$Debugger$Expando$viewMoreButton(path),
+                acc
+              )
+            );
+          }
+        }
+    }
+  );
   var $elm$browser$Debugger$Main$viewExpando = F3(
     function(expandoMsg, expandoModel, layout) {
       var block = $elm$browser$Debugger$Main$toMouseBlocker(layout);
@@ -6845,7 +7286,7 @@
             A2(
               $elm$html$Html$map,
               $elm$browser$Debugger$Main$TweakExpandoMsg,
-              A2($elm$browser$Debugger$Expando$view, $elm$core$Maybe$Nothing, expandoMsg)
+              A2($elm$browser$Debugger$Expando$view, _List_Nil, expandoMsg)
             ),
             A2(
               $elm$html$Html$div,
@@ -6864,7 +7305,7 @@
             A2(
               $elm$html$Html$map,
               $elm$browser$Debugger$Main$TweakExpandoModel,
-              A2($elm$browser$Debugger$Expando$view, $elm$core$Maybe$Nothing, expandoModel)
+              A2($elm$browser$Debugger$Expando$view, _List_Nil, expandoModel)
             )
           ]
         )
@@ -6970,7 +7411,6 @@
     var len = _v0.a;
     return len;
   };
-  var $elm$core$Basics$neq = _Utils_notEqual;
   var $elm$virtual_dom$VirtualDom$keyedNode = function(tag) {
     return _VirtualDom_keyedNode(
       _VirtualDom_noScript(tag)
@@ -7678,6 +8118,7 @@
   var $elm$core$String$toInt = _String_toInt;
   var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty("type");
   var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty("value");
+  var $elm$browser$Debugger$Main$Pause = { $: "Pause" };
   var $elm$browser$Debugger$Main$viewPlayButton = function(playing) {
     return A2(
       $elm$html$Html$button,
@@ -7689,7 +8130,9 @@
           A2($elm$html$Html$Attributes$style, "cursor", "pointer"),
           A2($elm$html$Html$Attributes$style, "width", "36px"),
           A2($elm$html$Html$Attributes$style, "height", "36px"),
-          $elm$html$Html$Events$onClick($elm$browser$Debugger$Main$Resume)
+          $elm$html$Html$Events$onClick(
+            playing ? $elm$browser$Debugger$Main$Pause : $elm$browser$Debugger$Main$Resume
+          )
         ]
       ),
       _List_fromArray(
@@ -7815,6 +8258,7 @@
             A2($elm$html$Html$Attributes$style, "height", "100%"),
             A2($elm$html$Html$Attributes$style, "font-family", "monospace"),
             A2($elm$html$Html$Attributes$style, "display", "flex"),
+            A2($elm$html$Html$Attributes$style, "background-color", "white"),
             A2(
               $elm$html$Html$Attributes$style,
               "flex-direction",
@@ -8172,126 +8616,28 @@
       0
     );
   };
-  var $elm$core$Dict$map = F2(
-    function(func, dict) {
-      if (dict.$ === "RBEmpty_elm_builtin") {
-        return $elm$core$Dict$RBEmpty_elm_builtin;
-      } else {
-        var color = dict.a;
-        var key = dict.b;
-        var value = dict.c;
-        var left = dict.d;
-        var right = dict.e;
-        return A5(
-          $elm$core$Dict$RBNode_elm_builtin,
-          color,
-          key,
-          A2(func, key, value),
-          A2($elm$core$Dict$map, func, left),
-          A2($elm$core$Dict$map, func, right)
-        );
-      }
-    }
-  );
-  var $elm$core$Dict$sizeHelp = F2(
-    function(n, dict) {
-      sizeHelp:
-        while (true) {
-          if (dict.$ === "RBEmpty_elm_builtin") {
-            return n;
-          } else {
-            var left = dict.d;
-            var right = dict.e;
-            var $temp$n = A2($elm$core$Dict$sizeHelp, n + 1, right), $temp$dict = left;
-            n = $temp$n;
-            dict = $temp$dict;
-            continue sizeHelp;
-          }
-        }
-    }
-  );
-  var $elm$core$Dict$size = function(dict) {
-    return A2($elm$core$Dict$sizeHelp, 0, dict);
+  var $elm$core$Basics$identity = function(x) {
+    return x;
   };
-  var $elm$browser$Debugger$Expando$initHelp = F2(
-    function(isOuter, expando) {
-      switch (expando.$) {
-        case "S":
-          return expando;
-        case "Primitive":
-          return expando;
-        case "Sequence":
-          var seqType = expando.a;
-          var isClosed = expando.b;
-          var items = expando.c;
-          return isOuter ? A3(
-            $elm$browser$Debugger$Expando$Sequence,
-            seqType,
-            false,
-            A2(
-              $elm$core$List$map,
-              $elm$browser$Debugger$Expando$initHelp(false),
-              items
-            )
-          ) : $elm$core$List$length(items) <= 8 ? A3($elm$browser$Debugger$Expando$Sequence, seqType, false, items) : expando;
-        case "Dictionary":
-          var isClosed = expando.a;
-          var keyValuePairs = expando.b;
-          return isOuter ? A2(
-            $elm$browser$Debugger$Expando$Dictionary,
-            false,
-            A2(
-              $elm$core$List$map,
-              function(_v1) {
-                var k = _v1.a;
-                var v = _v1.b;
-                return _Utils_Tuple2(
-                  k,
-                  A2($elm$browser$Debugger$Expando$initHelp, false, v)
-                );
-              },
-              keyValuePairs
-            )
-          ) : $elm$core$List$length(keyValuePairs) <= 8 ? A2($elm$browser$Debugger$Expando$Dictionary, false, keyValuePairs) : expando;
-        case "Record":
-          var isClosed = expando.a;
-          var entries = expando.b;
-          return isOuter ? A2(
-            $elm$browser$Debugger$Expando$Record,
-            false,
-            A2(
-              $elm$core$Dict$map,
-              F2(
-                function(_v2, v) {
-                  return A2($elm$browser$Debugger$Expando$initHelp, false, v);
-                }
-              ),
-              entries
-            )
-          ) : $elm$core$Dict$size(entries) <= 4 ? A2($elm$browser$Debugger$Expando$Record, false, entries) : expando;
-        default:
-          var maybeName = expando.a;
-          var isClosed = expando.b;
-          var args = expando.c;
-          return isOuter ? A3(
-            $elm$browser$Debugger$Expando$Constructor,
-            maybeName,
-            false,
-            A2(
-              $elm$core$List$map,
-              $elm$browser$Debugger$Expando$initHelp(false),
-              args
-            )
-          ) : $elm$core$List$length(args) <= 4 ? A3($elm$browser$Debugger$Expando$Constructor, maybeName, false, args) : expando;
-      }
+  var $elm$core$Set$Set_elm_builtin = function(a) {
+    return { $: "Set_elm_builtin", a };
+  };
+  var $elm$core$Dict$singleton = F2(
+    function(key, value) {
+      return A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, key, value, $elm$core$Dict$RBEmpty_elm_builtin, $elm$core$Dict$RBEmpty_elm_builtin);
     }
   );
-  var $elm$browser$Debugger$Expando$init = function(value) {
-    return A2(
-      $elm$browser$Debugger$Expando$initHelp,
-      true,
-      _Debugger_init(value)
+  var $elm$core$Set$singleton = function(key) {
+    return $elm$core$Set$Set_elm_builtin(
+      A2($elm$core$Dict$singleton, key, _Utils_Tuple0)
     );
+  };
+  var $elm$browser$Debugger$Expando$init = function(value) {
+    return {
+      expanded: $elm$core$Set$singleton(_List_Nil),
+      unexpanded: _Debugger_toUnexpanded(value),
+      viewMore: $elm$core$Dict$empty
+    };
   };
   var $elm$core$Platform$Cmd$map = _Platform_map;
   var $elm$browser$Debugger$Overlay$None = { $: "None" };
@@ -8700,7 +9046,6 @@
   var $elm$browser$Debugger$Report$Fine = { $: "Fine" };
   var $elm$browser$Debugger$Report$Impossible = { $: "Impossible" };
   var $elm$browser$Debugger$Report$Risky = { $: "Risky" };
-  var $elm$core$Basics$not = _Basics_not;
   var $elm$core$List$isEmpty = function(xs) {
     if (!xs.b) {
       return true;
@@ -8892,6 +9237,27 @@
       )
     );
   };
+  var $elm$core$Dict$map = F2(
+    function(func, dict) {
+      if (dict.$ === "RBEmpty_elm_builtin") {
+        return $elm$core$Dict$RBEmpty_elm_builtin;
+      } else {
+        var color = dict.a;
+        var key = dict.b;
+        var value = dict.c;
+        var left = dict.d;
+        var right = dict.e;
+        return A5(
+          $elm$core$Dict$RBNode_elm_builtin,
+          color,
+          key,
+          A2(func, key, value),
+          A2($elm$core$Dict$map, func, left),
+          A2($elm$core$Dict$map, func, right)
+        );
+      }
+    }
+  );
   var $elm$browser$Debugger$Metadata$encodeDict = F2(
     function(f, dict) {
       return $elm$json$Json$Encode$object(
@@ -8984,9 +9350,6 @@
         ]
       )
     );
-  };
-  var $elm$core$Basics$identity = function(x) {
-    return x;
   };
   var $elm$core$Task$Perform = function(a) {
     return { $: "Perform", a };
@@ -9233,155 +9596,13 @@
         }
       }
   };
-  var $elm$core$Dict$get = F2(
-    function(targetKey, dict) {
-      get:
-        while (true) {
-          if (dict.$ === "RBEmpty_elm_builtin") {
-            return $elm$core$Maybe$Nothing;
-          } else {
-            var key = dict.b;
-            var value = dict.c;
-            var left = dict.d;
-            var right = dict.e;
-            var _v1 = A2($elm$core$Basics$compare, targetKey, key);
-            switch (_v1.$) {
-              case "LT":
-                var $temp$targetKey = targetKey, $temp$dict = left;
-                targetKey = $temp$targetKey;
-                dict = $temp$dict;
-                continue get;
-              case "EQ":
-                return $elm$core$Maybe$Just(value);
-              default:
-                var $temp$targetKey = targetKey, $temp$dict = right;
-                targetKey = $temp$targetKey;
-                dict = $temp$dict;
-                continue get;
-            }
-          }
-        }
-    }
-  );
-  var $elm$browser$Debugger$Expando$mergeDictHelp = F3(
-    function(oldDict, key, value) {
-      var _v12 = A2($elm$core$Dict$get, key, oldDict);
-      if (_v12.$ === "Nothing") {
-        return value;
-      } else {
-        var oldValue = _v12.a;
-        return A2($elm$browser$Debugger$Expando$mergeHelp, oldValue, value);
-      }
-    }
-  );
-  var $elm$browser$Debugger$Expando$mergeHelp = F2(
-    function(old, _new) {
-      var _v3 = _Utils_Tuple2(old, _new);
-      _v3$6:
-        while (true) {
-          switch (_v3.b.$) {
-            case "S":
-              return _new;
-            case "Primitive":
-              return _new;
-            case "Sequence":
-              if (_v3.a.$ === "Sequence") {
-                var _v4 = _v3.a;
-                var isClosed = _v4.b;
-                var oldValues = _v4.c;
-                var _v5 = _v3.b;
-                var seqType = _v5.a;
-                var newValues = _v5.c;
-                return A3(
-                  $elm$browser$Debugger$Expando$Sequence,
-                  seqType,
-                  isClosed,
-                  A2($elm$browser$Debugger$Expando$mergeListHelp, oldValues, newValues)
-                );
-              } else {
-                break _v3$6;
-              }
-            case "Dictionary":
-              if (_v3.a.$ === "Dictionary") {
-                var _v6 = _v3.a;
-                var isClosed = _v6.a;
-                var _v7 = _v3.b;
-                var keyValuePairs = _v7.b;
-                return A2($elm$browser$Debugger$Expando$Dictionary, isClosed, keyValuePairs);
-              } else {
-                break _v3$6;
-              }
-            case "Record":
-              if (_v3.a.$ === "Record") {
-                var _v8 = _v3.a;
-                var isClosed = _v8.a;
-                var oldDict = _v8.b;
-                var _v9 = _v3.b;
-                var newDict = _v9.b;
-                return A2(
-                  $elm$browser$Debugger$Expando$Record,
-                  isClosed,
-                  A2(
-                    $elm$core$Dict$map,
-                    $elm$browser$Debugger$Expando$mergeDictHelp(oldDict),
-                    newDict
-                  )
-                );
-              } else {
-                break _v3$6;
-              }
-            default:
-              if (_v3.a.$ === "Constructor") {
-                var _v10 = _v3.a;
-                var isClosed = _v10.b;
-                var oldValues = _v10.c;
-                var _v11 = _v3.b;
-                var maybeName = _v11.a;
-                var newValues = _v11.c;
-                return A3(
-                  $elm$browser$Debugger$Expando$Constructor,
-                  maybeName,
-                  isClosed,
-                  A2($elm$browser$Debugger$Expando$mergeListHelp, oldValues, newValues)
-                );
-              } else {
-                break _v3$6;
-              }
-          }
-        }
-      return _new;
-    }
-  );
-  var $elm$browser$Debugger$Expando$mergeListHelp = F2(
-    function(olds, news) {
-      var _v0 = _Utils_Tuple2(olds, news);
-      if (!_v0.a.b) {
-        return news;
-      } else {
-        if (!_v0.b.b) {
-          return news;
-        } else {
-          var _v1 = _v0.a;
-          var x = _v1.a;
-          var xs = _v1.b;
-          var _v2 = _v0.b;
-          var y = _v2.a;
-          var ys = _v2.b;
-          return A2(
-            $elm$core$List$cons,
-            A2($elm$browser$Debugger$Expando$mergeHelp, x, y),
-            A2($elm$browser$Debugger$Expando$mergeListHelp, xs, ys)
-          );
-        }
-      }
-    }
-  );
   var $elm$browser$Debugger$Expando$merge = F2(
     function(value, expando) {
-      return A2(
-        $elm$browser$Debugger$Expando$mergeHelp,
+      return _Utils_update(
         expando,
-        _Debugger_init(value)
+        {
+          unexpanded: _Debugger_toUnexpanded(value)
+        }
       );
     }
   );
@@ -9529,6 +9750,14 @@
       return A3($elm$browser$Debugger$Main$Horizontal, s, x, y);
     }
   };
+  var $elm$core$Set$insert = F2(
+    function(key, _v0) {
+      var dict = _v0.a;
+      return $elm$core$Set$Set_elm_builtin(
+        A3($elm$core$Dict$insert, key, _Utils_Tuple0, dict)
+      );
+    }
+  );
   var $elm$core$Dict$getMin = function(dict) {
     getMin:
       while (true) {
@@ -9913,6 +10142,14 @@
       }
     }
   );
+  var $elm$core$Set$remove = F2(
+    function(key, _v0) {
+      var dict = _v0.a;
+      return $elm$core$Set$Set_elm_builtin(
+        A2($elm$core$Dict$remove, key, dict)
+      );
+    }
+  );
   var $elm$core$Dict$update = F3(
     function(targetKey, alter, dictionary) {
       var _v0 = alter(
@@ -9926,176 +10163,31 @@
       }
     }
   );
-  var $elm$browser$Debugger$Expando$updateIndex = F3(
-    function(n, func, list) {
-      if (!list.b) {
-        return _List_Nil;
-      } else {
-        var x = list.a;
-        var xs = list.b;
-        return n <= 0 ? A2(
-          $elm$core$List$cons,
-          func(x),
-          xs
-        ) : A2(
-          $elm$core$List$cons,
-          x,
-          A3($elm$browser$Debugger$Expando$updateIndex, n - 1, func, xs)
-        );
-      }
+  var $elm$browser$Debugger$Expando$updateViewMoreCount = function(maybeCount) {
+    if (maybeCount.$ === "Just") {
+      var count = maybeCount.a;
+      return $elm$core$Maybe$Just(count + 1);
+    } else {
+      return $elm$core$Maybe$Just(2);
     }
-  );
+  };
   var $elm$browser$Debugger$Expando$update = F2(
-    function(msg, value) {
-      switch (value.$) {
-        case "S":
-          return value;
-        case "Primitive":
-          return value;
-        case "Sequence":
-          var seqType = value.a;
-          var isClosed = value.b;
-          var valueList = value.c;
-          switch (msg.$) {
-            case "Toggle":
-              return A3($elm$browser$Debugger$Expando$Sequence, seqType, !isClosed, valueList);
-            case "Index":
-              if (msg.a.$ === "None") {
-                var _v3 = msg.a;
-                var index = msg.b;
-                var subMsg = msg.c;
-                return A3(
-                  $elm$browser$Debugger$Expando$Sequence,
-                  seqType,
-                  isClosed,
-                  A3(
-                    $elm$browser$Debugger$Expando$updateIndex,
-                    index,
-                    $elm$browser$Debugger$Expando$update(subMsg),
-                    valueList
-                  )
-                );
-              } else {
-                return value;
-              }
-            default:
-              return value;
+    function(msg, expando) {
+      if (msg.$ === "Toggle") {
+        var path = msg.a;
+        return _Utils_update(
+          expando,
+          {
+            expanded: A2($elm$core$Set$member, path, expando.expanded) ? A2($elm$core$Set$remove, path, expando.expanded) : A2($elm$core$Set$insert, path, expando.expanded)
           }
-        case "Dictionary":
-          var isClosed = value.a;
-          var keyValuePairs = value.b;
-          switch (msg.$) {
-            case "Toggle":
-              return A2($elm$browser$Debugger$Expando$Dictionary, !isClosed, keyValuePairs);
-            case "Index":
-              var redirect = msg.a;
-              var index = msg.b;
-              var subMsg = msg.c;
-              switch (redirect.$) {
-                case "None":
-                  return value;
-                case "Key":
-                  return A2(
-                    $elm$browser$Debugger$Expando$Dictionary,
-                    isClosed,
-                    A3(
-                      $elm$browser$Debugger$Expando$updateIndex,
-                      index,
-                      function(_v6) {
-                        var k = _v6.a;
-                        var v = _v6.b;
-                        return _Utils_Tuple2(
-                          A2($elm$browser$Debugger$Expando$update, subMsg, k),
-                          v
-                        );
-                      },
-                      keyValuePairs
-                    )
-                  );
-                default:
-                  return A2(
-                    $elm$browser$Debugger$Expando$Dictionary,
-                    isClosed,
-                    A3(
-                      $elm$browser$Debugger$Expando$updateIndex,
-                      index,
-                      function(_v7) {
-                        var k = _v7.a;
-                        var v = _v7.b;
-                        return _Utils_Tuple2(
-                          k,
-                          A2($elm$browser$Debugger$Expando$update, subMsg, v)
-                        );
-                      },
-                      keyValuePairs
-                    )
-                  );
-              }
-            default:
-              return value;
-          }
-        case "Record":
-          var isClosed = value.a;
-          var valueDict = value.b;
-          switch (msg.$) {
-            case "Toggle":
-              return A2($elm$browser$Debugger$Expando$Record, !isClosed, valueDict);
-            case "Index":
-              return value;
-            default:
-              var field = msg.a;
-              var subMsg = msg.b;
-              return A2(
-                $elm$browser$Debugger$Expando$Record,
-                isClosed,
-                A3(
-                  $elm$core$Dict$update,
-                  field,
-                  $elm$browser$Debugger$Expando$updateField(subMsg),
-                  valueDict
-                )
-              );
-          }
-        default:
-          var maybeName = value.a;
-          var isClosed = value.b;
-          var valueList = value.c;
-          switch (msg.$) {
-            case "Toggle":
-              return A3($elm$browser$Debugger$Expando$Constructor, maybeName, !isClosed, valueList);
-            case "Index":
-              if (msg.a.$ === "None") {
-                var _v10 = msg.a;
-                var index = msg.b;
-                var subMsg = msg.c;
-                return A3(
-                  $elm$browser$Debugger$Expando$Constructor,
-                  maybeName,
-                  isClosed,
-                  A3(
-                    $elm$browser$Debugger$Expando$updateIndex,
-                    index,
-                    $elm$browser$Debugger$Expando$update(subMsg),
-                    valueList
-                  )
-                );
-              } else {
-                return value;
-              }
-            default:
-              return value;
-          }
-      }
-    }
-  );
-  var $elm$browser$Debugger$Expando$updateField = F2(
-    function(msg, maybeExpando) {
-      if (maybeExpando.$ === "Nothing") {
-        return maybeExpando;
+        );
       } else {
-        var expando = maybeExpando.a;
-        return $elm$core$Maybe$Just(
-          A2($elm$browser$Debugger$Expando$update, msg, expando)
+        var path = msg.a;
+        return _Utils_update(
+          expando,
+          {
+            viewMore: A3($elm$core$Dict$update, path, $elm$browser$Debugger$Expando$updateViewMoreCount, expando.viewMore)
+          }
         );
       }
     }
@@ -10207,13 +10299,26 @@
                 ),
                 $elm$core$Platform$Cmd$none
               );
-            case "Resume":
+            case "Pause":
               var _v3 = model.state;
               if (_v3.$ === "Running") {
-                return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+                var size = $elm$browser$Debugger$History$size(model.history);
+                return !size ? _Utils_Tuple2(model, $elm$core$Platform$Cmd$none) : _Utils_Tuple2(
+                  A3($elm$browser$Debugger$Main$jumpUpdate, update, size - 1, model),
+                  $elm$core$Platform$Cmd$none
+                );
               } else {
                 var userModel = _v3.c;
                 var userMsg = _v3.d;
+                return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+              }
+            case "Resume":
+              var _v4 = model.state;
+              if (_v4.$ === "Running") {
+                return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+              } else {
+                var userModel = _v4.c;
+                var userMsg = _v4.d;
                 return _Utils_Tuple2(
                   _Utils_update(
                     model,
@@ -10252,12 +10357,12 @@
                 )
               );
             case "Up":
-              var _v4 = model.state;
-              if (_v4.$ === "Running") {
+              var _v5 = model.state;
+              if (_v5.$ === "Running") {
                 return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
               } else {
-                var i = _v4.a;
-                var history2 = _v4.e;
+                var i = _v5.a;
+                var history2 = _v5.e;
                 var targetIndex = i + 1;
                 if (_Utils_cmp(
                   targetIndex,
@@ -10277,8 +10382,8 @@
                 }
               }
             case "Down":
-              var _v5 = model.state;
-              if (_v5.$ === "Running") {
+              var _v6 = model.state;
+              if (_v6.$ === "Running") {
                 var $temp$update = update, $temp$msg = $elm$browser$Debugger$Main$Jump(
                   $elm$browser$Debugger$History$size(model.history) - 1
                 ), $temp$model = model;
@@ -10287,7 +10392,7 @@
                 model = $temp$model;
                 continue wrapUpdate;
               } else {
-                var index = _v5.a;
+                var index = _v6.a;
                 if (index > 0) {
                   var $temp$update = update, $temp$msg = $elm$browser$Debugger$Main$SliderJump(index - 1), $temp$model = model;
                   update = $temp$update;
@@ -10302,7 +10407,7 @@
               return A2(
                 $elm$browser$Debugger$Main$withGoodMetadata,
                 model,
-                function(_v6) {
+                function(_v7) {
                   return _Utils_Tuple2(
                     model,
                     $elm$browser$Debugger$Main$upload(model.popout)
@@ -10326,9 +10431,9 @@
                 $elm$browser$Debugger$Main$withGoodMetadata,
                 model,
                 function(metadata) {
-                  var _v7 = A2($elm$browser$Debugger$Overlay$assessImport, metadata, jsonString);
-                  if (_v7.$ === "Err") {
-                    var newOverlay = _v7.a;
+                  var _v8 = A2($elm$browser$Debugger$Overlay$assessImport, metadata, jsonString);
+                  if (_v8.$ === "Err") {
+                    var newOverlay = _v8.a;
                     return _Utils_Tuple2(
                       _Utils_update(
                         model,
@@ -10337,15 +10442,15 @@
                       $elm$core$Platform$Cmd$none
                     );
                   } else {
-                    var rawHistory2 = _v7.a;
+                    var rawHistory2 = _v8.a;
                     return A3($elm$browser$Debugger$Main$loadNewHistory, rawHistory2, update, model);
                   }
                 }
               );
             case "OverlayMsg":
               var overlayMsg = msg.a;
-              var _v8 = A2($elm$browser$Debugger$Overlay$close, overlayMsg, model.overlay);
-              if (_v8.$ === "Nothing") {
+              var _v9 = A2($elm$browser$Debugger$Overlay$close, overlayMsg, model.overlay);
+              if (_v9.$ === "Nothing") {
                 return _Utils_Tuple2(
                   _Utils_update(
                     model,
@@ -10354,7 +10459,7 @@
                   $elm$core$Platform$Cmd$none
                 );
               } else {
-                var rawHistory = _v8.a;
+                var rawHistory = _v9.a;
                 return A3($elm$browser$Debugger$Main$loadNewHistory, rawHistory, update, model);
               }
             case "SwapLayout":
@@ -10555,7 +10660,7 @@
   };
   var $elm$browser$Browser$element = _Browser_element;
   var $author$project$Model$ContentsIndex = { $: "ContentsIndex" };
-  var $author$project$IIIF$Language$LanguageCode = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Language$LanguageCode = function(a) {
     return { $: "LanguageCode", a };
   };
   var $author$project$Model$Loading = { $: "Loading" };
@@ -10571,11 +10676,9 @@
       return { $: "ViewportChanged", a, b };
     }
   );
-  var $elm$core$Set$Set_elm_builtin = function(a) {
-    return { $: "Set_elm_builtin", a };
-  };
   var $elm$core$Set$empty = $elm$core$Set$Set_elm_builtin($elm$core$Dict$empty);
   var $elm$browser$Browser$Dom$getViewport = _Browser_withWindow(_Browser_getViewport);
+  var $author$project$Auth$init = { activeInteractive: $elm$core$Maybe$Nothing, activePrompt: $elm$core$Maybe$Nothing, destroyed: false, familyStates: $elm$core$Dict$empty, flows: $elm$core$Dict$empty, nextOperation: 0, operations: $elm$core$Dict$empty, pending: $elm$core$Dict$empty, promptQueue: _List_Nil, sessions: $elm$core$Dict$empty, sources: $elm$core$Dict$empty };
   var $elm$http$Http$BadStatus_ = F2(
     function(a, b) {
       return { $: "BadStatus_", a, b };
@@ -10864,7 +10967,7 @@
       )
     );
   };
-  var $author$project$IIIF$Internal$Request$request = F3(
+  var $rism_digital$elm_iiif$IIIF$Internal$Request$request = F3(
     function(acceptHeaders, expect, url) {
       return $elm$http$Http$request(
         {
@@ -10914,7 +11017,7 @@
       );
     }
   );
-  var $author$project$IIIF$Internal$Contexts$contextMatches = F2(
+  var $rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches = F2(
     function(expected, actual) {
       return _Utils_eq(actual, expected) || _Utils_eq(
         actual,
@@ -10923,42 +11026,42 @@
     }
   );
   var $elm$json$Json$Decode$fail = _Json_fail;
-  var $author$project$IIIF$Internal$Contexts$iiifV2PresentationContextString = "http://iiif.io/api/presentation/2/context.json";
-  var $author$project$IIIF$Internal$Contexts$iiifV3PresentationContextString = "http://iiif.io/api/presentation/3/context.json";
-  var $author$project$IIIF$Presentation$IIIFCanvas = F2(
+  var $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV2PresentationContextString = "http://iiif.io/api/presentation/2/context.json";
+  var $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV3PresentationContextString = "http://iiif.io/api/presentation/3/context.json";
+  var $rism_digital$elm_iiif$IIIF$Presentation$IIIFCanvas = F2(
     function(a, b) {
       return { $: "IIIFCanvas", a, b };
     }
   );
-  var $author$project$IIIF$Presentation$IIIFCollection = F2(
+  var $rism_digital$elm_iiif$IIIF$Presentation$IIIFCollection = F2(
     function(a, b) {
       return { $: "IIIFCollection", a, b };
     }
   );
-  var $author$project$IIIF$Presentation$IIIFManifest = F2(
+  var $rism_digital$elm_iiif$IIIF$Presentation$IIIFManifest = F2(
     function(a, b) {
       return { $: "IIIFManifest", a, b };
     }
   );
-  var $author$project$IIIF$Presentation$IIIFRange = F2(
+  var $rism_digital$elm_iiif$IIIF$Presentation$IIIFRange = F2(
     function(a, b) {
       return { $: "IIIFRange", a, b };
     }
   );
-  var $author$project$IIIF$Version$IIIFV2 = { $: "IIIFV2" };
-  var $author$project$IIIF$Presentation$ResourceCanvas = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Version$IIIFV2 = { $: "IIIFV2" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$ResourceCanvas = function(a) {
     return { $: "ResourceCanvas", a };
   };
-  var $author$project$IIIF$Presentation$ResourceCollection = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$ResourceCollection = function(a) {
     return { $: "ResourceCollection", a };
   };
-  var $author$project$IIIF$Presentation$ResourceManifest = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$ResourceManifest = function(a) {
     return { $: "ResourceManifest", a };
   };
-  var $author$project$IIIF$Presentation$ResourceRange = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$ResourceRange = function(a) {
     return { $: "ResourceRange", a };
   };
-  var $author$project$IIIF$Presentation$Canvas = F7(
+  var $rism_digital$elm_iiif$IIIF$Presentation$Canvas = F7(
     function(id, label, width, height, images, thumbnail, viewingLayout) {
       return { height, id, images, label, thumbnail, viewingLayout, width };
     }
@@ -10973,7 +11076,7 @@
       )
     );
   };
-  var $author$project$IIIF$Internal$Utilities$applyDecoder = F2(
+  var $rism_digital$elm_iiif$IIIF$Internal$Utilities$applyDecoder = F2(
     function(valueDecoder, pipeline) {
       return A3(
         $elm$json$Json$Decode$map2,
@@ -10987,7 +11090,7 @@
       );
     }
   );
-  var $author$project$IIIF$Internal$Utilities$optional = F4(
+  var $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional = F4(
     function(field, decoder, fallback, pipeline) {
       var fieldDecoder = $elm$json$Json$Decode$oneOf(
         _List_fromArray(
@@ -10997,28 +11100,19 @@
           ]
         )
       );
-      return A2($author$project$IIIF$Internal$Utilities$applyDecoder, fieldDecoder, pipeline);
+      return A2($rism_digital$elm_iiif$IIIF$Internal$Utilities$applyDecoder, fieldDecoder, pipeline);
     }
   );
-  var $author$project$IIIF$Internal$Utilities$required = F3(
+  var $rism_digital$elm_iiif$IIIF$Internal$Utilities$required = F3(
     function(field, decoder, pipeline) {
       return A2(
-        $author$project$IIIF$Internal$Utilities$applyDecoder,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$applyDecoder,
         A2($elm$json$Json$Decode$field, field, decoder),
         pipeline
       );
     }
   );
-  var $elm$core$List$head = function(list) {
-    if (list.b) {
-      var x = list.a;
-      var xs = list.b;
-      return $elm$core$Maybe$Just(x);
-    } else {
-      return $elm$core$Maybe$Nothing;
-    }
-  };
-  var $author$project$IIIF$Internal$SharedDecoders$thumbnailDecoder = function(imageDecoder) {
+  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$thumbnailDecoder = function(imageDecoder) {
     return $elm$json$Json$Decode$oneOf(
       _List_fromArray(
         [
@@ -11032,29 +11126,29 @@
       )
     );
   };
-  var $author$project$IIIF$Internal$V2PresentationDecoders$unwrapDecoderLists = $elm$core$List$concat;
-  var $author$project$IIIF$Presentation$ChoiceImage = { $: "ChoiceImage" };
-  var $author$project$IIIF$Presentation$Image = F5(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$unwrapDecoderLists = $elm$core$List$concat;
+  var $rism_digital$elm_iiif$IIIF$Presentation$ChoiceImage = { $: "ChoiceImage" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$Image = F5(
     function(id, label, imageType, service, serviceObjects) {
       return { id, imageType, label, service, serviceObjects };
     }
   );
-  var $author$project$IIIF$Presentation$PrimaryImage = { $: "PrimaryImage" };
-  var $author$project$IIIF$Internal$Utilities$custom = F2(
+  var $rism_digital$elm_iiif$IIIF$Presentation$PrimaryImage = { $: "PrimaryImage" };
+  var $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom = F2(
     function(decoder, pipeline) {
-      return A2($author$project$IIIF$Internal$Utilities$applyDecoder, decoder, pipeline);
+      return A2($rism_digital$elm_iiif$IIIF$Internal$Utilities$applyDecoder, decoder, pipeline);
     }
   );
-  var $author$project$IIIF$Internal$Utilities$hardcoded = F2(
+  var $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded = F2(
     function(value, pipeline) {
       return A2(
-        $author$project$IIIF$Internal$Utilities$applyDecoder,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$applyDecoder,
         $elm$json$Json$Decode$succeed(value),
         pipeline
       );
     }
   );
-  var $author$project$IIIF$Image$StaticImageUri = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$StaticImageUri = function(a) {
     return { $: "StaticImageUri", a };
   };
   var $elm$core$Maybe$andThen = F2(
@@ -11079,7 +11173,7 @@
       }
     }
   );
-  var $author$project$IIIF$Image$decomposeUrl = function(_v0) {
+  var $rism_digital$elm_iiif$IIIF$Image$decomposeUrl = function(_v0) {
     var protocol = _v0.protocol;
     var host = _v0.host;
     var port_ = _v0.port_;
@@ -11119,12 +11213,12 @@
     };
   };
   var $elm$core$String$endsWith = _String_endsWith;
-  var $author$project$IIIF$Image$ImageRequestParameters = F7(
+  var $rism_digital$elm_iiif$IIIF$Image$ImageRequestParameters = F7(
     function(host, prefix, region, size, rotation, quality, format) {
       return { format, host, prefix, quality, region, rotation, size };
     }
   );
-  var $author$project$IIIF$Image$ImageUri = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$ImageUri = function(a) {
     return { $: "ImageUri", a };
   };
   var $elm$core$Maybe$map2 = F3(
@@ -11144,34 +11238,34 @@
       }
     }
   );
-  var $author$project$IIIF$Internal$Utilities$applyMaybe = F2(
+  var $rism_digital$elm_iiif$IIIF$Internal$Utilities$applyMaybe = F2(
     function(argParser, funcParser) {
       return A3($elm$core$Maybe$map2, $elm$core$Basics$apL, funcParser, argParser);
     }
   );
-  var $author$project$IIIF$Image$GifFormat = { $: "GifFormat" };
-  var $author$project$IIIF$Image$Jp2Format = { $: "Jp2Format" };
-  var $author$project$IIIF$Image$JpegFormat = { $: "JpegFormat" };
-  var $author$project$IIIF$Image$PdfFormat = { $: "PdfFormat" };
-  var $author$project$IIIF$Image$PngFormat = { $: "PngFormat" };
-  var $author$project$IIIF$Image$TiffFormat = { $: "TiffFormat" };
-  var $author$project$IIIF$Image$WebpFormat = { $: "WebpFormat" };
-  var $author$project$IIIF$Image$formatParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$GifFormat = { $: "GifFormat" };
+  var $rism_digital$elm_iiif$IIIF$Image$Jp2Format = { $: "Jp2Format" };
+  var $rism_digital$elm_iiif$IIIF$Image$JpegFormat = { $: "JpegFormat" };
+  var $rism_digital$elm_iiif$IIIF$Image$PdfFormat = { $: "PdfFormat" };
+  var $rism_digital$elm_iiif$IIIF$Image$PngFormat = { $: "PngFormat" };
+  var $rism_digital$elm_iiif$IIIF$Image$TiffFormat = { $: "TiffFormat" };
+  var $rism_digital$elm_iiif$IIIF$Image$WebpFormat = { $: "WebpFormat" };
+  var $rism_digital$elm_iiif$IIIF$Image$formatParser = function(inp) {
     var _v0 = A2($elm$core$String$split, ".", inp);
     if (_v0.b && _v0.b.b && !_v0.b.b.b) {
       var _v1 = _v0.b;
       var format = _v1.a;
-      return format === "jpg" ? $elm$core$Maybe$Just($author$project$IIIF$Image$JpegFormat) : format === "tif" ? $elm$core$Maybe$Just($author$project$IIIF$Image$TiffFormat) : format === "png" ? $elm$core$Maybe$Just($author$project$IIIF$Image$PngFormat) : format === "gif" ? $elm$core$Maybe$Just($author$project$IIIF$Image$GifFormat) : format === "jp2" ? $elm$core$Maybe$Just($author$project$IIIF$Image$Jp2Format) : format === "pdf" ? $elm$core$Maybe$Just($author$project$IIIF$Image$PdfFormat) : format === "webp" ? $elm$core$Maybe$Just($author$project$IIIF$Image$WebpFormat) : $elm$core$Maybe$Nothing;
+      return format === "jpg" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$JpegFormat) : format === "tif" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$TiffFormat) : format === "png" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$PngFormat) : format === "gif" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$GifFormat) : format === "jp2" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$Jp2Format) : format === "pdf" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$PdfFormat) : format === "webp" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$WebpFormat) : $elm$core$Maybe$Nothing;
     } else {
       return $elm$core$Maybe$Nothing;
     }
   };
-  var $author$project$IIIF$Image$FullRegion = { $: "FullRegion" };
-  var $author$project$IIIF$Image$SquareRegion = { $: "SquareRegion" };
-  var $author$project$IIIF$Image$fullSquareRegionParser = function(inp) {
-    return inp === "full" ? $elm$core$Maybe$Just($author$project$IIIF$Image$FullRegion) : inp === "square" ? $elm$core$Maybe$Just($author$project$IIIF$Image$SquareRegion) : $elm$core$Maybe$Nothing;
+  var $rism_digital$elm_iiif$IIIF$Image$FullRegion = { $: "FullRegion" };
+  var $rism_digital$elm_iiif$IIIF$Image$SquareRegion = { $: "SquareRegion" };
+  var $rism_digital$elm_iiif$IIIF$Image$fullSquareRegionParser = function(inp) {
+    return inp === "full" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$FullRegion) : inp === "square" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$SquareRegion) : $elm$core$Maybe$Nothing;
   };
-  var $author$project$IIIF$Internal$Utilities$oneOfMaybes = F2(
+  var $rism_digital$elm_iiif$IIIF$Internal$Utilities$oneOfMaybes = F2(
     function(fmbs, a) {
       oneOfMaybes:
         while (true) {
@@ -11194,11 +11288,11 @@
         }
     }
   );
-  var $author$project$IIIF$Image$PctSizeRegion = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$PctSizeRegion = function(a) {
     return { $: "PctSizeRegion", a };
   };
   var $elm$core$String$toFloat = _String_toFloat;
-  var $author$project$IIIF$Image$pctSizeRegionParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$pctSizeRegionParser = function(inp) {
     var transformedInput = A2(
       $elm$core$List$filterMap,
       $elm$core$String$toFloat,
@@ -11217,7 +11311,7 @@
       var _v3 = _v2.b;
       var h = _v3.a;
       return $elm$core$Maybe$Just(
-        $author$project$IIIF$Image$PctSizeRegion(
+        $rism_digital$elm_iiif$IIIF$Image$PctSizeRegion(
           { h, w, x, y }
         )
       );
@@ -11225,10 +11319,10 @@
       return $elm$core$Maybe$Nothing;
     }
   };
-  var $author$project$IIIF$Image$SizeRegion = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$SizeRegion = function(a) {
     return { $: "SizeRegion", a };
   };
-  var $author$project$IIIF$Image$sizeRegionParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$sizeRegionParser = function(inp) {
     var transformedInput = A2(
       $elm$core$List$filterMap,
       $elm$core$String$toInt,
@@ -11243,7 +11337,7 @@
       var _v3 = _v2.b;
       var h = _v3.a;
       return $elm$core$Maybe$Just(
-        $author$project$IIIF$Image$SizeRegion(
+        $rism_digital$elm_iiif$IIIF$Image$SizeRegion(
           { h, w, x, y }
         )
       );
@@ -11251,40 +11345,40 @@
       return $elm$core$Maybe$Nothing;
     }
   };
-  var $author$project$IIIF$Image$imageRegionParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$imageRegionParser = function(inp) {
     return A2(
-      $author$project$IIIF$Internal$Utilities$oneOfMaybes,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$oneOfMaybes,
       _List_fromArray(
-        [$author$project$IIIF$Image$fullSquareRegionParser, $author$project$IIIF$Image$sizeRegionParser, $author$project$IIIF$Image$pctSizeRegionParser]
+        [$rism_digital$elm_iiif$IIIF$Image$fullSquareRegionParser, $rism_digital$elm_iiif$IIIF$Image$sizeRegionParser, $rism_digital$elm_iiif$IIIF$Image$pctSizeRegionParser]
       ),
       inp
     );
   };
-  var $author$project$IIIF$Image$ExactHeightOnlySize = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$ExactHeightOnlySize = function(a) {
     return { $: "ExactHeightOnlySize", a };
   };
-  var $author$project$IIIF$Image$exactHeightOnlySizeParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$exactHeightOnlySizeParser = function(inp) {
     return A2($elm$core$String$startsWith, "^,", inp) ? A2(
       $elm$core$Maybe$map,
-      $author$project$IIIF$Image$ExactHeightOnlySize,
+      $rism_digital$elm_iiif$IIIF$Image$ExactHeightOnlySize,
       $elm$core$String$toInt(
         A2($elm$core$String$dropLeft, 2, inp)
       )
     ) : $elm$core$Maybe$Nothing;
   };
-  var $author$project$IIIF$Image$ExactPercentSize = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$ExactPercentSize = function(a) {
     return { $: "ExactPercentSize", a };
   };
-  var $author$project$IIIF$Image$exactPercentSizeParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$exactPercentSizeParser = function(inp) {
     return A2($elm$core$String$startsWith, "^pct:", inp) ? A2(
       $elm$core$Maybe$map,
-      $author$project$IIIF$Image$ExactPercentSize,
+      $rism_digital$elm_iiif$IIIF$Image$ExactPercentSize,
       $elm$core$String$toFloat(
         A2($elm$core$String$dropLeft, 5, inp)
       )
     ) : $elm$core$Maybe$Nothing;
   };
-  var $author$project$IIIF$Image$ExactScaledWidthAndHeightSize = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$ExactScaledWidthAndHeightSize = function(a) {
     return { $: "ExactScaledWidthAndHeightSize", a };
   };
   var $elm$core$Tuple$pair = F2(
@@ -11292,7 +11386,7 @@
       return _Utils_Tuple2(a, b);
     }
   );
-  var $author$project$IIIF$Image$whSizeParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$whSizeParser = function(inp) {
     var _v0 = A2($elm$core$String$split, ",", inp);
     if (_v0.b && _v0.b.b && !_v0.b.b.b) {
       var width = _v0.a;
@@ -11308,28 +11402,28 @@
       return $elm$core$Maybe$Nothing;
     }
   };
-  var $author$project$IIIF$Image$exactScaledWidthAndHeightSizeParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$exactScaledWidthAndHeightSizeParser = function(inp) {
     return A2($elm$core$String$startsWith, "^!", inp) ? A2(
       $elm$core$Maybe$map,
-      $author$project$IIIF$Image$ExactScaledWidthAndHeightSize,
-      $author$project$IIIF$Image$whSizeParser(
+      $rism_digital$elm_iiif$IIIF$Image$ExactScaledWidthAndHeightSize,
+      $rism_digital$elm_iiif$IIIF$Image$whSizeParser(
         A2($elm$core$String$dropLeft, 2, inp)
       )
     ) : $elm$core$Maybe$Nothing;
   };
-  var $author$project$IIIF$Image$ExactWidthAndHeightSize = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$ExactWidthAndHeightSize = function(a) {
     return { $: "ExactWidthAndHeightSize", a };
   };
-  var $author$project$IIIF$Image$exactWidthAndHeightSizeParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$exactWidthAndHeightSizeParser = function(inp) {
     return A2($elm$core$String$startsWith, "^", inp) ? A2(
       $elm$core$Maybe$map,
-      $author$project$IIIF$Image$ExactWidthAndHeightSize,
-      $author$project$IIIF$Image$whSizeParser(
+      $rism_digital$elm_iiif$IIIF$Image$ExactWidthAndHeightSize,
+      $rism_digital$elm_iiif$IIIF$Image$whSizeParser(
         A2($elm$core$String$dropLeft, 1, inp)
       )
     ) : $elm$core$Maybe$Nothing;
   };
-  var $author$project$IIIF$Image$ExactWidthOnlySize = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$ExactWidthOnlySize = function(a) {
     return { $: "ExactWidthOnlySize", a };
   };
   var $elm$core$String$dropRight = F2(
@@ -11337,10 +11431,10 @@
       return n < 1 ? string : A3($elm$core$String$slice, 0, -n, string);
     }
   );
-  var $author$project$IIIF$Image$exactWidthOnlySizeParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$exactWidthOnlySizeParser = function(inp) {
     return A2($elm$core$String$endsWith, ",", inp) && A2($elm$core$String$startsWith, "^", inp) ? A2(
       $elm$core$Maybe$map,
-      $author$project$IIIF$Image$ExactWidthOnlySize,
+      $rism_digital$elm_iiif$IIIF$Image$ExactWidthOnlySize,
       $elm$core$String$toInt(
         A2(
           $elm$core$String$dropLeft,
@@ -11350,131 +11444,131 @@
       )
     ) : $elm$core$Maybe$Nothing;
   };
-  var $author$project$IIIF$Image$HeightOnlySize = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$HeightOnlySize = function(a) {
     return { $: "HeightOnlySize", a };
   };
-  var $author$project$IIIF$Image$heightOnlySizeParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$heightOnlySizeParser = function(inp) {
     return A2($elm$core$String$startsWith, ",", inp) ? A2(
       $elm$core$Maybe$map,
-      $author$project$IIIF$Image$HeightOnlySize,
+      $rism_digital$elm_iiif$IIIF$Image$HeightOnlySize,
       $elm$core$String$toInt(
         A2($elm$core$String$dropLeft, 1, inp)
       )
     ) : $elm$core$Maybe$Nothing;
   };
-  var $author$project$IIIF$Image$ExactMaxSize = { $: "ExactMaxSize" };
-  var $author$project$IIIF$Image$MaxSize = { $: "MaxSize" };
-  var $author$project$IIIF$Image$maxSizeParser = function(inp) {
-    return inp === "max" || inp === "full" ? $elm$core$Maybe$Just($author$project$IIIF$Image$MaxSize) : inp === "^max" ? $elm$core$Maybe$Just($author$project$IIIF$Image$ExactMaxSize) : $elm$core$Maybe$Nothing;
+  var $rism_digital$elm_iiif$IIIF$Image$ExactMaxSize = { $: "ExactMaxSize" };
+  var $rism_digital$elm_iiif$IIIF$Image$MaxSize = { $: "MaxSize" };
+  var $rism_digital$elm_iiif$IIIF$Image$maxSizeParser = function(inp) {
+    return inp === "max" || inp === "full" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$MaxSize) : inp === "^max" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$ExactMaxSize) : $elm$core$Maybe$Nothing;
   };
-  var $author$project$IIIF$Image$PercentSize = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$PercentSize = function(a) {
     return { $: "PercentSize", a };
   };
-  var $author$project$IIIF$Image$percentSizeParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$percentSizeParser = function(inp) {
     return A2($elm$core$String$startsWith, "pct:", inp) ? A2(
       $elm$core$Maybe$map,
-      $author$project$IIIF$Image$PercentSize,
+      $rism_digital$elm_iiif$IIIF$Image$PercentSize,
       $elm$core$String$toFloat(
         A2($elm$core$String$dropLeft, 4, inp)
       )
     ) : $elm$core$Maybe$Nothing;
   };
-  var $author$project$IIIF$Image$ScaledWidthAndHeightSize = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$ScaledWidthAndHeightSize = function(a) {
     return { $: "ScaledWidthAndHeightSize", a };
   };
-  var $author$project$IIIF$Image$scaledWidthAndHeightSizeParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$scaledWidthAndHeightSizeParser = function(inp) {
     return A2($elm$core$String$startsWith, "!", inp) ? A2(
       $elm$core$Maybe$map,
-      $author$project$IIIF$Image$ScaledWidthAndHeightSize,
-      $author$project$IIIF$Image$whSizeParser(
+      $rism_digital$elm_iiif$IIIF$Image$ScaledWidthAndHeightSize,
+      $rism_digital$elm_iiif$IIIF$Image$whSizeParser(
         A2($elm$core$String$dropLeft, 1, inp)
       )
     ) : $elm$core$Maybe$Nothing;
   };
-  var $author$project$IIIF$Image$WidthAndHeightSize = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$WidthAndHeightSize = function(a) {
     return { $: "WidthAndHeightSize", a };
   };
-  var $author$project$IIIF$Image$widthAndHeightSizeParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$widthAndHeightSizeParser = function(inp) {
     var _v0 = A2($elm$core$String$split, ",", inp);
     if (_v0.b && _v0.b.b && !_v0.b.b.b) {
       var _v1 = _v0.b;
       return A2(
         $elm$core$Maybe$map,
-        $author$project$IIIF$Image$WidthAndHeightSize,
-        $author$project$IIIF$Image$whSizeParser(inp)
+        $rism_digital$elm_iiif$IIIF$Image$WidthAndHeightSize,
+        $rism_digital$elm_iiif$IIIF$Image$whSizeParser(inp)
       );
     } else {
       return $elm$core$Maybe$Nothing;
     }
   };
-  var $author$project$IIIF$Image$WidthOnlySize = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$WidthOnlySize = function(a) {
     return { $: "WidthOnlySize", a };
   };
-  var $author$project$IIIF$Image$widthOnlySizeParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$widthOnlySizeParser = function(inp) {
     return A2($elm$core$String$endsWith, ",", inp) ? A2(
       $elm$core$Maybe$map,
-      $author$project$IIIF$Image$WidthOnlySize,
+      $rism_digital$elm_iiif$IIIF$Image$WidthOnlySize,
       $elm$core$String$toInt(
         A2($elm$core$String$dropRight, 1, inp)
       )
     ) : $elm$core$Maybe$Nothing;
   };
-  var $author$project$IIIF$Image$imageSizeParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$imageSizeParser = function(inp) {
     return A2(
-      $author$project$IIIF$Internal$Utilities$oneOfMaybes,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$oneOfMaybes,
       _List_fromArray(
-        [$author$project$IIIF$Image$maxSizeParser, $author$project$IIIF$Image$widthOnlySizeParser, $author$project$IIIF$Image$exactWidthOnlySizeParser, $author$project$IIIF$Image$heightOnlySizeParser, $author$project$IIIF$Image$exactHeightOnlySizeParser, $author$project$IIIF$Image$percentSizeParser, $author$project$IIIF$Image$exactPercentSizeParser, $author$project$IIIF$Image$widthAndHeightSizeParser, $author$project$IIIF$Image$exactWidthAndHeightSizeParser, $author$project$IIIF$Image$scaledWidthAndHeightSizeParser, $author$project$IIIF$Image$exactScaledWidthAndHeightSizeParser]
+        [$rism_digital$elm_iiif$IIIF$Image$maxSizeParser, $rism_digital$elm_iiif$IIIF$Image$widthOnlySizeParser, $rism_digital$elm_iiif$IIIF$Image$exactWidthOnlySizeParser, $rism_digital$elm_iiif$IIIF$Image$heightOnlySizeParser, $rism_digital$elm_iiif$IIIF$Image$exactHeightOnlySizeParser, $rism_digital$elm_iiif$IIIF$Image$percentSizeParser, $rism_digital$elm_iiif$IIIF$Image$exactPercentSizeParser, $rism_digital$elm_iiif$IIIF$Image$widthAndHeightSizeParser, $rism_digital$elm_iiif$IIIF$Image$exactWidthAndHeightSizeParser, $rism_digital$elm_iiif$IIIF$Image$scaledWidthAndHeightSizeParser, $rism_digital$elm_iiif$IIIF$Image$exactScaledWidthAndHeightSizeParser]
       ),
       inp
     );
   };
-  var $author$project$IIIF$Image$BiTonalQuality = { $: "BiTonalQuality" };
-  var $author$project$IIIF$Image$ColorQuality = { $: "ColorQuality" };
-  var $author$project$IIIF$Image$DefaultQuality = { $: "DefaultQuality" };
-  var $author$project$IIIF$Image$GrayQuality = { $: "GrayQuality" };
-  var $author$project$IIIF$Image$NativeQuality = { $: "NativeQuality" };
-  var $author$project$IIIF$Image$qualityParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$BiTonalQuality = { $: "BiTonalQuality" };
+  var $rism_digital$elm_iiif$IIIF$Image$ColorQuality = { $: "ColorQuality" };
+  var $rism_digital$elm_iiif$IIIF$Image$DefaultQuality = { $: "DefaultQuality" };
+  var $rism_digital$elm_iiif$IIIF$Image$GrayQuality = { $: "GrayQuality" };
+  var $rism_digital$elm_iiif$IIIF$Image$NativeQuality = { $: "NativeQuality" };
+  var $rism_digital$elm_iiif$IIIF$Image$qualityParser = function(inp) {
     var _v0 = A2($elm$core$String$split, ".", inp);
     if (_v0.b && _v0.b.b && !_v0.b.b.b) {
       var quality = _v0.a;
       var _v1 = _v0.b;
-      return quality === "default" ? $elm$core$Maybe$Just($author$project$IIIF$Image$DefaultQuality) : quality === "native" ? $elm$core$Maybe$Just($author$project$IIIF$Image$NativeQuality) : quality === "color" ? $elm$core$Maybe$Just($author$project$IIIF$Image$ColorQuality) : quality === "gray" ? $elm$core$Maybe$Just($author$project$IIIF$Image$GrayQuality) : quality === "bitonal" ? $elm$core$Maybe$Just($author$project$IIIF$Image$BiTonalQuality) : $elm$core$Maybe$Nothing;
+      return quality === "default" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$DefaultQuality) : quality === "native" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$NativeQuality) : quality === "color" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$ColorQuality) : quality === "gray" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$GrayQuality) : quality === "bitonal" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$BiTonalQuality) : $elm$core$Maybe$Nothing;
     } else {
       return $elm$core$Maybe$Nothing;
     }
   };
-  var $author$project$IIIF$Image$MirroredRotation = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$MirroredRotation = function(a) {
     return { $: "MirroredRotation", a };
   };
-  var $author$project$IIIF$Image$mirroredRotationParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$mirroredRotationParser = function(inp) {
     return A2($elm$core$String$startsWith, "!", inp) ? A2(
       $elm$core$Maybe$map,
-      $author$project$IIIF$Image$MirroredRotation,
+      $rism_digital$elm_iiif$IIIF$Image$MirroredRotation,
       $elm$core$String$toFloat(
         A2($elm$core$String$dropLeft, 1, inp)
       )
     ) : $elm$core$Maybe$Nothing;
   };
-  var $author$project$IIIF$Image$NormalRotation = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$NormalRotation = function(a) {
     return { $: "NormalRotation", a };
   };
-  var $author$project$IIIF$Image$normalRotationParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$normalRotationParser = function(inp) {
     return A2(
       $elm$core$Maybe$map,
-      $author$project$IIIF$Image$NormalRotation,
+      $rism_digital$elm_iiif$IIIF$Image$NormalRotation,
       $elm$core$String$toFloat(inp)
     );
   };
-  var $author$project$IIIF$Image$rotationParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$rotationParser = function(inp) {
     return A2(
-      $author$project$IIIF$Internal$Utilities$oneOfMaybes,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$oneOfMaybes,
       _List_fromArray(
-        [$author$project$IIIF$Image$normalRotationParser, $author$project$IIIF$Image$mirroredRotationParser]
+        [$rism_digital$elm_iiif$IIIF$Image$normalRotationParser, $rism_digital$elm_iiif$IIIF$Image$mirroredRotationParser]
       ),
       inp
     );
   };
-  var $author$project$IIIF$Image$imageUriFromComponents = F2(
+  var $rism_digital$elm_iiif$IIIF$Image$imageUriFromComponents = F2(
     function(host, pathComponents) {
       var _v0 = $elm$core$List$reverse(pathComponents);
       if (_v0.b && _v0.b.b && _v0.b.b.b && _v0.b.b.b.b) {
@@ -11493,24 +11587,24 @@
         );
         return A2(
           $elm$core$Maybe$map,
-          $author$project$IIIF$Image$ImageUri,
+          $rism_digital$elm_iiif$IIIF$Image$ImageUri,
           A2(
-            $author$project$IIIF$Internal$Utilities$applyMaybe,
-            $author$project$IIIF$Image$formatParser(qualityFormat),
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$applyMaybe,
+            $rism_digital$elm_iiif$IIIF$Image$formatParser(qualityFormat),
             A2(
-              $author$project$IIIF$Internal$Utilities$applyMaybe,
-              $author$project$IIIF$Image$qualityParser(qualityFormat),
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$applyMaybe,
+              $rism_digital$elm_iiif$IIIF$Image$qualityParser(qualityFormat),
               A2(
-                $author$project$IIIF$Internal$Utilities$applyMaybe,
-                $author$project$IIIF$Image$rotationParser(rotation),
+                $rism_digital$elm_iiif$IIIF$Internal$Utilities$applyMaybe,
+                $rism_digital$elm_iiif$IIIF$Image$rotationParser(rotation),
                 A2(
-                  $author$project$IIIF$Internal$Utilities$applyMaybe,
-                  $author$project$IIIF$Image$imageSizeParser(size),
+                  $rism_digital$elm_iiif$IIIF$Internal$Utilities$applyMaybe,
+                  $rism_digital$elm_iiif$IIIF$Image$imageSizeParser(size),
                   A2(
-                    $author$project$IIIF$Internal$Utilities$applyMaybe,
-                    $author$project$IIIF$Image$imageRegionParser(region),
+                    $rism_digital$elm_iiif$IIIF$Internal$Utilities$applyMaybe,
+                    $rism_digital$elm_iiif$IIIF$Image$imageRegionParser(region),
                     $elm$core$Maybe$Just(
-                      A2($author$project$IIIF$Image$ImageRequestParameters, host, imageIdent)
+                      A2($rism_digital$elm_iiif$IIIF$Image$ImageRequestParameters, host, imageIdent)
                     )
                   )
                 )
@@ -11523,7 +11617,7 @@
       }
     }
   );
-  var $author$project$IIIF$Image$InfoUri = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$InfoUri = function(a) {
     return { $: "InfoUri", a };
   };
   var $elm$core$List$filter = F2(
@@ -11540,7 +11634,7 @@
       );
     }
   );
-  var $author$project$IIIF$Internal$Utilities$remove = F2(
+  var $rism_digital$elm_iiif$IIIF$Internal$Utilities$remove = F2(
     function(item, items) {
       return A2(
         $elm$core$List$filter,
@@ -11549,21 +11643,21 @@
       );
     }
   );
-  var $author$project$IIIF$Image$infoUriFromComponents = F2(
+  var $rism_digital$elm_iiif$IIIF$Image$infoUriFromComponents = F2(
     function(host, pathComponents) {
       var identifier = A2(
         $elm$core$String$join,
         "/",
-        A2($author$project$IIIF$Internal$Utilities$remove, "info.json", pathComponents)
+        A2($rism_digital$elm_iiif$IIIF$Internal$Utilities$remove, "info.json", pathComponents)
       );
       return $elm$core$Maybe$Just(
-        $author$project$IIIF$Image$InfoUri(
+        $rism_digital$elm_iiif$IIIF$Image$InfoUri(
           { host, prefix: identifier }
         )
       );
     }
   );
-  var $author$project$IIIF$Internal$Utilities$cartesianProduct = function(lists) {
+  var $rism_digital$elm_iiif$IIIF$Internal$Utilities$cartesianProduct = function(lists) {
     return A3(
       $elm$core$List$foldr,
       F2(
@@ -11587,7 +11681,7 @@
       lists
     );
   };
-  var $author$project$IIIF$Image$possibleSuffixes = (function() {
+  var $rism_digital$elm_iiif$IIIF$Image$possibleSuffixes = (function() {
     var qualitySuffixes = _List_fromArray(
       ["color", "gray", "bitonal", "default", "native"]
     );
@@ -11597,24 +11691,24 @@
     return A2(
       $elm$core$List$map,
       $elm$core$String$join("."),
-      $author$project$IIIF$Internal$Utilities$cartesianProduct(
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$cartesianProduct(
         _List_fromArray(
           [qualitySuffixes, formatSuffixes]
         )
       )
     );
   })();
-  var $author$project$IIIF$Image$staticImageUriFromComponents = F2(
+  var $rism_digital$elm_iiif$IIIF$Image$staticImageUriFromComponents = F2(
     function(host, path) {
       return $elm$core$Maybe$Just(
-        $author$project$IIIF$Image$StaticImageUri(
+        $rism_digital$elm_iiif$IIIF$Image$StaticImageUri(
           { host, prefix: path }
         )
       );
     }
   );
-  var $author$project$IIIF$Image$parseImageUrl = function(url) {
-    var _v0 = $author$project$IIIF$Image$decomposeUrl(url);
+  var $rism_digital$elm_iiif$IIIF$Image$parseImageUrl = function(url) {
+    var _v0 = $rism_digital$elm_iiif$IIIF$Image$decomposeUrl(url);
     var address = _v0.address;
     var path = _v0.path;
     var pathComponents = _v0.pathComponents;
@@ -11624,53 +11718,53 @@
       function(s) {
         return A2($elm$core$String$endsWith, s, path);
       },
-      $author$project$IIIF$Image$possibleSuffixes
+      $rism_digital$elm_iiif$IIIF$Image$possibleSuffixes
     );
-    return isImageApiUri ? A2($author$project$IIIF$Image$imageUriFromComponents, address, pathComponents) : A2($elm$core$String$endsWith, "info.json", path) ? A2($author$project$IIIF$Image$infoUriFromComponents, address, pathComponents) : A2($author$project$IIIF$Image$staticImageUriFromComponents, address, pathWithQuery);
+    return isImageApiUri ? A2($rism_digital$elm_iiif$IIIF$Image$imageUriFromComponents, address, pathComponents) : A2($elm$core$String$endsWith, "info.json", path) ? A2($rism_digital$elm_iiif$IIIF$Image$infoUriFromComponents, address, pathComponents) : A2($rism_digital$elm_iiif$IIIF$Image$staticImageUriFromComponents, address, pathWithQuery);
   };
-  var $author$project$IIIF$Image$parseImageAddress = function(fullAddress) {
+  var $rism_digital$elm_iiif$IIIF$Image$parseImageAddress = function(fullAddress) {
     return A2(
       $elm$core$Maybe$andThen,
-      $author$project$IIIF$Image$parseImageUrl,
+      $rism_digital$elm_iiif$IIIF$Image$parseImageUrl,
       $elm$url$Url$fromString(fullAddress)
     );
   };
-  var $author$project$IIIF$Internal$SharedDecoders$convertStaticImageIdToImageUri = function(idValue) {
-    var _v0 = $author$project$IIIF$Image$parseImageAddress(idValue);
+  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$convertStaticImageIdToImageUri = function(idValue) {
+    var _v0 = $rism_digital$elm_iiif$IIIF$Image$parseImageAddress(idValue);
     if (_v0.$ === "Just" && _v0.a.$ === "StaticImageUri") {
       var params = _v0.a.a;
       return $elm$json$Json$Decode$succeed(
-        $author$project$IIIF$Image$StaticImageUri(params)
+        $rism_digital$elm_iiif$IIIF$Image$StaticImageUri(params)
       );
     } else {
       return $elm$json$Json$Decode$fail("Could not decode static image Url");
     }
   };
-  var $author$project$IIIF$Image$imageUriToInfoUri = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$imageUriToInfoUri = function(inp) {
     switch (inp.$) {
       case "InfoUri":
         return inp;
       case "ImageUri":
         var params = inp.a;
-        return $author$project$IIIF$Image$InfoUri(
+        return $rism_digital$elm_iiif$IIIF$Image$InfoUri(
           { host: params.host, prefix: params.prefix }
         );
       default:
         return inp;
     }
   };
-  var $author$project$IIIF$Internal$SharedDecoders$convertImageIdToImageUri = function(idValue) {
-    var _v0 = $author$project$IIIF$Image$parseImageAddress(idValue);
+  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$convertImageIdToImageUri = function(idValue) {
+    var _v0 = $rism_digital$elm_iiif$IIIF$Image$parseImageAddress(idValue);
     if (_v0.$ === "Just") {
       if (_v0.a.$ === "StaticImageUri") {
         var params = _v0.a.a;
         return $elm$json$Json$Decode$succeed(
-          $author$project$IIIF$Image$InfoUri(params)
+          $rism_digital$elm_iiif$IIIF$Image$InfoUri(params)
         );
       } else {
         var url = _v0.a;
         return $elm$json$Json$Decode$succeed(
-          $author$project$IIIF$Image$imageUriToInfoUri(url)
+          $rism_digital$elm_iiif$IIIF$Image$imageUriToInfoUri(url)
         );
       }
     } else {
@@ -11688,93 +11782,93 @@
       );
     }
   );
-  var $author$project$IIIF$Presentation$AuthLogoutService1 = { $: "AuthLogoutService1" };
-  var $author$project$IIIF$Presentation$AuthTokenService1 = { $: "AuthTokenService1" };
-  var $author$project$IIIF$Presentation$AutoCompleteService1 = { $: "AutoCompleteService1" };
-  var $author$project$IIIF$Presentation$ImageService1 = { $: "ImageService1" };
-  var $author$project$IIIF$Presentation$ImageService2 = { $: "ImageService2" };
-  var $author$project$IIIF$Presentation$ImageService3 = { $: "ImageService3" };
-  var $author$project$IIIF$Presentation$SearchService1 = { $: "SearchService1" };
-  var $author$project$IIIF$Presentation$UnknownService = { $: "UnknownService" };
-  var $author$project$IIIF$Internal$Contexts$iiifV2ImageContextString = "http://iiif.io/api/image/2/context.json";
-  var $author$project$IIIF$Internal$Contexts$iiifV3ImageContextString = "http://iiif.io/api/image/3/context.json";
-  var $author$project$IIIF$Presentation$stringToServiceType = function(val) {
-    if (A2($author$project$IIIF$Internal$Contexts$contextMatches, $author$project$IIIF$Internal$Contexts$iiifV2ImageContextString, val)) {
-      return $author$project$IIIF$Presentation$ImageService2;
+  var $rism_digital$elm_iiif$IIIF$Presentation$AuthLogoutService1 = { $: "AuthLogoutService1" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$AuthTokenService1 = { $: "AuthTokenService1" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$AutoCompleteService1 = { $: "AutoCompleteService1" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$ImageService1 = { $: "ImageService1" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$ImageService2 = { $: "ImageService2" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$ImageService3 = { $: "ImageService3" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$SearchService1 = { $: "SearchService1" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$UnknownService = { $: "UnknownService" };
+  var $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV2ImageContextString = "http://iiif.io/api/image/2/context.json";
+  var $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV3ImageContextString = "http://iiif.io/api/image/3/context.json";
+  var $rism_digital$elm_iiif$IIIF$Presentation$stringToServiceType = function(val) {
+    if (A2($rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches, $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV2ImageContextString, val)) {
+      return $rism_digital$elm_iiif$IIIF$Presentation$ImageService2;
     } else {
-      if (A2($author$project$IIIF$Internal$Contexts$contextMatches, $author$project$IIIF$Internal$Contexts$iiifV3ImageContextString, val)) {
-        return $author$project$IIIF$Presentation$ImageService3;
+      if (A2($rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches, $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV3ImageContextString, val)) {
+        return $rism_digital$elm_iiif$IIIF$Presentation$ImageService3;
       } else {
         switch (val) {
           case "AuthLogoutService1":
-            return $author$project$IIIF$Presentation$AuthLogoutService1;
+            return $rism_digital$elm_iiif$IIIF$Presentation$AuthLogoutService1;
           case "AuthTokenService1":
-            return $author$project$IIIF$Presentation$AuthTokenService1;
+            return $rism_digital$elm_iiif$IIIF$Presentation$AuthTokenService1;
           case "AutoCompleteService1":
-            return $author$project$IIIF$Presentation$AutoCompleteService1;
+            return $rism_digital$elm_iiif$IIIF$Presentation$AutoCompleteService1;
           case "ImageService1":
-            return $author$project$IIIF$Presentation$ImageService1;
+            return $rism_digital$elm_iiif$IIIF$Presentation$ImageService1;
           case "ImageService2":
-            return $author$project$IIIF$Presentation$ImageService2;
+            return $rism_digital$elm_iiif$IIIF$Presentation$ImageService2;
           case "ImageService3":
-            return $author$project$IIIF$Presentation$ImageService3;
+            return $rism_digital$elm_iiif$IIIF$Presentation$ImageService3;
           case "SearchService1":
-            return $author$project$IIIF$Presentation$SearchService1;
+            return $rism_digital$elm_iiif$IIIF$Presentation$SearchService1;
           default:
-            return $author$project$IIIF$Presentation$UnknownService;
+            return $rism_digital$elm_iiif$IIIF$Presentation$UnknownService;
         }
       }
     }
   };
-  var $author$project$IIIF$Internal$V2PresentationDecoders$isImageService = function(serviceType) {
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$isImageService = function(serviceType) {
     return A2(
       $elm$core$List$member,
       serviceType,
       _List_fromArray(
         [
-          $author$project$IIIF$Presentation$stringToServiceType("ImageService1"),
-          $author$project$IIIF$Presentation$stringToServiceType("ImageService2"),
-          $author$project$IIIF$Presentation$stringToServiceType("ImageService3")
+          $rism_digital$elm_iiif$IIIF$Presentation$stringToServiceType("ImageService1"),
+          $rism_digital$elm_iiif$IIIF$Presentation$stringToServiceType("ImageService2"),
+          $rism_digital$elm_iiif$IIIF$Presentation$stringToServiceType("ImageService3")
         ]
       )
     );
   };
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ServiceTypeObjectDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ServiceTypeObjectDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
         A2(
           $elm$json$Json$Decode$map,
-          $author$project$IIIF$Presentation$stringToServiceType,
+          $rism_digital$elm_iiif$IIIF$Presentation$stringToServiceType,
           A2($elm$json$Json$Decode$field, "@type", $elm$json$Json$Decode$string)
         ),
         A2(
           $elm$json$Json$Decode$map,
-          $author$project$IIIF$Presentation$stringToServiceType,
+          $rism_digital$elm_iiif$IIIF$Presentation$stringToServiceType,
           A2($elm$json$Json$Decode$field, "type", $elm$json$Json$Decode$string)
         ),
         A2(
           $elm$json$Json$Decode$map,
           function(context) {
-            return A2($author$project$IIIF$Internal$Contexts$contextMatches, $author$project$IIIF$Internal$Contexts$iiifV2ImageContextString, context) ? $author$project$IIIF$Presentation$stringToServiceType("ImageService2") : $author$project$IIIF$Presentation$stringToServiceType(context);
+            return A2($rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches, $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV2ImageContextString, context) ? $rism_digital$elm_iiif$IIIF$Presentation$stringToServiceType("ImageService2") : $rism_digital$elm_iiif$IIIF$Presentation$stringToServiceType(context);
           },
           A2($elm$json$Json$Decode$field, "@context", $elm$json$Json$Decode$string)
         )
       ]
     )
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceIdDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageServiceIdDecoder = A2(
     $elm$json$Json$Decode$andThen,
     function(serviceType) {
-      return $author$project$IIIF$Internal$V2PresentationDecoders$isImageService(serviceType) ? A2($elm$json$Json$Decode$field, "@id", $elm$json$Json$Decode$string) : $elm$json$Json$Decode$fail("Not an Image API service");
+      return $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$isImageService(serviceType) ? A2($elm$json$Json$Decode$field, "@id", $elm$json$Json$Decode$string) : $elm$json$Json$Decode$fail("Not an Image API service");
     },
-    $author$project$IIIF$Internal$V2PresentationDecoders$v2ServiceTypeObjectDecoder
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ServiceTypeObjectDecoder
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageIdFromServiceDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageIdFromServiceDecoder = A2(
     $elm$json$Json$Decode$andThen,
     function(maybeId) {
       if (maybeId.$ === "Just") {
         var id = maybeId.a;
-        return $author$project$IIIF$Internal$SharedDecoders$convertImageIdToImageUri(id);
+        return $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$convertImageIdToImageUri(id);
       } else {
         return $elm$json$Json$Decode$fail("No Image API service ID found");
       }
@@ -11787,28 +11881,28 @@
           [
             A2(
               $elm$json$Json$Decode$map,
-              A2(
-                $elm$core$Basics$composeR,
-                $elm$core$List$filterMap($elm$core$Basics$identity),
-                $elm$core$List$head
-              ),
+              function(services) {
+                return $elm$core$List$head(
+                  A2($elm$core$List$filterMap, $elm$core$Basics$identity, services)
+                );
+              },
               $elm$json$Json$Decode$list(
-                $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceIdDecoder)
+                $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageServiceIdDecoder)
               )
             ),
-            A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceIdDecoder)
+            A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageServiceIdDecoder)
           ]
         )
       )
     )
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageIdDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageIdDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
-        $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageIdFromServiceDecoder,
+        $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageIdFromServiceDecoder,
         A2(
           $elm$json$Json$Decode$andThen,
-          $author$project$IIIF$Internal$SharedDecoders$convertStaticImageIdToImageUri,
+          $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$convertStaticImageIdToImageUri,
           A2($elm$json$Json$Decode$field, "@id", $elm$json$Json$Decode$string)
         )
       ]
@@ -11819,7 +11913,7 @@
       [value]
     );
   };
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceObjectsDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageServiceObjectsDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
         A2(
@@ -11836,7 +11930,7 @@
       ]
     )
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceTypesDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageServiceTypesDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
         A2(
@@ -11849,10 +11943,10 @@
                   $elm$json$Json$Decode$map,
                   $elm$core$List$filterMap($elm$core$Basics$identity),
                   $elm$json$Json$Decode$list(
-                    $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$V2PresentationDecoders$v2ServiceTypeObjectDecoder)
+                    $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ServiceTypeObjectDecoder)
                   )
                 ),
-                A2($elm$json$Json$Decode$map, $elm$core$List$singleton, $author$project$IIIF$Internal$V2PresentationDecoders$v2ServiceTypeObjectDecoder)
+                A2($elm$json$Json$Decode$map, $elm$core$List$singleton, $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ServiceTypeObjectDecoder)
               ]
             )
           )
@@ -11861,32 +11955,32 @@
       ]
     )
   );
-  var $author$project$IIIF$Language$LanguageValues = F2(
+  var $rism_digital$elm_iiif$IIIF$Language$LanguageValues = F2(
     function(a, b) {
       return { $: "LanguageValues", a, b };
     }
   );
-  var $author$project$IIIF$Language$None = { $: "None" };
-  var $author$project$IIIF$Language$parseLocaleToLanguage = function(locale) {
-    return locale === "none" ? $author$project$IIIF$Language$None : $author$project$IIIF$Language$LanguageCode(locale);
+  var $rism_digital$elm_iiif$IIIF$Language$None = { $: "None" };
+  var $rism_digital$elm_iiif$IIIF$Language$parseLocaleToLanguage = function(locale) {
+    return locale === "none" ? $rism_digital$elm_iiif$IIIF$Language$None : $rism_digital$elm_iiif$IIIF$Language$LanguageCode(locale);
   };
-  var $author$project$IIIF$Language$languageValuesDecoder = function(_v0) {
+  var $rism_digital$elm_iiif$IIIF$Language$languageValuesDecoder = function(_v0) {
     var locale = _v0.a;
     var translations = _v0.b;
     return A2(
-      $author$project$IIIF$Language$LanguageValues,
-      $author$project$IIIF$Language$parseLocaleToLanguage(locale),
+      $rism_digital$elm_iiif$IIIF$Language$LanguageValues,
+      $rism_digital$elm_iiif$IIIF$Language$parseLocaleToLanguage(locale),
       translations
     );
   };
-  var $author$project$IIIF$Language$languageMapDecoder = function(json) {
+  var $rism_digital$elm_iiif$IIIF$Language$languageMapDecoder = function(json) {
     return A3(
       $elm$core$List$foldl,
       F2(
         function(map, maps) {
           return A2(
             $elm$core$List$cons,
-            $author$project$IIIF$Language$languageValuesDecoder(map),
+            $rism_digital$elm_iiif$IIIF$Language$languageValuesDecoder(map),
             maps
           );
         }
@@ -11895,22 +11989,22 @@
       json
     );
   };
-  var $author$project$IIIF$Language$languageMapLabelDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder = A2(
     $elm$json$Json$Decode$map,
-    $author$project$IIIF$Language$languageMapDecoder,
+    $rism_digital$elm_iiif$IIIF$Language$languageMapDecoder,
     $elm$json$Json$Decode$keyValuePairs(
       $elm$json$Json$Decode$list($elm$json$Json$Decode$string)
     )
   );
-  var $author$project$IIIF$Language$Default = { $: "Default" };
-  var $author$project$IIIF$Language$stringToLanguageMapLabelDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Language$Default = { $: "Default" };
+  var $rism_digital$elm_iiif$IIIF$Language$stringToLanguageMapLabelDecoder = A2(
     $elm$json$Json$Decode$map,
     function(s) {
       return _List_fromArray(
         [
           A2(
-            $author$project$IIIF$Language$LanguageValues,
-            $author$project$IIIF$Language$Default,
+            $rism_digital$elm_iiif$IIIF$Language$LanguageValues,
+            $rism_digital$elm_iiif$IIIF$Language$Default,
             _List_fromArray(
               [s]
             )
@@ -11920,15 +12014,15 @@
     },
     $elm$json$Json$Decode$string
   );
-  var $author$project$IIIF$Language$v2LanguageValueObjectDecoder = A3(
+  var $rism_digital$elm_iiif$IIIF$Language$v2LanguageValueObjectDecoder = A3(
     $elm$json$Json$Decode$map2,
     F2(
       function(value, locale) {
         return _List_fromArray(
           [
             A2(
-              $author$project$IIIF$Language$LanguageValues,
-              $author$project$IIIF$Language$parseLocaleToLanguage(locale),
+              $rism_digital$elm_iiif$IIIF$Language$LanguageValues,
+              $rism_digital$elm_iiif$IIIF$Language$parseLocaleToLanguage(locale),
               _List_fromArray(
                 [value]
               )
@@ -11947,65 +12041,65 @@
       )
     )
   );
-  var $author$project$IIIF$Language$v2LanguageValueObjectListDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Language$v2LanguageValueObjectListDecoder = A2(
     $elm$json$Json$Decode$map,
     $elm$core$List$concat,
-    $elm$json$Json$Decode$list($author$project$IIIF$Language$v2LanguageValueObjectDecoder)
+    $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Language$v2LanguageValueObjectDecoder)
   );
-  var $author$project$IIIF$Language$v2LanguageMapLabelDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
-      [$author$project$IIIF$Language$v2LanguageValueObjectDecoder, $author$project$IIIF$Language$v2LanguageValueObjectListDecoder, $author$project$IIIF$Language$stringToLanguageMapLabelDecoder, $author$project$IIIF$Language$languageMapLabelDecoder]
+      [$rism_digital$elm_iiif$IIIF$Language$v2LanguageValueObjectDecoder, $rism_digital$elm_iiif$IIIF$Language$v2LanguageValueObjectListDecoder, $rism_digital$elm_iiif$IIIF$Language$stringToLanguageMapLabelDecoder, $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder]
     )
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageDecoder = A2(
-    $author$project$IIIF$Internal$Utilities$custom,
-    $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceObjectsDecoder,
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageDecoder = A2(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageServiceObjectsDecoder,
     A2(
-      $author$project$IIIF$Internal$Utilities$custom,
-      $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceTypesDecoder,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+      $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageServiceTypesDecoder,
       A2(
-        $author$project$IIIF$Internal$Utilities$hardcoded,
-        $author$project$IIIF$Presentation$PrimaryImage,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
+        $rism_digital$elm_iiif$IIIF$Presentation$PrimaryImage,
         A4(
-          $author$project$IIIF$Internal$Utilities$optional,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
           "label",
-          $elm$json$Json$Decode$maybe($author$project$IIIF$Language$v2LanguageMapLabelDecoder),
+          $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder),
           $elm$core$Maybe$Nothing,
           A2(
-            $author$project$IIIF$Internal$Utilities$custom,
-            $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageIdDecoder,
-            $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Image)
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+            $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageIdDecoder,
+            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Image)
           )
         )
       )
     )
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageDecoderVaryingType = function(imgType) {
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageDecoderVaryingType = function(imgType) {
     return A2(
-      $author$project$IIIF$Internal$Utilities$custom,
-      $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceObjectsDecoder,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+      $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageServiceObjectsDecoder,
       A2(
-        $author$project$IIIF$Internal$Utilities$custom,
-        $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceTypesDecoder,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+        $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageServiceTypesDecoder,
         A2(
-          $author$project$IIIF$Internal$Utilities$hardcoded,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
           imgType,
           A4(
-            $author$project$IIIF$Internal$Utilities$optional,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
             "label",
-            $elm$json$Json$Decode$maybe($author$project$IIIF$Language$v2LanguageMapLabelDecoder),
+            $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder),
             $elm$core$Maybe$Nothing,
             A2(
-              $author$project$IIIF$Internal$Utilities$custom,
-              $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageIdDecoder,
-              $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Image)
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+              $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageIdDecoder,
+              $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Image)
             )
           )
         )
       )
     );
   };
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ChoiceObjectDecoder = A3(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ChoiceObjectDecoder = A3(
     $elm$json$Json$Decode$map2,
     $elm$core$List$cons,
     A2(
@@ -12013,7 +12107,7 @@
       _List_fromArray(
         ["default"]
       ),
-      $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageDecoder
+      $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageDecoder
     ),
     A2(
       $elm$json$Json$Decode$at,
@@ -12021,11 +12115,11 @@
         ["item"]
       ),
       $elm$json$Json$Decode$list(
-        $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageDecoderVaryingType($author$project$IIIF$Presentation$ChoiceImage)
+        $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageDecoderVaryingType($rism_digital$elm_iiif$IIIF$Presentation$ChoiceImage)
       )
     )
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2AnnotationListDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2AnnotationListDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
         $elm$json$Json$Decode$list(
@@ -12034,153 +12128,153 @@
             _List_fromArray(
               ["resource"]
             ),
-            $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageDecoder
+            $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageDecoder
           )
         ),
         A2(
           $elm$json$Json$Decode$map,
-          $author$project$IIIF$Internal$V2PresentationDecoders$unwrapDecoderLists,
+          $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$unwrapDecoderLists,
           $elm$json$Json$Decode$list(
             A2(
               $elm$json$Json$Decode$at,
               _List_fromArray(
                 ["resource"]
               ),
-              $author$project$IIIF$Internal$V2PresentationDecoders$v2ChoiceObjectDecoder
+              $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ChoiceObjectDecoder
             )
           )
         )
       ]
     )
   );
-  var $author$project$IIIF$Image$staticImageUriFromUrl = function(url) {
-    var _v0 = $author$project$IIIF$Image$decomposeUrl(url);
+  var $rism_digital$elm_iiif$IIIF$Image$staticImageUriFromUrl = function(url) {
+    var _v0 = $rism_digital$elm_iiif$IIIF$Image$decomposeUrl(url);
     var address = _v0.address;
     var pathWithQuery = _v0.pathWithQuery;
-    return $author$project$IIIF$Image$StaticImageUri(
+    return $rism_digital$elm_iiif$IIIF$Image$StaticImageUri(
       { host: address, prefix: pathWithQuery }
     );
   };
-  var $author$project$IIIF$Internal$SharedDecoders$convertThumbnailImageIdToImageUri = function(idValue) {
+  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$convertThumbnailImageIdToImageUri = function(idValue) {
     var _v0 = $elm$url$Url$fromString(idValue);
     if (_v0.$ === "Just") {
       var url = _v0.a;
       return $elm$json$Json$Decode$succeed(
-        $author$project$IIIF$Image$staticImageUriFromUrl(url)
+        $rism_digital$elm_iiif$IIIF$Image$staticImageUriFromUrl(url)
       );
     } else {
       return $elm$json$Json$Decode$fail("Could not decode static image Url");
     }
   };
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageIdDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageIdDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
-        $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageIdFromServiceDecoder,
+        $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageIdFromServiceDecoder,
         A2(
           $elm$json$Json$Decode$andThen,
-          $author$project$IIIF$Internal$SharedDecoders$convertThumbnailImageIdToImageUri,
+          $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$convertThumbnailImageIdToImageUri,
           A2($elm$json$Json$Decode$field, "@id", $elm$json$Json$Decode$string)
         )
       ]
     )
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageDecoder = A2(
-    $author$project$IIIF$Internal$Utilities$custom,
-    $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceObjectsDecoder,
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageDecoder = A2(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageServiceObjectsDecoder,
     A2(
-      $author$project$IIIF$Internal$Utilities$custom,
-      $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceTypesDecoder,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+      $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageServiceTypesDecoder,
       A2(
-        $author$project$IIIF$Internal$Utilities$hardcoded,
-        $author$project$IIIF$Presentation$PrimaryImage,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
+        $rism_digital$elm_iiif$IIIF$Presentation$PrimaryImage,
         A4(
-          $author$project$IIIF$Internal$Utilities$optional,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
           "label",
-          $elm$json$Json$Decode$maybe($author$project$IIIF$Language$v2LanguageMapLabelDecoder),
+          $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder),
           $elm$core$Maybe$Nothing,
           A2(
-            $author$project$IIIF$Internal$Utilities$custom,
-            $author$project$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageIdDecoder,
-            $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Image)
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+            $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageIdDecoder,
+            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Image)
           )
         )
       )
     )
   );
-  var $author$project$IIIF$Presentation$LayoutV2 = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$LayoutV2 = function(a) {
     return { $: "LayoutV2", a };
   };
-  var $author$project$IIIF$Presentation$ContinuousHint = { $: "ContinuousHint" };
-  var $author$project$IIIF$Presentation$FacingPagesHint = { $: "FacingPagesHint" };
-  var $author$project$IIIF$Presentation$IndividualsHint = { $: "IndividualsHint" };
-  var $author$project$IIIF$Presentation$MultiPartHint = { $: "MultiPartHint" };
-  var $author$project$IIIF$Presentation$NonPagedHint = { $: "NonPagedHint" };
-  var $author$project$IIIF$Presentation$PagedHint = { $: "PagedHint" };
-  var $author$project$IIIF$Presentation$TopHint = { $: "TopHint" };
-  var $author$project$IIIF$Presentation$stringToViewingHint = function(hint) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$ContinuousHint = { $: "ContinuousHint" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$FacingPagesHint = { $: "FacingPagesHint" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$IndividualsHint = { $: "IndividualsHint" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$MultiPartHint = { $: "MultiPartHint" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$NonPagedHint = { $: "NonPagedHint" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$PagedHint = { $: "PagedHint" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$TopHint = { $: "TopHint" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$stringToViewingHint = function(hint) {
     switch (hint) {
       case "continuous":
-        return $author$project$IIIF$Presentation$ContinuousHint;
+        return $rism_digital$elm_iiif$IIIF$Presentation$ContinuousHint;
       case "facing-pages":
-        return $author$project$IIIF$Presentation$FacingPagesHint;
+        return $rism_digital$elm_iiif$IIIF$Presentation$FacingPagesHint;
       case "individuals":
-        return $author$project$IIIF$Presentation$IndividualsHint;
+        return $rism_digital$elm_iiif$IIIF$Presentation$IndividualsHint;
       case "multi-part":
-        return $author$project$IIIF$Presentation$MultiPartHint;
+        return $rism_digital$elm_iiif$IIIF$Presentation$MultiPartHint;
       case "non-paged":
-        return $author$project$IIIF$Presentation$NonPagedHint;
+        return $rism_digital$elm_iiif$IIIF$Presentation$NonPagedHint;
       case "paged":
-        return $author$project$IIIF$Presentation$PagedHint;
+        return $rism_digital$elm_iiif$IIIF$Presentation$PagedHint;
       case "top":
-        return $author$project$IIIF$Presentation$TopHint;
+        return $rism_digital$elm_iiif$IIIF$Presentation$TopHint;
       default:
-        return $author$project$IIIF$Presentation$PagedHint;
+        return $rism_digital$elm_iiif$IIIF$Presentation$PagedHint;
     }
   };
-  var $author$project$IIIF$Internal$SharedDecoders$viewingHintDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingHintDecoder = A2(
     $elm$json$Json$Decode$map,
     function(str) {
-      return $author$project$IIIF$Presentation$LayoutV2(
-        $author$project$IIIF$Presentation$stringToViewingHint(str)
+      return $rism_digital$elm_iiif$IIIF$Presentation$LayoutV2(
+        $rism_digital$elm_iiif$IIIF$Presentation$stringToViewingHint(str)
       );
     },
     $elm$json$Json$Decode$string
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2CanvasDecoder = A4(
-    $author$project$IIIF$Internal$Utilities$optional,
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CanvasDecoder = A4(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
     "viewingHint",
-    $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$SharedDecoders$viewingHintDecoder),
+    $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingHintDecoder),
     $elm$core$Maybe$Nothing,
     A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "thumbnail",
-      $author$project$IIIF$Internal$SharedDecoders$thumbnailDecoder($author$project$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageDecoder),
+      $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$thumbnailDecoder($rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageDecoder),
       $elm$core$Maybe$Nothing,
       A4(
-        $author$project$IIIF$Internal$Utilities$optional,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
         "images",
-        $author$project$IIIF$Internal$V2PresentationDecoders$v2AnnotationListDecoder,
+        $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2AnnotationListDecoder,
         _List_Nil,
         A4(
-          $author$project$IIIF$Internal$Utilities$optional,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
           "height",
           $elm$json$Json$Decode$maybe($elm$json$Json$Decode$int),
           $elm$core$Maybe$Nothing,
           A4(
-            $author$project$IIIF$Internal$Utilities$optional,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
             "width",
             $elm$json$Json$Decode$maybe($elm$json$Json$Decode$int),
             $elm$core$Maybe$Nothing,
             A4(
-              $author$project$IIIF$Internal$Utilities$optional,
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
               "label",
-              $elm$json$Json$Decode$maybe($author$project$IIIF$Language$v2LanguageMapLabelDecoder),
+              $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder),
               $elm$core$Maybe$Nothing,
               A3(
-                $author$project$IIIF$Internal$Utilities$required,
+                $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
                 "@id",
                 $elm$json$Json$Decode$string,
-                $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Canvas)
+                $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Canvas)
               )
             )
           )
@@ -12188,22 +12282,22 @@
       )
     )
   );
-  var $author$project$IIIF$Presentation$Range = F4(
+  var $rism_digital$elm_iiif$IIIF$Presentation$Range = F4(
     function(id, label, items, metadata) {
       return { id, items, label, metadata };
     }
   );
-  var $author$project$IIIF$Presentation$RangeCanvas = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$RangeCanvas = function(a) {
     return { $: "RangeCanvas", a };
   };
-  var $author$project$IIIF$Presentation$RangeRange = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$RangeRange = function(a) {
     return { $: "RangeRange", a };
   };
-  var $author$project$IIIF$Internal$V2PresentationDecoders$defaultLabelMap = _List_fromArray(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$defaultLabelMap = _List_fromArray(
     [
       A2(
-        $author$project$IIIF$Language$LanguageValues,
-        $author$project$IIIF$Language$Default,
+        $rism_digital$elm_iiif$IIIF$Language$LanguageValues,
+        $rism_digital$elm_iiif$IIIF$Language$Default,
         _List_fromArray(
           ["Homepage"]
         )
@@ -12217,54 +12311,54 @@
       $elm$json$Json$Decode$succeed(_Utils_Tuple0)
     );
   };
-  var $author$project$IIIF$Language$LabelValue = F2(
+  var $rism_digital$elm_iiif$IIIF$Language$LabelValue = F2(
     function(label, value) {
       return { label, value };
     }
   );
-  var $author$project$IIIF$Language$v2LabelValueDecoder = A3(
-    $author$project$IIIF$Internal$Utilities$required,
+  var $rism_digital$elm_iiif$IIIF$Language$v2LabelValueDecoder = A3(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
     "value",
-    $author$project$IIIF$Language$v2LanguageMapLabelDecoder,
+    $rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder,
     A3(
-      $author$project$IIIF$Internal$Utilities$required,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
       "label",
-      $author$project$IIIF$Language$v2LanguageMapLabelDecoder,
-      $elm$json$Json$Decode$succeed($author$project$IIIF$Language$LabelValue)
+      $rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder,
+      $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Language$LabelValue)
     )
   );
-  function $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoderHelp() {
+  function $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoderHelp() {
     return A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "metadata",
-      $elm$json$Json$Decode$list($author$project$IIIF$Language$v2LabelValueDecoder),
+      $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Language$v2LabelValueDecoder),
       _List_Nil,
       A2(
-        $author$project$IIIF$Internal$Utilities$custom,
-        $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeItemsDecoder(),
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+        $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeItemsDecoder(),
         A4(
-          $author$project$IIIF$Internal$Utilities$optional,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
           "label",
-          $author$project$IIIF$Language$v2LanguageMapLabelDecoder,
-          $author$project$IIIF$Internal$V2PresentationDecoders$defaultLabelMap,
+          $rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder,
+          $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$defaultLabelMap,
           A3(
-            $author$project$IIIF$Internal$Utilities$required,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
             "@id",
             $elm$json$Json$Decode$string,
-            $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Range)
+            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Range)
           )
         )
       )
     );
   }
-  function $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeItemsDecoder() {
+  function $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeItemsDecoder() {
     return A3(
       $elm$json$Json$Decode$map2,
       F2(
         function(subranges, canvases) {
           return _Utils_ap(
-            A2($elm$core$List$map, $author$project$IIIF$Presentation$RangeRange, subranges),
-            A2($elm$core$List$map, $author$project$IIIF$Presentation$RangeCanvas, canvases)
+            A2($elm$core$List$map, $rism_digital$elm_iiif$IIIF$Presentation$RangeRange, subranges),
+            A2($elm$core$List$map, $rism_digital$elm_iiif$IIIF$Presentation$RangeCanvas, canvases)
           );
         }
       ),
@@ -12275,7 +12369,7 @@
               $elm$json$Json$Decode$field,
               "ranges",
               $elm$json$Json$Decode$list(
-                $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoder()
+                $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoder()
               )
             ),
             $elm$json$Json$Decode$succeed(_List_Nil)
@@ -12296,45 +12390,45 @@
       )
     );
   }
-  function $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoder() {
+  function $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoder() {
     return $elm$json$Json$Decode$lazy(
       function(_v0) {
-        return $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoderHelp();
+        return $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoderHelp();
       }
     );
   }
   try {
-    $author$project$IIIF$Internal$V2PresentationDecoders$v2RangeDecoderHelp = $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoderHelp();
-    $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoderHelp = function() {
-      return $author$project$IIIF$Internal$V2PresentationDecoders$v2RangeDecoderHelp;
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2RangeDecoderHelp = $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoderHelp();
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoderHelp = function() {
+      return $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2RangeDecoderHelp;
     };
-    $author$project$IIIF$Internal$V2PresentationDecoders$v2RangeItemsDecoder = $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeItemsDecoder();
-    $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeItemsDecoder = function() {
-      return $author$project$IIIF$Internal$V2PresentationDecoders$v2RangeItemsDecoder;
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2RangeItemsDecoder = $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeItemsDecoder();
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeItemsDecoder = function() {
+      return $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2RangeItemsDecoder;
     };
-    $author$project$IIIF$Internal$V2PresentationDecoders$v2RangeDecoder = $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoder();
-    $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoder = function() {
-      return $author$project$IIIF$Internal$V2PresentationDecoders$v2RangeDecoder;
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2RangeDecoder = $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoder();
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoder = function() {
+      return $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2RangeDecoder;
     };
   } catch ($) {
     throw "Some top-level definitions from `IIIF.Internal.V2PresentationDecoders` are causing infinite recursion:\n\n  \u250C\u2500\u2500\u2500\u2500\u2500\u2510\n  \u2502    v2RangeDecoderHelp\n  \u2502     \u2193\n  \u2502    v2RangeItemsDecoder\n  \u2502     \u2193\n  \u2502    v2RangeDecoder\n  \u2514\u2500\u2500\u2500\u2500\u2500\u2518\n\nThese errors are very tricky, so read https://elm-lang.org/0.19.1/bad-recursion to learn how to fix it!";
   }
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2RangeDecoderHelp;
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2RangeItemsDecoder;
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2RangeDecoder;
-  var $author$project$IIIF$Presentation$Collection = F4(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2RangeDecoderHelp;
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2RangeItemsDecoder;
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2RangeDecoder;
+  var $rism_digital$elm_iiif$IIIF$Presentation$Collection = F4(
     function(id, label, summary, items) {
       return { id, items, label, summary };
     }
   );
-  var $author$project$IIIF$Presentation$ManifestItem = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$ManifestItem = function(a) {
     return { $: "ManifestItem", a };
   };
-  var $author$project$IIIF$Presentation$NestedCollection = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$NestedCollection = function(a) {
     return { $: "NestedCollection", a };
   };
-  var $author$project$IIIF$Presentation$LeftToRight = { $: "LeftToRight" };
-  var $author$project$IIIF$Presentation$Manifest = function(id) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$LeftToRight = { $: "LeftToRight" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$Manifest = function(id) {
     return function(label) {
       return function(metadata) {
         return function(viewingDirection) {
@@ -12361,115 +12455,115 @@
       };
     };
   };
-  var $author$project$IIIF$Presentation$HomePage = F4(
+  var $rism_digital$elm_iiif$IIIF$Presentation$HomePage = F4(
     function(id, label, format, type_) {
       return { format, id, label, type_ };
     }
   );
-  var $author$project$IIIF$Presentation$OtherFormat = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$OtherFormat = function(a) {
     return { $: "OtherFormat", a };
   };
-  var $author$project$IIIF$Presentation$OtherResource = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$OtherResource = function(a) {
     return { $: "OtherResource", a };
   };
-  var $author$project$IIIF$Presentation$ImageJpeg = { $: "ImageJpeg" };
-  var $author$project$IIIF$Presentation$mediaFormatFromString = function(value) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$ImageJpeg = { $: "ImageJpeg" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$mediaFormatFromString = function(value) {
     if (value === "image/jpeg") {
-      return $author$project$IIIF$Presentation$ImageJpeg;
+      return $rism_digital$elm_iiif$IIIF$Presentation$ImageJpeg;
     } else {
-      return $author$project$IIIF$Presentation$OtherFormat(value);
+      return $rism_digital$elm_iiif$IIIF$Presentation$OtherFormat(value);
     }
   };
-  var $author$project$IIIF$Internal$SharedDecoders$formatDecoder = A2($elm$json$Json$Decode$map, $author$project$IIIF$Presentation$mediaFormatFromString, $elm$json$Json$Decode$string);
-  var $author$project$IIIF$Presentation$Video = { $: "Video" };
-  var $author$project$IIIF$Presentation$resourceTypeFromString = function(value) {
+  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$formatDecoder = A2($elm$json$Json$Decode$map, $rism_digital$elm_iiif$IIIF$Presentation$mediaFormatFromString, $elm$json$Json$Decode$string);
+  var $rism_digital$elm_iiif$IIIF$Presentation$Video = { $: "Video" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$resourceTypeFromString = function(value) {
     if (value === "Video") {
-      return $author$project$IIIF$Presentation$Video;
+      return $rism_digital$elm_iiif$IIIF$Presentation$Video;
     } else {
-      return $author$project$IIIF$Presentation$OtherResource(value);
+      return $rism_digital$elm_iiif$IIIF$Presentation$OtherResource(value);
     }
   };
-  var $author$project$IIIF$Internal$SharedDecoders$resourceTypeDecoder = A2($elm$json$Json$Decode$map, $author$project$IIIF$Presentation$resourceTypeFromString, $elm$json$Json$Decode$string);
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2HomePageDecoder = A4(
-    $author$project$IIIF$Internal$Utilities$optional,
+  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$resourceTypeDecoder = A2($elm$json$Json$Decode$map, $rism_digital$elm_iiif$IIIF$Presentation$resourceTypeFromString, $elm$json$Json$Decode$string);
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2HomePageDecoder = A4(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
     "@type",
-    $author$project$IIIF$Internal$SharedDecoders$resourceTypeDecoder,
-    $author$project$IIIF$Presentation$OtherResource("Text"),
+    $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$resourceTypeDecoder,
+    $rism_digital$elm_iiif$IIIF$Presentation$OtherResource("Text"),
     A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "format",
-      $author$project$IIIF$Internal$SharedDecoders$formatDecoder,
-      $author$project$IIIF$Presentation$OtherFormat("text/html"),
+      $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$formatDecoder,
+      $rism_digital$elm_iiif$IIIF$Presentation$OtherFormat("text/html"),
       A4(
-        $author$project$IIIF$Internal$Utilities$optional,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
         "label",
-        $author$project$IIIF$Language$v2LanguageMapLabelDecoder,
-        $author$project$IIIF$Internal$V2PresentationDecoders$defaultLabelMap,
+        $rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder,
+        $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$defaultLabelMap,
         A3(
-          $author$project$IIIF$Internal$Utilities$required,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
           "@id",
           $elm$json$Json$Decode$string,
-          $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$HomePage)
+          $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$HomePage)
         )
       )
     )
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2HomePageListDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2HomePageListDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
-        $elm$json$Json$Decode$list($author$project$IIIF$Internal$V2PresentationDecoders$v2HomePageDecoder),
-        A2($elm$json$Json$Decode$map, $elm$core$List$singleton, $author$project$IIIF$Internal$V2PresentationDecoders$v2HomePageDecoder)
+        $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2HomePageDecoder),
+        A2($elm$json$Json$Decode$map, $elm$core$List$singleton, $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2HomePageDecoder)
       ]
     )
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2CollectionItemManifestDecoder = A2(
-    $author$project$IIIF$Internal$Utilities$hardcoded,
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CollectionItemManifestDecoder = A2(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
     $elm$core$Maybe$Nothing,
     A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "thumbnail",
-      $author$project$IIIF$Internal$SharedDecoders$thumbnailDecoder($author$project$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageDecoder),
+      $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$thumbnailDecoder($rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageDecoder),
       $elm$core$Maybe$Nothing,
       A2(
-        $author$project$IIIF$Internal$Utilities$hardcoded,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
         $elm$core$Maybe$Nothing,
         A2(
-          $author$project$IIIF$Internal$Utilities$hardcoded,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
           $elm$core$Maybe$Nothing,
           A4(
-            $author$project$IIIF$Internal$Utilities$optional,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
             "rendering",
-            $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$V2PresentationDecoders$v2HomePageListDecoder),
+            $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2HomePageListDecoder),
             $elm$core$Maybe$Nothing,
             A2(
-              $author$project$IIIF$Internal$Utilities$hardcoded,
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
               $elm$core$Maybe$Nothing,
               A2(
-                $author$project$IIIF$Internal$Utilities$hardcoded,
+                $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
                 _List_Nil,
                 A2(
-                  $author$project$IIIF$Internal$Utilities$hardcoded,
-                  $author$project$IIIF$Presentation$LayoutV2($author$project$IIIF$Presentation$IndividualsHint),
+                  $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
+                  $rism_digital$elm_iiif$IIIF$Presentation$LayoutV2($rism_digital$elm_iiif$IIIF$Presentation$IndividualsHint),
                   A4(
-                    $author$project$IIIF$Internal$Utilities$optional,
+                    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
                     "description",
-                    $elm$json$Json$Decode$maybe($author$project$IIIF$Language$v2LanguageMapLabelDecoder),
+                    $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder),
                     $elm$core$Maybe$Nothing,
                     A2(
-                      $author$project$IIIF$Internal$Utilities$hardcoded,
-                      $author$project$IIIF$Presentation$LeftToRight,
+                      $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
+                      $rism_digital$elm_iiif$IIIF$Presentation$LeftToRight,
                       A2(
-                        $author$project$IIIF$Internal$Utilities$hardcoded,
+                        $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
                         _List_Nil,
                         A3(
-                          $author$project$IIIF$Internal$Utilities$required,
+                          $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
                           "label",
-                          $author$project$IIIF$Language$v2LanguageMapLabelDecoder,
+                          $rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder,
                           A3(
-                            $author$project$IIIF$Internal$Utilities$required,
+                            $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
                             "@id",
                             $elm$json$Json$Decode$string,
-                            $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Manifest)
+                            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Manifest)
                           )
                         )
                       )
@@ -12483,48 +12577,48 @@
       )
     )
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2CollectionItemFromType = function(itemType) {
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CollectionItemFromType = function(itemType) {
     switch (itemType) {
       case "sc:Collection":
         return A2(
           $elm$json$Json$Decode$map,
-          $author$project$IIIF$Presentation$NestedCollection,
+          $rism_digital$elm_iiif$IIIF$Presentation$NestedCollection,
           $elm$json$Json$Decode$lazy(
             function(_v1) {
-              return $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2iiifCollectionDecoder();
+              return $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2iiifCollectionDecoder();
             }
           )
         );
       case "sc:Manifest":
-        return A2($elm$json$Json$Decode$map, $author$project$IIIF$Presentation$ManifestItem, $author$project$IIIF$Internal$V2PresentationDecoders$v2CollectionItemManifestDecoder);
+        return A2($elm$json$Json$Decode$map, $rism_digital$elm_iiif$IIIF$Presentation$ManifestItem, $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CollectionItemManifestDecoder);
       default:
         return $elm$json$Json$Decode$fail("Unknown collection item type: " + itemType);
     }
   };
-  function $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2iiifCollectionDecoder() {
+  function $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2iiifCollectionDecoder() {
     return A2(
-      $author$project$IIIF$Internal$Utilities$custom,
-      $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemsDecoder(),
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+      $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemsDecoder(),
       A4(
-        $author$project$IIIF$Internal$Utilities$optional,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
         "description",
-        $elm$json$Json$Decode$maybe($author$project$IIIF$Language$v2LanguageMapLabelDecoder),
+        $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder),
         $elm$core$Maybe$Nothing,
         A3(
-          $author$project$IIIF$Internal$Utilities$required,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
           "label",
-          $author$project$IIIF$Language$v2LanguageMapLabelDecoder,
+          $rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder,
           A3(
-            $author$project$IIIF$Internal$Utilities$required,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
             "@id",
             $elm$json$Json$Decode$string,
-            $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Collection)
+            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Collection)
           )
         )
       )
     );
   }
-  function $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemsDecoder() {
+  function $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemsDecoder() {
     return $elm$json$Json$Decode$oneOf(
       _List_fromArray(
         [
@@ -12532,7 +12626,7 @@
             $elm$json$Json$Decode$field,
             "members",
             $elm$json$Json$Decode$list(
-              $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemDecoder()
+              $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemDecoder()
             )
           ),
           A3(
@@ -12551,10 +12645,10 @@
                     $elm$json$Json$Decode$list(
                       A2(
                         $elm$json$Json$Decode$map,
-                        $author$project$IIIF$Presentation$NestedCollection,
+                        $rism_digital$elm_iiif$IIIF$Presentation$NestedCollection,
                         $elm$json$Json$Decode$lazy(
                           function(_v2) {
-                            return $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2iiifCollectionDecoder();
+                            return $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2iiifCollectionDecoder();
                           }
                         )
                       )
@@ -12571,7 +12665,7 @@
                     $elm$json$Json$Decode$field,
                     "manifests",
                     $elm$json$Json$Decode$list(
-                      A2($elm$json$Json$Decode$map, $author$project$IIIF$Presentation$ManifestItem, $author$project$IIIF$Internal$V2PresentationDecoders$v2CollectionItemManifestDecoder)
+                      A2($elm$json$Json$Decode$map, $rism_digital$elm_iiif$IIIF$Presentation$ManifestItem, $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CollectionItemManifestDecoder)
                     )
                   ),
                   $elm$json$Json$Decode$succeed(_List_Nil)
@@ -12583,44 +12677,44 @@
       )
     );
   }
-  function $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemDecoder() {
+  function $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemDecoder() {
     return A2(
       $elm$json$Json$Decode$andThen,
-      $author$project$IIIF$Internal$V2PresentationDecoders$v2CollectionItemFromType,
+      $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CollectionItemFromType,
       A2($elm$json$Json$Decode$field, "@type", $elm$json$Json$Decode$string)
     );
   }
   try {
-    $author$project$IIIF$Internal$V2PresentationDecoders$v2iiifCollectionDecoder = $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2iiifCollectionDecoder();
-    $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2iiifCollectionDecoder = function() {
-      return $author$project$IIIF$Internal$V2PresentationDecoders$v2iiifCollectionDecoder;
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2iiifCollectionDecoder = $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2iiifCollectionDecoder();
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2iiifCollectionDecoder = function() {
+      return $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2iiifCollectionDecoder;
     };
-    $author$project$IIIF$Internal$V2PresentationDecoders$v2CollectionItemsDecoder = $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemsDecoder();
-    $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemsDecoder = function() {
-      return $author$project$IIIF$Internal$V2PresentationDecoders$v2CollectionItemsDecoder;
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CollectionItemsDecoder = $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemsDecoder();
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemsDecoder = function() {
+      return $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CollectionItemsDecoder;
     };
-    $author$project$IIIF$Internal$V2PresentationDecoders$v2CollectionItemDecoder = $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemDecoder();
-    $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemDecoder = function() {
-      return $author$project$IIIF$Internal$V2PresentationDecoders$v2CollectionItemDecoder;
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CollectionItemDecoder = $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemDecoder();
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemDecoder = function() {
+      return $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CollectionItemDecoder;
     };
   } catch ($) {
     throw "Some top-level definitions from `IIIF.Internal.V2PresentationDecoders` are causing infinite recursion:\n\n  \u250C\u2500\u2500\u2500\u2500\u2500\u2510\n  \u2502    v2iiifCollectionDecoder\n  \u2502     \u2193\n  \u2502    v2CollectionItemsDecoder\n  \u2502     \u2193\n  \u2502    v2CollectionItemDecoder\n  \u2502     \u2193\n  \u2502    v2CollectionItemFromType\n  \u2514\u2500\u2500\u2500\u2500\u2500\u2518\n\nThese errors are very tricky, so read https://elm-lang.org/0.19.1/bad-recursion to learn how to fix it!";
   }
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2iiifCollectionDecoder;
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2CollectionItemsDecoder;
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2CollectionItemDecoder;
-  var $author$project$IIIF$Language$labelValueDecoder = A3(
-    $author$project$IIIF$Internal$Utilities$required,
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2iiifCollectionDecoder;
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CollectionItemsDecoder;
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CollectionItemDecoder;
+  var $rism_digital$elm_iiif$IIIF$Language$labelValueDecoder = A3(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
     "value",
-    $author$project$IIIF$Language$languageMapLabelDecoder,
+    $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder,
     A3(
-      $author$project$IIIF$Internal$Utilities$required,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
       "label",
-      $author$project$IIIF$Language$languageMapLabelDecoder,
-      $elm$json$Json$Decode$succeed($author$project$IIIF$Language$LabelValue)
+      $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder,
+      $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Language$LabelValue)
     )
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2RequiredStatement = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2RequiredStatement = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
         A2(
@@ -12630,8 +12724,8 @@
               label: _List_fromArray(
                 [
                   A2(
-                    $author$project$IIIF$Language$LanguageValues,
-                    $author$project$IIIF$Language$Default,
+                    $rism_digital$elm_iiif$IIIF$Language$LanguageValues,
+                    $rism_digital$elm_iiif$IIIF$Language$Default,
                     _List_fromArray(
                       ["Attribution"]
                     )
@@ -12641,8 +12735,8 @@
               value: _List_fromArray(
                 [
                   A2(
-                    $author$project$IIIF$Language$LanguageValues,
-                    $author$project$IIIF$Language$Default,
+                    $rism_digital$elm_iiif$IIIF$Language$LanguageValues,
+                    $rism_digital$elm_iiif$IIIF$Language$Default,
                     _List_fromArray(
                       [value]
                     )
@@ -12653,13 +12747,13 @@
           },
           $elm$json$Json$Decode$string
         ),
-        $author$project$IIIF$Language$labelValueDecoder,
-        $author$project$IIIF$Language$v2LabelValueDecoder
+        $rism_digital$elm_iiif$IIIF$Language$labelValueDecoder,
+        $rism_digital$elm_iiif$IIIF$Language$v2LabelValueDecoder
       ]
     )
   );
   var $elm$json$Json$Decode$index = _Json_decodeIndex;
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2SequencesDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2SequencesDecoder = A2(
     $elm$json$Json$Decode$index,
     0,
     A2(
@@ -12667,90 +12761,90 @@
       _List_fromArray(
         ["canvases"]
       ),
-      $elm$json$Json$Decode$list($author$project$IIIF$Internal$V2PresentationDecoders$v2CanvasDecoder)
+      $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CanvasDecoder)
     )
   );
-  var $author$project$IIIF$Presentation$BottomToTop = { $: "BottomToTop" };
-  var $author$project$IIIF$Presentation$RightToLeft = { $: "RightToLeft" };
-  var $author$project$IIIF$Presentation$TopToBottom = { $: "TopToBottom" };
-  var $author$project$IIIF$Presentation$stringToViewingDirection = function(direction) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$BottomToTop = { $: "BottomToTop" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$RightToLeft = { $: "RightToLeft" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$TopToBottom = { $: "TopToBottom" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$stringToViewingDirection = function(direction) {
     switch (direction) {
       case "bottom-to-top":
-        return $author$project$IIIF$Presentation$BottomToTop;
+        return $rism_digital$elm_iiif$IIIF$Presentation$BottomToTop;
       case "left-to-right":
-        return $author$project$IIIF$Presentation$LeftToRight;
+        return $rism_digital$elm_iiif$IIIF$Presentation$LeftToRight;
       case "right-to-left":
-        return $author$project$IIIF$Presentation$RightToLeft;
+        return $rism_digital$elm_iiif$IIIF$Presentation$RightToLeft;
       case "top-to-bottom":
-        return $author$project$IIIF$Presentation$TopToBottom;
+        return $rism_digital$elm_iiif$IIIF$Presentation$TopToBottom;
       default:
-        return $author$project$IIIF$Presentation$LeftToRight;
+        return $rism_digital$elm_iiif$IIIF$Presentation$LeftToRight;
     }
   };
-  var $author$project$IIIF$Internal$SharedDecoders$viewingDirectionDecoder = A2($elm$json$Json$Decode$map, $author$project$IIIF$Presentation$stringToViewingDirection, $elm$json$Json$Decode$string);
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2iiifManifestDecoder = A4(
-    $author$project$IIIF$Internal$Utilities$optional,
+  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingDirectionDecoder = A2($elm$json$Json$Decode$map, $rism_digital$elm_iiif$IIIF$Presentation$stringToViewingDirection, $elm$json$Json$Decode$string);
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2iiifManifestDecoder = A4(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
     "attribution",
-    $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$V2PresentationDecoders$v2RequiredStatement),
+    $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2RequiredStatement),
     $elm$core$Maybe$Nothing,
     A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "thumbnail",
-      $author$project$IIIF$Internal$SharedDecoders$thumbnailDecoder($author$project$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageDecoder),
+      $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$thumbnailDecoder($rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageDecoder),
       $elm$core$Maybe$Nothing,
       A2(
-        $author$project$IIIF$Internal$Utilities$hardcoded,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
         $elm$core$Maybe$Nothing,
         A4(
-          $author$project$IIIF$Internal$Utilities$optional,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
           "logo",
-          $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$V2PresentationDecoders$v2ImageDecoder),
+          $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageDecoder),
           $elm$core$Maybe$Nothing,
           A4(
-            $author$project$IIIF$Internal$Utilities$optional,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
             "rendering",
-            $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$V2PresentationDecoders$v2HomePageListDecoder),
+            $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2HomePageListDecoder),
             $elm$core$Maybe$Nothing,
             A4(
-              $author$project$IIIF$Internal$Utilities$optional,
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
               "structures",
               $elm$json$Json$Decode$maybe(
-                $elm$json$Json$Decode$list($author$project$IIIF$Internal$V2PresentationDecoders$v2RangeDecoder)
+                $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2RangeDecoder)
               ),
               $elm$core$Maybe$Nothing,
               A3(
-                $author$project$IIIF$Internal$Utilities$required,
+                $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
                 "sequences",
-                $author$project$IIIF$Internal$V2PresentationDecoders$v2SequencesDecoder,
+                $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2SequencesDecoder,
                 A4(
-                  $author$project$IIIF$Internal$Utilities$optional,
+                  $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
                   "viewingHint",
-                  $author$project$IIIF$Internal$SharedDecoders$viewingHintDecoder,
-                  $author$project$IIIF$Presentation$LayoutV2($author$project$IIIF$Presentation$IndividualsHint),
+                  $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingHintDecoder,
+                  $rism_digital$elm_iiif$IIIF$Presentation$LayoutV2($rism_digital$elm_iiif$IIIF$Presentation$IndividualsHint),
                   A4(
-                    $author$project$IIIF$Internal$Utilities$optional,
+                    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
                     "description",
-                    $elm$json$Json$Decode$maybe($author$project$IIIF$Language$v2LanguageMapLabelDecoder),
+                    $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder),
                     $elm$core$Maybe$Nothing,
                     A4(
-                      $author$project$IIIF$Internal$Utilities$optional,
+                      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
                       "viewingDirection",
-                      $author$project$IIIF$Internal$SharedDecoders$viewingDirectionDecoder,
-                      $author$project$IIIF$Presentation$LeftToRight,
+                      $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingDirectionDecoder,
+                      $rism_digital$elm_iiif$IIIF$Presentation$LeftToRight,
                       A4(
-                        $author$project$IIIF$Internal$Utilities$optional,
+                        $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
                         "metadata",
-                        $elm$json$Json$Decode$list($author$project$IIIF$Language$v2LabelValueDecoder),
+                        $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Language$v2LabelValueDecoder),
                         _List_Nil,
                         A3(
-                          $author$project$IIIF$Internal$Utilities$required,
+                          $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
                           "label",
-                          $author$project$IIIF$Language$v2LanguageMapLabelDecoder,
+                          $rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder,
                           A3(
-                            $author$project$IIIF$Internal$Utilities$required,
+                            $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
                             "@id",
                             $elm$json$Json$Decode$string,
-                            $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Manifest)
+                            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Manifest)
                           )
                         )
                       )
@@ -12764,123 +12858,123 @@
       )
     )
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ResourceFromType = function(resourceType) {
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ResourceFromType = function(resourceType) {
     switch (resourceType) {
       case "sc:Canvas":
         return A2(
           $elm$json$Json$Decode$map,
           A2(
             $elm$core$Basics$composeL,
-            $author$project$IIIF$Presentation$ResourceCanvas,
-            $author$project$IIIF$Presentation$IIIFCanvas($author$project$IIIF$Version$IIIFV2)
+            $rism_digital$elm_iiif$IIIF$Presentation$ResourceCanvas,
+            $rism_digital$elm_iiif$IIIF$Presentation$IIIFCanvas($rism_digital$elm_iiif$IIIF$Version$IIIFV2)
           ),
-          $author$project$IIIF$Internal$V2PresentationDecoders$v2CanvasDecoder
+          $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CanvasDecoder
         );
       case "sc:Collection":
         return A2(
           $elm$json$Json$Decode$map,
           A2(
             $elm$core$Basics$composeL,
-            $author$project$IIIF$Presentation$ResourceCollection,
-            $author$project$IIIF$Presentation$IIIFCollection($author$project$IIIF$Version$IIIFV2)
+            $rism_digital$elm_iiif$IIIF$Presentation$ResourceCollection,
+            $rism_digital$elm_iiif$IIIF$Presentation$IIIFCollection($rism_digital$elm_iiif$IIIF$Version$IIIFV2)
           ),
-          $author$project$IIIF$Internal$V2PresentationDecoders$v2iiifCollectionDecoder
+          $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2iiifCollectionDecoder
         );
       case "sc:Manifest":
         return A2(
           $elm$json$Json$Decode$map,
           A2(
             $elm$core$Basics$composeL,
-            $author$project$IIIF$Presentation$ResourceManifest,
-            $author$project$IIIF$Presentation$IIIFManifest($author$project$IIIF$Version$IIIFV2)
+            $rism_digital$elm_iiif$IIIF$Presentation$ResourceManifest,
+            $rism_digital$elm_iiif$IIIF$Presentation$IIIFManifest($rism_digital$elm_iiif$IIIF$Version$IIIFV2)
           ),
-          $author$project$IIIF$Internal$V2PresentationDecoders$v2iiifManifestDecoder
+          $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2iiifManifestDecoder
         );
       case "sc:Range":
         return A2(
           $elm$json$Json$Decode$map,
           A2(
             $elm$core$Basics$composeL,
-            $author$project$IIIF$Presentation$ResourceRange,
-            $author$project$IIIF$Presentation$IIIFRange($author$project$IIIF$Version$IIIFV2)
+            $rism_digital$elm_iiif$IIIF$Presentation$ResourceRange,
+            $rism_digital$elm_iiif$IIIF$Presentation$IIIFRange($rism_digital$elm_iiif$IIIF$Version$IIIFV2)
           ),
-          $author$project$IIIF$Internal$V2PresentationDecoders$v2RangeDecoder
+          $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2RangeDecoder
         );
       default:
         return $elm$json$Json$Decode$fail("Unknown IIIF v2 resource type: " + resourceType);
     }
   };
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ResourceTypeDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ResourceTypeDecoder = A2(
     $elm$json$Json$Decode$andThen,
-    $author$project$IIIF$Internal$V2PresentationDecoders$v2ResourceFromType,
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ResourceFromType,
     A2($elm$json$Json$Decode$field, "@type", $elm$json$Json$Decode$string)
   );
-  var $author$project$IIIF$Version$IIIFV3 = { $: "IIIFV3" };
-  var $author$project$IIIF$Presentation$LayoutV3 = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Version$IIIFV3 = { $: "IIIFV3" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$LayoutV3 = function(a) {
     return { $: "LayoutV3", a };
   };
-  var $author$project$IIIF$Presentation$AutoAdvanceBehavior = { $: "AutoAdvanceBehavior" };
-  var $author$project$IIIF$Presentation$ContinuousBehavior = { $: "ContinuousBehavior" };
-  var $author$project$IIIF$Presentation$FacingPagesBehavior = { $: "FacingPagesBehavior" };
-  var $author$project$IIIF$Presentation$HiddenBehavior = { $: "HiddenBehavior" };
-  var $author$project$IIIF$Presentation$IndividualsBehavior = { $: "IndividualsBehavior" };
-  var $author$project$IIIF$Presentation$MultiPartBehavior = { $: "MultiPartBehavior" };
-  var $author$project$IIIF$Presentation$NoAutoAdvanceBehavior = { $: "NoAutoAdvanceBehavior" };
-  var $author$project$IIIF$Presentation$NoNavBehavior = { $: "NoNavBehavior" };
-  var $author$project$IIIF$Presentation$NoRepeatBehavior = { $: "NoRepeatBehavior" };
-  var $author$project$IIIF$Presentation$NonPagedBehavior = { $: "NonPagedBehavior" };
-  var $author$project$IIIF$Presentation$PagedBehavior = { $: "PagedBehavior" };
-  var $author$project$IIIF$Presentation$RepeatBehavior = { $: "RepeatBehavior" };
-  var $author$project$IIIF$Presentation$SequenceBehavior = { $: "SequenceBehavior" };
-  var $author$project$IIIF$Presentation$ThumbnailNavBehavior = { $: "ThumbnailNavBehavior" };
-  var $author$project$IIIF$Presentation$TogetherBehavior = { $: "TogetherBehavior" };
-  var $author$project$IIIF$Presentation$UnorderedBehavior = { $: "UnorderedBehavior" };
-  var $author$project$IIIF$Presentation$stringToBehavior = function(behavior) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$AutoAdvanceBehavior = { $: "AutoAdvanceBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$ContinuousBehavior = { $: "ContinuousBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$FacingPagesBehavior = { $: "FacingPagesBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$HiddenBehavior = { $: "HiddenBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$IndividualsBehavior = { $: "IndividualsBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$MultiPartBehavior = { $: "MultiPartBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$NoAutoAdvanceBehavior = { $: "NoAutoAdvanceBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$NoNavBehavior = { $: "NoNavBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$NoRepeatBehavior = { $: "NoRepeatBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$NonPagedBehavior = { $: "NonPagedBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$PagedBehavior = { $: "PagedBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$RepeatBehavior = { $: "RepeatBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$SequenceBehavior = { $: "SequenceBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$ThumbnailNavBehavior = { $: "ThumbnailNavBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$TogetherBehavior = { $: "TogetherBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$UnorderedBehavior = { $: "UnorderedBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$stringToBehavior = function(behavior) {
     switch (behavior) {
       case "auto-advance":
-        return $author$project$IIIF$Presentation$AutoAdvanceBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$AutoAdvanceBehavior;
       case "continuous":
-        return $author$project$IIIF$Presentation$ContinuousBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$ContinuousBehavior;
       case "facing-pages":
-        return $author$project$IIIF$Presentation$FacingPagesBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$FacingPagesBehavior;
       case "hidden":
-        return $author$project$IIIF$Presentation$HiddenBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$HiddenBehavior;
       case "individuals":
-        return $author$project$IIIF$Presentation$IndividualsBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$IndividualsBehavior;
       case "multi-part":
-        return $author$project$IIIF$Presentation$MultiPartBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$MultiPartBehavior;
       case "no-auto-advance":
-        return $author$project$IIIF$Presentation$NoAutoAdvanceBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$NoAutoAdvanceBehavior;
       case "no-nav":
-        return $author$project$IIIF$Presentation$NoNavBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$NoNavBehavior;
       case "no-repeat":
-        return $author$project$IIIF$Presentation$NoRepeatBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$NoRepeatBehavior;
       case "non-paged":
-        return $author$project$IIIF$Presentation$NonPagedBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$NonPagedBehavior;
       case "paged":
-        return $author$project$IIIF$Presentation$PagedBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$PagedBehavior;
       case "repeat":
-        return $author$project$IIIF$Presentation$RepeatBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$RepeatBehavior;
       case "sequence":
-        return $author$project$IIIF$Presentation$SequenceBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$SequenceBehavior;
       case "thumbnail-nav":
-        return $author$project$IIIF$Presentation$ThumbnailNavBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$ThumbnailNavBehavior;
       case "together":
-        return $author$project$IIIF$Presentation$TogetherBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$TogetherBehavior;
       case "unordered":
-        return $author$project$IIIF$Presentation$UnorderedBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$UnorderedBehavior;
       default:
-        return $author$project$IIIF$Presentation$PagedBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$PagedBehavior;
     }
   };
-  var $author$project$IIIF$Internal$SharedDecoders$behaviourDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$behaviourDecoder = A2(
     $elm$json$Json$Decode$map,
-    $author$project$IIIF$Presentation$LayoutV3,
+    $rism_digital$elm_iiif$IIIF$Presentation$LayoutV3,
     $elm$json$Json$Decode$list(
-      A2($elm$json$Json$Decode$map, $author$project$IIIF$Presentation$stringToBehavior, $elm$json$Json$Decode$string)
+      A2($elm$json$Json$Decode$map, $rism_digital$elm_iiif$IIIF$Presentation$stringToBehavior, $elm$json$Json$Decode$string)
     )
   );
-  var $author$project$IIIF$Internal$Utilities$find = F2(
+  var $rism_digital$elm_iiif$IIIF$Internal$Utilities$find = F2(
     function(predicate, items) {
       find:
         while (true) {
@@ -12901,20 +12995,20 @@
         }
     }
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$selectServiceId = function(services) {
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$selectServiceId = function(services) {
     return A2(
       $elm$core$Maybe$map,
       function($) {
         return $.id;
       },
       A2(
-        $author$project$IIIF$Internal$Utilities$find,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$find,
         function(service) {
           return A2(
             $elm$core$List$member,
             service.serviceType,
             _List_fromArray(
-              [$author$project$IIIF$Presentation$ImageService1, $author$project$IIIF$Presentation$ImageService2, $author$project$IIIF$Presentation$ImageService3]
+              [$rism_digital$elm_iiif$IIIF$Presentation$ImageService1, $rism_digital$elm_iiif$IIIF$Presentation$ImageService2, $rism_digital$elm_iiif$IIIF$Presentation$ImageService3]
             )
           );
         },
@@ -12922,14 +13016,14 @@
       )
     );
   };
-  var $author$project$IIIF$Presentation$ServiceObject = F2(
+  var $rism_digital$elm_iiif$IIIF$Presentation$ServiceObject = F2(
     function(id, serviceType) {
       return { id, serviceType };
     }
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeDecoder = A2(
     $elm$json$Json$Decode$map,
-    $author$project$IIIF$Presentation$stringToServiceType,
+    $rism_digital$elm_iiif$IIIF$Presentation$stringToServiceType,
     $elm$json$Json$Decode$oneOf(
       _List_fromArray(
         [
@@ -12939,11 +13033,11 @@
       )
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectDecoder = A2(
-    $author$project$IIIF$Internal$Utilities$custom,
-    $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeDecoder,
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectDecoder = A2(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeDecoder,
     A2(
-      $author$project$IIIF$Internal$Utilities$custom,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
       $elm$json$Json$Decode$oneOf(
         _List_fromArray(
           [
@@ -12952,52 +13046,52 @@
           ]
         )
       ),
-      $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$ServiceObject)
+      $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$ServiceObject)
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectListDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectListDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
-        $elm$json$Json$Decode$list($author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectDecoder),
-        A2($elm$json$Json$Decode$map, $elm$core$List$singleton, $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectDecoder)
+        $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectDecoder),
+        A2($elm$json$Json$Decode$map, $elm$core$List$singleton, $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectDecoder)
       ]
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageIdFromServiceDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ImageIdFromServiceDecoder = A2(
     $elm$json$Json$Decode$andThen,
     function(services) {
-      var _v0 = $author$project$IIIF$Internal$V3PresentationDecoders$selectServiceId(services);
+      var _v0 = $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$selectServiceId(services);
       if (_v0.$ === "Just") {
         var id = _v0.a;
         return A2(
           $elm$json$Json$Decode$map,
-          $author$project$IIIF$Image$imageUriToInfoUri,
-          $author$project$IIIF$Internal$SharedDecoders$convertImageIdToImageUri(id)
+          $rism_digital$elm_iiif$IIIF$Image$imageUriToInfoUri,
+          $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$convertImageIdToImageUri(id)
         );
       } else {
         return $elm$json$Json$Decode$fail("No valid service ID found in service array");
       }
     },
-    A2($elm$json$Json$Decode$field, "service", $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectListDecoder)
+    A2($elm$json$Json$Decode$field, "service", $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectListDecoder)
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageIdDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ImageIdDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
-        $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageIdFromServiceDecoder,
+        $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ImageIdFromServiceDecoder,
         A2(
           $elm$json$Json$Decode$andThen,
-          $author$project$IIIF$Internal$SharedDecoders$convertStaticImageIdToImageUri,
+          $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$convertStaticImageIdToImageUri,
           A2($elm$json$Json$Decode$field, "id", $elm$json$Json$Decode$string)
         )
       ]
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
-      [$author$project$IIIF$Language$languageMapLabelDecoder, $author$project$IIIF$Language$stringToLanguageMapLabelDecoder]
+      [$rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder, $rism_digital$elm_iiif$IIIF$Language$stringToLanguageMapLabelDecoder]
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectValueListDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectValueListDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
         $elm$json$Json$Decode$list($elm$json$Json$Decode$value),
@@ -13005,67 +13099,67 @@
       ]
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeListDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeListDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
-        $elm$json$Json$Decode$list($author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeDecoder),
-        A2($elm$json$Json$Decode$map, $elm$core$List$singleton, $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeDecoder)
+        $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeDecoder),
+        A2($elm$json$Json$Decode$map, $elm$core$List$singleton, $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeDecoder)
       ]
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageDecoder = function(imageType) {
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ImageDecoder = function(imageType) {
     return A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "service",
-      $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectValueListDecoder,
+      $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectValueListDecoder,
       _List_Nil,
       A4(
-        $author$project$IIIF$Internal$Utilities$optional,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
         "service",
-        $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeListDecoder,
+        $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeListDecoder,
         _List_Nil,
         A2(
-          $author$project$IIIF$Internal$Utilities$hardcoded,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
           imageType,
           A4(
-            $author$project$IIIF$Internal$Utilities$optional,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
             "label",
-            $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder),
+            $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder),
             $elm$core$Maybe$Nothing,
             A2(
-              $author$project$IIIF$Internal$Utilities$custom,
-              $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageIdDecoder,
-              $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Image)
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+              $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ImageIdDecoder,
+              $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Image)
             )
           )
         )
       )
     );
   };
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ChoiceBodyDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ChoiceBodyDecoder = A2(
     $elm$json$Json$Decode$at,
     _List_fromArray(
       ["body", "items"]
     ),
     $elm$json$Json$Decode$list(
-      $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageDecoder($author$project$IIIF$Presentation$ChoiceImage)
+      $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ImageDecoder($rism_digital$elm_iiif$IIIF$Presentation$ChoiceImage)
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageBodyDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ImageBodyDecoder = A2(
     $elm$json$Json$Decode$map,
     $elm$core$List$singleton,
     A2(
       $elm$json$Json$Decode$field,
       "body",
-      $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageDecoder($author$project$IIIF$Presentation$PrimaryImage)
+      $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ImageDecoder($rism_digital$elm_iiif$IIIF$Presentation$PrimaryImage)
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3AnnotationChoiceTypeDecoder = function(annotType) {
-    return annotType === "Choice" ? $author$project$IIIF$Internal$V3PresentationDecoders$v3ChoiceBodyDecoder : $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageBodyDecoder;
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3AnnotationChoiceTypeDecoder = function(annotType) {
+    return annotType === "Choice" ? $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ChoiceBodyDecoder : $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ImageBodyDecoder;
   };
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3AnnotationBodyDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3AnnotationBodyDecoder = A2(
     $elm$json$Json$Decode$andThen,
-    $author$project$IIIF$Internal$V3PresentationDecoders$v3AnnotationChoiceTypeDecoder,
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3AnnotationChoiceTypeDecoder,
     A2(
       $elm$json$Json$Decode$at,
       _List_fromArray(
@@ -13074,84 +13168,84 @@
       $elm$json$Json$Decode$string
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3AnnotationPageDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3AnnotationPageDecoder = A2(
     $elm$json$Json$Decode$at,
     _List_fromArray(
       ["items"]
     ),
-    A2($elm$json$Json$Decode$index, 0, $author$project$IIIF$Internal$V3PresentationDecoders$v3AnnotationBodyDecoder)
+    A2($elm$json$Json$Decode$index, 0, $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3AnnotationBodyDecoder)
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageIdDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageIdDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
-        $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageIdFromServiceDecoder,
+        $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ImageIdFromServiceDecoder,
         A2(
           $elm$json$Json$Decode$andThen,
-          $author$project$IIIF$Internal$SharedDecoders$convertThumbnailImageIdToImageUri,
+          $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$convertThumbnailImageIdToImageUri,
           A2($elm$json$Json$Decode$field, "id", $elm$json$Json$Decode$string)
         )
       ]
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageDecoder = A4(
-    $author$project$IIIF$Internal$Utilities$optional,
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageDecoder = A4(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
     "service",
-    $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectValueListDecoder,
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectValueListDecoder,
     _List_Nil,
     A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "service",
-      $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeListDecoder,
+      $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeListDecoder,
       _List_Nil,
       A2(
-        $author$project$IIIF$Internal$Utilities$hardcoded,
-        $author$project$IIIF$Presentation$PrimaryImage,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
+        $rism_digital$elm_iiif$IIIF$Presentation$PrimaryImage,
         A4(
-          $author$project$IIIF$Internal$Utilities$optional,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
           "label",
-          $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder),
+          $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder),
           $elm$core$Maybe$Nothing,
           A2(
-            $author$project$IIIF$Internal$Utilities$custom,
-            $author$project$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageIdDecoder,
-            $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Image)
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+            $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageIdDecoder,
+            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Image)
           )
         )
       )
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3CanvasDecoder = A4(
-    $author$project$IIIF$Internal$Utilities$optional,
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CanvasDecoder = A4(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
     "behavior",
-    $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$SharedDecoders$behaviourDecoder),
+    $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$behaviourDecoder),
     $elm$core$Maybe$Nothing,
     A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "thumbnail",
-      $author$project$IIIF$Internal$SharedDecoders$thumbnailDecoder($author$project$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageDecoder),
+      $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$thumbnailDecoder($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageDecoder),
       $elm$core$Maybe$Nothing,
       A3(
-        $author$project$IIIF$Internal$Utilities$required,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
         "items",
-        A2($elm$json$Json$Decode$index, 0, $author$project$IIIF$Internal$V3PresentationDecoders$v3AnnotationPageDecoder),
+        A2($elm$json$Json$Decode$index, 0, $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3AnnotationPageDecoder),
         A3(
-          $author$project$IIIF$Internal$Utilities$required,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
           "height",
           $elm$json$Json$Decode$maybe($elm$json$Json$Decode$int),
           A3(
-            $author$project$IIIF$Internal$Utilities$required,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
             "width",
             $elm$json$Json$Decode$maybe($elm$json$Json$Decode$int),
             A4(
-              $author$project$IIIF$Internal$Utilities$optional,
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
               "label",
-              $elm$json$Json$Decode$maybe($author$project$IIIF$Language$languageMapLabelDecoder),
+              $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
               $elm$core$Maybe$Nothing,
               A3(
-                $author$project$IIIF$Internal$Utilities$required,
+                $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
                 "id",
                 $elm$json$Json$Decode$string,
-                $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Canvas)
+                $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Canvas)
               )
             )
           )
@@ -13159,162 +13253,162 @@
       )
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$defaultLabelMap = _List_fromArray(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$defaultLabelMap = _List_fromArray(
     [
       A2(
-        $author$project$IIIF$Language$LanguageValues,
-        $author$project$IIIF$Language$Default,
+        $rism_digital$elm_iiif$IIIF$Language$LanguageValues,
+        $rism_digital$elm_iiif$IIIF$Language$Default,
         _List_fromArray(
           ["Homepage"]
         )
       )
     ]
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3RangeItemFromType = function(itemType) {
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3RangeItemFromType = function(itemType) {
     switch (itemType) {
       case "Canvas":
         return A2(
           $elm$json$Json$Decode$map,
-          $author$project$IIIF$Presentation$RangeCanvas,
+          $rism_digital$elm_iiif$IIIF$Presentation$RangeCanvas,
           A2($elm$json$Json$Decode$field, "id", $elm$json$Json$Decode$string)
         );
       case "Range":
         return A2(
           $elm$json$Json$Decode$map,
-          $author$project$IIIF$Presentation$RangeRange,
-          $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeDecoder()
+          $rism_digital$elm_iiif$IIIF$Presentation$RangeRange,
+          $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeDecoder()
         );
       default:
         return $elm$json$Json$Decode$fail("Unsupported range item type");
     }
   };
-  function $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeDecoder() {
+  function $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeDecoder() {
     return A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "metadata",
-      $elm$json$Json$Decode$list($author$project$IIIF$Language$labelValueDecoder),
+      $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Language$labelValueDecoder),
       _List_Nil,
       A4(
-        $author$project$IIIF$Internal$Utilities$optional,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
         "items",
         $elm$json$Json$Decode$list(
-          $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeItemDecoder()
+          $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeItemDecoder()
         ),
         _List_Nil,
         A4(
-          $author$project$IIIF$Internal$Utilities$optional,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
           "label",
-          $author$project$IIIF$Language$languageMapLabelDecoder,
-          $author$project$IIIF$Internal$V3PresentationDecoders$defaultLabelMap,
+          $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder,
+          $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$defaultLabelMap,
           A3(
-            $author$project$IIIF$Internal$Utilities$required,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
             "id",
             $elm$json$Json$Decode$string,
-            $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Range)
+            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Range)
           )
         )
       )
     );
   }
-  function $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeItemDecoder() {
+  function $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeItemDecoder() {
     return A2(
       $elm$json$Json$Decode$andThen,
-      $author$project$IIIF$Internal$V3PresentationDecoders$v3RangeItemFromType,
+      $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3RangeItemFromType,
       A2($elm$json$Json$Decode$field, "type", $elm$json$Json$Decode$string)
     );
   }
   try {
-    $author$project$IIIF$Internal$V3PresentationDecoders$v3RangeDecoder = $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeDecoder();
-    $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeDecoder = function() {
-      return $author$project$IIIF$Internal$V3PresentationDecoders$v3RangeDecoder;
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3RangeDecoder = $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeDecoder();
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeDecoder = function() {
+      return $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3RangeDecoder;
     };
-    $author$project$IIIF$Internal$V3PresentationDecoders$v3RangeItemDecoder = $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeItemDecoder();
-    $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeItemDecoder = function() {
-      return $author$project$IIIF$Internal$V3PresentationDecoders$v3RangeItemDecoder;
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3RangeItemDecoder = $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeItemDecoder();
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeItemDecoder = function() {
+      return $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3RangeItemDecoder;
     };
   } catch ($) {
     throw "Some top-level definitions from `IIIF.Internal.V3PresentationDecoders` are causing infinite recursion:\n\n  \u250C\u2500\u2500\u2500\u2500\u2500\u2510\n  \u2502    v3RangeDecoder\n  \u2502     \u2193\n  \u2502    v3RangeItemDecoder\n  \u2502     \u2193\n  \u2502    v3RangeItemFromType\n  \u2514\u2500\u2500\u2500\u2500\u2500\u2518\n\nThese errors are very tricky, so read https://elm-lang.org/0.19.1/bad-recursion to learn how to fix it!";
   }
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3RangeDecoder;
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3RangeItemDecoder;
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3HomePageDecoder = A4(
-    $author$project$IIIF$Internal$Utilities$optional,
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3RangeDecoder;
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3RangeItemDecoder;
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3HomePageDecoder = A4(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
     "type",
-    $author$project$IIIF$Internal$SharedDecoders$resourceTypeDecoder,
-    $author$project$IIIF$Presentation$OtherResource("Text"),
+    $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$resourceTypeDecoder,
+    $rism_digital$elm_iiif$IIIF$Presentation$OtherResource("Text"),
     A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "format",
-      $author$project$IIIF$Internal$SharedDecoders$formatDecoder,
-      $author$project$IIIF$Presentation$OtherFormat("text/html"),
+      $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$formatDecoder,
+      $rism_digital$elm_iiif$IIIF$Presentation$OtherFormat("text/html"),
       A4(
-        $author$project$IIIF$Internal$Utilities$optional,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
         "label",
-        $author$project$IIIF$Language$languageMapLabelDecoder,
-        $author$project$IIIF$Internal$V3PresentationDecoders$defaultLabelMap,
+        $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder,
+        $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$defaultLabelMap,
         A3(
-          $author$project$IIIF$Internal$Utilities$required,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
           "id",
           $elm$json$Json$Decode$string,
-          $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$HomePage)
+          $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$HomePage)
         )
       )
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3CollectionItemManifestDecoder = A2(
-    $author$project$IIIF$Internal$Utilities$hardcoded,
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CollectionItemManifestDecoder = A2(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
     $elm$core$Maybe$Nothing,
     A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "thumbnail",
-      $author$project$IIIF$Internal$SharedDecoders$thumbnailDecoder($author$project$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageDecoder),
+      $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$thumbnailDecoder($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageDecoder),
       $elm$core$Maybe$Nothing,
       A2(
-        $author$project$IIIF$Internal$Utilities$hardcoded,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
         $elm$core$Maybe$Nothing,
         A2(
-          $author$project$IIIF$Internal$Utilities$hardcoded,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
           $elm$core$Maybe$Nothing,
           A4(
-            $author$project$IIIF$Internal$Utilities$optional,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
             "homepage",
             $elm$json$Json$Decode$maybe(
-              $elm$json$Json$Decode$list($author$project$IIIF$Internal$V3PresentationDecoders$v3HomePageDecoder)
+              $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3HomePageDecoder)
             ),
             $elm$core$Maybe$Nothing,
             A2(
-              $author$project$IIIF$Internal$Utilities$hardcoded,
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
               $elm$core$Maybe$Nothing,
               A2(
-                $author$project$IIIF$Internal$Utilities$hardcoded,
+                $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
                 _List_Nil,
                 A2(
-                  $author$project$IIIF$Internal$Utilities$hardcoded,
-                  $author$project$IIIF$Presentation$LayoutV3(
+                  $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
+                  $rism_digital$elm_iiif$IIIF$Presentation$LayoutV3(
                     _List_fromArray(
-                      [$author$project$IIIF$Presentation$IndividualsBehavior]
+                      [$rism_digital$elm_iiif$IIIF$Presentation$IndividualsBehavior]
                     )
                   ),
                   A4(
-                    $author$project$IIIF$Internal$Utilities$optional,
+                    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
                     "summary",
-                    $elm$json$Json$Decode$maybe($author$project$IIIF$Language$languageMapLabelDecoder),
+                    $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
                     $elm$core$Maybe$Nothing,
                     A2(
-                      $author$project$IIIF$Internal$Utilities$hardcoded,
-                      $author$project$IIIF$Presentation$LeftToRight,
+                      $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
+                      $rism_digital$elm_iiif$IIIF$Presentation$LeftToRight,
                       A2(
-                        $author$project$IIIF$Internal$Utilities$hardcoded,
+                        $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
                         _List_Nil,
                         A3(
-                          $author$project$IIIF$Internal$Utilities$required,
+                          $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
                           "label",
-                          $author$project$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder,
+                          $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder,
                           A3(
-                            $author$project$IIIF$Internal$Utilities$required,
+                            $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
                             "id",
                             $elm$json$Json$Decode$string,
-                            $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Manifest)
+                            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Manifest)
                           )
                         )
                       )
@@ -13328,48 +13422,48 @@
       )
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3CollectionItemFromType = function(itemType) {
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CollectionItemFromType = function(itemType) {
     switch (itemType) {
       case "Collection":
         return A2(
           $elm$json$Json$Decode$map,
-          $author$project$IIIF$Presentation$NestedCollection,
+          $rism_digital$elm_iiif$IIIF$Presentation$NestedCollection,
           $elm$json$Json$Decode$lazy(
             function(_v1) {
-              return $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3iiifCollectionDecoder();
+              return $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3iiifCollectionDecoder();
             }
           )
         );
       case "Manifest":
-        return A2($elm$json$Json$Decode$map, $author$project$IIIF$Presentation$ManifestItem, $author$project$IIIF$Internal$V3PresentationDecoders$v3CollectionItemManifestDecoder);
+        return A2($elm$json$Json$Decode$map, $rism_digital$elm_iiif$IIIF$Presentation$ManifestItem, $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CollectionItemManifestDecoder);
       default:
         return $elm$json$Json$Decode$fail("Unknown collection item type: " + itemType);
     }
   };
-  function $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3iiifCollectionDecoder() {
+  function $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3iiifCollectionDecoder() {
     return A2(
-      $author$project$IIIF$Internal$Utilities$custom,
-      $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemsDecoder(),
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+      $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemsDecoder(),
       A4(
-        $author$project$IIIF$Internal$Utilities$optional,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
         "summary",
-        $elm$json$Json$Decode$maybe($author$project$IIIF$Language$languageMapLabelDecoder),
+        $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
         $elm$core$Maybe$Nothing,
         A3(
-          $author$project$IIIF$Internal$Utilities$required,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
           "label",
-          $author$project$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder,
+          $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder,
           A3(
-            $author$project$IIIF$Internal$Utilities$required,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
             "id",
             $elm$json$Json$Decode$string,
-            $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Collection)
+            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Collection)
           )
         )
       )
     );
   }
-  function $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemsDecoder() {
+  function $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemsDecoder() {
     return A4(
       $elm$json$Json$Decode$map3,
       F3(
@@ -13387,7 +13481,7 @@
               $elm$json$Json$Decode$field,
               "items",
               $elm$json$Json$Decode$list(
-                $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemDecoder()
+                $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemDecoder()
               )
             ),
             $elm$json$Json$Decode$succeed(_List_Nil)
@@ -13403,10 +13497,10 @@
               $elm$json$Json$Decode$list(
                 A2(
                   $elm$json$Json$Decode$map,
-                  $author$project$IIIF$Presentation$NestedCollection,
+                  $rism_digital$elm_iiif$IIIF$Presentation$NestedCollection,
                   $elm$json$Json$Decode$lazy(
                     function(_v2) {
-                      return $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3iiifCollectionDecoder();
+                      return $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3iiifCollectionDecoder();
                     }
                   )
                 )
@@ -13423,7 +13517,7 @@
               $elm$json$Json$Decode$field,
               "manifests",
               $elm$json$Json$Decode$list(
-                A2($elm$json$Json$Decode$map, $author$project$IIIF$Presentation$ManifestItem, $author$project$IIIF$Internal$V3PresentationDecoders$v3CollectionItemManifestDecoder)
+                A2($elm$json$Json$Decode$map, $rism_digital$elm_iiif$IIIF$Presentation$ManifestItem, $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CollectionItemManifestDecoder)
               )
             ),
             $elm$json$Json$Decode$succeed(_List_Nil)
@@ -13432,88 +13526,88 @@
       )
     );
   }
-  function $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemDecoder() {
+  function $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemDecoder() {
     return A2(
       $elm$json$Json$Decode$andThen,
-      $author$project$IIIF$Internal$V3PresentationDecoders$v3CollectionItemFromType,
+      $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CollectionItemFromType,
       A2($elm$json$Json$Decode$field, "type", $elm$json$Json$Decode$string)
     );
   }
   try {
-    $author$project$IIIF$Internal$V3PresentationDecoders$v3iiifCollectionDecoder = $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3iiifCollectionDecoder();
-    $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3iiifCollectionDecoder = function() {
-      return $author$project$IIIF$Internal$V3PresentationDecoders$v3iiifCollectionDecoder;
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3iiifCollectionDecoder = $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3iiifCollectionDecoder();
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3iiifCollectionDecoder = function() {
+      return $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3iiifCollectionDecoder;
     };
-    $author$project$IIIF$Internal$V3PresentationDecoders$v3CollectionItemsDecoder = $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemsDecoder();
-    $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemsDecoder = function() {
-      return $author$project$IIIF$Internal$V3PresentationDecoders$v3CollectionItemsDecoder;
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CollectionItemsDecoder = $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemsDecoder();
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemsDecoder = function() {
+      return $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CollectionItemsDecoder;
     };
-    $author$project$IIIF$Internal$V3PresentationDecoders$v3CollectionItemDecoder = $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemDecoder();
-    $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemDecoder = function() {
-      return $author$project$IIIF$Internal$V3PresentationDecoders$v3CollectionItemDecoder;
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CollectionItemDecoder = $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemDecoder();
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemDecoder = function() {
+      return $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CollectionItemDecoder;
     };
   } catch ($) {
     throw "Some top-level definitions from `IIIF.Internal.V3PresentationDecoders` are causing infinite recursion:\n\n  \u250C\u2500\u2500\u2500\u2500\u2500\u2510\n  \u2502    v3iiifCollectionDecoder\n  \u2502     \u2193\n  \u2502    v3CollectionItemsDecoder\n  \u2502     \u2193\n  \u2502    v3CollectionItemDecoder\n  \u2502     \u2193\n  \u2502    v3CollectionItemFromType\n  \u2514\u2500\u2500\u2500\u2500\u2500\u2518\n\nThese errors are very tricky, so read https://elm-lang.org/0.19.1/bad-recursion to learn how to fix it!";
   }
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3iiifCollectionDecoder;
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3CollectionItemsDecoder;
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3CollectionItemDecoder;
-  var $author$project$IIIF$Presentation$Provider = F6(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3iiifCollectionDecoder;
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CollectionItemsDecoder;
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CollectionItemDecoder;
+  var $rism_digital$elm_iiif$IIIF$Presentation$Provider = F6(
     function(id, label, type_, homepage, logo, seeAlso) {
       return { homepage, id, label, logo, seeAlso, type_ };
     }
   );
-  var $author$project$IIIF$Presentation$Logo = F7(
+  var $rism_digital$elm_iiif$IIIF$Presentation$Logo = F7(
     function(id, label, format, type_, width, height, service) {
       return { format, height, id, label, service, type_, width };
     }
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$defaultLogoLabelMap = _List_fromArray(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$defaultLogoLabelMap = _List_fromArray(
     [
       A2(
-        $author$project$IIIF$Language$LanguageValues,
-        $author$project$IIIF$Language$Default,
+        $rism_digital$elm_iiif$IIIF$Language$LanguageValues,
+        $rism_digital$elm_iiif$IIIF$Language$Default,
         _List_fromArray(
           ["Logo"]
         )
       )
     ]
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3LogoDecoder = A4(
-    $author$project$IIIF$Internal$Utilities$optional,
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3LogoDecoder = A4(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
     "service",
-    $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectListDecoder),
+    $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectListDecoder),
     $elm$core$Maybe$Nothing,
     A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "height",
       $elm$json$Json$Decode$int,
       0,
       A4(
-        $author$project$IIIF$Internal$Utilities$optional,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
         "width",
         $elm$json$Json$Decode$int,
         0,
         A4(
-          $author$project$IIIF$Internal$Utilities$optional,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
           "type",
-          $author$project$IIIF$Internal$SharedDecoders$resourceTypeDecoder,
-          $author$project$IIIF$Presentation$OtherResource("Image"),
+          $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$resourceTypeDecoder,
+          $rism_digital$elm_iiif$IIIF$Presentation$OtherResource("Image"),
           A4(
-            $author$project$IIIF$Internal$Utilities$optional,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
             "format",
-            $author$project$IIIF$Internal$SharedDecoders$formatDecoder,
-            $author$project$IIIF$Presentation$OtherFormat("image/png"),
+            $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$formatDecoder,
+            $rism_digital$elm_iiif$IIIF$Presentation$OtherFormat("image/png"),
             A4(
-              $author$project$IIIF$Internal$Utilities$optional,
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
               "label",
-              $author$project$IIIF$Language$languageMapLabelDecoder,
-              $author$project$IIIF$Internal$V3PresentationDecoders$defaultLogoLabelMap,
+              $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder,
+              $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$defaultLogoLabelMap,
               A3(
-                $author$project$IIIF$Internal$Utilities$required,
+                $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
                 "id",
                 $elm$json$Json$Decode$string,
-                $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Logo)
+                $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Logo)
               )
             )
           )
@@ -13521,147 +13615,147 @@
       )
     )
   );
-  var $author$project$IIIF$Presentation$SeeAlso = F4(
+  var $rism_digital$elm_iiif$IIIF$Presentation$SeeAlso = F4(
     function(id, label, format, type_) {
       return { format, id, label, type_ };
     }
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3SeeAlsoDecoder = A3(
-    $author$project$IIIF$Internal$Utilities$required,
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3SeeAlsoDecoder = A3(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
     "type_",
-    $author$project$IIIF$Internal$SharedDecoders$resourceTypeDecoder,
+    $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$resourceTypeDecoder,
     A3(
-      $author$project$IIIF$Internal$Utilities$required,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
       "format",
-      $author$project$IIIF$Internal$SharedDecoders$formatDecoder,
+      $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$formatDecoder,
       A3(
-        $author$project$IIIF$Internal$Utilities$required,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
         "label",
-        $author$project$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder,
+        $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder,
         A3(
-          $author$project$IIIF$Internal$Utilities$required,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
           "id",
           $elm$json$Json$Decode$string,
-          $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$SeeAlso)
+          $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$SeeAlso)
         )
       )
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ProviderDecoder = A4(
-    $author$project$IIIF$Internal$Utilities$optional,
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ProviderDecoder = A4(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
     "seeAlso",
     $elm$json$Json$Decode$maybe(
-      $elm$json$Json$Decode$list($author$project$IIIF$Internal$V3PresentationDecoders$v3SeeAlsoDecoder)
+      $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3SeeAlsoDecoder)
     ),
     $elm$core$Maybe$Nothing,
     A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "logo",
       $elm$json$Json$Decode$maybe(
-        $elm$json$Json$Decode$list($author$project$IIIF$Internal$V3PresentationDecoders$v3LogoDecoder)
+        $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3LogoDecoder)
       ),
       $elm$core$Maybe$Nothing,
       A4(
-        $author$project$IIIF$Internal$Utilities$optional,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
         "homepage",
         $elm$json$Json$Decode$maybe(
-          $elm$json$Json$Decode$list($author$project$IIIF$Internal$V3PresentationDecoders$v3HomePageDecoder)
+          $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3HomePageDecoder)
         ),
         $elm$core$Maybe$Nothing,
         A3(
-          $author$project$IIIF$Internal$Utilities$required,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
           "type",
-          $author$project$IIIF$Internal$SharedDecoders$resourceTypeDecoder,
+          $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$resourceTypeDecoder,
           A3(
-            $author$project$IIIF$Internal$Utilities$required,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
             "label",
-            $author$project$IIIF$Language$languageMapLabelDecoder,
+            $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder,
             A3(
-              $author$project$IIIF$Internal$Utilities$required,
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
               "id",
               $elm$json$Json$Decode$string,
-              $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Provider)
+              $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Provider)
             )
           )
         )
       )
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3iiifManifestDecoder = A4(
-    $author$project$IIIF$Internal$Utilities$optional,
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3iiifManifestDecoder = A4(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
     "requiredStatement",
-    $elm$json$Json$Decode$maybe($author$project$IIIF$Language$labelValueDecoder),
+    $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$labelValueDecoder),
     $elm$core$Maybe$Nothing,
     A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "thumbnail",
-      $author$project$IIIF$Internal$SharedDecoders$thumbnailDecoder($author$project$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageDecoder),
+      $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$thumbnailDecoder($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageDecoder),
       $elm$core$Maybe$Nothing,
       A4(
-        $author$project$IIIF$Internal$Utilities$optional,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
         "provider",
         $elm$json$Json$Decode$maybe(
-          $elm$json$Json$Decode$list($author$project$IIIF$Internal$V3PresentationDecoders$v3ProviderDecoder)
+          $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ProviderDecoder)
         ),
         $elm$core$Maybe$Nothing,
         A4(
-          $author$project$IIIF$Internal$Utilities$optional,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
           "logo",
           $elm$json$Json$Decode$maybe(
-            $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageDecoder($author$project$IIIF$Presentation$PrimaryImage)
+            $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ImageDecoder($rism_digital$elm_iiif$IIIF$Presentation$PrimaryImage)
           ),
           $elm$core$Maybe$Nothing,
           A4(
-            $author$project$IIIF$Internal$Utilities$optional,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
             "homepage",
             $elm$json$Json$Decode$maybe(
-              $elm$json$Json$Decode$list($author$project$IIIF$Internal$V3PresentationDecoders$v3HomePageDecoder)
+              $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3HomePageDecoder)
             ),
             $elm$core$Maybe$Nothing,
             A4(
-              $author$project$IIIF$Internal$Utilities$optional,
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
               "structures",
               $elm$json$Json$Decode$maybe(
-                $elm$json$Json$Decode$list($author$project$IIIF$Internal$V3PresentationDecoders$v3RangeDecoder)
+                $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3RangeDecoder)
               ),
               $elm$core$Maybe$Nothing,
               A3(
-                $author$project$IIIF$Internal$Utilities$required,
+                $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
                 "items",
-                $elm$json$Json$Decode$list($author$project$IIIF$Internal$V3PresentationDecoders$v3CanvasDecoder),
+                $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CanvasDecoder),
                 A4(
-                  $author$project$IIIF$Internal$Utilities$optional,
+                  $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
                   "behavior",
-                  $author$project$IIIF$Internal$SharedDecoders$behaviourDecoder,
-                  $author$project$IIIF$Presentation$LayoutV3(
+                  $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$behaviourDecoder,
+                  $rism_digital$elm_iiif$IIIF$Presentation$LayoutV3(
                     _List_fromArray(
-                      [$author$project$IIIF$Presentation$IndividualsBehavior]
+                      [$rism_digital$elm_iiif$IIIF$Presentation$IndividualsBehavior]
                     )
                   ),
                   A4(
-                    $author$project$IIIF$Internal$Utilities$optional,
+                    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
                     "summary",
-                    $elm$json$Json$Decode$maybe($author$project$IIIF$Language$languageMapLabelDecoder),
+                    $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
                     $elm$core$Maybe$Nothing,
                     A4(
-                      $author$project$IIIF$Internal$Utilities$optional,
+                      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
                       "viewingDirection",
-                      $author$project$IIIF$Internal$SharedDecoders$viewingDirectionDecoder,
-                      $author$project$IIIF$Presentation$LeftToRight,
+                      $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingDirectionDecoder,
+                      $rism_digital$elm_iiif$IIIF$Presentation$LeftToRight,
                       A4(
-                        $author$project$IIIF$Internal$Utilities$optional,
+                        $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
                         "metadata",
-                        $elm$json$Json$Decode$list($author$project$IIIF$Language$labelValueDecoder),
+                        $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Language$labelValueDecoder),
                         _List_Nil,
                         A3(
-                          $author$project$IIIF$Internal$Utilities$required,
+                          $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
                           "label",
-                          $author$project$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder,
+                          $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder,
                           A3(
-                            $author$project$IIIF$Internal$Utilities$required,
+                            $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
                             "id",
                             $elm$json$Json$Decode$string,
-                            $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Manifest)
+                            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Manifest)
                           )
                         )
                       )
@@ -13675,84 +13769,84 @@
       )
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ResourceFromType = function(resourceType) {
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ResourceFromType = function(resourceType) {
     switch (resourceType) {
       case "Canvas":
         return A2(
           $elm$json$Json$Decode$map,
           A2(
             $elm$core$Basics$composeL,
-            $author$project$IIIF$Presentation$ResourceCanvas,
-            $author$project$IIIF$Presentation$IIIFCanvas($author$project$IIIF$Version$IIIFV3)
+            $rism_digital$elm_iiif$IIIF$Presentation$ResourceCanvas,
+            $rism_digital$elm_iiif$IIIF$Presentation$IIIFCanvas($rism_digital$elm_iiif$IIIF$Version$IIIFV3)
           ),
-          $author$project$IIIF$Internal$V3PresentationDecoders$v3CanvasDecoder
+          $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CanvasDecoder
         );
       case "Collection":
         return A2(
           $elm$json$Json$Decode$map,
           A2(
             $elm$core$Basics$composeL,
-            $author$project$IIIF$Presentation$ResourceCollection,
-            $author$project$IIIF$Presentation$IIIFCollection($author$project$IIIF$Version$IIIFV3)
+            $rism_digital$elm_iiif$IIIF$Presentation$ResourceCollection,
+            $rism_digital$elm_iiif$IIIF$Presentation$IIIFCollection($rism_digital$elm_iiif$IIIF$Version$IIIFV3)
           ),
-          $author$project$IIIF$Internal$V3PresentationDecoders$v3iiifCollectionDecoder
+          $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3iiifCollectionDecoder
         );
       case "Manifest":
         return A2(
           $elm$json$Json$Decode$map,
           A2(
             $elm$core$Basics$composeL,
-            $author$project$IIIF$Presentation$ResourceManifest,
-            $author$project$IIIF$Presentation$IIIFManifest($author$project$IIIF$Version$IIIFV3)
+            $rism_digital$elm_iiif$IIIF$Presentation$ResourceManifest,
+            $rism_digital$elm_iiif$IIIF$Presentation$IIIFManifest($rism_digital$elm_iiif$IIIF$Version$IIIFV3)
           ),
-          $author$project$IIIF$Internal$V3PresentationDecoders$v3iiifManifestDecoder
+          $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3iiifManifestDecoder
         );
       case "Range":
         return A2(
           $elm$json$Json$Decode$map,
           A2(
             $elm$core$Basics$composeL,
-            $author$project$IIIF$Presentation$ResourceRange,
-            $author$project$IIIF$Presentation$IIIFRange($author$project$IIIF$Version$IIIFV3)
+            $rism_digital$elm_iiif$IIIF$Presentation$ResourceRange,
+            $rism_digital$elm_iiif$IIIF$Presentation$IIIFRange($rism_digital$elm_iiif$IIIF$Version$IIIFV3)
           ),
-          $author$project$IIIF$Internal$V3PresentationDecoders$v3RangeDecoder
+          $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3RangeDecoder
         );
       default:
         return $elm$json$Json$Decode$fail("Unknown IIIF v3 resource type: " + resourceType);
     }
   };
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ResourceTypeDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ResourceTypeDecoder = A2(
     $elm$json$Json$Decode$andThen,
-    $author$project$IIIF$Internal$V3PresentationDecoders$v3ResourceFromType,
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ResourceFromType,
     A2($elm$json$Json$Decode$field, "type", $elm$json$Json$Decode$string)
   );
-  var $author$project$IIIF$Internal$CoreDecoders$resourceContextListDecoder = function(contextValues) {
+  var $rism_digital$elm_iiif$IIIF$Internal$CoreDecoders$resourceContextListDecoder = function(contextValues) {
     return A2(
       $elm$core$List$any,
-      $author$project$IIIF$Internal$Contexts$contextMatches($author$project$IIIF$Internal$Contexts$iiifV3PresentationContextString),
+      $rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches($rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV3PresentationContextString),
       contextValues
-    ) ? $author$project$IIIF$Internal$V3PresentationDecoders$v3ResourceTypeDecoder : A2(
+    ) ? $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ResourceTypeDecoder : A2(
       $elm$core$List$any,
-      $author$project$IIIF$Internal$Contexts$contextMatches($author$project$IIIF$Internal$Contexts$iiifV2PresentationContextString),
+      $rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches($rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV2PresentationContextString),
       contextValues
-    ) ? $author$project$IIIF$Internal$V2PresentationDecoders$v2ResourceTypeDecoder : $elm$json$Json$Decode$fail(
+    ) ? $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ResourceTypeDecoder : $elm$json$Json$Decode$fail(
       "Context values contain an unknown IIIF version: " + A2($elm$core$String$join, ", ", contextValues)
     );
   };
-  var $author$project$IIIF$Internal$CoreDecoders$resourceContextStringDecoder = function(contextValue) {
-    return A2($author$project$IIIF$Internal$Contexts$contextMatches, $author$project$IIIF$Internal$Contexts$iiifV3PresentationContextString, contextValue) ? $author$project$IIIF$Internal$V3PresentationDecoders$v3ResourceTypeDecoder : A2($author$project$IIIF$Internal$Contexts$contextMatches, $author$project$IIIF$Internal$Contexts$iiifV2PresentationContextString, contextValue) ? $author$project$IIIF$Internal$V2PresentationDecoders$v2ResourceTypeDecoder : $elm$json$Json$Decode$fail("Unknown resource context value: " + contextValue);
+  var $rism_digital$elm_iiif$IIIF$Internal$CoreDecoders$resourceContextStringDecoder = function(contextValue) {
+    return A2($rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches, $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV3PresentationContextString, contextValue) ? $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ResourceTypeDecoder : A2($rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches, $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV2PresentationContextString, contextValue) ? $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ResourceTypeDecoder : $elm$json$Json$Decode$fail("Unknown resource context value: " + contextValue);
   };
-  var $author$project$IIIF$Decoders$resourceDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Decoders$resourceDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
         A2(
           $elm$json$Json$Decode$andThen,
-          $author$project$IIIF$Internal$CoreDecoders$resourceContextStringDecoder,
+          $rism_digital$elm_iiif$IIIF$Internal$CoreDecoders$resourceContextStringDecoder,
           A2($elm$json$Json$Decode$field, "@context", $elm$json$Json$Decode$string)
         ),
         A2(
           $elm$json$Json$Decode$andThen,
-          $author$project$IIIF$Internal$CoreDecoders$resourceContextListDecoder,
+          $rism_digital$elm_iiif$IIIF$Internal$CoreDecoders$resourceContextListDecoder,
           A2(
             $elm$json$Json$Decode$field,
             "@context",
@@ -13762,12 +13856,12 @@
       ]
     )
   );
-  var $author$project$IIIF$requestResource = F3(
+  var $rism_digital$elm_iiif$IIIF$requestResource = F3(
     function(responseMsg, acceptHeaders, url) {
       return A3(
-        $author$project$IIIF$Internal$Request$request,
+        $rism_digital$elm_iiif$IIIF$Internal$Request$request,
         acceptHeaders,
-        A2($elm$http$Http$expectJson, responseMsg, $author$project$IIIF$Decoders$resourceDecoder),
+        A2($elm$http$Http$expectJson, responseMsg, $rism_digital$elm_iiif$IIIF$Decoders$resourceDecoder),
         url
       );
     }
@@ -13775,15 +13869,15 @@
   var $author$project$Filters$resetFilters = { adaptiveEnabled: false, adaptiveOffset: 10, adaptiveWindow: 15, altBlueGamma: 0, altBlueGammaEnabled: false, altBlueHue: 0, altBlueHueEnabled: false, altBlueHueWindow: 8, altBlueSigmoid: 0, altBlueSigmoidEnabled: false, altBlueVibrance: 0, altBlueVibranceEnabled: false, altGreenGamma: 0, altGreenGammaEnabled: false, altGreenHue: 0, altGreenHueEnabled: false, altGreenHueWindow: 8, altGreenSigmoid: 0, altGreenSigmoidEnabled: false, altGreenVibrance: 0, altGreenVibranceEnabled: false, altRedGamma: 0, altRedGammaEnabled: false, altRedHue: 0, altRedHueEnabled: false, altRedHueWindow: 8, altRedSigmoid: 0, altRedSigmoidEnabled: false, altRedVibrance: 0, altRedVibranceEnabled: false, brightness: 0, brightnessEnabled: false, ccBlue: 0, ccBlueEnabled: false, ccGreen: 0, ccGreenEnabled: false, ccRed: 0, ccRedEnabled: false, colourReplaceBlend: 1, colourReplaceEnabled: false, colourReplacePreserveLum: false, colourReplaceSource: "#ffffff", colourReplaceTarget: "#ffffff", colourReplaceTolerance: 24, colourmapCenter: 128, colourmapEnabled: false, colourmapPreset: "gray", contrast: 1, contrastEnabled: false, convolutionEnabled: false, convolutionPreset: "sharpen", flip: false, gamma: 1, gammaEnabled: false, globalPcaEnabled: false, grayscale: false, hue: 0, hueEnabled: false, invert: false, morphEnabled: false, morphKernel: 3, morphOperation: "erode", normalizeEnabled: false, normalizeStrength: 1, pcaHue: 0, pcaMode: "pca-rgb", pseudoColourBlue: 1, pseudoColourEnabled: false, pseudoColourGreen: 1, pseudoColourMode: "rg", pseudoColourRed: 1, rotation: 0, saturation: 0, saturationEnabled: false, threshold: 128, thresholdEnabled: false, unsharpAmount: 1, unsharpEnabled: false, vibrance: 0, vibranceEnabled: false };
   var $elm$core$Basics$round = _Basics_round;
   var $author$project$Main$init = function(flags) {
-    var userLanguage = $author$project$IIIF$Language$LanguageCode(flags.userLanguage);
+    var userLanguage = $rism_digital$elm_iiif$IIIF$Language$LanguageCode(flags.userLanguage);
     var sidebarState = flags.showSidebar ? $author$project$Model$SidebarThumbnails : $author$project$Model$SidebarHidden;
     var manifestUrl = flags.objectData;
     return _Utils_Tuple2(
-      { acceptHeaders: flags.acceptHeaders, collectionSidebarDrag: $elm$core$Maybe$Nothing, collectionSidebarVisible: true, collectionSidebarWidth: 400, contentsView: $author$project$Model$ContentsIndex, currentZoom: $elm$core$Maybe$Nothing, detectedLanguage: userLanguage, filterGroupExpanded: $elm$core$Set$empty, filters: $author$project$Filters$resetFilters, filtersJsonError: $elm$core$Maybe$Nothing, filtersJsonInput: "", fullscreen: false, hasTileSources: false, initialZoom: $elm$core$Maybe$Nothing, isMobile: false, isViewerLoading: false, manifestInfoOpen: false, manifestUrl, mobileSidebarOpen: false, pageViewFullscreen: false, pageViewImageIndex: 0, pageViewOpen: false, pageViewSidebarVisible: true, pages: _List_Nil, pendingThumbScroll: $elm$core$Maybe$Nothing, rangeIndexMap: $elm$core$Dict$empty, resourceResponse: $author$project$Model$ResourceLoading, response: $author$project$Model$Loading, rootElementId: flags.rootElementId, selectedIndex: $elm$core$Maybe$Nothing, selectedRangeId: $elm$core$Maybe$Nothing, shiftByOne: false, showTitle: flags.showTitle, sidebarDrag: $elm$core$Maybe$Nothing, sidebarState, sidebarWidth: 320, thumbsInstantScroll: false, viewMode: $author$project$Model$OneUp },
+      { acceptHeaders: flags.acceptHeaders, auth: $author$project$Auth$init, collectionSidebarDrag: $elm$core$Maybe$Nothing, collectionSidebarVisible: true, collectionSidebarWidth: 400, contentsView: $author$project$Model$ContentsIndex, currentZoom: $elm$core$Maybe$Nothing, detectedLanguage: userLanguage, filterGroupExpanded: $elm$core$Set$empty, filters: $author$project$Filters$resetFilters, filtersJsonError: $elm$core$Maybe$Nothing, filtersJsonInput: "", fullscreen: false, hasTileSources: false, initialZoom: $elm$core$Maybe$Nothing, isMobile: false, isViewerLoading: false, manifestInfoOpen: false, manifestUrl, mobileSidebarOpen: false, pageViewFullscreen: false, pageViewImageIndex: 0, pageViewOpen: false, pageViewSidebarVisible: true, pages: _List_Nil, pendingThumbScroll: $elm$core$Maybe$Nothing, rangeIndexMap: $elm$core$Dict$empty, resourceResponse: $author$project$Model$ResourceLoading, response: $author$project$Model$Loading, rootElementId: flags.rootElementId, selectedIndex: $elm$core$Maybe$Nothing, selectedRangeId: $elm$core$Maybe$Nothing, shiftByOne: false, showTitle: flags.showTitle, sidebarDrag: $elm$core$Maybe$Nothing, sidebarState, sidebarWidth: 320, thumbsInstantScroll: false, viewMode: $author$project$Model$OneUp },
       $elm$core$Platform$Cmd$batch(
         _List_fromArray(
           [
-            A3($author$project$IIIF$requestResource, $author$project$Msg$ServerRespondedWithResource, flags.acceptHeaders, manifestUrl),
+            A3($rism_digital$elm_iiif$IIIF$requestResource, $author$project$Msg$ServerRespondedWithResource, flags.acceptHeaders, manifestUrl),
             A2(
               $elm$core$Task$perform,
               function(viewport) {
@@ -13800,6 +13894,12 @@
       )
     );
   };
+  var $author$project$Msg$AuthEvent = function(a) {
+    return { $: "AuthEvent", a };
+  };
+  var $author$project$Auth$Cancel = function(a) {
+    return { $: "Cancel", a };
+  };
   var $author$project$Msg$ClientNotifiedFullscreenChanged = function(a) {
     return { $: "ClientNotifiedFullscreenChanged", a };
   };
@@ -13809,6 +13909,37 @@
   var $author$project$Msg$ClientNotifiedPageChangedInstant = function(a) {
     return { $: "ClientNotifiedPageChangedInstant", a };
   };
+  var $author$project$Auth$Destroyed = { $: "Destroyed" };
+  var $author$project$Auth$HttpFailed = F2(
+    function(a, b) {
+      return { $: "HttpFailed", a, b };
+    }
+  );
+  var $author$project$Auth$HttpSucceeded = F3(
+    function(a, b, c) {
+      return { $: "HttpSucceeded", a, b, c };
+    }
+  );
+  var $author$project$Auth$Resolve = F2(
+    function(a, b) {
+      return { $: "Resolve", a, b };
+    }
+  );
+  var $author$project$Auth$StorageRead = F3(
+    function(a, b, c) {
+      return { $: "StorageRead", a, b, c };
+    }
+  );
+  var $author$project$Auth$TokenFailed = F2(
+    function(a, b) {
+      return { $: "TokenFailed", a, b };
+    }
+  );
+  var $author$project$Auth$TokenMessage = F3(
+    function(a, b, c) {
+      return { $: "TokenMessage", a, b, c };
+    }
+  );
   var $author$project$Msg$UserChangedZoomLevel = function(a) {
     return { $: "UserChangedZoomLevel", a };
   };
@@ -13823,8 +13954,192 @@
   var $author$project$Msg$ViewerLoadingChanged = function(a) {
     return { $: "ViewerLoadingChanged", a };
   };
+  var $elm$json$Json$Decode$null = _Json_decodeNull;
+  var $author$project$Main$authDestroyed = _Platform_incomingPort(
+    "authDestroyed",
+    $elm$json$Json$Decode$null(_Utils_Tuple0)
+  );
+  var $author$project$Main$authHttpFailed = _Platform_incomingPort(
+    "authHttpFailed",
+    A2(
+      $elm$json$Json$Decode$andThen,
+      function(message) {
+        return A2(
+          $elm$json$Json$Decode$andThen,
+          function(id) {
+            return $elm$json$Json$Decode$succeed(
+              { id, message }
+            );
+          },
+          A2($elm$json$Json$Decode$field, "id", $elm$json$Json$Decode$string)
+        );
+      },
+      A2($elm$json$Json$Decode$field, "message", $elm$json$Json$Decode$string)
+    )
+  );
+  var $author$project$Main$authHttpResponded = _Platform_incomingPort(
+    "authHttpResponded",
+    A2(
+      $elm$json$Json$Decode$andThen,
+      function(status) {
+        return A2(
+          $elm$json$Json$Decode$andThen,
+          function(id) {
+            return A2(
+              $elm$json$Json$Decode$andThen,
+              function(body) {
+                return $elm$json$Json$Decode$succeed(
+                  { body, id, status }
+                );
+              },
+              A2($elm$json$Json$Decode$field, "body", $elm$json$Json$Decode$string)
+            );
+          },
+          A2($elm$json$Json$Decode$field, "id", $elm$json$Json$Decode$string)
+        );
+      },
+      A2($elm$json$Json$Decode$field, "status", $elm$json$Json$Decode$int)
+    )
+  );
+  var $author$project$Main$authLogoutChanged = _Platform_incomingPort(
+    "authLogoutChanged",
+    A2(
+      $elm$json$Json$Decode$andThen,
+      function(status) {
+        return A2(
+          $elm$json$Json$Decode$andThen,
+          function(sessionId) {
+            return $elm$json$Json$Decode$succeed(
+              { sessionId, status }
+            );
+          },
+          A2($elm$json$Json$Decode$field, "sessionId", $elm$json$Json$Decode$string)
+        );
+      },
+      A2($elm$json$Json$Decode$field, "status", $elm$json$Json$Decode$string)
+    )
+  );
+  var $author$project$Main$authPopupChanged = _Platform_incomingPort(
+    "authPopupChanged",
+    A2(
+      $elm$json$Json$Decode$andThen,
+      function(status) {
+        return A2(
+          $elm$json$Json$Decode$andThen,
+          function(flowId) {
+            return $elm$json$Json$Decode$succeed(
+              { flowId, status }
+            );
+          },
+          A2($elm$json$Json$Decode$field, "flowId", $elm$json$Json$Decode$string)
+        );
+      },
+      A2($elm$json$Json$Decode$field, "status", $elm$json$Json$Decode$string)
+    )
+  );
+  var $author$project$Main$authStorageResponded = _Platform_incomingPort(
+    "authStorageResponded",
+    A2(
+      $elm$json$Json$Decode$andThen,
+      function(value) {
+        return A2(
+          $elm$json$Json$Decode$andThen,
+          function(now) {
+            return A2(
+              $elm$json$Json$Decode$andThen,
+              function(flowId) {
+                return $elm$json$Json$Decode$succeed(
+                  { flowId, now, value }
+                );
+              },
+              A2($elm$json$Json$Decode$field, "flowId", $elm$json$Json$Decode$string)
+            );
+          },
+          A2($elm$json$Json$Decode$field, "now", $elm$json$Json$Decode$float)
+        );
+      },
+      A2(
+        $elm$json$Json$Decode$field,
+        "value",
+        $elm$json$Json$Decode$oneOf(
+          _List_fromArray(
+            [
+              $elm$json$Json$Decode$null($elm$core$Maybe$Nothing),
+              A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, $elm$json$Json$Decode$value)
+            ]
+          )
+        )
+      )
+    )
+  );
+  var $author$project$Main$authTokenFailed = _Platform_incomingPort(
+    "authTokenFailed",
+    A2(
+      $elm$json$Json$Decode$andThen,
+      function(message) {
+        return A2(
+          $elm$json$Json$Decode$andThen,
+          function(flowId) {
+            return $elm$json$Json$Decode$succeed(
+              { flowId, message }
+            );
+          },
+          A2($elm$json$Json$Decode$field, "flowId", $elm$json$Json$Decode$string)
+        );
+      },
+      A2($elm$json$Json$Decode$field, "message", $elm$json$Json$Decode$string)
+    )
+  );
+  var $author$project$Main$authTokenMessage = _Platform_incomingPort(
+    "authTokenMessage",
+    A2(
+      $elm$json$Json$Decode$andThen,
+      function(value) {
+        return A2(
+          $elm$json$Json$Decode$andThen,
+          function(now) {
+            return A2(
+              $elm$json$Json$Decode$andThen,
+              function(flowId) {
+                return $elm$json$Json$Decode$succeed(
+                  { flowId, now, value }
+                );
+              },
+              A2($elm$json$Json$Decode$field, "flowId", $elm$json$Json$Decode$string)
+            );
+          },
+          A2($elm$json$Json$Decode$field, "now", $elm$json$Json$Decode$float)
+        );
+      },
+      A2($elm$json$Json$Decode$field, "value", $elm$json$Json$Decode$value)
+    )
+  );
   var $elm$core$Platform$Sub$batch = _Platform_batch;
   var $author$project$Main$fullscreenChanged = _Platform_incomingPort("fullscreenChanged", $elm$json$Json$Decode$bool);
+  var $author$project$Auth$LogoutBlocked = function(a) {
+    return { $: "LogoutBlocked", a };
+  };
+  var $author$project$Auth$LogoutClosed = function(a) {
+    return { $: "LogoutClosed", a };
+  };
+  var $author$project$Auth$LogoutOpened = function(a) {
+    return { $: "LogoutOpened", a };
+  };
+  var $author$project$Main$logoutEvent = function(change) {
+    return $author$project$Msg$AuthEvent(
+      (function() {
+        var _v0 = change.status;
+        switch (_v0) {
+          case "opened":
+            return $author$project$Auth$LogoutOpened(change.sessionId);
+          case "closed":
+            return $author$project$Auth$LogoutClosed(change.sessionId);
+          default:
+            return $author$project$Auth$LogoutBlocked(change.sessionId);
+        }
+      })()
+    );
+  };
   var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
   var $elm$browser$Browser$Events$Document = { $: "Document" };
   var $elm$browser$Browser$Events$MySub = F3(
@@ -14053,12 +14368,107 @@
   };
   var $author$project$Main$pageIndexChanged = _Platform_incomingPort("pageIndexChanged", $elm$json$Json$Decode$int);
   var $author$project$Main$pageIndexChangedInstant = _Platform_incomingPort("pageIndexChangedInstant", $elm$json$Json$Decode$int);
+  var $author$project$Auth$PopupBlocked = function(a) {
+    return { $: "PopupBlocked", a };
+  };
+  var $author$project$Auth$PopupClosed = function(a) {
+    return { $: "PopupClosed", a };
+  };
+  var $author$project$Auth$PopupOpened = function(a) {
+    return { $: "PopupOpened", a };
+  };
+  var $author$project$Main$popupEvent = function(change) {
+    return $author$project$Msg$AuthEvent(
+      (function() {
+        var _v0 = change.status;
+        switch (_v0) {
+          case "opened":
+            return $author$project$Auth$PopupOpened(change.flowId);
+          case "closed":
+            return $author$project$Auth$PopupClosed(change.flowId);
+          default:
+            return $author$project$Auth$PopupBlocked(change.flowId);
+        }
+      })()
+    );
+  };
+  var $author$project$Main$resolveTileSourceCancelled = _Platform_incomingPort("resolveTileSourceCancelled", $elm$json$Json$Decode$string);
+  var $author$project$Main$resolveTileSourceRequested = _Platform_incomingPort(
+    "resolveTileSourceRequested",
+    A2(
+      $elm$json$Json$Decode$andThen,
+      function(sourceId) {
+        return A2(
+          $elm$json$Json$Decode$andThen,
+          function(requestId) {
+            return $elm$json$Json$Decode$succeed(
+              { requestId, sourceId }
+            );
+          },
+          A2($elm$json$Json$Decode$field, "requestId", $elm$json$Json$Decode$string)
+        );
+      },
+      A2($elm$json$Json$Decode$field, "sourceId", $elm$json$Json$Decode$string)
+    )
+  );
   var $author$project$Main$viewerLoadingChanged = _Platform_incomingPort("viewerLoadingChanged", $elm$json$Json$Decode$bool);
   var $author$project$Main$zoomChanged = _Platform_incomingPort("zoomChanged", $elm$json$Json$Decode$float);
   var $author$project$Main$subscriptions = function(model) {
     return $elm$core$Platform$Sub$batch(
       _List_fromArray(
         [
+          $author$project$Main$resolveTileSourceRequested(
+            function(request) {
+              return $author$project$Msg$AuthEvent(
+                A2($author$project$Auth$Resolve, request.requestId, request.sourceId)
+              );
+            }
+          ),
+          $author$project$Main$resolveTileSourceCancelled(
+            A2($elm$core$Basics$composeR, $author$project$Auth$Cancel, $author$project$Msg$AuthEvent)
+          ),
+          $author$project$Main$authHttpResponded(
+            function(response) {
+              return $author$project$Msg$AuthEvent(
+                A3($author$project$Auth$HttpSucceeded, response.id, response.status, response.body)
+              );
+            }
+          ),
+          $author$project$Main$authHttpFailed(
+            function(response) {
+              return $author$project$Msg$AuthEvent(
+                A2($author$project$Auth$HttpFailed, response.id, response.message)
+              );
+            }
+          ),
+          $author$project$Main$authStorageResponded(
+            function(response) {
+              return $author$project$Msg$AuthEvent(
+                A3($author$project$Auth$StorageRead, response.flowId, response.now, response.value)
+              );
+            }
+          ),
+          $author$project$Main$authTokenMessage(
+            function(response) {
+              return $author$project$Msg$AuthEvent(
+                A3($author$project$Auth$TokenMessage, response.flowId, response.now, response.value)
+              );
+            }
+          ),
+          $author$project$Main$authTokenFailed(
+            function(response) {
+              return $author$project$Msg$AuthEvent(
+                A2($author$project$Auth$TokenFailed, response.flowId, response.message)
+              );
+            }
+          ),
+          $author$project$Main$authPopupChanged($author$project$Main$popupEvent),
+          $author$project$Main$authLogoutChanged($author$project$Main$logoutEvent),
+          $author$project$Main$authDestroyed(
+            function(_v0) {
+              return $author$project$Msg$AuthEvent($author$project$Auth$Destroyed);
+            }
+          ),
           $author$project$Main$pageIndexChanged($author$project$Msg$ClientNotifiedPageChanged),
           $author$project$Main$pageIndexChangedInstant($author$project$Msg$ClientNotifiedPageChangedInstant),
           $author$project$Main$fullscreenChanged($author$project$Msg$ClientNotifiedFullscreenChanged),
@@ -14066,8 +14476,8 @@
           $author$project$Main$viewerLoadingChanged($author$project$Msg$ViewerLoadingChanged),
           $elm$browser$Browser$Events$onResize($author$project$Msg$ViewportChanged),
           (function() {
-            var _v0 = model.sidebarDrag;
-            if (_v0.$ === "Just") {
+            var _v1 = model.sidebarDrag;
+            if (_v1.$ === "Just") {
               return $elm$core$Platform$Sub$batch(
                 _List_fromArray(
                   [
@@ -14089,8 +14499,8 @@
             }
           })(),
           (function() {
-            var _v1 = model.collectionSidebarDrag;
-            if (_v1.$ === "Just") {
+            var _v2 = model.collectionSidebarDrag;
+            if (_v2.$ === "Just") {
               return $elm$core$Platform$Sub$batch(
                 _List_fromArray(
                   [
@@ -16213,6 +16623,382 @@
       return state;
     }
   };
+  var $elm$core$Maybe$destruct = F3(
+    function(_default, func, maybe) {
+      if (maybe.$ === "Just") {
+        var a = maybe.a;
+        return func(a);
+      } else {
+        return _default;
+      }
+    }
+  );
+  var $elm$json$Json$Encode$null = _Json_encodeNull;
+  var $author$project$Main$filterPreviewUpdated = _Platform_outgoingPort(
+    "filterPreviewUpdated",
+    function($) {
+      return A3(
+        $elm$core$Maybe$destruct,
+        $elm$json$Json$Encode$null,
+        function($2) {
+          return $elm$json$Json$Encode$object(
+            _List_fromArray(
+              [
+                _Utils_Tuple2(
+                  "aspect",
+                  $elm$json$Json$Encode$float($2.aspect)
+                ),
+                _Utils_Tuple2(
+                  "filters",
+                  (function($3) {
+                    return $elm$json$Json$Encode$object(
+                      _List_fromArray(
+                        [
+                          _Utils_Tuple2(
+                            "adaptiveEnabled",
+                            $elm$json$Json$Encode$bool($3.adaptiveEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "adaptiveOffset",
+                            $elm$json$Json$Encode$int($3.adaptiveOffset)
+                          ),
+                          _Utils_Tuple2(
+                            "adaptiveWindow",
+                            $elm$json$Json$Encode$int($3.adaptiveWindow)
+                          ),
+                          _Utils_Tuple2(
+                            "altBlueGamma",
+                            $elm$json$Json$Encode$int($3.altBlueGamma)
+                          ),
+                          _Utils_Tuple2(
+                            "altBlueGammaEnabled",
+                            $elm$json$Json$Encode$bool($3.altBlueGammaEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "altBlueHue",
+                            $elm$json$Json$Encode$int($3.altBlueHue)
+                          ),
+                          _Utils_Tuple2(
+                            "altBlueHueEnabled",
+                            $elm$json$Json$Encode$bool($3.altBlueHueEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "altBlueHueWindow",
+                            $elm$json$Json$Encode$int($3.altBlueHueWindow)
+                          ),
+                          _Utils_Tuple2(
+                            "altBlueSigmoid",
+                            $elm$json$Json$Encode$int($3.altBlueSigmoid)
+                          ),
+                          _Utils_Tuple2(
+                            "altBlueSigmoidEnabled",
+                            $elm$json$Json$Encode$bool($3.altBlueSigmoidEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "altBlueVibrance",
+                            $elm$json$Json$Encode$int($3.altBlueVibrance)
+                          ),
+                          _Utils_Tuple2(
+                            "altBlueVibranceEnabled",
+                            $elm$json$Json$Encode$bool($3.altBlueVibranceEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "altGreenGamma",
+                            $elm$json$Json$Encode$int($3.altGreenGamma)
+                          ),
+                          _Utils_Tuple2(
+                            "altGreenGammaEnabled",
+                            $elm$json$Json$Encode$bool($3.altGreenGammaEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "altGreenHue",
+                            $elm$json$Json$Encode$int($3.altGreenHue)
+                          ),
+                          _Utils_Tuple2(
+                            "altGreenHueEnabled",
+                            $elm$json$Json$Encode$bool($3.altGreenHueEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "altGreenHueWindow",
+                            $elm$json$Json$Encode$int($3.altGreenHueWindow)
+                          ),
+                          _Utils_Tuple2(
+                            "altGreenSigmoid",
+                            $elm$json$Json$Encode$int($3.altGreenSigmoid)
+                          ),
+                          _Utils_Tuple2(
+                            "altGreenSigmoidEnabled",
+                            $elm$json$Json$Encode$bool($3.altGreenSigmoidEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "altGreenVibrance",
+                            $elm$json$Json$Encode$int($3.altGreenVibrance)
+                          ),
+                          _Utils_Tuple2(
+                            "altGreenVibranceEnabled",
+                            $elm$json$Json$Encode$bool($3.altGreenVibranceEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "altRedGamma",
+                            $elm$json$Json$Encode$int($3.altRedGamma)
+                          ),
+                          _Utils_Tuple2(
+                            "altRedGammaEnabled",
+                            $elm$json$Json$Encode$bool($3.altRedGammaEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "altRedHue",
+                            $elm$json$Json$Encode$int($3.altRedHue)
+                          ),
+                          _Utils_Tuple2(
+                            "altRedHueEnabled",
+                            $elm$json$Json$Encode$bool($3.altRedHueEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "altRedHueWindow",
+                            $elm$json$Json$Encode$int($3.altRedHueWindow)
+                          ),
+                          _Utils_Tuple2(
+                            "altRedSigmoid",
+                            $elm$json$Json$Encode$int($3.altRedSigmoid)
+                          ),
+                          _Utils_Tuple2(
+                            "altRedSigmoidEnabled",
+                            $elm$json$Json$Encode$bool($3.altRedSigmoidEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "altRedVibrance",
+                            $elm$json$Json$Encode$int($3.altRedVibrance)
+                          ),
+                          _Utils_Tuple2(
+                            "altRedVibranceEnabled",
+                            $elm$json$Json$Encode$bool($3.altRedVibranceEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "brightness",
+                            $elm$json$Json$Encode$int($3.brightness)
+                          ),
+                          _Utils_Tuple2(
+                            "brightnessEnabled",
+                            $elm$json$Json$Encode$bool($3.brightnessEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "ccBlue",
+                            $elm$json$Json$Encode$int($3.ccBlue)
+                          ),
+                          _Utils_Tuple2(
+                            "ccBlueEnabled",
+                            $elm$json$Json$Encode$bool($3.ccBlueEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "ccGreen",
+                            $elm$json$Json$Encode$int($3.ccGreen)
+                          ),
+                          _Utils_Tuple2(
+                            "ccGreenEnabled",
+                            $elm$json$Json$Encode$bool($3.ccGreenEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "ccRed",
+                            $elm$json$Json$Encode$int($3.ccRed)
+                          ),
+                          _Utils_Tuple2(
+                            "ccRedEnabled",
+                            $elm$json$Json$Encode$bool($3.ccRedEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "colourReplaceBlend",
+                            $elm$json$Json$Encode$float($3.colourReplaceBlend)
+                          ),
+                          _Utils_Tuple2(
+                            "colourReplaceEnabled",
+                            $elm$json$Json$Encode$bool($3.colourReplaceEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "colourReplacePreserveLum",
+                            $elm$json$Json$Encode$bool($3.colourReplacePreserveLum)
+                          ),
+                          _Utils_Tuple2(
+                            "colourReplaceSource",
+                            $elm$json$Json$Encode$string($3.colourReplaceSource)
+                          ),
+                          _Utils_Tuple2(
+                            "colourReplaceTarget",
+                            $elm$json$Json$Encode$string($3.colourReplaceTarget)
+                          ),
+                          _Utils_Tuple2(
+                            "colourReplaceTolerance",
+                            $elm$json$Json$Encode$int($3.colourReplaceTolerance)
+                          ),
+                          _Utils_Tuple2(
+                            "colourmapCenter",
+                            $elm$json$Json$Encode$int($3.colourmapCenter)
+                          ),
+                          _Utils_Tuple2(
+                            "colourmapEnabled",
+                            $elm$json$Json$Encode$bool($3.colourmapEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "colourmapPreset",
+                            $elm$json$Json$Encode$string($3.colourmapPreset)
+                          ),
+                          _Utils_Tuple2(
+                            "contrast",
+                            $elm$json$Json$Encode$float($3.contrast)
+                          ),
+                          _Utils_Tuple2(
+                            "contrastEnabled",
+                            $elm$json$Json$Encode$bool($3.contrastEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "convolutionEnabled",
+                            $elm$json$Json$Encode$bool($3.convolutionEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "convolutionPreset",
+                            $elm$json$Json$Encode$string($3.convolutionPreset)
+                          ),
+                          _Utils_Tuple2(
+                            "flip",
+                            $elm$json$Json$Encode$bool($3.flip)
+                          ),
+                          _Utils_Tuple2(
+                            "gamma",
+                            $elm$json$Json$Encode$float($3.gamma)
+                          ),
+                          _Utils_Tuple2(
+                            "gammaEnabled",
+                            $elm$json$Json$Encode$bool($3.gammaEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "globalPcaEnabled",
+                            $elm$json$Json$Encode$bool($3.globalPcaEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "grayscale",
+                            $elm$json$Json$Encode$bool($3.grayscale)
+                          ),
+                          _Utils_Tuple2(
+                            "hue",
+                            $elm$json$Json$Encode$int($3.hue)
+                          ),
+                          _Utils_Tuple2(
+                            "hueEnabled",
+                            $elm$json$Json$Encode$bool($3.hueEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "invert",
+                            $elm$json$Json$Encode$bool($3.invert)
+                          ),
+                          _Utils_Tuple2(
+                            "morphEnabled",
+                            $elm$json$Json$Encode$bool($3.morphEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "morphKernel",
+                            $elm$json$Json$Encode$int($3.morphKernel)
+                          ),
+                          _Utils_Tuple2(
+                            "morphOperation",
+                            $elm$json$Json$Encode$string($3.morphOperation)
+                          ),
+                          _Utils_Tuple2(
+                            "normalizeEnabled",
+                            $elm$json$Json$Encode$bool($3.normalizeEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "normalizeStrength",
+                            $elm$json$Json$Encode$float($3.normalizeStrength)
+                          ),
+                          _Utils_Tuple2(
+                            "pcaHue",
+                            $elm$json$Json$Encode$int($3.pcaHue)
+                          ),
+                          _Utils_Tuple2(
+                            "pcaMode",
+                            $elm$json$Json$Encode$string($3.pcaMode)
+                          ),
+                          _Utils_Tuple2(
+                            "pseudoColourBlue",
+                            $elm$json$Json$Encode$float($3.pseudoColourBlue)
+                          ),
+                          _Utils_Tuple2(
+                            "pseudoColourEnabled",
+                            $elm$json$Json$Encode$bool($3.pseudoColourEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "pseudoColourGreen",
+                            $elm$json$Json$Encode$float($3.pseudoColourGreen)
+                          ),
+                          _Utils_Tuple2(
+                            "pseudoColourMode",
+                            $elm$json$Json$Encode$string($3.pseudoColourMode)
+                          ),
+                          _Utils_Tuple2(
+                            "pseudoColourRed",
+                            $elm$json$Json$Encode$float($3.pseudoColourRed)
+                          ),
+                          _Utils_Tuple2(
+                            "rotation",
+                            $elm$json$Json$Encode$int($3.rotation)
+                          ),
+                          _Utils_Tuple2(
+                            "saturation",
+                            $elm$json$Json$Encode$int($3.saturation)
+                          ),
+                          _Utils_Tuple2(
+                            "saturationEnabled",
+                            $elm$json$Json$Encode$bool($3.saturationEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "threshold",
+                            $elm$json$Json$Encode$int($3.threshold)
+                          ),
+                          _Utils_Tuple2(
+                            "thresholdEnabled",
+                            $elm$json$Json$Encode$bool($3.thresholdEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "unsharpAmount",
+                            $elm$json$Json$Encode$float($3.unsharpAmount)
+                          ),
+                          _Utils_Tuple2(
+                            "unsharpEnabled",
+                            $elm$json$Json$Encode$bool($3.unsharpEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "vibrance",
+                            $elm$json$Json$Encode$int($3.vibrance)
+                          ),
+                          _Utils_Tuple2(
+                            "vibranceEnabled",
+                            $elm$json$Json$Encode$bool($3.vibranceEnabled)
+                          )
+                        ]
+                      )
+                    );
+                  })($2.filters)
+                ),
+                _Utils_Tuple2(
+                  "isStatic",
+                  $elm$json$Json$Encode$bool($2.isStatic)
+                ),
+                _Utils_Tuple2(
+                  "sourceId",
+                  $elm$json$Json$Encode$string($2.sourceId)
+                ),
+                _Utils_Tuple2(
+                  "tileSource",
+                  $elm$json$Json$Encode$string($2.tileSource)
+                )
+              ]
+            )
+          );
+        },
+        $
+      );
+    }
+  );
   var $author$project$Main$findCollectionById = F2(
     function(collectionId, collection) {
       var loop = F2(
@@ -16341,7 +17127,7 @@
       );
     }
   );
-  var $author$project$IIIF$Presentation$isPagedLayout = function(layout) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$isPagedLayout = function(layout) {
     if (layout.$ === "LayoutV2") {
       var hint = layout.a;
       if (hint.$ === "PagedHint") {
@@ -16351,7 +17137,7 @@
       }
     } else {
       var behaviour = layout.a;
-      return A2($elm$core$List$member, $author$project$IIIF$Presentation$PagedBehavior, behaviour);
+      return A2($elm$core$List$member, $rism_digital$elm_iiif$IIIF$Presentation$PagedBehavior, behaviour);
     }
   };
   var $author$project$Main$layoutConfigUpdated = _Platform_outgoingPort(
@@ -16382,7 +17168,7 @@
       }
     }
   );
-  var $author$project$IIIF$Presentation$canvasAspect = function(canvas) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$canvasAspect = function(canvas) {
     var _v0 = _Utils_Tuple2(canvas.width, canvas.height);
     if (_v0.a.$ === "Just" && _v0.b.$ === "Just") {
       var w = _v0.a.a;
@@ -16392,7 +17178,7 @@
       return 1;
     }
   };
-  var $author$project$IIIF$Language$extractTextFromLanguageMap = F2(
+  var $rism_digital$elm_iiif$IIIF$Language$extractTextFromLanguageMap = F2(
     function(lang, langMap) {
       return A2(
         $elm$core$Maybe$withDefault,
@@ -16406,14 +17192,14 @@
             return v;
           },
           A2(
-            $author$project$IIIF$Internal$Utilities$oneOfMaybes,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$oneOfMaybes,
             _List_fromArray(
               [
                 function(_v0) {
                   if (lang.$ === "LanguageCode") {
                     var code = lang.a;
                     return A2(
-                      $author$project$IIIF$Internal$Utilities$find,
+                      $rism_digital$elm_iiif$IIIF$Internal$Utilities$find,
                       function(languageValues) {
                         if (languageValues.a.$ === "LanguageCode") {
                           var l = languageValues.a.a;
@@ -16430,20 +17216,20 @@
                 },
                 function(_v3) {
                   return A2(
-                    $author$project$IIIF$Internal$Utilities$find,
+                    $rism_digital$elm_iiif$IIIF$Internal$Utilities$find,
                     function(_v4) {
                       var l = _v4.a;
-                      return _Utils_eq(l, $author$project$IIIF$Language$None);
+                      return _Utils_eq(l, $rism_digital$elm_iiif$IIIF$Language$None);
                     },
                     langMap
                   );
                 },
                 function(_v5) {
                   return A2(
-                    $author$project$IIIF$Internal$Utilities$find,
+                    $rism_digital$elm_iiif$IIIF$Internal$Utilities$find,
                     function(_v6) {
                       var l = _v6.a;
-                      return _Utils_eq(l, $author$project$IIIF$Language$Default);
+                      return _Utils_eq(l, $rism_digital$elm_iiif$IIIF$Language$Default);
                     },
                     langMap
                   );
@@ -16459,25 +17245,25 @@
       );
     }
   );
-  var $author$project$IIIF$Language$extractLabelFromLanguageMap = F2(
+  var $rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap = F2(
     function(lang, langMap) {
       return A2(
         $elm$core$String$join,
         "; ",
-        A2($author$project$IIIF$Language$extractTextFromLanguageMap, lang, langMap)
+        A2($rism_digital$elm_iiif$IIIF$Language$extractTextFromLanguageMap, lang, langMap)
       );
     }
   );
-  var $author$project$IIIF$Presentation$canvasLabel = function(canvas) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$canvasLabel = function(canvas) {
     var _v0 = canvas.label;
     if (_v0.$ === "Just") {
       var langMap = _v0.a;
-      return A2($author$project$IIIF$Language$extractLabelFromLanguageMap, $author$project$IIIF$Language$Default, langMap);
+      return A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, $rism_digital$elm_iiif$IIIF$Language$Default, langMap);
     } else {
       return "Untitled";
     }
   };
-  var $author$project$IIIF$Image$createFormatComponent = function(fmt) {
+  var $rism_digital$elm_iiif$IIIF$Image$createFormatComponent = function(fmt) {
     switch (fmt.$) {
       case "JpegFormat":
         return "jpg";
@@ -16495,7 +17281,7 @@
         return "webp";
     }
   };
-  var $author$project$IIIF$Image$createQualityComponent = function(qual) {
+  var $rism_digital$elm_iiif$IIIF$Image$createQualityComponent = function(qual) {
     switch (qual.$) {
       case "ColorQuality":
         return "color";
@@ -16509,7 +17295,7 @@
         return "native";
     }
   };
-  var $author$project$IIIF$Image$createRegionComponent = function(region) {
+  var $rism_digital$elm_iiif$IIIF$Image$createRegionComponent = function(region) {
     switch (region.$) {
       case "FullRegion":
         return "full";
@@ -16549,7 +17335,7 @@
         );
     }
   };
-  var $author$project$IIIF$Image$createRotationComponent = function(rot) {
+  var $rism_digital$elm_iiif$IIIF$Image$createRotationComponent = function(rot) {
     if (rot.$ === "NormalRotation") {
       var f = rot.a;
       return $elm$core$String$fromFloat(f);
@@ -16558,7 +17344,7 @@
       return "!" + $elm$core$String$fromFloat(f);
     }
   };
-  var $author$project$IIIF$Image$createSizeComponent = function(size) {
+  var $rism_digital$elm_iiif$IIIF$Image$createSizeComponent = function(size) {
     switch (size.$) {
       case "MaxSize":
         return "max";
@@ -16604,68 +17390,123 @@
         return "^!" + ($elm$core$String$fromInt(w) + ("," + $elm$core$String$fromInt(h)));
     }
   };
-  var $author$project$IIIF$Image$createImageUri = function(params) {
+  var $rism_digital$elm_iiif$IIIF$Image$dropLeadingSlashCharacters = function(characters) {
+    dropLeadingSlashCharacters:
+      while (true) {
+        if (characters.b && "/" === characters.a.valueOf()) {
+          var remaining = characters.b;
+          var $temp$characters = remaining;
+          characters = $temp$characters;
+          continue dropLeadingSlashCharacters;
+        } else {
+          return characters;
+        }
+      }
+  };
+  var $elm$core$String$fromList = _String_fromList;
+  var $elm$core$String$foldr = _String_foldr;
+  var $elm$core$String$toList = function(string) {
+    return A3($elm$core$String$foldr, $elm$core$List$cons, _List_Nil, string);
+  };
+  var $rism_digital$elm_iiif$IIIF$Image$trimLeadingSlashes = function(string) {
+    return $elm$core$String$fromList(
+      $rism_digital$elm_iiif$IIIF$Image$dropLeadingSlashCharacters(
+        $elm$core$String$toList(string)
+      )
+    );
+  };
+  var $rism_digital$elm_iiif$IIIF$Image$trimTrailingSlashes = function(string) {
+    return $elm$core$String$fromList(
+      $elm$core$List$reverse(
+        $rism_digital$elm_iiif$IIIF$Image$dropLeadingSlashCharacters(
+          $elm$core$List$reverse(
+            $elm$core$String$toList(string)
+          )
+        )
+      )
+    );
+  };
+  var $rism_digital$elm_iiif$IIIF$Image$appendUrlPart = F2(
+    function(part, url) {
+      var normalizedPart = $rism_digital$elm_iiif$IIIF$Image$trimLeadingSlashes(part);
+      return $elm$core$String$isEmpty(normalizedPart) ? $rism_digital$elm_iiif$IIIF$Image$trimTrailingSlashes(url) : $rism_digital$elm_iiif$IIIF$Image$trimTrailingSlashes(url) + ("/" + normalizedPart);
+    }
+  );
+  var $rism_digital$elm_iiif$IIIF$Image$joinUrlParts = $elm$core$List$foldl($rism_digital$elm_iiif$IIIF$Image$appendUrlPart);
+  var $rism_digital$elm_iiif$IIIF$Image$createImageUri = function(params) {
     return A2(
-      $elm$core$String$join,
-      "/",
+      $rism_digital$elm_iiif$IIIF$Image$joinUrlParts,
+      params.host,
       _List_fromArray(
         [
-          _Utils_ap(params.host, params.prefix),
-          $author$project$IIIF$Image$createRegionComponent(params.region),
-          $author$project$IIIF$Image$createSizeComponent(params.size),
-          $author$project$IIIF$Image$createRotationComponent(params.rotation),
-          $author$project$IIIF$Image$createQualityComponent(params.quality) + ("." + $author$project$IIIF$Image$createFormatComponent(params.format))
+          params.prefix,
+          $rism_digital$elm_iiif$IIIF$Image$createRegionComponent(params.region),
+          $rism_digital$elm_iiif$IIIF$Image$createSizeComponent(params.size),
+          $rism_digital$elm_iiif$IIIF$Image$createRotationComponent(params.rotation),
+          $rism_digital$elm_iiif$IIIF$Image$createQualityComponent(params.quality) + ("." + $rism_digital$elm_iiif$IIIF$Image$createFormatComponent(params.format))
         ]
       )
     );
   };
-  var $author$project$IIIF$Image$createInfoUri = function(params) {
-    return params.host + (params.prefix + "/info.json");
+  var $rism_digital$elm_iiif$IIIF$Image$createInfoUri = function(params) {
+    return A2(
+      $rism_digital$elm_iiif$IIIF$Image$joinUrlParts,
+      params.host,
+      _List_fromArray(
+        [params.prefix, "info.json"]
+      )
+    );
   };
-  var $author$project$IIIF$Image$createImageAddress = function(iiifUri) {
+  var $rism_digital$elm_iiif$IIIF$Image$createImageAddress = function(iiifUri) {
     switch (iiifUri.$) {
       case "InfoUri":
         var params = iiifUri.a;
-        return $author$project$IIIF$Image$createInfoUri(params);
+        return $rism_digital$elm_iiif$IIIF$Image$createInfoUri(params);
       case "ImageUri":
         var params = iiifUri.a;
-        return $author$project$IIIF$Image$createImageUri(params);
+        return $rism_digital$elm_iiif$IIIF$Image$createImageUri(params);
       default:
         var params = iiifUri.a;
-        return _Utils_ap(params.host, params.prefix);
+        return A2(
+          $rism_digital$elm_iiif$IIIF$Image$joinUrlParts,
+          params.host,
+          _List_fromArray(
+            [params.prefix]
+          )
+        );
     }
   };
-  var $author$project$IIIF$Image$imageServerToImageRequest = function(_v0) {
+  var $rism_digital$elm_iiif$IIIF$Image$imageServerToImageRequest = function(_v0) {
     var host = _v0.host;
     var prefix = _v0.prefix;
     return {
-      format: $author$project$IIIF$Image$JpegFormat,
+      format: $rism_digital$elm_iiif$IIIF$Image$JpegFormat,
       host,
       prefix,
-      quality: $author$project$IIIF$Image$DefaultQuality,
-      region: $author$project$IIIF$Image$FullRegion,
-      rotation: $author$project$IIIF$Image$NormalRotation(0),
-      size: $author$project$IIIF$Image$MaxSize
+      quality: $rism_digital$elm_iiif$IIIF$Image$DefaultQuality,
+      region: $rism_digital$elm_iiif$IIIF$Image$FullRegion,
+      rotation: $rism_digital$elm_iiif$IIIF$Image$NormalRotation(0),
+      size: $rism_digital$elm_iiif$IIIF$Image$MaxSize
     };
   };
-  var $author$project$IIIF$Image$setImageUriSize = F2(
+  var $rism_digital$elm_iiif$IIIF$Image$setImageUriSize = F2(
     function(size, uri) {
       switch (uri.$) {
         case "InfoUri":
           var p = uri.a;
           return (function(normParams) {
-            return $author$project$IIIF$Image$ImageUri(
+            return $rism_digital$elm_iiif$IIIF$Image$ImageUri(
               _Utils_update(
                 normParams,
                 { size }
               )
             );
           })(
-            $author$project$IIIF$Image$imageServerToImageRequest(p)
+            $rism_digital$elm_iiif$IIIF$Image$imageServerToImageRequest(p)
           );
         case "ImageUri":
           var p = uri.a;
-          return $author$project$IIIF$Image$ImageUri(
+          return $rism_digital$elm_iiif$IIIF$Image$ImageUri(
             _Utils_update(
               p,
               { size }
@@ -16676,14 +17517,14 @@
       }
     }
   );
-  var $author$project$IIIF$Image$thumbnailUrlFromInfo = function(infoUrl) {
-    var _v0 = $author$project$IIIF$Image$parseImageAddress(infoUrl);
+  var $rism_digital$elm_iiif$IIIF$Image$thumbnailUrlFromInfo = function(infoUrl) {
+    var _v0 = $rism_digital$elm_iiif$IIIF$Image$parseImageAddress(infoUrl);
     if (_v0.$ === "Just") {
       var iiifUrl = _v0.a;
-      return $author$project$IIIF$Image$createImageAddress(
+      return $rism_digital$elm_iiif$IIIF$Image$createImageAddress(
         A2(
-          $author$project$IIIF$Image$setImageUriSize,
-          $author$project$IIIF$Image$WidthOnlySize(180),
+          $rism_digital$elm_iiif$IIIF$Image$setImageUriSize,
+          $rism_digital$elm_iiif$IIIF$Image$WidthOnlySize(180),
           iiifUrl
         )
       );
@@ -16692,8 +17533,8 @@
     }
   };
   var $author$project$Model$thumbnailUrlForImage = function(image) {
-    var url = $author$project$IIIF$Image$createImageAddress(image.id);
-    return $elm$core$List$isEmpty(image.service) ? url : $author$project$IIIF$Image$thumbnailUrlFromInfo(url);
+    var url = $rism_digital$elm_iiif$IIIF$Image$createImageAddress(image.id);
+    return $elm$core$List$isEmpty(image.service) ? url : $rism_digital$elm_iiif$IIIF$Image$thumbnailUrlFromInfo(url);
   };
   var $author$project$Model$canvasThumbnailUrl = F2(
     function(images, canvas) {
@@ -16725,6 +17566,405 @@
         }
       }
     }
+  );
+  var $author$project$Auth$Discovered = function(a) {
+    return { $: "Discovered", a };
+  };
+  var $author$project$Auth$Invalid = function(a) {
+    return { $: "Invalid", a };
+  };
+  var $rism_digital$elm_iiif$IIIF$Auth$objectOrList = function(decoder) {
+    return $elm$json$Json$Decode$oneOf(
+      _List_fromArray(
+        [
+          $elm$json$Json$Decode$list(decoder),
+          A2($elm$json$Json$Decode$map, $elm$core$List$singleton, decoder)
+        ]
+      )
+    );
+  };
+  var $rism_digital$elm_iiif$IIIF$Auth$ProbeService = F5(
+    function(id, type_, services, errorHeading, errorNote) {
+      return { errorHeading, errorNote, id, services, type_ };
+    }
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$Active = { $: "Active" };
+  var $rism_digital$elm_iiif$IIIF$Auth$External = { $: "External" };
+  var $rism_digital$elm_iiif$IIIF$Auth$Kiosk = { $: "Kiosk" };
+  var $rism_digital$elm_iiif$IIIF$Auth$accessProfileDecoder = A2(
+    $elm$json$Json$Decode$andThen,
+    function(profile) {
+      switch (profile) {
+        case "active":
+          return $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$Active);
+        case "external":
+          return $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$External);
+        case "kiosk":
+          return $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$Kiosk);
+        default:
+          return $elm$json$Json$Decode$fail("Unsupported Auth 2 access profile: " + profile);
+      }
+    },
+    $elm$json$Json$Decode$string
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$AccessService = F8(
+    function(id, type_, profile, services, label, heading, note, confirmLabel) {
+      return { confirmLabel, heading, id, label, note, profile, services, type_ };
+    }
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$exact = F2(
+    function(expected, decoder) {
+      return A2(
+        $elm$json$Json$Decode$andThen,
+        function(actual) {
+          return _Utils_eq(actual, expected) ? $elm$json$Json$Decode$succeed(actual) : $elm$json$Json$Decode$fail("Expected " + (expected + (" but got " + actual)));
+        },
+        decoder
+      );
+    }
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$typeDecoder = $elm$json$Json$Decode$oneOf(
+    _List_fromArray(
+      [
+        A2($elm$json$Json$Decode$field, "type", $elm$json$Json$Decode$string),
+        A2($elm$json$Json$Decode$field, "@type", $elm$json$Json$Decode$string)
+      ]
+    )
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$authTypeDecoder = function(expected) {
+    return A2($rism_digital$elm_iiif$IIIF$Auth$exact, expected, $rism_digital$elm_iiif$IIIF$Auth$typeDecoder);
+  };
+  var $rism_digital$elm_iiif$IIIF$Auth$idDecoder = $elm$json$Json$Decode$oneOf(
+    _List_fromArray(
+      [
+        A2($elm$json$Json$Decode$field, "id", $elm$json$Json$Decode$string),
+        A2($elm$json$Json$Decode$field, "@id", $elm$json$Json$Decode$string)
+      ]
+    )
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$httpsIdDecoder = A2(
+    $elm$json$Json$Decode$andThen,
+    function(id) {
+      return A2($elm$core$String$startsWith, "https://", id) ? $elm$json$Json$Decode$succeed(id) : $elm$json$Json$Decode$fail("Expected an HTTPS service identifier");
+    },
+    $rism_digital$elm_iiif$IIIF$Auth$idDecoder
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$optionalStrict = F2(
+    function(fieldName, decoder) {
+      return A2(
+        $elm$json$Json$Decode$andThen,
+        function(object) {
+          var _v0 = A2(
+            $elm$json$Json$Decode$decodeValue,
+            A2($elm$json$Json$Decode$field, fieldName, $elm$json$Json$Decode$value),
+            object
+          );
+          if (_v0.$ === "Ok") {
+            var fieldValue = _v0.a;
+            var _v1 = A2($elm$json$Json$Decode$decodeValue, decoder, fieldValue);
+            if (_v1.$ === "Ok") {
+              var decoded = _v1.a;
+              return $elm$json$Json$Decode$succeed(
+                $elm$core$Maybe$Just(decoded)
+              );
+            } else {
+              var error = _v1.a;
+              return $elm$json$Json$Decode$fail(
+                $elm$json$Json$Decode$errorToString(error)
+              );
+            }
+          } else {
+            return $elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing);
+          }
+        },
+        $elm$json$Json$Decode$value
+      );
+    }
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$RelatedLogoutService = function(a) {
+    return { $: "RelatedLogoutService", a };
+  };
+  var $rism_digital$elm_iiif$IIIF$Auth$RelatedTokenService = function(a) {
+    return { $: "RelatedTokenService", a };
+  };
+  var $rism_digital$elm_iiif$IIIF$Auth$AccessTokenService = F4(
+    function(id, type_, errorHeading, errorNote) {
+      return { errorHeading, errorNote, id, type_ };
+    }
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$accessTokenServiceDecoder = A2(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+    A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "errorNote", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
+    A2(
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+      A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "errorHeading", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
+      A2(
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+        $rism_digital$elm_iiif$IIIF$Auth$authTypeDecoder("AuthAccessTokenService2"),
+        A2(
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+          $rism_digital$elm_iiif$IIIF$Auth$httpsIdDecoder,
+          $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$AccessTokenService)
+        )
+      )
+    )
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$LogoutService = F3(
+    function(id, type_, label) {
+      return { id, label, type_ };
+    }
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$logoutServiceDecoder = A2(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+    A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "label", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
+    A2(
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+      $rism_digital$elm_iiif$IIIF$Auth$authTypeDecoder("AuthLogoutService2"),
+      A2(
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+        $rism_digital$elm_iiif$IIIF$Auth$httpsIdDecoder,
+        $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$LogoutService)
+      )
+    )
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$relatedServiceDecoder = A2(
+    $elm$json$Json$Decode$andThen,
+    function(serviceType) {
+      switch (serviceType) {
+        case "AuthAccessTokenService2":
+          return A2($elm$json$Json$Decode$map, $rism_digital$elm_iiif$IIIF$Auth$RelatedTokenService, $rism_digital$elm_iiif$IIIF$Auth$accessTokenServiceDecoder);
+        case "AuthLogoutService2":
+          return A2($elm$json$Json$Decode$map, $rism_digital$elm_iiif$IIIF$Auth$RelatedLogoutService, $rism_digital$elm_iiif$IIIF$Auth$logoutServiceDecoder);
+        default:
+          return $elm$json$Json$Decode$fail("Unsupported Auth 2 related service: " + serviceType);
+      }
+    },
+    $rism_digital$elm_iiif$IIIF$Auth$typeDecoder
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$relatedServicesDecoder = A2(
+    $elm$json$Json$Decode$andThen,
+    function(services) {
+      var tokenCount = $elm$core$List$length(
+        A2(
+          $elm$core$List$filter,
+          function(service) {
+            if (service.$ === "RelatedTokenService") {
+              return true;
+            } else {
+              return false;
+            }
+          },
+          services
+        )
+      );
+      var logoutCount = $elm$core$List$length(services) - tokenCount;
+      return tokenCount === 1 && logoutCount <= 1 ? $elm$json$Json$Decode$succeed(services) : $elm$json$Json$Decode$fail("Auth access services require exactly one token service and at most one logout service");
+    },
+    $rism_digital$elm_iiif$IIIF$Auth$objectOrList($rism_digital$elm_iiif$IIIF$Auth$relatedServiceDecoder)
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$activeAccessServiceForProfileDecoder = function(profile) {
+    return A2(
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+      A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "confirmLabel", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
+      A2(
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+        A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "note", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
+        A2(
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+          A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "heading", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
+          A2(
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+            (function() {
+              if (profile.$ === "Active") {
+                return A2(
+                  $elm$json$Json$Decode$map,
+                  $elm$core$Maybe$Just,
+                  A2($elm$json$Json$Decode$field, "label", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder)
+                );
+              } else {
+                return A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "label", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder);
+              }
+            })(),
+            A3(
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
+              "service",
+              $rism_digital$elm_iiif$IIIF$Auth$relatedServicesDecoder,
+              A2(
+                $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+                $elm$json$Json$Decode$succeed(profile),
+                A2(
+                  $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+                  $rism_digital$elm_iiif$IIIF$Auth$authTypeDecoder("AuthAccessService2"),
+                  A2(
+                    $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+                    (function() {
+                      if (profile.$ === "External") {
+                        return $elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing);
+                      } else {
+                        return A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, $rism_digital$elm_iiif$IIIF$Auth$httpsIdDecoder);
+                      }
+                    })(),
+                    $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$AccessService)
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    );
+  };
+  var $rism_digital$elm_iiif$IIIF$Auth$activeAccessServiceDecoder = A2(
+    $elm$json$Json$Decode$andThen,
+    $rism_digital$elm_iiif$IIIF$Auth$activeAccessServiceForProfileDecoder,
+    A2($elm$json$Json$Decode$field, "profile", $rism_digital$elm_iiif$IIIF$Auth$accessProfileDecoder)
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$probeServiceDecoder = A2(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+    A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "errorNote", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
+    A2(
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+      A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "errorHeading", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
+      A3(
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
+        "service",
+        $rism_digital$elm_iiif$IIIF$Auth$objectOrList($rism_digital$elm_iiif$IIIF$Auth$activeAccessServiceDecoder),
+        A2(
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+          $rism_digital$elm_iiif$IIIF$Auth$authTypeDecoder("AuthProbeService2"),
+          A2(
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+            $rism_digital$elm_iiif$IIIF$Auth$httpsIdDecoder,
+            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$ProbeService)
+          )
+        )
+      )
+    )
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$discoverAuthServices = function(root) {
+    var discover = F3(
+      function(pending, reversedProbes, reversedUnsupported) {
+        discover:
+          while (true) {
+            if (!pending.b) {
+              return $elm$core$Result$Ok(
+                {
+                  probes: $elm$core$List$reverse(reversedProbes),
+                  unsupportedServiceTypes: $elm$core$List$reverse(reversedUnsupported)
+                }
+              );
+            } else {
+              var current = pending.a;
+              var remaining = pending.b;
+              var _v1 = A2(
+                $elm$json$Json$Decode$decodeValue,
+                $elm$json$Json$Decode$list($elm$json$Json$Decode$value),
+                current
+              );
+              if (_v1.$ === "Ok") {
+                var values = _v1.a;
+                var $temp$pending = _Utils_ap(values, remaining), $temp$reversedProbes = reversedProbes, $temp$reversedUnsupported = reversedUnsupported;
+                pending = $temp$pending;
+                reversedProbes = $temp$reversedProbes;
+                reversedUnsupported = $temp$reversedUnsupported;
+                continue discover;
+              } else {
+                var _v2 = A2($elm$json$Json$Decode$decodeValue, $rism_digital$elm_iiif$IIIF$Auth$typeDecoder, current);
+                if (_v2.$ === "Ok") {
+                  if (_v2.a === "AuthProbeService2") {
+                    var _v3 = A2($elm$json$Json$Decode$decodeValue, $rism_digital$elm_iiif$IIIF$Auth$probeServiceDecoder, current);
+                    if (_v3.$ === "Ok") {
+                      var probe = _v3.a;
+                      var $temp$pending = remaining, $temp$reversedProbes = A2($elm$core$List$cons, probe, reversedProbes), $temp$reversedUnsupported = reversedUnsupported;
+                      pending = $temp$pending;
+                      reversedProbes = $temp$reversedProbes;
+                      reversedUnsupported = $temp$reversedUnsupported;
+                      continue discover;
+                    } else {
+                      var error = _v3.a;
+                      return $elm$core$Result$Err(error);
+                    }
+                  } else {
+                    var serviceType = _v2.a;
+                    var nextUnsupported = A2($elm$core$String$startsWith, "Auth", serviceType) ? A2($elm$core$List$cons, serviceType, reversedUnsupported) : reversedUnsupported;
+                    var _v4 = A2(
+                      $elm$json$Json$Decode$decodeValue,
+                      A2(
+                        $elm$json$Json$Decode$field,
+                        "service",
+                        $rism_digital$elm_iiif$IIIF$Auth$objectOrList($elm$json$Json$Decode$value)
+                      ),
+                      current
+                    );
+                    if (_v4.$ === "Ok") {
+                      var children = _v4.a;
+                      var $temp$pending = _Utils_ap(children, remaining), $temp$reversedProbes = reversedProbes, $temp$reversedUnsupported = nextUnsupported;
+                      pending = $temp$pending;
+                      reversedProbes = $temp$reversedProbes;
+                      reversedUnsupported = $temp$reversedUnsupported;
+                      continue discover;
+                    } else {
+                      var $temp$pending = remaining, $temp$reversedProbes = reversedProbes, $temp$reversedUnsupported = nextUnsupported;
+                      pending = $temp$pending;
+                      reversedProbes = $temp$reversedProbes;
+                      reversedUnsupported = $temp$reversedUnsupported;
+                      continue discover;
+                    }
+                  }
+                } else {
+                  var _v5 = A2(
+                    $elm$json$Json$Decode$decodeValue,
+                    A2(
+                      $elm$json$Json$Decode$field,
+                      "service",
+                      $rism_digital$elm_iiif$IIIF$Auth$objectOrList($elm$json$Json$Decode$value)
+                    ),
+                    current
+                  );
+                  if (_v5.$ === "Ok") {
+                    var children = _v5.a;
+                    var $temp$pending = _Utils_ap(children, remaining), $temp$reversedProbes = reversedProbes, $temp$reversedUnsupported = reversedUnsupported;
+                    pending = $temp$pending;
+                    reversedProbes = $temp$reversedProbes;
+                    reversedUnsupported = $temp$reversedUnsupported;
+                    continue discover;
+                  } else {
+                    var $temp$pending = remaining, $temp$reversedProbes = reversedProbes, $temp$reversedUnsupported = reversedUnsupported;
+                    pending = $temp$pending;
+                    reversedProbes = $temp$reversedProbes;
+                    reversedUnsupported = $temp$reversedUnsupported;
+                    continue discover;
+                  }
+                }
+              }
+            }
+          }
+      }
+    );
+    return A3(
+      discover,
+      _List_fromArray(
+        [root]
+      ),
+      _List_Nil,
+      _List_Nil
+    );
+  };
+  var $rism_digital$elm_iiif$IIIF$Auth$authServicesDecoder = A2(
+    $elm$json$Json$Decode$andThen,
+    function(root) {
+      var _v0 = $rism_digital$elm_iiif$IIIF$Auth$discoverAuthServices(root);
+      if (_v0.$ === "Ok") {
+        var discovery = _v0.a;
+        return $elm$json$Json$Decode$succeed(discovery);
+      } else {
+        var error = _v0.a;
+        return $elm$json$Json$Decode$fail(
+          $elm$json$Json$Decode$errorToString(error)
+        );
+      }
+    },
+    $elm$json$Json$Decode$value
   );
   var $author$project$Utilities$find = F2(
     function(predicate, list) {
@@ -16759,14 +17999,14 @@
   };
   var $author$project$Model$iiifImageToPageImage = F3(
     function(language, allImages, image) {
-      var tileSource = $author$project$IIIF$Image$createImageAddress(image.id);
+      var tileSource = $rism_digital$elm_iiif$IIIF$Image$createImageAddress(image.id);
       var thumbUrl = $author$project$Model$thumbnailUrlForImage(image);
       var label = A2(
         $elm$core$Maybe$withDefault,
         "Image",
         A2(
           $elm$core$Maybe$map,
-          $author$project$IIIF$Language$extractLabelFromLanguageMap(language),
+          $rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap(language),
           image.label
         )
       );
@@ -16775,7 +18015,7 @@
         A2(
           $author$project$Utilities$find,
           function(img) {
-            return _Utils_eq(img.imageType, $author$project$IIIF$Presentation$PrimaryImage);
+            return _Utils_eq(img.imageType, $rism_digital$elm_iiif$IIIF$Presentation$PrimaryImage);
           },
           allImages
         )
@@ -16784,16 +18024,28 @@
         $elm$core$Maybe$Just(image),
         $elm$core$List$head(allImages)
       );
-      var isPrimary = _Utils_eq(image.imageType, $author$project$IIIF$Presentation$PrimaryImage) || isPrimaryImage && isFirst;
+      var isPrimary = _Utils_eq(image.imageType, $rism_digital$elm_iiif$IIIF$Presentation$PrimaryImage) || isPrimaryImage && isFirst;
       return {
+        auth: (function() {
+          var _v0 = A2(
+            $elm$json$Json$Decode$decodeValue,
+            $rism_digital$elm_iiif$IIIF$Auth$authServicesDecoder,
+            A2($elm$json$Json$Encode$list, $elm$core$Basics$identity, image.serviceObjects)
+          );
+          if (_v0.$ === "Ok") {
+            var discovery = _v0.a;
+            return $author$project$Auth$Discovered(discovery);
+          } else {
+            var error = _v0.a;
+            return $author$project$Auth$Invalid(
+              $elm$json$Json$Decode$errorToString(error)
+            );
+          }
+        })(),
         isPrimary,
         isStatic,
         label,
-        servicesJson: A2(
-          $elm$json$Json$Encode$encode,
-          0,
-          A2($elm$json$Json$Encode$list, $elm$core$Basics$identity, image.serviceObjects)
-        ),
+        sourceId: tileSource,
         thumbUrl,
         tileSource
       };
@@ -16812,27 +18064,27 @@
         var thumbUrl = A2($author$project$Model$canvasThumbnailUrl, images, canvas);
         return $elm$core$Maybe$Just(
           {
-            aspect: $author$project$IIIF$Presentation$canvasAspect(canvas),
+            aspect: $rism_digital$elm_iiif$IIIF$Presentation$canvasAspect(canvas),
             images,
-            label: $author$project$IIIF$Presentation$canvasLabel(canvas),
+            label: $rism_digital$elm_iiif$IIIF$Presentation$canvasLabel(canvas),
             thumbUrl
           }
         );
       }
     }
   );
-  var $author$project$IIIF$Presentation$toManifest = function(_v0) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$toManifest = function(_v0) {
     var iiifManifest = _v0.b;
     return iiifManifest;
   };
-  var $author$project$IIIF$Presentation$withManifest = F2(
+  var $rism_digital$elm_iiif$IIIF$Presentation$withManifest = F2(
     function(accessor, manifest) {
       return accessor(
-        $author$project$IIIF$Presentation$toManifest(manifest)
+        $rism_digital$elm_iiif$IIIF$Presentation$toManifest(manifest)
       );
     }
   );
-  var $author$project$IIIF$Presentation$toCanvases = $author$project$IIIF$Presentation$withManifest(
+  var $rism_digital$elm_iiif$IIIF$Presentation$toCanvases = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
     function($) {
       return $.canvases;
     }
@@ -16842,11 +18094,11 @@
       return A2(
         $elm$core$List$filterMap,
         $author$project$Model$canvasToPage(language),
-        $author$project$IIIF$Presentation$toCanvases(iiifManifest)
+        $rism_digital$elm_iiif$IIIF$Presentation$toCanvases(iiifManifest)
       );
     }
   );
-  var $author$project$IIIF$Presentation$manifestViewingLayout = $author$project$IIIF$Presentation$withManifest(
+  var $rism_digital$elm_iiif$IIIF$Presentation$manifestViewingLayout = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
     function($) {
       return $.viewingLayout;
     }
@@ -16874,6 +18126,30 @@
       return $elm$core$List$head(page.images);
     }
   };
+  var $author$project$Auth$registerSources = F2(
+    function(sources, model) {
+      return _Utils_update(
+        model,
+        {
+          activeInteractive: $elm$core$Maybe$Nothing,
+          activePrompt: $elm$core$Maybe$Nothing,
+          flows: $elm$core$Dict$empty,
+          operations: $elm$core$Dict$empty,
+          pending: $elm$core$Dict$empty,
+          promptQueue: _List_Nil,
+          sources: $elm$core$Dict$fromList(
+            A2(
+              $elm$core$List$map,
+              function(source) {
+                return _Utils_Tuple2(source.id, source);
+              },
+              sources
+            )
+          )
+        }
+      );
+    }
+  );
   var $author$project$Main$tileSourcesUpdated = _Platform_outgoingPort(
     "tileSourcesUpdated",
     $elm$json$Json$Encode$list(
@@ -16886,8 +18162,8 @@
                 $elm$json$Json$Encode$bool($.isStatic)
               ),
               _Utils_Tuple2(
-                "servicesJson",
-                $elm$json$Json$Encode$string($.servicesJson)
+                "sourceId",
+                $elm$json$Json$Encode$string($.sourceId)
               ),
               _Utils_Tuple2(
                 "url",
@@ -16899,12 +18175,12 @@
       }
     )
   );
-  var $author$project$IIIF$Presentation$toRanges = $author$project$IIIF$Presentation$withManifest(
+  var $rism_digital$elm_iiif$IIIF$Presentation$toRanges = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
     function($) {
       return $.ranges;
     }
   );
-  var $author$project$IIIF$Presentation$toViewingDirection = $author$project$IIIF$Presentation$withManifest(
+  var $rism_digital$elm_iiif$IIIF$Presentation$toViewingDirection = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
     function($) {
       return $.viewingDirection;
     }
@@ -16924,7 +18200,7 @@
   var $author$project$Main$zoomLevelUpdated = _Platform_outgoingPort("zoomLevelUpdated", $elm$json$Json$Encode$float);
   var $author$project$Main$handleManifestLoaded = F2(
     function(model, manifest) {
-      var viewingDirection = $author$project$IIIF$Presentation$toViewingDirection(manifest);
+      var viewingDirection = $rism_digital$elm_iiif$IIIF$Presentation$toViewingDirection(manifest);
       var pages = A2($author$project$Model$manifestToPages, model.detectedLanguage, manifest);
       var tileSources = A2(
         $elm$core$List$filterMap,
@@ -16933,14 +18209,14 @@
           $author$project$Model$primaryImage,
           $elm$core$Maybe$map(
             function(image) {
-              return { isStatic: image.isStatic, servicesJson: image.servicesJson, url: image.tileSource };
+              return { isStatic: image.isStatic, sourceId: image.sourceId, url: image.tileSource };
             }
           )
         ),
         pages
       );
-      var pagedLayout = $author$project$IIIF$Presentation$isPagedLayout(
-        $author$project$IIIF$Presentation$manifestViewingLayout(manifest)
+      var pagedLayout = $rism_digital$elm_iiif$IIIF$Presentation$isPagedLayout(
+        $rism_digital$elm_iiif$IIIF$Presentation$manifestViewingLayout(manifest)
       );
       var pageAspects = A2(
         $elm$core$List$map,
@@ -16950,7 +18226,7 @@
         pages
       );
       var isSingleCanvas = $elm$core$List$length(pages) === 1;
-      var shiftByOne = isSingleCanvas ? false : pagedLayout || _Utils_eq(viewingDirection, $author$project$IIIF$Presentation$RightToLeft);
+      var shiftByOne = isSingleCanvas ? false : pagedLayout || _Utils_eq(viewingDirection, $rism_digital$elm_iiif$IIIF$Presentation$RightToLeft);
       var viewMode = isSingleCanvas ? $author$project$Model$OneUp : pagedLayout ? $author$project$Model$TwoUp : $author$project$Model$OneUp;
       var layoutMode = A2($author$project$Main$layoutModeToString, viewMode, shiftByOne);
       var direction = $author$project$Main$viewingDirectionToString(viewingDirection);
@@ -16962,7 +18238,7 @@
               return _Utils_Tuple2(canvas.id, index);
             }
           ),
-          $author$project$IIIF$Presentation$toCanvases(manifest)
+          $rism_digital$elm_iiif$IIIF$Presentation$toCanvases(manifest)
         )
       );
       var rangeIndexMap = A2(
@@ -16971,18 +18247,33 @@
         A2(
           $elm$core$Maybe$map,
           $author$project$Main$buildRangeIndexMap(canvasIndexMap),
-          $author$project$IIIF$Presentation$toRanges(manifest)
+          $rism_digital$elm_iiif$IIIF$Presentation$toRanges(manifest)
+        )
+      );
+      var authSources = A2(
+        $elm$core$List$map,
+        function(image) {
+          return { auth: image.auth, id: image.sourceId, isStatic: image.isStatic, url: image.tileSource };
+        },
+        A2(
+          $elm$core$List$concatMap,
+          function($) {
+            return $.images;
+          },
+          pages
         )
       );
       return _Utils_Tuple2(
         _Utils_update(
           model,
           {
+            auth: A2($author$project$Auth$registerSources, authSources, model.auth),
             currentZoom: $elm$core$Maybe$Nothing,
             filters: $author$project$Filters$resetFilters,
             hasTileSources: !$elm$core$List$isEmpty(tileSources),
             initialZoom: $elm$core$Maybe$Nothing,
             isViewerLoading: false,
+            pageViewOpen: false,
             pages,
             rangeIndexMap,
             response: $author$project$Model$Loaded(manifest),
@@ -16995,6 +18286,7 @@
           _List_fromArray(
             [
               $author$project$Main$tileSourcesUpdated(tileSources),
+              $author$project$Main$filterPreviewUpdated($elm$core$Maybe$Nothing),
               $author$project$Main$pageAspectsUpdated(pageAspects),
               $author$project$Main$pageLabelsUpdated(
                 A2(
@@ -17113,364 +18405,6 @@
       }
     }
   );
-  var $author$project$Main$filterPreviewUpdated = _Platform_outgoingPort(
-    "filterPreviewUpdated",
-    function($) {
-      return $elm$json$Json$Encode$object(
-        _List_fromArray(
-          [
-            _Utils_Tuple2(
-              "aspect",
-              $elm$json$Json$Encode$float($.aspect)
-            ),
-            _Utils_Tuple2(
-              "filters",
-              (function($2) {
-                return $elm$json$Json$Encode$object(
-                  _List_fromArray(
-                    [
-                      _Utils_Tuple2(
-                        "adaptiveEnabled",
-                        $elm$json$Json$Encode$bool($2.adaptiveEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "adaptiveOffset",
-                        $elm$json$Json$Encode$int($2.adaptiveOffset)
-                      ),
-                      _Utils_Tuple2(
-                        "adaptiveWindow",
-                        $elm$json$Json$Encode$int($2.adaptiveWindow)
-                      ),
-                      _Utils_Tuple2(
-                        "altBlueGamma",
-                        $elm$json$Json$Encode$int($2.altBlueGamma)
-                      ),
-                      _Utils_Tuple2(
-                        "altBlueGammaEnabled",
-                        $elm$json$Json$Encode$bool($2.altBlueGammaEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "altBlueHue",
-                        $elm$json$Json$Encode$int($2.altBlueHue)
-                      ),
-                      _Utils_Tuple2(
-                        "altBlueHueEnabled",
-                        $elm$json$Json$Encode$bool($2.altBlueHueEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "altBlueHueWindow",
-                        $elm$json$Json$Encode$int($2.altBlueHueWindow)
-                      ),
-                      _Utils_Tuple2(
-                        "altBlueSigmoid",
-                        $elm$json$Json$Encode$int($2.altBlueSigmoid)
-                      ),
-                      _Utils_Tuple2(
-                        "altBlueSigmoidEnabled",
-                        $elm$json$Json$Encode$bool($2.altBlueSigmoidEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "altBlueVibrance",
-                        $elm$json$Json$Encode$int($2.altBlueVibrance)
-                      ),
-                      _Utils_Tuple2(
-                        "altBlueVibranceEnabled",
-                        $elm$json$Json$Encode$bool($2.altBlueVibranceEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "altGreenGamma",
-                        $elm$json$Json$Encode$int($2.altGreenGamma)
-                      ),
-                      _Utils_Tuple2(
-                        "altGreenGammaEnabled",
-                        $elm$json$Json$Encode$bool($2.altGreenGammaEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "altGreenHue",
-                        $elm$json$Json$Encode$int($2.altGreenHue)
-                      ),
-                      _Utils_Tuple2(
-                        "altGreenHueEnabled",
-                        $elm$json$Json$Encode$bool($2.altGreenHueEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "altGreenHueWindow",
-                        $elm$json$Json$Encode$int($2.altGreenHueWindow)
-                      ),
-                      _Utils_Tuple2(
-                        "altGreenSigmoid",
-                        $elm$json$Json$Encode$int($2.altGreenSigmoid)
-                      ),
-                      _Utils_Tuple2(
-                        "altGreenSigmoidEnabled",
-                        $elm$json$Json$Encode$bool($2.altGreenSigmoidEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "altGreenVibrance",
-                        $elm$json$Json$Encode$int($2.altGreenVibrance)
-                      ),
-                      _Utils_Tuple2(
-                        "altGreenVibranceEnabled",
-                        $elm$json$Json$Encode$bool($2.altGreenVibranceEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "altRedGamma",
-                        $elm$json$Json$Encode$int($2.altRedGamma)
-                      ),
-                      _Utils_Tuple2(
-                        "altRedGammaEnabled",
-                        $elm$json$Json$Encode$bool($2.altRedGammaEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "altRedHue",
-                        $elm$json$Json$Encode$int($2.altRedHue)
-                      ),
-                      _Utils_Tuple2(
-                        "altRedHueEnabled",
-                        $elm$json$Json$Encode$bool($2.altRedHueEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "altRedHueWindow",
-                        $elm$json$Json$Encode$int($2.altRedHueWindow)
-                      ),
-                      _Utils_Tuple2(
-                        "altRedSigmoid",
-                        $elm$json$Json$Encode$int($2.altRedSigmoid)
-                      ),
-                      _Utils_Tuple2(
-                        "altRedSigmoidEnabled",
-                        $elm$json$Json$Encode$bool($2.altRedSigmoidEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "altRedVibrance",
-                        $elm$json$Json$Encode$int($2.altRedVibrance)
-                      ),
-                      _Utils_Tuple2(
-                        "altRedVibranceEnabled",
-                        $elm$json$Json$Encode$bool($2.altRedVibranceEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "brightness",
-                        $elm$json$Json$Encode$int($2.brightness)
-                      ),
-                      _Utils_Tuple2(
-                        "brightnessEnabled",
-                        $elm$json$Json$Encode$bool($2.brightnessEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "ccBlue",
-                        $elm$json$Json$Encode$int($2.ccBlue)
-                      ),
-                      _Utils_Tuple2(
-                        "ccBlueEnabled",
-                        $elm$json$Json$Encode$bool($2.ccBlueEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "ccGreen",
-                        $elm$json$Json$Encode$int($2.ccGreen)
-                      ),
-                      _Utils_Tuple2(
-                        "ccGreenEnabled",
-                        $elm$json$Json$Encode$bool($2.ccGreenEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "ccRed",
-                        $elm$json$Json$Encode$int($2.ccRed)
-                      ),
-                      _Utils_Tuple2(
-                        "ccRedEnabled",
-                        $elm$json$Json$Encode$bool($2.ccRedEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "colourReplaceBlend",
-                        $elm$json$Json$Encode$float($2.colourReplaceBlend)
-                      ),
-                      _Utils_Tuple2(
-                        "colourReplaceEnabled",
-                        $elm$json$Json$Encode$bool($2.colourReplaceEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "colourReplacePreserveLum",
-                        $elm$json$Json$Encode$bool($2.colourReplacePreserveLum)
-                      ),
-                      _Utils_Tuple2(
-                        "colourReplaceSource",
-                        $elm$json$Json$Encode$string($2.colourReplaceSource)
-                      ),
-                      _Utils_Tuple2(
-                        "colourReplaceTarget",
-                        $elm$json$Json$Encode$string($2.colourReplaceTarget)
-                      ),
-                      _Utils_Tuple2(
-                        "colourReplaceTolerance",
-                        $elm$json$Json$Encode$int($2.colourReplaceTolerance)
-                      ),
-                      _Utils_Tuple2(
-                        "colourmapCenter",
-                        $elm$json$Json$Encode$int($2.colourmapCenter)
-                      ),
-                      _Utils_Tuple2(
-                        "colourmapEnabled",
-                        $elm$json$Json$Encode$bool($2.colourmapEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "colourmapPreset",
-                        $elm$json$Json$Encode$string($2.colourmapPreset)
-                      ),
-                      _Utils_Tuple2(
-                        "contrast",
-                        $elm$json$Json$Encode$float($2.contrast)
-                      ),
-                      _Utils_Tuple2(
-                        "contrastEnabled",
-                        $elm$json$Json$Encode$bool($2.contrastEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "convolutionEnabled",
-                        $elm$json$Json$Encode$bool($2.convolutionEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "convolutionPreset",
-                        $elm$json$Json$Encode$string($2.convolutionPreset)
-                      ),
-                      _Utils_Tuple2(
-                        "flip",
-                        $elm$json$Json$Encode$bool($2.flip)
-                      ),
-                      _Utils_Tuple2(
-                        "gamma",
-                        $elm$json$Json$Encode$float($2.gamma)
-                      ),
-                      _Utils_Tuple2(
-                        "gammaEnabled",
-                        $elm$json$Json$Encode$bool($2.gammaEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "globalPcaEnabled",
-                        $elm$json$Json$Encode$bool($2.globalPcaEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "grayscale",
-                        $elm$json$Json$Encode$bool($2.grayscale)
-                      ),
-                      _Utils_Tuple2(
-                        "hue",
-                        $elm$json$Json$Encode$int($2.hue)
-                      ),
-                      _Utils_Tuple2(
-                        "hueEnabled",
-                        $elm$json$Json$Encode$bool($2.hueEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "invert",
-                        $elm$json$Json$Encode$bool($2.invert)
-                      ),
-                      _Utils_Tuple2(
-                        "morphEnabled",
-                        $elm$json$Json$Encode$bool($2.morphEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "morphKernel",
-                        $elm$json$Json$Encode$int($2.morphKernel)
-                      ),
-                      _Utils_Tuple2(
-                        "morphOperation",
-                        $elm$json$Json$Encode$string($2.morphOperation)
-                      ),
-                      _Utils_Tuple2(
-                        "normalizeEnabled",
-                        $elm$json$Json$Encode$bool($2.normalizeEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "normalizeStrength",
-                        $elm$json$Json$Encode$float($2.normalizeStrength)
-                      ),
-                      _Utils_Tuple2(
-                        "pcaHue",
-                        $elm$json$Json$Encode$int($2.pcaHue)
-                      ),
-                      _Utils_Tuple2(
-                        "pcaMode",
-                        $elm$json$Json$Encode$string($2.pcaMode)
-                      ),
-                      _Utils_Tuple2(
-                        "pseudoColourBlue",
-                        $elm$json$Json$Encode$float($2.pseudoColourBlue)
-                      ),
-                      _Utils_Tuple2(
-                        "pseudoColourEnabled",
-                        $elm$json$Json$Encode$bool($2.pseudoColourEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "pseudoColourGreen",
-                        $elm$json$Json$Encode$float($2.pseudoColourGreen)
-                      ),
-                      _Utils_Tuple2(
-                        "pseudoColourMode",
-                        $elm$json$Json$Encode$string($2.pseudoColourMode)
-                      ),
-                      _Utils_Tuple2(
-                        "pseudoColourRed",
-                        $elm$json$Json$Encode$float($2.pseudoColourRed)
-                      ),
-                      _Utils_Tuple2(
-                        "rotation",
-                        $elm$json$Json$Encode$int($2.rotation)
-                      ),
-                      _Utils_Tuple2(
-                        "saturation",
-                        $elm$json$Json$Encode$int($2.saturation)
-                      ),
-                      _Utils_Tuple2(
-                        "saturationEnabled",
-                        $elm$json$Json$Encode$bool($2.saturationEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "threshold",
-                        $elm$json$Json$Encode$int($2.threshold)
-                      ),
-                      _Utils_Tuple2(
-                        "thresholdEnabled",
-                        $elm$json$Json$Encode$bool($2.thresholdEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "unsharpAmount",
-                        $elm$json$Json$Encode$float($2.unsharpAmount)
-                      ),
-                      _Utils_Tuple2(
-                        "unsharpEnabled",
-                        $elm$json$Json$Encode$bool($2.unsharpEnabled)
-                      ),
-                      _Utils_Tuple2(
-                        "vibrance",
-                        $elm$json$Json$Encode$int($2.vibrance)
-                      ),
-                      _Utils_Tuple2(
-                        "vibranceEnabled",
-                        $elm$json$Json$Encode$bool($2.vibranceEnabled)
-                      )
-                    ]
-                  )
-                );
-              })($.filters)
-            ),
-            _Utils_Tuple2(
-              "isStatic",
-              $elm$json$Json$Encode$bool($.isStatic)
-            ),
-            _Utils_Tuple2(
-              "servicesJson",
-              $elm$json$Json$Encode$string($.servicesJson)
-            ),
-            _Utils_Tuple2(
-              "tileSource",
-              $elm$json$Json$Encode$string($.tileSource)
-            )
-          ]
-        )
-      );
-    }
-  );
   var $author$project$Model$getPageAt = F2(
     function(index, pageList) {
       return $elm$core$List$head(
@@ -17489,7 +18423,9 @@
             $elm$core$Maybe$map,
             function(image) {
               return $author$project$Main$filterPreviewUpdated(
-                { aspect: page.aspect, filters: model.filters, isStatic: image.isStatic, servicesJson: image.servicesJson, tileSource: image.tileSource }
+                $elm$core$Maybe$Just(
+                  { aspect: page.aspect, filters: model.filters, isStatic: image.isStatic, sourceId: image.sourceId, tileSource: image.tileSource }
+                )
               );
             },
             $elm$core$List$head(
@@ -17593,45 +18529,13 @@
         return "Invalid IIIF response body. URL did not return a valid IIIF Manifest or Collection JSON.";
     }
   };
-  var $elm$core$Set$insert = F2(
-    function(key, _v0) {
-      var dict = _v0.a;
-      return $elm$core$Set$Set_elm_builtin(
-        A3($elm$core$Dict$insert, key, _Utils_Tuple0, dict)
-      );
-    }
-  );
   var $author$project$Main$layoutModeUpdated = _Platform_outgoingPort("layoutModeUpdated", $elm$json$Json$Encode$string);
-  var $elm$core$Dict$member = F2(
-    function(key, dict) {
-      var _v0 = A2($elm$core$Dict$get, key, dict);
-      if (_v0.$ === "Just") {
-        return true;
-      } else {
-        return false;
-      }
-    }
-  );
-  var $elm$core$Set$member = F2(
-    function(key, _v0) {
-      var dict = _v0.a;
-      return A2($elm$core$Dict$member, key, dict);
-    }
-  );
   var $elm$core$Basics$min = F2(
     function(x, y) {
       return _Utils_cmp(x, y) < 0 ? x : y;
     }
   );
   var $author$project$Main$mobileShortSideBreakpoint = 720;
-  var $elm$core$Set$remove = F2(
-    function(key, _v0) {
-      var dict = _v0.a;
-      return $elm$core$Set$Set_elm_builtin(
-        A2($elm$core$Dict$remove, key, dict)
-      );
-    }
-  );
   var $author$project$Main$replaceCollectionById = F3(
     function(collectionId, replacement, collection) {
       var rebuildUp = F2(
@@ -17651,7 +18555,7 @@
                       $elm$core$List$reverse(
                         A2(
                           $elm$core$List$cons,
-                          $author$project$IIIF$Presentation$NestedCollection(updatedChild),
+                          $rism_digital$elm_iiif$IIIF$Presentation$NestedCollection(updatedChild),
                           frame.beforeRev
                         )
                       ),
@@ -17678,7 +18582,7 @@
               {
                 beforeRev: A2(
                   $elm$core$List$cons,
-                  $author$project$IIIF$Presentation$NestedCollection(updatedChild),
+                  $rism_digital$elm_iiif$IIIF$Presentation$NestedCollection(updatedChild),
                   frame.beforeRev
                 ),
                 collection: frame.collection,
@@ -17745,49 +18649,49 @@
       );
     }
   );
-  var $author$project$IIIF$Internal$CoreDecoders$contextListDecoder = function(contextValues) {
+  var $rism_digital$elm_iiif$IIIF$Internal$CoreDecoders$contextListDecoder = function(contextValues) {
     return A2(
       $elm$core$List$any,
-      $author$project$IIIF$Internal$Contexts$contextMatches($author$project$IIIF$Internal$Contexts$iiifV3PresentationContextString),
+      $rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches($rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV3PresentationContextString),
       contextValues
     ) ? A2(
       $elm$json$Json$Decode$map,
-      $author$project$IIIF$Presentation$IIIFManifest($author$project$IIIF$Version$IIIFV3),
-      $author$project$IIIF$Internal$V3PresentationDecoders$v3iiifManifestDecoder
+      $rism_digital$elm_iiif$IIIF$Presentation$IIIFManifest($rism_digital$elm_iiif$IIIF$Version$IIIFV3),
+      $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3iiifManifestDecoder
     ) : A2(
       $elm$core$List$any,
-      $author$project$IIIF$Internal$Contexts$contextMatches($author$project$IIIF$Internal$Contexts$iiifV2PresentationContextString),
+      $rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches($rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV2PresentationContextString),
       contextValues
     ) ? A2(
       $elm$json$Json$Decode$map,
-      $author$project$IIIF$Presentation$IIIFManifest($author$project$IIIF$Version$IIIFV2),
-      $author$project$IIIF$Internal$V2PresentationDecoders$v2iiifManifestDecoder
+      $rism_digital$elm_iiif$IIIF$Presentation$IIIFManifest($rism_digital$elm_iiif$IIIF$Version$IIIFV2),
+      $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2iiifManifestDecoder
     ) : $elm$json$Json$Decode$fail(
       "Unknown IIIF Version in context values: " + A2($elm$core$String$join, ", ", contextValues)
     );
   };
-  var $author$project$IIIF$Internal$CoreDecoders$contextStringDecoder = function(contextValue) {
-    return A2($author$project$IIIF$Internal$Contexts$contextMatches, $author$project$IIIF$Internal$Contexts$iiifV3PresentationContextString, contextValue) ? A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$CoreDecoders$contextStringDecoder = function(contextValue) {
+    return A2($rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches, $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV3PresentationContextString, contextValue) ? A2(
       $elm$json$Json$Decode$map,
-      $author$project$IIIF$Presentation$IIIFManifest($author$project$IIIF$Version$IIIFV3),
-      $author$project$IIIF$Internal$V3PresentationDecoders$v3iiifManifestDecoder
-    ) : A2($author$project$IIIF$Internal$Contexts$contextMatches, $author$project$IIIF$Internal$Contexts$iiifV2PresentationContextString, contextValue) ? A2(
+      $rism_digital$elm_iiif$IIIF$Presentation$IIIFManifest($rism_digital$elm_iiif$IIIF$Version$IIIFV3),
+      $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3iiifManifestDecoder
+    ) : A2($rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches, $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV2PresentationContextString, contextValue) ? A2(
       $elm$json$Json$Decode$map,
-      $author$project$IIIF$Presentation$IIIFManifest($author$project$IIIF$Version$IIIFV2),
-      $author$project$IIIF$Internal$V2PresentationDecoders$v2iiifManifestDecoder
+      $rism_digital$elm_iiif$IIIF$Presentation$IIIFManifest($rism_digital$elm_iiif$IIIF$Version$IIIFV2),
+      $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2iiifManifestDecoder
     ) : $elm$json$Json$Decode$fail("Unknown IIIF Version: " + contextValue);
   };
-  var $author$project$IIIF$Decoders$manifestDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Decoders$manifestDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
         A2(
           $elm$json$Json$Decode$andThen,
-          $author$project$IIIF$Internal$CoreDecoders$contextStringDecoder,
+          $rism_digital$elm_iiif$IIIF$Internal$CoreDecoders$contextStringDecoder,
           A2($elm$json$Json$Decode$field, "@context", $elm$json$Json$Decode$string)
         ),
         A2(
           $elm$json$Json$Decode$andThen,
-          $author$project$IIIF$Internal$CoreDecoders$contextListDecoder,
+          $rism_digital$elm_iiif$IIIF$Internal$CoreDecoders$contextListDecoder,
           A2(
             $elm$json$Json$Decode$field,
             "@context",
@@ -17797,12 +18701,12 @@
       ]
     )
   );
-  var $author$project$IIIF$requestManifest = F3(
+  var $rism_digital$elm_iiif$IIIF$requestManifest = F3(
     function(responseMsg, acceptHeaders, manifest) {
       return A3(
-        $author$project$IIIF$Internal$Request$request,
+        $rism_digital$elm_iiif$IIIF$Internal$Request$request,
         acceptHeaders,
-        A2($elm$http$Http$expectJson, responseMsg, $author$project$IIIF$Decoders$manifestDecoder),
+        A2($elm$http$Http$expectJson, responseMsg, $rism_digital$elm_iiif$IIIF$Decoders$manifestDecoder),
         manifest
       );
     }
@@ -17813,7 +18717,225 @@
       { altBlueGamma: 0, altBlueGammaEnabled: false, altBlueHue: 0, altBlueHueEnabled: false, altBlueHueWindow: 8, altBlueSigmoid: 0, altBlueSigmoidEnabled: false, altBlueVibrance: 0, altBlueVibranceEnabled: false, altGreenGamma: 0, altGreenGammaEnabled: false, altGreenHue: 0, altGreenHueEnabled: false, altGreenHueWindow: 8, altGreenSigmoid: 0, altGreenSigmoidEnabled: false, altGreenVibrance: 0, altGreenVibranceEnabled: false, altRedGamma: 0, altRedGammaEnabled: false, altRedHue: 0, altRedHueEnabled: false, altRedHueWindow: 8, altRedSigmoid: 0, altRedSigmoidEnabled: false, altRedVibrance: 0, altRedVibranceEnabled: false }
     );
   };
-  var $elm$json$Json$Encode$null = _Json_encodeNull;
+  var $author$project$Main$authHttpCancelled = _Platform_outgoingPort("authHttpCancelled", $elm$json$Json$Encode$string);
+  var $author$project$Main$authHttpRequested = _Platform_outgoingPort("authHttpRequested", $elm$core$Basics$identity);
+  var $author$project$Main$authSourcesInvalidated = _Platform_outgoingPort(
+    "authSourcesInvalidated",
+    $elm$json$Json$Encode$list($elm$json$Json$Encode$string)
+  );
+  var $author$project$Main$authStorageRequested = _Platform_outgoingPort("authStorageRequested", $elm$core$Basics$identity);
+  var $author$project$Main$authTokenFrameCancelled = _Platform_outgoingPort("authTokenFrameCancelled", $elm$json$Json$Encode$string);
+  var $author$project$Main$authTokenFrameRequested = _Platform_outgoingPort("authTokenFrameRequested", $elm$core$Basics$identity);
+  var $author$project$Main$tileSourceResolutionFailed = _Platform_outgoingPort(
+    "tileSourceResolutionFailed",
+    function($) {
+      return $elm$json$Json$Encode$object(
+        _List_fromArray(
+          [
+            _Utils_Tuple2(
+              "message",
+              $elm$json$Json$Encode$string($.message)
+            ),
+            _Utils_Tuple2(
+              "requestId",
+              $elm$json$Json$Encode$string($.requestId)
+            )
+          ]
+        )
+      );
+    }
+  );
+  var $author$project$Main$tileSourceResolutionSucceeded = _Platform_outgoingPort("tileSourceResolutionSucceeded", $elm$core$Basics$identity);
+  var $author$project$Main$runAuthEffect = function(effect) {
+    switch (effect.$) {
+      case "Fetch":
+        var operationId = effect.a;
+        var url = effect.b;
+        var bearer = effect.c;
+        var withCredentials = effect.d;
+        return $author$project$Main$authHttpRequested(
+          $elm$json$Json$Encode$object(
+            _List_fromArray(
+              [
+                _Utils_Tuple2(
+                  "id",
+                  $elm$json$Json$Encode$string(operationId)
+                ),
+                _Utils_Tuple2(
+                  "url",
+                  $elm$json$Json$Encode$string(url)
+                ),
+                _Utils_Tuple2(
+                  "bearer",
+                  A2(
+                    $elm$core$Maybe$withDefault,
+                    $elm$json$Json$Encode$null,
+                    A2($elm$core$Maybe$map, $elm$json$Json$Encode$string, bearer)
+                  )
+                ),
+                _Utils_Tuple2(
+                  "withCredentials",
+                  $elm$json$Json$Encode$bool(withCredentials)
+                )
+              ]
+            )
+          )
+        );
+      case "CancelFetch":
+        var operationId = effect.a;
+        return $author$project$Main$authHttpCancelled(operationId);
+      case "ReadToken":
+        var flowId = effect.a;
+        var key = effect.b;
+        return $author$project$Main$authStorageRequested(
+          $elm$json$Json$Encode$object(
+            _List_fromArray(
+              [
+                _Utils_Tuple2(
+                  "action",
+                  $elm$json$Json$Encode$string("read")
+                ),
+                _Utils_Tuple2(
+                  "flowId",
+                  $elm$json$Json$Encode$string(flowId)
+                ),
+                _Utils_Tuple2(
+                  "key",
+                  $elm$json$Json$Encode$string(key)
+                )
+              ]
+            )
+          )
+        );
+      case "WriteToken":
+        var flowId = effect.a;
+        var key = effect.b;
+        var accessToken = effect.c;
+        var expiresAt = effect.d;
+        return $author$project$Main$authStorageRequested(
+          $elm$json$Json$Encode$object(
+            _List_fromArray(
+              [
+                _Utils_Tuple2(
+                  "action",
+                  $elm$json$Json$Encode$string("write")
+                ),
+                _Utils_Tuple2(
+                  "flowId",
+                  $elm$json$Json$Encode$string(flowId)
+                ),
+                _Utils_Tuple2(
+                  "key",
+                  $elm$json$Json$Encode$string(key)
+                ),
+                _Utils_Tuple2(
+                  "accessToken",
+                  $elm$json$Json$Encode$string(accessToken)
+                ),
+                _Utils_Tuple2(
+                  "expiresAt",
+                  $elm$json$Json$Encode$float(expiresAt)
+                )
+              ]
+            )
+          )
+        );
+      case "RemoveToken":
+        var flowId = effect.a;
+        var key = effect.b;
+        return $author$project$Main$authStorageRequested(
+          $elm$json$Json$Encode$object(
+            _List_fromArray(
+              [
+                _Utils_Tuple2(
+                  "action",
+                  $elm$json$Json$Encode$string("remove")
+                ),
+                _Utils_Tuple2(
+                  "flowId",
+                  $elm$json$Json$Encode$string(flowId)
+                ),
+                _Utils_Tuple2(
+                  "key",
+                  $elm$json$Json$Encode$string(key)
+                )
+              ]
+            )
+          )
+        );
+      case "StartTokenFrame":
+        var flowId = effect.a;
+        var url = effect.b;
+        var messageId = effect.c;
+        return $author$project$Main$authTokenFrameRequested(
+          $elm$json$Json$Encode$object(
+            _List_fromArray(
+              [
+                _Utils_Tuple2(
+                  "flowId",
+                  $elm$json$Json$Encode$string(flowId)
+                ),
+                _Utils_Tuple2(
+                  "url",
+                  $elm$json$Json$Encode$string(url)
+                ),
+                _Utils_Tuple2(
+                  "messageId",
+                  $elm$json$Json$Encode$string(messageId)
+                )
+              ]
+            )
+          )
+        );
+      case "CancelTokenFrame":
+        var flowId = effect.a;
+        return $author$project$Main$authTokenFrameCancelled(flowId);
+      case "InvalidateSources":
+        var sourceIds = effect.a;
+        return $author$project$Main$authSourcesInvalidated(sourceIds);
+      case "Complete":
+        var resolution = effect.a;
+        return $author$project$Main$tileSourceResolutionSucceeded(
+          $elm$json$Json$Encode$object(
+            _List_fromArray(
+              [
+                _Utils_Tuple2(
+                  "requestId",
+                  $elm$json$Json$Encode$string(resolution.requestId)
+                ),
+                _Utils_Tuple2(
+                  "url",
+                  $elm$json$Json$Encode$string(resolution.url)
+                ),
+                _Utils_Tuple2(
+                  "isStatic",
+                  $elm$json$Json$Encode$bool(resolution.isStatic)
+                ),
+                _Utils_Tuple2(
+                  "credentialed",
+                  $elm$json$Json$Encode$bool(resolution.credentialed)
+                ),
+                _Utils_Tuple2(
+                  "infoJson",
+                  A2($elm$core$Maybe$withDefault, $elm$json$Json$Encode$null, resolution.infoJson)
+                )
+              ]
+            )
+          )
+        );
+      default:
+        var requestId = effect.a;
+        var message = effect.b;
+        return $author$project$Main$tileSourceResolutionFailed(
+          { message, requestId }
+        );
+    }
+  };
+  var $author$project$Main$runAuthEffects = function(effects) {
+    return $elm$core$Platform$Cmd$batch(
+      A2($elm$core$List$map, $author$project$Main$runAuthEffect, effects)
+    );
+  };
   var $author$project$Main$saveFilteredImage = _Platform_outgoingPort(
     "saveFilteredImage",
     function($) {
@@ -17821,6 +18943,1974 @@
     }
   );
   var $author$project$Main$setFullscreen = _Platform_outgoingPort("setFullscreen", $elm$json$Json$Encode$bool);
+  var $author$project$Auth$AwaitingPopup = { $: "AwaitingPopup" };
+  var $author$project$Auth$AwaitingToken = { $: "AwaitingToken" };
+  var $author$project$Auth$CancelFetch = function(a) {
+    return { $: "CancelFetch", a };
+  };
+  var $author$project$Auth$CancelTokenFrame = function(a) {
+    return { $: "CancelTokenFrame", a };
+  };
+  var $author$project$Auth$StartTokenFrame = F3(
+    function(a, b, c) {
+      return { $: "StartTokenFrame", a, b, c };
+    }
+  );
+  var $elm$core$Dict$diff = F2(
+    function(t1, t2) {
+      return A3(
+        $elm$core$Dict$foldl,
+        F3(
+          function(k, v, t) {
+            return A2($elm$core$Dict$remove, k, t);
+          }
+        ),
+        t1,
+        t2
+      );
+    }
+  );
+  var $elm$core$Dict$filter = F2(
+    function(isGood, dict) {
+      return A3(
+        $elm$core$Dict$foldl,
+        F3(
+          function(k, v, d) {
+            return A2(isGood, k, v) ? A3($elm$core$Dict$insert, k, v, d) : d;
+          }
+        ),
+        $elm$core$Dict$empty,
+        dict
+      );
+    }
+  );
+  var $author$project$Auth$activatePrompt = F3(
+    function(flowId, flow, model) {
+      var _v0 = flow.association.access.id;
+      if (_v0.$ === "Just") {
+        var accessUrl = _v0.a;
+        return _Utils_update(
+          model,
+          {
+            activeInteractive: $elm$core$Maybe$Just(flowId),
+            activePrompt: $elm$core$Maybe$Just(
+              { accessUrl, confirmLabel: flow.association.access.confirmLabel, error: flow.promptError, flowId, heading: flow.association.access.heading, note: flow.association.access.note }
+            ),
+            promptQueue: A2(
+              $elm$core$List$filter,
+              $elm$core$Basics$neq(flowId),
+              model.promptQueue
+            )
+          }
+        );
+      } else {
+        return model;
+      }
+    }
+  );
+  var $author$project$Auth$activateNextQueued = function(model) {
+    activateNextQueued:
+      while (true) {
+        var _v0 = model.promptQueue;
+        if (!_v0.b) {
+          return model;
+        } else {
+          var nextFlowId = _v0.a;
+          var remaining = _v0.b;
+          var withRemaining = _Utils_update(
+            model,
+            { promptQueue: remaining }
+          );
+          var _v1 = A2($elm$core$Dict$get, nextFlowId, model.flows);
+          if (_v1.$ === "Just") {
+            var flow = _v1.a;
+            var _v2 = flow.association.access.id;
+            if (_v2.$ === "Just") {
+              return A3($author$project$Auth$activatePrompt, nextFlowId, flow, withRemaining);
+            } else {
+              var $temp$model = withRemaining;
+              model = $temp$model;
+              continue activateNextQueued;
+            }
+          } else {
+            var $temp$model = withRemaining;
+            model = $temp$model;
+            continue activateNextQueued;
+          }
+        }
+      }
+  };
+  var $author$project$Auth$releaseInteractive = F2(
+    function(flowId, model) {
+      var withoutQueued = _Utils_update(
+        model,
+        {
+          promptQueue: A2(
+            $elm$core$List$filter,
+            $elm$core$Basics$neq(flowId),
+            model.promptQueue
+          )
+        }
+      );
+      var withoutPrompt = (function() {
+        var _v0 = withoutQueued.activePrompt;
+        if (_v0.$ === "Just") {
+          var active = _v0.a;
+          return _Utils_eq(active.flowId, flowId) ? _Utils_update(
+            withoutQueued,
+            { activePrompt: $elm$core$Maybe$Nothing }
+          ) : withoutQueued;
+        } else {
+          return withoutQueued;
+        }
+      })();
+      return _Utils_eq(
+        withoutPrompt.activeInteractive,
+        $elm$core$Maybe$Just(flowId)
+      ) ? $author$project$Auth$activateNextQueued(
+        _Utils_update(
+          withoutPrompt,
+          { activeInteractive: $elm$core$Maybe$Nothing }
+        )
+      ) : withoutPrompt;
+    }
+  );
+  var $author$project$Auth$cancelRequest = F2(
+    function(requestId, model) {
+      var nextFlows = A2(
+        $elm$core$Dict$filter,
+        F2(
+          function(_v3, flow) {
+            return !$elm$core$List$isEmpty(flow.waiters);
+          }
+        ),
+        A2(
+          $elm$core$Dict$map,
+          F2(
+            function(_v2, flow) {
+              return _Utils_update(
+                flow,
+                {
+                  waiters: A2(
+                    $elm$core$List$filter,
+                    $elm$core$Basics$neq(requestId),
+                    flow.waiters
+                  )
+                }
+              );
+            }
+          ),
+          model.flows
+        )
+      );
+      var removedFlowIds = A2(
+        $elm$core$List$filter,
+        function(flowId) {
+          return !A2($elm$core$Dict$member, flowId, nextFlows);
+        },
+        $elm$core$Dict$keys(model.flows)
+      );
+      var operations = A2(
+        $elm$core$Dict$filter,
+        F2(
+          function(_v0, operation) {
+            if (operation.$ === "InfoOperation") {
+              var waiter = operation.a;
+              return _Utils_eq(waiter, requestId);
+            } else {
+              var flowId = operation.a;
+              return A2($elm$core$List$member, flowId, removedFlowIds);
+            }
+          }
+        ),
+        model.operations
+      );
+      var withoutRemoved = _Utils_update(
+        model,
+        {
+          flows: nextFlows,
+          operations: A2($elm$core$Dict$diff, model.operations, operations),
+          pending: A2($elm$core$Dict$remove, requestId, model.pending)
+        }
+      );
+      var next = A3($elm$core$List$foldl, $author$project$Auth$releaseInteractive, withoutRemoved, removedFlowIds);
+      return _Utils_Tuple2(
+        next,
+        _Utils_ap(
+          A2(
+            $elm$core$List$map,
+            $author$project$Auth$CancelFetch,
+            $elm$core$Dict$keys(operations)
+          ),
+          A2($elm$core$List$map, $author$project$Auth$CancelTokenFrame, removedFlowIds)
+        )
+      );
+    }
+  );
+  var $author$project$Auth$Fail = F2(
+    function(a, b) {
+      return { $: "Fail", a, b };
+    }
+  );
+  var $author$project$Auth$completeFailure = F3(
+    function(requestId, message, model) {
+      return _Utils_Tuple2(
+        _Utils_update(
+          model,
+          {
+            pending: A2($elm$core$Dict$remove, requestId, model.pending)
+          }
+        ),
+        _List_fromArray(
+          [
+            A2($author$project$Auth$Fail, requestId, message)
+          ]
+        )
+      );
+    }
+  );
+  var $author$project$Auth$failFlow = F3(
+    function(flowId, message, model) {
+      var _v0 = A2($elm$core$Dict$get, flowId, model.flows);
+      if (_v0.$ === "Nothing") {
+        return _Utils_Tuple2(model, _List_Nil);
+      } else {
+        var flow = _v0.a;
+        var failOne = F2(
+          function(requestId, _v2) {
+            var current = _v2.a;
+            var effects = _v2.b;
+            var _v1 = A3($author$project$Auth$completeFailure, requestId, message, current);
+            var next = _v1.a;
+            var nextEffects = _v1.b;
+            return _Utils_Tuple2(
+              next,
+              _Utils_ap(effects, nextEffects)
+            );
+          }
+        );
+        var cleared = A2(
+          $author$project$Auth$releaseInteractive,
+          flowId,
+          _Utils_update(
+            model,
+            {
+              flows: A2($elm$core$Dict$remove, flowId, model.flows)
+            }
+          )
+        );
+        return A3(
+          $elm$core$List$foldl,
+          failOne,
+          _Utils_Tuple2(
+            cleared,
+            _List_fromArray(
+              [
+                $author$project$Auth$CancelTokenFrame(flowId)
+              ]
+            )
+          ),
+          flow.waiters
+        );
+      }
+    }
+  );
+  var $author$project$Auth$Fetch = F4(
+    function(a, b, c, d) {
+      return { $: "Fetch", a, b, c, d };
+    }
+  );
+  var $author$project$Auth$ProbeOperation = F2(
+    function(a, b) {
+      return { $: "ProbeOperation", a, b };
+    }
+  );
+  var $author$project$Auth$ProbingAnonymous = { $: "ProbingAnonymous" };
+  var $author$project$Auth$allocateOperation = F2(
+    function(operation, model) {
+      var operationId = "auth-http-" + $elm$core$String$fromInt(model.nextOperation);
+      return _Utils_Tuple2(
+        operationId,
+        _Utils_update(
+          model,
+          {
+            nextOperation: model.nextOperation + 1,
+            operations: A3($elm$core$Dict$insert, operationId, operation, model.operations)
+          }
+        )
+      );
+    }
+  );
+  var $author$project$Auth$Complete = function(a) {
+    return { $: "Complete", a };
+  };
+  var $author$project$Auth$completeSource = F4(
+    function(requestId, credentialed, infoJson, model) {
+      var _v0 = A2($elm$core$Dict$get, requestId, model.pending);
+      if (_v0.$ === "Just") {
+        var pending = _v0.a;
+        var _v1 = A2($elm$core$Dict$get, pending.sourceId, model.sources);
+        if (_v1.$ === "Just") {
+          var source = _v1.a;
+          return _Utils_Tuple2(
+            _Utils_update(
+              model,
+              {
+                pending: A2($elm$core$Dict$remove, requestId, model.pending)
+              }
+            ),
+            _List_fromArray(
+              [
+                $author$project$Auth$Complete(
+                  {
+                    credentialed,
+                    infoJson: (function() {
+                      if (infoJson.$ === "Just") {
+                        var value = infoJson.a;
+                        return $elm$core$Maybe$Just(value);
+                      } else {
+                        return pending.infoJson;
+                      }
+                    })(),
+                    isStatic: source.isStatic,
+                    requestId,
+                    url: source.url
+                  }
+                )
+              ]
+            )
+          );
+        } else {
+          return _Utils_Tuple2(model, _List_Nil);
+        }
+      } else {
+        return _Utils_Tuple2(model, _List_Nil);
+      }
+    }
+  );
+  var $author$project$Auth$InfoOperation = F2(
+    function(a, b) {
+      return { $: "InfoOperation", a, b };
+    }
+  );
+  var $author$project$Auth$ResolveInfo = function(a) {
+    return { $: "ResolveInfo", a };
+  };
+  var $author$project$Auth$startResolvedInfoRequest = F4(
+    function(requestId, credentialed, source, model) {
+      var _v0 = A2(
+        $author$project$Auth$allocateOperation,
+        A2(
+          $author$project$Auth$InfoOperation,
+          requestId,
+          $author$project$Auth$ResolveInfo(credentialed)
+        ),
+        model
+      );
+      var operationId = _v0.a;
+      var next = _v0.b;
+      return _Utils_Tuple2(
+        next,
+        _List_fromArray(
+          [
+            A4($author$project$Auth$Fetch, operationId, source.url, $elm$core$Maybe$Nothing, credentialed)
+          ]
+        )
+      );
+    }
+  );
+  var $author$project$Auth$completeKnownFamily = F3(
+    function(requestId, credentialed, model) {
+      var _v0 = A2($elm$core$Dict$get, requestId, model.pending);
+      if (_v0.$ === "Just") {
+        var pending = _v0.a;
+        var _v1 = A2($elm$core$Dict$get, pending.sourceId, model.sources);
+        if (_v1.$ === "Just") {
+          var source = _v1.a;
+          var _v2 = _Utils_Tuple2(source.isStatic, pending.infoJson);
+          if (!_v2.a && _v2.b.$ === "Nothing") {
+            var _v3 = _v2.b;
+            return A4($author$project$Auth$startResolvedInfoRequest, requestId, credentialed, source, model);
+          } else {
+            return A4($author$project$Auth$completeSource, requestId, credentialed, $elm$core$Maybe$Nothing, model);
+          }
+        } else {
+          return _Utils_Tuple2(model, _List_Nil);
+        }
+      } else {
+        return _Utils_Tuple2(model, _List_Nil);
+      }
+    }
+  );
+  var $elm$url$Url$addPort = F2(
+    function(maybePort, starter) {
+      if (maybePort.$ === "Nothing") {
+        return starter;
+      } else {
+        var port_ = maybePort.a;
+        return starter + (":" + $elm$core$String$fromInt(port_));
+      }
+    }
+  );
+  var $elm$url$Url$addPrefixed = F3(
+    function(prefix, maybeSegment, starter) {
+      if (maybeSegment.$ === "Nothing") {
+        return starter;
+      } else {
+        var segment = maybeSegment.a;
+        return _Utils_ap(
+          starter,
+          _Utils_ap(prefix, segment)
+        );
+      }
+    }
+  );
+  var $elm$url$Url$toString = function(url) {
+    var http = (function() {
+      var _v0 = url.protocol;
+      if (_v0.$ === "Http") {
+        return "http://";
+      } else {
+        return "https://";
+      }
+    })();
+    return A3(
+      $elm$url$Url$addPrefixed,
+      "#",
+      url.fragment,
+      A3(
+        $elm$url$Url$addPrefixed,
+        "?",
+        url.query,
+        _Utils_ap(
+          A2(
+            $elm$url$Url$addPort,
+            url.port_,
+            _Utils_ap(http, url.host)
+          ),
+          url.path
+        )
+      )
+    );
+  };
+  var $author$project$Auth$normalizedProbeUrl = function(probeUrl) {
+    return A2(
+      $elm$core$Maybe$withDefault,
+      probeUrl,
+      A2(
+        $elm$core$Maybe$map,
+        function(parsed) {
+          return $elm$url$Url$toString(
+            _Utils_update(
+              parsed,
+              { fragment: $elm$core$Maybe$Nothing, query: $elm$core$Maybe$Nothing }
+            )
+          );
+        },
+        $elm$url$Url$fromString(probeUrl)
+      )
+    );
+  };
+  var $author$project$Auth$associationFromProbe = function(probe) {
+    var hasUnsupportedAccess = A2(
+      $elm$core$List$any,
+      function(access) {
+        return !_Utils_eq(access.profile, $rism_digital$elm_iiif$IIIF$Auth$Active);
+      },
+      probe.services
+    );
+    var active = $elm$core$List$head(
+      A2(
+        $elm$core$List$filter,
+        function(access) {
+          return _Utils_eq(access.profile, $rism_digital$elm_iiif$IIIF$Auth$Active);
+        },
+        probe.services
+      )
+    );
+    return hasUnsupportedAccess ? $elm$core$Maybe$Nothing : A2(
+      $elm$core$Maybe$andThen,
+      function(access) {
+        return A2(
+          $elm$core$Maybe$map,
+          function(token) {
+            return {
+              access,
+              key: $author$project$Auth$normalizedProbeUrl(probe.id) + ("|" + (A2($elm$core$Maybe$withDefault, "", access.id) + ("|" + token.id))),
+              logout: $elm$core$List$head(
+                A2(
+                  $elm$core$List$filterMap,
+                  function(service) {
+                    if (service.$ === "RelatedLogoutService") {
+                      var logout = service.a;
+                      return $elm$core$Maybe$Just(logout);
+                    } else {
+                      return $elm$core$Maybe$Nothing;
+                    }
+                  },
+                  access.services
+                )
+              ),
+              probe,
+              token
+            };
+          },
+          $elm$core$List$head(
+            A2(
+              $elm$core$List$filterMap,
+              function(service) {
+                if (service.$ === "RelatedTokenService") {
+                  var token = service.a;
+                  return $elm$core$Maybe$Just(token);
+                } else {
+                  return $elm$core$Maybe$Nothing;
+                }
+              },
+              access.services
+            )
+          )
+        );
+      },
+      active
+    );
+  };
+  var $elm$core$Result$fromMaybe = F2(
+    function(err, maybe) {
+      if (maybe.$ === "Just") {
+        var v = maybe.a;
+        return $elm$core$Result$Ok(v);
+      } else {
+        return $elm$core$Result$Err(err);
+      }
+    }
+  );
+  var $author$project$Auth$unsupportedMessage = function(serviceTypes) {
+    return "Unsupported authorization service: " + (A2($elm$core$String$join, ", ", serviceTypes) + ".");
+  };
+  var $author$project$Auth$unsupportedPolicyError = function(probes) {
+    var accesses = A2(
+      $elm$core$List$concatMap,
+      function($) {
+        return $.services;
+      },
+      probes
+    );
+    var _v0 = $elm$core$List$head(
+      A2(
+        $elm$core$List$filter,
+        function(access2) {
+          return !_Utils_eq(access2.profile, $rism_digital$elm_iiif$IIIF$Auth$Active);
+        },
+        accesses
+      )
+    );
+    if (_v0.$ === "Just") {
+      var access = _v0.a;
+      return $elm$core$Maybe$Just(
+        "IIIF Auth 2 '" + ((function() {
+          var _v1 = access.profile;
+          switch (_v1.$) {
+            case "Kiosk":
+              return "kiosk";
+            case "External":
+              return "external";
+            default:
+              return "active";
+          }
+        })() + "' access is not supported; only the 'active' profile is supported.")
+      );
+    } else {
+      return $elm$core$Maybe$Nothing;
+    }
+  };
+  var $author$project$Auth$supportedAssociation = function(discovery) {
+    if (!$elm$core$List$isEmpty(discovery.unsupportedServiceTypes)) {
+      return $elm$core$Result$Err(
+        $author$project$Auth$unsupportedMessage(discovery.unsupportedServiceTypes)
+      );
+    } else {
+      var _v0 = $author$project$Auth$unsupportedPolicyError(discovery.probes);
+      if (_v0.$ === "Just") {
+        var message = _v0.a;
+        return $elm$core$Result$Err(message);
+      } else {
+        return A2(
+          $elm$core$Result$fromMaybe,
+          "No supported Auth 2 active sign-in service was provided.",
+          $elm$core$List$head(
+            A2($elm$core$List$filterMap, $author$project$Auth$associationFromProbe, discovery.probes)
+          )
+        );
+      }
+    }
+  };
+  var $author$project$Auth$beginAuthorization = F4(
+    function(requestId, discovery, infoJson, model) {
+      var withInfo = _Utils_update(
+        model,
+        {
+          pending: A3(
+            $elm$core$Dict$update,
+            requestId,
+            $elm$core$Maybe$map(
+              function(pending) {
+                return _Utils_update(
+                  pending,
+                  { infoJson }
+                );
+              }
+            ),
+            model.pending
+          )
+        }
+      );
+      var _v0 = $author$project$Auth$supportedAssociation(discovery);
+      if (_v0.$ === "Err") {
+        var message = _v0.a;
+        return A3($author$project$Auth$completeFailure, requestId, message, withInfo);
+      } else {
+        var association = _v0.a;
+        var _v1 = A2($elm$core$Dict$get, association.key, withInfo.familyStates);
+        if (_v1.$ === "Just") {
+          if (_v1.a.$ === "AnonymousFamily") {
+            var _v2 = _v1.a;
+            return A3($author$project$Auth$completeKnownFamily, requestId, false, withInfo);
+          } else {
+            var _v3 = _v1.a;
+            return A3($author$project$Auth$completeKnownFamily, requestId, true, withInfo);
+          }
+        } else {
+          var _v4 = A2($elm$core$Dict$get, association.key, withInfo.flows);
+          if (_v4.$ === "Just") {
+            var flow = _v4.a;
+            return _Utils_Tuple2(
+              _Utils_update(
+                withInfo,
+                {
+                  flows: A3(
+                    $elm$core$Dict$insert,
+                    association.key,
+                    _Utils_update(
+                      flow,
+                      {
+                        waiters: A2($elm$core$List$cons, requestId, flow.waiters)
+                      }
+                    ),
+                    withInfo.flows
+                  )
+                }
+              ),
+              _List_Nil
+            );
+          } else {
+            var flow = {
+              association,
+              attempts: 0,
+              phase: $author$project$Auth$ProbingAnonymous,
+              promptError: $elm$core$Maybe$Nothing,
+              waiters: _List_fromArray(
+                [requestId]
+              )
+            };
+            var withFlow = _Utils_update(
+              withInfo,
+              {
+                flows: A3($elm$core$Dict$insert, association.key, flow, withInfo.flows)
+              }
+            );
+            var _v5 = A2(
+              $author$project$Auth$allocateOperation,
+              A2($author$project$Auth$ProbeOperation, association.key, $elm$core$Maybe$Nothing),
+              withFlow
+            );
+            var operationId = _v5.a;
+            var next = _v5.b;
+            return _Utils_Tuple2(
+              next,
+              _List_fromArray(
+                [
+                  A4($author$project$Auth$Fetch, operationId, association.probe.id, $elm$core$Maybe$Nothing, false)
+                ]
+              )
+            );
+          }
+        }
+      }
+    }
+  );
+  var $author$project$Auth$handleInfo = F4(
+    function(requestId, status, body, model) {
+      var _v0 = A2($elm$json$Json$Decode$decodeString, $elm$json$Json$Decode$value, body);
+      if (_v0.$ === "Err") {
+        var error = _v0.a;
+        return A3(
+          $author$project$Auth$completeFailure,
+          requestId,
+          $elm$json$Json$Decode$errorToString(error),
+          model
+        );
+      } else {
+        var raw = _v0.a;
+        var _v1 = A2($elm$json$Json$Decode$decodeValue, $rism_digital$elm_iiif$IIIF$Auth$authServicesDecoder, raw);
+        if (_v1.$ === "Err") {
+          var error = _v1.a;
+          return A3(
+            $author$project$Auth$completeFailure,
+            requestId,
+            $elm$json$Json$Decode$errorToString(error),
+            model
+          );
+        } else {
+          var discovery = _v1.a;
+          return $elm$core$List$isEmpty(discovery.probes) && $elm$core$List$isEmpty(discovery.unsupportedServiceTypes) ? status >= 200 && status < 300 ? A4(
+            $author$project$Auth$completeSource,
+            requestId,
+            false,
+            $elm$core$Maybe$Just(raw),
+            model
+          ) : A3(
+            $author$project$Auth$completeFailure,
+            requestId,
+            "Image information request failed (" + ($elm$core$String$fromInt(status) + ")."),
+            model
+          ) : A4(
+            $author$project$Auth$beginAuthorization,
+            requestId,
+            discovery,
+            $elm$core$Maybe$Just(raw),
+            model
+          );
+        }
+      }
+    }
+  );
+  var $author$project$Auth$ReadToken = F2(
+    function(a, b) {
+      return { $: "ReadToken", a, b };
+    }
+  );
+  var $author$project$Auth$ReadingCache = { $: "ReadingCache" };
+  var $author$project$Auth$RemoveToken = F2(
+    function(a, b) {
+      return { $: "RemoveToken", a, b };
+    }
+  );
+  var $author$project$Auth$addEffects = F2(
+    function(effects, _v0) {
+      var model = _v0.a;
+      var existing = _v0.b;
+      return _Utils_Tuple2(
+        model,
+        _Utils_ap(existing, effects)
+      );
+    }
+  );
+  var $author$project$Auth$AnonymousFamily = { $: "AnonymousFamily" };
+  var $author$project$Auth$CredentialedFamily = { $: "CredentialedFamily" };
+  var $elm$core$Set$fromList = function(list) {
+    return A3($elm$core$List$foldl, $elm$core$Set$insert, $elm$core$Set$empty, list);
+  };
+  var $author$project$Auth$tokenStorageKey = function(association) {
+    return association.key;
+  };
+  var $elm$core$Set$union = F2(
+    function(_v0, _v1) {
+      var dict1 = _v0.a;
+      var dict2 = _v1.a;
+      return $elm$core$Set$Set_elm_builtin(
+        A2($elm$core$Dict$union, dict1, dict2)
+      );
+    }
+  );
+  var $author$project$Auth$registerSession = F2(
+    function(flow, model) {
+      var _v0 = flow.association.logout;
+      if (_v0.$ === "Nothing") {
+        return model;
+      } else {
+        var logout = _v0.a;
+        var sourceIds = $elm$core$Set$fromList(
+          A2(
+            $elm$core$List$filterMap,
+            function(requestId) {
+              return A2(
+                $elm$core$Maybe$map,
+                function($) {
+                  return $.sourceId;
+                },
+                A2($elm$core$Dict$get, requestId, model.pending)
+              );
+            },
+            flow.waiters
+          )
+        );
+        var sessionId = A2($elm$core$Maybe$withDefault, "", flow.association.access.id) + ("|" + (flow.association.token.id + ("|" + logout.id)));
+        var familyKey = $author$project$Auth$tokenStorageKey(flow.association);
+        var updateSession = function(maybeSession) {
+          if (maybeSession.$ === "Just") {
+            var session = maybeSession.a;
+            return $elm$core$Maybe$Just(
+              _Utils_update(
+                session,
+                {
+                  error: $elm$core$Maybe$Nothing,
+                  familyKeys: A2($elm$core$Set$insert, familyKey, session.familyKeys),
+                  sourceIds: A2($elm$core$Set$union, sourceIds, session.sourceIds)
+                }
+              )
+            );
+          } else {
+            return $elm$core$Maybe$Just(
+              {
+                error: $elm$core$Maybe$Nothing,
+                familyKeys: $elm$core$Set$singleton(familyKey),
+                id: sessionId,
+                logout,
+                sourceIds
+              }
+            );
+          }
+        };
+        return _Utils_update(
+          model,
+          {
+            sessions: A3($elm$core$Dict$update, sessionId, updateSession, model.sessions)
+          }
+        );
+      }
+    }
+  );
+  var $author$project$Auth$completeFlow = F3(
+    function(flowId, credentialed, model) {
+      var _v0 = A2($elm$core$Dict$get, flowId, model.flows);
+      if (_v0.$ === "Nothing") {
+        return _Utils_Tuple2(model, _List_Nil);
+      } else {
+        var flow = _v0.a;
+        var withFamilyState = _Utils_update(
+          model,
+          {
+            familyStates: A3(
+              $elm$core$Dict$insert,
+              flow.association.key,
+              credentialed ? $author$project$Auth$CredentialedFamily : $author$project$Auth$AnonymousFamily,
+              model.familyStates
+            )
+          }
+        );
+        var withSession = credentialed ? A2($author$project$Auth$registerSession, flow, withFamilyState) : withFamilyState;
+        var completeOne = F2(
+          function(requestId, _v7) {
+            var current = _v7.a;
+            var effects = _v7.b;
+            var _v1 = A2($elm$core$Dict$get, requestId, current.pending);
+            if (_v1.$ === "Just") {
+              var pending = _v1.a;
+              var _v2 = A2($elm$core$Dict$get, pending.sourceId, current.sources);
+              if (_v2.$ === "Just") {
+                var source = _v2.a;
+                var _v3 = _Utils_Tuple2(source.isStatic, pending.infoJson);
+                if (!_v3.a && _v3.b.$ === "Nothing") {
+                  var _v4 = _v3.b;
+                  var _v5 = A4($author$project$Auth$startResolvedInfoRequest, requestId, credentialed, source, current);
+                  var next = _v5.a;
+                  var nextEffects = _v5.b;
+                  return _Utils_Tuple2(
+                    next,
+                    _Utils_ap(effects, nextEffects)
+                  );
+                } else {
+                  var _v6 = A4($author$project$Auth$completeSource, requestId, credentialed, $elm$core$Maybe$Nothing, current);
+                  var next = _v6.a;
+                  var nextEffects = _v6.b;
+                  return _Utils_Tuple2(
+                    next,
+                    _Utils_ap(effects, nextEffects)
+                  );
+                }
+              } else {
+                return _Utils_Tuple2(current, effects);
+              }
+            } else {
+              return _Utils_Tuple2(current, effects);
+            }
+          }
+        );
+        var cleared = A2(
+          $author$project$Auth$releaseInteractive,
+          flowId,
+          _Utils_update(
+            withSession,
+            {
+              flows: A2($elm$core$Dict$remove, flowId, withSession.flows)
+            }
+          )
+        );
+        return A3(
+          $elm$core$List$foldl,
+          completeOne,
+          _Utils_Tuple2(
+            cleared,
+            _List_fromArray(
+              [
+                $author$project$Auth$CancelTokenFrame(flowId)
+              ]
+            )
+          ),
+          flow.waiters
+        );
+      }
+    }
+  );
+  var $author$project$Auth$probeError = F2(
+    function(flow, status) {
+      var _v0 = flow.association.probe.errorHeading;
+      if (_v0.$ === "Just") {
+        return "Access was not granted (" + ($elm$core$String$fromInt(status) + ").");
+      } else {
+        return "Access was not granted (" + ($elm$core$String$fromInt(status) + ").");
+      }
+    }
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$httpStatusDecoder = A2(
+    $elm$json$Json$Decode$andThen,
+    function(status) {
+      return status >= 100 && status <= 599 ? $elm$json$Json$Decode$succeed(status) : $elm$json$Json$Decode$fail("Expected an HTTP status code between 100 and 599");
+    },
+    $elm$json$Json$Decode$int
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$ProbeResult = F7(
+    function(context, type_, status, substitutes, heading, note, location2) {
+      return { context, heading, location: location2, note, status, substitutes, type_ };
+    }
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$authContext = "http://iiif.io/api/auth/2/context.json";
+  var $rism_digital$elm_iiif$IIIF$Auth$contextDecoder = $elm$json$Json$Decode$oneOf(
+    _List_fromArray(
+      [
+        A2($elm$json$Json$Decode$field, "@context", $elm$json$Json$Decode$string),
+        A2($elm$json$Json$Decode$field, "context", $elm$json$Json$Decode$string)
+      ]
+    )
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$authContextDecoder = A2(
+    $elm$json$Json$Decode$andThen,
+    function(actual) {
+      return A2($rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches, $rism_digital$elm_iiif$IIIF$Auth$authContext, actual) ? $elm$json$Json$Decode$succeed(actual) : $elm$json$Json$Decode$fail("Expected " + ($rism_digital$elm_iiif$IIIF$Auth$authContext + (" but got " + actual)));
+    },
+    $rism_digital$elm_iiif$IIIF$Auth$contextDecoder
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$ProbeLocation = F2(
+    function(id, type_) {
+      return { id, type_ };
+    }
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$probeLocationDecoder = A3($elm$json$Json$Decode$map2, $rism_digital$elm_iiif$IIIF$Auth$ProbeLocation, $rism_digital$elm_iiif$IIIF$Auth$idDecoder, $rism_digital$elm_iiif$IIIF$Auth$typeDecoder);
+  var $rism_digital$elm_iiif$IIIF$Auth$statusDependentOptional = F3(
+    function(fieldName, allowed, decoder) {
+      return A2(
+        $elm$json$Json$Decode$andThen,
+        function(object) {
+          var _v0 = A2(
+            $elm$json$Json$Decode$decodeValue,
+            A2($elm$json$Json$Decode$field, fieldName, $elm$json$Json$Decode$value),
+            object
+          );
+          if (_v0.$ === "Ok") {
+            var fieldValue = _v0.a;
+            if (allowed) {
+              var _v1 = A2($elm$json$Json$Decode$decodeValue, decoder, fieldValue);
+              if (_v1.$ === "Ok") {
+                var decoded = _v1.a;
+                return $elm$json$Json$Decode$succeed(
+                  $elm$core$Maybe$Just(decoded)
+                );
+              } else {
+                var error = _v1.a;
+                return $elm$json$Json$Decode$fail(
+                  $elm$json$Json$Decode$errorToString(error)
+                );
+              }
+            } else {
+              return $elm$json$Json$Decode$fail(fieldName + " is not permitted for this probe status");
+            }
+          } else {
+            return $elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing);
+          }
+        },
+        $elm$json$Json$Decode$value
+      );
+    }
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$probeResultForStatusDecoder = function(status) {
+    return A2(
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+      A3($rism_digital$elm_iiif$IIIF$Auth$statusDependentOptional, "location", status >= 300 && status <= 399, $rism_digital$elm_iiif$IIIF$Auth$probeLocationDecoder),
+      A2(
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+        A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "note", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
+        A2(
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+          A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "heading", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
+          A2(
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+            A2(
+              $elm$json$Json$Decode$map,
+              $elm$core$Maybe$withDefault(_List_Nil),
+              A3(
+                $rism_digital$elm_iiif$IIIF$Auth$statusDependentOptional,
+                "substitute",
+                status === 401 || status === 403,
+                $rism_digital$elm_iiif$IIIF$Auth$objectOrList($elm$json$Json$Decode$value)
+              )
+            ),
+            A2(
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+              $elm$json$Json$Decode$succeed(status),
+              A2(
+                $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+                $rism_digital$elm_iiif$IIIF$Auth$authTypeDecoder("AuthProbeResult2"),
+                A2(
+                  $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+                  $rism_digital$elm_iiif$IIIF$Auth$authContextDecoder,
+                  $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$ProbeResult)
+                )
+              )
+            )
+          )
+        )
+      )
+    );
+  };
+  var $rism_digital$elm_iiif$IIIF$Auth$probeResultDecoder = A2(
+    $elm$json$Json$Decode$andThen,
+    $rism_digital$elm_iiif$IIIF$Auth$probeResultForStatusDecoder,
+    A2($elm$json$Json$Decode$field, "status", $rism_digital$elm_iiif$IIIF$Auth$httpStatusDecoder)
+  );
+  var $author$project$Auth$AwaitingUser = { $: "AwaitingUser" };
+  var $author$project$Auth$appendUnique = F2(
+    function(flowId, queue) {
+      return A2($elm$core$List$member, flowId, queue) ? queue : _Utils_ap(
+        queue,
+        _List_fromArray(
+          [flowId]
+        )
+      );
+    }
+  );
+  var $author$project$Auth$showPrompt = F3(
+    function(flowId, error, model) {
+      var _v0 = A2($elm$core$Dict$get, flowId, model.flows);
+      if (_v0.$ === "Just") {
+        var flow = _v0.a;
+        var _v1 = flow.association.access.id;
+        if (_v1.$ === "Just") {
+          var updatedFlow = _Utils_update(
+            flow,
+            { phase: $author$project$Auth$AwaitingUser, promptError: error }
+          );
+          var withFlow = _Utils_update(
+            model,
+            {
+              flows: A3($elm$core$Dict$insert, flowId, updatedFlow, model.flows)
+            }
+          );
+          var _v2 = model.activeInteractive;
+          if (_v2.$ === "Nothing") {
+            return _Utils_Tuple2(
+              A3($author$project$Auth$activatePrompt, flowId, updatedFlow, withFlow),
+              _List_Nil
+            );
+          } else {
+            var activeFlowId = _v2.a;
+            return _Utils_eq(activeFlowId, flowId) ? _Utils_Tuple2(
+              A3($author$project$Auth$activatePrompt, flowId, updatedFlow, withFlow),
+              _List_Nil
+            ) : _Utils_Tuple2(
+              _Utils_update(
+                withFlow,
+                {
+                  promptQueue: A2($author$project$Auth$appendUnique, flowId, withFlow.promptQueue)
+                }
+              ),
+              _List_Nil
+            );
+          }
+        } else {
+          return A3($author$project$Auth$failFlow, flowId, "The active access service has no URL.", model);
+        }
+      } else {
+        return _Utils_Tuple2(model, _List_Nil);
+      }
+    }
+  );
+  var $author$project$Auth$retryOrFail = F3(
+    function(flowId, message, model) {
+      var _v0 = A2($elm$core$Dict$get, flowId, model.flows);
+      if (_v0.$ === "Just") {
+        var flow = _v0.a;
+        if (flow.attempts + 1 >= 2) {
+          return A3($author$project$Auth$failFlow, flowId, message, model);
+        } else {
+          var next = _Utils_update(
+            model,
+            {
+              flows: A3(
+                $elm$core$Dict$insert,
+                flowId,
+                _Utils_update(
+                  flow,
+                  { attempts: flow.attempts + 1 }
+                ),
+                model.flows
+              )
+            }
+          );
+          return A2(
+            $author$project$Auth$addEffects,
+            _List_fromArray(
+              [
+                $author$project$Auth$CancelTokenFrame(flowId)
+              ]
+            ),
+            A3(
+              $author$project$Auth$showPrompt,
+              flowId,
+              $elm$core$Maybe$Just(message),
+              next
+            )
+          );
+        }
+      } else {
+        return _Utils_Tuple2(model, _List_Nil);
+      }
+    }
+  );
+  var $author$project$Auth$handleProbe = F4(
+    function(flowId, token, body, model) {
+      var _v0 = A2($elm$json$Json$Decode$decodeString, $rism_digital$elm_iiif$IIIF$Auth$probeResultDecoder, body);
+      if (_v0.$ === "Err") {
+        var error = _v0.a;
+        return A3(
+          $author$project$Auth$retryOrFail,
+          flowId,
+          $elm$json$Json$Decode$errorToString(error),
+          model
+        );
+      } else {
+        var result = _v0.a;
+        if (!_Utils_eq(result.location, $elm$core$Maybe$Nothing) || !$elm$core$List$isEmpty(result.substitutes)) {
+          return A3($author$project$Auth$failFlow, flowId, "IIIF Auth redirect, substitute, and tiered access flows are not supported.", model);
+        } else {
+          if (result.status === 200) {
+            return A3(
+              $author$project$Auth$completeFlow,
+              flowId,
+              !_Utils_eq(token, $elm$core$Maybe$Nothing),
+              model
+            );
+          } else {
+            var _v1 = A2($elm$core$Dict$get, flowId, model.flows);
+            if (_v1.$ === "Nothing") {
+              return _Utils_Tuple2(model, _List_Nil);
+            } else {
+              var flow = _v1.a;
+              var _v2 = flow.phase;
+              switch (_v2.$) {
+                case "ProbingAnonymous":
+                  return _Utils_Tuple2(
+                    _Utils_update(
+                      model,
+                      {
+                        flows: A3(
+                          $elm$core$Dict$insert,
+                          flowId,
+                          _Utils_update(
+                            flow,
+                            { phase: $author$project$Auth$ReadingCache }
+                          ),
+                          model.flows
+                        )
+                      }
+                    ),
+                    _List_fromArray(
+                      [
+                        A2(
+                          $author$project$Auth$ReadToken,
+                          flowId,
+                          $author$project$Auth$tokenStorageKey(flow.association)
+                        )
+                      ]
+                    )
+                  );
+                case "ProbingCached":
+                  return A2(
+                    $author$project$Auth$addEffects,
+                    _List_fromArray(
+                      [
+                        A2(
+                          $author$project$Auth$RemoveToken,
+                          flowId,
+                          $author$project$Auth$tokenStorageKey(flow.association)
+                        )
+                      ]
+                    ),
+                    A3($author$project$Auth$showPrompt, flowId, $elm$core$Maybe$Nothing, model)
+                  );
+                case "ProbingFresh":
+                  return A2(
+                    $author$project$Auth$addEffects,
+                    _List_fromArray(
+                      [
+                        A2(
+                          $author$project$Auth$RemoveToken,
+                          flowId,
+                          $author$project$Auth$tokenStorageKey(flow.association)
+                        )
+                      ]
+                    ),
+                    A3(
+                      $author$project$Auth$retryOrFail,
+                      flowId,
+                      A2($author$project$Auth$probeError, flow, result.status),
+                      model
+                    )
+                  );
+                default:
+                  return A3(
+                    $author$project$Auth$retryOrFail,
+                    flowId,
+                    A2($author$project$Auth$probeError, flow, result.status),
+                    model
+                  );
+              }
+            }
+          }
+        }
+      }
+    }
+  );
+  var $author$project$Auth$handleResolvedInfo = F5(
+    function(requestId, credentialed, status, body, model) {
+      if (status >= 200 && status < 300) {
+        var _v0 = A2($elm$json$Json$Decode$decodeString, $elm$json$Json$Decode$value, body);
+        if (_v0.$ === "Ok") {
+          var raw = _v0.a;
+          return A4(
+            $author$project$Auth$completeSource,
+            requestId,
+            credentialed,
+            $elm$core$Maybe$Just(raw),
+            model
+          );
+        } else {
+          var error = _v0.a;
+          return A3(
+            $author$project$Auth$completeFailure,
+            requestId,
+            $elm$json$Json$Decode$errorToString(error),
+            model
+          );
+        }
+      } else {
+        return A3(
+          $author$project$Auth$completeFailure,
+          requestId,
+          "Image information request failed (" + ($elm$core$String$fromInt(status) + ")."),
+          model
+        );
+      }
+    }
+  );
+  var $author$project$Auth$httpSucceeded = F4(
+    function(operationId, status, body, model) {
+      var _v0 = A2($elm$core$Dict$get, operationId, model.operations);
+      if (_v0.$ === "Just") {
+        if (_v0.a.$ === "InfoOperation") {
+          var _v1 = _v0.a;
+          var requestId = _v1.a;
+          var purpose = _v1.b;
+          var next = _Utils_update(
+            model,
+            {
+              operations: A2($elm$core$Dict$remove, operationId, model.operations)
+            }
+          );
+          if (purpose.$ === "DiscoverInfo") {
+            return A4($author$project$Auth$handleInfo, requestId, status, body, next);
+          } else {
+            var credentialed = purpose.a;
+            return A5($author$project$Auth$handleResolvedInfo, requestId, credentialed, status, body, next);
+          }
+        } else {
+          var _v3 = _v0.a;
+          var flowId = _v3.a;
+          var token = _v3.b;
+          var next = _Utils_update(
+            model,
+            {
+              operations: A2($elm$core$Dict$remove, operationId, model.operations)
+            }
+          );
+          return A4($author$project$Auth$handleProbe, flowId, token, body, next);
+        }
+      } else {
+        return _Utils_Tuple2(model, _List_Nil);
+      }
+    }
+  );
+  var $author$project$Auth$InvalidateSources = function(a) {
+    return { $: "InvalidateSources", a };
+  };
+  var $elm$core$Set$foldl = F3(
+    function(func, initialState, _v0) {
+      var dict = _v0.a;
+      return A3(
+        $elm$core$Dict$foldl,
+        F3(
+          function(key, _v1, state) {
+            return A2(func, key, state);
+          }
+        ),
+        initialState,
+        dict
+      );
+    }
+  );
+  var $author$project$Auth$sourceFamilyKey = function(source) {
+    var _v0 = source.auth;
+    if (_v0.$ === "Discovered") {
+      var discovery = _v0.a;
+      return A2(
+        $elm$core$Maybe$map,
+        function($) {
+          return $.key;
+        },
+        $elm$core$Result$toMaybe(
+          $author$project$Auth$supportedAssociation(discovery)
+        )
+      );
+    } else {
+      return $elm$core$Maybe$Nothing;
+    }
+  };
+  var $author$project$Auth$sourceIdsForFamilyKeys = F2(
+    function(familyKeys, sources) {
+      return $elm$core$Set$fromList(
+        A2(
+          $elm$core$List$filterMap,
+          function(source) {
+            return A2(
+              $elm$core$Maybe$andThen,
+              function(familyKey) {
+                return A2($elm$core$Set$member, familyKey, familyKeys) ? $elm$core$Maybe$Just(source.id) : $elm$core$Maybe$Nothing;
+              },
+              $author$project$Auth$sourceFamilyKey(source)
+            );
+          },
+          $elm$core$Dict$values(sources)
+        )
+      );
+    }
+  );
+  var $author$project$Auth$logoutOpened = F2(
+    function(sessionId, model) {
+      var _v0 = A2($elm$core$Dict$get, sessionId, model.sessions);
+      if (_v0.$ === "Nothing") {
+        return _Utils_Tuple2(model, _List_Nil);
+      } else {
+        var session = _v0.a;
+        var currentSourceIds = A2($author$project$Auth$sourceIdsForFamilyKeys, session.familyKeys, model.sources);
+        var invalidatedSourceIds = $elm$core$Set$toList(
+          A2($elm$core$Set$union, session.sourceIds, currentSourceIds)
+        );
+        return _Utils_Tuple2(
+          _Utils_update(
+            model,
+            {
+              familyStates: A3($elm$core$Set$foldl, $elm$core$Dict$remove, model.familyStates, session.familyKeys),
+              sessions: A2($elm$core$Dict$remove, sessionId, model.sessions)
+            }
+          ),
+          _Utils_ap(
+            A2(
+              $elm$core$List$map,
+              $author$project$Auth$RemoveToken(sessionId),
+              $elm$core$Set$toList(session.familyKeys)
+            ),
+            _List_fromArray(
+              [
+                $author$project$Auth$InvalidateSources(invalidatedSourceIds)
+              ]
+            )
+          )
+        );
+      }
+    }
+  );
+  var $author$project$Auth$operationFailed = F3(
+    function(operationId, message, model) {
+      var _v0 = A2($elm$core$Dict$get, operationId, model.operations);
+      if (_v0.$ === "Just") {
+        if (_v0.a.$ === "InfoOperation") {
+          var _v1 = _v0.a;
+          var requestId = _v1.a;
+          return A3(
+            $author$project$Auth$completeFailure,
+            requestId,
+            message,
+            _Utils_update(
+              model,
+              {
+                operations: A2($elm$core$Dict$remove, operationId, model.operations)
+              }
+            )
+          );
+        } else {
+          var _v2 = _v0.a;
+          var flowId = _v2.a;
+          return A3(
+            $author$project$Auth$retryOrFail,
+            flowId,
+            message,
+            _Utils_update(
+              model,
+              {
+                operations: A2($elm$core$Dict$remove, operationId, model.operations)
+              }
+            )
+          );
+        }
+      } else {
+        return _Utils_Tuple2(model, _List_Nil);
+      }
+    }
+  );
+  var $author$project$Auth$DiscoverInfo = { $: "DiscoverInfo" };
+  var $author$project$Auth$startInfoRequest = F3(
+    function(requestId, source, model) {
+      var _v0 = A2(
+        $author$project$Auth$allocateOperation,
+        A2($author$project$Auth$InfoOperation, requestId, $author$project$Auth$DiscoverInfo),
+        model
+      );
+      var operationId = _v0.a;
+      var next = _v0.b;
+      return _Utils_Tuple2(
+        next,
+        _List_fromArray(
+          [
+            A4($author$project$Auth$Fetch, operationId, source.url, $elm$core$Maybe$Nothing, false)
+          ]
+        )
+      );
+    }
+  );
+  var $author$project$Auth$resolve = F3(
+    function(requestId, sourceId, model) {
+      var _v0 = A2($elm$core$Dict$get, sourceId, model.sources);
+      if (_v0.$ === "Nothing") {
+        return _Utils_Tuple2(
+          model,
+          _List_fromArray(
+            [
+              A2($author$project$Auth$Fail, requestId, "Unknown image source.")
+            ]
+          )
+        );
+      } else {
+        var source = _v0.a;
+        var next = _Utils_update(
+          model,
+          {
+            pending: A3(
+              $elm$core$Dict$insert,
+              requestId,
+              { infoJson: $elm$core$Maybe$Nothing, sourceId },
+              model.pending
+            )
+          }
+        );
+        var _v1 = source.auth;
+        switch (_v1.$) {
+          case "Invalid":
+            var message = _v1.a;
+            return A3($author$project$Auth$completeFailure, requestId, message, next);
+          case "Unknown":
+            return source.isStatic ? A4($author$project$Auth$completeSource, requestId, false, $elm$core$Maybe$Nothing, next) : A3($author$project$Auth$startInfoRequest, requestId, source, next);
+          default:
+            var discovery = _v1.a;
+            return $elm$core$List$isEmpty(discovery.probes) ? $elm$core$List$isEmpty(discovery.unsupportedServiceTypes) ? source.isStatic ? A4($author$project$Auth$completeSource, requestId, false, $elm$core$Maybe$Nothing, next) : A3($author$project$Auth$startInfoRequest, requestId, source, next) : A3(
+              $author$project$Auth$completeFailure,
+              requestId,
+              $author$project$Auth$unsupportedMessage(discovery.unsupportedServiceTypes),
+              next
+            ) : A4($author$project$Auth$beginAuthorization, requestId, discovery, $elm$core$Maybe$Nothing, next);
+        }
+      }
+    }
+  );
+  var $author$project$Auth$ProbingCached = { $: "ProbingCached" };
+  var $author$project$Auth$CachedToken = F2(
+    function(accessToken, expiresAt) {
+      return { accessToken, expiresAt };
+    }
+  );
+  var $author$project$Auth$cachedTokenDecoder = A3(
+    $elm$json$Json$Decode$map2,
+    $author$project$Auth$CachedToken,
+    A2($elm$json$Json$Decode$field, "accessToken", $elm$json$Json$Decode$string),
+    $elm$json$Json$Decode$oneOf(
+      _List_fromArray(
+        [
+          A2(
+            $elm$json$Json$Decode$map,
+            $elm$core$Maybe$Just,
+            A2($elm$json$Json$Decode$field, "expiresAt", $elm$json$Json$Decode$float)
+          ),
+          $elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing)
+        ]
+      )
+    )
+  );
+  var $author$project$Auth$storageRead = F4(
+    function(flowId, now, value, model) {
+      var _v0 = _Utils_Tuple2(
+        A2($elm$core$Dict$get, flowId, model.flows),
+        value
+      );
+      if (_v0.a.$ === "Just") {
+        if (_v0.b.$ === "Just") {
+          var flow = _v0.a.a;
+          var stored = _v0.b.a;
+          var _v1 = A2($elm$json$Json$Decode$decodeValue, $author$project$Auth$cachedTokenDecoder, stored);
+          if (_v1.$ === "Ok") {
+            var cached = _v1.a;
+            if (A2(
+              $elm$core$Maybe$withDefault,
+              true,
+              A2(
+                $elm$core$Maybe$map,
+                $elm$core$Basics$lt(now),
+                cached.expiresAt
+              )
+            )) {
+              var _v2 = A2(
+                $author$project$Auth$allocateOperation,
+                A2(
+                  $author$project$Auth$ProbeOperation,
+                  flowId,
+                  $elm$core$Maybe$Just(cached.accessToken)
+                ),
+                model
+              );
+              var operationId = _v2.a;
+              var withOperation = _v2.b;
+              return _Utils_Tuple2(
+                _Utils_update(
+                  withOperation,
+                  {
+                    flows: A3(
+                      $elm$core$Dict$insert,
+                      flowId,
+                      _Utils_update(
+                        flow,
+                        { phase: $author$project$Auth$ProbingCached }
+                      ),
+                      withOperation.flows
+                    )
+                  }
+                ),
+                _List_fromArray(
+                  [
+                    A4(
+                      $author$project$Auth$Fetch,
+                      operationId,
+                      flow.association.probe.id,
+                      $elm$core$Maybe$Just(cached.accessToken),
+                      false
+                    )
+                  ]
+                )
+              );
+            } else {
+              return A2(
+                $author$project$Auth$addEffects,
+                _List_fromArray(
+                  [
+                    A2(
+                      $author$project$Auth$RemoveToken,
+                      flowId,
+                      $author$project$Auth$tokenStorageKey(flow.association)
+                    )
+                  ]
+                ),
+                A3($author$project$Auth$showPrompt, flowId, $elm$core$Maybe$Nothing, model)
+              );
+            }
+          } else {
+            return A3($author$project$Auth$showPrompt, flowId, $elm$core$Maybe$Nothing, model);
+          }
+        } else {
+          var _v3 = _v0.b;
+          return A3($author$project$Auth$showPrompt, flowId, $elm$core$Maybe$Nothing, model);
+        }
+      } else {
+        return _Utils_Tuple2(model, _List_Nil);
+      }
+    }
+  );
+  var $author$project$Auth$ProbingFresh = { $: "ProbingFresh" };
+  var $author$project$Auth$WriteToken = F4(
+    function(a, b, c, d) {
+      return { $: "WriteToken", a, b, c, d };
+    }
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$AccessToken = F5(
+    function(context, type_, accessToken, expiresIn, messageId) {
+      return { accessToken, context, expiresIn, messageId, type_ };
+    }
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$positiveIntDecoder = A2(
+    $elm$json$Json$Decode$andThen,
+    function(number) {
+      return number > 0 ? $elm$json$Json$Decode$succeed(number) : $elm$json$Json$Decode$fail("Expected a positive integer");
+    },
+    $elm$json$Json$Decode$int
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$accessTokenDecoder = A3(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
+    "messageId",
+    $elm$json$Json$Decode$string,
+    A2(
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+      A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "expiresIn", $rism_digital$elm_iiif$IIIF$Auth$positiveIntDecoder),
+      A3(
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
+        "accessToken",
+        $elm$json$Json$Decode$string,
+        A2(
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+          $rism_digital$elm_iiif$IIIF$Auth$authTypeDecoder("AuthAccessToken2"),
+          A2(
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+            $rism_digital$elm_iiif$IIIF$Auth$authContextDecoder,
+            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$AccessToken)
+          )
+        )
+      )
+    )
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$TokenError = F6(
+    function(context, type_, profile, heading, note, messageId) {
+      return { context, heading, messageId, note, profile, type_ };
+    }
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$ExpiredAspect = { $: "ExpiredAspect" };
+  var $rism_digital$elm_iiif$IIIF$Auth$InvalidAspect = { $: "InvalidAspect" };
+  var $rism_digital$elm_iiif$IIIF$Auth$InvalidOrigin = { $: "InvalidOrigin" };
+  var $rism_digital$elm_iiif$IIIF$Auth$InvalidRequest = { $: "InvalidRequest" };
+  var $rism_digital$elm_iiif$IIIF$Auth$MissingAspect = { $: "MissingAspect" };
+  var $rism_digital$elm_iiif$IIIF$Auth$Unavailable = { $: "Unavailable" };
+  var $rism_digital$elm_iiif$IIIF$Auth$tokenErrorProfileDecoder = A2(
+    $elm$json$Json$Decode$andThen,
+    function(profile) {
+      switch (profile) {
+        case "expiredAspect":
+          return $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$ExpiredAspect);
+        case "invalidAspect":
+          return $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$InvalidAspect);
+        case "invalidOrigin":
+          return $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$InvalidOrigin);
+        case "invalidRequest":
+          return $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$InvalidRequest);
+        case "missingAspect":
+          return $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$MissingAspect);
+        case "unavailable":
+          return $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$Unavailable);
+        default:
+          return $elm$json$Json$Decode$fail("Unsupported Auth 2 token error profile: " + profile);
+      }
+    },
+    $elm$json$Json$Decode$string
+  );
+  var $rism_digital$elm_iiif$IIIF$Auth$tokenErrorDecoder = A3(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
+    "messageId",
+    $elm$json$Json$Decode$string,
+    A2(
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+      A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "note", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
+      A2(
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+        A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "heading", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
+        A3(
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
+          "profile",
+          $rism_digital$elm_iiif$IIIF$Auth$tokenErrorProfileDecoder,
+          A2(
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+            $rism_digital$elm_iiif$IIIF$Auth$authTypeDecoder("AuthAccessTokenError2"),
+            A2(
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+              $rism_digital$elm_iiif$IIIF$Auth$authContextDecoder,
+              $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$TokenError)
+            )
+          )
+        )
+      )
+    )
+  );
+  var $author$project$Auth$tokenMessage = F4(
+    function(flowId, now, value, model) {
+      var _v0 = A2($elm$core$Dict$get, flowId, model.flows);
+      if (_v0.$ === "Nothing") {
+        return _Utils_Tuple2(model, _List_Nil);
+      } else {
+        var flow = _v0.a;
+        var _v1 = A2($elm$json$Json$Decode$decodeValue, $rism_digital$elm_iiif$IIIF$Auth$accessTokenDecoder, value);
+        if (_v1.$ === "Ok") {
+          var token = _v1.a;
+          var expiresAt = now + A2($elm$core$Maybe$withDefault, 300, token.expiresIn) * 1e3;
+          var _v2 = A2(
+            $author$project$Auth$allocateOperation,
+            A2(
+              $author$project$Auth$ProbeOperation,
+              flowId,
+              $elm$core$Maybe$Just(token.accessToken)
+            ),
+            model
+          );
+          var operationId = _v2.a;
+          var withOperation = _v2.b;
+          var next = _Utils_update(
+            withOperation,
+            {
+              flows: A3(
+                $elm$core$Dict$insert,
+                flowId,
+                _Utils_update(
+                  flow,
+                  { phase: $author$project$Auth$ProbingFresh }
+                ),
+                withOperation.flows
+              )
+            }
+          );
+          return _Utils_Tuple2(
+            next,
+            _List_fromArray(
+              [
+                A4(
+                  $author$project$Auth$WriteToken,
+                  flowId,
+                  $author$project$Auth$tokenStorageKey(flow.association),
+                  token.accessToken,
+                  expiresAt
+                ),
+                A4(
+                  $author$project$Auth$Fetch,
+                  operationId,
+                  flow.association.probe.id,
+                  $elm$core$Maybe$Just(token.accessToken),
+                  false
+                ),
+                $author$project$Auth$CancelTokenFrame(flowId)
+              ]
+            )
+          );
+        } else {
+          var tokenDecodeError = _v1.a;
+          var _v3 = A2($elm$json$Json$Decode$decodeValue, $rism_digital$elm_iiif$IIIF$Auth$tokenErrorDecoder, value);
+          if (_v3.$ === "Ok") {
+            return A3($author$project$Auth$retryOrFail, flowId, "The token service refused access.", model);
+          } else {
+            return A3(
+              $author$project$Auth$retryOrFail,
+              flowId,
+              $elm$json$Json$Decode$errorToString(tokenDecodeError),
+              model
+            );
+          }
+        }
+      }
+    }
+  );
+  var $author$project$Auth$updateFlow = F4(
+    function(flowId, change, model, effects) {
+      return _Utils_Tuple2(
+        _Utils_update(
+          model,
+          {
+            flows: A3(
+              $elm$core$Dict$update,
+              flowId,
+              $elm$core$Maybe$map(change),
+              model.flows
+            )
+          }
+        ),
+        effects
+      );
+    }
+  );
+  var $author$project$Auth$update = F2(
+    function(event, model) {
+      if (model.destroyed) {
+        return _Utils_Tuple2(model, _List_Nil);
+      } else {
+        switch (event.$) {
+          case "Resolve":
+            var requestId = event.a;
+            var sourceId = event.b;
+            return A3($author$project$Auth$resolve, requestId, sourceId, model);
+          case "Cancel":
+            var requestId = event.a;
+            return A2($author$project$Auth$cancelRequest, requestId, model);
+          case "HttpSucceeded":
+            var operationId = event.a;
+            var status = event.b;
+            var body = event.c;
+            return A4($author$project$Auth$httpSucceeded, operationId, status, body, model);
+          case "HttpFailed":
+            var operationId = event.a;
+            var message = event.b;
+            return A3($author$project$Auth$operationFailed, operationId, message, model);
+          case "StorageRead":
+            var flowId = event.a;
+            var now = event.b;
+            var value = event.c;
+            return A4($author$project$Auth$storageRead, flowId, now, value, model);
+          case "PopupOpened":
+            var flowId = event.a;
+            return _Utils_eq(
+              model.activeInteractive,
+              $elm$core$Maybe$Just(flowId)
+            ) ? A4(
+              $author$project$Auth$updateFlow,
+              flowId,
+              function(flow2) {
+                return _Utils_update(
+                  flow2,
+                  { phase: $author$project$Auth$AwaitingPopup }
+                );
+              },
+              _Utils_update(
+                model,
+                { activePrompt: $elm$core$Maybe$Nothing }
+              ),
+              _List_Nil
+            ) : _Utils_Tuple2(model, _List_Nil);
+          case "PopupBlocked":
+            var flowId = event.a;
+            return _Utils_eq(
+              model.activeInteractive,
+              $elm$core$Maybe$Just(flowId)
+            ) ? A3($author$project$Auth$retryOrFail, flowId, "The sign-in window was blocked. Allow popups and retry.", model) : _Utils_Tuple2(model, _List_Nil);
+          case "PopupClosed":
+            var flowId = event.a;
+            var _v1 = _Utils_Tuple2(
+              model.activeInteractive,
+              A2($elm$core$Dict$get, flowId, model.flows)
+            );
+            if (_v1.a.$ === "Just" && _v1.b.$ === "Just") {
+              var activeFlowId = _v1.a.a;
+              var flow = _v1.b.a;
+              if (!_Utils_eq(activeFlowId, flowId)) {
+                return _Utils_Tuple2(model, _List_Nil);
+              } else {
+                var messageId = flowId + ("-" + $elm$core$String$fromInt(flow.attempts + 1));
+                return A4(
+                  $author$project$Auth$updateFlow,
+                  flowId,
+                  function(current) {
+                    return _Utils_update(
+                      current,
+                      { phase: $author$project$Auth$AwaitingToken }
+                    );
+                  },
+                  model,
+                  _List_fromArray(
+                    [
+                      A3($author$project$Auth$StartTokenFrame, flowId, flow.association.token.id, messageId)
+                    ]
+                  )
+                );
+              }
+            } else {
+              return _Utils_Tuple2(model, _List_Nil);
+            }
+          case "TokenMessage":
+            var flowId = event.a;
+            var now = event.b;
+            var value = event.c;
+            return A4($author$project$Auth$tokenMessage, flowId, now, value, model);
+          case "TokenFailed":
+            var flowId = event.a;
+            var message = event.b;
+            return A3($author$project$Auth$retryOrFail, flowId, message, model);
+          case "LogoutOpened":
+            var sessionId = event.a;
+            return A2($author$project$Auth$logoutOpened, sessionId, model);
+          case "LogoutBlocked":
+            var sessionId = event.a;
+            return _Utils_Tuple2(
+              _Utils_update(
+                model,
+                {
+                  sessions: A3(
+                    $elm$core$Dict$update,
+                    sessionId,
+                    $elm$core$Maybe$map(
+                      function(session) {
+                        return _Utils_update(
+                          session,
+                          {
+                            error: $elm$core$Maybe$Just("The logout window was blocked. Allow popups and try again.")
+                          }
+                        );
+                      }
+                    ),
+                    model.sessions
+                  )
+                }
+              ),
+              _List_Nil
+            );
+          case "LogoutClosed":
+            return _Utils_Tuple2(model, _List_Nil);
+          case "UserCancelled":
+            var _v2 = model.activePrompt;
+            if (_v2.$ === "Just") {
+              var active = _v2.a;
+              return A3($author$project$Auth$failFlow, active.flowId, "Authorization was cancelled.", model);
+            } else {
+              return _Utils_Tuple2(model, _List_Nil);
+            }
+          default:
+            var effects = _Utils_ap(
+              A2(
+                $elm$core$List$map,
+                $author$project$Auth$CancelFetch,
+                $elm$core$Dict$keys(model.operations)
+              ),
+              A2(
+                $elm$core$List$map,
+                $author$project$Auth$CancelTokenFrame,
+                $elm$core$Dict$keys(model.flows)
+              )
+            );
+            return _Utils_Tuple2(
+              _Utils_update(
+                model,
+                { activeInteractive: $elm$core$Maybe$Nothing, activePrompt: $elm$core$Maybe$Nothing, destroyed: true, flows: $elm$core$Dict$empty, operations: $elm$core$Dict$empty, pending: $elm$core$Dict$empty, promptQueue: _List_Nil, sessions: $elm$core$Dict$empty }
+              ),
+              effects
+            );
+        }
+      }
+    }
+  );
   var $author$project$Filters$updateFilters = F2(
     function(updater, model) {
       return _Utils_update(
@@ -17845,6 +20935,18 @@
   var $author$project$Main$update = F2(
     function(msg, model) {
       switch (msg.$) {
+        case "AuthEvent":
+          var event = msg.a;
+          var _v1 = A2($author$project$Auth$update, event, model.auth);
+          var nextAuth = _v1.a;
+          var effects = _v1.b;
+          return _Utils_Tuple2(
+            _Utils_update(
+              model,
+              { auth: nextAuth }
+            ),
+            $author$project$Main$runAuthEffects(effects)
+          );
         case "ClientNotifiedFullscreenChanged":
           var enabled = msg.a;
           return _Utils_Tuple2(
@@ -17871,23 +20973,23 @@
         case "ServerRespondedWithCollectionItem":
           var collectionId = msg.a;
           var result = msg.b;
-          var _v1 = model.resourceResponse;
-          if (_v1.$ === "ResourceLoadedCollection") {
-            var collectionState = _v1.a;
+          var _v2 = model.resourceResponse;
+          if (_v2.$ === "ResourceLoadedCollection") {
+            var collectionState = _v2.a;
             var nextLoadingIds = A2($elm$core$Set$remove, collectionId, collectionState.loadingCollectionIds);
             if (result.$ === "Ok") {
               var resource = result.a;
               if (resource.$ === "ResourceCollection") {
-                var _v4 = resource.a;
-                var fetchedCollection = _v4.b;
-                var _v5 = collectionState.collection;
-                var rootVersion = _v5.a;
-                var rootCollection = _v5.b;
+                var _v5 = resource.a;
+                var fetchedCollection = _v5.b;
+                var _v6 = collectionState.collection;
+                var rootVersion = _v6.a;
+                var rootCollection = _v6.b;
                 var nextCollection = A3($author$project$Main$replaceCollectionById, collectionId, fetchedCollection, rootCollection);
                 var nextState = _Utils_update(
                   collectionState,
                   {
-                    collection: A2($author$project$IIIF$Presentation$IIIFCollection, rootVersion, nextCollection),
+                    collection: A2($rism_digital$elm_iiif$IIIF$Presentation$IIIFCollection, rootVersion, nextCollection),
                     loadedCollectionIds: A2($elm$core$Set$insert, collectionId, collectionState.loadedCollectionIds),
                     loadingCollectionIds: nextLoadingIds
                   }
@@ -17939,9 +21041,9 @@
         case "ServerRespondedWithManifestFromCollection":
           var manifestId = msg.a;
           var result = msg.b;
-          var _v6 = model.resourceResponse;
-          if (_v6.$ === "ResourceLoadedCollection") {
-            var collectionState = _v6.a;
+          var _v7 = model.resourceResponse;
+          if (_v7.$ === "ResourceLoadedCollection") {
+            var collectionState = _v7.a;
             if (!_Utils_eq(
               collectionState.selectedManifestId,
               $elm$core$Maybe$Just(manifestId)
@@ -17977,9 +21079,9 @@
             switch (resource.$) {
               case "ResourceManifest":
                 var manifest = resource.a;
-                var _v10 = A2($author$project$Main$handleManifestLoaded, model, manifest);
-                var nextModel = _v10.a;
-                var cmd = _v10.b;
+                var _v11 = A2($author$project$Main$handleManifestLoaded, model, manifest);
+                var nextModel = _v11.a;
+                var cmd = _v11.b;
                 return _Utils_Tuple2(
                   _Utils_update(
                     nextModel,
@@ -17991,9 +21093,9 @@
                   cmd
                 );
               case "ResourceCollection":
-                var _v11 = resource.a;
-                var version = _v11.a;
-                var collection = _v11.b;
+                var _v12 = resource.a;
+                var version = _v12.a;
+                var collection = _v12.b;
                 return _Utils_Tuple2(
                   _Utils_update(
                     model,
@@ -18002,7 +21104,7 @@
                       isViewerLoading: false,
                       resourceResponse: $author$project$Model$ResourceLoadedCollection(
                         {
-                          collection: A2($author$project$IIIF$Presentation$IIIFCollection, version, collection),
+                          collection: A2($rism_digital$elm_iiif$IIIF$Presentation$IIIFCollection, version, collection),
                           expandedIds: $elm$core$Set$empty,
                           loadedCollectionIds: $elm$core$Set$empty,
                           loadingCollectionIds: $elm$core$Set$empty,
@@ -18033,9 +21135,9 @@
             );
           }
         case "UserAppliedFilterJson":
-          var _v12 = $author$project$Filters$decodeFilterJson(model.filtersJsonInput);
-          if (_v12.$ === "Ok") {
-            var filters = _v12.a;
+          var _v13 = $author$project$Filters$decodeFilterJson(model.filtersJsonInput);
+          if (_v13.$ === "Ok") {
+            var filters = _v13.a;
             var json = $author$project$Filters$encodeActiveFilters(filters);
             var nextModel = _Utils_update(
               model,
@@ -18046,7 +21148,7 @@
               $author$project$Main$sendPageViewPreview(nextModel)
             );
           } else {
-            var err = _v12.a;
+            var err = _v13.a;
             return _Utils_Tuple2(
               _Utils_update(
                 model,
@@ -18060,9 +21162,9 @@
         case "UserChangedZoomLevel":
           var zoom = msg.a;
           var nextInitialZoom = (function() {
-            var _v13 = model.initialZoom;
-            if (_v13.$ === "Just") {
-              var initialZoom = _v13.a;
+            var _v14 = model.initialZoom;
+            if (_v14.$ === "Just") {
+              var initialZoom = _v14.a;
               return $elm$core$Maybe$Just(initialZoom);
             } else {
               return $elm$core$Maybe$Just(zoom);
@@ -18091,16 +21193,19 @@
             model,
             { filters: $author$project$Filters$resetFilters, pageViewFullscreen: false, pageViewImageIndex: 0, pageViewOpen: false }
           );
-          return _Utils_Tuple2(nextModel, $elm$core$Platform$Cmd$none);
+          return _Utils_Tuple2(
+            nextModel,
+            $author$project$Main$filterPreviewUpdated($elm$core$Maybe$Nothing)
+          );
         case "UserClickedCollectionItem":
           var collectionId = msg.a;
-          var _v14 = model.resourceResponse;
-          if (_v14.$ === "ResourceLoadedCollection") {
-            var collectionState = _v14.a;
+          var _v15 = model.resourceResponse;
+          if (_v15.$ === "ResourceLoadedCollection") {
+            var collectionState = _v15.a;
             var isExpanded = A2($elm$core$Set$member, collectionId, collectionState.expandedIds);
             var nextExpandedIds = isExpanded ? A2($elm$core$Set$remove, collectionId, collectionState.expandedIds) : A2($elm$core$Set$insert, collectionId, collectionState.expandedIds);
-            var _v15 = collectionState.collection;
-            var rootCollection = _v15.b;
+            var _v16 = collectionState.collection;
+            var rootCollection = _v16.b;
             var isItemsEmpty = A2(
               $elm$core$Maybe$withDefault,
               true,
@@ -18130,7 +21235,7 @@
                 }
               ),
               shouldRequest ? A3(
-                $author$project$IIIF$requestResource,
+                $rism_digital$elm_iiif$IIIF$requestResource,
                 $author$project$Msg$ServerRespondedWithCollectionItem(collectionId),
                 model.acceptHeaders,
                 collectionId
@@ -18142,9 +21247,9 @@
         case "UserClickedManifestItem":
           var manifestId = msg.a;
           var manifestUrl = msg.b;
-          var _v16 = model.resourceResponse;
-          if (_v16.$ === "ResourceLoadedCollection") {
-            var collectionState = _v16.a;
+          var _v17 = model.resourceResponse;
+          if (_v17.$ === "ResourceLoadedCollection") {
+            var collectionState = _v17.a;
             return _Utils_Tuple2(
               _Utils_update(
                 model,
@@ -18162,7 +21267,7 @@
                 }
               ),
               A3(
-                $author$project$IIIF$requestManifest,
+                $rism_digital$elm_iiif$IIIF$requestManifest,
                 $author$project$Msg$ServerRespondedWithManifestFromCollection(manifestId),
                 model.acceptHeaders,
                 manifestUrl
@@ -18293,9 +21398,9 @@
           );
         case "UserDraggedCollectionSidebarResize":
           var clientX = msg.a;
-          var _v19 = model.collectionSidebarDrag;
-          if (_v19.$ === "Just") {
-            var drag = _v19.a;
+          var _v20 = model.collectionSidebarDrag;
+          if (_v20.$ === "Just") {
+            var drag = _v20.a;
             var nextWidth = A3($elm$core$Basics$clamp, 240, 480, drag.startWidth + (clientX - drag.startX));
             return _Utils_Tuple2(
               _Utils_update(
@@ -18309,9 +21414,9 @@
           }
         case "UserDraggedSidebarResize":
           var clientX = msg.a;
-          var _v20 = model.sidebarDrag;
-          if (_v20.$ === "Just") {
-            var drag = _v20.a;
+          var _v21 = model.sidebarDrag;
+          if (_v21.$ === "Just") {
+            var drag = _v21.a;
             var delta = drag.startX - clientX;
             var nextWidth = A3($elm$core$Basics$clamp, 220, 520, drag.startWidth + delta);
             return _Utils_Tuple2(
@@ -18406,8 +21511,8 @@
             $elm$core$Platform$Cmd$none
           );
         case "UserToggledCollectionSidebar":
-          var _v21 = model.resourceResponse;
-          if (_v21.$ === "ResourceLoadedCollection") {
+          var _v22 = model.resourceResponse;
+          if (_v22.$ === "ResourceLoadedCollection") {
             return _Utils_Tuple2(
               _Utils_update(
                 model,
@@ -18474,8 +21579,8 @@
             $elm$core$Platform$Cmd$none
           );
         case "UserToggledShiftByOne":
-          var _v22 = model.viewMode;
-          if (_v22.$ === "OneUp") {
+          var _v23 = model.viewMode;
+          if (_v23.$ === "OneUp") {
             return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
           } else {
             var nextShift = !model.shiftByOne;
@@ -18520,14 +21625,14 @@
           );
         case "UserToggledThumbnails":
           var thumbCmd = (function() {
-            var _v24 = _Utils_Tuple2(model.pendingThumbScroll, model.selectedIndex);
-            if (_v24.a.$ === "Just") {
-              var index2 = _v24.a.a;
+            var _v25 = _Utils_Tuple2(model.pendingThumbScroll, model.selectedIndex);
+            if (_v25.a.$ === "Just") {
+              var index2 = _v25.a.a;
               return A2($author$project$Main$scrollThumbsToIndex, true, index2);
             } else {
-              if (_v24.b.$ === "Just") {
-                var _v25 = _v24.a;
-                var index2 = _v24.b.a;
+              if (_v25.b.$ === "Just") {
+                var _v26 = _v25.a;
+                var index2 = _v25.b.a;
                 return A2($author$project$Main$scrollThumbsToIndex, true, index2);
               } else {
                 return $elm$core$Platform$Cmd$none;
@@ -18539,8 +21644,8 @@
             { sidebarState: $author$project$Model$SidebarThumbnails }
           );
           var nextInstant = (function() {
-            var _v23 = model.pendingThumbScroll;
-            if (_v23.$ === "Just") {
+            var _v24 = model.pendingThumbScroll;
+            if (_v24.$ === "Just") {
               return true;
             } else {
               return false;
@@ -18555,8 +21660,8 @@
           );
         case "UserToggledTwoUp":
           var nextMode = (function() {
-            var _v26 = model.viewMode;
-            if (_v26.$ === "OneUp") {
+            var _v27 = model.viewMode;
+            if (_v27.$ === "OneUp") {
               return $author$project$Model$TwoUp;
             } else {
               return $author$project$Model$OneUp;
@@ -18685,7 +21790,7 @@
         return $elm$core$Maybe$Nothing;
     }
   };
-  var $author$project$IIIF$Presentation$toLabel = $author$project$IIIF$Presentation$withManifest(
+  var $rism_digital$elm_iiif$IIIF$Presentation$toLabel = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
     function($) {
       return $.label;
     }
@@ -18698,16 +21803,19 @@
         $elm$core$Maybe$map,
         function(manifest) {
           return A2(
-            $author$project$IIIF$Language$extractLabelFromLanguageMap,
+            $rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap,
             model.detectedLanguage,
-            $author$project$IIIF$Presentation$toLabel(manifest)
+            $rism_digital$elm_iiif$IIIF$Presentation$toLabel(manifest)
           );
         },
         $author$project$Model$currentManifest(model)
       )
     );
   };
-  var $author$project$IIIF$Presentation$toRequiredStatement = $author$project$IIIF$Presentation$withManifest(
+  var $author$project$Auth$prompt = function(model) {
+    return model.activePrompt;
+  };
+  var $rism_digital$elm_iiif$IIIF$Presentation$toRequiredStatement = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
     function($) {
       return $.requiredStatement;
     }
@@ -18716,15 +21824,119 @@
     return A2(
       $elm$core$Maybe$map,
       function(statement) {
-        return A2($author$project$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, statement.value);
+        return A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, statement.value);
       },
       A2(
         $elm$core$Maybe$andThen,
-        $author$project$IIIF$Presentation$toRequiredStatement,
+        $rism_digital$elm_iiif$IIIF$Presentation$toRequiredStatement,
         $author$project$Model$currentManifest(model)
       )
     );
   };
+  var $author$project$Auth$UserCancelled = { $: "UserCancelled" };
+  var $elm$html$Html$Attributes$attribute = $elm$virtual_dom$VirtualDom$attribute;
+  var $elm$html$Html$h2 = _VirtualDom_node("h2");
+  var $author$project$View$viewAuthPrompt = F2(
+    function(model, authPrompt) {
+      var localized = F2(
+        function(value, fallback) {
+          return A2(
+            $elm$core$Maybe$withDefault,
+            fallback,
+            A2(
+              $elm$core$Maybe$map,
+              $rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap(model.detectedLanguage),
+              value
+            )
+          );
+        }
+      );
+      var noteText = A2(
+        $elm$core$Maybe$withDefault,
+        A2(localized, authPrompt.note, "Sign in to view this image."),
+        authPrompt.error
+      );
+      return A2(
+        $elm$html$Html$div,
+        _List_fromArray(
+          [
+            $elm$html$Html$Attributes$class("diva-auth-overlay"),
+            A2($elm$html$Html$Attributes$attribute, "role", "dialog"),
+            A2($elm$html$Html$Attributes$attribute, "aria-modal", "true")
+          ]
+        ),
+        _List_fromArray(
+          [
+            A2(
+              $elm$html$Html$div,
+              _List_fromArray(
+                [
+                  $elm$html$Html$Attributes$class("diva-auth-dialog")
+                ]
+              ),
+              _List_fromArray(
+                [
+                  A2(
+                    $elm$html$Html$h2,
+                    _List_Nil,
+                    _List_fromArray(
+                      [
+                        $elm$html$Html$text(
+                          A2(localized, authPrompt.heading, "Sign in required")
+                        )
+                      ]
+                    )
+                  ),
+                  A2(
+                    $elm$html$Html$p,
+                    _List_Nil,
+                    _List_fromArray(
+                      [
+                        $elm$html$Html$text(noteText)
+                      ]
+                    )
+                  ),
+                  A2(
+                    $elm$html$Html$button,
+                    _List_fromArray(
+                      [
+                        $elm$html$Html$Attributes$type_("button"),
+                        A2($elm$html$Html$Attributes$attribute, "data-diva-auth-flow", authPrompt.flowId),
+                        A2($elm$html$Html$Attributes$attribute, "data-diva-auth-url", authPrompt.accessUrl)
+                      ]
+                    ),
+                    _List_fromArray(
+                      [
+                        $elm$html$Html$text(
+                          _Utils_eq(authPrompt.error, $elm$core$Maybe$Nothing) ? A2(localized, authPrompt.confirmLabel, "Sign in") : "Retry"
+                        )
+                      ]
+                    )
+                  ),
+                  A2(
+                    $elm$html$Html$button,
+                    _List_fromArray(
+                      [
+                        $elm$html$Html$Attributes$type_("button"),
+                        $elm$html$Html$Events$onClick(
+                          $author$project$Msg$AuthEvent($author$project$Auth$UserCancelled)
+                        )
+                      ]
+                    ),
+                    _List_fromArray(
+                      [
+                        $elm$html$Html$text("Cancel")
+                      ]
+                    )
+                  )
+                ]
+              )
+            )
+          ]
+        )
+      );
+    }
+  );
   var $author$project$View$Helpers$emptyHtml = $elm$html$Html$text("");
   var $author$project$View$Helpers$viewIf = F2(
     function(view, condition) {
@@ -18974,7 +22186,7 @@
   );
   var $author$project$View$CollectionExplorer$viewManifestItem = F3(
     function(language, collectionState, manifest) {
-      var labelText = A2($author$project$IIIF$Language$extractLabelFromLanguageMap, language, manifest.label);
+      var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, language, manifest.label);
       var isActive = _Utils_eq(
         collectionState.selectedManifestId,
         $elm$core$Maybe$Just(manifest.id)
@@ -19044,7 +22256,7 @@
   );
   var $author$project$View$CollectionExplorer$viewNestedCollection = F3(
     function(language, collectionState, collection) {
-      var labelText = A2($author$project$IIIF$Language$extractLabelFromLanguageMap, language, collection.label);
+      var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, language, collection.label);
       var isExpanded = A2($elm$core$Set$member, collection.id, collectionState.expandedIds);
       var expandIcon = isExpanded ? "\u25BC" : "\u25B6";
       var childrenView = (function() {
@@ -19124,7 +22336,7 @@
     function(model, collectionState) {
       var _v0 = collectionState.collection;
       var collection = _v0.b;
-      var labelText = A2($author$project$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, collection.label);
+      var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, collection.label);
       return A2(
         $elm$html$Html$div,
         _List_fromArray(
@@ -19182,7 +22394,7 @@
                         _List_fromArray(
                           [
                             $elm$html$Html$text(
-                              A2($author$project$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, summary)
+                              A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, summary)
                             )
                           ]
                         )
@@ -22205,10 +25417,6 @@
       return $elm$core$Maybe$Nothing;
     }
   };
-  var $elm$core$String$foldr = _String_foldr;
-  var $elm$core$String$toList = function(string) {
-    return A3($elm$core$String$foldr, $elm$core$List$cons, _List_Nil, string);
-  };
   var $rtfeldman$elm_hex$Hex$fromString = function(str) {
     if ($elm$core$String$isEmpty(str)) {
       return $elm$core$Result$Err("Empty strings are not valid hexadecimal strings.");
@@ -23036,7 +26244,6 @@
   var $author$project$View$HtmlRenderer$sanitizeNodes = function(nodes) {
     return A2($elm$core$List$concatMap, $author$project$View$HtmlRenderer$sanitizeNode, nodes);
   };
-  var $elm$html$Html$Attributes$attribute = $elm$virtual_dom$VirtualDom$attribute;
   var $hecrj$html_parser$Html$Parser$Util$toAttribute = function(_v0) {
     var name = _v0.a;
     var value = _v0.b;
@@ -23189,7 +26396,7 @@
           A2(
             $elm$core$Maybe$map,
             $elm$core$List$length,
-            $author$project$IIIF$Presentation$toRanges(manifest)
+            $rism_digital$elm_iiif$IIIF$Presentation$toRanges(manifest)
           )
         )
       );
@@ -23207,7 +26414,7 @@
       })();
       var canvasCount = $elm$core$String$fromInt(
         $elm$core$List$length(
-          $author$project$IIIF$Presentation$toCanvases(manifest)
+          $rism_digital$elm_iiif$IIIF$Presentation$toCanvases(manifest)
         )
       );
       var _v0 = manifest;
@@ -23218,7 +26425,7 @@
         "None",
         A2(
           $elm$core$Maybe$map,
-          $author$project$IIIF$Language$extractLabelFromLanguageMap(model.detectedLanguage),
+          $rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap(model.detectedLanguage),
           innerManifest.summary
         )
       );
@@ -23319,12 +26526,12 @@
         $elm$core$Maybe$map,
         A2(
           $elm$core$Basics$composeR,
-          $author$project$IIIF$Image$setImageUriSize(
-            $author$project$IIIF$Image$WidthOnlySize(256)
+          $rism_digital$elm_iiif$IIIF$Image$setImageUriSize(
+            $rism_digital$elm_iiif$IIIF$Image$WidthOnlySize(256)
           ),
-          $author$project$IIIF$Image$createImageAddress
+          $rism_digital$elm_iiif$IIIF$Image$createImageAddress
         ),
-        $author$project$IIIF$Image$parseImageAddress(service.id)
+        $rism_digital$elm_iiif$IIIF$Image$parseImageAddress(service.id)
       );
     } else {
       return $elm$core$Maybe$Just(logo.id);
@@ -23343,17 +26550,17 @@
       _VirtualDom_noJavaScriptOrHtmlUri(url)
     );
   };
-  var $author$project$IIIF$Presentation$toHomepage = $author$project$IIIF$Presentation$withManifest(
+  var $rism_digital$elm_iiif$IIIF$Presentation$toHomepage = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
     function($) {
       return $.homepage;
     }
   );
-  var $author$project$IIIF$Presentation$toLogo = $author$project$IIIF$Presentation$withManifest(
+  var $rism_digital$elm_iiif$IIIF$Presentation$toLogo = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
     function($) {
       return $.logo;
     }
   );
-  var $author$project$IIIF$Presentation$toProvider = $author$project$IIIF$Presentation$withManifest(
+  var $rism_digital$elm_iiif$IIIF$Presentation$toProvider = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
     function($) {
       return $.provider;
     }
@@ -23364,7 +26571,7 @@
         var _v1 = A2(
           $elm$core$Maybe$andThen,
           $elm$core$List$head,
-          $author$project$IIIF$Presentation$toProvider(manifest)
+          $rism_digital$elm_iiif$IIIF$Presentation$toProvider(manifest)
         );
         if (_v1.$ === "Just") {
           var provider = _v1.a;
@@ -23378,7 +26585,7 @@
             A2(
               $elm$core$Maybe$andThen,
               $elm$core$List$head,
-              $author$project$IIIF$Presentation$toHomepage(manifest)
+              $rism_digital$elm_iiif$IIIF$Presentation$toHomepage(manifest)
             )
           );
         }
@@ -23399,13 +26606,13 @@
               },
               A2(
                 $elm$core$Basics$composeR,
-                $author$project$IIIF$Image$setImageUriSize(
-                  $author$project$IIIF$Image$WidthOnlySize(256)
+                $rism_digital$elm_iiif$IIIF$Image$setImageUriSize(
+                  $rism_digital$elm_iiif$IIIF$Image$WidthOnlySize(256)
                 ),
-                $author$project$IIIF$Image$createImageAddress
+                $rism_digital$elm_iiif$IIIF$Image$createImageAddress
               )
             ),
-            $author$project$IIIF$Presentation$toLogo(manifest)
+            $rism_digital$elm_iiif$IIIF$Presentation$toLogo(manifest)
           );
         }
       })();
@@ -23434,7 +26641,7 @@
             A2(
               $author$project$View$Helpers$viewMaybe,
               function(page) {
-                var labelText = A2($author$project$IIIF$Language$extractLabelFromLanguageMap, language, page.label);
+                var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, language, page.label);
                 return A2(
                   $elm$html$Html$a,
                   _List_fromArray(
@@ -23780,11 +26987,48 @@
       ) : $author$project$View$Helpers$emptyHtml;
     }
   );
+  var $elm$virtual_dom$VirtualDom$lazy4 = _VirtualDom_lazy4;
+  var $elm$html$Html$Lazy$lazy4 = $elm$virtual_dom$VirtualDom$lazy4;
   var $author$project$Msg$UserClickedPageViewImageChoice = function(a) {
     return { $: "UserClickedPageViewImageChoice", a };
   };
-  var $author$project$View$PageViewModal$viewImageChoiceItem = F3(
-    function(selectedIndex, index, image) {
+  var $author$project$Auth$requiresAuthorization = function(sourceAuth) {
+    if (sourceAuth.$ === "Discovered") {
+      var discovery = sourceAuth.a;
+      return !$elm$core$List$isEmpty(discovery.probes);
+    } else {
+      return false;
+    }
+  };
+  var $author$project$Auth$thumbnailCrossOrigin = F2(
+    function(sourceId, model) {
+      var _v0 = A2($elm$core$Dict$get, sourceId, model.sources);
+      if (_v0.$ === "Nothing") {
+        return $elm$core$Maybe$Nothing;
+      } else {
+        var source = _v0.a;
+        return $author$project$Auth$requiresAuthorization(source.auth) ? A2(
+          $elm$core$Maybe$map,
+          function(state) {
+            if (state.$ === "AnonymousFamily") {
+              return "anonymous";
+            } else {
+              return "use-credentials";
+            }
+          },
+          A2(
+            $elm$core$Maybe$andThen,
+            function(key) {
+              return A2($elm$core$Dict$get, key, model.familyStates);
+            },
+            $author$project$Auth$sourceFamilyKey(source)
+          )
+        ) : $elm$core$Maybe$Just("anonymous");
+      }
+    }
+  );
+  var $author$project$View$PageViewModal$viewImageChoiceItem = F4(
+    function(auth, selectedIndex, index, image) {
       var isActive = _Utils_eq(index, selectedIndex);
       return A2(
         $elm$html$Html$button,
@@ -23808,17 +27052,36 @@
         ),
         _List_fromArray(
           [
-            A2(
-              $elm$html$Html$img,
-              _List_fromArray(
-                [
-                  $elm$html$Html$Attributes$class("page-view-choice-thumb"),
-                  $elm$html$Html$Attributes$src(image.thumbUrl),
-                  $elm$html$Html$Attributes$alt(image.label)
-                ]
-              ),
-              _List_Nil
-            ),
+            (function() {
+              var _v0 = A2($author$project$Auth$thumbnailCrossOrigin, image.sourceId, auth);
+              if (_v0.$ === "Just") {
+                var crossOrigin = _v0.a;
+                return A2(
+                  $elm$html$Html$img,
+                  _List_fromArray(
+                    [
+                      $elm$html$Html$Attributes$class("page-view-choice-thumb"),
+                      $elm$html$Html$Attributes$src(image.thumbUrl),
+                      $elm$html$Html$Attributes$alt(image.label),
+                      A2($elm$html$Html$Attributes$attribute, "loading", "lazy"),
+                      A2($elm$html$Html$Attributes$attribute, "crossorigin", crossOrigin)
+                    ]
+                  ),
+                  _List_Nil
+                );
+              } else {
+                return A2(
+                  $elm$html$Html$div,
+                  _List_fromArray(
+                    [
+                      $elm$html$Html$Attributes$class("page-view-choice-thumb page-view-choice-thumb--protected"),
+                      A2($elm$html$Html$Attributes$attribute, "aria-label", "Protected image")
+                    ]
+                  ),
+                  _List_Nil
+                );
+              }
+            })(),
             A2(
               $elm$html$Html$span,
               _List_fromArray(
@@ -23837,8 +27100,8 @@
       );
     }
   );
-  var $author$project$View$PageViewModal$viewImageChoicesSidebar = F2(
-    function(images, selectedIndex) {
+  var $author$project$View$PageViewModal$viewImageChoicesSidebar = F3(
+    function(auth, images, selectedIndex) {
       return A2(
         $elm$html$Html$div,
         _List_fromArray(
@@ -23850,7 +27113,7 @@
           $elm$core$List$indexedMap,
           F2(
             function(index, image) {
-              return A4($elm$html$Html$Lazy$lazy3, $author$project$View$PageViewModal$viewImageChoiceItem, selectedIndex, index, image);
+              return A5($elm$html$Html$Lazy$lazy4, $author$project$View$PageViewModal$viewImageChoiceItem, auth, selectedIndex, index, image);
             }
           ),
           images
@@ -25530,7 +28793,7 @@
             var page = _v0.b.a;
             return _List_fromArray(
               [
-                A2($author$project$View$PageViewModal$viewImageChoicesSidebar, page.images, model.pageViewImageIndex),
+                A3($author$project$View$PageViewModal$viewImageChoicesSidebar, model.auth, page.images, model.pageViewImageIndex),
                 A2($author$project$View$PageViewModal$viewModalViewer, model.pageViewFullscreen, false)
               ]
             );
@@ -25546,7 +28809,7 @@
             var page = _v0.b.a;
             return _List_fromArray(
               [
-                A2($author$project$View$PageViewModal$viewImageChoicesSidebar, page.images, model.pageViewImageIndex),
+                A3($author$project$View$PageViewModal$viewImageChoicesSidebar, model.auth, page.images, model.pageViewImageIndex),
                 A2($author$project$View$PageViewModal$viewModalViewer, model.pageViewFullscreen, false),
                 $author$project$View$PageViewModal$viewModalSidebar(model)
               ]
@@ -25611,9 +28874,9 @@
         $elm$core$Maybe$map,
         function(m) {
           return A2(
-            $author$project$IIIF$Language$extractLabelFromLanguageMap,
+            $rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap,
             model.detectedLanguage,
-            $author$project$IIIF$Presentation$toLabel(m)
+            $rism_digital$elm_iiif$IIIF$Presentation$toLabel(m)
           );
         },
         $author$project$Model$currentManifest(model)
@@ -25871,17 +29134,17 @@
   var $author$project$Msg$UserToggledContents = { $: "UserToggledContents" };
   var $author$project$Msg$UserToggledMetadata = { $: "UserToggledMetadata" };
   var $author$project$Msg$UserToggledThumbnails = { $: "UserToggledThumbnails" };
-  var $author$project$IIIF$Presentation$toMetadata = $author$project$IIIF$Presentation$withManifest(
+  var $rism_digital$elm_iiif$IIIF$Presentation$toMetadata = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
     function($) {
       return $.metadata;
     }
   );
   var $author$project$View$Sidebar$hasManifestMetadata = function(manifest) {
     var hasMetadataEntries = !$elm$core$List$isEmpty(
-      $author$project$IIIF$Presentation$toMetadata(manifest)
+      $rism_digital$elm_iiif$IIIF$Presentation$toMetadata(manifest)
     );
     var hasHomepageEntries = (function() {
-      var _v0 = $author$project$IIIF$Presentation$toHomepage(manifest);
+      var _v0 = $rism_digital$elm_iiif$IIIF$Presentation$toHomepage(manifest);
       if (_v0.$ === "Just") {
         var links = _v0.a;
         return !$elm$core$List$isEmpty(links);
@@ -25966,7 +29229,7 @@
               _List_fromArray(
                 [
                   $elm$html$Html$text(
-                    A2($author$project$IIIF$Language$extractLabelFromLanguageMap, language, entry.label)
+                    A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, language, entry.label)
                   )
                 ]
               )
@@ -25979,7 +29242,7 @@
                 ]
               ),
               $author$project$View$HtmlRenderer$renderHtml(
-                A2($author$project$IIIF$Language$extractLabelFromLanguageMap, language, entry.value)
+                A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, language, entry.value)
               )
             )
           ]
@@ -26046,7 +29309,7 @@
         $elm$core$Maybe$Just(range.id)
       ) ? A2($author$project$View$Sidebar$viewRangeMetadata, model.detectedLanguage, range.metadata) : _List_Nil;
       var maybeIndex = A2($author$project$View$Sidebar$lookupRangeIndex, rangeIndexMap, range.id);
-      var labelText = A2($author$project$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, range.label);
+      var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, range.label);
       var resolvedLabel = $elm$core$String$isEmpty(labelText) ? "[Untitled range]" : labelText;
       var labelNode = A3($author$project$View$Sidebar$viewRangeButton, range.id, maybeIndex, resolvedLabel);
       var children = A3($author$project$View$Sidebar$viewRangeItems, model, rangeIndexMap, range.items);
@@ -26084,7 +29347,7 @@
   );
   var $author$project$View$Sidebar$viewContentsIndexBody = F2(
     function(model, manifest) {
-      var _v0 = $author$project$IIIF$Presentation$toRanges(manifest);
+      var _v0 = $rism_digital$elm_iiif$IIIF$Presentation$toRanges(manifest);
       if (_v0.$ === "Just") {
         var list = _v0.a;
         return $elm$core$List$isEmpty(list) ? $author$project$View$Sidebar$viewContentsEmptyBody : A3($author$project$View$Sidebar$viewRangeList, model, model.rangeIndexMap, list);
@@ -26183,7 +29446,7 @@
               A2(
                 $elm$core$List$drop,
                 index,
-                $author$project$IIIF$Presentation$toCanvases(manifest)
+                $rism_digital$elm_iiif$IIIF$Presentation$toCanvases(manifest)
               )
             );
           },
@@ -26303,7 +29566,7 @@
     function(model, canvasLabelMap, range) {
       var metadataBlock = A2($author$project$View$Sidebar$viewRangeMetadata, model.detectedLanguage, range.metadata);
       var maybeIndex = A2($author$project$View$Sidebar$lookupRangeIndex, model.rangeIndexMap, range.id);
-      var labelText = A2($author$project$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, range.label);
+      var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, range.label);
       var canvasLabels = A2($author$project$View$Sidebar$rangeCanvasLabels, canvasLabelMap, range);
       var firstLabel = $elm$core$List$head(canvasLabels);
       var lastLabel = $elm$core$List$head(
@@ -26349,7 +29612,7 @@
       var _v0 = A2($author$project$View$Sidebar$currentCanvasId, model, manifest);
       if (_v0.$ === "Just") {
         var canvasId = _v0.a;
-        var _v1 = $author$project$IIIF$Presentation$toRanges(manifest);
+        var _v1 = $rism_digital$elm_iiif$IIIF$Presentation$toRanges(manifest);
         if (_v1.$ === "Just") {
           var list = _v1.a;
           var matches = A2($author$project$View$Sidebar$rangesForCanvas, canvasId, list);
@@ -26362,10 +29625,10 @@
                 function(canvas) {
                   return _Utils_Tuple2(
                     canvas.id,
-                    $author$project$IIIF$Presentation$canvasLabel(canvas)
+                    $rism_digital$elm_iiif$IIIF$Presentation$canvasLabel(canvas)
                   );
                 },
-                $author$project$IIIF$Presentation$toCanvases(manifest)
+                $rism_digital$elm_iiif$IIIF$Presentation$toCanvases(manifest)
               )
             );
             return A2(
@@ -26463,7 +29726,7 @@
               _List_fromArray(
                 [
                   $elm$html$Html$text(
-                    A2($author$project$IIIF$Language$extractLabelFromLanguageMap, language, page.label)
+                    A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, language, page.label)
                   )
                 ]
               )
@@ -26475,7 +29738,7 @@
   );
   var $author$project$View$Sidebar$homepageEntries = F2(
     function(language, manifest) {
-      var _v0 = $author$project$IIIF$Presentation$toHomepage(manifest);
+      var _v0 = $rism_digital$elm_iiif$IIIF$Presentation$toHomepage(manifest);
       if (_v0.$ === "Just") {
         var links = _v0.a;
         return $elm$core$List$isEmpty(links) ? _List_Nil : _List_fromArray(
@@ -26530,7 +29793,7 @@
       return A2(
         $elm$core$List$map,
         $author$project$View$Sidebar$metadataEntry(language),
-        $author$project$IIIF$Presentation$toMetadata(manifest)
+        $rism_digital$elm_iiif$IIIF$Presentation$toMetadata(manifest)
       );
     }
   );
@@ -26638,6 +29901,8 @@
       );
     }
   );
+  var $elm$virtual_dom$VirtualDom$lazy6 = _VirtualDom_lazy6;
+  var $elm$html$Html$Lazy$lazy6 = $elm$virtual_dom$VirtualDom$lazy6;
   var $elm$core$List$takeReverse = F3(
     function(n, list, kept) {
       takeReverse:
@@ -26810,6 +30075,7 @@
       );
     }
   );
+  var $author$project$Auth$Unknown = { $: "Unknown" };
   var $author$project$Msg$UserClickedThumbnail = function(a) {
     return { $: "UserClickedThumbnail", a };
   };
@@ -26841,10 +30107,60 @@
       }
     }
   );
-  var $author$project$View$Sidebar$viewThumbnail = F5(
-    function(viewMode, shiftByOne, selectedIndex, index, page) {
+  var $author$project$View$Sidebar$viewThumbnail = F6(
+    function(auth, viewMode, shiftByOne, selectedIndex, index, page) {
       var isActive = A4($author$project$View$Sidebar$isThumbnailActive, viewMode, shiftByOne, selectedIndex, index);
       var hasChoices = $elm$core$List$length(page.images) > 1;
+      var fallbackImage = { auth: $author$project$Auth$Unknown, isPrimary: false, isStatic: true, label: "", sourceId: "", thumbUrl: "", tileSource: "" };
+      var primary = A2(
+        $elm$core$Maybe$withDefault,
+        A2(
+          $elm$core$Maybe$withDefault,
+          fallbackImage,
+          $elm$core$List$head(page.images)
+        ),
+        $elm$core$List$head(
+          A2(
+            $elm$core$List$filter,
+            function($) {
+              return $.isPrimary;
+            },
+            page.images
+          )
+        )
+      );
+      var thumbnail = (function() {
+        var _v0 = A2($author$project$Auth$thumbnailCrossOrigin, primary.sourceId, auth);
+        if (_v0.$ === "Just") {
+          var crossOrigin = _v0.a;
+          return A2(
+            $elm$html$Html$img,
+            _List_fromArray(
+              [
+                $elm$html$Html$Attributes$class("thumbs-image"),
+                $elm$html$Html$Attributes$src(page.thumbUrl),
+                $elm$html$Html$Attributes$alt(
+                  "Page " + $elm$core$String$fromInt(index + 1)
+                ),
+                A2($elm$html$Html$Attributes$attribute, "loading", "lazy"),
+                A2($elm$html$Html$Attributes$attribute, "crossorigin", crossOrigin)
+              ]
+            ),
+            _List_Nil
+          );
+        } else {
+          return A2(
+            $elm$html$Html$div,
+            _List_fromArray(
+              [
+                $elm$html$Html$Attributes$class("thumbs-image thumbs-image--protected"),
+                A2($elm$html$Html$Attributes$attribute, "aria-label", "Protected image")
+              ]
+            ),
+            _List_Nil
+          );
+        }
+      })();
       var attrs = _List_fromArray(
         [
           $elm$html$Html$Attributes$classList(
@@ -26876,19 +30192,7 @@
         attrs,
         _List_fromArray(
           [
-            A2(
-              $elm$html$Html$img,
-              _List_fromArray(
-                [
-                  $elm$html$Html$Attributes$class("thumbs-image"),
-                  $elm$html$Html$Attributes$src(page.thumbUrl),
-                  $elm$html$Html$Attributes$alt(
-                    "Page " + $elm$core$String$fromInt(index + 1)
-                  )
-                ]
-              ),
-              _List_Nil
-            ),
+            thumbnail,
             A2(
               $elm$html$Html$div,
               _List_fromArray(
@@ -26919,13 +30223,14 @@
   var $author$project$View$Sidebar$viewThumbnails = F2(
     function(_v0, pages) {
       var fullscreen = _v0.fullscreen;
+      var auth = _v0.auth;
       var selectedIndex = _v0.selectedIndex;
       var shiftByOne = _v0.shiftByOne;
       var thumbsInstantScroll = _v0.thumbsInstantScroll;
       var viewMode = _v0.viewMode;
       var viewingDirection = _v0.viewingDirection;
       var indexedPages = A2($elm$core$List$indexedMap, $elm$core$Tuple$pair, pages);
-      var orderedPages = _Utils_eq(viewingDirection, $author$project$IIIF$Presentation$RightToLeft) ? A2($author$project$View$Sidebar$reverseInRows, 3, indexedPages) : indexedPages;
+      var orderedPages = _Utils_eq(viewingDirection, $rism_digital$elm_iiif$IIIF$Presentation$RightToLeft) ? A2($author$project$View$Sidebar$reverseInRows, 3, indexedPages) : indexedPages;
       return A2(
         $elm$html$Html$div,
         _List_fromArray(
@@ -26951,7 +30256,7 @@
           function(_v1) {
             var index = _v1.a;
             var page = _v1.b;
-            return A6($elm$html$Html$Lazy$lazy5, $author$project$View$Sidebar$viewThumbnail, viewMode, shiftByOne, selectedIndex, index, page);
+            return A7($elm$html$Html$Lazy$lazy6, $author$project$View$Sidebar$viewThumbnail, auth, viewMode, shiftByOne, selectedIndex, index, page);
           },
           orderedPages
         )
@@ -26962,8 +30267,8 @@
     function(model, maybeManifest) {
       var viewingDirection = A2(
         $elm$core$Maybe$withDefault,
-        $author$project$IIIF$Presentation$LeftToRight,
-        A2($elm$core$Maybe$map, $author$project$IIIF$Presentation$toViewingDirection, maybeManifest)
+        $rism_digital$elm_iiif$IIIF$Presentation$LeftToRight,
+        A2($elm$core$Maybe$map, $rism_digital$elm_iiif$IIIF$Presentation$toViewingDirection, maybeManifest)
       );
       var thumbnailPages = _Utils_eq(model.resourceResponse, $author$project$Model$ResourceLoading) || _Utils_eq(model.response, $author$project$Model$Loading) ? _List_Nil : model.pages;
       var panelClasses = _List_fromArray(
@@ -27004,7 +30309,7 @@
         A2(
           $elm$core$Maybe$map,
           A2($elm$core$Basics$composeR, $elm$core$List$isEmpty, $elm$core$Basics$not),
-          A2($elm$core$Maybe$andThen, $author$project$IIIF$Presentation$toRanges, maybeManifest)
+          A2($elm$core$Maybe$andThen, $rism_digital$elm_iiif$IIIF$Presentation$toRanges, maybeManifest)
         )
       );
       var contentsTab = hasContents ? _List_fromArray(
@@ -27064,7 +30369,7 @@
                   $author$project$Model$SidebarThumbnails,
                   A2(
                     $author$project$View$Sidebar$viewThumbnails,
-                    { fullscreen: model.fullscreen, selectedIndex: model.selectedIndex, shiftByOne: model.shiftByOne, thumbsInstantScroll: model.thumbsInstantScroll, viewMode: model.viewMode, viewingDirection },
+                    { auth: model.auth, fullscreen: model.fullscreen, selectedIndex: model.selectedIndex, shiftByOne: model.shiftByOne, thumbsInstantScroll: model.thumbsInstantScroll, viewMode: model.viewMode, viewingDirection },
                     thumbnailPages
                   )
                 ),
@@ -27282,6 +30587,68 @@
       );
     }
   );
+  var $author$project$Auth$logoutActions = function(model) {
+    return A2(
+      $elm$core$List$map,
+      function(session) {
+        return { error: session.error, label: session.logout.label, sessionId: session.id, url: session.logout.id };
+      },
+      $elm$core$Dict$values(model.sessions)
+    );
+  };
+  var $author$project$View$Toolbar$viewLogoutActions = function(model) {
+    return A2(
+      $elm$core$List$map,
+      function(action) {
+        var label = A2(
+          $elm$core$Maybe$withDefault,
+          "Log out",
+          A2(
+            $elm$core$Maybe$map,
+            $rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap(model.detectedLanguage),
+            action.label
+          )
+        );
+        var displayLabel = (function() {
+          var _v0 = action.error;
+          if (_v0.$ === "Just") {
+            return label + " (popup blocked)";
+          } else {
+            return label;
+          }
+        })();
+        return A2(
+          $elm$html$Html$div,
+          _List_fromArray(
+            [
+              $elm$html$Html$Attributes$class("canvas-toolbar-item"),
+              A2($elm$html$Html$Attributes$attribute, "data-tooltip", displayLabel)
+            ]
+          ),
+          _List_fromArray(
+            [
+              A2(
+                $elm$html$Html$button,
+                _List_fromArray(
+                  [
+                    $elm$html$Html$Attributes$class("canvas-toolbar-button"),
+                    $elm$html$Html$Attributes$type_("button"),
+                    A2($elm$html$Html$Attributes$attribute, "aria-label", displayLabel),
+                    A2($elm$html$Html$Attributes$attribute, "data-diva-auth-logout", action.sessionId),
+                    A2($elm$html$Html$Attributes$attribute, "data-diva-auth-url", action.url)
+                  ]
+                ),
+                _List_fromArray(
+                  [$author$project$View$Icons$shiftRight]
+                )
+              )
+            ]
+          )
+        );
+      },
+      $author$project$Auth$logoutActions(model.auth)
+    );
+  };
   var $author$project$View$Icons$zoomIn = $author$project$View$Icons$makeSvgIcon(
     { path: "M208 48a160 160 0 1 1 0 320 160 160 0 1 1 0-320zm0 368c48.8 0 93.7-16.8 129.1-44.9L471 505c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9L371.1 337.1C399.2 301.7 416 256.8 416 208C416 93.1 322.9 0 208 0S0 93.1 0 208S93.1 416 208 416zM184 296c0 13.3 10.7 24 24 24s24-10.7 24-24V232h64c13.3 0 24-10.7 24-24s-10.7-24-24-24H232V120c0-13.3-10.7-24-24-24s-24 10.7-24 24v64H120c-13.3 0-24 10.7-24 24s10.7 24 24 24h64v64z", viewBox: "0 0 512 512" }
   );
@@ -27356,71 +30723,74 @@
                             $elm$html$Html$Attributes$class("canvas-toolbar-section is-right")
                           ]
                         ),
-                        _List_fromArray(
-                          [
-                            $author$project$View$Helpers$viewButton(
-                              {
-                                icon: $author$project$View$Icons$pageViewOpen,
-                                isFullscreen: model.fullscreen,
-                                label: "Page View",
-                                onClickMsg: A2($author$project$Utilities$disabledIf, controlsDisabled, $author$project$Msg$UserClickedOpenPageView)
-                              }
-                            ),
-                            $author$project$View$Helpers$viewButton(
-                              {
-                                icon: $author$project$View$Icons$info,
-                                isFullscreen: model.fullscreen,
-                                label: "Manifest Info",
-                                onClickMsg: A2($author$project$Utilities$disabledIf, controlsDisabled, $author$project$Msg$UserClickedOpenManifestInfo)
-                              }
-                            ),
-                            $author$project$View$Helpers$viewButton(
-                              {
-                                icon: _Utils_eq(model.viewMode, $author$project$Model$OneUp) ? $author$project$View$Icons$openingPageView : $author$project$View$Icons$scrollingPageView,
-                                isFullscreen: model.fullscreen,
-                                label: _Utils_eq(model.viewMode, $author$project$Model$OneUp) ? "Two Page" : "One Page",
-                                onClickMsg: A2($author$project$Utilities$disabledIf, controlsDisabled, $author$project$Msg$UserToggledTwoUp)
-                              }
-                            ),
-                            $author$project$View$Helpers$viewButton(
-                              {
-                                icon: model.shiftByOne ? $author$project$View$Icons$shiftLeft : $author$project$View$Icons$shiftRight,
-                                isFullscreen: model.fullscreen,
-                                label: "Shift Pages",
-                                onClickMsg: A2(
-                                  $author$project$Utilities$disabledIf,
-                                  controlsDisabled || _Utils_eq(model.viewMode, $author$project$Model$OneUp),
-                                  $author$project$Msg$UserToggledShiftByOne
-                                )
-                              }
-                            ),
-                            $author$project$View$Toolbar$viewCollectionSidebarButton(model),
-                            $author$project$View$Helpers$viewButton(
-                              (function() {
-                                var sidebarVisible = model.isMobile ? model.mobileSidebarOpen : !_Utils_eq(model.sidebarState, $author$project$Model$SidebarHidden);
-                                return {
-                                  icon: sidebarVisible ? $author$project$View$Icons$hideSidebar : $author$project$View$Icons$showSidebar,
+                        _Utils_ap(
+                          $author$project$View$Toolbar$viewLogoutActions(model),
+                          _List_fromArray(
+                            [
+                              $author$project$View$Helpers$viewButton(
+                                {
+                                  icon: $author$project$View$Icons$pageViewOpen,
                                   isFullscreen: model.fullscreen,
-                                  label: sidebarVisible ? "Hide Sidebar" : "Show Sidebar",
-                                  onClickMsg: A2($author$project$Utilities$disabledIf, controlsDisabled, $author$project$Msg$UserToggledSidebar)
-                                };
-                              })()
-                            ),
-                            A2(
-                              $author$project$View$Helpers$viewButtonWithAttributes,
-                              _List_fromArray(
-                                [
-                                  A2($elm$html$Html$Attributes$attribute, "data-diva-action", "fullscreen")
-                                ]
+                                  label: "Page View",
+                                  onClickMsg: A2($author$project$Utilities$disabledIf, controlsDisabled, $author$project$Msg$UserClickedOpenPageView)
+                                }
                               ),
-                              {
-                                icon: model.fullscreen ? $author$project$View$Icons$fromFullscreen : $author$project$View$Icons$toFullscreen,
-                                isFullscreen: model.fullscreen,
-                                label: model.fullscreen ? "Exit Full" : "Fullscreen",
-                                onClickMsg: $elm$core$Maybe$Just($author$project$Msg$UserToggledFullscreen)
-                              }
-                            )
-                          ]
+                              $author$project$View$Helpers$viewButton(
+                                {
+                                  icon: $author$project$View$Icons$info,
+                                  isFullscreen: model.fullscreen,
+                                  label: "Manifest Info",
+                                  onClickMsg: A2($author$project$Utilities$disabledIf, controlsDisabled, $author$project$Msg$UserClickedOpenManifestInfo)
+                                }
+                              ),
+                              $author$project$View$Helpers$viewButton(
+                                {
+                                  icon: _Utils_eq(model.viewMode, $author$project$Model$OneUp) ? $author$project$View$Icons$openingPageView : $author$project$View$Icons$scrollingPageView,
+                                  isFullscreen: model.fullscreen,
+                                  label: _Utils_eq(model.viewMode, $author$project$Model$OneUp) ? "Two Page" : "One Page",
+                                  onClickMsg: A2($author$project$Utilities$disabledIf, controlsDisabled, $author$project$Msg$UserToggledTwoUp)
+                                }
+                              ),
+                              $author$project$View$Helpers$viewButton(
+                                {
+                                  icon: model.shiftByOne ? $author$project$View$Icons$shiftLeft : $author$project$View$Icons$shiftRight,
+                                  isFullscreen: model.fullscreen,
+                                  label: "Shift Pages",
+                                  onClickMsg: A2(
+                                    $author$project$Utilities$disabledIf,
+                                    controlsDisabled || _Utils_eq(model.viewMode, $author$project$Model$OneUp),
+                                    $author$project$Msg$UserToggledShiftByOne
+                                  )
+                                }
+                              ),
+                              $author$project$View$Toolbar$viewCollectionSidebarButton(model),
+                              $author$project$View$Helpers$viewButton(
+                                (function() {
+                                  var sidebarVisible = model.isMobile ? model.mobileSidebarOpen : !_Utils_eq(model.sidebarState, $author$project$Model$SidebarHidden);
+                                  return {
+                                    icon: sidebarVisible ? $author$project$View$Icons$hideSidebar : $author$project$View$Icons$showSidebar,
+                                    isFullscreen: model.fullscreen,
+                                    label: sidebarVisible ? "Hide Sidebar" : "Show Sidebar",
+                                    onClickMsg: A2($author$project$Utilities$disabledIf, controlsDisabled, $author$project$Msg$UserToggledSidebar)
+                                  };
+                                })()
+                              ),
+                              A2(
+                                $author$project$View$Helpers$viewButtonWithAttributes,
+                                _List_fromArray(
+                                  [
+                                    A2($elm$html$Html$Attributes$attribute, "data-diva-action", "fullscreen")
+                                  ]
+                                ),
+                                {
+                                  icon: model.fullscreen ? $author$project$View$Icons$fromFullscreen : $author$project$View$Icons$toFullscreen,
+                                  isFullscreen: model.fullscreen,
+                                  label: model.fullscreen ? "Exit Full" : "Fullscreen",
+                                  onClickMsg: $elm$core$Maybe$Just($author$project$Msg$UserToggledFullscreen)
+                                }
+                              )
+                            ]
+                          )
                         )
                       )
                     ]
@@ -27596,7 +30966,12 @@
                   )
                 ),
                 $author$project$View$PageViewModal$viewPageViewModal(model),
-                $author$project$View$ManifestInfoModal$viewManifestInfoModal(model)
+                $author$project$View$ManifestInfoModal$viewManifestInfoModal(model),
+                A2(
+                  $author$project$View$Helpers$viewMaybe,
+                  $author$project$View$viewAuthPrompt(model),
+                  $author$project$Auth$prompt(model.auth)
+                )
               ]
             )
           )
@@ -27651,7 +31026,378 @@
       },
       A2($elm$json$Json$Decode$field, "userLanguage", $elm$json$Json$Decode$string)
     )
-  )({ "versions": { "elm": "0.19.1" }, "types": { "message": "Msg.Msg", "aliases": { "IIIF.Presentation.Canvas": { "args": [], "type": "{ id : String.String, label : Maybe.Maybe IIIF.Language.LanguageMap, width : Maybe.Maybe Basics.Int, height : Maybe.Maybe Basics.Int, images : List.List IIIF.Presentation.Image, thumbnail : Maybe.Maybe IIIF.Presentation.Image, viewingLayout : Maybe.Maybe IIIF.Presentation.ViewingLayout }" }, "IIIF.Presentation.HomePage": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.Image": { "args": [], "type": "{ id : IIIF.Image.ImageUri, label : Maybe.Maybe IIIF.Language.LanguageMap, imageType : IIIF.Presentation.ImageType, service : List.List IIIF.Presentation.ServiceTypes, serviceObjects : List.List Json.Decode.Value }" }, "IIIF.Language.LabelValue": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Language.LanguageMap": { "args": [], "type": "List.List IIIF.Language.LanguageValues" }, "IIIF.Presentation.Logo": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes, width : Basics.Int, height : Basics.Int, service : Maybe.Maybe (List.List IIIF.Presentation.ServiceObject) }" }, "IIIF.Presentation.Manifest": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, metadata : List.List IIIF.Language.LabelValue, viewingDirection : IIIF.Presentation.ViewingDirection, summary : Maybe.Maybe IIIF.Language.LanguageMap, viewingLayout : IIIF.Presentation.ViewingLayout, canvases : List.List IIIF.Presentation.Canvas, ranges : Maybe.Maybe (List.List IIIF.Presentation.Range), homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe IIIF.Presentation.Image, provider : Maybe.Maybe (List.List IIIF.Presentation.Provider), thumbnail : Maybe.Maybe IIIF.Presentation.Image, requiredStatement : Maybe.Maybe IIIF.Presentation.RequiredStatement }" }, "IIIF.Presentation.Provider": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, type_ : IIIF.Presentation.ResourceTypes, homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe (List.List IIIF.Presentation.Logo), seeAlso : Maybe.Maybe (List.List IIIF.Presentation.SeeAlso) }" }, "IIIF.Presentation.Range": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.RangeItem, metadata : List.List IIIF.Language.LabelValue }" }, "IIIF.Presentation.RequiredStatement": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Presentation.SeeAlso": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.ServiceObject": { "args": [], "type": "{ id : String.String, serviceType : IIIF.Presentation.ServiceTypes }" }, "Json.Decode.Value": { "args": [], "type": "Json.Encode.Value" }, "IIIF.Presentation.Collection": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, summary : Maybe.Maybe IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.CollectionItem }" }, "IIIF.Image.ImageRequestParameters": { "args": [], "type": "{ host : String.String, prefix : String.String, region : IIIF.Image.ImageRegion, size : IIIF.Image.ImageSize, rotation : IIIF.Image.ImageRotation, quality : IIIF.Image.ImageQuality, format : IIIF.Image.ImageFormat }" }, "IIIF.Image.ImageServerParameters": { "args": [], "type": "{ host : String.String, prefix : String.String }" } }, "unions": { "Msg.Msg": { "args": [], "tags": { "ClientNotifiedFullscreenChanged": ["Basics.Bool"], "ClientNotifiedPageChanged": ["Basics.Int"], "ClientNotifiedPageChangedInstant": ["Basics.Int"], "ClientNotifiedScrollThumbs": [], "ServerRespondedWithCollectionItem": ["String.String", "Result.Result Http.Error IIIF.Presentation.IIIFResource"], "ServerRespondedWithManifestFromCollection": ["String.String", "Result.Result Http.Error IIIF.Presentation.IIIFManifest"], "ServerRespondedWithResource": ["Result.Result Http.Error IIIF.Presentation.IIIFResource"], "UserAppliedFilterJson": [], "UserChangedZoomLevel": ["Basics.Float"], "UserClickedCloseManifestInfo": [], "UserClickedClosePageView": [], "UserClickedCollectionItem": ["String.String"], "UserClickedManifestItem": ["String.String", "String.String"], "UserClickedOpenManifestInfo": [], "UserClickedOpenPageView": [], "UserClickedPageViewImageChoice": ["Basics.Int"], "UserClickedPageViewNext": [], "UserClickedPageViewPrev": [], "UserClickedRange": ["String.String", "Maybe.Maybe Basics.Int"], "UserClickedSaveFilteredImage": [], "UserClickedThumbnail": ["Basics.Int"], "UserClickedZoomIn": [], "UserClickedZoomOut": [], "UserCopiedFilterJson": [], "UserDraggedCollectionSidebarResize": ["Basics.Int"], "UserDraggedSidebarResize": ["Basics.Int"], "UserEndedCollectionSidebarResize": [], "UserEndedSidebarResize": [], "UserResetAllFilters": [], "UserResetAltColourAdjust": [], "UserSelectedContentsIndex": [], "UserSelectedContentsPages": [], "UserStartedCollectionSidebarResize": ["Basics.Int"], "UserStartedSidebarResize": ["Basics.Int"], "UserToggledContents": [], "UserToggledCollectionSidebar": [], "UserToggledFilter": ["Filters.FilterToggle", "Basics.Bool"], "UserToggledFilterGroup": ["String.String"], "UserToggledFullscreen": [], "UserToggledMetadata": [], "UserToggledPageViewFullscreen": [], "UserToggledPageViewSidebar": [], "UserToggledShiftByOne": [], "UserToggledSidebar": [], "UserToggledThumbnails": [], "UserToggledTwoUp": [], "UserUpdatedFilterFloat": ["Filters.FilterFloatValue", "String.String"], "UserUpdatedFilterInt": ["Filters.FilterIntValue", "String.String"], "UserUpdatedFilterJsonInput": ["String.String"], "UserUpdatedFilterString": ["Filters.FilterStringValue", "String.String"], "ViewerLoadingChanged": ["Basics.Bool"], "ViewportChanged": ["Basics.Int", "Basics.Int"] } }, "Basics.Bool": { "args": [], "tags": { "True": [], "False": [] } }, "Http.Error": { "args": [], "tags": { "BadUrl": ["String.String"], "Timeout": [], "NetworkError": [], "BadStatus": ["Basics.Int"], "BadBody": ["String.String"] } }, "Filters.FilterFloatValue": { "args": [], "tags": { "FloatColourReplaceBlend": [], "FloatContrast": [], "FloatGamma": [], "FloatNormalizeStrength": [], "FloatPseudoColourBlue": [], "FloatPseudoColourGreen": [], "FloatPseudoColourRed": [], "FloatUnsharpAmount": [] } }, "Filters.FilterIntValue": { "args": [], "tags": { "IntAdaptiveOffset": [], "IntAdaptiveWindow": [], "IntAltRedGamma": [], "IntAltRedSigmoid": [], "IntAltRedVibrance": [], "IntAltRedHue": [], "IntAltRedHueWindow": [], "IntAltGreenGamma": [], "IntAltGreenSigmoid": [], "IntAltGreenHue": [], "IntAltGreenHueWindow": [], "IntAltGreenVibrance": [], "IntAltBlueGamma": [], "IntAltBlueSigmoid": [], "IntAltBlueHue": [], "IntAltBlueHueWindow": [], "IntAltBlueVibrance": [], "IntBrightness": [], "IntCcBlue": [], "IntCcGreen": [], "IntCcRed": [], "IntColourmapCenter": [], "IntColourReplaceTolerance": [], "IntPcaHue": [], "IntHue": [], "IntMorphKernel": [], "IntRotation": [], "IntSaturation": [], "IntThreshold": [], "IntVibrance": [] } }, "Filters.FilterStringValue": { "args": [], "tags": { "StringColourmapPreset": [], "StringColourReplaceSource": [], "StringColourReplaceTarget": [], "StringConvolutionPreset": [], "StringPcaMode": [], "StringMorphOperation": [], "StringPseudoColourMode": [] } }, "Filters.FilterToggle": { "args": [], "tags": { "ToggleAdaptive": [], "ToggleAltBlueGamma": [], "ToggleAltBlueHue": [], "ToggleAltBlueSigmoid": [], "ToggleAltBlueVibrance": [], "ToggleAltGreenGamma": [], "ToggleAltGreenHue": [], "ToggleAltGreenSigmoid": [], "ToggleAltGreenVibrance": [], "ToggleAltRedGamma": [], "ToggleAltRedHue": [], "ToggleAltRedSigmoid": [], "ToggleAltRedVibrance": [], "ToggleBrightness": [], "ToggleCcBlue": [], "ToggleCcGreen": [], "ToggleCcRed": [], "ToggleColourmap": [], "ToggleColourReplace": [], "ToggleColourReplacePreserveLum": [], "ToggleContrast": [], "ToggleConvolution": [], "ToggleFlip": [], "ToggleGamma": [], "ToggleGlobalPca": [], "ToggleGrayscale": [], "ToggleHue": [], "ToggleInvert": [], "ToggleMorph": [], "ToggleNormalize": [], "TogglePseudoColour": [], "ToggleSaturation": [], "ToggleThreshold": [], "ToggleUnsharp": [], "ToggleVibrance": [] } }, "Basics.Float": { "args": [], "tags": { "Float": [] } }, "IIIF.Presentation.IIIFManifest": { "args": [], "tags": { "IIIFManifest": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Manifest"] } }, "IIIF.Presentation.IIIFResource": { "args": [], "tags": { "ResourceManifest": ["IIIF.Presentation.IIIFManifest"], "ResourceCollection": ["IIIF.Presentation.IIIFCollection"], "ResourceCanvas": ["IIIF.Presentation.IIIFCanvas"], "ResourceRange": ["IIIF.Presentation.IIIFRange"] } }, "Basics.Int": { "args": [], "tags": { "Int": [] } }, "Maybe.Maybe": { "args": ["a"], "tags": { "Just": ["a"], "Nothing": [] } }, "Result.Result": { "args": ["error", "value"], "tags": { "Ok": ["value"], "Err": ["error"] } }, "String.String": { "args": [], "tags": { "String": [] } }, "IIIF.Presentation.IIIFCanvas": { "args": [], "tags": { "IIIFCanvas": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Canvas"] } }, "IIIF.Presentation.IIIFCollection": { "args": [], "tags": { "IIIFCollection": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Collection"] } }, "IIIF.Presentation.IIIFRange": { "args": [], "tags": { "IIIFRange": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Range"] } }, "IIIF.Version.IIIFVersion": { "args": [], "tags": { "IIIFV2": [], "IIIFV3": [] } }, "IIIF.Presentation.ImageType": { "args": [], "tags": { "PrimaryImage": [], "ChoiceImage": [] } }, "IIIF.Image.ImageUri": { "args": [], "tags": { "InfoUri": ["IIIF.Image.ImageServerParameters"], "ImageUri": ["IIIF.Image.ImageRequestParameters"], "StaticImageUri": ["IIIF.Image.ImageServerParameters"] } }, "IIIF.Language.LanguageValues": { "args": [], "tags": { "LanguageValues": ["IIIF.Language.Language", "List.List String.String"] } }, "List.List": { "args": ["a"], "tags": {} }, "IIIF.Presentation.MediaFormats": { "args": [], "tags": { "ImageJpeg": [], "OtherFormat": ["String.String"] } }, "IIIF.Presentation.RangeItem": { "args": [], "tags": { "RangeCanvas": ["String.String"], "RangeRange": ["IIIF.Presentation.Range"] } }, "IIIF.Presentation.ResourceTypes": { "args": [], "tags": { "Video": [], "OtherResource": ["String.String"] } }, "IIIF.Presentation.ServiceTypes": { "args": [], "tags": { "ImageService1": [], "ImageService2": [], "ImageService3": [], "SearchService1": [], "AutoCompleteService1": [], "AuthTokenService1": [], "AuthLogoutService1": [], "UnknownService": [] } }, "Json.Encode.Value": { "args": [], "tags": { "Value": [] } }, "IIIF.Presentation.ViewingDirection": { "args": [], "tags": { "LeftToRight": [], "RightToLeft": [], "TopToBottom": [], "BottomToTop": [] } }, "IIIF.Presentation.ViewingLayout": { "args": [], "tags": { "LayoutV2": ["IIIF.Presentation.ViewingHint"], "LayoutV3": ["List.List IIIF.Presentation.Behavior"] } }, "IIIF.Presentation.Behavior": { "args": [], "tags": { "AutoAdvanceBehavior": [], "NoAutoAdvanceBehavior": [], "RepeatBehavior": [], "NoRepeatBehavior": [], "UnorderedBehavior": [], "IndividualsBehavior": [], "ContinuousBehavior": [], "PagedBehavior": [], "FacingPagesBehavior": [], "NonPagedBehavior": [], "MultiPartBehavior": [], "TogetherBehavior": [], "SequenceBehavior": [], "ThumbnailNavBehavior": [], "NoNavBehavior": [], "HiddenBehavior": [] } }, "IIIF.Presentation.CollectionItem": { "args": [], "tags": { "NestedCollection": ["IIIF.Presentation.Collection"], "ManifestItem": ["IIIF.Presentation.Manifest"] } }, "IIIF.Image.ImageFormat": { "args": [], "tags": { "JpegFormat": [], "TiffFormat": [], "PngFormat": [], "Jp2Format": [], "GifFormat": [], "PdfFormat": [], "WebpFormat": [] } }, "IIIF.Image.ImageQuality": { "args": [], "tags": { "ColorQuality": [], "GrayQuality": [], "BiTonalQuality": [], "DefaultQuality": [], "NativeQuality": [] } }, "IIIF.Image.ImageRegion": { "args": [], "tags": { "FullRegion": [], "SquareRegion": [], "SizeRegion": ["{ x : Basics.Int, y : Basics.Int, w : Basics.Int, h : Basics.Int }"], "PctSizeRegion": ["{ x : Basics.Float, y : Basics.Float, w : Basics.Float, h : Basics.Float }"] } }, "IIIF.Image.ImageRotation": { "args": [], "tags": { "NormalRotation": ["Basics.Float"], "MirroredRotation": ["Basics.Float"] } }, "IIIF.Image.ImageSize": { "args": [], "tags": { "MaxSize": [], "ExactMaxSize": [], "WidthOnlySize": ["Basics.Int"], "ExactWidthOnlySize": ["Basics.Int"], "HeightOnlySize": ["Basics.Int"], "ExactHeightOnlySize": ["Basics.Int"], "PercentSize": ["Basics.Float"], "ExactPercentSize": ["Basics.Float"], "WidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"] } }, "IIIF.Language.Language": { "args": [], "tags": { "LanguageCode": ["String.String"], "None": [], "Default": [] } }, "IIIF.Presentation.ViewingHint": { "args": [], "tags": { "PagedHint": [], "IndividualsHint": [], "ContinuousHint": [], "MultiPartHint": [], "NonPagedHint": [], "TopHint": [], "FacingPagesHint": [] } } } } }) } };
+  )({ "versions": { "elm": "0.19.1" }, "types": { "message": "Msg.Msg", "aliases": { "IIIF.Presentation.Canvas": { "args": [], "type": "{ id : String.String, label : Maybe.Maybe IIIF.Language.LanguageMap, width : Maybe.Maybe Basics.Int, height : Maybe.Maybe Basics.Int, images : List.List IIIF.Presentation.Image, thumbnail : Maybe.Maybe IIIF.Presentation.Image, viewingLayout : Maybe.Maybe IIIF.Presentation.ViewingLayout }" }, "IIIF.Presentation.HomePage": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.Image": { "args": [], "type": "{ id : IIIF.Image.ImageUri, label : Maybe.Maybe IIIF.Language.LanguageMap, imageType : IIIF.Presentation.ImageType, service : List.List IIIF.Presentation.ServiceTypes, serviceObjects : List.List Json.Decode.Value }" }, "IIIF.Language.LabelValue": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Language.LanguageMap": { "args": [], "type": "List.List IIIF.Language.LanguageValues" }, "IIIF.Presentation.Logo": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes, width : Basics.Int, height : Basics.Int, service : Maybe.Maybe (List.List IIIF.Presentation.ServiceObject) }" }, "IIIF.Presentation.Manifest": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, metadata : List.List IIIF.Language.LabelValue, viewingDirection : IIIF.Presentation.ViewingDirection, summary : Maybe.Maybe IIIF.Language.LanguageMap, viewingLayout : IIIF.Presentation.ViewingLayout, canvases : List.List IIIF.Presentation.Canvas, ranges : Maybe.Maybe (List.List IIIF.Presentation.Range), homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe IIIF.Presentation.Image, provider : Maybe.Maybe (List.List IIIF.Presentation.Provider), thumbnail : Maybe.Maybe IIIF.Presentation.Image, requiredStatement : Maybe.Maybe IIIF.Presentation.RequiredStatement }" }, "IIIF.Presentation.Provider": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, type_ : IIIF.Presentation.ResourceTypes, homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe (List.List IIIF.Presentation.Logo), seeAlso : Maybe.Maybe (List.List IIIF.Presentation.SeeAlso) }" }, "IIIF.Presentation.Range": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.RangeItem, metadata : List.List IIIF.Language.LabelValue }" }, "IIIF.Presentation.RequiredStatement": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Presentation.SeeAlso": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.ServiceObject": { "args": [], "type": "{ id : String.String, serviceType : IIIF.Presentation.ServiceTypes }" }, "Json.Decode.Value": { "args": [], "type": "Json.Encode.Value" }, "IIIF.Presentation.Collection": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, summary : Maybe.Maybe IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.CollectionItem }" }, "IIIF.Image.ImageRequestParameters": { "args": [], "type": "{ host : String.String, prefix : String.String, region : IIIF.Image.ImageRegion, size : IIIF.Image.ImageSize, rotation : IIIF.Image.ImageRotation, quality : IIIF.Image.ImageQuality, format : IIIF.Image.ImageFormat }" }, "IIIF.Image.ImageServerParameters": { "args": [], "type": "{ host : String.String, prefix : String.String }" } }, "unions": { "Msg.Msg": { "args": [], "tags": { "AuthEvent": ["Auth.Event"], "ClientNotifiedFullscreenChanged": ["Basics.Bool"], "ClientNotifiedPageChanged": ["Basics.Int"], "ClientNotifiedPageChangedInstant": ["Basics.Int"], "ClientNotifiedScrollThumbs": [], "ServerRespondedWithCollectionItem": ["String.String", "Result.Result Http.Error IIIF.Presentation.IIIFResource"], "ServerRespondedWithManifestFromCollection": ["String.String", "Result.Result Http.Error IIIF.Presentation.IIIFManifest"], "ServerRespondedWithResource": ["Result.Result Http.Error IIIF.Presentation.IIIFResource"], "UserAppliedFilterJson": [], "UserChangedZoomLevel": ["Basics.Float"], "UserClickedCloseManifestInfo": [], "UserClickedClosePageView": [], "UserClickedCollectionItem": ["String.String"], "UserClickedManifestItem": ["String.String", "String.String"], "UserClickedOpenManifestInfo": [], "UserClickedOpenPageView": [], "UserClickedPageViewImageChoice": ["Basics.Int"], "UserClickedPageViewNext": [], "UserClickedPageViewPrev": [], "UserClickedRange": ["String.String", "Maybe.Maybe Basics.Int"], "UserClickedSaveFilteredImage": [], "UserClickedThumbnail": ["Basics.Int"], "UserClickedZoomIn": [], "UserClickedZoomOut": [], "UserCopiedFilterJson": [], "UserDraggedCollectionSidebarResize": ["Basics.Int"], "UserDraggedSidebarResize": ["Basics.Int"], "UserEndedCollectionSidebarResize": [], "UserEndedSidebarResize": [], "UserResetAllFilters": [], "UserResetAltColourAdjust": [], "UserSelectedContentsIndex": [], "UserSelectedContentsPages": [], "UserStartedCollectionSidebarResize": ["Basics.Int"], "UserStartedSidebarResize": ["Basics.Int"], "UserToggledContents": [], "UserToggledCollectionSidebar": [], "UserToggledFilter": ["Filters.FilterToggle", "Basics.Bool"], "UserToggledFilterGroup": ["String.String"], "UserToggledFullscreen": [], "UserToggledMetadata": [], "UserToggledPageViewFullscreen": [], "UserToggledPageViewSidebar": [], "UserToggledShiftByOne": [], "UserToggledSidebar": [], "UserToggledThumbnails": [], "UserToggledTwoUp": [], "UserUpdatedFilterFloat": ["Filters.FilterFloatValue", "String.String"], "UserUpdatedFilterInt": ["Filters.FilterIntValue", "String.String"], "UserUpdatedFilterJsonInput": ["String.String"], "UserUpdatedFilterString": ["Filters.FilterStringValue", "String.String"], "ViewerLoadingChanged": ["Basics.Bool"], "ViewportChanged": ["Basics.Int", "Basics.Int"] } }, "Basics.Bool": { "args": [], "tags": { "True": [], "False": [] } }, "Http.Error": { "args": [], "tags": { "BadUrl": ["String.String"], "Timeout": [], "NetworkError": [], "BadStatus": ["Basics.Int"], "BadBody": ["String.String"] } }, "Auth.Event": { "args": [], "tags": { "Resolve": ["String.String", "String.String"], "Cancel": ["String.String"], "HttpSucceeded": ["String.String", "Basics.Int", "String.String"], "HttpFailed": ["String.String", "String.String"], "StorageRead": ["String.String", "Basics.Float", "Maybe.Maybe Json.Decode.Value"], "PopupOpened": ["String.String"], "PopupBlocked": ["String.String"], "PopupClosed": ["String.String"], "TokenMessage": ["String.String", "Basics.Float", "Json.Decode.Value"], "TokenFailed": ["String.String", "String.String"], "LogoutOpened": ["String.String"], "LogoutBlocked": ["String.String"], "LogoutClosed": ["String.String"], "UserCancelled": [], "Destroyed": [] } }, "Filters.FilterFloatValue": { "args": [], "tags": { "FloatColourReplaceBlend": [], "FloatContrast": [], "FloatGamma": [], "FloatNormalizeStrength": [], "FloatPseudoColourBlue": [], "FloatPseudoColourGreen": [], "FloatPseudoColourRed": [], "FloatUnsharpAmount": [] } }, "Filters.FilterIntValue": { "args": [], "tags": { "IntAdaptiveOffset": [], "IntAdaptiveWindow": [], "IntAltRedGamma": [], "IntAltRedSigmoid": [], "IntAltRedVibrance": [], "IntAltRedHue": [], "IntAltRedHueWindow": [], "IntAltGreenGamma": [], "IntAltGreenSigmoid": [], "IntAltGreenHue": [], "IntAltGreenHueWindow": [], "IntAltGreenVibrance": [], "IntAltBlueGamma": [], "IntAltBlueSigmoid": [], "IntAltBlueHue": [], "IntAltBlueHueWindow": [], "IntAltBlueVibrance": [], "IntBrightness": [], "IntCcBlue": [], "IntCcGreen": [], "IntCcRed": [], "IntColourmapCenter": [], "IntColourReplaceTolerance": [], "IntPcaHue": [], "IntHue": [], "IntMorphKernel": [], "IntRotation": [], "IntSaturation": [], "IntThreshold": [], "IntVibrance": [] } }, "Filters.FilterStringValue": { "args": [], "tags": { "StringColourmapPreset": [], "StringColourReplaceSource": [], "StringColourReplaceTarget": [], "StringConvolutionPreset": [], "StringPcaMode": [], "StringMorphOperation": [], "StringPseudoColourMode": [] } }, "Filters.FilterToggle": { "args": [], "tags": { "ToggleAdaptive": [], "ToggleAltBlueGamma": [], "ToggleAltBlueHue": [], "ToggleAltBlueSigmoid": [], "ToggleAltBlueVibrance": [], "ToggleAltGreenGamma": [], "ToggleAltGreenHue": [], "ToggleAltGreenSigmoid": [], "ToggleAltGreenVibrance": [], "ToggleAltRedGamma": [], "ToggleAltRedHue": [], "ToggleAltRedSigmoid": [], "ToggleAltRedVibrance": [], "ToggleBrightness": [], "ToggleCcBlue": [], "ToggleCcGreen": [], "ToggleCcRed": [], "ToggleColourmap": [], "ToggleColourReplace": [], "ToggleColourReplacePreserveLum": [], "ToggleContrast": [], "ToggleConvolution": [], "ToggleFlip": [], "ToggleGamma": [], "ToggleGlobalPca": [], "ToggleGrayscale": [], "ToggleHue": [], "ToggleInvert": [], "ToggleMorph": [], "ToggleNormalize": [], "TogglePseudoColour": [], "ToggleSaturation": [], "ToggleThreshold": [], "ToggleUnsharp": [], "ToggleVibrance": [] } }, "Basics.Float": { "args": [], "tags": { "Float": [] } }, "IIIF.Presentation.IIIFManifest": { "args": [], "tags": { "IIIFManifest": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Manifest"] } }, "IIIF.Presentation.IIIFResource": { "args": [], "tags": { "ResourceManifest": ["IIIF.Presentation.IIIFManifest"], "ResourceCollection": ["IIIF.Presentation.IIIFCollection"], "ResourceCanvas": ["IIIF.Presentation.IIIFCanvas"], "ResourceRange": ["IIIF.Presentation.IIIFRange"] } }, "Basics.Int": { "args": [], "tags": { "Int": [] } }, "Maybe.Maybe": { "args": ["a"], "tags": { "Just": ["a"], "Nothing": [] } }, "Result.Result": { "args": ["error", "value"], "tags": { "Ok": ["value"], "Err": ["error"] } }, "String.String": { "args": [], "tags": { "String": [] } }, "IIIF.Presentation.IIIFCanvas": { "args": [], "tags": { "IIIFCanvas": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Canvas"] } }, "IIIF.Presentation.IIIFCollection": { "args": [], "tags": { "IIIFCollection": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Collection"] } }, "IIIF.Presentation.IIIFRange": { "args": [], "tags": { "IIIFRange": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Range"] } }, "IIIF.Version.IIIFVersion": { "args": [], "tags": { "IIIFV2": [], "IIIFV3": [] } }, "IIIF.Presentation.ImageType": { "args": [], "tags": { "PrimaryImage": [], "ChoiceImage": [] } }, "IIIF.Image.ImageUri": { "args": [], "tags": { "InfoUri": ["IIIF.Image.ImageServerParameters"], "ImageUri": ["IIIF.Image.ImageRequestParameters"], "StaticImageUri": ["IIIF.Image.ImageServerParameters"] } }, "IIIF.Language.LanguageValues": { "args": [], "tags": { "LanguageValues": ["IIIF.Language.Language", "List.List String.String"] } }, "List.List": { "args": ["a"], "tags": {} }, "IIIF.Presentation.MediaFormats": { "args": [], "tags": { "ImageJpeg": [], "OtherFormat": ["String.String"] } }, "IIIF.Presentation.RangeItem": { "args": [], "tags": { "RangeCanvas": ["String.String"], "RangeRange": ["IIIF.Presentation.Range"] } }, "IIIF.Presentation.ResourceTypes": { "args": [], "tags": { "Video": [], "OtherResource": ["String.String"] } }, "IIIF.Presentation.ServiceTypes": { "args": [], "tags": { "ImageService1": [], "ImageService2": [], "ImageService3": [], "SearchService1": [], "AutoCompleteService1": [], "AuthTokenService1": [], "AuthLogoutService1": [], "UnknownService": [] } }, "Json.Encode.Value": { "args": [], "tags": { "Value": [] } }, "IIIF.Presentation.ViewingDirection": { "args": [], "tags": { "LeftToRight": [], "RightToLeft": [], "TopToBottom": [], "BottomToTop": [] } }, "IIIF.Presentation.ViewingLayout": { "args": [], "tags": { "LayoutV2": ["IIIF.Presentation.ViewingHint"], "LayoutV3": ["List.List IIIF.Presentation.Behavior"] } }, "IIIF.Presentation.Behavior": { "args": [], "tags": { "AutoAdvanceBehavior": [], "NoAutoAdvanceBehavior": [], "RepeatBehavior": [], "NoRepeatBehavior": [], "UnorderedBehavior": [], "IndividualsBehavior": [], "ContinuousBehavior": [], "PagedBehavior": [], "FacingPagesBehavior": [], "NonPagedBehavior": [], "MultiPartBehavior": [], "TogetherBehavior": [], "SequenceBehavior": [], "ThumbnailNavBehavior": [], "NoNavBehavior": [], "HiddenBehavior": [] } }, "IIIF.Presentation.CollectionItem": { "args": [], "tags": { "NestedCollection": ["IIIF.Presentation.Collection"], "ManifestItem": ["IIIF.Presentation.Manifest"] } }, "IIIF.Image.ImageFormat": { "args": [], "tags": { "JpegFormat": [], "TiffFormat": [], "PngFormat": [], "Jp2Format": [], "GifFormat": [], "PdfFormat": [], "WebpFormat": [] } }, "IIIF.Image.ImageQuality": { "args": [], "tags": { "ColorQuality": [], "GrayQuality": [], "BiTonalQuality": [], "DefaultQuality": [], "NativeQuality": [] } }, "IIIF.Image.ImageRegion": { "args": [], "tags": { "FullRegion": [], "SquareRegion": [], "SizeRegion": ["{ x : Basics.Int, y : Basics.Int, w : Basics.Int, h : Basics.Int }"], "PctSizeRegion": ["{ x : Basics.Float, y : Basics.Float, w : Basics.Float, h : Basics.Float }"] } }, "IIIF.Image.ImageRotation": { "args": [], "tags": { "NormalRotation": ["Basics.Float"], "MirroredRotation": ["Basics.Float"] } }, "IIIF.Image.ImageSize": { "args": [], "tags": { "MaxSize": [], "ExactMaxSize": [], "WidthOnlySize": ["Basics.Int"], "ExactWidthOnlySize": ["Basics.Int"], "HeightOnlySize": ["Basics.Int"], "ExactHeightOnlySize": ["Basics.Int"], "PercentSize": ["Basics.Float"], "ExactPercentSize": ["Basics.Float"], "WidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"] } }, "IIIF.Language.Language": { "args": [], "tags": { "LanguageCode": ["String.String"], "None": [], "Default": [] } }, "IIIF.Presentation.ViewingHint": { "args": [], "tags": { "PagedHint": [], "IndividualsHint": [], "ContinuousHint": [], "MultiPartHint": [], "NonPagedHint": [], "TopHint": [], "FacingPagesHint": [] } } } } }) } };
+
+  // src/auth.ts
+  var STORAGE_PREFIX = "diva:iiif-auth2:";
+  var errorMessage = (error) => error instanceof Error ? error.message : "Authorization request failed.";
+  var infoJsonSuffix = /\/info\.json(?:[?#].*)?$/;
+  var descriptorKey = (source) => JSON.stringify([source.url, source.isStatic]);
+  var cancelled = () => new DOMException("The operation was cancelled.", "AbortError");
+  var cloneResolvedTileSource = (source) => typeof source === "string" ? source : { ...source };
+  var normalizeInfoJsonServiceIds = (infoJson) => {
+    const normalized = { ...infoJson };
+    for (const key of ["id", "@id"]) {
+      const value = normalized[key];
+      if (typeof value === "string" && infoJsonSuffix.test(value)) {
+        normalized[key] = value.replace(infoJsonSuffix, "");
+      }
+    }
+    return normalized;
+  };
+  var AuthBrowser = class {
+    constructor(ports, root) {
+      this.pending = /* @__PURE__ */ new Map();
+      this.inflight = /* @__PURE__ */ new Map();
+      this.resolutionCache = /* @__PURE__ */ new Map();
+      this.requests = /* @__PURE__ */ new Map();
+      this.frames = /* @__PURE__ */ new Map();
+      this.popups = /* @__PURE__ */ new Map();
+      this.logoutPopups = /* @__PURE__ */ new Map();
+      this.nextRequest = 0;
+      this.nextConsumer = 0;
+      this.destroyed = false;
+      this.ports = ports;
+      this.root = root;
+      this.clickHandler = this.handleClick.bind(this);
+      root.addEventListener("click", this.clickHandler, true);
+      ports.tileSourceResolutionSucceeded.subscribe((result) => this.succeed(result));
+      ports.tileSourceResolutionFailed.subscribe((result) => this.fail(result.requestId, result.message));
+      ports.authHttpRequested.subscribe((request) => void this.fetch(request));
+      ports.authHttpCancelled.subscribe((id) => this.cancelFetch(id));
+      ports.authStorageRequested.subscribe((request) => this.storage(request));
+      ports.authTokenFrameRequested.subscribe((request) => this.startFrame(request));
+      ports.authTokenFrameCancelled.subscribe((flowId) => this.cancelFrame(flowId));
+    }
+    resolve(source, signal) {
+      if (this.destroyed || signal.aborted) {
+        return Promise.reject(cancelled());
+      }
+      const key = descriptorKey(source);
+      const cached = this.resolutionCache.get(source.sourceId);
+      if (cached && cached.descriptorKey !== key) {
+        this.invalidateSource(source.sourceId);
+      } else if (cached) {
+        const resolution = cached.resolutions.get(cached.activeState);
+        if (resolution !== void 0) {
+          return Promise.resolve(cloneResolvedTileSource(resolution));
+        }
+      }
+      let active = this.inflight.get(source.sourceId);
+      if (active && active.descriptorKey !== key) {
+        this.invalidateSource(source.sourceId);
+        active = void 0;
+      }
+      if (!active) {
+        active = this.startResolution(source, key);
+      }
+      return this.consume(active, signal);
+    }
+    registerSources(_sources) {
+      Array.from(this.inflight.values()).forEach((active) => this.cancelResolution(active));
+      this.resolutionCache.clear();
+      this.requests.forEach((controller) => controller.abort());
+      this.requests.clear();
+      Array.from(this.frames.keys()).forEach((flowId) => this.cancelFrame(flowId));
+      this.popups.forEach((popup) => {
+        clearInterval(popup.timer);
+        popup.window.close();
+      });
+      this.popups.clear();
+      this.logoutPopups.forEach((popup) => {
+        clearInterval(popup.timer);
+        popup.window.close();
+      });
+      this.logoutPopups.clear();
+    }
+    invalidateSources(sourceIds) {
+      sourceIds.forEach((sourceId) => this.invalidateSource(sourceId));
+    }
+    destroy() {
+      if (this.destroyed) {
+        return;
+      }
+      this.destroyed = true;
+      this.root.removeEventListener("click", this.clickHandler, true);
+      this.ports.authDestroyed.send(null);
+      this.requests.forEach((controller) => controller.abort());
+      this.requests.clear();
+      this.frames.forEach((_frame, flowId) => this.cancelFrame(flowId));
+      this.popups.forEach((popup) => {
+        clearInterval(popup.timer);
+        popup.window.close();
+      });
+      this.popups.clear();
+      this.logoutPopups.forEach((popup) => {
+        clearInterval(popup.timer);
+        popup.window.close();
+      });
+      this.logoutPopups.clear();
+      this.pending.forEach((pending) => pending.reject(new DOMException("The viewer was destroyed.", "AbortError")));
+      this.pending.clear();
+      this.inflight.clear();
+      this.resolutionCache.clear();
+    }
+    succeed(result) {
+      const pending = this.pending.get(result.requestId);
+      if (!pending || this.destroyed) {
+        return;
+      }
+      this.pending.delete(result.requestId);
+      const active = this.inflight.get(pending.sourceId);
+      if ((active == null ? void 0 : active.requestId) === result.requestId) {
+        this.inflight.delete(pending.sourceId);
+      }
+      const credentials = result.credentialed ? "use-credentials" : "Anonymous";
+      let tileSource;
+      if (result.infoJson && typeof result.infoJson === "object" && !result.isStatic) {
+        tileSource = {
+          ...normalizeInfoJsonServiceIds(result.infoJson),
+          crossOriginPolicy: credentials,
+          ajaxWithCredentials: result.credentialed
+        };
+      } else if (result.isStatic) {
+        tileSource = { type: "image", url: result.url, crossOriginPolicy: credentials, ajaxWithCredentials: result.credentialed };
+      } else if (result.credentialed) {
+        tileSource = { url: result.url, crossOriginPolicy: credentials, ajaxWithCredentials: true };
+      } else {
+        tileSource = result.url;
+      }
+      const state = result.credentialed ? "credentialed" : "anonymous";
+      const cached = this.resolutionCache.get(pending.sourceId);
+      const resolutions = (cached == null ? void 0 : cached.descriptorKey) === pending.descriptorKey ? cached.resolutions : /* @__PURE__ */ new Map();
+      resolutions.set(state, tileSource);
+      this.resolutionCache.set(pending.sourceId, { descriptorKey: pending.descriptorKey, activeState: state, resolutions });
+      pending.resolve(tileSource);
+    }
+    fail(requestId, message) {
+      const pending = this.pending.get(requestId);
+      if (!pending) {
+        return;
+      }
+      this.pending.delete(requestId);
+      const active = this.inflight.get(pending.sourceId);
+      if ((active == null ? void 0 : active.requestId) === requestId) {
+        this.inflight.delete(pending.sourceId);
+      }
+      pending.reject(new Error(message));
+    }
+    startResolution(source, key) {
+      const requestId = `tile-source-${this.nextRequest += 1}`;
+      let resolveShared;
+      let rejectShared;
+      const promise = new Promise((resolve, reject) => {
+        resolveShared = resolve;
+        rejectShared = reject;
+      });
+      const active = { requestId, descriptorKey: key, promise, consumers: /* @__PURE__ */ new Set() };
+      this.pending.set(requestId, { sourceId: source.sourceId, descriptorKey: key, resolve: resolveShared, reject: rejectShared });
+      this.inflight.set(source.sourceId, active);
+      this.ports.resolveTileSourceRequested.send({ requestId, sourceId: source.sourceId });
+      return active;
+    }
+    consume(active, signal) {
+      const consumerId = this.nextConsumer += 1;
+      active.consumers.add(consumerId);
+      return new Promise((resolve, reject) => {
+        let settled = false;
+        const finish = () => {
+          signal.removeEventListener("abort", abort);
+          active.consumers.delete(consumerId);
+        };
+        const abort = () => {
+          if (settled) {
+            return;
+          }
+          settled = true;
+          finish();
+          reject(cancelled());
+          if (active.consumers.size === 0) {
+            this.cancelResolution(active);
+          }
+        };
+        signal.addEventListener("abort", abort, { once: true });
+        active.promise.then(
+          (source) => {
+            if (!settled) {
+              settled = true;
+              finish();
+              resolve(cloneResolvedTileSource(source));
+            }
+          },
+          (error) => {
+            if (!settled) {
+              settled = true;
+              finish();
+              reject(error);
+            }
+          }
+        );
+      });
+    }
+    cancelResolution(active) {
+      var _a;
+      const pending = this.pending.get(active.requestId);
+      if (!pending) {
+        return;
+      }
+      this.pending.delete(active.requestId);
+      if (((_a = this.inflight.get(pending.sourceId)) == null ? void 0 : _a.requestId) === active.requestId) {
+        this.inflight.delete(pending.sourceId);
+      }
+      this.ports.resolveTileSourceCancelled.send(active.requestId);
+      pending.reject(cancelled());
+    }
+    invalidateSource(sourceId) {
+      this.resolutionCache.delete(sourceId);
+      const active = this.inflight.get(sourceId);
+      if (active) {
+        this.cancelResolution(active);
+      }
+    }
+    async fetch(request) {
+      const controller = new AbortController();
+      this.requests.set(request.id, controller);
+      try {
+        const response = await fetch(request.url, {
+          mode: "cors",
+          credentials: request.withCredentials ? "include" : "omit",
+          signal: controller.signal,
+          headers: request.bearer ? { Authorization: `Bearer ${request.bearer}` } : void 0
+        });
+        const body = await response.text();
+        if (!this.destroyed) {
+          this.ports.authHttpResponded.send({ id: request.id, status: response.status, body });
+        }
+      } catch (error) {
+        if (!controller.signal.aborted && !this.destroyed) {
+          this.ports.authHttpFailed.send({ id: request.id, message: errorMessage(error) });
+        }
+      } finally {
+        this.requests.delete(request.id);
+      }
+    }
+    cancelFetch(id) {
+      var _a;
+      (_a = this.requests.get(id)) == null ? void 0 : _a.abort();
+      this.requests.delete(id);
+    }
+    storage(request) {
+      const key = STORAGE_PREFIX + encodeURIComponent(request.key);
+      try {
+        if (request.action === "write") {
+          sessionStorage.setItem(key, JSON.stringify({ accessToken: request.accessToken, expiresAt: request.expiresAt }));
+          return;
+        }
+        if (request.action === "remove") {
+          sessionStorage.removeItem(key);
+          return;
+        }
+        const raw = sessionStorage.getItem(key);
+        this.ports.authStorageResponded.send({ flowId: request.flowId, now: Date.now(), value: raw ? JSON.parse(raw) : null });
+      } catch (_) {
+        if (request.action === "read") {
+          this.ports.authStorageResponded.send({ flowId: request.flowId, now: Date.now(), value: null });
+        }
+      }
+    }
+    handleClick(event) {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+      const logoutButton = target.closest("button[data-diva-auth-logout][data-diva-auth-url]");
+      if (logoutButton && this.root.contains(logoutButton)) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.startLogout(logoutButton);
+        return;
+      }
+      const button = target.closest("button[data-diva-auth-flow][data-diva-auth-url]");
+      if (!button || !this.root.contains(button)) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      const flowId = button.dataset.divaAuthFlow;
+      const url = new URL(button.dataset.divaAuthUrl, location.href);
+      url.searchParams.set("origin", location.origin);
+      const popup = window.open(url.href, "_blank");
+      if (!popup) {
+        this.ports.authPopupChanged.send({ flowId, status: "blocked" });
+        return;
+      }
+      this.ports.authPopupChanged.send({ flowId, status: "opened" });
+      const started = Date.now();
+      const timer = window.setInterval(() => {
+        if (popup.closed) {
+          clearInterval(timer);
+          this.popups.delete(flowId);
+          this.ports.authPopupChanged.send({ flowId, status: "closed" });
+        } else if (Date.now() - started > 10 * 60 * 1e3) {
+          popup.close();
+          clearInterval(timer);
+          this.popups.delete(flowId);
+          this.ports.authTokenFailed.send({ flowId, message: "Sign-in timed out." });
+        }
+      }, 250);
+      this.popups.set(flowId, { window: popup, timer });
+    }
+    startLogout(button) {
+      const sessionId = button.dataset.divaAuthLogout;
+      const url = new URL(button.dataset.divaAuthUrl, location.href);
+      const popup = window.open(url.href, "_blank");
+      if (!popup) {
+        this.ports.authLogoutChanged.send({ sessionId, status: "blocked" });
+        return;
+      }
+      this.ports.authLogoutChanged.send({ sessionId, status: "opened" });
+      const timer = window.setInterval(() => {
+        if (!popup.closed) {
+          return;
+        }
+        clearInterval(timer);
+        this.logoutPopups.delete(sessionId);
+        this.ports.authLogoutChanged.send({ sessionId, status: "closed" });
+      }, 250);
+      this.logoutPopups.set(sessionId, { window: popup, timer });
+    }
+    startFrame(request) {
+      this.cancelFrame(request.flowId);
+      const url = new URL(request.url, location.href);
+      url.searchParams.set("messageId", request.messageId);
+      url.searchParams.set("origin", location.origin);
+      const iframe = document.createElement("iframe");
+      iframe.hidden = true;
+      iframe.src = url.href;
+      const receive = (event) => {
+        if (event.source !== iframe.contentWindow || event.origin !== url.origin || !event.data || typeof event.data !== "object") {
+          return;
+        }
+        if (event.data.messageId !== request.messageId) {
+          return;
+        }
+        this.ports.authTokenMessage.send({ flowId: request.flowId, now: Date.now(), value: event.data });
+      };
+      window.addEventListener("message", receive);
+      const timeout = window.setTimeout(() => {
+        this.cancelFrame(request.flowId);
+        this.ports.authTokenFailed.send({ flowId: request.flowId, message: "The token service did not respond." });
+      }, 3e4);
+      this.frames.set(request.flowId, { element: iframe, timeout, receive });
+      document.body.append(iframe);
+    }
+    cancelFrame(flowId) {
+      const frame = this.frames.get(flowId);
+      if (!frame) {
+        return;
+      }
+      clearTimeout(frame.timeout);
+      window.removeEventListener("message", frame.receive);
+      frame.element.remove();
+      this.frames.delete(flowId);
+    }
+  };
 
   // src/filters.ts
   function setFilterOptions(viewer, options) {
@@ -29149,317 +32895,6 @@
     }
   };
 
-  // src/auth.ts
-  var AUTH_CONTEXTS = /* @__PURE__ */ new Set([
-    "http://iiif.io/api/auth/2/context.json",
-    "https://iiif.io/api/auth/2/context.json"
-  ]);
-  var STORAGE_PREFIX = "diva:iiif-auth2:";
-  var UNSUPPORTED_PROFILES = /* @__PURE__ */ new Set(["kiosk", "external"]);
-  var UNSUPPORTED_TYPES = ["AuthLogoutService2", "AuthAccessService1", "AuthTokenService1", "AuthCookieService1"];
-  var isObject = (value) => Boolean(value) && typeof value === "object";
-  var idOf = (value) => String(value.id || value["@id"] || "");
-  var typeOf = (value) => String(value.type || value["@type"] || "");
-  var profileOf = (value) => String(value.profile || "").toLowerCase();
-  var hasType = (service, suffix) => typeOf(service).toLowerCase().includes(suffix.toLowerCase());
-  var contextsOf = (value) => Array.isArray(value["@context"]) ? value["@context"] : [value["@context"] || value.context];
-  var hasContext = (value) => contextsOf(value).some((context) => AUTH_CONTEXTS.has(String(context)));
-  var servicesOf = (value) => {
-    const services = value.service;
-    return Array.isArray(services) ? services.filter(isObject) : isObject(services) ? [services] : [];
-  };
-  var localized = (value, fallback) => {
-    if (typeof value === "string") return value;
-    if (!isObject(value)) return fallback;
-    const language = typeof navigator === "undefined" ? "en" : navigator.language;
-    for (const key of [language, language.split("-")[0], "en", "none"]) {
-      const candidate = value[key];
-      if (Array.isArray(candidate) && typeof candidate[0] === "string") return candidate[0];
-    }
-    for (const candidate of Object.values(value))
-      if (Array.isArray(candidate) && typeof candidate[0] === "string") return candidate[0];
-    return fallback;
-  };
-  var errorText = (heading, note, fallback) => [localized(heading, ""), localized(note, "")].filter(Boolean).join(" ") || fallback;
-  var findAuthServices = (root) => {
-    const probes = [];
-    const findProbes = (value) => {
-      if (Array.isArray(value)) return value.forEach(findProbes);
-      if (!isObject(value)) return;
-      if (hasType(value, "AuthProbeService2")) probes.push(value);
-      servicesOf(value).forEach(findProbes);
-    };
-    findProbes(root);
-    for (const probe of probes) {
-      const result = { probe };
-      const visitAssociation = (value) => {
-        if (!result.access && hasType(value, "AuthAccessService2") && profileOf(value) === "active") result.access = value;
-        if (!result.token && hasType(value, "AuthAccessTokenService2")) result.token = value;
-        servicesOf(value).forEach(visitAssociation);
-      };
-      visitAssociation(probe);
-      if (result.access && result.token) return result;
-    }
-    return probes.length > 0 ? { probe: probes[0] } : {};
-  };
-  var rejectUnsupported = (root) => {
-    const visit = (value) => {
-      if (Array.isArray(value)) return value.forEach(visit);
-      if (!isObject(value)) return;
-      const profile = profileOf(value);
-      if (hasType(value, "AuthAccessService2") && UNSUPPORTED_PROFILES.has(profile))
-        throw new Error(`IIIF Auth 2 '${profile}' access is not supported; only the 'active' profile is supported.`);
-      const unsupported = UNSUPPORTED_TYPES.find((type) => hasType(value, type));
-      if (unsupported) throw new Error(`Unsupported authorization service: ${unsupported}.`);
-      if (value.location || value.substitute || value.items && hasType(value, "AuthProbeResult2"))
-        throw new Error("IIIF Auth redirect, substitute, and tiered access flows are not supported.");
-      servicesOf(value).forEach(visit);
-    };
-    visit(root);
-  };
-  var findResource = (root, sourceUrl) => {
-    const wanted = sourceUrl.replace(/\/info\.json(?:\?.*)?$/, "").replace(/\/$/, "");
-    let found = null;
-    const visit = (value) => {
-      if (found || !value) return;
-      if (Array.isArray(value)) return value.forEach(visit);
-      if (!isObject(value)) return;
-      const id = idOf(value).replace(/\/$/, "");
-      if (id === wanted || id === sourceUrl) {
-        found = value;
-        return;
-      }
-      Object.values(value).forEach(visit);
-    };
-    visit(root);
-    return found;
-  };
-  var parseServicesJson = (servicesJson) => {
-    if (!servicesJson) return null;
-    try {
-      return JSON.parse(servicesJson);
-    } catch (_) {
-      return null;
-    }
-  };
-  var associationKey = (services) => [services.probe, services.access, services.token].map((service) => service ? idOf(service) : "").join("|");
-  var tokenKey = (probe, token) => STORAGE_PREFIX + encodeURIComponent(`${idOf(probe)}|${idOf(token)}`);
-  var removeToken = (probe, token) => {
-    try {
-      sessionStorage.removeItem(tokenKey(probe, token));
-    } catch (_) {
-    }
-  };
-  var readToken = (probe, tokenService) => {
-    try {
-      const raw = sessionStorage.getItem(tokenKey(probe, tokenService));
-      if (!raw) return null;
-      const token = JSON.parse(raw);
-      if (!token.accessToken || token.expiresAt !== void 0 && token.expiresAt <= Date.now()) {
-        removeToken(probe, tokenService);
-        return null;
-      }
-      return token;
-    } catch (_) {
-      return null;
-    }
-  };
-  var regularSource = (source) => source.isStatic ? { type: "image", url: source.url, crossOriginPolicy: "Anonymous" } : source.url;
-  var abortError = () => new DOMException("The operation was cancelled.", "AbortError");
-  var throwIfAborted = (signal) => {
-    if (signal.aborted) throw abortError();
-  };
-  var requestProbe = async (service, signal, token) => {
-    const response = await fetch(idOf(service), {
-      mode: "cors",
-      credentials: "omit",
-      signal,
-      headers: token ? { Authorization: `Bearer ${token}` } : void 0
-    });
-    if (!response.ok) throw new Error(`Probe service failed (${response.status}).`);
-    const data = await response.json();
-    if (!isObject(data) || !hasContext(data) || typeOf(data) !== "AuthProbeResult2" || typeof data.status !== "number")
-      throw new Error("Probe service returned an invalid response.");
-    rejectUnsupported(data);
-    return { status: data.status, heading: data.heading, note: data.note };
-  };
-  var dialog = (access, signal, error) => new Promise((resolve, reject) => {
-    const overlay = document.createElement("div");
-    overlay.className = "diva-auth-overlay";
-    overlay.setAttribute("role", "dialog");
-    overlay.setAttribute("aria-modal", "true");
-    const box = document.createElement("div");
-    box.className = "diva-auth-dialog";
-    const heading = document.createElement("h2");
-    heading.textContent = localized(access.heading, "Sign in required");
-    const note = document.createElement("p");
-    note.textContent = error || localized(access.note, "Sign in to view this image.");
-    const confirm = document.createElement("button");
-    confirm.type = "button";
-    confirm.textContent = error ? "Retry" : localized(access.confirmLabel || access.label, "Sign in");
-    const cancel = document.createElement("button");
-    cancel.type = "button";
-    cancel.textContent = "Cancel";
-    const finish = (cancelled) => {
-      signal.removeEventListener("abort", onAbort);
-      overlay.remove();
-      cancelled ? reject(abortError()) : resolve();
-    };
-    const onAbort = () => finish(true);
-    confirm.addEventListener("click", () => finish(false), { once: true });
-    cancel.addEventListener("click", () => finish(true), { once: true });
-    signal.addEventListener("abort", onAbort, { once: true });
-    box.append(heading, note, confirm, cancel);
-    overlay.append(box);
-    document.body.append(overlay);
-    confirm.focus();
-  });
-  var waitForPopup = (popup, signal) => new Promise((resolve, reject) => {
-    const started = Date.now();
-    const onAbort = () => {
-      popup.close();
-      finish(abortError());
-    };
-    const timer = window.setInterval(() => {
-      if (popup.closed) return finish();
-      if (Date.now() - started > 10 * 60 * 1e3) {
-        popup.close();
-        finish(new Error("Sign-in timed out."));
-      }
-    }, 250);
-    const finish = (error) => {
-      clearInterval(timer);
-      signal.removeEventListener("abort", onAbort);
-      error ? reject(error) : resolve();
-    };
-    signal.addEventListener("abort", onAbort, { once: true });
-  });
-  var requestToken = (service, signal) => new Promise((resolve, reject) => {
-    const url = new URL(idOf(service), location.href);
-    const messageId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
-    url.searchParams.set("messageId", messageId);
-    url.searchParams.set("origin", location.origin);
-    const iframe = document.createElement("iframe");
-    iframe.hidden = true;
-    iframe.src = url.href;
-    const timeout = window.setTimeout(() => finish(new Error("The token service did not respond.")), 3e4);
-    const finish = (error, token) => {
-      clearTimeout(timeout);
-      signal.removeEventListener("abort", onAbort);
-      window.removeEventListener("message", receive);
-      iframe.remove();
-      error ? reject(error) : resolve(token);
-    };
-    const onAbort = () => finish(abortError());
-    const receive = (event) => {
-      if (event.source !== iframe.contentWindow || event.origin !== url.origin || !isObject(event.data)) return;
-      const data = event.data;
-      if (data.messageId !== messageId || !hasContext(data)) return;
-      if (typeOf(data) === "AuthAccessTokenError2")
-        return finish(new Error(errorText(
-          data.heading || service.errorHeading,
-          data.note || service.errorNote,
-          `The token service refused access (${String(data.profile || "unknown")}).`
-        )));
-      if (typeOf(data) !== "AuthAccessToken2" || typeof data.accessToken !== "string")
-        return finish(new Error("The token service returned an invalid message."));
-      const expiresIn = typeof data.expiresIn === "number" ? data.expiresIn : void 0;
-      finish(void 0, { accessToken: data.accessToken, expiresAt: expiresIn === void 0 ? void 0 : Date.now() + expiresIn * 1e3 });
-    };
-    signal.addEventListener("abort", onAbort, { once: true });
-    window.addEventListener("message", receive);
-    document.body.append(iframe);
-  });
-  var AuthCoordinator = class {
-    constructor(objectData) {
-      this.controller = new AbortController();
-      this.attempts = /* @__PURE__ */ new Map();
-      this.manifest = this.loadJson(objectData).catch(() => null);
-    }
-    destroy() {
-      this.controller.abort();
-      this.attempts.clear();
-      document.querySelectorAll(".diva-auth-overlay").forEach((element) => element.remove());
-    }
-    async loadJson(value) {
-      const trimmed = value.trim();
-      if (trimmed.startsWith("{") || trimmed.startsWith("[")) return JSON.parse(trimmed);
-      const response = await fetch(value, { headers: { Accept: "application/ld+json, application/json" }, signal: this.controller.signal });
-      if (!response.ok) throw new Error(`Request failed (${response.status})`);
-      return response.json();
-    }
-    async resolve(source, callerSignal) {
-      throwIfAborted(this.controller.signal);
-      if (callerSignal == null ? void 0 : callerSignal.aborted) throw abortError();
-      let info = null;
-      if (!source.isStatic) {
-        const response = await fetch(source.url, { mode: "cors", credentials: "omit", signal: callerSignal || this.controller.signal });
-        if (!response.ok && response.status !== 401 && response.status !== 403)
-          throw new Error(`Image information request failed (${response.status}).`);
-        try {
-          info = await response.json();
-        } catch (_) {
-          info = null;
-        }
-      }
-      const manifest = await this.manifest;
-      throwIfAborted(this.controller.signal);
-      const roots = [parseServicesJson(source.servicesJson), findResource(manifest, source.url), info];
-      rejectUnsupported(roots);
-      const services = findAuthServices(roots);
-      if (!services.probe) return regularSource(source);
-      const key = associationKey(services);
-      let attempt = this.attempts.get(key);
-      if (!attempt) {
-        attempt = this.authorize(services).finally(() => this.attempts.delete(key));
-        this.attempts.set(key, attempt);
-      }
-      const bearer = await attempt;
-      if (!bearer) return regularSource(source);
-      return source.isStatic ? { type: "image", url: source.url, crossOriginPolicy: "use-credentials", ajaxWithCredentials: true } : { url: source.url, crossOriginPolicy: "use-credentials", ajaxWithCredentials: true };
-    }
-    async authorize(services) {
-      const signal = this.controller.signal;
-      const probe = services.probe;
-      if ((await requestProbe(probe, signal)).status === 200) return null;
-      if (!services.access || !services.token)
-        throw new Error("No supported Auth 2 active sign-in service was provided.");
-      const cached = readToken(probe, services.token);
-      if (cached) {
-        if ((await requestProbe(probe, signal, cached.accessToken)).status === 200) return cached.accessToken;
-        removeToken(probe, services.token);
-      }
-      let previousError;
-      for (let attempt = 0; attempt < 2; attempt += 1) {
-        try {
-          await dialog(services.access, signal, previousError);
-          previousError = void 0;
-          const accessUrl = new URL(idOf(services.access), location.href);
-          accessUrl.searchParams.set("origin", location.origin);
-          const popup = window.open(accessUrl.href, "_blank");
-          if (!popup) throw new Error("The sign-in window was blocked. Allow popups and retry.");
-          await waitForPopup(popup, signal);
-          const token = await requestToken(services.token, signal);
-          sessionStorage.setItem(tokenKey(probe, services.token), JSON.stringify(token));
-          const finalProbe = await requestProbe(probe, signal, token.accessToken);
-          if (finalProbe.status !== 200) {
-            removeToken(probe, services.token);
-            throw new Error(errorText(
-              finalProbe.heading || probe.errorHeading,
-              finalProbe.note || probe.errorNote,
-              `Access was not granted (${finalProbe.status}).`
-            ));
-          }
-          return token.accessToken;
-        } catch (error) {
-          if (error instanceof DOMException && error.name === "AbortError") throw error;
-          previousError = error instanceof Error ? error.message : "Authorization failed.";
-        }
-      }
-      throw new Error(previousError || "Authorization failed.");
-    }
-  };
-
   // src/diva.ts
   var DIVA_STYLE_ID = "diva-inline-styles";
   var injectStyles = (cssText) => {
@@ -29479,15 +32914,19 @@
   var Diva = class {
     constructor(rootId, flags) {
       this.mainViewer = null;
+      this.pendingViewerMethods = /* @__PURE__ */ new Map();
+      this.viewerMethodRafId = null;
+      this.viewerMethodAttempts = 0;
       this.filterViewer = null;
       this.filterViewerElement = null;
       this.filterOptions = null;
       this.filterViewerFlipped = false;
-      this.currentFilterTileSource = null;
+      this.currentFilterSourceKey = null;
       this.pendingFilterPreview = null;
       this.filterPreviewVersion = 0;
       this.filterPreviewRetries = 0;
       this.filterPreviewRafId = null;
+      this.filterPreviewController = null;
       this.isDestroyed = false;
       const root = document.getElementById(rootId);
       if (!root) {
@@ -29503,7 +32942,6 @@
       }
       this.rootId = rootId;
       this.root = root;
-      this.auth = new AuthCoordinator(flags.objectData);
       this.isDestroyed = false;
       this.handlePageChangeBound = this.handlePageChange.bind(this);
       this.handleZoomChangeBound = this.handleZoomChange.bind(this);
@@ -29523,10 +32961,12 @@
         }
       });
       this.root = this.getConnectedRoot();
+      this.auth = new AuthBrowser(this.app.ports, this.root);
+      this.tileSourceResolver = (source, signal) => this.auth.resolve(source, signal);
       const connectedRootAny = this.root;
       connectedRootAny.__divaInstance = this;
       this.bindPorts();
-      this.callViewerMethod("setTileSourceResolver", (source, signal) => this.auth.resolve(source, signal));
+      this.callViewerMethodWhenReady("setTileSourceResolver", this.tileSourceResolver);
       this.bindRootClick();
       this.bindPageChange();
       this.bindFullscreenChange();
@@ -29551,16 +32991,18 @@
     }
     bindPorts() {
       this.getPort("tileSourcesUpdated").subscribe((tileSources) => {
-        this.callViewerMethod("setTileSources", tileSources);
+        this.auth.registerSources(tileSources);
+        this.callViewerMethodWhenReady("setTileSourceResolver", this.tileSourceResolver);
+        this.callViewerMethodWhenReady("setTileSources", tileSources);
       });
       this.getPort("pageAspectsUpdated").subscribe((aspects) => {
-        this.callViewerMethod("setPageAspects", aspects);
+        this.callViewerMethodWhenReady("setPageAspects", aspects);
       });
       this.getPort("pageLabelsUpdated").subscribe((labels) => {
-        this.callViewerMethod("setPageLabels", labels);
+        this.callViewerMethodWhenReady("setPageLabels", labels);
       });
       this.getPort("zoomLevelUpdated").subscribe((zoom) => {
-        this.callViewerMethod("setZoomLevel", zoom);
+        this.callViewerMethodWhenReady("setZoomLevel", zoom);
       });
       this.getPort("zoomBy").subscribe((factor) => {
         this.callViewerMethod("zoomBy", factor);
@@ -29569,9 +33011,14 @@
         this.callViewerMethod("scrollToIndex", index);
       });
       this.getPort("filterPreviewUpdated").subscribe((payload) => {
+        var _a;
         if (!payload) {
+          this.closeFilterPreview();
           return;
         }
+        this.filterPreviewVersion += 1;
+        (_a = this.filterPreviewController) == null ? void 0 : _a.abort();
+        this.filterPreviewController = null;
         this.pendingFilterPreview = payload;
         void this.applyFilterPreview();
       });
@@ -29585,8 +33032,7 @@
         if (this.callViewerMethod("setLayoutConfig", config.mode, config.direction)) {
           return;
         }
-        this.callViewerMethod("setViewingDirection", config.direction);
-        this.callViewerMethod("setLayoutMode", config.mode);
+        this.callViewerMethodWhenReady("setLayoutConfig", config.mode, config.direction);
       });
       this.getPort("layoutModeUpdated").subscribe((mode) => {
         this.callViewerMethod("setLayoutMode", mode);
@@ -29594,10 +33040,15 @@
       this.getPort("copyToClipboard").subscribe((text) => {
         this.copyToClipboard(text);
       });
+      this.getPort("authSourcesInvalidated").subscribe((sourceIds) => {
+        this.auth.invalidateSources(sourceIds);
+        this.callViewerMethodWhenReady("invalidateTileSources", sourceIds);
+      });
     }
     ensureMainViewer() {
-      if (!this.mainViewer) {
-        this.mainViewer = document.getElementById("main-viewer");
+      const current = document.getElementById("main-viewer");
+      if (current && current !== this.mainViewer) {
+        this.mainViewer = current;
       }
       return this.mainViewer;
     }
@@ -29612,33 +33063,44 @@
       if (!element) {
         if (this.filterPreviewRetries < 10) {
           this.filterPreviewRetries += 1;
-          this.filterPreviewRafId = requestAnimationFrame(() => {
-            this.filterPreviewRafId = null;
-            void this.applyFilterPreview();
-          });
+          if (this.filterPreviewRafId === null) {
+            this.filterPreviewRafId = requestAnimationFrame(() => {
+              this.filterPreviewRafId = null;
+              void this.applyFilterPreview();
+            });
+          }
         }
         return;
       }
       const payload = this.pendingFilterPreview;
       this.pendingFilterPreview = null;
       this.filterPreviewRetries = 0;
-      const version = this.filterPreviewVersion += 1;
+      const version = this.filterPreviewVersion;
       this.filterOptions = payload.filters || null;
       this.ensureFilterViewer();
       if (this.filterViewer) {
-        const tileSourceChanged = this.currentFilterTileSource !== payload.tileSource;
+        const sourceKey = JSON.stringify([payload.sourceId, payload.tileSource, payload.isStatic]);
+        const tileSourceChanged = this.currentFilterSourceKey !== sourceKey;
         if (tileSourceChanged) {
           let tileSource;
+          const controller = new AbortController();
+          this.filterPreviewController = controller;
           try {
-            tileSource = await this.auth.resolve({ url: payload.tileSource, isStatic: payload.isStatic, servicesJson: payload.servicesJson });
+            tileSource = await this.auth.resolve({ sourceId: payload.sourceId, url: payload.tileSource, isStatic: payload.isStatic }, controller.signal);
           } catch (error) {
-            console.error("Unable to authorize filter preview source", error);
+            if (!controller.signal.aborted && !this.isDestroyed && version === this.filterPreviewVersion) {
+              console.error("Unable to authorize filter preview source", error);
+            }
             return;
+          } finally {
+            if (this.filterPreviewController === controller) {
+              this.filterPreviewController = null;
+            }
           }
           if (this.isDestroyed || version !== this.filterPreviewVersion) {
             return;
           }
-          this.currentFilterTileSource = payload.tileSource;
+          this.currentFilterSourceKey = sourceKey;
           this.filterViewer.open(tileSource);
         } else {
           this.applyFilterOptions();
@@ -29669,24 +33131,19 @@
     }
     destroy() {
       this.isDestroyed = true;
+      this.closeFilterPreview();
       this.auth.destroy();
-      if (this.filterPreviewRafId !== null) {
-        cancelAnimationFrame(this.filterPreviewRafId);
-        this.filterPreviewRafId = null;
+      if (this.viewerMethodRafId !== null) {
+        cancelAnimationFrame(this.viewerMethodRafId);
+        this.viewerMethodRafId = null;
       }
+      this.pendingViewerMethods.clear();
       const root = this.getConnectedRoot();
       this.removeViewerEvent("diva-page-change", this.handlePageChangeBound);
       this.removeViewerEvent("diva-zoom-change", this.handleZoomChangeBound);
       this.removeViewerEvent("diva-loading-change", this.handleLoadingChangeBound);
       root.removeEventListener("click", this.handleRootClickBound, true);
       document.removeEventListener("fullscreenchange", this.handleFullscreenChangeBound);
-      if (this.filterViewer && typeof this.filterViewer.destroy === "function") {
-        this.filterViewer.destroy();
-      }
-      this.filterViewer = null;
-      this.filterViewerElement = null;
-      this.currentFilterTileSource = null;
-      this.pendingFilterPreview = null;
       if (root) {
         const rootAny = root;
         if (rootAny.__divaInstance === this) {
@@ -29697,6 +33154,25 @@
         }
         root.innerHTML = "";
       }
+    }
+    closeFilterPreview() {
+      var _a;
+      this.filterPreviewVersion += 1;
+      (_a = this.filterPreviewController) == null ? void 0 : _a.abort();
+      this.filterPreviewController = null;
+      if (this.filterPreviewRafId !== null) {
+        cancelAnimationFrame(this.filterPreviewRafId);
+        this.filterPreviewRafId = null;
+      }
+      if (this.filterViewer && typeof this.filterViewer.destroy === "function") {
+        this.filterViewer.destroy();
+      }
+      this.filterViewer = null;
+      this.filterViewerElement = null;
+      this.currentFilterSourceKey = null;
+      this.pendingFilterPreview = null;
+      this.filterOptions = null;
+      this.filterPreviewRetries = 0;
     }
     setFullscreen(enabled) {
       const root = this.getConnectedRoot();
@@ -29811,7 +33287,7 @@
           this.filterViewer.destroy();
         }
         this.filterViewer = null;
-        this.currentFilterTileSource = null;
+        this.currentFilterSourceKey = null;
         this.filterViewerFlipped = false;
         this.filterViewerElement = element;
       }
@@ -29881,6 +33357,44 @@
       }
       method.apply(viewer, args);
       return true;
+    }
+    callViewerMethodWhenReady(name, ...args) {
+      if (this.callViewerMethod(name, ...args)) {
+        this.viewerMethodAttempts = 0;
+        return;
+      }
+      this.pendingViewerMethods.set(name, args);
+      this.viewerMethodAttempts = 0;
+      this.scheduleViewerMethodFlush();
+    }
+    scheduleViewerMethodFlush() {
+      if (this.isDestroyed || this.viewerMethodRafId !== null) {
+        return;
+      }
+      this.viewerMethodRafId = requestAnimationFrame(() => {
+        this.viewerMethodRafId = null;
+        this.flushPendingViewerMethods();
+      });
+    }
+    flushPendingViewerMethods() {
+      if (this.isDestroyed || this.pendingViewerMethods.size === 0) {
+        return;
+      }
+      const pending = Array.from(this.pendingViewerMethods.entries());
+      this.pendingViewerMethods.clear();
+      pending.forEach(([name, args]) => {
+        if (!this.callViewerMethod(name, ...args)) {
+          this.pendingViewerMethods.set(name, args);
+        }
+      });
+      if (this.pendingViewerMethods.size === 0) {
+        this.viewerMethodAttempts = 0;
+        return;
+      }
+      if (this.viewerMethodAttempts < 120) {
+        this.viewerMethodAttempts += 1;
+        this.scheduleViewerMethodFlush();
+      }
     }
     bindViewerEvent(name, handler) {
       const viewer = this.ensureMainViewer();
