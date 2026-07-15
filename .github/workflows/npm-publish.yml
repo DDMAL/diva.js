@@ -27,7 +27,7 @@ jobs:
         run: yarn install
 
       - name: Install Elm globally
-        run: npm install -g elm
+        run: npm install -g elm@0.19.1
 
       - name: Build
         run: make build
