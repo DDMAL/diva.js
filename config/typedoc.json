@@ -1,0 +1,21 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["../src/diva-esm.ts"],
+  "tsconfig": "../tsconfig.json",
+  "out": "../build/docs",
+  "name": "Diva.js Public API",
+  "includeVersion": true,
+  "readme": "none",
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "excludeExternals": true,
+  "requiredToBeDocumented": ["Class", "Constructor", "Interface", "Method", "Property", "TypeAlias"],
+  "validation": {
+    "invalidLink": true,
+    "notDocumented": true,
+    "notExported": true
+  },
+  "treatValidationWarningsAsErrors": true,
+  "sort": ["source-order"]
+}

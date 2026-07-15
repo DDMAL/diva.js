@@ -38,6 +38,9 @@ tests =
         , test "selects thumbnail CORS from the source authorization state"
             (\_ ->
                 let
+                    ( probing, effects ) =
+                        Auth.update (Auth.Resolve "request-1" "protected") initial
+
                     discovery =
                         Auth.Discovered { probes = [ activeProbe ], unsupportedServiceTypes = [] }
 
@@ -47,9 +50,6 @@ tests =
                                 [ source "public" False Auth.Unknown
                                 , source "protected" False discovery
                                 ]
-
-                    ( probing, effects ) =
-                        Auth.update (Auth.Resolve "request-1" "protected") initial
 
                     operationId =
                         case effects of
@@ -87,12 +87,13 @@ tests =
 
                     ( afterFirst, firstEffects ) =
                         Auth.update (Auth.Resolve "request-1" "one") initial
-
-                    ( _, secondEffects ) =
-                        Auth.update (Auth.Resolve "request-2" "two") afterFirst
                 in
                 case firstEffects of
                     [ Auth.Fetch _ "https://auth.example/probe" Nothing False ] ->
+                        let
+                            ( _, secondEffects ) =
+                                Auth.update (Auth.Resolve "request-2" "two") afterFirst
+                        in
                         Expect.equal [] secondEffects
 
                     _ ->
@@ -258,14 +259,8 @@ tests =
                     ( probingA, effectsA ) =
                         Auth.update (Auth.Resolve "request-a-one" "a-one") initial
 
-                    ( probingAWaiter, effectsAWaiter ) =
-                        Auth.update (Auth.Resolve "request-a-two" "a-two") probingA
-
                     ( probingBoth, effectsB ) =
                         Auth.update (Auth.Resolve "request-b-one" "b-one") probingAWaiter
-
-                    ( probing, effectsBWaiter ) =
-                        Auth.update (Auth.Resolve "request-b-two" "b-two") probingBoth
 
                     operationId effects =
                         case effects of
@@ -277,6 +272,12 @@ tests =
 
                     denied =
                         "{\"@context\":\"http://iiif.io/api/auth/2/context.json\",\"type\":\"AuthProbeResult2\",\"status\":401}"
+
+                    ( probingAWaiter, effectsAWaiter ) =
+                        Auth.update (Auth.Resolve "request-a-two" "a-two") probingA
+
+                    ( probing, effectsBWaiter ) =
+                        Auth.update (Auth.Resolve "request-b-two" "b-two") probingBoth
 
                     ( readingA, _ ) =
                         Auth.update (Auth.HttpSucceeded (operationId effectsA) 200 denied) probing
@@ -422,11 +423,11 @@ tests =
                     firstProbe =
                         { activeProbe | id = "https://auth.example/probe?uri=image-one" }
 
-                    secondProbe =
-                        { activeProbe | id = "https://auth.example/probe?uri=image-two" }
-
                     firstDiscovery =
                         Auth.Discovered { probes = [ firstProbe ], unsupportedServiceTypes = [] }
+
+                    secondProbe =
+                        { activeProbe | id = "https://auth.example/probe?uri=image-two" }
 
                     secondDiscovery =
                         Auth.Discovered { probes = [ secondProbe ], unsupportedServiceTypes = [] }
@@ -452,9 +453,6 @@ tests =
                     denied =
                         "{\"@context\":\"http://iiif.io/api/auth/2/context.json\",\"type\":\"AuthProbeResult2\",\"status\":401}"
 
-                    allowed =
-                        "{\"@context\":\"http://iiif.io/api/auth/2/context.json\",\"type\":\"AuthProbeResult2\",\"status\":200}"
-
                     ( reading, _ ) =
                         Auth.update (Auth.HttpSucceeded anonymousOperation 200 denied) probing
 
@@ -478,6 +476,9 @@ tests =
 
                     ( freshProbe, tokenEffects ) =
                         Auth.update (Auth.TokenMessage associationKey 1000 token) tokenFrame
+
+                    allowed =
+                        "{\"@context\":\"http://iiif.io/api/auth/2/context.json\",\"type\":\"AuthProbeResult2\",\"status\":200}"
 
                     freshOperation =
                         tokenEffects
@@ -537,9 +538,6 @@ tests =
                     denied =
                         "{\"@context\":\"http://iiif.io/api/auth/2/context.json\",\"type\":\"AuthProbeResult2\",\"status\":401}"
 
-                    allowed =
-                        "{\"@context\":\"http://iiif.io/api/auth/2/context.json\",\"type\":\"AuthProbeResult2\",\"status\":200}"
-
                     ( reading, _ ) =
                         Auth.update (Auth.HttpSucceeded anonymousOperation 200 denied) probing
 
@@ -563,6 +561,9 @@ tests =
 
                     ( freshProbe, tokenEffects ) =
                         Auth.update (Auth.TokenMessage associationKey 1000 token) tokenFrame
+
+                    allowed =
+                        "{\"@context\":\"http://iiif.io/api/auth/2/context.json\",\"type\":\"AuthProbeResult2\",\"status\":200}"
 
                     freshOperation =
                         tokenEffects
@@ -720,9 +721,6 @@ tests =
                     denied =
                         "{\"@context\":\"http://iiif.io/api/auth/2/context.json\",\"type\":\"AuthProbeResult2\",\"status\":401}"
 
-                    allowed =
-                        "{\"@context\":\"http://iiif.io/api/auth/2/context.json\",\"type\":\"AuthProbeResult2\",\"status\":200}"
-
                     ( reading, _ ) =
                         Auth.update (Auth.HttpSucceeded anonymousOperation 200 denied) probing
 
@@ -746,6 +744,9 @@ tests =
 
                     ( freshProbe, tokenEffects ) =
                         Auth.update (Auth.TokenMessage associationKey 1000 token) tokenFrame
+
+                    allowed =
+                        "{\"@context\":\"http://iiif.io/api/auth/2/context.json\",\"type\":\"AuthProbeResult2\",\"status\":200}"
 
                     freshOperation =
                         tokenEffects
@@ -790,35 +791,6 @@ tests =
         ]
 
 
-source : String -> Bool -> Auth.SourceAuth -> Auth.Source
-source id isStatic auth =
-    { id = id
-    , url = "https://images.example/" ++ id ++ "/info.json"
-    , isStatic = isStatic
-    , auth = auth
-    }
-
-
-associationKey : String
-associationKey =
-    "https://auth.example/probe|https://auth.example/login|https://auth.example/token"
-
-
-secondAssociationKey : String
-secondAssociationKey =
-    "https://auth.example/other-probe|https://auth.example/login|https://auth.example/token"
-
-
-tokenCacheKey : String
-tokenCacheKey =
-    associationKey
-
-
-mapAccess : (IIIF.Auth.AccessService -> IIIF.Auth.AccessService) -> IIIF.Auth.ProbeService -> IIIF.Auth.ProbeService
-mapAccess change probe =
-    { probe | services = List.map change probe.services }
-
-
 activeProbe : IIIF.Auth.ProbeService
 activeProbe =
     { id = "https://auth.example/probe"
@@ -846,11 +818,6 @@ activeProbe =
     }
 
 
-secondActiveProbe : IIIF.Auth.ProbeService
-secondActiveProbe =
-    { activeProbe | id = "https://auth.example/other-probe" }
-
-
 activeProbeWithLogout : IIIF.Auth.ProbeService
 activeProbeWithLogout =
     { activeProbe
@@ -870,3 +837,37 @@ activeProbeWithLogout =
                         }
                     )
     }
+
+
+associationKey : String
+associationKey =
+    "https://auth.example/probe|https://auth.example/login|https://auth.example/token"
+
+
+mapAccess : (IIIF.Auth.AccessService -> IIIF.Auth.AccessService) -> IIIF.Auth.ProbeService -> IIIF.Auth.ProbeService
+mapAccess change probe =
+    { probe | services = List.map change probe.services }
+
+
+secondActiveProbe : IIIF.Auth.ProbeService
+secondActiveProbe =
+    { activeProbe | id = "https://auth.example/other-probe" }
+
+
+secondAssociationKey : String
+secondAssociationKey =
+    "https://auth.example/other-probe|https://auth.example/login|https://auth.example/token"
+
+
+source : String -> Bool -> Auth.SourceAuth -> Auth.Source
+source id isStatic auth =
+    { id = id
+    , url = "https://images.example/" ++ id ++ "/info.json"
+    , isStatic = isStatic
+    , auth = auth
+    }
+
+
+tokenCacheKey : String
+tokenCacheKey =
+    associationKey

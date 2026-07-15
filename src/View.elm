@@ -71,6 +71,35 @@ view model =
         ]
 
 
+hasCollectionSidebar : Model -> Bool
+hasCollectionSidebar model =
+    case model.resourceResponse of
+        ResourceLoadedCollection _ ->
+            model.collectionSidebarVisible
+
+        _ ->
+            False
+
+
+isCanvasLoading : Model -> Bool
+isCanvasLoading model =
+    (model.isViewerLoading || model.resourceResponse == ResourceLoading) || (model.response == Loading)
+
+
+manifestTitleFor : Model -> String
+manifestTitleFor model =
+    currentManifest model
+        |> Maybe.map (\manifest -> toLabel manifest |> extractLabelFromLanguageMap model.detectedLanguage)
+        |> Maybe.withDefault ""
+
+
+requiredStatementTextFor : Model -> Maybe String
+requiredStatementTextFor model =
+    currentManifest model
+        |> Maybe.andThen toRequiredStatement
+        |> Maybe.map (\statement -> extractLabelFromLanguageMap model.detectedLanguage statement.value)
+
+
 viewAuthPrompt : Model -> Auth.Prompt -> Html Msg
 viewAuthPrompt model authPrompt =
     let
@@ -106,35 +135,6 @@ viewAuthPrompt model authPrompt =
             , button [ HA.type_ "button", HE.onClick (Msg.AuthEvent Auth.UserCancelled) ] [ text "Cancel" ]
             ]
         ]
-
-
-hasCollectionSidebar : Model -> Bool
-hasCollectionSidebar model =
-    case model.resourceResponse of
-        ResourceLoadedCollection _ ->
-            model.collectionSidebarVisible
-
-        _ ->
-            False
-
-
-isCanvasLoading : Model -> Bool
-isCanvasLoading model =
-    (model.isViewerLoading || model.resourceResponse == ResourceLoading) || (model.response == Loading)
-
-
-manifestTitleFor : Model -> String
-manifestTitleFor model =
-    currentManifest model
-        |> Maybe.map (\manifest -> toLabel manifest |> extractLabelFromLanguageMap model.detectedLanguage)
-        |> Maybe.withDefault ""
-
-
-requiredStatementTextFor : Model -> Maybe String
-requiredStatementTextFor model =
-    currentManifest model
-        |> Maybe.andThen toRequiredStatement
-        |> Maybe.map (\statement -> extractLabelFromLanguageMap model.detectedLanguage statement.value)
 
 
 viewCanvas : Bool -> Bool -> Bool -> Maybe ( String, String, Bool ) -> Maybe String -> Html Msg

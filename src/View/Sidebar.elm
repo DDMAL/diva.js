@@ -718,14 +718,9 @@ viewThumbnail auth viewMode shiftByOne selectedIndex index page =
         hasChoices =
             List.length page.images > 1
 
-        primary =
-            page.images
-                |> List.filter .isPrimary
-                |> List.head
-                |> Maybe.withDefault (List.head page.images |> Maybe.withDefault fallbackImage)
-
         fallbackImage =
-            { sourceId = ""
+            { id = ""
+            , sourceId = ""
             , tileSource = ""
             , thumbUrl = ""
             , label = ""
@@ -734,6 +729,12 @@ viewThumbnail auth viewMode shiftByOne selectedIndex index page =
             , auth = Auth.Unknown
             }
 
+        primary =
+            page.images
+                |> List.filter .isPrimary
+                |> List.head
+                |> Maybe.withDefault (List.head page.images |> Maybe.withDefault fallbackImage)
+
         thumbnail =
             case Auth.thumbnailCrossOrigin primary.sourceId auth of
                 Just crossOrigin ->
@@ -741,15 +742,15 @@ viewThumbnail auth viewMode shiftByOne selectedIndex index page =
                         [ HA.class "thumbs-image"
                         , src page.thumbUrl
                         , alt ("Page " ++ String.fromInt (index + 1))
-                        , HA.attribute "loading" "lazy"
-                        , HA.attribute "crossorigin" crossOrigin
+                        , attribute "loading" "lazy"
+                        , attribute "crossorigin" crossOrigin
                         ]
                         []
 
                 Nothing ->
                     div
                         [ HA.class "thumbs-image thumbs-image--protected"
-                        , HA.attribute "aria-label" "Protected image"
+                        , attribute "aria-label" "Protected image"
                         ]
                         []
     in

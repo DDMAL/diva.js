@@ -1,6 +1,3 @@
-import "./diva";
-
-const Diva = (window as any).Diva;
-
-export {Diva};
-export default Diva;
+export {Diva,
+        Diva as default} from "./diva";
+export type * from "./public-api";

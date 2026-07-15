@@ -13,6 +13,7 @@ ELM_ESM := cache/elm-esm.js
 DIVA_DEBUG := build/diva.debug.js
 DIVA_JS := build/diva.js
 DIVA_ESM := build/diva.esm.js
+DIVA_TYPES := build/diva-esm.d.ts
 MINIFIED_TARGETS := $(DIVA_JS) $(DIVA_ESM)
 ELM_ESM_SCRIPT := scripts/elm-esm.sh
 ELM_FLAGS ?= --optimize
@@ -35,12 +36,12 @@ define print_bundle_size
 	printf "%-18s %10s (%7s)\n" "Gzipped size:" "$$GZIPPED_SIZE bytes" "$$GZIPPED_HR";
 endef
 
-.PHONY: all build build-dev clean clean-cache release report-build-sizes test
+.PHONY: all build build-dev clean clean-cache docs docs-check release report-build-sizes test
 
 all: build
 
 build: clean-cache
-	$(MAKE) -j 2 $(MINIFIED_TARGETS)
+	$(MAKE) -j 3 $(MINIFIED_TARGETS) $(DIVA_TYPES)
 	@$(MAKE) report-build-sizes
 
 build-dev: ELM_FLAGS = --debug
@@ -49,6 +50,12 @@ build-dev:
 
 test:
 	yarn test
+
+docs:
+	yarn docs
+
+docs-check:
+	yarn docs:check
 
 $(ELM_OUT): $(ELM_SRC)
 	mkdir -p build
@@ -70,12 +77,17 @@ $(DIVA_JS): $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(TS_AUTH_SRC) $(DIVA_CSS) $(ELM
 $(DIVA_ESM): $(TS_ESM_SRC) $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(TS_AUTH_SRC) $(DIVA_CSS) $(ELM_ESM)
 	@$(ESBUILD) $(TS_ESM_SRC) $(ESBUILD_COMMON_FLAGS) --format=esm $(ESBUILD_MINIFY_FLAGS) --outfile=$(DIVA_ESM)
 
+$(DIVA_TYPES): $(TS_ESM_SRC) $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(TS_AUTH_SRC) src/public-api.ts tsconfig.json
+	@mkdir -p build
+	@yarn -s tsc -p tsconfig.json --declaration --emitDeclarationOnly --outDir build
+
 report-build-sizes: $(MINIFIED_TARGETS)
 	$(call print_bundle_size,$(DIVA_JS))
 	$(call print_bundle_size,$(DIVA_ESM))
 
 clean:
-	rm -f $(ELM_OUT) $(ELM_ESM) $(DIVA_JS) $(DIVA_ESM) $(DIVA_DEBUG) $(DIVA_CSS) build/diva.css build/diva.min.css
+	rm -rf build/docs
+	rm -f $(ELM_OUT) $(ELM_ESM) $(DIVA_JS) $(DIVA_ESM) $(DIVA_DEBUG) $(DIVA_CSS) build/*.d.ts build/diva.css build/diva.min.css
 
 clean-cache:
 	rm -f cache/*

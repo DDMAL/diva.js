@@ -8,23 +8,31 @@
   },
   "main": "./build/diva.js",
   "module": "./build/diva.esm.js",
+  "types": "./build/diva-esm.d.ts",
   "browser": "./build/diva.js",
   "exports": {
     ".": {
+      "types": "./build/diva-esm.d.ts",
       "import": "./build/diva.esm.js",
       "default": "./build/diva.js"
     }
   },
   "files": [
-    "build/",
+    "build/diva.js",
+    "build/diva.debug.js",
+    "build/diva.esm.js",
+    "build/*.d.ts",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
+    "docs": "typedoc --options config/typedoc.json",
+    "docs:check": "typedoc --options config/typedoc.json --emit none",
     "format": "find src -name \"*.ts\" -print0 | xargs -0 clang-format -i",
     "develop": "chokidar \"src/**/*\" \"scripts/elm-esm.sh\" \"Makefile\" -c \"make build-dev\"",
-    "test": "elm-test-rs",
-    "test:browser": "playwright test"
+    "test": "elm-test-rs && yarn docs:check",
+    "test:browser": "playwright test",
+    "test:types": "tsc -p type-tests/tsconfig.json"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
@@ -36,6 +44,7 @@
     "lightningcss": "^1.31.1",
     "openseadragon": "^6.0.2",
     "openseadragon5": "npm:openseadragon@5.0.1",
+    "typedoc": "^0.28.20",
     "typescript": "^5.9.3"
   }
 }

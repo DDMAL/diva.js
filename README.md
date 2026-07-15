@@ -53,6 +53,68 @@ The package publishes browser and ESM builds. For detailed integration guidance,
 
 - https://diva.simssa.ca/docs/getting-started/
 
+## Public API
+
+Wait for the initial IIIF resource before reading page state or issuing viewer commands:
+
+```js
+const viewer = new Diva("diva-wrapper", { objectData: manifestUrl });
+await viewer.ready;
+
+const pages = viewer.getPages();
+const current = viewer.getCurrentPage();
+console.log(current?.canvasId, current?.primaryImage.id);
+```
+
+Navigation follows the current layout, so `next()` and `previous()` advance by an opening in a spread layout:
+
+```js
+await viewer.setLayoutMode("spread");
+await viewer.next();
+
+viewer.addEventListener("pagechange", (event) => {
+  console.log(event.detail.pageIndex, event.detail.visiblePages);
+});
+```
+
+Image regions use full-resolution image pixels with their origin at the upper-left corner. Diva handles navigation, authorization, and waiting for the OpenSeadragon item:
+
+```js
+await viewer.zoomToRegion(12, {
+  x: 840,
+  y: 1250,
+  width: 460,
+  height: 180
+}, { padding: 0.08 });
+```
+
+Replace the current manifest or collection without replacing the `Diva` instance or its event listeners, and destroy the viewer when it is no longer needed:
+
+```js
+await viewer.setResource(nextManifestUrl);
+viewer.destroy();
+```
+
+The ESM build exports `Diva` as both its default and named export, along with the public TypeScript types. OpenSeadragon objects, Elm ports, authentication state, and tile-loading internals are not public API.
+
+### API reference documentation
+
+The TSDoc comments on the exported TypeScript class and types are the canonical public API documentation. Generate the searchable TypeDoc site with:
+
+```sh
+yarn docs
+```
+
+Open `build/docs/index.html` to browse the generated reference. The generated site is a build artifact and is not committed.
+
+Documentation completeness is enforced with:
+
+```sh
+yarn docs:check
+```
+
+This command fails when an exported class, constructor, interface, type, property, method, nested event field, or API link is undocumented or invalid.
+
 ## Features
 
 - IIIF Presentation API v2 and v3 support

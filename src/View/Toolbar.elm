@@ -130,41 +130,6 @@ viewToolbar model =
         ]
 
 
-viewLogoutActions : Model -> List (Html Msg)
-viewLogoutActions model =
-    Auth.logoutActions model.auth
-        |> List.map
-            (\action ->
-                let
-                    label =
-                        action.label
-                            |> Maybe.map (extractLabelFromLanguageMap model.detectedLanguage)
-                            |> Maybe.withDefault "Log out"
-
-                    displayLabel =
-                        case action.error of
-                            Just _ ->
-                                label ++ " (popup blocked)"
-
-                            Nothing ->
-                                label
-                in
-                div
-                    [ HA.class "canvas-toolbar-item"
-                    , HA.attribute "data-tooltip" displayLabel
-                    ]
-                    [ button
-                        [ HA.class "canvas-toolbar-button"
-                        , HA.type_ "button"
-                        , HA.attribute "aria-label" displayLabel
-                        , HA.attribute "data-diva-auth-logout" action.sessionId
-                        , HA.attribute "data-diva-auth-url" action.url
-                        ]
-                        [ Icons.shiftRight ]
-                    ]
-            )
-
-
 currentLabelFor : Model -> String
 currentLabelFor model =
     let
@@ -255,3 +220,38 @@ viewCurrentLabel fullscreen labelText =
             ]
         ]
         [ text labelText ]
+
+
+viewLogoutActions : Model -> List (Html Msg)
+viewLogoutActions model =
+    Auth.logoutActions model.auth
+        |> List.map
+            (\action ->
+                let
+                    label =
+                        action.label
+                            |> Maybe.map (extractLabelFromLanguageMap model.detectedLanguage)
+                            |> Maybe.withDefault "Log out"
+
+                    displayLabel =
+                        case action.error of
+                            Just _ ->
+                                label ++ " (popup blocked)"
+
+                            Nothing ->
+                                label
+                in
+                div
+                    [ HA.class "canvas-toolbar-item"
+                    , HA.attribute "data-tooltip" displayLabel
+                    ]
+                    [ button
+                        [ HA.class "canvas-toolbar-button"
+                        , HA.type_ "button"
+                        , HA.attribute "aria-label" displayLabel
+                        , HA.attribute "data-diva-auth-logout" action.sessionId
+                        , HA.attribute "data-diva-auth-url" action.url
+                        ]
+                        [ Icons.shiftRight ]
+                    ]
+            )

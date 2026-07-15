@@ -110,8 +110,12 @@
     <div id="diva-wrapper"></div>
 
 
-    <script src="https://cdn.jsdelivr.net/npm/openseadragon@6.0.2/build/openseadragon/openseadragon.min.js"></script>
-<!--    <script src="./openseadragon.min.js"></script>-->
+    <script>
+      const osdPackage = new URLSearchParams(location.search).get("osd") === "5"
+        ? "openseadragon5"
+        : "openseadragon";
+      document.write(`<script src="../node_modules/${osdPackage}/build/openseadragon/openseadragon.min.js"><\/script>`);
+    </script>
     <script src="../build/diva.debug.js"></script>
     <script>
       const manifests = [

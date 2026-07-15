@@ -1,6 +1,7 @@
 import type * as OpenSeadragonType from "openseadragon";
 
 import type {ResolvedTileSource, TileSourceDescriptor} from "./auth";
+import type {DivaRegion, ZoomToRegionOptions} from "./public-api";
 
 declare const OpenSeadragon: typeof OpenSeadragonType;
 
@@ -34,6 +35,7 @@ class OsdViewer extends HTMLElement
     private tileSourceResolver: TileSourceResolver = async (source) =>
         source.isStatic ? {type : "image", url: source.url, crossOriginPolicy: "Anonymous"} : source.url;
     private loadedItems: Map<number, any> = new Map();
+    private pageWaiters: Map<number, Array<{resolve : (item: any) => void; reject : (error: Error) => void}>> = new Map();
     private pageOverlayElements: Map<number, HTMLDivElement> = new Map();
     private targetIndex: number|null = null;
     private scrollPlaneItem: any = null;
@@ -397,6 +399,7 @@ class OsdViewer extends HTMLElement
                 item.setHeight(height, true);
                 this.loadedIndexes.add(index);
                 this.loadedItems.set(index, item);
+                this.resolvePageWaiters(index, item);
                 this.addOrUpdatePageOverlay(index);
                 this.loadingIndexes.delete(index);
                 this.loadControllers.delete(index);
@@ -441,7 +444,7 @@ class OsdViewer extends HTMLElement
                 this.finishLoad(index, controller);
                 this.maybeLoadMore();
             }
-        });
+        } as any);
     }
 
     private tileRequestOptions(tileSource: ResolvedTileSource): {ajaxWithCredentials?: boolean; crossOriginPolicy?: string | boolean}
@@ -478,13 +481,53 @@ class OsdViewer extends HTMLElement
         this.loadControllers.forEach((controller) => controller.abort());
         this.loadControllers.clear();
         this.loadingIndexes.clear();
+        this.rejectPageWaiters(new DOMException("The image load was cancelled.", "AbortError"));
         this.resetLoadingState();
     }
 
     private markUnavailable(index: number, message: string): void
     {
         this.unavailableIndexes.set(index, message);
+        this.rejectPageWaiters(new Error(message), index);
+        this.emitCustomEvent("diva-page-load-error", {index, message});
         this.addUnavailableOverlay(index, message);
+    }
+
+    private waitForPage(index: number): Promise<any>
+    {
+        const loaded = this.loadedItems.get(index);
+        if (loaded)
+        {
+            return Promise.resolve(loaded);
+        }
+        const unavailable = this.unavailableIndexes.get(index);
+        if (unavailable)
+        {
+            return Promise.reject(new Error(unavailable));
+        }
+        return new Promise((resolve, reject) => {
+            const waiters = this.pageWaiters.get(index) ?? [];
+            waiters.push({resolve, reject});
+            this.pageWaiters.set(index, waiters);
+            this.ensurePageLoaded(index);
+        });
+    }
+
+    private resolvePageWaiters(index: number, item: any): void
+    {
+        const waiters = this.pageWaiters.get(index) ?? [];
+        this.pageWaiters.delete(index);
+        waiters.forEach((waiter) => waiter.resolve(item));
+    }
+
+    private rejectPageWaiters(error: Error, index?: number): void
+    {
+        const indexes = index === undefined ? Array.from(this.pageWaiters.keys()) : [ index ];
+        indexes.forEach((waiterIndex) => {
+            const waiters = this.pageWaiters.get(waiterIndex) ?? [];
+            this.pageWaiters.delete(waiterIndex);
+            waiters.forEach((waiter) => waiter.reject(error));
+        });
     }
 
     private addUnavailableOverlay(index: number, message: string): void
@@ -820,6 +863,66 @@ class OsdViewer extends HTMLElement
         this.ensurePageLoaded(index);
         this.lastReportedIndex = index;
         this.emitCustomEvent("diva-page-change", {index});
+    }
+
+    public getVisiblePageIndexes(): number[]
+    {
+        if (this.pageOffsets.length === 0)
+        {
+            return [];
+        }
+        const index = this.lastReportedIndex ?? 0;
+        const start = this.getRowStartIndex(index);
+        const end = this.getRowEndIndex(start);
+        return Array.from({length : end - start + 1}, (_value, offset) => start + offset);
+    }
+
+    public next(): void
+    {
+        const visible = this.getVisiblePageIndexes();
+        if (visible.length === 0)
+        {
+            return;
+        }
+        const nextIndex = this.getRowEndIndex(visible[0]) + 1;
+        if (nextIndex < this.tileSources.length)
+        {
+            this.scrollToIndex(nextIndex);
+        }
+    }
+
+    public previous(): void
+    {
+        const visible = this.getVisiblePageIndexes();
+        if (visible.length === 0 || visible[0] === 0)
+        {
+            return;
+        }
+        this.scrollToIndex(this.getRowStartIndex(visible[0] - 1));
+    }
+
+    public async fitToPage(index: number): Promise<void>
+    {
+        this.scrollToIndex(index);
+        const item = await this.waitForPage(index);
+        this.viewer?.viewport.fitBounds(item.getBounds(), false);
+        this.viewer?.viewport.applyConstraints();
+    }
+
+    public async zoomToRegion(index: number, region: DivaRegion, options: ZoomToRegionOptions = {}): Promise<void>
+    {
+        this.scrollToIndex(index);
+        const item = await this.waitForPage(index);
+        const padding = options.padding ?? 0.05;
+        const padded = {
+            x : region.x - (region.width * padding),
+            y : region.y - (region.height * padding),
+            width : region.width * (1 + (padding * 2)),
+            height : region.height * (1 + (padding * 2))
+        };
+        const bounds = item.imageToViewportRectangle(padded.x, padded.y, padded.width, padded.height);
+        this.viewer?.viewport.fitBounds(bounds, options.immediately === true);
+        this.viewer?.viewport.applyConstraints();
     }
 
     public setZoomLevel(zoom: number): void

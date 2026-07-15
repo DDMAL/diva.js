@@ -20,6 +20,7 @@ elm-stuff/
 .gitignore
 
 # Documentation
+build/docs/
 osd-6-changelog
 AUTHORS
 

@@ -20,6 +20,48 @@ import Task
 import View
 
 
+port authDestroyed : (() -> msg) -> Sub msg
+
+
+port authHttpCancelled : String -> Cmd msg
+
+
+port authHttpFailed : ({ id : String, message : String } -> msg) -> Sub msg
+
+
+port authHttpRequested : Encode.Value -> Cmd msg
+
+
+port authHttpResponded : ({ id : String, status : Int, body : String } -> msg) -> Sub msg
+
+
+port authLogoutChanged : ({ sessionId : String, status : String } -> msg) -> Sub msg
+
+
+port authPopupChanged : ({ flowId : String, status : String } -> msg) -> Sub msg
+
+
+port authSourcesInvalidated : List String -> Cmd msg
+
+
+port authStorageRequested : Encode.Value -> Cmd msg
+
+
+port authStorageResponded : ({ flowId : String, now : Float, value : Maybe Decode.Value } -> msg) -> Sub msg
+
+
+port authTokenFailed : ({ flowId : String, message : String } -> msg) -> Sub msg
+
+
+port authTokenFrameCancelled : String -> Cmd msg
+
+
+port authTokenFrameRequested : Encode.Value -> Cmd msg
+
+
+port authTokenMessage : ({ flowId : String, now : Float, value : Decode.Value } -> msg) -> Sub msg
+
+
 port copyToClipboard : String -> Cmd msg
 
 
@@ -40,6 +82,9 @@ port fullscreenChanged : (Bool -> msg) -> Sub msg
 port layoutConfigUpdated : { mode : String, direction : String } -> Cmd msg
 
 
+port layoutModeRequested : (String -> msg) -> Sub msg
+
+
 port layoutModeUpdated : String -> Cmd msg
 
 
@@ -55,6 +100,34 @@ port pageIndexChangedInstant : (Int -> msg) -> Sub msg
 port pageLabelsUpdated : List String -> Cmd msg
 
 
+port pagesUpdated :
+    List
+        { index : Int
+        , canvasId : String
+        , label : String
+        , width : Maybe Int
+        , height : Maybe Int
+        , primaryImage : { id : String, label : String, isPrimary : Bool }
+        , images : List { id : String, label : String, isPrimary : Bool }
+        }
+    -> Cmd msg
+
+
+port resolveTileSourceCancelled : (String -> msg) -> Sub msg
+
+
+port resolveTileSourceRequested : ({ requestId : String, sourceId : String } -> msg) -> Sub msg
+
+
+port resourceLoadFailed : { requestId : String, url : String, message : String } -> Cmd msg
+
+
+port resourceLoadSucceeded : { requestId : String, url : String, hasPages : Bool } -> Cmd msg
+
+
+port resourceRequested : ({ requestId : String, url : String } -> msg) -> Sub msg
+
+
 port saveFilteredImage : () -> Cmd msg
 
 
@@ -64,61 +137,13 @@ port scrollToIndex : Int -> Cmd msg
 port setFullscreen : Bool -> Cmd msg
 
 
-port tileSourcesUpdated : List { sourceId : String, url : String, isStatic : Bool } -> Cmd msg
-
-
-port resolveTileSourceRequested : ({ requestId : String, sourceId : String } -> msg) -> Sub msg
-
-
-port resolveTileSourceCancelled : (String -> msg) -> Sub msg
+port tileSourceResolutionFailed : { requestId : String, message : String } -> Cmd msg
 
 
 port tileSourceResolutionSucceeded : Encode.Value -> Cmd msg
 
 
-port tileSourceResolutionFailed : { requestId : String, message : String } -> Cmd msg
-
-
-port authHttpRequested : Encode.Value -> Cmd msg
-
-
-port authHttpCancelled : String -> Cmd msg
-
-
-port authHttpResponded : ({ id : String, status : Int, body : String } -> msg) -> Sub msg
-
-
-port authHttpFailed : ({ id : String, message : String } -> msg) -> Sub msg
-
-
-port authStorageRequested : Encode.Value -> Cmd msg
-
-
-port authStorageResponded : ({ flowId : String, now : Float, value : Maybe Decode.Value } -> msg) -> Sub msg
-
-
-port authTokenFrameRequested : Encode.Value -> Cmd msg
-
-
-port authTokenFrameCancelled : String -> Cmd msg
-
-
-port authTokenMessage : ({ flowId : String, now : Float, value : Decode.Value } -> msg) -> Sub msg
-
-
-port authTokenFailed : ({ flowId : String, message : String } -> msg) -> Sub msg
-
-
-port authPopupChanged : ({ flowId : String, status : String } -> msg) -> Sub msg
-
-
-port authLogoutChanged : ({ sessionId : String, status : String } -> msg) -> Sub msg
-
-
-port authSourcesInvalidated : List String -> Cmd msg
-
-
-port authDestroyed : (() -> msg) -> Sub msg
+port tileSourcesUpdated : List { sourceId : String, url : String, isStatic : Bool } -> Cmd msg
 
 
 port viewerLoadingChanged : (Bool -> msg) -> Sub msg
@@ -161,6 +186,17 @@ buildRangeIndexMap canvasIndex ranges =
         )
         Dict.empty
         ranges
+
+
+clearViewer : Cmd msg
+clearViewer =
+    Cmd.batch
+        [ tileSourcesUpdated []
+        , pagesUpdated []
+        , pageAspectsUpdated []
+        , pageLabelsUpdated []
+        , filterPreviewUpdated Nothing
+        ]
 
 
 ensureSidebarVisible : SidebarState -> SidebarState
@@ -276,7 +312,7 @@ handleManifestLoaded model manifest =
     in
     ( { model
         | currentZoom = Nothing
-        , auth = Auth.registerSources authSources model.auth
+        , auth = Auth.registerSources authSources Auth.init
         , filters = resetFilters
         , hasTileSources = not (List.isEmpty tileSources)
         , initialZoom = Nothing
@@ -296,6 +332,7 @@ handleManifestLoaded model manifest =
       }
     , Cmd.batch
         [ tileSourcesUpdated tileSources
+        , pagesUpdated (publicPages pages)
         , filterPreviewUpdated Nothing
         , pageAspectsUpdated pageAspects
         , pageLabelsUpdated (List.map .label pages)
@@ -416,6 +453,7 @@ init flags =
       , pageViewSidebarVisible = True
       , pages = []
       , pendingThumbScroll = Nothing
+      , pendingPublicResource = Nothing
       , rangeIndexMap = Dict.empty
       , resourceResponse = ResourceLoading
       , response = Loading
@@ -451,9 +489,74 @@ layoutModeToString viewMode shiftByOne =
                 "spread"
 
 
+logoutEvent : { sessionId : String, status : String } -> Msg
+logoutEvent change =
+    AuthEvent
+        (case change.status of
+            "closed" ->
+                Auth.LogoutClosed
+
+            "opened" ->
+                Auth.LogoutOpened change.sessionId
+
+            _ ->
+                Auth.LogoutBlocked change.sessionId
+        )
+
+
 mobileShortSideBreakpoint : Int
 mobileShortSideBreakpoint =
     720
+
+
+popupEvent : { flowId : String, status : String } -> Msg
+popupEvent change =
+    AuthEvent
+        (case change.status of
+            "closed" ->
+                Auth.PopupClosed change.flowId
+
+            "opened" ->
+                Auth.PopupOpened change.flowId
+
+            _ ->
+                Auth.PopupBlocked change.flowId
+        )
+
+
+publicPages :
+    List Model.Page
+    ->
+        List
+            { index : Int
+            , canvasId : String
+            , label : String
+            , width : Maybe Int
+            , height : Maybe Int
+            , primaryImage : { id : String, label : String, isPrimary : Bool }
+            , images : List { id : String, label : String, isPrimary : Bool }
+            }
+publicPages pages =
+    pages
+        |> List.indexedMap
+            (\index page ->
+                primaryImage page
+                    |> Maybe.map
+                        (\primary ->
+                            { index = index
+                            , canvasId = page.canvasId
+                            , label = page.label
+                            , width = page.width
+                            , height = page.height
+                            , primaryImage = { id = primary.id, label = primary.label, isPrimary = primary.isPrimary }
+                            , images =
+                                List.map
+                                    (\image -> { id = image.id, label = image.label, isPrimary = image.isPrimary })
+                                    page.images
+                            }
+                        )
+            )
+        |> List.filterMap identity
 
 
 rangeIndexMapForRange :
@@ -582,70 +685,6 @@ replaceCollectionById collectionId replacement collection =
         []
 
 
-scrollThumbsToIndex : Bool -> Int -> Cmd Msg
-scrollThumbsToIndex showThumbs index =
-    if showThumbs then
-        let
-            delayedTask =
-                Process.sleep 0
-                    |> Task.andThen
-                        (\_ ->
-                            let
-                                thumbId =
-                                    "thumb-" ++ String.fromInt index
-                            in
-                            Task.map3
-                                (\thumb container viewport ->
-                                    max 0 (thumb.element.y - container.element.y + viewport.viewport.y)
-                                        |> Dom.setViewportOf "thumbs" 0
-                                )
-                                (Dom.getElement thumbId)
-                                (Dom.getElement "thumbs")
-                                (Dom.getViewportOf "thumbs")
-                                |> Task.andThen identity
-                        )
-        in
-        Task.attempt (\_ -> ClientNotifiedScrollThumbs) delayedTask
-
-    else
-        Cmd.none
-
-
-sendPageViewPreview : Model -> Cmd Msg
-sendPageViewPreview model =
-    if model.pageViewOpen then
-        model.selectedIndex
-            |> Maybe.andThen (\index -> getPageAt index model.pages)
-            |> Maybe.andThen
-                (\page ->
-                    List.drop model.pageViewImageIndex page.images
-                        |> List.head
-                        |> Maybe.map
-                            (\image ->
-                                filterPreviewUpdated
-                                    (Just
-                                        { aspect = page.aspect
-                                        , filters = model.filters
-                                        , isStatic = image.isStatic
-                                        , sourceId = image.sourceId
-                                        , tileSource = image.tileSource
-                                        }
-                                    )
-                            )
-                )
-            |> Maybe.withDefault Cmd.none
-
-    else
-        Cmd.none
-
-
-runAuthEffects : List Auth.Effect -> Cmd Msg
-runAuthEffects effects =
-    effects
-        |> List.map runAuthEffect
-        |> Cmd.batch
-
-
 runAuthEffect : Auth.Effect -> Cmd Msg
 runAuthEffect effect =
     case effect of
@@ -721,40 +760,76 @@ runAuthEffect effect =
             tileSourceResolutionFailed { requestId = requestId, message = message }
 
 
-popupEvent : { flowId : String, status : String } -> Msg
-popupEvent change =
-    AuthEvent
-        (case change.status of
-            "opened" ->
-                Auth.PopupOpened change.flowId
-
-            "closed" ->
-                Auth.PopupClosed change.flowId
-
-            _ ->
-                Auth.PopupBlocked change.flowId
-        )
+runAuthEffects : List Auth.Effect -> Cmd Msg
+runAuthEffects effects =
+    effects
+        |> List.map runAuthEffect
+        |> Cmd.batch
 
 
-logoutEvent : { sessionId : String, status : String } -> Msg
-logoutEvent change =
-    AuthEvent
-        (case change.status of
-            "opened" ->
-                Auth.LogoutOpened change.sessionId
+scrollThumbsToIndex : Bool -> Int -> Cmd Msg
+scrollThumbsToIndex showThumbs index =
+    if showThumbs then
+        let
+            delayedTask =
+                Process.sleep 0
+                    |> Task.andThen
+                        (\_ ->
+                            let
+                                thumbId =
+                                    "thumb-" ++ String.fromInt index
+                            in
+                            Task.map3
+                                (\thumb container viewport ->
+                                    max 0 (thumb.element.y - container.element.y + viewport.viewport.y)
+                                        |> Dom.setViewportOf "thumbs" 0
+                                )
+                                (Dom.getElement thumbId)
+                                (Dom.getElement "thumbs")
+                                (Dom.getViewportOf "thumbs")
+                                |> Task.andThen identity
+                        )
+        in
+        Task.attempt (\_ -> ClientNotifiedScrollThumbs) delayedTask
 
-            "closed" ->
-                Auth.LogoutClosed change.sessionId
+    else
+        Cmd.none
 
-            _ ->
-                Auth.LogoutBlocked change.sessionId
-        )
+
+sendPageViewPreview : Model -> Cmd Msg
+sendPageViewPreview model =
+    if model.pageViewOpen then
+        model.selectedIndex
+            |> Maybe.andThen (\index -> getPageAt index model.pages)
+            |> Maybe.andThen
+                (\page ->
+                    List.drop model.pageViewImageIndex page.images
+                        |> List.head
+                        |> Maybe.map
+                            (\image ->
+                                filterPreviewUpdated
+                                    (Just
+                                        { aspect = page.aspect
+                                        , filters = model.filters
+                                        , isStatic = image.isStatic
+                                        , sourceId = image.sourceId
+                                        , tileSource = image.tileSource
+                                        }
+                                    )
+                            )
+                )
+            |> Maybe.withDefault Cmd.none
+
+    else
+        Cmd.none
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ resolveTileSourceRequested (\request -> AuthEvent (Auth.Resolve request.requestId request.sourceId))
+        , resourceRequested (\request -> ClientRequestedResource request.requestId request.url)
+        , layoutModeRequested ClientRequestedLayoutMode
         , resolveTileSourceCancelled (Auth.Cancel >> AuthEvent)
         , authHttpResponded (\response -> AuthEvent (Auth.HttpSucceeded response.id response.status response.body))
         , authHttpFailed (\response -> AuthEvent (Auth.HttpFailed response.id response.message))
@@ -802,6 +877,28 @@ update msg model =
                     Auth.update event model.auth
             in
             ( { model | auth = nextAuth }, runAuthEffects effects )
+
+        ClientRequestedLayoutMode requestedMode ->
+            let
+                ( nextViewMode, nextShift ) =
+                    case requestedMode of
+                        "spread" ->
+                            ( TwoUp, False )
+
+                        "spread-shift" ->
+                            ( TwoUp, True )
+
+                        _ ->
+                            ( OneUp, False )
+            in
+            ( { model | viewMode = nextViewMode, shiftByOne = nextShift }
+            , layoutModeUpdated (layoutModeToString nextViewMode nextShift)
+            )
+
+        ClientRequestedResource requestId url ->
+            ( { model | pendingPublicResource = Just requestId, isViewerLoading = True }
+            , IIIF.requestResource (ServerRespondedWithRequestedResource requestId url) model.acceptHeaders url
+            )
 
         ClientNotifiedFullscreenChanged enabled ->
             ( { model | fullscreen = enabled }, Cmd.none )
@@ -899,13 +996,23 @@ update msg model =
                                 | collectionSidebarVisible = False
                                 , resourceResponse = ResourceLoadedManifest manifest
                               }
-                            , cmd
+                            , Cmd.batch
+                                [ cmd
+                                , resourceLoadSucceeded
+                                    { requestId = "initial"
+                                    , url = model.manifestUrl
+                                    , hasPages = not (List.isEmpty nextModel.pages)
+                                    }
+                                ]
                             )
 
                         ResourceCollection (IIIFCollection version collection) ->
                             ( { model
-                                | collectionSidebarVisible = True
+                                | auth = Auth.init
+                                , collectionSidebarVisible = True
                                 , isViewerLoading = False
+                                , pages = []
+                                , selectedIndex = Nothing
                                 , resourceResponse =
                                     ResourceLoadedCollection
                                         { collection = IIIFCollection version collection
@@ -916,19 +1023,104 @@ update msg model =
                                         }
                                 , response = NotRequested
                               }
-                            , Cmd.none
+                            , Cmd.batch
+                                [ clearViewer
+                                , resourceLoadSucceeded { requestId = "initial", url = model.manifestUrl, hasPages = False }
+                                ]
                             )
 
                         _ ->
-                            ( model, Cmd.none )
+                            ( { model | isViewerLoading = False }
+                            , resourceLoadFailed
+                                { requestId = "initial"
+                                , url = model.manifestUrl
+                                , message = "URL did not return a supported IIIF resource."
+                                }
+                            )
 
                 Err err ->
                     ( { model
                         | isViewerLoading = False
                         , resourceResponse = ResourceFailed (httpErrorToString err)
                       }
-                    , Cmd.none
+                    , resourceLoadFailed
+                        { requestId = "initial"
+                        , url = model.manifestUrl
+                        , message = httpErrorToString err
+                        }
                     )
+
+        ServerRespondedWithRequestedResource requestId url result ->
+            if model.pendingPublicResource /= Just requestId then
+                ( model, Cmd.none )
+
+            else
+                case result of
+                    Ok resource ->
+                        case resource of
+                            ResourceManifest manifest ->
+                                let
+                                    ( nextModel, cmd ) =
+                                        handleManifestLoaded model manifest
+                                in
+                                ( { nextModel
+                                    | collectionSidebarVisible = False
+                                    , manifestUrl = url
+                                    , pendingPublicResource = Nothing
+                                    , resourceResponse = ResourceLoadedManifest manifest
+                                  }
+                                , Cmd.batch
+                                    [ cmd
+                                    , resourceLoadSucceeded
+                                        { requestId = requestId
+                                        , url = url
+                                        , hasPages = not (List.isEmpty nextModel.pages)
+                                        }
+                                    ]
+                                )
+
+                            ResourceCollection (IIIFCollection version collection) ->
+                                ( { model
+                                    | auth = Auth.init
+                                    , collectionSidebarVisible = True
+                                    , isViewerLoading = False
+                                    , manifestUrl = url
+                                    , pages = []
+                                    , pendingPublicResource = Nothing
+                                    , selectedIndex = Nothing
+                                    , resourceResponse =
+                                        ResourceLoadedCollection
+                                            { collection = IIIFCollection version collection
+                                            , expandedIds = Set.empty
+                                            , loadedCollectionIds = Set.empty
+                                            , loadingCollectionIds = Set.empty
+                                            , selectedManifestId = Nothing
+                                            }
+                                    , response = NotRequested
+                                  }
+                                , Cmd.batch
+                                    [ clearViewer
+                                    , resourceLoadSucceeded { requestId = requestId, url = url, hasPages = False }
+                                    ]
+                                )
+
+                            _ ->
+                                ( { model | pendingPublicResource = Nothing, isViewerLoading = False }
+                                , resourceLoadFailed
+                                    { requestId = requestId
+                                    , url = url
+                                    , message = "URL did not return a supported IIIF resource."
+                                    }
+                                )
+
+                    Err err ->
+                        ( { model | pendingPublicResource = Nothing, isViewerLoading = False }
+                        , resourceLoadFailed
+                            { requestId = requestId
+                            , url = url
+                            , message = httpErrorToString err
+                            }
+                        )
 
         UserAppliedFilterJson ->
             case decodeFilterJson model.filtersJsonInput of

@@ -24,12 +24,12 @@
   <body>
 
     <div id="diva-wrapper"></div>
-<!--    <script src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/5.0.1/openseadragon.min.js"></script>-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/5.0.1/openseadragon.min.js"></script>
 <!--    <script src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/6.0.1/openseadragon.min.js"></script>-->
-    <script src="https://cdn.jsdelivr.net/npm/openseadragon@6.0.2/build/openseadragon/openseadragon.min.js"></script>
+<!--    <script src="https://cdn.jsdelivr.net/npm/openseadragon@6.0.2/build/openseadragon/openseadragon.min.js"></script>-->
 <!--    <script src="./openseadragon.min.js"></script>-->
 <!--    <script src="vendor/openseadragon.js"></script>-->
-    <script src="../build/diva.js"></script>
+    <script src="../build/diva.debug.js"></script>
     <script>
       const searchParams = new URLSearchParams(window.location.search);
 
@@ -48,7 +48,8 @@
 
       new Diva("diva-wrapper", {
         // objectData,
-        objectData: "https://www.e-codices.unifr.ch/metadata/iiif/collection.json",
+        // objectData: "https://www.e-codices.unifr.ch/metadata/iiif/collection.json",
+        objectData: "https://staging.diamm.net/sources/202/manifest/",
         // objectData: "https://www.e-codices.unifr.ch/metadata/iiif/bbb-0009/manifest.json",
         // objectData: "https://www.e-codices.unifr.ch/metadata/iiif/kba-MurF0002/manifest.json",
         // objectData: "https://digitalcollections.lib.washington.edu//iiif/info/mm/23084/manifest.json",

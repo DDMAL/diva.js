@@ -125,8 +125,10 @@ export class AuthBrowser
         {
             return Promise.reject(cancelled());
         }
+
         const key = descriptorKey(source);
         const cached = this.resolutionCache.get(source.sourceId);
+
         if (cached && cached.descriptorKey !== key)
         {
             this.invalidateSource(source.sourceId);

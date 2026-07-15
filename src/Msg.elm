@@ -8,6 +8,8 @@ import IIIF.Presentation exposing (IIIFManifest, IIIFResource)
 
 type Msg
     = AuthEvent Auth.Event
+    | ClientRequestedLayoutMode String
+    | ClientRequestedResource String String
     | ClientNotifiedFullscreenChanged Bool
     | ClientNotifiedPageChanged Int
     | ClientNotifiedPageChangedInstant Int
@@ -15,6 +17,7 @@ type Msg
     | ServerRespondedWithCollectionItem String (Result Http.Error IIIFResource)
     | ServerRespondedWithManifestFromCollection String (Result Http.Error IIIFManifest)
     | ServerRespondedWithResource (Result Http.Error IIIFResource)
+    | ServerRespondedWithRequestedResource String String (Result Http.Error IIIFResource)
     | UserAppliedFilterJson
     | UserChangedZoomLevel Float
     | UserClickedCloseManifestInfo

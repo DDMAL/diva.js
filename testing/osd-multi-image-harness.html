@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OSD Multi-Image Harness</title>
+    <style>
+      :root {
+        --bg: #10151f;
+        --panel: #172233;
+        --line: #2b3b57;
+        --text: #e8eef9;
+        --muted: #9fb2d1;
+        --accent: #6ea0ff;
+      }
+
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      .app {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        height: 100%;
+      }
+
+      .controls {
+        display: grid;
+        gap: 10px;
+        padding: 12px;
+        border-bottom: 1px solid var(--line);
+        background: linear-gradient(180deg, #18263a, #141f30);
+      }
+
+      .row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      label {
+        font-size: 12px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      input,
+      select,
+      button,
+      textarea {
+        border-radius: 6px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        color: var(--text);
+        padding: 8px 10px;
+        font-size: 14px;
+      }
+
+      input,
+      textarea {
+        min-width: 340px;
+      }
+
+      textarea {
+        width: min(960px, 95vw);
+        height: 80px;
+        resize: vertical;
+      }
+
+      button {
+        cursor: pointer;
+        border-color: #3a5685;
+      }
+
+      button.primary {
+        background: #244277;
+        border-color: #3f70be;
+      }
+
+      .hint {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      #viewer {
+        width: 100%;
+        height: 100%;
+      }
+
+      #status {
+        font-size: 12px;
+        color: var(--muted);
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <div class="controls">
+        <div class="row">
+          <label for="osd-version">OSD</label>
+          <select id="osd-version">
+            <option value="6.0.2">6.0.2</option>
+            <option value="5.0.1">5.0.1</option>
+          </select>
+
+          <label for="drawer">Drawer</label>
+          <select id="drawer">
+            <option value="auto">Auto</option>
+            <option value="canvas">Canvas</option>
+          </select>
+
+          <label for="layout">Layout</label>
+          <select id="layout">
+            <option value="single">Single</option>
+            <option value="spread">2-up</option>
+          </select>
+
+          <label for="direction">Direction</label>
+          <select id="direction">
+            <option value="ltr">LTR</option>
+            <option value="rtl">RTL</option>
+          </select>
+
+          <label for="load-mode">Load Mode</label>
+          <select id="load-mode">
+            <option value="parallel">Parallel</option>
+            <option value="sequential">Sequential</option>
+          </select>
+
+          <button id="apply-layout" type="button">Apply Layout</button>
+          <button id="clear" type="button">Clear Viewer</button>
+        </div>
+
+        <div class="row">
+          <label for="manifest-url">Manifest URL</label>
+          <input id="manifest-url" type="text" value="https://www.e-codices.unifr.ch/metadata/iiif/ubb-0001/manifest.json" />
+          <button id="load-manifest" class="primary" type="button">Load Manifest</button>
+        </div>
+
+        <div class="row">
+          <label for="tile-source-list">TileSources (one per line)</label>
+          <textarea id="tile-source-list" placeholder="https://.../info.json"></textarea>
+          <button id="load-tile-sources" type="button">Load TileSources</button>
+        </div>
+
+        <div class="hint">This harness uses direct <code>viewer.addTiledImage</code> calls to place many pages in single/2-up layouts without Elm code.</div>
+        <div id="status">Idle</div>
+      </div>
+      <div id="viewer"></div>
+    </div>
+
+    <script>
+      const osdVersionEl = document.getElementById("osd-version");
+      const layoutEl = document.getElementById("layout");
+      const directionEl = document.getElementById("direction");
+      const drawerEl = document.getElementById("drawer");
+      const loadModeEl = document.getElementById("load-mode");
+      const manifestUrlEl = document.getElementById("manifest-url");
+      const tileSourceListEl = document.getElementById("tile-source-list");
+      const statusEl = document.getElementById("status");
+
+      const OSD_URLS = {
+        "6.0.2": "../node_modules/openseadragon/build/openseadragon/openseadragon.min.js",
+        "5.0.1": "../node_modules/openseadragon5/build/openseadragon/openseadragon.min.js"
+      };
+
+      let viewer = null;
+      let currentTileSources = [];
+      let pageHeights = [];
+      let pageOffsets = [];
+      let pageXOffsets = [];
+      let successItemOwnerByObject = new WeakMap();
+
+      function setStatus(text) {
+        statusEl.textContent = text;
+      }
+
+      function loadScript(src) {
+        return new Promise((resolve, reject) => {
+          const old = document.getElementById("osd-script");
+          if (old) {
+            old.remove();
+          }
+          window.OpenSeadragon = undefined;
+          const script = document.createElement("script");
+          script.id = "osd-script";
+          script.src = src;
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error(`Failed to load ${src}`));
+          document.head.appendChild(script);
+        });
+      }
+
+      async function ensureViewer() {
+        const selectedVersion = osdVersionEl.value;
+        const src = OSD_URLS[selectedVersion];
+
+        if (!window.OpenSeadragon || window.__osdVersionLoaded !== selectedVersion) {
+          setStatus(`Loading OpenSeadragon ${selectedVersion}...`);
+          await loadScript(src);
+          window.__osdVersionLoaded = selectedVersion;
+        }
+
+        if (viewer && typeof viewer.destroy === "function") {
+          viewer.destroy();
+        }
+        successItemOwnerByObject = new WeakMap();
+
+        const options = {
+          id: "viewer",
+          showNavigationControl: true,
+          preserveViewport: true,
+          visibilityRatio: 0,
+          constrainDuringPan: false,
+          minZoomLevel: 0.1,
+          minZoomImageRatio: 0.1,
+          crossOriginPolicy: "Anonymous",
+          loadTilesWithAjax: true,
+          ajaxWithCredentials: false,
+        };
+        if (drawerEl.value === "canvas") {
+          options.drawer = "canvas";
+        }
+        viewer = OpenSeadragon(options);
+
+        viewer.addHandler("tile-load-failed", (event) => {
+          const page = typeof event?.tile?.originalPage === "number" ? event.tile.originalPage : null;
+          const tries = typeof event?.tries === "number" ? event.tries : null;
+          const maxReached = typeof event?.maxReached === "boolean" ? event.maxReached : null;
+          console.warn("[HARNESS] tile-load-failed", { page, tries, maxReached, message: event?.message || event?.error || null });
+        });
+      }
+
+      function parseTileSourcesInput() {
+        return tileSourceListEl.value
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+      }
+
+      async function fetchJson(url) {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status} for ${url}`);
+        }
+        return response.json();
+      }
+
+      function pickCanvases(manifest) {
+        if (manifest?.items && Array.isArray(manifest.items)) {
+          return manifest.items;
+        }
+        if (manifest?.sequences?.[0]?.canvases && Array.isArray(manifest.sequences[0].canvases)) {
+          return manifest.sequences[0].canvases;
+        }
+        return [];
+      }
+
+      function extractInfoJsonFromCanvas(canvas) {
+        const annoPage = canvas?.items?.[0];
+        const anno = annoPage?.items?.[0];
+        const serviceV3 = anno?.body?.service?.[0]?.id || anno?.body?.service?.id;
+        if (typeof serviceV3 === "string") {
+          return `${serviceV3.replace(/\/$/, "")}/info.json`;
+        }
+
+        const image = canvas?.images?.[0];
+        const serviceV2 = image?.resource?.service?.["@id"] || image?.resource?.service?.id;
+        if (typeof serviceV2 === "string") {
+          return `${serviceV2.replace(/\/$/, "")}/info.json`;
+        }
+
+        return null;
+      }
+
+      async function getTileSourcesFromManifest(url) {
+        const manifest = await fetchJson(url);
+        const canvases = pickCanvases(manifest);
+        const tileSources = canvases
+          .map(extractInfoJsonFromCanvas)
+          .filter(Boolean);
+        if (tileSources.length === 0) {
+          throw new Error("No tile sources extracted from manifest");
+        }
+        return tileSources;
+      }
+
+      async function getAspectFromInfoJson(url) {
+        try {
+          const info = await fetchJson(url);
+          const width = Number(info?.width || 1);
+          const height = Number(info?.height || 1);
+          return width > 0 && height > 0 ? height / width : 1;
+        } catch {
+          return 1;
+        }
+      }
+
+      async function computeAspects(tileSources) {
+        const aspects = [];
+        for (const src of tileSources) {
+          aspects.push(await getAspectFromInfoJson(src));
+        }
+        return aspects;
+      }
+
+      function buildLayout(mode, direction) {
+        const count = currentTileSources.length;
+        pageOffsets = new Array(count);
+        pageHeights = new Array(count);
+        pageXOffsets = new Array(count);
+
+        const gap = 0.03;
+        let currentY = 0;
+
+        if (mode === "single") {
+          let fallback = 1;
+          for (let i = 0; i < count; i += 1) {
+            const h = Number(pageHeights[i]) || fallback || 1;
+            fallback = h;
+            pageOffsets[i] = currentY;
+            pageHeights[i] = h;
+            pageXOffsets[i] = 0;
+            currentY += h + gap;
+          }
+          return;
+        }
+
+        let i = 0;
+        let fallback = 1;
+        while (i < count) {
+          const left = Number(pageHeights[i]) || fallback || 1;
+          const rightIndex = i + 1;
+          const right = rightIndex < count ? Number(pageHeights[rightIndex]) || left : left;
+          fallback = right;
+          const row = Math.max(left, right);
+
+          pageOffsets[i] = currentY;
+          pageHeights[i] = left;
+          pageXOffsets[i] = direction === "rtl" ? 1 : 0;
+
+          if (rightIndex < count) {
+            pageOffsets[rightIndex] = currentY;
+            pageHeights[rightIndex] = right;
+            pageXOffsets[rightIndex] = direction === "rtl" ? 0 : 1;
+          }
+
+          currentY += row + gap;
+          i += 2;
+        }
+      }
+
+      function addTileAt(index, onDone, firstItemRef) {
+        const tileSource = currentTileSources[index];
+        viewer.addTiledImage({
+          tileSource,
+          x: pageXOffsets[index] || 0,
+          y: pageOffsets[index] || 0,
+          width: 1,
+          success: (event) => {
+            const item = event.item;
+            const priorOwner = successItemOwnerByObject.get(item);
+            if (typeof priorOwner === "number" && priorOwner !== index) {
+              console.error("[HARNESS] success callback received item already owned by another index", {
+                requestedIndex: index,
+                priorOwner,
+                tileSource,
+                priorOwnerTileSource: currentTileSources[priorOwner] || null,
+                itemSourceUrl: item?.source?.url || item?.source?.tilesUrl || null,
+              });
+            } else if (typeof priorOwner !== "number") {
+              successItemOwnerByObject.set(item, index);
+            }
+
+            item.setPosition(new OpenSeadragon.Point(pageXOffsets[index] || 0, pageOffsets[index] || 0), true);
+            item.setWidth(1, true);
+            item.setHeight(pageHeights[index] || 1, true);
+
+            if (!firstItemRef.item) {
+              firstItemRef.item = item;
+              const width = layoutEl.value === "single" ? 1 : 2;
+              const bounds = new OpenSeadragon.Rect(0, pageOffsets[index] || 0, width, Math.max(pageHeights[index] || 1, 0.5));
+              viewer.viewport.fitBounds(bounds, true);
+              viewer.viewport.zoomBy(0.95, viewer.viewport.getCenter(true), true);
+              viewer.viewport.applyConstraints();
+            }
+            onDone();
+          },
+          error: (e) => {
+            console.warn("[HARNESS] addTiledImage error", { index, e });
+            onDone();
+          },
+        });
+      }
+
+      function addAllTiles() {
+        if (!viewer || !currentTileSources.length) {
+          return;
+        }
+
+        const firstItemRef = { item: null };
+        if (loadModeEl.value === "sequential") {
+          let i = 0;
+          const loadNext = () => {
+            if (i >= currentTileSources.length) {
+              setStatus(`Loaded ${currentTileSources.length} tile sources with ${layoutEl.value} layout (${directionEl.value}), sequential.`);
+              return;
+            }
+            const index = i;
+            i += 1;
+            addTileAt(index, loadNext, firstItemRef);
+          };
+          loadNext();
+          return;
+        }
+
+        for (let i = 0; i < currentTileSources.length; i += 1) {
+          addTileAt(i, () => {}, firstItemRef);
+        }
+        setStatus(`Loaded ${currentTileSources.length} tile sources with ${layoutEl.value} layout (${directionEl.value}), parallel.`);
+      }
+
+      async function loadTileSources(tileSources) {
+        if (!tileSources.length) {
+          setStatus("No tile sources provided.");
+          return;
+        }
+
+        await ensureViewer();
+        currentTileSources = tileSources.slice();
+        pageHeights = await computeAspects(currentTileSources);
+
+        buildLayout(layoutEl.value, directionEl.value);
+        addAllTiles();
+      }
+
+      document.getElementById("load-manifest").addEventListener("click", async () => {
+        try {
+          const url = manifestUrlEl.value.trim();
+          const tileSources = await getTileSourcesFromManifest(url);
+          tileSourceListEl.value = tileSources.join("\n");
+          await loadTileSources(tileSources);
+        } catch (error) {
+          console.error(error);
+          setStatus(`Manifest load failed: ${String(error.message || error)}`);
+        }
+      });
+
+      document.getElementById("load-tile-sources").addEventListener("click", async () => {
+        try {
+          await loadTileSources(parseTileSourcesInput());
+        } catch (error) {
+          console.error(error);
+          setStatus(`TileSources load failed: ${String(error.message || error)}`);
+        }
+      });
+
+      document.getElementById("apply-layout").addEventListener("click", async () => {
+        if (!currentTileSources.length) {
+          setStatus("Load tile sources first.");
+          return;
+        }
+        await loadTileSources(currentTileSources);
+      });
+
+      document.getElementById("clear").addEventListener("click", () => {
+        if (viewer && typeof viewer.destroy === "function") {
+          viewer.destroy();
+          viewer = null;
+        }
+        currentTileSources = [];
+        pageHeights = [];
+        pageOffsets = [];
+        pageXOffsets = [];
+        setStatus("Cleared viewer.");
+      });
+    </script>
+  </body>
+</html>

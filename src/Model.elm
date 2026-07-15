@@ -41,6 +41,7 @@ type alias Model =
     , rangeIndexMap : Dict String (Maybe Int)
     , thumbsInstantScroll : Bool
     , pendingThumbScroll : Maybe Int
+    , pendingPublicResource : Maybe String
     , pageViewOpen : Bool
     , pageViewFullscreen : Bool
     , pageViewSidebarVisible : Bool
@@ -71,7 +72,10 @@ type alias Model =
 
 
 type alias Page =
-    { aspect : Float
+    { canvasId : String
+    , width : Maybe Int
+    , height : Maybe Int
+    , aspect : Float
     , label : String
     , thumbUrl : String
     , images : List PageImage
@@ -79,7 +83,8 @@ type alias Page =
 
 
 type alias PageImage =
-    { sourceId : String
+    { id : String
+    , sourceId : String
     , tileSource : String
     , thumbUrl : String
     , label : String
@@ -210,7 +215,10 @@ canvasToPage language canvas =
                 canvasThumbnailUrl images canvas
         in
         Just
-            { aspect = canvasAspect canvas
+            { canvasId = canvas.id
+            , width = canvas.width
+            , height = canvas.height
+            , aspect = canvasAspect canvas
             , label = canvasLabel canvas
             , thumbUrl = thumbUrl
             , images = images
@@ -243,7 +251,8 @@ iiifImageToPageImage language allImages image =
         isPrimary =
             image.imageType == PrimaryImage || (isPrimaryImage && isFirst)
     in
-    { sourceId = tileSource
+    { id = tileSource
+    , sourceId = tileSource
     , tileSource = tileSource
     , thumbUrl = thumbUrl
     , label = label

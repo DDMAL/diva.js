@@ -79,11 +79,20 @@ suite =
                         page
                             |> Expect.all
                                 [ .thumbUrl >> Expect.equal "https://thumbs.example.org/canvas-thumb.jpg"
+                                , .canvasId >> Expect.equal "https://example.org/canvas/1"
+                                , .width >> Expect.equal (Just 1200)
+                                , .height >> Expect.equal (Just 1800)
                                 , .images
                                     >> List.map .thumbUrl
                                     >> Expect.equal
                                         [ "https://example.org/iiif/canvas-1/full/180,/0/default.jpg"
                                         , "https://example.org/iiif/canvas-1-alt/full/180,/0/default.jpg"
+                                        ]
+                                , .images
+                                    >> List.map .id
+                                    >> Expect.equal
+                                        [ "https://example.org/iiif/canvas-1/info.json"
+                                        , "https://example.org/iiif/canvas-1-alt/info.json"
                                         ]
                                 ]
 
