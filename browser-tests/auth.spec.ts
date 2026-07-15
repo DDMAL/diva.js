@@ -86,6 +86,67 @@ test("loads the first tile without duplicate resolution requests", async ({page}
     expect(metrics.firstTileMs).toBeGreaterThanOrEqual(0);
 });
 
+test("loads only nearby sidebar thumbnails", async ({page}, testInfo) => {
+    const origin = "http://127.0.0.1:4173";
+    const pageCount = 60;
+    const thumbnailRequests = new Set<string>();
+    const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64");
+    const canvas = (index: number) => ({
+        id : `${origin}/lazy/canvas-${index}`,
+        type : "Canvas",
+        width : 100,
+        height : 100,
+        items : [ {id : `${origin}/lazy/page-${index}`, type : "AnnotationPage", items : [ {
+                                                                                         id : `${origin}/lazy/annotation-${index}`,
+                                                                                         type : "Annotation",
+                                                                                         motivation : "painting",
+                                                                                         target : `${origin}/lazy/canvas-${index}`,
+                                                                                         body : {id : `${origin}/lazy/image-${index}/full/full/0/default.jpg`, type : "Image", service : {id : `${origin}/lazy/image-${index}`, type : "ImageService3"}}
+                                                                                     } ]} ]
+    });
+
+    await page.route(`${origin}/lazy/manifest`, (route) => route.fulfill({json : {
+        "@context" : "http://iiif.io/api/presentation/3/context.json",
+        id : `${origin}/lazy/manifest`,
+        type : "Manifest",
+        label : {en : [ "Lazy thumbnails" ]},
+        items : Array.from({length : pageCount}, (_, index) => canvas(index + 1))
+    }}));
+    await page.route(`${origin}/lazy/image-*/**`, (route) => {
+        const url = route.request().url();
+        if (url.endsWith("/info.json"))
+        {
+            return route.fulfill({json : {
+                "@context" : "http://iiif.io/api/image/3/context.json",
+                id : url.replace(/\/info\.json$/, ""),
+                type : "ImageService3",
+                protocol : "http://iiif.io/api/image",
+                profile : "level0",
+                width : 100,
+                height : 100,
+                tiles : [ {width : 100, scaleFactors : [ 1 ]} ]
+            }});
+        }
+        if (url.includes("/full/180,/0/default.jpg"))
+        {
+            thumbnailRequests.add(url);
+        }
+        return route.fulfill({contentType : "image/png", body : png});
+    });
+
+    await openHarness(page, `${origin}/lazy/manifest`, testInfo);
+    await expect(page.locator("diva-lazy-image")).toHaveCount(pageCount);
+    expect(thumbnailRequests.size).toBe(0);
+
+    await page.getByRole("button", {name : "Show Sidebar"}).click();
+    await expect.poll(() => thumbnailRequests.size).toBeGreaterThan(0);
+    const initiallyLoaded = thumbnailRequests.size;
+    expect(initiallyLoaded).toBeLessThan(pageCount);
+
+    await page.locator(".thumbs").evaluate((element) => { element.scrollTop = element.scrollHeight; });
+    await expect.poll(() => thumbnailRequests.size).toBeGreaterThan(initiallyLoaded);
+});
+
 test("deduplicates active login and sends bearer only to the probe", async ({context : browserContext, page}, testInfo) => {
     const origin = "http://127.0.0.1:4173";
     const authOrigin = `https://${testInfo.project.name}.auth.example.test`;
@@ -455,7 +516,7 @@ test("isolates info.json failure and does not retry unavailable sources automati
 
     await openHarness(page, `${origin}/plain/manifest`, testInfo);
     await expect(page.locator(".diva-image-unavailable")).toHaveCount(1);
-    await expect(page.locator("img.thumbs-image").first()).toHaveAttribute("crossorigin", "anonymous");
+    await expect(page.locator("diva-lazy-image").first()).toHaveAttribute("data-crossorigin", "anonymous");
     await page.waitForTimeout(1000);
     expect(failedInfoRequests).toBe(1);
     expect(successfulInfoRequests).toBe(1);

@@ -2,8 +2,8 @@ module View.Sidebar exposing (viewSidebarPanel, viewSidebarResizer)
 
 import Auth
 import Dict exposing (Dict)
-import Html exposing (Html, a, button, div, img, li, text, ul)
-import Html.Attributes as HA exposing (alt, attribute, classList, id, src, type_)
+import Html exposing (Html, a, button, div, li, text, ul)
+import Html.Attributes as HA exposing (attribute, classList, id, type_)
 import Html.Events as Events
 import Html.Lazy as Lazy
 import IIIF.Language exposing (LabelValue, Language, extractLabelFromLanguageMap)
@@ -738,12 +738,11 @@ viewThumbnail auth viewMode shiftByOne selectedIndex index page =
         thumbnail =
             case Auth.thumbnailCrossOrigin primary.sourceId auth of
                 Just crossOrigin ->
-                    img
-                        [ HA.class "thumbs-image"
-                        , src page.thumbUrl
-                        , alt ("Page " ++ String.fromInt (index + 1))
-                        , attribute "loading" "lazy"
-                        , attribute "crossorigin" crossOrigin
+                    Html.node "diva-lazy-image"
+                        [ HA.class "thumbs-lazy-image"
+                        , attribute "data-src" page.thumbUrl
+                        , attribute "data-alt" ("Page " ++ String.fromInt (index + 1))
+                        , attribute "data-crossorigin" crossOrigin
                         ]
                         []
 

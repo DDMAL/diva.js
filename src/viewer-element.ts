@@ -13,6 +13,87 @@ const ZOOM_OUT_FACTOR = 1 / ZOOM_IN_FACTOR
 const PAGE_LABEL_TOP_PADDING_PX = 28;
 const PAGE_GAP_VIEWPORT_UNITS = 0.06;
 
+let lazyImageObserver: IntersectionObserver|null = null;
+
+class DivaLazyImage extends HTMLElement
+{
+    private image: HTMLImageElement|null = null;
+
+    static get observedAttributes(): string[]
+    {
+        return [ "data-src", "data-alt", "data-crossorigin" ];
+    }
+
+    connectedCallback(): void
+    {
+        this.observe();
+    }
+
+    disconnectedCallback(): void
+    {
+        lazyImageObserver?.unobserve(this);
+    }
+
+    attributeChangedCallback(): void
+    {
+        if (this.image)
+        {
+            this.image.remove();
+            this.image = null;
+        }
+        if (this.isConnected)
+        {
+            this.observe();
+        }
+    }
+
+    load(): void
+    {
+        if (this.image)
+        {
+            return;
+        }
+        const url = this.dataset.src;
+        if (!url)
+        {
+            return;
+        }
+        lazyImageObserver?.unobserve(this);
+        const image = document.createElement("img");
+        image.className = "thumbs-image";
+        image.alt = this.dataset.alt ?? "";
+        const crossOrigin = this.dataset.crossorigin;
+        if (crossOrigin)
+        {
+            image.crossOrigin = crossOrigin;
+        }
+        this.image = image;
+        this.appendChild(image);
+        image.src = url;
+    }
+
+    private observe(): void
+    {
+        if (!("IntersectionObserver" in window))
+        {
+            this.load();
+            return;
+        }
+        if (!lazyImageObserver)
+        {
+            lazyImageObserver = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting)
+                    {
+                        (entry.target as DivaLazyImage).load();
+                    }
+                });
+            }, {rootMargin : "300px 0px"});
+        }
+        lazyImageObserver.observe(this);
+    }
+}
+
 class OsdViewer extends HTMLElement
 {
     private container: HTMLDivElement|null = null;
@@ -1547,4 +1628,5 @@ class OsdViewer extends HTMLElement
     }
 }
 
+customElements.define("diva-lazy-image", DivaLazyImage);
 customElements.define("osd-viewer", OsdViewer);

@@ -112,6 +112,13 @@
   border-radius: 0;
 }
 
+.thumbs-lazy-image {
+  display: block;
+  width: 100%;
+  min-height: 96px;
+  background: var(--diva-dark-bg);
+}
+
 .thumbs-image--protected {
   min-height: 96px;
   background: var(--diva-dark-bg);
