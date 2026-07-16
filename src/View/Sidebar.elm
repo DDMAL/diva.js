@@ -9,7 +9,7 @@ import Html.Lazy as Lazy
 import IIIF.Language exposing (LabelValue, Language, extractLabelFromLanguageMap)
 import IIIF.Presentation exposing (IIIFManifest, MediaFormats, Range, RangeItem(..), ResourceTypes, ViewingDirection(..), canvasLabel, toCanvases, toHomepage, toMetadata, toRanges, toViewingDirection)
 import Json.Decode as Decode
-import Model exposing (ContentsView(..), Model, Page, ResourceResponse(..), Response(..), SidebarState(..), ViewMode(..), currentManifest, pageViewStartIndex)
+import Model exposing (ContentsView(..), Model, Page, ResourceResponse(..), Response(..), SidebarState(..), ViewMode(..), currentManifest, getPageAt, pageViewStartIndex)
 import Msg exposing (Msg(..))
 import View.Helpers exposing (emptyHtml, viewMaybe)
 import View.HtmlRenderer exposing (renderHtml)
@@ -71,11 +71,11 @@ chunkHelp size remaining acc =
             chunkHelp size rest (nextChunk :: acc)
 
 
-currentCanvasId : Model -> IIIFManifest -> Maybe String
-currentCanvasId model manifest =
+currentCanvasId : Model -> Maybe String
+currentCanvasId model =
     model.selectedIndex
-        |> Maybe.andThen (\index -> List.drop index (toCanvases manifest) |> List.head)
-        |> Maybe.map .id
+        |> Maybe.andThen (\index -> getPageAt index model.pages)
+        |> Maybe.map .canvasId
 
 
 hasManifestMetadata : IIIFManifest -> Bool
@@ -395,7 +395,7 @@ viewMetadataContent model =
 
 viewOnThisPageBody : Model -> IIIFManifest -> Html Msg
 viewOnThisPageBody model manifest =
-    case currentCanvasId model manifest of
+    case currentCanvasId model of
         Just canvasId ->
             case toRanges manifest of
                 Just list ->
@@ -473,7 +473,7 @@ viewOtpRangeItem model canvasLabelMap range =
                 rangePrefix ++ labelText
 
         labelNode =
-            viewRangeButton range.id maybeIndex resolvedLabel
+            viewRangeButton False range.id maybeIndex resolvedLabel
 
         metadataBlock =
             viewRangeMetadata model.detectedLanguage range.metadata
@@ -483,13 +483,24 @@ viewOtpRangeItem model canvasLabelMap range =
         (labelNode :: metadataBlock)
 
 
-viewRangeButton : String -> Maybe Int -> String -> Html Msg
-viewRangeButton rangeId maybeIndex labelText =
+viewRangeButton : Bool -> String -> Maybe Int -> String -> Html Msg
+viewRangeButton isCurrent rangeId maybeIndex labelText =
     button
-        [ HA.class "contents-button ui-button"
-        , type_ "button"
-        , Events.onClick (UserClickedRange rangeId maybeIndex)
-        ]
+        ([ classList
+            [ ( "contents-button", True )
+            , ( "ui-button", True )
+            , ( "is-current", isCurrent )
+            ]
+         , type_ "button"
+         , Events.onClick (UserClickedRange rangeId maybeIndex)
+         ]
+            ++ (if isCurrent then
+                    [ attribute "aria-current" "location" ]
+
+                else
+                    []
+               )
+        )
         [ text labelText ]
 
 
@@ -550,8 +561,13 @@ viewRangeNode model rangeIndexMap range =
             else
                 labelText
 
+        isCurrent =
+            currentCanvasId model
+                |> Maybe.map (\canvasId -> rangeContainsCanvas canvasId range)
+                |> Maybe.withDefault False
+
         labelNode =
-            viewRangeButton range.id maybeIndex resolvedLabel
+            viewRangeButton isCurrent range.id maybeIndex resolvedLabel
 
         metadataBlock =
             if model.selectedRangeId == Just range.id then

@@ -15,7 +15,10 @@ import type {DivaEventMap,
              DivaLayoutMode,
              DivaOptions,
              DivaPage,
+             DivaPageSelector,
+             DivaPageTarget,
              DivaRegion,
+             DivaSidebarPanel,
              DivaState,
              DivaViewingDirection,
              ZoomToRegionOptions} from "./public-api";
@@ -25,7 +28,10 @@ export type {DivaEventMap,
              DivaLayoutMode,
              DivaOptions,
              DivaPage,
+             DivaPageSelector,
+             DivaPageTarget,
              DivaRegion,
+             DivaSidebarPanel,
              DivaState,
              DivaViewingDirection,
              ZoomToRegionOptions} from "./public-api";
@@ -161,7 +167,7 @@ type PublicPageEntry = {
 type TileSourceResolver = (source: TileSourceDescriptor, signal: AbortSignal) => Promise<ResolvedTileSource>;
 
 type ElmPorts = {
-    tileSourcesUpdated: {subscribe: (callback: (tileSources: TileSourceEntry[]) => void) => void};
+    tileSourcesUpdated: {subscribe: (callback: (update: {tileSources: TileSourceEntry[]; initialPageIndex : number}) => void) => void};
     pageAspectsUpdated : {subscribe : (callback: (aspects: number[]) => void) => void};
     pageLabelsUpdated : {subscribe : (callback: (labels: string[]) => void) => void};
     pagesUpdated : {subscribe : (callback: (pages: PublicPageEntry[]) => void) => void};
@@ -199,7 +205,7 @@ type ElmPorts = {
     authSourcesInvalidated : {subscribe : (callback: (value: string[]) => void) => void};
     authDestroyed : {send : (value: null) => void};
     resourceRequested : {send : (value: {requestId: string; url : string}) => void};
-    resourceLoadSucceeded : {subscribe : (callback: (value: {requestId: string; url : string; hasPages : boolean}) => void) => void};
+    resourceLoadSucceeded : {subscribe : (callback: (value: {requestId: string; url : string; hasPages : boolean; pageIndex : number}) => void) => void};
     resourceLoadFailed : {subscribe : (callback: (value: {requestId: string; url : string; message : string}) => void) => void};
 };
 
@@ -212,6 +218,10 @@ type DivaRoot = HTMLElement&
     elmTree?: unknown;
     __divaInstance?: Diva;
 };
+
+const DEFAULT_SIDEBAR_WIDTH = 320;
+const MIN_SIDEBAR_WIDTH = 220;
+const MAX_SIDEBAR_WIDTH = 520;
 
 /**
  * A browser viewer for IIIF Presentation manifests and collections.
@@ -265,23 +275,26 @@ export class Diva extends EventTarget
     private filterPreviewController: AbortController|null = null;
     private isDestroyed = false;
     private readonly handlePageChangeBound: (event: Event) => void;
+    private readonly handlePageLoadedBound: (event: Event) => void;
     private readonly handleZoomChangeBound: (event: Event) => void;
     private readonly handleLoadingChangeBound: (event: Event) => void;
     private readonly handlePageLoadErrorBound: (event: Event) => void;
     private readonly handleFullscreenChangeBound: () => void;
     private readonly handleRootClickBound: (event: Event) => void;
     private pages: DivaPage[] = [];
+    private readonly pagesByCanvasId: Map<string, DivaPage> = new Map();
+    private readonly pagesByLabel: Map<string, DivaPage> = new Map();
     private state: DivaState;
     private readyResolve!: () => void;
     private readyReject!: (error: Error) => void;
     private readySettled = false;
     private resourceSequence = 0;
     private pendingResource: {id: string; promise : Promise<void>; resolve : () => void; reject : (error: Error) => void}|null = null;
-    private awaitingViewerResource: {id: string; url : string}|null = null;
+    private awaitingViewerResource: {id: string; url : string; pageIndex : number}|null = null;
     private resourceLoading = true;
     private viewerLoading = false;
     /**
-     * Resolves when the initial resource and its first displayable page are ready.
+     * Resolves when the initial resource and selected initial page are ready.
      *
      * @remarks
      * Collections without an active manifest resolve when their collection UI is
@@ -349,6 +362,7 @@ export class Diva extends EventTarget
         void this.ready.catch(() => {});
 
         this.handlePageChangeBound = this.handlePageChange.bind(this);
+        this.handlePageLoadedBound = this.handlePageLoaded.bind(this);
         this.handleZoomChangeBound = this.handleZoomChange.bind(this);
         this.handleLoadingChangeBound = this.handleLoadingChange.bind(this);
         this.handlePageLoadErrorBound = this.handlePageLoadError.bind(this);
@@ -356,14 +370,24 @@ export class Diva extends EventTarget
         this.handleRootClickBound = this.handleRootClick.bind(this);
 
         let langCode = this.detectLanguage();
+        const requestedSidebarWidth = flags.sidebarWidth;
+        const sidebarWidth = typeof requestedSidebarWidth === "number" && Number.isFinite(requestedSidebarWidth)
+                                 ? Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, Math.round(requestedSidebarWidth)))
+                                 : DEFAULT_SIDEBAR_WIDTH;
+        const sidebarPanel: DivaSidebarPanel = flags.sidebarPanel === "contents" || flags.sidebarPanel === "metadata"
+                                                   ? flags.sidebarPanel
+                                                   : "thumbnails";
 
         this.app = Elm.Main.init({
             node : root,
             flags : {
                 rootElementId : rootId,
                 objectData : flags.objectData,
+                initialPage : this.initialPageFlag(flags.initialPage),
                 acceptHeaders : flags.acceptHeaders || [],
                 showSidebar : flags.showSidebar !== false,
+                sidebarWidth,
+                sidebarPanel,
                 showTitle : flags.showTitle !== false,
                 userLanguage : flags.setLanguage || langCode
             }
@@ -378,6 +402,7 @@ export class Diva extends EventTarget
         this.callViewerMethodWhenReady("setTileSourceResolver", this.tileSourceResolver);
         this.bindRootClick();
         this.bindPageChange();
+        this.bindViewerEvent("diva-page-loaded", this.handlePageLoadedBound as EventListener);
         this.bindFullscreenChange();
         this.bindZoomChange();
         this.bindLoadingChange();
@@ -391,6 +416,20 @@ export class Diva extends EventTarget
      * @returns {string}
      */
     private detectLanguage(): string { return navigator.language.split("-")[0]; }
+
+    private initialPageFlag(target: DivaPageTarget|undefined): unknown
+    {
+        if (typeof target === "number")
+        {
+            return Number.isInteger(target) && target >= 0 ? target : null;
+        }
+        if (target && typeof target === "object" &&
+            (target.by === "canvasId" || target.by === "label") && typeof target.value === "string")
+        {
+            return {by : target.by, value : target.value};
+        }
+        return null;
+    }
 
     private getConnectedRoot(): HTMLElement
     {
@@ -406,10 +445,10 @@ export class Diva extends EventTarget
     private bindPorts(): void
     {
         this.getPort("tileSourcesUpdated")
-            .subscribe((tileSources: TileSourceEntry[]) => {
-                this.auth.registerSources(tileSources);
+            .subscribe((update: {tileSources: TileSourceEntry[]; initialPageIndex : number}) => {
+                this.auth.registerSources(update.tileSources);
                 this.callViewerMethodWhenReady("setTileSourceResolver", this.tileSourceResolver);
-                this.callViewerMethodWhenReady("setTileSources", tileSources);
+                this.callViewerMethodWhenReady("setTileSources", update.tileSources, update.initialPageIndex);
             });
 
         this.getPort("pageAspectsUpdated")
@@ -420,6 +459,7 @@ export class Diva extends EventTarget
 
         this.getPort("pagesUpdated").subscribe((pages: PublicPageEntry[]) => {
             this.pages = pages.map((page) => this.copyPage(page));
+            this.rebuildPageIndexes();
             this.updateState({pageCount : this.pages.length, currentPageIndex : null, visiblePageIndexes : []});
         });
 
@@ -462,8 +502,8 @@ export class Diva extends EventTarget
                 this.updateLayoutState(mode, this.state.viewingDirection);
             });
 
-        this.getPort("resourceLoadSucceeded").subscribe((value: {requestId: string; url : string; hasPages : boolean}) => {
-            this.handleResourceSucceeded(value.requestId, value.url, value.hasPages);
+        this.getPort("resourceLoadSucceeded").subscribe((value: {requestId: string; url : string; hasPages : boolean; pageIndex : number}) => {
+            this.handleResourceSucceeded(value.requestId, value.url, value.hasPages, value.pageIndex);
         });
 
         this.getPort("resourceLoadFailed").subscribe((value: {requestId: string; url : string; message : string}) => {
@@ -504,6 +544,35 @@ export class Diva extends EventTarget
         };
     }
 
+    private rebuildPageIndexes(): void
+    {
+        this.pagesByCanvasId.clear();
+        this.pagesByLabel.clear();
+        this.pages.forEach((page) => {
+            if (!this.pagesByCanvasId.has(page.canvasId))
+            {
+                this.pagesByCanvasId.set(page.canvasId, page);
+            }
+            const label = page.label.toLowerCase();
+            if (!this.pagesByLabel.has(label))
+            {
+                this.pagesByLabel.set(label, page);
+            }
+        });
+    }
+
+    private pageForSelector(selector: DivaPageSelector): DivaPage|undefined
+    {
+        if (!selector || typeof selector !== "object" ||
+            (selector.by !== "canvasId" && selector.by !== "label") || typeof selector.value !== "string")
+        {
+            throw new TypeError("A page selector must contain a supported 'by' value and a string 'value'.");
+        }
+        return selector.by === "canvasId"
+                   ? this.pagesByCanvasId.get(selector.value)
+                   : this.pagesByLabel.get(selector.value.toLowerCase());
+    }
+
     private copyState(): Readonly<DivaState>
     {
         return {...this.state, visiblePageIndexes : this.state.visiblePageIndexes.slice()};
@@ -535,7 +604,7 @@ export class Diva extends EventTarget
         }
     }
 
-    private handleResourceSucceeded(requestId: string, url: string, hasPages: boolean): void
+    private handleResourceSucceeded(requestId: string, url: string, hasPages: boolean, pageIndex: number): void
     {
         if (requestId !== "initial" && this.pendingResource?.id !== requestId)
         {
@@ -543,7 +612,13 @@ export class Diva extends EventTarget
         }
         if (hasPages)
         {
-            this.awaitingViewerResource = {id : requestId, url};
+            this.awaitingViewerResource = {id : requestId, url, pageIndex};
+            const viewer = this.ensureMainViewer();
+            const sourceId = this.pages[pageIndex]?.primaryImage.id;
+            if (sourceId && viewer && typeof viewer.isPageLoaded === "function" && viewer.isPageLoaded(pageIndex, sourceId))
+            {
+                this.completeResource(requestId, url);
+            }
             return;
         }
         this.completeResource(requestId, url);
@@ -555,16 +630,13 @@ export class Diva extends EventTarget
         this.updateState({resourceUrl : url, ready : true});
         this.resourceLoading = false;
         this.refreshLoadingState();
-        if (requestId === "initial")
+        if (!this.readySettled)
         {
-            if (!this.readySettled)
-            {
-                this.readySettled = true;
-                this.readyResolve();
-                this.emit("ready", this.copyState());
-            }
+            this.readySettled = true;
+            this.readyResolve();
+            this.emit("ready", this.copyState());
         }
-        else if (this.pendingResource)
+        if (requestId !== "initial" && this.pendingResource)
         {
             this.pendingResource.resolve();
             this.pendingResource = null;
@@ -795,6 +867,26 @@ export class Diva extends EventTarget
     public getPages(): readonly DivaPage[] { return this.pages.map((page) => this.copyPage(page)); }
 
     /**
+     * Find a displayed page by Canvas identifier or localized display label.
+     *
+     * @param selector - Exact Canvas-ID or complete label lookup.
+     * @returns A defensive page snapshot, or `undefined` when no page matches.
+     *
+     * @throws `TypeError`
+     * Thrown when a runtime value is not a valid {@link DivaPageSelector}.
+     *
+     * @remarks
+     * Canvas IDs are case-sensitive. Labels are case-insensitive but are not
+     * trimmed, whitespace-normalized, or substring-matched. Duplicate labels
+     * return the first page in manifest order.
+     */
+    public findPage(selector: DivaPageSelector): DivaPage|undefined
+    {
+        const page = this.pageForSelector(selector);
+        return page ? this.copyPage(page) : undefined;
+    }
+
+    /**
      * Return metadata for the active page, if the resource has pages.
      *
      * @returns The active page, or `undefined` before page initialization and for collections without an active manifest.
@@ -884,9 +976,31 @@ export class Diva extends EventTarget
      * @throws `DOMException`
      * Rejected with `InvalidStateError` after destruction.
      */
-    public async goToPage(index: number): Promise<void>
+    public goToPage(index: number): Promise<void>;
+    /**
+     * Navigate to a page selected by Canvas identifier or display label.
+     *
+     * @param selector - Page lookup using the matching rules from {@link Diva.findPage}.
+     * @returns `true` after navigation, or `false` without moving when no page matches.
+     *
+     * @throws `TypeError`
+     * Rejected when a runtime selector object is malformed.
+     */
+    public goToPage(selector: DivaPageSelector): Promise<boolean>;
+    public async goToPage(target: number|DivaPageSelector): Promise<void|boolean>
     {
         await this.waitForResource();
+        if (typeof target !== "number")
+        {
+            const page = this.pageForSelector(target);
+            if (!page)
+            {
+                return false;
+            }
+            await this.callViewerMethodAsync("scrollToIndex", page.index);
+            return true;
+        }
+        const index = target;
         this.assertPageIndex(index);
         await this.callViewerMethodAsync("scrollToIndex", index);
     }
@@ -1128,6 +1242,7 @@ export class Diva extends EventTarget
         this.pendingViewerMethods.clear();
         const root = this.getConnectedRoot();
         this.removeViewerEvent("diva-page-change", this.handlePageChangeBound as EventListener);
+        this.removeViewerEvent("diva-page-loaded", this.handlePageLoadedBound as EventListener);
         this.removeViewerEvent("diva-zoom-change", this.handleZoomChangeBound as EventListener);
         this.removeViewerEvent("diva-loading-change", this.handleLoadingChangeBound as EventListener);
         this.removeViewerEvent("diva-page-load-error", this.handlePageLoadErrorBound as EventListener);
@@ -1256,9 +1371,18 @@ export class Diva extends EventTarget
                 visiblePages : this.getVisiblePages()
             });
         }
-        if (this.awaitingViewerResource)
+    }
+
+    private handlePageLoaded(event: Event): void
+    {
+        const detail = (event as CustomEvent).detail;
+        if (!detail || typeof detail.index !== "number")
         {
-            const awaiting = this.awaitingViewerResource;
+            return;
+        }
+        const awaiting = this.awaitingViewerResource;
+        if (awaiting && detail.index === awaiting.pageIndex)
+        {
             this.completeResource(awaiting.id, awaiting.url);
         }
     }
@@ -1291,10 +1415,23 @@ export class Diva extends EventTarget
     {
         const detail = (event as CustomEvent).detail;
         const error = new Error(detail?.message || "The image could not be loaded.");
-        if (this.awaitingViewerResource)
+        const awaiting = this.awaitingViewerResource;
+        if (awaiting && detail?.index === awaiting.pageIndex)
         {
-            const awaiting = this.awaitingViewerResource;
-            this.completeResource(awaiting.id, awaiting.url);
+            this.awaitingViewerResource = null;
+            this.updateState({ready : false});
+            this.resourceLoading = false;
+            this.refreshLoadingState();
+            if (!this.readySettled)
+            {
+                this.readySettled = true;
+                this.readyReject(error);
+            }
+            if (awaiting.id !== "initial" && this.pendingResource?.id === awaiting.id)
+            {
+                this.pendingResource.reject(error);
+                this.pendingResource = null;
+            }
         }
         this.emit("error", {error, operation : "loadPage", recoverable : true});
     }

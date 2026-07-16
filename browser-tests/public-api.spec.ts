@@ -99,6 +99,251 @@ test("exposes immutable IIIF page metadata and state", async ({page}) => {
     expect(result.state).toMatchObject({ready : true, pageCount : 4, resourceUrl : `${origin}/api/first/manifest`});
 });
 
+test("finds pages by exact Canvas ID and complete case-insensitive label", async ({page}) => {
+    const name = "duplicate-labels";
+    const duplicateManifest = manifest(name, 3);
+    duplicateManifest.items[0].label = {en : [ "Same Label" ]};
+    duplicateManifest.items[1].label = {en : [ "Same Label" ]};
+    await page.route(`${origin}/api/${name}/manifest`, (route) => route.fulfill({json : duplicateManifest}));
+    await page.evaluate((url) => (window as any).diva.setResource(url), `${origin}/api/${name}/manifest`);
+
+    const result = await page.evaluate(async ({canvasId}) => {
+        const diva = (window as any).diva;
+        const byCanvas = diva.findPage({by : "canvasId", value : canvasId});
+        const byLabel = diva.findPage({by : "label", value : "sAmE lAbEl"});
+        byLabel.label = "mutated";
+        const defensive = diva.findPage({by : "label", value : "Same Label"});
+        const substring = diva.findPage({by : "label", value : "Same"});
+        const whitespace = diva.findPage({by : "label", value : " Same Label "});
+        const moved = await diva.goToPage({by : "canvasId", value : canvasId});
+        const beforeMissing = diva.getState().currentPageIndex;
+        const missing = await diva.goToPage({by : "label", value : "Missing"});
+        let findError = "";
+        let goError = "";
+        try
+        {
+            diva.findPage({by : "unknown", value : "x"});
+        }
+        catch (error)
+        {
+            findError = (error as Error).name;
+        }
+        try
+        {
+            await diva.goToPage({by : "label", value : 4});
+        }
+        catch (error)
+        {
+            goError = (error as Error).name;
+        }
+        return {
+            byCanvas,
+            byLabelIndex : byLabel.index,
+            defensiveLabel : defensive.label,
+            substring,
+            whitespace,
+            moved,
+            missing,
+            beforeMissing,
+            afterMissing : diva.getState().currentPageIndex,
+            findError,
+            goError
+        };
+    }, {canvasId : `${origin}/api/${name}/canvas/3`});
+
+    expect(result).toMatchObject({
+        byCanvas : {index : 2, canvasId : `${origin}/api/${name}/canvas/3`},
+        byLabelIndex : 0,
+        defensiveLabel : "Same Label",
+        substring : undefined,
+        whitespace : undefined,
+        moved : true,
+        missing : false,
+        beforeMissing : 2,
+        afterMissing : 2,
+        findError : "TypeError",
+        goError : "TypeError"
+    });
+});
+
+test("rebuilds page lookup indexes after resource replacement", async ({page}) => {
+    const result = await page.evaluate(async ({firstCanvas, second}) => {
+        const diva = (window as any).diva;
+        const before = diva.findPage({by : "canvasId", value : firstCanvas})?.index;
+        await diva.setResource(second);
+        return {
+            before,
+            stale : diva.findPage({by : "canvasId", value : firstCanvas}),
+            current : diva.findPage({by : "label", value : "folio 2"})?.canvasId
+        };
+    }, {firstCanvas : `${origin}/api/first/canvas/4`, second : `${origin}/api/second/manifest`});
+
+    expect(result).toEqual({before : 3, stale : undefined, current : `${origin}/api/second/canvas/2`});
+});
+
+test("opens numeric, Canvas-ID, and label initial targets", async ({page}) => {
+    const objectData = `${origin}/api/first/manifest`;
+    const targets = [
+        2,
+        {by : "canvasId", value : `${origin}/api/first/canvas/4`},
+        {by : "label", value : "fOlIo 2"}
+    ];
+    const indexes: number[] = [];
+    for (const [offset, initialPage] of targets.entries())
+    {
+        indexes.push(await page.evaluate(async ({objectData, initialPage, offset}) => {
+            const root = document.createElement("div");
+            root.id = `initial-target-${offset}`;
+            root.style.cssText = "width:800px;height:600px";
+            document.body.appendChild(root);
+            const diva = new (window as any).Diva(root.id, {objectData, initialPage});
+            await diva.ready;
+            return diva.getState().currentPageIndex;
+        }, {objectData, initialPage, offset}));
+    }
+    expect(indexes).toEqual([ 2, 3, 1 ]);
+});
+
+test("falls back to page zero for invalid and unmatched initial targets", async ({page}) => {
+    const objectData = `${origin}/api/first/manifest`;
+    const targets = [ 99, {by : "label", value : "missing"}, {by : "bad", value : "x"} ];
+    const indexes: number[] = [];
+    for (const [offset, initialPage] of targets.entries())
+    {
+        indexes.push(await page.evaluate(async ({objectData, initialPage, offset}) => {
+            const root = document.createElement("div");
+            root.id = `fallback-target-${offset}`;
+            root.style.cssText = "width:800px;height:600px";
+            document.body.appendChild(root);
+            const diva = new (window as any).Diva(root.id, {objectData, initialPage});
+            await diva.ready;
+            return diva.getState().currentPageIndex;
+        }, {objectData, initialPage, offset}));
+    }
+    expect(indexes).toEqual([ 0, 0, 0 ]);
+});
+
+test("loads a distant initial target without requesting page zero", async ({page}) => {
+    const name = "distant";
+    const infoRequests: string[] = [];
+    await page.route(`${origin}/api/${name}/manifest`, (route) => route.fulfill({json : manifest(name, 24)}));
+    page.on("request", (request) => {
+        if (request.url().includes(`/api/${name}/image/`) && request.url().endsWith("/info.json"))
+        {
+            infoRequests.push(request.url());
+        }
+    });
+
+    const state = await page.evaluate(async ({objectData, initialPage}) => {
+        const diva = new (window as any).Diva("diva-wrapper", {objectData, initialPage});
+        (window as any).diva = diva;
+        await diva.ready;
+        return diva.getState();
+    }, {objectData : `${origin}/api/${name}/manifest`, initialPage : 18});
+
+    expect(state.currentPageIndex).toBe(18);
+    expect(infoRequests).toContain(`${origin}/api/${name}/image/19/info.json`);
+    expect(infoRequests).not.toContain(`${origin}/api/${name}/image/1/info.json`);
+});
+
+test("positions a distant initial image with final page geometry", async ({page}) => {
+    const name = "varied-geometry";
+    const targetIndex = 19;
+    const variedManifest = manifest(name, 24);
+    (variedManifest as any).behavior = [ "paged" ];
+    variedManifest.items.forEach((canvas, index) => {
+        canvas.width = index % 2 === 0 ? 900 : 1300;
+        canvas.height = 1600 + (index * 17);
+        const body = canvas.items[0].items[0].body as any;
+        body.id = `${origin}/api/${name}/static/${index + 1}.png`;
+        delete body.service;
+    });
+    await page.route(`${origin}/api/${name}/manifest`, (route) => route.fulfill({json : variedManifest}));
+    await page.route(`${origin}/api/${name}/static/*`, (route) => route.fulfill({contentType : "image/png", body : png}));
+
+    const result = await page.evaluate(async ({objectData, initialPage}) => {
+        const diva = new (window as any).Diva("diva-wrapper", {objectData, initialPage});
+        (window as any).diva = diva;
+        await diva.ready;
+        const viewer = document.getElementById("main-viewer") as any;
+        const itemBounds = viewer.loadedItems.get(initialPage).getBounds();
+        return {
+            currentPageIndex : diva.getState().currentPageIndex,
+            itemX : itemBounds.x,
+            itemY : itemBounds.y,
+            itemHeight : itemBounds.height,
+            expectedX : viewer.pageXOffsets[initialPage],
+            expectedY : viewer.pageOffsets[initialPage],
+            expectedHeight : viewer.pageHeights[initialPage]
+        };
+    }, {objectData : `${origin}/api/${name}/manifest`, initialPage : targetIndex});
+
+    expect(result.currentPageIndex).toBe(targetIndex);
+    expect(result.itemX).toBeCloseTo(result.expectedX, 6);
+    expect(result.itemY).toBeCloseTo(result.expectedY, 6);
+    expect(result.itemHeight).toBeCloseTo(result.expectedHeight, 6);
+});
+
+test("configures the initial sidebar width and retains the default", async ({page}) => {
+    const sidebar = page.locator(".sidebar-panel");
+    await page.getByRole("button", {name : "Show Sidebar"}).evaluate((button: HTMLButtonElement) => button.click());
+    await expect(sidebar).toHaveCSS("width", "320px");
+
+    await page.evaluate(async (objectData) => {
+        (window as any).diva = new (window as any).Diva("diva-wrapper", {objectData, sidebarWidth : 411.6});
+        await (window as any).diva.ready;
+    }, `${origin}/api/first/manifest`);
+    await page.getByRole("button", {name : "Show Sidebar"}).evaluate((button: HTMLButtonElement) => button.click());
+    await expect(sidebar).toHaveCSS("width", "412px");
+});
+
+test("defaults to thumbnails and selects the configured contents panel", async ({page}) => {
+    const name = "sidebar-panels";
+    await page.route(`${origin}/api/${name}/manifest`, (route) => route.fulfill({json : {
+        ...manifest(name, 2),
+        metadata : [ {
+            label : {en : [ "Creator" ]},
+            value : {en : [ "Test Creator" ]}
+        } ],
+        structures : [ {
+            id : `${origin}/api/${name}/range/a`,
+            type : "Range",
+            label : {en : [ "Section A" ]},
+            items : [ {id : `${origin}/api/${name}/canvas/1`, type : "Canvas"} ]
+        } ]
+    }}));
+
+    await page.getByRole("button", {name : "Show Sidebar"}).evaluate((button: HTMLButtonElement) => button.click());
+    await expect(page.getByRole("button", {name : "Thumbnails", exact : true})).toHaveClass(/is-active/);
+    await page.evaluate(({objectData, sidebarPanel}) => {
+        (window as any).diva = new (window as any).Diva("diva-wrapper", {objectData, sidebarPanel});
+    }, {objectData : `${origin}/api/${name}/manifest`, sidebarPanel : "contents"});
+    await expect(page.getByRole("button", {name : "Contents", exact : true})).toHaveClass(/is-active/);
+});
+
+test("selects the configured metadata panel", async ({page}) => {
+    const name = "sidebar-metadata";
+    await page.route(`${origin}/api/${name}/manifest`, (route) => route.fulfill({json : {
+        ...manifest(name, 1),
+        metadata : [ {
+            label : {en : [ "Creator" ]},
+            value : {en : [ "Test Creator" ]}
+        } ]
+    }}));
+
+    await page.evaluate(({objectData, sidebarPanel}) => {
+        (window as any).diva = new (window as any).Diva("diva-wrapper", {objectData, sidebarPanel});
+    }, {objectData : `${origin}/api/${name}/manifest`, sidebarPanel : "metadata"});
+    await expect(page.getByRole("button", {name : "Metadata", exact : true})).toHaveClass(/is-active/);
+});
+
+test("falls back to thumbnails when the configured panel is unavailable", async ({page}) => {
+    await page.evaluate(({objectData, sidebarPanel}) => {
+        (window as any).diva = new (window as any).Diva("diva-wrapper", {objectData, sidebarPanel});
+    }, {objectData : `${origin}/api/first/manifest`, sidebarPanel : "contents"});
+    await expect(page.getByRole("button", {name : "Thumbnails", exact : true})).toHaveClass(/is-active/);
+});
+
 test("navigates by openings and frames an image region", async ({page}) => {
     await page.evaluate(async () => {
         const diva = (window as any).diva;
@@ -112,6 +357,86 @@ test("navigates by openings and frames an image region", async ({page}) => {
 
     await page.evaluate(() => (window as any).diva.zoomToRegion(2, {x : 100, y : 200, width : 300, height : 400}, {padding : 0.1, immediately : true}));
     await expect.poll(() => page.evaluate(() => (window as any).diva.getState().zoom)).not.toBeNull();
+});
+
+test("bolds ranges containing the current page in the contents index", async ({page}) => {
+    const name = "ranged";
+    await page.route(`${origin}/api/${name}/manifest`, (route) => route.fulfill({json : {
+        ...manifest(name, 3),
+        structures : [ {
+                          id : `${origin}/api/${name}/range/a`,
+                          type : "Range",
+                          label : {en : [ "Section A" ]},
+                          items : [
+                              {id : `${origin}/api/${name}/canvas/1`, type : "Canvas"},
+                              {id : `${origin}/api/${name}/canvas/2`, type : "Canvas"}
+                          ]
+                      },
+                       {
+                           id : `${origin}/api/${name}/range/b`,
+                           type : "Range",
+                           label : {en : [ "Section B" ]},
+                           items : [ {id : `${origin}/api/${name}/canvas/3`, type : "Canvas"} ]
+                       } ]
+    }}));
+
+    await page.evaluate((url) => (window as any).diva.setResource(url), `${origin}/api/${name}/manifest`);
+    await page.getByRole("button", {name : "Contents"}).evaluate((button: HTMLButtonElement) => button.click());
+
+    const sectionA = page.getByRole("button", {name : "Section A", exact : true});
+    const sectionB = page.getByRole("button", {name : "Section B", exact : true});
+    await expect(sectionA).toHaveClass(/is-current/);
+    await expect(sectionA).toHaveAttribute("aria-current", "location");
+    await expect(sectionA).toHaveCSS("font-weight", "600");
+    await expect(sectionB).not.toHaveClass(/is-current/);
+
+    await page.evaluate(() => (window as any).diva.goToPage(2));
+    await expect(sectionB).toHaveClass(/is-current/);
+    await expect(sectionB).toHaveAttribute("aria-current", "location");
+    await expect(sectionA).not.toHaveClass(/is-current/);
+
+    await page.getByRole("button", {name : "On this page"}).evaluate((button: HTMLButtonElement) => button.click());
+    await expect(page.locator(".contents-button.is-current")).toHaveCount(0);
+});
+
+test("indents nested ranges in the contents index", async ({page}) => {
+    const name = "nested-ranges";
+    await page.route(`${origin}/api/${name}/manifest`, (route) => route.fulfill({json : {
+        ...manifest(name, 3),
+        structures : [ {
+            id : `${origin}/api/${name}/range/parent`,
+            type : "Range",
+            label : {en : [ "Parent range" ]},
+            items : [ {
+                id : `${origin}/api/${name}/range/child`,
+                type : "Range",
+                label : {en : [ "Child range" ]},
+                items : [ {
+                    id : `${origin}/api/${name}/range/grandchild`,
+                    type : "Range",
+                    label : {en : [ "Grandchild range" ]},
+                    items : [ {id : `${origin}/api/${name}/canvas/1`, type : "Canvas"} ]
+                } ]
+            } ]
+        } ]
+    }}));
+
+    await page.evaluate((url) => (window as any).diva.setResource(url), `${origin}/api/${name}/manifest`);
+    await page.getByRole("button", {name : "Contents"}).evaluate((button: HTMLButtonElement) => button.click());
+
+    const parent = page.getByRole("button", {name : "Parent range", exact : true});
+    const child = page.getByRole("button", {name : "Child range", exact : true});
+    const grandchild = page.getByRole("button", {name : "Grandchild range", exact : true});
+    const [parentBox, childBox, grandchildBox] = await Promise.all([
+        parent.boundingBox(),
+        child.boundingBox(),
+        grandchild.boundingBox()
+    ]);
+
+    expect(parentBox).not.toBeNull();
+    expect(childBox!.x - parentBox!.x).toBeGreaterThanOrEqual(18);
+    expect(grandchildBox!.x - childBox!.x).toBeGreaterThanOrEqual(18);
+    await expect(page.locator(".contents-list-nested").first()).toHaveCSS("border-left-width", "1px");
 });
 
 test("replaces resources atomically and reports recoverable failure", async ({page}) => {
@@ -165,6 +490,159 @@ test("validates commands and cancels superseded resource loads", async ({page}) 
     expect(result.regionError).toBe("RangeError");
     expect(result.superseded).toBe("AbortError");
     expect(result.replacement).toMatchObject({resourceUrl : `${origin}/api/second/manifest`, pageCount : 2, ready : true});
+});
+
+test("ignores a late initial resource after an immediate replacement", async ({page}, testInfo) => {
+    const slowInitial = `${origin}/api/slow-initial/manifest`;
+    let releaseInitial!: () => void;
+    const initialReleased = new Promise<void>((resolve) => {
+        releaseInitial = resolve;
+    });
+    let initialRequested = false;
+
+    await page.route(slowInitial, async (route) => {
+        initialRequested = true;
+        await initialReleased;
+        await route.fulfill({json : manifest("slow-initial", 1)});
+    });
+
+    const osd = (testInfo.project.metadata.osdVersion as string).startsWith("5") ? "5" : "6";
+    await page.goto(`/testing/auth-harness.html?manifest=${encodeURIComponent(slowInitial)}&osd=${osd}`);
+    await page.evaluate((replacementUrl) => {
+        const diva = (window as any).diva;
+        const outcomes = {
+            ready : "pending",
+            replacement : "pending",
+            readyEvents : [] as string[],
+            resourceEvents : [] as string[]
+        };
+        (window as any).resourceRaceOutcomes = outcomes;
+        diva.addEventListener("ready", (event: CustomEvent) => outcomes.readyEvents.push(event.detail.resourceUrl));
+        diva.addEventListener("resourcechange", (event: CustomEvent) => outcomes.resourceEvents.push(event.detail.resourceUrl));
+        diva.ready.then(() => outcomes.ready = "resolved", (error: Error) => outcomes.ready = error.name);
+        diva.setResource(replacementUrl)
+            .then(() => outcomes.replacement = "resolved", (error: Error) => outcomes.replacement = error.name);
+    }, `${origin}/api/second/manifest`);
+
+    await expect.poll(() => initialRequested).toBe(true);
+    await expect.poll(() => page.evaluate(() => (window as any).resourceRaceOutcomes)).toMatchObject({
+        ready : "resolved",
+        replacement : "resolved",
+        readyEvents : [ `${origin}/api/second/manifest` ],
+        resourceEvents : [ `${origin}/api/second/manifest` ]
+    });
+
+    releaseInitial();
+    await page.waitForTimeout(250);
+
+    const result = await page.evaluate(() => ({
+                                           outcomes : (window as any).resourceRaceOutcomes,
+                                           pages : (window as any).diva.getPages(),
+                                           state : (window as any).diva.getState()
+                                       }));
+    expect(result.state).toMatchObject({
+        resourceUrl : `${origin}/api/second/manifest`,
+        pageCount : 2,
+        ready : true
+    });
+    expect(result.pages).toHaveLength(2);
+    expect(result.pages[0].canvasId).toBe(`${origin}/api/second/canvas/1`);
+    expect(result.outcomes.readyEvents).toEqual([ `${origin}/api/second/manifest` ]);
+    expect(result.outcomes.resourceEvents).toEqual([ `${origin}/api/second/manifest` ]);
+});
+
+test("waits for the required page when a prefetched neighbor fails", async ({page}, testInfo) => {
+    const name = "prefetch-failure";
+    let releaseFirstPage!: () => void;
+    const firstPageReleased = new Promise<void>((resolve) => {
+        releaseFirstPage = resolve;
+    });
+
+    await page.route(`${origin}/api/${name}/manifest`, (route) => route.fulfill({json : manifest(name, 2)}));
+    await page.route(`${origin}/api/${name}/image/1/info.json`, async (route) => {
+        await firstPageReleased;
+        await route.fulfill({json : {
+            "@context" : "http://iiif.io/api/image/3/context.json",
+            id : `${origin}/api/${name}/image/1`,
+            type : "ImageService3",
+            protocol : "http://iiif.io/api/image",
+            profile : "level0",
+            width : 1000,
+            height : 2000,
+            tiles : [ {width : 256, scaleFactors : [ 1, 2, 4, 8 ]} ]
+        }});
+    });
+    await page.route(`${origin}/api/${name}/image/2/info.json`, (route) => route.fulfill({status : 500, body : "failed"}));
+
+    const osd = (testInfo.project.metadata.osdVersion as string).startsWith("5") ? "5" : "6";
+    await page.goto(`/testing/auth-harness.html?manifest=${encodeURIComponent(`${origin}/api/${name}/manifest`)}&osd=${osd}`);
+    await page.evaluate(() => {
+        (window as any).requiredPageOutcome = "pending";
+        (window as any).diva.ready.then(() => (window as any).requiredPageOutcome = "resolved", (error: Error) => (window as any).requiredPageOutcome = error.name);
+    });
+
+    await expect(page.locator(".diva-image-unavailable")).toHaveCount(1);
+    expect(await page.evaluate(() => (window as any).requiredPageOutcome)).toBe("pending");
+    expect(await page.evaluate(() => (window as any).diva.getState().ready)).toBe(false);
+
+    releaseFirstPage();
+    await expect.poll(() => page.evaluate(() => (window as any).requiredPageOutcome)).toBe("resolved");
+    await expect.poll(() => page.evaluate(() => (window as any).diva.getState().ready)).toBe(true);
+});
+
+test("rejects initial readiness when the required page fails", async ({page}, testInfo) => {
+    const name = "required-page-failure";
+    await page.route(`${origin}/api/${name}/manifest`, (route) => route.fulfill({json : manifest(name, 2)}));
+    await page.route(`${origin}/api/${name}/image/1/info.json`, (route) => route.fulfill({status : 500, body : "failed"}));
+
+    const osd = (testInfo.project.metadata.osdVersion as string).startsWith("5") ? "5" : "6";
+    await page.goto(`/testing/auth-harness.html?manifest=${encodeURIComponent(`${origin}/api/${name}/manifest`)}&osd=${osd}`);
+    const result = await page.evaluate(async () => {
+        const diva = (window as any).diva;
+        let readyOutcome = "resolved";
+        try
+        {
+            await diva.ready;
+        }
+        catch (error)
+        {
+            readyOutcome = (error as Error).name;
+        }
+        return {readyOutcome, state : diva.getState()};
+    });
+
+    expect(result.readyOutcome).toBe("Error");
+    expect(result.state.ready).toBe(false);
+    await expect(page.locator(".diva-image-unavailable")).toHaveCount(1);
+});
+
+test("rejects a replacement when its required page fails", async ({page}) => {
+    const name = "replacement-page-failure";
+    await page.route(`${origin}/api/${name}/manifest`, (route) => route.fulfill({json : manifest(name, 1)}));
+    await page.route(`${origin}/api/${name}/image/1/info.json`, (route) => route.fulfill({status : 500, body : "failed"}));
+
+    const result = await page.evaluate(async (url) => {
+        const diva = (window as any).diva;
+        const errors: string[] = [];
+        let resourceEvents = 0;
+        diva.addEventListener("error", (event: CustomEvent) => errors.push(event.detail.operation));
+        diva.addEventListener("resourcechange", () => resourceEvents += 1);
+        let replacementOutcome = "resolved";
+        try
+        {
+            await diva.setResource(url);
+        }
+        catch (error)
+        {
+            replacementOutcome = (error as Error).name;
+        }
+        return {errors, replacementOutcome, resourceEvents, state : diva.getState()};
+    }, `${origin}/api/${name}/manifest`);
+
+    expect(result.replacementOutcome).toBe("Error");
+    expect(result.resourceEvents).toBe(0);
+    expect(result.errors).toContain("loadPage");
+    expect(result.state.ready).toBe(false);
 });
 
 test("rejects commands after destruction", async ({page}) => {

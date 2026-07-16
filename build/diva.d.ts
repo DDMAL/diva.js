@@ -1,6 +1,6 @@
 import "./viewer-element";
-import type { DivaEventMap, DivaLayoutMode, DivaOptions, DivaPage, DivaRegion, DivaState, ZoomToRegionOptions } from "./public-api";
-export type { DivaEventMap, DivaImage, DivaLayoutMode, DivaOptions, DivaPage, DivaRegion, DivaState, DivaViewingDirection, ZoomToRegionOptions } from "./public-api";
+import type { DivaEventMap, DivaLayoutMode, DivaOptions, DivaPage, DivaPageSelector, DivaRegion, DivaState, ZoomToRegionOptions } from "./public-api";
+export type { DivaEventMap, DivaImage, DivaLayoutMode, DivaOptions, DivaPage, DivaPageSelector, DivaPageTarget, DivaRegion, DivaSidebarPanel, DivaState, DivaViewingDirection, ZoomToRegionOptions } from "./public-api";
 /**
  * A browser viewer for IIIF Presentation manifests and collections.
  *
@@ -52,12 +52,15 @@ export declare class Diva extends EventTarget {
     private filterPreviewController;
     private isDestroyed;
     private readonly handlePageChangeBound;
+    private readonly handlePageLoadedBound;
     private readonly handleZoomChangeBound;
     private readonly handleLoadingChangeBound;
     private readonly handlePageLoadErrorBound;
     private readonly handleFullscreenChangeBound;
     private readonly handleRootClickBound;
     private pages;
+    private readonly pagesByCanvasId;
+    private readonly pagesByLabel;
     private state;
     private readyResolve;
     private readyReject;
@@ -68,7 +71,7 @@ export declare class Diva extends EventTarget {
     private resourceLoading;
     private viewerLoading;
     /**
-     * Resolves when the initial resource and its first displayable page are ready.
+     * Resolves when the initial resource and selected initial page are ready.
      *
      * @remarks
      * Collections without an active manifest resolve when their collection UI is
@@ -97,10 +100,13 @@ export declare class Diva extends EventTarget {
      * @returns {string}
      */
     private detectLanguage;
+    private initialPageFlag;
     private getConnectedRoot;
     private bindPorts;
     private ensureMainViewer;
     private copyPage;
+    private rebuildPageIndexes;
+    private pageForSelector;
     private copyState;
     private updateState;
     private emit;
@@ -149,6 +155,21 @@ export declare class Diva extends EventTarget {
      * @returns Pages in zero-based display order. Auth tokens and resolved loading URLs are never included.
      */
     getPages(): readonly DivaPage[];
+    /**
+     * Find a displayed page by Canvas identifier or localized display label.
+     *
+     * @param selector - Exact Canvas-ID or complete label lookup.
+     * @returns A defensive page snapshot, or `undefined` when no page matches.
+     *
+     * @throws `TypeError`
+     * Thrown when a runtime value is not a valid {@link DivaPageSelector}.
+     *
+     * @remarks
+     * Canvas IDs are case-sensitive. Labels are case-insensitive but are not
+     * trimmed, whitespace-normalized, or substring-matched. Duplicate labels
+     * return the first page in manifest order.
+     */
+    findPage(selector: DivaPageSelector): DivaPage | undefined;
     /**
      * Return metadata for the active page, if the resource has pages.
      *
@@ -203,6 +224,16 @@ export declare class Diva extends EventTarget {
      * Rejected with `InvalidStateError` after destruction.
      */
     goToPage(index: number): Promise<void>;
+    /**
+     * Navigate to a page selected by Canvas identifier or display label.
+     *
+     * @param selector - Page lookup using the matching rules from {@link Diva.findPage}.
+     * @returns `true` after navigation, or `false` without moving when no page matches.
+     *
+     * @throws `TypeError`
+     * Rejected when a runtime selector object is malformed.
+     */
+    goToPage(selector: DivaPageSelector): Promise<boolean>;
     /**
      * Navigate to the next page or opening for the active layout.
      *
@@ -333,6 +364,7 @@ export declare class Diva extends EventTarget {
     private handleRootClick;
     private toggleFullscreenFromUserActivation;
     private handlePageChange;
+    private handlePageLoaded;
     private handleZoomChange;
     private handleLoadingChange;
     private handlePageLoadError;

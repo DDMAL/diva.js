@@ -14,6 +14,46 @@ export type DivaLayoutMode = "single" | "spread" | "spread-shift";
  */
 export type DivaViewingDirection = "ltr" | "rtl";
 /**
+ * A manifest-derived page lookup selector.
+ *
+ * @remarks
+ * Canvas identifiers match exactly. Labels match the complete localized label
+ * selected for display by Diva, case-insensitively. Labels are not trimmed or
+ * otherwise whitespace-normalized, and duplicate labels select the first page
+ * in manifest order.
+ */
+export type DivaPageSelector = {
+    /**
+     * Select by exact IIIF Canvas identifier.
+     */
+    by: "canvasId";
+    /**
+     * Canvas identifier to match.
+     */
+    value: string;
+} | {
+    /**
+     * Select by complete, case-insensitive localized display label.
+     */
+    by: "label";
+    /**
+     * Display label to match.
+     */
+    value: string;
+};
+/**
+ * A page target accepted during initial viewer construction.
+ *
+ * @remarks
+ * Numeric targets are zero-based, like all numeric Diva page APIs. This differs
+ * from one-based page numbers an application may choose to expose in its URLs.
+ */
+export type DivaPageTarget = number | DivaPageSelector;
+/**
+ * The panel selected when the navigation sidebar is first opened.
+ */
+export type DivaSidebarPanel = "thumbnails" | "contents" | "metadata";
+/**
  * A painted image described by a IIIF canvas.
  */
 export interface DivaImage {
@@ -110,7 +150,7 @@ export interface DivaState {
      */
     resourceUrl: string;
     /**
-     * Whether the current resource and its first displayable page are ready.
+     * Whether the current resource and its required initial page are ready.
      */
     ready: boolean;
     /**
@@ -155,7 +195,7 @@ export interface DivaState {
  */
 export interface DivaEventMap {
     /**
-     * Fired once after the initial resource and first displayable page are ready.
+     * Fired once after the initial resource and selected initial page are ready.
      */
     ready: CustomEvent<Readonly<DivaState>>;
     /**
@@ -255,6 +295,16 @@ export interface DivaOptions {
      */
     objectData: string;
     /**
+     * Page to display when the initial manifest opens.
+     *
+     * @remarks
+     * Numeric values are zero-based. Selector matching follows
+     * {@link DivaPageSelector}. Invalid or unmatched targets silently fall back
+     * to page index 0. This option applies only to the initial manifest;
+     * resources loaded later begin at index 0.
+     */
+    initialPage?: DivaPageTarget;
+    /**
      * Preferred HTTP Accept values for IIIF resource requests.
      */
     acceptHeaders?: string[];
@@ -264,6 +314,27 @@ export interface DivaOptions {
      * @defaultValue `true`
      */
     showSidebar?: boolean;
+    /**
+     * Initial width of the thumbnail and contents sidebar, in CSS pixels.
+     *
+     * @remarks
+     * Finite values are rounded and constrained to the supported 220–520 pixel
+     * resize range. Invalid runtime values use the default.
+     *
+     * @defaultValue `320`
+     */
+    sidebarWidth?: number;
+    /**
+     * Panel selected when the navigation sidebar is first shown.
+     *
+     * @remarks
+     * Contents requires manifest ranges, and Metadata requires manifest metadata or
+     * homepage links. Diva falls back to Thumbnails when the requested panel is not
+     * available for the loaded manifest.
+     *
+     * @defaultValue `"thumbnails"`
+     */
+    sidebarPanel?: DivaSidebarPanel;
     /**
      * Show the resource title.
      *

@@ -32,6 +32,7 @@ type alias Model =
     , rootElementId : String
     , manifestUrl : String
     , acceptHeaders : List String
+    , initialPage : Decode.Value
     , initialZoom : Maybe Float
     , currentZoom : Maybe Float
     , hasTileSources : Bool
@@ -42,6 +43,7 @@ type alias Model =
     , thumbsInstantScroll : Bool
     , pendingThumbScroll : Maybe Int
     , pendingPublicResource : Maybe String
+    , initialResourceSuperseded : Bool
     , pageViewOpen : Bool
     , pageViewFullscreen : Bool
     , pageViewSidebarVisible : Bool
@@ -54,6 +56,7 @@ type alias Model =
     , viewMode : ViewMode
     , shiftByOne : Bool
     , sidebarState : SidebarState
+    , sidebarPanel : SidebarState
     , mobileSidebarOpen : Bool
     , isMobile : Bool
     , showTitle : Bool

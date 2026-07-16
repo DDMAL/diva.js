@@ -171,7 +171,9 @@
 }
 
 .contents-list-nested {
-  padding-left: 16px;
+  border-left: 1px solid var(--diva-border);
+  margin-left: 6px;
+  padding-left: 13px;
   margin-top: 6px;
 }
 
@@ -187,6 +189,10 @@
 
 .contents-button:hover {
   color: var(--diva-accent);
+}
+
+.contents-button.is-current {
+  font-weight: 600;
 }
 
 @media (max-width: 720px) {

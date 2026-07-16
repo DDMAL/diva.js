@@ -86,6 +86,93 @@ test("loads the first tile without duplicate resolution requests", async ({page}
     expect(metrics.firstTileMs).toBeGreaterThanOrEqual(0);
 });
 
+test("starts authorization at a distant authenticated initial page", async ({page}, testInfo) => {
+    const origin = "http://127.0.0.1:4173";
+    const authOrigin = `https://${testInfo.project.name}.initial-auth.example.test`;
+    const targetIndex = 8;
+    const probeRequests: string[] = [];
+    const infoRequests: string[] = [];
+    const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64");
+    const canvas = (index: number) => {
+        const imageService: Record<string, unknown> = {
+            id : `${origin}/initial-auth/image-${index}`,
+            type : "ImageService3"
+        };
+        if (index === targetIndex + 1)
+        {
+            imageService.service = [ {
+                id : `${authOrigin}/initial-auth/probe?uri=${encodeURIComponent(`${origin}/initial-auth/image-${index}`)}`,
+                type : "AuthProbeService2",
+                service : [ {
+                    id : `${authOrigin}/initial-auth/access`,
+                    type : "AuthAccessService2",
+                    profile : "active",
+                    label : {en : [ "Sign in" ]},
+                    service : [ {id : `${authOrigin}/initial-auth/token`, type : "AuthAccessTokenService2"} ]
+                } ]
+            } ];
+        }
+        return {
+            id : `${origin}/initial-auth/canvas-${index}`,
+            type : "Canvas",
+            width : 100,
+            height : 100,
+            label : {en : [ `Page ${index}` ]},
+            items : [ {id : `${origin}/initial-auth/page-${index}`, type : "AnnotationPage", items : [ {
+                                                                                                 id : `${origin}/initial-auth/annotation-${index}`,
+                                                                                                 type : "Annotation",
+                                                                                                 motivation : "painting",
+                                                                                                 target : `${origin}/initial-auth/canvas-${index}`,
+                                                                                                 body : {id : `${origin}/initial-auth/image-${index}/full/full/0/default.jpg`, type : "Image", service : imageService}
+                                                                                             } ]} ]
+        };
+    };
+
+    await page.route(`${origin}/initial-auth/manifest`, (route) => route.fulfill({json : {
+        "@context" : [ context, "http://iiif.io/api/presentation/3/context.json" ],
+        id : `${origin}/initial-auth/manifest`,
+        type : "Manifest",
+        label : {en : [ "Authenticated initial target" ]},
+        items : Array.from({length : 16}, (_value, offset) => canvas(offset + 1))
+    }}));
+    await page.route(`${authOrigin}/initial-auth/probe*`, (route) => {
+        probeRequests.push(route.request().url());
+        return route.fulfill({headers : {"access-control-allow-origin" : origin}, json : {
+                                  "@context" : context,
+                                  type : "AuthProbeResult2",
+                                  status : 200
+                              }});
+    });
+    await page.route(`${origin}/initial-auth/image-*/**`, (route) => {
+        const url = route.request().url();
+        if (url.endsWith("/info.json"))
+        {
+            infoRequests.push(url);
+            return route.fulfill({json : {
+                "@context" : "http://iiif.io/api/image/3/context.json",
+                id : url.replace(/\/info\.json$/, ""),
+                type : "ImageService3",
+                protocol : "http://iiif.io/api/image",
+                profile : "level0",
+                width : 100,
+                height : 100,
+                tiles : [ {width : 100, scaleFactors : [ 1 ]} ]
+            }});
+        }
+        return route.fulfill({contentType : "image/png", body : png});
+    });
+
+    const expectedVersion = testInfo.project.metadata.osdVersion as string;
+    const osd = expectedVersion.startsWith("5") ? "5" : "6";
+    await page.goto(`/testing/auth-harness.html?manifest=${encodeURIComponent(`${origin}/initial-auth/manifest`)}&initialPage=${targetIndex}&osd=${osd}`);
+    await page.evaluate(() => (window as any).diva.ready);
+
+    expect(await page.evaluate(() => (window as any).diva.getState().currentPageIndex)).toBe(targetIndex);
+    expect(probeRequests).toHaveLength(1);
+    expect(infoRequests).toContain(`${origin}/initial-auth/image-${targetIndex + 1}/info.json`);
+    expect(infoRequests).not.toContain(`${origin}/initial-auth/image-1/info.json`);
+});
+
 test("loads only nearby sidebar thumbnails", async ({page}, testInfo) => {
     const origin = "http://127.0.0.1:4173";
     const pageCount = 60;
@@ -97,12 +184,12 @@ test("loads only nearby sidebar thumbnails", async ({page}, testInfo) => {
         width : 100,
         height : 100,
         items : [ {id : `${origin}/lazy/page-${index}`, type : "AnnotationPage", items : [ {
-                                                                                         id : `${origin}/lazy/annotation-${index}`,
-                                                                                         type : "Annotation",
-                                                                                         motivation : "painting",
-                                                                                         target : `${origin}/lazy/canvas-${index}`,
-                                                                                         body : {id : `${origin}/lazy/image-${index}/full/full/0/default.jpg`, type : "Image", service : {id : `${origin}/lazy/image-${index}`, type : "ImageService3"}}
-                                                                                     } ]} ]
+                                                                                     id : `${origin}/lazy/annotation-${index}`,
+                                                                                     type : "Annotation",
+                                                                                     motivation : "painting",
+                                                                                     target : `${origin}/lazy/canvas-${index}`,
+                                                                                     body : {id : `${origin}/lazy/image-${index}/full/full/0/default.jpg`, type : "Image", service : {id : `${origin}/lazy/image-${index}`, type : "ImageService3"}}
+                                                                                 } ]} ]
     });
 
     await page.route(`${origin}/lazy/manifest`, (route) => route.fulfill({json : {
@@ -652,10 +739,16 @@ test("cancels superseded previews, source resolutions, and destroyed viewers", a
             events.push(`${source.sourceId}-started`);
             if (source.sourceId === "rapid-old")
             {
-                signal.addEventListener("abort", () => events.push("rapid-old-aborted"), {once : true});
-                return new Promise(() => {});
+                return new Promise((_resolve, reject) => {
+                    signal.addEventListener("abort", () => {
+                        events.push("rapid-old-aborted");
+                        reject(new DOMException("The old load was cancelled.", "AbortError"));
+                    }, {once : true});
+                });
             }
-            return Promise.resolve({type : "image", url : source.url, crossOriginPolicy : "Anonymous"});
+            return new Promise((resolve) => {
+                (window as any).releaseRapidNew = () => resolve({type : "image", url : source.url, crossOriginPolicy : "Anonymous"});
+            });
         });
         viewer.setPageAspects([ 1 ]);
         viewer.setTileSources([ {sourceId : "rapid-old", url : "data:image/png;base64,", isStatic : true} ]);
@@ -667,6 +760,34 @@ test("cancels superseded previews, source resolutions, and destroyed viewers", a
     });
     await expect.poll(() => page.evaluate(() => (window as any).rapidSwitchEvents))
         .toEqual([ "rapid-old-started", "rapid-old-aborted", "rapid-new-started" ]);
+    const ownership = await page.evaluate(async () => {
+        await Promise.resolve();
+        const viewer = document.querySelector("osd-viewer") as any;
+        const beforeRetry = {
+            hasController : viewer.loadControllers.has(0),
+            isLoading : viewer.loadingIndexes.has(0)
+        };
+        viewer.ensurePageLoaded(0);
+        await Promise.resolve();
+        return {
+            beforeRetry,
+            afterRetry : {
+                events : (window as any).rapidSwitchEvents.slice(),
+                hasController : viewer.loadControllers.has(0),
+                isLoading : viewer.loadingIndexes.has(0)
+            }
+        };
+    });
+    expect(ownership).toEqual({
+        beforeRetry : {hasController : true, isLoading : true},
+        afterRetry : {
+            events : [ "rapid-old-started", "rapid-old-aborted", "rapid-new-started" ],
+            hasController : true,
+            isLoading : true
+        }
+    });
+    await page.evaluate(() => (window as any).releaseRapidNew());
+    await expect.poll(() => page.evaluate(() => (document.querySelector("osd-viewer") as any).loadedIndexes.has(0))).toBe(true);
     await expect(page.locator(".diva-image-unavailable")).toHaveCount(0);
     expect(consoleErrors).toEqual([]);
 });

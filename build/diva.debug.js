@@ -92,6 +92,7 @@
       this.pageWaiters = /* @__PURE__ */ new Map();
       this.pageOverlayElements = /* @__PURE__ */ new Map();
       this.targetIndex = null;
+      this.initialPageIndex = 0;
       this.scrollPlaneItem = null;
       this.isViewportInitialized = false;
       this.lastReportedIndex = null;
@@ -126,7 +127,7 @@
       const hadViewer = Boolean(this.viewer);
       this.syncViewer();
       if (!hadViewer && this.viewer && this.tileSources.length > 0) {
-        this.resetTileSources(this.tileSources.slice());
+        this.resetTileSources(this.tileSources.slice(), this.initialPageIndex);
       }
     }
     disconnectedCallback() {
@@ -206,27 +207,29 @@
       const nextDirection = direction === "rtl" ? "rtl" : "ltr";
       this.applyLayoutChange({ mode: nextMode, direction: nextDirection });
     }
-    setTileSources(tileSources) {
+    setTileSources(tileSources, initialPageIndex = 0) {
       if (!Array.isArray(tileSources)) {
         return;
       }
       this.tileSources = tileSources.slice();
+      this.initialPageIndex = Number.isInteger(initialPageIndex) && initialPageIndex >= 0 && initialPageIndex < tileSources.length ? initialPageIndex : 0;
       this.syncViewer();
       if (!this.viewer) {
         this.buildOffsets();
         return;
       }
-      this.resetTileSources(this.tileSources.slice());
+      this.resetTileSources(this.tileSources.slice(), this.initialPageIndex);
     }
     setTileSourceResolver(resolver) {
       this.tileSourceResolver = resolver;
     }
     invalidateTileSources(sourceIds) {
+      var _a;
       const affected = new Set(sourceIds);
       if (affected.size === 0 || !this.tileSources.some((source) => affected.has(source.sourceId))) {
         return;
       }
-      this.resetTileSources(this.tileSources.slice());
+      this.resetTileSources(this.tileSources.slice(), (_a = this.lastReportedIndex) != null ? _a : this.initialPageIndex);
     }
     setPageLabels(labels) {
       if (!Array.isArray(labels)) {
@@ -237,7 +240,7 @@
         this.addOrUpdatePageOverlay(index);
       });
     }
-    resetTileSources(tileSources) {
+    resetTileSources(tileSources, initialPageIndex = 0) {
       if (!this.viewer) {
         return;
       }
@@ -248,6 +251,7 @@
       }
       this.cancelLoads();
       this.tileSources = tileSources;
+      this.initialPageIndex = Number.isInteger(initialPageIndex) && initialPageIndex >= 0 && initialPageIndex < tileSources.length ? initialPageIndex : 0;
       this.hasFitFirstPage = false;
       this.isViewportInitialized = false;
       this.loadedIndexes.clear();
@@ -255,10 +259,14 @@
       this.unavailableIndexes.clear();
       this.loadedItems.clear();
       this.clearPageOverlays();
-      this.targetIndex = null;
+      this.targetIndex = tileSources.length > 0 ? this.initialPageIndex : null;
+      this.lastReportedIndex = this.targetIndex;
       this.clearScrollPlane();
       this.buildOffsets();
       this.ensureScrollPlane();
+      if (this.targetIndex !== null) {
+        this.positionInitialViewport(this.targetIndex);
+      }
       this.resetLoadingState();
       this.suppressPageChange = true;
       this.suppressZoomChange = true;
@@ -285,6 +293,20 @@
     maybeLoadMore(viewport) {
       var _a;
       if (this.tileSources.length === 0) {
+        return;
+      }
+      if (!this.isViewportInitialized) {
+        if (this.targetIndex !== null) {
+          this.ensurePageLoaded(this.targetIndex);
+          const targetTop = this.pageOffsets[this.targetIndex] || 0;
+          const targetHeight = this.pageRowHeights[this.targetIndex] || this.pageHeights[this.targetIndex] || 1;
+          const range2 = this.indicesForRange(Math.max(0, targetTop - targetHeight * 1.5), targetTop + targetHeight * 2.5);
+          if (range2) {
+            for (let index2 = range2[0]; index2 <= range2[1]; index2 += 1) {
+              this.ensurePageLoaded(index2);
+            }
+          }
+        }
         return;
       }
       const vp = viewport != null ? viewport : (_a = this.viewer) == null ? void 0 : _a.viewport;
@@ -331,9 +353,6 @@
       this.unavailableIndexes.delete(index);
       this.removeUnavailableOverlay(index);
       this.updateLoadingState();
-      const yOffset = this.pageOffsets[index] || 0;
-      const xOffset = this.pageXOffsets[index] || 0;
-      const height = this.pageHeights[index] || 1;
       let tileSource;
       try {
         tileSource = await this.tileSourceResolver(descriptor, controller.signal);
@@ -347,6 +366,8 @@
         this.finishLoad(index, controller);
         return;
       }
+      const yOffset = this.pageOffsets[index] || 0;
+      const xOffset = this.pageXOffsets[index] || 0;
       this.viewer.addTiledImage({
         tileSource,
         ...this.tileRequestOptions(tileSource),
@@ -358,9 +379,12 @@
             return;
           }
           const item = event.item;
-          item.setPosition(new OpenSeadragon.Point(xOffset, yOffset), true);
+          const currentXOffset = this.pageXOffsets[index] || 0;
+          const currentYOffset = this.pageOffsets[index] || 0;
+          const currentHeight = this.pageHeights[index] || 1;
+          item.setPosition(new OpenSeadragon.Point(currentXOffset, currentYOffset), true);
           item.setWidth(1, true);
-          item.setHeight(height, true);
+          item.setHeight(currentHeight, true);
           this.loadedIndexes.add(index);
           this.loadedItems.set(index, item);
           this.resolvePageWaiters(index, item);
@@ -368,7 +392,7 @@
           this.loadingIndexes.delete(index);
           this.loadControllers.delete(index);
           this.updateLoadingState();
-          if (!this.hasFitFirstPage) {
+          if (!this.hasFitFirstPage && index === this.initialPageIndex) {
             this.hasFitFirstPage = true;
             const viewer = this.viewer;
             if (!viewer || !viewer.viewport) {
@@ -380,7 +404,7 @@
             if (!isSingleCanvas) {
               viewer.viewport.zoomBy(0.95, viewer.viewport.getCenter(true), true);
             }
-            this.alignTopAfterFit();
+            this.alignTopAfterFit(index);
             viewer.viewport.applyConstraints();
             this.isViewportInitialized = true;
             this.lockHorizontalPan();
@@ -388,6 +412,7 @@
             this.flushInitialPageChange();
             this.flushInitialZoomChange();
           }
+          this.emitCustomEvent("diva-page-loaded", { index });
           if (this.targetIndex === index) {
             this.targetIndex = null;
           }
@@ -418,8 +443,10 @@
       return options;
     }
     finishLoad(index, controller) {
-      if (this.loadControllers.get(index) === controller)
-        this.loadControllers.delete(index);
+      if (this.loadControllers.get(index) !== controller) {
+        return;
+      }
+      this.loadControllers.delete(index);
       this.loadingIndexes.delete(index);
       this.updateLoadingState();
     }
@@ -506,6 +533,9 @@
       this.buildOffsets();
       this.updateLoadedItemPositions();
       this.ensureScrollPlane();
+      if (!this.isViewportInitialized && this.targetIndex !== null) {
+        this.positionInitialViewport(this.targetIndex);
+      }
       this.maybeLoadMore();
     }
     buildOffsets() {
@@ -709,6 +739,19 @@
       const rect = new OpenSeadragon.Rect(0, offset, width, bounds.height);
       viewport.fitBounds(rect, true);
     }
+    positionInitialViewport(index) {
+      var _a;
+      const viewport = (_a = this.viewer) == null ? void 0 : _a.viewport;
+      if (!viewport) {
+        return;
+      }
+      const targetTop = this.pageOffsets[index] || 0;
+      const targetHeight = this.pageRowHeights[index] || this.pageHeights[index] || 1;
+      const top = Math.max(0, targetTop - targetHeight * 1.5);
+      const bottom = targetTop + targetHeight * 2.5;
+      const width = this.isSpreadMode() ? 2 : 1;
+      viewport.fitBounds(new OpenSeadragon.Rect(0, top, width, bottom - top), true);
+    }
     scrollToIndex(index) {
       if (index < 0 || index >= this.tileSources.length || index >= this.pageOffsets.length) {
         return;
@@ -729,6 +772,10 @@
       const start = this.getRowStartIndex(index);
       const end = this.getRowEndIndex(start);
       return Array.from({ length: end - start + 1 }, (_value, offset) => start + offset);
+    }
+    isPageLoaded(index, sourceId) {
+      var _a;
+      return ((_a = this.tileSources[index]) == null ? void 0 : _a.sourceId) === sourceId && this.loadedIndexes.has(index);
     }
     next() {
       const visible = this.getVisiblePageIndexes();
@@ -987,7 +1034,7 @@
       this.suppressZoomChange = false;
       this.emitCustomEvent("diva-zoom-change", { zoom });
     }
-    alignTopAfterFit() {
+    alignTopAfterFit(index) {
       if (!this.viewer) {
         return;
       }
@@ -997,12 +1044,12 @@
       }
       const bounds = viewport.getBounds(true);
       const topPadding = this.getTopPaddingViewport(bounds.height);
-      const minTop = -topPadding;
-      if (bounds.y <= minTop) {
+      const targetTop = (this.pageOffsets[index] || 0) - topPadding;
+      if (Math.abs(bounds.y - targetTop) < 5e-4) {
         return;
       }
       const center = viewport.getCenter(true);
-      viewport.panTo(new OpenSeadragon.Point(center.x, bounds.height / 2 + minTop), true);
+      viewport.panTo(new OpenSeadragon.Point(center.x, bounds.height / 2 + targetTop), true);
       viewport.applyConstraints();
     }
     getTopPaddingViewport(viewportHeight) {
@@ -1221,7 +1268,7 @@
   customElements.define("osd-viewer", OsdViewer);
 
   // cache/diva.css
-  var diva_default = ":root{--diva-accent:#5a6bff;--diva-accent-light:#9aa4ff;--diva-border:#d9d4ce;--diva-danger:#d32f2f;--diva-dark-bg:#1c1d22;--diva-dark-border:#2c2d33;--diva-overlay-bg:#10111499;--diva-page-bg:#f7f5f1;--diva-shadow-dark:#00000026;--diva-shadow-focus:#9aa4ff59;--diva-shadow-modal:#00000040;--diva-surface:#e6e1dc;--diva-text-muted:#5c5a55;--diva-text-muted-on-dark:#ffffffb3;--diva-text-primary:#1b1b1b;--diva-toolbar-button-bg:#5258626b;--diva-toolbar-button-bg-hover:#5c636e85;--diva-toolbar-button-bg-fullscreen:#52586285;--diva-toolbar-button-bg-fullscreen-hover:#6068749e;--diva-toolbar-button-border:#ffffff59;--diva-toolbar-button-border-hover:#ffffff73;--diva-toolbar-button-border-fullscreen-hover:#fff9;--diva-toolbar-button-icon:#2c2d33;--diva-toolbar-button-shadow:inset 0 1px 0 #ffffff8c, inset 0 -1px 0 #ffffff2e;--diva-toolbar-button-shadow-hover:inset 0 1px 0 #ffffffb3, inset 0 -1px 0 #ffffff3d;--diva-white:#fff;--diva-font-lg:16px;--diva-font-md:13px;--diva-font-sm:11px;--diva-font-xs:10px;--diva-font-xl:20px;color-scheme:light}*{box-sizing:border-box}.list-reset{margin:0;padding:0;list-style:none}.ui-button{text-align:left;cursor:pointer;color:var(--diva-text-primary);font-size:var(--diva-font-lg);background-color:#0000;border:none;padding:0}.ui-button:hover{background-color:var(--diva-surface)}.ui-card{cursor:pointer;border-radius:0;width:100%;padding:6px}.ui-card--dark{background-color:var(--diva-dark-bg)}.diva-app{flex-direction:column;flex:1;height:100%;min-height:0;padding:12px 24px;display:flex}.diva-app.is-fullscreen{height:100vh;min-height:100vh;padding:0}.diva-app-header{font-size:var(--diva-font-lg);align-items:center;gap:12px;margin-bottom:8px;font-weight:600;display:flex}.diva-app-title{font-size:var(--diva-font-xl);text-align:left;color:var(--diva-text-primary);margin-bottom:6px;font-weight:600}.diva-app-title.is-fullscreen{color:var(--diva-white)}.diva-app-body{flex:1;align-items:stretch;gap:0;height:100%;min-height:0;display:flex;position:relative}.diva-app-body.is-fullscreen{flex:1;min-height:0}.diva-canvas-column{flex-direction:column;flex:1;gap:24px;min-height:0;display:flex}.diva-canvas-column.is-fullscreen{flex:1;height:100%;min-height:0}.diva-canvas-wrapper{flex:1;min-height:0;position:relative}.diva-canvas{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);border-radius:0;width:100%;height:100%;overflow:hidden}.diva-canvas.is-fullscreen{border-radius:0;flex:1;height:100%}.diva-canvas.has-collection{border-radius:0}.metadata-panel{height:100%;padding:12px;overflow:auto}.metadata-body{flex-direction:column;gap:10px;display:flex}.metadata-item{flex-direction:column;gap:4px;display:flex}.metadata-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}.metadata-value{font-size:var(--diva-font-lg);color:var(--diva-text-muted);line-height:1.4}.contents-empty{font-size:var(--diva-font-lg);color:var(--diva-text-muted);padding-left:12px}.sidebar-resizer,.collection-resizer{width:12px;font-size:var(--diva-font-xl);color:var(--diva-white);background-color:var(--diva-text-muted);cursor:ew-resize;user-select:none;touch-action:none;flex:0 0 12px;justify-content:center;align-self:stretch;align-items:center;line-height:1;display:flex}.sidebar-resizer.is-hidden,.collection-resizer.is-hidden{display:none}.sidebar-panel.is-fullscreen,.collection-panel.is-fullscreen{border-radius:0;height:100%}.sidebar-panel.is-hidden,.collection-panel.is-hidden{opacity:0;pointer-events:none;border-width:0;padding:0;overflow:hidden}.required-statement-dock{justify-content:flex-end;width:100%;margin-top:12px;padding-right:8px;display:flex}.required-statement{font-size:var(--diva-font-md);color:var(--diva-text-muted);text-align:right;min-width:250px;max-width:20vw;line-height:1.4}.diva-scrollbar-track{background:var(--diva-surface);border:1px solid var(--diva-border);z-index:100;border-radius:0;width:12px;position:absolute;top:4px;bottom:4px;right:4px}.diva-scrollbar-thumb{background:var(--diva-text-muted);cursor:pointer;border-radius:0;min-height:30px;position:absolute;left:1px;right:1px}.diva-scrollbar-thumb:hover{background:var(--diva-text-primary)}.diva-scrollbar-thumb:active{background:var(--diva-dark-border)}.throbber-overlay{pointer-events:none;justify-content:center;align-items:center;display:flex;position:absolute;inset:0}.viewer-zoom-indicator{z-index:30;pointer-events:none;font-size:var(--diva-font-sm);color:var(--diva-white);background-color:#0000008c;border-radius:0;padding:4px 8px;font-weight:600;position:absolute;bottom:12px;left:12px}.throbber{background-color:var(--diva-white);width:64px;height:64px;box-shadow:0 8px 16px var(--diva-shadow-dark);border-radius:0;flex-wrap:wrap;padding:8px;display:flex}.throbber-cube{background-color:var(--diva-accent);width:16px;height:16px;animation-name:diva-cube-grid;animation-duration:1.3s;animation-timing-function:ease-in-out;animation-iteration-count:infinite}@keyframes diva-cube-grid{0%{transform:scale(1)}35%{transform:scale(0)}70%{transform:scale(1)}to{transform:scale(1)}}@media (width<=720px){.diva-app{padding:12px}.diva-app-body{flex-direction:column;gap:12px}.sidebar-resizer,.collection-resizer{display:none}}.diva-image-unavailable{background:color-mix(in srgb, var(--diva-background-color,#fff) 92%, transparent);box-sizing:border-box;text-align:center;border:1px solid #999;flex-direction:column;justify-content:center;align-items:center;padding:1rem;display:flex}.diva-image-unavailable button{cursor:pointer}.sidebar-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0;flex-direction:column;width:320px;height:100%;min-height:0;display:flex;overflow:hidden}.sidebar-tabs{border:1px solid var(--diva-surface);background-color:var(--diva-surface);border-radius:0;display:flex}.sidebar-tab-button{font-size:var(--diva-font-md);text-transform:uppercase;cursor:pointer;color:var(--diva-text-muted);background-color:#0000;border:none;flex:1;padding:10px 12px}.sidebar-tab-button.is-active{background-color:var(--diva-white);font-weight:600}.sidebar-content{background-color:var(--diva-page-bg);flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}.sidebar-pane{flex:1;width:100%;min-height:0}.sidebar-pane.is-hidden{display:none}.thumbs{scroll-behavior:smooth;background-color:var(--diva-dark-bg);flex:1;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:10px;width:100%;height:100%;min-height:0;padding:12px;display:grid;overflow-y:auto}.thumbs.is-fullscreen{height:100%}.thumbs-item{border:1px solid var(--diva-dark-border);text-align:left;flex-direction:column;justify-content:flex-start;align-items:stretch;max-width:none;display:flex}.thumbs-item:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.thumbs-item.is-active{border-color:var(--diva-accent-light);box-shadow:0 0 0 var(--diva-shadow-focus);background-color:var(--diva-dark-bg);outline:2px solid var(--diva-accent-light);outline-offset:2px}.thumbs-image{border-radius:0;width:100%;height:auto;display:block}.thumbs-lazy-image{background:var(--diva-dark-bg);width:100%;min-height:96px;display:block}.thumbs-image--protected{background:var(--diva-dark-bg);min-height:96px}.thumbs-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted-on-dark);margin-top:6px;line-height:1.3}.thumbs-label.is-active{color:var(--diva-white)}.contents-panel{height:100%;padding:12px;overflow:auto}.contents-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:10px;font-weight:600}.contents-view-tabs{gap:8px;margin-bottom:12px;display:flex}.contents-view-button{background-color:var(--diva-surface);border:1px solid var(--diva-border);font-size:var(--diva-font-sm);color:var(--diva-text-muted);cursor:pointer;border-radius:0;padding:4px 10px}.contents-view-button.is-active{background-color:var(--diva-white);border-color:var(--diva-accent);color:var(--diva-text-primary)}.contents-list-nested{margin-top:6px;padding-left:16px}.contents-item{margin-bottom:6px}.contents-meta{border:1px solid var(--diva-dark-border);margin-top:6px;padding:8px}.contents-button:hover{color:var(--diva-accent)}@media (width<=720px){.sidebar-panel{border-radius:0;height:auto;width:100%!important}.sidebar-panel.is-overlay{z-index:100;width:100%;height:100%;box-shadow:0 12px 24px var(--diva-shadow-dark);border-radius:0;position:absolute;inset:0}.sidebar-panel.is-mobile-hidden{display:none}.thumbs{grid-template-columns:repeat(3,minmax(0,1fr));width:100%;height:auto;overflow:auto hidden}.thumbs-item{min-width:120px}}.canvas-toolbar-stack{flex-direction:column;gap:4px;width:100%;min-width:0;display:flex}.canvas-toolbar{align-items:center;width:100%;margin-bottom:0;display:flex}.canvas-toolbar-section{flex:none;align-items:center;gap:5px;min-width:0;display:flex}.canvas-toolbar-section.is-right{flex:none;margin-left:auto}.canvas-toolbar-end{align-items:center;gap:8px;min-width:0;margin-left:auto;display:flex}.canvas-toolbar-end .canvas-toolbar-section.is-right{margin-left:0}.canvas-toolbar-item{flex:none;justify-content:center;align-items:center;width:34px;height:34px;display:flex;position:relative}.canvas-toolbar-button{width:30px;height:30px;color:var(--diva-toolbar-button-icon);box-shadow:none;cursor:pointer;background-color:#e2e2e2f0;border:1px solid #2c2d3373;border-radius:0;justify-content:center;align-items:center;padding:6px;display:flex}.canvas-toolbar-button svg{flex:none;width:16px;height:16px}.canvas-toolbar-button:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.canvas-toolbar-button:hover{border-color:var(--diva-toolbar-button-icon);background-color:#d6d6d6fa}.canvas-toolbar-button.is-fullscreen{color:var(--diva-white);background-color:#52586294;border-color:#ffffff85}.canvas-toolbar-button.is-fullscreen:hover{border-color:var(--diva-white);background-color:#606874b8}.canvas-toolbar-button.is-disabled{opacity:.4;cursor:not-allowed}.canvas-toolbar-button.is-disabled:hover{background-color:#e2e2e2f0;border-color:#2c2d3373}.canvas-toolbar-button.is-fullscreen.is-disabled:hover{background-color:#52586294;border-color:#ffffff85}.canvas-toolbar-item:after{z-index:80;max-width:160px;color:var(--diva-white);content:attr(data-tooltip);font-size:var(--diva-font-xs);letter-spacing:.02em;opacity:0;pointer-events:none;text-align:center;visibility:hidden;white-space:normal;word-break:normal;background-color:#1c1d22f2;border:1px solid #ffffff2e;border-radius:0;width:max-content;padding:5px 7px;font-weight:600;line-height:1.2;transition:opacity .12s,transform .12s;position:absolute;top:calc(100% + 7px);left:50%;transform:translate(-50%,-3px);box-shadow:0 4px 10px #0003}.canvas-toolbar-item:hover:after,.canvas-toolbar-item:has(.canvas-toolbar-button:focus-visible):after{opacity:1;visibility:visible;transform:translate(-50%)}.canvas-toolbar-section.is-right .canvas-toolbar-item:last-child:after{left:auto;right:0;transform:translateY(-3px)}.canvas-toolbar-section.is-right .canvas-toolbar-item:last-child:hover:after,.canvas-toolbar-section.is-right .canvas-toolbar-item:last-child:has(.canvas-toolbar-button:focus-visible):after{transform:translate(0)}.canvas-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-align:left;white-space:normal;overflow-wrap:anywhere;word-break:break-word;width:100%}.canvas-toolbar-end .canvas-label{overflow-wrap:normal;text-align:right;white-space:nowrap;word-break:normal;flex:auto;width:auto;min-width:0;max-width:min(42vw,42rem);overflow:hidden}.canvas-label.is-fullscreen{color:var(--diva-white)}.status{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:0}.status.is-error{color:var(--diva-danger)}@media (width<=720px){.canvas-toolbar{flex-wrap:wrap;gap:5px}.canvas-toolbar-end{justify-content:flex-end;width:100%;margin-left:0}.canvas-toolbar-item{width:32px;height:32px}.canvas-toolbar-button{width:28px;height:28px;padding:6px}.canvas-toolbar-button svg{width:15px;height:15px}.canvas-label,.status{display:none}}.modal-overlay{background-color:var(--diva-overlay-bg);z-index:100;justify-content:center;align-items:center;padding:24px;display:flex;position:fixed;inset:0}.viewer-status-overlay{background-color:var(--diva-overlay-bg);z-index:40;justify-content:center;align-items:center;padding:24px;display:flex;position:absolute;inset:0}.modal-overlay.is-fullscreen{padding:0}.modal{background-color:var(--diva-page-bg);color:var(--diva-text-primary);width:min(1440px,96vw);max-height:90vh;box-shadow:0 20px 40px var(--diva-shadow-modal);border-radius:0;flex-direction:column;display:flex}.modal.is-narrow{width:min(960px,94vw)}.modal.is-page-view{height:80vh;max-height:80vh}.modal.is-fullscreen{border-radius:0;width:100vw;height:100vh;max-height:100vh}.modal-header{justify-content:space-between;align-items:center;padding:16px 20px 0;display:flex}.modal-actions{gap:8px;display:flex}.modal-close-action .canvas-toolbar-button{color:var(--diva-danger);box-shadow:none;-webkit-backdrop-filter:none;background-color:#0000;border:none;width:auto;height:auto;padding:2px}.modal-close-action .canvas-toolbar-button:hover{background-color:#d32f2f1f;border-color:#0000}.modal-close-action .canvas-toolbar-item{width:32px}.modal-title-stack{flex-direction:column;gap:4px;display:flex}.modal-title{font-size:var(--diva-font-lg);font-weight:600}.modal-subtitle{font-size:var(--diva-font-lg);color:var(--diva-text-primary)}.modal-subtitle.is-muted{font-size:var(--diva-font-md)}.modal-body{flex:1;grid-template-columns:minmax(0,1fr) 240px;gap:16px;min-height:0;padding:16px 20px 20px;display:grid}.modal-body.is-no-gap{gap:0}.modal-body.is-two-column{grid-template-columns:minmax(0,1fr) 200px;align-items:start}.modal-body.is-no-sidebar{grid-template-columns:minmax(0,1fr)}.modal-body.is-fullscreen{flex:1;min-height:0}.modal-body.is-with-choices{grid-template-columns:120px minmax(0,1fr) 240px}.modal-body.is-with-choices-no-sidebar{grid-template-columns:120px minmax(0,1fr)}.modal-viewer{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);height:100%;overflow:hidden}.modal-viewer.is-fullscreen{border-radius:0;height:100%}.modal-viewer.is-outer-left{border-radius:0}.modal-canvas{width:100%;height:100%;display:block}.modal-sidebar{background-color:var(--diva-white);border-top:1px solid var(--diva-border);border-right:1px solid var(--diva-border);border-bottom:1px solid var(--diva-border);border-radius:0;padding:16px;overflow:auto}.manifest-info-logo-wrap{text-align:center;flex-direction:column;align-items:center;gap:8px;display:flex}.manifest-info-logo{width:100%;max-width:180px;height:auto}.page-view-choices{background-color:var(--diva-dark-bg);border-radius:0;flex-direction:column;gap:8px;padding:8px;display:flex;overflow:auto}.page-view-choice{border:2px solid #0000;flex-direction:column;gap:4px;display:flex}.page-view-choice:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.page-view-choice:hover{background-color:var(--diva-dark-bg)}.page-view-choice.is-active{border-color:var(--diva-accent-light);background-color:var(--diva-dark-bg)}.page-view-choice-thumb{border-radius:0;width:100%;height:auto;display:block}.page-view-choice-thumb--protected{background:var(--diva-dark-bg);min-height:72px}.page-view-choice-label{font-size:var(--diva-font-xs);color:var(--diva-text-muted);text-overflow:ellipsis;white-space:nowrap;line-height:1.2;overflow:hidden}.filter-group{border-bottom:1px solid var(--diva-border);margin-bottom:12px;padding-bottom:12px}.filter-title-button{text-align:left;cursor:pointer;width:100%;font-size:var(--diva-font-sm);text-transform:uppercase;letter-spacing:.08em;color:var(--diva-text-muted);background-color:#0000;border:none;align-items:center;gap:8px;margin-bottom:8px;padding:0;font-weight:600;display:flex}.filter-title-button.is-collapsed{margin-bottom:0}.filter-title-icon{border-top:4px solid #0000;border-bottom:4px solid #0000;border-left:6px solid var(--diva-text-muted);width:0;height:0;transition:transform .15s;display:inline-block}.filter-title-icon.is-expanded{transform:rotate(90deg)}.filter-row{flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle{font-size:var(--diva-font-md);align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle.is-inline{margin-bottom:0}.filter-range-group{flex-direction:column;gap:6px;margin-bottom:10px;display:flex}.filter-range-header{justify-content:space-between;align-items:center;gap:8px;display:flex}.filter-range-header-right{align-items:center;gap:8px;display:flex}.filter-range-input{width:100%}.filter-value{font-size:var(--diva-font-sm);color:var(--diva-text-muted);text-align:right;width:40px}.filter-reset{font-size:var(--diva-font-xs);background-color:var(--diva-surface);border:1px solid var(--diva-border);cursor:pointer;color:var(--diva-text-muted);border-radius:0;padding:2px 6px}.filter-reset:hover{background-color:var(--diva-border)}.filter-json{width:100%;min-height:120px;font-size:var(--diva-font-sm);border:1px solid var(--diva-border);background-color:var(--diva-white);resize:vertical;border-radius:0;padding:6px 8px;font-family:Menlo,Monaco,Consolas,Liberation Mono,monospace}.filter-json-error{font-size:var(--diva-font-sm);color:var(--diva-danger);margin-top:4px}.filter-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted)}.filter-select{border:1px solid var(--diva-border);background-color:var(--diva-white);font-size:var(--diva-font-sm);border-radius:0;padding:4px 6px}.filter-color-input{border:1px solid var(--diva-border);background-color:var(--diva-white);border-radius:0;width:42px;height:28px;padding:0}.diva-auth-overlay{z-index:10000;background:#0000008c;place-items:center;display:grid;position:fixed;inset:0}.diva-auth-dialog{box-sizing:border-box;border:1px solid var(--diva-border,#aaa);background:var(--diva-background,#fff);width:min(30rem,100vw - 2rem);color:var(--diva-text-primary,#222);border-radius:0;padding:1.25rem}.diva-auth-dialog button{min-height:2.25rem;color:inherit;cursor:pointer;background:0 0;border:1px solid;border-radius:0;padding:.35rem .8rem}.diva-auth-dialog button:focus-visible{outline:2px solid var(--diva-accent,#1769aa);outline-offset:2px}.collection-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0;flex-direction:column;height:100%;min-height:0;display:flex;overflow:hidden}.collection-header{background-color:var(--diva-surface);border-bottom:1px solid var(--diva-border);border-radius:0;padding:12px}.collection-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:4px;font-weight:600}.collection-summary{font-size:var(--diva-font-md);color:var(--diva-text-muted);line-height:1.4}.collection-tree-item{padding-left:12px}.collection-node-button{align-items:center;gap:6px;width:100%;padding:6px 8px;display:flex}.collection-expand-icon{flex-shrink:0;justify-content:center;align-items:center;width:16px;height:16px;display:flex}.manifest-tree-item{padding:6px 8px 6px 30px}.manifest-tree-item.is-active{background-color:var(--diva-border);font-weight:600}.sidebar-pane.is-scroll{overflow-y:auto}@media (width<=720px){.collection-panel{border-radius:0;width:100%;height:auto}}";
+  var diva_default = ":root{--diva-accent:#5a6bff;--diva-accent-light:#9aa4ff;--diva-border:#d9d4ce;--diva-danger:#d32f2f;--diva-dark-bg:#1c1d22;--diva-dark-border:#2c2d33;--diva-overlay-bg:#10111499;--diva-page-bg:#f7f5f1;--diva-shadow-dark:#00000026;--diva-shadow-focus:#9aa4ff59;--diva-shadow-modal:#00000040;--diva-surface:#e6e1dc;--diva-text-muted:#5c5a55;--diva-text-muted-on-dark:#ffffffb3;--diva-text-primary:#1b1b1b;--diva-toolbar-button-bg:#5258626b;--diva-toolbar-button-bg-hover:#5c636e85;--diva-toolbar-button-bg-fullscreen:#52586285;--diva-toolbar-button-bg-fullscreen-hover:#6068749e;--diva-toolbar-button-border:#ffffff59;--diva-toolbar-button-border-hover:#ffffff73;--diva-toolbar-button-border-fullscreen-hover:#fff9;--diva-toolbar-button-icon:#2c2d33;--diva-toolbar-button-shadow:inset 0 1px 0 #ffffff8c, inset 0 -1px 0 #ffffff2e;--diva-toolbar-button-shadow-hover:inset 0 1px 0 #ffffffb3, inset 0 -1px 0 #ffffff3d;--diva-white:#fff;--diva-font-lg:16px;--diva-font-md:13px;--diva-font-sm:11px;--diva-font-xs:10px;--diva-font-xl:20px;color-scheme:light}*{box-sizing:border-box}.list-reset{margin:0;padding:0;list-style:none}.ui-button{text-align:left;cursor:pointer;color:var(--diva-text-primary);font-size:var(--diva-font-lg);background-color:#0000;border:none;padding:0}.ui-button:hover{background-color:var(--diva-surface)}.ui-card{cursor:pointer;border-radius:0;width:100%;padding:6px}.ui-card--dark{background-color:var(--diva-dark-bg)}.diva-app{flex-direction:column;flex:1;height:100%;min-height:0;padding:12px 24px;display:flex}.diva-app.is-fullscreen{height:100vh;min-height:100vh;padding:0}.diva-app-header{font-size:var(--diva-font-lg);align-items:center;gap:12px;margin-bottom:8px;font-weight:600;display:flex}.diva-app-title{font-size:var(--diva-font-xl);text-align:left;color:var(--diva-text-primary);margin-bottom:6px;font-weight:600}.diva-app-title.is-fullscreen{color:var(--diva-white)}.diva-app-body{flex:1;align-items:stretch;gap:0;height:100%;min-height:0;display:flex;position:relative}.diva-app-body.is-fullscreen{flex:1;min-height:0}.diva-canvas-column{flex-direction:column;flex:1;gap:24px;min-height:0;display:flex}.diva-canvas-column.is-fullscreen{flex:1;height:100%;min-height:0}.diva-canvas-wrapper{flex:1;min-height:0;position:relative}.diva-canvas{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);border-radius:0;width:100%;height:100%;overflow:hidden}.diva-canvas.is-fullscreen{border-radius:0;flex:1;height:100%}.diva-canvas.has-collection{border-radius:0}.metadata-panel{height:100%;padding:12px;overflow:auto}.metadata-body{flex-direction:column;gap:10px;display:flex}.metadata-item{flex-direction:column;gap:4px;display:flex}.metadata-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}.metadata-value{font-size:var(--diva-font-lg);color:var(--diva-text-muted);line-height:1.4}.contents-empty{font-size:var(--diva-font-lg);color:var(--diva-text-muted);padding-left:12px}.sidebar-resizer,.collection-resizer{width:12px;font-size:var(--diva-font-xl);color:var(--diva-white);background-color:var(--diva-text-muted);cursor:ew-resize;user-select:none;touch-action:none;flex:0 0 12px;justify-content:center;align-self:stretch;align-items:center;line-height:1;display:flex}.sidebar-resizer.is-hidden,.collection-resizer.is-hidden{display:none}.sidebar-panel.is-fullscreen,.collection-panel.is-fullscreen{border-radius:0;height:100%}.sidebar-panel.is-hidden,.collection-panel.is-hidden{opacity:0;pointer-events:none;border-width:0;padding:0;overflow:hidden}.required-statement-dock{justify-content:flex-end;width:100%;margin-top:12px;padding-right:8px;display:flex}.required-statement{font-size:var(--diva-font-md);color:var(--diva-text-muted);text-align:right;min-width:250px;max-width:20vw;line-height:1.4}.diva-scrollbar-track{background:var(--diva-surface);border:1px solid var(--diva-border);z-index:100;border-radius:0;width:12px;position:absolute;top:4px;bottom:4px;right:4px}.diva-scrollbar-thumb{background:var(--diva-text-muted);cursor:pointer;border-radius:0;min-height:30px;position:absolute;left:1px;right:1px}.diva-scrollbar-thumb:hover{background:var(--diva-text-primary)}.diva-scrollbar-thumb:active{background:var(--diva-dark-border)}.throbber-overlay{pointer-events:none;justify-content:center;align-items:center;display:flex;position:absolute;inset:0}.viewer-zoom-indicator{z-index:30;pointer-events:none;font-size:var(--diva-font-sm);color:var(--diva-white);background-color:#0000008c;border-radius:0;padding:4px 8px;font-weight:600;position:absolute;bottom:12px;left:12px}.throbber{background-color:var(--diva-white);width:64px;height:64px;box-shadow:0 8px 16px var(--diva-shadow-dark);border-radius:0;flex-wrap:wrap;padding:8px;display:flex}.throbber-cube{background-color:var(--diva-accent);width:16px;height:16px;animation-name:diva-cube-grid;animation-duration:1.3s;animation-timing-function:ease-in-out;animation-iteration-count:infinite}@keyframes diva-cube-grid{0%{transform:scale(1)}35%{transform:scale(0)}70%{transform:scale(1)}to{transform:scale(1)}}@media (width<=720px){.diva-app{padding:12px}.diva-app-body{flex-direction:column;gap:12px}.sidebar-resizer,.collection-resizer{display:none}}.diva-image-unavailable{background:color-mix(in srgb, var(--diva-background-color,#fff) 92%, transparent);box-sizing:border-box;text-align:center;border:1px solid #999;flex-direction:column;justify-content:center;align-items:center;padding:1rem;display:flex}.diva-image-unavailable button{cursor:pointer}.sidebar-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0;flex-direction:column;width:320px;height:100%;min-height:0;display:flex;overflow:hidden}.sidebar-tabs{border:1px solid var(--diva-surface);background-color:var(--diva-surface);border-radius:0;display:flex}.sidebar-tab-button{font-size:var(--diva-font-md);text-transform:uppercase;cursor:pointer;color:var(--diva-text-muted);background-color:#0000;border:none;flex:1;padding:10px 12px}.sidebar-tab-button.is-active{background-color:var(--diva-white);font-weight:600}.sidebar-content{background-color:var(--diva-page-bg);flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}.sidebar-pane{flex:1;width:100%;min-height:0}.sidebar-pane.is-hidden{display:none}.thumbs{scroll-behavior:smooth;background-color:var(--diva-dark-bg);flex:1;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:10px;width:100%;height:100%;min-height:0;padding:12px;display:grid;overflow-y:auto}.thumbs.is-fullscreen{height:100%}.thumbs-item{border:1px solid var(--diva-dark-border);text-align:left;flex-direction:column;justify-content:flex-start;align-items:stretch;max-width:none;display:flex}.thumbs-item:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.thumbs-item.is-active{border-color:var(--diva-accent-light);box-shadow:0 0 0 var(--diva-shadow-focus);background-color:var(--diva-dark-bg);outline:2px solid var(--diva-accent-light);outline-offset:2px}.thumbs-image{border-radius:0;width:100%;height:auto;display:block}.thumbs-lazy-image{background:var(--diva-dark-bg);width:100%;min-height:96px;display:block}.thumbs-image--protected{background:var(--diva-dark-bg);min-height:96px}.thumbs-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted-on-dark);margin-top:6px;line-height:1.3}.thumbs-label.is-active{color:var(--diva-white)}.contents-panel{height:100%;padding:12px;overflow:auto}.contents-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:10px;font-weight:600}.contents-view-tabs{gap:8px;margin-bottom:12px;display:flex}.contents-view-button{background-color:var(--diva-surface);border:1px solid var(--diva-border);font-size:var(--diva-font-sm);color:var(--diva-text-muted);cursor:pointer;border-radius:0;padding:4px 10px}.contents-view-button.is-active{background-color:var(--diva-white);border-color:var(--diva-accent);color:var(--diva-text-primary)}.contents-list-nested{border-left:1px solid var(--diva-border);margin-top:6px;margin-left:6px;padding-left:13px}.contents-item{margin-bottom:6px}.contents-meta{border:1px solid var(--diva-dark-border);margin-top:6px;padding:8px}.contents-button:hover{color:var(--diva-accent)}.contents-button.is-current{font-weight:600}@media (width<=720px){.sidebar-panel{border-radius:0;height:auto;width:100%!important}.sidebar-panel.is-overlay{z-index:100;width:100%;height:100%;box-shadow:0 12px 24px var(--diva-shadow-dark);border-radius:0;position:absolute;inset:0}.sidebar-panel.is-mobile-hidden{display:none}.thumbs{grid-template-columns:repeat(3,minmax(0,1fr));width:100%;height:auto;overflow:auto hidden}.thumbs-item{min-width:120px}}.canvas-toolbar-stack{flex-direction:column;gap:4px;width:100%;min-width:0;display:flex}.canvas-toolbar{align-items:center;width:100%;margin-bottom:0;display:flex}.canvas-toolbar-section{flex:none;align-items:center;gap:5px;min-width:0;display:flex}.canvas-toolbar-section.is-right{flex:none;margin-left:auto}.canvas-toolbar-end{align-items:center;gap:8px;min-width:0;margin-left:auto;display:flex}.canvas-toolbar-end .canvas-toolbar-section.is-right{margin-left:0}.canvas-toolbar-item{flex:none;justify-content:center;align-items:center;width:34px;height:34px;display:flex;position:relative}.canvas-toolbar-button{width:30px;height:30px;color:var(--diva-toolbar-button-icon);box-shadow:none;cursor:pointer;background-color:#e2e2e2f0;border:1px solid #2c2d3373;border-radius:0;justify-content:center;align-items:center;padding:6px;display:flex}.canvas-toolbar-button svg{flex:none;width:16px;height:16px}.canvas-toolbar-button:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.canvas-toolbar-button:hover{border-color:var(--diva-toolbar-button-icon);background-color:#d6d6d6fa}.canvas-toolbar-button.is-fullscreen{color:var(--diva-white);background-color:#52586294;border-color:#ffffff85}.canvas-toolbar-button.is-fullscreen:hover{border-color:var(--diva-white);background-color:#606874b8}.canvas-toolbar-button.is-disabled{opacity:.4;cursor:not-allowed}.canvas-toolbar-button.is-disabled:hover{background-color:#e2e2e2f0;border-color:#2c2d3373}.canvas-toolbar-button.is-fullscreen.is-disabled:hover{background-color:#52586294;border-color:#ffffff85}.canvas-toolbar-item:after{z-index:80;max-width:160px;color:var(--diva-white);content:attr(data-tooltip);font-size:var(--diva-font-xs);letter-spacing:.02em;opacity:0;pointer-events:none;text-align:center;visibility:hidden;white-space:normal;word-break:normal;background-color:#1c1d22f2;border:1px solid #ffffff2e;border-radius:0;width:max-content;padding:5px 7px;font-weight:600;line-height:1.2;transition:opacity .12s,transform .12s;position:absolute;top:calc(100% + 7px);left:50%;transform:translate(-50%,-3px);box-shadow:0 4px 10px #0003}.canvas-toolbar-item:hover:after,.canvas-toolbar-item:has(.canvas-toolbar-button:focus-visible):after{opacity:1;visibility:visible;transform:translate(-50%)}.canvas-toolbar-section.is-right .canvas-toolbar-item:last-child:after{left:auto;right:0;transform:translateY(-3px)}.canvas-toolbar-section.is-right .canvas-toolbar-item:last-child:hover:after,.canvas-toolbar-section.is-right .canvas-toolbar-item:last-child:has(.canvas-toolbar-button:focus-visible):after{transform:translate(0)}.canvas-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-align:left;white-space:normal;overflow-wrap:anywhere;word-break:break-word;width:100%}.canvas-toolbar-end .canvas-label{overflow-wrap:normal;text-align:right;white-space:nowrap;word-break:normal;flex:auto;width:auto;min-width:0;max-width:min(42vw,42rem);overflow:hidden}.canvas-label.is-fullscreen{color:var(--diva-white)}.status{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:0}.status.is-error{color:var(--diva-danger)}@media (width<=720px){.canvas-toolbar{flex-wrap:wrap;gap:5px}.canvas-toolbar-end{justify-content:flex-end;width:100%;margin-left:0}.canvas-toolbar-item{width:32px;height:32px}.canvas-toolbar-button{width:28px;height:28px;padding:6px}.canvas-toolbar-button svg{width:15px;height:15px}.canvas-label,.status{display:none}}.modal-overlay{background-color:var(--diva-overlay-bg);z-index:100;justify-content:center;align-items:center;padding:24px;display:flex;position:fixed;inset:0}.viewer-status-overlay{background-color:var(--diva-overlay-bg);z-index:40;justify-content:center;align-items:center;padding:24px;display:flex;position:absolute;inset:0}.modal-overlay.is-fullscreen{padding:0}.modal{background-color:var(--diva-page-bg);color:var(--diva-text-primary);width:min(1440px,96vw);max-height:90vh;box-shadow:0 20px 40px var(--diva-shadow-modal);border-radius:0;flex-direction:column;display:flex}.modal.is-narrow{width:min(960px,94vw)}.modal.is-page-view{height:80vh;max-height:80vh}.modal.is-fullscreen{border-radius:0;width:100vw;height:100vh;max-height:100vh}.modal-header{justify-content:space-between;align-items:center;padding:16px 20px 0;display:flex}.modal-actions{gap:8px;display:flex}.modal-close-action .canvas-toolbar-button{color:var(--diva-danger);box-shadow:none;-webkit-backdrop-filter:none;background-color:#0000;border:none;width:auto;height:auto;padding:2px}.modal-close-action .canvas-toolbar-button:hover{background-color:#d32f2f1f;border-color:#0000}.modal-close-action .canvas-toolbar-item{width:32px}.modal-title-stack{flex-direction:column;gap:4px;display:flex}.modal-title{font-size:var(--diva-font-lg);font-weight:600}.modal-subtitle{font-size:var(--diva-font-lg);color:var(--diva-text-primary)}.modal-subtitle.is-muted{font-size:var(--diva-font-md)}.modal-body{flex:1;grid-template-columns:minmax(0,1fr) 240px;gap:16px;min-height:0;padding:16px 20px 20px;display:grid}.modal-body.is-no-gap{gap:0}.modal-body.is-two-column{grid-template-columns:minmax(0,1fr) 200px;align-items:start}.modal-body.is-no-sidebar{grid-template-columns:minmax(0,1fr)}.modal-body.is-fullscreen{flex:1;min-height:0}.modal-body.is-with-choices{grid-template-columns:120px minmax(0,1fr) 240px}.modal-body.is-with-choices-no-sidebar{grid-template-columns:120px minmax(0,1fr)}.modal-viewer{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);height:100%;overflow:hidden}.modal-viewer.is-fullscreen{border-radius:0;height:100%}.modal-viewer.is-outer-left{border-radius:0}.modal-canvas{width:100%;height:100%;display:block}.modal-sidebar{background-color:var(--diva-white);border-top:1px solid var(--diva-border);border-right:1px solid var(--diva-border);border-bottom:1px solid var(--diva-border);border-radius:0;padding:16px;overflow:auto}.manifest-info-logo-wrap{text-align:center;flex-direction:column;align-items:center;gap:8px;display:flex}.manifest-info-logo{width:100%;max-width:180px;height:auto}.page-view-choices{background-color:var(--diva-dark-bg);border-radius:0;flex-direction:column;gap:8px;padding:8px;display:flex;overflow:auto}.page-view-choice{border:2px solid #0000;flex-direction:column;gap:4px;display:flex}.page-view-choice:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.page-view-choice:hover{background-color:var(--diva-dark-bg)}.page-view-choice.is-active{border-color:var(--diva-accent-light);background-color:var(--diva-dark-bg)}.page-view-choice-thumb{border-radius:0;width:100%;height:auto;display:block}.page-view-choice-thumb--protected{background:var(--diva-dark-bg);min-height:72px}.page-view-choice-label{font-size:var(--diva-font-xs);color:var(--diva-text-muted);text-overflow:ellipsis;white-space:nowrap;line-height:1.2;overflow:hidden}.filter-group{border-bottom:1px solid var(--diva-border);margin-bottom:12px;padding-bottom:12px}.filter-title-button{text-align:left;cursor:pointer;width:100%;font-size:var(--diva-font-sm);text-transform:uppercase;letter-spacing:.08em;color:var(--diva-text-muted);background-color:#0000;border:none;align-items:center;gap:8px;margin-bottom:8px;padding:0;font-weight:600;display:flex}.filter-title-button.is-collapsed{margin-bottom:0}.filter-title-icon{border-top:4px solid #0000;border-bottom:4px solid #0000;border-left:6px solid var(--diva-text-muted);width:0;height:0;transition:transform .15s;display:inline-block}.filter-title-icon.is-expanded{transform:rotate(90deg)}.filter-row{flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle{font-size:var(--diva-font-md);align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle.is-inline{margin-bottom:0}.filter-range-group{flex-direction:column;gap:6px;margin-bottom:10px;display:flex}.filter-range-header{justify-content:space-between;align-items:center;gap:8px;display:flex}.filter-range-header-right{align-items:center;gap:8px;display:flex}.filter-range-input{width:100%}.filter-value{font-size:var(--diva-font-sm);color:var(--diva-text-muted);text-align:right;width:40px}.filter-reset{font-size:var(--diva-font-xs);background-color:var(--diva-surface);border:1px solid var(--diva-border);cursor:pointer;color:var(--diva-text-muted);border-radius:0;padding:2px 6px}.filter-reset:hover{background-color:var(--diva-border)}.filter-json{width:100%;min-height:120px;font-size:var(--diva-font-sm);border:1px solid var(--diva-border);background-color:var(--diva-white);resize:vertical;border-radius:0;padding:6px 8px;font-family:Menlo,Monaco,Consolas,Liberation Mono,monospace}.filter-json-error{font-size:var(--diva-font-sm);color:var(--diva-danger);margin-top:4px}.filter-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted)}.filter-select{border:1px solid var(--diva-border);background-color:var(--diva-white);font-size:var(--diva-font-sm);border-radius:0;padding:4px 6px}.filter-color-input{border:1px solid var(--diva-border);background-color:var(--diva-white);border-radius:0;width:42px;height:28px;padding:0}.diva-auth-overlay{z-index:10000;background:#0000008c;place-items:center;display:grid;position:fixed;inset:0}.diva-auth-dialog{box-sizing:border-box;border:1px solid var(--diva-border,#aaa);background:var(--diva-background,#fff);width:min(30rem,100vw - 2rem);color:var(--diva-text-primary,#222);border-radius:0;padding:1.25rem}.diva-auth-dialog button{min-height:2.25rem;color:inherit;cursor:pointer;background:0 0;border:1px solid;border-radius:0;padding:.35rem .8rem}.diva-auth-dialog button:focus-visible{outline:2px solid var(--diva-accent,#1769aa);outline-offset:2px}.collection-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0;flex-direction:column;height:100%;min-height:0;display:flex;overflow:hidden}.collection-header{background-color:var(--diva-surface);border-bottom:1px solid var(--diva-border);border-radius:0;padding:12px}.collection-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:4px;font-weight:600}.collection-summary{font-size:var(--diva-font-md);color:var(--diva-text-muted);line-height:1.4}.collection-tree-item{padding-left:12px}.collection-node-button{align-items:center;gap:6px;width:100%;padding:6px 8px;display:flex}.collection-expand-icon{flex-shrink:0;justify-content:center;align-items:center;width:16px;height:16px;display:flex}.manifest-tree-item{padding:6px 8px 6px 30px}.manifest-tree-item.is-active{background-color:var(--diva-border);font-weight:600}.sidebar-pane.is-scroll{overflow-y:auto}@media (width<=720px){.collection-panel{border-radius:0;width:100%;height:auto}}";
 
   // cache/elm-esm.js
   function F(arity, fun, wrapper) {
@@ -10818,10 +10865,14 @@
     return { $: "ServerRespondedWithResource", a };
   };
   var $author$project$Model$SidebarHidden = { $: "SidebarHidden" };
-  var $author$project$Model$SidebarThumbnails = { $: "SidebarThumbnails" };
   var $author$project$Msg$ViewportChanged = F2(
     function(a, b) {
       return { $: "ViewportChanged", a, b };
+    }
+  );
+  var $elm$core$Basics$clamp = F3(
+    function(low, high, number) {
+      return _Utils_cmp(number, low) < 0 ? low : _Utils_cmp(number, high) > 0 ? high : number;
     }
   );
   var $elm$core$Set$empty = $elm$core$Set$Set_elm_builtin($elm$core$Dict$empty);
@@ -14016,12 +14067,70 @@
   );
   var $author$project$Filters$resetFilters = { adaptiveEnabled: false, adaptiveOffset: 10, adaptiveWindow: 15, altBlueGamma: 0, altBlueGammaEnabled: false, altBlueHue: 0, altBlueHueEnabled: false, altBlueHueWindow: 8, altBlueSigmoid: 0, altBlueSigmoidEnabled: false, altBlueVibrance: 0, altBlueVibranceEnabled: false, altGreenGamma: 0, altGreenGammaEnabled: false, altGreenHue: 0, altGreenHueEnabled: false, altGreenHueWindow: 8, altGreenSigmoid: 0, altGreenSigmoidEnabled: false, altGreenVibrance: 0, altGreenVibranceEnabled: false, altRedGamma: 0, altRedGammaEnabled: false, altRedHue: 0, altRedHueEnabled: false, altRedHueWindow: 8, altRedSigmoid: 0, altRedSigmoidEnabled: false, altRedVibrance: 0, altRedVibranceEnabled: false, brightness: 0, brightnessEnabled: false, ccBlue: 0, ccBlueEnabled: false, ccGreen: 0, ccGreenEnabled: false, ccRed: 0, ccRedEnabled: false, colourReplaceBlend: 1, colourReplaceEnabled: false, colourReplacePreserveLum: false, colourReplaceSource: "#ffffff", colourReplaceTarget: "#ffffff", colourReplaceTolerance: 24, colourmapCenter: 128, colourmapEnabled: false, colourmapPreset: "gray", contrast: 1, contrastEnabled: false, convolutionEnabled: false, convolutionPreset: "sharpen", flip: false, gamma: 1, gammaEnabled: false, globalPcaEnabled: false, grayscale: false, hue: 0, hueEnabled: false, invert: false, morphEnabled: false, morphKernel: 3, morphOperation: "erode", normalizeEnabled: false, normalizeStrength: 1, pcaHue: 0, pcaMode: "pca-rgb", pseudoColourBlue: 1, pseudoColourEnabled: false, pseudoColourGreen: 1, pseudoColourMode: "rg", pseudoColourRed: 1, rotation: 0, saturation: 0, saturationEnabled: false, threshold: 128, thresholdEnabled: false, unsharpAmount: 1, unsharpEnabled: false, vibrance: 0, vibranceEnabled: false };
   var $elm$core$Basics$round = _Basics_round;
+  var $author$project$Model$SidebarContents = { $: "SidebarContents" };
+  var $author$project$Model$SidebarMetadata = { $: "SidebarMetadata" };
+  var $author$project$Model$SidebarThumbnails = { $: "SidebarThumbnails" };
+  var $author$project$Main$sidebarPanelFromString = function(value) {
+    switch (value) {
+      case "contents":
+        return $author$project$Model$SidebarContents;
+      case "metadata":
+        return $author$project$Model$SidebarMetadata;
+      default:
+        return $author$project$Model$SidebarThumbnails;
+    }
+  };
   var $author$project$Main$init = function(flags) {
     var userLanguage = $rism_digital$elm_iiif$IIIF$Language$LanguageCode(flags.userLanguage);
-    var sidebarState = flags.showSidebar ? $author$project$Model$SidebarThumbnails : $author$project$Model$SidebarHidden;
+    var sidebarPanel = $author$project$Main$sidebarPanelFromString(flags.sidebarPanel);
+    var sidebarState = flags.showSidebar ? sidebarPanel : $author$project$Model$SidebarHidden;
     var manifestUrl = flags.objectData;
     return _Utils_Tuple2(
-      { acceptHeaders: flags.acceptHeaders, auth: $author$project$Auth$init, collectionSidebarDrag: $elm$core$Maybe$Nothing, collectionSidebarVisible: true, collectionSidebarWidth: 400, contentsView: $author$project$Model$ContentsIndex, currentZoom: $elm$core$Maybe$Nothing, detectedLanguage: userLanguage, filterGroupExpanded: $elm$core$Set$empty, filters: $author$project$Filters$resetFilters, filtersJsonError: $elm$core$Maybe$Nothing, filtersJsonInput: "", fullscreen: false, hasTileSources: false, initialZoom: $elm$core$Maybe$Nothing, isMobile: false, isViewerLoading: false, manifestInfoOpen: false, manifestUrl, mobileSidebarOpen: false, pageViewFullscreen: false, pageViewImageIndex: 0, pageViewOpen: false, pageViewSidebarVisible: true, pages: _List_Nil, pendingPublicResource: $elm$core$Maybe$Nothing, pendingThumbScroll: $elm$core$Maybe$Nothing, rangeIndexMap: $elm$core$Dict$empty, resourceResponse: $author$project$Model$ResourceLoading, response: $author$project$Model$Loading, rootElementId: flags.rootElementId, selectedIndex: $elm$core$Maybe$Nothing, selectedRangeId: $elm$core$Maybe$Nothing, shiftByOne: false, showTitle: flags.showTitle, sidebarDrag: $elm$core$Maybe$Nothing, sidebarState, sidebarWidth: 320, thumbsInstantScroll: false, viewMode: $author$project$Model$OneUp },
+      {
+        acceptHeaders: flags.acceptHeaders,
+        auth: $author$project$Auth$init,
+        collectionSidebarDrag: $elm$core$Maybe$Nothing,
+        collectionSidebarVisible: true,
+        collectionSidebarWidth: 400,
+        contentsView: $author$project$Model$ContentsIndex,
+        currentZoom: $elm$core$Maybe$Nothing,
+        detectedLanguage: userLanguage,
+        filterGroupExpanded: $elm$core$Set$empty,
+        filters: $author$project$Filters$resetFilters,
+        filtersJsonError: $elm$core$Maybe$Nothing,
+        filtersJsonInput: "",
+        fullscreen: false,
+        hasTileSources: false,
+        initialPage: flags.initialPage,
+        initialResourceSuperseded: false,
+        initialZoom: $elm$core$Maybe$Nothing,
+        isMobile: false,
+        isViewerLoading: false,
+        manifestInfoOpen: false,
+        manifestUrl,
+        mobileSidebarOpen: false,
+        pageViewFullscreen: false,
+        pageViewImageIndex: 0,
+        pageViewOpen: false,
+        pageViewSidebarVisible: true,
+        pages: _List_Nil,
+        pendingPublicResource: $elm$core$Maybe$Nothing,
+        pendingThumbScroll: $elm$core$Maybe$Nothing,
+        rangeIndexMap: $elm$core$Dict$empty,
+        resourceResponse: $author$project$Model$ResourceLoading,
+        response: $author$project$Model$Loading,
+        rootElementId: flags.rootElementId,
+        selectedIndex: $elm$core$Maybe$Nothing,
+        selectedRangeId: $elm$core$Maybe$Nothing,
+        shiftByOne: false,
+        showTitle: flags.showTitle,
+        sidebarDrag: $elm$core$Maybe$Nothing,
+        sidebarPanel,
+        sidebarState,
+        sidebarWidth: A3($elm$core$Basics$clamp, 220, 520, flags.sidebarWidth),
+        thumbsInstantScroll: false,
+        viewMode: $author$project$Model$OneUp
+      },
       $elm$core$Platform$Cmd$batch(
         _List_fromArray(
           [
@@ -14733,8 +14842,6 @@
       return { $: "ServerRespondedWithRequestedResource", a, b, c };
     }
   );
-  var $author$project$Model$SidebarContents = { $: "SidebarContents" };
-  var $author$project$Model$SidebarMetadata = { $: "SidebarMetadata" };
   var $author$project$Model$TwoUp = { $: "TwoUp" };
   var $author$project$Filters$applyFilterToggle = F3(
     function(toggle, enabled, filters) {
@@ -14915,11 +15022,6 @@
             { vibranceEnabled: enabled }
           );
       }
-    }
-  );
-  var $elm$core$Basics$clamp = F3(
-    function(low, high, number) {
-      return _Utils_cmp(number, low) < 0 ? low : _Utils_cmp(number, high) > 0 ? high : number;
     }
   );
   var $author$project$Filters$floatFilterConfig = function(value) {
@@ -16237,33 +16339,50 @@
   );
   var $author$project$Main$tileSourcesUpdated = _Platform_outgoingPort(
     "tileSourcesUpdated",
-    $elm$json$Json$Encode$list(
-      function($) {
-        return $elm$json$Json$Encode$object(
-          _List_fromArray(
-            [
-              _Utils_Tuple2(
-                "isStatic",
-                $elm$json$Json$Encode$bool($.isStatic)
-              ),
-              _Utils_Tuple2(
-                "sourceId",
-                $elm$json$Json$Encode$string($.sourceId)
-              ),
-              _Utils_Tuple2(
-                "url",
-                $elm$json$Json$Encode$string($.url)
-              )
-            ]
-          )
-        );
-      }
-    )
+    function($) {
+      return $elm$json$Json$Encode$object(
+        _List_fromArray(
+          [
+            _Utils_Tuple2(
+              "initialPageIndex",
+              $elm$json$Json$Encode$int($.initialPageIndex)
+            ),
+            _Utils_Tuple2(
+              "tileSources",
+              $elm$json$Json$Encode$list(
+                function($2) {
+                  return $elm$json$Json$Encode$object(
+                    _List_fromArray(
+                      [
+                        _Utils_Tuple2(
+                          "isStatic",
+                          $elm$json$Json$Encode$bool($2.isStatic)
+                        ),
+                        _Utils_Tuple2(
+                          "sourceId",
+                          $elm$json$Json$Encode$string($2.sourceId)
+                        ),
+                        _Utils_Tuple2(
+                          "url",
+                          $elm$json$Json$Encode$string($2.url)
+                        )
+                      ]
+                    )
+                  );
+                }
+              )($.tileSources)
+            )
+          ]
+        )
+      );
+    }
   );
   var $author$project$Main$clearViewer = $elm$core$Platform$Cmd$batch(
     _List_fromArray(
       [
-        $author$project$Main$tileSourcesUpdated(_List_Nil),
+        $author$project$Main$tileSourcesUpdated(
+          { initialPageIndex: 0, tileSources: _List_Nil }
+        ),
         $author$project$Main$pagesUpdated(_List_Nil),
         $author$project$Main$pageAspectsUpdated(_List_Nil),
         $author$project$Main$pageLabelsUpdated(_List_Nil),
@@ -17304,13 +17423,6 @@
       2,
       $elm$json$Json$Encode$object(activeFields)
     );
-  };
-  var $author$project$Main$ensureSidebarVisible = function(state) {
-    if (state.$ === "SidebarHidden") {
-      return $author$project$Model$SidebarThumbnails;
-    } else {
-      return state;
-    }
   };
   var $author$project$Main$findCollectionById = F2(
     function(collectionId, collection) {
@@ -18494,9 +18606,160 @@
       );
     }
   );
+  var $author$project$Main$findPageIndex = F2(
+    function(predicate, pages) {
+      return A2(
+        $elm$core$Maybe$map,
+        $elm$core$Tuple$first,
+        $elm$core$List$head(
+          A2(
+            $elm$core$List$filter,
+            A2($elm$core$Basics$composeR, $elm$core$Tuple$second, predicate),
+            A2($elm$core$List$indexedMap, $elm$core$Tuple$pair, pages)
+          )
+        )
+      );
+    }
+  );
+  var $author$project$Main$InitialPageCanvasId = function(a) {
+    return { $: "InitialPageCanvasId", a };
+  };
+  var $author$project$Main$InitialPageIndex = function(a) {
+    return { $: "InitialPageIndex", a };
+  };
+  var $author$project$Main$InitialPageLabel = function(a) {
+    return { $: "InitialPageLabel", a };
+  };
+  var $author$project$Main$initialPageTargetDecoder = $elm$json$Json$Decode$oneOf(
+    _List_fromArray(
+      [
+        A2($elm$json$Json$Decode$map, $author$project$Main$InitialPageIndex, $elm$json$Json$Decode$int),
+        A2(
+          $elm$json$Json$Decode$andThen,
+          function(by) {
+            switch (by) {
+              case "canvasId":
+                return A2(
+                  $elm$json$Json$Decode$map,
+                  $author$project$Main$InitialPageCanvasId,
+                  A2($elm$json$Json$Decode$field, "value", $elm$json$Json$Decode$string)
+                );
+              case "label":
+                return A2(
+                  $elm$json$Json$Decode$map,
+                  $author$project$Main$InitialPageLabel,
+                  A2($elm$json$Json$Decode$field, "value", $elm$json$Json$Decode$string)
+                );
+              default:
+                return $elm$json$Json$Decode$fail("Unsupported initial page selector");
+            }
+          },
+          A2($elm$json$Json$Decode$field, "by", $elm$json$Json$Decode$string)
+        )
+      ]
+    )
+  );
+  var $elm$core$String$toLower = _String_toLower;
+  var $author$project$Main$resolveInitialPageIndex = F2(
+    function(encoded, pages) {
+      var fallback = 0;
+      var _v0 = A2(
+        $elm$core$Maybe$andThen,
+        A2(
+          $elm$core$Basics$composeR,
+          $elm$json$Json$Decode$decodeValue($author$project$Main$initialPageTargetDecoder),
+          $elm$core$Result$toMaybe
+        ),
+        encoded
+      );
+      if (_v0.$ === "Just") {
+        switch (_v0.a.$) {
+          case "InitialPageIndex":
+            var index = _v0.a.a;
+            return index >= 0 && _Utils_cmp(
+              index,
+              $elm$core$List$length(pages)
+            ) < 0 ? index : fallback;
+          case "InitialPageCanvasId":
+            var canvasId = _v0.a.a;
+            return A2(
+              $elm$core$Maybe$withDefault,
+              fallback,
+              A2(
+                $author$project$Main$findPageIndex,
+                function(page) {
+                  return _Utils_eq(page.canvasId, canvasId);
+                },
+                pages
+              )
+            );
+          default:
+            var label = _v0.a.a;
+            return A2(
+              $elm$core$Maybe$withDefault,
+              fallback,
+              A2(
+                $author$project$Main$findPageIndex,
+                function(page) {
+                  return _Utils_eq(
+                    $elm$core$String$toLower(page.label),
+                    $elm$core$String$toLower(label)
+                  );
+                },
+                pages
+              )
+            );
+        }
+      } else {
+        return fallback;
+      }
+    }
+  );
+  var $rism_digital$elm_iiif$IIIF$Presentation$toHomepage = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
+    function($) {
+      return $.homepage;
+    }
+  );
+  var $rism_digital$elm_iiif$IIIF$Presentation$toMetadata = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
+    function($) {
+      return $.metadata;
+    }
+  );
   var $rism_digital$elm_iiif$IIIF$Presentation$toRanges = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
     function($) {
       return $.ranges;
+    }
+  );
+  var $author$project$Main$sidebarPanelForManifest = F2(
+    function(manifest, requested) {
+      switch (requested.$) {
+        case "SidebarMetadata":
+          var hasMetadata = !$elm$core$List$isEmpty(
+            $rism_digital$elm_iiif$IIIF$Presentation$toMetadata(manifest)
+          );
+          var hasHomepage = A2(
+            $elm$core$Maybe$withDefault,
+            false,
+            A2(
+              $elm$core$Maybe$map,
+              A2($elm$core$Basics$composeR, $elm$core$List$isEmpty, $elm$core$Basics$not),
+              $rism_digital$elm_iiif$IIIF$Presentation$toHomepage(manifest)
+            )
+          );
+          return hasMetadata || hasHomepage ? $author$project$Model$SidebarMetadata : $author$project$Model$SidebarThumbnails;
+        case "SidebarContents":
+          return A2(
+            $elm$core$Maybe$withDefault,
+            false,
+            A2(
+              $elm$core$Maybe$map,
+              A2($elm$core$Basics$composeR, $elm$core$List$isEmpty, $elm$core$Basics$not),
+              $rism_digital$elm_iiif$IIIF$Presentation$toRanges(manifest)
+            )
+          ) ? $author$project$Model$SidebarContents : $author$project$Model$SidebarThumbnails;
+        default:
+          return $author$project$Model$SidebarThumbnails;
+      }
     }
   );
   var $rism_digital$elm_iiif$IIIF$Presentation$toViewingDirection = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
@@ -18517,8 +18780,8 @@
     }
   };
   var $author$project$Main$zoomLevelUpdated = _Platform_outgoingPort("zoomLevelUpdated", $elm$json$Json$Encode$float);
-  var $author$project$Main$handleManifestLoaded = F2(
-    function(model, manifest) {
+  var $author$project$Main$handleManifestLoaded = F3(
+    function(initialPage, model, manifest) {
       var viewingDirection = $rism_digital$elm_iiif$IIIF$Presentation$toViewingDirection(manifest);
       var pages = A2($author$project$Model$manifestToPages, model.detectedLanguage, manifest);
       var tileSources = A2(
@@ -18548,6 +18811,7 @@
       var shiftByOne = isSingleCanvas ? false : pagedLayout || _Utils_eq(viewingDirection, $rism_digital$elm_iiif$IIIF$Presentation$RightToLeft);
       var viewMode = isSingleCanvas ? $author$project$Model$OneUp : pagedLayout ? $author$project$Model$TwoUp : $author$project$Model$OneUp;
       var layoutMode = A2($author$project$Main$layoutModeToString, viewMode, shiftByOne);
+      var initialPageIndex = A2($author$project$Main$resolveInitialPageIndex, initialPage, pages);
       var direction = $author$project$Main$viewingDirectionToString(viewingDirection);
       var canvasIndexMap = $elm$core$Dict$fromList(
         A2(
@@ -18569,6 +18833,8 @@
           $rism_digital$elm_iiif$IIIF$Presentation$toRanges(manifest)
         )
       );
+      var availableSidebarPanel = A2($author$project$Main$sidebarPanelForManifest, manifest, model.sidebarPanel);
+      var nextSidebarState = _Utils_eq(model.sidebarState, $author$project$Model$SidebarHidden) ? $author$project$Model$SidebarHidden : availableSidebarPanel;
       var authSources = A2(
         $elm$core$List$map,
         function(image) {
@@ -18596,15 +18862,19 @@
             pages,
             rangeIndexMap,
             response: $author$project$Model$Loaded(manifest),
-            selectedIndex: $elm$core$List$isEmpty(pages) ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(0),
+            selectedIndex: $elm$core$List$isEmpty(pages) ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(initialPageIndex),
             shiftByOne,
+            sidebarPanel: availableSidebarPanel,
+            sidebarState: nextSidebarState,
             viewMode
           }
         ),
         $elm$core$Platform$Cmd$batch(
           _List_fromArray(
             [
-              $author$project$Main$tileSourcesUpdated(tileSources),
+              $author$project$Main$tileSourcesUpdated(
+                { initialPageIndex, tileSources }
+              ),
               $author$project$Main$pagesUpdated(
                 $author$project$Main$publicPages(pages)
               ),
@@ -19071,6 +19341,10 @@
             _Utils_Tuple2(
               "hasPages",
               $elm$json$Json$Encode$bool($.hasPages)
+            ),
+            _Utils_Tuple2(
+              "pageIndex",
+              $elm$json$Json$Encode$int($.pageIndex)
             ),
             _Utils_Tuple2(
               "requestId",
@@ -21297,6 +21571,15 @@
       );
     }
   );
+  var $author$project$Main$visibleSidebarState = function(model) {
+    var _v0 = model.sidebarState;
+    if (_v0.$ === "SidebarHidden") {
+      return model.sidebarPanel;
+    } else {
+      var state = _v0;
+      return state;
+    }
+  };
   var $author$project$Main$zoomInFactor = 1.6;
   var $author$project$Main$zoomOutFactor = 1 / $author$project$Main$zoomInFactor;
   var $author$project$Main$update = F2(
@@ -21344,6 +21627,7 @@
             _Utils_update(
               model,
               {
+                initialResourceSuperseded: true,
                 isViewerLoading: true,
                 pendingPublicResource: $elm$core$Maybe$Just(requestId)
               }
@@ -21460,7 +21744,7 @@
             } else {
               if (result.$ === "Ok") {
                 var manifest = result.a;
-                return A2($author$project$Main$handleManifestLoaded, model, manifest);
+                return A3($author$project$Main$handleManifestLoaded, $elm$core$Maybe$Nothing, model, manifest);
               } else {
                 var err = result.a;
                 return _Utils_Tuple2(
@@ -21482,104 +21766,114 @@
           }
         case "ServerRespondedWithResource":
           var result = msg.a;
-          if (result.$ === "Ok") {
-            var resource = result.a;
-            switch (resource.$) {
-              case "ResourceManifest":
-                var manifest = resource.a;
-                var _v13 = A2($author$project$Main$handleManifestLoaded, model, manifest);
-                var nextModel = _v13.a;
-                var cmd = _v13.b;
-                return _Utils_Tuple2(
-                  _Utils_update(
-                    nextModel,
-                    {
-                      collectionSidebarVisible: false,
-                      resourceResponse: $author$project$Model$ResourceLoadedManifest(manifest)
-                    }
-                  ),
-                  $elm$core$Platform$Cmd$batch(
-                    _List_fromArray(
-                      [
-                        cmd,
-                        $author$project$Main$resourceLoadSucceeded(
-                          {
-                            hasPages: !$elm$core$List$isEmpty(nextModel.pages),
-                            requestId: "initial",
-                            url: model.manifestUrl
-                          }
-                        )
-                      ]
-                    )
-                  )
-                );
-              case "ResourceCollection":
-                var _v14 = resource.a;
-                var version = _v14.a;
-                var collection = _v14.b;
-                return _Utils_Tuple2(
-                  _Utils_update(
-                    model,
-                    {
-                      auth: $author$project$Auth$init,
-                      collectionSidebarVisible: true,
-                      isViewerLoading: false,
-                      pages: _List_Nil,
-                      resourceResponse: $author$project$Model$ResourceLoadedCollection(
-                        {
-                          collection: A2($rism_digital$elm_iiif$IIIF$Presentation$IIIFCollection, version, collection),
-                          expandedIds: $elm$core$Set$empty,
-                          loadedCollectionIds: $elm$core$Set$empty,
-                          loadingCollectionIds: $elm$core$Set$empty,
-                          selectedManifestId: $elm$core$Maybe$Nothing
-                        }
-                      ),
-                      response: $author$project$Model$NotRequested,
-                      selectedIndex: $elm$core$Maybe$Nothing
-                    }
-                  ),
-                  $elm$core$Platform$Cmd$batch(
-                    _List_fromArray(
-                      [
-                        $author$project$Main$clearViewer,
-                        $author$project$Main$resourceLoadSucceeded(
-                          { hasPages: false, requestId: "initial", url: model.manifestUrl }
-                        )
-                      ]
-                    )
-                  )
-                );
-              default:
-                return _Utils_Tuple2(
-                  _Utils_update(
-                    model,
-                    { isViewerLoading: false }
-                  ),
-                  $author$project$Main$resourceLoadFailed(
-                    { message: "URL did not return a supported IIIF resource.", requestId: "initial", url: model.manifestUrl }
-                  )
-                );
-            }
+          if (model.initialResourceSuperseded) {
+            return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
           } else {
-            var err = result.a;
-            return _Utils_Tuple2(
-              _Utils_update(
-                model,
-                {
-                  isViewerLoading: false,
-                  resourceResponse: $author$project$Model$ResourceFailed(
-                    $author$project$Main$httpErrorToString(err)
-                  )
-                }
-              ),
-              $author$project$Main$resourceLoadFailed(
-                {
-                  message: $author$project$Main$httpErrorToString(err),
-                  requestId: "initial",
-                  url: model.manifestUrl
-                }
-              )
-            );
+            if (result.$ === "Ok") {
+              var resource = result.a;
+              switch (resource.$) {
+                case "ResourceManifest":
+                  var manifest = resource.a;
+                  var _v13 = A3(
+                    $author$project$Main$handleManifestLoaded,
+                    $elm$core$Maybe$Just(model.initialPage),
+                    model,
+                    manifest
+                  );
+                  var nextModel = _v13.a;
+                  var cmd = _v13.b;
+                  return _Utils_Tuple2(
+                    _Utils_update(
+                      nextModel,
+                      {
+                        collectionSidebarVisible: false,
+                        resourceResponse: $author$project$Model$ResourceLoadedManifest(manifest)
+                      }
+                    ),
+                    $elm$core$Platform$Cmd$batch(
+                      _List_fromArray(
+                        [
+                          cmd,
+                          $author$project$Main$resourceLoadSucceeded(
+                            {
+                              hasPages: !$elm$core$List$isEmpty(nextModel.pages),
+                              pageIndex: A2($elm$core$Maybe$withDefault, 0, nextModel.selectedIndex),
+                              requestId: "initial",
+                              url: model.manifestUrl
+                            }
+                          )
+                        ]
+                      )
+                    )
+                  );
+                case "ResourceCollection":
+                  var _v14 = resource.a;
+                  var version = _v14.a;
+                  var collection = _v14.b;
+                  return _Utils_Tuple2(
+                    _Utils_update(
+                      model,
+                      {
+                        auth: $author$project$Auth$init,
+                        collectionSidebarVisible: true,
+                        isViewerLoading: false,
+                        pages: _List_Nil,
+                        resourceResponse: $author$project$Model$ResourceLoadedCollection(
+                          {
+                            collection: A2($rism_digital$elm_iiif$IIIF$Presentation$IIIFCollection, version, collection),
+                            expandedIds: $elm$core$Set$empty,
+                            loadedCollectionIds: $elm$core$Set$empty,
+                            loadingCollectionIds: $elm$core$Set$empty,
+                            selectedManifestId: $elm$core$Maybe$Nothing
+                          }
+                        ),
+                        response: $author$project$Model$NotRequested,
+                        selectedIndex: $elm$core$Maybe$Nothing
+                      }
+                    ),
+                    $elm$core$Platform$Cmd$batch(
+                      _List_fromArray(
+                        [
+                          $author$project$Main$clearViewer,
+                          $author$project$Main$resourceLoadSucceeded(
+                            { hasPages: false, pageIndex: 0, requestId: "initial", url: model.manifestUrl }
+                          )
+                        ]
+                      )
+                    )
+                  );
+                default:
+                  return _Utils_Tuple2(
+                    _Utils_update(
+                      model,
+                      { isViewerLoading: false }
+                    ),
+                    $author$project$Main$resourceLoadFailed(
+                      { message: "URL did not return a supported IIIF resource.", requestId: "initial", url: model.manifestUrl }
+                    )
+                  );
+              }
+            } else {
+              var err = result.a;
+              return _Utils_Tuple2(
+                _Utils_update(
+                  model,
+                  {
+                    isViewerLoading: false,
+                    resourceResponse: $author$project$Model$ResourceFailed(
+                      $author$project$Main$httpErrorToString(err)
+                    )
+                  }
+                ),
+                $author$project$Main$resourceLoadFailed(
+                  {
+                    message: $author$project$Main$httpErrorToString(err),
+                    requestId: "initial",
+                    url: model.manifestUrl
+                  }
+                )
+              );
+            }
           }
         case "ServerRespondedWithRequestedResource":
           var requestId = msg.a;
@@ -21596,7 +21890,7 @@
               switch (resource.$) {
                 case "ResourceManifest":
                   var manifest = resource.a;
-                  var _v17 = A2($author$project$Main$handleManifestLoaded, model, manifest);
+                  var _v17 = A3($author$project$Main$handleManifestLoaded, $elm$core$Maybe$Nothing, model, manifest);
                   var nextModel = _v17.a;
                   var cmd = _v17.b;
                   return _Utils_Tuple2(
@@ -21616,6 +21910,7 @@
                           $author$project$Main$resourceLoadSucceeded(
                             {
                               hasPages: !$elm$core$List$isEmpty(nextModel.pages),
+                              pageIndex: 0,
                               requestId,
                               url
                             }
@@ -21656,7 +21951,7 @@
                         [
                           $author$project$Main$clearViewer,
                           $author$project$Main$resourceLoadSucceeded(
-                            { hasPages: false, requestId, url }
+                            { hasPages: false, pageIndex: 0, requestId, url }
                           )
                         ]
                       )
@@ -21847,7 +22142,7 @@
               pageViewImageIndex: 0,
               pageViewOpen: true,
               pageViewSidebarVisible: true,
-              sidebarState: $author$project$Main$ensureSidebarVisible(model.sidebarState)
+              sidebarState: $author$project$Main$visibleSidebarState(model)
             }
           );
           return _Utils_Tuple2(
@@ -21892,7 +22187,7 @@
                 }
               })(),
               selectedRangeId: $elm$core$Maybe$Just(rangeId),
-              sidebarState: $author$project$Main$ensureSidebarVisible(model.sidebarState),
+              sidebarState: $author$project$Main$visibleSidebarState(model),
               thumbsInstantScroll: true
             }
           );
@@ -21919,7 +22214,7 @@
             {
               pageViewImageIndex: 0,
               selectedIndex: $elm$core$Maybe$Just(index),
-              sidebarState: $author$project$Main$ensureSidebarVisible(model.sidebarState),
+              sidebarState: $author$project$Main$visibleSidebarState(model),
               thumbsInstantScroll: false
             }
           );
@@ -22062,7 +22357,7 @@
           return _Utils_Tuple2(
             _Utils_update(
               model,
-              { sidebarState: $author$project$Model$SidebarContents }
+              { sidebarPanel: $author$project$Model$SidebarContents, sidebarState: $author$project$Model$SidebarContents }
             ),
             $elm$core$Platform$Cmd$none
           );
@@ -22114,7 +22409,7 @@
           return _Utils_Tuple2(
             _Utils_update(
               model,
-              { sidebarState: $author$project$Model$SidebarMetadata }
+              { sidebarPanel: $author$project$Model$SidebarMetadata, sidebarState: $author$project$Model$SidebarMetadata }
             ),
             $elm$core$Platform$Cmd$none
           );
@@ -22160,16 +22455,13 @@
           ) : _Utils_Tuple2(
             _Utils_update(
               model,
-              {
-                mobileSidebarOpen: true,
-                sidebarState: $author$project$Main$ensureSidebarVisible(model.sidebarState)
-              }
+              { mobileSidebarOpen: true, sidebarState: model.sidebarPanel }
             ),
             $elm$core$Platform$Cmd$none
           ) : _Utils_eq(model.sidebarState, $author$project$Model$SidebarHidden) ? _Utils_Tuple2(
             _Utils_update(
               model,
-              { sidebarState: $author$project$Model$SidebarThumbnails }
+              { sidebarState: model.sidebarPanel }
             ),
             $elm$core$Platform$Cmd$none
           ) : _Utils_Tuple2(
@@ -22197,7 +22489,7 @@
           })();
           var nextModel = _Utils_update(
             model,
-            { sidebarState: $author$project$Model$SidebarThumbnails }
+            { sidebarPanel: $author$project$Model$SidebarThumbnails, sidebarState: $author$project$Model$SidebarThumbnails }
           );
           var nextInstant = (function() {
             var _v30 = model.pendingThumbScroll;
@@ -23314,7 +23606,6 @@
     );
   };
   var $elm$parser$Parser$succeed = $elm$parser$Parser$Advanced$succeed;
-  var $elm$core$String$toLower = _String_toLower;
   var $hecrj$html_parser$Html$Parser$closingTag = function(name) {
     var chompName = A2(
       $elm$parser$Parser$andThen,
@@ -27106,11 +27397,6 @@
       _VirtualDom_noJavaScriptOrHtmlUri(url)
     );
   };
-  var $rism_digital$elm_iiif$IIIF$Presentation$toHomepage = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
-    function($) {
-      return $.homepage;
-    }
-  );
   var $rism_digital$elm_iiif$IIIF$Presentation$toLogo = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
     function($) {
       return $.logo;
@@ -29690,11 +29976,6 @@
   var $author$project$Msg$UserToggledContents = { $: "UserToggledContents" };
   var $author$project$Msg$UserToggledMetadata = { $: "UserToggledMetadata" };
   var $author$project$Msg$UserToggledThumbnails = { $: "UserToggledThumbnails" };
-  var $rism_digital$elm_iiif$IIIF$Presentation$toMetadata = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
-    function($) {
-      return $.metadata;
-    }
-  );
   var $author$project$View$Sidebar$hasManifestMetadata = function(manifest) {
     var hasMetadataEntries = !$elm$core$List$isEmpty(
       $rism_digital$elm_iiif$IIIF$Presentation$toMetadata(manifest)
@@ -29729,6 +30010,21 @@
     );
   };
   var $author$project$View$Sidebar$viewContentsEmptyBody = $author$project$View$Sidebar$viewContentsEmpty("No contents available.");
+  var $author$project$View$Sidebar$currentCanvasId = function(model) {
+    return A2(
+      $elm$core$Maybe$map,
+      function($) {
+        return $.canvasId;
+      },
+      A2(
+        $elm$core$Maybe$andThen,
+        function(index) {
+          return A2($author$project$Model$getPageAt, index, model.pages);
+        },
+        model.selectedIndex
+      )
+    );
+  };
   var $author$project$View$Sidebar$lookupRangeIndex = F2(
     function(rangeIndexMap, rangeId) {
       return A2(
@@ -29738,23 +30034,58 @@
       );
     }
   );
+  var $author$project$View$Sidebar$rangeContainsCanvas = F2(
+    function(canvasId, range) {
+      return A2(
+        $elm$core$List$any,
+        $author$project$View$Sidebar$rangeItemContainsCanvas(canvasId),
+        range.items
+      );
+    }
+  );
+  var $author$project$View$Sidebar$rangeItemContainsCanvas = F2(
+    function(canvasId, item) {
+      if (item.$ === "RangeCanvas") {
+        var idValue = item.a;
+        return _Utils_eq(idValue, canvasId);
+      } else {
+        var range = item.a;
+        return A2($author$project$View$Sidebar$rangeContainsCanvas, canvasId, range);
+      }
+    }
+  );
   var $author$project$Msg$UserClickedRange = F2(
     function(a, b) {
       return { $: "UserClickedRange", a, b };
     }
   );
-  var $author$project$View$Sidebar$viewRangeButton = F3(
-    function(rangeId, maybeIndex, labelText) {
+  var $author$project$View$Sidebar$viewRangeButton = F4(
+    function(isCurrent, rangeId, maybeIndex, labelText) {
       return A2(
         $elm$html$Html$button,
-        _List_fromArray(
-          [
-            $elm$html$Html$Attributes$class("contents-button ui-button"),
-            $elm$html$Html$Attributes$type_("button"),
-            $elm$html$Html$Events$onClick(
-              A2($author$project$Msg$UserClickedRange, rangeId, maybeIndex)
-            )
-          ]
+        _Utils_ap(
+          _List_fromArray(
+            [
+              $elm$html$Html$Attributes$classList(
+                _List_fromArray(
+                  [
+                    _Utils_Tuple2("contents-button", true),
+                    _Utils_Tuple2("ui-button", true),
+                    _Utils_Tuple2("is-current", isCurrent)
+                  ]
+                )
+              ),
+              $elm$html$Html$Attributes$type_("button"),
+              $elm$html$Html$Events$onClick(
+                A2($author$project$Msg$UserClickedRange, rangeId, maybeIndex)
+              )
+            ]
+          ),
+          isCurrent ? _List_fromArray(
+            [
+              A2($elm$html$Html$Attributes$attribute, "aria-current", "location")
+            ]
+          ) : _List_Nil
         ),
         _List_fromArray(
           [
@@ -29867,7 +30198,18 @@
       var maybeIndex = A2($author$project$View$Sidebar$lookupRangeIndex, rangeIndexMap, range.id);
       var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, range.label);
       var resolvedLabel = $elm$core$String$isEmpty(labelText) ? "[Untitled range]" : labelText;
-      var labelNode = A3($author$project$View$Sidebar$viewRangeButton, range.id, maybeIndex, resolvedLabel);
+      var isCurrent = A2(
+        $elm$core$Maybe$withDefault,
+        false,
+        A2(
+          $elm$core$Maybe$map,
+          function(canvasId) {
+            return A2($author$project$View$Sidebar$rangeContainsCanvas, canvasId, range);
+          },
+          $author$project$View$Sidebar$currentCanvasId(model)
+        )
+      );
+      var labelNode = A4($author$project$View$Sidebar$viewRangeButton, isCurrent, range.id, maybeIndex, resolvedLabel);
       var children = A3($author$project$View$Sidebar$viewRangeItems, model, rangeIndexMap, range.items);
       return A2(
         $elm$html$Html$li,
@@ -29986,49 +30328,6 @@
           ]
         )
       );
-    }
-  );
-  var $author$project$View$Sidebar$currentCanvasId = F2(
-    function(model, manifest) {
-      return A2(
-        $elm$core$Maybe$map,
-        function($) {
-          return $.id;
-        },
-        A2(
-          $elm$core$Maybe$andThen,
-          function(index) {
-            return $elm$core$List$head(
-              A2(
-                $elm$core$List$drop,
-                index,
-                $rism_digital$elm_iiif$IIIF$Presentation$toCanvases(manifest)
-              )
-            );
-          },
-          model.selectedIndex
-        )
-      );
-    }
-  );
-  var $author$project$View$Sidebar$rangeContainsCanvas = F2(
-    function(canvasId, range) {
-      return A2(
-        $elm$core$List$any,
-        $author$project$View$Sidebar$rangeItemContainsCanvas(canvasId),
-        range.items
-      );
-    }
-  );
-  var $author$project$View$Sidebar$rangeItemContainsCanvas = F2(
-    function(canvasId, item) {
-      if (item.$ === "RangeCanvas") {
-        var idValue = item.a;
-        return _Utils_eq(idValue, canvasId);
-      } else {
-        var range = item.a;
-        return A2($author$project$View$Sidebar$rangeContainsCanvas, canvasId, range);
-      }
     }
   );
   var $author$project$View$Sidebar$rangesForCanvasInRange = F2(
@@ -30151,7 +30450,7 @@
         }
       })();
       var resolvedLabel = $elm$core$String$isEmpty(labelText) ? rangePrefix + "[Untitled range]" : _Utils_ap(rangePrefix, labelText);
-      var labelNode = A3($author$project$View$Sidebar$viewRangeButton, range.id, maybeIndex, resolvedLabel);
+      var labelNode = A4($author$project$View$Sidebar$viewRangeButton, false, range.id, maybeIndex, resolvedLabel);
       return A2(
         $elm$html$Html$li,
         _List_fromArray(
@@ -30165,7 +30464,7 @@
   );
   var $author$project$View$Sidebar$viewOnThisPageBody = F2(
     function(model, manifest) {
-      var _v0 = A2($author$project$View$Sidebar$currentCanvasId, model, manifest);
+      var _v0 = $author$project$View$Sidebar$currentCanvasId(model);
       if (_v0.$ === "Just") {
         var canvasId = _v0.a;
         var _v1 = $rism_digital$elm_iiif$IIIF$Presentation$toRanges(manifest);
@@ -31546,40 +31845,58 @@
       function(userLanguage) {
         return A2(
           $elm$json$Json$Decode$andThen,
-          function(showTitle) {
+          function(sidebarWidth) {
             return A2(
               $elm$json$Json$Decode$andThen,
-              function(showSidebar) {
+              function(sidebarPanel) {
                 return A2(
                   $elm$json$Json$Decode$andThen,
-                  function(rootElementId) {
+                  function(showTitle) {
                     return A2(
                       $elm$json$Json$Decode$andThen,
-                      function(objectData) {
+                      function(showSidebar) {
                         return A2(
                           $elm$json$Json$Decode$andThen,
-                          function(acceptHeaders) {
-                            return $elm$json$Json$Decode$succeed(
-                              { acceptHeaders, objectData, rootElementId, showSidebar, showTitle, userLanguage }
+                          function(rootElementId) {
+                            return A2(
+                              $elm$json$Json$Decode$andThen,
+                              function(objectData) {
+                                return A2(
+                                  $elm$json$Json$Decode$andThen,
+                                  function(initialPage) {
+                                    return A2(
+                                      $elm$json$Json$Decode$andThen,
+                                      function(acceptHeaders) {
+                                        return $elm$json$Json$Decode$succeed(
+                                          { acceptHeaders, initialPage, objectData, rootElementId, showSidebar, showTitle, sidebarPanel, sidebarWidth, userLanguage }
+                                        );
+                                      },
+                                      A2(
+                                        $elm$json$Json$Decode$field,
+                                        "acceptHeaders",
+                                        $elm$json$Json$Decode$list($elm$json$Json$Decode$string)
+                                      )
+                                    );
+                                  },
+                                  A2($elm$json$Json$Decode$field, "initialPage", $elm$json$Json$Decode$value)
+                                );
+                              },
+                              A2($elm$json$Json$Decode$field, "objectData", $elm$json$Json$Decode$string)
                             );
                           },
-                          A2(
-                            $elm$json$Json$Decode$field,
-                            "acceptHeaders",
-                            $elm$json$Json$Decode$list($elm$json$Json$Decode$string)
-                          )
+                          A2($elm$json$Json$Decode$field, "rootElementId", $elm$json$Json$Decode$string)
                         );
                       },
-                      A2($elm$json$Json$Decode$field, "objectData", $elm$json$Json$Decode$string)
+                      A2($elm$json$Json$Decode$field, "showSidebar", $elm$json$Json$Decode$bool)
                     );
                   },
-                  A2($elm$json$Json$Decode$field, "rootElementId", $elm$json$Json$Decode$string)
+                  A2($elm$json$Json$Decode$field, "showTitle", $elm$json$Json$Decode$bool)
                 );
               },
-              A2($elm$json$Json$Decode$field, "showSidebar", $elm$json$Json$Decode$bool)
+              A2($elm$json$Json$Decode$field, "sidebarPanel", $elm$json$Json$Decode$string)
             );
           },
-          A2($elm$json$Json$Decode$field, "showTitle", $elm$json$Json$Decode$bool)
+          A2($elm$json$Json$Decode$field, "sidebarWidth", $elm$json$Json$Decode$int)
         );
       },
       A2($elm$json$Json$Decode$field, "userLanguage", $elm$json$Json$Decode$string)
@@ -33469,6 +33786,9 @@
     target.appendChild(styleEl);
   };
   injectStyles(diva_default);
+  var DEFAULT_SIDEBAR_WIDTH = 320;
+  var MIN_SIDEBAR_WIDTH = 220;
+  var MAX_SIDEBAR_WIDTH = 520;
   var Diva = class extends EventTarget {
     /**
      * Create a Diva viewer in an existing root element.
@@ -33501,6 +33821,8 @@
       this.filterPreviewController = null;
       this.isDestroyed = false;
       this.pages = [];
+      this.pagesByCanvasId = /* @__PURE__ */ new Map();
+      this.pagesByLabel = /* @__PURE__ */ new Map();
       this.readySettled = false;
       this.resourceSequence = 0;
       this.pendingResource = null;
@@ -33542,19 +33864,26 @@
       void this.ready.catch(() => {
       });
       this.handlePageChangeBound = this.handlePageChange.bind(this);
+      this.handlePageLoadedBound = this.handlePageLoaded.bind(this);
       this.handleZoomChangeBound = this.handleZoomChange.bind(this);
       this.handleLoadingChangeBound = this.handleLoadingChange.bind(this);
       this.handlePageLoadErrorBound = this.handlePageLoadError.bind(this);
       this.handleFullscreenChangeBound = this.handleFullscreenChange.bind(this);
       this.handleRootClickBound = this.handleRootClick.bind(this);
       let langCode = this.detectLanguage();
+      const requestedSidebarWidth = flags.sidebarWidth;
+      const sidebarWidth = typeof requestedSidebarWidth === "number" && Number.isFinite(requestedSidebarWidth) ? Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, Math.round(requestedSidebarWidth))) : DEFAULT_SIDEBAR_WIDTH;
+      const sidebarPanel = flags.sidebarPanel === "contents" || flags.sidebarPanel === "metadata" ? flags.sidebarPanel : "thumbnails";
       this.app = Elm.Main.init({
         node: root,
         flags: {
           rootElementId: rootId,
           objectData: flags.objectData,
+          initialPage: this.initialPageFlag(flags.initialPage),
           acceptHeaders: flags.acceptHeaders || [],
           showSidebar: flags.showSidebar !== false,
+          sidebarWidth,
+          sidebarPanel,
           showTitle: flags.showTitle !== false,
           userLanguage: flags.setLanguage || langCode
         }
@@ -33568,6 +33897,7 @@
       this.callViewerMethodWhenReady("setTileSourceResolver", this.tileSourceResolver);
       this.bindRootClick();
       this.bindPageChange();
+      this.bindViewerEvent("diva-page-loaded", this.handlePageLoadedBound);
       this.bindFullscreenChange();
       this.bindZoomChange();
       this.bindLoadingChange();
@@ -33582,6 +33912,15 @@
     detectLanguage() {
       return navigator.language.split("-")[0];
     }
+    initialPageFlag(target) {
+      if (typeof target === "number") {
+        return Number.isInteger(target) && target >= 0 ? target : null;
+      }
+      if (target && typeof target === "object" && (target.by === "canvasId" || target.by === "label") && typeof target.value === "string") {
+        return { by: target.by, value: target.value };
+      }
+      return null;
+    }
     getConnectedRoot() {
       const root = document.getElementById(this.rootId);
       if (root) {
@@ -33590,10 +33929,10 @@
       return this.root;
     }
     bindPorts() {
-      this.getPort("tileSourcesUpdated").subscribe((tileSources) => {
-        this.auth.registerSources(tileSources);
+      this.getPort("tileSourcesUpdated").subscribe((update) => {
+        this.auth.registerSources(update.tileSources);
         this.callViewerMethodWhenReady("setTileSourceResolver", this.tileSourceResolver);
-        this.callViewerMethodWhenReady("setTileSources", tileSources);
+        this.callViewerMethodWhenReady("setTileSources", update.tileSources, update.initialPageIndex);
       });
       this.getPort("pageAspectsUpdated").subscribe((aspects) => {
         this.callViewerMethodWhenReady("setPageAspects", aspects);
@@ -33603,6 +33942,7 @@
       });
       this.getPort("pagesUpdated").subscribe((pages) => {
         this.pages = pages.map((page) => this.copyPage(page));
+        this.rebuildPageIndexes();
         this.updateState({ pageCount: this.pages.length, currentPageIndex: null, visiblePageIndexes: [] });
       });
       this.getPort("zoomLevelUpdated").subscribe((zoom) => {
@@ -33645,7 +33985,7 @@
         this.updateLayoutState(mode, this.state.viewingDirection);
       });
       this.getPort("resourceLoadSucceeded").subscribe((value) => {
-        this.handleResourceSucceeded(value.requestId, value.url, value.hasPages);
+        this.handleResourceSucceeded(value.requestId, value.url, value.hasPages, value.pageIndex);
       });
       this.getPort("resourceLoadFailed").subscribe((value) => {
         this.handleResourceFailed(value.requestId, value.message);
@@ -33679,6 +34019,25 @@
         images
       };
     }
+    rebuildPageIndexes() {
+      this.pagesByCanvasId.clear();
+      this.pagesByLabel.clear();
+      this.pages.forEach((page) => {
+        if (!this.pagesByCanvasId.has(page.canvasId)) {
+          this.pagesByCanvasId.set(page.canvasId, page);
+        }
+        const label = page.label.toLowerCase();
+        if (!this.pagesByLabel.has(label)) {
+          this.pagesByLabel.set(label, page);
+        }
+      });
+    }
+    pageForSelector(selector) {
+      if (!selector || typeof selector !== "object" || selector.by !== "canvasId" && selector.by !== "label" || typeof selector.value !== "string") {
+        throw new TypeError("A page selector must contain a supported 'by' value and a string 'value'.");
+      }
+      return selector.by === "canvasId" ? this.pagesByCanvasId.get(selector.value) : this.pagesByLabel.get(selector.value.toLowerCase());
+    }
     copyState() {
       return { ...this.state, visiblePageIndexes: this.state.visiblePageIndexes.slice() };
     }
@@ -33699,13 +34058,18 @@
         this.emit("layoutchange", { layoutMode, viewingDirection });
       }
     }
-    handleResourceSucceeded(requestId, url, hasPages) {
-      var _a;
+    handleResourceSucceeded(requestId, url, hasPages, pageIndex) {
+      var _a, _b;
       if (requestId !== "initial" && ((_a = this.pendingResource) == null ? void 0 : _a.id) !== requestId) {
         return;
       }
       if (hasPages) {
-        this.awaitingViewerResource = { id: requestId, url };
+        this.awaitingViewerResource = { id: requestId, url, pageIndex };
+        const viewer = this.ensureMainViewer();
+        const sourceId = (_b = this.pages[pageIndex]) == null ? void 0 : _b.primaryImage.id;
+        if (sourceId && viewer && typeof viewer.isPageLoaded === "function" && viewer.isPageLoaded(pageIndex, sourceId)) {
+          this.completeResource(requestId, url);
+        }
         return;
       }
       this.completeResource(requestId, url);
@@ -33715,13 +34079,12 @@
       this.updateState({ resourceUrl: url, ready: true });
       this.resourceLoading = false;
       this.refreshLoadingState();
-      if (requestId === "initial") {
-        if (!this.readySettled) {
-          this.readySettled = true;
-          this.readyResolve();
-          this.emit("ready", this.copyState());
-        }
-      } else if (this.pendingResource) {
+      if (!this.readySettled) {
+        this.readySettled = true;
+        this.readyResolve();
+        this.emit("ready", this.copyState());
+      }
+      if (requestId !== "initial" && this.pendingResource) {
         this.pendingResource.resolve();
         this.pendingResource = null;
       }
@@ -33873,6 +34236,24 @@
       return this.pages.map((page) => this.copyPage(page));
     }
     /**
+     * Find a displayed page by Canvas identifier or localized display label.
+     *
+     * @param selector - Exact Canvas-ID or complete label lookup.
+     * @returns A defensive page snapshot, or `undefined` when no page matches.
+     *
+     * @throws `TypeError`
+     * Thrown when a runtime value is not a valid {@link DivaPageSelector}.
+     *
+     * @remarks
+     * Canvas IDs are case-sensitive. Labels are case-insensitive but are not
+     * trimmed, whitespace-normalized, or substring-matched. Duplicate labels
+     * return the first page in manifest order.
+     */
+    findPage(selector) {
+      const page = this.pageForSelector(selector);
+      return page ? this.copyPage(page) : void 0;
+    }
+    /**
      * Return metadata for the active page, if the resource has pages.
      *
      * @returns The active page, or `undefined` before page initialization and for collections without an active manifest.
@@ -33944,20 +34325,17 @@
       this.getPort("resourceRequested").send({ requestId: id, url });
       return promise;
     }
-    /**
-     * Navigate to a zero-based page index.
-     *
-     * @param index - Target index in {@link Diva.getPages}.
-     * @returns A promise that resolves after the navigation command is accepted.
-     *
-     * @throws `RangeError`
-     * Rejected when `index` is not an available integer page index.
-     *
-     * @throws `DOMException`
-     * Rejected with `InvalidStateError` after destruction.
-     */
-    async goToPage(index) {
+    async goToPage(target) {
       await this.waitForResource();
+      if (typeof target !== "number") {
+        const page = this.pageForSelector(target);
+        if (!page) {
+          return false;
+        }
+        await this.callViewerMethodAsync("scrollToIndex", page.index);
+        return true;
+      }
+      const index = target;
       this.assertPageIndex(index);
       await this.callViewerMethodAsync("scrollToIndex", index);
     }
@@ -34171,6 +34549,7 @@
       this.pendingViewerMethods.clear();
       const root = this.getConnectedRoot();
       this.removeViewerEvent("diva-page-change", this.handlePageChangeBound);
+      this.removeViewerEvent("diva-page-loaded", this.handlePageLoadedBound);
       this.removeViewerEvent("diva-zoom-change", this.handleZoomChangeBound);
       this.removeViewerEvent("diva-loading-change", this.handleLoadingChangeBound);
       this.removeViewerEvent("diva-page-load-error", this.handlePageLoadErrorBound);
@@ -34269,8 +34648,14 @@
           visiblePages: this.getVisiblePages()
         });
       }
-      if (this.awaitingViewerResource) {
-        const awaiting = this.awaitingViewerResource;
+    }
+    handlePageLoaded(event) {
+      const detail = event.detail;
+      if (!detail || typeof detail.index !== "number") {
+        return;
+      }
+      const awaiting = this.awaitingViewerResource;
+      if (awaiting && detail.index === awaiting.pageIndex) {
         this.completeResource(awaiting.id, awaiting.url);
       }
     }
@@ -34293,11 +34678,23 @@
       this.refreshLoadingState();
     }
     handlePageLoadError(event) {
+      var _a;
       const detail = event.detail;
       const error = new Error((detail == null ? void 0 : detail.message) || "The image could not be loaded.");
-      if (this.awaitingViewerResource) {
-        const awaiting = this.awaitingViewerResource;
-        this.completeResource(awaiting.id, awaiting.url);
+      const awaiting = this.awaitingViewerResource;
+      if (awaiting && (detail == null ? void 0 : detail.index) === awaiting.pageIndex) {
+        this.awaitingViewerResource = null;
+        this.updateState({ ready: false });
+        this.resourceLoading = false;
+        this.refreshLoadingState();
+        if (!this.readySettled) {
+          this.readySettled = true;
+          this.readyReject(error);
+        }
+        if (awaiting.id !== "initial" && ((_a = this.pendingResource) == null ? void 0 : _a.id) === awaiting.id) {
+          this.pendingResource.reject(error);
+          this.pendingResource = null;
+        }
       }
       this.emit("error", { error, operation: "loadPage", recoverable: true });
     }

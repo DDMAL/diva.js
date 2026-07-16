@@ -119,6 +119,7 @@ class OsdViewer extends HTMLElement
     private pageWaiters: Map<number, Array<{resolve : (item: any) => void; reject : (error: Error) => void}>> = new Map();
     private pageOverlayElements: Map<number, HTMLDivElement> = new Map();
     private targetIndex: number|null = null;
+    private initialPageIndex = 0;
     private scrollPlaneItem: any = null;
     private isViewportInitialized = false;
     private lastReportedIndex: number|null = null;
@@ -166,7 +167,7 @@ class OsdViewer extends HTMLElement
         this.syncViewer();
         if (!hadViewer && this.viewer && this.tileSources.length > 0)
         {
-            this.resetTileSources(this.tileSources.slice());
+            this.resetTileSources(this.tileSources.slice(), this.initialPageIndex);
         }
     }
 
@@ -267,7 +268,7 @@ class OsdViewer extends HTMLElement
         this.applyLayoutChange({mode : nextMode, direction : nextDirection});
     }
 
-    public setTileSources(tileSources: ViewerTileSource[]): void
+    public setTileSources(tileSources: ViewerTileSource[], initialPageIndex = 0): void
     {
         if (!Array.isArray(tileSources))
         {
@@ -275,13 +276,16 @@ class OsdViewer extends HTMLElement
         }
 
         this.tileSources = tileSources.slice();
+        this.initialPageIndex = Number.isInteger(initialPageIndex) && initialPageIndex >= 0 && initialPageIndex < tileSources.length
+                                    ? initialPageIndex
+                                    : 0;
         this.syncViewer();
         if (!this.viewer)
         {
             this.buildOffsets();
             return;
         }
-        this.resetTileSources(this.tileSources.slice());
+        this.resetTileSources(this.tileSources.slice(), this.initialPageIndex);
     }
 
     public setTileSourceResolver(resolver: TileSourceResolver): void
@@ -296,7 +300,7 @@ class OsdViewer extends HTMLElement
         {
             return;
         }
-        this.resetTileSources(this.tileSources.slice());
+        this.resetTileSources(this.tileSources.slice(), this.lastReportedIndex ?? this.initialPageIndex);
     }
 
     public setPageLabels(labels: string[]): void
@@ -312,7 +316,7 @@ class OsdViewer extends HTMLElement
         });
     }
 
-    private resetTileSources(tileSources: ViewerTileSource[]): void
+    private resetTileSources(tileSources: ViewerTileSource[], initialPageIndex = 0): void
     {
         if (!this.viewer)
         {
@@ -330,6 +334,9 @@ class OsdViewer extends HTMLElement
         }
         this.cancelLoads();
         this.tileSources = tileSources;
+        this.initialPageIndex = Number.isInteger(initialPageIndex) && initialPageIndex >= 0 && initialPageIndex < tileSources.length
+                                    ? initialPageIndex
+                                    : 0;
         this.hasFitFirstPage = false;
         this.isViewportInitialized = false;
         this.loadedIndexes.clear();
@@ -337,10 +344,15 @@ class OsdViewer extends HTMLElement
         this.unavailableIndexes.clear();
         this.loadedItems.clear();
         this.clearPageOverlays();
-        this.targetIndex = null;
+        this.targetIndex = tileSources.length > 0 ? this.initialPageIndex : null;
+        this.lastReportedIndex = this.targetIndex;
         this.clearScrollPlane();
         this.buildOffsets();
         this.ensureScrollPlane();
+        if (this.targetIndex !== null)
+        {
+            this.positionInitialViewport(this.targetIndex);
+        }
         this.resetLoadingState();
         this.suppressPageChange = true;
         this.suppressZoomChange = true;
@@ -375,6 +387,25 @@ class OsdViewer extends HTMLElement
     {
         if (this.tileSources.length === 0)
         {
+            return;
+        }
+
+        if (!this.isViewportInitialized)
+        {
+            if (this.targetIndex !== null)
+            {
+                this.ensurePageLoaded(this.targetIndex);
+                const targetTop = this.pageOffsets[this.targetIndex] || 0;
+                const targetHeight = this.pageRowHeights[this.targetIndex] || this.pageHeights[this.targetIndex] || 1;
+                const range = this.indicesForRange(Math.max(0, targetTop - (targetHeight * 1.5)), targetTop + (targetHeight * 2.5));
+                if (range)
+                {
+                    for (let index = range[0]; index <= range[1]; index += 1)
+                    {
+                        this.ensurePageLoaded(index);
+                    }
+                }
+            }
             return;
         }
 
@@ -441,10 +472,6 @@ class OsdViewer extends HTMLElement
         this.unavailableIndexes.delete(index);
         this.removeUnavailableOverlay(index);
         this.updateLoadingState();
-        const yOffset = this.pageOffsets[index] || 0;
-        const xOffset = this.pageXOffsets[index] || 0;
-        const height = this.pageHeights[index] || 1;
-
         let tileSource: ResolvedTileSource;
         try
         {
@@ -463,6 +490,9 @@ class OsdViewer extends HTMLElement
             return;
         }
 
+        const yOffset = this.pageOffsets[index] || 0;
+        const xOffset = this.pageXOffsets[index] || 0;
+
         this.viewer.addTiledImage({
             tileSource,
             ...this.tileRequestOptions(tileSource),
@@ -475,9 +505,12 @@ class OsdViewer extends HTMLElement
                     return;
                 }
                 const item = event.item;
-                item.setPosition(new OpenSeadragon.Point(xOffset, yOffset), true);
+                const currentXOffset = this.pageXOffsets[index] || 0;
+                const currentYOffset = this.pageOffsets[index] || 0;
+                const currentHeight = this.pageHeights[index] || 1;
+                item.setPosition(new OpenSeadragon.Point(currentXOffset, currentYOffset), true);
                 item.setWidth(1, true);
-                item.setHeight(height, true);
+                item.setHeight(currentHeight, true);
                 this.loadedIndexes.add(index);
                 this.loadedItems.set(index, item);
                 this.resolvePageWaiters(index, item);
@@ -485,7 +518,7 @@ class OsdViewer extends HTMLElement
                 this.loadingIndexes.delete(index);
                 this.loadControllers.delete(index);
                 this.updateLoadingState();
-                if (!this.hasFitFirstPage)
+                if (!this.hasFitFirstPage && index === this.initialPageIndex)
                 {
                     this.hasFitFirstPage = true;
                     const viewer = this.viewer;
@@ -502,7 +535,7 @@ class OsdViewer extends HTMLElement
                     {
                         viewer.viewport.zoomBy(0.95, viewer.viewport.getCenter(true), true);
                     }
-                    this.alignTopAfterFit();
+                    this.alignTopAfterFit(index);
                     viewer.viewport.applyConstraints();
                     this.isViewportInitialized = true;
                     this.lockHorizontalPan();
@@ -510,6 +543,7 @@ class OsdViewer extends HTMLElement
                     this.flushInitialPageChange();
                     this.flushInitialZoomChange();
                 }
+                this.emitCustomEvent("diva-page-loaded", {index});
                 if (this.targetIndex === index)
                 {
                     this.targetIndex = null;
@@ -550,8 +584,11 @@ class OsdViewer extends HTMLElement
 
     private finishLoad(index: number, controller: AbortController): void
     {
-        if (this.loadControllers.get(index) === controller)
-            this.loadControllers.delete(index);
+        if (this.loadControllers.get(index) !== controller)
+        {
+            return;
+        }
+        this.loadControllers.delete(index);
         this.loadingIndexes.delete(index);
         this.updateLoadingState();
     }
@@ -655,6 +692,10 @@ class OsdViewer extends HTMLElement
         this.buildOffsets();
         this.updateLoadedItemPositions();
         this.ensureScrollPlane();
+        if (!this.isViewportInitialized && this.targetIndex !== null)
+        {
+            this.positionInitialViewport(this.targetIndex);
+        }
         this.maybeLoadMore();
     }
 
@@ -931,6 +972,21 @@ class OsdViewer extends HTMLElement
         viewport.fitBounds(rect, true);
     }
 
+    private positionInitialViewport(index: number): void
+    {
+        const viewport = this.viewer?.viewport;
+        if (!viewport)
+        {
+            return;
+        }
+        const targetTop = this.pageOffsets[index] || 0;
+        const targetHeight = this.pageRowHeights[index] || this.pageHeights[index] || 1;
+        const top = Math.max(0, targetTop - (targetHeight * 1.5));
+        const bottom = targetTop + (targetHeight * 2.5);
+        const width = this.isSpreadMode() ? 2 : 1;
+        viewport.fitBounds(new OpenSeadragon.Rect(0, top, width, bottom - top), true);
+    }
+
     public scrollToIndex(index: number): void
     {
         if (index < 0 || index >= this.tileSources.length || index >= this.pageOffsets.length)
@@ -956,6 +1012,11 @@ class OsdViewer extends HTMLElement
         const start = this.getRowStartIndex(index);
         const end = this.getRowEndIndex(start);
         return Array.from({length : end - start + 1}, (_value, offset) => start + offset);
+    }
+
+    public isPageLoaded(index: number, sourceId: string): boolean
+    {
+        return this.tileSources[index]?.sourceId === sourceId && this.loadedIndexes.has(index);
     }
 
     public next(): void
@@ -1305,7 +1366,7 @@ class OsdViewer extends HTMLElement
         this.emitCustomEvent("diva-zoom-change", {zoom});
     }
 
-    private alignTopAfterFit(): void
+    private alignTopAfterFit(index: number): void
     {
         if (!this.viewer)
         {
@@ -1320,14 +1381,14 @@ class OsdViewer extends HTMLElement
 
         const bounds = viewport.getBounds(true);
         const topPadding = this.getTopPaddingViewport(bounds.height);
-        const minTop = -topPadding;
-        if (bounds.y <= minTop)
+        const targetTop = (this.pageOffsets[index] || 0) - topPadding;
+        if (Math.abs(bounds.y - targetTop) < 0.0005)
         {
             return;
         }
 
         const center = viewport.getCenter(true);
-        viewport.panTo(new OpenSeadragon.Point(center.x, (bounds.height / 2) + minTop), true);
+        viewport.panTo(new OpenSeadragon.Point(center.x, (bounds.height / 2) + targetTop), true);
         viewport.applyConstraints();
     }
 

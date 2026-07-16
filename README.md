@@ -77,6 +77,49 @@ viewer.addEventListener("pagechange", (event) => {
 });
 ```
 
+### URL deep links
+
+Diva leaves browser URL and history ownership to the host application: it does not read or write
+`window.location` or listen for `hashchange`. One useful convention is a `p` hash parameter with
+`canvas:`, `label:`, or one-based `page:` values. Always construct such hashes with
+`URLSearchParams` so identifiers and labels are encoded safely.
+
+```js
+function pageTargetFromHash(hash) {
+  const value = new URLSearchParams(hash.slice(1)).get("p");
+  if (value?.startsWith("canvas:")) {
+    return { by: "canvasId", value: value.slice("canvas:".length) };
+  }
+  if (value?.startsWith("label:")) {
+    return { by: "label", value: value.slice("label:".length) };
+  }
+  if (value?.startsWith("page:")) {
+    const pageNumber = Number(value.slice("page:".length));
+    return Number.isInteger(pageNumber) && pageNumber > 0 ? pageNumber - 1 : undefined;
+  }
+  return undefined;
+}
+
+const initialPage = pageTargetFromHash(location.hash);
+const viewer = new Diva("diva-wrapper", { objectData: manifestUrl, initialPage });
+
+// Example when creating a link:
+const hash = new URLSearchParams({ p: `canvas:${canvasId}` });
+history.replaceState(null, "", `#${hash}`);
+```
+
+Numeric Diva API indexes are zero-based; only the documented `page:` URL convention is one-based.
+Invalid or unmatched initial targets fall back to index 0. Applications can also control later
+navigation explicitly. Canvas IDs match exactly; labels match the complete localized display label
+case-insensitively, with the first manifest page winning when labels are duplicated.
+
+```js
+const page = viewer.findPage({ by: "label", value: "Folio 12r" });
+if (page) {
+  await viewer.goToPage({ by: "canvasId", value: page.canvasId });
+}
+```
+
 Image regions use full-resolution image pixels with their origin at the upper-left corner. Diva handles navigation, authorization, and waiting for the OpenSeadragon item:
 
 ```js

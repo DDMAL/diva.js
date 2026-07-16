@@ -9,7 +9,7 @@ import Filters exposing (Filters, applyFilterToggle, applyFloatFilter, applyIntF
 import Http
 import IIIF
 import IIIF.Language exposing (Language(..))
-import IIIF.Presentation exposing (Collection, CollectionItem(..), IIIFCollection(..), IIIFManifest, IIIFResource(..), Range, RangeItem(..), ViewingDirection(..), isPagedLayout, manifestViewingLayout, toCanvases, toRanges, toViewingDirection)
+import IIIF.Presentation exposing (Collection, CollectionItem(..), IIIFCollection(..), IIIFManifest, IIIFResource(..), Range, RangeItem(..), ViewingDirection(..), isPagedLayout, manifestViewingLayout, toCanvases, toHomepage, toMetadata, toRanges, toViewingDirection)
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Model exposing (ContentsView(..), Model, ResourceResponse(..), Response(..), SidebarState(..), ViewMode(..), getPageAt, manifestToPages, primaryImage)
@@ -122,7 +122,7 @@ port resolveTileSourceRequested : ({ requestId : String, sourceId : String } -> 
 port resourceLoadFailed : { requestId : String, url : String, message : String } -> Cmd msg
 
 
-port resourceLoadSucceeded : { requestId : String, url : String, hasPages : Bool } -> Cmd msg
+port resourceLoadSucceeded : { requestId : String, url : String, hasPages : Bool, pageIndex : Int } -> Cmd msg
 
 
 port resourceRequested : ({ requestId : String, url : String } -> msg) -> Sub msg
@@ -143,7 +143,7 @@ port tileSourceResolutionFailed : { requestId : String, message : String } -> Cm
 port tileSourceResolutionSucceeded : Encode.Value -> Cmd msg
 
 
-port tileSourcesUpdated : List { sourceId : String, url : String, isStatic : Bool } -> Cmd msg
+port tileSourcesUpdated : { tileSources : List { sourceId : String, url : String, isStatic : Bool }, initialPageIndex : Int } -> Cmd msg
 
 
 port viewerLoadingChanged : (Bool -> msg) -> Sub msg
@@ -161,8 +161,11 @@ port zoomLevelUpdated : Float -> Cmd msg
 type alias Flags =
     { rootElementId : String
     , objectData : String
+    , initialPage : Decode.Value
     , acceptHeaders : List String
     , showSidebar : Bool
+    , sidebarWidth : Int
+    , sidebarPanel : String
     , showTitle : Bool
     , userLanguage : String
     }
@@ -191,22 +194,12 @@ buildRangeIndexMap canvasIndex ranges =
 clearViewer : Cmd msg
 clearViewer =
     Cmd.batch
-        [ tileSourcesUpdated []
+        [ tileSourcesUpdated { tileSources = [], initialPageIndex = 0 }
         , pagesUpdated []
         , pageAspectsUpdated []
         , pageLabelsUpdated []
         , filterPreviewUpdated Nothing
         ]
-
-
-ensureSidebarVisible : SidebarState -> SidebarState
-ensureSidebarVisible state =
-    case state of
-        SidebarHidden ->
-            SidebarThumbnails
-
-        _ ->
-            state
 
 
 findCollectionById : String -> Collection -> Maybe Collection
@@ -241,8 +234,17 @@ findCollectionById collectionId collection =
     loop { collection = collection, rest = collection.items } []
 
 
-handleManifestLoaded : Model -> IIIFManifest -> ( Model, Cmd Msg )
-handleManifestLoaded model manifest =
+findPageIndex : (Model.Page -> Bool) -> List Model.Page -> Maybe Int
+findPageIndex predicate pages =
+    pages
+        |> List.indexedMap Tuple.pair
+        |> List.filter (Tuple.second >> predicate)
+        |> List.head
+        |> Maybe.map Tuple.first
+
+
+handleManifestLoaded : Maybe Decode.Value -> Model -> IIIFManifest -> ( Model, Cmd Msg )
+handleManifestLoaded initialPage model manifest =
     let
         pagedLayout =
             manifestViewingLayout manifest
@@ -254,8 +256,21 @@ handleManifestLoaded model manifest =
         isSingleCanvas =
             List.length pages == 1
 
+        availableSidebarPanel =
+            sidebarPanelForManifest manifest model.sidebarPanel
+
+        nextSidebarState =
+            if model.sidebarState == SidebarHidden then
+                SidebarHidden
+
+            else
+                availableSidebarPanel
+
         pages =
             manifestToPages model.detectedLanguage manifest
+
+        initialPageIndex =
+            resolveInitialPageIndex initialPage pages
 
         tileSources =
             List.filterMap
@@ -321,17 +336,19 @@ handleManifestLoaded model manifest =
         , pages = pages
         , rangeIndexMap = rangeIndexMap
         , response = Loaded manifest
+        , sidebarPanel = availableSidebarPanel
+        , sidebarState = nextSidebarState
         , selectedIndex =
             if List.isEmpty pages then
                 Nothing
 
             else
-                Just 0
+                Just initialPageIndex
         , shiftByOne = shiftByOne
         , viewMode = viewMode
       }
     , Cmd.batch
-        [ tileSourcesUpdated tileSources
+        [ tileSourcesUpdated { tileSources = tileSources, initialPageIndex = initialPageIndex }
         , pagesUpdated (publicPages pages)
         , filterPreviewUpdated Nothing
         , pageAspectsUpdated pageAspects
@@ -417,9 +434,12 @@ init flags =
         manifestUrl =
             flags.objectData
 
+        sidebarPanel =
+            sidebarPanelFromString flags.sidebarPanel
+
         sidebarState =
             if flags.showSidebar then
-                SidebarThumbnails
+                sidebarPanel
 
             else
                 SidebarHidden
@@ -442,6 +462,8 @@ init flags =
       , fullscreen = False
       , hasTileSources = False
       , initialZoom = Nothing
+      , initialPage = flags.initialPage
+      , initialResourceSuperseded = False
       , isMobile = False
       , isViewerLoading = False
       , manifestInfoOpen = False
@@ -463,8 +485,9 @@ init flags =
       , shiftByOne = False
       , showTitle = flags.showTitle
       , sidebarDrag = Nothing
+      , sidebarPanel = sidebarPanel
       , sidebarState = sidebarState
-      , sidebarWidth = 320
+      , sidebarWidth = clamp 220 520 flags.sidebarWidth
       , thumbsInstantScroll = False
       , viewMode = OneUp
       }
@@ -473,6 +496,32 @@ init flags =
         , Task.perform (\viewport -> ViewportChanged (round viewport.viewport.width) (round viewport.viewport.height)) Dom.getViewport
         ]
     )
+
+
+type InitialPageTarget
+    = InitialPageIndex Int
+    | InitialPageCanvasId String
+    | InitialPageLabel String
+
+
+initialPageTargetDecoder : Decode.Decoder InitialPageTarget
+initialPageTargetDecoder =
+    Decode.oneOf
+        [ Decode.map InitialPageIndex Decode.int
+        , Decode.field "by" Decode.string
+            |> Decode.andThen
+                (\by ->
+                    case by of
+                        "canvasId" ->
+                            Decode.map InitialPageCanvasId (Decode.field "value" Decode.string)
+
+                        "label" ->
+                            Decode.map InitialPageLabel (Decode.field "value" Decode.string)
+
+                        _ ->
+                            Decode.fail "Unsupported initial page selector"
+                )
+        ]
 
 
 layoutModeToString : ViewMode -> Bool -> String
@@ -685,6 +734,32 @@ replaceCollectionById collectionId replacement collection =
         []
 
 
+resolveInitialPageIndex : Maybe Decode.Value -> List Model.Page -> Int
+resolveInitialPageIndex encoded pages =
+    let
+        fallback =
+            0
+    in
+    case encoded |> Maybe.andThen (Decode.decodeValue initialPageTargetDecoder >> Result.toMaybe) of
+        Just (InitialPageIndex index) ->
+            if index >= 0 && index < List.length pages then
+                index
+
+            else
+                fallback
+
+        Just (InitialPageCanvasId canvasId) ->
+            findPageIndex (\page -> page.canvasId == canvasId) pages
+                |> Maybe.withDefault fallback
+
+        Just (InitialPageLabel label) ->
+            findPageIndex (\page -> String.toLower page.label == String.toLower label) pages
+                |> Maybe.withDefault fallback
+
+        Nothing ->
+            fallback
+
+
 runAuthEffect : Auth.Effect -> Cmd Msg
 runAuthEffect effect =
     case effect of
@@ -824,6 +899,53 @@ sendPageViewPreview model =
         Cmd.none
 
 
+sidebarPanelForManifest : IIIFManifest -> SidebarState -> SidebarState
+sidebarPanelForManifest manifest requested =
+    case requested of
+        SidebarMetadata ->
+            let
+                hasMetadata =
+                    not (List.isEmpty (toMetadata manifest))
+
+                hasHomepage =
+                    toHomepage manifest
+                        |> Maybe.map (List.isEmpty >> not)
+                        |> Maybe.withDefault False
+            in
+            if hasMetadata || hasHomepage then
+                SidebarMetadata
+
+            else
+                SidebarThumbnails
+
+        SidebarContents ->
+            if
+                toRanges manifest
+                    |> Maybe.map (List.isEmpty >> not)
+                    |> Maybe.withDefault False
+            then
+                SidebarContents
+
+            else
+                SidebarThumbnails
+
+        _ ->
+            SidebarThumbnails
+
+
+sidebarPanelFromString : String -> SidebarState
+sidebarPanelFromString value =
+    case value of
+        "contents" ->
+            SidebarContents
+
+        "metadata" ->
+            SidebarMetadata
+
+        _ ->
+            SidebarThumbnails
+
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
@@ -896,7 +1018,11 @@ update msg model =
             )
 
         ClientRequestedResource requestId url ->
-            ( { model | pendingPublicResource = Just requestId, isViewerLoading = True }
+            ( { model
+                | initialResourceSuperseded = True
+                , pendingPublicResource = Just requestId
+                , isViewerLoading = True
+              }
             , IIIF.requestResource (ServerRespondedWithRequestedResource requestId url) model.acceptHeaders url
             )
 
@@ -970,7 +1096,7 @@ update msg model =
                     else
                         case result of
                             Ok manifest ->
-                                handleManifestLoaded model manifest
+                                handleManifestLoaded Nothing model manifest
 
                             Err err ->
                                 ( { model
@@ -984,71 +1110,76 @@ update msg model =
                     ( model, Cmd.none )
 
         ServerRespondedWithResource result ->
-            case result of
-                Ok resource ->
-                    case resource of
-                        ResourceManifest manifest ->
-                            let
-                                ( nextModel, cmd ) =
-                                    handleManifestLoaded model manifest
-                            in
-                            ( { nextModel
-                                | collectionSidebarVisible = False
-                                , resourceResponse = ResourceLoadedManifest manifest
-                              }
-                            , Cmd.batch
-                                [ cmd
-                                , resourceLoadSucceeded
+            if model.initialResourceSuperseded then
+                ( model, Cmd.none )
+
+            else
+                case result of
+                    Ok resource ->
+                        case resource of
+                            ResourceManifest manifest ->
+                                let
+                                    ( nextModel, cmd ) =
+                                        handleManifestLoaded (Just model.initialPage) model manifest
+                                in
+                                ( { nextModel
+                                    | collectionSidebarVisible = False
+                                    , resourceResponse = ResourceLoadedManifest manifest
+                                  }
+                                , Cmd.batch
+                                    [ cmd
+                                    , resourceLoadSucceeded
+                                        { requestId = "initial"
+                                        , url = model.manifestUrl
+                                        , hasPages = not (List.isEmpty nextModel.pages)
+                                        , pageIndex = Maybe.withDefault 0 nextModel.selectedIndex
+                                        }
+                                    ]
+                                )
+
+                            ResourceCollection (IIIFCollection version collection) ->
+                                ( { model
+                                    | auth = Auth.init
+                                    , collectionSidebarVisible = True
+                                    , isViewerLoading = False
+                                    , pages = []
+                                    , selectedIndex = Nothing
+                                    , resourceResponse =
+                                        ResourceLoadedCollection
+                                            { collection = IIIFCollection version collection
+                                            , expandedIds = Set.empty
+                                            , loadedCollectionIds = Set.empty
+                                            , loadingCollectionIds = Set.empty
+                                            , selectedManifestId = Nothing
+                                            }
+                                    , response = NotRequested
+                                  }
+                                , Cmd.batch
+                                    [ clearViewer
+                                    , resourceLoadSucceeded { requestId = "initial", url = model.manifestUrl, hasPages = False, pageIndex = 0 }
+                                    ]
+                                )
+
+                            _ ->
+                                ( { model | isViewerLoading = False }
+                                , resourceLoadFailed
                                     { requestId = "initial"
                                     , url = model.manifestUrl
-                                    , hasPages = not (List.isEmpty nextModel.pages)
+                                    , message = "URL did not return a supported IIIF resource."
                                     }
-                                ]
-                            )
+                                )
 
-                        ResourceCollection (IIIFCollection version collection) ->
-                            ( { model
-                                | auth = Auth.init
-                                , collectionSidebarVisible = True
-                                , isViewerLoading = False
-                                , pages = []
-                                , selectedIndex = Nothing
-                                , resourceResponse =
-                                    ResourceLoadedCollection
-                                        { collection = IIIFCollection version collection
-                                        , expandedIds = Set.empty
-                                        , loadedCollectionIds = Set.empty
-                                        , loadingCollectionIds = Set.empty
-                                        , selectedManifestId = Nothing
-                                        }
-                                , response = NotRequested
-                              }
-                            , Cmd.batch
-                                [ clearViewer
-                                , resourceLoadSucceeded { requestId = "initial", url = model.manifestUrl, hasPages = False }
-                                ]
-                            )
-
-                        _ ->
-                            ( { model | isViewerLoading = False }
-                            , resourceLoadFailed
-                                { requestId = "initial"
-                                , url = model.manifestUrl
-                                , message = "URL did not return a supported IIIF resource."
-                                }
-                            )
-
-                Err err ->
-                    ( { model
-                        | isViewerLoading = False
-                        , resourceResponse = ResourceFailed (httpErrorToString err)
-                      }
-                    , resourceLoadFailed
-                        { requestId = "initial"
-                        , url = model.manifestUrl
-                        , message = httpErrorToString err
-                        }
-                    )
+                    Err err ->
+                        ( { model
+                            | isViewerLoading = False
+                            , resourceResponse = ResourceFailed (httpErrorToString err)
+                          }
+                        , resourceLoadFailed
+                            { requestId = "initial"
+                            , url = model.manifestUrl
+                            , message = httpErrorToString err
+                            }
+                        )
 
         ServerRespondedWithRequestedResource requestId url result ->
             if model.pendingPublicResource /= Just requestId then
@@ -1061,7 +1192,7 @@ update msg model =
                             ResourceManifest manifest ->
                                 let
                                     ( nextModel, cmd ) =
-                                        handleManifestLoaded model manifest
+                                        handleManifestLoaded Nothing model manifest
                                 in
                                 ( { nextModel
                                     | collectionSidebarVisible = False
@@ -1075,6 +1206,7 @@ update msg model =
                                         { requestId = requestId
                                         , url = url
                                         , hasPages = not (List.isEmpty nextModel.pages)
+                                        , pageIndex = 0
                                         }
                                     ]
                                 )
@@ -1100,7 +1232,7 @@ update msg model =
                                   }
                                 , Cmd.batch
                                     [ clearViewer
-                                    , resourceLoadSucceeded { requestId = requestId, url = url, hasPages = False }
+                                    , resourceLoadSucceeded { requestId = requestId, url = url, hasPages = False, pageIndex = 0 }
                                     ]
                                 )
 
@@ -1257,7 +1389,7 @@ update msg model =
                         | pageViewImageIndex = 0
                         , pageViewOpen = True
                         , pageViewSidebarVisible = True
-                        , sidebarState = ensureSidebarVisible model.sidebarState
+                        , sidebarState = visibleSidebarState model
                     }
             in
             ( nextModel, sendPageViewPreview nextModel )
@@ -1288,7 +1420,7 @@ update msg model =
                                 Nothing ->
                                     model.selectedIndex
                         , selectedRangeId = Just rangeId
-                        , sidebarState = ensureSidebarVisible model.sidebarState
+                        , sidebarState = visibleSidebarState model
                         , thumbsInstantScroll = True
                     }
 
@@ -1316,7 +1448,7 @@ update msg model =
                     { model
                         | pageViewImageIndex = 0
                         , selectedIndex = Just index
-                        , sidebarState = ensureSidebarVisible model.sidebarState
+                        , sidebarState = visibleSidebarState model
                         , thumbsInstantScroll = False
                     }
             in
@@ -1412,7 +1544,8 @@ update msg model =
 
         UserToggledContents ->
             ( { model
-                | sidebarState = SidebarContents
+                | sidebarPanel = SidebarContents
+                , sidebarState = SidebarContents
               }
             , Cmd.none
             )
@@ -1453,7 +1586,7 @@ update msg model =
             )
 
         UserToggledMetadata ->
-            ( { model | sidebarState = SidebarMetadata }, Cmd.none )
+            ( { model | sidebarPanel = SidebarMetadata, sidebarState = SidebarMetadata }, Cmd.none )
 
         UserToggledPageViewFullscreen ->
             ( { model | pageViewFullscreen = not model.pageViewFullscreen }, Cmd.none )
@@ -1488,13 +1621,13 @@ update msg model =
                 else
                     ( { model
                         | mobileSidebarOpen = True
-                        , sidebarState = ensureSidebarVisible model.sidebarState
+                        , sidebarState = model.sidebarPanel
                       }
                     , Cmd.none
                     )
 
             else if model.sidebarState == SidebarHidden then
-                ( { model | sidebarState = SidebarThumbnails }, Cmd.none )
+                ( { model | sidebarState = model.sidebarPanel }, Cmd.none )
 
             else
                 ( { model | sidebarState = SidebarHidden }, Cmd.none )
@@ -1502,7 +1635,7 @@ update msg model =
         UserToggledThumbnails ->
             let
                 nextModel =
-                    { model | sidebarState = SidebarThumbnails }
+                    { model | sidebarPanel = SidebarThumbnails, sidebarState = SidebarThumbnails }
 
                 thumbCmd =
                     case ( model.pendingThumbScroll, model.selectedIndex ) of
@@ -1615,6 +1748,16 @@ viewingDirectionToString direction =
 
         BottomToTop ->
             "ltr"
+
+
+visibleSidebarState : Model -> SidebarState
+visibleSidebarState model =
+    case model.sidebarState of
+        SidebarHidden ->
+            model.sidebarPanel
+
+        state ->
+            state
 
 
 zoomInFactor : Float
