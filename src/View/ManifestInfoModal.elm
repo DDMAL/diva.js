@@ -102,6 +102,9 @@ buildRows model manifest =
 
         iiifVersion =
             case version of
+                IIIFV1 ->
+                    "IIIF v1"
+
                 IIIFV2 ->
                     "IIIF v2"
 
