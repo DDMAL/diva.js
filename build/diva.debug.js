@@ -19593,9 +19593,24 @@
   var $author$project$Auth$CancelTokenFrame = function(a) {
     return { $: "CancelTokenFrame", a };
   };
+  var $author$project$Auth$RemoveToken = F2(
+    function(a, b) {
+      return { $: "RemoveToken", a, b };
+    }
+  );
   var $author$project$Auth$StartTokenFrame = F3(
     function(a, b, c) {
       return { $: "StartTokenFrame", a, b, c };
+    }
+  );
+  var $author$project$Auth$addEffects = F2(
+    function(effects, _v0) {
+      var model = _v0.a;
+      var existing = _v0.b;
+      return _Utils_Tuple2(
+        model,
+        _Utils_ap(existing, effects)
+      );
     }
   );
   var $elm$core$Dict$diff = F2(
@@ -19857,6 +19872,226 @@
       }
     }
   );
+  var $author$project$Auth$AwaitingUser = { $: "AwaitingUser" };
+  var $author$project$Auth$appendUnique = F2(
+    function(flowId, queue) {
+      return A2($elm$core$List$member, flowId, queue) ? queue : _Utils_ap(
+        queue,
+        _List_fromArray(
+          [flowId]
+        )
+      );
+    }
+  );
+  var $author$project$Auth$showPrompt = F3(
+    function(flowId, error, model) {
+      var _v0 = A2($elm$core$Dict$get, flowId, model.flows);
+      if (_v0.$ === "Just") {
+        var flow = _v0.a;
+        var _v1 = flow.association.access.id;
+        if (_v1.$ === "Just") {
+          var updatedFlow = _Utils_update(
+            flow,
+            { phase: $author$project$Auth$AwaitingUser, promptError: error }
+          );
+          var withFlow = _Utils_update(
+            model,
+            {
+              flows: A3($elm$core$Dict$insert, flowId, updatedFlow, model.flows)
+            }
+          );
+          var _v2 = model.activeInteractive;
+          if (_v2.$ === "Just") {
+            var activeFlowId = _v2.a;
+            return _Utils_eq(activeFlowId, flowId) ? _Utils_Tuple2(
+              A3($author$project$Auth$activatePrompt, flowId, updatedFlow, withFlow),
+              _List_Nil
+            ) : _Utils_Tuple2(
+              _Utils_update(
+                withFlow,
+                {
+                  promptQueue: A2($author$project$Auth$appendUnique, flowId, withFlow.promptQueue)
+                }
+              ),
+              _List_Nil
+            );
+          } else {
+            return _Utils_Tuple2(
+              A3($author$project$Auth$activatePrompt, flowId, updatedFlow, withFlow),
+              _List_Nil
+            );
+          }
+        } else {
+          return A3($author$project$Auth$failFlow, flowId, "The active access service has no URL.", model);
+        }
+      } else {
+        return _Utils_Tuple2(model, _List_Nil);
+      }
+    }
+  );
+  var $author$project$Auth$updateFlow = F4(
+    function(flowId, change, model, effects) {
+      return _Utils_Tuple2(
+        _Utils_update(
+          model,
+          {
+            flows: A3(
+              $elm$core$Dict$update,
+              flowId,
+              $elm$core$Maybe$map(change),
+              model.flows
+            )
+          }
+        ),
+        effects
+      );
+    }
+  );
+  var $author$project$Auth$startSilentToken = F3(
+    function(flowId, flow, model) {
+      var messageId = flowId + ("-" + $elm$core$String$fromInt(flow.attempts + 1));
+      return A4(
+        $author$project$Auth$updateFlow,
+        flowId,
+        function(current) {
+          return _Utils_update(
+            current,
+            { phase: $author$project$Auth$AwaitingToken }
+          );
+        },
+        model,
+        _List_fromArray(
+          [
+            A3($author$project$Auth$StartTokenFrame, flowId, flow.association.token.id, messageId)
+          ]
+        )
+      );
+    }
+  );
+  var $author$project$Auth$advanceCandidate = F3(
+    function(flowId, message, model) {
+      advanceCandidate:
+        while (true) {
+          var _v0 = A2($elm$core$Dict$get, flowId, model.flows);
+          if (_v0.$ === "Just") {
+            var flow = _v0.a;
+            var _v1 = flow.remainingAssociations;
+            if (!_v1.b) {
+              return A3($author$project$Auth$failFlow, flowId, message, model);
+            } else {
+              var nextAssociation = _v1.a;
+              var remaining = _v1.b;
+              var nextFlow = _Utils_update(
+                flow,
+                { association: nextAssociation, attempts: 0, promptError: $elm$core$Maybe$Nothing, remainingAssociations: remaining }
+              );
+              var nextModel = A2(
+                $author$project$Auth$releaseInteractive,
+                flowId,
+                _Utils_update(
+                  model,
+                  {
+                    flows: A3($elm$core$Dict$insert, flowId, nextFlow, model.flows)
+                  }
+                )
+              );
+              var _v2 = nextAssociation.access.profile;
+              switch (_v2.$) {
+                case "Active":
+                  return A2(
+                    $author$project$Auth$addEffects,
+                    _List_fromArray(
+                      [
+                        $author$project$Auth$CancelTokenFrame(flowId)
+                      ]
+                    ),
+                    A3($author$project$Auth$showPrompt, flowId, $elm$core$Maybe$Nothing, nextModel)
+                  );
+                case "Kiosk":
+                  var $temp$flowId = flowId, $temp$message = message, $temp$model = nextModel;
+                  flowId = $temp$flowId;
+                  message = $temp$message;
+                  model = $temp$model;
+                  continue advanceCandidate;
+                default:
+                  return A2(
+                    $author$project$Auth$addEffects,
+                    _List_fromArray(
+                      [
+                        $author$project$Auth$CancelTokenFrame(flowId)
+                      ]
+                    ),
+                    A3($author$project$Auth$startSilentToken, flowId, nextFlow, nextModel)
+                  );
+              }
+            }
+          } else {
+            return _Utils_Tuple2(model, _List_Nil);
+          }
+        }
+    }
+  );
+  var $author$project$Auth$retryOrFail = F3(
+    function(flowId, message, model) {
+      var _v0 = A2($elm$core$Dict$get, flowId, model.flows);
+      if (_v0.$ === "Just") {
+        var flow = _v0.a;
+        if (flow.attempts + 1 >= 2) {
+          return A3($author$project$Auth$failFlow, flowId, message, model);
+        } else {
+          var next = _Utils_update(
+            model,
+            {
+              flows: A3(
+                $elm$core$Dict$insert,
+                flowId,
+                _Utils_update(
+                  flow,
+                  { attempts: flow.attempts + 1 }
+                ),
+                model.flows
+              )
+            }
+          );
+          return A2(
+            $author$project$Auth$addEffects,
+            _List_fromArray(
+              [
+                $author$project$Auth$CancelTokenFrame(flowId)
+              ]
+            ),
+            A3(
+              $author$project$Auth$showPrompt,
+              flowId,
+              $elm$core$Maybe$Just(message),
+              next
+            )
+          );
+        }
+      } else {
+        return _Utils_Tuple2(model, _List_Nil);
+      }
+    }
+  );
+  var $author$project$Auth$candidateFailed = F3(
+    function(flowId, message, model) {
+      var _v0 = A2($elm$core$Dict$get, flowId, model.flows);
+      if (_v0.$ === "Just") {
+        var flow = _v0.a;
+        var _v1 = flow.association.access.profile;
+        switch (_v1.$) {
+          case "Active":
+            return A3($author$project$Auth$retryOrFail, flowId, message, model);
+          case "Kiosk":
+            return A3($author$project$Auth$advanceCandidate, flowId, message, model);
+          default:
+            return A3($author$project$Auth$advanceCandidate, flowId, message, model);
+        }
+      } else {
+        return _Utils_Tuple2(model, _List_Nil);
+      }
+    }
+  );
   var $author$project$Auth$Fetch = F4(
     function(a, b, c, d) {
       return { $: "Fetch", a, b, c, d };
@@ -20053,83 +20288,89 @@
       )
     );
   };
-  var $author$project$Auth$associationFromProbe = function(probe) {
-    var hasUnsupportedAccess = A2(
-      $elm$core$List$any,
-      function(access) {
-        return !_Utils_eq(access.profile, $rism_digital$elm_iiif$IIIF$Auth$Active);
-      },
-      probe.services
+  var $author$project$Auth$associationsFromProbe = function(probe) {
+    var supportedAccesses = _Utils_ap(
+      A2(
+        $elm$core$List$filter,
+        function(access) {
+          return _Utils_eq(access.profile, $rism_digital$elm_iiif$IIIF$Auth$External);
+        },
+        probe.services
+      ),
+      A2(
+        $elm$core$List$filter,
+        function(access) {
+          return _Utils_eq(access.profile, $rism_digital$elm_iiif$IIIF$Auth$Active);
+        },
+        probe.services
+      )
     );
-    if (hasUnsupportedAccess) {
-      return $elm$core$Maybe$Nothing;
-    } else {
-      var active = $elm$core$List$head(
+    var candidateSignature = function(access) {
+      return $elm$core$List$head(
         A2(
-          $elm$core$List$filter,
-          function(access) {
-            return _Utils_eq(access.profile, $rism_digital$elm_iiif$IIIF$Auth$Active);
+          $elm$core$List$filterMap,
+          function(service) {
+            if (service.$ === "RelatedTokenService") {
+              var token = service.a;
+              return $elm$core$Maybe$Just(
+                A2($elm$core$Maybe$withDefault, "", access.id) + ("|" + token.id)
+              );
+            } else {
+              return $elm$core$Maybe$Nothing;
+            }
           },
-          probe.services
+          access.services
         )
       );
+    };
+    var familyKey = $author$project$Auth$normalizedProbeUrl(probe.id) + ("|" + A2(
+      $elm$core$String$join,
+      "|",
+      A2($elm$core$List$filterMap, candidateSignature, supportedAccesses)
+    ));
+    var association = function(access) {
       return A2(
-        $elm$core$Maybe$andThen,
-        function(access) {
-          return A2(
-            $elm$core$Maybe$map,
-            function(token) {
-              return {
-                access,
-                key: $author$project$Auth$normalizedProbeUrl(probe.id) + ("|" + (A2($elm$core$Maybe$withDefault, "", access.id) + ("|" + token.id))),
-                logout: $elm$core$List$head(
-                  A2(
-                    $elm$core$List$filterMap,
-                    function(service) {
-                      if (service.$ === "RelatedTokenService") {
-                        return $elm$core$Maybe$Nothing;
-                      } else {
-                        var logout = service.a;
-                        return $elm$core$Maybe$Just(logout);
-                      }
-                    },
-                    access.services
-                  )
-                ),
-                probe,
-                token
-              };
-            },
-            $elm$core$List$head(
+        $elm$core$Maybe$map,
+        function(token) {
+          return {
+            access,
+            key: familyKey,
+            logout: $elm$core$List$head(
               A2(
                 $elm$core$List$filterMap,
                 function(service) {
                   if (service.$ === "RelatedTokenService") {
-                    var token = service.a;
-                    return $elm$core$Maybe$Just(token);
-                  } else {
                     return $elm$core$Maybe$Nothing;
+                  } else {
+                    var logout = service.a;
+                    return $elm$core$Maybe$Just(logout);
                   }
                 },
                 access.services
               )
-            )
-          );
+            ),
+            probe,
+            token
+          };
         },
-        active
+        $elm$core$List$head(
+          A2(
+            $elm$core$List$filterMap,
+            function(service) {
+              if (service.$ === "RelatedTokenService") {
+                var token = service.a;
+                return $elm$core$Maybe$Just(token);
+              } else {
+                return $elm$core$Maybe$Nothing;
+              }
+            },
+            access.services
+          )
+        )
       );
-    }
+    };
+    return A2($elm$core$List$filterMap, association, supportedAccesses);
   };
-  var $elm$core$Result$fromMaybe = F2(
-    function(err, maybe) {
-      if (maybe.$ === "Just") {
-        var v = maybe.a;
-        return $elm$core$Result$Ok(v);
-      } else {
-        return $elm$core$Result$Err(err);
-      }
-    }
-  );
   var $author$project$Auth$unsupportedMessage = function(serviceTypes) {
     return "Unsupported authorization service: " + (A2($elm$core$String$join, ", ", serviceTypes) + ".");
   };
@@ -20145,7 +20386,7 @@
       A2(
         $elm$core$List$filter,
         function(access2) {
-          return !_Utils_eq(access2.profile, $rism_digital$elm_iiif$IIIF$Auth$Active);
+          return _Utils_eq(access2.profile, $rism_digital$elm_iiif$IIIF$Auth$Kiosk);
         },
         accesses
       )
@@ -20163,30 +20404,39 @@
             default:
               return "external";
           }
-        })() + "' access is not supported; only the 'active' profile is supported.")
+        })() + "' access is not supported; supported profiles are 'external' and 'active'.")
       );
     } else {
       return $elm$core$Maybe$Nothing;
     }
   };
-  var $author$project$Auth$supportedAssociation = function(discovery) {
+  var $author$project$Auth$supportedAssociations = function(discovery) {
     if (!$elm$core$List$isEmpty(discovery.unsupportedServiceTypes)) {
       return $elm$core$Result$Err(
         $author$project$Auth$unsupportedMessage(discovery.unsupportedServiceTypes)
       );
     } else {
-      var _v0 = $author$project$Auth$unsupportedPolicyError(discovery.probes);
-      if (_v0.$ === "Just") {
-        var message = _v0.a;
-        return $elm$core$Result$Err(message);
-      } else {
-        return A2(
-          $elm$core$Result$fromMaybe,
-          "No supported Auth 2 active sign-in service was provided.",
-          $elm$core$List$head(
-            A2($elm$core$List$filterMap, $author$project$Auth$associationFromProbe, discovery.probes)
+      var associations = A2(
+        $elm$core$Maybe$withDefault,
+        _List_Nil,
+        $elm$core$List$head(
+          A2(
+            $elm$core$List$filter,
+            A2($elm$core$Basics$composeL, $elm$core$Basics$not, $elm$core$List$isEmpty),
+            A2($elm$core$List$map, $author$project$Auth$associationsFromProbe, discovery.probes)
           )
-        );
+        )
+      );
+      if ($elm$core$List$isEmpty(associations)) {
+        var _v0 = $author$project$Auth$unsupportedPolicyError(discovery.probes);
+        if (_v0.$ === "Just") {
+          var message = _v0.a;
+          return $elm$core$Result$Err(message);
+        } else {
+          return $elm$core$Result$Err("No supported Auth 2 external or active access service was provided.");
+        }
+      } else {
+        return $elm$core$Result$Ok(associations);
       }
     }
   };
@@ -20210,72 +20460,79 @@
           )
         }
       );
-      var _v0 = $author$project$Auth$supportedAssociation(discovery);
+      var _v0 = $author$project$Auth$supportedAssociations(discovery);
       if (_v0.$ === "Ok") {
-        var association = _v0.a;
-        var _v1 = A2($elm$core$Dict$get, association.key, withInfo.familyStates);
-        if (_v1.$ === "Just") {
-          if (_v1.a.$ === "AnonymousFamily") {
-            var _v2 = _v1.a;
-            return A3($author$project$Auth$completeKnownFamily, requestId, false, withInfo);
-          } else {
-            var _v3 = _v1.a;
-            return A3($author$project$Auth$completeKnownFamily, requestId, true, withInfo);
-          }
+        if (!_v0.a.b) {
+          return A3($author$project$Auth$completeFailure, requestId, "No supported Auth 2 external or active access service was provided.", withInfo);
         } else {
-          var _v4 = A2($elm$core$Dict$get, association.key, withInfo.flows);
-          if (_v4.$ === "Just") {
-            var flow = _v4.a;
-            return _Utils_Tuple2(
-              _Utils_update(
+          var _v1 = _v0.a;
+          var association = _v1.a;
+          var remainingAssociations = _v1.b;
+          var _v2 = A2($elm$core$Dict$get, association.key, withInfo.familyStates);
+          if (_v2.$ === "Just") {
+            if (_v2.a.$ === "AnonymousFamily") {
+              var _v3 = _v2.a;
+              return A3($author$project$Auth$completeKnownFamily, requestId, false, withInfo);
+            } else {
+              var _v4 = _v2.a;
+              return A3($author$project$Auth$completeKnownFamily, requestId, true, withInfo);
+            }
+          } else {
+            var _v5 = A2($elm$core$Dict$get, association.key, withInfo.flows);
+            if (_v5.$ === "Just") {
+              var flow = _v5.a;
+              return _Utils_Tuple2(
+                _Utils_update(
+                  withInfo,
+                  {
+                    flows: A3(
+                      $elm$core$Dict$insert,
+                      association.key,
+                      _Utils_update(
+                        flow,
+                        {
+                          waiters: A2($elm$core$List$cons, requestId, flow.waiters)
+                        }
+                      ),
+                      withInfo.flows
+                    )
+                  }
+                ),
+                _List_Nil
+              );
+            } else {
+              var flow = {
+                association,
+                attempts: 0,
+                phase: $author$project$Auth$ProbingAnonymous,
+                promptError: $elm$core$Maybe$Nothing,
+                remainingAssociations,
+                waiters: _List_fromArray(
+                  [requestId]
+                )
+              };
+              var withFlow = _Utils_update(
                 withInfo,
                 {
-                  flows: A3(
-                    $elm$core$Dict$insert,
-                    association.key,
-                    _Utils_update(
-                      flow,
-                      {
-                        waiters: A2($elm$core$List$cons, requestId, flow.waiters)
-                      }
-                    ),
-                    withInfo.flows
-                  )
+                  flows: A3($elm$core$Dict$insert, association.key, flow, withInfo.flows)
                 }
-              ),
-              _List_Nil
-            );
-          } else {
-            var flow = {
-              association,
-              attempts: 0,
-              phase: $author$project$Auth$ProbingAnonymous,
-              promptError: $elm$core$Maybe$Nothing,
-              waiters: _List_fromArray(
-                [requestId]
-              )
-            };
-            var withFlow = _Utils_update(
-              withInfo,
-              {
-                flows: A3($elm$core$Dict$insert, association.key, flow, withInfo.flows)
-              }
-            );
-            var _v5 = A2(
-              $author$project$Auth$allocateOperation,
-              A2($author$project$Auth$ProbeOperation, association.key, $elm$core$Maybe$Nothing),
-              withFlow
-            );
-            var operationId = _v5.a;
-            var next = _v5.b;
-            return _Utils_Tuple2(
-              next,
-              _List_fromArray(
-                [
-                  A4($author$project$Auth$Fetch, operationId, association.probe.id, $elm$core$Maybe$Nothing, false)
-                ]
-              )
-            );
+              );
+              var _v6 = A2(
+                $author$project$Auth$allocateOperation,
+                A2($author$project$Auth$ProbeOperation, association.key, $elm$core$Maybe$Nothing),
+                withFlow
+              );
+              var operationId = _v6.a;
+              var next = _v6.b;
+              return _Utils_Tuple2(
+                next,
+                _List_fromArray(
+                  [
+                    A4($author$project$Auth$Fetch, operationId, association.probe.id, $elm$core$Maybe$Nothing, false)
+                  ]
+                )
+              );
+            }
           }
         }
       } else {
@@ -20336,21 +20593,6 @@
     }
   );
   var $author$project$Auth$ReadingCache = { $: "ReadingCache" };
-  var $author$project$Auth$RemoveToken = F2(
-    function(a, b) {
-      return { $: "RemoveToken", a, b };
-    }
-  );
-  var $author$project$Auth$addEffects = F2(
-    function(effects, _v0) {
-      var model = _v0.a;
-      var existing = _v0.b;
-      return _Utils_Tuple2(
-        model,
-        _Utils_ap(existing, effects)
-      );
-    }
-  );
   var $author$project$Auth$AnonymousFamily = { $: "AnonymousFamily" };
   var $author$project$Auth$CredentialedFamily = { $: "CredentialedFamily" };
   var $elm$core$Set$fromList = function(list) {
@@ -20508,6 +20750,25 @@
       }
     }
   );
+  var $author$project$Auth$continueAfterInvalidToken = F3(
+    function(flowId, message, model) {
+      var _v0 = A2($elm$core$Dict$get, flowId, model.flows);
+      if (_v0.$ === "Just") {
+        var flow = _v0.a;
+        var _v1 = flow.association.access.profile;
+        switch (_v1.$) {
+          case "Active":
+            return A3($author$project$Auth$showPrompt, flowId, $elm$core$Maybe$Nothing, model);
+          case "Kiosk":
+            return A3($author$project$Auth$advanceCandidate, flowId, message, model);
+          default:
+            return A3($author$project$Auth$startSilentToken, flowId, flow, model);
+        }
+      } else {
+        return _Utils_Tuple2(model, _List_Nil);
+      }
+    }
+  );
   var $author$project$Auth$probeError = function(status) {
     return "Access was not granted (" + ($elm$core$String$fromInt(status) + ").");
   };
@@ -20626,105 +20887,6 @@
     $rism_digital$elm_iiif$IIIF$Auth$probeResultForStatusDecoder,
     A2($elm$json$Json$Decode$field, "status", $rism_digital$elm_iiif$IIIF$Auth$httpStatusDecoder)
   );
-  var $author$project$Auth$AwaitingUser = { $: "AwaitingUser" };
-  var $author$project$Auth$appendUnique = F2(
-    function(flowId, queue) {
-      return A2($elm$core$List$member, flowId, queue) ? queue : _Utils_ap(
-        queue,
-        _List_fromArray(
-          [flowId]
-        )
-      );
-    }
-  );
-  var $author$project$Auth$showPrompt = F3(
-    function(flowId, error, model) {
-      var _v0 = A2($elm$core$Dict$get, flowId, model.flows);
-      if (_v0.$ === "Just") {
-        var flow = _v0.a;
-        var _v1 = flow.association.access.id;
-        if (_v1.$ === "Just") {
-          var updatedFlow = _Utils_update(
-            flow,
-            { phase: $author$project$Auth$AwaitingUser, promptError: error }
-          );
-          var withFlow = _Utils_update(
-            model,
-            {
-              flows: A3($elm$core$Dict$insert, flowId, updatedFlow, model.flows)
-            }
-          );
-          var _v2 = model.activeInteractive;
-          if (_v2.$ === "Just") {
-            var activeFlowId = _v2.a;
-            return _Utils_eq(activeFlowId, flowId) ? _Utils_Tuple2(
-              A3($author$project$Auth$activatePrompt, flowId, updatedFlow, withFlow),
-              _List_Nil
-            ) : _Utils_Tuple2(
-              _Utils_update(
-                withFlow,
-                {
-                  promptQueue: A2($author$project$Auth$appendUnique, flowId, withFlow.promptQueue)
-                }
-              ),
-              _List_Nil
-            );
-          } else {
-            return _Utils_Tuple2(
-              A3($author$project$Auth$activatePrompt, flowId, updatedFlow, withFlow),
-              _List_Nil
-            );
-          }
-        } else {
-          return A3($author$project$Auth$failFlow, flowId, "The active access service has no URL.", model);
-        }
-      } else {
-        return _Utils_Tuple2(model, _List_Nil);
-      }
-    }
-  );
-  var $author$project$Auth$retryOrFail = F3(
-    function(flowId, message, model) {
-      var _v0 = A2($elm$core$Dict$get, flowId, model.flows);
-      if (_v0.$ === "Just") {
-        var flow = _v0.a;
-        if (flow.attempts + 1 >= 2) {
-          return A3($author$project$Auth$failFlow, flowId, message, model);
-        } else {
-          var next = _Utils_update(
-            model,
-            {
-              flows: A3(
-                $elm$core$Dict$insert,
-                flowId,
-                _Utils_update(
-                  flow,
-                  { attempts: flow.attempts + 1 }
-                ),
-                model.flows
-              )
-            }
-          );
-          return A2(
-            $author$project$Auth$addEffects,
-            _List_fromArray(
-              [
-                $author$project$Auth$CancelTokenFrame(flowId)
-              ]
-            ),
-            A3(
-              $author$project$Auth$showPrompt,
-              flowId,
-              $elm$core$Maybe$Just(message),
-              next
-            )
-          );
-        }
-      } else {
-        return _Utils_Tuple2(model, _List_Nil);
-      }
-    }
-  );
   var $author$project$Auth$handleProbe = F4(
     function(flowId, token, body, model) {
       var _v0 = A2($elm$json$Json$Decode$decodeString, $rism_digital$elm_iiif$IIIF$Auth$probeResultDecoder, body);
@@ -20784,7 +20946,12 @@
                         )
                       ]
                     ),
-                    A3($author$project$Auth$showPrompt, flowId, $elm$core$Maybe$Nothing, model)
+                    A3(
+                      $author$project$Auth$continueAfterInvalidToken,
+                      flowId,
+                      $author$project$Auth$probeError(result.status),
+                      model
+                    )
                   );
                 case "ProbingFresh":
                   return A2(
@@ -20799,7 +20966,7 @@
                       ]
                     ),
                     A3(
-                      $author$project$Auth$retryOrFail,
+                      $author$project$Auth$candidateFailed,
                       flowId,
                       $author$project$Auth$probeError(result.status),
                       model
@@ -20821,7 +20988,7 @@
       } else {
         var error = _v0.a;
         return A3(
-          $author$project$Auth$retryOrFail,
+          $author$project$Auth$candidateFailed,
           flowId,
           $elm$json$Json$Decode$errorToString(error),
           model
@@ -20925,8 +21092,12 @@
         function($) {
           return $.key;
         },
-        $elm$core$Result$toMaybe(
-          $author$project$Auth$supportedAssociation(discovery)
+        A2(
+          $elm$core$Maybe$andThen,
+          $elm$core$List$head,
+          $elm$core$Result$toMaybe(
+            $author$project$Auth$supportedAssociations(discovery)
+          )
         )
       );
     } else {
@@ -21009,7 +21180,7 @@
           var _v2 = _v0.a;
           var flowId = _v2.a;
           return A3(
-            $author$project$Auth$retryOrFail,
+            $author$project$Auth$candidateFailed,
             flowId,
             message,
             _Utils_update(
@@ -21186,15 +21357,27 @@
                     )
                   ]
                 ),
-                A3($author$project$Auth$showPrompt, flowId, $elm$core$Maybe$Nothing, model)
+                A3($author$project$Auth$continueAfterInvalidToken, flowId, "The cached token has expired.", model)
               );
             }
           } else {
-            return A3($author$project$Auth$showPrompt, flowId, $elm$core$Maybe$Nothing, model);
+            return A2(
+              $author$project$Auth$addEffects,
+              _List_fromArray(
+                [
+                  A2(
+                    $author$project$Auth$RemoveToken,
+                    flowId,
+                    $author$project$Auth$tokenStorageKey(flow.association)
+                  )
+                ]
+              ),
+              A3($author$project$Auth$continueAfterInvalidToken, flowId, "The cached token is invalid.", model)
+            );
           }
         } else {
           var _v3 = _v0.b;
-          return A3($author$project$Auth$showPrompt, flowId, $elm$core$Maybe$Nothing, model);
+          return A3($author$project$Auth$continueAfterInvalidToken, flowId, "No cached token was found.", model);
         }
       } else {
         return _Utils_Tuple2(model, _List_Nil);
@@ -21362,37 +21545,43 @@
           var tokenDecodeError = _v1.a;
           var _v3 = A2($elm$json$Json$Decode$decodeValue, $rism_digital$elm_iiif$IIIF$Auth$tokenErrorDecoder, value);
           if (_v3.$ === "Ok") {
-            return A3($author$project$Auth$retryOrFail, flowId, "The token service refused access.", model);
+            return A2(
+              $author$project$Auth$addEffects,
+              _List_fromArray(
+                [
+                  A2(
+                    $author$project$Auth$RemoveToken,
+                    flowId,
+                    $author$project$Auth$tokenStorageKey(flow.association)
+                  )
+                ]
+              ),
+              A3($author$project$Auth$candidateFailed, flowId, "The token service refused access.", model)
+            );
           } else {
-            return A3(
-              $author$project$Auth$retryOrFail,
-              flowId,
-              $elm$json$Json$Decode$errorToString(tokenDecodeError),
-              model
+            return A2(
+              $author$project$Auth$addEffects,
+              _List_fromArray(
+                [
+                  A2(
+                    $author$project$Auth$RemoveToken,
+                    flowId,
+                    $author$project$Auth$tokenStorageKey(flow.association)
+                  )
+                ]
+              ),
+              A3(
+                $author$project$Auth$candidateFailed,
+                flowId,
+                $elm$json$Json$Decode$errorToString(tokenDecodeError),
+                model
+              )
             );
           }
         }
       } else {
         return _Utils_Tuple2(model, _List_Nil);
       }
-    }
-  );
-  var $author$project$Auth$updateFlow = F4(
-    function(flowId, change, model, effects) {
-      return _Utils_Tuple2(
-        _Utils_update(
-          model,
-          {
-            flows: A3(
-              $elm$core$Dict$update,
-              flowId,
-              $elm$core$Maybe$map(change),
-              model.flows
-            )
-          }
-        ),
-        effects
-      );
     }
   );
   var $author$project$Auth$update = F2(
@@ -21489,7 +21678,27 @@
           case "TokenFailed":
             var flowId = event.a;
             var message = event.b;
-            return A3($author$project$Auth$retryOrFail, flowId, message, model);
+            return A2(
+              $author$project$Auth$addEffects,
+              (function() {
+                var _v2 = A2($elm$core$Dict$get, flowId, model.flows);
+                if (_v2.$ === "Just") {
+                  var flow2 = _v2.a;
+                  return _List_fromArray(
+                    [
+                      A2(
+                        $author$project$Auth$RemoveToken,
+                        flowId,
+                        $author$project$Auth$tokenStorageKey(flow2.association)
+                      )
+                    ]
+                  );
+                } else {
+                  return _List_Nil;
+                }
+              })(),
+              A3($author$project$Auth$candidateFailed, flowId, message, model)
+            );
           case "LogoutOpened":
             var sessionId = event.a;
             return A2($author$project$Auth$logoutOpened, sessionId, model);
@@ -21521,9 +21730,9 @@
           case "LogoutClosed":
             return _Utils_Tuple2(model, _List_Nil);
           case "UserCancelled":
-            var _v2 = model.activePrompt;
-            if (_v2.$ === "Just") {
-              var active = _v2.a;
+            var _v3 = model.activePrompt;
+            if (_v3.$ === "Just") {
+              var active = _v3.a;
               return A3($author$project$Auth$failFlow, active.flowId, "Authorization was cancelled.", model);
             } else {
               return _Utils_Tuple2(model, _List_Nil);

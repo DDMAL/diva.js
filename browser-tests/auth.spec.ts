@@ -234,11 +234,86 @@ test("loads only nearby sidebar thumbnails", async ({page}, testInfo) => {
     await expect.poll(() => thumbnailRequests.size).toBeGreaterThan(initiallyLoaded);
 });
 
-test("deduplicates active login and sends bearer only to the probe", async ({context : browserContext, page}, testInfo) => {
+test("uses an existing session in the external token frame without prompting", async ({context : browserContext, page}, testInfo) => {
+    const origin = "http://127.0.0.1:4173";
+    const authOrigin = `https://${testInfo.project.name}.external.example.test`;
+    const probeRequests: Array<{authorization?: string; cookie?: string}> = [];
+    const tokenCookies: Array<string|undefined> = [];
+    let protectedInfoRequests = 0;
+
+    await browserContext.addCookies([ {
+        name : "diamm-session", value : "authenticated", url : authOrigin, sameSite : "None", secure : true
+    } ]);
+    await page.route(`${origin}/external/manifest`, (route) => route.fulfill({json : {
+        "@context" : [ context, "http://iiif.io/api/presentation/3/context.json" ],
+        id : `${origin}/external/manifest`,
+        type : "Manifest",
+        label : {en : [ "External auth" ]},
+        items : [ {
+            id : `${origin}/external/canvas`, type : "Canvas", width : 100, height : 100,
+            items : [ {id : `${origin}/external/page`, type : "AnnotationPage", items : [ {
+                id : `${origin}/external/annotation`, type : "Annotation", motivation : "painting",
+                target : `${origin}/external/canvas`,
+                body : {id : `${origin}/external/image/full/full/0/default.jpg`, type : "Image", service : {
+                    id : `${origin}/external/image`, type : "ImageService3", service : [ {
+                        id : `${authOrigin}/external/probe`, type : "AuthProbeService2", service : [
+                            {type : "AuthAccessService2", profile : "external", service : [
+                                {id : `${authOrigin}/external/token`, type : "AuthAccessTokenService2"},
+                                {id : `${authOrigin}/external/logout`, type : "AuthLogoutService2"}
+                            ]},
+                            {id : `${authOrigin}/external/login`, type : "AuthAccessService2", profile : "active",
+                             label : {en : [ "Sign in" ]}, service : [ {id : `${authOrigin}/external/token`, type : "AuthAccessTokenService2"} ]}
+                        ]
+                    } ]
+                }}
+            } ]} ]
+        } ]
+    }}));
+    await page.route(`${authOrigin}/external/probe`, (route) => {
+        const headers = route.request().headers();
+        probeRequests.push({authorization : headers.authorization, cookie : headers.cookie});
+        return route.fulfill({headers : {"access-control-allow-origin" : origin}, json : {
+            "@context" : context, type : "AuthProbeResult2",
+            status : headers.authorization === "Bearer external-token" ? 200 : 401
+        }});
+    });
+    await browserContext.route(`${authOrigin}/external/token*`, (route) => {
+        tokenCookies.push(route.request().headers().cookie);
+        const url = new URL(route.request().url());
+        const messageId = url.searchParams.get("messageId");
+        return route.fulfill({contentType : "text/html", body : `<script>parent.postMessage(${JSON.stringify({
+            "@context" : context, type : "AuthAccessToken2", accessToken : "external-token", expiresIn : 300, messageId
+        })}, ${JSON.stringify(origin)})</script>`});
+    });
+    await page.route(`${origin}/external/image/**`, (route) => {
+        if (!route.request().url().endsWith("/info.json"))
+        {
+            return route.fulfill({status : 204});
+        }
+        protectedInfoRequests += 1;
+        return route.fulfill({json : {
+            "@context" : "http://iiif.io/api/image/3/context.json", id : `${origin}/external/image`,
+            type : "ImageService3", protocol : "http://iiif.io/api/image", profile : "level0",
+            width : 100, height : 100, tiles : [ {width : 100, scaleFactors : [ 1 ]} ]
+        }});
+    });
+
+    await openHarness(page, `${origin}/external/manifest`, testInfo);
+    await expect.poll(() => protectedInfoRequests).toBe(1);
+    await expect(page.locator(".diva-auth-dialog")).toHaveCount(0);
+    expect(probeRequests).toEqual([
+        {authorization : undefined, cookie : undefined},
+        {authorization : "Bearer external-token", cookie : undefined}
+    ]);
+    expect(tokenCookies).toEqual([ "diamm-session=authenticated" ]);
+});
+
+test("falls back from silent external auth and deduplicates active login", async ({context : browserContext, page}, testInfo) => {
     const origin = "http://127.0.0.1:4173";
     const authOrigin = `https://${testInfo.project.name}.auth.example.test`;
     const probeRequests: Array<{authorization?: string; cookie?: string; url : string}> = [];
     let loginRequests = 0;
+    let externalTokenRequests = 0;
     let tokenRequests = 0;
     let logoutRequests = 0;
     let logoutUrl: string|undefined;
@@ -259,6 +334,10 @@ test("deduplicates active login and sends bearer only to the probe", async ({con
                 id : `${authOrigin}/mock/probe?uri=${encodeURIComponent(`${origin}/mock/${image}`)}`,
                 type : "AuthProbeService2",
                 service : [ {
+                    type : "AuthAccessService2",
+                    profile : "external",
+                    service : [ {id : `${authOrigin}/mock/external-token`, type : "AuthAccessTokenService2"} ]
+                }, {
                     id : `${authOrigin}/mock/login`,
                     type : "AuthAccessService2",
                     profile : "active",
@@ -309,6 +388,17 @@ test("deduplicates active login and sends bearer only to the probe", async ({con
     await browserContext.route(`${authOrigin}/mock/login*`, async (route) => {
         loginRequests += 1;
         await route.fulfill({contentType : "text/html", body : "<script>window.close()</script>"});
+    });
+
+    await browserContext.route(`${authOrigin}/mock/external-token*`, async (route) => {
+        externalTokenRequests += 1;
+        const url = new URL(route.request().url());
+        await route.fulfill({contentType : "text/html", body : `<script>parent.postMessage(${JSON.stringify({
+            "@context" : context,
+            type : "AuthAccessTokenError2",
+            profile : "missingAspect",
+            messageId : url.searchParams.get("messageId")
+        })}, ${JSON.stringify(url.searchParams.get("origin"))})</script>`});
     });
 
     await browserContext.route(`${authOrigin}/mock/token*`, async (route) => {
@@ -362,6 +452,7 @@ test("deduplicates active login and sends bearer only to the probe", async ({con
 
     await openHarness(page, `${origin}/mock/manifest`, testInfo);
     await expect(page.locator(".diva-auth-dialog")).toBeVisible();
+    expect(externalTokenRequests).toBe(1);
     await expect(page.locator(".thumbs-image--protected")).toHaveCount(2);
     await page.locator("button[data-diva-auth-flow]").click();
     await expect(page.locator(".diva-auth-dialog")).toBeHidden({timeout : 10000});

@@ -78,6 +78,7 @@ type FamilyState
 
 type alias Flow =
     { association : Association
+    , remainingAssociations : List Association
     , waiters : List String
     , attempts : Int
     , phase : Phase
@@ -314,7 +315,15 @@ update event model =
                 tokenMessage flowId now value model
 
             TokenFailed flowId message ->
-                retryOrFail flowId message model
+                candidateFailed flowId message model
+                    |> addEffects
+                        (case Dict.get flowId model.flows of
+                            Just flow ->
+                                [ RemoveToken flowId (tokenStorageKey flow.association) ]
+
+                            Nothing ->
+                                []
+                        )
 
             LogoutOpened sessionId ->
                 logoutOpened sessionId model
@@ -411,6 +420,44 @@ addEffects effects ( model, existing ) =
     ( model, existing ++ effects )
 
 
+advanceCandidate : String -> String -> Model -> ( Model, List Effect )
+advanceCandidate flowId message model =
+    case Dict.get flowId model.flows of
+        Just flow ->
+            case flow.remainingAssociations of
+                [] ->
+                    failFlow flowId message model
+
+                nextAssociation :: remaining ->
+                    let
+                        nextFlow =
+                            { flow
+                                | association = nextAssociation
+                                , remainingAssociations = remaining
+                                , attempts = 0
+                                , promptError = Nothing
+                            }
+
+                        nextModel =
+                            releaseInteractive flowId
+                                { model | flows = Dict.insert flowId nextFlow model.flows }
+                    in
+                    case nextAssociation.access.profile of
+                        Active ->
+                            showPrompt flowId Nothing nextModel
+                                |> addEffects [ CancelTokenFrame flowId ]
+
+                        Kiosk ->
+                            advanceCandidate flowId message nextModel
+
+                        External ->
+                            startSilentToken flowId nextFlow nextModel
+                                |> addEffects [ CancelTokenFrame flowId ]
+
+        Nothing ->
+            ( model, [] )
+
+
 allocateOperation : Operation -> Model -> ( String, Model )
 allocateOperation operation model =
     let
@@ -434,55 +481,65 @@ appendUnique flowId queue =
         queue ++ [ flowId ]
 
 
-associationFromProbe : IIIFAuth.ProbeService -> Maybe Association
-associationFromProbe probe =
+associationsFromProbe : IIIFAuth.ProbeService -> List Association
+associationsFromProbe probe =
     let
-        hasUnsupportedAccess =
-            List.any (\access -> access.profile /= Active) probe.services
+        supportedAccesses =
+            List.filter (\access -> access.profile == External) probe.services
+                ++ List.filter (\access -> access.profile == Active) probe.services
+
+        candidateSignature access =
+            access.services
+                |> List.filterMap
+                    (\service ->
+                        case service of
+                            RelatedTokenService token ->
+                                Just (Maybe.withDefault "" access.id ++ "|" ++ token.id)
+
+                            RelatedLogoutService _ ->
+                                Nothing
+                    )
+                |> List.head
+
+        familyKey =
+            normalizedProbeUrl probe.id
+                ++ "|"
+                ++ (supportedAccesses |> List.filterMap candidateSignature |> String.join "|")
+
+        association access =
+            access.services
+                |> List.filterMap
+                    (\service ->
+                        case service of
+                            RelatedTokenService token ->
+                                Just token
+
+                            RelatedLogoutService _ ->
+                                Nothing
+                    )
+                |> List.head
+                |> Maybe.map
+                    (\token ->
+                        { key = familyKey
+                        , probe = probe
+                        , access = access
+                        , token = token
+                        , logout =
+                            access.services
+                                |> List.filterMap
+                                    (\service ->
+                                        case service of
+                                            RelatedTokenService _ ->
+                                                Nothing
+
+                                            RelatedLogoutService logout ->
+                                                Just logout
+                                    )
+                                |> List.head
+                        }
+                    )
     in
-    if hasUnsupportedAccess then
-        Nothing
-
-    else
-        let
-            active =
-                List.filter (\access -> access.profile == Active) probe.services |> List.head
-        in
-        active
-            |> Maybe.andThen
-                (\access ->
-                    access.services
-                        |> List.filterMap
-                            (\service ->
-                                case service of
-                                    RelatedTokenService token ->
-                                        Just token
-
-                                    RelatedLogoutService _ ->
-                                        Nothing
-                            )
-                        |> List.head
-                        |> Maybe.map
-                            (\token ->
-                                { key = normalizedProbeUrl probe.id ++ "|" ++ Maybe.withDefault "" access.id ++ "|" ++ token.id
-                                , probe = probe
-                                , access = access
-                                , token = token
-                                , logout =
-                                    access.services
-                                        |> List.filterMap
-                                            (\service ->
-                                                case service of
-                                                    RelatedTokenService _ ->
-                                                        Nothing
-
-                                                    RelatedLogoutService logout ->
-                                                        Just logout
-                                            )
-                                        |> List.head
-                                }
-                            )
-                )
+    List.filterMap association supportedAccesses
 
 
 beginAuthorization : String -> AuthDiscovery -> Maybe Value -> Model -> ( Model, List Effect )
@@ -496,8 +553,11 @@ beginAuthorization requestId discovery infoJson model =
                         model.pending
             }
     in
-    case supportedAssociation discovery of
-        Ok association ->
+    case supportedAssociations discovery of
+        Ok [] ->
+            completeFailure requestId "No supported Auth 2 external or active access service was provided." withInfo
+
+        Ok (association :: remainingAssociations) ->
             case Dict.get association.key withInfo.familyStates of
                 Just AnonymousFamily ->
                     completeKnownFamily requestId False withInfo
@@ -514,6 +574,7 @@ beginAuthorization requestId discovery infoJson model =
                             let
                                 flow =
                                     { association = association
+                                    , remainingAssociations = remainingAssociations
                                     , waiters = [ requestId ]
                                     , attempts = 0
                                     , phase = ProbingAnonymous
@@ -585,6 +646,24 @@ cancelRequest requestId model =
     , (Dict.keys operations |> List.map CancelFetch)
         ++ List.map CancelTokenFrame removedFlowIds
     )
+
+
+candidateFailed : String -> String -> Model -> ( Model, List Effect )
+candidateFailed flowId message model =
+    case Dict.get flowId model.flows of
+        Just flow ->
+            case flow.association.access.profile of
+                Active ->
+                    retryOrFail flowId message model
+
+                Kiosk ->
+                    advanceCandidate flowId message model
+
+                External ->
+                    advanceCandidate flowId message model
+
+        Nothing ->
+            ( model, [] )
 
 
 completeFailure : String -> String -> Model -> ( Model, List Effect )
@@ -703,6 +782,24 @@ completeSource requestId credentialed infoJson model =
             ( model, [] )
 
 
+continueAfterInvalidToken : String -> String -> Model -> ( Model, List Effect )
+continueAfterInvalidToken flowId message model =
+    case Dict.get flowId model.flows of
+        Just flow ->
+            case flow.association.access.profile of
+                Active ->
+                    showPrompt flowId Nothing model
+
+                Kiosk ->
+                    advanceCandidate flowId message model
+
+                External ->
+                    startSilentToken flowId flow model
+
+        Nothing ->
+            ( model, [] )
+
+
 failFlow : String -> String -> Model -> ( Model, List Effect )
 failFlow flowId message model =
     case Dict.get flowId model.flows of
@@ -768,11 +865,11 @@ handleProbe flowId token body model =
                                 )
 
                             ProbingCached ->
-                                showPrompt flowId Nothing model
+                                continueAfterInvalidToken flowId (probeError result.status) model
                                     |> addEffects [ RemoveToken flowId (tokenStorageKey flow.association) ]
 
                             ProbingFresh ->
-                                retryOrFail flowId (probeError result.status) model
+                                candidateFailed flowId (probeError result.status) model
                                     |> addEffects [ RemoveToken flowId (tokenStorageKey flow.association) ]
 
                             _ ->
@@ -782,7 +879,7 @@ handleProbe flowId token body model =
                         ( model, [] )
 
         Err error ->
-            retryOrFail flowId (Decode.errorToString error) model
+            candidateFailed flowId (Decode.errorToString error) model
 
 
 handleResolvedInfo : String -> Bool -> Int -> String -> Model -> ( Model, List Effect )
@@ -871,7 +968,7 @@ operationFailed operationId message model =
             completeFailure requestId message { model | operations = Dict.remove operationId model.operations }
 
         Just (ProbeOperation flowId _) ->
-            retryOrFail flowId message { model | operations = Dict.remove operationId model.operations }
+            candidateFailed flowId message { model | operations = Dict.remove operationId model.operations }
 
         Nothing ->
             ( model, [] )
@@ -1050,8 +1147,9 @@ sourceFamilyKey : Source -> Maybe String
 sourceFamilyKey source =
     case source.auth of
         Discovered discovery ->
-            supportedAssociation discovery
+            supportedAssociations discovery
                 |> Result.toMaybe
+                |> Maybe.andThen List.head
                 |> Maybe.map .key
 
         _ ->
@@ -1095,6 +1193,18 @@ startResolvedInfoRequest requestId credentialed source model =
     ( next, [ Fetch operationId source.url Nothing credentialed ] )
 
 
+startSilentToken : String -> Flow -> Model -> ( Model, List Effect )
+startSilentToken flowId flow model =
+    let
+        messageId =
+            flowId ++ "-" ++ String.fromInt (flow.attempts + 1)
+    in
+    updateFlow flowId
+        (\current -> { current | phase = AwaitingToken })
+        model
+        [ StartTokenFrame flowId flow.association.token.id messageId ]
+
+
 storageRead : String -> Float -> Maybe Value -> Model -> ( Model, List Effect )
 storageRead flowId now value model =
     case ( Dict.get flowId model.flows, value ) of
@@ -1111,34 +1221,44 @@ storageRead flowId now value model =
                         )
 
                     else
-                        showPrompt flowId Nothing model
+                        continueAfterInvalidToken flowId "The cached token has expired." model
                             |> addEffects [ RemoveToken flowId (tokenStorageKey flow.association) ]
 
                 Err _ ->
-                    showPrompt flowId Nothing model
+                    continueAfterInvalidToken flowId "The cached token is invalid." model
+                        |> addEffects [ RemoveToken flowId (tokenStorageKey flow.association) ]
 
         ( Just _, Nothing ) ->
-            showPrompt flowId Nothing model
+            continueAfterInvalidToken flowId "No cached token was found." model
 
         _ ->
             ( model, [] )
 
 
-supportedAssociation : AuthDiscovery -> Result String Association
-supportedAssociation discovery =
+supportedAssociations : AuthDiscovery -> Result String (List Association)
+supportedAssociations discovery =
     if not (List.isEmpty discovery.unsupportedServiceTypes) then
         Err (unsupportedMessage discovery.unsupportedServiceTypes)
 
     else
-        case unsupportedPolicyError discovery.probes of
-            Just message ->
-                Err message
-
-            Nothing ->
+        let
+            associations =
                 discovery.probes
-                    |> List.filterMap associationFromProbe
+                    |> List.map associationsFromProbe
+                    |> List.filter (not << List.isEmpty)
                     |> List.head
-                    |> Result.fromMaybe "No supported Auth 2 active sign-in service was provided."
+                    |> Maybe.withDefault []
+        in
+        if List.isEmpty associations then
+            case unsupportedPolicyError discovery.probes of
+                Just message ->
+                    Err message
+
+                Nothing ->
+                    Err "No supported Auth 2 external or active access service was provided."
+
+        else
+            Ok associations
 
 
 tokenMessage : String -> Float -> Value -> Model -> ( Model, List Effect )
@@ -1167,10 +1287,12 @@ tokenMessage flowId now value model =
                 Err tokenDecodeError ->
                     case Decode.decodeValue IIIFAuth.tokenErrorDecoder value of
                         Ok _ ->
-                            retryOrFail flowId "The token service refused access." model
+                            candidateFailed flowId "The token service refused access." model
+                                |> addEffects [ RemoveToken flowId (tokenStorageKey flow.association) ]
 
                         Err _ ->
-                            retryOrFail flowId (Decode.errorToString tokenDecodeError) model
+                            candidateFailed flowId (Decode.errorToString tokenDecodeError) model
+                                |> addEffects [ RemoveToken flowId (tokenStorageKey flow.association) ]
 
         Nothing ->
             ( model, [] )
@@ -1192,7 +1314,7 @@ unsupportedPolicyError probes =
         accesses =
             List.concatMap .services probes
     in
-    case List.filter (\access -> access.profile /= Active) accesses |> List.head of
+    case List.filter (\access -> access.profile == Kiosk) accesses |> List.head of
         Just access ->
             Just
                 ("IIIF Auth 2 '"
@@ -1206,7 +1328,7 @@ unsupportedPolicyError probes =
                             External ->
                                 "external"
                        )
-                    ++ "' access is not supported; only the 'active' profile is supported."
+                    ++ "' access is not supported; supported profiles are 'external' and 'active'."
                 )
 
         Nothing ->

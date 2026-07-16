@@ -788,6 +788,118 @@ tests =
                     _ ->
                         Expect.fail "Expected one deduplicated logout action"
             )
+        , test "prioritizes external over active and starts it without a prompt"
+            (\_ ->
+                let
+                    discovery =
+                        Auth.Discovered { probes = [ externalAndActiveProbe ], unsupportedServiceTypes = [] }
+
+                    ( probing, probeEffects ) =
+                        Auth.init
+                            |> Auth.registerSources [ source "one" False discovery ]
+                            |> Auth.update (Auth.Resolve "request-1" "one")
+
+                    operationId =
+                        fetchOperationId probeEffects
+
+                    ( reading, cacheEffects ) =
+                        Auth.update (Auth.HttpSucceeded operationId 200 deniedProbeResult) probing
+
+                    flowId =
+                        readTokenFlowId cacheEffects
+
+                    ( silent, effects ) =
+                        Auth.update (Auth.StorageRead flowId 1000 Nothing) reading
+                in
+                Expect.all
+                    [ \_ -> Expect.equal Nothing (Auth.prompt silent)
+                    , \_ ->
+                        case effects of
+                            [ Auth.StartTokenFrame actualFlowId "https://auth.example/external-token" _ ] ->
+                                Expect.equal flowId actualFlowId
+
+                            _ ->
+                                Expect.fail "Expected the external token service to start silently"
+                    ]
+                    ()
+            )
+        , test "falls through from an external token error to active sign-in"
+            (\_ ->
+                let
+                    discovery =
+                        Auth.Discovered { probes = [ externalAndActiveProbe ], unsupportedServiceTypes = [] }
+
+                    ( probing, probeEffects ) =
+                        Auth.init
+                            |> Auth.registerSources [ source "one" False discovery ]
+                            |> Auth.update (Auth.Resolve "request-1" "one")
+
+                    operationId =
+                        fetchOperationId probeEffects
+
+                    ( reading, cacheEffects ) =
+                        Auth.update (Auth.HttpSucceeded operationId 200 deniedProbeResult) probing
+
+                    flowId =
+                        readTokenFlowId cacheEffects
+
+                    ( silent, _ ) =
+                        Auth.update (Auth.StorageRead flowId 1000 Nothing) reading
+
+                    ( fallback, _ ) =
+                        Auth.update (Auth.TokenFailed flowId "external failed") silent
+                in
+                Expect.equal (Just "https://auth.example/login") (Auth.prompt fallback |> Maybe.map .accessUrl)
+            )
+        , test "fails an external-only family when silent authorization fails"
+            (\_ ->
+                let
+                    discovery =
+                        Auth.Discovered { probes = [ externalProbe ], unsupportedServiceTypes = [] }
+
+                    ( probing, probeEffects ) =
+                        Auth.init
+                            |> Auth.registerSources [ source "one" False discovery ]
+                            |> Auth.update (Auth.Resolve "request-1" "one")
+
+                    operationId =
+                        fetchOperationId probeEffects
+
+                    ( reading, cacheEffects ) =
+                        Auth.update (Auth.HttpSucceeded operationId 200 deniedProbeResult) probing
+
+                    flowId =
+                        readTokenFlowId cacheEffects
+
+                    ( silent, _ ) =
+                        Auth.update (Auth.StorageRead flowId 1000 Nothing) reading
+
+                    ( _, effects ) =
+                        Auth.update (Auth.TokenFailed flowId "external failed") silent
+                in
+                Expect.equal True (List.member (Auth.Fail "request-1" "external failed") effects)
+            )
+        , test "skips kiosk when a supported candidate exists"
+            (\_ ->
+                let
+                    discovery =
+                        Auth.Discovered
+                            { probes = [ { externalAndActiveProbe | services = kioskAccess :: externalAndActiveProbe.services } ]
+                            , unsupportedServiceTypes = []
+                            }
+
+                    ( _, effects ) =
+                        Auth.init
+                            |> Auth.registerSources [ source "one" False discovery ]
+                            |> Auth.update (Auth.Resolve "request-1" "one")
+                in
+                case effects of
+                    [ Auth.Fetch _ "https://auth.example/probe" Nothing False ] ->
+                        Expect.pass
+
+                    _ ->
+                        Expect.fail "Expected the supported family to be probed"
+            )
         ]
 
 
@@ -844,9 +956,69 @@ associationKey =
     "https://auth.example/probe|https://auth.example/login|https://auth.example/token"
 
 
+deniedProbeResult : String
+deniedProbeResult =
+    "{\"@context\":\"http://iiif.io/api/auth/2/context.json\",\"type\":\"AuthProbeResult2\",\"status\":401}"
+
+
+externalAccess : IIIF.Auth.AccessService
+externalAccess =
+    { id = Nothing
+    , type_ = "AuthAccessService2"
+    , profile = External
+    , services =
+        [ RelatedTokenService
+            { id = "https://auth.example/external-token"
+            , type_ = "AuthAccessTokenService2"
+            , errorHeading = Nothing
+            , errorNote = Nothing
+            }
+        ]
+    , label = Nothing
+    , heading = Nothing
+    , note = Nothing
+    , confirmLabel = Nothing
+    }
+
+
+externalAndActiveProbe : IIIF.Auth.ProbeService
+externalAndActiveProbe =
+    { activeProbe | services = activeProbe.services ++ [ externalAccess ] }
+
+
+externalProbe : IIIF.Auth.ProbeService
+externalProbe =
+    { activeProbe | services = [ externalAccess ] }
+
+
+fetchOperationId : List Auth.Effect -> String
+fetchOperationId effects =
+    case effects of
+        [ Auth.Fetch operationId _ Nothing False ] ->
+            operationId
+
+        _ ->
+            "missing-fetch"
+
+
+kioskAccess : IIIF.Auth.AccessService
+kioskAccess =
+    { externalAccess | id = Just "https://auth.example/kiosk", profile = Kiosk }
+
+
 mapAccess : (IIIF.Auth.AccessService -> IIIF.Auth.AccessService) -> IIIF.Auth.ProbeService -> IIIF.Auth.ProbeService
 mapAccess change probe =
     { probe | services = List.map change probe.services }
+
+
+readTokenFlowId : List Auth.Effect -> String
+readTokenFlowId effects =
+    case effects of
+        [ Auth.ReadToken flowId _ ] ->
+            flowId
+
+        _ ->
+            "missing-flow"
 
 
 secondActiveProbe : IIIF.Auth.ProbeService
