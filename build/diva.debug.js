@@ -5,6 +5,68 @@
   var ZOOM_OUT_FACTOR = 1 / ZOOM_IN_FACTOR;
   var PAGE_LABEL_TOP_PADDING_PX = 28;
   var PAGE_GAP_VIEWPORT_UNITS = 0.06;
+  var lazyImageObserver = null;
+  var DivaLazyImage = class extends HTMLElement {
+    constructor() {
+      super(...arguments);
+      this.image = null;
+    }
+    static get observedAttributes() {
+      return ["data-src", "data-alt", "data-crossorigin"];
+    }
+    connectedCallback() {
+      this.observe();
+    }
+    disconnectedCallback() {
+      lazyImageObserver == null ? void 0 : lazyImageObserver.unobserve(this);
+    }
+    attributeChangedCallback() {
+      if (this.image) {
+        this.image.remove();
+        this.image = null;
+      }
+      if (this.isConnected) {
+        this.observe();
+      }
+    }
+    load() {
+      var _a;
+      if (this.image) {
+        return;
+      }
+      const url = this.dataset.src;
+      if (!url) {
+        return;
+      }
+      lazyImageObserver == null ? void 0 : lazyImageObserver.unobserve(this);
+      const image = document.createElement("img");
+      image.className = "thumbs-image";
+      image.alt = (_a = this.dataset.alt) != null ? _a : "";
+      const crossOrigin = this.dataset.crossorigin;
+      if (crossOrigin) {
+        image.crossOrigin = crossOrigin;
+      }
+      this.image = image;
+      this.appendChild(image);
+      image.src = url;
+    }
+    observe() {
+      if (!("IntersectionObserver" in window)) {
+        this.load();
+        return;
+      }
+      if (!lazyImageObserver) {
+        lazyImageObserver = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.load();
+            }
+          });
+        }, { rootMargin: "300px 0px" });
+      }
+      lazyImageObserver.observe(this);
+    }
+  };
   var OsdViewer = class extends HTMLElement {
     constructor() {
       super();
@@ -27,6 +89,7 @@
       this.loadControllers = /* @__PURE__ */ new Map();
       this.tileSourceResolver = async (source) => source.isStatic ? { type: "image", url: source.url, crossOriginPolicy: "Anonymous" } : source.url;
       this.loadedItems = /* @__PURE__ */ new Map();
+      this.pageWaiters = /* @__PURE__ */ new Map();
       this.pageOverlayElements = /* @__PURE__ */ new Map();
       this.targetIndex = null;
       this.scrollPlaneItem = null;
@@ -300,6 +363,7 @@
           item.setHeight(height, true);
           this.loadedIndexes.add(index);
           this.loadedItems.set(index, item);
+          this.resolvePageWaiters(index, item);
           this.addOrUpdatePageOverlay(index);
           this.loadingIndexes.delete(index);
           this.loadControllers.delete(index);
@@ -364,11 +428,46 @@
       this.loadControllers.forEach((controller) => controller.abort());
       this.loadControllers.clear();
       this.loadingIndexes.clear();
+      this.rejectPageWaiters(new DOMException("The image load was cancelled.", "AbortError"));
       this.resetLoadingState();
     }
     markUnavailable(index, message) {
       this.unavailableIndexes.set(index, message);
+      this.rejectPageWaiters(new Error(message), index);
+      this.emitCustomEvent("diva-page-load-error", { index, message });
       this.addUnavailableOverlay(index, message);
+    }
+    waitForPage(index) {
+      const loaded = this.loadedItems.get(index);
+      if (loaded) {
+        return Promise.resolve(loaded);
+      }
+      const unavailable = this.unavailableIndexes.get(index);
+      if (unavailable) {
+        return Promise.reject(new Error(unavailable));
+      }
+      return new Promise((resolve, reject) => {
+        var _a;
+        const waiters = (_a = this.pageWaiters.get(index)) != null ? _a : [];
+        waiters.push({ resolve, reject });
+        this.pageWaiters.set(index, waiters);
+        this.ensurePageLoaded(index);
+      });
+    }
+    resolvePageWaiters(index, item) {
+      var _a;
+      const waiters = (_a = this.pageWaiters.get(index)) != null ? _a : [];
+      this.pageWaiters.delete(index);
+      waiters.forEach((waiter) => waiter.resolve(item));
+    }
+    rejectPageWaiters(error, index) {
+      const indexes = index === void 0 ? Array.from(this.pageWaiters.keys()) : [index];
+      indexes.forEach((waiterIndex) => {
+        var _a;
+        const waiters = (_a = this.pageWaiters.get(waiterIndex)) != null ? _a : [];
+        this.pageWaiters.delete(waiterIndex);
+        waiters.forEach((waiter) => waiter.reject(error));
+      });
     }
     addUnavailableOverlay(index, message) {
       if (!this.viewer)
@@ -620,6 +719,55 @@
       this.ensurePageLoaded(index);
       this.lastReportedIndex = index;
       this.emitCustomEvent("diva-page-change", { index });
+    }
+    getVisiblePageIndexes() {
+      var _a;
+      if (this.pageOffsets.length === 0) {
+        return [];
+      }
+      const index = (_a = this.lastReportedIndex) != null ? _a : 0;
+      const start = this.getRowStartIndex(index);
+      const end = this.getRowEndIndex(start);
+      return Array.from({ length: end - start + 1 }, (_value, offset) => start + offset);
+    }
+    next() {
+      const visible = this.getVisiblePageIndexes();
+      if (visible.length === 0) {
+        return;
+      }
+      const nextIndex = this.getRowEndIndex(visible[0]) + 1;
+      if (nextIndex < this.tileSources.length) {
+        this.scrollToIndex(nextIndex);
+      }
+    }
+    previous() {
+      const visible = this.getVisiblePageIndexes();
+      if (visible.length === 0 || visible[0] === 0) {
+        return;
+      }
+      this.scrollToIndex(this.getRowStartIndex(visible[0] - 1));
+    }
+    async fitToPage(index) {
+      var _a, _b;
+      this.scrollToIndex(index);
+      const item = await this.waitForPage(index);
+      (_a = this.viewer) == null ? void 0 : _a.viewport.fitBounds(item.getBounds(), false);
+      (_b = this.viewer) == null ? void 0 : _b.viewport.applyConstraints();
+    }
+    async zoomToRegion(index, region, options = {}) {
+      var _a, _b, _c;
+      this.scrollToIndex(index);
+      const item = await this.waitForPage(index);
+      const padding = (_a = options.padding) != null ? _a : 0.05;
+      const padded = {
+        x: region.x - region.width * padding,
+        y: region.y - region.height * padding,
+        width: region.width * (1 + padding * 2),
+        height: region.height * (1 + padding * 2)
+      };
+      const bounds = item.imageToViewportRectangle(padded.x, padded.y, padded.width, padded.height);
+      (_b = this.viewer) == null ? void 0 : _b.viewport.fitBounds(bounds, options.immediately === true);
+      (_c = this.viewer) == null ? void 0 : _c.viewport.applyConstraints();
     }
     setZoomLevel(zoom) {
       var _a;
@@ -1069,10 +1217,11 @@
       });
     }
   };
+  customElements.define("diva-lazy-image", DivaLazyImage);
   customElements.define("osd-viewer", OsdViewer);
 
   // cache/diva.css
-  var diva_default = ":root{--diva-accent:#5a6bff;--diva-accent-light:#9aa4ff;--diva-border:#d9d4ce;--diva-danger:#d32f2f;--diva-dark-bg:#1c1d22;--diva-dark-border:#2c2d33;--diva-overlay-bg:#10111499;--diva-page-bg:#f7f5f1;--diva-shadow-dark:#00000026;--diva-shadow-focus:#9aa4ff59;--diva-shadow-modal:#00000040;--diva-surface:#e6e1dc;--diva-text-muted:#5c5a55;--diva-text-muted-on-dark:#ffffffb3;--diva-text-primary:#1b1b1b;--diva-toolbar-button-bg:#5258626b;--diva-toolbar-button-bg-hover:#5c636e85;--diva-toolbar-button-bg-fullscreen:#52586285;--diva-toolbar-button-bg-fullscreen-hover:#6068749e;--diva-toolbar-button-border:#ffffff59;--diva-toolbar-button-border-hover:#ffffff73;--diva-toolbar-button-border-fullscreen-hover:#fff9;--diva-toolbar-button-icon:#2c2d33;--diva-toolbar-button-shadow:inset 0 1px 0 #ffffff8c, inset 0 -1px 0 #ffffff2e;--diva-toolbar-button-shadow-hover:inset 0 1px 0 #ffffffb3, inset 0 -1px 0 #ffffff3d;--diva-white:#fff;--diva-font-lg:16px;--diva-font-md:13px;--diva-font-sm:11px;--diva-font-xs:10px;--diva-font-xl:20px;color-scheme:light}*{box-sizing:border-box}.list-reset{margin:0;padding:0;list-style:none}.ui-button{text-align:left;cursor:pointer;color:var(--diva-text-primary);font-size:var(--diva-font-lg);background-color:#0000;border:none;padding:0}.ui-button:hover{background-color:var(--diva-surface)}.ui-card{cursor:pointer;border-radius:0;width:100%;padding:6px}.ui-card--dark{background-color:var(--diva-dark-bg)}.diva-app{flex-direction:column;flex:1;height:100%;min-height:0;padding:12px 24px;display:flex}.diva-app.is-fullscreen{height:100vh;min-height:100vh;padding:0}.diva-app-header{font-size:var(--diva-font-lg);align-items:center;gap:12px;margin-bottom:8px;font-weight:600;display:flex}.diva-app-title{font-size:var(--diva-font-xl);text-align:left;color:var(--diva-text-primary);margin-bottom:6px;font-weight:600}.diva-app-title.is-fullscreen{color:var(--diva-white)}.diva-app-body{flex:1;align-items:stretch;gap:0;height:100%;min-height:0;display:flex;position:relative}.diva-app-body.is-fullscreen{flex:1;min-height:0}.diva-canvas-column{flex-direction:column;flex:1;gap:24px;min-height:0;display:flex}.diva-canvas-column.is-fullscreen{flex:1;height:100%;min-height:0}.diva-canvas-wrapper{flex:1;min-height:0;position:relative}.diva-canvas{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);border-radius:0;width:100%;height:100%;overflow:hidden}.diva-canvas.is-fullscreen{border-radius:0;flex:1;height:100%}.diva-canvas.has-collection{border-radius:0}.metadata-panel{height:100%;padding:12px;overflow:auto}.metadata-body{flex-direction:column;gap:10px;display:flex}.metadata-item{flex-direction:column;gap:4px;display:flex}.metadata-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}.metadata-value{font-size:var(--diva-font-lg);color:var(--diva-text-muted);line-height:1.4}.contents-empty{font-size:var(--diva-font-lg);color:var(--diva-text-muted);padding-left:12px}.sidebar-resizer,.collection-resizer{width:12px;font-size:var(--diva-font-xl);color:var(--diva-white);background-color:var(--diva-text-muted);cursor:ew-resize;user-select:none;touch-action:none;flex:0 0 12px;justify-content:center;align-self:stretch;align-items:center;line-height:1;display:flex}.sidebar-resizer.is-hidden,.collection-resizer.is-hidden{display:none}.sidebar-panel.is-fullscreen,.collection-panel.is-fullscreen{border-radius:0;height:100%}.sidebar-panel.is-hidden,.collection-panel.is-hidden{opacity:0;pointer-events:none;border-width:0;padding:0;overflow:hidden}.required-statement-dock{justify-content:flex-end;width:100%;margin-top:12px;padding-right:8px;display:flex}.required-statement{font-size:var(--diva-font-md);color:var(--diva-text-muted);text-align:right;min-width:250px;max-width:20vw;line-height:1.4}.diva-scrollbar-track{background:var(--diva-surface);border:1px solid var(--diva-border);z-index:100;border-radius:0;width:12px;position:absolute;top:4px;bottom:4px;right:4px}.diva-scrollbar-thumb{background:var(--diva-text-muted);cursor:pointer;border-radius:0;min-height:30px;position:absolute;left:1px;right:1px}.diva-scrollbar-thumb:hover{background:var(--diva-text-primary)}.diva-scrollbar-thumb:active{background:var(--diva-dark-border)}.throbber-overlay{pointer-events:none;justify-content:center;align-items:center;display:flex;position:absolute;inset:0}.viewer-zoom-indicator{z-index:30;pointer-events:none;font-size:var(--diva-font-sm);color:var(--diva-white);background-color:#0000008c;border-radius:0;padding:4px 8px;font-weight:600;position:absolute;bottom:12px;left:12px}.throbber{background-color:var(--diva-white);width:64px;height:64px;box-shadow:0 8px 16px var(--diva-shadow-dark);border-radius:0;flex-wrap:wrap;padding:8px;display:flex}.throbber-cube{background-color:var(--diva-accent);width:16px;height:16px;animation-name:diva-cube-grid;animation-duration:1.3s;animation-timing-function:ease-in-out;animation-iteration-count:infinite}@keyframes diva-cube-grid{0%{transform:scale(1)}35%{transform:scale(0)}70%{transform:scale(1)}to{transform:scale(1)}}@media (width<=720px){.diva-app{padding:12px}.diva-app-body{flex-direction:column;gap:12px}.sidebar-resizer,.collection-resizer{display:none}}.diva-image-unavailable{background:color-mix(in srgb, var(--diva-background-color,#fff) 92%, transparent);box-sizing:border-box;text-align:center;border:1px solid #999;flex-direction:column;justify-content:center;align-items:center;padding:1rem;display:flex}.diva-image-unavailable button{cursor:pointer}.sidebar-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0;flex-direction:column;width:320px;height:100%;min-height:0;display:flex;overflow:hidden}.sidebar-tabs{border:1px solid var(--diva-surface);background-color:var(--diva-surface);border-radius:0;display:flex}.sidebar-tab-button{font-size:var(--diva-font-md);text-transform:uppercase;cursor:pointer;color:var(--diva-text-muted);background-color:#0000;border:none;flex:1;padding:10px 12px}.sidebar-tab-button.is-active{background-color:var(--diva-white);font-weight:600}.sidebar-content{background-color:var(--diva-page-bg);flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}.sidebar-pane{flex:1;width:100%;min-height:0}.sidebar-pane.is-hidden{display:none}.thumbs{scroll-behavior:smooth;background-color:var(--diva-dark-bg);flex:1;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:10px;width:100%;height:100%;min-height:0;padding:12px;display:grid;overflow-y:auto}.thumbs.is-fullscreen{height:100%}.thumbs-item{border:1px solid var(--diva-dark-border);text-align:left;flex-direction:column;justify-content:flex-start;align-items:stretch;max-width:none;display:flex}.thumbs-item:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.thumbs-item.is-active{border-color:var(--diva-accent-light);box-shadow:0 0 0 var(--diva-shadow-focus);background-color:var(--diva-dark-bg);outline:2px solid var(--diva-accent-light);outline-offset:2px}.thumbs-image{border-radius:0;width:100%;height:auto;display:block}.thumbs-image--protected{background:var(--diva-dark-bg);min-height:96px}.thumbs-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted-on-dark);margin-top:6px;line-height:1.3}.thumbs-label.is-active{color:var(--diva-white)}.contents-panel{height:100%;padding:12px;overflow:auto}.contents-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:10px;font-weight:600}.contents-view-tabs{gap:8px;margin-bottom:12px;display:flex}.contents-view-button{background-color:var(--diva-surface);border:1px solid var(--diva-border);font-size:var(--diva-font-sm);color:var(--diva-text-muted);cursor:pointer;border-radius:0;padding:4px 10px}.contents-view-button.is-active{background-color:var(--diva-white);border-color:var(--diva-accent);color:var(--diva-text-primary)}.contents-list-nested{margin-top:6px;padding-left:16px}.contents-item{margin-bottom:6px}.contents-meta{border:1px solid var(--diva-dark-border);margin-top:6px;padding:8px}.contents-button:hover{color:var(--diva-accent)}@media (width<=720px){.sidebar-panel{border-radius:0;height:auto;width:100%!important}.sidebar-panel.is-overlay{z-index:100;width:100%;height:100%;box-shadow:0 12px 24px var(--diva-shadow-dark);border-radius:0;position:absolute;inset:0}.sidebar-panel.is-mobile-hidden{display:none}.thumbs{grid-template-columns:repeat(3,minmax(0,1fr));width:100%;height:auto;overflow:auto hidden}.thumbs-item{min-width:120px}}.canvas-toolbar-stack{flex-direction:column;gap:4px;width:100%;min-width:0;display:flex}.canvas-toolbar{align-items:center;width:100%;margin-bottom:0;display:flex}.canvas-toolbar-section{flex:none;align-items:center;gap:5px;min-width:0;display:flex}.canvas-toolbar-section.is-right{flex:none;margin-left:auto}.canvas-toolbar-end{align-items:center;gap:8px;min-width:0;margin-left:auto;display:flex}.canvas-toolbar-end .canvas-toolbar-section.is-right{margin-left:0}.canvas-toolbar-item{flex:none;justify-content:center;align-items:center;width:34px;height:34px;display:flex;position:relative}.canvas-toolbar-button{width:30px;height:30px;color:var(--diva-toolbar-button-icon);box-shadow:none;cursor:pointer;background-color:#e2e2e2f0;border:1px solid #2c2d3373;border-radius:0;justify-content:center;align-items:center;padding:6px;display:flex}.canvas-toolbar-button svg{flex:none;width:16px;height:16px}.canvas-toolbar-button:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.canvas-toolbar-button:hover{border-color:var(--diva-toolbar-button-icon);background-color:#d6d6d6fa}.canvas-toolbar-button.is-fullscreen{color:var(--diva-white);background-color:#52586294;border-color:#ffffff85}.canvas-toolbar-button.is-fullscreen:hover{border-color:var(--diva-white);background-color:#606874b8}.canvas-toolbar-button.is-disabled{opacity:.4;cursor:not-allowed}.canvas-toolbar-button.is-disabled:hover{background-color:#e2e2e2f0;border-color:#2c2d3373}.canvas-toolbar-button.is-fullscreen.is-disabled:hover{background-color:#52586294;border-color:#ffffff85}.canvas-toolbar-item:after{z-index:80;max-width:160px;color:var(--diva-white);content:attr(data-tooltip);font-size:var(--diva-font-xs);letter-spacing:.02em;opacity:0;pointer-events:none;text-align:center;visibility:hidden;white-space:normal;word-break:normal;background-color:#1c1d22f2;border:1px solid #ffffff2e;border-radius:0;width:max-content;padding:5px 7px;font-weight:600;line-height:1.2;transition:opacity .12s,transform .12s;position:absolute;top:calc(100% + 7px);left:50%;transform:translate(-50%,-3px);box-shadow:0 4px 10px #0003}.canvas-toolbar-item:hover:after,.canvas-toolbar-item:has(.canvas-toolbar-button:focus-visible):after{opacity:1;visibility:visible;transform:translate(-50%)}.canvas-toolbar-section.is-right .canvas-toolbar-item:last-child:after{left:auto;right:0;transform:translateY(-3px)}.canvas-toolbar-section.is-right .canvas-toolbar-item:last-child:hover:after,.canvas-toolbar-section.is-right .canvas-toolbar-item:last-child:has(.canvas-toolbar-button:focus-visible):after{transform:translate(0)}.canvas-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-align:left;white-space:normal;overflow-wrap:anywhere;word-break:break-word;width:100%}.canvas-toolbar-end .canvas-label{overflow-wrap:normal;text-align:right;white-space:nowrap;word-break:normal;flex:auto;width:auto;min-width:0;max-width:min(42vw,42rem);overflow:hidden}.canvas-label.is-fullscreen{color:var(--diva-white)}.status{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:0}.status.is-error{color:var(--diva-danger)}@media (width<=720px){.canvas-toolbar{flex-wrap:wrap;gap:5px}.canvas-toolbar-end{justify-content:flex-end;width:100%;margin-left:0}.canvas-toolbar-item{width:32px;height:32px}.canvas-toolbar-button{width:28px;height:28px;padding:6px}.canvas-toolbar-button svg{width:15px;height:15px}.canvas-label,.status{display:none}}.modal-overlay{background-color:var(--diva-overlay-bg);z-index:100;justify-content:center;align-items:center;padding:24px;display:flex;position:fixed;inset:0}.viewer-status-overlay{background-color:var(--diva-overlay-bg);z-index:40;justify-content:center;align-items:center;padding:24px;display:flex;position:absolute;inset:0}.modal-overlay.is-fullscreen{padding:0}.modal{background-color:var(--diva-page-bg);color:var(--diva-text-primary);width:min(1440px,96vw);max-height:90vh;box-shadow:0 20px 40px var(--diva-shadow-modal);border-radius:0;flex-direction:column;display:flex}.modal.is-narrow{width:min(960px,94vw)}.modal.is-page-view{height:80vh;max-height:80vh}.modal.is-fullscreen{border-radius:0;width:100vw;height:100vh;max-height:100vh}.modal-header{justify-content:space-between;align-items:center;padding:16px 20px 0;display:flex}.modal-actions{gap:8px;display:flex}.modal-close-action .canvas-toolbar-button{color:var(--diva-danger);box-shadow:none;-webkit-backdrop-filter:none;background-color:#0000;border:none;width:auto;height:auto;padding:2px}.modal-close-action .canvas-toolbar-button:hover{background-color:#d32f2f1f;border-color:#0000}.modal-close-action .canvas-toolbar-item{width:32px}.modal-title-stack{flex-direction:column;gap:4px;display:flex}.modal-title{font-size:var(--diva-font-lg);font-weight:600}.modal-subtitle{font-size:var(--diva-font-lg);color:var(--diva-text-primary)}.modal-subtitle.is-muted{font-size:var(--diva-font-md)}.modal-body{flex:1;grid-template-columns:minmax(0,1fr) 240px;gap:16px;min-height:0;padding:16px 20px 20px;display:grid}.modal-body.is-no-gap{gap:0}.modal-body.is-two-column{grid-template-columns:minmax(0,1fr) 200px;align-items:start}.modal-body.is-no-sidebar{grid-template-columns:minmax(0,1fr)}.modal-body.is-fullscreen{flex:1;min-height:0}.modal-body.is-with-choices{grid-template-columns:120px minmax(0,1fr) 240px}.modal-body.is-with-choices-no-sidebar{grid-template-columns:120px minmax(0,1fr)}.modal-viewer{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);height:100%;overflow:hidden}.modal-viewer.is-fullscreen{border-radius:0;height:100%}.modal-viewer.is-outer-left{border-radius:0}.modal-canvas{width:100%;height:100%;display:block}.modal-sidebar{background-color:var(--diva-white);border-top:1px solid var(--diva-border);border-right:1px solid var(--diva-border);border-bottom:1px solid var(--diva-border);border-radius:0;padding:16px;overflow:auto}.manifest-info-logo-wrap{text-align:center;flex-direction:column;align-items:center;gap:8px;display:flex}.manifest-info-logo{width:100%;max-width:180px;height:auto}.page-view-choices{background-color:var(--diva-dark-bg);border-radius:0;flex-direction:column;gap:8px;padding:8px;display:flex;overflow:auto}.page-view-choice{border:2px solid #0000;flex-direction:column;gap:4px;display:flex}.page-view-choice:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.page-view-choice:hover{background-color:var(--diva-dark-bg)}.page-view-choice.is-active{border-color:var(--diva-accent-light);background-color:var(--diva-dark-bg)}.page-view-choice-thumb{border-radius:0;width:100%;height:auto;display:block}.page-view-choice-thumb--protected{background:var(--diva-dark-bg);min-height:72px}.page-view-choice-label{font-size:var(--diva-font-xs);color:var(--diva-text-muted);text-overflow:ellipsis;white-space:nowrap;line-height:1.2;overflow:hidden}.filter-group{border-bottom:1px solid var(--diva-border);margin-bottom:12px;padding-bottom:12px}.filter-title-button{text-align:left;cursor:pointer;width:100%;font-size:var(--diva-font-sm);text-transform:uppercase;letter-spacing:.08em;color:var(--diva-text-muted);background-color:#0000;border:none;align-items:center;gap:8px;margin-bottom:8px;padding:0;font-weight:600;display:flex}.filter-title-button.is-collapsed{margin-bottom:0}.filter-title-icon{border-top:4px solid #0000;border-bottom:4px solid #0000;border-left:6px solid var(--diva-text-muted);width:0;height:0;transition:transform .15s;display:inline-block}.filter-title-icon.is-expanded{transform:rotate(90deg)}.filter-row{flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle{font-size:var(--diva-font-md);align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle.is-inline{margin-bottom:0}.filter-range-group{flex-direction:column;gap:6px;margin-bottom:10px;display:flex}.filter-range-header{justify-content:space-between;align-items:center;gap:8px;display:flex}.filter-range-header-right{align-items:center;gap:8px;display:flex}.filter-range-input{width:100%}.filter-value{font-size:var(--diva-font-sm);color:var(--diva-text-muted);text-align:right;width:40px}.filter-reset{font-size:var(--diva-font-xs);background-color:var(--diva-surface);border:1px solid var(--diva-border);cursor:pointer;color:var(--diva-text-muted);border-radius:0;padding:2px 6px}.filter-reset:hover{background-color:var(--diva-border)}.filter-json{width:100%;min-height:120px;font-size:var(--diva-font-sm);border:1px solid var(--diva-border);background-color:var(--diva-white);resize:vertical;border-radius:0;padding:6px 8px;font-family:Menlo,Monaco,Consolas,Liberation Mono,monospace}.filter-json-error{font-size:var(--diva-font-sm);color:var(--diva-danger);margin-top:4px}.filter-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted)}.filter-select{border:1px solid var(--diva-border);background-color:var(--diva-white);font-size:var(--diva-font-sm);border-radius:0;padding:4px 6px}.filter-color-input{border:1px solid var(--diva-border);background-color:var(--diva-white);border-radius:0;width:42px;height:28px;padding:0}.diva-auth-overlay{z-index:10000;background:#0000008c;place-items:center;display:grid;position:fixed;inset:0}.diva-auth-dialog{box-sizing:border-box;border:1px solid var(--diva-border,#aaa);background:var(--diva-background,#fff);width:min(30rem,100vw - 2rem);color:var(--diva-text-primary,#222);border-radius:0;padding:1.25rem}.diva-auth-dialog button{min-height:2.25rem;color:inherit;cursor:pointer;background:0 0;border:1px solid;border-radius:0;padding:.35rem .8rem}.diva-auth-dialog button:focus-visible{outline:2px solid var(--diva-accent,#1769aa);outline-offset:2px}.collection-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0;flex-direction:column;height:100%;min-height:0;display:flex;overflow:hidden}.collection-header{background-color:var(--diva-surface);border-bottom:1px solid var(--diva-border);border-radius:0;padding:12px}.collection-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:4px;font-weight:600}.collection-summary{font-size:var(--diva-font-md);color:var(--diva-text-muted);line-height:1.4}.collection-tree-item{padding-left:12px}.collection-node-button{align-items:center;gap:6px;width:100%;padding:6px 8px;display:flex}.collection-expand-icon{flex-shrink:0;justify-content:center;align-items:center;width:16px;height:16px;display:flex}.manifest-tree-item{padding:6px 8px 6px 30px}.manifest-tree-item.is-active{background-color:var(--diva-border);font-weight:600}.sidebar-pane.is-scroll{overflow-y:auto}@media (width<=720px){.collection-panel{border-radius:0;width:100%;height:auto}}";
+  var diva_default = ":root{--diva-accent:#5a6bff;--diva-accent-light:#9aa4ff;--diva-border:#d9d4ce;--diva-danger:#d32f2f;--diva-dark-bg:#1c1d22;--diva-dark-border:#2c2d33;--diva-overlay-bg:#10111499;--diva-page-bg:#f7f5f1;--diva-shadow-dark:#00000026;--diva-shadow-focus:#9aa4ff59;--diva-shadow-modal:#00000040;--diva-surface:#e6e1dc;--diva-text-muted:#5c5a55;--diva-text-muted-on-dark:#ffffffb3;--diva-text-primary:#1b1b1b;--diva-toolbar-button-bg:#5258626b;--diva-toolbar-button-bg-hover:#5c636e85;--diva-toolbar-button-bg-fullscreen:#52586285;--diva-toolbar-button-bg-fullscreen-hover:#6068749e;--diva-toolbar-button-border:#ffffff59;--diva-toolbar-button-border-hover:#ffffff73;--diva-toolbar-button-border-fullscreen-hover:#fff9;--diva-toolbar-button-icon:#2c2d33;--diva-toolbar-button-shadow:inset 0 1px 0 #ffffff8c, inset 0 -1px 0 #ffffff2e;--diva-toolbar-button-shadow-hover:inset 0 1px 0 #ffffffb3, inset 0 -1px 0 #ffffff3d;--diva-white:#fff;--diva-font-lg:16px;--diva-font-md:13px;--diva-font-sm:11px;--diva-font-xs:10px;--diva-font-xl:20px;color-scheme:light}*{box-sizing:border-box}.list-reset{margin:0;padding:0;list-style:none}.ui-button{text-align:left;cursor:pointer;color:var(--diva-text-primary);font-size:var(--diva-font-lg);background-color:#0000;border:none;padding:0}.ui-button:hover{background-color:var(--diva-surface)}.ui-card{cursor:pointer;border-radius:0;width:100%;padding:6px}.ui-card--dark{background-color:var(--diva-dark-bg)}.diva-app{flex-direction:column;flex:1;height:100%;min-height:0;padding:12px 24px;display:flex}.diva-app.is-fullscreen{height:100vh;min-height:100vh;padding:0}.diva-app-header{font-size:var(--diva-font-lg);align-items:center;gap:12px;margin-bottom:8px;font-weight:600;display:flex}.diva-app-title{font-size:var(--diva-font-xl);text-align:left;color:var(--diva-text-primary);margin-bottom:6px;font-weight:600}.diva-app-title.is-fullscreen{color:var(--diva-white)}.diva-app-body{flex:1;align-items:stretch;gap:0;height:100%;min-height:0;display:flex;position:relative}.diva-app-body.is-fullscreen{flex:1;min-height:0}.diva-canvas-column{flex-direction:column;flex:1;gap:24px;min-height:0;display:flex}.diva-canvas-column.is-fullscreen{flex:1;height:100%;min-height:0}.diva-canvas-wrapper{flex:1;min-height:0;position:relative}.diva-canvas{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);border-radius:0;width:100%;height:100%;overflow:hidden}.diva-canvas.is-fullscreen{border-radius:0;flex:1;height:100%}.diva-canvas.has-collection{border-radius:0}.metadata-panel{height:100%;padding:12px;overflow:auto}.metadata-body{flex-direction:column;gap:10px;display:flex}.metadata-item{flex-direction:column;gap:4px;display:flex}.metadata-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}.metadata-value{font-size:var(--diva-font-lg);color:var(--diva-text-muted);line-height:1.4}.contents-empty{font-size:var(--diva-font-lg);color:var(--diva-text-muted);padding-left:12px}.sidebar-resizer,.collection-resizer{width:12px;font-size:var(--diva-font-xl);color:var(--diva-white);background-color:var(--diva-text-muted);cursor:ew-resize;user-select:none;touch-action:none;flex:0 0 12px;justify-content:center;align-self:stretch;align-items:center;line-height:1;display:flex}.sidebar-resizer.is-hidden,.collection-resizer.is-hidden{display:none}.sidebar-panel.is-fullscreen,.collection-panel.is-fullscreen{border-radius:0;height:100%}.sidebar-panel.is-hidden,.collection-panel.is-hidden{opacity:0;pointer-events:none;border-width:0;padding:0;overflow:hidden}.required-statement-dock{justify-content:flex-end;width:100%;margin-top:12px;padding-right:8px;display:flex}.required-statement{font-size:var(--diva-font-md);color:var(--diva-text-muted);text-align:right;min-width:250px;max-width:20vw;line-height:1.4}.diva-scrollbar-track{background:var(--diva-surface);border:1px solid var(--diva-border);z-index:100;border-radius:0;width:12px;position:absolute;top:4px;bottom:4px;right:4px}.diva-scrollbar-thumb{background:var(--diva-text-muted);cursor:pointer;border-radius:0;min-height:30px;position:absolute;left:1px;right:1px}.diva-scrollbar-thumb:hover{background:var(--diva-text-primary)}.diva-scrollbar-thumb:active{background:var(--diva-dark-border)}.throbber-overlay{pointer-events:none;justify-content:center;align-items:center;display:flex;position:absolute;inset:0}.viewer-zoom-indicator{z-index:30;pointer-events:none;font-size:var(--diva-font-sm);color:var(--diva-white);background-color:#0000008c;border-radius:0;padding:4px 8px;font-weight:600;position:absolute;bottom:12px;left:12px}.throbber{background-color:var(--diva-white);width:64px;height:64px;box-shadow:0 8px 16px var(--diva-shadow-dark);border-radius:0;flex-wrap:wrap;padding:8px;display:flex}.throbber-cube{background-color:var(--diva-accent);width:16px;height:16px;animation-name:diva-cube-grid;animation-duration:1.3s;animation-timing-function:ease-in-out;animation-iteration-count:infinite}@keyframes diva-cube-grid{0%{transform:scale(1)}35%{transform:scale(0)}70%{transform:scale(1)}to{transform:scale(1)}}@media (width<=720px){.diva-app{padding:12px}.diva-app-body{flex-direction:column;gap:12px}.sidebar-resizer,.collection-resizer{display:none}}.diva-image-unavailable{background:color-mix(in srgb, var(--diva-background-color,#fff) 92%, transparent);box-sizing:border-box;text-align:center;border:1px solid #999;flex-direction:column;justify-content:center;align-items:center;padding:1rem;display:flex}.diva-image-unavailable button{cursor:pointer}.sidebar-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0;flex-direction:column;width:320px;height:100%;min-height:0;display:flex;overflow:hidden}.sidebar-tabs{border:1px solid var(--diva-surface);background-color:var(--diva-surface);border-radius:0;display:flex}.sidebar-tab-button{font-size:var(--diva-font-md);text-transform:uppercase;cursor:pointer;color:var(--diva-text-muted);background-color:#0000;border:none;flex:1;padding:10px 12px}.sidebar-tab-button.is-active{background-color:var(--diva-white);font-weight:600}.sidebar-content{background-color:var(--diva-page-bg);flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}.sidebar-pane{flex:1;width:100%;min-height:0}.sidebar-pane.is-hidden{display:none}.thumbs{scroll-behavior:smooth;background-color:var(--diva-dark-bg);flex:1;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:10px;width:100%;height:100%;min-height:0;padding:12px;display:grid;overflow-y:auto}.thumbs.is-fullscreen{height:100%}.thumbs-item{border:1px solid var(--diva-dark-border);text-align:left;flex-direction:column;justify-content:flex-start;align-items:stretch;max-width:none;display:flex}.thumbs-item:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.thumbs-item.is-active{border-color:var(--diva-accent-light);box-shadow:0 0 0 var(--diva-shadow-focus);background-color:var(--diva-dark-bg);outline:2px solid var(--diva-accent-light);outline-offset:2px}.thumbs-image{border-radius:0;width:100%;height:auto;display:block}.thumbs-lazy-image{background:var(--diva-dark-bg);width:100%;min-height:96px;display:block}.thumbs-image--protected{background:var(--diva-dark-bg);min-height:96px}.thumbs-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted-on-dark);margin-top:6px;line-height:1.3}.thumbs-label.is-active{color:var(--diva-white)}.contents-panel{height:100%;padding:12px;overflow:auto}.contents-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:10px;font-weight:600}.contents-view-tabs{gap:8px;margin-bottom:12px;display:flex}.contents-view-button{background-color:var(--diva-surface);border:1px solid var(--diva-border);font-size:var(--diva-font-sm);color:var(--diva-text-muted);cursor:pointer;border-radius:0;padding:4px 10px}.contents-view-button.is-active{background-color:var(--diva-white);border-color:var(--diva-accent);color:var(--diva-text-primary)}.contents-list-nested{margin-top:6px;padding-left:16px}.contents-item{margin-bottom:6px}.contents-meta{border:1px solid var(--diva-dark-border);margin-top:6px;padding:8px}.contents-button:hover{color:var(--diva-accent)}@media (width<=720px){.sidebar-panel{border-radius:0;height:auto;width:100%!important}.sidebar-panel.is-overlay{z-index:100;width:100%;height:100%;box-shadow:0 12px 24px var(--diva-shadow-dark);border-radius:0;position:absolute;inset:0}.sidebar-panel.is-mobile-hidden{display:none}.thumbs{grid-template-columns:repeat(3,minmax(0,1fr));width:100%;height:auto;overflow:auto hidden}.thumbs-item{min-width:120px}}.canvas-toolbar-stack{flex-direction:column;gap:4px;width:100%;min-width:0;display:flex}.canvas-toolbar{align-items:center;width:100%;margin-bottom:0;display:flex}.canvas-toolbar-section{flex:none;align-items:center;gap:5px;min-width:0;display:flex}.canvas-toolbar-section.is-right{flex:none;margin-left:auto}.canvas-toolbar-end{align-items:center;gap:8px;min-width:0;margin-left:auto;display:flex}.canvas-toolbar-end .canvas-toolbar-section.is-right{margin-left:0}.canvas-toolbar-item{flex:none;justify-content:center;align-items:center;width:34px;height:34px;display:flex;position:relative}.canvas-toolbar-button{width:30px;height:30px;color:var(--diva-toolbar-button-icon);box-shadow:none;cursor:pointer;background-color:#e2e2e2f0;border:1px solid #2c2d3373;border-radius:0;justify-content:center;align-items:center;padding:6px;display:flex}.canvas-toolbar-button svg{flex:none;width:16px;height:16px}.canvas-toolbar-button:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.canvas-toolbar-button:hover{border-color:var(--diva-toolbar-button-icon);background-color:#d6d6d6fa}.canvas-toolbar-button.is-fullscreen{color:var(--diva-white);background-color:#52586294;border-color:#ffffff85}.canvas-toolbar-button.is-fullscreen:hover{border-color:var(--diva-white);background-color:#606874b8}.canvas-toolbar-button.is-disabled{opacity:.4;cursor:not-allowed}.canvas-toolbar-button.is-disabled:hover{background-color:#e2e2e2f0;border-color:#2c2d3373}.canvas-toolbar-button.is-fullscreen.is-disabled:hover{background-color:#52586294;border-color:#ffffff85}.canvas-toolbar-item:after{z-index:80;max-width:160px;color:var(--diva-white);content:attr(data-tooltip);font-size:var(--diva-font-xs);letter-spacing:.02em;opacity:0;pointer-events:none;text-align:center;visibility:hidden;white-space:normal;word-break:normal;background-color:#1c1d22f2;border:1px solid #ffffff2e;border-radius:0;width:max-content;padding:5px 7px;font-weight:600;line-height:1.2;transition:opacity .12s,transform .12s;position:absolute;top:calc(100% + 7px);left:50%;transform:translate(-50%,-3px);box-shadow:0 4px 10px #0003}.canvas-toolbar-item:hover:after,.canvas-toolbar-item:has(.canvas-toolbar-button:focus-visible):after{opacity:1;visibility:visible;transform:translate(-50%)}.canvas-toolbar-section.is-right .canvas-toolbar-item:last-child:after{left:auto;right:0;transform:translateY(-3px)}.canvas-toolbar-section.is-right .canvas-toolbar-item:last-child:hover:after,.canvas-toolbar-section.is-right .canvas-toolbar-item:last-child:has(.canvas-toolbar-button:focus-visible):after{transform:translate(0)}.canvas-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-align:left;white-space:normal;overflow-wrap:anywhere;word-break:break-word;width:100%}.canvas-toolbar-end .canvas-label{overflow-wrap:normal;text-align:right;white-space:nowrap;word-break:normal;flex:auto;width:auto;min-width:0;max-width:min(42vw,42rem);overflow:hidden}.canvas-label.is-fullscreen{color:var(--diva-white)}.status{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:0}.status.is-error{color:var(--diva-danger)}@media (width<=720px){.canvas-toolbar{flex-wrap:wrap;gap:5px}.canvas-toolbar-end{justify-content:flex-end;width:100%;margin-left:0}.canvas-toolbar-item{width:32px;height:32px}.canvas-toolbar-button{width:28px;height:28px;padding:6px}.canvas-toolbar-button svg{width:15px;height:15px}.canvas-label,.status{display:none}}.modal-overlay{background-color:var(--diva-overlay-bg);z-index:100;justify-content:center;align-items:center;padding:24px;display:flex;position:fixed;inset:0}.viewer-status-overlay{background-color:var(--diva-overlay-bg);z-index:40;justify-content:center;align-items:center;padding:24px;display:flex;position:absolute;inset:0}.modal-overlay.is-fullscreen{padding:0}.modal{background-color:var(--diva-page-bg);color:var(--diva-text-primary);width:min(1440px,96vw);max-height:90vh;box-shadow:0 20px 40px var(--diva-shadow-modal);border-radius:0;flex-direction:column;display:flex}.modal.is-narrow{width:min(960px,94vw)}.modal.is-page-view{height:80vh;max-height:80vh}.modal.is-fullscreen{border-radius:0;width:100vw;height:100vh;max-height:100vh}.modal-header{justify-content:space-between;align-items:center;padding:16px 20px 0;display:flex}.modal-actions{gap:8px;display:flex}.modal-close-action .canvas-toolbar-button{color:var(--diva-danger);box-shadow:none;-webkit-backdrop-filter:none;background-color:#0000;border:none;width:auto;height:auto;padding:2px}.modal-close-action .canvas-toolbar-button:hover{background-color:#d32f2f1f;border-color:#0000}.modal-close-action .canvas-toolbar-item{width:32px}.modal-title-stack{flex-direction:column;gap:4px;display:flex}.modal-title{font-size:var(--diva-font-lg);font-weight:600}.modal-subtitle{font-size:var(--diva-font-lg);color:var(--diva-text-primary)}.modal-subtitle.is-muted{font-size:var(--diva-font-md)}.modal-body{flex:1;grid-template-columns:minmax(0,1fr) 240px;gap:16px;min-height:0;padding:16px 20px 20px;display:grid}.modal-body.is-no-gap{gap:0}.modal-body.is-two-column{grid-template-columns:minmax(0,1fr) 200px;align-items:start}.modal-body.is-no-sidebar{grid-template-columns:minmax(0,1fr)}.modal-body.is-fullscreen{flex:1;min-height:0}.modal-body.is-with-choices{grid-template-columns:120px minmax(0,1fr) 240px}.modal-body.is-with-choices-no-sidebar{grid-template-columns:120px minmax(0,1fr)}.modal-viewer{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);height:100%;overflow:hidden}.modal-viewer.is-fullscreen{border-radius:0;height:100%}.modal-viewer.is-outer-left{border-radius:0}.modal-canvas{width:100%;height:100%;display:block}.modal-sidebar{background-color:var(--diva-white);border-top:1px solid var(--diva-border);border-right:1px solid var(--diva-border);border-bottom:1px solid var(--diva-border);border-radius:0;padding:16px;overflow:auto}.manifest-info-logo-wrap{text-align:center;flex-direction:column;align-items:center;gap:8px;display:flex}.manifest-info-logo{width:100%;max-width:180px;height:auto}.page-view-choices{background-color:var(--diva-dark-bg);border-radius:0;flex-direction:column;gap:8px;padding:8px;display:flex;overflow:auto}.page-view-choice{border:2px solid #0000;flex-direction:column;gap:4px;display:flex}.page-view-choice:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.page-view-choice:hover{background-color:var(--diva-dark-bg)}.page-view-choice.is-active{border-color:var(--diva-accent-light);background-color:var(--diva-dark-bg)}.page-view-choice-thumb{border-radius:0;width:100%;height:auto;display:block}.page-view-choice-thumb--protected{background:var(--diva-dark-bg);min-height:72px}.page-view-choice-label{font-size:var(--diva-font-xs);color:var(--diva-text-muted);text-overflow:ellipsis;white-space:nowrap;line-height:1.2;overflow:hidden}.filter-group{border-bottom:1px solid var(--diva-border);margin-bottom:12px;padding-bottom:12px}.filter-title-button{text-align:left;cursor:pointer;width:100%;font-size:var(--diva-font-sm);text-transform:uppercase;letter-spacing:.08em;color:var(--diva-text-muted);background-color:#0000;border:none;align-items:center;gap:8px;margin-bottom:8px;padding:0;font-weight:600;display:flex}.filter-title-button.is-collapsed{margin-bottom:0}.filter-title-icon{border-top:4px solid #0000;border-bottom:4px solid #0000;border-left:6px solid var(--diva-text-muted);width:0;height:0;transition:transform .15s;display:inline-block}.filter-title-icon.is-expanded{transform:rotate(90deg)}.filter-row{flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle{font-size:var(--diva-font-md);align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle.is-inline{margin-bottom:0}.filter-range-group{flex-direction:column;gap:6px;margin-bottom:10px;display:flex}.filter-range-header{justify-content:space-between;align-items:center;gap:8px;display:flex}.filter-range-header-right{align-items:center;gap:8px;display:flex}.filter-range-input{width:100%}.filter-value{font-size:var(--diva-font-sm);color:var(--diva-text-muted);text-align:right;width:40px}.filter-reset{font-size:var(--diva-font-xs);background-color:var(--diva-surface);border:1px solid var(--diva-border);cursor:pointer;color:var(--diva-text-muted);border-radius:0;padding:2px 6px}.filter-reset:hover{background-color:var(--diva-border)}.filter-json{width:100%;min-height:120px;font-size:var(--diva-font-sm);border:1px solid var(--diva-border);background-color:var(--diva-white);resize:vertical;border-radius:0;padding:6px 8px;font-family:Menlo,Monaco,Consolas,Liberation Mono,monospace}.filter-json-error{font-size:var(--diva-font-sm);color:var(--diva-danger);margin-top:4px}.filter-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted)}.filter-select{border:1px solid var(--diva-border);background-color:var(--diva-white);font-size:var(--diva-font-sm);border-radius:0;padding:4px 6px}.filter-color-input{border:1px solid var(--diva-border);background-color:var(--diva-white);border-radius:0;width:42px;height:28px;padding:0}.diva-auth-overlay{z-index:10000;background:#0000008c;place-items:center;display:grid;position:fixed;inset:0}.diva-auth-dialog{box-sizing:border-box;border:1px solid var(--diva-border,#aaa);background:var(--diva-background,#fff);width:min(30rem,100vw - 2rem);color:var(--diva-text-primary,#222);border-radius:0;padding:1.25rem}.diva-auth-dialog button{min-height:2.25rem;color:inherit;cursor:pointer;background:0 0;border:1px solid;border-radius:0;padding:.35rem .8rem}.diva-auth-dialog button:focus-visible{outline:2px solid var(--diva-accent,#1769aa);outline-offset:2px}.collection-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0;flex-direction:column;height:100%;min-height:0;display:flex;overflow:hidden}.collection-header{background-color:var(--diva-surface);border-bottom:1px solid var(--diva-border);border-radius:0;padding:12px}.collection-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:4px;font-weight:600}.collection-summary{font-size:var(--diva-font-md);color:var(--diva-text-muted);line-height:1.4}.collection-tree-item{padding-left:12px}.collection-node-button{align-items:center;gap:6px;width:100%;padding:6px 8px;display:flex}.collection-expand-icon{flex-shrink:0;justify-content:center;align-items:center;width:16px;height:16px;display:flex}.manifest-tree-item{padding:6px 8px 6px 30px}.manifest-tree-item.is-active{background-color:var(--diva-border);font-weight:600}.sidebar-pane.is-scroll{overflow-y:auto}@media (width<=720px){.collection-panel{border-radius:0;width:100%;height:auto}}";
 
   // cache/elm-esm.js
   function F(arity, fun, wrapper) {
@@ -4850,7 +4999,6 @@
       }
     }
   );
-  var $elm$core$Basics$lt = _Utils_lt;
   var $elm$core$Array$initializeHelp = F5(
     function(fn, fromIndex, len, nodeList, tail) {
       initializeHelp:
@@ -13873,7 +14021,7 @@
     var sidebarState = flags.showSidebar ? $author$project$Model$SidebarThumbnails : $author$project$Model$SidebarHidden;
     var manifestUrl = flags.objectData;
     return _Utils_Tuple2(
-      { acceptHeaders: flags.acceptHeaders, auth: $author$project$Auth$init, collectionSidebarDrag: $elm$core$Maybe$Nothing, collectionSidebarVisible: true, collectionSidebarWidth: 400, contentsView: $author$project$Model$ContentsIndex, currentZoom: $elm$core$Maybe$Nothing, detectedLanguage: userLanguage, filterGroupExpanded: $elm$core$Set$empty, filters: $author$project$Filters$resetFilters, filtersJsonError: $elm$core$Maybe$Nothing, filtersJsonInput: "", fullscreen: false, hasTileSources: false, initialZoom: $elm$core$Maybe$Nothing, isMobile: false, isViewerLoading: false, manifestInfoOpen: false, manifestUrl, mobileSidebarOpen: false, pageViewFullscreen: false, pageViewImageIndex: 0, pageViewOpen: false, pageViewSidebarVisible: true, pages: _List_Nil, pendingThumbScroll: $elm$core$Maybe$Nothing, rangeIndexMap: $elm$core$Dict$empty, resourceResponse: $author$project$Model$ResourceLoading, response: $author$project$Model$Loading, rootElementId: flags.rootElementId, selectedIndex: $elm$core$Maybe$Nothing, selectedRangeId: $elm$core$Maybe$Nothing, shiftByOne: false, showTitle: flags.showTitle, sidebarDrag: $elm$core$Maybe$Nothing, sidebarState, sidebarWidth: 320, thumbsInstantScroll: false, viewMode: $author$project$Model$OneUp },
+      { acceptHeaders: flags.acceptHeaders, auth: $author$project$Auth$init, collectionSidebarDrag: $elm$core$Maybe$Nothing, collectionSidebarVisible: true, collectionSidebarWidth: 400, contentsView: $author$project$Model$ContentsIndex, currentZoom: $elm$core$Maybe$Nothing, detectedLanguage: userLanguage, filterGroupExpanded: $elm$core$Set$empty, filters: $author$project$Filters$resetFilters, filtersJsonError: $elm$core$Maybe$Nothing, filtersJsonInput: "", fullscreen: false, hasTileSources: false, initialZoom: $elm$core$Maybe$Nothing, isMobile: false, isViewerLoading: false, manifestInfoOpen: false, manifestUrl, mobileSidebarOpen: false, pageViewFullscreen: false, pageViewImageIndex: 0, pageViewOpen: false, pageViewSidebarVisible: true, pages: _List_Nil, pendingPublicResource: $elm$core$Maybe$Nothing, pendingThumbScroll: $elm$core$Maybe$Nothing, rangeIndexMap: $elm$core$Dict$empty, resourceResponse: $author$project$Model$ResourceLoading, response: $author$project$Model$Loading, rootElementId: flags.rootElementId, selectedIndex: $elm$core$Maybe$Nothing, selectedRangeId: $elm$core$Maybe$Nothing, shiftByOne: false, showTitle: flags.showTitle, sidebarDrag: $elm$core$Maybe$Nothing, sidebarState, sidebarWidth: 320, thumbsInstantScroll: false, viewMode: $author$project$Model$OneUp },
       $elm$core$Platform$Cmd$batch(
         _List_fromArray(
           [
@@ -13909,6 +14057,14 @@
   var $author$project$Msg$ClientNotifiedPageChangedInstant = function(a) {
     return { $: "ClientNotifiedPageChangedInstant", a };
   };
+  var $author$project$Msg$ClientRequestedLayoutMode = function(a) {
+    return { $: "ClientRequestedLayoutMode", a };
+  };
+  var $author$project$Msg$ClientRequestedResource = F2(
+    function(a, b) {
+      return { $: "ClientRequestedResource", a, b };
+    }
+  );
   var $author$project$Auth$Destroyed = { $: "Destroyed" };
   var $author$project$Auth$HttpFailed = F2(
     function(a, b) {
@@ -14116,12 +14272,11 @@
   );
   var $elm$core$Platform$Sub$batch = _Platform_batch;
   var $author$project$Main$fullscreenChanged = _Platform_incomingPort("fullscreenChanged", $elm$json$Json$Decode$bool);
+  var $author$project$Main$layoutModeRequested = _Platform_incomingPort("layoutModeRequested", $elm$json$Json$Decode$string);
   var $author$project$Auth$LogoutBlocked = function(a) {
     return { $: "LogoutBlocked", a };
   };
-  var $author$project$Auth$LogoutClosed = function(a) {
-    return { $: "LogoutClosed", a };
-  };
+  var $author$project$Auth$LogoutClosed = { $: "LogoutClosed" };
   var $author$project$Auth$LogoutOpened = function(a) {
     return { $: "LogoutOpened", a };
   };
@@ -14130,10 +14285,10 @@
       (function() {
         var _v0 = change.status;
         switch (_v0) {
+          case "closed":
+            return $author$project$Auth$LogoutClosed;
           case "opened":
             return $author$project$Auth$LogoutOpened(change.sessionId);
-          case "closed":
-            return $author$project$Auth$LogoutClosed(change.sessionId);
           default:
             return $author$project$Auth$LogoutBlocked(change.sessionId);
         }
@@ -14382,10 +14537,10 @@
       (function() {
         var _v0 = change.status;
         switch (_v0) {
-          case "opened":
-            return $author$project$Auth$PopupOpened(change.flowId);
           case "closed":
             return $author$project$Auth$PopupClosed(change.flowId);
+          case "opened":
+            return $author$project$Auth$PopupOpened(change.flowId);
           default:
             return $author$project$Auth$PopupBlocked(change.flowId);
         }
@@ -14411,6 +14566,24 @@
       A2($elm$json$Json$Decode$field, "sourceId", $elm$json$Json$Decode$string)
     )
   );
+  var $author$project$Main$resourceRequested = _Platform_incomingPort(
+    "resourceRequested",
+    A2(
+      $elm$json$Json$Decode$andThen,
+      function(url) {
+        return A2(
+          $elm$json$Json$Decode$andThen,
+          function(requestId) {
+            return $elm$json$Json$Decode$succeed(
+              { requestId, url }
+            );
+          },
+          A2($elm$json$Json$Decode$field, "requestId", $elm$json$Json$Decode$string)
+        );
+      },
+      A2($elm$json$Json$Decode$field, "url", $elm$json$Json$Decode$string)
+    )
+  );
   var $author$project$Main$viewerLoadingChanged = _Platform_incomingPort("viewerLoadingChanged", $elm$json$Json$Decode$bool);
   var $author$project$Main$zoomChanged = _Platform_incomingPort("zoomChanged", $elm$json$Json$Decode$float);
   var $author$project$Main$subscriptions = function(model) {
@@ -14424,6 +14597,12 @@
               );
             }
           ),
+          $author$project$Main$resourceRequested(
+            function(request) {
+              return A2($author$project$Msg$ClientRequestedResource, request.requestId, request.url);
+            }
+          ),
+          $author$project$Main$layoutModeRequested($author$project$Msg$ClientRequestedLayoutMode),
           $author$project$Main$resolveTileSourceCancelled(
             A2($elm$core$Basics$composeR, $author$project$Auth$Cancel, $author$project$Msg$AuthEvent)
           ),
@@ -14547,6 +14726,11 @@
   var $author$project$Msg$ServerRespondedWithManifestFromCollection = F2(
     function(a, b) {
       return { $: "ServerRespondedWithManifestFromCollection", a, b };
+    }
+  );
+  var $author$project$Msg$ServerRespondedWithRequestedResource = F3(
+    function(a, b, c) {
+      return { $: "ServerRespondedWithRequestedResource", a, b, c };
     }
   );
   var $author$project$Model$SidebarContents = { $: "SidebarContents" };
@@ -15579,6 +15763,514 @@
       return A2(config.set, nextValue, filters);
     }
   );
+  var $elm$json$Json$Encode$bool = _Json_wrap;
+  var $elm$core$Maybe$destruct = F3(
+    function(_default, func, maybe) {
+      if (maybe.$ === "Just") {
+        var a = maybe.a;
+        return func(a);
+      } else {
+        return _default;
+      }
+    }
+  );
+  var $elm$json$Json$Encode$float = _Json_wrap;
+  var $elm$json$Json$Encode$int = _Json_wrap;
+  var $elm$json$Json$Encode$null = _Json_encodeNull;
+  var $author$project$Main$filterPreviewUpdated = _Platform_outgoingPort(
+    "filterPreviewUpdated",
+    function($) {
+      return A3(
+        $elm$core$Maybe$destruct,
+        $elm$json$Json$Encode$null,
+        function($2) {
+          return $elm$json$Json$Encode$object(
+            _List_fromArray(
+              [
+                _Utils_Tuple2(
+                  "aspect",
+                  $elm$json$Json$Encode$float($2.aspect)
+                ),
+                _Utils_Tuple2(
+                  "filters",
+                  (function($3) {
+                    return $elm$json$Json$Encode$object(
+                      _List_fromArray(
+                        [
+                          _Utils_Tuple2(
+                            "adaptiveEnabled",
+                            $elm$json$Json$Encode$bool($3.adaptiveEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "adaptiveOffset",
+                            $elm$json$Json$Encode$int($3.adaptiveOffset)
+                          ),
+                          _Utils_Tuple2(
+                            "adaptiveWindow",
+                            $elm$json$Json$Encode$int($3.adaptiveWindow)
+                          ),
+                          _Utils_Tuple2(
+                            "altBlueGamma",
+                            $elm$json$Json$Encode$int($3.altBlueGamma)
+                          ),
+                          _Utils_Tuple2(
+                            "altBlueGammaEnabled",
+                            $elm$json$Json$Encode$bool($3.altBlueGammaEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "altBlueHue",
+                            $elm$json$Json$Encode$int($3.altBlueHue)
+                          ),
+                          _Utils_Tuple2(
+                            "altBlueHueEnabled",
+                            $elm$json$Json$Encode$bool($3.altBlueHueEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "altBlueHueWindow",
+                            $elm$json$Json$Encode$int($3.altBlueHueWindow)
+                          ),
+                          _Utils_Tuple2(
+                            "altBlueSigmoid",
+                            $elm$json$Json$Encode$int($3.altBlueSigmoid)
+                          ),
+                          _Utils_Tuple2(
+                            "altBlueSigmoidEnabled",
+                            $elm$json$Json$Encode$bool($3.altBlueSigmoidEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "altBlueVibrance",
+                            $elm$json$Json$Encode$int($3.altBlueVibrance)
+                          ),
+                          _Utils_Tuple2(
+                            "altBlueVibranceEnabled",
+                            $elm$json$Json$Encode$bool($3.altBlueVibranceEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "altGreenGamma",
+                            $elm$json$Json$Encode$int($3.altGreenGamma)
+                          ),
+                          _Utils_Tuple2(
+                            "altGreenGammaEnabled",
+                            $elm$json$Json$Encode$bool($3.altGreenGammaEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "altGreenHue",
+                            $elm$json$Json$Encode$int($3.altGreenHue)
+                          ),
+                          _Utils_Tuple2(
+                            "altGreenHueEnabled",
+                            $elm$json$Json$Encode$bool($3.altGreenHueEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "altGreenHueWindow",
+                            $elm$json$Json$Encode$int($3.altGreenHueWindow)
+                          ),
+                          _Utils_Tuple2(
+                            "altGreenSigmoid",
+                            $elm$json$Json$Encode$int($3.altGreenSigmoid)
+                          ),
+                          _Utils_Tuple2(
+                            "altGreenSigmoidEnabled",
+                            $elm$json$Json$Encode$bool($3.altGreenSigmoidEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "altGreenVibrance",
+                            $elm$json$Json$Encode$int($3.altGreenVibrance)
+                          ),
+                          _Utils_Tuple2(
+                            "altGreenVibranceEnabled",
+                            $elm$json$Json$Encode$bool($3.altGreenVibranceEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "altRedGamma",
+                            $elm$json$Json$Encode$int($3.altRedGamma)
+                          ),
+                          _Utils_Tuple2(
+                            "altRedGammaEnabled",
+                            $elm$json$Json$Encode$bool($3.altRedGammaEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "altRedHue",
+                            $elm$json$Json$Encode$int($3.altRedHue)
+                          ),
+                          _Utils_Tuple2(
+                            "altRedHueEnabled",
+                            $elm$json$Json$Encode$bool($3.altRedHueEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "altRedHueWindow",
+                            $elm$json$Json$Encode$int($3.altRedHueWindow)
+                          ),
+                          _Utils_Tuple2(
+                            "altRedSigmoid",
+                            $elm$json$Json$Encode$int($3.altRedSigmoid)
+                          ),
+                          _Utils_Tuple2(
+                            "altRedSigmoidEnabled",
+                            $elm$json$Json$Encode$bool($3.altRedSigmoidEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "altRedVibrance",
+                            $elm$json$Json$Encode$int($3.altRedVibrance)
+                          ),
+                          _Utils_Tuple2(
+                            "altRedVibranceEnabled",
+                            $elm$json$Json$Encode$bool($3.altRedVibranceEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "brightness",
+                            $elm$json$Json$Encode$int($3.brightness)
+                          ),
+                          _Utils_Tuple2(
+                            "brightnessEnabled",
+                            $elm$json$Json$Encode$bool($3.brightnessEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "ccBlue",
+                            $elm$json$Json$Encode$int($3.ccBlue)
+                          ),
+                          _Utils_Tuple2(
+                            "ccBlueEnabled",
+                            $elm$json$Json$Encode$bool($3.ccBlueEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "ccGreen",
+                            $elm$json$Json$Encode$int($3.ccGreen)
+                          ),
+                          _Utils_Tuple2(
+                            "ccGreenEnabled",
+                            $elm$json$Json$Encode$bool($3.ccGreenEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "ccRed",
+                            $elm$json$Json$Encode$int($3.ccRed)
+                          ),
+                          _Utils_Tuple2(
+                            "ccRedEnabled",
+                            $elm$json$Json$Encode$bool($3.ccRedEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "colourReplaceBlend",
+                            $elm$json$Json$Encode$float($3.colourReplaceBlend)
+                          ),
+                          _Utils_Tuple2(
+                            "colourReplaceEnabled",
+                            $elm$json$Json$Encode$bool($3.colourReplaceEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "colourReplacePreserveLum",
+                            $elm$json$Json$Encode$bool($3.colourReplacePreserveLum)
+                          ),
+                          _Utils_Tuple2(
+                            "colourReplaceSource",
+                            $elm$json$Json$Encode$string($3.colourReplaceSource)
+                          ),
+                          _Utils_Tuple2(
+                            "colourReplaceTarget",
+                            $elm$json$Json$Encode$string($3.colourReplaceTarget)
+                          ),
+                          _Utils_Tuple2(
+                            "colourReplaceTolerance",
+                            $elm$json$Json$Encode$int($3.colourReplaceTolerance)
+                          ),
+                          _Utils_Tuple2(
+                            "colourmapCenter",
+                            $elm$json$Json$Encode$int($3.colourmapCenter)
+                          ),
+                          _Utils_Tuple2(
+                            "colourmapEnabled",
+                            $elm$json$Json$Encode$bool($3.colourmapEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "colourmapPreset",
+                            $elm$json$Json$Encode$string($3.colourmapPreset)
+                          ),
+                          _Utils_Tuple2(
+                            "contrast",
+                            $elm$json$Json$Encode$float($3.contrast)
+                          ),
+                          _Utils_Tuple2(
+                            "contrastEnabled",
+                            $elm$json$Json$Encode$bool($3.contrastEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "convolutionEnabled",
+                            $elm$json$Json$Encode$bool($3.convolutionEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "convolutionPreset",
+                            $elm$json$Json$Encode$string($3.convolutionPreset)
+                          ),
+                          _Utils_Tuple2(
+                            "flip",
+                            $elm$json$Json$Encode$bool($3.flip)
+                          ),
+                          _Utils_Tuple2(
+                            "gamma",
+                            $elm$json$Json$Encode$float($3.gamma)
+                          ),
+                          _Utils_Tuple2(
+                            "gammaEnabled",
+                            $elm$json$Json$Encode$bool($3.gammaEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "globalPcaEnabled",
+                            $elm$json$Json$Encode$bool($3.globalPcaEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "grayscale",
+                            $elm$json$Json$Encode$bool($3.grayscale)
+                          ),
+                          _Utils_Tuple2(
+                            "hue",
+                            $elm$json$Json$Encode$int($3.hue)
+                          ),
+                          _Utils_Tuple2(
+                            "hueEnabled",
+                            $elm$json$Json$Encode$bool($3.hueEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "invert",
+                            $elm$json$Json$Encode$bool($3.invert)
+                          ),
+                          _Utils_Tuple2(
+                            "morphEnabled",
+                            $elm$json$Json$Encode$bool($3.morphEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "morphKernel",
+                            $elm$json$Json$Encode$int($3.morphKernel)
+                          ),
+                          _Utils_Tuple2(
+                            "morphOperation",
+                            $elm$json$Json$Encode$string($3.morphOperation)
+                          ),
+                          _Utils_Tuple2(
+                            "normalizeEnabled",
+                            $elm$json$Json$Encode$bool($3.normalizeEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "normalizeStrength",
+                            $elm$json$Json$Encode$float($3.normalizeStrength)
+                          ),
+                          _Utils_Tuple2(
+                            "pcaHue",
+                            $elm$json$Json$Encode$int($3.pcaHue)
+                          ),
+                          _Utils_Tuple2(
+                            "pcaMode",
+                            $elm$json$Json$Encode$string($3.pcaMode)
+                          ),
+                          _Utils_Tuple2(
+                            "pseudoColourBlue",
+                            $elm$json$Json$Encode$float($3.pseudoColourBlue)
+                          ),
+                          _Utils_Tuple2(
+                            "pseudoColourEnabled",
+                            $elm$json$Json$Encode$bool($3.pseudoColourEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "pseudoColourGreen",
+                            $elm$json$Json$Encode$float($3.pseudoColourGreen)
+                          ),
+                          _Utils_Tuple2(
+                            "pseudoColourMode",
+                            $elm$json$Json$Encode$string($3.pseudoColourMode)
+                          ),
+                          _Utils_Tuple2(
+                            "pseudoColourRed",
+                            $elm$json$Json$Encode$float($3.pseudoColourRed)
+                          ),
+                          _Utils_Tuple2(
+                            "rotation",
+                            $elm$json$Json$Encode$int($3.rotation)
+                          ),
+                          _Utils_Tuple2(
+                            "saturation",
+                            $elm$json$Json$Encode$int($3.saturation)
+                          ),
+                          _Utils_Tuple2(
+                            "saturationEnabled",
+                            $elm$json$Json$Encode$bool($3.saturationEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "threshold",
+                            $elm$json$Json$Encode$int($3.threshold)
+                          ),
+                          _Utils_Tuple2(
+                            "thresholdEnabled",
+                            $elm$json$Json$Encode$bool($3.thresholdEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "unsharpAmount",
+                            $elm$json$Json$Encode$float($3.unsharpAmount)
+                          ),
+                          _Utils_Tuple2(
+                            "unsharpEnabled",
+                            $elm$json$Json$Encode$bool($3.unsharpEnabled)
+                          ),
+                          _Utils_Tuple2(
+                            "vibrance",
+                            $elm$json$Json$Encode$int($3.vibrance)
+                          ),
+                          _Utils_Tuple2(
+                            "vibranceEnabled",
+                            $elm$json$Json$Encode$bool($3.vibranceEnabled)
+                          )
+                        ]
+                      )
+                    );
+                  })($2.filters)
+                ),
+                _Utils_Tuple2(
+                  "isStatic",
+                  $elm$json$Json$Encode$bool($2.isStatic)
+                ),
+                _Utils_Tuple2(
+                  "sourceId",
+                  $elm$json$Json$Encode$string($2.sourceId)
+                ),
+                _Utils_Tuple2(
+                  "tileSource",
+                  $elm$json$Json$Encode$string($2.tileSource)
+                )
+              ]
+            )
+          );
+        },
+        $
+      );
+    }
+  );
+  var $author$project$Main$pageAspectsUpdated = _Platform_outgoingPort(
+    "pageAspectsUpdated",
+    $elm$json$Json$Encode$list($elm$json$Json$Encode$float)
+  );
+  var $author$project$Main$pageLabelsUpdated = _Platform_outgoingPort(
+    "pageLabelsUpdated",
+    $elm$json$Json$Encode$list($elm$json$Json$Encode$string)
+  );
+  var $author$project$Main$pagesUpdated = _Platform_outgoingPort(
+    "pagesUpdated",
+    $elm$json$Json$Encode$list(
+      function($) {
+        return $elm$json$Json$Encode$object(
+          _List_fromArray(
+            [
+              _Utils_Tuple2(
+                "canvasId",
+                $elm$json$Json$Encode$string($.canvasId)
+              ),
+              _Utils_Tuple2(
+                "height",
+                (function($2) {
+                  return A3($elm$core$Maybe$destruct, $elm$json$Json$Encode$null, $elm$json$Json$Encode$int, $2);
+                })($.height)
+              ),
+              _Utils_Tuple2(
+                "images",
+                $elm$json$Json$Encode$list(
+                  function($2) {
+                    return $elm$json$Json$Encode$object(
+                      _List_fromArray(
+                        [
+                          _Utils_Tuple2(
+                            "id",
+                            $elm$json$Json$Encode$string($2.id)
+                          ),
+                          _Utils_Tuple2(
+                            "isPrimary",
+                            $elm$json$Json$Encode$bool($2.isPrimary)
+                          ),
+                          _Utils_Tuple2(
+                            "label",
+                            $elm$json$Json$Encode$string($2.label)
+                          )
+                        ]
+                      )
+                    );
+                  }
+                )($.images)
+              ),
+              _Utils_Tuple2(
+                "index",
+                $elm$json$Json$Encode$int($.index)
+              ),
+              _Utils_Tuple2(
+                "label",
+                $elm$json$Json$Encode$string($.label)
+              ),
+              _Utils_Tuple2(
+                "primaryImage",
+                (function($2) {
+                  return $elm$json$Json$Encode$object(
+                    _List_fromArray(
+                      [
+                        _Utils_Tuple2(
+                          "id",
+                          $elm$json$Json$Encode$string($2.id)
+                        ),
+                        _Utils_Tuple2(
+                          "isPrimary",
+                          $elm$json$Json$Encode$bool($2.isPrimary)
+                        ),
+                        _Utils_Tuple2(
+                          "label",
+                          $elm$json$Json$Encode$string($2.label)
+                        )
+                      ]
+                    )
+                  );
+                })($.primaryImage)
+              ),
+              _Utils_Tuple2(
+                "width",
+                (function($2) {
+                  return A3($elm$core$Maybe$destruct, $elm$json$Json$Encode$null, $elm$json$Json$Encode$int, $2);
+                })($.width)
+              )
+            ]
+          )
+        );
+      }
+    )
+  );
+  var $author$project$Main$tileSourcesUpdated = _Platform_outgoingPort(
+    "tileSourcesUpdated",
+    $elm$json$Json$Encode$list(
+      function($) {
+        return $elm$json$Json$Encode$object(
+          _List_fromArray(
+            [
+              _Utils_Tuple2(
+                "isStatic",
+                $elm$json$Json$Encode$bool($.isStatic)
+              ),
+              _Utils_Tuple2(
+                "sourceId",
+                $elm$json$Json$Encode$string($.sourceId)
+              ),
+              _Utils_Tuple2(
+                "url",
+                $elm$json$Json$Encode$string($.url)
+              )
+            ]
+          )
+        );
+      }
+    )
+  );
+  var $author$project$Main$clearViewer = $elm$core$Platform$Cmd$batch(
+    _List_fromArray(
+      [
+        $author$project$Main$tileSourcesUpdated(_List_Nil),
+        $author$project$Main$pagesUpdated(_List_Nil),
+        $author$project$Main$pageAspectsUpdated(_List_Nil),
+        $author$project$Main$pageLabelsUpdated(_List_Nil),
+        $author$project$Main$filterPreviewUpdated($elm$core$Maybe$Nothing)
+      ]
+    )
+  );
   var $author$project$Main$copyToClipboard = _Platform_outgoingPort("copyToClipboard", $elm$json$Json$Encode$string);
   var $author$project$Filters$applyMaybe = F3(
     function(maybeValue, updater, filters) {
@@ -16311,9 +17003,6 @@
       ) : acc;
     }
   );
-  var $elm$json$Json$Encode$bool = _Json_wrap;
-  var $elm$json$Json$Encode$float = _Json_wrap;
-  var $elm$json$Json$Encode$int = _Json_wrap;
   var $author$project$Filters$encodeActiveFilters = function(filters) {
     var activeFields = A4(
       $author$project$Filters$addIf,
@@ -16623,382 +17312,6 @@
       return state;
     }
   };
-  var $elm$core$Maybe$destruct = F3(
-    function(_default, func, maybe) {
-      if (maybe.$ === "Just") {
-        var a = maybe.a;
-        return func(a);
-      } else {
-        return _default;
-      }
-    }
-  );
-  var $elm$json$Json$Encode$null = _Json_encodeNull;
-  var $author$project$Main$filterPreviewUpdated = _Platform_outgoingPort(
-    "filterPreviewUpdated",
-    function($) {
-      return A3(
-        $elm$core$Maybe$destruct,
-        $elm$json$Json$Encode$null,
-        function($2) {
-          return $elm$json$Json$Encode$object(
-            _List_fromArray(
-              [
-                _Utils_Tuple2(
-                  "aspect",
-                  $elm$json$Json$Encode$float($2.aspect)
-                ),
-                _Utils_Tuple2(
-                  "filters",
-                  (function($3) {
-                    return $elm$json$Json$Encode$object(
-                      _List_fromArray(
-                        [
-                          _Utils_Tuple2(
-                            "adaptiveEnabled",
-                            $elm$json$Json$Encode$bool($3.adaptiveEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "adaptiveOffset",
-                            $elm$json$Json$Encode$int($3.adaptiveOffset)
-                          ),
-                          _Utils_Tuple2(
-                            "adaptiveWindow",
-                            $elm$json$Json$Encode$int($3.adaptiveWindow)
-                          ),
-                          _Utils_Tuple2(
-                            "altBlueGamma",
-                            $elm$json$Json$Encode$int($3.altBlueGamma)
-                          ),
-                          _Utils_Tuple2(
-                            "altBlueGammaEnabled",
-                            $elm$json$Json$Encode$bool($3.altBlueGammaEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "altBlueHue",
-                            $elm$json$Json$Encode$int($3.altBlueHue)
-                          ),
-                          _Utils_Tuple2(
-                            "altBlueHueEnabled",
-                            $elm$json$Json$Encode$bool($3.altBlueHueEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "altBlueHueWindow",
-                            $elm$json$Json$Encode$int($3.altBlueHueWindow)
-                          ),
-                          _Utils_Tuple2(
-                            "altBlueSigmoid",
-                            $elm$json$Json$Encode$int($3.altBlueSigmoid)
-                          ),
-                          _Utils_Tuple2(
-                            "altBlueSigmoidEnabled",
-                            $elm$json$Json$Encode$bool($3.altBlueSigmoidEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "altBlueVibrance",
-                            $elm$json$Json$Encode$int($3.altBlueVibrance)
-                          ),
-                          _Utils_Tuple2(
-                            "altBlueVibranceEnabled",
-                            $elm$json$Json$Encode$bool($3.altBlueVibranceEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "altGreenGamma",
-                            $elm$json$Json$Encode$int($3.altGreenGamma)
-                          ),
-                          _Utils_Tuple2(
-                            "altGreenGammaEnabled",
-                            $elm$json$Json$Encode$bool($3.altGreenGammaEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "altGreenHue",
-                            $elm$json$Json$Encode$int($3.altGreenHue)
-                          ),
-                          _Utils_Tuple2(
-                            "altGreenHueEnabled",
-                            $elm$json$Json$Encode$bool($3.altGreenHueEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "altGreenHueWindow",
-                            $elm$json$Json$Encode$int($3.altGreenHueWindow)
-                          ),
-                          _Utils_Tuple2(
-                            "altGreenSigmoid",
-                            $elm$json$Json$Encode$int($3.altGreenSigmoid)
-                          ),
-                          _Utils_Tuple2(
-                            "altGreenSigmoidEnabled",
-                            $elm$json$Json$Encode$bool($3.altGreenSigmoidEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "altGreenVibrance",
-                            $elm$json$Json$Encode$int($3.altGreenVibrance)
-                          ),
-                          _Utils_Tuple2(
-                            "altGreenVibranceEnabled",
-                            $elm$json$Json$Encode$bool($3.altGreenVibranceEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "altRedGamma",
-                            $elm$json$Json$Encode$int($3.altRedGamma)
-                          ),
-                          _Utils_Tuple2(
-                            "altRedGammaEnabled",
-                            $elm$json$Json$Encode$bool($3.altRedGammaEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "altRedHue",
-                            $elm$json$Json$Encode$int($3.altRedHue)
-                          ),
-                          _Utils_Tuple2(
-                            "altRedHueEnabled",
-                            $elm$json$Json$Encode$bool($3.altRedHueEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "altRedHueWindow",
-                            $elm$json$Json$Encode$int($3.altRedHueWindow)
-                          ),
-                          _Utils_Tuple2(
-                            "altRedSigmoid",
-                            $elm$json$Json$Encode$int($3.altRedSigmoid)
-                          ),
-                          _Utils_Tuple2(
-                            "altRedSigmoidEnabled",
-                            $elm$json$Json$Encode$bool($3.altRedSigmoidEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "altRedVibrance",
-                            $elm$json$Json$Encode$int($3.altRedVibrance)
-                          ),
-                          _Utils_Tuple2(
-                            "altRedVibranceEnabled",
-                            $elm$json$Json$Encode$bool($3.altRedVibranceEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "brightness",
-                            $elm$json$Json$Encode$int($3.brightness)
-                          ),
-                          _Utils_Tuple2(
-                            "brightnessEnabled",
-                            $elm$json$Json$Encode$bool($3.brightnessEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "ccBlue",
-                            $elm$json$Json$Encode$int($3.ccBlue)
-                          ),
-                          _Utils_Tuple2(
-                            "ccBlueEnabled",
-                            $elm$json$Json$Encode$bool($3.ccBlueEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "ccGreen",
-                            $elm$json$Json$Encode$int($3.ccGreen)
-                          ),
-                          _Utils_Tuple2(
-                            "ccGreenEnabled",
-                            $elm$json$Json$Encode$bool($3.ccGreenEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "ccRed",
-                            $elm$json$Json$Encode$int($3.ccRed)
-                          ),
-                          _Utils_Tuple2(
-                            "ccRedEnabled",
-                            $elm$json$Json$Encode$bool($3.ccRedEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "colourReplaceBlend",
-                            $elm$json$Json$Encode$float($3.colourReplaceBlend)
-                          ),
-                          _Utils_Tuple2(
-                            "colourReplaceEnabled",
-                            $elm$json$Json$Encode$bool($3.colourReplaceEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "colourReplacePreserveLum",
-                            $elm$json$Json$Encode$bool($3.colourReplacePreserveLum)
-                          ),
-                          _Utils_Tuple2(
-                            "colourReplaceSource",
-                            $elm$json$Json$Encode$string($3.colourReplaceSource)
-                          ),
-                          _Utils_Tuple2(
-                            "colourReplaceTarget",
-                            $elm$json$Json$Encode$string($3.colourReplaceTarget)
-                          ),
-                          _Utils_Tuple2(
-                            "colourReplaceTolerance",
-                            $elm$json$Json$Encode$int($3.colourReplaceTolerance)
-                          ),
-                          _Utils_Tuple2(
-                            "colourmapCenter",
-                            $elm$json$Json$Encode$int($3.colourmapCenter)
-                          ),
-                          _Utils_Tuple2(
-                            "colourmapEnabled",
-                            $elm$json$Json$Encode$bool($3.colourmapEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "colourmapPreset",
-                            $elm$json$Json$Encode$string($3.colourmapPreset)
-                          ),
-                          _Utils_Tuple2(
-                            "contrast",
-                            $elm$json$Json$Encode$float($3.contrast)
-                          ),
-                          _Utils_Tuple2(
-                            "contrastEnabled",
-                            $elm$json$Json$Encode$bool($3.contrastEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "convolutionEnabled",
-                            $elm$json$Json$Encode$bool($3.convolutionEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "convolutionPreset",
-                            $elm$json$Json$Encode$string($3.convolutionPreset)
-                          ),
-                          _Utils_Tuple2(
-                            "flip",
-                            $elm$json$Json$Encode$bool($3.flip)
-                          ),
-                          _Utils_Tuple2(
-                            "gamma",
-                            $elm$json$Json$Encode$float($3.gamma)
-                          ),
-                          _Utils_Tuple2(
-                            "gammaEnabled",
-                            $elm$json$Json$Encode$bool($3.gammaEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "globalPcaEnabled",
-                            $elm$json$Json$Encode$bool($3.globalPcaEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "grayscale",
-                            $elm$json$Json$Encode$bool($3.grayscale)
-                          ),
-                          _Utils_Tuple2(
-                            "hue",
-                            $elm$json$Json$Encode$int($3.hue)
-                          ),
-                          _Utils_Tuple2(
-                            "hueEnabled",
-                            $elm$json$Json$Encode$bool($3.hueEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "invert",
-                            $elm$json$Json$Encode$bool($3.invert)
-                          ),
-                          _Utils_Tuple2(
-                            "morphEnabled",
-                            $elm$json$Json$Encode$bool($3.morphEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "morphKernel",
-                            $elm$json$Json$Encode$int($3.morphKernel)
-                          ),
-                          _Utils_Tuple2(
-                            "morphOperation",
-                            $elm$json$Json$Encode$string($3.morphOperation)
-                          ),
-                          _Utils_Tuple2(
-                            "normalizeEnabled",
-                            $elm$json$Json$Encode$bool($3.normalizeEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "normalizeStrength",
-                            $elm$json$Json$Encode$float($3.normalizeStrength)
-                          ),
-                          _Utils_Tuple2(
-                            "pcaHue",
-                            $elm$json$Json$Encode$int($3.pcaHue)
-                          ),
-                          _Utils_Tuple2(
-                            "pcaMode",
-                            $elm$json$Json$Encode$string($3.pcaMode)
-                          ),
-                          _Utils_Tuple2(
-                            "pseudoColourBlue",
-                            $elm$json$Json$Encode$float($3.pseudoColourBlue)
-                          ),
-                          _Utils_Tuple2(
-                            "pseudoColourEnabled",
-                            $elm$json$Json$Encode$bool($3.pseudoColourEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "pseudoColourGreen",
-                            $elm$json$Json$Encode$float($3.pseudoColourGreen)
-                          ),
-                          _Utils_Tuple2(
-                            "pseudoColourMode",
-                            $elm$json$Json$Encode$string($3.pseudoColourMode)
-                          ),
-                          _Utils_Tuple2(
-                            "pseudoColourRed",
-                            $elm$json$Json$Encode$float($3.pseudoColourRed)
-                          ),
-                          _Utils_Tuple2(
-                            "rotation",
-                            $elm$json$Json$Encode$int($3.rotation)
-                          ),
-                          _Utils_Tuple2(
-                            "saturation",
-                            $elm$json$Json$Encode$int($3.saturation)
-                          ),
-                          _Utils_Tuple2(
-                            "saturationEnabled",
-                            $elm$json$Json$Encode$bool($3.saturationEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "threshold",
-                            $elm$json$Json$Encode$int($3.threshold)
-                          ),
-                          _Utils_Tuple2(
-                            "thresholdEnabled",
-                            $elm$json$Json$Encode$bool($3.thresholdEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "unsharpAmount",
-                            $elm$json$Json$Encode$float($3.unsharpAmount)
-                          ),
-                          _Utils_Tuple2(
-                            "unsharpEnabled",
-                            $elm$json$Json$Encode$bool($3.unsharpEnabled)
-                          ),
-                          _Utils_Tuple2(
-                            "vibrance",
-                            $elm$json$Json$Encode$int($3.vibrance)
-                          ),
-                          _Utils_Tuple2(
-                            "vibranceEnabled",
-                            $elm$json$Json$Encode$bool($3.vibranceEnabled)
-                          )
-                        ]
-                      )
-                    );
-                  })($2.filters)
-                ),
-                _Utils_Tuple2(
-                  "isStatic",
-                  $elm$json$Json$Encode$bool($2.isStatic)
-                ),
-                _Utils_Tuple2(
-                  "sourceId",
-                  $elm$json$Json$Encode$string($2.sourceId)
-                ),
-                _Utils_Tuple2(
-                  "tileSource",
-                  $elm$json$Json$Encode$string($2.tileSource)
-                )
-              ]
-            )
-          );
-        },
-        $
-      );
-    }
-  );
   var $author$project$Main$findCollectionById = F2(
     function(collectionId, collection) {
       var loop = F2(
@@ -18042,6 +18355,7 @@
             );
           }
         })(),
+        id: tileSource,
         isPrimary,
         isStatic,
         label,
@@ -18065,9 +18379,12 @@
         return $elm$core$Maybe$Just(
           {
             aspect: $rism_digital$elm_iiif$IIIF$Presentation$canvasAspect(canvas),
+            canvasId: canvas.id,
+            height: canvas.height,
             images,
             label: $rism_digital$elm_iiif$IIIF$Presentation$canvasLabel(canvas),
-            thumbUrl
+            thumbUrl,
+            width: canvas.width
           }
         );
       }
@@ -18103,14 +18420,6 @@
       return $.viewingLayout;
     }
   );
-  var $author$project$Main$pageAspectsUpdated = _Platform_outgoingPort(
-    "pageAspectsUpdated",
-    $elm$json$Json$Encode$list($elm$json$Json$Encode$float)
-  );
-  var $author$project$Main$pageLabelsUpdated = _Platform_outgoingPort(
-    "pageLabelsUpdated",
-    $elm$json$Json$Encode$list($elm$json$Json$Encode$string)
-  );
   var $author$project$Model$primaryImage = function(page) {
     var _v0 = A2(
       $author$project$Utilities$find,
@@ -18125,6 +18434,41 @@
     } else {
       return $elm$core$List$head(page.images);
     }
+  };
+  var $author$project$Main$publicPages = function(pages) {
+    return A2(
+      $elm$core$List$filterMap,
+      $elm$core$Basics$identity,
+      A2(
+        $elm$core$List$indexedMap,
+        F2(
+          function(index, page) {
+            return A2(
+              $elm$core$Maybe$map,
+              function(primary) {
+                return {
+                  canvasId: page.canvasId,
+                  height: page.height,
+                  images: A2(
+                    $elm$core$List$map,
+                    function(image) {
+                      return { id: image.id, isPrimary: image.isPrimary, label: image.label };
+                    },
+                    page.images
+                  ),
+                  index,
+                  label: page.label,
+                  primaryImage: { id: primary.id, isPrimary: primary.isPrimary, label: primary.label },
+                  width: page.width
+                };
+              },
+              $author$project$Model$primaryImage(page)
+            );
+          }
+        ),
+        pages
+      )
+    );
   };
   var $author$project$Auth$registerSources = F2(
     function(sources, model) {
@@ -18149,31 +18493,6 @@
         }
       );
     }
-  );
-  var $author$project$Main$tileSourcesUpdated = _Platform_outgoingPort(
-    "tileSourcesUpdated",
-    $elm$json$Json$Encode$list(
-      function($) {
-        return $elm$json$Json$Encode$object(
-          _List_fromArray(
-            [
-              _Utils_Tuple2(
-                "isStatic",
-                $elm$json$Json$Encode$bool($.isStatic)
-              ),
-              _Utils_Tuple2(
-                "sourceId",
-                $elm$json$Json$Encode$string($.sourceId)
-              ),
-              _Utils_Tuple2(
-                "url",
-                $elm$json$Json$Encode$string($.url)
-              )
-            ]
-          )
-        );
-      }
-    )
   );
   var $rism_digital$elm_iiif$IIIF$Presentation$toRanges = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
     function($) {
@@ -18267,7 +18586,7 @@
         _Utils_update(
           model,
           {
-            auth: A2($author$project$Auth$registerSources, authSources, model.auth),
+            auth: A2($author$project$Auth$registerSources, authSources, $author$project$Auth$init),
             currentZoom: $elm$core$Maybe$Nothing,
             filters: $author$project$Filters$resetFilters,
             hasTileSources: !$elm$core$List$isEmpty(tileSources),
@@ -18286,6 +18605,9 @@
           _List_fromArray(
             [
               $author$project$Main$tileSourcesUpdated(tileSources),
+              $author$project$Main$pagesUpdated(
+                $author$project$Main$publicPages(pages)
+              ),
               $author$project$Main$filterPreviewUpdated($elm$core$Maybe$Nothing),
               $author$project$Main$pageAspectsUpdated(pageAspects),
               $author$project$Main$pageLabelsUpdated(
@@ -18717,6 +19039,52 @@
       { altBlueGamma: 0, altBlueGammaEnabled: false, altBlueHue: 0, altBlueHueEnabled: false, altBlueHueWindow: 8, altBlueSigmoid: 0, altBlueSigmoidEnabled: false, altBlueVibrance: 0, altBlueVibranceEnabled: false, altGreenGamma: 0, altGreenGammaEnabled: false, altGreenHue: 0, altGreenHueEnabled: false, altGreenHueWindow: 8, altGreenSigmoid: 0, altGreenSigmoidEnabled: false, altGreenVibrance: 0, altGreenVibranceEnabled: false, altRedGamma: 0, altRedGammaEnabled: false, altRedHue: 0, altRedHueEnabled: false, altRedHueWindow: 8, altRedSigmoid: 0, altRedSigmoidEnabled: false, altRedVibrance: 0, altRedVibranceEnabled: false }
     );
   };
+  var $author$project$Main$resourceLoadFailed = _Platform_outgoingPort(
+    "resourceLoadFailed",
+    function($) {
+      return $elm$json$Json$Encode$object(
+        _List_fromArray(
+          [
+            _Utils_Tuple2(
+              "message",
+              $elm$json$Json$Encode$string($.message)
+            ),
+            _Utils_Tuple2(
+              "requestId",
+              $elm$json$Json$Encode$string($.requestId)
+            ),
+            _Utils_Tuple2(
+              "url",
+              $elm$json$Json$Encode$string($.url)
+            )
+          ]
+        )
+      );
+    }
+  );
+  var $author$project$Main$resourceLoadSucceeded = _Platform_outgoingPort(
+    "resourceLoadSucceeded",
+    function($) {
+      return $elm$json$Json$Encode$object(
+        _List_fromArray(
+          [
+            _Utils_Tuple2(
+              "hasPages",
+              $elm$json$Json$Encode$bool($.hasPages)
+            ),
+            _Utils_Tuple2(
+              "requestId",
+              $elm$json$Json$Encode$string($.requestId)
+            ),
+            _Utils_Tuple2(
+              "url",
+              $elm$json$Json$Encode$string($.url)
+            )
+          ]
+        )
+      );
+    }
+  );
   var $author$project$Main$authHttpCancelled = _Platform_outgoingPort("authHttpCancelled", $elm$json$Json$Encode$string);
   var $author$project$Main$authHttpRequested = _Platform_outgoingPort("authHttpRequested", $elm$core$Basics$identity);
   var $author$project$Main$authSourcesInvalidated = _Platform_outgoingPort(
@@ -19172,9 +19540,7 @@
   var $author$project$Auth$failFlow = F3(
     function(flowId, message, model) {
       var _v0 = A2($elm$core$Dict$get, flowId, model.flows);
-      if (_v0.$ === "Nothing") {
-        return _Utils_Tuple2(model, _List_Nil);
-      } else {
+      if (_v0.$ === "Just") {
         var flow = _v0.a;
         var failOne = F2(
           function(requestId, _v2) {
@@ -19212,6 +19578,8 @@
           ),
           flow.waiters
         );
+      } else {
+        return _Utils_Tuple2(model, _List_Nil);
       }
     }
   );
@@ -19419,60 +19787,64 @@
       },
       probe.services
     );
-    var active = $elm$core$List$head(
-      A2(
-        $elm$core$List$filter,
-        function(access) {
-          return _Utils_eq(access.profile, $rism_digital$elm_iiif$IIIF$Auth$Active);
-        },
-        probe.services
-      )
-    );
-    return hasUnsupportedAccess ? $elm$core$Maybe$Nothing : A2(
-      $elm$core$Maybe$andThen,
-      function(access) {
-        return A2(
-          $elm$core$Maybe$map,
-          function(token) {
-            return {
-              access,
-              key: $author$project$Auth$normalizedProbeUrl(probe.id) + ("|" + (A2($elm$core$Maybe$withDefault, "", access.id) + ("|" + token.id))),
-              logout: $elm$core$List$head(
-                A2(
-                  $elm$core$List$filterMap,
-                  function(service) {
-                    if (service.$ === "RelatedLogoutService") {
-                      var logout = service.a;
-                      return $elm$core$Maybe$Just(logout);
-                    } else {
-                      return $elm$core$Maybe$Nothing;
-                    }
-                  },
-                  access.services
-                )
-              ),
-              probe,
-              token
-            };
+    if (hasUnsupportedAccess) {
+      return $elm$core$Maybe$Nothing;
+    } else {
+      var active = $elm$core$List$head(
+        A2(
+          $elm$core$List$filter,
+          function(access) {
+            return _Utils_eq(access.profile, $rism_digital$elm_iiif$IIIF$Auth$Active);
           },
-          $elm$core$List$head(
-            A2(
-              $elm$core$List$filterMap,
-              function(service) {
-                if (service.$ === "RelatedTokenService") {
-                  var token = service.a;
-                  return $elm$core$Maybe$Just(token);
-                } else {
-                  return $elm$core$Maybe$Nothing;
-                }
-              },
-              access.services
+          probe.services
+        )
+      );
+      return A2(
+        $elm$core$Maybe$andThen,
+        function(access) {
+          return A2(
+            $elm$core$Maybe$map,
+            function(token) {
+              return {
+                access,
+                key: $author$project$Auth$normalizedProbeUrl(probe.id) + ("|" + (A2($elm$core$Maybe$withDefault, "", access.id) + ("|" + token.id))),
+                logout: $elm$core$List$head(
+                  A2(
+                    $elm$core$List$filterMap,
+                    function(service) {
+                      if (service.$ === "RelatedTokenService") {
+                        return $elm$core$Maybe$Nothing;
+                      } else {
+                        var logout = service.a;
+                        return $elm$core$Maybe$Just(logout);
+                      }
+                    },
+                    access.services
+                  )
+                ),
+                probe,
+                token
+              };
+            },
+            $elm$core$List$head(
+              A2(
+                $elm$core$List$filterMap,
+                function(service) {
+                  if (service.$ === "RelatedTokenService") {
+                    var token = service.a;
+                    return $elm$core$Maybe$Just(token);
+                  } else {
+                    return $elm$core$Maybe$Nothing;
+                  }
+                },
+                access.services
+              )
             )
-          )
-        );
-      },
-      active
-    );
+          );
+        },
+        active
+      );
+    }
   };
   var $elm$core$Result$fromMaybe = F2(
     function(err, maybe) {
@@ -19510,12 +19882,12 @@
         "IIIF Auth 2 '" + ((function() {
           var _v1 = access.profile;
           switch (_v1.$) {
+            case "Active":
+              return "active";
             case "Kiosk":
               return "kiosk";
-            case "External":
-              return "external";
             default:
-              return "active";
+              return "external";
           }
         })() + "' access is not supported; only the 'active' profile is supported.")
       );
@@ -19565,10 +19937,7 @@
         }
       );
       var _v0 = $author$project$Auth$supportedAssociation(discovery);
-      if (_v0.$ === "Err") {
-        var message = _v0.a;
-        return A3($author$project$Auth$completeFailure, requestId, message, withInfo);
-      } else {
+      if (_v0.$ === "Ok") {
         var association = _v0.a;
         var _v1 = A2($elm$core$Dict$get, association.key, withInfo.familyStates);
         if (_v1.$ === "Just") {
@@ -19635,32 +20004,19 @@
             );
           }
         }
+      } else {
+        var message = _v0.a;
+        return A3($author$project$Auth$completeFailure, requestId, message, withInfo);
       }
     }
   );
   var $author$project$Auth$handleInfo = F4(
     function(requestId, status, body, model) {
       var _v0 = A2($elm$json$Json$Decode$decodeString, $elm$json$Json$Decode$value, body);
-      if (_v0.$ === "Err") {
-        var error = _v0.a;
-        return A3(
-          $author$project$Auth$completeFailure,
-          requestId,
-          $elm$json$Json$Decode$errorToString(error),
-          model
-        );
-      } else {
+      if (_v0.$ === "Ok") {
         var raw = _v0.a;
         var _v1 = A2($elm$json$Json$Decode$decodeValue, $rism_digital$elm_iiif$IIIF$Auth$authServicesDecoder, raw);
-        if (_v1.$ === "Err") {
-          var error = _v1.a;
-          return A3(
-            $author$project$Auth$completeFailure,
-            requestId,
-            $elm$json$Json$Decode$errorToString(error),
-            model
-          );
-        } else {
+        if (_v1.$ === "Ok") {
           var discovery = _v1.a;
           return $elm$core$List$isEmpty(discovery.probes) && $elm$core$List$isEmpty(discovery.unsupportedServiceTypes) ? status >= 200 && status < 300 ? A4(
             $author$project$Auth$completeSource,
@@ -19680,7 +20036,23 @@
             $elm$core$Maybe$Just(raw),
             model
           );
+        } else {
+          var error = _v1.a;
+          return A3(
+            $author$project$Auth$completeFailure,
+            requestId,
+            $elm$json$Json$Decode$errorToString(error),
+            model
+          );
         }
+      } else {
+        var error = _v0.a;
+        return A3(
+          $author$project$Auth$completeFailure,
+          requestId,
+          $elm$json$Json$Decode$errorToString(error),
+          model
+        );
       }
     }
   );
@@ -19725,9 +20097,7 @@
   var $author$project$Auth$registerSession = F2(
     function(flow, model) {
       var _v0 = flow.association.logout;
-      if (_v0.$ === "Nothing") {
-        return model;
-      } else {
+      if (_v0.$ === "Just") {
         var logout = _v0.a;
         var sourceIds = $elm$core$Set$fromList(
           A2(
@@ -19777,15 +20147,15 @@
             sessions: A3($elm$core$Dict$update, sessionId, updateSession, model.sessions)
           }
         );
+      } else {
+        return model;
       }
     }
   );
   var $author$project$Auth$completeFlow = F3(
     function(flowId, credentialed, model) {
       var _v0 = A2($elm$core$Dict$get, flowId, model.flows);
-      if (_v0.$ === "Nothing") {
-        return _Utils_Tuple2(model, _List_Nil);
-      } else {
+      if (_v0.$ === "Just") {
         var flow = _v0.a;
         var withFamilyState = _Utils_update(
           model,
@@ -19859,19 +20229,14 @@
           ),
           flow.waiters
         );
-      }
-    }
-  );
-  var $author$project$Auth$probeError = F2(
-    function(flow, status) {
-      var _v0 = flow.association.probe.errorHeading;
-      if (_v0.$ === "Just") {
-        return "Access was not granted (" + ($elm$core$String$fromInt(status) + ").");
       } else {
-        return "Access was not granted (" + ($elm$core$String$fromInt(status) + ").");
+        return _Utils_Tuple2(model, _List_Nil);
       }
     }
   );
+  var $author$project$Auth$probeError = function(status) {
+    return "Access was not granted (" + ($elm$core$String$fromInt(status) + ").");
+  };
   var $rism_digital$elm_iiif$IIIF$Auth$httpStatusDecoder = A2(
     $elm$json$Json$Decode$andThen,
     function(status) {
@@ -20016,12 +20381,7 @@
             }
           );
           var _v2 = model.activeInteractive;
-          if (_v2.$ === "Nothing") {
-            return _Utils_Tuple2(
-              A3($author$project$Auth$activatePrompt, flowId, updatedFlow, withFlow),
-              _List_Nil
-            );
-          } else {
+          if (_v2.$ === "Just") {
             var activeFlowId = _v2.a;
             return _Utils_eq(activeFlowId, flowId) ? _Utils_Tuple2(
               A3($author$project$Auth$activatePrompt, flowId, updatedFlow, withFlow),
@@ -20033,6 +20393,11 @@
                   promptQueue: A2($author$project$Auth$appendUnique, flowId, withFlow.promptQueue)
                 }
               ),
+              _List_Nil
+            );
+          } else {
+            return _Utils_Tuple2(
+              A3($author$project$Auth$activatePrompt, flowId, updatedFlow, withFlow),
               _List_Nil
             );
           }
@@ -20089,15 +20454,7 @@
   var $author$project$Auth$handleProbe = F4(
     function(flowId, token, body, model) {
       var _v0 = A2($elm$json$Json$Decode$decodeString, $rism_digital$elm_iiif$IIIF$Auth$probeResultDecoder, body);
-      if (_v0.$ === "Err") {
-        var error = _v0.a;
-        return A3(
-          $author$project$Auth$retryOrFail,
-          flowId,
-          $elm$json$Json$Decode$errorToString(error),
-          model
-        );
-      } else {
+      if (_v0.$ === "Ok") {
         var result = _v0.a;
         if (!_Utils_eq(result.location, $elm$core$Maybe$Nothing) || !$elm$core$List$isEmpty(result.substitutes)) {
           return A3($author$project$Auth$failFlow, flowId, "IIIF Auth redirect, substitute, and tiered access flows are not supported.", model);
@@ -20111,9 +20468,7 @@
             );
           } else {
             var _v1 = A2($elm$core$Dict$get, flowId, model.flows);
-            if (_v1.$ === "Nothing") {
-              return _Utils_Tuple2(model, _List_Nil);
-            } else {
+            if (_v1.$ === "Just") {
               var flow = _v1.a;
               var _v2 = flow.phase;
               switch (_v2.$) {
@@ -20172,7 +20527,7 @@
                     A3(
                       $author$project$Auth$retryOrFail,
                       flowId,
-                      A2($author$project$Auth$probeError, flow, result.status),
+                      $author$project$Auth$probeError(result.status),
                       model
                     )
                   );
@@ -20180,13 +20535,23 @@
                   return A3(
                     $author$project$Auth$retryOrFail,
                     flowId,
-                    A2($author$project$Auth$probeError, flow, result.status),
+                    $author$project$Auth$probeError(result.status),
                     model
                   );
               }
+            } else {
+              return _Utils_Tuple2(model, _List_Nil);
             }
           }
         }
+      } else {
+        var error = _v0.a;
+        return A3(
+          $author$project$Auth$retryOrFail,
+          flowId,
+          $elm$json$Json$Decode$errorToString(error),
+          model
+        );
       }
     }
   );
@@ -20316,9 +20681,7 @@
   var $author$project$Auth$logoutOpened = F2(
     function(sessionId, model) {
       var _v0 = A2($elm$core$Dict$get, sessionId, model.sessions);
-      if (_v0.$ === "Nothing") {
-        return _Utils_Tuple2(model, _List_Nil);
-      } else {
+      if (_v0.$ === "Just") {
         var session = _v0.a;
         var currentSourceIds = A2($author$project$Auth$sourceIdsForFamilyKeys, session.familyKeys, model.sources);
         var invalidatedSourceIds = $elm$core$Set$toList(
@@ -20345,6 +20708,8 @@
             )
           )
         );
+      } else {
+        return _Utils_Tuple2(model, _List_Nil);
       }
     }
   );
@@ -20409,16 +20774,7 @@
   var $author$project$Auth$resolve = F3(
     function(requestId, sourceId, model) {
       var _v0 = A2($elm$core$Dict$get, sourceId, model.sources);
-      if (_v0.$ === "Nothing") {
-        return _Utils_Tuple2(
-          model,
-          _List_fromArray(
-            [
-              A2($author$project$Auth$Fail, requestId, "Unknown image source.")
-            ]
-          )
-        );
-      } else {
+      if (_v0.$ === "Just") {
         var source = _v0.a;
         var next = _Utils_update(
           model,
@@ -20433,12 +20789,9 @@
         );
         var _v1 = source.auth;
         switch (_v1.$) {
-          case "Invalid":
-            var message = _v1.a;
-            return A3($author$project$Auth$completeFailure, requestId, message, next);
           case "Unknown":
             return source.isStatic ? A4($author$project$Auth$completeSource, requestId, false, $elm$core$Maybe$Nothing, next) : A3($author$project$Auth$startInfoRequest, requestId, source, next);
-          default:
+          case "Discovered":
             var discovery = _v1.a;
             return $elm$core$List$isEmpty(discovery.probes) ? $elm$core$List$isEmpty(discovery.unsupportedServiceTypes) ? source.isStatic ? A4($author$project$Auth$completeSource, requestId, false, $elm$core$Maybe$Nothing, next) : A3($author$project$Auth$startInfoRequest, requestId, source, next) : A3(
               $author$project$Auth$completeFailure,
@@ -20446,7 +20799,19 @@
               $author$project$Auth$unsupportedMessage(discovery.unsupportedServiceTypes),
               next
             ) : A4($author$project$Auth$beginAuthorization, requestId, discovery, $elm$core$Maybe$Nothing, next);
+          default:
+            var message = _v1.a;
+            return A3($author$project$Auth$completeFailure, requestId, message, next);
         }
+      } else {
+        return _Utils_Tuple2(
+          model,
+          _List_fromArray(
+            [
+              A2($author$project$Auth$Fail, requestId, "Unknown image source.")
+            ]
+          )
+        );
       }
     }
   );
@@ -20491,7 +20856,9 @@
               true,
               A2(
                 $elm$core$Maybe$map,
-                $elm$core$Basics$lt(now),
+                function(expiresAt) {
+                  return _Utils_cmp(now, expiresAt) < 0;
+                },
                 cached.expiresAt
               )
             )) {
@@ -20664,9 +21031,7 @@
   var $author$project$Auth$tokenMessage = F4(
     function(flowId, now, value, model) {
       var _v0 = A2($elm$core$Dict$get, flowId, model.flows);
-      if (_v0.$ === "Nothing") {
-        return _Utils_Tuple2(model, _List_Nil);
-      } else {
+      if (_v0.$ === "Just") {
         var flow = _v0.a;
         var _v1 = A2($elm$json$Json$Decode$decodeValue, $rism_digital$elm_iiif$IIIF$Auth$accessTokenDecoder, value);
         if (_v1.$ === "Ok") {
@@ -20733,6 +21098,8 @@
             );
           }
         }
+      } else {
+        return _Utils_Tuple2(model, _List_Nil);
       }
     }
   );
@@ -20947,6 +21314,47 @@
             ),
             $author$project$Main$runAuthEffects(effects)
           );
+        case "ClientRequestedLayoutMode":
+          var requestedMode = msg.a;
+          var _v2 = (function() {
+            switch (requestedMode) {
+              case "spread":
+                return _Utils_Tuple2($author$project$Model$TwoUp, false);
+              case "spread-shift":
+                return _Utils_Tuple2($author$project$Model$TwoUp, true);
+              default:
+                return _Utils_Tuple2($author$project$Model$OneUp, false);
+            }
+          })();
+          var nextViewMode = _v2.a;
+          var nextShift = _v2.b;
+          return _Utils_Tuple2(
+            _Utils_update(
+              model,
+              { shiftByOne: nextShift, viewMode: nextViewMode }
+            ),
+            $author$project$Main$layoutModeUpdated(
+              A2($author$project$Main$layoutModeToString, nextViewMode, nextShift)
+            )
+          );
+        case "ClientRequestedResource":
+          var requestId = msg.a;
+          var url = msg.b;
+          return _Utils_Tuple2(
+            _Utils_update(
+              model,
+              {
+                isViewerLoading: true,
+                pendingPublicResource: $elm$core$Maybe$Just(requestId)
+              }
+            ),
+            A3(
+              $rism_digital$elm_iiif$IIIF$requestResource,
+              A2($author$project$Msg$ServerRespondedWithRequestedResource, requestId, url),
+              model.acceptHeaders,
+              url
+            )
+          );
         case "ClientNotifiedFullscreenChanged":
           var enabled = msg.a;
           return _Utils_Tuple2(
@@ -20973,18 +21381,18 @@
         case "ServerRespondedWithCollectionItem":
           var collectionId = msg.a;
           var result = msg.b;
-          var _v2 = model.resourceResponse;
-          if (_v2.$ === "ResourceLoadedCollection") {
-            var collectionState = _v2.a;
+          var _v4 = model.resourceResponse;
+          if (_v4.$ === "ResourceLoadedCollection") {
+            var collectionState = _v4.a;
             var nextLoadingIds = A2($elm$core$Set$remove, collectionId, collectionState.loadingCollectionIds);
             if (result.$ === "Ok") {
               var resource = result.a;
               if (resource.$ === "ResourceCollection") {
-                var _v5 = resource.a;
-                var fetchedCollection = _v5.b;
-                var _v6 = collectionState.collection;
-                var rootVersion = _v6.a;
-                var rootCollection = _v6.b;
+                var _v7 = resource.a;
+                var fetchedCollection = _v7.b;
+                var _v8 = collectionState.collection;
+                var rootVersion = _v8.a;
+                var rootCollection = _v8.b;
                 var nextCollection = A3($author$project$Main$replaceCollectionById, collectionId, fetchedCollection, rootCollection);
                 var nextState = _Utils_update(
                   collectionState,
@@ -21041,9 +21449,9 @@
         case "ServerRespondedWithManifestFromCollection":
           var manifestId = msg.a;
           var result = msg.b;
-          var _v7 = model.resourceResponse;
-          if (_v7.$ === "ResourceLoadedCollection") {
-            var collectionState = _v7.a;
+          var _v9 = model.resourceResponse;
+          if (_v9.$ === "ResourceLoadedCollection") {
+            var collectionState = _v9.a;
             if (!_Utils_eq(
               collectionState.selectedManifestId,
               $elm$core$Maybe$Just(manifestId)
@@ -21079,9 +21487,9 @@
             switch (resource.$) {
               case "ResourceManifest":
                 var manifest = resource.a;
-                var _v11 = A2($author$project$Main$handleManifestLoaded, model, manifest);
-                var nextModel = _v11.a;
-                var cmd = _v11.b;
+                var _v13 = A2($author$project$Main$handleManifestLoaded, model, manifest);
+                var nextModel = _v13.a;
+                var cmd = _v13.b;
                 return _Utils_Tuple2(
                   _Utils_update(
                     nextModel,
@@ -21090,18 +21498,33 @@
                       resourceResponse: $author$project$Model$ResourceLoadedManifest(manifest)
                     }
                   ),
-                  cmd
+                  $elm$core$Platform$Cmd$batch(
+                    _List_fromArray(
+                      [
+                        cmd,
+                        $author$project$Main$resourceLoadSucceeded(
+                          {
+                            hasPages: !$elm$core$List$isEmpty(nextModel.pages),
+                            requestId: "initial",
+                            url: model.manifestUrl
+                          }
+                        )
+                      ]
+                    )
+                  )
                 );
               case "ResourceCollection":
-                var _v12 = resource.a;
-                var version = _v12.a;
-                var collection = _v12.b;
+                var _v14 = resource.a;
+                var version = _v14.a;
+                var collection = _v14.b;
                 return _Utils_Tuple2(
                   _Utils_update(
                     model,
                     {
+                      auth: $author$project$Auth$init,
                       collectionSidebarVisible: true,
                       isViewerLoading: false,
+                      pages: _List_Nil,
                       resourceResponse: $author$project$Model$ResourceLoadedCollection(
                         {
                           collection: A2($rism_digital$elm_iiif$IIIF$Presentation$IIIFCollection, version, collection),
@@ -21111,13 +21534,31 @@
                           selectedManifestId: $elm$core$Maybe$Nothing
                         }
                       ),
-                      response: $author$project$Model$NotRequested
+                      response: $author$project$Model$NotRequested,
+                      selectedIndex: $elm$core$Maybe$Nothing
                     }
                   ),
-                  $elm$core$Platform$Cmd$none
+                  $elm$core$Platform$Cmd$batch(
+                    _List_fromArray(
+                      [
+                        $author$project$Main$clearViewer,
+                        $author$project$Main$resourceLoadSucceeded(
+                          { hasPages: false, requestId: "initial", url: model.manifestUrl }
+                        )
+                      ]
+                    )
+                  )
                 );
               default:
-                return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+                return _Utils_Tuple2(
+                  _Utils_update(
+                    model,
+                    { isViewerLoading: false }
+                  ),
+                  $author$project$Main$resourceLoadFailed(
+                    { message: "URL did not return a supported IIIF resource.", requestId: "initial", url: model.manifestUrl }
+                  )
+                );
             }
           } else {
             var err = result.a;
@@ -21131,13 +21572,128 @@
                   )
                 }
               ),
-              $elm$core$Platform$Cmd$none
+              $author$project$Main$resourceLoadFailed(
+                {
+                  message: $author$project$Main$httpErrorToString(err),
+                  requestId: "initial",
+                  url: model.manifestUrl
+                }
+              )
             );
           }
+        case "ServerRespondedWithRequestedResource":
+          var requestId = msg.a;
+          var url = msg.b;
+          var result = msg.c;
+          if (!_Utils_eq(
+            model.pendingPublicResource,
+            $elm$core$Maybe$Just(requestId)
+          )) {
+            return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+          } else {
+            if (result.$ === "Ok") {
+              var resource = result.a;
+              switch (resource.$) {
+                case "ResourceManifest":
+                  var manifest = resource.a;
+                  var _v17 = A2($author$project$Main$handleManifestLoaded, model, manifest);
+                  var nextModel = _v17.a;
+                  var cmd = _v17.b;
+                  return _Utils_Tuple2(
+                    _Utils_update(
+                      nextModel,
+                      {
+                        collectionSidebarVisible: false,
+                        manifestUrl: url,
+                        pendingPublicResource: $elm$core$Maybe$Nothing,
+                        resourceResponse: $author$project$Model$ResourceLoadedManifest(manifest)
+                      }
+                    ),
+                    $elm$core$Platform$Cmd$batch(
+                      _List_fromArray(
+                        [
+                          cmd,
+                          $author$project$Main$resourceLoadSucceeded(
+                            {
+                              hasPages: !$elm$core$List$isEmpty(nextModel.pages),
+                              requestId,
+                              url
+                            }
+                          )
+                        ]
+                      )
+                    )
+                  );
+                case "ResourceCollection":
+                  var _v18 = resource.a;
+                  var version = _v18.a;
+                  var collection = _v18.b;
+                  return _Utils_Tuple2(
+                    _Utils_update(
+                      model,
+                      {
+                        auth: $author$project$Auth$init,
+                        collectionSidebarVisible: true,
+                        isViewerLoading: false,
+                        manifestUrl: url,
+                        pages: _List_Nil,
+                        pendingPublicResource: $elm$core$Maybe$Nothing,
+                        resourceResponse: $author$project$Model$ResourceLoadedCollection(
+                          {
+                            collection: A2($rism_digital$elm_iiif$IIIF$Presentation$IIIFCollection, version, collection),
+                            expandedIds: $elm$core$Set$empty,
+                            loadedCollectionIds: $elm$core$Set$empty,
+                            loadingCollectionIds: $elm$core$Set$empty,
+                            selectedManifestId: $elm$core$Maybe$Nothing
+                          }
+                        ),
+                        response: $author$project$Model$NotRequested,
+                        selectedIndex: $elm$core$Maybe$Nothing
+                      }
+                    ),
+                    $elm$core$Platform$Cmd$batch(
+                      _List_fromArray(
+                        [
+                          $author$project$Main$clearViewer,
+                          $author$project$Main$resourceLoadSucceeded(
+                            { hasPages: false, requestId, url }
+                          )
+                        ]
+                      )
+                    )
+                  );
+                default:
+                  return _Utils_Tuple2(
+                    _Utils_update(
+                      model,
+                      { isViewerLoading: false, pendingPublicResource: $elm$core$Maybe$Nothing }
+                    ),
+                    $author$project$Main$resourceLoadFailed(
+                      { message: "URL did not return a supported IIIF resource.", requestId, url }
+                    )
+                  );
+              }
+            } else {
+              var err = result.a;
+              return _Utils_Tuple2(
+                _Utils_update(
+                  model,
+                  { isViewerLoading: false, pendingPublicResource: $elm$core$Maybe$Nothing }
+                ),
+                $author$project$Main$resourceLoadFailed(
+                  {
+                    message: $author$project$Main$httpErrorToString(err),
+                    requestId,
+                    url
+                  }
+                )
+              );
+            }
+          }
         case "UserAppliedFilterJson":
-          var _v13 = $author$project$Filters$decodeFilterJson(model.filtersJsonInput);
-          if (_v13.$ === "Ok") {
-            var filters = _v13.a;
+          var _v19 = $author$project$Filters$decodeFilterJson(model.filtersJsonInput);
+          if (_v19.$ === "Ok") {
+            var filters = _v19.a;
             var json = $author$project$Filters$encodeActiveFilters(filters);
             var nextModel = _Utils_update(
               model,
@@ -21148,7 +21704,7 @@
               $author$project$Main$sendPageViewPreview(nextModel)
             );
           } else {
-            var err = _v13.a;
+            var err = _v19.a;
             return _Utils_Tuple2(
               _Utils_update(
                 model,
@@ -21162,9 +21718,9 @@
         case "UserChangedZoomLevel":
           var zoom = msg.a;
           var nextInitialZoom = (function() {
-            var _v14 = model.initialZoom;
-            if (_v14.$ === "Just") {
-              var initialZoom = _v14.a;
+            var _v20 = model.initialZoom;
+            if (_v20.$ === "Just") {
+              var initialZoom = _v20.a;
               return $elm$core$Maybe$Just(initialZoom);
             } else {
               return $elm$core$Maybe$Just(zoom);
@@ -21199,13 +21755,13 @@
           );
         case "UserClickedCollectionItem":
           var collectionId = msg.a;
-          var _v15 = model.resourceResponse;
-          if (_v15.$ === "ResourceLoadedCollection") {
-            var collectionState = _v15.a;
+          var _v21 = model.resourceResponse;
+          if (_v21.$ === "ResourceLoadedCollection") {
+            var collectionState = _v21.a;
             var isExpanded = A2($elm$core$Set$member, collectionId, collectionState.expandedIds);
             var nextExpandedIds = isExpanded ? A2($elm$core$Set$remove, collectionId, collectionState.expandedIds) : A2($elm$core$Set$insert, collectionId, collectionState.expandedIds);
-            var _v16 = collectionState.collection;
-            var rootCollection = _v16.b;
+            var _v22 = collectionState.collection;
+            var rootCollection = _v22.b;
             var isItemsEmpty = A2(
               $elm$core$Maybe$withDefault,
               true,
@@ -21247,9 +21803,9 @@
         case "UserClickedManifestItem":
           var manifestId = msg.a;
           var manifestUrl = msg.b;
-          var _v17 = model.resourceResponse;
-          if (_v17.$ === "ResourceLoadedCollection") {
-            var collectionState = _v17.a;
+          var _v23 = model.resourceResponse;
+          if (_v23.$ === "ResourceLoadedCollection") {
+            var collectionState = _v23.a;
             return _Utils_Tuple2(
               _Utils_update(
                 model,
@@ -21398,9 +21954,9 @@
           );
         case "UserDraggedCollectionSidebarResize":
           var clientX = msg.a;
-          var _v20 = model.collectionSidebarDrag;
-          if (_v20.$ === "Just") {
-            var drag = _v20.a;
+          var _v26 = model.collectionSidebarDrag;
+          if (_v26.$ === "Just") {
+            var drag = _v26.a;
             var nextWidth = A3($elm$core$Basics$clamp, 240, 480, drag.startWidth + (clientX - drag.startX));
             return _Utils_Tuple2(
               _Utils_update(
@@ -21414,9 +21970,9 @@
           }
         case "UserDraggedSidebarResize":
           var clientX = msg.a;
-          var _v21 = model.sidebarDrag;
-          if (_v21.$ === "Just") {
-            var drag = _v21.a;
+          var _v27 = model.sidebarDrag;
+          if (_v27.$ === "Just") {
+            var drag = _v27.a;
             var delta = drag.startX - clientX;
             var nextWidth = A3($elm$core$Basics$clamp, 220, 520, drag.startWidth + delta);
             return _Utils_Tuple2(
@@ -21511,8 +22067,8 @@
             $elm$core$Platform$Cmd$none
           );
         case "UserToggledCollectionSidebar":
-          var _v22 = model.resourceResponse;
-          if (_v22.$ === "ResourceLoadedCollection") {
+          var _v28 = model.resourceResponse;
+          if (_v28.$ === "ResourceLoadedCollection") {
             return _Utils_Tuple2(
               _Utils_update(
                 model,
@@ -21579,8 +22135,8 @@
             $elm$core$Platform$Cmd$none
           );
         case "UserToggledShiftByOne":
-          var _v23 = model.viewMode;
-          if (_v23.$ === "OneUp") {
+          var _v29 = model.viewMode;
+          if (_v29.$ === "OneUp") {
             return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
           } else {
             var nextShift = !model.shiftByOne;
@@ -21625,14 +22181,14 @@
           );
         case "UserToggledThumbnails":
           var thumbCmd = (function() {
-            var _v25 = _Utils_Tuple2(model.pendingThumbScroll, model.selectedIndex);
-            if (_v25.a.$ === "Just") {
-              var index2 = _v25.a.a;
+            var _v31 = _Utils_Tuple2(model.pendingThumbScroll, model.selectedIndex);
+            if (_v31.a.$ === "Just") {
+              var index2 = _v31.a.a;
               return A2($author$project$Main$scrollThumbsToIndex, true, index2);
             } else {
-              if (_v25.b.$ === "Just") {
-                var _v26 = _v25.a;
-                var index2 = _v25.b.a;
+              if (_v31.b.$ === "Just") {
+                var _v32 = _v31.a;
+                var index2 = _v31.b.a;
                 return A2($author$project$Main$scrollThumbsToIndex, true, index2);
               } else {
                 return $elm$core$Platform$Cmd$none;
@@ -21644,8 +22200,8 @@
             { sidebarState: $author$project$Model$SidebarThumbnails }
           );
           var nextInstant = (function() {
-            var _v24 = model.pendingThumbScroll;
-            if (_v24.$ === "Just") {
+            var _v30 = model.pendingThumbScroll;
+            if (_v30.$ === "Just") {
               return true;
             } else {
               return false;
@@ -21660,8 +22216,8 @@
           );
         case "UserToggledTwoUp":
           var nextMode = (function() {
-            var _v27 = model.viewMode;
-            if (_v27.$ === "OneUp") {
+            var _v33 = model.viewMode;
+            if (_v33.$ === "OneUp") {
               return $author$project$Model$TwoUp;
             } else {
               return $author$project$Model$OneUp;
@@ -27003,9 +27559,7 @@
   var $author$project$Auth$thumbnailCrossOrigin = F2(
     function(sourceId, model) {
       var _v0 = A2($elm$core$Dict$get, sourceId, model.sources);
-      if (_v0.$ === "Nothing") {
-        return $elm$core$Maybe$Nothing;
-      } else {
+      if (_v0.$ === "Just") {
         var source = _v0.a;
         return $author$project$Auth$requiresAuthorization(source.auth) ? A2(
           $elm$core$Maybe$map,
@@ -27024,6 +27578,8 @@
             $author$project$Auth$sourceFamilyKey(source)
           )
         ) : $elm$core$Maybe$Just("anonymous");
+      } else {
+        return $elm$core$Maybe$Nothing;
       }
     }
   );
@@ -30111,7 +30667,7 @@
     function(auth, viewMode, shiftByOne, selectedIndex, index, page) {
       var isActive = A4($author$project$View$Sidebar$isThumbnailActive, viewMode, shiftByOne, selectedIndex, index);
       var hasChoices = $elm$core$List$length(page.images) > 1;
-      var fallbackImage = { auth: $author$project$Auth$Unknown, isPrimary: false, isStatic: true, label: "", sourceId: "", thumbUrl: "", tileSource: "" };
+      var fallbackImage = { auth: $author$project$Auth$Unknown, id: "", isPrimary: false, isStatic: true, label: "", sourceId: "", thumbUrl: "", tileSource: "" };
       var primary = A2(
         $elm$core$Maybe$withDefault,
         A2(
@@ -30133,17 +30689,19 @@
         var _v0 = A2($author$project$Auth$thumbnailCrossOrigin, primary.sourceId, auth);
         if (_v0.$ === "Just") {
           var crossOrigin = _v0.a;
-          return A2(
-            $elm$html$Html$img,
+          return A3(
+            $elm$html$Html$node,
+            "diva-lazy-image",
             _List_fromArray(
               [
-                $elm$html$Html$Attributes$class("thumbs-image"),
-                $elm$html$Html$Attributes$src(page.thumbUrl),
-                $elm$html$Html$Attributes$alt(
+                $elm$html$Html$Attributes$class("thumbs-lazy-image"),
+                A2($elm$html$Html$Attributes$attribute, "data-src", page.thumbUrl),
+                A2(
+                  $elm$html$Html$Attributes$attribute,
+                  "data-alt",
                   "Page " + $elm$core$String$fromInt(index + 1)
                 ),
-                A2($elm$html$Html$Attributes$attribute, "loading", "lazy"),
-                A2($elm$html$Html$Attributes$attribute, "crossorigin", crossOrigin)
+                A2($elm$html$Html$Attributes$attribute, "data-crossorigin", crossOrigin)
               ]
             ),
             _List_Nil
@@ -31026,7 +31584,7 @@
       },
       A2($elm$json$Json$Decode$field, "userLanguage", $elm$json$Json$Decode$string)
     )
-  )({ "versions": { "elm": "0.19.1" }, "types": { "message": "Msg.Msg", "aliases": { "IIIF.Presentation.Canvas": { "args": [], "type": "{ id : String.String, label : Maybe.Maybe IIIF.Language.LanguageMap, width : Maybe.Maybe Basics.Int, height : Maybe.Maybe Basics.Int, images : List.List IIIF.Presentation.Image, thumbnail : Maybe.Maybe IIIF.Presentation.Image, viewingLayout : Maybe.Maybe IIIF.Presentation.ViewingLayout }" }, "IIIF.Presentation.HomePage": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.Image": { "args": [], "type": "{ id : IIIF.Image.ImageUri, label : Maybe.Maybe IIIF.Language.LanguageMap, imageType : IIIF.Presentation.ImageType, service : List.List IIIF.Presentation.ServiceTypes, serviceObjects : List.List Json.Decode.Value }" }, "IIIF.Language.LabelValue": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Language.LanguageMap": { "args": [], "type": "List.List IIIF.Language.LanguageValues" }, "IIIF.Presentation.Logo": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes, width : Basics.Int, height : Basics.Int, service : Maybe.Maybe (List.List IIIF.Presentation.ServiceObject) }" }, "IIIF.Presentation.Manifest": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, metadata : List.List IIIF.Language.LabelValue, viewingDirection : IIIF.Presentation.ViewingDirection, summary : Maybe.Maybe IIIF.Language.LanguageMap, viewingLayout : IIIF.Presentation.ViewingLayout, canvases : List.List IIIF.Presentation.Canvas, ranges : Maybe.Maybe (List.List IIIF.Presentation.Range), homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe IIIF.Presentation.Image, provider : Maybe.Maybe (List.List IIIF.Presentation.Provider), thumbnail : Maybe.Maybe IIIF.Presentation.Image, requiredStatement : Maybe.Maybe IIIF.Presentation.RequiredStatement }" }, "IIIF.Presentation.Provider": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, type_ : IIIF.Presentation.ResourceTypes, homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe (List.List IIIF.Presentation.Logo), seeAlso : Maybe.Maybe (List.List IIIF.Presentation.SeeAlso) }" }, "IIIF.Presentation.Range": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.RangeItem, metadata : List.List IIIF.Language.LabelValue }" }, "IIIF.Presentation.RequiredStatement": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Presentation.SeeAlso": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.ServiceObject": { "args": [], "type": "{ id : String.String, serviceType : IIIF.Presentation.ServiceTypes }" }, "Json.Decode.Value": { "args": [], "type": "Json.Encode.Value" }, "IIIF.Presentation.Collection": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, summary : Maybe.Maybe IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.CollectionItem }" }, "IIIF.Image.ImageRequestParameters": { "args": [], "type": "{ host : String.String, prefix : String.String, region : IIIF.Image.ImageRegion, size : IIIF.Image.ImageSize, rotation : IIIF.Image.ImageRotation, quality : IIIF.Image.ImageQuality, format : IIIF.Image.ImageFormat }" }, "IIIF.Image.ImageServerParameters": { "args": [], "type": "{ host : String.String, prefix : String.String }" } }, "unions": { "Msg.Msg": { "args": [], "tags": { "AuthEvent": ["Auth.Event"], "ClientNotifiedFullscreenChanged": ["Basics.Bool"], "ClientNotifiedPageChanged": ["Basics.Int"], "ClientNotifiedPageChangedInstant": ["Basics.Int"], "ClientNotifiedScrollThumbs": [], "ServerRespondedWithCollectionItem": ["String.String", "Result.Result Http.Error IIIF.Presentation.IIIFResource"], "ServerRespondedWithManifestFromCollection": ["String.String", "Result.Result Http.Error IIIF.Presentation.IIIFManifest"], "ServerRespondedWithResource": ["Result.Result Http.Error IIIF.Presentation.IIIFResource"], "UserAppliedFilterJson": [], "UserChangedZoomLevel": ["Basics.Float"], "UserClickedCloseManifestInfo": [], "UserClickedClosePageView": [], "UserClickedCollectionItem": ["String.String"], "UserClickedManifestItem": ["String.String", "String.String"], "UserClickedOpenManifestInfo": [], "UserClickedOpenPageView": [], "UserClickedPageViewImageChoice": ["Basics.Int"], "UserClickedPageViewNext": [], "UserClickedPageViewPrev": [], "UserClickedRange": ["String.String", "Maybe.Maybe Basics.Int"], "UserClickedSaveFilteredImage": [], "UserClickedThumbnail": ["Basics.Int"], "UserClickedZoomIn": [], "UserClickedZoomOut": [], "UserCopiedFilterJson": [], "UserDraggedCollectionSidebarResize": ["Basics.Int"], "UserDraggedSidebarResize": ["Basics.Int"], "UserEndedCollectionSidebarResize": [], "UserEndedSidebarResize": [], "UserResetAllFilters": [], "UserResetAltColourAdjust": [], "UserSelectedContentsIndex": [], "UserSelectedContentsPages": [], "UserStartedCollectionSidebarResize": ["Basics.Int"], "UserStartedSidebarResize": ["Basics.Int"], "UserToggledContents": [], "UserToggledCollectionSidebar": [], "UserToggledFilter": ["Filters.FilterToggle", "Basics.Bool"], "UserToggledFilterGroup": ["String.String"], "UserToggledFullscreen": [], "UserToggledMetadata": [], "UserToggledPageViewFullscreen": [], "UserToggledPageViewSidebar": [], "UserToggledShiftByOne": [], "UserToggledSidebar": [], "UserToggledThumbnails": [], "UserToggledTwoUp": [], "UserUpdatedFilterFloat": ["Filters.FilterFloatValue", "String.String"], "UserUpdatedFilterInt": ["Filters.FilterIntValue", "String.String"], "UserUpdatedFilterJsonInput": ["String.String"], "UserUpdatedFilterString": ["Filters.FilterStringValue", "String.String"], "ViewerLoadingChanged": ["Basics.Bool"], "ViewportChanged": ["Basics.Int", "Basics.Int"] } }, "Basics.Bool": { "args": [], "tags": { "True": [], "False": [] } }, "Http.Error": { "args": [], "tags": { "BadUrl": ["String.String"], "Timeout": [], "NetworkError": [], "BadStatus": ["Basics.Int"], "BadBody": ["String.String"] } }, "Auth.Event": { "args": [], "tags": { "Resolve": ["String.String", "String.String"], "Cancel": ["String.String"], "HttpSucceeded": ["String.String", "Basics.Int", "String.String"], "HttpFailed": ["String.String", "String.String"], "StorageRead": ["String.String", "Basics.Float", "Maybe.Maybe Json.Decode.Value"], "PopupOpened": ["String.String"], "PopupBlocked": ["String.String"], "PopupClosed": ["String.String"], "TokenMessage": ["String.String", "Basics.Float", "Json.Decode.Value"], "TokenFailed": ["String.String", "String.String"], "LogoutOpened": ["String.String"], "LogoutBlocked": ["String.String"], "LogoutClosed": ["String.String"], "UserCancelled": [], "Destroyed": [] } }, "Filters.FilterFloatValue": { "args": [], "tags": { "FloatColourReplaceBlend": [], "FloatContrast": [], "FloatGamma": [], "FloatNormalizeStrength": [], "FloatPseudoColourBlue": [], "FloatPseudoColourGreen": [], "FloatPseudoColourRed": [], "FloatUnsharpAmount": [] } }, "Filters.FilterIntValue": { "args": [], "tags": { "IntAdaptiveOffset": [], "IntAdaptiveWindow": [], "IntAltRedGamma": [], "IntAltRedSigmoid": [], "IntAltRedVibrance": [], "IntAltRedHue": [], "IntAltRedHueWindow": [], "IntAltGreenGamma": [], "IntAltGreenSigmoid": [], "IntAltGreenHue": [], "IntAltGreenHueWindow": [], "IntAltGreenVibrance": [], "IntAltBlueGamma": [], "IntAltBlueSigmoid": [], "IntAltBlueHue": [], "IntAltBlueHueWindow": [], "IntAltBlueVibrance": [], "IntBrightness": [], "IntCcBlue": [], "IntCcGreen": [], "IntCcRed": [], "IntColourmapCenter": [], "IntColourReplaceTolerance": [], "IntPcaHue": [], "IntHue": [], "IntMorphKernel": [], "IntRotation": [], "IntSaturation": [], "IntThreshold": [], "IntVibrance": [] } }, "Filters.FilterStringValue": { "args": [], "tags": { "StringColourmapPreset": [], "StringColourReplaceSource": [], "StringColourReplaceTarget": [], "StringConvolutionPreset": [], "StringPcaMode": [], "StringMorphOperation": [], "StringPseudoColourMode": [] } }, "Filters.FilterToggle": { "args": [], "tags": { "ToggleAdaptive": [], "ToggleAltBlueGamma": [], "ToggleAltBlueHue": [], "ToggleAltBlueSigmoid": [], "ToggleAltBlueVibrance": [], "ToggleAltGreenGamma": [], "ToggleAltGreenHue": [], "ToggleAltGreenSigmoid": [], "ToggleAltGreenVibrance": [], "ToggleAltRedGamma": [], "ToggleAltRedHue": [], "ToggleAltRedSigmoid": [], "ToggleAltRedVibrance": [], "ToggleBrightness": [], "ToggleCcBlue": [], "ToggleCcGreen": [], "ToggleCcRed": [], "ToggleColourmap": [], "ToggleColourReplace": [], "ToggleColourReplacePreserveLum": [], "ToggleContrast": [], "ToggleConvolution": [], "ToggleFlip": [], "ToggleGamma": [], "ToggleGlobalPca": [], "ToggleGrayscale": [], "ToggleHue": [], "ToggleInvert": [], "ToggleMorph": [], "ToggleNormalize": [], "TogglePseudoColour": [], "ToggleSaturation": [], "ToggleThreshold": [], "ToggleUnsharp": [], "ToggleVibrance": [] } }, "Basics.Float": { "args": [], "tags": { "Float": [] } }, "IIIF.Presentation.IIIFManifest": { "args": [], "tags": { "IIIFManifest": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Manifest"] } }, "IIIF.Presentation.IIIFResource": { "args": [], "tags": { "ResourceManifest": ["IIIF.Presentation.IIIFManifest"], "ResourceCollection": ["IIIF.Presentation.IIIFCollection"], "ResourceCanvas": ["IIIF.Presentation.IIIFCanvas"], "ResourceRange": ["IIIF.Presentation.IIIFRange"] } }, "Basics.Int": { "args": [], "tags": { "Int": [] } }, "Maybe.Maybe": { "args": ["a"], "tags": { "Just": ["a"], "Nothing": [] } }, "Result.Result": { "args": ["error", "value"], "tags": { "Ok": ["value"], "Err": ["error"] } }, "String.String": { "args": [], "tags": { "String": [] } }, "IIIF.Presentation.IIIFCanvas": { "args": [], "tags": { "IIIFCanvas": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Canvas"] } }, "IIIF.Presentation.IIIFCollection": { "args": [], "tags": { "IIIFCollection": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Collection"] } }, "IIIF.Presentation.IIIFRange": { "args": [], "tags": { "IIIFRange": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Range"] } }, "IIIF.Version.IIIFVersion": { "args": [], "tags": { "IIIFV2": [], "IIIFV3": [] } }, "IIIF.Presentation.ImageType": { "args": [], "tags": { "PrimaryImage": [], "ChoiceImage": [] } }, "IIIF.Image.ImageUri": { "args": [], "tags": { "InfoUri": ["IIIF.Image.ImageServerParameters"], "ImageUri": ["IIIF.Image.ImageRequestParameters"], "StaticImageUri": ["IIIF.Image.ImageServerParameters"] } }, "IIIF.Language.LanguageValues": { "args": [], "tags": { "LanguageValues": ["IIIF.Language.Language", "List.List String.String"] } }, "List.List": { "args": ["a"], "tags": {} }, "IIIF.Presentation.MediaFormats": { "args": [], "tags": { "ImageJpeg": [], "OtherFormat": ["String.String"] } }, "IIIF.Presentation.RangeItem": { "args": [], "tags": { "RangeCanvas": ["String.String"], "RangeRange": ["IIIF.Presentation.Range"] } }, "IIIF.Presentation.ResourceTypes": { "args": [], "tags": { "Video": [], "OtherResource": ["String.String"] } }, "IIIF.Presentation.ServiceTypes": { "args": [], "tags": { "ImageService1": [], "ImageService2": [], "ImageService3": [], "SearchService1": [], "AutoCompleteService1": [], "AuthTokenService1": [], "AuthLogoutService1": [], "UnknownService": [] } }, "Json.Encode.Value": { "args": [], "tags": { "Value": [] } }, "IIIF.Presentation.ViewingDirection": { "args": [], "tags": { "LeftToRight": [], "RightToLeft": [], "TopToBottom": [], "BottomToTop": [] } }, "IIIF.Presentation.ViewingLayout": { "args": [], "tags": { "LayoutV2": ["IIIF.Presentation.ViewingHint"], "LayoutV3": ["List.List IIIF.Presentation.Behavior"] } }, "IIIF.Presentation.Behavior": { "args": [], "tags": { "AutoAdvanceBehavior": [], "NoAutoAdvanceBehavior": [], "RepeatBehavior": [], "NoRepeatBehavior": [], "UnorderedBehavior": [], "IndividualsBehavior": [], "ContinuousBehavior": [], "PagedBehavior": [], "FacingPagesBehavior": [], "NonPagedBehavior": [], "MultiPartBehavior": [], "TogetherBehavior": [], "SequenceBehavior": [], "ThumbnailNavBehavior": [], "NoNavBehavior": [], "HiddenBehavior": [] } }, "IIIF.Presentation.CollectionItem": { "args": [], "tags": { "NestedCollection": ["IIIF.Presentation.Collection"], "ManifestItem": ["IIIF.Presentation.Manifest"] } }, "IIIF.Image.ImageFormat": { "args": [], "tags": { "JpegFormat": [], "TiffFormat": [], "PngFormat": [], "Jp2Format": [], "GifFormat": [], "PdfFormat": [], "WebpFormat": [] } }, "IIIF.Image.ImageQuality": { "args": [], "tags": { "ColorQuality": [], "GrayQuality": [], "BiTonalQuality": [], "DefaultQuality": [], "NativeQuality": [] } }, "IIIF.Image.ImageRegion": { "args": [], "tags": { "FullRegion": [], "SquareRegion": [], "SizeRegion": ["{ x : Basics.Int, y : Basics.Int, w : Basics.Int, h : Basics.Int }"], "PctSizeRegion": ["{ x : Basics.Float, y : Basics.Float, w : Basics.Float, h : Basics.Float }"] } }, "IIIF.Image.ImageRotation": { "args": [], "tags": { "NormalRotation": ["Basics.Float"], "MirroredRotation": ["Basics.Float"] } }, "IIIF.Image.ImageSize": { "args": [], "tags": { "MaxSize": [], "ExactMaxSize": [], "WidthOnlySize": ["Basics.Int"], "ExactWidthOnlySize": ["Basics.Int"], "HeightOnlySize": ["Basics.Int"], "ExactHeightOnlySize": ["Basics.Int"], "PercentSize": ["Basics.Float"], "ExactPercentSize": ["Basics.Float"], "WidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"] } }, "IIIF.Language.Language": { "args": [], "tags": { "LanguageCode": ["String.String"], "None": [], "Default": [] } }, "IIIF.Presentation.ViewingHint": { "args": [], "tags": { "PagedHint": [], "IndividualsHint": [], "ContinuousHint": [], "MultiPartHint": [], "NonPagedHint": [], "TopHint": [], "FacingPagesHint": [] } } } } }) } };
+  )({ "versions": { "elm": "0.19.1" }, "types": { "message": "Msg.Msg", "aliases": { "IIIF.Presentation.Canvas": { "args": [], "type": "{ id : String.String, label : Maybe.Maybe IIIF.Language.LanguageMap, width : Maybe.Maybe Basics.Int, height : Maybe.Maybe Basics.Int, images : List.List IIIF.Presentation.Image, thumbnail : Maybe.Maybe IIIF.Presentation.Image, viewingLayout : Maybe.Maybe IIIF.Presentation.ViewingLayout }" }, "IIIF.Presentation.HomePage": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.Image": { "args": [], "type": "{ id : IIIF.Image.ImageUri, label : Maybe.Maybe IIIF.Language.LanguageMap, imageType : IIIF.Presentation.ImageType, service : List.List IIIF.Presentation.ServiceTypes, serviceObjects : List.List Json.Decode.Value }" }, "IIIF.Language.LabelValue": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Language.LanguageMap": { "args": [], "type": "List.List IIIF.Language.LanguageValues" }, "IIIF.Presentation.Logo": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes, width : Basics.Int, height : Basics.Int, service : Maybe.Maybe (List.List IIIF.Presentation.ServiceObject) }" }, "IIIF.Presentation.Manifest": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, metadata : List.List IIIF.Language.LabelValue, viewingDirection : IIIF.Presentation.ViewingDirection, summary : Maybe.Maybe IIIF.Language.LanguageMap, viewingLayout : IIIF.Presentation.ViewingLayout, canvases : List.List IIIF.Presentation.Canvas, ranges : Maybe.Maybe (List.List IIIF.Presentation.Range), homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe IIIF.Presentation.Image, provider : Maybe.Maybe (List.List IIIF.Presentation.Provider), thumbnail : Maybe.Maybe IIIF.Presentation.Image, requiredStatement : Maybe.Maybe IIIF.Presentation.RequiredStatement }" }, "IIIF.Presentation.Provider": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, type_ : IIIF.Presentation.ResourceTypes, homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe (List.List IIIF.Presentation.Logo), seeAlso : Maybe.Maybe (List.List IIIF.Presentation.SeeAlso) }" }, "IIIF.Presentation.Range": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.RangeItem, metadata : List.List IIIF.Language.LabelValue }" }, "IIIF.Presentation.RequiredStatement": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Presentation.SeeAlso": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.ServiceObject": { "args": [], "type": "{ id : String.String, serviceType : IIIF.Presentation.ServiceTypes }" }, "Json.Decode.Value": { "args": [], "type": "Json.Encode.Value" }, "IIIF.Presentation.Collection": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, summary : Maybe.Maybe IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.CollectionItem }" }, "IIIF.Image.ImageRequestParameters": { "args": [], "type": "{ host : String.String, prefix : String.String, region : IIIF.Image.ImageRegion, size : IIIF.Image.ImageSize, rotation : IIIF.Image.ImageRotation, quality : IIIF.Image.ImageQuality, format : IIIF.Image.ImageFormat }" }, "IIIF.Image.ImageServerParameters": { "args": [], "type": "{ host : String.String, prefix : String.String }" } }, "unions": { "Msg.Msg": { "args": [], "tags": { "AuthEvent": ["Auth.Event"], "ClientRequestedLayoutMode": ["String.String"], "ClientRequestedResource": ["String.String", "String.String"], "ClientNotifiedFullscreenChanged": ["Basics.Bool"], "ClientNotifiedPageChanged": ["Basics.Int"], "ClientNotifiedPageChangedInstant": ["Basics.Int"], "ClientNotifiedScrollThumbs": [], "ServerRespondedWithCollectionItem": ["String.String", "Result.Result Http.Error IIIF.Presentation.IIIFResource"], "ServerRespondedWithManifestFromCollection": ["String.String", "Result.Result Http.Error IIIF.Presentation.IIIFManifest"], "ServerRespondedWithResource": ["Result.Result Http.Error IIIF.Presentation.IIIFResource"], "ServerRespondedWithRequestedResource": ["String.String", "String.String", "Result.Result Http.Error IIIF.Presentation.IIIFResource"], "UserAppliedFilterJson": [], "UserChangedZoomLevel": ["Basics.Float"], "UserClickedCloseManifestInfo": [], "UserClickedClosePageView": [], "UserClickedCollectionItem": ["String.String"], "UserClickedManifestItem": ["String.String", "String.String"], "UserClickedOpenManifestInfo": [], "UserClickedOpenPageView": [], "UserClickedPageViewImageChoice": ["Basics.Int"], "UserClickedPageViewNext": [], "UserClickedPageViewPrev": [], "UserClickedRange": ["String.String", "Maybe.Maybe Basics.Int"], "UserClickedSaveFilteredImage": [], "UserClickedThumbnail": ["Basics.Int"], "UserClickedZoomIn": [], "UserClickedZoomOut": [], "UserCopiedFilterJson": [], "UserDraggedCollectionSidebarResize": ["Basics.Int"], "UserDraggedSidebarResize": ["Basics.Int"], "UserEndedCollectionSidebarResize": [], "UserEndedSidebarResize": [], "UserResetAllFilters": [], "UserResetAltColourAdjust": [], "UserSelectedContentsIndex": [], "UserSelectedContentsPages": [], "UserStartedCollectionSidebarResize": ["Basics.Int"], "UserStartedSidebarResize": ["Basics.Int"], "UserToggledContents": [], "UserToggledCollectionSidebar": [], "UserToggledFilter": ["Filters.FilterToggle", "Basics.Bool"], "UserToggledFilterGroup": ["String.String"], "UserToggledFullscreen": [], "UserToggledMetadata": [], "UserToggledPageViewFullscreen": [], "UserToggledPageViewSidebar": [], "UserToggledShiftByOne": [], "UserToggledSidebar": [], "UserToggledThumbnails": [], "UserToggledTwoUp": [], "UserUpdatedFilterFloat": ["Filters.FilterFloatValue", "String.String"], "UserUpdatedFilterInt": ["Filters.FilterIntValue", "String.String"], "UserUpdatedFilterJsonInput": ["String.String"], "UserUpdatedFilterString": ["Filters.FilterStringValue", "String.String"], "ViewerLoadingChanged": ["Basics.Bool"], "ViewportChanged": ["Basics.Int", "Basics.Int"] } }, "Basics.Bool": { "args": [], "tags": { "True": [], "False": [] } }, "Http.Error": { "args": [], "tags": { "BadUrl": ["String.String"], "Timeout": [], "NetworkError": [], "BadStatus": ["Basics.Int"], "BadBody": ["String.String"] } }, "Auth.Event": { "args": [], "tags": { "Resolve": ["String.String", "String.String"], "Cancel": ["String.String"], "HttpSucceeded": ["String.String", "Basics.Int", "String.String"], "HttpFailed": ["String.String", "String.String"], "StorageRead": ["String.String", "Basics.Float", "Maybe.Maybe Json.Decode.Value"], "PopupOpened": ["String.String"], "PopupBlocked": ["String.String"], "PopupClosed": ["String.String"], "TokenMessage": ["String.String", "Basics.Float", "Json.Decode.Value"], "TokenFailed": ["String.String", "String.String"], "LogoutOpened": ["String.String"], "LogoutBlocked": ["String.String"], "LogoutClosed": [], "UserCancelled": [], "Destroyed": [] } }, "Filters.FilterFloatValue": { "args": [], "tags": { "FloatColourReplaceBlend": [], "FloatContrast": [], "FloatGamma": [], "FloatNormalizeStrength": [], "FloatPseudoColourBlue": [], "FloatPseudoColourGreen": [], "FloatPseudoColourRed": [], "FloatUnsharpAmount": [] } }, "Filters.FilterIntValue": { "args": [], "tags": { "IntAdaptiveOffset": [], "IntAdaptiveWindow": [], "IntAltRedGamma": [], "IntAltRedSigmoid": [], "IntAltRedVibrance": [], "IntAltRedHue": [], "IntAltRedHueWindow": [], "IntAltGreenGamma": [], "IntAltGreenSigmoid": [], "IntAltGreenHue": [], "IntAltGreenHueWindow": [], "IntAltGreenVibrance": [], "IntAltBlueGamma": [], "IntAltBlueSigmoid": [], "IntAltBlueHue": [], "IntAltBlueHueWindow": [], "IntAltBlueVibrance": [], "IntBrightness": [], "IntCcBlue": [], "IntCcGreen": [], "IntCcRed": [], "IntColourmapCenter": [], "IntColourReplaceTolerance": [], "IntPcaHue": [], "IntHue": [], "IntMorphKernel": [], "IntRotation": [], "IntSaturation": [], "IntThreshold": [], "IntVibrance": [] } }, "Filters.FilterStringValue": { "args": [], "tags": { "StringColourmapPreset": [], "StringColourReplaceSource": [], "StringColourReplaceTarget": [], "StringConvolutionPreset": [], "StringPcaMode": [], "StringMorphOperation": [], "StringPseudoColourMode": [] } }, "Filters.FilterToggle": { "args": [], "tags": { "ToggleAdaptive": [], "ToggleAltBlueGamma": [], "ToggleAltBlueHue": [], "ToggleAltBlueSigmoid": [], "ToggleAltBlueVibrance": [], "ToggleAltGreenGamma": [], "ToggleAltGreenHue": [], "ToggleAltGreenSigmoid": [], "ToggleAltGreenVibrance": [], "ToggleAltRedGamma": [], "ToggleAltRedHue": [], "ToggleAltRedSigmoid": [], "ToggleAltRedVibrance": [], "ToggleBrightness": [], "ToggleCcBlue": [], "ToggleCcGreen": [], "ToggleCcRed": [], "ToggleColourmap": [], "ToggleColourReplace": [], "ToggleColourReplacePreserveLum": [], "ToggleContrast": [], "ToggleConvolution": [], "ToggleFlip": [], "ToggleGamma": [], "ToggleGlobalPca": [], "ToggleGrayscale": [], "ToggleHue": [], "ToggleInvert": [], "ToggleMorph": [], "ToggleNormalize": [], "TogglePseudoColour": [], "ToggleSaturation": [], "ToggleThreshold": [], "ToggleUnsharp": [], "ToggleVibrance": [] } }, "Basics.Float": { "args": [], "tags": { "Float": [] } }, "IIIF.Presentation.IIIFManifest": { "args": [], "tags": { "IIIFManifest": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Manifest"] } }, "IIIF.Presentation.IIIFResource": { "args": [], "tags": { "ResourceManifest": ["IIIF.Presentation.IIIFManifest"], "ResourceCollection": ["IIIF.Presentation.IIIFCollection"], "ResourceCanvas": ["IIIF.Presentation.IIIFCanvas"], "ResourceRange": ["IIIF.Presentation.IIIFRange"] } }, "Basics.Int": { "args": [], "tags": { "Int": [] } }, "Maybe.Maybe": { "args": ["a"], "tags": { "Just": ["a"], "Nothing": [] } }, "Result.Result": { "args": ["error", "value"], "tags": { "Ok": ["value"], "Err": ["error"] } }, "String.String": { "args": [], "tags": { "String": [] } }, "IIIF.Presentation.IIIFCanvas": { "args": [], "tags": { "IIIFCanvas": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Canvas"] } }, "IIIF.Presentation.IIIFCollection": { "args": [], "tags": { "IIIFCollection": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Collection"] } }, "IIIF.Presentation.IIIFRange": { "args": [], "tags": { "IIIFRange": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Range"] } }, "IIIF.Version.IIIFVersion": { "args": [], "tags": { "IIIFV2": [], "IIIFV3": [] } }, "IIIF.Presentation.ImageType": { "args": [], "tags": { "PrimaryImage": [], "ChoiceImage": [] } }, "IIIF.Image.ImageUri": { "args": [], "tags": { "InfoUri": ["IIIF.Image.ImageServerParameters"], "ImageUri": ["IIIF.Image.ImageRequestParameters"], "StaticImageUri": ["IIIF.Image.ImageServerParameters"] } }, "IIIF.Language.LanguageValues": { "args": [], "tags": { "LanguageValues": ["IIIF.Language.Language", "List.List String.String"] } }, "List.List": { "args": ["a"], "tags": {} }, "IIIF.Presentation.MediaFormats": { "args": [], "tags": { "ImageJpeg": [], "OtherFormat": ["String.String"] } }, "IIIF.Presentation.RangeItem": { "args": [], "tags": { "RangeCanvas": ["String.String"], "RangeRange": ["IIIF.Presentation.Range"] } }, "IIIF.Presentation.ResourceTypes": { "args": [], "tags": { "Video": [], "OtherResource": ["String.String"] } }, "IIIF.Presentation.ServiceTypes": { "args": [], "tags": { "ImageService1": [], "ImageService2": [], "ImageService3": [], "SearchService1": [], "AutoCompleteService1": [], "AuthTokenService1": [], "AuthLogoutService1": [], "UnknownService": [] } }, "Json.Encode.Value": { "args": [], "tags": { "Value": [] } }, "IIIF.Presentation.ViewingDirection": { "args": [], "tags": { "LeftToRight": [], "RightToLeft": [], "TopToBottom": [], "BottomToTop": [] } }, "IIIF.Presentation.ViewingLayout": { "args": [], "tags": { "LayoutV2": ["IIIF.Presentation.ViewingHint"], "LayoutV3": ["List.List IIIF.Presentation.Behavior"] } }, "IIIF.Presentation.Behavior": { "args": [], "tags": { "AutoAdvanceBehavior": [], "NoAutoAdvanceBehavior": [], "RepeatBehavior": [], "NoRepeatBehavior": [], "UnorderedBehavior": [], "IndividualsBehavior": [], "ContinuousBehavior": [], "PagedBehavior": [], "FacingPagesBehavior": [], "NonPagedBehavior": [], "MultiPartBehavior": [], "TogetherBehavior": [], "SequenceBehavior": [], "ThumbnailNavBehavior": [], "NoNavBehavior": [], "HiddenBehavior": [] } }, "IIIF.Presentation.CollectionItem": { "args": [], "tags": { "NestedCollection": ["IIIF.Presentation.Collection"], "ManifestItem": ["IIIF.Presentation.Manifest"] } }, "IIIF.Image.ImageFormat": { "args": [], "tags": { "JpegFormat": [], "TiffFormat": [], "PngFormat": [], "Jp2Format": [], "GifFormat": [], "PdfFormat": [], "WebpFormat": [] } }, "IIIF.Image.ImageQuality": { "args": [], "tags": { "ColorQuality": [], "GrayQuality": [], "BiTonalQuality": [], "DefaultQuality": [], "NativeQuality": [] } }, "IIIF.Image.ImageRegion": { "args": [], "tags": { "FullRegion": [], "SquareRegion": [], "SizeRegion": ["{ x : Basics.Int, y : Basics.Int, w : Basics.Int, h : Basics.Int }"], "PctSizeRegion": ["{ x : Basics.Float, y : Basics.Float, w : Basics.Float, h : Basics.Float }"] } }, "IIIF.Image.ImageRotation": { "args": [], "tags": { "NormalRotation": ["Basics.Float"], "MirroredRotation": ["Basics.Float"] } }, "IIIF.Image.ImageSize": { "args": [], "tags": { "MaxSize": [], "ExactMaxSize": [], "WidthOnlySize": ["Basics.Int"], "ExactWidthOnlySize": ["Basics.Int"], "HeightOnlySize": ["Basics.Int"], "ExactHeightOnlySize": ["Basics.Int"], "PercentSize": ["Basics.Float"], "ExactPercentSize": ["Basics.Float"], "WidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"] } }, "IIIF.Language.Language": { "args": [], "tags": { "LanguageCode": ["String.String"], "None": [], "Default": [] } }, "IIIF.Presentation.ViewingHint": { "args": [], "tags": { "PagedHint": [], "IndividualsHint": [], "ContinuousHint": [], "MultiPartHint": [], "NonPagedHint": [], "TopHint": [], "FacingPagesHint": [] } } } } }) } };
 
   // src/auth.ts
   var STORAGE_PREFIX = "diva:iiif-auth2:";
@@ -32911,8 +33469,22 @@
     target.appendChild(styleEl);
   };
   injectStyles(diva_default);
-  var Diva = class {
+  var Diva = class extends EventTarget {
+    /**
+     * Create a Diva viewer in an existing root element.
+     *
+     * @param rootId - HTML `id` of the root element, without a leading `#`.
+     * @param flags - Initial resource and display options.
+     *
+     * @throws `Error`
+     * Thrown synchronously when no element has the supplied `rootId`.
+     *
+     * @remarks
+     * Constructing another Diva instance for the same root destroys the previous
+     * instance first.
+     */
     constructor(rootId, flags) {
+      super();
       this.mainViewer = null;
       this.pendingViewerMethods = /* @__PURE__ */ new Map();
       this.viewerMethodRafId = null;
@@ -32928,6 +33500,13 @@
       this.filterPreviewRafId = null;
       this.filterPreviewController = null;
       this.isDestroyed = false;
+      this.pages = [];
+      this.readySettled = false;
+      this.resourceSequence = 0;
+      this.pendingResource = null;
+      this.awaitingViewerResource = null;
+      this.resourceLoading = true;
+      this.viewerLoading = false;
       const root = document.getElementById(rootId);
       if (!root) {
         throw new Error(`Missing root element: ${rootId}`);
@@ -32943,9 +33522,29 @@
       this.rootId = rootId;
       this.root = root;
       this.isDestroyed = false;
+      this.state = {
+        resourceUrl: flags.objectData,
+        ready: false,
+        loading: true,
+        pageCount: 0,
+        currentPageIndex: null,
+        visiblePageIndexes: [],
+        layoutMode: "single",
+        viewingDirection: "ltr",
+        zoom: null,
+        fullscreen: false,
+        destroyed: false
+      };
+      this.ready = new Promise((resolve, reject) => {
+        this.readyResolve = resolve;
+        this.readyReject = reject;
+      });
+      void this.ready.catch(() => {
+      });
       this.handlePageChangeBound = this.handlePageChange.bind(this);
       this.handleZoomChangeBound = this.handleZoomChange.bind(this);
       this.handleLoadingChangeBound = this.handleLoadingChange.bind(this);
+      this.handlePageLoadErrorBound = this.handlePageLoadError.bind(this);
       this.handleFullscreenChangeBound = this.handleFullscreenChange.bind(this);
       this.handleRootClickBound = this.handleRootClick.bind(this);
       let langCode = this.detectLanguage();
@@ -32972,6 +33571,7 @@
       this.bindFullscreenChange();
       this.bindZoomChange();
       this.bindLoadingChange();
+      this.bindViewerEvent("diva-page-load-error", this.handlePageLoadErrorBound);
     }
     /**
      * Detects the current locale of the browser,
@@ -33000,6 +33600,10 @@
       });
       this.getPort("pageLabelsUpdated").subscribe((labels) => {
         this.callViewerMethodWhenReady("setPageLabels", labels);
+      });
+      this.getPort("pagesUpdated").subscribe((pages) => {
+        this.pages = pages.map((page) => this.copyPage(page));
+        this.updateState({ pageCount: this.pages.length, currentPageIndex: null, visiblePageIndexes: [] });
       });
       this.getPort("zoomLevelUpdated").subscribe((zoom) => {
         this.callViewerMethodWhenReady("setZoomLevel", zoom);
@@ -33030,12 +33634,21 @@
       });
       this.getPort("layoutConfigUpdated").subscribe((config) => {
         if (this.callViewerMethod("setLayoutConfig", config.mode, config.direction)) {
+          this.updateLayoutState(config.mode, config.direction);
           return;
         }
         this.callViewerMethodWhenReady("setLayoutConfig", config.mode, config.direction);
+        this.updateLayoutState(config.mode, config.direction);
       });
       this.getPort("layoutModeUpdated").subscribe((mode) => {
         this.callViewerMethod("setLayoutMode", mode);
+        this.updateLayoutState(mode, this.state.viewingDirection);
+      });
+      this.getPort("resourceLoadSucceeded").subscribe((value) => {
+        this.handleResourceSucceeded(value.requestId, value.url, value.hasPages);
+      });
+      this.getPort("resourceLoadFailed").subscribe((value) => {
+        this.handleResourceFailed(value.requestId, value.message);
       });
       this.getPort("copyToClipboard").subscribe((text) => {
         this.copyToClipboard(text);
@@ -33051,6 +33664,114 @@
         this.mainViewer = current;
       }
       return this.mainViewer;
+    }
+    copyPage(page) {
+      var _a;
+      const images = page.images.map((image) => ({ ...image }));
+      const primary = (_a = images.find((image) => image.id === page.primaryImage.id && image.isPrimary)) != null ? _a : { ...page.primaryImage };
+      return {
+        index: page.index,
+        canvasId: page.canvasId,
+        label: page.label,
+        ...page.width === null || page.width === void 0 ? {} : { width: page.width },
+        ...page.height === null || page.height === void 0 ? {} : { height: page.height },
+        primaryImage: { ...primary },
+        images
+      };
+    }
+    copyState() {
+      return { ...this.state, visiblePageIndexes: this.state.visiblePageIndexes.slice() };
+    }
+    updateState(next) {
+      this.state = { ...this.state, ...next };
+    }
+    emit(type, detail) {
+      this.dispatchEvent(new CustomEvent(type, { detail }));
+    }
+    updateLayoutState(mode, direction) {
+      const layoutMode = mode === "spread" || mode === "spread-shift" ? mode : "single";
+      const viewingDirection = direction === "rtl" ? "rtl" : "ltr";
+      const viewer = this.ensureMainViewer();
+      const visible = viewer && typeof viewer.getVisiblePageIndexes === "function" ? viewer.getVisiblePageIndexes() : this.state.visiblePageIndexes;
+      const changed = layoutMode !== this.state.layoutMode || viewingDirection !== this.state.viewingDirection;
+      this.updateState({ layoutMode, viewingDirection, visiblePageIndexes: visible });
+      if (changed) {
+        this.emit("layoutchange", { layoutMode, viewingDirection });
+      }
+    }
+    handleResourceSucceeded(requestId, url, hasPages) {
+      var _a;
+      if (requestId !== "initial" && ((_a = this.pendingResource) == null ? void 0 : _a.id) !== requestId) {
+        return;
+      }
+      if (hasPages) {
+        this.awaitingViewerResource = { id: requestId, url };
+        return;
+      }
+      this.completeResource(requestId, url);
+    }
+    completeResource(requestId, url) {
+      this.awaitingViewerResource = null;
+      this.updateState({ resourceUrl: url, ready: true });
+      this.resourceLoading = false;
+      this.refreshLoadingState();
+      if (requestId === "initial") {
+        if (!this.readySettled) {
+          this.readySettled = true;
+          this.readyResolve();
+          this.emit("ready", this.copyState());
+        }
+      } else if (this.pendingResource) {
+        this.pendingResource.resolve();
+        this.pendingResource = null;
+      }
+      this.emit("resourcechange", { resourceUrl: url, state: this.copyState() });
+    }
+    handleResourceFailed(requestId, message) {
+      var _a;
+      if (requestId !== "initial" && ((_a = this.pendingResource) == null ? void 0 : _a.id) !== requestId) {
+        return;
+      }
+      const error = new Error(message);
+      this.awaitingViewerResource = null;
+      this.updateState({ ready: requestId !== "initial" });
+      this.resourceLoading = false;
+      this.refreshLoadingState();
+      if (requestId === "initial" && !this.readySettled) {
+        this.readySettled = true;
+        this.readyReject(error);
+      } else if (this.pendingResource) {
+        this.pendingResource.reject(error);
+        this.pendingResource = null;
+      }
+      this.emit("error", { error, operation: "setResource", recoverable: requestId !== "initial" });
+    }
+    assertAlive() {
+      if (this.isDestroyed) {
+        throw new DOMException("The Diva instance was destroyed.", "InvalidStateError");
+      }
+    }
+    assertPageIndex(index) {
+      if (!Number.isInteger(index) || index < 0 || index >= this.pages.length) {
+        throw new RangeError(`Page index ${index} is outside the available page range.`);
+      }
+    }
+    refreshLoadingState() {
+      const loading = this.resourceLoading || this.viewerLoading;
+      if (loading === this.state.loading) {
+        return;
+      }
+      this.updateState({ loading });
+      this.emit("loadingchange", { loading });
+    }
+    async waitForResource() {
+      this.assertAlive();
+      if (this.pendingResource) {
+        await this.pendingResource.promise;
+      } else {
+        await this.ready;
+      }
+      this.assertAlive();
     }
     async applyFilterPreview() {
       if (this.isDestroyed) {
@@ -33129,8 +33850,318 @@
     bindRootClick() {
       this.getConnectedRoot().addEventListener("click", this.handleRootClickBound, true);
     }
+    addEventListener(type, listener, options) {
+      super.addEventListener(type, listener, options);
+    }
+    removeEventListener(type, listener, options) {
+      super.removeEventListener(type, listener, options);
+    }
+    /**
+     * Return a defensive snapshot of current viewer state.
+     *
+     * @returns State that callers may retain without observing later mutations.
+     */
+    getState() {
+      return this.copyState();
+    }
+    /**
+     * Return defensive metadata snapshots for every displayed page.
+     *
+     * @returns Pages in zero-based display order. Auth tokens and resolved loading URLs are never included.
+     */
+    getPages() {
+      return this.pages.map((page) => this.copyPage(page));
+    }
+    /**
+     * Return metadata for the active page, if the resource has pages.
+     *
+     * @returns The active page, or `undefined` before page initialization and for collections without an active manifest.
+     */
+    getCurrentPage() {
+      const index = this.state.currentPageIndex;
+      return index === null || !this.pages[index] ? void 0 : this.copyPage(this.pages[index]);
+    }
+    /**
+     * Return the pages in the active row or opening.
+     *
+     * @returns One page in `single` mode, or the pages belonging to the current logical opening in a spread mode.
+     */
+    getVisiblePages() {
+      return this.state.visiblePageIndexes.map((index) => this.pages[index]).filter(Boolean).map((page) => this.copyPage(page));
+    }
+    /**
+     * Return the current single-page or spread layout mode.
+     *
+     * @returns The active {@link DivaLayoutMode}.
+     */
+    getLayoutMode() {
+      return this.state.layoutMode;
+    }
+    /**
+     * Replace the current IIIF manifest or collection without replacing this instance.
+     *
+     * @param url - URL of a IIIF Presentation manifest or collection.
+     * @returns A promise that resolves when the replacement and its first displayable page are ready.
+     *
+     * @throws `TypeError`
+     * Rejected when `url` is empty.
+     *
+     * @throws `DOMException`
+     * Rejected with `AbortError` when superseded by a newer replacement, or with
+     * `InvalidStateError` when the viewer has been destroyed.
+     *
+     * @remarks
+     * Event listeners remain attached. A failed request leaves the previous resource
+     * active and emits a recoverable `error` event.
+     *
+     * @example
+     * ```ts
+     * await viewer.setResource("https://example.org/iiif/next-manifest.json");
+     * ```
+     */
+    setResource(url) {
+      this.assertAlive();
+      if (!url || typeof url !== "string") {
+        return Promise.reject(new TypeError("A resource URL is required."));
+      }
+      if (this.pendingResource) {
+        this.pendingResource.reject(new DOMException("The resource load was superseded.", "AbortError"));
+        this.pendingResource = null;
+      }
+      const id = `public-${++this.resourceSequence}`;
+      let resolve;
+      let reject;
+      const promise = new Promise((res, rej) => {
+        resolve = res;
+        reject = rej;
+      });
+      void promise.catch(() => {
+      });
+      this.pendingResource = { id, promise, resolve, reject };
+      this.updateState({ ready: false });
+      this.resourceLoading = true;
+      this.refreshLoadingState();
+      this.getPort("resourceRequested").send({ requestId: id, url });
+      return promise;
+    }
+    /**
+     * Navigate to a zero-based page index.
+     *
+     * @param index - Target index in {@link Diva.getPages}.
+     * @returns A promise that resolves after the navigation command is accepted.
+     *
+     * @throws `RangeError`
+     * Rejected when `index` is not an available integer page index.
+     *
+     * @throws `DOMException`
+     * Rejected with `InvalidStateError` after destruction.
+     */
+    async goToPage(index) {
+      await this.waitForResource();
+      this.assertPageIndex(index);
+      await this.callViewerMethodAsync("scrollToIndex", index);
+    }
+    /**
+     * Navigate to the next page or opening for the active layout.
+     *
+     * @returns A promise that resolves after navigation, or immediately at the final opening.
+     *
+     * @remarks
+     * Spread modes advance by logical opening; clients do not need to calculate a page step.
+     */
+    async next() {
+      await this.waitForResource();
+      await this.callViewerMethodAsync("next");
+    }
+    /**
+     * Navigate to the previous page or opening for the active layout.
+     *
+     * @returns A promise that resolves after navigation, or immediately at the first opening.
+     */
+    async previous() {
+      await this.waitForResource();
+      await this.callViewerMethodAsync("previous");
+    }
+    /**
+     * Set the OpenSeadragon viewport zoom to a positive value.
+     *
+     * @param zoom - Positive finite viewport zoom value.
+     * @returns A promise that resolves after the zoom command is applied.
+     *
+     * @throws `RangeError`
+     * Rejected when `zoom` is not positive and finite.
+     */
+    async setZoom(zoom) {
+      await this.waitForResource();
+      if (!Number.isFinite(zoom) || zoom <= 0) {
+        throw new RangeError("Zoom must be a positive finite number.");
+      }
+      await this.callViewerMethodAsync("setZoomLevel", zoom);
+    }
+    /**
+     * Multiply the current viewport zoom by a positive factor.
+     *
+     * @param factor - Positive finite multiplier; values above 1 zoom in and values below 1 zoom out.
+     * @returns A promise that resolves after the zoom command is applied.
+     *
+     * @throws `RangeError`
+     * Rejected when `factor` is not positive and finite.
+     */
+    async zoomBy(factor) {
+      await this.waitForResource();
+      if (!Number.isFinite(factor) || factor <= 0) {
+        throw new RangeError("Zoom factor must be a positive finite number.");
+      }
+      await this.callViewerMethodAsync("zoomBy", factor);
+    }
+    /**
+     * Zoom in by Diva's standard zoom factor.
+     *
+     * @returns A promise that resolves after multiplying the zoom by 1.6.
+     */
+    zoomIn() {
+      return this.zoomBy(1.6);
+    }
+    /**
+     * Zoom out by Diva's standard zoom factor.
+     *
+     * @returns A promise that resolves after dividing the zoom by 1.6.
+     */
+    zoomOut() {
+      return this.zoomBy(1 / 1.6);
+    }
+    /**
+     * Fit a page, or the current page when omitted, into the viewport.
+     *
+     * @param pageIndex - Optional zero-based page index. Defaults to the active page.
+     * @returns A promise that resolves after the page image loads and is fitted.
+     *
+     * @throws `RangeError`
+     * Rejected when there is no active page or `pageIndex` is unavailable.
+     */
+    async fitToPage(pageIndex) {
+      await this.waitForResource();
+      const index = pageIndex != null ? pageIndex : this.state.currentPageIndex;
+      if (index === null) {
+        throw new RangeError("There is no current page.");
+      }
+      this.assertPageIndex(index);
+      await this.callViewerMethodAsync("fitToPage", index);
+    }
+    /**
+     * Frame a full-resolution pixel rectangle on a page, waiting for that image when necessary.
+     *
+     * @param pageIndex - Zero-based page index containing the region.
+     * @param region - Rectangle in full-resolution image pixels from the upper-left origin.
+     * @param options - Optional padding and animation settings.
+     * @returns A promise that resolves after the image loads and the viewport fits the region.
+     *
+     * @throws `RangeError`
+     * Rejected for an unavailable page, negative coordinates, non-positive dimensions,
+     * non-finite values, or negative padding.
+     *
+     * @throws `Error`
+     * Rejected when authorization or image loading fails.
+     *
+     * @example
+     * ```ts
+     * await viewer.zoomToRegion(
+     *   12,
+     *   { x: 840, y: 1250, width: 460, height: 180 },
+     *   { padding: 0.08 }
+     * );
+     * ```
+     */
+    async zoomToRegion(pageIndex, region, options = {}) {
+      var _a;
+      await this.waitForResource();
+      this.assertPageIndex(pageIndex);
+      if (![region.x, region.y, region.width, region.height].every(Number.isFinite) || region.x < 0 || region.y < 0 || region.width <= 0 || region.height <= 0) {
+        throw new RangeError("Region coordinates must be finite, non-negative, and have positive dimensions.");
+      }
+      const padding = (_a = options.padding) != null ? _a : 0.05;
+      if (!Number.isFinite(padding) || padding < 0) {
+        throw new RangeError("Region padding must be a non-negative finite number.");
+      }
+      await this.callViewerMethodAsync("zoomToRegion", pageIndex, region, options);
+    }
+    /**
+     * Change the page layout while preserving the active page.
+     *
+     * @param mode - Desired single-page or spread arrangement.
+     * @returns A promise that resolves after the layout is applied.
+     *
+     * @throws `RangeError`
+     * Rejected for a value outside {@link DivaLayoutMode}.
+     */
+    async setLayoutMode(mode) {
+      await this.waitForResource();
+      if (!["single", "spread", "spread-shift"].includes(mode)) {
+        throw new RangeError(`Unsupported layout mode: ${mode}`);
+      }
+      await this.callViewerMethodAsync("setLayoutMode", mode);
+      this.updateLayoutState(mode, this.state.viewingDirection);
+      this.getPort("layoutModeRequested").send(mode);
+    }
+    /**
+     * Request fullscreen display; browser user-activation rules apply.
+     *
+     * @returns A promise that resolves when the root enters fullscreen or is already fullscreen.
+     *
+     * @throws `DOMException`
+     * Rejected when browser permissions or user-activation rules deny the request,
+     * or with `InvalidStateError` after destruction.
+     */
+    async enterFullscreen() {
+      this.assertAlive();
+      if (!document.fullscreenElement) {
+        await this.getConnectedRoot().requestFullscreen();
+      }
+    }
+    /**
+     * Exit fullscreen display when active.
+     *
+     * @returns A promise that resolves when fullscreen exits or when it was already inactive.
+     *
+     * @throws `DOMException`
+     * Rejected when the browser cannot exit fullscreen or with `InvalidStateError` after destruction.
+     */
+    async exitFullscreen() {
+      this.assertAlive();
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      }
+    }
+    /**
+     * Enter or exit fullscreen display; browser user-activation rules apply.
+     *
+     * @returns The promise returned by {@link Diva.enterFullscreen} or {@link Diva.exitFullscreen}.
+     */
+    toggleFullscreen() {
+      return document.fullscreenElement ? this.exitFullscreen() : this.enterFullscreen();
+    }
+    /**
+     * Cancel outstanding work, release resources, and empty the viewer root.
+     *
+     * @remarks
+     * Destruction is idempotent and permanent. Pending public commands reject with
+     * `InvalidStateError`; later commands do the same. State snapshots remain readable.
+     */
     destroy() {
+      var _a;
+      if (this.isDestroyed) {
+        return;
+      }
       this.isDestroyed = true;
+      const destroyed = new DOMException("The Diva instance was destroyed.", "InvalidStateError");
+      if (!this.readySettled) {
+        this.readySettled = true;
+        this.readyReject(destroyed);
+      }
+      (_a = this.pendingResource) == null ? void 0 : _a.reject(destroyed);
+      this.pendingResource = null;
+      this.awaitingViewerResource = null;
+      this.updateState({ destroyed: true, loading: false });
       this.closeFilterPreview();
       this.auth.destroy();
       if (this.viewerMethodRafId !== null) {
@@ -33142,6 +34173,7 @@
       this.removeViewerEvent("diva-page-change", this.handlePageChangeBound);
       this.removeViewerEvent("diva-zoom-change", this.handleZoomChangeBound);
       this.removeViewerEvent("diva-loading-change", this.handleLoadingChangeBound);
+      this.removeViewerEvent("diva-page-load-error", this.handlePageLoadErrorBound);
       root.removeEventListener("click", this.handleRootClickBound, true);
       document.removeEventListener("fullscreenchange", this.handleFullscreenChangeBound);
       if (root) {
@@ -33226,6 +34258,21 @@
       } else {
         this.getPort("pageIndexChanged").send(detail.index);
       }
+      const viewer = this.ensureMainViewer();
+      const visible = viewer && typeof viewer.getVisiblePageIndexes === "function" ? viewer.getVisiblePageIndexes() : [detail.index];
+      this.updateState({ currentPageIndex: detail.index, visiblePageIndexes: visible });
+      const page = this.pages[detail.index];
+      if (page) {
+        this.emit("pagechange", {
+          pageIndex: detail.index,
+          page: this.copyPage(page),
+          visiblePages: this.getVisiblePages()
+        });
+      }
+      if (this.awaitingViewerResource) {
+        const awaiting = this.awaitingViewerResource;
+        this.completeResource(awaiting.id, awaiting.url);
+      }
     }
     handleZoomChange(event) {
       const detail = event.detail;
@@ -33233,6 +34280,8 @@
         return;
       }
       this.getPort("zoomChanged").send(detail.zoom);
+      this.updateState({ zoom: detail.zoom });
+      this.emit("zoomchange", { zoom: detail.zoom });
     }
     handleLoadingChange(event) {
       const detail = event.detail;
@@ -33240,10 +34289,23 @@
         return;
       }
       this.getPort("viewerLoadingChanged").send(detail.loading);
+      this.viewerLoading = detail.loading;
+      this.refreshLoadingState();
+    }
+    handlePageLoadError(event) {
+      const detail = event.detail;
+      const error = new Error((detail == null ? void 0 : detail.message) || "The image could not be loaded.");
+      if (this.awaitingViewerResource) {
+        const awaiting = this.awaitingViewerResource;
+        this.completeResource(awaiting.id, awaiting.url);
+      }
+      this.emit("error", { error, operation: "loadPage", recoverable: true });
     }
     handleFullscreenChange() {
       const isFullscreen = Boolean(document.fullscreenElement);
       this.getPort("fullscreenChanged").send(isFullscreen);
+      this.updateState({ fullscreen: isFullscreen });
+      this.emit("fullscreenchange", { fullscreen: isFullscreen });
     }
     ensureFilterViewer() {
       if (this.filterViewer || !this.filterViewerElement) {
@@ -33357,6 +34419,20 @@
       }
       method.apply(viewer, args);
       return true;
+    }
+    async callViewerMethodAsync(name, ...args) {
+      let attempts = 0;
+      while (attempts < 120) {
+        this.assertAlive();
+        const viewer = this.ensureMainViewer();
+        const method = viewer == null ? void 0 : viewer[name];
+        if (typeof method === "function") {
+          return await method.apply(viewer, args);
+        }
+        attempts += 1;
+        await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+      }
+      throw new DOMException(`The viewer method ${name} is not available.`, "InvalidStateError");
     }
     callViewerMethodWhenReady(name, ...args) {
       if (this.callViewerMethod(name, ...args)) {
