@@ -122,6 +122,18 @@ test("exposes immutable IIIF page metadata and state", async ({page}) => {
     expect(result.state).toMatchObject({ready : true, pageCount : 4, resourceUrl : `${origin}/api/first/manifest`});
 });
 
+test("labels modal close buttons", async ({page}) => {
+    for (const opener of [ "Manifest Info", "Page View" ])
+    {
+        await page.getByRole("button", {name : opener, exact : true}).click();
+        const closeButton = page.getByRole("button", {name : "Close", exact : true});
+        await expect(closeButton).toBeVisible();
+        await expect(closeButton.locator("..")).toHaveAttribute("data-tooltip", "Close");
+        await closeButton.click();
+        await expect(closeButton).toBeHidden();
+    }
+});
+
 test("finds pages by exact Canvas ID and complete case-insensitive label", async ({page}) => {
     const name = "duplicate-labels";
     const duplicateManifest = manifest(name, 3);

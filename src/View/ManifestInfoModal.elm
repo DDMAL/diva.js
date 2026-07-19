@@ -236,7 +236,7 @@ viewHeader { fullscreen } =
             [ div
                 [ HA.class "modal-close-action" ]
                 [ viewButton
-                    { label = ""
+                    { label = "Close"
                     , icon = Icons.close
                     , onClickMsg = Just UserClickedCloseManifestInfo
                     , isFullscreen = fullscreen

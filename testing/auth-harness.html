@@ -10,15 +10,18 @@
   <body>
     <div id="diva-wrapper"></div>
     <script>
-      const osdPackage = new URLSearchParams(location.search).get("osd") === "5"
+      const harnessParams = new URLSearchParams(location.search);
+      const osdPackage = harnessParams.get("osd") === "5"
         ? "openseadragon5"
         : "openseadragon";
+      const divaBundle = harnessParams.get("bundle") === "production"
+        ? "diva.js"
+        : "diva.debug.js";
       document.write(`<script src="../node_modules/${osdPackage}/build/openseadragon/openseadragon.min.js"><\/script>`);
+      document.write(`<script src="../build/${divaBundle}"><\/script>`);
     </script>
-    <script src="../build/diva.debug.js"></script>
     <script>
       window.__divaOsdVersion = OpenSeadragon.version.versionStr;
-      const harnessParams = new URLSearchParams(location.search);
       const initialPageParam = harnessParams.get("initialPage");
       window.diva = new Diva("diva-wrapper", {
         objectData: harnessParams.get("manifest"),

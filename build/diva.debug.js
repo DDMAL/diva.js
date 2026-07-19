@@ -27971,7 +27971,7 @@
                         {
                           icon: $author$project$View$Icons$close,
                           isFullscreen: fullscreen,
-                          label: "",
+                          label: "Close",
                           onClickMsg: $elm$core$Maybe$Just($author$project$Msg$UserClickedCloseManifestInfo)
                         }
                       )
@@ -30118,7 +30118,7 @@
                         {
                           icon: $author$project$View$Icons$close,
                           isFullscreen: model.fullscreen,
-                          label: "",
+                          label: "Close",
                           onClickMsg: $elm$core$Maybe$Just($author$project$Msg$UserClickedClosePageView)
                         }
                       )

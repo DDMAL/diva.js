@@ -781,7 +781,7 @@ viewModalHeader model =
             , div
                 [ HA.class "modal-close-action" ]
                 [ viewButton
-                    { label = ""
+                    { label = "Close"
                     , icon = Icons.close
                     , onClickMsg = Just UserClickedClosePageView
                     , isFullscreen = model.fullscreen
