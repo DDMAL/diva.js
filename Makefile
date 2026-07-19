@@ -13,6 +13,8 @@ ELM_ESM := cache/elm-esm.js
 DIVA_DEBUG := build/diva.debug.js
 DIVA_JS := build/diva.js
 DIVA_ESM := build/diva.esm.js
+DIVA_IIFE_BUNDLE := cache/diva.iife.js
+DIVA_ESM_BUNDLE := cache/diva.esm.bundle.js
 DIVA_TYPES := build/diva-esm.d.ts
 MINIFIED_TARGETS := $(DIVA_JS) $(DIVA_ESM)
 ELM_ESM_SCRIPT := scripts/elm-esm.sh
@@ -24,7 +26,7 @@ RELEASE_TAR := $(RELEASE_DIR)/$(RELEASE_PREFIX).tar.gz
 RELEASE_ZIP := $(RELEASE_DIR)/$(RELEASE_PREFIX).zip
 ESBUILD := yarn -s esbuild
 ESBUILD_COMMON_FLAGS := --bundle --platform=browser --target=es2019 --loader:.css=text
-ESBUILD_MINIFY_FLAGS := --minify --drop:console --pure:F2 --pure:F3 --pure:F4 --pure:F5 --pure:F6 --pure:F7 --pure:F8 --pure:F9 --pure:A2 --pure:A3 --pure:A4 --pure:A5 --pure:A6 --pure:A7 --pure:A8 --pure:A9
+SWC := yarn -s swc
 
 define print_bundle_size
 	@bundle="$(1)"; \
@@ -71,11 +73,19 @@ $(DIVA_DEBUG): $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(TS_AUTH_SRC) $(DIVA_CSS) $(
 	mkdir -p public
 	$(ESBUILD) $(TS_SRC) $(ESBUILD_COMMON_FLAGS) --format=iife --outfile=$(DIVA_DEBUG)
 
-$(DIVA_JS): $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(TS_AUTH_SRC) $(DIVA_CSS) $(ELM_ESM)
-	@$(ESBUILD) $(TS_SRC) $(ESBUILD_COMMON_FLAGS) --format=iife $(ESBUILD_MINIFY_FLAGS) --outfile=$(DIVA_JS)
+$(DIVA_IIFE_BUNDLE): $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(TS_AUTH_SRC) $(DIVA_CSS) $(ELM_ESM)
+	@$(ESBUILD) $(TS_SRC) $(ESBUILD_COMMON_FLAGS) --format=iife --outfile=$(DIVA_IIFE_BUNDLE)
 
-$(DIVA_ESM): $(TS_ESM_SRC) $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(TS_AUTH_SRC) $(DIVA_CSS) $(ELM_ESM)
-	@$(ESBUILD) $(TS_ESM_SRC) $(ESBUILD_COMMON_FLAGS) --format=esm $(ESBUILD_MINIFY_FLAGS) --outfile=$(DIVA_ESM)
+$(DIVA_ESM_BUNDLE): $(TS_ESM_SRC) $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(TS_AUTH_SRC) $(DIVA_CSS) $(ELM_ESM)
+	@$(ESBUILD) $(TS_ESM_SRC) $(ESBUILD_COMMON_FLAGS) --format=esm --outfile=$(DIVA_ESM_BUNDLE)
+
+$(DIVA_JS): $(DIVA_IIFE_BUNDLE) .swcrc
+	@mkdir -p build
+	@$(SWC) $(DIVA_IIFE_BUNDLE) --out-file $(DIVA_JS)
+
+$(DIVA_ESM): $(DIVA_ESM_BUNDLE) .swcrc
+	@mkdir -p build
+	@$(SWC) $(DIVA_ESM_BUNDLE) --out-file $(DIVA_ESM)
 
 $(DIVA_TYPES): $(TS_ESM_SRC) $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(TS_AUTH_SRC) src/public-api.ts tsconfig.json
 	@mkdir -p build

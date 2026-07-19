@@ -1,0 +1,35 @@
+{
+  "jsc": {
+    "parser": {
+      "syntax": "ecmascript"
+    },
+    "target": "es2019",
+    "minify": {
+      "compress": {
+        "passes": 2,
+        "drop_console": true,
+        "pure_funcs": [
+          "F2",
+          "F3",
+          "F4",
+          "F5",
+          "F6",
+          "F7",
+          "F8",
+          "F9",
+          "A2",
+          "A3",
+          "A4",
+          "A5",
+          "A6",
+          "A7",
+          "A8",
+          "A9"
+        ]
+      },
+      "mangle": true
+    }
+  },
+  "minify": true,
+  "sourceMaps": false
+}

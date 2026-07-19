@@ -1268,7 +1268,7 @@
   customElements.define("osd-viewer", OsdViewer);
 
   // cache/diva.css
-  var diva_default = ":root{--diva-accent:#5a6bff;--diva-accent-light:#9aa4ff;--diva-border:#d9d4ce;--diva-danger:#d32f2f;--diva-dark-bg:#1c1d22;--diva-dark-border:#2c2d33;--diva-overlay-bg:#10111499;--diva-page-bg:#f7f5f1;--diva-shadow-dark:#00000026;--diva-shadow-focus:#9aa4ff59;--diva-shadow-modal:#00000040;--diva-surface:#e6e1dc;--diva-text-muted:#5c5a55;--diva-text-muted-on-dark:#ffffffb3;--diva-text-primary:#1b1b1b;--diva-toolbar-button-bg:#5258626b;--diva-toolbar-button-bg-hover:#5c636e85;--diva-toolbar-button-bg-fullscreen:#52586285;--diva-toolbar-button-bg-fullscreen-hover:#6068749e;--diva-toolbar-button-border:#ffffff59;--diva-toolbar-button-border-hover:#ffffff73;--diva-toolbar-button-border-fullscreen-hover:#fff9;--diva-toolbar-button-icon:#2c2d33;--diva-toolbar-button-shadow:inset 0 1px 0 #ffffff8c, inset 0 -1px 0 #ffffff2e;--diva-toolbar-button-shadow-hover:inset 0 1px 0 #ffffffb3, inset 0 -1px 0 #ffffff3d;--diva-white:#fff;--diva-font-lg:16px;--diva-font-md:13px;--diva-font-sm:11px;--diva-font-xs:10px;--diva-font-xl:20px;color-scheme:light}*{box-sizing:border-box}.list-reset{margin:0;padding:0;list-style:none}.ui-button{text-align:left;cursor:pointer;color:var(--diva-text-primary);font-size:var(--diva-font-lg);background-color:#0000;border:none;padding:0}.ui-button:hover{background-color:var(--diva-surface)}.ui-card{cursor:pointer;border-radius:0;width:100%;padding:6px}.ui-card--dark{background-color:var(--diva-dark-bg)}.diva-app{flex-direction:column;flex:1;height:100%;min-height:0;padding:12px 24px;display:flex}.diva-app.is-fullscreen{height:100vh;min-height:100vh;padding:0}.diva-app-header{font-size:var(--diva-font-lg);align-items:center;gap:12px;margin-bottom:8px;font-weight:600;display:flex}.diva-app-title{font-size:var(--diva-font-xl);text-align:left;color:var(--diva-text-primary);margin-bottom:6px;font-weight:600}.diva-app-title.is-fullscreen{color:var(--diva-white)}.diva-app-body{flex:1;align-items:stretch;gap:0;height:100%;min-height:0;display:flex;position:relative}.diva-app-body.is-fullscreen{flex:1;min-height:0}.diva-canvas-column{flex-direction:column;flex:1;gap:24px;min-height:0;display:flex}.diva-canvas-column.is-fullscreen{flex:1;height:100%;min-height:0}.diva-canvas-wrapper{flex:1;min-height:0;position:relative}.diva-canvas{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);border-radius:0;width:100%;height:100%;overflow:hidden}.diva-canvas.is-fullscreen{border-radius:0;flex:1;height:100%}.diva-canvas.has-collection{border-radius:0}.metadata-panel{height:100%;padding:12px;overflow:auto}.metadata-body{flex-direction:column;gap:10px;display:flex}.metadata-item{flex-direction:column;gap:4px;display:flex}.metadata-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}.metadata-value{font-size:var(--diva-font-lg);color:var(--diva-text-muted);line-height:1.4}.contents-empty{font-size:var(--diva-font-lg);color:var(--diva-text-muted);padding-left:12px}.sidebar-resizer,.collection-resizer{width:12px;font-size:var(--diva-font-xl);color:var(--diva-white);background-color:var(--diva-text-muted);cursor:ew-resize;user-select:none;touch-action:none;flex:0 0 12px;justify-content:center;align-self:stretch;align-items:center;line-height:1;display:flex}.sidebar-resizer.is-hidden,.collection-resizer.is-hidden{display:none}.sidebar-panel.is-fullscreen,.collection-panel.is-fullscreen{border-radius:0;height:100%}.sidebar-panel.is-hidden,.collection-panel.is-hidden{opacity:0;pointer-events:none;border-width:0;padding:0;overflow:hidden}.required-statement-dock{justify-content:flex-end;width:100%;margin-top:12px;padding-right:8px;display:flex}.required-statement{font-size:var(--diva-font-md);color:var(--diva-text-muted);text-align:right;min-width:250px;max-width:20vw;line-height:1.4}.diva-scrollbar-track{background:var(--diva-surface);border:1px solid var(--diva-border);z-index:100;border-radius:0;width:12px;position:absolute;top:4px;bottom:4px;right:4px}.diva-scrollbar-thumb{background:var(--diva-text-muted);cursor:pointer;border-radius:0;min-height:30px;position:absolute;left:1px;right:1px}.diva-scrollbar-thumb:hover{background:var(--diva-text-primary)}.diva-scrollbar-thumb:active{background:var(--diva-dark-border)}.throbber-overlay{pointer-events:none;justify-content:center;align-items:center;display:flex;position:absolute;inset:0}.viewer-zoom-indicator{z-index:30;pointer-events:none;font-size:var(--diva-font-sm);color:var(--diva-white);background-color:#0000008c;border-radius:0;padding:4px 8px;font-weight:600;position:absolute;bottom:12px;left:12px}.throbber{background-color:var(--diva-white);width:64px;height:64px;box-shadow:0 8px 16px var(--diva-shadow-dark);border-radius:0;flex-wrap:wrap;padding:8px;display:flex}.throbber-cube{background-color:var(--diva-accent);width:16px;height:16px;animation-name:diva-cube-grid;animation-duration:1.3s;animation-timing-function:ease-in-out;animation-iteration-count:infinite}@keyframes diva-cube-grid{0%{transform:scale(1)}35%{transform:scale(0)}70%{transform:scale(1)}to{transform:scale(1)}}@media (width<=720px){.diva-app{padding:12px}.diva-app-body{flex-direction:column;gap:12px}.sidebar-resizer,.collection-resizer{display:none}}.diva-image-unavailable{background:color-mix(in srgb, var(--diva-background-color,#fff) 92%, transparent);box-sizing:border-box;text-align:center;border:1px solid #999;flex-direction:column;justify-content:center;align-items:center;padding:1rem;display:flex}.diva-image-unavailable button{cursor:pointer}.sidebar-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0;flex-direction:column;width:320px;height:100%;min-height:0;display:flex;overflow:hidden}.sidebar-tabs{border:1px solid var(--diva-surface);background-color:var(--diva-surface);border-radius:0;display:flex}.sidebar-tab-button{font-size:var(--diva-font-md);text-transform:uppercase;cursor:pointer;color:var(--diva-text-muted);background-color:#0000;border:none;flex:1;padding:10px 12px}.sidebar-tab-button.is-active{background-color:var(--diva-white);font-weight:600}.sidebar-content{background-color:var(--diva-page-bg);flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}.sidebar-pane{flex:1;width:100%;min-height:0}.sidebar-pane.is-hidden{display:none}.thumbs{scroll-behavior:smooth;background-color:var(--diva-dark-bg);flex:1;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:10px;width:100%;height:100%;min-height:0;padding:12px;display:grid;overflow-y:auto}.thumbs.is-fullscreen{height:100%}.thumbs-item{border:1px solid var(--diva-dark-border);text-align:left;flex-direction:column;justify-content:flex-start;align-items:stretch;max-width:none;display:flex}.thumbs-item:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.thumbs-item.is-active{border-color:var(--diva-accent-light);box-shadow:0 0 0 var(--diva-shadow-focus);background-color:var(--diva-dark-bg);outline:2px solid var(--diva-accent-light);outline-offset:2px}.thumbs-image{border-radius:0;width:100%;height:auto;display:block}.thumbs-lazy-image{background:var(--diva-dark-bg);width:100%;min-height:96px;display:block}.thumbs-image--protected{background:var(--diva-dark-bg);min-height:96px}.thumbs-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted-on-dark);margin-top:6px;line-height:1.3}.thumbs-label.is-active{color:var(--diva-white)}.contents-panel{height:100%;padding:12px;overflow:auto}.contents-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:10px;font-weight:600}.contents-view-tabs{gap:8px;margin-bottom:12px;display:flex}.contents-view-button{background-color:var(--diva-surface);border:1px solid var(--diva-border);font-size:var(--diva-font-sm);color:var(--diva-text-muted);cursor:pointer;border-radius:0;padding:4px 10px}.contents-view-button.is-active{background-color:var(--diva-white);border-color:var(--diva-accent);color:var(--diva-text-primary)}.contents-list-nested{border-left:1px solid var(--diva-border);margin-top:6px;margin-left:6px;padding-left:13px}.contents-item{margin-bottom:6px}.contents-meta{border:1px solid var(--diva-dark-border);margin-top:6px;padding:8px}.contents-button:hover{color:var(--diva-accent)}.contents-button.is-current{font-weight:600}@media (width<=720px){.sidebar-panel{border-radius:0;height:auto;width:100%!important}.sidebar-panel.is-overlay{z-index:100;width:100%;height:100%;box-shadow:0 12px 24px var(--diva-shadow-dark);border-radius:0;position:absolute;inset:0}.sidebar-panel.is-mobile-hidden{display:none}.thumbs{grid-template-columns:repeat(3,minmax(0,1fr));width:100%;height:auto;overflow:auto hidden}.thumbs-item{min-width:120px}}.canvas-toolbar-stack{flex-direction:column;gap:4px;width:100%;min-width:0;display:flex}.canvas-toolbar{align-items:center;width:100%;margin-bottom:0;display:flex}.canvas-toolbar-section{flex:none;align-items:center;gap:5px;min-width:0;display:flex}.canvas-toolbar-section.is-right{flex:none;margin-left:auto}.canvas-toolbar-end{align-items:center;gap:8px;min-width:0;margin-left:auto;display:flex}.canvas-toolbar-end .canvas-toolbar-section.is-right{margin-left:0}.canvas-toolbar-item{flex:none;justify-content:center;align-items:center;width:34px;height:34px;display:flex;position:relative}.canvas-toolbar-button{width:30px;height:30px;color:var(--diva-toolbar-button-icon);box-shadow:none;cursor:pointer;background-color:#e2e2e2f0;border:1px solid #2c2d3373;border-radius:0;justify-content:center;align-items:center;padding:6px;display:flex}.canvas-toolbar-button svg{flex:none;width:16px;height:16px}.canvas-toolbar-button:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.canvas-toolbar-button:hover{border-color:var(--diva-toolbar-button-icon);background-color:#d6d6d6fa}.canvas-toolbar-button.is-fullscreen{color:var(--diva-white);background-color:#52586294;border-color:#ffffff85}.canvas-toolbar-button.is-fullscreen:hover{border-color:var(--diva-white);background-color:#606874b8}.canvas-toolbar-button.is-disabled{opacity:.4;cursor:not-allowed}.canvas-toolbar-button.is-disabled:hover{background-color:#e2e2e2f0;border-color:#2c2d3373}.canvas-toolbar-button.is-fullscreen.is-disabled:hover{background-color:#52586294;border-color:#ffffff85}.canvas-toolbar-item:after{z-index:80;max-width:160px;color:var(--diva-white);content:attr(data-tooltip);font-size:var(--diva-font-xs);letter-spacing:.02em;opacity:0;pointer-events:none;text-align:center;visibility:hidden;white-space:normal;word-break:normal;background-color:#1c1d22f2;border:1px solid #ffffff2e;border-radius:0;width:max-content;padding:5px 7px;font-weight:600;line-height:1.2;transition:opacity .12s,transform .12s;position:absolute;top:calc(100% + 7px);left:50%;transform:translate(-50%,-3px);box-shadow:0 4px 10px #0003}.canvas-toolbar-item:hover:after,.canvas-toolbar-item:has(.canvas-toolbar-button:focus-visible):after{opacity:1;visibility:visible;transform:translate(-50%)}.canvas-toolbar-section.is-right .canvas-toolbar-item:last-child:after{left:auto;right:0;transform:translateY(-3px)}.canvas-toolbar-section.is-right .canvas-toolbar-item:last-child:hover:after,.canvas-toolbar-section.is-right .canvas-toolbar-item:last-child:has(.canvas-toolbar-button:focus-visible):after{transform:translate(0)}.canvas-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-align:left;white-space:normal;overflow-wrap:anywhere;word-break:break-word;width:100%}.canvas-toolbar-end .canvas-label{overflow-wrap:normal;text-align:right;white-space:nowrap;word-break:normal;flex:auto;width:auto;min-width:0;max-width:min(42vw,42rem);overflow:hidden}.canvas-label.is-fullscreen{color:var(--diva-white)}.status{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:0}.status.is-error{color:var(--diva-danger)}@media (width<=720px){.canvas-toolbar{flex-wrap:wrap;gap:5px}.canvas-toolbar-end{justify-content:flex-end;width:100%;margin-left:0}.canvas-toolbar-item{width:32px;height:32px}.canvas-toolbar-button{width:28px;height:28px;padding:6px}.canvas-toolbar-button svg{width:15px;height:15px}.canvas-label,.status{display:none}}.modal-overlay{background-color:var(--diva-overlay-bg);z-index:100;justify-content:center;align-items:center;padding:24px;display:flex;position:fixed;inset:0}.viewer-status-overlay{background-color:var(--diva-overlay-bg);z-index:40;justify-content:center;align-items:center;padding:24px;display:flex;position:absolute;inset:0}.modal-overlay.is-fullscreen{padding:0}.modal{background-color:var(--diva-page-bg);color:var(--diva-text-primary);width:min(1440px,96vw);max-height:90vh;box-shadow:0 20px 40px var(--diva-shadow-modal);border-radius:0;flex-direction:column;display:flex}.modal.is-narrow{width:min(960px,94vw)}.modal.is-page-view{height:80vh;max-height:80vh}.modal.is-fullscreen{border-radius:0;width:100vw;height:100vh;max-height:100vh}.modal-header{justify-content:space-between;align-items:center;padding:16px 20px 0;display:flex}.modal-actions{gap:8px;display:flex}.modal-close-action .canvas-toolbar-button{color:var(--diva-danger);box-shadow:none;-webkit-backdrop-filter:none;background-color:#0000;border:none;width:auto;height:auto;padding:2px}.modal-close-action .canvas-toolbar-button:hover{background-color:#d32f2f1f;border-color:#0000}.modal-close-action .canvas-toolbar-item{width:32px}.modal-title-stack{flex-direction:column;gap:4px;display:flex}.modal-title{font-size:var(--diva-font-lg);font-weight:600}.modal-subtitle{font-size:var(--diva-font-lg);color:var(--diva-text-primary)}.modal-subtitle.is-muted{font-size:var(--diva-font-md)}.modal-body{flex:1;grid-template-columns:minmax(0,1fr) 240px;gap:16px;min-height:0;padding:16px 20px 20px;display:grid}.modal-body.is-no-gap{gap:0}.modal-body.is-two-column{grid-template-columns:minmax(0,1fr) 200px;align-items:start}.modal-body.is-no-sidebar{grid-template-columns:minmax(0,1fr)}.modal-body.is-fullscreen{flex:1;min-height:0}.modal-body.is-with-choices{grid-template-columns:120px minmax(0,1fr) 240px}.modal-body.is-with-choices-no-sidebar{grid-template-columns:120px minmax(0,1fr)}.modal-viewer{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);height:100%;overflow:hidden}.modal-viewer.is-fullscreen{border-radius:0;height:100%}.modal-viewer.is-outer-left{border-radius:0}.modal-canvas{width:100%;height:100%;display:block}.modal-sidebar{background-color:var(--diva-white);border-top:1px solid var(--diva-border);border-right:1px solid var(--diva-border);border-bottom:1px solid var(--diva-border);border-radius:0;padding:16px;overflow:auto}.manifest-info-logo-wrap{text-align:center;flex-direction:column;align-items:center;gap:8px;display:flex}.manifest-info-logo{width:100%;max-width:180px;height:auto}.page-view-choices{background-color:var(--diva-dark-bg);border-radius:0;flex-direction:column;gap:8px;padding:8px;display:flex;overflow:auto}.page-view-choice{border:2px solid #0000;flex-direction:column;gap:4px;display:flex}.page-view-choice:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.page-view-choice:hover{background-color:var(--diva-dark-bg)}.page-view-choice.is-active{border-color:var(--diva-accent-light);background-color:var(--diva-dark-bg)}.page-view-choice-thumb{border-radius:0;width:100%;height:auto;display:block}.page-view-choice-thumb--protected{background:var(--diva-dark-bg);min-height:72px}.page-view-choice-label{font-size:var(--diva-font-xs);color:var(--diva-text-muted);text-overflow:ellipsis;white-space:nowrap;line-height:1.2;overflow:hidden}.filter-group{border-bottom:1px solid var(--diva-border);margin-bottom:12px;padding-bottom:12px}.filter-title-button{text-align:left;cursor:pointer;width:100%;font-size:var(--diva-font-sm);text-transform:uppercase;letter-spacing:.08em;color:var(--diva-text-muted);background-color:#0000;border:none;align-items:center;gap:8px;margin-bottom:8px;padding:0;font-weight:600;display:flex}.filter-title-button.is-collapsed{margin-bottom:0}.filter-title-icon{border-top:4px solid #0000;border-bottom:4px solid #0000;border-left:6px solid var(--diva-text-muted);width:0;height:0;transition:transform .15s;display:inline-block}.filter-title-icon.is-expanded{transform:rotate(90deg)}.filter-row{flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle{font-size:var(--diva-font-md);align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle.is-inline{margin-bottom:0}.filter-range-group{flex-direction:column;gap:6px;margin-bottom:10px;display:flex}.filter-range-header{justify-content:space-between;align-items:center;gap:8px;display:flex}.filter-range-header-right{align-items:center;gap:8px;display:flex}.filter-range-input{width:100%}.filter-value{font-size:var(--diva-font-sm);color:var(--diva-text-muted);text-align:right;width:40px}.filter-reset{font-size:var(--diva-font-xs);background-color:var(--diva-surface);border:1px solid var(--diva-border);cursor:pointer;color:var(--diva-text-muted);border-radius:0;padding:2px 6px}.filter-reset:hover{background-color:var(--diva-border)}.filter-json{width:100%;min-height:120px;font-size:var(--diva-font-sm);border:1px solid var(--diva-border);background-color:var(--diva-white);resize:vertical;border-radius:0;padding:6px 8px;font-family:Menlo,Monaco,Consolas,Liberation Mono,monospace}.filter-json-error{font-size:var(--diva-font-sm);color:var(--diva-danger);margin-top:4px}.filter-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted)}.filter-select{border:1px solid var(--diva-border);background-color:var(--diva-white);font-size:var(--diva-font-sm);border-radius:0;padding:4px 6px}.filter-color-input{border:1px solid var(--diva-border);background-color:var(--diva-white);border-radius:0;width:42px;height:28px;padding:0}.diva-auth-overlay{z-index:10000;background:#0000008c;place-items:center;display:grid;position:fixed;inset:0}.diva-auth-dialog{box-sizing:border-box;border:1px solid var(--diva-border,#aaa);background:var(--diva-background,#fff);width:min(30rem,100vw - 2rem);color:var(--diva-text-primary,#222);border-radius:0;padding:1.25rem}.diva-auth-dialog button{min-height:2.25rem;color:inherit;cursor:pointer;background:0 0;border:1px solid;border-radius:0;padding:.35rem .8rem}.diva-auth-dialog button:focus-visible{outline:2px solid var(--diva-accent,#1769aa);outline-offset:2px}.collection-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0;flex-direction:column;height:100%;min-height:0;display:flex;overflow:hidden}.collection-header{background-color:var(--diva-surface);border-bottom:1px solid var(--diva-border);border-radius:0;padding:12px}.collection-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:4px;font-weight:600}.collection-summary{font-size:var(--diva-font-md);color:var(--diva-text-muted);line-height:1.4}.collection-tree-item{padding-left:12px}.collection-node-button{align-items:center;gap:6px;width:100%;padding:6px 8px;display:flex}.collection-expand-icon{flex-shrink:0;justify-content:center;align-items:center;width:16px;height:16px;display:flex}.manifest-tree-item{padding:6px 8px 6px 30px}.manifest-tree-item.is-active{background-color:var(--diva-border);font-weight:600}.sidebar-pane.is-scroll{overflow-y:auto}@media (width<=720px){.collection-panel{border-radius:0;width:100%;height:auto}}";
+  var diva_default = ":root{--diva-accent:#5a6bff;--diva-accent-light:#9aa4ff;--diva-border:#d9d4ce;--diva-danger:#d32f2f;--diva-dark-bg:#1c1d22;--diva-dark-border:#2c2d33;--diva-overlay-bg:#10111499;--diva-page-bg:#f7f5f1;--diva-shadow-dark:#00000026;--diva-shadow-focus:#9aa4ff59;--diva-shadow-modal:#00000040;--diva-surface:#e6e1dc;--diva-text-muted:#5c5a55;--diva-text-muted-on-dark:#ffffffb3;--diva-text-primary:#1b1b1b;--diva-toolbar-button-bg:#5258626b;--diva-toolbar-button-bg-hover:#5c636e85;--diva-toolbar-button-bg-fullscreen:#52586285;--diva-toolbar-button-bg-fullscreen-hover:#6068749e;--diva-toolbar-button-border:#ffffff59;--diva-toolbar-button-border-hover:#ffffff73;--diva-toolbar-button-border-fullscreen-hover:#fff9;--diva-toolbar-button-icon:#2c2d33;--diva-toolbar-button-shadow:inset 0 1px 0 #ffffff8c, inset 0 -1px 0 #ffffff2e;--diva-toolbar-button-shadow-hover:inset 0 1px 0 #ffffffb3, inset 0 -1px 0 #ffffff3d;--diva-white:#fff;--diva-font-lg:16px;--diva-font-md:13px;--diva-font-sm:11px;--diva-font-xs:10px;--diva-font-xl:20px;color-scheme:light}*{box-sizing:border-box}.list-reset{margin:0;padding:0;list-style:none}.ui-button{text-align:left;cursor:pointer;color:var(--diva-text-primary);font-size:var(--diva-font-lg);background-color:#0000;border:none;padding:0}.ui-button:hover{background-color:var(--diva-surface)}.ui-card{cursor:pointer;border-radius:0;width:100%;padding:6px}.ui-card--dark{background-color:var(--diva-dark-bg)}.diva-app{flex-direction:column;flex:1;height:100%;min-height:0;padding:12px 24px;display:flex}.diva-app.is-fullscreen{height:100vh;min-height:100vh;padding:0}.diva-app-header{font-size:var(--diva-font-lg);align-items:center;gap:12px;margin-bottom:8px;font-weight:600;display:flex}.diva-app-title{font-size:var(--diva-font-xl);text-align:left;color:var(--diva-text-primary);margin-bottom:6px;font-weight:600}.diva-app-title.is-fullscreen{color:var(--diva-white)}.diva-app-body{flex:1;align-items:stretch;gap:0;height:100%;min-height:0;display:flex;position:relative}.diva-app-body.is-fullscreen{flex:1;min-height:0}.diva-canvas-column{flex-direction:column;flex:1;gap:24px;min-height:0;display:flex}.diva-canvas-column.is-fullscreen{flex:1;height:100%;min-height:0}.diva-canvas-wrapper{flex:1;min-height:0;position:relative}.diva-canvas{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);border-radius:0;width:100%;height:100%;overflow:hidden}.diva-canvas.is-fullscreen{border-radius:0;flex:1;height:100%}.diva-canvas.has-collection{border-radius:0}.metadata-panel{height:100%;padding:12px;overflow:auto}.metadata-body{flex-direction:column;gap:10px;display:flex}.metadata-item{flex-direction:column;gap:0;display:flex}.metadata-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600;line-height:1.3}.metadata-value{font-size:var(--diva-font-lg);color:var(--diva-text-muted);padding-left:12px;line-height:1.3}.metadata-value>:first-child{margin-top:0}.metadata-value>:last-child{margin-bottom:0}.contents-empty{font-size:var(--diva-font-lg);color:var(--diva-text-muted);padding-left:12px}.sidebar-resizer,.collection-resizer{width:12px;font-size:var(--diva-font-xl);color:var(--diva-white);background-color:var(--diva-text-muted);cursor:ew-resize;user-select:none;touch-action:none;flex:0 0 12px;justify-content:center;align-self:stretch;align-items:center;line-height:1;display:flex}.sidebar-resizer.is-hidden,.collection-resizer.is-hidden{display:none}.sidebar-panel.is-fullscreen,.collection-panel.is-fullscreen{border-radius:0;height:100%}.sidebar-panel.is-hidden,.collection-panel.is-hidden{opacity:0;pointer-events:none;border-width:0;padding:0;overflow:hidden}.required-statement-dock{justify-content:flex-end;width:100%;margin-top:12px;padding-right:8px;display:flex}.required-statement{font-size:var(--diva-font-md);color:var(--diva-text-muted);text-align:right;min-width:250px;max-width:20vw;line-height:1.4}.diva-scrollbar-track{background:var(--diva-surface);border:1px solid var(--diva-border);z-index:100;border-radius:0;width:12px;position:absolute;top:4px;bottom:4px;right:4px}.diva-scrollbar-thumb{background:var(--diva-text-muted);cursor:pointer;border-radius:0;min-height:30px;position:absolute;left:1px;right:1px}.diva-scrollbar-thumb:hover{background:var(--diva-text-primary)}.diva-scrollbar-thumb:active{background:var(--diva-dark-border)}.throbber-overlay{pointer-events:none;justify-content:center;align-items:center;display:flex;position:absolute;inset:0}.viewer-zoom-indicator{z-index:30;pointer-events:none;font-size:var(--diva-font-sm);color:var(--diva-white);background-color:#0000008c;border-radius:0;padding:4px 8px;font-weight:600;position:absolute;bottom:12px;left:12px}.throbber{background-color:var(--diva-white);width:64px;height:64px;box-shadow:0 8px 16px var(--diva-shadow-dark);border-radius:0;flex-wrap:wrap;padding:8px;display:flex}.throbber-cube{background-color:var(--diva-accent);width:16px;height:16px;animation-name:diva-cube-grid;animation-duration:1.3s;animation-timing-function:ease-in-out;animation-iteration-count:infinite}@keyframes diva-cube-grid{0%{transform:scale(1)}35%{transform:scale(0)}70%{transform:scale(1)}to{transform:scale(1)}}@media (width<=720px){.diva-app{padding:12px}.diva-app-body{flex-direction:column;gap:12px}.sidebar-resizer,.collection-resizer{display:none}}.diva-image-unavailable{background:color-mix(in srgb, var(--diva-background-color,#fff) 92%, transparent);box-sizing:border-box;text-align:center;border:1px solid #999;flex-direction:column;justify-content:center;align-items:center;padding:1rem;display:flex}.diva-image-unavailable button{cursor:pointer}.sidebar-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0;flex-direction:column;width:320px;height:100%;min-height:0;display:flex;overflow:hidden}.sidebar-tabs{border:1px solid var(--diva-surface);background-color:var(--diva-surface);border-radius:0;display:flex}.sidebar-tab-button{font-size:var(--diva-font-md);text-transform:uppercase;cursor:pointer;color:var(--diva-text-muted);background-color:#0000;border:none;flex:1;padding:10px 12px}.sidebar-tab-button.is-active{background-color:var(--diva-white);font-weight:600}.sidebar-content{background-color:var(--diva-page-bg);flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}.sidebar-pane{flex:1;width:100%;min-height:0}.sidebar-pane.is-hidden{display:none}.thumbs{scroll-behavior:smooth;background-color:var(--diva-dark-bg);flex:1;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:10px;width:100%;height:100%;min-height:0;padding:12px;display:grid;overflow-y:auto}.thumbs.is-fullscreen{height:100%}.thumbs-item{border:1px solid var(--diva-dark-border);text-align:left;flex-direction:column;justify-content:flex-start;align-items:stretch;max-width:none;display:flex}.thumbs-item:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.thumbs-item.is-active{border-color:var(--diva-accent-light);box-shadow:0 0 0 var(--diva-shadow-focus);background-color:var(--diva-dark-bg);outline:2px solid var(--diva-accent-light);outline-offset:2px}.thumbs-image{border-radius:0;width:100%;height:auto;display:block}.thumbs-lazy-image{background:var(--diva-dark-bg);width:100%;min-height:96px;display:block}.thumbs-image--protected{background:var(--diva-dark-bg);min-height:96px}.thumbs-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted-on-dark);margin-top:6px;line-height:1.3}.thumbs-label.is-active{color:var(--diva-white)}.contents-panel{height:100%;padding:12px;overflow:auto}.contents-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:10px;font-weight:600}.contents-view-tabs{gap:8px;margin-bottom:12px;display:flex}.contents-view-button{background-color:var(--diva-surface);border:1px solid var(--diva-border);font-size:var(--diva-font-sm);color:var(--diva-text-muted);cursor:pointer;border-radius:0;padding:4px 10px}.contents-view-button.is-active{background-color:var(--diva-white);border-color:var(--diva-accent);color:var(--diva-text-primary)}.contents-list-nested{border-left:1px solid var(--diva-border);margin-top:6px;margin-left:6px;padding-left:13px}.contents-item{margin-bottom:6px}.contents-meta{border:1px solid var(--diva-dark-border);flex-direction:column;gap:10px;margin-top:6px;padding:8px;display:flex}.contents-meta dl>div+div{border-top:1px solid var(--diva-dark-border);margin-top:.75rem;padding-top:.75rem}.contents-meta dt{font-weight:600}.contents-meta dd{margin:0 0 .5rem 1rem}.contents-meta dd:last-child{margin-bottom:0}.contents-button:hover{color:var(--diva-accent)}.contents-button.is-current{font-weight:600}@media (width<=720px){.sidebar-panel{border-radius:0;height:auto;width:100%!important}.sidebar-panel.is-overlay{z-index:100;width:100%;height:100%;box-shadow:0 12px 24px var(--diva-shadow-dark);border-radius:0;position:absolute;inset:0}.sidebar-panel.is-mobile-hidden{display:none}.thumbs{grid-template-columns:repeat(3,minmax(0,1fr));width:100%;height:auto;overflow:auto hidden}.thumbs-item{min-width:120px}}.canvas-toolbar-stack{flex-direction:column;gap:4px;width:100%;min-width:0;display:flex}.canvas-toolbar{align-items:center;width:100%;margin-bottom:0;display:flex}.canvas-toolbar-section{flex:none;align-items:center;gap:5px;min-width:0;display:flex}.canvas-toolbar-section.is-right{flex:none;margin-left:auto}.canvas-toolbar-end{align-items:center;gap:8px;min-width:0;margin-left:auto;display:flex}.canvas-toolbar-end .canvas-toolbar-section.is-right{margin-left:0}.canvas-toolbar-item{flex:none;justify-content:center;align-items:center;width:34px;height:34px;display:flex;position:relative}.canvas-toolbar-button{width:30px;height:30px;color:var(--diva-toolbar-button-icon);box-shadow:none;cursor:pointer;background-color:#e2e2e2f0;border:1px solid #2c2d3373;border-radius:0;justify-content:center;align-items:center;padding:6px;display:flex}.canvas-toolbar-button svg{flex:none;width:16px;height:16px}.canvas-toolbar-button:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.canvas-toolbar-button:hover{border-color:var(--diva-toolbar-button-icon);background-color:#d6d6d6fa}.canvas-toolbar-button.is-fullscreen{color:var(--diva-white);background-color:#52586294;border-color:#ffffff85}.canvas-toolbar-button.is-fullscreen:hover{border-color:var(--diva-white);background-color:#606874b8}.canvas-toolbar-button.is-disabled{opacity:.4;cursor:not-allowed}.canvas-toolbar-button.is-disabled:hover{background-color:#e2e2e2f0;border-color:#2c2d3373}.canvas-toolbar-button.is-fullscreen.is-disabled:hover{background-color:#52586294;border-color:#ffffff85}.canvas-toolbar-item:after{z-index:80;max-width:160px;color:var(--diva-white);content:attr(data-tooltip);font-size:var(--diva-font-xs);letter-spacing:.02em;opacity:0;pointer-events:none;text-align:center;visibility:hidden;white-space:normal;word-break:normal;background-color:#1c1d22f2;border:1px solid #ffffff2e;border-radius:0;width:max-content;padding:5px 7px;font-weight:600;line-height:1.2;transition:opacity .12s,transform .12s;position:absolute;top:calc(100% + 7px);left:50%;transform:translate(-50%,-3px);box-shadow:0 4px 10px #0003}.canvas-toolbar-item:hover:after,.canvas-toolbar-item:has(.canvas-toolbar-button:focus-visible):after{opacity:1;visibility:visible;transform:translate(-50%)}.canvas-toolbar-section.is-right .canvas-toolbar-item:last-child:after{left:auto;right:0;transform:translateY(-3px)}.canvas-toolbar-section.is-right .canvas-toolbar-item:last-child:hover:after,.canvas-toolbar-section.is-right .canvas-toolbar-item:last-child:has(.canvas-toolbar-button:focus-visible):after{transform:translate(0)}.canvas-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-align:left;white-space:normal;overflow-wrap:anywhere;word-break:break-word;width:100%}.canvas-toolbar-end .canvas-label{overflow-wrap:normal;text-align:right;white-space:nowrap;word-break:normal;flex:auto;width:auto;min-width:0;max-width:min(42vw,42rem);overflow:hidden}.canvas-label.is-fullscreen{color:var(--diva-white)}.status{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:0}.status.is-error{color:var(--diva-danger)}@media (width<=720px){.canvas-toolbar{flex-wrap:wrap;gap:5px}.canvas-toolbar-end{justify-content:flex-end;width:100%;margin-left:0}.canvas-toolbar-item{width:32px;height:32px}.canvas-toolbar-button{width:28px;height:28px;padding:6px}.canvas-toolbar-button svg{width:15px;height:15px}.canvas-label,.status{display:none}}.modal-overlay{background-color:var(--diva-overlay-bg);z-index:100;justify-content:center;align-items:center;padding:24px;display:flex;position:fixed;inset:0}.viewer-status-overlay{background-color:var(--diva-overlay-bg);z-index:40;justify-content:center;align-items:center;padding:24px;display:flex;position:absolute;inset:0}.modal-overlay.is-fullscreen{padding:0}.modal{background-color:var(--diva-page-bg);color:var(--diva-text-primary);width:min(1440px,96vw);max-height:90vh;box-shadow:0 20px 40px var(--diva-shadow-modal);border-radius:0;flex-direction:column;display:flex}.modal.is-narrow{width:min(960px,94vw)}.modal.is-page-view{height:80vh;max-height:80vh}.modal.is-fullscreen{border-radius:0;width:100vw;height:100vh;max-height:100vh}.modal-header{justify-content:space-between;align-items:center;padding:16px 20px 0;display:flex}.modal-actions{gap:8px;display:flex}.modal-close-action .canvas-toolbar-button{color:var(--diva-danger);box-shadow:none;-webkit-backdrop-filter:none;background-color:#0000;border:none;width:auto;height:auto;padding:2px}.modal-close-action .canvas-toolbar-button:hover{background-color:#d32f2f1f;border-color:#0000}.modal-close-action .canvas-toolbar-item{width:32px}.modal-title-stack{flex-direction:column;gap:4px;display:flex}.modal-title{font-size:var(--diva-font-lg);font-weight:600}.modal-subtitle{font-size:var(--diva-font-lg);color:var(--diva-text-primary)}.modal-subtitle.is-muted{font-size:var(--diva-font-md)}.modal-body{flex:1;grid-template-columns:minmax(0,1fr) 240px;gap:16px;min-height:0;padding:16px 20px 20px;display:grid}.modal-body.is-no-gap{gap:0}.modal-body.is-two-column{grid-template-columns:minmax(0,1fr) 200px;align-items:start}.modal-body.is-no-sidebar{grid-template-columns:minmax(0,1fr)}.modal-body.is-fullscreen{flex:1;min-height:0}.modal-body.is-with-choices{grid-template-columns:120px minmax(0,1fr) 240px}.modal-body.is-with-choices-no-sidebar{grid-template-columns:120px minmax(0,1fr)}.modal-viewer{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);height:100%;overflow:hidden}.modal-viewer.is-fullscreen{border-radius:0;height:100%}.modal-viewer.is-outer-left{border-radius:0}.modal-canvas{width:100%;height:100%;display:block}.modal-sidebar{background-color:var(--diva-white);border-top:1px solid var(--diva-border);border-right:1px solid var(--diva-border);border-bottom:1px solid var(--diva-border);border-radius:0;padding:16px;overflow:auto}.manifest-info-logo-wrap{text-align:center;flex-direction:column;align-items:center;gap:8px;display:flex}.manifest-info-logo{width:100%;max-width:180px;height:auto}.page-view-choices{background-color:var(--diva-dark-bg);border-radius:0;flex-direction:column;gap:8px;padding:8px;display:flex;overflow:auto}.page-view-choice{border:2px solid #0000;flex-direction:column;gap:4px;display:flex}.page-view-choice:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.page-view-choice:hover{background-color:var(--diva-dark-bg)}.page-view-choice.is-active{border-color:var(--diva-accent-light);background-color:var(--diva-dark-bg)}.page-view-choice-thumb{border-radius:0;width:100%;height:auto;display:block}.page-view-choice-thumb--protected{background:var(--diva-dark-bg);min-height:72px}.page-view-choice-label{font-size:var(--diva-font-xs);color:var(--diva-text-muted);text-overflow:ellipsis;white-space:nowrap;line-height:1.2;overflow:hidden}.filter-group{border-bottom:1px solid var(--diva-border);margin-bottom:12px;padding-bottom:12px}.filter-title-button{text-align:left;cursor:pointer;width:100%;font-size:var(--diva-font-sm);text-transform:uppercase;letter-spacing:.08em;color:var(--diva-text-muted);background-color:#0000;border:none;align-items:center;gap:8px;margin-bottom:8px;padding:0;font-weight:600;display:flex}.filter-title-button.is-collapsed{margin-bottom:0}.filter-title-icon{border-top:4px solid #0000;border-bottom:4px solid #0000;border-left:6px solid var(--diva-text-muted);width:0;height:0;transition:transform .15s;display:inline-block}.filter-title-icon.is-expanded{transform:rotate(90deg)}.filter-row{flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle{font-size:var(--diva-font-md);align-items:center;gap:8px;margin-bottom:8px;display:flex}.filter-toggle.is-inline{margin-bottom:0}.filter-range-group{flex-direction:column;gap:6px;margin-bottom:10px;display:flex}.filter-range-header{justify-content:space-between;align-items:center;gap:8px;display:flex}.filter-range-header-right{align-items:center;gap:8px;display:flex}.filter-range-input{width:100%}.filter-value{font-size:var(--diva-font-sm);color:var(--diva-text-muted);text-align:right;width:40px}.filter-reset{font-size:var(--diva-font-xs);background-color:var(--diva-surface);border:1px solid var(--diva-border);cursor:pointer;color:var(--diva-text-muted);border-radius:0;padding:2px 6px}.filter-reset:hover{background-color:var(--diva-border)}.filter-json{width:100%;min-height:120px;font-size:var(--diva-font-sm);border:1px solid var(--diva-border);background-color:var(--diva-white);resize:vertical;border-radius:0;padding:6px 8px;font-family:Menlo,Monaco,Consolas,Liberation Mono,monospace}.filter-json-error{font-size:var(--diva-font-sm);color:var(--diva-danger);margin-top:4px}.filter-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted)}.filter-select{border:1px solid var(--diva-border);background-color:var(--diva-white);font-size:var(--diva-font-sm);border-radius:0;padding:4px 6px}.filter-color-input{border:1px solid var(--diva-border);background-color:var(--diva-white);border-radius:0;width:42px;height:28px;padding:0}.diva-auth-overlay{z-index:10000;background:#0000008c;place-items:center;display:grid;position:fixed;inset:0}.diva-auth-dialog{box-sizing:border-box;border:1px solid var(--diva-border,#aaa);background:var(--diva-background,#fff);width:min(30rem,100vw - 2rem);color:var(--diva-text-primary,#222);border-radius:0;padding:1.25rem}.diva-auth-dialog button{min-height:2.25rem;color:inherit;cursor:pointer;background:0 0;border:1px solid;border-radius:0;padding:.35rem .8rem}.diva-auth-dialog button:focus-visible{outline:2px solid var(--diva-accent,#1769aa);outline-offset:2px}.collection-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0;flex-direction:column;height:100%;min-height:0;display:flex;overflow:hidden}.collection-header{background-color:var(--diva-surface);border-bottom:1px solid var(--diva-border);border-radius:0;padding:12px}.collection-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:4px;font-weight:600}.collection-summary{font-size:var(--diva-font-md);color:var(--diva-text-muted);line-height:1.4}.collection-tree-item{padding-left:12px}.collection-node-button{align-items:center;gap:6px;width:100%;padding:6px 8px;display:flex}.collection-expand-icon{flex-shrink:0;justify-content:center;align-items:center;width:16px;height:16px;display:flex}.manifest-tree-item{padding:6px 8px 6px 30px}.manifest-tree-item.is-active{background-color:var(--diva-border);font-weight:600}.sidebar-pane.is-scroll{overflow-y:auto}@media (width<=720px){.collection-panel{border-radius:0;width:100%;height:auto}}";
 
   // cache/elm-esm.js
   function F(arity, fun, wrapper) {
@@ -10855,7 +10855,7 @@
   };
   var $elm$browser$Browser$element = _Browser_element;
   var $author$project$Model$ContentsIndex = { $: "ContentsIndex" };
-  var $author$project$IIIF$Language$LanguageCode = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Language$LanguageCode = function(a) {
     return { $: "LanguageCode", a };
   };
   var $author$project$Model$Loading = { $: "Loading" };
@@ -11166,7 +11166,7 @@
       )
     );
   };
-  var $author$project$IIIF$Internal$Request$request = F3(
+  var $rism_digital$elm_iiif$IIIF$Internal$Request$request = F3(
     function(acceptHeaders, expect, url) {
       return $elm$http$Http$request(
         {
@@ -11216,7 +11216,7 @@
       );
     }
   );
-  var $author$project$IIIF$Internal$Contexts$contextMatches = F2(
+  var $rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches = F2(
     function(expected, actual) {
       return _Utils_eq(actual, expected) || _Utils_eq(
         actual,
@@ -11225,42 +11225,42 @@
     }
   );
   var $elm$json$Json$Decode$fail = _Json_fail;
-  var $author$project$IIIF$Internal$Contexts$iiifV2PresentationContextString = "http://iiif.io/api/presentation/2/context.json";
-  var $author$project$IIIF$Internal$Contexts$iiifV3PresentationContextString = "http://iiif.io/api/presentation/3/context.json";
-  var $author$project$IIIF$Presentation$IIIFCanvas = F2(
+  var $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV2PresentationContextString = "http://iiif.io/api/presentation/2/context.json";
+  var $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV3PresentationContextString = "http://iiif.io/api/presentation/3/context.json";
+  var $rism_digital$elm_iiif$IIIF$Presentation$IIIFCanvas = F2(
     function(a, b) {
       return { $: "IIIFCanvas", a, b };
     }
   );
-  var $author$project$IIIF$Presentation$IIIFCollection = F2(
+  var $rism_digital$elm_iiif$IIIF$Presentation$IIIFCollection = F2(
     function(a, b) {
       return { $: "IIIFCollection", a, b };
     }
   );
-  var $author$project$IIIF$Presentation$IIIFManifest = F2(
+  var $rism_digital$elm_iiif$IIIF$Presentation$IIIFManifest = F2(
     function(a, b) {
       return { $: "IIIFManifest", a, b };
     }
   );
-  var $author$project$IIIF$Presentation$IIIFRange = F2(
+  var $rism_digital$elm_iiif$IIIF$Presentation$IIIFRange = F2(
     function(a, b) {
       return { $: "IIIFRange", a, b };
     }
   );
-  var $author$project$IIIF$Version$IIIFV2 = { $: "IIIFV2" };
-  var $author$project$IIIF$Presentation$ResourceCanvas = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Version$IIIFV2 = { $: "IIIFV2" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$ResourceCanvas = function(a) {
     return { $: "ResourceCanvas", a };
   };
-  var $author$project$IIIF$Presentation$ResourceCollection = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$ResourceCollection = function(a) {
     return { $: "ResourceCollection", a };
   };
-  var $author$project$IIIF$Presentation$ResourceManifest = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$ResourceManifest = function(a) {
     return { $: "ResourceManifest", a };
   };
-  var $author$project$IIIF$Presentation$ResourceRange = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$ResourceRange = function(a) {
     return { $: "ResourceRange", a };
   };
-  var $author$project$IIIF$Presentation$Canvas = F7(
+  var $rism_digital$elm_iiif$IIIF$Presentation$Canvas = F7(
     function(id, label, width, height, images, thumbnail, viewingLayout) {
       return { height, id, images, label, thumbnail, viewingLayout, width };
     }
@@ -11275,7 +11275,7 @@
       )
     );
   };
-  var $author$project$IIIF$Internal$Utilities$applyDecoder = F2(
+  var $rism_digital$elm_iiif$IIIF$Internal$Utilities$applyDecoder = F2(
     function(valueDecoder, pipeline) {
       return A3(
         $elm$json$Json$Decode$map2,
@@ -11289,7 +11289,7 @@
       );
     }
   );
-  var $author$project$IIIF$Internal$Utilities$optional = F4(
+  var $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional = F4(
     function(field, decoder, fallback, pipeline) {
       var fieldDecoder = $elm$json$Json$Decode$oneOf(
         _List_fromArray(
@@ -11299,19 +11299,19 @@
           ]
         )
       );
-      return A2($author$project$IIIF$Internal$Utilities$applyDecoder, fieldDecoder, pipeline);
+      return A2($rism_digital$elm_iiif$IIIF$Internal$Utilities$applyDecoder, fieldDecoder, pipeline);
     }
   );
-  var $author$project$IIIF$Internal$Utilities$required = F3(
+  var $rism_digital$elm_iiif$IIIF$Internal$Utilities$required = F3(
     function(field, decoder, pipeline) {
       return A2(
-        $author$project$IIIF$Internal$Utilities$applyDecoder,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$applyDecoder,
         A2($elm$json$Json$Decode$field, field, decoder),
         pipeline
       );
     }
   );
-  var $author$project$IIIF$Internal$SharedDecoders$thumbnailDecoder = function(imageDecoder) {
+  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$thumbnailDecoder = function(imageDecoder) {
     return $elm$json$Json$Decode$oneOf(
       _List_fromArray(
         [
@@ -11325,29 +11325,29 @@
       )
     );
   };
-  var $author$project$IIIF$Internal$V2PresentationDecoders$unwrapDecoderLists = $elm$core$List$concat;
-  var $author$project$IIIF$Presentation$ChoiceImage = { $: "ChoiceImage" };
-  var $author$project$IIIF$Presentation$Image = F5(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$unwrapDecoderLists = $elm$core$List$concat;
+  var $rism_digital$elm_iiif$IIIF$Presentation$ChoiceImage = { $: "ChoiceImage" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$Image = F5(
     function(id, label, imageType, service, serviceObjects) {
       return { id, imageType, label, service, serviceObjects };
     }
   );
-  var $author$project$IIIF$Presentation$PrimaryImage = { $: "PrimaryImage" };
-  var $author$project$IIIF$Internal$Utilities$custom = F2(
+  var $rism_digital$elm_iiif$IIIF$Presentation$PrimaryImage = { $: "PrimaryImage" };
+  var $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom = F2(
     function(decoder, pipeline) {
-      return A2($author$project$IIIF$Internal$Utilities$applyDecoder, decoder, pipeline);
+      return A2($rism_digital$elm_iiif$IIIF$Internal$Utilities$applyDecoder, decoder, pipeline);
     }
   );
-  var $author$project$IIIF$Internal$Utilities$hardcoded = F2(
+  var $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded = F2(
     function(value, pipeline) {
       return A2(
-        $author$project$IIIF$Internal$Utilities$applyDecoder,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$applyDecoder,
         $elm$json$Json$Decode$succeed(value),
         pipeline
       );
     }
   );
-  var $author$project$IIIF$Image$StaticImageUri = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$StaticImageUri = function(a) {
     return { $: "StaticImageUri", a };
   };
   var $elm$core$Maybe$andThen = F2(
@@ -11372,7 +11372,7 @@
       }
     }
   );
-  var $author$project$IIIF$Image$decomposeUrl = function(_v0) {
+  var $rism_digital$elm_iiif$IIIF$Image$decomposeUrl = function(_v0) {
     var protocol = _v0.protocol;
     var host = _v0.host;
     var port_ = _v0.port_;
@@ -11412,12 +11412,12 @@
     };
   };
   var $elm$core$String$endsWith = _String_endsWith;
-  var $author$project$IIIF$Image$ImageRequestParameters = F7(
+  var $rism_digital$elm_iiif$IIIF$Image$ImageRequestParameters = F7(
     function(host, prefix, region, size, rotation, quality, format) {
       return { format, host, prefix, quality, region, rotation, size };
     }
   );
-  var $author$project$IIIF$Image$ImageUri = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$ImageUri = function(a) {
     return { $: "ImageUri", a };
   };
   var $elm$core$Maybe$map2 = F3(
@@ -11437,34 +11437,34 @@
       }
     }
   );
-  var $author$project$IIIF$Internal$Utilities$applyMaybe = F2(
+  var $rism_digital$elm_iiif$IIIF$Internal$Utilities$applyMaybe = F2(
     function(argParser, funcParser) {
       return A3($elm$core$Maybe$map2, $elm$core$Basics$apL, funcParser, argParser);
     }
   );
-  var $author$project$IIIF$Image$GifFormat = { $: "GifFormat" };
-  var $author$project$IIIF$Image$Jp2Format = { $: "Jp2Format" };
-  var $author$project$IIIF$Image$JpegFormat = { $: "JpegFormat" };
-  var $author$project$IIIF$Image$PdfFormat = { $: "PdfFormat" };
-  var $author$project$IIIF$Image$PngFormat = { $: "PngFormat" };
-  var $author$project$IIIF$Image$TiffFormat = { $: "TiffFormat" };
-  var $author$project$IIIF$Image$WebpFormat = { $: "WebpFormat" };
-  var $author$project$IIIF$Image$formatParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$GifFormat = { $: "GifFormat" };
+  var $rism_digital$elm_iiif$IIIF$Image$Jp2Format = { $: "Jp2Format" };
+  var $rism_digital$elm_iiif$IIIF$Image$JpegFormat = { $: "JpegFormat" };
+  var $rism_digital$elm_iiif$IIIF$Image$PdfFormat = { $: "PdfFormat" };
+  var $rism_digital$elm_iiif$IIIF$Image$PngFormat = { $: "PngFormat" };
+  var $rism_digital$elm_iiif$IIIF$Image$TiffFormat = { $: "TiffFormat" };
+  var $rism_digital$elm_iiif$IIIF$Image$WebpFormat = { $: "WebpFormat" };
+  var $rism_digital$elm_iiif$IIIF$Image$formatParser = function(inp) {
     var _v0 = A2($elm$core$String$split, ".", inp);
     if (_v0.b && _v0.b.b && !_v0.b.b.b) {
       var _v1 = _v0.b;
       var format = _v1.a;
-      return format === "jpg" ? $elm$core$Maybe$Just($author$project$IIIF$Image$JpegFormat) : format === "tif" ? $elm$core$Maybe$Just($author$project$IIIF$Image$TiffFormat) : format === "png" ? $elm$core$Maybe$Just($author$project$IIIF$Image$PngFormat) : format === "gif" ? $elm$core$Maybe$Just($author$project$IIIF$Image$GifFormat) : format === "jp2" ? $elm$core$Maybe$Just($author$project$IIIF$Image$Jp2Format) : format === "pdf" ? $elm$core$Maybe$Just($author$project$IIIF$Image$PdfFormat) : format === "webp" ? $elm$core$Maybe$Just($author$project$IIIF$Image$WebpFormat) : $elm$core$Maybe$Nothing;
+      return format === "jpg" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$JpegFormat) : format === "tif" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$TiffFormat) : format === "png" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$PngFormat) : format === "gif" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$GifFormat) : format === "jp2" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$Jp2Format) : format === "pdf" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$PdfFormat) : format === "webp" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$WebpFormat) : $elm$core$Maybe$Nothing;
     } else {
       return $elm$core$Maybe$Nothing;
     }
   };
-  var $author$project$IIIF$Image$FullRegion = { $: "FullRegion" };
-  var $author$project$IIIF$Image$SquareRegion = { $: "SquareRegion" };
-  var $author$project$IIIF$Image$fullSquareRegionParser = function(inp) {
-    return inp === "full" ? $elm$core$Maybe$Just($author$project$IIIF$Image$FullRegion) : inp === "square" ? $elm$core$Maybe$Just($author$project$IIIF$Image$SquareRegion) : $elm$core$Maybe$Nothing;
+  var $rism_digital$elm_iiif$IIIF$Image$FullRegion = { $: "FullRegion" };
+  var $rism_digital$elm_iiif$IIIF$Image$SquareRegion = { $: "SquareRegion" };
+  var $rism_digital$elm_iiif$IIIF$Image$fullSquareRegionParser = function(inp) {
+    return inp === "full" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$FullRegion) : inp === "square" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$SquareRegion) : $elm$core$Maybe$Nothing;
   };
-  var $author$project$IIIF$Internal$Utilities$oneOfMaybes = F2(
+  var $rism_digital$elm_iiif$IIIF$Internal$Utilities$oneOfMaybes = F2(
     function(fmbs, a) {
       oneOfMaybes:
         while (true) {
@@ -11487,11 +11487,11 @@
         }
     }
   );
-  var $author$project$IIIF$Image$PctSizeRegion = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$PctSizeRegion = function(a) {
     return { $: "PctSizeRegion", a };
   };
   var $elm$core$String$toFloat = _String_toFloat;
-  var $author$project$IIIF$Image$pctSizeRegionParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$pctSizeRegionParser = function(inp) {
     var transformedInput = A2(
       $elm$core$List$filterMap,
       $elm$core$String$toFloat,
@@ -11510,7 +11510,7 @@
       var _v3 = _v2.b;
       var h = _v3.a;
       return $elm$core$Maybe$Just(
-        $author$project$IIIF$Image$PctSizeRegion(
+        $rism_digital$elm_iiif$IIIF$Image$PctSizeRegion(
           { h, w, x, y }
         )
       );
@@ -11518,10 +11518,10 @@
       return $elm$core$Maybe$Nothing;
     }
   };
-  var $author$project$IIIF$Image$SizeRegion = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$SizeRegion = function(a) {
     return { $: "SizeRegion", a };
   };
-  var $author$project$IIIF$Image$sizeRegionParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$sizeRegionParser = function(inp) {
     var transformedInput = A2(
       $elm$core$List$filterMap,
       $elm$core$String$toInt,
@@ -11536,7 +11536,7 @@
       var _v3 = _v2.b;
       var h = _v3.a;
       return $elm$core$Maybe$Just(
-        $author$project$IIIF$Image$SizeRegion(
+        $rism_digital$elm_iiif$IIIF$Image$SizeRegion(
           { h, w, x, y }
         )
       );
@@ -11544,40 +11544,40 @@
       return $elm$core$Maybe$Nothing;
     }
   };
-  var $author$project$IIIF$Image$imageRegionParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$imageRegionParser = function(inp) {
     return A2(
-      $author$project$IIIF$Internal$Utilities$oneOfMaybes,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$oneOfMaybes,
       _List_fromArray(
-        [$author$project$IIIF$Image$fullSquareRegionParser, $author$project$IIIF$Image$sizeRegionParser, $author$project$IIIF$Image$pctSizeRegionParser]
+        [$rism_digital$elm_iiif$IIIF$Image$fullSquareRegionParser, $rism_digital$elm_iiif$IIIF$Image$sizeRegionParser, $rism_digital$elm_iiif$IIIF$Image$pctSizeRegionParser]
       ),
       inp
     );
   };
-  var $author$project$IIIF$Image$ExactHeightOnlySize = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$ExactHeightOnlySize = function(a) {
     return { $: "ExactHeightOnlySize", a };
   };
-  var $author$project$IIIF$Image$exactHeightOnlySizeParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$exactHeightOnlySizeParser = function(inp) {
     return A2($elm$core$String$startsWith, "^,", inp) ? A2(
       $elm$core$Maybe$map,
-      $author$project$IIIF$Image$ExactHeightOnlySize,
+      $rism_digital$elm_iiif$IIIF$Image$ExactHeightOnlySize,
       $elm$core$String$toInt(
         A2($elm$core$String$dropLeft, 2, inp)
       )
     ) : $elm$core$Maybe$Nothing;
   };
-  var $author$project$IIIF$Image$ExactPercentSize = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$ExactPercentSize = function(a) {
     return { $: "ExactPercentSize", a };
   };
-  var $author$project$IIIF$Image$exactPercentSizeParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$exactPercentSizeParser = function(inp) {
     return A2($elm$core$String$startsWith, "^pct:", inp) ? A2(
       $elm$core$Maybe$map,
-      $author$project$IIIF$Image$ExactPercentSize,
+      $rism_digital$elm_iiif$IIIF$Image$ExactPercentSize,
       $elm$core$String$toFloat(
         A2($elm$core$String$dropLeft, 5, inp)
       )
     ) : $elm$core$Maybe$Nothing;
   };
-  var $author$project$IIIF$Image$ExactScaledWidthAndHeightSize = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$ExactScaledWidthAndHeightSize = function(a) {
     return { $: "ExactScaledWidthAndHeightSize", a };
   };
   var $elm$core$Tuple$pair = F2(
@@ -11585,7 +11585,7 @@
       return _Utils_Tuple2(a, b);
     }
   );
-  var $author$project$IIIF$Image$whSizeParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$whSizeParser = function(inp) {
     var _v0 = A2($elm$core$String$split, ",", inp);
     if (_v0.b && _v0.b.b && !_v0.b.b.b) {
       var width = _v0.a;
@@ -11601,28 +11601,28 @@
       return $elm$core$Maybe$Nothing;
     }
   };
-  var $author$project$IIIF$Image$exactScaledWidthAndHeightSizeParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$exactScaledWidthAndHeightSizeParser = function(inp) {
     return A2($elm$core$String$startsWith, "^!", inp) ? A2(
       $elm$core$Maybe$map,
-      $author$project$IIIF$Image$ExactScaledWidthAndHeightSize,
-      $author$project$IIIF$Image$whSizeParser(
+      $rism_digital$elm_iiif$IIIF$Image$ExactScaledWidthAndHeightSize,
+      $rism_digital$elm_iiif$IIIF$Image$whSizeParser(
         A2($elm$core$String$dropLeft, 2, inp)
       )
     ) : $elm$core$Maybe$Nothing;
   };
-  var $author$project$IIIF$Image$ExactWidthAndHeightSize = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$ExactWidthAndHeightSize = function(a) {
     return { $: "ExactWidthAndHeightSize", a };
   };
-  var $author$project$IIIF$Image$exactWidthAndHeightSizeParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$exactWidthAndHeightSizeParser = function(inp) {
     return A2($elm$core$String$startsWith, "^", inp) ? A2(
       $elm$core$Maybe$map,
-      $author$project$IIIF$Image$ExactWidthAndHeightSize,
-      $author$project$IIIF$Image$whSizeParser(
+      $rism_digital$elm_iiif$IIIF$Image$ExactWidthAndHeightSize,
+      $rism_digital$elm_iiif$IIIF$Image$whSizeParser(
         A2($elm$core$String$dropLeft, 1, inp)
       )
     ) : $elm$core$Maybe$Nothing;
   };
-  var $author$project$IIIF$Image$ExactWidthOnlySize = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$ExactWidthOnlySize = function(a) {
     return { $: "ExactWidthOnlySize", a };
   };
   var $elm$core$String$dropRight = F2(
@@ -11630,10 +11630,10 @@
       return n < 1 ? string : A3($elm$core$String$slice, 0, -n, string);
     }
   );
-  var $author$project$IIIF$Image$exactWidthOnlySizeParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$exactWidthOnlySizeParser = function(inp) {
     return A2($elm$core$String$endsWith, ",", inp) && A2($elm$core$String$startsWith, "^", inp) ? A2(
       $elm$core$Maybe$map,
-      $author$project$IIIF$Image$ExactWidthOnlySize,
+      $rism_digital$elm_iiif$IIIF$Image$ExactWidthOnlySize,
       $elm$core$String$toInt(
         A2(
           $elm$core$String$dropLeft,
@@ -11643,131 +11643,131 @@
       )
     ) : $elm$core$Maybe$Nothing;
   };
-  var $author$project$IIIF$Image$HeightOnlySize = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$HeightOnlySize = function(a) {
     return { $: "HeightOnlySize", a };
   };
-  var $author$project$IIIF$Image$heightOnlySizeParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$heightOnlySizeParser = function(inp) {
     return A2($elm$core$String$startsWith, ",", inp) ? A2(
       $elm$core$Maybe$map,
-      $author$project$IIIF$Image$HeightOnlySize,
+      $rism_digital$elm_iiif$IIIF$Image$HeightOnlySize,
       $elm$core$String$toInt(
         A2($elm$core$String$dropLeft, 1, inp)
       )
     ) : $elm$core$Maybe$Nothing;
   };
-  var $author$project$IIIF$Image$ExactMaxSize = { $: "ExactMaxSize" };
-  var $author$project$IIIF$Image$MaxSize = { $: "MaxSize" };
-  var $author$project$IIIF$Image$maxSizeParser = function(inp) {
-    return inp === "max" || inp === "full" ? $elm$core$Maybe$Just($author$project$IIIF$Image$MaxSize) : inp === "^max" ? $elm$core$Maybe$Just($author$project$IIIF$Image$ExactMaxSize) : $elm$core$Maybe$Nothing;
+  var $rism_digital$elm_iiif$IIIF$Image$ExactMaxSize = { $: "ExactMaxSize" };
+  var $rism_digital$elm_iiif$IIIF$Image$MaxSize = { $: "MaxSize" };
+  var $rism_digital$elm_iiif$IIIF$Image$maxSizeParser = function(inp) {
+    return inp === "max" || inp === "full" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$MaxSize) : inp === "^max" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$ExactMaxSize) : $elm$core$Maybe$Nothing;
   };
-  var $author$project$IIIF$Image$PercentSize = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$PercentSize = function(a) {
     return { $: "PercentSize", a };
   };
-  var $author$project$IIIF$Image$percentSizeParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$percentSizeParser = function(inp) {
     return A2($elm$core$String$startsWith, "pct:", inp) ? A2(
       $elm$core$Maybe$map,
-      $author$project$IIIF$Image$PercentSize,
+      $rism_digital$elm_iiif$IIIF$Image$PercentSize,
       $elm$core$String$toFloat(
         A2($elm$core$String$dropLeft, 4, inp)
       )
     ) : $elm$core$Maybe$Nothing;
   };
-  var $author$project$IIIF$Image$ScaledWidthAndHeightSize = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$ScaledWidthAndHeightSize = function(a) {
     return { $: "ScaledWidthAndHeightSize", a };
   };
-  var $author$project$IIIF$Image$scaledWidthAndHeightSizeParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$scaledWidthAndHeightSizeParser = function(inp) {
     return A2($elm$core$String$startsWith, "!", inp) ? A2(
       $elm$core$Maybe$map,
-      $author$project$IIIF$Image$ScaledWidthAndHeightSize,
-      $author$project$IIIF$Image$whSizeParser(
+      $rism_digital$elm_iiif$IIIF$Image$ScaledWidthAndHeightSize,
+      $rism_digital$elm_iiif$IIIF$Image$whSizeParser(
         A2($elm$core$String$dropLeft, 1, inp)
       )
     ) : $elm$core$Maybe$Nothing;
   };
-  var $author$project$IIIF$Image$WidthAndHeightSize = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$WidthAndHeightSize = function(a) {
     return { $: "WidthAndHeightSize", a };
   };
-  var $author$project$IIIF$Image$widthAndHeightSizeParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$widthAndHeightSizeParser = function(inp) {
     var _v0 = A2($elm$core$String$split, ",", inp);
     if (_v0.b && _v0.b.b && !_v0.b.b.b) {
       var _v1 = _v0.b;
       return A2(
         $elm$core$Maybe$map,
-        $author$project$IIIF$Image$WidthAndHeightSize,
-        $author$project$IIIF$Image$whSizeParser(inp)
+        $rism_digital$elm_iiif$IIIF$Image$WidthAndHeightSize,
+        $rism_digital$elm_iiif$IIIF$Image$whSizeParser(inp)
       );
     } else {
       return $elm$core$Maybe$Nothing;
     }
   };
-  var $author$project$IIIF$Image$WidthOnlySize = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$WidthOnlySize = function(a) {
     return { $: "WidthOnlySize", a };
   };
-  var $author$project$IIIF$Image$widthOnlySizeParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$widthOnlySizeParser = function(inp) {
     return A2($elm$core$String$endsWith, ",", inp) ? A2(
       $elm$core$Maybe$map,
-      $author$project$IIIF$Image$WidthOnlySize,
+      $rism_digital$elm_iiif$IIIF$Image$WidthOnlySize,
       $elm$core$String$toInt(
         A2($elm$core$String$dropRight, 1, inp)
       )
     ) : $elm$core$Maybe$Nothing;
   };
-  var $author$project$IIIF$Image$imageSizeParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$imageSizeParser = function(inp) {
     return A2(
-      $author$project$IIIF$Internal$Utilities$oneOfMaybes,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$oneOfMaybes,
       _List_fromArray(
-        [$author$project$IIIF$Image$maxSizeParser, $author$project$IIIF$Image$widthOnlySizeParser, $author$project$IIIF$Image$exactWidthOnlySizeParser, $author$project$IIIF$Image$heightOnlySizeParser, $author$project$IIIF$Image$exactHeightOnlySizeParser, $author$project$IIIF$Image$percentSizeParser, $author$project$IIIF$Image$exactPercentSizeParser, $author$project$IIIF$Image$widthAndHeightSizeParser, $author$project$IIIF$Image$exactWidthAndHeightSizeParser, $author$project$IIIF$Image$scaledWidthAndHeightSizeParser, $author$project$IIIF$Image$exactScaledWidthAndHeightSizeParser]
+        [$rism_digital$elm_iiif$IIIF$Image$maxSizeParser, $rism_digital$elm_iiif$IIIF$Image$widthOnlySizeParser, $rism_digital$elm_iiif$IIIF$Image$exactWidthOnlySizeParser, $rism_digital$elm_iiif$IIIF$Image$heightOnlySizeParser, $rism_digital$elm_iiif$IIIF$Image$exactHeightOnlySizeParser, $rism_digital$elm_iiif$IIIF$Image$percentSizeParser, $rism_digital$elm_iiif$IIIF$Image$exactPercentSizeParser, $rism_digital$elm_iiif$IIIF$Image$widthAndHeightSizeParser, $rism_digital$elm_iiif$IIIF$Image$exactWidthAndHeightSizeParser, $rism_digital$elm_iiif$IIIF$Image$scaledWidthAndHeightSizeParser, $rism_digital$elm_iiif$IIIF$Image$exactScaledWidthAndHeightSizeParser]
       ),
       inp
     );
   };
-  var $author$project$IIIF$Image$BiTonalQuality = { $: "BiTonalQuality" };
-  var $author$project$IIIF$Image$ColorQuality = { $: "ColorQuality" };
-  var $author$project$IIIF$Image$DefaultQuality = { $: "DefaultQuality" };
-  var $author$project$IIIF$Image$GrayQuality = { $: "GrayQuality" };
-  var $author$project$IIIF$Image$NativeQuality = { $: "NativeQuality" };
-  var $author$project$IIIF$Image$qualityParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$BiTonalQuality = { $: "BiTonalQuality" };
+  var $rism_digital$elm_iiif$IIIF$Image$ColorQuality = { $: "ColorQuality" };
+  var $rism_digital$elm_iiif$IIIF$Image$DefaultQuality = { $: "DefaultQuality" };
+  var $rism_digital$elm_iiif$IIIF$Image$GrayQuality = { $: "GrayQuality" };
+  var $rism_digital$elm_iiif$IIIF$Image$NativeQuality = { $: "NativeQuality" };
+  var $rism_digital$elm_iiif$IIIF$Image$qualityParser = function(inp) {
     var _v0 = A2($elm$core$String$split, ".", inp);
     if (_v0.b && _v0.b.b && !_v0.b.b.b) {
       var quality = _v0.a;
       var _v1 = _v0.b;
-      return quality === "default" ? $elm$core$Maybe$Just($author$project$IIIF$Image$DefaultQuality) : quality === "native" ? $elm$core$Maybe$Just($author$project$IIIF$Image$NativeQuality) : quality === "color" ? $elm$core$Maybe$Just($author$project$IIIF$Image$ColorQuality) : quality === "gray" ? $elm$core$Maybe$Just($author$project$IIIF$Image$GrayQuality) : quality === "bitonal" ? $elm$core$Maybe$Just($author$project$IIIF$Image$BiTonalQuality) : $elm$core$Maybe$Nothing;
+      return quality === "default" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$DefaultQuality) : quality === "native" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$NativeQuality) : quality === "color" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$ColorQuality) : quality === "gray" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$GrayQuality) : quality === "bitonal" ? $elm$core$Maybe$Just($rism_digital$elm_iiif$IIIF$Image$BiTonalQuality) : $elm$core$Maybe$Nothing;
     } else {
       return $elm$core$Maybe$Nothing;
     }
   };
-  var $author$project$IIIF$Image$MirroredRotation = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$MirroredRotation = function(a) {
     return { $: "MirroredRotation", a };
   };
-  var $author$project$IIIF$Image$mirroredRotationParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$mirroredRotationParser = function(inp) {
     return A2($elm$core$String$startsWith, "!", inp) ? A2(
       $elm$core$Maybe$map,
-      $author$project$IIIF$Image$MirroredRotation,
+      $rism_digital$elm_iiif$IIIF$Image$MirroredRotation,
       $elm$core$String$toFloat(
         A2($elm$core$String$dropLeft, 1, inp)
       )
     ) : $elm$core$Maybe$Nothing;
   };
-  var $author$project$IIIF$Image$NormalRotation = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$NormalRotation = function(a) {
     return { $: "NormalRotation", a };
   };
-  var $author$project$IIIF$Image$normalRotationParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$normalRotationParser = function(inp) {
     return A2(
       $elm$core$Maybe$map,
-      $author$project$IIIF$Image$NormalRotation,
+      $rism_digital$elm_iiif$IIIF$Image$NormalRotation,
       $elm$core$String$toFloat(inp)
     );
   };
-  var $author$project$IIIF$Image$rotationParser = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$rotationParser = function(inp) {
     return A2(
-      $author$project$IIIF$Internal$Utilities$oneOfMaybes,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$oneOfMaybes,
       _List_fromArray(
-        [$author$project$IIIF$Image$normalRotationParser, $author$project$IIIF$Image$mirroredRotationParser]
+        [$rism_digital$elm_iiif$IIIF$Image$normalRotationParser, $rism_digital$elm_iiif$IIIF$Image$mirroredRotationParser]
       ),
       inp
     );
   };
-  var $author$project$IIIF$Image$imageUriFromComponents = F2(
+  var $rism_digital$elm_iiif$IIIF$Image$imageUriFromComponents = F2(
     function(host, pathComponents) {
       var _v0 = $elm$core$List$reverse(pathComponents);
       if (_v0.b && _v0.b.b && _v0.b.b.b && _v0.b.b.b.b) {
@@ -11786,24 +11786,24 @@
         );
         return A2(
           $elm$core$Maybe$map,
-          $author$project$IIIF$Image$ImageUri,
+          $rism_digital$elm_iiif$IIIF$Image$ImageUri,
           A2(
-            $author$project$IIIF$Internal$Utilities$applyMaybe,
-            $author$project$IIIF$Image$formatParser(qualityFormat),
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$applyMaybe,
+            $rism_digital$elm_iiif$IIIF$Image$formatParser(qualityFormat),
             A2(
-              $author$project$IIIF$Internal$Utilities$applyMaybe,
-              $author$project$IIIF$Image$qualityParser(qualityFormat),
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$applyMaybe,
+              $rism_digital$elm_iiif$IIIF$Image$qualityParser(qualityFormat),
               A2(
-                $author$project$IIIF$Internal$Utilities$applyMaybe,
-                $author$project$IIIF$Image$rotationParser(rotation),
+                $rism_digital$elm_iiif$IIIF$Internal$Utilities$applyMaybe,
+                $rism_digital$elm_iiif$IIIF$Image$rotationParser(rotation),
                 A2(
-                  $author$project$IIIF$Internal$Utilities$applyMaybe,
-                  $author$project$IIIF$Image$imageSizeParser(size),
+                  $rism_digital$elm_iiif$IIIF$Internal$Utilities$applyMaybe,
+                  $rism_digital$elm_iiif$IIIF$Image$imageSizeParser(size),
                   A2(
-                    $author$project$IIIF$Internal$Utilities$applyMaybe,
-                    $author$project$IIIF$Image$imageRegionParser(region),
+                    $rism_digital$elm_iiif$IIIF$Internal$Utilities$applyMaybe,
+                    $rism_digital$elm_iiif$IIIF$Image$imageRegionParser(region),
                     $elm$core$Maybe$Just(
-                      A2($author$project$IIIF$Image$ImageRequestParameters, host, imageIdent)
+                      A2($rism_digital$elm_iiif$IIIF$Image$ImageRequestParameters, host, imageIdent)
                     )
                   )
                 )
@@ -11816,7 +11816,7 @@
       }
     }
   );
-  var $author$project$IIIF$Image$InfoUri = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Image$InfoUri = function(a) {
     return { $: "InfoUri", a };
   };
   var $elm$core$List$filter = F2(
@@ -11833,7 +11833,7 @@
       );
     }
   );
-  var $author$project$IIIF$Internal$Utilities$remove = F2(
+  var $rism_digital$elm_iiif$IIIF$Internal$Utilities$remove = F2(
     function(item, items) {
       return A2(
         $elm$core$List$filter,
@@ -11842,21 +11842,21 @@
       );
     }
   );
-  var $author$project$IIIF$Image$infoUriFromComponents = F2(
+  var $rism_digital$elm_iiif$IIIF$Image$infoUriFromComponents = F2(
     function(host, pathComponents) {
       var identifier = A2(
         $elm$core$String$join,
         "/",
-        A2($author$project$IIIF$Internal$Utilities$remove, "info.json", pathComponents)
+        A2($rism_digital$elm_iiif$IIIF$Internal$Utilities$remove, "info.json", pathComponents)
       );
       return $elm$core$Maybe$Just(
-        $author$project$IIIF$Image$InfoUri(
+        $rism_digital$elm_iiif$IIIF$Image$InfoUri(
           { host, prefix: identifier }
         )
       );
     }
   );
-  var $author$project$IIIF$Internal$Utilities$cartesianProduct = function(lists) {
+  var $rism_digital$elm_iiif$IIIF$Internal$Utilities$cartesianProduct = function(lists) {
     return A3(
       $elm$core$List$foldr,
       F2(
@@ -11880,7 +11880,7 @@
       lists
     );
   };
-  var $author$project$IIIF$Image$possibleSuffixes = (function() {
+  var $rism_digital$elm_iiif$IIIF$Image$possibleSuffixes = (function() {
     var qualitySuffixes = _List_fromArray(
       ["color", "gray", "bitonal", "default", "native"]
     );
@@ -11890,24 +11890,24 @@
     return A2(
       $elm$core$List$map,
       $elm$core$String$join("."),
-      $author$project$IIIF$Internal$Utilities$cartesianProduct(
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$cartesianProduct(
         _List_fromArray(
           [qualitySuffixes, formatSuffixes]
         )
       )
     );
   })();
-  var $author$project$IIIF$Image$staticImageUriFromComponents = F2(
+  var $rism_digital$elm_iiif$IIIF$Image$staticImageUriFromComponents = F2(
     function(host, path) {
       return $elm$core$Maybe$Just(
-        $author$project$IIIF$Image$StaticImageUri(
+        $rism_digital$elm_iiif$IIIF$Image$StaticImageUri(
           { host, prefix: path }
         )
       );
     }
   );
-  var $author$project$IIIF$Image$parseImageUrl = function(url) {
-    var _v0 = $author$project$IIIF$Image$decomposeUrl(url);
+  var $rism_digital$elm_iiif$IIIF$Image$parseImageUrl = function(url) {
+    var _v0 = $rism_digital$elm_iiif$IIIF$Image$decomposeUrl(url);
     var address = _v0.address;
     var path = _v0.path;
     var pathComponents = _v0.pathComponents;
@@ -11917,62 +11917,62 @@
       function(s) {
         return A2($elm$core$String$endsWith, s, path);
       },
-      $author$project$IIIF$Image$possibleSuffixes
+      $rism_digital$elm_iiif$IIIF$Image$possibleSuffixes
     );
-    return isImageApiUri ? A2($author$project$IIIF$Image$imageUriFromComponents, address, pathComponents) : A2($elm$core$String$endsWith, "info.json", path) ? A2($author$project$IIIF$Image$infoUriFromComponents, address, pathComponents) : A2($author$project$IIIF$Image$staticImageUriFromComponents, address, pathWithQuery);
+    return isImageApiUri ? A2($rism_digital$elm_iiif$IIIF$Image$imageUriFromComponents, address, pathComponents) : A2($elm$core$String$endsWith, "info.json", path) ? A2($rism_digital$elm_iiif$IIIF$Image$infoUriFromComponents, address, pathComponents) : A2($rism_digital$elm_iiif$IIIF$Image$staticImageUriFromComponents, address, pathWithQuery);
   };
-  var $author$project$IIIF$Image$parseImageAddress = function(fullAddress) {
+  var $rism_digital$elm_iiif$IIIF$Image$parseImageAddress = function(fullAddress) {
     return A2(
       $elm$core$Maybe$andThen,
-      $author$project$IIIF$Image$parseImageUrl,
+      $rism_digital$elm_iiif$IIIF$Image$parseImageUrl,
       $elm$url$Url$fromString(fullAddress)
     );
   };
-  var $author$project$IIIF$Internal$SharedDecoders$convertStaticImageIdToImageUri = function(idValue) {
-    var _v0 = $author$project$IIIF$Image$parseImageAddress(idValue);
+  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$convertStaticImageIdToImageUri = function(idValue) {
+    var _v0 = $rism_digital$elm_iiif$IIIF$Image$parseImageAddress(idValue);
     if (_v0.$ === "Just" && _v0.a.$ === "StaticImageUri") {
       var params = _v0.a.a;
       return $elm$json$Json$Decode$succeed(
-        $author$project$IIIF$Image$StaticImageUri(params)
+        $rism_digital$elm_iiif$IIIF$Image$StaticImageUri(params)
       );
     } else {
       return $elm$json$Json$Decode$fail("Could not decode static image Url");
     }
   };
-  var $author$project$IIIF$Image$imageUriToInfoUri = function(inp) {
+  var $rism_digital$elm_iiif$IIIF$Image$imageUriToInfoUri = function(inp) {
     switch (inp.$) {
       case "InfoUri":
         return inp;
       case "ImageUri":
         var params = inp.a;
-        return $author$project$IIIF$Image$InfoUri(
+        return $rism_digital$elm_iiif$IIIF$Image$InfoUri(
           { host: params.host, prefix: params.prefix }
         );
       default:
         return inp;
     }
   };
-  var $author$project$IIIF$Internal$SharedDecoders$convertImageIdToImageUri = function(idValue) {
-    var _v0 = $author$project$IIIF$Image$parseImageAddress(idValue);
+  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$convertImageIdToImageUri = function(idValue) {
+    var _v0 = $rism_digital$elm_iiif$IIIF$Image$parseImageAddress(idValue);
     if (_v0.$ === "Just") {
       if (_v0.a.$ === "StaticImageUri") {
         var params = _v0.a.a;
         return $elm$json$Json$Decode$succeed(
-          $author$project$IIIF$Image$InfoUri(params)
+          $rism_digital$elm_iiif$IIIF$Image$InfoUri(params)
         );
       } else {
         var url = _v0.a;
         return $elm$json$Json$Decode$succeed(
-          $author$project$IIIF$Image$imageUriToInfoUri(url)
+          $rism_digital$elm_iiif$IIIF$Image$imageUriToInfoUri(url)
         );
       }
     } else {
       return $elm$json$Json$Decode$fail("Could not decode image Url");
     }
   };
-  var $author$project$IIIF$Presentation$ImageService1 = { $: "ImageService1" };
-  var $author$project$IIIF$Presentation$ImageService2 = { $: "ImageService2" };
-  var $author$project$IIIF$Presentation$ImageService3 = { $: "ImageService3" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$ImageService1 = { $: "ImageService1" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$ImageService2 = { $: "ImageService2" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$ImageService3 = { $: "ImageService3" };
   var $elm$core$List$member = F2(
     function(x, xs) {
       return A2(
@@ -11984,91 +11984,91 @@
       );
     }
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$isImageService = function(serviceType) {
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$isImageService = function(serviceType) {
     return A2(
       $elm$core$List$member,
       serviceType,
       _List_fromArray(
-        [$author$project$IIIF$Presentation$ImageService1, $author$project$IIIF$Presentation$ImageService2, $author$project$IIIF$Presentation$ImageService3]
+        [$rism_digital$elm_iiif$IIIF$Presentation$ImageService1, $rism_digital$elm_iiif$IIIF$Presentation$ImageService2, $rism_digital$elm_iiif$IIIF$Presentation$ImageService3]
       )
     );
   };
-  var $author$project$IIIF$Internal$Contexts$iiifV2ImageContextString = "http://iiif.io/api/image/2/context.json";
-  var $author$project$IIIF$Internal$Contexts$iiifV1ImageContextString = "http://library.stanford.edu/iiif/image-api/1.1/context.json";
-  var $author$project$IIIF$Internal$Contexts$iiifV1ImageServiceContextString = "http://iiif.io/api/image/1/context.json";
-  var $author$project$IIIF$Internal$Contexts$isV1ImageContext = function(actual) {
-    return A2($author$project$IIIF$Internal$Contexts$contextMatches, $author$project$IIIF$Internal$Contexts$iiifV1ImageContextString, actual) || A2($author$project$IIIF$Internal$Contexts$contextMatches, $author$project$IIIF$Internal$Contexts$iiifV1ImageServiceContextString, actual);
+  var $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV2ImageContextString = "http://iiif.io/api/image/2/context.json";
+  var $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV1ImageContextString = "http://library.stanford.edu/iiif/image-api/1.1/context.json";
+  var $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV1ImageServiceContextString = "http://iiif.io/api/image/1/context.json";
+  var $rism_digital$elm_iiif$IIIF$Internal$Contexts$isV1ImageContext = function(actual) {
+    return A2($rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches, $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV1ImageContextString, actual) || A2($rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches, $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV1ImageServiceContextString, actual);
   };
-  var $author$project$IIIF$Presentation$AuthLogoutService1 = { $: "AuthLogoutService1" };
-  var $author$project$IIIF$Presentation$AuthTokenService1 = { $: "AuthTokenService1" };
-  var $author$project$IIIF$Presentation$AutoCompleteService1 = { $: "AutoCompleteService1" };
-  var $author$project$IIIF$Presentation$SearchService1 = { $: "SearchService1" };
-  var $author$project$IIIF$Presentation$UnknownService = { $: "UnknownService" };
-  var $author$project$IIIF$Internal$Contexts$iiifV3ImageContextString = "http://iiif.io/api/image/3/context.json";
-  var $author$project$IIIF$Presentation$stringToServiceType = function(val) {
-    if (A2($author$project$IIIF$Internal$Contexts$contextMatches, $author$project$IIIF$Internal$Contexts$iiifV2ImageContextString, val)) {
-      return $author$project$IIIF$Presentation$ImageService2;
+  var $rism_digital$elm_iiif$IIIF$Presentation$AuthLogoutService1 = { $: "AuthLogoutService1" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$AuthTokenService1 = { $: "AuthTokenService1" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$AutoCompleteService1 = { $: "AutoCompleteService1" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$SearchService1 = { $: "SearchService1" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$UnknownService = { $: "UnknownService" };
+  var $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV3ImageContextString = "http://iiif.io/api/image/3/context.json";
+  var $rism_digital$elm_iiif$IIIF$Presentation$stringToServiceType = function(val) {
+    if (A2($rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches, $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV2ImageContextString, val)) {
+      return $rism_digital$elm_iiif$IIIF$Presentation$ImageService2;
     } else {
-      if (A2($author$project$IIIF$Internal$Contexts$contextMatches, $author$project$IIIF$Internal$Contexts$iiifV3ImageContextString, val)) {
-        return $author$project$IIIF$Presentation$ImageService3;
+      if (A2($rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches, $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV3ImageContextString, val)) {
+        return $rism_digital$elm_iiif$IIIF$Presentation$ImageService3;
       } else {
         switch (val) {
           case "AuthLogoutService1":
-            return $author$project$IIIF$Presentation$AuthLogoutService1;
+            return $rism_digital$elm_iiif$IIIF$Presentation$AuthLogoutService1;
           case "AuthTokenService1":
-            return $author$project$IIIF$Presentation$AuthTokenService1;
+            return $rism_digital$elm_iiif$IIIF$Presentation$AuthTokenService1;
           case "AutoCompleteService1":
-            return $author$project$IIIF$Presentation$AutoCompleteService1;
+            return $rism_digital$elm_iiif$IIIF$Presentation$AutoCompleteService1;
           case "ImageService1":
-            return $author$project$IIIF$Presentation$ImageService1;
+            return $rism_digital$elm_iiif$IIIF$Presentation$ImageService1;
           case "ImageService2":
-            return $author$project$IIIF$Presentation$ImageService2;
+            return $rism_digital$elm_iiif$IIIF$Presentation$ImageService2;
           case "ImageService3":
-            return $author$project$IIIF$Presentation$ImageService3;
+            return $rism_digital$elm_iiif$IIIF$Presentation$ImageService3;
           case "SearchService1":
-            return $author$project$IIIF$Presentation$SearchService1;
+            return $rism_digital$elm_iiif$IIIF$Presentation$SearchService1;
           default:
-            return $author$project$IIIF$Presentation$UnknownService;
+            return $rism_digital$elm_iiif$IIIF$Presentation$UnknownService;
         }
       }
     }
   };
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ServiceTypeObjectDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ServiceTypeObjectDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
         A2(
           $elm$json$Json$Decode$map,
-          $author$project$IIIF$Presentation$stringToServiceType,
+          $rism_digital$elm_iiif$IIIF$Presentation$stringToServiceType,
           A2($elm$json$Json$Decode$field, "@type", $elm$json$Json$Decode$string)
         ),
         A2(
           $elm$json$Json$Decode$map,
-          $author$project$IIIF$Presentation$stringToServiceType,
+          $rism_digital$elm_iiif$IIIF$Presentation$stringToServiceType,
           A2($elm$json$Json$Decode$field, "type", $elm$json$Json$Decode$string)
         ),
         A2(
           $elm$json$Json$Decode$map,
           function(context) {
-            return $author$project$IIIF$Internal$Contexts$isV1ImageContext(context) ? $author$project$IIIF$Presentation$ImageService1 : A2($author$project$IIIF$Internal$Contexts$contextMatches, $author$project$IIIF$Internal$Contexts$iiifV2ImageContextString, context) ? $author$project$IIIF$Presentation$ImageService2 : $author$project$IIIF$Presentation$stringToServiceType(context);
+            return $rism_digital$elm_iiif$IIIF$Internal$Contexts$isV1ImageContext(context) ? $rism_digital$elm_iiif$IIIF$Presentation$ImageService1 : A2($rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches, $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV2ImageContextString, context) ? $rism_digital$elm_iiif$IIIF$Presentation$ImageService2 : $rism_digital$elm_iiif$IIIF$Presentation$stringToServiceType(context);
           },
           A2($elm$json$Json$Decode$field, "@context", $elm$json$Json$Decode$string)
         )
       ]
     )
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceIdDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageServiceIdDecoder = A2(
     $elm$json$Json$Decode$andThen,
     function(serviceType) {
-      return $author$project$IIIF$Internal$V2PresentationDecoders$isImageService(serviceType) ? A2($elm$json$Json$Decode$field, "@id", $elm$json$Json$Decode$string) : $elm$json$Json$Decode$fail("Not an Image API service");
+      return $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$isImageService(serviceType) ? A2($elm$json$Json$Decode$field, "@id", $elm$json$Json$Decode$string) : $elm$json$Json$Decode$fail("Not an Image API service");
     },
-    $author$project$IIIF$Internal$V2PresentationDecoders$v2ServiceTypeObjectDecoder
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ServiceTypeObjectDecoder
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageIdFromServiceDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageIdFromServiceDecoder = A2(
     $elm$json$Json$Decode$andThen,
     function(maybeId) {
       if (maybeId.$ === "Just") {
         var id = maybeId.a;
-        return $author$project$IIIF$Internal$SharedDecoders$convertImageIdToImageUri(id);
+        return $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$convertImageIdToImageUri(id);
       } else {
         return $elm$json$Json$Decode$fail("No Image API service ID found");
       }
@@ -12087,22 +12087,22 @@
                 );
               },
               $elm$json$Json$Decode$list(
-                $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceIdDecoder)
+                $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageServiceIdDecoder)
               )
             ),
-            A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceIdDecoder)
+            A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageServiceIdDecoder)
           ]
         )
       )
     )
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageIdDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageIdDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
-        $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageIdFromServiceDecoder,
+        $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageIdFromServiceDecoder,
         A2(
           $elm$json$Json$Decode$andThen,
-          $author$project$IIIF$Internal$SharedDecoders$convertStaticImageIdToImageUri,
+          $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$convertStaticImageIdToImageUri,
           A2($elm$json$Json$Decode$field, "@id", $elm$json$Json$Decode$string)
         )
       ]
@@ -12113,7 +12113,7 @@
       [value]
     );
   };
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceObjectsDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageServiceObjectsDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
         A2(
@@ -12130,7 +12130,7 @@
       ]
     )
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceTypesDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageServiceTypesDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
         A2(
@@ -12143,10 +12143,10 @@
                   $elm$json$Json$Decode$map,
                   $elm$core$List$filterMap($elm$core$Basics$identity),
                   $elm$json$Json$Decode$list(
-                    $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$V2PresentationDecoders$v2ServiceTypeObjectDecoder)
+                    $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ServiceTypeObjectDecoder)
                   )
                 ),
-                A2($elm$json$Json$Decode$map, $elm$core$List$singleton, $author$project$IIIF$Internal$V2PresentationDecoders$v2ServiceTypeObjectDecoder)
+                A2($elm$json$Json$Decode$map, $elm$core$List$singleton, $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ServiceTypeObjectDecoder)
               ]
             )
           )
@@ -12155,32 +12155,32 @@
       ]
     )
   );
-  var $author$project$IIIF$Language$LanguageValues = F2(
+  var $rism_digital$elm_iiif$IIIF$Language$LanguageValues = F2(
     function(a, b) {
       return { $: "LanguageValues", a, b };
     }
   );
-  var $author$project$IIIF$Language$None = { $: "None" };
-  var $author$project$IIIF$Language$parseLocaleToLanguage = function(locale) {
-    return locale === "none" ? $author$project$IIIF$Language$None : $author$project$IIIF$Language$LanguageCode(locale);
+  var $rism_digital$elm_iiif$IIIF$Language$None = { $: "None" };
+  var $rism_digital$elm_iiif$IIIF$Language$parseLocaleToLanguage = function(locale) {
+    return locale === "none" ? $rism_digital$elm_iiif$IIIF$Language$None : $rism_digital$elm_iiif$IIIF$Language$LanguageCode(locale);
   };
-  var $author$project$IIIF$Language$languageValuesDecoder = function(_v0) {
+  var $rism_digital$elm_iiif$IIIF$Language$languageValuesDecoder = function(_v0) {
     var locale = _v0.a;
     var translations = _v0.b;
     return A2(
-      $author$project$IIIF$Language$LanguageValues,
-      $author$project$IIIF$Language$parseLocaleToLanguage(locale),
+      $rism_digital$elm_iiif$IIIF$Language$LanguageValues,
+      $rism_digital$elm_iiif$IIIF$Language$parseLocaleToLanguage(locale),
       translations
     );
   };
-  var $author$project$IIIF$Language$languageMapDecoder = function(json) {
+  var $rism_digital$elm_iiif$IIIF$Language$languageMapDecoder = function(json) {
     return A3(
       $elm$core$List$foldl,
       F2(
         function(map, maps) {
           return A2(
             $elm$core$List$cons,
-            $author$project$IIIF$Language$languageValuesDecoder(map),
+            $rism_digital$elm_iiif$IIIF$Language$languageValuesDecoder(map),
             maps
           );
         }
@@ -12189,22 +12189,22 @@
       json
     );
   };
-  var $author$project$IIIF$Language$languageMapLabelDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder = A2(
     $elm$json$Json$Decode$map,
-    $author$project$IIIF$Language$languageMapDecoder,
+    $rism_digital$elm_iiif$IIIF$Language$languageMapDecoder,
     $elm$json$Json$Decode$keyValuePairs(
       $elm$json$Json$Decode$list($elm$json$Json$Decode$string)
     )
   );
-  var $author$project$IIIF$Language$Default = { $: "Default" };
-  var $author$project$IIIF$Language$stringToLanguageMapLabelDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Language$Default = { $: "Default" };
+  var $rism_digital$elm_iiif$IIIF$Language$stringToLanguageMapLabelDecoder = A2(
     $elm$json$Json$Decode$map,
     function(s) {
       return _List_fromArray(
         [
           A2(
-            $author$project$IIIF$Language$LanguageValues,
-            $author$project$IIIF$Language$Default,
+            $rism_digital$elm_iiif$IIIF$Language$LanguageValues,
+            $rism_digital$elm_iiif$IIIF$Language$Default,
             _List_fromArray(
               [s]
             )
@@ -12214,15 +12214,15 @@
     },
     $elm$json$Json$Decode$string
   );
-  var $author$project$IIIF$Language$v2LanguageValueObjectDecoder = A3(
+  var $rism_digital$elm_iiif$IIIF$Language$v2LanguageValueObjectDecoder = A3(
     $elm$json$Json$Decode$map2,
     F2(
       function(value, locale) {
         return _List_fromArray(
           [
             A2(
-              $author$project$IIIF$Language$LanguageValues,
-              $author$project$IIIF$Language$parseLocaleToLanguage(locale),
+              $rism_digital$elm_iiif$IIIF$Language$LanguageValues,
+              $rism_digital$elm_iiif$IIIF$Language$parseLocaleToLanguage(locale),
               _List_fromArray(
                 [value]
               )
@@ -12241,65 +12241,65 @@
       )
     )
   );
-  var $author$project$IIIF$Language$v2LanguageValueObjectListDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Language$v2LanguageValueObjectListDecoder = A2(
     $elm$json$Json$Decode$map,
     $elm$core$List$concat,
-    $elm$json$Json$Decode$list($author$project$IIIF$Language$v2LanguageValueObjectDecoder)
+    $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Language$v2LanguageValueObjectDecoder)
   );
-  var $author$project$IIIF$Language$v2LanguageMapLabelDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
-      [$author$project$IIIF$Language$v2LanguageValueObjectDecoder, $author$project$IIIF$Language$v2LanguageValueObjectListDecoder, $author$project$IIIF$Language$stringToLanguageMapLabelDecoder, $author$project$IIIF$Language$languageMapLabelDecoder]
+      [$rism_digital$elm_iiif$IIIF$Language$v2LanguageValueObjectDecoder, $rism_digital$elm_iiif$IIIF$Language$v2LanguageValueObjectListDecoder, $rism_digital$elm_iiif$IIIF$Language$stringToLanguageMapLabelDecoder, $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder]
     )
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageDecoder = A2(
-    $author$project$IIIF$Internal$Utilities$custom,
-    $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceObjectsDecoder,
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageDecoder = A2(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageServiceObjectsDecoder,
     A2(
-      $author$project$IIIF$Internal$Utilities$custom,
-      $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceTypesDecoder,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+      $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageServiceTypesDecoder,
       A2(
-        $author$project$IIIF$Internal$Utilities$hardcoded,
-        $author$project$IIIF$Presentation$PrimaryImage,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
+        $rism_digital$elm_iiif$IIIF$Presentation$PrimaryImage,
         A4(
-          $author$project$IIIF$Internal$Utilities$optional,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
           "label",
-          $elm$json$Json$Decode$maybe($author$project$IIIF$Language$v2LanguageMapLabelDecoder),
+          $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder),
           $elm$core$Maybe$Nothing,
           A2(
-            $author$project$IIIF$Internal$Utilities$custom,
-            $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageIdDecoder,
-            $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Image)
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+            $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageIdDecoder,
+            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Image)
           )
         )
       )
     )
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageDecoderVaryingType = function(imgType) {
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageDecoderVaryingType = function(imgType) {
     return A2(
-      $author$project$IIIF$Internal$Utilities$custom,
-      $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceObjectsDecoder,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+      $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageServiceObjectsDecoder,
       A2(
-        $author$project$IIIF$Internal$Utilities$custom,
-        $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceTypesDecoder,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+        $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageServiceTypesDecoder,
         A2(
-          $author$project$IIIF$Internal$Utilities$hardcoded,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
           imgType,
           A4(
-            $author$project$IIIF$Internal$Utilities$optional,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
             "label",
-            $elm$json$Json$Decode$maybe($author$project$IIIF$Language$v2LanguageMapLabelDecoder),
+            $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder),
             $elm$core$Maybe$Nothing,
             A2(
-              $author$project$IIIF$Internal$Utilities$custom,
-              $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageIdDecoder,
-              $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Image)
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+              $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageIdDecoder,
+              $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Image)
             )
           )
         )
       )
     );
   };
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ChoiceObjectDecoder = A3(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ChoiceObjectDecoder = A3(
     $elm$json$Json$Decode$map2,
     $elm$core$List$cons,
     A2(
@@ -12307,7 +12307,7 @@
       _List_fromArray(
         ["default"]
       ),
-      $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageDecoder
+      $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageDecoder
     ),
     A2(
       $elm$json$Json$Decode$at,
@@ -12315,11 +12315,11 @@
         ["item"]
       ),
       $elm$json$Json$Decode$list(
-        $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageDecoderVaryingType($author$project$IIIF$Presentation$ChoiceImage)
+        $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageDecoderVaryingType($rism_digital$elm_iiif$IIIF$Presentation$ChoiceImage)
       )
     )
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2AnnotationListDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2AnnotationListDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
         $elm$json$Json$Decode$list(
@@ -12328,153 +12328,153 @@
             _List_fromArray(
               ["resource"]
             ),
-            $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageDecoder
+            $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageDecoder
           )
         ),
         A2(
           $elm$json$Json$Decode$map,
-          $author$project$IIIF$Internal$V2PresentationDecoders$unwrapDecoderLists,
+          $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$unwrapDecoderLists,
           $elm$json$Json$Decode$list(
             A2(
               $elm$json$Json$Decode$at,
               _List_fromArray(
                 ["resource"]
               ),
-              $author$project$IIIF$Internal$V2PresentationDecoders$v2ChoiceObjectDecoder
+              $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ChoiceObjectDecoder
             )
           )
         )
       ]
     )
   );
-  var $author$project$IIIF$Image$staticImageUriFromUrl = function(url) {
-    var _v0 = $author$project$IIIF$Image$decomposeUrl(url);
+  var $rism_digital$elm_iiif$IIIF$Image$staticImageUriFromUrl = function(url) {
+    var _v0 = $rism_digital$elm_iiif$IIIF$Image$decomposeUrl(url);
     var address = _v0.address;
     var pathWithQuery = _v0.pathWithQuery;
-    return $author$project$IIIF$Image$StaticImageUri(
+    return $rism_digital$elm_iiif$IIIF$Image$StaticImageUri(
       { host: address, prefix: pathWithQuery }
     );
   };
-  var $author$project$IIIF$Internal$SharedDecoders$convertThumbnailImageIdToImageUri = function(idValue) {
+  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$convertThumbnailImageIdToImageUri = function(idValue) {
     var _v0 = $elm$url$Url$fromString(idValue);
     if (_v0.$ === "Just") {
       var url = _v0.a;
       return $elm$json$Json$Decode$succeed(
-        $author$project$IIIF$Image$staticImageUriFromUrl(url)
+        $rism_digital$elm_iiif$IIIF$Image$staticImageUriFromUrl(url)
       );
     } else {
       return $elm$json$Json$Decode$fail("Could not decode static image Url");
     }
   };
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageIdDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageIdDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
-        $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageIdFromServiceDecoder,
+        $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageIdFromServiceDecoder,
         A2(
           $elm$json$Json$Decode$andThen,
-          $author$project$IIIF$Internal$SharedDecoders$convertThumbnailImageIdToImageUri,
+          $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$convertThumbnailImageIdToImageUri,
           A2($elm$json$Json$Decode$field, "@id", $elm$json$Json$Decode$string)
         )
       ]
     )
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageDecoder = A2(
-    $author$project$IIIF$Internal$Utilities$custom,
-    $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceObjectsDecoder,
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageDecoder = A2(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageServiceObjectsDecoder,
     A2(
-      $author$project$IIIF$Internal$Utilities$custom,
-      $author$project$IIIF$Internal$V2PresentationDecoders$v2ImageServiceTypesDecoder,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+      $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageServiceTypesDecoder,
       A2(
-        $author$project$IIIF$Internal$Utilities$hardcoded,
-        $author$project$IIIF$Presentation$PrimaryImage,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
+        $rism_digital$elm_iiif$IIIF$Presentation$PrimaryImage,
         A4(
-          $author$project$IIIF$Internal$Utilities$optional,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
           "label",
-          $elm$json$Json$Decode$maybe($author$project$IIIF$Language$v2LanguageMapLabelDecoder),
+          $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder),
           $elm$core$Maybe$Nothing,
           A2(
-            $author$project$IIIF$Internal$Utilities$custom,
-            $author$project$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageIdDecoder,
-            $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Image)
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+            $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageIdDecoder,
+            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Image)
           )
         )
       )
     )
   );
-  var $author$project$IIIF$Presentation$LayoutV2 = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$LayoutV2 = function(a) {
     return { $: "LayoutV2", a };
   };
-  var $author$project$IIIF$Presentation$ContinuousHint = { $: "ContinuousHint" };
-  var $author$project$IIIF$Presentation$FacingPagesHint = { $: "FacingPagesHint" };
-  var $author$project$IIIF$Presentation$IndividualsHint = { $: "IndividualsHint" };
-  var $author$project$IIIF$Presentation$MultiPartHint = { $: "MultiPartHint" };
-  var $author$project$IIIF$Presentation$NonPagedHint = { $: "NonPagedHint" };
-  var $author$project$IIIF$Presentation$PagedHint = { $: "PagedHint" };
-  var $author$project$IIIF$Presentation$TopHint = { $: "TopHint" };
-  var $author$project$IIIF$Presentation$stringToViewingHint = function(hint) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$ContinuousHint = { $: "ContinuousHint" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$FacingPagesHint = { $: "FacingPagesHint" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$IndividualsHint = { $: "IndividualsHint" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$MultiPartHint = { $: "MultiPartHint" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$NonPagedHint = { $: "NonPagedHint" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$PagedHint = { $: "PagedHint" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$TopHint = { $: "TopHint" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$stringToViewingHint = function(hint) {
     switch (hint) {
       case "continuous":
-        return $author$project$IIIF$Presentation$ContinuousHint;
+        return $rism_digital$elm_iiif$IIIF$Presentation$ContinuousHint;
       case "facing-pages":
-        return $author$project$IIIF$Presentation$FacingPagesHint;
+        return $rism_digital$elm_iiif$IIIF$Presentation$FacingPagesHint;
       case "individuals":
-        return $author$project$IIIF$Presentation$IndividualsHint;
+        return $rism_digital$elm_iiif$IIIF$Presentation$IndividualsHint;
       case "multi-part":
-        return $author$project$IIIF$Presentation$MultiPartHint;
+        return $rism_digital$elm_iiif$IIIF$Presentation$MultiPartHint;
       case "non-paged":
-        return $author$project$IIIF$Presentation$NonPagedHint;
+        return $rism_digital$elm_iiif$IIIF$Presentation$NonPagedHint;
       case "paged":
-        return $author$project$IIIF$Presentation$PagedHint;
+        return $rism_digital$elm_iiif$IIIF$Presentation$PagedHint;
       case "top":
-        return $author$project$IIIF$Presentation$TopHint;
+        return $rism_digital$elm_iiif$IIIF$Presentation$TopHint;
       default:
-        return $author$project$IIIF$Presentation$PagedHint;
+        return $rism_digital$elm_iiif$IIIF$Presentation$PagedHint;
     }
   };
-  var $author$project$IIIF$Internal$SharedDecoders$viewingHintDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingHintDecoder = A2(
     $elm$json$Json$Decode$map,
     function(str) {
-      return $author$project$IIIF$Presentation$LayoutV2(
-        $author$project$IIIF$Presentation$stringToViewingHint(str)
+      return $rism_digital$elm_iiif$IIIF$Presentation$LayoutV2(
+        $rism_digital$elm_iiif$IIIF$Presentation$stringToViewingHint(str)
       );
     },
     $elm$json$Json$Decode$string
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2CanvasDecoder = A4(
-    $author$project$IIIF$Internal$Utilities$optional,
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CanvasDecoder = A4(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
     "viewingHint",
-    $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$SharedDecoders$viewingHintDecoder),
+    $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingHintDecoder),
     $elm$core$Maybe$Nothing,
     A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "thumbnail",
-      $author$project$IIIF$Internal$SharedDecoders$thumbnailDecoder($author$project$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageDecoder),
+      $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$thumbnailDecoder($rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageDecoder),
       $elm$core$Maybe$Nothing,
       A4(
-        $author$project$IIIF$Internal$Utilities$optional,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
         "images",
-        $author$project$IIIF$Internal$V2PresentationDecoders$v2AnnotationListDecoder,
+        $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2AnnotationListDecoder,
         _List_Nil,
         A4(
-          $author$project$IIIF$Internal$Utilities$optional,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
           "height",
           $elm$json$Json$Decode$maybe($elm$json$Json$Decode$int),
           $elm$core$Maybe$Nothing,
           A4(
-            $author$project$IIIF$Internal$Utilities$optional,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
             "width",
             $elm$json$Json$Decode$maybe($elm$json$Json$Decode$int),
             $elm$core$Maybe$Nothing,
             A4(
-              $author$project$IIIF$Internal$Utilities$optional,
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
               "label",
-              $elm$json$Json$Decode$maybe($author$project$IIIF$Language$v2LanguageMapLabelDecoder),
+              $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder),
               $elm$core$Maybe$Nothing,
               A3(
-                $author$project$IIIF$Internal$Utilities$required,
+                $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
                 "@id",
                 $elm$json$Json$Decode$string,
-                $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Canvas)
+                $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Canvas)
               )
             )
           )
@@ -12482,22 +12482,22 @@
       )
     )
   );
-  var $author$project$IIIF$Presentation$Range = F4(
+  var $rism_digital$elm_iiif$IIIF$Presentation$Range = F4(
     function(id, label, items, metadata) {
       return { id, items, label, metadata };
     }
   );
-  var $author$project$IIIF$Presentation$RangeCanvas = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$RangeCanvas = function(a) {
     return { $: "RangeCanvas", a };
   };
-  var $author$project$IIIF$Presentation$RangeRange = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$RangeRange = function(a) {
     return { $: "RangeRange", a };
   };
-  var $author$project$IIIF$Internal$V2PresentationDecoders$defaultLabelMap = _List_fromArray(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$defaultLabelMap = _List_fromArray(
     [
       A2(
-        $author$project$IIIF$Language$LanguageValues,
-        $author$project$IIIF$Language$Default,
+        $rism_digital$elm_iiif$IIIF$Language$LanguageValues,
+        $rism_digital$elm_iiif$IIIF$Language$Default,
         _List_fromArray(
           ["Homepage"]
         )
@@ -12511,54 +12511,54 @@
       $elm$json$Json$Decode$succeed(_Utils_Tuple0)
     );
   };
-  var $author$project$IIIF$Language$LabelValue = F2(
+  var $rism_digital$elm_iiif$IIIF$Language$LabelValue = F2(
     function(label, value) {
       return { label, value };
     }
   );
-  var $author$project$IIIF$Language$v2LabelValueDecoder = A3(
-    $author$project$IIIF$Internal$Utilities$required,
+  var $rism_digital$elm_iiif$IIIF$Language$v2LabelValueDecoder = A3(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
     "value",
-    $author$project$IIIF$Language$v2LanguageMapLabelDecoder,
+    $rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder,
     A3(
-      $author$project$IIIF$Internal$Utilities$required,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
       "label",
-      $author$project$IIIF$Language$v2LanguageMapLabelDecoder,
-      $elm$json$Json$Decode$succeed($author$project$IIIF$Language$LabelValue)
+      $rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder,
+      $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Language$LabelValue)
     )
   );
-  function $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoderHelp() {
+  function $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoderHelp() {
     return A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "metadata",
-      $elm$json$Json$Decode$list($author$project$IIIF$Language$v2LabelValueDecoder),
+      $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Language$v2LabelValueDecoder),
       _List_Nil,
       A2(
-        $author$project$IIIF$Internal$Utilities$custom,
-        $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeItemsDecoder(),
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+        $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeItemsDecoder(),
         A4(
-          $author$project$IIIF$Internal$Utilities$optional,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
           "label",
-          $author$project$IIIF$Language$v2LanguageMapLabelDecoder,
-          $author$project$IIIF$Internal$V2PresentationDecoders$defaultLabelMap,
+          $rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder,
+          $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$defaultLabelMap,
           A3(
-            $author$project$IIIF$Internal$Utilities$required,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
             "@id",
             $elm$json$Json$Decode$string,
-            $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Range)
+            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Range)
           )
         )
       )
     );
   }
-  function $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeItemsDecoder() {
+  function $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeItemsDecoder() {
     return A3(
       $elm$json$Json$Decode$map2,
       F2(
         function(subranges, canvases) {
           return _Utils_ap(
-            A2($elm$core$List$map, $author$project$IIIF$Presentation$RangeRange, subranges),
-            A2($elm$core$List$map, $author$project$IIIF$Presentation$RangeCanvas, canvases)
+            A2($elm$core$List$map, $rism_digital$elm_iiif$IIIF$Presentation$RangeRange, subranges),
+            A2($elm$core$List$map, $rism_digital$elm_iiif$IIIF$Presentation$RangeCanvas, canvases)
           );
         }
       ),
@@ -12569,7 +12569,7 @@
               $elm$json$Json$Decode$field,
               "ranges",
               $elm$json$Json$Decode$list(
-                $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoder()
+                $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoder()
               )
             ),
             $elm$json$Json$Decode$succeed(_List_Nil)
@@ -12590,45 +12590,45 @@
       )
     );
   }
-  function $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoder() {
+  function $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoder() {
     return $elm$json$Json$Decode$lazy(
       function(_v0) {
-        return $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoderHelp();
+        return $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoderHelp();
       }
     );
   }
   try {
-    $author$project$IIIF$Internal$V2PresentationDecoders$v2RangeDecoderHelp = $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoderHelp();
-    $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoderHelp = function() {
-      return $author$project$IIIF$Internal$V2PresentationDecoders$v2RangeDecoderHelp;
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2RangeDecoderHelp = $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoderHelp();
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoderHelp = function() {
+      return $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2RangeDecoderHelp;
     };
-    $author$project$IIIF$Internal$V2PresentationDecoders$v2RangeItemsDecoder = $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeItemsDecoder();
-    $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeItemsDecoder = function() {
-      return $author$project$IIIF$Internal$V2PresentationDecoders$v2RangeItemsDecoder;
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2RangeItemsDecoder = $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeItemsDecoder();
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeItemsDecoder = function() {
+      return $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2RangeItemsDecoder;
     };
-    $author$project$IIIF$Internal$V2PresentationDecoders$v2RangeDecoder = $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoder();
-    $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoder = function() {
-      return $author$project$IIIF$Internal$V2PresentationDecoders$v2RangeDecoder;
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2RangeDecoder = $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoder();
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2RangeDecoder = function() {
+      return $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2RangeDecoder;
     };
   } catch ($) {
     throw "Some top-level definitions from `IIIF.Internal.V2PresentationDecoders` are causing infinite recursion:\n\n  \u250C\u2500\u2500\u2500\u2500\u2500\u2510\n  \u2502    v2RangeDecoderHelp\n  \u2502     \u2193\n  \u2502    v2RangeItemsDecoder\n  \u2502     \u2193\n  \u2502    v2RangeDecoder\n  \u2514\u2500\u2500\u2500\u2500\u2500\u2518\n\nThese errors are very tricky, so read https://elm-lang.org/0.19.1/bad-recursion to learn how to fix it!";
   }
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2RangeDecoderHelp;
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2RangeItemsDecoder;
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2RangeDecoder;
-  var $author$project$IIIF$Presentation$Collection = F4(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2RangeDecoderHelp;
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2RangeItemsDecoder;
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2RangeDecoder;
+  var $rism_digital$elm_iiif$IIIF$Presentation$Collection = F4(
     function(id, label, summary, items) {
       return { id, items, label, summary };
     }
   );
-  var $author$project$IIIF$Presentation$ManifestItem = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$ManifestItem = function(a) {
     return { $: "ManifestItem", a };
   };
-  var $author$project$IIIF$Presentation$NestedCollection = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$NestedCollection = function(a) {
     return { $: "NestedCollection", a };
   };
-  var $author$project$IIIF$Presentation$LeftToRight = { $: "LeftToRight" };
-  var $author$project$IIIF$Presentation$Manifest = function(id) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$LeftToRight = { $: "LeftToRight" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$Manifest = function(id) {
     return function(label) {
       return function(metadata) {
         return function(viewingDirection) {
@@ -12655,115 +12655,115 @@
       };
     };
   };
-  var $author$project$IIIF$Presentation$HomePage = F4(
+  var $rism_digital$elm_iiif$IIIF$Presentation$HomePage = F4(
     function(id, label, format, type_) {
       return { format, id, label, type_ };
     }
   );
-  var $author$project$IIIF$Presentation$OtherFormat = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$OtherFormat = function(a) {
     return { $: "OtherFormat", a };
   };
-  var $author$project$IIIF$Presentation$OtherResource = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$OtherResource = function(a) {
     return { $: "OtherResource", a };
   };
-  var $author$project$IIIF$Presentation$ImageJpeg = { $: "ImageJpeg" };
-  var $author$project$IIIF$Presentation$mediaFormatFromString = function(value) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$ImageJpeg = { $: "ImageJpeg" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$mediaFormatFromString = function(value) {
     if (value === "image/jpeg") {
-      return $author$project$IIIF$Presentation$ImageJpeg;
+      return $rism_digital$elm_iiif$IIIF$Presentation$ImageJpeg;
     } else {
-      return $author$project$IIIF$Presentation$OtherFormat(value);
+      return $rism_digital$elm_iiif$IIIF$Presentation$OtherFormat(value);
     }
   };
-  var $author$project$IIIF$Internal$SharedDecoders$formatDecoder = A2($elm$json$Json$Decode$map, $author$project$IIIF$Presentation$mediaFormatFromString, $elm$json$Json$Decode$string);
-  var $author$project$IIIF$Presentation$Video = { $: "Video" };
-  var $author$project$IIIF$Presentation$resourceTypeFromString = function(value) {
+  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$formatDecoder = A2($elm$json$Json$Decode$map, $rism_digital$elm_iiif$IIIF$Presentation$mediaFormatFromString, $elm$json$Json$Decode$string);
+  var $rism_digital$elm_iiif$IIIF$Presentation$Video = { $: "Video" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$resourceTypeFromString = function(value) {
     if (value === "Video") {
-      return $author$project$IIIF$Presentation$Video;
+      return $rism_digital$elm_iiif$IIIF$Presentation$Video;
     } else {
-      return $author$project$IIIF$Presentation$OtherResource(value);
+      return $rism_digital$elm_iiif$IIIF$Presentation$OtherResource(value);
     }
   };
-  var $author$project$IIIF$Internal$SharedDecoders$resourceTypeDecoder = A2($elm$json$Json$Decode$map, $author$project$IIIF$Presentation$resourceTypeFromString, $elm$json$Json$Decode$string);
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2HomePageDecoder = A4(
-    $author$project$IIIF$Internal$Utilities$optional,
+  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$resourceTypeDecoder = A2($elm$json$Json$Decode$map, $rism_digital$elm_iiif$IIIF$Presentation$resourceTypeFromString, $elm$json$Json$Decode$string);
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2HomePageDecoder = A4(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
     "@type",
-    $author$project$IIIF$Internal$SharedDecoders$resourceTypeDecoder,
-    $author$project$IIIF$Presentation$OtherResource("Text"),
+    $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$resourceTypeDecoder,
+    $rism_digital$elm_iiif$IIIF$Presentation$OtherResource("Text"),
     A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "format",
-      $author$project$IIIF$Internal$SharedDecoders$formatDecoder,
-      $author$project$IIIF$Presentation$OtherFormat("text/html"),
+      $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$formatDecoder,
+      $rism_digital$elm_iiif$IIIF$Presentation$OtherFormat("text/html"),
       A4(
-        $author$project$IIIF$Internal$Utilities$optional,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
         "label",
-        $author$project$IIIF$Language$v2LanguageMapLabelDecoder,
-        $author$project$IIIF$Internal$V2PresentationDecoders$defaultLabelMap,
+        $rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder,
+        $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$defaultLabelMap,
         A3(
-          $author$project$IIIF$Internal$Utilities$required,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
           "@id",
           $elm$json$Json$Decode$string,
-          $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$HomePage)
+          $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$HomePage)
         )
       )
     )
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2HomePageListDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2HomePageListDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
-        $elm$json$Json$Decode$list($author$project$IIIF$Internal$V2PresentationDecoders$v2HomePageDecoder),
-        A2($elm$json$Json$Decode$map, $elm$core$List$singleton, $author$project$IIIF$Internal$V2PresentationDecoders$v2HomePageDecoder)
+        $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2HomePageDecoder),
+        A2($elm$json$Json$Decode$map, $elm$core$List$singleton, $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2HomePageDecoder)
       ]
     )
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2CollectionItemManifestDecoder = A2(
-    $author$project$IIIF$Internal$Utilities$hardcoded,
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CollectionItemManifestDecoder = A2(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
     $elm$core$Maybe$Nothing,
     A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "thumbnail",
-      $author$project$IIIF$Internal$SharedDecoders$thumbnailDecoder($author$project$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageDecoder),
+      $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$thumbnailDecoder($rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageDecoder),
       $elm$core$Maybe$Nothing,
       A2(
-        $author$project$IIIF$Internal$Utilities$hardcoded,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
         $elm$core$Maybe$Nothing,
         A2(
-          $author$project$IIIF$Internal$Utilities$hardcoded,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
           $elm$core$Maybe$Nothing,
           A4(
-            $author$project$IIIF$Internal$Utilities$optional,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
             "rendering",
-            $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$V2PresentationDecoders$v2HomePageListDecoder),
+            $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2HomePageListDecoder),
             $elm$core$Maybe$Nothing,
             A2(
-              $author$project$IIIF$Internal$Utilities$hardcoded,
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
               $elm$core$Maybe$Nothing,
               A2(
-                $author$project$IIIF$Internal$Utilities$hardcoded,
+                $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
                 _List_Nil,
                 A2(
-                  $author$project$IIIF$Internal$Utilities$hardcoded,
-                  $author$project$IIIF$Presentation$LayoutV2($author$project$IIIF$Presentation$IndividualsHint),
+                  $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
+                  $rism_digital$elm_iiif$IIIF$Presentation$LayoutV2($rism_digital$elm_iiif$IIIF$Presentation$IndividualsHint),
                   A4(
-                    $author$project$IIIF$Internal$Utilities$optional,
+                    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
                     "description",
-                    $elm$json$Json$Decode$maybe($author$project$IIIF$Language$v2LanguageMapLabelDecoder),
+                    $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder),
                     $elm$core$Maybe$Nothing,
                     A2(
-                      $author$project$IIIF$Internal$Utilities$hardcoded,
-                      $author$project$IIIF$Presentation$LeftToRight,
+                      $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
+                      $rism_digital$elm_iiif$IIIF$Presentation$LeftToRight,
                       A2(
-                        $author$project$IIIF$Internal$Utilities$hardcoded,
+                        $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
                         _List_Nil,
                         A3(
-                          $author$project$IIIF$Internal$Utilities$required,
+                          $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
                           "label",
-                          $author$project$IIIF$Language$v2LanguageMapLabelDecoder,
+                          $rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder,
                           A3(
-                            $author$project$IIIF$Internal$Utilities$required,
+                            $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
                             "@id",
                             $elm$json$Json$Decode$string,
-                            $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Manifest)
+                            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Manifest)
                           )
                         )
                       )
@@ -12777,48 +12777,48 @@
       )
     )
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2CollectionItemFromType = function(itemType) {
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CollectionItemFromType = function(itemType) {
     switch (itemType) {
       case "sc:Collection":
         return A2(
           $elm$json$Json$Decode$map,
-          $author$project$IIIF$Presentation$NestedCollection,
+          $rism_digital$elm_iiif$IIIF$Presentation$NestedCollection,
           $elm$json$Json$Decode$lazy(
             function(_v1) {
-              return $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2iiifCollectionDecoder();
+              return $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2iiifCollectionDecoder();
             }
           )
         );
       case "sc:Manifest":
-        return A2($elm$json$Json$Decode$map, $author$project$IIIF$Presentation$ManifestItem, $author$project$IIIF$Internal$V2PresentationDecoders$v2CollectionItemManifestDecoder);
+        return A2($elm$json$Json$Decode$map, $rism_digital$elm_iiif$IIIF$Presentation$ManifestItem, $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CollectionItemManifestDecoder);
       default:
         return $elm$json$Json$Decode$fail("Unknown collection item type: " + itemType);
     }
   };
-  function $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2iiifCollectionDecoder() {
+  function $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2iiifCollectionDecoder() {
     return A2(
-      $author$project$IIIF$Internal$Utilities$custom,
-      $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemsDecoder(),
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+      $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemsDecoder(),
       A4(
-        $author$project$IIIF$Internal$Utilities$optional,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
         "description",
-        $elm$json$Json$Decode$maybe($author$project$IIIF$Language$v2LanguageMapLabelDecoder),
+        $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder),
         $elm$core$Maybe$Nothing,
         A3(
-          $author$project$IIIF$Internal$Utilities$required,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
           "label",
-          $author$project$IIIF$Language$v2LanguageMapLabelDecoder,
+          $rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder,
           A3(
-            $author$project$IIIF$Internal$Utilities$required,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
             "@id",
             $elm$json$Json$Decode$string,
-            $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Collection)
+            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Collection)
           )
         )
       )
     );
   }
-  function $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemsDecoder() {
+  function $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemsDecoder() {
     return $elm$json$Json$Decode$oneOf(
       _List_fromArray(
         [
@@ -12826,7 +12826,7 @@
             $elm$json$Json$Decode$field,
             "members",
             $elm$json$Json$Decode$list(
-              $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemDecoder()
+              $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemDecoder()
             )
           ),
           A3(
@@ -12845,10 +12845,10 @@
                     $elm$json$Json$Decode$list(
                       A2(
                         $elm$json$Json$Decode$map,
-                        $author$project$IIIF$Presentation$NestedCollection,
+                        $rism_digital$elm_iiif$IIIF$Presentation$NestedCollection,
                         $elm$json$Json$Decode$lazy(
                           function(_v2) {
-                            return $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2iiifCollectionDecoder();
+                            return $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2iiifCollectionDecoder();
                           }
                         )
                       )
@@ -12865,7 +12865,7 @@
                     $elm$json$Json$Decode$field,
                     "manifests",
                     $elm$json$Json$Decode$list(
-                      A2($elm$json$Json$Decode$map, $author$project$IIIF$Presentation$ManifestItem, $author$project$IIIF$Internal$V2PresentationDecoders$v2CollectionItemManifestDecoder)
+                      A2($elm$json$Json$Decode$map, $rism_digital$elm_iiif$IIIF$Presentation$ManifestItem, $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CollectionItemManifestDecoder)
                     )
                   ),
                   $elm$json$Json$Decode$succeed(_List_Nil)
@@ -12877,44 +12877,44 @@
       )
     );
   }
-  function $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemDecoder() {
+  function $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemDecoder() {
     return A2(
       $elm$json$Json$Decode$andThen,
-      $author$project$IIIF$Internal$V2PresentationDecoders$v2CollectionItemFromType,
+      $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CollectionItemFromType,
       A2($elm$json$Json$Decode$field, "@type", $elm$json$Json$Decode$string)
     );
   }
   try {
-    $author$project$IIIF$Internal$V2PresentationDecoders$v2iiifCollectionDecoder = $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2iiifCollectionDecoder();
-    $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2iiifCollectionDecoder = function() {
-      return $author$project$IIIF$Internal$V2PresentationDecoders$v2iiifCollectionDecoder;
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2iiifCollectionDecoder = $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2iiifCollectionDecoder();
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2iiifCollectionDecoder = function() {
+      return $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2iiifCollectionDecoder;
     };
-    $author$project$IIIF$Internal$V2PresentationDecoders$v2CollectionItemsDecoder = $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemsDecoder();
-    $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemsDecoder = function() {
-      return $author$project$IIIF$Internal$V2PresentationDecoders$v2CollectionItemsDecoder;
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CollectionItemsDecoder = $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemsDecoder();
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemsDecoder = function() {
+      return $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CollectionItemsDecoder;
     };
-    $author$project$IIIF$Internal$V2PresentationDecoders$v2CollectionItemDecoder = $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemDecoder();
-    $author$project$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemDecoder = function() {
-      return $author$project$IIIF$Internal$V2PresentationDecoders$v2CollectionItemDecoder;
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CollectionItemDecoder = $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemDecoder();
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$cyclic$v2CollectionItemDecoder = function() {
+      return $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CollectionItemDecoder;
     };
   } catch ($) {
     throw "Some top-level definitions from `IIIF.Internal.V2PresentationDecoders` are causing infinite recursion:\n\n  \u250C\u2500\u2500\u2500\u2500\u2500\u2510\n  \u2502    v2iiifCollectionDecoder\n  \u2502     \u2193\n  \u2502    v2CollectionItemsDecoder\n  \u2502     \u2193\n  \u2502    v2CollectionItemDecoder\n  \u2502     \u2193\n  \u2502    v2CollectionItemFromType\n  \u2514\u2500\u2500\u2500\u2500\u2500\u2518\n\nThese errors are very tricky, so read https://elm-lang.org/0.19.1/bad-recursion to learn how to fix it!";
   }
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2iiifCollectionDecoder;
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2CollectionItemsDecoder;
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2CollectionItemDecoder;
-  var $author$project$IIIF$Language$labelValueDecoder = A3(
-    $author$project$IIIF$Internal$Utilities$required,
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2iiifCollectionDecoder;
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CollectionItemsDecoder;
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CollectionItemDecoder;
+  var $rism_digital$elm_iiif$IIIF$Language$labelValueDecoder = A3(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
     "value",
-    $author$project$IIIF$Language$languageMapLabelDecoder,
+    $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder,
     A3(
-      $author$project$IIIF$Internal$Utilities$required,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
       "label",
-      $author$project$IIIF$Language$languageMapLabelDecoder,
-      $elm$json$Json$Decode$succeed($author$project$IIIF$Language$LabelValue)
+      $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder,
+      $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Language$LabelValue)
     )
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2RequiredStatement = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2RequiredStatement = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
         A2(
@@ -12924,8 +12924,8 @@
               label: _List_fromArray(
                 [
                   A2(
-                    $author$project$IIIF$Language$LanguageValues,
-                    $author$project$IIIF$Language$Default,
+                    $rism_digital$elm_iiif$IIIF$Language$LanguageValues,
+                    $rism_digital$elm_iiif$IIIF$Language$Default,
                     _List_fromArray(
                       ["Attribution"]
                     )
@@ -12935,8 +12935,8 @@
               value: _List_fromArray(
                 [
                   A2(
-                    $author$project$IIIF$Language$LanguageValues,
-                    $author$project$IIIF$Language$Default,
+                    $rism_digital$elm_iiif$IIIF$Language$LanguageValues,
+                    $rism_digital$elm_iiif$IIIF$Language$Default,
                     _List_fromArray(
                       [value]
                     )
@@ -12947,13 +12947,13 @@
           },
           $elm$json$Json$Decode$string
         ),
-        $author$project$IIIF$Language$labelValueDecoder,
-        $author$project$IIIF$Language$v2LabelValueDecoder
+        $rism_digital$elm_iiif$IIIF$Language$labelValueDecoder,
+        $rism_digital$elm_iiif$IIIF$Language$v2LabelValueDecoder
       ]
     )
   );
   var $elm$json$Json$Decode$index = _Json_decodeIndex;
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2SequencesDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2SequencesDecoder = A2(
     $elm$json$Json$Decode$index,
     0,
     A2(
@@ -12961,90 +12961,90 @@
       _List_fromArray(
         ["canvases"]
       ),
-      $elm$json$Json$Decode$list($author$project$IIIF$Internal$V2PresentationDecoders$v2CanvasDecoder)
+      $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CanvasDecoder)
     )
   );
-  var $author$project$IIIF$Presentation$BottomToTop = { $: "BottomToTop" };
-  var $author$project$IIIF$Presentation$RightToLeft = { $: "RightToLeft" };
-  var $author$project$IIIF$Presentation$TopToBottom = { $: "TopToBottom" };
-  var $author$project$IIIF$Presentation$stringToViewingDirection = function(direction) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$BottomToTop = { $: "BottomToTop" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$RightToLeft = { $: "RightToLeft" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$TopToBottom = { $: "TopToBottom" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$stringToViewingDirection = function(direction) {
     switch (direction) {
       case "bottom-to-top":
-        return $author$project$IIIF$Presentation$BottomToTop;
+        return $rism_digital$elm_iiif$IIIF$Presentation$BottomToTop;
       case "left-to-right":
-        return $author$project$IIIF$Presentation$LeftToRight;
+        return $rism_digital$elm_iiif$IIIF$Presentation$LeftToRight;
       case "right-to-left":
-        return $author$project$IIIF$Presentation$RightToLeft;
+        return $rism_digital$elm_iiif$IIIF$Presentation$RightToLeft;
       case "top-to-bottom":
-        return $author$project$IIIF$Presentation$TopToBottom;
+        return $rism_digital$elm_iiif$IIIF$Presentation$TopToBottom;
       default:
-        return $author$project$IIIF$Presentation$LeftToRight;
+        return $rism_digital$elm_iiif$IIIF$Presentation$LeftToRight;
     }
   };
-  var $author$project$IIIF$Internal$SharedDecoders$viewingDirectionDecoder = A2($elm$json$Json$Decode$map, $author$project$IIIF$Presentation$stringToViewingDirection, $elm$json$Json$Decode$string);
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2iiifManifestDecoder = A4(
-    $author$project$IIIF$Internal$Utilities$optional,
+  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingDirectionDecoder = A2($elm$json$Json$Decode$map, $rism_digital$elm_iiif$IIIF$Presentation$stringToViewingDirection, $elm$json$Json$Decode$string);
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2iiifManifestDecoder = A4(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
     "attribution",
-    $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$V2PresentationDecoders$v2RequiredStatement),
+    $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2RequiredStatement),
     $elm$core$Maybe$Nothing,
     A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "thumbnail",
-      $author$project$IIIF$Internal$SharedDecoders$thumbnailDecoder($author$project$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageDecoder),
+      $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$thumbnailDecoder($rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ThumbnailImageDecoder),
       $elm$core$Maybe$Nothing,
       A2(
-        $author$project$IIIF$Internal$Utilities$hardcoded,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
         $elm$core$Maybe$Nothing,
         A4(
-          $author$project$IIIF$Internal$Utilities$optional,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
           "logo",
-          $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$V2PresentationDecoders$v2ImageDecoder),
+          $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ImageDecoder),
           $elm$core$Maybe$Nothing,
           A4(
-            $author$project$IIIF$Internal$Utilities$optional,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
             "rendering",
-            $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$V2PresentationDecoders$v2HomePageListDecoder),
+            $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2HomePageListDecoder),
             $elm$core$Maybe$Nothing,
             A4(
-              $author$project$IIIF$Internal$Utilities$optional,
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
               "structures",
               $elm$json$Json$Decode$maybe(
-                $elm$json$Json$Decode$list($author$project$IIIF$Internal$V2PresentationDecoders$v2RangeDecoder)
+                $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2RangeDecoder)
               ),
               $elm$core$Maybe$Nothing,
               A3(
-                $author$project$IIIF$Internal$Utilities$required,
+                $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
                 "sequences",
-                $author$project$IIIF$Internal$V2PresentationDecoders$v2SequencesDecoder,
+                $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2SequencesDecoder,
                 A4(
-                  $author$project$IIIF$Internal$Utilities$optional,
+                  $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
                   "viewingHint",
-                  $author$project$IIIF$Internal$SharedDecoders$viewingHintDecoder,
-                  $author$project$IIIF$Presentation$LayoutV2($author$project$IIIF$Presentation$IndividualsHint),
+                  $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingHintDecoder,
+                  $rism_digital$elm_iiif$IIIF$Presentation$LayoutV2($rism_digital$elm_iiif$IIIF$Presentation$IndividualsHint),
                   A4(
-                    $author$project$IIIF$Internal$Utilities$optional,
+                    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
                     "description",
-                    $elm$json$Json$Decode$maybe($author$project$IIIF$Language$v2LanguageMapLabelDecoder),
+                    $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder),
                     $elm$core$Maybe$Nothing,
                     A4(
-                      $author$project$IIIF$Internal$Utilities$optional,
+                      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
                       "viewingDirection",
-                      $author$project$IIIF$Internal$SharedDecoders$viewingDirectionDecoder,
-                      $author$project$IIIF$Presentation$LeftToRight,
+                      $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingDirectionDecoder,
+                      $rism_digital$elm_iiif$IIIF$Presentation$LeftToRight,
                       A4(
-                        $author$project$IIIF$Internal$Utilities$optional,
+                        $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
                         "metadata",
-                        $elm$json$Json$Decode$list($author$project$IIIF$Language$v2LabelValueDecoder),
+                        $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Language$v2LabelValueDecoder),
                         _List_Nil,
                         A3(
-                          $author$project$IIIF$Internal$Utilities$required,
+                          $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
                           "label",
-                          $author$project$IIIF$Language$v2LanguageMapLabelDecoder,
+                          $rism_digital$elm_iiif$IIIF$Language$v2LanguageMapLabelDecoder,
                           A3(
-                            $author$project$IIIF$Internal$Utilities$required,
+                            $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
                             "@id",
                             $elm$json$Json$Decode$string,
-                            $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Manifest)
+                            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Manifest)
                           )
                         )
                       )
@@ -13058,123 +13058,123 @@
       )
     )
   );
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ResourceFromType = function(resourceType) {
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ResourceFromType = function(resourceType) {
     switch (resourceType) {
       case "sc:Canvas":
         return A2(
           $elm$json$Json$Decode$map,
           A2(
             $elm$core$Basics$composeL,
-            $author$project$IIIF$Presentation$ResourceCanvas,
-            $author$project$IIIF$Presentation$IIIFCanvas($author$project$IIIF$Version$IIIFV2)
+            $rism_digital$elm_iiif$IIIF$Presentation$ResourceCanvas,
+            $rism_digital$elm_iiif$IIIF$Presentation$IIIFCanvas($rism_digital$elm_iiif$IIIF$Version$IIIFV2)
           ),
-          $author$project$IIIF$Internal$V2PresentationDecoders$v2CanvasDecoder
+          $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2CanvasDecoder
         );
       case "sc:Collection":
         return A2(
           $elm$json$Json$Decode$map,
           A2(
             $elm$core$Basics$composeL,
-            $author$project$IIIF$Presentation$ResourceCollection,
-            $author$project$IIIF$Presentation$IIIFCollection($author$project$IIIF$Version$IIIFV2)
+            $rism_digital$elm_iiif$IIIF$Presentation$ResourceCollection,
+            $rism_digital$elm_iiif$IIIF$Presentation$IIIFCollection($rism_digital$elm_iiif$IIIF$Version$IIIFV2)
           ),
-          $author$project$IIIF$Internal$V2PresentationDecoders$v2iiifCollectionDecoder
+          $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2iiifCollectionDecoder
         );
       case "sc:Manifest":
         return A2(
           $elm$json$Json$Decode$map,
           A2(
             $elm$core$Basics$composeL,
-            $author$project$IIIF$Presentation$ResourceManifest,
-            $author$project$IIIF$Presentation$IIIFManifest($author$project$IIIF$Version$IIIFV2)
+            $rism_digital$elm_iiif$IIIF$Presentation$ResourceManifest,
+            $rism_digital$elm_iiif$IIIF$Presentation$IIIFManifest($rism_digital$elm_iiif$IIIF$Version$IIIFV2)
           ),
-          $author$project$IIIF$Internal$V2PresentationDecoders$v2iiifManifestDecoder
+          $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2iiifManifestDecoder
         );
       case "sc:Range":
         return A2(
           $elm$json$Json$Decode$map,
           A2(
             $elm$core$Basics$composeL,
-            $author$project$IIIF$Presentation$ResourceRange,
-            $author$project$IIIF$Presentation$IIIFRange($author$project$IIIF$Version$IIIFV2)
+            $rism_digital$elm_iiif$IIIF$Presentation$ResourceRange,
+            $rism_digital$elm_iiif$IIIF$Presentation$IIIFRange($rism_digital$elm_iiif$IIIF$Version$IIIFV2)
           ),
-          $author$project$IIIF$Internal$V2PresentationDecoders$v2RangeDecoder
+          $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2RangeDecoder
         );
       default:
         return $elm$json$Json$Decode$fail("Unknown IIIF v2 resource type: " + resourceType);
     }
   };
-  var $author$project$IIIF$Internal$V2PresentationDecoders$v2ResourceTypeDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ResourceTypeDecoder = A2(
     $elm$json$Json$Decode$andThen,
-    $author$project$IIIF$Internal$V2PresentationDecoders$v2ResourceFromType,
+    $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ResourceFromType,
     A2($elm$json$Json$Decode$field, "@type", $elm$json$Json$Decode$string)
   );
-  var $author$project$IIIF$Version$IIIFV3 = { $: "IIIFV3" };
-  var $author$project$IIIF$Presentation$LayoutV3 = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Version$IIIFV3 = { $: "IIIFV3" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$LayoutV3 = function(a) {
     return { $: "LayoutV3", a };
   };
-  var $author$project$IIIF$Presentation$AutoAdvanceBehavior = { $: "AutoAdvanceBehavior" };
-  var $author$project$IIIF$Presentation$ContinuousBehavior = { $: "ContinuousBehavior" };
-  var $author$project$IIIF$Presentation$FacingPagesBehavior = { $: "FacingPagesBehavior" };
-  var $author$project$IIIF$Presentation$HiddenBehavior = { $: "HiddenBehavior" };
-  var $author$project$IIIF$Presentation$IndividualsBehavior = { $: "IndividualsBehavior" };
-  var $author$project$IIIF$Presentation$MultiPartBehavior = { $: "MultiPartBehavior" };
-  var $author$project$IIIF$Presentation$NoAutoAdvanceBehavior = { $: "NoAutoAdvanceBehavior" };
-  var $author$project$IIIF$Presentation$NoNavBehavior = { $: "NoNavBehavior" };
-  var $author$project$IIIF$Presentation$NoRepeatBehavior = { $: "NoRepeatBehavior" };
-  var $author$project$IIIF$Presentation$NonPagedBehavior = { $: "NonPagedBehavior" };
-  var $author$project$IIIF$Presentation$PagedBehavior = { $: "PagedBehavior" };
-  var $author$project$IIIF$Presentation$RepeatBehavior = { $: "RepeatBehavior" };
-  var $author$project$IIIF$Presentation$SequenceBehavior = { $: "SequenceBehavior" };
-  var $author$project$IIIF$Presentation$ThumbnailNavBehavior = { $: "ThumbnailNavBehavior" };
-  var $author$project$IIIF$Presentation$TogetherBehavior = { $: "TogetherBehavior" };
-  var $author$project$IIIF$Presentation$UnorderedBehavior = { $: "UnorderedBehavior" };
-  var $author$project$IIIF$Presentation$stringToBehavior = function(behavior) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$AutoAdvanceBehavior = { $: "AutoAdvanceBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$ContinuousBehavior = { $: "ContinuousBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$FacingPagesBehavior = { $: "FacingPagesBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$HiddenBehavior = { $: "HiddenBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$IndividualsBehavior = { $: "IndividualsBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$MultiPartBehavior = { $: "MultiPartBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$NoAutoAdvanceBehavior = { $: "NoAutoAdvanceBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$NoNavBehavior = { $: "NoNavBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$NoRepeatBehavior = { $: "NoRepeatBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$NonPagedBehavior = { $: "NonPagedBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$PagedBehavior = { $: "PagedBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$RepeatBehavior = { $: "RepeatBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$SequenceBehavior = { $: "SequenceBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$ThumbnailNavBehavior = { $: "ThumbnailNavBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$TogetherBehavior = { $: "TogetherBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$UnorderedBehavior = { $: "UnorderedBehavior" };
+  var $rism_digital$elm_iiif$IIIF$Presentation$stringToBehavior = function(behavior) {
     switch (behavior) {
       case "auto-advance":
-        return $author$project$IIIF$Presentation$AutoAdvanceBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$AutoAdvanceBehavior;
       case "continuous":
-        return $author$project$IIIF$Presentation$ContinuousBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$ContinuousBehavior;
       case "facing-pages":
-        return $author$project$IIIF$Presentation$FacingPagesBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$FacingPagesBehavior;
       case "hidden":
-        return $author$project$IIIF$Presentation$HiddenBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$HiddenBehavior;
       case "individuals":
-        return $author$project$IIIF$Presentation$IndividualsBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$IndividualsBehavior;
       case "multi-part":
-        return $author$project$IIIF$Presentation$MultiPartBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$MultiPartBehavior;
       case "no-auto-advance":
-        return $author$project$IIIF$Presentation$NoAutoAdvanceBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$NoAutoAdvanceBehavior;
       case "no-nav":
-        return $author$project$IIIF$Presentation$NoNavBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$NoNavBehavior;
       case "no-repeat":
-        return $author$project$IIIF$Presentation$NoRepeatBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$NoRepeatBehavior;
       case "non-paged":
-        return $author$project$IIIF$Presentation$NonPagedBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$NonPagedBehavior;
       case "paged":
-        return $author$project$IIIF$Presentation$PagedBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$PagedBehavior;
       case "repeat":
-        return $author$project$IIIF$Presentation$RepeatBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$RepeatBehavior;
       case "sequence":
-        return $author$project$IIIF$Presentation$SequenceBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$SequenceBehavior;
       case "thumbnail-nav":
-        return $author$project$IIIF$Presentation$ThumbnailNavBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$ThumbnailNavBehavior;
       case "together":
-        return $author$project$IIIF$Presentation$TogetherBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$TogetherBehavior;
       case "unordered":
-        return $author$project$IIIF$Presentation$UnorderedBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$UnorderedBehavior;
       default:
-        return $author$project$IIIF$Presentation$PagedBehavior;
+        return $rism_digital$elm_iiif$IIIF$Presentation$PagedBehavior;
     }
   };
-  var $author$project$IIIF$Internal$SharedDecoders$behaviourDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$behaviourDecoder = A2(
     $elm$json$Json$Decode$map,
-    $author$project$IIIF$Presentation$LayoutV3,
+    $rism_digital$elm_iiif$IIIF$Presentation$LayoutV3,
     $elm$json$Json$Decode$list(
-      A2($elm$json$Json$Decode$map, $author$project$IIIF$Presentation$stringToBehavior, $elm$json$Json$Decode$string)
+      A2($elm$json$Json$Decode$map, $rism_digital$elm_iiif$IIIF$Presentation$stringToBehavior, $elm$json$Json$Decode$string)
     )
   );
-  var $author$project$IIIF$Internal$Utilities$find = F2(
+  var $rism_digital$elm_iiif$IIIF$Internal$Utilities$find = F2(
     function(predicate, items) {
       find:
         while (true) {
@@ -13195,20 +13195,20 @@
         }
     }
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$selectServiceId = function(services) {
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$selectServiceId = function(services) {
     return A2(
       $elm$core$Maybe$map,
       function($) {
         return $.id;
       },
       A2(
-        $author$project$IIIF$Internal$Utilities$find,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$find,
         function(service) {
           return A2(
             $elm$core$List$member,
             service.serviceType,
             _List_fromArray(
-              [$author$project$IIIF$Presentation$ImageService1, $author$project$IIIF$Presentation$ImageService2, $author$project$IIIF$Presentation$ImageService3]
+              [$rism_digital$elm_iiif$IIIF$Presentation$ImageService1, $rism_digital$elm_iiif$IIIF$Presentation$ImageService2, $rism_digital$elm_iiif$IIIF$Presentation$ImageService3]
             )
           );
         },
@@ -13216,14 +13216,14 @@
       )
     );
   };
-  var $author$project$IIIF$Presentation$ServiceObject = F2(
+  var $rism_digital$elm_iiif$IIIF$Presentation$ServiceObject = F2(
     function(id, serviceType) {
       return { id, serviceType };
     }
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeDecoder = A2(
     $elm$json$Json$Decode$map,
-    $author$project$IIIF$Presentation$stringToServiceType,
+    $rism_digital$elm_iiif$IIIF$Presentation$stringToServiceType,
     $elm$json$Json$Decode$oneOf(
       _List_fromArray(
         [
@@ -13233,11 +13233,11 @@
       )
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectDecoder = A2(
-    $author$project$IIIF$Internal$Utilities$custom,
-    $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeDecoder,
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectDecoder = A2(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeDecoder,
     A2(
-      $author$project$IIIF$Internal$Utilities$custom,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
       $elm$json$Json$Decode$oneOf(
         _List_fromArray(
           [
@@ -13246,52 +13246,52 @@
           ]
         )
       ),
-      $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$ServiceObject)
+      $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$ServiceObject)
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectListDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectListDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
-        $elm$json$Json$Decode$list($author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectDecoder),
-        A2($elm$json$Json$Decode$map, $elm$core$List$singleton, $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectDecoder)
+        $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectDecoder),
+        A2($elm$json$Json$Decode$map, $elm$core$List$singleton, $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectDecoder)
       ]
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageIdFromServiceDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ImageIdFromServiceDecoder = A2(
     $elm$json$Json$Decode$andThen,
     function(services) {
-      var _v0 = $author$project$IIIF$Internal$V3PresentationDecoders$selectServiceId(services);
+      var _v0 = $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$selectServiceId(services);
       if (_v0.$ === "Just") {
         var id = _v0.a;
         return A2(
           $elm$json$Json$Decode$map,
-          $author$project$IIIF$Image$imageUriToInfoUri,
-          $author$project$IIIF$Internal$SharedDecoders$convertImageIdToImageUri(id)
+          $rism_digital$elm_iiif$IIIF$Image$imageUriToInfoUri,
+          $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$convertImageIdToImageUri(id)
         );
       } else {
         return $elm$json$Json$Decode$fail("No valid service ID found in service array");
       }
     },
-    A2($elm$json$Json$Decode$field, "service", $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectListDecoder)
+    A2($elm$json$Json$Decode$field, "service", $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectListDecoder)
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageIdDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ImageIdDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
-        $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageIdFromServiceDecoder,
+        $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ImageIdFromServiceDecoder,
         A2(
           $elm$json$Json$Decode$andThen,
-          $author$project$IIIF$Internal$SharedDecoders$convertStaticImageIdToImageUri,
+          $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$convertStaticImageIdToImageUri,
           A2($elm$json$Json$Decode$field, "id", $elm$json$Json$Decode$string)
         )
       ]
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
-      [$author$project$IIIF$Language$languageMapLabelDecoder, $author$project$IIIF$Language$stringToLanguageMapLabelDecoder]
+      [$rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder, $rism_digital$elm_iiif$IIIF$Language$stringToLanguageMapLabelDecoder]
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectValueListDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectValueListDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
         $elm$json$Json$Decode$list($elm$json$Json$Decode$value),
@@ -13299,67 +13299,67 @@
       ]
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeListDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeListDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
-        $elm$json$Json$Decode$list($author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeDecoder),
-        A2($elm$json$Json$Decode$map, $elm$core$List$singleton, $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeDecoder)
+        $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeDecoder),
+        A2($elm$json$Json$Decode$map, $elm$core$List$singleton, $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeDecoder)
       ]
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageDecoder = function(imageType) {
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ImageDecoder = function(imageType) {
     return A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "service",
-      $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectValueListDecoder,
+      $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectValueListDecoder,
       _List_Nil,
       A4(
-        $author$project$IIIF$Internal$Utilities$optional,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
         "service",
-        $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeListDecoder,
+        $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeListDecoder,
         _List_Nil,
         A2(
-          $author$project$IIIF$Internal$Utilities$hardcoded,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
           imageType,
           A4(
-            $author$project$IIIF$Internal$Utilities$optional,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
             "label",
-            $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder),
+            $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder),
             $elm$core$Maybe$Nothing,
             A2(
-              $author$project$IIIF$Internal$Utilities$custom,
-              $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageIdDecoder,
-              $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Image)
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+              $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ImageIdDecoder,
+              $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Image)
             )
           )
         )
       )
     );
   };
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ChoiceBodyDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ChoiceBodyDecoder = A2(
     $elm$json$Json$Decode$at,
     _List_fromArray(
       ["body", "items"]
     ),
     $elm$json$Json$Decode$list(
-      $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageDecoder($author$project$IIIF$Presentation$ChoiceImage)
+      $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ImageDecoder($rism_digital$elm_iiif$IIIF$Presentation$ChoiceImage)
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageBodyDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ImageBodyDecoder = A2(
     $elm$json$Json$Decode$map,
     $elm$core$List$singleton,
     A2(
       $elm$json$Json$Decode$field,
       "body",
-      $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageDecoder($author$project$IIIF$Presentation$PrimaryImage)
+      $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ImageDecoder($rism_digital$elm_iiif$IIIF$Presentation$PrimaryImage)
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3AnnotationChoiceTypeDecoder = function(annotType) {
-    return annotType === "Choice" ? $author$project$IIIF$Internal$V3PresentationDecoders$v3ChoiceBodyDecoder : $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageBodyDecoder;
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3AnnotationChoiceTypeDecoder = function(annotType) {
+    return annotType === "Choice" ? $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ChoiceBodyDecoder : $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ImageBodyDecoder;
   };
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3AnnotationBodyDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3AnnotationBodyDecoder = A2(
     $elm$json$Json$Decode$andThen,
-    $author$project$IIIF$Internal$V3PresentationDecoders$v3AnnotationChoiceTypeDecoder,
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3AnnotationChoiceTypeDecoder,
     A2(
       $elm$json$Json$Decode$at,
       _List_fromArray(
@@ -13368,84 +13368,84 @@
       $elm$json$Json$Decode$string
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3AnnotationPageDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3AnnotationPageDecoder = A2(
     $elm$json$Json$Decode$at,
     _List_fromArray(
       ["items"]
     ),
-    A2($elm$json$Json$Decode$index, 0, $author$project$IIIF$Internal$V3PresentationDecoders$v3AnnotationBodyDecoder)
+    A2($elm$json$Json$Decode$index, 0, $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3AnnotationBodyDecoder)
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageIdDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageIdDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
-        $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageIdFromServiceDecoder,
+        $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ImageIdFromServiceDecoder,
         A2(
           $elm$json$Json$Decode$andThen,
-          $author$project$IIIF$Internal$SharedDecoders$convertThumbnailImageIdToImageUri,
+          $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$convertThumbnailImageIdToImageUri,
           A2($elm$json$Json$Decode$field, "id", $elm$json$Json$Decode$string)
         )
       ]
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageDecoder = A4(
-    $author$project$IIIF$Internal$Utilities$optional,
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageDecoder = A4(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
     "service",
-    $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectValueListDecoder,
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectValueListDecoder,
     _List_Nil,
     A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "service",
-      $author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeListDecoder,
+      $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceTypeListDecoder,
       _List_Nil,
       A2(
-        $author$project$IIIF$Internal$Utilities$hardcoded,
-        $author$project$IIIF$Presentation$PrimaryImage,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
+        $rism_digital$elm_iiif$IIIF$Presentation$PrimaryImage,
         A4(
-          $author$project$IIIF$Internal$Utilities$optional,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
           "label",
-          $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder),
+          $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder),
           $elm$core$Maybe$Nothing,
           A2(
-            $author$project$IIIF$Internal$Utilities$custom,
-            $author$project$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageIdDecoder,
-            $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Image)
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+            $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageIdDecoder,
+            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Image)
           )
         )
       )
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3CanvasDecoder = A4(
-    $author$project$IIIF$Internal$Utilities$optional,
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CanvasDecoder = A4(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
     "behavior",
-    $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$SharedDecoders$behaviourDecoder),
+    $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$behaviourDecoder),
     $elm$core$Maybe$Nothing,
     A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "thumbnail",
-      $author$project$IIIF$Internal$SharedDecoders$thumbnailDecoder($author$project$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageDecoder),
+      $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$thumbnailDecoder($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageDecoder),
       $elm$core$Maybe$Nothing,
       A3(
-        $author$project$IIIF$Internal$Utilities$required,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
         "items",
-        A2($elm$json$Json$Decode$index, 0, $author$project$IIIF$Internal$V3PresentationDecoders$v3AnnotationPageDecoder),
+        A2($elm$json$Json$Decode$index, 0, $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3AnnotationPageDecoder),
         A3(
-          $author$project$IIIF$Internal$Utilities$required,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
           "height",
           $elm$json$Json$Decode$maybe($elm$json$Json$Decode$int),
           A3(
-            $author$project$IIIF$Internal$Utilities$required,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
             "width",
             $elm$json$Json$Decode$maybe($elm$json$Json$Decode$int),
             A4(
-              $author$project$IIIF$Internal$Utilities$optional,
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
               "label",
-              $elm$json$Json$Decode$maybe($author$project$IIIF$Language$languageMapLabelDecoder),
+              $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
               $elm$core$Maybe$Nothing,
               A3(
-                $author$project$IIIF$Internal$Utilities$required,
+                $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
                 "id",
                 $elm$json$Json$Decode$string,
-                $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Canvas)
+                $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Canvas)
               )
             )
           )
@@ -13453,162 +13453,162 @@
       )
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$defaultLabelMap = _List_fromArray(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$defaultLabelMap = _List_fromArray(
     [
       A2(
-        $author$project$IIIF$Language$LanguageValues,
-        $author$project$IIIF$Language$Default,
+        $rism_digital$elm_iiif$IIIF$Language$LanguageValues,
+        $rism_digital$elm_iiif$IIIF$Language$Default,
         _List_fromArray(
           ["Homepage"]
         )
       )
     ]
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3RangeItemFromType = function(itemType) {
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3RangeItemFromType = function(itemType) {
     switch (itemType) {
       case "Canvas":
         return A2(
           $elm$json$Json$Decode$map,
-          $author$project$IIIF$Presentation$RangeCanvas,
+          $rism_digital$elm_iiif$IIIF$Presentation$RangeCanvas,
           A2($elm$json$Json$Decode$field, "id", $elm$json$Json$Decode$string)
         );
       case "Range":
         return A2(
           $elm$json$Json$Decode$map,
-          $author$project$IIIF$Presentation$RangeRange,
-          $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeDecoder()
+          $rism_digital$elm_iiif$IIIF$Presentation$RangeRange,
+          $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeDecoder()
         );
       default:
         return $elm$json$Json$Decode$fail("Unsupported range item type");
     }
   };
-  function $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeDecoder() {
+  function $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeDecoder() {
     return A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "metadata",
-      $elm$json$Json$Decode$list($author$project$IIIF$Language$labelValueDecoder),
+      $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Language$labelValueDecoder),
       _List_Nil,
       A4(
-        $author$project$IIIF$Internal$Utilities$optional,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
         "items",
         $elm$json$Json$Decode$list(
-          $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeItemDecoder()
+          $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeItemDecoder()
         ),
         _List_Nil,
         A4(
-          $author$project$IIIF$Internal$Utilities$optional,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
           "label",
-          $author$project$IIIF$Language$languageMapLabelDecoder,
-          $author$project$IIIF$Internal$V3PresentationDecoders$defaultLabelMap,
+          $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder,
+          $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$defaultLabelMap,
           A3(
-            $author$project$IIIF$Internal$Utilities$required,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
             "id",
             $elm$json$Json$Decode$string,
-            $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Range)
+            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Range)
           )
         )
       )
     );
   }
-  function $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeItemDecoder() {
+  function $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeItemDecoder() {
     return A2(
       $elm$json$Json$Decode$andThen,
-      $author$project$IIIF$Internal$V3PresentationDecoders$v3RangeItemFromType,
+      $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3RangeItemFromType,
       A2($elm$json$Json$Decode$field, "type", $elm$json$Json$Decode$string)
     );
   }
   try {
-    $author$project$IIIF$Internal$V3PresentationDecoders$v3RangeDecoder = $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeDecoder();
-    $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeDecoder = function() {
-      return $author$project$IIIF$Internal$V3PresentationDecoders$v3RangeDecoder;
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3RangeDecoder = $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeDecoder();
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeDecoder = function() {
+      return $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3RangeDecoder;
     };
-    $author$project$IIIF$Internal$V3PresentationDecoders$v3RangeItemDecoder = $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeItemDecoder();
-    $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeItemDecoder = function() {
-      return $author$project$IIIF$Internal$V3PresentationDecoders$v3RangeItemDecoder;
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3RangeItemDecoder = $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeItemDecoder();
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3RangeItemDecoder = function() {
+      return $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3RangeItemDecoder;
     };
   } catch ($) {
     throw "Some top-level definitions from `IIIF.Internal.V3PresentationDecoders` are causing infinite recursion:\n\n  \u250C\u2500\u2500\u2500\u2500\u2500\u2510\n  \u2502    v3RangeDecoder\n  \u2502     \u2193\n  \u2502    v3RangeItemDecoder\n  \u2502     \u2193\n  \u2502    v3RangeItemFromType\n  \u2514\u2500\u2500\u2500\u2500\u2500\u2518\n\nThese errors are very tricky, so read https://elm-lang.org/0.19.1/bad-recursion to learn how to fix it!";
   }
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3RangeDecoder;
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3RangeItemDecoder;
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3HomePageDecoder = A4(
-    $author$project$IIIF$Internal$Utilities$optional,
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3RangeDecoder;
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3RangeItemDecoder;
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3HomePageDecoder = A4(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
     "type",
-    $author$project$IIIF$Internal$SharedDecoders$resourceTypeDecoder,
-    $author$project$IIIF$Presentation$OtherResource("Text"),
+    $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$resourceTypeDecoder,
+    $rism_digital$elm_iiif$IIIF$Presentation$OtherResource("Text"),
     A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "format",
-      $author$project$IIIF$Internal$SharedDecoders$formatDecoder,
-      $author$project$IIIF$Presentation$OtherFormat("text/html"),
+      $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$formatDecoder,
+      $rism_digital$elm_iiif$IIIF$Presentation$OtherFormat("text/html"),
       A4(
-        $author$project$IIIF$Internal$Utilities$optional,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
         "label",
-        $author$project$IIIF$Language$languageMapLabelDecoder,
-        $author$project$IIIF$Internal$V3PresentationDecoders$defaultLabelMap,
+        $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder,
+        $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$defaultLabelMap,
         A3(
-          $author$project$IIIF$Internal$Utilities$required,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
           "id",
           $elm$json$Json$Decode$string,
-          $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$HomePage)
+          $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$HomePage)
         )
       )
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3CollectionItemManifestDecoder = A2(
-    $author$project$IIIF$Internal$Utilities$hardcoded,
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CollectionItemManifestDecoder = A2(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
     $elm$core$Maybe$Nothing,
     A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "thumbnail",
-      $author$project$IIIF$Internal$SharedDecoders$thumbnailDecoder($author$project$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageDecoder),
+      $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$thumbnailDecoder($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageDecoder),
       $elm$core$Maybe$Nothing,
       A2(
-        $author$project$IIIF$Internal$Utilities$hardcoded,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
         $elm$core$Maybe$Nothing,
         A2(
-          $author$project$IIIF$Internal$Utilities$hardcoded,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
           $elm$core$Maybe$Nothing,
           A4(
-            $author$project$IIIF$Internal$Utilities$optional,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
             "homepage",
             $elm$json$Json$Decode$maybe(
-              $elm$json$Json$Decode$list($author$project$IIIF$Internal$V3PresentationDecoders$v3HomePageDecoder)
+              $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3HomePageDecoder)
             ),
             $elm$core$Maybe$Nothing,
             A2(
-              $author$project$IIIF$Internal$Utilities$hardcoded,
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
               $elm$core$Maybe$Nothing,
               A2(
-                $author$project$IIIF$Internal$Utilities$hardcoded,
+                $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
                 _List_Nil,
                 A2(
-                  $author$project$IIIF$Internal$Utilities$hardcoded,
-                  $author$project$IIIF$Presentation$LayoutV3(
+                  $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
+                  $rism_digital$elm_iiif$IIIF$Presentation$LayoutV3(
                     _List_fromArray(
-                      [$author$project$IIIF$Presentation$IndividualsBehavior]
+                      [$rism_digital$elm_iiif$IIIF$Presentation$IndividualsBehavior]
                     )
                   ),
                   A4(
-                    $author$project$IIIF$Internal$Utilities$optional,
+                    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
                     "summary",
-                    $elm$json$Json$Decode$maybe($author$project$IIIF$Language$languageMapLabelDecoder),
+                    $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
                     $elm$core$Maybe$Nothing,
                     A2(
-                      $author$project$IIIF$Internal$Utilities$hardcoded,
-                      $author$project$IIIF$Presentation$LeftToRight,
+                      $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
+                      $rism_digital$elm_iiif$IIIF$Presentation$LeftToRight,
                       A2(
-                        $author$project$IIIF$Internal$Utilities$hardcoded,
+                        $rism_digital$elm_iiif$IIIF$Internal$Utilities$hardcoded,
                         _List_Nil,
                         A3(
-                          $author$project$IIIF$Internal$Utilities$required,
+                          $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
                           "label",
-                          $author$project$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder,
+                          $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder,
                           A3(
-                            $author$project$IIIF$Internal$Utilities$required,
+                            $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
                             "id",
                             $elm$json$Json$Decode$string,
-                            $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Manifest)
+                            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Manifest)
                           )
                         )
                       )
@@ -13622,48 +13622,48 @@
       )
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3CollectionItemFromType = function(itemType) {
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CollectionItemFromType = function(itemType) {
     switch (itemType) {
       case "Collection":
         return A2(
           $elm$json$Json$Decode$map,
-          $author$project$IIIF$Presentation$NestedCollection,
+          $rism_digital$elm_iiif$IIIF$Presentation$NestedCollection,
           $elm$json$Json$Decode$lazy(
             function(_v1) {
-              return $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3iiifCollectionDecoder();
+              return $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3iiifCollectionDecoder();
             }
           )
         );
       case "Manifest":
-        return A2($elm$json$Json$Decode$map, $author$project$IIIF$Presentation$ManifestItem, $author$project$IIIF$Internal$V3PresentationDecoders$v3CollectionItemManifestDecoder);
+        return A2($elm$json$Json$Decode$map, $rism_digital$elm_iiif$IIIF$Presentation$ManifestItem, $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CollectionItemManifestDecoder);
       default:
         return $elm$json$Json$Decode$fail("Unknown collection item type: " + itemType);
     }
   };
-  function $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3iiifCollectionDecoder() {
+  function $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3iiifCollectionDecoder() {
     return A2(
-      $author$project$IIIF$Internal$Utilities$custom,
-      $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemsDecoder(),
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+      $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemsDecoder(),
       A4(
-        $author$project$IIIF$Internal$Utilities$optional,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
         "summary",
-        $elm$json$Json$Decode$maybe($author$project$IIIF$Language$languageMapLabelDecoder),
+        $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
         $elm$core$Maybe$Nothing,
         A3(
-          $author$project$IIIF$Internal$Utilities$required,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
           "label",
-          $author$project$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder,
+          $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder,
           A3(
-            $author$project$IIIF$Internal$Utilities$required,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
             "id",
             $elm$json$Json$Decode$string,
-            $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Collection)
+            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Collection)
           )
         )
       )
     );
   }
-  function $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemsDecoder() {
+  function $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemsDecoder() {
     return A4(
       $elm$json$Json$Decode$map3,
       F3(
@@ -13681,7 +13681,7 @@
               $elm$json$Json$Decode$field,
               "items",
               $elm$json$Json$Decode$list(
-                $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemDecoder()
+                $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemDecoder()
               )
             ),
             $elm$json$Json$Decode$succeed(_List_Nil)
@@ -13697,10 +13697,10 @@
               $elm$json$Json$Decode$list(
                 A2(
                   $elm$json$Json$Decode$map,
-                  $author$project$IIIF$Presentation$NestedCollection,
+                  $rism_digital$elm_iiif$IIIF$Presentation$NestedCollection,
                   $elm$json$Json$Decode$lazy(
                     function(_v2) {
-                      return $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3iiifCollectionDecoder();
+                      return $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3iiifCollectionDecoder();
                     }
                   )
                 )
@@ -13717,7 +13717,7 @@
               $elm$json$Json$Decode$field,
               "manifests",
               $elm$json$Json$Decode$list(
-                A2($elm$json$Json$Decode$map, $author$project$IIIF$Presentation$ManifestItem, $author$project$IIIF$Internal$V3PresentationDecoders$v3CollectionItemManifestDecoder)
+                A2($elm$json$Json$Decode$map, $rism_digital$elm_iiif$IIIF$Presentation$ManifestItem, $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CollectionItemManifestDecoder)
               )
             ),
             $elm$json$Json$Decode$succeed(_List_Nil)
@@ -13726,88 +13726,88 @@
       )
     );
   }
-  function $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemDecoder() {
+  function $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemDecoder() {
     return A2(
       $elm$json$Json$Decode$andThen,
-      $author$project$IIIF$Internal$V3PresentationDecoders$v3CollectionItemFromType,
+      $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CollectionItemFromType,
       A2($elm$json$Json$Decode$field, "type", $elm$json$Json$Decode$string)
     );
   }
   try {
-    $author$project$IIIF$Internal$V3PresentationDecoders$v3iiifCollectionDecoder = $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3iiifCollectionDecoder();
-    $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3iiifCollectionDecoder = function() {
-      return $author$project$IIIF$Internal$V3PresentationDecoders$v3iiifCollectionDecoder;
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3iiifCollectionDecoder = $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3iiifCollectionDecoder();
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3iiifCollectionDecoder = function() {
+      return $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3iiifCollectionDecoder;
     };
-    $author$project$IIIF$Internal$V3PresentationDecoders$v3CollectionItemsDecoder = $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemsDecoder();
-    $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemsDecoder = function() {
-      return $author$project$IIIF$Internal$V3PresentationDecoders$v3CollectionItemsDecoder;
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CollectionItemsDecoder = $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemsDecoder();
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemsDecoder = function() {
+      return $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CollectionItemsDecoder;
     };
-    $author$project$IIIF$Internal$V3PresentationDecoders$v3CollectionItemDecoder = $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemDecoder();
-    $author$project$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemDecoder = function() {
-      return $author$project$IIIF$Internal$V3PresentationDecoders$v3CollectionItemDecoder;
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CollectionItemDecoder = $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemDecoder();
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$cyclic$v3CollectionItemDecoder = function() {
+      return $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CollectionItemDecoder;
     };
   } catch ($) {
     throw "Some top-level definitions from `IIIF.Internal.V3PresentationDecoders` are causing infinite recursion:\n\n  \u250C\u2500\u2500\u2500\u2500\u2500\u2510\n  \u2502    v3iiifCollectionDecoder\n  \u2502     \u2193\n  \u2502    v3CollectionItemsDecoder\n  \u2502     \u2193\n  \u2502    v3CollectionItemDecoder\n  \u2502     \u2193\n  \u2502    v3CollectionItemFromType\n  \u2514\u2500\u2500\u2500\u2500\u2500\u2518\n\nThese errors are very tricky, so read https://elm-lang.org/0.19.1/bad-recursion to learn how to fix it!";
   }
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3iiifCollectionDecoder;
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3CollectionItemsDecoder;
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3CollectionItemDecoder;
-  var $author$project$IIIF$Presentation$Provider = F6(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3iiifCollectionDecoder;
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CollectionItemsDecoder;
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CollectionItemDecoder;
+  var $rism_digital$elm_iiif$IIIF$Presentation$Provider = F6(
     function(id, label, type_, homepage, logo, seeAlso) {
       return { homepage, id, label, logo, seeAlso, type_ };
     }
   );
-  var $author$project$IIIF$Presentation$Logo = F7(
+  var $rism_digital$elm_iiif$IIIF$Presentation$Logo = F7(
     function(id, label, format, type_, width, height, service) {
       return { format, height, id, label, service, type_, width };
     }
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$defaultLogoLabelMap = _List_fromArray(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$defaultLogoLabelMap = _List_fromArray(
     [
       A2(
-        $author$project$IIIF$Language$LanguageValues,
-        $author$project$IIIF$Language$Default,
+        $rism_digital$elm_iiif$IIIF$Language$LanguageValues,
+        $rism_digital$elm_iiif$IIIF$Language$Default,
         _List_fromArray(
           ["Logo"]
         )
       )
     ]
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3LogoDecoder = A4(
-    $author$project$IIIF$Internal$Utilities$optional,
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3LogoDecoder = A4(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
     "service",
-    $elm$json$Json$Decode$maybe($author$project$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectListDecoder),
+    $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ServiceObjectListDecoder),
     $elm$core$Maybe$Nothing,
     A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "height",
       $elm$json$Json$Decode$int,
       0,
       A4(
-        $author$project$IIIF$Internal$Utilities$optional,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
         "width",
         $elm$json$Json$Decode$int,
         0,
         A4(
-          $author$project$IIIF$Internal$Utilities$optional,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
           "type",
-          $author$project$IIIF$Internal$SharedDecoders$resourceTypeDecoder,
-          $author$project$IIIF$Presentation$OtherResource("Image"),
+          $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$resourceTypeDecoder,
+          $rism_digital$elm_iiif$IIIF$Presentation$OtherResource("Image"),
           A4(
-            $author$project$IIIF$Internal$Utilities$optional,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
             "format",
-            $author$project$IIIF$Internal$SharedDecoders$formatDecoder,
-            $author$project$IIIF$Presentation$OtherFormat("image/png"),
+            $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$formatDecoder,
+            $rism_digital$elm_iiif$IIIF$Presentation$OtherFormat("image/png"),
             A4(
-              $author$project$IIIF$Internal$Utilities$optional,
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
               "label",
-              $author$project$IIIF$Language$languageMapLabelDecoder,
-              $author$project$IIIF$Internal$V3PresentationDecoders$defaultLogoLabelMap,
+              $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder,
+              $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$defaultLogoLabelMap,
               A3(
-                $author$project$IIIF$Internal$Utilities$required,
+                $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
                 "id",
                 $elm$json$Json$Decode$string,
-                $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Logo)
+                $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Logo)
               )
             )
           )
@@ -13815,147 +13815,147 @@
       )
     )
   );
-  var $author$project$IIIF$Presentation$SeeAlso = F4(
+  var $rism_digital$elm_iiif$IIIF$Presentation$SeeAlso = F4(
     function(id, label, format, type_) {
       return { format, id, label, type_ };
     }
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3SeeAlsoDecoder = A3(
-    $author$project$IIIF$Internal$Utilities$required,
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3SeeAlsoDecoder = A3(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
     "type_",
-    $author$project$IIIF$Internal$SharedDecoders$resourceTypeDecoder,
+    $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$resourceTypeDecoder,
     A3(
-      $author$project$IIIF$Internal$Utilities$required,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
       "format",
-      $author$project$IIIF$Internal$SharedDecoders$formatDecoder,
+      $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$formatDecoder,
       A3(
-        $author$project$IIIF$Internal$Utilities$required,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
         "label",
-        $author$project$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder,
+        $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder,
         A3(
-          $author$project$IIIF$Internal$Utilities$required,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
           "id",
           $elm$json$Json$Decode$string,
-          $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$SeeAlso)
+          $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$SeeAlso)
         )
       )
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ProviderDecoder = A4(
-    $author$project$IIIF$Internal$Utilities$optional,
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ProviderDecoder = A4(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
     "seeAlso",
     $elm$json$Json$Decode$maybe(
-      $elm$json$Json$Decode$list($author$project$IIIF$Internal$V3PresentationDecoders$v3SeeAlsoDecoder)
+      $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3SeeAlsoDecoder)
     ),
     $elm$core$Maybe$Nothing,
     A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "logo",
       $elm$json$Json$Decode$maybe(
-        $elm$json$Json$Decode$list($author$project$IIIF$Internal$V3PresentationDecoders$v3LogoDecoder)
+        $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3LogoDecoder)
       ),
       $elm$core$Maybe$Nothing,
       A4(
-        $author$project$IIIF$Internal$Utilities$optional,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
         "homepage",
         $elm$json$Json$Decode$maybe(
-          $elm$json$Json$Decode$list($author$project$IIIF$Internal$V3PresentationDecoders$v3HomePageDecoder)
+          $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3HomePageDecoder)
         ),
         $elm$core$Maybe$Nothing,
         A3(
-          $author$project$IIIF$Internal$Utilities$required,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
           "type",
-          $author$project$IIIF$Internal$SharedDecoders$resourceTypeDecoder,
+          $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$resourceTypeDecoder,
           A3(
-            $author$project$IIIF$Internal$Utilities$required,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
             "label",
-            $author$project$IIIF$Language$languageMapLabelDecoder,
+            $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder,
             A3(
-              $author$project$IIIF$Internal$Utilities$required,
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
               "id",
               $elm$json$Json$Decode$string,
-              $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Provider)
+              $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Provider)
             )
           )
         )
       )
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3iiifManifestDecoder = A4(
-    $author$project$IIIF$Internal$Utilities$optional,
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3iiifManifestDecoder = A4(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
     "requiredStatement",
-    $elm$json$Json$Decode$maybe($author$project$IIIF$Language$labelValueDecoder),
+    $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$labelValueDecoder),
     $elm$core$Maybe$Nothing,
     A4(
-      $author$project$IIIF$Internal$Utilities$optional,
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
       "thumbnail",
-      $author$project$IIIF$Internal$SharedDecoders$thumbnailDecoder($author$project$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageDecoder),
+      $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$thumbnailDecoder($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ThumbnailImageDecoder),
       $elm$core$Maybe$Nothing,
       A4(
-        $author$project$IIIF$Internal$Utilities$optional,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
         "provider",
         $elm$json$Json$Decode$maybe(
-          $elm$json$Json$Decode$list($author$project$IIIF$Internal$V3PresentationDecoders$v3ProviderDecoder)
+          $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ProviderDecoder)
         ),
         $elm$core$Maybe$Nothing,
         A4(
-          $author$project$IIIF$Internal$Utilities$optional,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
           "logo",
           $elm$json$Json$Decode$maybe(
-            $author$project$IIIF$Internal$V3PresentationDecoders$v3ImageDecoder($author$project$IIIF$Presentation$PrimaryImage)
+            $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ImageDecoder($rism_digital$elm_iiif$IIIF$Presentation$PrimaryImage)
           ),
           $elm$core$Maybe$Nothing,
           A4(
-            $author$project$IIIF$Internal$Utilities$optional,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
             "homepage",
             $elm$json$Json$Decode$maybe(
-              $elm$json$Json$Decode$list($author$project$IIIF$Internal$V3PresentationDecoders$v3HomePageDecoder)
+              $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3HomePageDecoder)
             ),
             $elm$core$Maybe$Nothing,
             A4(
-              $author$project$IIIF$Internal$Utilities$optional,
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
               "structures",
               $elm$json$Json$Decode$maybe(
-                $elm$json$Json$Decode$list($author$project$IIIF$Internal$V3PresentationDecoders$v3RangeDecoder)
+                $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3RangeDecoder)
               ),
               $elm$core$Maybe$Nothing,
               A3(
-                $author$project$IIIF$Internal$Utilities$required,
+                $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
                 "items",
-                $elm$json$Json$Decode$list($author$project$IIIF$Internal$V3PresentationDecoders$v3CanvasDecoder),
+                $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CanvasDecoder),
                 A4(
-                  $author$project$IIIF$Internal$Utilities$optional,
+                  $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
                   "behavior",
-                  $author$project$IIIF$Internal$SharedDecoders$behaviourDecoder,
-                  $author$project$IIIF$Presentation$LayoutV3(
+                  $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$behaviourDecoder,
+                  $rism_digital$elm_iiif$IIIF$Presentation$LayoutV3(
                     _List_fromArray(
-                      [$author$project$IIIF$Presentation$IndividualsBehavior]
+                      [$rism_digital$elm_iiif$IIIF$Presentation$IndividualsBehavior]
                     )
                   ),
                   A4(
-                    $author$project$IIIF$Internal$Utilities$optional,
+                    $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
                     "summary",
-                    $elm$json$Json$Decode$maybe($author$project$IIIF$Language$languageMapLabelDecoder),
+                    $elm$json$Json$Decode$maybe($rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
                     $elm$core$Maybe$Nothing,
                     A4(
-                      $author$project$IIIF$Internal$Utilities$optional,
+                      $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
                       "viewingDirection",
-                      $author$project$IIIF$Internal$SharedDecoders$viewingDirectionDecoder,
-                      $author$project$IIIF$Presentation$LeftToRight,
+                      $rism_digital$elm_iiif$IIIF$Internal$SharedDecoders$viewingDirectionDecoder,
+                      $rism_digital$elm_iiif$IIIF$Presentation$LeftToRight,
                       A4(
-                        $author$project$IIIF$Internal$Utilities$optional,
+                        $rism_digital$elm_iiif$IIIF$Internal$Utilities$optional,
                         "metadata",
-                        $elm$json$Json$Decode$list($author$project$IIIF$Language$labelValueDecoder),
+                        $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Language$labelValueDecoder),
                         _List_Nil,
                         A3(
-                          $author$project$IIIF$Internal$Utilities$required,
+                          $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
                           "label",
-                          $author$project$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder,
+                          $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3LabelDecoder,
                           A3(
-                            $author$project$IIIF$Internal$Utilities$required,
+                            $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
                             "id",
                             $elm$json$Json$Decode$string,
-                            $elm$json$Json$Decode$succeed($author$project$IIIF$Presentation$Manifest)
+                            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Presentation$Manifest)
                           )
                         )
                       )
@@ -13969,84 +13969,84 @@
       )
     )
   );
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ResourceFromType = function(resourceType) {
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ResourceFromType = function(resourceType) {
     switch (resourceType) {
       case "Canvas":
         return A2(
           $elm$json$Json$Decode$map,
           A2(
             $elm$core$Basics$composeL,
-            $author$project$IIIF$Presentation$ResourceCanvas,
-            $author$project$IIIF$Presentation$IIIFCanvas($author$project$IIIF$Version$IIIFV3)
+            $rism_digital$elm_iiif$IIIF$Presentation$ResourceCanvas,
+            $rism_digital$elm_iiif$IIIF$Presentation$IIIFCanvas($rism_digital$elm_iiif$IIIF$Version$IIIFV3)
           ),
-          $author$project$IIIF$Internal$V3PresentationDecoders$v3CanvasDecoder
+          $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3CanvasDecoder
         );
       case "Collection":
         return A2(
           $elm$json$Json$Decode$map,
           A2(
             $elm$core$Basics$composeL,
-            $author$project$IIIF$Presentation$ResourceCollection,
-            $author$project$IIIF$Presentation$IIIFCollection($author$project$IIIF$Version$IIIFV3)
+            $rism_digital$elm_iiif$IIIF$Presentation$ResourceCollection,
+            $rism_digital$elm_iiif$IIIF$Presentation$IIIFCollection($rism_digital$elm_iiif$IIIF$Version$IIIFV3)
           ),
-          $author$project$IIIF$Internal$V3PresentationDecoders$v3iiifCollectionDecoder
+          $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3iiifCollectionDecoder
         );
       case "Manifest":
         return A2(
           $elm$json$Json$Decode$map,
           A2(
             $elm$core$Basics$composeL,
-            $author$project$IIIF$Presentation$ResourceManifest,
-            $author$project$IIIF$Presentation$IIIFManifest($author$project$IIIF$Version$IIIFV3)
+            $rism_digital$elm_iiif$IIIF$Presentation$ResourceManifest,
+            $rism_digital$elm_iiif$IIIF$Presentation$IIIFManifest($rism_digital$elm_iiif$IIIF$Version$IIIFV3)
           ),
-          $author$project$IIIF$Internal$V3PresentationDecoders$v3iiifManifestDecoder
+          $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3iiifManifestDecoder
         );
       case "Range":
         return A2(
           $elm$json$Json$Decode$map,
           A2(
             $elm$core$Basics$composeL,
-            $author$project$IIIF$Presentation$ResourceRange,
-            $author$project$IIIF$Presentation$IIIFRange($author$project$IIIF$Version$IIIFV3)
+            $rism_digital$elm_iiif$IIIF$Presentation$ResourceRange,
+            $rism_digital$elm_iiif$IIIF$Presentation$IIIFRange($rism_digital$elm_iiif$IIIF$Version$IIIFV3)
           ),
-          $author$project$IIIF$Internal$V3PresentationDecoders$v3RangeDecoder
+          $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3RangeDecoder
         );
       default:
         return $elm$json$Json$Decode$fail("Unknown IIIF v3 resource type: " + resourceType);
     }
   };
-  var $author$project$IIIF$Internal$V3PresentationDecoders$v3ResourceTypeDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ResourceTypeDecoder = A2(
     $elm$json$Json$Decode$andThen,
-    $author$project$IIIF$Internal$V3PresentationDecoders$v3ResourceFromType,
+    $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ResourceFromType,
     A2($elm$json$Json$Decode$field, "type", $elm$json$Json$Decode$string)
   );
-  var $author$project$IIIF$Internal$CoreDecoders$resourceContextListDecoder = function(contextValues) {
+  var $rism_digital$elm_iiif$IIIF$Internal$CoreDecoders$resourceContextListDecoder = function(contextValues) {
     return A2(
       $elm$core$List$any,
-      $author$project$IIIF$Internal$Contexts$contextMatches($author$project$IIIF$Internal$Contexts$iiifV3PresentationContextString),
+      $rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches($rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV3PresentationContextString),
       contextValues
-    ) ? $author$project$IIIF$Internal$V3PresentationDecoders$v3ResourceTypeDecoder : A2(
+    ) ? $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ResourceTypeDecoder : A2(
       $elm$core$List$any,
-      $author$project$IIIF$Internal$Contexts$contextMatches($author$project$IIIF$Internal$Contexts$iiifV2PresentationContextString),
+      $rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches($rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV2PresentationContextString),
       contextValues
-    ) ? $author$project$IIIF$Internal$V2PresentationDecoders$v2ResourceTypeDecoder : $elm$json$Json$Decode$fail(
+    ) ? $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ResourceTypeDecoder : $elm$json$Json$Decode$fail(
       "Context values contain an unknown IIIF version: " + A2($elm$core$String$join, ", ", contextValues)
     );
   };
-  var $author$project$IIIF$Internal$CoreDecoders$resourceContextStringDecoder = function(contextValue) {
-    return A2($author$project$IIIF$Internal$Contexts$contextMatches, $author$project$IIIF$Internal$Contexts$iiifV3PresentationContextString, contextValue) ? $author$project$IIIF$Internal$V3PresentationDecoders$v3ResourceTypeDecoder : A2($author$project$IIIF$Internal$Contexts$contextMatches, $author$project$IIIF$Internal$Contexts$iiifV2PresentationContextString, contextValue) ? $author$project$IIIF$Internal$V2PresentationDecoders$v2ResourceTypeDecoder : $elm$json$Json$Decode$fail("Unknown resource context value: " + contextValue);
+  var $rism_digital$elm_iiif$IIIF$Internal$CoreDecoders$resourceContextStringDecoder = function(contextValue) {
+    return A2($rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches, $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV3PresentationContextString, contextValue) ? $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3ResourceTypeDecoder : A2($rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches, $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV2PresentationContextString, contextValue) ? $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2ResourceTypeDecoder : $elm$json$Json$Decode$fail("Unknown resource context value: " + contextValue);
   };
-  var $author$project$IIIF$Decoders$resourceDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Decoders$resourceDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
         A2(
           $elm$json$Json$Decode$andThen,
-          $author$project$IIIF$Internal$CoreDecoders$resourceContextStringDecoder,
+          $rism_digital$elm_iiif$IIIF$Internal$CoreDecoders$resourceContextStringDecoder,
           A2($elm$json$Json$Decode$field, "@context", $elm$json$Json$Decode$string)
         ),
         A2(
           $elm$json$Json$Decode$andThen,
-          $author$project$IIIF$Internal$CoreDecoders$resourceContextListDecoder,
+          $rism_digital$elm_iiif$IIIF$Internal$CoreDecoders$resourceContextListDecoder,
           A2(
             $elm$json$Json$Decode$field,
             "@context",
@@ -14056,12 +14056,12 @@
       ]
     )
   );
-  var $author$project$IIIF$requestResource = F3(
+  var $rism_digital$elm_iiif$IIIF$requestResource = F3(
     function(responseMsg, acceptHeaders, url) {
       return A3(
-        $author$project$IIIF$Internal$Request$request,
+        $rism_digital$elm_iiif$IIIF$Internal$Request$request,
         acceptHeaders,
-        A2($elm$http$Http$expectJson, responseMsg, $author$project$IIIF$Decoders$resourceDecoder),
+        A2($elm$http$Http$expectJson, responseMsg, $rism_digital$elm_iiif$IIIF$Decoders$resourceDecoder),
         url
       );
     }
@@ -14082,7 +14082,7 @@
     }
   };
   var $author$project$Main$init = function(flags) {
-    var userLanguage = $author$project$IIIF$Language$LanguageCode(flags.userLanguage);
+    var userLanguage = $rism_digital$elm_iiif$IIIF$Language$LanguageCode(flags.userLanguage);
     var sidebarPanel = $author$project$Main$sidebarPanelFromString(flags.sidebarPanel);
     var sidebarState = flags.showSidebar ? sidebarPanel : $author$project$Model$SidebarHidden;
     var manifestUrl = flags.objectData;
@@ -14135,7 +14135,7 @@
       $elm$core$Platform$Cmd$batch(
         _List_fromArray(
           [
-            A3($author$project$IIIF$requestResource, $author$project$Msg$ServerRespondedWithResource, flags.acceptHeaders, manifestUrl),
+            A3($rism_digital$elm_iiif$IIIF$requestResource, $author$project$Msg$ServerRespondedWithResource, flags.acceptHeaders, manifestUrl),
             A2(
               $elm$core$Task$perform,
               function(viewport) {
@@ -17553,7 +17553,7 @@
       );
     }
   );
-  var $author$project$IIIF$Presentation$isPagedLayout = function(layout) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$isPagedLayout = function(layout) {
     if (layout.$ === "LayoutV2") {
       var hint = layout.a;
       if (hint.$ === "PagedHint") {
@@ -17563,7 +17563,7 @@
       }
     } else {
       var behaviour = layout.a;
-      return A2($elm$core$List$member, $author$project$IIIF$Presentation$PagedBehavior, behaviour);
+      return A2($elm$core$List$member, $rism_digital$elm_iiif$IIIF$Presentation$PagedBehavior, behaviour);
     }
   };
   var $author$project$Main$layoutConfigUpdated = _Platform_outgoingPort(
@@ -17594,7 +17594,7 @@
       }
     }
   );
-  var $author$project$IIIF$Presentation$canvasAspect = function(canvas) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$canvasAspect = function(canvas) {
     var _v0 = _Utils_Tuple2(canvas.width, canvas.height);
     if (_v0.a.$ === "Just" && _v0.b.$ === "Just") {
       var w = _v0.a.a;
@@ -17604,7 +17604,7 @@
       return 1;
     }
   };
-  var $author$project$IIIF$Language$extractTextFromLanguageMap = F2(
+  var $rism_digital$elm_iiif$IIIF$Language$extractTextFromLanguageMap = F2(
     function(lang, langMap) {
       return A2(
         $elm$core$Maybe$withDefault,
@@ -17618,14 +17618,14 @@
             return v;
           },
           A2(
-            $author$project$IIIF$Internal$Utilities$oneOfMaybes,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$oneOfMaybes,
             _List_fromArray(
               [
                 function(_v0) {
                   if (lang.$ === "LanguageCode") {
                     var code = lang.a;
                     return A2(
-                      $author$project$IIIF$Internal$Utilities$find,
+                      $rism_digital$elm_iiif$IIIF$Internal$Utilities$find,
                       function(languageValues) {
                         if (languageValues.a.$ === "LanguageCode") {
                           var l = languageValues.a.a;
@@ -17642,20 +17642,20 @@
                 },
                 function(_v3) {
                   return A2(
-                    $author$project$IIIF$Internal$Utilities$find,
+                    $rism_digital$elm_iiif$IIIF$Internal$Utilities$find,
                     function(_v4) {
                       var l = _v4.a;
-                      return _Utils_eq(l, $author$project$IIIF$Language$None);
+                      return _Utils_eq(l, $rism_digital$elm_iiif$IIIF$Language$None);
                     },
                     langMap
                   );
                 },
                 function(_v5) {
                   return A2(
-                    $author$project$IIIF$Internal$Utilities$find,
+                    $rism_digital$elm_iiif$IIIF$Internal$Utilities$find,
                     function(_v6) {
                       var l = _v6.a;
-                      return _Utils_eq(l, $author$project$IIIF$Language$Default);
+                      return _Utils_eq(l, $rism_digital$elm_iiif$IIIF$Language$Default);
                     },
                     langMap
                   );
@@ -17671,25 +17671,25 @@
       );
     }
   );
-  var $author$project$IIIF$Language$extractLabelFromLanguageMap = F2(
+  var $rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap = F2(
     function(lang, langMap) {
       return A2(
         $elm$core$String$join,
         "; ",
-        A2($author$project$IIIF$Language$extractTextFromLanguageMap, lang, langMap)
+        A2($rism_digital$elm_iiif$IIIF$Language$extractTextFromLanguageMap, lang, langMap)
       );
     }
   );
-  var $author$project$IIIF$Presentation$canvasLabel = function(canvas) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$canvasLabel = function(canvas) {
     var _v0 = canvas.label;
     if (_v0.$ === "Just") {
       var langMap = _v0.a;
-      return A2($author$project$IIIF$Language$extractLabelFromLanguageMap, $author$project$IIIF$Language$Default, langMap);
+      return A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, $rism_digital$elm_iiif$IIIF$Language$Default, langMap);
     } else {
       return "Untitled";
     }
   };
-  var $author$project$IIIF$Image$createFormatComponent = function(fmt) {
+  var $rism_digital$elm_iiif$IIIF$Image$createFormatComponent = function(fmt) {
     switch (fmt.$) {
       case "JpegFormat":
         return "jpg";
@@ -17707,7 +17707,7 @@
         return "webp";
     }
   };
-  var $author$project$IIIF$Image$createQualityComponent = function(qual) {
+  var $rism_digital$elm_iiif$IIIF$Image$createQualityComponent = function(qual) {
     switch (qual.$) {
       case "ColorQuality":
         return "color";
@@ -17721,7 +17721,7 @@
         return "native";
     }
   };
-  var $author$project$IIIF$Image$createRegionComponent = function(region) {
+  var $rism_digital$elm_iiif$IIIF$Image$createRegionComponent = function(region) {
     switch (region.$) {
       case "FullRegion":
         return "full";
@@ -17761,7 +17761,7 @@
         );
     }
   };
-  var $author$project$IIIF$Image$createRotationComponent = function(rot) {
+  var $rism_digital$elm_iiif$IIIF$Image$createRotationComponent = function(rot) {
     if (rot.$ === "NormalRotation") {
       var f = rot.a;
       return $elm$core$String$fromFloat(f);
@@ -17770,7 +17770,7 @@
       return "!" + $elm$core$String$fromFloat(f);
     }
   };
-  var $author$project$IIIF$Image$createSizeComponent = function(size) {
+  var $rism_digital$elm_iiif$IIIF$Image$createSizeComponent = function(size) {
     switch (size.$) {
       case "MaxSize":
         return "max";
@@ -17816,7 +17816,7 @@
         return "^!" + ($elm$core$String$fromInt(w) + ("," + $elm$core$String$fromInt(h)));
     }
   };
-  var $author$project$IIIF$Image$dropLeadingSlashCharacters = function(characters) {
+  var $rism_digital$elm_iiif$IIIF$Image$dropLeadingSlashCharacters = function(characters) {
     dropLeadingSlashCharacters:
       while (true) {
         if (characters.b && "/" === characters.a.valueOf()) {
@@ -17834,17 +17834,17 @@
   var $elm$core$String$toList = function(string) {
     return A3($elm$core$String$foldr, $elm$core$List$cons, _List_Nil, string);
   };
-  var $author$project$IIIF$Image$trimLeadingSlashes = function(string) {
+  var $rism_digital$elm_iiif$IIIF$Image$trimLeadingSlashes = function(string) {
     return $elm$core$String$fromList(
-      $author$project$IIIF$Image$dropLeadingSlashCharacters(
+      $rism_digital$elm_iiif$IIIF$Image$dropLeadingSlashCharacters(
         $elm$core$String$toList(string)
       )
     );
   };
-  var $author$project$IIIF$Image$trimTrailingSlashes = function(string) {
+  var $rism_digital$elm_iiif$IIIF$Image$trimTrailingSlashes = function(string) {
     return $elm$core$String$fromList(
       $elm$core$List$reverse(
-        $author$project$IIIF$Image$dropLeadingSlashCharacters(
+        $rism_digital$elm_iiif$IIIF$Image$dropLeadingSlashCharacters(
           $elm$core$List$reverse(
             $elm$core$String$toList(string)
           )
@@ -17852,49 +17852,49 @@
       )
     );
   };
-  var $author$project$IIIF$Image$appendUrlPart = F2(
+  var $rism_digital$elm_iiif$IIIF$Image$appendUrlPart = F2(
     function(part, url) {
-      var normalizedPart = $author$project$IIIF$Image$trimLeadingSlashes(part);
-      return $elm$core$String$isEmpty(normalizedPart) ? $author$project$IIIF$Image$trimTrailingSlashes(url) : $author$project$IIIF$Image$trimTrailingSlashes(url) + ("/" + normalizedPart);
+      var normalizedPart = $rism_digital$elm_iiif$IIIF$Image$trimLeadingSlashes(part);
+      return $elm$core$String$isEmpty(normalizedPart) ? $rism_digital$elm_iiif$IIIF$Image$trimTrailingSlashes(url) : $rism_digital$elm_iiif$IIIF$Image$trimTrailingSlashes(url) + ("/" + normalizedPart);
     }
   );
-  var $author$project$IIIF$Image$joinUrlParts = $elm$core$List$foldl($author$project$IIIF$Image$appendUrlPart);
-  var $author$project$IIIF$Image$createImageUri = function(params) {
+  var $rism_digital$elm_iiif$IIIF$Image$joinUrlParts = $elm$core$List$foldl($rism_digital$elm_iiif$IIIF$Image$appendUrlPart);
+  var $rism_digital$elm_iiif$IIIF$Image$createImageUri = function(params) {
     return A2(
-      $author$project$IIIF$Image$joinUrlParts,
+      $rism_digital$elm_iiif$IIIF$Image$joinUrlParts,
       params.host,
       _List_fromArray(
         [
           params.prefix,
-          $author$project$IIIF$Image$createRegionComponent(params.region),
-          $author$project$IIIF$Image$createSizeComponent(params.size),
-          $author$project$IIIF$Image$createRotationComponent(params.rotation),
-          $author$project$IIIF$Image$createQualityComponent(params.quality) + ("." + $author$project$IIIF$Image$createFormatComponent(params.format))
+          $rism_digital$elm_iiif$IIIF$Image$createRegionComponent(params.region),
+          $rism_digital$elm_iiif$IIIF$Image$createSizeComponent(params.size),
+          $rism_digital$elm_iiif$IIIF$Image$createRotationComponent(params.rotation),
+          $rism_digital$elm_iiif$IIIF$Image$createQualityComponent(params.quality) + ("." + $rism_digital$elm_iiif$IIIF$Image$createFormatComponent(params.format))
         ]
       )
     );
   };
-  var $author$project$IIIF$Image$createInfoUri = function(params) {
+  var $rism_digital$elm_iiif$IIIF$Image$createInfoUri = function(params) {
     return A2(
-      $author$project$IIIF$Image$joinUrlParts,
+      $rism_digital$elm_iiif$IIIF$Image$joinUrlParts,
       params.host,
       _List_fromArray(
         [params.prefix, "info.json"]
       )
     );
   };
-  var $author$project$IIIF$Image$createImageAddress = function(iiifUri) {
+  var $rism_digital$elm_iiif$IIIF$Image$createImageAddress = function(iiifUri) {
     switch (iiifUri.$) {
       case "InfoUri":
         var params = iiifUri.a;
-        return $author$project$IIIF$Image$createInfoUri(params);
+        return $rism_digital$elm_iiif$IIIF$Image$createInfoUri(params);
       case "ImageUri":
         var params = iiifUri.a;
-        return $author$project$IIIF$Image$createImageUri(params);
+        return $rism_digital$elm_iiif$IIIF$Image$createImageUri(params);
       default:
         var params = iiifUri.a;
         return A2(
-          $author$project$IIIF$Image$joinUrlParts,
+          $rism_digital$elm_iiif$IIIF$Image$joinUrlParts,
           params.host,
           _List_fromArray(
             [params.prefix]
@@ -17902,37 +17902,37 @@
         );
     }
   };
-  var $author$project$IIIF$Image$imageServerToImageRequest = function(_v0) {
+  var $rism_digital$elm_iiif$IIIF$Image$imageServerToImageRequest = function(_v0) {
     var host = _v0.host;
     var prefix = _v0.prefix;
     return {
-      format: $author$project$IIIF$Image$JpegFormat,
+      format: $rism_digital$elm_iiif$IIIF$Image$JpegFormat,
       host,
       prefix,
-      quality: $author$project$IIIF$Image$DefaultQuality,
-      region: $author$project$IIIF$Image$FullRegion,
-      rotation: $author$project$IIIF$Image$NormalRotation(0),
-      size: $author$project$IIIF$Image$MaxSize
+      quality: $rism_digital$elm_iiif$IIIF$Image$DefaultQuality,
+      region: $rism_digital$elm_iiif$IIIF$Image$FullRegion,
+      rotation: $rism_digital$elm_iiif$IIIF$Image$NormalRotation(0),
+      size: $rism_digital$elm_iiif$IIIF$Image$MaxSize
     };
   };
-  var $author$project$IIIF$Image$setImageUriSize = F2(
+  var $rism_digital$elm_iiif$IIIF$Image$setImageUriSize = F2(
     function(size, uri) {
       switch (uri.$) {
         case "InfoUri":
           var p = uri.a;
           return (function(normParams) {
-            return $author$project$IIIF$Image$ImageUri(
+            return $rism_digital$elm_iiif$IIIF$Image$ImageUri(
               _Utils_update(
                 normParams,
                 { size }
               )
             );
           })(
-            $author$project$IIIF$Image$imageServerToImageRequest(p)
+            $rism_digital$elm_iiif$IIIF$Image$imageServerToImageRequest(p)
           );
         case "ImageUri":
           var p = uri.a;
-          return $author$project$IIIF$Image$ImageUri(
+          return $rism_digital$elm_iiif$IIIF$Image$ImageUri(
             _Utils_update(
               p,
               { size }
@@ -17943,14 +17943,14 @@
       }
     }
   );
-  var $author$project$IIIF$Image$thumbnailUrlFromInfo = function(infoUrl) {
-    var _v0 = $author$project$IIIF$Image$parseImageAddress(infoUrl);
+  var $rism_digital$elm_iiif$IIIF$Image$thumbnailUrlFromInfo = function(infoUrl) {
+    var _v0 = $rism_digital$elm_iiif$IIIF$Image$parseImageAddress(infoUrl);
     if (_v0.$ === "Just") {
       var iiifUrl = _v0.a;
-      return $author$project$IIIF$Image$createImageAddress(
+      return $rism_digital$elm_iiif$IIIF$Image$createImageAddress(
         A2(
-          $author$project$IIIF$Image$setImageUriSize,
-          $author$project$IIIF$Image$WidthOnlySize(180),
+          $rism_digital$elm_iiif$IIIF$Image$setImageUriSize,
+          $rism_digital$elm_iiif$IIIF$Image$WidthOnlySize(180),
           iiifUrl
         )
       );
@@ -17959,8 +17959,8 @@
     }
   };
   var $author$project$Model$thumbnailUrlForImage = function(image) {
-    var url = $author$project$IIIF$Image$createImageAddress(image.id);
-    return $elm$core$List$isEmpty(image.service) ? url : $author$project$IIIF$Image$thumbnailUrlFromInfo(url);
+    var url = $rism_digital$elm_iiif$IIIF$Image$createImageAddress(image.id);
+    return $elm$core$List$isEmpty(image.service) ? url : $rism_digital$elm_iiif$IIIF$Image$thumbnailUrlFromInfo(url);
   };
   var $author$project$Model$canvasThumbnailUrl = F2(
     function(images, canvas) {
@@ -17999,7 +17999,7 @@
   var $author$project$Auth$Invalid = function(a) {
     return { $: "Invalid", a };
   };
-  var $author$project$IIIF$Auth$objectOrList = function(decoder) {
+  var $rism_digital$elm_iiif$IIIF$Auth$objectOrList = function(decoder) {
     return $elm$json$Json$Decode$oneOf(
       _List_fromArray(
         [
@@ -18009,36 +18009,36 @@
       )
     );
   };
-  var $author$project$IIIF$Auth$ProbeService = F5(
+  var $rism_digital$elm_iiif$IIIF$Auth$ProbeService = F5(
     function(id, type_, services, errorHeading, errorNote) {
       return { errorHeading, errorNote, id, services, type_ };
     }
   );
-  var $author$project$IIIF$Auth$Active = { $: "Active" };
-  var $author$project$IIIF$Auth$External = { $: "External" };
-  var $author$project$IIIF$Auth$Kiosk = { $: "Kiosk" };
-  var $author$project$IIIF$Auth$accessProfileDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Auth$Active = { $: "Active" };
+  var $rism_digital$elm_iiif$IIIF$Auth$External = { $: "External" };
+  var $rism_digital$elm_iiif$IIIF$Auth$Kiosk = { $: "Kiosk" };
+  var $rism_digital$elm_iiif$IIIF$Auth$accessProfileDecoder = A2(
     $elm$json$Json$Decode$andThen,
     function(profile) {
       switch (profile) {
         case "active":
-          return $elm$json$Json$Decode$succeed($author$project$IIIF$Auth$Active);
+          return $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$Active);
         case "external":
-          return $elm$json$Json$Decode$succeed($author$project$IIIF$Auth$External);
+          return $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$External);
         case "kiosk":
-          return $elm$json$Json$Decode$succeed($author$project$IIIF$Auth$Kiosk);
+          return $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$Kiosk);
         default:
           return $elm$json$Json$Decode$fail("Unsupported Auth 2 access profile: " + profile);
       }
     },
     $elm$json$Json$Decode$string
   );
-  var $author$project$IIIF$Auth$AccessService = F8(
+  var $rism_digital$elm_iiif$IIIF$Auth$AccessService = F8(
     function(id, type_, profile, services, label, heading, note, confirmLabel) {
       return { confirmLabel, heading, id, label, note, profile, services, type_ };
     }
   );
-  var $author$project$IIIF$Auth$exact = F2(
+  var $rism_digital$elm_iiif$IIIF$Auth$exact = F2(
     function(expected, decoder) {
       return A2(
         $elm$json$Json$Decode$andThen,
@@ -18049,7 +18049,7 @@
       );
     }
   );
-  var $author$project$IIIF$Auth$typeDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Auth$typeDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
         A2($elm$json$Json$Decode$field, "type", $elm$json$Json$Decode$string),
@@ -18057,10 +18057,10 @@
       ]
     )
   );
-  var $author$project$IIIF$Auth$authTypeDecoder = function(expected) {
-    return A2($author$project$IIIF$Auth$exact, expected, $author$project$IIIF$Auth$typeDecoder);
+  var $rism_digital$elm_iiif$IIIF$Auth$authTypeDecoder = function(expected) {
+    return A2($rism_digital$elm_iiif$IIIF$Auth$exact, expected, $rism_digital$elm_iiif$IIIF$Auth$typeDecoder);
   };
-  var $author$project$IIIF$Auth$idDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Auth$idDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
         A2($elm$json$Json$Decode$field, "id", $elm$json$Json$Decode$string),
@@ -18068,14 +18068,14 @@
       ]
     )
   );
-  var $author$project$IIIF$Auth$httpsIdDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Auth$httpsIdDecoder = A2(
     $elm$json$Json$Decode$andThen,
     function(id) {
       return A2($elm$core$String$startsWith, "https://", id) ? $elm$json$Json$Decode$succeed(id) : $elm$json$Json$Decode$fail("Expected an HTTPS service identifier");
     },
-    $author$project$IIIF$Auth$idDecoder
+    $rism_digital$elm_iiif$IIIF$Auth$idDecoder
   );
-  var $author$project$IIIF$Auth$optionalStrict = F2(
+  var $rism_digital$elm_iiif$IIIF$Auth$optionalStrict = F2(
     function(fieldName, decoder) {
       return A2(
         $elm$json$Json$Decode$andThen,
@@ -18107,67 +18107,67 @@
       );
     }
   );
-  var $author$project$IIIF$Auth$RelatedLogoutService = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Auth$RelatedLogoutService = function(a) {
     return { $: "RelatedLogoutService", a };
   };
-  var $author$project$IIIF$Auth$RelatedTokenService = function(a) {
+  var $rism_digital$elm_iiif$IIIF$Auth$RelatedTokenService = function(a) {
     return { $: "RelatedTokenService", a };
   };
-  var $author$project$IIIF$Auth$AccessTokenService = F4(
+  var $rism_digital$elm_iiif$IIIF$Auth$AccessTokenService = F4(
     function(id, type_, errorHeading, errorNote) {
       return { errorHeading, errorNote, id, type_ };
     }
   );
-  var $author$project$IIIF$Auth$accessTokenServiceDecoder = A2(
-    $author$project$IIIF$Internal$Utilities$custom,
-    A2($author$project$IIIF$Auth$optionalStrict, "errorNote", $author$project$IIIF$Language$languageMapLabelDecoder),
+  var $rism_digital$elm_iiif$IIIF$Auth$accessTokenServiceDecoder = A2(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+    A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "errorNote", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
     A2(
-      $author$project$IIIF$Internal$Utilities$custom,
-      A2($author$project$IIIF$Auth$optionalStrict, "errorHeading", $author$project$IIIF$Language$languageMapLabelDecoder),
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+      A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "errorHeading", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
       A2(
-        $author$project$IIIF$Internal$Utilities$custom,
-        $author$project$IIIF$Auth$authTypeDecoder("AuthAccessTokenService2"),
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+        $rism_digital$elm_iiif$IIIF$Auth$authTypeDecoder("AuthAccessTokenService2"),
         A2(
-          $author$project$IIIF$Internal$Utilities$custom,
-          $author$project$IIIF$Auth$httpsIdDecoder,
-          $elm$json$Json$Decode$succeed($author$project$IIIF$Auth$AccessTokenService)
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+          $rism_digital$elm_iiif$IIIF$Auth$httpsIdDecoder,
+          $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$AccessTokenService)
         )
       )
     )
   );
-  var $author$project$IIIF$Auth$LogoutService = F3(
+  var $rism_digital$elm_iiif$IIIF$Auth$LogoutService = F3(
     function(id, type_, label) {
       return { id, label, type_ };
     }
   );
-  var $author$project$IIIF$Auth$logoutServiceDecoder = A2(
-    $author$project$IIIF$Internal$Utilities$custom,
-    A2($author$project$IIIF$Auth$optionalStrict, "label", $author$project$IIIF$Language$languageMapLabelDecoder),
+  var $rism_digital$elm_iiif$IIIF$Auth$logoutServiceDecoder = A2(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+    A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "label", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
     A2(
-      $author$project$IIIF$Internal$Utilities$custom,
-      $author$project$IIIF$Auth$authTypeDecoder("AuthLogoutService2"),
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+      $rism_digital$elm_iiif$IIIF$Auth$authTypeDecoder("AuthLogoutService2"),
       A2(
-        $author$project$IIIF$Internal$Utilities$custom,
-        $author$project$IIIF$Auth$httpsIdDecoder,
-        $elm$json$Json$Decode$succeed($author$project$IIIF$Auth$LogoutService)
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+        $rism_digital$elm_iiif$IIIF$Auth$httpsIdDecoder,
+        $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$LogoutService)
       )
     )
   );
-  var $author$project$IIIF$Auth$relatedServiceDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Auth$relatedServiceDecoder = A2(
     $elm$json$Json$Decode$andThen,
     function(serviceType) {
       switch (serviceType) {
         case "AuthAccessTokenService2":
-          return A2($elm$json$Json$Decode$map, $author$project$IIIF$Auth$RelatedTokenService, $author$project$IIIF$Auth$accessTokenServiceDecoder);
+          return A2($elm$json$Json$Decode$map, $rism_digital$elm_iiif$IIIF$Auth$RelatedTokenService, $rism_digital$elm_iiif$IIIF$Auth$accessTokenServiceDecoder);
         case "AuthLogoutService2":
-          return A2($elm$json$Json$Decode$map, $author$project$IIIF$Auth$RelatedLogoutService, $author$project$IIIF$Auth$logoutServiceDecoder);
+          return A2($elm$json$Json$Decode$map, $rism_digital$elm_iiif$IIIF$Auth$RelatedLogoutService, $rism_digital$elm_iiif$IIIF$Auth$logoutServiceDecoder);
         default:
           return $elm$json$Json$Decode$fail("Unsupported Auth 2 related service: " + serviceType);
       }
     },
-    $author$project$IIIF$Auth$typeDecoder
+    $rism_digital$elm_iiif$IIIF$Auth$typeDecoder
   );
-  var $author$project$IIIF$Auth$relatedServicesDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Auth$relatedServicesDecoder = A2(
     $elm$json$Json$Decode$andThen,
     function(services) {
       var tokenCount = $elm$core$List$length(
@@ -18186,51 +18186,51 @@
       var logoutCount = $elm$core$List$length(services) - tokenCount;
       return tokenCount === 1 && logoutCount <= 1 ? $elm$json$Json$Decode$succeed(services) : $elm$json$Json$Decode$fail("Auth access services require exactly one token service and at most one logout service");
     },
-    $author$project$IIIF$Auth$objectOrList($author$project$IIIF$Auth$relatedServiceDecoder)
+    $rism_digital$elm_iiif$IIIF$Auth$objectOrList($rism_digital$elm_iiif$IIIF$Auth$relatedServiceDecoder)
   );
-  var $author$project$IIIF$Auth$activeAccessServiceForProfileDecoder = function(profile) {
+  var $rism_digital$elm_iiif$IIIF$Auth$activeAccessServiceForProfileDecoder = function(profile) {
     return A2(
-      $author$project$IIIF$Internal$Utilities$custom,
-      A2($author$project$IIIF$Auth$optionalStrict, "confirmLabel", $author$project$IIIF$Language$languageMapLabelDecoder),
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+      A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "confirmLabel", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
       A2(
-        $author$project$IIIF$Internal$Utilities$custom,
-        A2($author$project$IIIF$Auth$optionalStrict, "note", $author$project$IIIF$Language$languageMapLabelDecoder),
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+        A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "note", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
         A2(
-          $author$project$IIIF$Internal$Utilities$custom,
-          A2($author$project$IIIF$Auth$optionalStrict, "heading", $author$project$IIIF$Language$languageMapLabelDecoder),
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+          A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "heading", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
           A2(
-            $author$project$IIIF$Internal$Utilities$custom,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
             (function() {
               if (profile.$ === "Active") {
                 return A2(
                   $elm$json$Json$Decode$map,
                   $elm$core$Maybe$Just,
-                  A2($elm$json$Json$Decode$field, "label", $author$project$IIIF$Language$languageMapLabelDecoder)
+                  A2($elm$json$Json$Decode$field, "label", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder)
                 );
               } else {
-                return A2($author$project$IIIF$Auth$optionalStrict, "label", $author$project$IIIF$Language$languageMapLabelDecoder);
+                return A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "label", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder);
               }
             })(),
             A3(
-              $author$project$IIIF$Internal$Utilities$required,
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
               "service",
-              $author$project$IIIF$Auth$relatedServicesDecoder,
+              $rism_digital$elm_iiif$IIIF$Auth$relatedServicesDecoder,
               A2(
-                $author$project$IIIF$Internal$Utilities$custom,
+                $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
                 $elm$json$Json$Decode$succeed(profile),
                 A2(
-                  $author$project$IIIF$Internal$Utilities$custom,
-                  $author$project$IIIF$Auth$authTypeDecoder("AuthAccessService2"),
+                  $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+                  $rism_digital$elm_iiif$IIIF$Auth$authTypeDecoder("AuthAccessService2"),
                   A2(
-                    $author$project$IIIF$Internal$Utilities$custom,
+                    $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
                     (function() {
                       if (profile.$ === "External") {
                         return $elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing);
                       } else {
-                        return A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, $author$project$IIIF$Auth$httpsIdDecoder);
+                        return A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, $rism_digital$elm_iiif$IIIF$Auth$httpsIdDecoder);
                       }
                     })(),
-                    $elm$json$Json$Decode$succeed($author$project$IIIF$Auth$AccessService)
+                    $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$AccessService)
                   )
                 )
               )
@@ -18240,34 +18240,34 @@
       )
     );
   };
-  var $author$project$IIIF$Auth$activeAccessServiceDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Auth$activeAccessServiceDecoder = A2(
     $elm$json$Json$Decode$andThen,
-    $author$project$IIIF$Auth$activeAccessServiceForProfileDecoder,
-    A2($elm$json$Json$Decode$field, "profile", $author$project$IIIF$Auth$accessProfileDecoder)
+    $rism_digital$elm_iiif$IIIF$Auth$activeAccessServiceForProfileDecoder,
+    A2($elm$json$Json$Decode$field, "profile", $rism_digital$elm_iiif$IIIF$Auth$accessProfileDecoder)
   );
-  var $author$project$IIIF$Auth$probeServiceDecoder = A2(
-    $author$project$IIIF$Internal$Utilities$custom,
-    A2($author$project$IIIF$Auth$optionalStrict, "errorNote", $author$project$IIIF$Language$languageMapLabelDecoder),
+  var $rism_digital$elm_iiif$IIIF$Auth$probeServiceDecoder = A2(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+    A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "errorNote", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
     A2(
-      $author$project$IIIF$Internal$Utilities$custom,
-      A2($author$project$IIIF$Auth$optionalStrict, "errorHeading", $author$project$IIIF$Language$languageMapLabelDecoder),
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+      A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "errorHeading", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
       A3(
-        $author$project$IIIF$Internal$Utilities$required,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
         "service",
-        $author$project$IIIF$Auth$objectOrList($author$project$IIIF$Auth$activeAccessServiceDecoder),
+        $rism_digital$elm_iiif$IIIF$Auth$objectOrList($rism_digital$elm_iiif$IIIF$Auth$activeAccessServiceDecoder),
         A2(
-          $author$project$IIIF$Internal$Utilities$custom,
-          $author$project$IIIF$Auth$authTypeDecoder("AuthProbeService2"),
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+          $rism_digital$elm_iiif$IIIF$Auth$authTypeDecoder("AuthProbeService2"),
           A2(
-            $author$project$IIIF$Internal$Utilities$custom,
-            $author$project$IIIF$Auth$httpsIdDecoder,
-            $elm$json$Json$Decode$succeed($author$project$IIIF$Auth$ProbeService)
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+            $rism_digital$elm_iiif$IIIF$Auth$httpsIdDecoder,
+            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$ProbeService)
           )
         )
       )
     )
   );
-  var $author$project$IIIF$Auth$discoverAuthServices = function(root) {
+  var $rism_digital$elm_iiif$IIIF$Auth$discoverAuthServices = function(root) {
     var discover = F3(
       function(pending, reversedProbes, reversedUnsupported) {
         discover:
@@ -18295,10 +18295,10 @@
                 reversedUnsupported = $temp$reversedUnsupported;
                 continue discover;
               } else {
-                var _v2 = A2($elm$json$Json$Decode$decodeValue, $author$project$IIIF$Auth$typeDecoder, current);
+                var _v2 = A2($elm$json$Json$Decode$decodeValue, $rism_digital$elm_iiif$IIIF$Auth$typeDecoder, current);
                 if (_v2.$ === "Ok") {
                   if (_v2.a === "AuthProbeService2") {
-                    var _v3 = A2($elm$json$Json$Decode$decodeValue, $author$project$IIIF$Auth$probeServiceDecoder, current);
+                    var _v3 = A2($elm$json$Json$Decode$decodeValue, $rism_digital$elm_iiif$IIIF$Auth$probeServiceDecoder, current);
                     if (_v3.$ === "Ok") {
                       var probe = _v3.a;
                       var $temp$pending = remaining, $temp$reversedProbes = A2($elm$core$List$cons, probe, reversedProbes), $temp$reversedUnsupported = reversedUnsupported;
@@ -18318,7 +18318,7 @@
                       A2(
                         $elm$json$Json$Decode$field,
                         "service",
-                        $author$project$IIIF$Auth$objectOrList($elm$json$Json$Decode$value)
+                        $rism_digital$elm_iiif$IIIF$Auth$objectOrList($elm$json$Json$Decode$value)
                       ),
                       current
                     );
@@ -18343,7 +18343,7 @@
                     A2(
                       $elm$json$Json$Decode$field,
                       "service",
-                      $author$project$IIIF$Auth$objectOrList($elm$json$Json$Decode$value)
+                      $rism_digital$elm_iiif$IIIF$Auth$objectOrList($elm$json$Json$Decode$value)
                     ),
                     current
                   );
@@ -18376,10 +18376,10 @@
       _List_Nil
     );
   };
-  var $author$project$IIIF$Auth$authServicesDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Auth$authServicesDecoder = A2(
     $elm$json$Json$Decode$andThen,
     function(root) {
-      var _v0 = $author$project$IIIF$Auth$discoverAuthServices(root);
+      var _v0 = $rism_digital$elm_iiif$IIIF$Auth$discoverAuthServices(root);
       if (_v0.$ === "Ok") {
         var discovery = _v0.a;
         return $elm$json$Json$Decode$succeed(discovery);
@@ -18425,14 +18425,14 @@
   };
   var $author$project$Model$iiifImageToPageImage = F3(
     function(language, allImages, image) {
-      var tileSource = $author$project$IIIF$Image$createImageAddress(image.id);
+      var tileSource = $rism_digital$elm_iiif$IIIF$Image$createImageAddress(image.id);
       var thumbUrl = $author$project$Model$thumbnailUrlForImage(image);
       var label = A2(
         $elm$core$Maybe$withDefault,
         "Image",
         A2(
           $elm$core$Maybe$map,
-          $author$project$IIIF$Language$extractLabelFromLanguageMap(language),
+          $rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap(language),
           image.label
         )
       );
@@ -18441,7 +18441,7 @@
         A2(
           $author$project$Utilities$find,
           function(img) {
-            return _Utils_eq(img.imageType, $author$project$IIIF$Presentation$PrimaryImage);
+            return _Utils_eq(img.imageType, $rism_digital$elm_iiif$IIIF$Presentation$PrimaryImage);
           },
           allImages
         )
@@ -18450,12 +18450,12 @@
         $elm$core$Maybe$Just(image),
         $elm$core$List$head(allImages)
       );
-      var isPrimary = _Utils_eq(image.imageType, $author$project$IIIF$Presentation$PrimaryImage) || isPrimaryImage && isFirst;
+      var isPrimary = _Utils_eq(image.imageType, $rism_digital$elm_iiif$IIIF$Presentation$PrimaryImage) || isPrimaryImage && isFirst;
       return {
         auth: (function() {
           var _v0 = A2(
             $elm$json$Json$Decode$decodeValue,
-            $author$project$IIIF$Auth$authServicesDecoder,
+            $rism_digital$elm_iiif$IIIF$Auth$authServicesDecoder,
             A2($elm$json$Json$Encode$list, $elm$core$Basics$identity, image.serviceObjects)
           );
           if (_v0.$ === "Ok") {
@@ -18491,11 +18491,11 @@
         var thumbUrl = A2($author$project$Model$canvasThumbnailUrl, images, canvas);
         return $elm$core$Maybe$Just(
           {
-            aspect: $author$project$IIIF$Presentation$canvasAspect(canvas),
+            aspect: $rism_digital$elm_iiif$IIIF$Presentation$canvasAspect(canvas),
             canvasId: canvas.id,
             height: canvas.height,
             images,
-            label: $author$project$IIIF$Presentation$canvasLabel(canvas),
+            label: $rism_digital$elm_iiif$IIIF$Presentation$canvasLabel(canvas),
             thumbUrl,
             width: canvas.width
           }
@@ -18503,18 +18503,18 @@
       }
     }
   );
-  var $author$project$IIIF$Presentation$toManifest = function(_v0) {
+  var $rism_digital$elm_iiif$IIIF$Presentation$toManifest = function(_v0) {
     var iiifManifest = _v0.b;
     return iiifManifest;
   };
-  var $author$project$IIIF$Presentation$withManifest = F2(
+  var $rism_digital$elm_iiif$IIIF$Presentation$withManifest = F2(
     function(accessor, manifest) {
       return accessor(
-        $author$project$IIIF$Presentation$toManifest(manifest)
+        $rism_digital$elm_iiif$IIIF$Presentation$toManifest(manifest)
       );
     }
   );
-  var $author$project$IIIF$Presentation$toCanvases = $author$project$IIIF$Presentation$withManifest(
+  var $rism_digital$elm_iiif$IIIF$Presentation$toCanvases = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
     function($) {
       return $.canvases;
     }
@@ -18524,11 +18524,11 @@
       return A2(
         $elm$core$List$filterMap,
         $author$project$Model$canvasToPage(language),
-        $author$project$IIIF$Presentation$toCanvases(iiifManifest)
+        $rism_digital$elm_iiif$IIIF$Presentation$toCanvases(iiifManifest)
       );
     }
   );
-  var $author$project$IIIF$Presentation$manifestViewingLayout = $author$project$IIIF$Presentation$withManifest(
+  var $rism_digital$elm_iiif$IIIF$Presentation$manifestViewingLayout = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
     function($) {
       return $.viewingLayout;
     }
@@ -18716,17 +18716,17 @@
       }
     }
   );
-  var $author$project$IIIF$Presentation$toHomepage = $author$project$IIIF$Presentation$withManifest(
+  var $rism_digital$elm_iiif$IIIF$Presentation$toHomepage = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
     function($) {
       return $.homepage;
     }
   );
-  var $author$project$IIIF$Presentation$toMetadata = $author$project$IIIF$Presentation$withManifest(
+  var $rism_digital$elm_iiif$IIIF$Presentation$toMetadata = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
     function($) {
       return $.metadata;
     }
   );
-  var $author$project$IIIF$Presentation$toRanges = $author$project$IIIF$Presentation$withManifest(
+  var $rism_digital$elm_iiif$IIIF$Presentation$toRanges = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
     function($) {
       return $.ranges;
     }
@@ -18736,7 +18736,7 @@
       switch (requested.$) {
         case "SidebarMetadata":
           var hasMetadata = !$elm$core$List$isEmpty(
-            $author$project$IIIF$Presentation$toMetadata(manifest)
+            $rism_digital$elm_iiif$IIIF$Presentation$toMetadata(manifest)
           );
           var hasHomepage = A2(
             $elm$core$Maybe$withDefault,
@@ -18744,7 +18744,7 @@
             A2(
               $elm$core$Maybe$map,
               A2($elm$core$Basics$composeR, $elm$core$List$isEmpty, $elm$core$Basics$not),
-              $author$project$IIIF$Presentation$toHomepage(manifest)
+              $rism_digital$elm_iiif$IIIF$Presentation$toHomepage(manifest)
             )
           );
           return hasMetadata || hasHomepage ? $author$project$Model$SidebarMetadata : $author$project$Model$SidebarThumbnails;
@@ -18755,7 +18755,7 @@
             A2(
               $elm$core$Maybe$map,
               A2($elm$core$Basics$composeR, $elm$core$List$isEmpty, $elm$core$Basics$not),
-              $author$project$IIIF$Presentation$toRanges(manifest)
+              $rism_digital$elm_iiif$IIIF$Presentation$toRanges(manifest)
             )
           ) ? $author$project$Model$SidebarContents : $author$project$Model$SidebarThumbnails;
         default:
@@ -18763,7 +18763,7 @@
       }
     }
   );
-  var $author$project$IIIF$Presentation$toViewingDirection = $author$project$IIIF$Presentation$withManifest(
+  var $rism_digital$elm_iiif$IIIF$Presentation$toViewingDirection = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
     function($) {
       return $.viewingDirection;
     }
@@ -18783,7 +18783,7 @@
   var $author$project$Main$zoomLevelUpdated = _Platform_outgoingPort("zoomLevelUpdated", $elm$json$Json$Encode$float);
   var $author$project$Main$handleManifestLoaded = F3(
     function(initialPage, model, manifest) {
-      var viewingDirection = $author$project$IIIF$Presentation$toViewingDirection(manifest);
+      var viewingDirection = $rism_digital$elm_iiif$IIIF$Presentation$toViewingDirection(manifest);
       var pages = A2($author$project$Model$manifestToPages, model.detectedLanguage, manifest);
       var tileSources = A2(
         $elm$core$List$filterMap,
@@ -18798,8 +18798,8 @@
         ),
         pages
       );
-      var pagedLayout = $author$project$IIIF$Presentation$isPagedLayout(
-        $author$project$IIIF$Presentation$manifestViewingLayout(manifest)
+      var pagedLayout = $rism_digital$elm_iiif$IIIF$Presentation$isPagedLayout(
+        $rism_digital$elm_iiif$IIIF$Presentation$manifestViewingLayout(manifest)
       );
       var pageAspects = A2(
         $elm$core$List$map,
@@ -18809,7 +18809,7 @@
         pages
       );
       var isSingleCanvas = $elm$core$List$length(pages) === 1;
-      var shiftByOne = isSingleCanvas ? false : pagedLayout || _Utils_eq(viewingDirection, $author$project$IIIF$Presentation$RightToLeft);
+      var shiftByOne = isSingleCanvas ? false : pagedLayout || _Utils_eq(viewingDirection, $rism_digital$elm_iiif$IIIF$Presentation$RightToLeft);
       var viewMode = isSingleCanvas ? $author$project$Model$OneUp : pagedLayout ? $author$project$Model$TwoUp : $author$project$Model$OneUp;
       var layoutMode = A2($author$project$Main$layoutModeToString, viewMode, shiftByOne);
       var initialPageIndex = A2($author$project$Main$resolveInitialPageIndex, initialPage, pages);
@@ -18822,7 +18822,7 @@
               return _Utils_Tuple2(canvas.id, index);
             }
           ),
-          $author$project$IIIF$Presentation$toCanvases(manifest)
+          $rism_digital$elm_iiif$IIIF$Presentation$toCanvases(manifest)
         )
       );
       var rangeIndexMap = A2(
@@ -18831,7 +18831,7 @@
         A2(
           $elm$core$Maybe$map,
           $author$project$Main$buildRangeIndexMap(canvasIndexMap),
-          $author$project$IIIF$Presentation$toRanges(manifest)
+          $rism_digital$elm_iiif$IIIF$Presentation$toRanges(manifest)
         )
       );
       var availableSidebarPanel = A2($author$project$Main$sidebarPanelForManifest, manifest, model.sidebarPanel);
@@ -19148,7 +19148,7 @@
                       $elm$core$List$reverse(
                         A2(
                           $elm$core$List$cons,
-                          $author$project$IIIF$Presentation$NestedCollection(updatedChild),
+                          $rism_digital$elm_iiif$IIIF$Presentation$NestedCollection(updatedChild),
                           frame.beforeRev
                         )
                       ),
@@ -19175,7 +19175,7 @@
               {
                 beforeRev: A2(
                   $elm$core$List$cons,
-                  $author$project$IIIF$Presentation$NestedCollection(updatedChild),
+                  $rism_digital$elm_iiif$IIIF$Presentation$NestedCollection(updatedChild),
                   frame.beforeRev
                 ),
                 collection: frame.collection,
@@ -19242,49 +19242,49 @@
       );
     }
   );
-  var $author$project$IIIF$Internal$CoreDecoders$contextListDecoder = function(contextValues) {
+  var $rism_digital$elm_iiif$IIIF$Internal$CoreDecoders$contextListDecoder = function(contextValues) {
     return A2(
       $elm$core$List$any,
-      $author$project$IIIF$Internal$Contexts$contextMatches($author$project$IIIF$Internal$Contexts$iiifV3PresentationContextString),
+      $rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches($rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV3PresentationContextString),
       contextValues
     ) ? A2(
       $elm$json$Json$Decode$map,
-      $author$project$IIIF$Presentation$IIIFManifest($author$project$IIIF$Version$IIIFV3),
-      $author$project$IIIF$Internal$V3PresentationDecoders$v3iiifManifestDecoder
+      $rism_digital$elm_iiif$IIIF$Presentation$IIIFManifest($rism_digital$elm_iiif$IIIF$Version$IIIFV3),
+      $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3iiifManifestDecoder
     ) : A2(
       $elm$core$List$any,
-      $author$project$IIIF$Internal$Contexts$contextMatches($author$project$IIIF$Internal$Contexts$iiifV2PresentationContextString),
+      $rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches($rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV2PresentationContextString),
       contextValues
     ) ? A2(
       $elm$json$Json$Decode$map,
-      $author$project$IIIF$Presentation$IIIFManifest($author$project$IIIF$Version$IIIFV2),
-      $author$project$IIIF$Internal$V2PresentationDecoders$v2iiifManifestDecoder
+      $rism_digital$elm_iiif$IIIF$Presentation$IIIFManifest($rism_digital$elm_iiif$IIIF$Version$IIIFV2),
+      $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2iiifManifestDecoder
     ) : $elm$json$Json$Decode$fail(
       "Unknown IIIF Version in context values: " + A2($elm$core$String$join, ", ", contextValues)
     );
   };
-  var $author$project$IIIF$Internal$CoreDecoders$contextStringDecoder = function(contextValue) {
-    return A2($author$project$IIIF$Internal$Contexts$contextMatches, $author$project$IIIF$Internal$Contexts$iiifV3PresentationContextString, contextValue) ? A2(
+  var $rism_digital$elm_iiif$IIIF$Internal$CoreDecoders$contextStringDecoder = function(contextValue) {
+    return A2($rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches, $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV3PresentationContextString, contextValue) ? A2(
       $elm$json$Json$Decode$map,
-      $author$project$IIIF$Presentation$IIIFManifest($author$project$IIIF$Version$IIIFV3),
-      $author$project$IIIF$Internal$V3PresentationDecoders$v3iiifManifestDecoder
-    ) : A2($author$project$IIIF$Internal$Contexts$contextMatches, $author$project$IIIF$Internal$Contexts$iiifV2PresentationContextString, contextValue) ? A2(
+      $rism_digital$elm_iiif$IIIF$Presentation$IIIFManifest($rism_digital$elm_iiif$IIIF$Version$IIIFV3),
+      $rism_digital$elm_iiif$IIIF$Internal$V3PresentationDecoders$v3iiifManifestDecoder
+    ) : A2($rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches, $rism_digital$elm_iiif$IIIF$Internal$Contexts$iiifV2PresentationContextString, contextValue) ? A2(
       $elm$json$Json$Decode$map,
-      $author$project$IIIF$Presentation$IIIFManifest($author$project$IIIF$Version$IIIFV2),
-      $author$project$IIIF$Internal$V2PresentationDecoders$v2iiifManifestDecoder
+      $rism_digital$elm_iiif$IIIF$Presentation$IIIFManifest($rism_digital$elm_iiif$IIIF$Version$IIIFV2),
+      $rism_digital$elm_iiif$IIIF$Internal$V2PresentationDecoders$v2iiifManifestDecoder
     ) : $elm$json$Json$Decode$fail("Unknown IIIF Version: " + contextValue);
   };
-  var $author$project$IIIF$Decoders$manifestDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Decoders$manifestDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
         A2(
           $elm$json$Json$Decode$andThen,
-          $author$project$IIIF$Internal$CoreDecoders$contextStringDecoder,
+          $rism_digital$elm_iiif$IIIF$Internal$CoreDecoders$contextStringDecoder,
           A2($elm$json$Json$Decode$field, "@context", $elm$json$Json$Decode$string)
         ),
         A2(
           $elm$json$Json$Decode$andThen,
-          $author$project$IIIF$Internal$CoreDecoders$contextListDecoder,
+          $rism_digital$elm_iiif$IIIF$Internal$CoreDecoders$contextListDecoder,
           A2(
             $elm$json$Json$Decode$field,
             "@context",
@@ -19294,12 +19294,12 @@
       ]
     )
   );
-  var $author$project$IIIF$requestManifest = F3(
+  var $rism_digital$elm_iiif$IIIF$requestManifest = F3(
     function(responseMsg, acceptHeaders, manifest) {
       return A3(
-        $author$project$IIIF$Internal$Request$request,
+        $rism_digital$elm_iiif$IIIF$Internal$Request$request,
         acceptHeaders,
-        A2($elm$http$Http$expectJson, responseMsg, $author$project$IIIF$Decoders$manifestDecoder),
+        A2($elm$http$Http$expectJson, responseMsg, $rism_digital$elm_iiif$IIIF$Decoders$manifestDecoder),
         manifest
       );
     }
@@ -20294,14 +20294,14 @@
       A2(
         $elm$core$List$filter,
         function(access) {
-          return _Utils_eq(access.profile, $author$project$IIIF$Auth$External);
+          return _Utils_eq(access.profile, $rism_digital$elm_iiif$IIIF$Auth$External);
         },
         probe.services
       ),
       A2(
         $elm$core$List$filter,
         function(access) {
-          return _Utils_eq(access.profile, $author$project$IIIF$Auth$Active);
+          return _Utils_eq(access.profile, $rism_digital$elm_iiif$IIIF$Auth$Active);
         },
         probe.services
       )
@@ -20387,7 +20387,7 @@
       A2(
         $elm$core$List$filter,
         function(access2) {
-          return _Utils_eq(access2.profile, $author$project$IIIF$Auth$Kiosk);
+          return _Utils_eq(access2.profile, $rism_digital$elm_iiif$IIIF$Auth$Kiosk);
         },
         accesses
       )
@@ -20547,7 +20547,7 @@
       var _v0 = A2($elm$json$Json$Decode$decodeString, $elm$json$Json$Decode$value, body);
       if (_v0.$ === "Ok") {
         var raw = _v0.a;
-        var _v1 = A2($elm$json$Json$Decode$decodeValue, $author$project$IIIF$Auth$authServicesDecoder, raw);
+        var _v1 = A2($elm$json$Json$Decode$decodeValue, $rism_digital$elm_iiif$IIIF$Auth$authServicesDecoder, raw);
         if (_v1.$ === "Ok") {
           var discovery = _v1.a;
           return $elm$core$List$isEmpty(discovery.probes) && $elm$core$List$isEmpty(discovery.unsupportedServiceTypes) ? status >= 200 && status < 300 ? A4(
@@ -20773,20 +20773,20 @@
   var $author$project$Auth$probeError = function(status) {
     return "Access was not granted (" + ($elm$core$String$fromInt(status) + ").");
   };
-  var $author$project$IIIF$Auth$httpStatusDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Auth$httpStatusDecoder = A2(
     $elm$json$Json$Decode$andThen,
     function(status) {
       return status >= 100 && status <= 599 ? $elm$json$Json$Decode$succeed(status) : $elm$json$Json$Decode$fail("Expected an HTTP status code between 100 and 599");
     },
     $elm$json$Json$Decode$int
   );
-  var $author$project$IIIF$Auth$ProbeResult = F7(
+  var $rism_digital$elm_iiif$IIIF$Auth$ProbeResult = F7(
     function(context, type_, status, substitutes, heading, note, location2) {
       return { context, heading, location: location2, note, status, substitutes, type_ };
     }
   );
-  var $author$project$IIIF$Auth$authContext = "http://iiif.io/api/auth/2/context.json";
-  var $author$project$IIIF$Auth$contextDecoder = $elm$json$Json$Decode$oneOf(
+  var $rism_digital$elm_iiif$IIIF$Auth$authContext = "http://iiif.io/api/auth/2/context.json";
+  var $rism_digital$elm_iiif$IIIF$Auth$contextDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
         A2($elm$json$Json$Decode$field, "@context", $elm$json$Json$Decode$string),
@@ -20794,20 +20794,20 @@
       ]
     )
   );
-  var $author$project$IIIF$Auth$authContextDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Auth$authContextDecoder = A2(
     $elm$json$Json$Decode$andThen,
     function(actual) {
-      return A2($author$project$IIIF$Internal$Contexts$contextMatches, $author$project$IIIF$Auth$authContext, actual) ? $elm$json$Json$Decode$succeed(actual) : $elm$json$Json$Decode$fail("Expected " + ($author$project$IIIF$Auth$authContext + (" but got " + actual)));
+      return A2($rism_digital$elm_iiif$IIIF$Internal$Contexts$contextMatches, $rism_digital$elm_iiif$IIIF$Auth$authContext, actual) ? $elm$json$Json$Decode$succeed(actual) : $elm$json$Json$Decode$fail("Expected " + ($rism_digital$elm_iiif$IIIF$Auth$authContext + (" but got " + actual)));
     },
-    $author$project$IIIF$Auth$contextDecoder
+    $rism_digital$elm_iiif$IIIF$Auth$contextDecoder
   );
-  var $author$project$IIIF$Auth$ProbeLocation = F2(
+  var $rism_digital$elm_iiif$IIIF$Auth$ProbeLocation = F2(
     function(id, type_) {
       return { id, type_ };
     }
   );
-  var $author$project$IIIF$Auth$probeLocationDecoder = A3($elm$json$Json$Decode$map2, $author$project$IIIF$Auth$ProbeLocation, $author$project$IIIF$Auth$idDecoder, $author$project$IIIF$Auth$typeDecoder);
-  var $author$project$IIIF$Auth$statusDependentOptional = F3(
+  var $rism_digital$elm_iiif$IIIF$Auth$probeLocationDecoder = A3($elm$json$Json$Decode$map2, $rism_digital$elm_iiif$IIIF$Auth$ProbeLocation, $rism_digital$elm_iiif$IIIF$Auth$idDecoder, $rism_digital$elm_iiif$IIIF$Auth$typeDecoder);
+  var $rism_digital$elm_iiif$IIIF$Auth$statusDependentOptional = F3(
     function(fieldName, allowed, decoder) {
       return A2(
         $elm$json$Json$Decode$andThen,
@@ -20843,38 +20843,38 @@
       );
     }
   );
-  var $author$project$IIIF$Auth$probeResultForStatusDecoder = function(status) {
+  var $rism_digital$elm_iiif$IIIF$Auth$probeResultForStatusDecoder = function(status) {
     return A2(
-      $author$project$IIIF$Internal$Utilities$custom,
-      A3($author$project$IIIF$Auth$statusDependentOptional, "location", status >= 300 && status <= 399, $author$project$IIIF$Auth$probeLocationDecoder),
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+      A3($rism_digital$elm_iiif$IIIF$Auth$statusDependentOptional, "location", status >= 300 && status <= 399, $rism_digital$elm_iiif$IIIF$Auth$probeLocationDecoder),
       A2(
-        $author$project$IIIF$Internal$Utilities$custom,
-        A2($author$project$IIIF$Auth$optionalStrict, "note", $author$project$IIIF$Language$languageMapLabelDecoder),
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+        A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "note", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
         A2(
-          $author$project$IIIF$Internal$Utilities$custom,
-          A2($author$project$IIIF$Auth$optionalStrict, "heading", $author$project$IIIF$Language$languageMapLabelDecoder),
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+          A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "heading", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
           A2(
-            $author$project$IIIF$Internal$Utilities$custom,
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
             A2(
               $elm$json$Json$Decode$map,
               $elm$core$Maybe$withDefault(_List_Nil),
               A3(
-                $author$project$IIIF$Auth$statusDependentOptional,
+                $rism_digital$elm_iiif$IIIF$Auth$statusDependentOptional,
                 "substitute",
                 status === 401 || status === 403,
-                $author$project$IIIF$Auth$objectOrList($elm$json$Json$Decode$value)
+                $rism_digital$elm_iiif$IIIF$Auth$objectOrList($elm$json$Json$Decode$value)
               )
             ),
             A2(
-              $author$project$IIIF$Internal$Utilities$custom,
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
               $elm$json$Json$Decode$succeed(status),
               A2(
-                $author$project$IIIF$Internal$Utilities$custom,
-                $author$project$IIIF$Auth$authTypeDecoder("AuthProbeResult2"),
+                $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+                $rism_digital$elm_iiif$IIIF$Auth$authTypeDecoder("AuthProbeResult2"),
                 A2(
-                  $author$project$IIIF$Internal$Utilities$custom,
-                  $author$project$IIIF$Auth$authContextDecoder,
-                  $elm$json$Json$Decode$succeed($author$project$IIIF$Auth$ProbeResult)
+                  $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+                  $rism_digital$elm_iiif$IIIF$Auth$authContextDecoder,
+                  $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$ProbeResult)
                 )
               )
             )
@@ -20883,14 +20883,14 @@
       )
     );
   };
-  var $author$project$IIIF$Auth$probeResultDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Auth$probeResultDecoder = A2(
     $elm$json$Json$Decode$andThen,
-    $author$project$IIIF$Auth$probeResultForStatusDecoder,
-    A2($elm$json$Json$Decode$field, "status", $author$project$IIIF$Auth$httpStatusDecoder)
+    $rism_digital$elm_iiif$IIIF$Auth$probeResultForStatusDecoder,
+    A2($elm$json$Json$Decode$field, "status", $rism_digital$elm_iiif$IIIF$Auth$httpStatusDecoder)
   );
   var $author$project$Auth$handleProbe = F4(
     function(flowId, token, body, model) {
-      var _v0 = A2($elm$json$Json$Decode$decodeString, $author$project$IIIF$Auth$probeResultDecoder, body);
+      var _v0 = A2($elm$json$Json$Decode$decodeString, $rism_digital$elm_iiif$IIIF$Auth$probeResultDecoder, body);
       if (_v0.$ === "Ok") {
         var result = _v0.a;
         if (!_Utils_eq(result.location, $elm$core$Maybe$Nothing) || !$elm$core$List$isEmpty(result.substitutes)) {
@@ -21391,95 +21391,95 @@
       return { $: "WriteToken", a, b, c, d };
     }
   );
-  var $author$project$IIIF$Auth$AccessToken = F5(
+  var $rism_digital$elm_iiif$IIIF$Auth$AccessToken = F5(
     function(context, type_, accessToken, expiresIn, messageId) {
       return { accessToken, context, expiresIn, messageId, type_ };
     }
   );
-  var $author$project$IIIF$Auth$positiveIntDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Auth$positiveIntDecoder = A2(
     $elm$json$Json$Decode$andThen,
     function(number) {
       return number > 0 ? $elm$json$Json$Decode$succeed(number) : $elm$json$Json$Decode$fail("Expected a positive integer");
     },
     $elm$json$Json$Decode$int
   );
-  var $author$project$IIIF$Auth$accessTokenDecoder = A3(
-    $author$project$IIIF$Internal$Utilities$required,
+  var $rism_digital$elm_iiif$IIIF$Auth$accessTokenDecoder = A3(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
     "messageId",
     $elm$json$Json$Decode$string,
     A2(
-      $author$project$IIIF$Internal$Utilities$custom,
-      A2($author$project$IIIF$Auth$optionalStrict, "expiresIn", $author$project$IIIF$Auth$positiveIntDecoder),
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+      A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "expiresIn", $rism_digital$elm_iiif$IIIF$Auth$positiveIntDecoder),
       A3(
-        $author$project$IIIF$Internal$Utilities$required,
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
         "accessToken",
         $elm$json$Json$Decode$string,
         A2(
-          $author$project$IIIF$Internal$Utilities$custom,
-          $author$project$IIIF$Auth$authTypeDecoder("AuthAccessToken2"),
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+          $rism_digital$elm_iiif$IIIF$Auth$authTypeDecoder("AuthAccessToken2"),
           A2(
-            $author$project$IIIF$Internal$Utilities$custom,
-            $author$project$IIIF$Auth$authContextDecoder,
-            $elm$json$Json$Decode$succeed($author$project$IIIF$Auth$AccessToken)
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+            $rism_digital$elm_iiif$IIIF$Auth$authContextDecoder,
+            $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$AccessToken)
           )
         )
       )
     )
   );
-  var $author$project$IIIF$Auth$TokenError = F6(
+  var $rism_digital$elm_iiif$IIIF$Auth$TokenError = F6(
     function(context, type_, profile, heading, note, messageId) {
       return { context, heading, messageId, note, profile, type_ };
     }
   );
-  var $author$project$IIIF$Auth$ExpiredAspect = { $: "ExpiredAspect" };
-  var $author$project$IIIF$Auth$InvalidAspect = { $: "InvalidAspect" };
-  var $author$project$IIIF$Auth$InvalidOrigin = { $: "InvalidOrigin" };
-  var $author$project$IIIF$Auth$InvalidRequest = { $: "InvalidRequest" };
-  var $author$project$IIIF$Auth$MissingAspect = { $: "MissingAspect" };
-  var $author$project$IIIF$Auth$Unavailable = { $: "Unavailable" };
-  var $author$project$IIIF$Auth$tokenErrorProfileDecoder = A2(
+  var $rism_digital$elm_iiif$IIIF$Auth$ExpiredAspect = { $: "ExpiredAspect" };
+  var $rism_digital$elm_iiif$IIIF$Auth$InvalidAspect = { $: "InvalidAspect" };
+  var $rism_digital$elm_iiif$IIIF$Auth$InvalidOrigin = { $: "InvalidOrigin" };
+  var $rism_digital$elm_iiif$IIIF$Auth$InvalidRequest = { $: "InvalidRequest" };
+  var $rism_digital$elm_iiif$IIIF$Auth$MissingAspect = { $: "MissingAspect" };
+  var $rism_digital$elm_iiif$IIIF$Auth$Unavailable = { $: "Unavailable" };
+  var $rism_digital$elm_iiif$IIIF$Auth$tokenErrorProfileDecoder = A2(
     $elm$json$Json$Decode$andThen,
     function(profile) {
       switch (profile) {
         case "expiredAspect":
-          return $elm$json$Json$Decode$succeed($author$project$IIIF$Auth$ExpiredAspect);
+          return $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$ExpiredAspect);
         case "invalidAspect":
-          return $elm$json$Json$Decode$succeed($author$project$IIIF$Auth$InvalidAspect);
+          return $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$InvalidAspect);
         case "invalidOrigin":
-          return $elm$json$Json$Decode$succeed($author$project$IIIF$Auth$InvalidOrigin);
+          return $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$InvalidOrigin);
         case "invalidRequest":
-          return $elm$json$Json$Decode$succeed($author$project$IIIF$Auth$InvalidRequest);
+          return $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$InvalidRequest);
         case "missingAspect":
-          return $elm$json$Json$Decode$succeed($author$project$IIIF$Auth$MissingAspect);
+          return $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$MissingAspect);
         case "unavailable":
-          return $elm$json$Json$Decode$succeed($author$project$IIIF$Auth$Unavailable);
+          return $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$Unavailable);
         default:
           return $elm$json$Json$Decode$fail("Unsupported Auth 2 token error profile: " + profile);
       }
     },
     $elm$json$Json$Decode$string
   );
-  var $author$project$IIIF$Auth$tokenErrorDecoder = A3(
-    $author$project$IIIF$Internal$Utilities$required,
+  var $rism_digital$elm_iiif$IIIF$Auth$tokenErrorDecoder = A3(
+    $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
     "messageId",
     $elm$json$Json$Decode$string,
     A2(
-      $author$project$IIIF$Internal$Utilities$custom,
-      A2($author$project$IIIF$Auth$optionalStrict, "note", $author$project$IIIF$Language$languageMapLabelDecoder),
+      $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+      A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "note", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
       A2(
-        $author$project$IIIF$Internal$Utilities$custom,
-        A2($author$project$IIIF$Auth$optionalStrict, "heading", $author$project$IIIF$Language$languageMapLabelDecoder),
+        $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+        A2($rism_digital$elm_iiif$IIIF$Auth$optionalStrict, "heading", $rism_digital$elm_iiif$IIIF$Language$languageMapLabelDecoder),
         A3(
-          $author$project$IIIF$Internal$Utilities$required,
+          $rism_digital$elm_iiif$IIIF$Internal$Utilities$required,
           "profile",
-          $author$project$IIIF$Auth$tokenErrorProfileDecoder,
+          $rism_digital$elm_iiif$IIIF$Auth$tokenErrorProfileDecoder,
           A2(
-            $author$project$IIIF$Internal$Utilities$custom,
-            $author$project$IIIF$Auth$authTypeDecoder("AuthAccessTokenError2"),
+            $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+            $rism_digital$elm_iiif$IIIF$Auth$authTypeDecoder("AuthAccessTokenError2"),
             A2(
-              $author$project$IIIF$Internal$Utilities$custom,
-              $author$project$IIIF$Auth$authContextDecoder,
-              $elm$json$Json$Decode$succeed($author$project$IIIF$Auth$TokenError)
+              $rism_digital$elm_iiif$IIIF$Internal$Utilities$custom,
+              $rism_digital$elm_iiif$IIIF$Auth$authContextDecoder,
+              $elm$json$Json$Decode$succeed($rism_digital$elm_iiif$IIIF$Auth$TokenError)
             )
           )
         )
@@ -21491,7 +21491,7 @@
       var _v0 = A2($elm$core$Dict$get, flowId, model.flows);
       if (_v0.$ === "Just") {
         var flow = _v0.a;
-        var _v1 = A2($elm$json$Json$Decode$decodeValue, $author$project$IIIF$Auth$accessTokenDecoder, value);
+        var _v1 = A2($elm$json$Json$Decode$decodeValue, $rism_digital$elm_iiif$IIIF$Auth$accessTokenDecoder, value);
         if (_v1.$ === "Ok") {
           var token = _v1.a;
           var expiresAt = now + A2($elm$core$Maybe$withDefault, 300, token.expiresIn) * 1e3;
@@ -21544,7 +21544,7 @@
           );
         } else {
           var tokenDecodeError = _v1.a;
-          var _v3 = A2($elm$json$Json$Decode$decodeValue, $author$project$IIIF$Auth$tokenErrorDecoder, value);
+          var _v3 = A2($elm$json$Json$Decode$decodeValue, $rism_digital$elm_iiif$IIIF$Auth$tokenErrorDecoder, value);
           if (_v3.$ === "Ok") {
             return A2(
               $author$project$Auth$addEffects,
@@ -21843,7 +21843,7 @@
               }
             ),
             A3(
-              $author$project$IIIF$requestResource,
+              $rism_digital$elm_iiif$IIIF$requestResource,
               A2($author$project$Msg$ServerRespondedWithRequestedResource, requestId, url),
               model.acceptHeaders,
               url
@@ -21891,7 +21891,7 @@
                 var nextState = _Utils_update(
                   collectionState,
                   {
-                    collection: A2($author$project$IIIF$Presentation$IIIFCollection, rootVersion, nextCollection),
+                    collection: A2($rism_digital$elm_iiif$IIIF$Presentation$IIIFCollection, rootVersion, nextCollection),
                     loadedCollectionIds: A2($elm$core$Set$insert, collectionId, collectionState.loadedCollectionIds),
                     loadingCollectionIds: nextLoadingIds
                   }
@@ -22030,7 +22030,7 @@
                         pages: _List_Nil,
                         resourceResponse: $author$project$Model$ResourceLoadedCollection(
                           {
-                            collection: A2($author$project$IIIF$Presentation$IIIFCollection, version, collection),
+                            collection: A2($rism_digital$elm_iiif$IIIF$Presentation$IIIFCollection, version, collection),
                             expandedIds: $elm$core$Set$empty,
                             loadedCollectionIds: $elm$core$Set$empty,
                             loadingCollectionIds: $elm$core$Set$empty,
@@ -22145,7 +22145,7 @@
                         pendingPublicResource: $elm$core$Maybe$Nothing,
                         resourceResponse: $author$project$Model$ResourceLoadedCollection(
                           {
-                            collection: A2($author$project$IIIF$Presentation$IIIFCollection, version, collection),
+                            collection: A2($rism_digital$elm_iiif$IIIF$Presentation$IIIFCollection, version, collection),
                             expandedIds: $elm$core$Set$empty,
                             loadedCollectionIds: $elm$core$Set$empty,
                             loadingCollectionIds: $elm$core$Set$empty,
@@ -22296,7 +22296,7 @@
                 }
               ),
               shouldRequest ? A3(
-                $author$project$IIIF$requestResource,
+                $rism_digital$elm_iiif$IIIF$requestResource,
                 $author$project$Msg$ServerRespondedWithCollectionItem(collectionId),
                 model.acceptHeaders,
                 collectionId
@@ -22328,7 +22328,7 @@
                 }
               ),
               A3(
-                $author$project$IIIF$requestManifest,
+                $rism_digital$elm_iiif$IIIF$requestManifest,
                 $author$project$Msg$ServerRespondedWithManifestFromCollection(manifestId),
                 model.acceptHeaders,
                 manifestUrl
@@ -22848,7 +22848,7 @@
         return $elm$core$Maybe$Nothing;
     }
   };
-  var $author$project$IIIF$Presentation$toLabel = $author$project$IIIF$Presentation$withManifest(
+  var $rism_digital$elm_iiif$IIIF$Presentation$toLabel = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
     function($) {
       return $.label;
     }
@@ -22861,9 +22861,9 @@
         $elm$core$Maybe$map,
         function(manifest) {
           return A2(
-            $author$project$IIIF$Language$extractLabelFromLanguageMap,
+            $rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap,
             model.detectedLanguage,
-            $author$project$IIIF$Presentation$toLabel(manifest)
+            $rism_digital$elm_iiif$IIIF$Presentation$toLabel(manifest)
           );
         },
         $author$project$Model$currentManifest(model)
@@ -22873,7 +22873,7 @@
   var $author$project$Auth$prompt = function(model) {
     return model.activePrompt;
   };
-  var $author$project$IIIF$Presentation$toRequiredStatement = $author$project$IIIF$Presentation$withManifest(
+  var $rism_digital$elm_iiif$IIIF$Presentation$toRequiredStatement = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
     function($) {
       return $.requiredStatement;
     }
@@ -22882,11 +22882,11 @@
     return A2(
       $elm$core$Maybe$map,
       function(statement) {
-        return A2($author$project$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, statement.value);
+        return A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, statement.value);
       },
       A2(
         $elm$core$Maybe$andThen,
-        $author$project$IIIF$Presentation$toRequiredStatement,
+        $rism_digital$elm_iiif$IIIF$Presentation$toRequiredStatement,
         $author$project$Model$currentManifest(model)
       )
     );
@@ -22903,7 +22903,7 @@
             fallback,
             A2(
               $elm$core$Maybe$map,
-              $author$project$IIIF$Language$extractLabelFromLanguageMap(model.detectedLanguage),
+              $rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap(model.detectedLanguage),
               value
             )
           );
@@ -23244,7 +23244,7 @@
   );
   var $author$project$View$CollectionExplorer$viewManifestItem = F3(
     function(language, collectionState, manifest) {
-      var labelText = A2($author$project$IIIF$Language$extractLabelFromLanguageMap, language, manifest.label);
+      var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, language, manifest.label);
       var isActive = _Utils_eq(
         collectionState.selectedManifestId,
         $elm$core$Maybe$Just(manifest.id)
@@ -23314,7 +23314,7 @@
   );
   var $author$project$View$CollectionExplorer$viewNestedCollection = F3(
     function(language, collectionState, collection) {
-      var labelText = A2($author$project$IIIF$Language$extractLabelFromLanguageMap, language, collection.label);
+      var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, language, collection.label);
       var isExpanded = A2($elm$core$Set$member, collection.id, collectionState.expandedIds);
       var expandIcon = isExpanded ? "\u25BC" : "\u25B6";
       var childrenView = (function() {
@@ -23394,7 +23394,7 @@
     function(model, collectionState) {
       var _v0 = collectionState.collection;
       var collection = _v0.b;
-      var labelText = A2($author$project$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, collection.label);
+      var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, collection.label);
       return A2(
         $elm$html$Html$div,
         _List_fromArray(
@@ -23452,7 +23452,7 @@
                         _List_fromArray(
                           [
                             $elm$html$Html$text(
-                              A2($author$project$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, summary)
+                              A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, summary)
                             )
                           ]
                         )
@@ -27203,7 +27203,7 @@
       $elm$core$List$member,
       tag,
       _List_fromArray(
-        ["p", "br", "em", "i", "strong", "b", "a", "ul", "ol", "li", "span", "img"]
+        ["div", "p", "br", "em", "i", "strong", "b", "a", "ul", "ol", "li", "dl", "dt", "dd", "span", "img"]
       )
     );
   };
@@ -27453,7 +27453,7 @@
           A2(
             $elm$core$Maybe$map,
             $elm$core$List$length,
-            $author$project$IIIF$Presentation$toRanges(manifest)
+            $rism_digital$elm_iiif$IIIF$Presentation$toRanges(manifest)
           )
         )
       );
@@ -27471,7 +27471,7 @@
       })();
       var canvasCount = $elm$core$String$fromInt(
         $elm$core$List$length(
-          $author$project$IIIF$Presentation$toCanvases(manifest)
+          $rism_digital$elm_iiif$IIIF$Presentation$toCanvases(manifest)
         )
       );
       var _v0 = manifest;
@@ -27482,7 +27482,7 @@
         "None",
         A2(
           $elm$core$Maybe$map,
-          $author$project$IIIF$Language$extractLabelFromLanguageMap(model.detectedLanguage),
+          $rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap(model.detectedLanguage),
           innerManifest.summary
         )
       );
@@ -27586,12 +27586,12 @@
         $elm$core$Maybe$map,
         A2(
           $elm$core$Basics$composeR,
-          $author$project$IIIF$Image$setImageUriSize(
-            $author$project$IIIF$Image$WidthOnlySize(256)
+          $rism_digital$elm_iiif$IIIF$Image$setImageUriSize(
+            $rism_digital$elm_iiif$IIIF$Image$WidthOnlySize(256)
           ),
-          $author$project$IIIF$Image$createImageAddress
+          $rism_digital$elm_iiif$IIIF$Image$createImageAddress
         ),
-        $author$project$IIIF$Image$parseImageAddress(service.id)
+        $rism_digital$elm_iiif$IIIF$Image$parseImageAddress(service.id)
       );
     } else {
       return $elm$core$Maybe$Just(logo.id);
@@ -27610,12 +27610,12 @@
       _VirtualDom_noJavaScriptOrHtmlUri(url)
     );
   };
-  var $author$project$IIIF$Presentation$toLogo = $author$project$IIIF$Presentation$withManifest(
+  var $rism_digital$elm_iiif$IIIF$Presentation$toLogo = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
     function($) {
       return $.logo;
     }
   );
-  var $author$project$IIIF$Presentation$toProvider = $author$project$IIIF$Presentation$withManifest(
+  var $rism_digital$elm_iiif$IIIF$Presentation$toProvider = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
     function($) {
       return $.provider;
     }
@@ -27626,7 +27626,7 @@
         var _v1 = A2(
           $elm$core$Maybe$andThen,
           $elm$core$List$head,
-          $author$project$IIIF$Presentation$toProvider(manifest)
+          $rism_digital$elm_iiif$IIIF$Presentation$toProvider(manifest)
         );
         if (_v1.$ === "Just") {
           var provider = _v1.a;
@@ -27640,7 +27640,7 @@
             A2(
               $elm$core$Maybe$andThen,
               $elm$core$List$head,
-              $author$project$IIIF$Presentation$toHomepage(manifest)
+              $rism_digital$elm_iiif$IIIF$Presentation$toHomepage(manifest)
             )
           );
         }
@@ -27661,13 +27661,13 @@
               },
               A2(
                 $elm$core$Basics$composeR,
-                $author$project$IIIF$Image$setImageUriSize(
-                  $author$project$IIIF$Image$WidthOnlySize(256)
+                $rism_digital$elm_iiif$IIIF$Image$setImageUriSize(
+                  $rism_digital$elm_iiif$IIIF$Image$WidthOnlySize(256)
                 ),
-                $author$project$IIIF$Image$createImageAddress
+                $rism_digital$elm_iiif$IIIF$Image$createImageAddress
               )
             ),
-            $author$project$IIIF$Presentation$toLogo(manifest)
+            $rism_digital$elm_iiif$IIIF$Presentation$toLogo(manifest)
           );
         }
       })();
@@ -27696,7 +27696,7 @@
             A2(
               $author$project$View$Helpers$viewMaybe,
               function(page) {
-                var labelText = A2($author$project$IIIF$Language$extractLabelFromLanguageMap, language, page.label);
+                var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, language, page.label);
                 return A2(
                   $elm$html$Html$a,
                   _List_fromArray(
@@ -29929,9 +29929,9 @@
         $elm$core$Maybe$map,
         function(m) {
           return A2(
-            $author$project$IIIF$Language$extractLabelFromLanguageMap,
+            $rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap,
             model.detectedLanguage,
-            $author$project$IIIF$Presentation$toLabel(m)
+            $rism_digital$elm_iiif$IIIF$Presentation$toLabel(m)
           );
         },
         $author$project$Model$currentManifest(model)
@@ -30191,10 +30191,10 @@
   var $author$project$Msg$UserToggledThumbnails = { $: "UserToggledThumbnails" };
   var $author$project$View$Sidebar$hasManifestMetadata = function(manifest) {
     var hasMetadataEntries = !$elm$core$List$isEmpty(
-      $author$project$IIIF$Presentation$toMetadata(manifest)
+      $rism_digital$elm_iiif$IIIF$Presentation$toMetadata(manifest)
     );
     var hasHomepageEntries = (function() {
-      var _v0 = $author$project$IIIF$Presentation$toHomepage(manifest);
+      var _v0 = $rism_digital$elm_iiif$IIIF$Presentation$toHomepage(manifest);
       if (_v0.$ === "Just") {
         var links = _v0.a;
         return !$elm$core$List$isEmpty(links);
@@ -30329,7 +30329,7 @@
               _List_fromArray(
                 [
                   $elm$html$Html$text(
-                    A2($author$project$IIIF$Language$extractLabelFromLanguageMap, language, entry.label)
+                    A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, language, entry.label)
                   )
                 ]
               )
@@ -30342,7 +30342,7 @@
                 ]
               ),
               $author$project$View$HtmlRenderer$renderHtml(
-                A2($author$project$IIIF$Language$extractLabelFromLanguageMap, language, entry.value)
+                A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, language, entry.value)
               )
             )
           ]
@@ -30409,7 +30409,7 @@
         $elm$core$Maybe$Just(range.id)
       ) ? A2($author$project$View$Sidebar$viewRangeMetadata, model.detectedLanguage, range.metadata) : _List_Nil;
       var maybeIndex = A2($author$project$View$Sidebar$lookupRangeIndex, rangeIndexMap, range.id);
-      var labelText = A2($author$project$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, range.label);
+      var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, range.label);
       var resolvedLabel = $elm$core$String$isEmpty(labelText) ? "[Untitled range]" : labelText;
       var isCurrent = A2(
         $elm$core$Maybe$withDefault,
@@ -30458,7 +30458,7 @@
   );
   var $author$project$View$Sidebar$viewContentsIndexBody = F2(
     function(model, manifest) {
-      var _v0 = $author$project$IIIF$Presentation$toRanges(manifest);
+      var _v0 = $rism_digital$elm_iiif$IIIF$Presentation$toRanges(manifest);
       if (_v0.$ === "Just") {
         var list = _v0.a;
         return $elm$core$List$isEmpty(list) ? $author$project$View$Sidebar$viewContentsEmptyBody : A3($author$project$View$Sidebar$viewRangeList, model, model.rangeIndexMap, list);
@@ -30634,7 +30634,7 @@
     function(model, canvasLabelMap, range) {
       var metadataBlock = A2($author$project$View$Sidebar$viewRangeMetadata, model.detectedLanguage, range.metadata);
       var maybeIndex = A2($author$project$View$Sidebar$lookupRangeIndex, model.rangeIndexMap, range.id);
-      var labelText = A2($author$project$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, range.label);
+      var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, range.label);
       var canvasLabels = A2($author$project$View$Sidebar$rangeCanvasLabels, canvasLabelMap, range);
       var firstLabel = $elm$core$List$head(canvasLabels);
       var lastLabel = $elm$core$List$head(
@@ -30680,7 +30680,7 @@
       var _v0 = $author$project$View$Sidebar$currentCanvasId(model);
       if (_v0.$ === "Just") {
         var canvasId = _v0.a;
-        var _v1 = $author$project$IIIF$Presentation$toRanges(manifest);
+        var _v1 = $rism_digital$elm_iiif$IIIF$Presentation$toRanges(manifest);
         if (_v1.$ === "Just") {
           var list = _v1.a;
           var matches = A2($author$project$View$Sidebar$rangesForCanvas, canvasId, list);
@@ -30693,10 +30693,10 @@
                 function(canvas) {
                   return _Utils_Tuple2(
                     canvas.id,
-                    $author$project$IIIF$Presentation$canvasLabel(canvas)
+                    $rism_digital$elm_iiif$IIIF$Presentation$canvasLabel(canvas)
                   );
                 },
-                $author$project$IIIF$Presentation$toCanvases(manifest)
+                $rism_digital$elm_iiif$IIIF$Presentation$toCanvases(manifest)
               )
             );
             return A2(
@@ -30794,7 +30794,7 @@
               _List_fromArray(
                 [
                   $elm$html$Html$text(
-                    A2($author$project$IIIF$Language$extractLabelFromLanguageMap, language, page.label)
+                    A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, language, page.label)
                   )
                 ]
               )
@@ -30806,7 +30806,7 @@
   );
   var $author$project$View$Sidebar$homepageEntries = F2(
     function(language, manifest) {
-      var _v0 = $author$project$IIIF$Presentation$toHomepage(manifest);
+      var _v0 = $rism_digital$elm_iiif$IIIF$Presentation$toHomepage(manifest);
       if (_v0.$ === "Just") {
         var links = _v0.a;
         return $elm$core$List$isEmpty(links) ? _List_Nil : _List_fromArray(
@@ -30861,7 +30861,7 @@
       return A2(
         $elm$core$List$map,
         $author$project$View$Sidebar$metadataEntry(language),
-        $author$project$IIIF$Presentation$toMetadata(manifest)
+        $rism_digital$elm_iiif$IIIF$Presentation$toMetadata(manifest)
       );
     }
   );
@@ -31300,7 +31300,7 @@
       var viewMode = _v0.viewMode;
       var viewingDirection = _v0.viewingDirection;
       var indexedPages = A2($elm$core$List$indexedMap, $elm$core$Tuple$pair, pages);
-      var orderedPages = _Utils_eq(viewingDirection, $author$project$IIIF$Presentation$RightToLeft) ? A2($author$project$View$Sidebar$reverseInRows, 3, indexedPages) : indexedPages;
+      var orderedPages = _Utils_eq(viewingDirection, $rism_digital$elm_iiif$IIIF$Presentation$RightToLeft) ? A2($author$project$View$Sidebar$reverseInRows, 3, indexedPages) : indexedPages;
       return A2(
         $elm$html$Html$div,
         _List_fromArray(
@@ -31337,8 +31337,8 @@
     function(model, maybeManifest) {
       var viewingDirection = A2(
         $elm$core$Maybe$withDefault,
-        $author$project$IIIF$Presentation$LeftToRight,
-        A2($elm$core$Maybe$map, $author$project$IIIF$Presentation$toViewingDirection, maybeManifest)
+        $rism_digital$elm_iiif$IIIF$Presentation$LeftToRight,
+        A2($elm$core$Maybe$map, $rism_digital$elm_iiif$IIIF$Presentation$toViewingDirection, maybeManifest)
       );
       var thumbnailPages = _Utils_eq(model.resourceResponse, $author$project$Model$ResourceLoading) || _Utils_eq(model.response, $author$project$Model$Loading) ? _List_Nil : model.pages;
       var panelClasses = _List_fromArray(
@@ -31379,7 +31379,7 @@
         A2(
           $elm$core$Maybe$map,
           A2($elm$core$Basics$composeR, $elm$core$List$isEmpty, $elm$core$Basics$not),
-          A2($elm$core$Maybe$andThen, $author$project$IIIF$Presentation$toRanges, maybeManifest)
+          A2($elm$core$Maybe$andThen, $rism_digital$elm_iiif$IIIF$Presentation$toRanges, maybeManifest)
         )
       );
       var contentsTab = hasContents ? _List_fromArray(
@@ -31675,7 +31675,7 @@
           "Log out",
           A2(
             $elm$core$Maybe$map,
-            $author$project$IIIF$Language$extractLabelFromLanguageMap(model.detectedLanguage),
+            $rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap(model.detectedLanguage),
             action.label
           )
         );

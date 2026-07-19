@@ -144,7 +144,7 @@
 .metadata-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0;
 }
 
 .metadata-label {
@@ -153,12 +153,22 @@
   color: var(--diva-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  line-height: 1.3;
 }
 
 .metadata-value {
   font-size: var(--diva-font-lg);
   color: var(--diva-text-muted);
-  line-height: 1.4;
+  line-height: 1.3;
+  padding-left: 12px;
+}
+
+.metadata-value > :first-child {
+  margin-top: 0;
+}
+
+.metadata-value > :last-child {
+  margin-bottom: 0;
 }
 
 .contents-empty {

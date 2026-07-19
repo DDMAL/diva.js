@@ -76,6 +76,29 @@ test.beforeEach(async ({page}, testInfo) => {
     await openHarness(page, testInfo);
 });
 
+test("loads the production IIFE and exposes the ESM entry points", async ({page}, testInfo) => {
+    const osd = (testInfo.project.metadata.osdVersion as string).startsWith("5") ? "5" : "6";
+    await page.goto(`/testing/auth-harness.html?manifest=${encodeURIComponent(`${origin}/api/first/manifest`)}&osd=${osd}&bundle=production`);
+    await page.evaluate(() => (window as any).diva.ready);
+
+    const iife = await page.evaluate(() => ({
+        constructor : typeof (window as any).Diva,
+        ready : (window as any).diva.getState().ready
+    }));
+    expect(iife).toEqual({constructor : "function", ready : true});
+
+    await page.goto("/");
+    const esm = await page.evaluate(async () => {
+        const module = await import("/build/diva.esm.js");
+        return {
+            named : typeof module.Diva,
+            defaultExport : typeof module.default,
+            sameExport : module.Diva === module.default
+        };
+    });
+    expect(esm).toEqual({named : "function", defaultExport : "function", sameExport : true});
+});
+
 test("exposes immutable IIIF page metadata and state", async ({page}) => {
     const result = await page.evaluate(() => {
         const diva = (window as any).diva;

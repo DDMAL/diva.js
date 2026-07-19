@@ -183,8 +183,29 @@
 
 .contents-meta {
   border: 1px solid var(--diva-dark-border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   padding: 8px;
   margin-top: 6px;
+}
+
+.contents-meta dl > div + div {
+  border-top: 1px solid var(--diva-dark-border);
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+}
+
+.contents-meta dt {
+  font-weight: 600;
+}
+
+.contents-meta dd {
+  margin: 0 0 0.5rem 1rem;
+}
+
+.contents-meta dd:last-child {
+  margin-bottom: 0;
 }
 
 .contents-button:hover {
