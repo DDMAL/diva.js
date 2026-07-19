@@ -172,7 +172,7 @@ both versions using local npm packages.
 
 ## Image access and CORS
 
-Diva supports the IIIF Authorization Flow API 2.0 `active` access profile, including optional logout services. Logging out clears the associated local access tokens and re-resolves affected images anonymously. Other Auth 2 profiles and flows—including `kiosk`, `external`, redirects, substitutes, and tiered access—are intentionally unsupported.
+Diva supports the IIIF Authorization Flow API 2.0 `external` and `active` access profiles, including optional logout services. When both profiles are available, Diva first attempts the silent `external` flow and falls back to the interactive `active` flow when external authorization does not provide a usable token. Logging out clears the associated local access tokens and re-resolves affected images anonymously. The `kiosk` profile, redirects, substitutes, and tiered access are intentionally unsupported.
 
 Static image resources must opt into cross-origin access with an appropriate CORS response header. Diva does not use a non-CORS fallback because doing so would break canvas-based image processing and could expose inconsistent behavior. Consequently, [GitHub issue #564](https://github.com/DDMAL/diva.js/issues/564) remains unresolved by policy.
 

@@ -167,7 +167,7 @@ type PublicPageEntry = {
 type TileSourceResolver = (source: TileSourceDescriptor, signal: AbortSignal) => Promise<ResolvedTileSource>;
 
 type ElmPorts = {
-    tileSourcesUpdated: {subscribe: (callback: (update: {tileSources: TileSourceEntry[]; initialPageIndex : number}) => void) => void};
+    tileSourcesUpdated: {subscribe: (callback: (update: {resourceId: string; tileSources : TileSourceEntry[]; initialPageIndex : number}) => void) => void};
     pageAspectsUpdated : {subscribe : (callback: (aspects: number[]) => void) => void};
     pageLabelsUpdated : {subscribe : (callback: (labels: string[]) => void) => void};
     pagesUpdated : {subscribe : (callback: (pages: PublicPageEntry[]) => void) => void};
@@ -288,9 +288,16 @@ export class Diva extends EventTarget
     private readyResolve!: () => void;
     private readyReject!: (error: Error) => void;
     private readySettled = false;
+    private activeResourceRequestId = "initial";
     private resourceSequence = 0;
-    private pendingResource: {id: string; promise : Promise<void>; resolve : () => void; reject : (error: Error) => void}|null = null;
-    private awaitingViewerResource: {id: string; url : string; pageIndex : number}|null = null;
+    private pendingResource: {
+        id: string;
+        promise : Promise<void>;
+        resolve : () => void;
+        reject : (error: Error) => void;
+        previousReady : boolean;
+    }|null = null;
+    private awaitingViewerResource: {id: string; url : string; pageIndex : number; resourceChangeEmitted : boolean}|null = null;
     private resourceLoading = true;
     private viewerLoading = false;
     /**
@@ -298,8 +305,9 @@ export class Diva extends EventTarget
      *
      * @remarks
      * Collections without an active manifest resolve when their collection UI is
-     * ready. The promise rejects when the initial resource fails or the instance is
-     * destroyed before readiness.
+     * ready. Calling {@link Diva.setResource} before readiness supersedes the
+     * constructor resource, so this promise follows that replacement. It rejects
+     * when the resource that owns startup fails or the instance is destroyed.
      */
     public readonly ready: Promise<void>;
 
@@ -445,10 +453,10 @@ export class Diva extends EventTarget
     private bindPorts(): void
     {
         this.getPort("tileSourcesUpdated")
-            .subscribe((update: {tileSources: TileSourceEntry[]; initialPageIndex : number}) => {
+            .subscribe((update: {resourceId: string; tileSources : TileSourceEntry[]; initialPageIndex : number}) => {
                 this.auth.registerSources(update.tileSources);
                 this.callViewerMethodWhenReady("setTileSourceResolver", this.tileSourceResolver);
-                this.callViewerMethodWhenReady("setTileSources", update.tileSources, update.initialPageIndex);
+                this.callViewerMethodWhenReady("setTileSources", update.tileSources, update.initialPageIndex, update.resourceId);
             });
 
         this.getPort("pageAspectsUpdated")
@@ -606,26 +614,36 @@ export class Diva extends EventTarget
 
     private handleResourceSucceeded(requestId: string, url: string, hasPages: boolean, pageIndex: number): void
     {
-        if (requestId !== "initial" && this.pendingResource?.id !== requestId)
+        if (requestId !== this.activeResourceRequestId)
         {
             return;
         }
+        const replacementCommitted = requestId !== "initial";
+        if (replacementCommitted)
+        {
+            this.updateState({resourceUrl : url});
+            this.emit("resourcechange", {resourceUrl : url, state : this.copyState()});
+        }
         if (hasPages)
         {
-            this.awaitingViewerResource = {id : requestId, url, pageIndex};
+            this.awaitingViewerResource = {id : requestId, url, pageIndex, resourceChangeEmitted : replacementCommitted};
             const viewer = this.ensureMainViewer();
             const sourceId = this.pages[pageIndex]?.primaryImage.id;
             if (sourceId && viewer && typeof viewer.isPageLoaded === "function" && viewer.isPageLoaded(pageIndex, sourceId))
             {
-                this.completeResource(requestId, url);
+                this.completeResource(requestId, url, !replacementCommitted);
             }
             return;
         }
-        this.completeResource(requestId, url);
+        this.completeResource(requestId, url, !replacementCommitted);
     }
 
-    private completeResource(requestId: string, url: string): void
+    private completeResource(requestId: string, url: string, emitResourceChange: boolean): void
     {
+        if (requestId !== this.activeResourceRequestId)
+        {
+            return;
+        }
         this.awaitingViewerResource = null;
         this.updateState({resourceUrl : url, ready : true});
         this.resourceLoading = false;
@@ -641,26 +659,30 @@ export class Diva extends EventTarget
             this.pendingResource.resolve();
             this.pendingResource = null;
         }
-        this.emit("resourcechange", {resourceUrl : url, state : this.copyState()});
+        if (emitResourceChange)
+        {
+            this.emit("resourcechange", {resourceUrl : url, state : this.copyState()});
+        }
     }
 
     private handleResourceFailed(requestId: string, message: string): void
     {
-        if (requestId !== "initial" && this.pendingResource?.id !== requestId)
+        if (requestId !== this.activeResourceRequestId)
         {
             return;
         }
         const error = new Error(message);
+        const previousReady = this.pendingResource?.id === requestId ? this.pendingResource.previousReady : false;
         this.awaitingViewerResource = null;
-        this.updateState({ready : requestId !== "initial"});
+        this.updateState({ready : previousReady});
         this.resourceLoading = false;
         this.refreshLoadingState();
-        if (requestId === "initial" && !this.readySettled)
+        if (!this.readySettled)
         {
             this.readySettled = true;
             this.readyReject(error);
         }
-        else if (this.pendingResource)
+        if (requestId !== "initial" && this.pendingResource?.id === requestId)
         {
             this.pendingResource.reject(error);
             this.pendingResource = null;
@@ -928,8 +950,12 @@ export class Diva extends EventTarget
      * `InvalidStateError` when the viewer has been destroyed.
      *
      * @remarks
-     * Event listeners remain attached. A failed request leaves the previous resource
-     * active and emits a recoverable `error` event.
+     * Event listeners remain attached. Fetching or parsing failures leave the
+     * previous resource active. Once a replacement parses, it becomes active;
+     * failure of its required image rejects while leaving that replacement and
+     * its unavailable-image UI in place. Calling this method before any resource
+     * is ready supersedes the constructor resource and determines the outcome of
+     * {@link Diva.ready}.
      *
      * @example
      * ```ts
@@ -948,6 +974,8 @@ export class Diva extends EventTarget
             this.pendingResource.reject(new DOMException("The resource load was superseded.", "AbortError"));
             this.pendingResource = null;
         }
+        this.awaitingViewerResource = null;
+        const previousReady = this.state.ready;
         const id = `public-${++this.resourceSequence}`;
         let resolve!: () => void;
         let reject!: (error: Error) => void;
@@ -956,7 +984,8 @@ export class Diva extends EventTarget
             reject = rej;
         });
         void promise.catch(() => {});
-        this.pendingResource = {id, promise, resolve, reject};
+        this.pendingResource = {id, promise, resolve, reject, previousReady};
+        this.activeResourceRequestId = id;
         this.updateState({ready : false});
         this.resourceLoading = true;
         this.refreshLoadingState();
@@ -1381,9 +1410,9 @@ export class Diva extends EventTarget
             return;
         }
         const awaiting = this.awaitingViewerResource;
-        if (awaiting && detail.index === awaiting.pageIndex)
+        if (awaiting && detail.resourceId === awaiting.id && detail.index === awaiting.pageIndex)
         {
-            this.completeResource(awaiting.id, awaiting.url);
+            this.completeResource(awaiting.id, awaiting.url, !awaiting.resourceChangeEmitted);
         }
     }
 
@@ -1416,9 +1445,8 @@ export class Diva extends EventTarget
         const detail = (event as CustomEvent).detail;
         const error = new Error(detail?.message || "The image could not be loaded.");
         const awaiting = this.awaitingViewerResource;
-        if (awaiting && detail?.index === awaiting.pageIndex)
+        if (awaiting && detail?.resourceId === awaiting.id && detail?.index === awaiting.pageIndex)
         {
-            this.awaitingViewerResource = null;
             this.updateState({ready : false});
             this.resourceLoading = false;
             this.refreshLoadingState();
@@ -1432,6 +1460,8 @@ export class Diva extends EventTarget
                 this.pendingResource.reject(error);
                 this.pendingResource = null;
             }
+            this.emit("error", {error, operation : "loadPage", recoverable : true});
+            return;
         }
         this.emit("error", {error, operation : "loadPage", recoverable : true});
     }

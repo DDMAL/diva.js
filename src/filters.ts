@@ -1113,9 +1113,9 @@ function rgbToHSV(r: number, g: number, b: number): {h: number; s : number; v : 
 
 function hsvToRGB(h: number, s: number, v: number): {r: number; g : number; b : number}
 {
-    let r = 0;
-    let g = 0;
-    let b = 0;
+    let r: number;
+    let g: number;
+    let b: number;
     const i = Math.floor(h * 6);
     const f = h * 6 - i;
     const p = v * (1 - s);
@@ -1672,7 +1672,7 @@ export const Filters = {
             const dg = g - src[1];
             const db = b - src[2];
             const dist = Math.sqrt(dr * dr + dg * dg + db * db);
-            let weight = 0;
+            let weight: number;
             if (tol <= 0)
             {
                 weight = dist === 0 ? 1 : 0;

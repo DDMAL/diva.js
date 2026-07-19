@@ -120,6 +120,7 @@ class OsdViewer extends HTMLElement
     private pageOverlayElements: Map<number, HTMLDivElement> = new Map();
     private targetIndex: number|null = null;
     private initialPageIndex = 0;
+    private resourceId = "initial";
     private scrollPlaneItem: any = null;
     private isViewportInitialized = false;
     private lastReportedIndex: number|null = null;
@@ -268,7 +269,7 @@ class OsdViewer extends HTMLElement
         this.applyLayoutChange({mode : nextMode, direction : nextDirection});
     }
 
-    public setTileSources(tileSources: ViewerTileSource[], initialPageIndex = 0): void
+    public setTileSources(tileSources: ViewerTileSource[], initialPageIndex = 0, resourceId = "internal"): void
     {
         if (!Array.isArray(tileSources))
         {
@@ -276,6 +277,7 @@ class OsdViewer extends HTMLElement
         }
 
         this.tileSources = tileSources.slice();
+        this.resourceId = resourceId;
         this.initialPageIndex = Number.isInteger(initialPageIndex) && initialPageIndex >= 0 && initialPageIndex < tileSources.length
                                     ? initialPageIndex
                                     : 0;
@@ -543,7 +545,7 @@ class OsdViewer extends HTMLElement
                     this.flushInitialPageChange();
                     this.flushInitialZoomChange();
                 }
-                this.emitCustomEvent("diva-page-loaded", {index});
+                this.emitCustomEvent("diva-page-loaded", {index, resourceId : this.resourceId});
                 if (this.targetIndex === index)
                 {
                     this.targetIndex = null;
@@ -607,7 +609,7 @@ class OsdViewer extends HTMLElement
     {
         this.unavailableIndexes.set(index, message);
         this.rejectPageWaiters(new Error(message), index);
-        this.emitCustomEvent("diva-page-load-error", {index, message});
+        this.emitCustomEvent("diva-page-load-error", {index, message, resourceId : this.resourceId});
         this.addUnavailableOverlay(index, message);
     }
 

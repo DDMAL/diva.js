@@ -474,7 +474,7 @@ test("indents nested ranges in the contents index", async ({page}) => {
     await expect(page.locator(".contents-list-nested").first()).toHaveCSS("border-left-width", "1px");
 });
 
-test("replaces resources atomically and reports recoverable failure", async ({page}) => {
+test("keeps the previous resource when a replacement request fails", async ({page}) => {
     const result = await page.evaluate(async ({second, failure}) => {
         const diva = (window as any).diva;
         let resourceEvents = 0;
@@ -586,6 +586,91 @@ test("ignores a late initial resource after an immediate replacement", async ({p
     expect(result.outcomes.resourceEvents).toEqual([ `${origin}/api/second/manifest` ]);
 });
 
+test("does not let an initial page finish after setResource has taken ownership", async ({page}, testInfo) => {
+    const initialName = "parsed-initial";
+    const replacementName = "delayed-replacement";
+    let releaseInitialImage!: () => void;
+    let releaseReplacement!: () => void;
+    const initialImageReleased = new Promise<void>((resolve) => releaseInitialImage = resolve);
+    const replacementReleased = new Promise<void>((resolve) => releaseReplacement = resolve);
+    let initialImageRequested = false;
+
+    await page.route(`${origin}/api/${initialName}/manifest`, (route) => route.fulfill({json : manifest(initialName, 1)}));
+    await page.route(`${origin}/api/${initialName}/image/1/info.json`, async (route) => {
+        initialImageRequested = true;
+        await initialImageReleased;
+        await route.fulfill({json : {
+            "@context" : "http://iiif.io/api/image/3/context.json",
+            id : `${origin}/api/${initialName}/image/1`,
+            type : "ImageService3",
+            protocol : "http://iiif.io/api/image",
+            profile : "level0",
+            width : 1000,
+            height : 2000,
+            tiles : [ {width : 256, scaleFactors : [ 1, 2, 4, 8 ]} ]
+        }});
+    });
+    await page.route(`${origin}/api/${replacementName}/manifest`, async (route) => {
+        await replacementReleased;
+        await route.fulfill({json : manifest(replacementName, 1)});
+    });
+
+    const osd = (testInfo.project.metadata.osdVersion as string).startsWith("5") ? "5" : "6";
+    await page.goto(`/testing/auth-harness.html?manifest=${encodeURIComponent(`${origin}/api/${initialName}/manifest`)}&osd=${osd}`);
+    await expect.poll(() => initialImageRequested).toBe(true);
+    await page.evaluate((url) => {
+        const diva = (window as any).diva;
+        const outcomes = {ready : "pending", replacement : "pending", readyEvents : [] as string[], resourceEvents : [] as string[]};
+        (window as any).parsedInitialOutcomes = outcomes;
+        diva.addEventListener("ready", (event: CustomEvent) => outcomes.readyEvents.push(event.detail.resourceUrl));
+        diva.addEventListener("resourcechange", (event: CustomEvent) => outcomes.resourceEvents.push(event.detail.resourceUrl));
+        diva.ready.then(() => outcomes.ready = "resolved", (error: Error) => outcomes.ready = error.name);
+        diva.setResource(url).then(() => outcomes.replacement = "resolved", (error: Error) => outcomes.replacement = error.name);
+    }, `${origin}/api/${replacementName}/manifest`);
+
+    releaseInitialImage();
+    await page.waitForTimeout(250);
+    expect(await page.evaluate(() => (window as any).parsedInitialOutcomes)).toEqual({
+        ready : "pending",
+        replacement : "pending",
+        readyEvents : [],
+        resourceEvents : []
+    });
+
+    releaseReplacement();
+    await expect.poll(() => page.evaluate(() => (window as any).parsedInitialOutcomes)).toMatchObject({
+        ready : "resolved",
+        replacement : "resolved",
+        readyEvents : [ `${origin}/api/${replacementName}/manifest` ],
+        resourceEvents : [ `${origin}/api/${replacementName}/manifest` ]
+    });
+});
+
+test("settles ready when an immediate replacement fails", async ({page}, testInfo) => {
+    const slowInitial = `${origin}/api/uncommitted-initial/manifest`;
+    let releaseInitial!: () => void;
+    const initialReleased = new Promise<void>((resolve) => releaseInitial = resolve);
+    await page.route(slowInitial, async (route) => {
+        await initialReleased;
+        await route.fulfill({json : manifest("uncommitted-initial", 1)});
+    });
+
+    const osd = (testInfo.project.metadata.osdVersion as string).startsWith("5") ? "5" : "6";
+    await page.goto(`/testing/auth-harness.html?manifest=${encodeURIComponent(slowInitial)}&osd=${osd}`);
+    const result = await page.evaluate(async (failureUrl) => {
+        const diva = (window as any).diva;
+        const replacement = diva.setResource(failureUrl).then(() => "resolved", (error: Error) => error.name);
+        const ready = diva.ready.then(() => "resolved", (error: Error) => error.name);
+        return {replacement : await replacement, ready : await ready, state : diva.getState(), pages : diva.getPages()};
+    }, `${origin}/api/failure/manifest`);
+
+    expect(result).toMatchObject({replacement : "Error", ready : "Error", state : {ready : false, pageCount : 0}});
+    expect(result.pages).toEqual([]);
+    releaseInitial();
+    await page.waitForTimeout(250);
+    expect(await page.evaluate(() => (window as any).diva.getState().ready)).toBe(false);
+});
+
 test("waits for the required page when a prefetched neighbor fails", async ({page}, testInfo) => {
     const name = "prefetch-failure";
     let releaseFirstPage!: () => void;
@@ -648,6 +733,7 @@ test("rejects initial readiness when the required page fails", async ({page}, te
 
     expect(result.readyOutcome).toBe("Error");
     expect(result.state.ready).toBe(false);
+    expect(result.state.pageCount).toBe(2);
     await expect(page.locator(".diva-image-unavailable")).toHaveCount(1);
 });
 
@@ -671,13 +757,15 @@ test("rejects a replacement when its required page fails", async ({page}) => {
         {
             replacementOutcome = (error as Error).name;
         }
-        return {errors, replacementOutcome, resourceEvents, state : diva.getState()};
+        return {errors, replacementOutcome, resourceEvents, state : diva.getState(), pages : diva.getPages()};
     }, `${origin}/api/${name}/manifest`);
 
     expect(result.replacementOutcome).toBe("Error");
-    expect(result.resourceEvents).toBe(0);
+    expect(result.resourceEvents).toBe(1);
     expect(result.errors).toContain("loadPage");
-    expect(result.state.ready).toBe(false);
+    expect(result.state).toMatchObject({ready : false, resourceUrl : `${origin}/api/${name}/manifest`, pageCount : 1});
+    expect(result.pages[0].canvasId).toBe(`${origin}/api/${name}/canvas/1`);
+    await expect(page.locator(".diva-image-unavailable")).toHaveCount(1);
 });
 
 test("rejects commands after destruction", async ({page}) => {

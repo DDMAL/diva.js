@@ -1,0 +1,35 @@
+{
+  "@context": "http://iiif.io/api/presentation/2/context.json",
+  "@id": "http://127.0.0.1:4173/browser-tests/fixtures/gallica-image-api-v1-manifest.json",
+  "@type": "sc:Manifest",
+  "label": "Gallica Image API 1 fixture",
+  "sequences": [
+    {
+      "canvases": [
+        {
+          "@id": "http://127.0.0.1:4173/image-api-v1/canvas/f1",
+          "label": "Plat supérieur",
+          "height": 4072,
+          "width": 3055,
+          "images": [
+            {
+              "motivation": "sc:painting",
+              "resource": {
+                "format": "image/jpeg",
+                "service": {
+                  "profile": "http://library.stanford.edu/iiif/image-api/1.1/compliance.html#level2",
+                  "@context": "http://iiif.io/api/image/1/context.json",
+                  "@id": "http://127.0.0.1:4173/image-api-v1/image/f1"
+                },
+                "height": 4072,
+                "width": 3055,
+                "@id": "http://127.0.0.1:4173/image-api-v1/image/f1/full/full/0/native.jpg",
+                "@type": "dctypes:Image"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

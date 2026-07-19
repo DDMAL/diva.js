@@ -143,7 +143,7 @@ port tileSourceResolutionFailed : { requestId : String, message : String } -> Cm
 port tileSourceResolutionSucceeded : Encode.Value -> Cmd msg
 
 
-port tileSourcesUpdated : { tileSources : List { sourceId : String, url : String, isStatic : Bool }, initialPageIndex : Int } -> Cmd msg
+port tileSourcesUpdated : { resourceId : String, tileSources : List { sourceId : String, url : String, isStatic : Bool }, initialPageIndex : Int } -> Cmd msg
 
 
 port viewerLoadingChanged : (Bool -> msg) -> Sub msg
@@ -191,10 +191,10 @@ buildRangeIndexMap canvasIndex ranges =
         ranges
 
 
-clearViewer : Cmd msg
-clearViewer =
+clearViewer : String -> Cmd msg
+clearViewer resourceId =
     Cmd.batch
-        [ tileSourcesUpdated { tileSources = [], initialPageIndex = 0 }
+        [ tileSourcesUpdated { resourceId = resourceId, tileSources = [], initialPageIndex = 0 }
         , pagesUpdated []
         , pageAspectsUpdated []
         , pageLabelsUpdated []
@@ -243,8 +243,8 @@ findPageIndex predicate pages =
         |> Maybe.map Tuple.first
 
 
-handleManifestLoaded : Maybe Decode.Value -> Model -> IIIFManifest -> ( Model, Cmd Msg )
-handleManifestLoaded initialPage model manifest =
+handleManifestLoaded : String -> Maybe Decode.Value -> Model -> IIIFManifest -> ( Model, Cmd Msg )
+handleManifestLoaded resourceId initialPage model manifest =
     let
         pagedLayout =
             manifestViewingLayout manifest
@@ -348,7 +348,7 @@ handleManifestLoaded initialPage model manifest =
         , viewMode = viewMode
       }
     , Cmd.batch
-        [ tileSourcesUpdated { tileSources = tileSources, initialPageIndex = initialPageIndex }
+        [ tileSourcesUpdated { resourceId = resourceId, tileSources = tileSources, initialPageIndex = initialPageIndex }
         , pagesUpdated (publicPages pages)
         , filterPreviewUpdated Nothing
         , pageAspectsUpdated pageAspects
@@ -1096,7 +1096,7 @@ update msg model =
                     else
                         case result of
                             Ok manifest ->
-                                handleManifestLoaded Nothing model manifest
+                                handleManifestLoaded ("collection-" ++ manifestId) Nothing model manifest
 
                             Err err ->
                                 ( { model
@@ -1120,7 +1120,7 @@ update msg model =
                             ResourceManifest manifest ->
                                 let
                                     ( nextModel, cmd ) =
-                                        handleManifestLoaded (Just model.initialPage) model manifest
+                                        handleManifestLoaded "initial" (Just model.initialPage) model manifest
                                 in
                                 ( { nextModel
                                     | collectionSidebarVisible = False
@@ -1155,7 +1155,7 @@ update msg model =
                                     , response = NotRequested
                                   }
                                 , Cmd.batch
-                                    [ clearViewer
+                                    [ clearViewer "initial"
                                     , resourceLoadSucceeded { requestId = "initial", url = model.manifestUrl, hasPages = False, pageIndex = 0 }
                                     ]
                                 )
@@ -1192,7 +1192,7 @@ update msg model =
                             ResourceManifest manifest ->
                                 let
                                     ( nextModel, cmd ) =
-                                        handleManifestLoaded Nothing model manifest
+                                        handleManifestLoaded requestId Nothing model manifest
                                 in
                                 ( { nextModel
                                     | collectionSidebarVisible = False
@@ -1231,7 +1231,7 @@ update msg model =
                                     , response = NotRequested
                                   }
                                 , Cmd.batch
-                                    [ clearViewer
+                                    [ clearViewer requestId
                                     , resourceLoadSucceeded { requestId = requestId, url = url, hasPages = False, pageIndex = 0 }
                                     ]
                                 )

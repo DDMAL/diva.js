@@ -93,6 +93,7 @@
       this.pageOverlayElements = /* @__PURE__ */ new Map();
       this.targetIndex = null;
       this.initialPageIndex = 0;
+      this.resourceId = "initial";
       this.scrollPlaneItem = null;
       this.isViewportInitialized = false;
       this.lastReportedIndex = null;
@@ -207,11 +208,12 @@
       const nextDirection = direction === "rtl" ? "rtl" : "ltr";
       this.applyLayoutChange({ mode: nextMode, direction: nextDirection });
     }
-    setTileSources(tileSources, initialPageIndex = 0) {
+    setTileSources(tileSources, initialPageIndex = 0, resourceId = "internal") {
       if (!Array.isArray(tileSources)) {
         return;
       }
       this.tileSources = tileSources.slice();
+      this.resourceId = resourceId;
       this.initialPageIndex = Number.isInteger(initialPageIndex) && initialPageIndex >= 0 && initialPageIndex < tileSources.length ? initialPageIndex : 0;
       this.syncViewer();
       if (!this.viewer) {
@@ -412,7 +414,7 @@
             this.flushInitialPageChange();
             this.flushInitialZoomChange();
           }
-          this.emitCustomEvent("diva-page-loaded", { index });
+          this.emitCustomEvent("diva-page-loaded", { index, resourceId: this.resourceId });
           if (this.targetIndex === index) {
             this.targetIndex = null;
           }
@@ -461,7 +463,7 @@
     markUnavailable(index, message) {
       this.unavailableIndexes.set(index, message);
       this.rejectPageWaiters(new Error(message), index);
-      this.emitCustomEvent("diva-page-load-error", { index, message });
+      this.emitCustomEvent("diva-page-load-error", { index, message, resourceId: this.resourceId });
       this.addUnavailableOverlay(index, message);
     }
     waitForPage(index) {
@@ -16349,6 +16351,10 @@
               $elm$json$Json$Encode$int($.initialPageIndex)
             ),
             _Utils_Tuple2(
+              "resourceId",
+              $elm$json$Json$Encode$string($.resourceId)
+            ),
+            _Utils_Tuple2(
               "tileSources",
               $elm$json$Json$Encode$list(
                 function($2) {
@@ -16378,19 +16384,21 @@
       );
     }
   );
-  var $author$project$Main$clearViewer = $elm$core$Platform$Cmd$batch(
-    _List_fromArray(
-      [
-        $author$project$Main$tileSourcesUpdated(
-          { initialPageIndex: 0, tileSources: _List_Nil }
-        ),
-        $author$project$Main$pagesUpdated(_List_Nil),
-        $author$project$Main$pageAspectsUpdated(_List_Nil),
-        $author$project$Main$pageLabelsUpdated(_List_Nil),
-        $author$project$Main$filterPreviewUpdated($elm$core$Maybe$Nothing)
-      ]
-    )
-  );
+  var $author$project$Main$clearViewer = function(resourceId) {
+    return $elm$core$Platform$Cmd$batch(
+      _List_fromArray(
+        [
+          $author$project$Main$tileSourcesUpdated(
+            { initialPageIndex: 0, resourceId, tileSources: _List_Nil }
+          ),
+          $author$project$Main$pagesUpdated(_List_Nil),
+          $author$project$Main$pageAspectsUpdated(_List_Nil),
+          $author$project$Main$pageLabelsUpdated(_List_Nil),
+          $author$project$Main$filterPreviewUpdated($elm$core$Maybe$Nothing)
+        ]
+      )
+    );
+  };
   var $author$project$Main$copyToClipboard = _Platform_outgoingPort("copyToClipboard", $elm$json$Json$Encode$string);
   var $author$project$Filters$applyMaybe = F3(
     function(maybeValue, updater, filters) {
@@ -18781,8 +18789,8 @@
     }
   };
   var $author$project$Main$zoomLevelUpdated = _Platform_outgoingPort("zoomLevelUpdated", $elm$json$Json$Encode$float);
-  var $author$project$Main$handleManifestLoaded = F3(
-    function(initialPage, model, manifest) {
+  var $author$project$Main$handleManifestLoaded = F4(
+    function(resourceId, initialPage, model, manifest) {
       var viewingDirection = $rism_digital$elm_iiif$IIIF$Presentation$toViewingDirection(manifest);
       var pages = A2($author$project$Model$manifestToPages, model.detectedLanguage, manifest);
       var tileSources = A2(
@@ -18874,7 +18882,7 @@
           _List_fromArray(
             [
               $author$project$Main$tileSourcesUpdated(
-                { initialPageIndex, tileSources }
+                { initialPageIndex, resourceId, tileSources }
               ),
               $author$project$Main$pagesUpdated(
                 $author$project$Main$publicPages(pages)
@@ -21954,7 +21962,7 @@
             } else {
               if (result.$ === "Ok") {
                 var manifest = result.a;
-                return A3($author$project$Main$handleManifestLoaded, $elm$core$Maybe$Nothing, model, manifest);
+                return A4($author$project$Main$handleManifestLoaded, "collection-" + manifestId, $elm$core$Maybe$Nothing, model, manifest);
               } else {
                 var err = result.a;
                 return _Utils_Tuple2(
@@ -21984,8 +21992,9 @@
               switch (resource.$) {
                 case "ResourceManifest":
                   var manifest = resource.a;
-                  var _v13 = A3(
+                  var _v13 = A4(
                     $author$project$Main$handleManifestLoaded,
+                    "initial",
                     $elm$core$Maybe$Just(model.initialPage),
                     model,
                     manifest
@@ -22044,7 +22053,7 @@
                     $elm$core$Platform$Cmd$batch(
                       _List_fromArray(
                         [
-                          $author$project$Main$clearViewer,
+                          $author$project$Main$clearViewer("initial"),
                           $author$project$Main$resourceLoadSucceeded(
                             { hasPages: false, pageIndex: 0, requestId: "initial", url: model.manifestUrl }
                           )
@@ -22100,7 +22109,7 @@
               switch (resource.$) {
                 case "ResourceManifest":
                   var manifest = resource.a;
-                  var _v17 = A3($author$project$Main$handleManifestLoaded, $elm$core$Maybe$Nothing, model, manifest);
+                  var _v17 = A4($author$project$Main$handleManifestLoaded, requestId, $elm$core$Maybe$Nothing, model, manifest);
                   var nextModel = _v17.a;
                   var cmd = _v17.b;
                   return _Utils_Tuple2(
@@ -22159,7 +22168,7 @@
                     $elm$core$Platform$Cmd$batch(
                       _List_fromArray(
                         [
-                          $author$project$Main$clearViewer,
+                          $author$project$Main$clearViewer(requestId),
                           $author$project$Main$resourceLoadSucceeded(
                             { hasPages: false, pageIndex: 0, requestId, url }
                           )
@@ -31618,12 +31627,15 @@
     { path: "M88 0C39.4 0 0 39.4 0 88V424H.4c-.3 2.6-.4 5.3-.4 8c0 44.2 35.8 80 80 80H424c13.3 0 24-10.7 24-24s-10.7-24-24-24h-8V394.6c18.9-9 32-28.3 32-50.6V288H400v56c0 4.4-3.6 8-8 8H80c-11.4 0-22.2 2.4-32 6.7V88c0-22.1 17.9-40 40-40H392c4.4 0 8 3.6 8 8v72h48V56c0-30.9-25.1-56-56-56H88zM368 400v64H80c-17.7 0-32-14.3-32-32s14.3-32 32-32H368zM553 111c-9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l39 39H280c-13.3 0-24 10.7-24 24s10.7 24 24 24H558.1l-39 39c-9.4 9.4-9.4 24.6 0 33.9s24.6 9.4 33.9 0l80-80c9.4-9.4 9.4-24.6 0-33.9l-80-80z", viewBox: "0 0 640 512" }
   );
   var $author$project$Msg$UserToggledCollectionSidebar = { $: "UserToggledCollectionSidebar" };
+  var $author$project$View$Icons$showCollection = $author$project$View$Icons$makeSvgIcon(
+    { path: "M217 401L345 273c9.4-9.4 9.4-24.6 0-33.9L217 111c-9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l87 87L24 232c-13.3 0-24 10.7-24 24s10.7 24 24 24l246.1 0-87 87c-9.4 9.4-9.4 24.6 0 33.9s24.6 9.4 33.9 0zM344 80l80 0c22.1 0 40 17.9 40 40l0 272c0 22.1-17.9 40-40 40l-80 0c-13.3 0-24 10.7-24 24s10.7 24 24 24l80 0c48.6 0 88-39.4 88-88l0-272c0-48.6-39.4-88-88-88l-80 0c-13.3 0-24 10.7-24 24s10.7 24 24 24z", viewBox: "0 0 512 512" }
+  );
   var $author$project$View$Toolbar$viewCollectionSidebarButton = function(model) {
     var _v0 = model.resourceResponse;
     if (_v0.$ === "ResourceLoadedCollection") {
       return $author$project$View$Helpers$viewButton(
         {
-          icon: model.collectionSidebarVisible ? $author$project$View$Icons$hideSidebar : $author$project$View$Icons$showSidebar,
+          icon: model.collectionSidebarVisible ? $author$project$View$Icons$hideSidebar : $author$project$View$Icons$showCollection,
           isFullscreen: model.fullscreen,
           label: model.collectionSidebarVisible ? "Hide Collection" : "Show Collection",
           onClickMsg: $elm$core$Maybe$Just($author$project$Msg$UserToggledCollectionSidebar)
@@ -31757,6 +31769,7 @@
                   ),
                   _List_fromArray(
                     [
+                      $author$project$View$Toolbar$viewCollectionSidebarButton(model),
                       $author$project$View$Helpers$viewButton(
                         {
                           icon: $author$project$View$Icons$zoomOut,
@@ -31833,7 +31846,6 @@
                                   )
                                 }
                               ),
-                              $author$project$View$Toolbar$viewCollectionSidebarButton(model),
                               $author$project$View$Helpers$viewButton(
                                 (function() {
                                   var sidebarVisible = model.isMobile ? model.mobileSidebarOpen : !_Utils_eq(model.sidebarState, $author$project$Model$SidebarHidden);
@@ -33315,9 +33327,9 @@
     return { h, s, v };
   }
   function hsvToRGB(h, s, v) {
-    let r = 0;
-    let g = 0;
-    let b = 0;
+    let r;
+    let g;
+    let b;
     const i = Math.floor(h * 6);
     const f = h * 6 - i;
     const p = v * (1 - s);
@@ -33810,7 +33822,7 @@
         const dg = g - src[1];
         const db = b - src[2];
         const dist = Math.sqrt(dr * dr + dg * dg + db * db);
-        let weight = 0;
+        let weight;
         if (tol <= 0) {
           weight = dist === 0 ? 1 : 0;
         } else {
@@ -34037,6 +34049,7 @@
       this.pagesByCanvasId = /* @__PURE__ */ new Map();
       this.pagesByLabel = /* @__PURE__ */ new Map();
       this.readySettled = false;
+      this.activeResourceRequestId = "initial";
       this.resourceSequence = 0;
       this.pendingResource = null;
       this.awaitingViewerResource = null;
@@ -34145,7 +34158,7 @@
       this.getPort("tileSourcesUpdated").subscribe((update) => {
         this.auth.registerSources(update.tileSources);
         this.callViewerMethodWhenReady("setTileSourceResolver", this.tileSourceResolver);
-        this.callViewerMethodWhenReady("setTileSources", update.tileSources, update.initialPageIndex);
+        this.callViewerMethodWhenReady("setTileSources", update.tileSources, update.initialPageIndex, update.resourceId);
       });
       this.getPort("pageAspectsUpdated").subscribe((aspects) => {
         this.callViewerMethodWhenReady("setPageAspects", aspects);
@@ -34272,22 +34285,30 @@
       }
     }
     handleResourceSucceeded(requestId, url, hasPages, pageIndex) {
-      var _a, _b;
-      if (requestId !== "initial" && ((_a = this.pendingResource) == null ? void 0 : _a.id) !== requestId) {
+      var _a;
+      if (requestId !== this.activeResourceRequestId) {
         return;
       }
+      const replacementCommitted = requestId !== "initial";
+      if (replacementCommitted) {
+        this.updateState({ resourceUrl: url });
+        this.emit("resourcechange", { resourceUrl: url, state: this.copyState() });
+      }
       if (hasPages) {
-        this.awaitingViewerResource = { id: requestId, url, pageIndex };
+        this.awaitingViewerResource = { id: requestId, url, pageIndex, resourceChangeEmitted: replacementCommitted };
         const viewer = this.ensureMainViewer();
-        const sourceId = (_b = this.pages[pageIndex]) == null ? void 0 : _b.primaryImage.id;
+        const sourceId = (_a = this.pages[pageIndex]) == null ? void 0 : _a.primaryImage.id;
         if (sourceId && viewer && typeof viewer.isPageLoaded === "function" && viewer.isPageLoaded(pageIndex, sourceId)) {
-          this.completeResource(requestId, url);
+          this.completeResource(requestId, url, !replacementCommitted);
         }
         return;
       }
-      this.completeResource(requestId, url);
+      this.completeResource(requestId, url, !replacementCommitted);
     }
-    completeResource(requestId, url) {
+    completeResource(requestId, url, emitResourceChange) {
+      if (requestId !== this.activeResourceRequestId) {
+        return;
+      }
       this.awaitingViewerResource = null;
       this.updateState({ resourceUrl: url, ready: true });
       this.resourceLoading = false;
@@ -34301,22 +34322,26 @@
         this.pendingResource.resolve();
         this.pendingResource = null;
       }
-      this.emit("resourcechange", { resourceUrl: url, state: this.copyState() });
+      if (emitResourceChange) {
+        this.emit("resourcechange", { resourceUrl: url, state: this.copyState() });
+      }
     }
     handleResourceFailed(requestId, message) {
-      var _a;
-      if (requestId !== "initial" && ((_a = this.pendingResource) == null ? void 0 : _a.id) !== requestId) {
+      var _a, _b;
+      if (requestId !== this.activeResourceRequestId) {
         return;
       }
       const error = new Error(message);
+      const previousReady = ((_a = this.pendingResource) == null ? void 0 : _a.id) === requestId ? this.pendingResource.previousReady : false;
       this.awaitingViewerResource = null;
-      this.updateState({ ready: requestId !== "initial" });
+      this.updateState({ ready: previousReady });
       this.resourceLoading = false;
       this.refreshLoadingState();
-      if (requestId === "initial" && !this.readySettled) {
+      if (!this.readySettled) {
         this.readySettled = true;
         this.readyReject(error);
-      } else if (this.pendingResource) {
+      }
+      if (requestId !== "initial" && ((_b = this.pendingResource) == null ? void 0 : _b.id) === requestId) {
         this.pendingResource.reject(error);
         this.pendingResource = null;
       }
@@ -34505,8 +34530,12 @@
      * `InvalidStateError` when the viewer has been destroyed.
      *
      * @remarks
-     * Event listeners remain attached. A failed request leaves the previous resource
-     * active and emits a recoverable `error` event.
+     * Event listeners remain attached. Fetching or parsing failures leave the
+     * previous resource active. Once a replacement parses, it becomes active;
+     * failure of its required image rejects while leaving that replacement and
+     * its unavailable-image UI in place. Calling this method before any resource
+     * is ready supersedes the constructor resource and determines the outcome of
+     * {@link Diva.ready}.
      *
      * @example
      * ```ts
@@ -34522,6 +34551,8 @@
         this.pendingResource.reject(new DOMException("The resource load was superseded.", "AbortError"));
         this.pendingResource = null;
       }
+      this.awaitingViewerResource = null;
+      const previousReady = this.state.ready;
       const id = `public-${++this.resourceSequence}`;
       let resolve;
       let reject;
@@ -34531,7 +34562,8 @@
       });
       void promise.catch(() => {
       });
-      this.pendingResource = { id, promise, resolve, reject };
+      this.pendingResource = { id, promise, resolve, reject, previousReady };
+      this.activeResourceRequestId = id;
       this.updateState({ ready: false });
       this.resourceLoading = true;
       this.refreshLoadingState();
@@ -34868,8 +34900,8 @@
         return;
       }
       const awaiting = this.awaitingViewerResource;
-      if (awaiting && detail.index === awaiting.pageIndex) {
-        this.completeResource(awaiting.id, awaiting.url);
+      if (awaiting && detail.resourceId === awaiting.id && detail.index === awaiting.pageIndex) {
+        this.completeResource(awaiting.id, awaiting.url, !awaiting.resourceChangeEmitted);
       }
     }
     handleZoomChange(event) {
@@ -34895,8 +34927,7 @@
       const detail = event.detail;
       const error = new Error((detail == null ? void 0 : detail.message) || "The image could not be loaded.");
       const awaiting = this.awaitingViewerResource;
-      if (awaiting && (detail == null ? void 0 : detail.index) === awaiting.pageIndex) {
-        this.awaitingViewerResource = null;
+      if (awaiting && (detail == null ? void 0 : detail.resourceId) === awaiting.id && (detail == null ? void 0 : detail.index) === awaiting.pageIndex) {
         this.updateState({ ready: false });
         this.resourceLoading = false;
         this.refreshLoadingState();
@@ -34908,6 +34939,8 @@
           this.pendingResource.reject(error);
           this.pendingResource = null;
         }
+        this.emit("error", { error, operation: "loadPage", recoverable: true });
+        return;
       }
       this.emit("error", { error, operation: "loadPage", recoverable: true });
     }

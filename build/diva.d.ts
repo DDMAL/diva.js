@@ -65,6 +65,7 @@ export declare class Diva extends EventTarget {
     private readyResolve;
     private readyReject;
     private readySettled;
+    private activeResourceRequestId;
     private resourceSequence;
     private pendingResource;
     private awaitingViewerResource;
@@ -75,8 +76,9 @@ export declare class Diva extends EventTarget {
      *
      * @remarks
      * Collections without an active manifest resolve when their collection UI is
-     * ready. The promise rejects when the initial resource fails or the instance is
-     * destroyed before readiness.
+     * ready. Calling {@link Diva.setResource} before readiness supersedes the
+     * constructor resource, so this promise follows that replacement. It rejects
+     * when the resource that owns startup fails or the instance is destroyed.
      */
     readonly ready: Promise<void>;
     /**
@@ -202,8 +204,12 @@ export declare class Diva extends EventTarget {
      * `InvalidStateError` when the viewer has been destroyed.
      *
      * @remarks
-     * Event listeners remain attached. A failed request leaves the previous resource
-     * active and emits a recoverable `error` event.
+     * Event listeners remain attached. Fetching or parsing failures leave the
+     * previous resource active. Once a replacement parses, it becomes active;
+     * failure of its required image rejects while leaving that replacement and
+     * its unavailable-image UI in place. Calling this method before any resource
+     * is ready supersedes the constructor resource and determines the outcome of
+     * {@link Diva.ready}.
      *
      * @example
      * ```ts

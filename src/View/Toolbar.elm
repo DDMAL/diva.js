@@ -24,7 +24,8 @@ viewToolbar model =
     div [ HA.class "canvas-toolbar-stack" ]
         [ div [ HA.class "canvas-toolbar" ]
             [ div [ HA.class "canvas-toolbar-section" ]
-                [ viewButton
+                [ viewCollectionSidebarButton model
+                , viewButton
                     { label = "Zoom Out"
                     , icon = Icons.zoomOut
                     , onClickMsg = disabledIf controlsDisabled UserClickedZoomOut
@@ -80,7 +81,6 @@ viewToolbar model =
                                 , onClickMsg = disabledIf (controlsDisabled || model.viewMode == OneUp) UserToggledShiftByOne
                                 , isFullscreen = model.fullscreen
                                 }
-                           , viewCollectionSidebarButton model
                            , viewButton
                                 (let
                                     sidebarVisible =
@@ -202,7 +202,7 @@ viewCollectionSidebarButton model =
                         Icons.hideSidebar
 
                     else
-                        Icons.showSidebar
+                        Icons.showCollection
                 , onClickMsg = Just UserToggledCollectionSidebar
                 , isFullscreen = model.fullscreen
                 }
