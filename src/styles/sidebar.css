@@ -181,6 +181,22 @@
   margin-bottom: 6px;
 }
 
+.contents-heading {
+  display: flex;
+  align-items: baseline;
+}
+
+.contents-disclosure {
+  flex: 0 0 1.25rem;
+  color: var(--diva-text-muted);
+  cursor: pointer;
+  text-align: center;
+}
+
+.contents-disclosure:hover {
+  color: var(--diva-accent);
+}
+
 .contents-meta {
   border: 1px solid var(--diva-dark-border);
   display: flex;

@@ -151,7 +151,6 @@
   font-size: var(--diva-font-lg);
   font-weight: 600;
   color: var(--diva-text-muted);
-  text-transform: uppercase;
   letter-spacing: 0.05em;
   line-height: 1.3;
 }

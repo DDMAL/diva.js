@@ -29,7 +29,7 @@ type Msg
     | UserClickedPageViewImageChoice Int
     | UserClickedPageViewNext
     | UserClickedPageViewPrev
-    | UserClickedRange String (Maybe Int)
+    | UserClickedRange (Maybe Int)
     | UserClickedSaveFilteredImage
     | UserClickedThumbnail Int
     | UserClickedZoomIn
@@ -53,6 +53,7 @@ type Msg
     | UserToggledMetadata
     | UserToggledPageViewFullscreen
     | UserToggledPageViewSidebar
+    | UserToggledRangeMetadata String
     | UserToggledShiftByOne
     | UserToggledSidebar
     | UserToggledThumbnails

@@ -455,7 +455,7 @@ viewOtpRangeItem model canvasLabelMap range =
                 rangePrefix ++ labelText
 
         labelNode =
-            viewRangeButton False range.id maybeIndex resolvedLabel
+            viewRangeButton False maybeIndex resolvedLabel
 
         metadataBlock =
             viewRangeMetadata model.detectedLanguage range.metadata
@@ -465,8 +465,8 @@ viewOtpRangeItem model canvasLabelMap range =
         (labelNode :: metadataBlock)
 
 
-viewRangeButton : Bool -> String -> Maybe Int -> String -> Html Msg
-viewRangeButton isCurrent rangeId maybeIndex labelText =
+viewRangeButton : Bool -> Maybe Int -> String -> Html Msg
+viewRangeButton isCurrent maybeIndex labelText =
     button
         ([ classList
             [ ( "contents-button", True )
@@ -474,7 +474,7 @@ viewRangeButton isCurrent rangeId maybeIndex labelText =
             , ( "is-current", isCurrent )
             ]
          , type_ "button"
-         , Events.onClick (UserClickedRange rangeId maybeIndex)
+         , Events.onClick (UserClickedRange maybeIndex)
          ]
             ++ (if isCurrent then
                     [ attribute "aria-current" "location" ]
@@ -484,6 +484,39 @@ viewRangeButton isCurrent rangeId maybeIndex labelText =
                )
         )
         [ text labelText ]
+
+
+viewRangeDisclosure : Bool -> String -> String -> Html Msg
+viewRangeDisclosure isExpanded rangeId labelText =
+    button
+        [ HA.class "contents-disclosure ui-button"
+        , type_ "button"
+        , attribute "aria-expanded"
+            (if isExpanded then
+                "true"
+
+             else
+                "false"
+            )
+        , attribute "aria-label"
+            ((if isExpanded then
+                "Hide information for "
+
+              else
+                "Show information for "
+             )
+                ++ labelText
+            )
+        , Events.onClick (UserToggledRangeMetadata rangeId)
+        ]
+        [ text
+            (if isExpanded then
+                "▾"
+
+             else
+                "▸"
+            )
+        ]
 
 
 viewRangeItems : Model -> Dict String (Maybe Int) -> List RangeItem -> List (Html Msg)
@@ -530,8 +563,8 @@ viewRangeMetadata language metadata =
 viewRangeNode : Model -> Dict String (Maybe Int) -> Range -> Html Msg
 viewRangeNode model rangeIndexMap range =
     let
-        maybeIndex =
-            lookupRangeIndex rangeIndexMap range.id
+        isExpanded =
+            model.selectedRangeId == Just range.id
 
         labelText =
             extractLabelFromLanguageMap model.detectedLanguage range.label
@@ -543,26 +576,41 @@ viewRangeNode model rangeIndexMap range =
             else
                 labelText
 
+        children =
+            viewRangeItems model rangeIndexMap range.items
+
         isCurrent =
             visibleCanvasIds model
                 |> List.any (\canvasId -> rangeContainsCanvas canvasId range)
 
+        maybeIndex =
+            lookupRangeIndex rangeIndexMap range.id
+
         labelNode =
-            viewRangeButton isCurrent range.id maybeIndex resolvedLabel
+            viewRangeButton isCurrent maybeIndex resolvedLabel
+
+        headingNode =
+            div
+                [ HA.class "contents-heading" ]
+                ((if List.isEmpty range.metadata then
+                    []
+
+                  else
+                    [ viewRangeDisclosure isExpanded range.id resolvedLabel ]
+                 )
+                    ++ [ labelNode ]
+                )
 
         metadataBlock =
-            if model.selectedRangeId == Just range.id then
+            if isExpanded then
                 viewRangeMetadata model.detectedLanguage range.metadata
 
             else
                 []
-
-        children =
-            viewRangeItems model rangeIndexMap range.items
     in
     li
         [ HA.class "contents-item" ]
-        (labelNode :: metadataBlock ++ children)
+        (headingNode :: metadataBlock ++ children)
 
 
 viewSidebarPane : SidebarState -> SidebarState -> Html Msg -> Html Msg

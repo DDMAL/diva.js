@@ -482,6 +482,47 @@ test("bolds ranges containing either page of a two-up spread", async ({page}) =>
     await expect(otherRange).toHaveClass(/is-current/);
 });
 
+test("uses separate controls for range navigation and metadata disclosure", async ({page}) => {
+    const name = "range-disclosure";
+    await page.route(`${origin}/api/${name}/manifest`, (route) => route.fulfill({json : {
+        ...manifest(name, 2),
+        structures : [ {
+            id : `${origin}/api/${name}/range/a`,
+            type : "Range",
+            label : {en : [ "Section A" ]},
+            metadata : [ {label : {en : [ "Composer" ]}, value : {en : [ "Anonymous" ]}} ],
+            items : [ {id : `${origin}/api/${name}/canvas/1`, type : "Canvas"} ]
+        } ]
+    }}));
+
+    await page.evaluate(async (url) => {
+        const diva = (window as any).diva;
+        await diva.setResource(url);
+        await diva.goToPage(1);
+    }, `${origin}/api/${name}/manifest`);
+    await page.getByRole("button", {name : "Contents"}).evaluate((button: HTMLButtonElement) => button.click());
+
+    const showInformation = page.getByRole("button", {name : "Show information for Section A", exact : true});
+    await expect(showInformation).toHaveAttribute("aria-expanded", "false");
+    await expect(page.getByText("Anonymous", {exact : true})).toHaveCount(0);
+
+    await showInformation.click();
+    await expect.poll(() => page.evaluate(() => (window as any).diva.getState().currentPageIndex)).toBe(1);
+    const hideInformation = page.getByRole("button", {name : "Hide information for Section A", exact : true});
+    await expect(hideInformation).toHaveAttribute("aria-expanded", "true");
+    await expect(page.getByText("Anonymous", {exact : true})).toBeVisible();
+    const metadataLabel = page.getByText("Composer", {exact : true});
+    await expect(metadataLabel).toHaveCSS("font-weight", "600");
+    await expect(metadataLabel).toHaveCSS("text-transform", "none");
+
+    await page.getByRole("button", {name : "Section A", exact : true}).click();
+    await expect.poll(() => page.evaluate(() => (window as any).diva.getState().currentPageIndex)).toBe(0);
+    await expect(page.getByText("Anonymous", {exact : true})).toBeVisible();
+
+    await hideInformation.click();
+    await expect(page.getByText("Anonymous", {exact : true})).toHaveCount(0);
+});
+
 test("indents nested ranges in the contents index", async ({page}) => {
     const name = "nested-ranges";
     await page.route(`${origin}/api/${name}/manifest`, (route) => route.fulfill({json : {

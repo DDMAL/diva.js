@@ -1407,7 +1407,7 @@ update msg model =
         UserClickedPageViewPrev ->
             handlePageViewStep -1 model
 
-        UserClickedRange rangeId maybeIndex ->
+        UserClickedRange maybeIndex ->
             let
                 nextModel =
                     { model
@@ -1419,7 +1419,6 @@ update msg model =
 
                                 Nothing ->
                                     model.selectedIndex
-                        , selectedRangeId = Just rangeId
                         , sidebarState = visibleSidebarState model
                         , thumbsInstantScroll = True
                     }
@@ -1593,6 +1592,18 @@ update msg model =
 
         UserToggledPageViewSidebar ->
             ( { model | pageViewSidebarVisible = not model.pageViewSidebarVisible }, Cmd.none )
+
+        UserToggledRangeMetadata rangeId ->
+            ( { model
+                | selectedRangeId =
+                    if model.selectedRangeId == Just rangeId then
+                        Nothing
+
+                    else
+                        Just rangeId
+              }
+            , Cmd.none
+            )
 
         UserToggledShiftByOne ->
             case model.viewMode of
