@@ -149,25 +149,7 @@ isSidebarVisible state =
 
 isThumbnailActive : ViewMode -> Bool -> Maybe Int -> Int -> Bool
 isThumbnailActive viewMode shiftByOne selectedIndex index =
-    case selectedIndex of
-        Just selected ->
-            case viewMode of
-                OneUp ->
-                    selected == index
-
-                TwoUp ->
-                    if shiftByOne && selected == 0 then
-                        index == 0
-
-                    else
-                        let
-                            startIndex =
-                                pageViewStartIndex TwoUp shiftByOne selected
-                        in
-                        index == startIndex || index == startIndex + 1
-
-        Nothing ->
-            False
+    List.member index (visiblePageIndexes viewMode shiftByOne selectedIndex)
 
 
 lookupRangeIndex : Dict String (Maybe Int) -> String -> Maybe Int
@@ -562,9 +544,8 @@ viewRangeNode model rangeIndexMap range =
                 labelText
 
         isCurrent =
-            currentCanvasId model
-                |> Maybe.map (\canvasId -> rangeContainsCanvas canvasId range)
-                |> Maybe.withDefault False
+            visibleCanvasIds model
+                |> List.any (\canvasId -> rangeContainsCanvas canvasId range)
 
         labelNode =
             viewRangeButton isCurrent range.id maybeIndex resolvedLabel
@@ -828,3 +809,33 @@ viewThumbnails { fullscreen, auth, selectedIndex, shiftByOne, thumbsInstantScrol
         (orderedPages
             |> List.map (\( index, page ) -> Lazy.lazy6 viewThumbnail auth viewMode shiftByOne selectedIndex index page)
         )
+
+
+visibleCanvasIds : Model -> List String
+visibleCanvasIds model =
+    visiblePageIndexes model.viewMode model.shiftByOne model.selectedIndex
+        |> List.filterMap (\index -> getPageAt index model.pages)
+        |> List.map .canvasId
+
+
+visiblePageIndexes : ViewMode -> Bool -> Maybe Int -> List Int
+visiblePageIndexes viewMode shiftByOne selectedIndex =
+    case selectedIndex of
+        Just selected ->
+            case viewMode of
+                OneUp ->
+                    [ selected ]
+
+                TwoUp ->
+                    if shiftByOne && selected == 0 then
+                        [ 0 ]
+
+                    else
+                        let
+                            startIndex =
+                                pageViewStartIndex TwoUp shiftByOne selected
+                        in
+                        [ startIndex, startIndex + 1 ]
+
+        Nothing ->
+            []

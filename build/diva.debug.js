@@ -30232,21 +30232,6 @@
     );
   };
   var $author$project$View$Sidebar$viewContentsEmptyBody = $author$project$View$Sidebar$viewContentsEmpty("No contents available.");
-  var $author$project$View$Sidebar$currentCanvasId = function(model) {
-    return A2(
-      $elm$core$Maybe$map,
-      function($) {
-        return $.canvasId;
-      },
-      A2(
-        $elm$core$Maybe$andThen,
-        function(index) {
-          return A2($author$project$Model$getPageAt, index, model.pages);
-        },
-        model.selectedIndex
-      )
-    );
-  };
   var $author$project$View$Sidebar$lookupRangeIndex = F2(
     function(rangeIndexMap, rangeId) {
       return A2(
@@ -30380,6 +30365,53 @@
       );
     }
   );
+  var $author$project$Model$pageViewStartIndex = F3(
+    function(viewMode, shiftByOne, index) {
+      if (viewMode.$ === "OneUp") {
+        return index;
+      } else {
+        return shiftByOne ? !index ? 0 : A2($elm$core$Basics$modBy, 2, index) === 1 ? index : index - 1 : index - A2($elm$core$Basics$modBy, 2, index);
+      }
+    }
+  );
+  var $author$project$View$Sidebar$visibleCanvasIds = function(model) {
+    var visibleIndexes = function(selected) {
+      var _v0 = model.viewMode;
+      if (_v0.$ === "OneUp") {
+        return _List_fromArray(
+          [selected]
+        );
+      } else {
+        if (model.shiftByOne && !selected) {
+          return _List_fromArray(
+            [0]
+          );
+        } else {
+          var startIndex = A3($author$project$Model$pageViewStartIndex, $author$project$Model$TwoUp, model.shiftByOne, selected);
+          return _List_fromArray(
+            [startIndex, startIndex + 1]
+          );
+        }
+      }
+    };
+    return A2(
+      $elm$core$List$map,
+      function($) {
+        return $.canvasId;
+      },
+      A2(
+        $elm$core$List$filterMap,
+        function(index) {
+          return A2($author$project$Model$getPageAt, index, model.pages);
+        },
+        A2(
+          $elm$core$Maybe$withDefault,
+          _List_Nil,
+          A2($elm$core$Maybe$map, visibleIndexes, model.selectedIndex)
+        )
+      )
+    );
+  };
   var $author$project$View$Sidebar$viewRangeItems = F3(
     function(model, rangeIndexMap, items) {
       var rendered = A2(
@@ -30421,15 +30453,11 @@
       var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, range.label);
       var resolvedLabel = $elm$core$String$isEmpty(labelText) ? "[Untitled range]" : labelText;
       var isCurrent = A2(
-        $elm$core$Maybe$withDefault,
-        false,
-        A2(
-          $elm$core$Maybe$map,
-          function(canvasId) {
-            return A2($author$project$View$Sidebar$rangeContainsCanvas, canvasId, range);
-          },
-          $author$project$View$Sidebar$currentCanvasId(model)
-        )
+        $elm$core$List$any,
+        function(canvasId) {
+          return A2($author$project$View$Sidebar$rangeContainsCanvas, canvasId, range);
+        },
+        $author$project$View$Sidebar$visibleCanvasIds(model)
       );
       var labelNode = A4($author$project$View$Sidebar$viewRangeButton, isCurrent, range.id, maybeIndex, resolvedLabel);
       var children = A3($author$project$View$Sidebar$viewRangeItems, model, rangeIndexMap, range.items);
@@ -30552,6 +30580,21 @@
       );
     }
   );
+  var $author$project$View$Sidebar$currentCanvasId = function(model) {
+    return A2(
+      $elm$core$Maybe$map,
+      function($) {
+        return $.canvasId;
+      },
+      A2(
+        $elm$core$Maybe$andThen,
+        function(index) {
+          return A2($author$project$Model$getPageAt, index, model.pages);
+        },
+        model.selectedIndex
+      )
+    );
+  };
   var $author$project$View$Sidebar$rangesForCanvasInRange = F2(
     function(canvasId, range) {
       var nested = A2(
@@ -31156,15 +31199,6 @@
   var $author$project$Msg$UserClickedThumbnail = function(a) {
     return { $: "UserClickedThumbnail", a };
   };
-  var $author$project$Model$pageViewStartIndex = F3(
-    function(viewMode, shiftByOne, index) {
-      if (viewMode.$ === "OneUp") {
-        return index;
-      } else {
-        return shiftByOne ? !index ? 0 : A2($elm$core$Basics$modBy, 2, index) === 1 ? index : index - 1 : index - A2($elm$core$Basics$modBy, 2, index);
-      }
-    }
-  );
   var $author$project$View$Sidebar$isThumbnailActive = F4(
     function(viewMode, shiftByOne, selectedIndex, index) {
       if (selectedIndex.$ === "Just") {

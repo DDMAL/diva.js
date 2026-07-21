@@ -434,6 +434,54 @@ test("bolds ranges containing the current page in the contents index", async ({p
     await expect(page.locator(".contents-button.is-current")).toHaveCount(0);
 });
 
+test("bolds ranges containing either page of a two-up spread", async ({page}) => {
+    const name = "spread-ranges";
+    await page.route(`${origin}/api/${name}/manifest`, (route) => route.fulfill({json : {
+        ...manifest(name, 3),
+        structures : [ {
+                          id : `${origin}/api/${name}/range/left`,
+                          type : "Range",
+                          label : {en : [ "Left page range" ]},
+                          items : [ {id : `${origin}/api/${name}/canvas/1`, type : "Canvas"} ]
+                      },
+                       {
+                           id : `${origin}/api/${name}/range/right`,
+                           type : "Range",
+                           label : {en : [ "Right page range" ]},
+                           items : [ {id : `${origin}/api/${name}/canvas/2`, type : "Canvas"} ]
+                       },
+                       {
+                           id : `${origin}/api/${name}/range/not-visible`,
+                           type : "Range",
+                           label : {en : [ "Other page range" ]},
+                           items : [ {id : `${origin}/api/${name}/canvas/3`, type : "Canvas"} ]
+                       } ]
+    }}));
+
+    await page.evaluate(async (url) => {
+        const diva = (window as any).diva;
+        await diva.setResource(url);
+        await diva.setLayoutMode("spread");
+    }, `${origin}/api/${name}/manifest`);
+    await page.getByRole("button", {name : "Contents"}).evaluate((button: HTMLButtonElement) => button.click());
+
+    const leftRange = page.getByRole("button", {name : "Left page range", exact : true});
+    const rightRange = page.getByRole("button", {name : "Right page range", exact : true});
+    const otherRange = page.getByRole("button", {name : "Other page range", exact : true});
+    await expect(leftRange).toHaveClass(/is-current/);
+    await expect(rightRange).toHaveClass(/is-current/);
+    await expect(otherRange).not.toHaveClass(/is-current/);
+
+    await page.evaluate(async () => {
+        const diva = (window as any).diva;
+        await diva.setLayoutMode("spread-shift");
+        await diva.goToPage(1);
+    });
+    await expect(leftRange).not.toHaveClass(/is-current/);
+    await expect(rightRange).toHaveClass(/is-current/);
+    await expect(otherRange).toHaveClass(/is-current/);
+});
+
 test("indents nested ranges in the contents index", async ({page}) => {
     const name = "nested-ranges";
     await page.route(`${origin}/api/${name}/manifest`, (route) => route.fulfill({json : {
