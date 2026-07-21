@@ -1,10 +1,7 @@
 /* App layout, canvas, and throbber styles. */
 
-:root {
-  color-scheme: light;
-}
-
-* {
+.diva-app,
+.diva-app * {
   box-sizing: border-box;
 }
 
@@ -40,6 +37,7 @@
 }
 
 .diva-app {
+  color-scheme: light;
   padding: 12px 24px;
   height: 100%;
   display: flex;
