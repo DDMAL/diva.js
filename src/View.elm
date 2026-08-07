@@ -62,7 +62,7 @@ view model =
                 , View.Sidebar.viewSidebarResizer model
                 , View.Sidebar.viewSidebarPanel model
                 ]
-            , div [ HA.class "required-statement-dock" ]
+            , div [ HA.class "diva-required-statement-dock" ]
                 [ viewMaybe (Lazy.lazy viewRequiredStatement) (requiredStatementTextFor model) ]
             , View.PageViewModal.viewPageViewModal model
             , View.ManifestInfoModal.viewManifestInfoModal model
@@ -177,7 +177,7 @@ viewRequiredStatement valueText =
 
     else
         div
-            [ HA.class "required-statement" ]
+            [ HA.class "diva-required-statement" ]
             (HtmlRenderer.renderHtml valueText)
 
 
@@ -197,13 +197,13 @@ viewThrobber =
             ]
     in
     div
-        [ HA.class "throbber-overlay" ]
+        [ HA.class "diva-throbber-overlay" ]
         [ div
-            [ HA.class "throbber" ]
+            [ HA.class "diva-throbber" ]
             (List.map
                 (\delay ->
                     div
-                        [ HA.class "throbber-cube"
+                        [ HA.class "diva-throbber-cube"
                         , HA.style "animation-delay" (String.fromFloat delay ++ "s")
                         ]
                         []
@@ -216,16 +216,16 @@ viewThrobber =
 viewViewerStatusModal : ( String, String, Bool ) -> Html Msg
 viewViewerStatusModal ( titleText, message, isError ) =
     div
-        [ HA.class "viewer-status-overlay" ]
+        [ HA.class "diva-viewer-status-overlay" ]
         [ div
-            [ HA.class "modal is-narrow" ]
+            [ HA.class "diva-modal is-narrow" ]
             [ div
-                [ HA.class "modal-header" ]
-                [ div [ HA.class "modal-title" ] [ text titleText ] ]
+                [ HA.class "diva-modal-header" ]
+                [ div [ HA.class "diva-modal-title" ] [ text titleText ] ]
             , div
-                [ HA.class "modal-body is-no-sidebar" ]
+                [ HA.class "diva-modal-body is-no-sidebar" ]
                 [ div
-                    [ classList [ ( "status", True ), ( "is-error", isError ) ] ]
+                    [ classList [ ( "diva-status", True ), ( "is-error", isError ) ] ]
                     [ text message ]
                 ]
             ]
@@ -234,7 +234,7 @@ viewViewerStatusModal ( titleText, message, isError ) =
 
 viewZoomIndicator : String -> Html Msg
 viewZoomIndicator zoomText =
-    div [ HA.class "viewer-zoom-indicator" ] [ text zoomText ]
+    div [ HA.class "diva-viewer-zoom-indicator" ] [ text zoomText ]
 
 
 viewerStatus : Model -> Maybe ( String, String, Bool )

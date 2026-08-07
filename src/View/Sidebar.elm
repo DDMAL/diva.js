@@ -106,12 +106,12 @@ homepageEntries language manifest =
 
             else
                 [ div
-                    [ HA.class "metadata-item" ]
+                    [ HA.class "diva-metadata-item" ]
                     [ div
-                        [ HA.class "metadata-label" ]
+                        [ HA.class "diva-metadata-label" ]
                         [ text "Homepage" ]
                     , div
-                        [ HA.class "metadata-value" ]
+                        [ HA.class "diva-metadata-value" ]
                         (List.map (homepageLinkBlock language) links)
                     ]
                 ]
@@ -167,12 +167,12 @@ metadataEntries language manifest =
 metadataEntry : Language -> LabelValue -> Html Msg
 metadataEntry language entry =
     div
-        [ HA.class "metadata-item" ]
+        [ HA.class "diva-metadata-item" ]
         [ div
-            [ HA.class "metadata-label" ]
+            [ HA.class "diva-metadata-label" ]
             [ extractLabelFromLanguageMap language entry.label |> text ]
         , div
-            [ HA.class "metadata-value" ]
+            [ HA.class "diva-metadata-value" ]
             (extractLabelFromLanguageMap language entry.value |> renderHtml)
         ]
 
@@ -357,11 +357,11 @@ viewContentsToggle viewMode contentsView =
 viewMetadataContent : Model -> Html Msg
 viewMetadataContent model =
     div
-        [ HA.class "metadata-panel" ]
+        [ HA.class "diva-metadata-panel" ]
         (case currentManifest model of
             Just manifest ->
                 [ div
-                    [ HA.class "metadata-body" ]
+                    [ HA.class "diva-metadata-body" ]
                     (metadataEntries model.detectedLanguage manifest
                         ++ homepageEntries model.detectedLanguage manifest
                     )
@@ -369,7 +369,7 @@ viewMetadataContent model =
 
             Nothing ->
                 [ div
-                    [ HA.class "metadata-body" ]
+                    [ HA.class "diva-metadata-body" ]
                     [ text "No metadata available." ]
                 ]
         )
@@ -396,7 +396,7 @@ viewOnThisPageBody model manifest =
                                     |> Dict.fromList
                         in
                         ul
-                            [ HA.class "contents-list list-reset" ]
+                            [ HA.class "contents-list diva-list-reset" ]
                             (List.map (viewOtpRangeItem model canvasLabelMap) matches)
 
                 Nothing ->
@@ -470,7 +470,7 @@ viewRangeButton isCurrent maybeIndex labelText =
     button
         ([ classList
             [ ( "contents-button", True )
-            , ( "ui-button", True )
+            , ( "diva-ui-button", True )
             , ( "is-current", isCurrent )
             ]
          , type_ "button"
@@ -489,7 +489,7 @@ viewRangeButton isCurrent maybeIndex labelText =
 viewRangeDisclosure : Bool -> String -> String -> Html Msg
 viewRangeDisclosure isExpanded rangeId labelText =
     button
-        [ HA.class "contents-disclosure ui-button"
+        [ HA.class "contents-disclosure diva-ui-button"
         , type_ "button"
         , attribute "aria-expanded"
             (if isExpanded then
@@ -538,13 +538,13 @@ viewRangeItems model rangeIndexMap items =
         []
 
     else
-        [ ul [ HA.class "contents-list-nested list-reset" ] rendered ]
+        [ ul [ HA.class "contents-list-nested diva-list-reset" ] rendered ]
 
 
 viewRangeList : Model -> Dict String (Maybe Int) -> List Range -> Html Msg
 viewRangeList model rangeIndexMap ranges =
     ul
-        [ HA.class "contents-list list-reset" ]
+        [ HA.class "contents-list diva-list-reset" ]
         (List.map (Lazy.lazy3 viewRangeNode model rangeIndexMap) ranges)
 
 
@@ -749,9 +749,9 @@ viewThumbnail auth viewMode shiftByOne selectedIndex index page =
 
         attrs =
             [ classList
-                [ ( "thumbs-item", True )
-                , ( "ui-card", True )
-                , ( "ui-card--dark", True )
+                [ ( "diva-thumbs-item", True )
+                , ( "diva-ui-card", True )
+                , ( "diva-ui-card--dark", True )
                 , ( "is-active", isActive )
                 ]
             , type_ "button"
@@ -784,7 +784,7 @@ viewThumbnail auth viewMode shiftByOne selectedIndex index page =
             case Auth.thumbnailCrossOrigin primary.sourceId auth of
                 Just crossOrigin ->
                     Html.node "diva-lazy-image"
-                        [ HA.class "thumbs-lazy-image"
+                        [ HA.class "diva-thumbs-lazy-image"
                         , attribute "data-src" page.thumbUrl
                         , attribute "data-alt" ("Page " ++ String.fromInt (index + 1))
                         , attribute "data-crossorigin" crossOrigin
@@ -793,7 +793,7 @@ viewThumbnail auth viewMode shiftByOne selectedIndex index page =
 
                 Nothing ->
                     div
-                        [ HA.class "thumbs-image thumbs-image--protected"
+                        [ HA.class "diva-thumbs-image diva-thumbs-image--protected"
                         , attribute "aria-label" "Protected image"
                         ]
                         []
@@ -802,7 +802,7 @@ viewThumbnail auth viewMode shiftByOne selectedIndex index page =
         [ thumbnail
         , div
             [ classList
-                [ ( "thumbs-label", True )
+                [ ( "diva-thumbs-label", True )
                 , ( "is-active", isActive )
                 ]
             ]
@@ -842,7 +842,7 @@ viewThumbnails { fullscreen, auth, selectedIndex, shiftByOne, thumbsInstantScrol
     in
     div
         [ classList
-            [ ( "thumbs", True )
+            [ ( "diva-thumbs", True )
             , ( "is-fullscreen", fullscreen )
             ]
         , id "thumbs"

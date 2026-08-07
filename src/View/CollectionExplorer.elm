@@ -97,7 +97,7 @@ viewCollectionPanel model collectionState =
 viewCollectionTree : Language -> CollectionState -> List CollectionItem -> Html Msg
 viewCollectionTree language collectionState items =
     ul
-        [ HA.class "collection-list list-reset" ]
+        [ HA.class "collection-list diva-list-reset" ]
         (List.map (Lazy.lazy3 viewCollectionItem language collectionState) items)
 
 
@@ -114,7 +114,7 @@ viewManifestItem language collectionState manifest =
         [ button
             [ classList
                 [ ( "manifest-tree-item", True )
-                , ( "ui-button", True )
+                , ( "diva-ui-button", True )
                 , ( "is-active", isActive )
                 ]
             , type_ "button"
@@ -161,7 +161,7 @@ viewNestedCollection language collectionState collection =
     li
         [ HA.class "collection-tree-item" ]
         (button
-            [ HA.class "collection-node-button ui-button"
+            [ HA.class "collection-node-button diva-ui-button"
             , type_ "button"
             , Events.onClick (UserClickedCollectionItem collection.id)
             ]

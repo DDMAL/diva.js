@@ -21,13 +21,13 @@ viewPageViewModal model =
     if model.pageViewOpen then
         div
             [ classList
-                [ ( "modal-overlay", True )
+                [ ( "diva-modal-overlay", True )
                 , ( "is-fullscreen", model.pageViewFullscreen )
                 ]
             ]
             [ div
                 [ classList
-                    [ ( "modal", True )
+                    [ ( "diva-modal", True )
                     , ( "is-fullscreen", model.pageViewFullscreen )
                     , ( "is-page-view", not model.pageViewFullscreen )
                     ]
@@ -387,7 +387,7 @@ viewAdvancedColourAdjustGroup model =
         "Advanced colour adjust"
         (viewFilterRow
             [ button
-                [ HA.class "filter-reset"
+                [ HA.class "diva-filter-reset"
                 , type_ "button"
                 , onClick UserResetAltColourAdjust
                 ]
@@ -468,7 +468,7 @@ viewColourAdjustGroup model =
 viewColourInput : String -> (String -> Msg) -> Html Msg
 viewColourInput colourValue onChange =
     input
-        [ HA.class "filter-color-input"
+        [ HA.class "diva-filter-color-input"
         , type_ "color"
         , value colourValue
         , onInput onChange
@@ -525,17 +525,17 @@ viewFilterGroup model groupId title items =
         isExpanded =
             Set.member groupId model.filterGroupExpanded
     in
-    div [ HA.class "filter-group" ]
+    div [ HA.class "diva-filter-group" ]
         (button
             [ classList
-                [ ( "filter-title-button", True )
+                [ ( "diva-filter-title-button", True )
                 , ( "is-collapsed", not isExpanded )
                 ]
             , onClick (UserToggledFilterGroup groupId)
             ]
             [ span
                 [ classList
-                    [ ( "filter-title-icon", True )
+                    [ ( "diva-filter-title-icon", True )
                     , ( "is-expanded", isExpanded )
                     ]
                 ]
@@ -554,24 +554,24 @@ viewFilterGroup model groupId title items =
 viewFilterJsonGroup : Model -> Html Msg
 viewFilterJsonGroup model =
     viewFilterGroup model
-        "filter-json"
+        "diva-filter-json"
         "Import / Export Filter Settings"
         [ viewFilterRow
             [ button
-                [ HA.class "filter-reset"
+                [ HA.class "diva-filter-reset"
                 , type_ "button"
                 , onClick UserCopiedFilterJson
                 ]
                 [ text "Show JSON" ]
             , button
-                [ HA.class "filter-reset"
+                [ HA.class "diva-filter-reset"
                 , type_ "button"
                 , onClick UserAppliedFilterJson
                 ]
                 [ text "Apply" ]
             ]
         , textarea
-            [ HA.class "filter-json"
+            [ HA.class "diva-filter-json"
             , value model.filtersJsonInput
             , onInput UserUpdatedFilterJsonInput
             , rows 6
@@ -579,7 +579,7 @@ viewFilterJsonGroup model =
             []
         , case model.filtersJsonError of
             Just err ->
-                div [ HA.class "filter-json-error" ] [ text err ]
+                div [ HA.class "diva-filter-json-error" ] [ text err ]
 
             Nothing ->
                 emptyHtml
@@ -588,7 +588,7 @@ viewFilterJsonGroup model =
 
 viewFilterRow : List (Html Msg) -> Html Msg
 viewFilterRow items =
-    div [ HA.class "filter-row" ] items
+    div [ HA.class "diva-filter-row" ] items
 
 
 viewImageChoiceItem : Auth.Model -> Int -> Int -> PageImage -> Html Msg
@@ -599,9 +599,9 @@ viewImageChoiceItem auth selectedIndex index image =
     in
     button
         [ classList
-            [ ( "page-view-choice", True )
-            , ( "ui-card", True )
-            , ( "ui-card--dark", True )
+            [ ( "diva-page-view-choice", True )
+            , ( "diva-ui-card", True )
+            , ( "diva-ui-card--dark", True )
             , ( "is-active", isActive )
             ]
         , type_ "button"
@@ -610,7 +610,7 @@ viewImageChoiceItem auth selectedIndex index image =
         [ case Auth.thumbnailCrossOrigin image.sourceId auth of
             Just crossOrigin ->
                 img
-                    [ HA.class "page-view-choice-thumb"
+                    [ HA.class "diva-page-view-choice-thumb"
                     , src image.thumbUrl
                     , alt image.label
                     , HA.attribute "loading" "lazy"
@@ -620,12 +620,12 @@ viewImageChoiceItem auth selectedIndex index image =
 
             Nothing ->
                 div
-                    [ HA.class "page-view-choice-thumb page-view-choice-thumb--protected"
+                    [ HA.class "diva-page-view-choice-thumb diva-page-view-choice-thumb--protected"
                     , HA.attribute "aria-label" "Protected image"
                     ]
                     []
         , span
-            [ HA.class "page-view-choice-label" ]
+            [ HA.class "diva-page-view-choice-label" ]
             [ text image.label ]
         ]
 
@@ -633,7 +633,7 @@ viewImageChoiceItem auth selectedIndex index image =
 viewImageChoicesSidebar : Auth.Model -> List PageImage -> Int -> Html Msg
 viewImageChoicesSidebar auth images selectedIndex =
     div
-        [ HA.class "page-view-choices" ]
+        [ HA.class "diva-page-view-choices" ]
         (List.indexedMap (\index image -> Lazy.lazy4 viewImageChoiceItem auth selectedIndex index image) images)
 
 
@@ -656,7 +656,7 @@ viewModalBody model =
     in
     div
         [ classList
-            [ ( "modal-body", True )
+            [ ( "diva-modal-body", True )
             , ( "is-no-gap", True )
             , ( "is-fullscreen", model.pageViewFullscreen )
             , ( "is-with-choices", hasChoices )
@@ -723,25 +723,25 @@ viewModalHeader model =
                 ( Icons.showSidebar, "Show filters" )
     in
     div
-        [ HA.class "modal-header" ]
+        [ HA.class "diva-modal-header" ]
         [ div
-            [ HA.class "modal-title-stack" ]
-            (div [ HA.class "modal-title" ] [ text "Page View" ]
+            [ HA.class "diva-modal-title-stack" ]
+            (div [ HA.class "diva-modal-title" ] [ text "Page View" ]
                 :: (if String.isEmpty manifestTitle then
                         []
 
                     else
-                        [ div [ HA.class "modal-subtitle" ] [ text manifestTitle ] ]
+                        [ div [ HA.class "diva-modal-subtitle" ] [ text manifestTitle ] ]
                    )
                 ++ (if String.isEmpty pageLabel then
                         []
 
                     else
-                        [ div [ HA.class "modal-subtitle is-muted" ] [ text pageLabel ] ]
+                        [ div [ HA.class "diva-modal-subtitle is-muted" ] [ text pageLabel ] ]
                    )
             )
         , div
-            [ HA.class "modal-actions" ]
+            [ HA.class "diva-modal-actions" ]
             [ viewButton
                 { label = "Previous Page"
                 , icon = Icons.prevPage
@@ -779,7 +779,7 @@ viewModalHeader model =
                 , isFullscreen = model.fullscreen
                 }
             , div
-                [ HA.class "modal-close-action" ]
+                [ HA.class "diva-modal-close-action" ]
                 [ viewButton
                     { label = "Close"
                     , icon = Icons.close
@@ -794,7 +794,7 @@ viewModalHeader model =
 viewModalSidebar : Model -> Html Msg
 viewModalSidebar model =
     div
-        [ HA.class "modal-sidebar" ]
+        [ HA.class "diva-modal-sidebar" ]
         [ Lazy.lazy viewTransformGroup model
         , Lazy.lazy viewToneGroup model
         , Lazy.lazy viewColourAdjustGroup model
@@ -813,13 +813,13 @@ viewModalViewer : Bool -> Bool -> Html Msg
 viewModalViewer fullscreen isOuterLeft =
     div
         [ classList
-            [ ( "modal-viewer", True )
+            [ ( "diva-modal-viewer", True )
             , ( "is-fullscreen", fullscreen )
             , ( "is-outer-left", isOuterLeft )
             ]
         ]
         [ div
-            [ HA.class "modal-canvas"
+            [ HA.class "diva-modal-canvas"
             , id "filter-viewer"
             ]
             []
@@ -899,9 +899,9 @@ viewPseudoColourGroup model =
         , viewFilterRow
             [ viewToggle "Replace Colour" model.filters.colourReplaceEnabled ToggleColourReplace ]
         , viewFilterRow
-            [ span [ HA.class "filter-label" ] [ text "Source" ]
+            [ span [ HA.class "diva-filter-label" ] [ text "Source" ]
             , viewColourInput model.filters.colourReplaceSource (UserUpdatedFilterString StringColourReplaceSource)
-            , span [ HA.class "filter-label" ] [ text "Target" ]
+            , span [ HA.class "diva-filter-label" ] [ text "Target" ]
             , viewColourInput model.filters.colourReplaceTarget (UserUpdatedFilterString StringColourReplaceTarget)
             ]
         , viewRangeRow
@@ -946,15 +946,15 @@ viewRangeInput minValue maxValue stepValue currentValue onChange =
                 Nothing ->
                     baseAttrs
     in
-    input (HA.class "filter-range-input" :: attrs) []
+    input (HA.class "diva-filter-range-input" :: attrs) []
 
 
 viewRangeRow : RangeRowConfig -> Html Msg
 viewRangeRow config =
-    div [ HA.class "filter-range-group" ]
-        [ div [ HA.class "filter-range-header" ]
-            [ span [ HA.class "filter-label" ] [ text config.label ]
-            , span [ HA.class "filter-value" ] [ text config.display ]
+    div [ HA.class "diva-filter-range-group" ]
+        [ div [ HA.class "diva-filter-range-header" ]
+            [ span [ HA.class "diva-filter-label" ] [ text config.label ]
+            , span [ HA.class "diva-filter-value" ] [ text config.display ]
             ]
         , viewRangeInput config.min config.max config.step config.value config.onInput
         ]
@@ -962,14 +962,14 @@ viewRangeRow config =
 
 viewRotationRow : Model -> Html Msg
 viewRotationRow model =
-    div [ HA.class "filter-range-group" ]
-        [ div [ HA.class "filter-range-header" ]
-            [ span [ HA.class "filter-label" ] [ text "Rotation" ]
-            , span [ HA.class "filter-range-header-right" ]
-                [ span [ HA.class "filter-value" ]
+    div [ HA.class "diva-filter-range-group" ]
+        [ div [ HA.class "diva-filter-range-header" ]
+            [ span [ HA.class "diva-filter-label" ] [ text "Rotation" ]
+            , span [ HA.class "diva-filter-range-header-right" ]
+                [ span [ HA.class "diva-filter-value" ]
                     [ text (String.fromInt model.filters.rotation ++ "°") ]
                 , button
-                    [ HA.class "filter-reset"
+                    [ HA.class "diva-filter-reset"
                     , type_ "button"
                     , onClick (UserUpdatedFilterInt IntRotation "0")
                     ]
@@ -987,7 +987,7 @@ viewRotationRow model =
 viewSelect : String -> (String -> Msg) -> List (Html Msg) -> Html Msg
 viewSelect currentValue onChange options =
     select
-        [ HA.class "filter-select"
+        [ HA.class "diva-filter-select"
         , onInput onChange
         , value currentValue
         ]
@@ -996,7 +996,7 @@ viewSelect currentValue onChange options =
 
 viewToggle : String -> Bool -> FilterToggle -> Html Msg
 viewToggle labelText isChecked toggle =
-    label [ HA.class "filter-toggle" ]
+    label [ HA.class "diva-filter-toggle" ]
         [ input
             [ type_ "checkbox"
             , checked isChecked
@@ -1009,9 +1009,9 @@ viewToggle labelText isChecked toggle =
 
 viewToggleRangeRow : ToggleRangeRowConfig -> Html Msg
 viewToggleRangeRow config =
-    div [ HA.class "filter-range-group" ]
-        [ div [ HA.class "filter-range-header" ]
-            [ label [ HA.class "filter-toggle is-inline" ]
+    div [ HA.class "diva-filter-range-group" ]
+        [ div [ HA.class "diva-filter-range-header" ]
+            [ label [ HA.class "diva-filter-toggle is-inline" ]
                 [ input
                     [ type_ "checkbox"
                     , checked config.checked
@@ -1020,7 +1020,7 @@ viewToggleRangeRow config =
                     []
                 , text config.label
                 ]
-            , span [ HA.class "filter-value" ] [ text config.display ]
+            , span [ HA.class "diva-filter-value" ] [ text config.display ]
             ]
         , viewRangeInput config.min config.max config.step config.value config.onInput
         ]

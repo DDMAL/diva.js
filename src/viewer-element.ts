@@ -60,7 +60,7 @@ class DivaLazyImage extends HTMLElement
         }
         lazyImageObserver?.unobserve(this);
         const image = document.createElement("img");
-        image.className = "thumbs-image";
+        image.className = "diva-thumbs-image";
         image.alt = this.dataset.alt ?? "";
         const crossOrigin = this.dataset.crossorigin;
         if (crossOrigin)

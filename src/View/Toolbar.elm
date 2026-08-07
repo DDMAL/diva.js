@@ -215,7 +215,7 @@ viewCurrentLabel : Bool -> String -> Html Msg
 viewCurrentLabel fullscreen labelText =
     div
         [ classList
-            [ ( "canvas-label", True )
+            [ ( "diva-canvas-label", True )
             , ( "is-fullscreen", fullscreen )
             ]
         ]
