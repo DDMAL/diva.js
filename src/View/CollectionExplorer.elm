@@ -19,7 +19,7 @@ viewCollectionResizer model =
         ResourceLoadedCollection _ ->
             div
                 [ classList
-                    [ ( "collection-resizer", True )
+                    [ ( "diva-collection-resizer", True )
                     , ( "is-hidden", not model.collectionSidebarVisible )
                     ]
                 , Events.on "mousedown"
@@ -64,7 +64,7 @@ viewCollectionPanel model collectionState =
     in
     div
         [ classList
-            [ ( "collection-panel", True )
+            [ ( "diva-collection-panel", True )
             , ( "is-fullscreen", model.fullscreen )
             , ( "is-hidden", not model.collectionSidebarVisible )
             ]
@@ -77,18 +77,18 @@ viewCollectionPanel model collectionState =
             )
         ]
         [ div
-            [ HA.class "collection-header" ]
-            [ div [ HA.class "collection-title" ] [ text labelText ]
+            [ HA.class "diva-collection-header" ]
+            [ div [ HA.class "diva-collection-title" ] [ text labelText ]
             , viewMaybe
                 (\summary ->
-                    div [ HA.class "collection-summary" ] [ text (extractLabelFromLanguageMap model.detectedLanguage summary) ]
+                    div [ HA.class "diva-collection-summary" ] [ text (extractLabelFromLanguageMap model.detectedLanguage summary) ]
                 )
                 collection.summary
             ]
         , div
-            [ HA.class "sidebar-content" ]
+            [ HA.class "diva-sidebar-content" ]
             [ div
-                [ HA.class "sidebar-pane is-scroll" ]
+                [ HA.class "diva-sidebar-pane is-scroll" ]
                 [ viewCollectionTree model.detectedLanguage collectionState collection.items ]
             ]
         ]
@@ -97,7 +97,7 @@ viewCollectionPanel model collectionState =
 viewCollectionTree : Language -> CollectionState -> List CollectionItem -> Html Msg
 viewCollectionTree language collectionState items =
     ul
-        [ HA.class "collection-list diva-list-reset" ]
+        [ HA.class "diva-collection-list diva-list-reset" ]
         (List.map (Lazy.lazy3 viewCollectionItem language collectionState) items)
 
 
@@ -113,7 +113,7 @@ viewManifestItem language collectionState manifest =
     li []
         [ button
             [ classList
-                [ ( "manifest-tree-item", True )
+                [ ( "diva-manifest-tree-item", True )
                 , ( "diva-ui-button", True )
                 , ( "is-active", isActive )
                 ]
@@ -148,7 +148,7 @@ viewNestedCollection language collectionState collection =
 
                     loadingView =
                         if isLoading then
-                            [ div [ HA.class "contents-empty" ] [ text "Loading…" ] ]
+                            [ div [ HA.class "diva-contents-empty" ] [ text "Loading…" ] ]
 
                         else
                             []
@@ -159,13 +159,13 @@ viewNestedCollection language collectionState collection =
                 []
     in
     li
-        [ HA.class "collection-tree-item" ]
+        [ HA.class "diva-collection-tree-item" ]
         (button
-            [ HA.class "collection-node-button diva-ui-button"
+            [ HA.class "diva-collection-node-button diva-ui-button"
             , type_ "button"
             , Events.onClick (UserClickedCollectionItem collection.id)
             ]
-            [ div [ HA.class "collection-expand-icon" ] [ text expandIcon ]
+            [ div [ HA.class "diva-collection-expand-icon" ] [ text expandIcon ]
             , text labelText
             ]
             :: childrenView

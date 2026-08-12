@@ -33,7 +33,7 @@ viewButtonWithAttributes extraAttrs config =
 
                 baseAttrs =
                     [ classList
-                        [ ( "canvas-toolbar-button", True )
+                        [ ( "diva-canvas-toolbar-button", True )
                         , ( "is-disabled", isDisabled )
                         , ( "is-fullscreen", config.isFullscreen )
                         ]
@@ -49,7 +49,7 @@ viewButtonWithAttributes extraAttrs config =
                     HA.disabled True :: (extraAttrs ++ baseAttrs)
     in
     div
-        [ HA.class "canvas-toolbar-item"
+        [ HA.class "diva-canvas-toolbar-item"
         , HA.attribute "data-tooltip" config.label
         ]
         [ button buttonAttrs [ config.icon ]

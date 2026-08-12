@@ -65,7 +65,7 @@
   gap: 8px;
 }
 
-.diva-modal-close-action .canvas-toolbar-button {
+.diva-modal-close-action .diva-canvas-toolbar-button {
   background-color: transparent;
   color: var(--diva-danger);
   border: none;
@@ -77,12 +77,12 @@
   padding: 2px;
 }
 
-.diva-modal-close-action .canvas-toolbar-button:hover {
+.diva-modal-close-action .diva-canvas-toolbar-button:hover {
   background-color: rgb(211 47 47 / 12%);
   border-color: transparent;
 }
 
-.diva-modal-close-action .canvas-toolbar-item {
+.diva-modal-close-action .diva-canvas-toolbar-item {
   width: 32px;
 }
 

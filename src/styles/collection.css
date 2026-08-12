@@ -1,6 +1,6 @@
 /* Collection sidebar styles. */
 
-.collection-panel {
+.diva-collection-panel {
   height: 100%;
   min-height: 0;
   display: flex;
@@ -11,31 +11,31 @@
   overflow: hidden;
 }
 
-.collection-header {
+.diva-collection-header {
   padding: 12px;
   border-radius: 0;
   background-color: var(--diva-surface);
   border-bottom: 1px solid var(--diva-border);
 }
 
-.collection-title {
+.diva-collection-title {
   font-size: var(--diva-font-lg);
   font-weight: 600;
   color: var(--diva-text-muted);
   margin-bottom: 4px;
 }
 
-.collection-summary {
+.diva-collection-summary {
   font-size: var(--diva-font-md);
   color: var(--diva-text-muted);
   line-height: 1.4;
 }
 
-.collection-tree-item {
+.diva-collection-tree-item {
   padding-left: 12px;
 }
 
-.collection-node-button {
+.diva-collection-node-button {
   padding: 6px 8px;
   width: 100%;
   display: flex;
@@ -43,7 +43,7 @@
   gap: 6px;
 }
 
-.collection-expand-icon {
+.diva-collection-expand-icon {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -52,21 +52,21 @@
   flex-shrink: 0;
 }
 
-.manifest-tree-item {
+.diva-manifest-tree-item {
   padding: 6px 8px 6px 30px;
 }
 
-.manifest-tree-item.is-active {
+.diva-manifest-tree-item.is-active {
   background-color: var(--diva-border);
   font-weight: 600;
 }
 
-.sidebar-pane.is-scroll {
+.diva-sidebar-pane.is-scroll {
   overflow-y: auto;
 }
 
 @media (max-width: 720px) {
-  .collection-panel {
+  .diva-collection-panel {
     width: 100%;
     height: auto;
     border-radius: 0;

@@ -31,7 +31,7 @@ viewSidebarResizer model =
     if shouldRenderSidebarShell model then
         div
             [ classList
-                [ ( "sidebar-resizer", True )
+                [ ( "diva-sidebar-resizer", True )
                 , ( "is-hidden", not (isSidebarVisible model.sidebarState) )
                 ]
             , Events.on "mousedown"
@@ -288,8 +288,8 @@ viewContentsContent model =
                     viewOnThisPageEmptyBody
     in
     div
-        [ HA.class "contents-panel" ]
-        [ div [ HA.class "contents-title" ] [ text "Contents" ]
+        [ HA.class "diva-contents-panel" ]
+        [ div [ HA.class "diva-contents-title" ] [ text "Contents" ]
         , viewContentsToggle model.viewMode model.contentsView
         , body
         ]
@@ -298,7 +298,7 @@ viewContentsContent model =
 viewContentsEmpty : String -> Html Msg
 viewContentsEmpty message =
     div
-        [ HA.class "contents-empty" ]
+        [ HA.class "diva-contents-empty" ]
         [ text message ]
 
 
@@ -324,10 +324,10 @@ viewContentsIndexBody model manifest =
 viewContentsToggle : ViewMode -> ContentsView -> Html Msg
 viewContentsToggle viewMode contentsView =
     div
-        [ HA.class "contents-view-tabs" ]
+        [ HA.class "diva-contents-view-tabs" ]
         [ button
             [ classList
-                [ ( "contents-view-button", True )
+                [ ( "diva-contents-view-button", True )
                 , ( "is-active", contentsView == ContentsIndex )
                 ]
             , type_ "button"
@@ -336,7 +336,7 @@ viewContentsToggle viewMode contentsView =
             [ text "Index" ]
         , button
             [ classList
-                [ ( "contents-view-button", True )
+                [ ( "diva-contents-view-button", True )
                 , ( "is-active", contentsView == ContentsPages )
                 ]
             , type_ "button"
@@ -396,7 +396,7 @@ viewOnThisPageBody model manifest =
                                     |> Dict.fromList
                         in
                         ul
-                            [ HA.class "contents-list diva-list-reset" ]
+                            [ HA.class "diva-contents-list diva-list-reset" ]
                             (List.map (viewOtpRangeItem model canvasLabelMap) matches)
 
                 Nothing ->
@@ -461,7 +461,7 @@ viewOtpRangeItem model canvasLabelMap range =
             viewRangeMetadata model.detectedLanguage range.metadata
     in
     li
-        [ HA.class "contents-item" ]
+        [ HA.class "diva-contents-item" ]
         (labelNode :: metadataBlock)
 
 
@@ -469,7 +469,7 @@ viewRangeButton : Bool -> Maybe Int -> String -> Html Msg
 viewRangeButton isCurrent maybeIndex labelText =
     button
         ([ classList
-            [ ( "contents-button", True )
+            [ ( "diva-contents-button", True )
             , ( "diva-ui-button", True )
             , ( "is-current", isCurrent )
             ]
@@ -489,7 +489,7 @@ viewRangeButton isCurrent maybeIndex labelText =
 viewRangeDisclosure : Bool -> String -> String -> Html Msg
 viewRangeDisclosure isExpanded rangeId labelText =
     button
-        [ HA.class "contents-disclosure diva-ui-button"
+        [ HA.class "diva-contents-disclosure diva-ui-button"
         , type_ "button"
         , attribute "aria-expanded"
             (if isExpanded then
@@ -538,13 +538,13 @@ viewRangeItems model rangeIndexMap items =
         []
 
     else
-        [ ul [ HA.class "contents-list-nested diva-list-reset" ] rendered ]
+        [ ul [ HA.class "diva-contents-list-nested diva-list-reset" ] rendered ]
 
 
 viewRangeList : Model -> Dict String (Maybe Int) -> List Range -> Html Msg
 viewRangeList model rangeIndexMap ranges =
     ul
-        [ HA.class "contents-list diva-list-reset" ]
+        [ HA.class "diva-contents-list diva-list-reset" ]
         (List.map (Lazy.lazy3 viewRangeNode model rangeIndexMap) ranges)
 
 
@@ -555,7 +555,7 @@ viewRangeMetadata language metadata =
 
     else
         [ div
-            [ HA.class "contents-meta" ]
+            [ HA.class "diva-contents-meta" ]
             (List.map (metadataEntry language) metadata)
         ]
 
@@ -591,7 +591,7 @@ viewRangeNode model rangeIndexMap range =
 
         headingNode =
             div
-                [ HA.class "contents-heading" ]
+                [ HA.class "diva-contents-heading" ]
                 ((if List.isEmpty range.metadata then
                     []
 
@@ -609,7 +609,7 @@ viewRangeNode model rangeIndexMap range =
                 []
     in
     li
-        [ HA.class "contents-item" ]
+        [ HA.class "diva-contents-item" ]
         (headingNode :: metadataBlock ++ children)
 
 
@@ -617,7 +617,7 @@ viewSidebarPane : SidebarState -> SidebarState -> Html Msg -> Html Msg
 viewSidebarPane current target content =
     div
         [ classList
-            [ ( "sidebar-pane", True )
+            [ ( "diva-sidebar-pane", True )
             , ( "is-hidden", current /= target )
             ]
         ]
@@ -656,7 +656,7 @@ viewSidebarPanelWithMaybeManifest model maybeManifest =
                 model.pages
 
         panelClasses =
-            [ ( "sidebar-panel", True )
+            [ ( "diva-sidebar-panel", True )
             , ( "is-fullscreen", model.fullscreen )
             , ( "is-hidden", not (isSidebarVisible model.sidebarState) )
             , ( "is-overlay", model.mobileSidebarOpen )
@@ -702,13 +702,13 @@ viewSidebarPanelWithMaybeManifest model maybeManifest =
             )
         ]
         [ div
-            [ HA.class "sidebar-tabs" ]
+            [ HA.class "diva-sidebar-tabs" ]
             (viewSidebarTab model.sidebarState SidebarThumbnails "Thumbnails" UserToggledThumbnails
                 :: metadataTab
                 ++ contentsTab
             )
         , div
-            [ HA.class "sidebar-content" ]
+            [ HA.class "diva-sidebar-content" ]
             (viewSidebarPane model.sidebarState
                 SidebarThumbnails
                 (viewThumbnails
@@ -732,7 +732,7 @@ viewSidebarTab : SidebarState -> SidebarState -> String -> Msg -> Html Msg
 viewSidebarTab current target label msg =
     button
         [ classList
-            [ ( "sidebar-tab-button", True )
+            [ ( "diva-sidebar-tab-button", True )
             , ( "is-active", current == target )
             ]
         , type_ "button"
