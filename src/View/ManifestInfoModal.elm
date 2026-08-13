@@ -17,9 +17,9 @@ viewManifestInfoModal : Model -> Html Msg
 viewManifestInfoModal model =
     if model.manifestInfoOpen then
         div
-            [ HA.class "modal-overlay" ]
+            [ HA.class "diva-modal-overlay" ]
             [ div
-                [ HA.class "modal is-narrow" ]
+                [ HA.class "diva-modal is-narrow" ]
                 [ viewHeader model
                 , currentManifest model
                     |> viewBody model
@@ -214,12 +214,12 @@ viewBody model maybeManifest =
             viewMaybe (viewLogoBlock model.detectedLanguage) maybeManifest
     in
     div
-        [ HA.class "modal-body is-two-column" ]
+        [ HA.class "diva-modal-body is-two-column" ]
         [ div
-            [ HA.class "metadata-body" ]
+            [ HA.class "diva-metadata-body" ]
             (List.map viewRow rows)
         , div
-            [ HA.class "manifest-info-logo-wrap" ]
+            [ HA.class "diva-manifest-info-logo-wrap" ]
             [ logoBlock ]
         ]
 
@@ -227,14 +227,14 @@ viewBody model maybeManifest =
 viewHeader : { a | fullscreen : Bool } -> Html Msg
 viewHeader { fullscreen } =
     div
-        [ HA.class "modal-header" ]
+        [ HA.class "diva-modal-header" ]
         [ div
-            [ HA.class "modal-title" ]
+            [ HA.class "diva-modal-title" ]
             [ text "Manifest Info" ]
         , div
-            [ HA.class "modal-actions" ]
+            [ HA.class "diva-modal-actions" ]
             [ div
-                [ HA.class "modal-close-action" ]
+                [ HA.class "diva-modal-close-action" ]
                 [ viewButton
                     { label = "Close"
                     , icon = Icons.close
@@ -275,7 +275,7 @@ viewLogoBlock language manifest =
             [ viewMaybe
                 (\url ->
                     img
-                        [ HA.class "manifest-info-logo"
+                        [ HA.class "diva-manifest-info-logo"
                         , src url
                         , alt "Manifest logo"
                         ]
@@ -305,9 +305,9 @@ viewLogoBlock language manifest =
 viewRow : ( String, Html Msg ) -> Html Msg
 viewRow ( labelText, valueNode ) =
     div
-        [ HA.class "metadata-item" ]
-        [ div [ HA.class "metadata-label" ] [ text labelText ]
-        , div [ HA.class "metadata-value" ] [ valueNode ]
+        [ HA.class "diva-metadata-item" ]
+        [ div [ HA.class "diva-metadata-label" ] [ text labelText ]
+        , div [ HA.class "diva-metadata-value" ] [ valueNode ]
         ]
 
 

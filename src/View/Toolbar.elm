@@ -21,9 +21,9 @@ viewToolbar model =
         currentLabelText =
             currentLabelFor model
     in
-    div [ HA.class "canvas-toolbar-stack" ]
-        [ div [ HA.class "canvas-toolbar" ]
-            [ div [ HA.class "canvas-toolbar-section" ]
+    div [ HA.class "diva-canvas-toolbar-stack" ]
+        [ div [ HA.class "diva-canvas-toolbar" ]
+            [ div [ HA.class "diva-canvas-toolbar-section" ]
                 [ viewCollectionSidebarButton model
                 , viewButton
                     { label = "Zoom Out"
@@ -38,9 +38,9 @@ viewToolbar model =
                     , isFullscreen = model.fullscreen
                     }
                 ]
-            , div [ HA.class "canvas-toolbar-end" ]
+            , div [ HA.class "diva-canvas-toolbar-end" ]
                 [ Lazy.lazy2 viewCurrentLabel model.fullscreen currentLabelText
-                , div [ HA.class "canvas-toolbar-section is-right" ]
+                , div [ HA.class "diva-canvas-toolbar-section is-right" ]
                     (viewLogoutActions model
                         ++ [ viewButton
                                 { label = "Page View"
@@ -215,7 +215,7 @@ viewCurrentLabel : Bool -> String -> Html Msg
 viewCurrentLabel fullscreen labelText =
     div
         [ classList
-            [ ( "canvas-label", True )
+            [ ( "diva-canvas-label", True )
             , ( "is-fullscreen", fullscreen )
             ]
         ]
@@ -242,11 +242,11 @@ viewLogoutActions model =
                                 label
                 in
                 div
-                    [ HA.class "canvas-toolbar-item"
+                    [ HA.class "diva-canvas-toolbar-item"
                     , HA.attribute "data-tooltip" displayLabel
                     ]
                     [ button
-                        [ HA.class "canvas-toolbar-button"
+                        [ HA.class "diva-canvas-toolbar-button"
                         , HA.type_ "button"
                         , HA.attribute "aria-label" displayLabel
                         , HA.attribute "data-diva-auth-logout" action.sessionId

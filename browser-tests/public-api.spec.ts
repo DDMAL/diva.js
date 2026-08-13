@@ -320,7 +320,7 @@ test("positions a distant initial image with final page geometry", async ({page}
 });
 
 test("configures the initial sidebar width and retains the default", async ({page}) => {
-    const sidebar = page.locator(".sidebar-panel");
+    const sidebar = page.locator(".diva-sidebar-panel");
     await page.getByRole("button", {name : "Show Sidebar"}).evaluate((button: HTMLButtonElement) => button.click());
     await expect(sidebar).toHaveCSS("width", "320px");
 
@@ -431,7 +431,7 @@ test("bolds ranges containing the current page in the contents index", async ({p
     await expect(sectionA).not.toHaveClass(/is-current/);
 
     await page.getByRole("button", {name : "On this page"}).evaluate((button: HTMLButtonElement) => button.click());
-    await expect(page.locator(".contents-button.is-current")).toHaveCount(0);
+    await expect(page.locator(".diva-contents-button.is-current")).toHaveCount(0);
 });
 
 test("bolds ranges containing either page of a two-up spread", async ({page}) => {
@@ -560,7 +560,7 @@ test("indents nested ranges in the contents index", async ({page}) => {
     expect(parentBox).not.toBeNull();
     expect(childBox!.x - parentBox!.x).toBeGreaterThanOrEqual(18);
     expect(grandchildBox!.x - childBox!.x).toBeGreaterThanOrEqual(18);
-    await expect(page.locator(".contents-list-nested").first()).toHaveCSS("border-left-width", "1px");
+    await expect(page.locator(".diva-contents-list-nested").first()).toHaveCSS("border-left-width", "1px");
 });
 
 test("keeps the previous resource when a replacement request fails", async ({page}) => {

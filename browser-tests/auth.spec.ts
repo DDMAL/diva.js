@@ -230,7 +230,7 @@ test("loads only nearby sidebar thumbnails", async ({page}, testInfo) => {
     const initiallyLoaded = thumbnailRequests.size;
     expect(initiallyLoaded).toBeLessThan(pageCount);
 
-    await page.locator(".thumbs").evaluate((element) => { element.scrollTop = element.scrollHeight; });
+    await page.locator(".diva-thumbs").evaluate((element) => { element.scrollTop = element.scrollHeight; });
     await expect.poll(() => thumbnailRequests.size).toBeGreaterThan(initiallyLoaded);
 });
 
@@ -453,23 +453,23 @@ test("falls back from silent external auth and deduplicates active login", async
     await openHarness(page, `${origin}/mock/manifest`, testInfo);
     await expect(page.locator(".diva-auth-dialog")).toBeVisible();
     expect(externalTokenRequests).toBe(1);
-    await expect(page.locator(".thumbs-image--protected")).toHaveCount(2);
+    await expect(page.locator(".diva-thumbs-image--protected")).toHaveCount(2);
     await page.locator("button[data-diva-auth-flow]").click();
     await expect(page.locator(".diva-auth-dialog")).toBeHidden({timeout : 10000});
     await expect.poll(() => probeRequests.filter((request) => request.authorization === "Bearer token-1").length).toBe(1);
     await page.getByRole("button", {name : "Page View"}).click();
-    await expect(page.locator(".modal.is-page-view")).toBeVisible();
+    await expect(page.locator(".diva-modal.is-page-view")).toBeVisible();
     await expect.poll(() => infoRequests.get(`${origin}/mock/image-1/info.json`) || 0).toBe(1);
     await expect.poll(() => infoRequests.get(`${origin}/mock/image-2/info.json`) || 0).toBe(1);
-    await expect(page.locator("img.thumbs-image").first()).toHaveAttribute("crossorigin", "use-credentials");
+    await expect(page.locator("img.diva-thumbs-image").first()).toHaveAttribute("crossorigin", "use-credentials");
 
     await page.evaluate(async ({sourceId, url}) => {
         const instance = (window as any).diva;
         await instance.auth.resolve({sourceId, url, isStatic : false}, new AbortController().signal);
     }, {sourceId : `${origin}/mock/image-1/info.json`, url : `${origin}/mock/image-1/info.json`});
     expect(infoRequests.get(`${origin}/mock/image-1/info.json`)).toBe(1);
-    await page.locator(".modal-close-action button").click();
-    await expect(page.locator(".modal.is-page-view")).toBeHidden();
+    await page.locator(".diva-modal-close-action button").click();
+    await expect(page.locator(".diva-modal.is-page-view")).toBeHidden();
 
     await page.evaluate(async () => {
         const viewer = document.querySelector("osd-viewer") as any;
@@ -779,12 +779,12 @@ test("cancels superseded previews, source resolutions, and destroyed viewers", a
     await expect.poll(() => infoRequests).toBe(1);
 
     await page.getByRole("button", {name : "Page View"}).click();
-    await expect(page.locator(".modal.is-page-view")).toBeVisible();
-    await page.locator(".modal-close-action button").click();
+    await expect(page.locator(".diva-modal.is-page-view")).toBeVisible();
+    await page.locator(".diva-modal-close-action button").click();
     await page.evaluate((id) => (window as any).diva.auth.invalidateSources([ id ]), sourceId);
     await page.getByRole("button", {name : "Page View"}).click();
     await expect.poll(() => infoRequests).toBe(2);
-    await page.locator(".modal-close-action button").click();
+    await page.locator(".diva-modal-close-action button").click();
     await expect.poll(() => page.evaluate(() => ({
                                               inflight : (window as any).diva.auth.inflight.size,
                                               pending : (window as any).diva.auth.pending.size,
@@ -792,7 +792,7 @@ test("cancels superseded previews, source resolutions, and destroyed viewers", a
                                           })))
         .toEqual({inflight : 0, pending : 0, requests : 0});
     releases.shift()?.();
-    await expect(page.locator(".modal.is-page-view")).toBeHidden();
+    await expect(page.locator(".diva-modal.is-page-view")).toBeHidden();
     await expect(page.locator(".diva-image-unavailable")).toHaveCount(0);
 
     await page.evaluate(({id, url}) => {
