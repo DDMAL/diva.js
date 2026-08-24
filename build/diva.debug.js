@@ -41,23 +41,20 @@
       image.className = "diva-thumbs-image";
       image.alt = (_a = this.dataset.alt) != null ? _a : "";
       const crossOrigin = this.dataset.crossorigin;
+      const isAnonymous = crossOrigin === "anonymous";
       this.image = image;
       this.appendChild(image);
-      this.loadImage(image, url, crossOrigin, crossOrigin === "anonymous", false);
+      this.loadImage(image, url, isAnonymous ? void 0 : crossOrigin, isAnonymous, false);
     }
-    loadImage(image, url, crossOrigin, canRetryWithoutCors, usedFallback) {
+    loadImage(image, url, crossOrigin, canUseFallback, usedFallback) {
       image.removeAttribute("crossorigin");
       if (crossOrigin) {
         image.crossOrigin = crossOrigin;
       }
       image.onerror = () => {
-        if (canRetryWithoutCors) {
-          this.loadImage(image, url, void 0, false, usedFallback);
-          return;
-        }
         const fallbackUrl = this.dataset.fallbackSrc;
-        if (!usedFallback && fallbackUrl && fallbackUrl !== url) {
-          this.loadImage(image, fallbackUrl, "anonymous", false, true);
+        if (canUseFallback && !usedFallback && fallbackUrl && fallbackUrl !== url) {
+          this.loadImage(image, fallbackUrl, void 0, true, true);
           return;
         }
         this.showUnavailable();
