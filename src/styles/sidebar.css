@@ -120,7 +120,8 @@
   background: var(--diva-dark-bg);
 }
 
-.diva-thumbs-image--protected {
+.diva-thumbs-image--protected,
+.diva-thumbs-image--unavailable {
   min-height: 96px;
   background: var(--diva-dark-bg);
 }

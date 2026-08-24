@@ -347,6 +347,75 @@ test("uses the same width breakpoint for sidebar state and CSS layout", async ({
     await expect(page.locator(".diva-sidebar-resizer")).toBeHidden();
 });
 
+test("retries anonymous thumbnails without CORS before using their fallback", async ({page}) => {
+    const thumbnailUrl = "https://thumbnail.example.test/manifest-thumbnail.jpg";
+    const fallbackUrl = `${origin}/api/first/image/1/full/180,/0/default.jpg`;
+
+    await page.route(thumbnailUrl, (route) => route.fulfill({
+        contentType : "image/png",
+        headers : {"access-control-allow-origin" : "*"},
+        body : png
+    }));
+
+    await page.evaluate(({thumbnailUrl, fallbackUrl}) => {
+        const thumbnail = document.createElement("diva-lazy-image");
+        thumbnail.dataset.src = thumbnailUrl;
+        thumbnail.dataset.fallbackSrc = fallbackUrl;
+        thumbnail.dataset.crossorigin = "anonymous";
+        document.body.appendChild(thumbnail);
+    }, {thumbnailUrl, fallbackUrl});
+
+    const thumbnail = page.locator("diva-lazy-image").last().locator("img");
+    await thumbnail.evaluate((image) => image.dispatchEvent(new Event("error")));
+    await expect(thumbnail).toHaveAttribute("src", thumbnailUrl);
+    await expect(thumbnail).not.toHaveAttribute("crossorigin");
+});
+
+test("uses the IIIF thumbnail when both manifest-thumbnail attempts fail", async ({page}) => {
+    const thumbnailUrl = "https://thumbnail.example.test/unavailable-thumbnail.jpg";
+    const fallbackUrl = `${origin}/api/first/image/1/full/180,/0/default.jpg`;
+
+    await page.route(thumbnailUrl, (route) => route.fulfill({
+        contentType : "image/png",
+        headers : {"access-control-allow-origin" : "*"},
+        body : png
+    }));
+
+    await page.evaluate(({thumbnailUrl, fallbackUrl}) => {
+        const thumbnail = document.createElement("diva-lazy-image");
+        thumbnail.dataset.src = thumbnailUrl;
+        thumbnail.dataset.fallbackSrc = fallbackUrl;
+        thumbnail.dataset.crossorigin = "anonymous";
+        document.body.appendChild(thumbnail);
+    }, {thumbnailUrl, fallbackUrl});
+
+    const thumbnail = page.locator("diva-lazy-image").last().locator("img");
+    await thumbnail.evaluate((image) => image.dispatchEvent(new Event("error")));
+    await thumbnail.evaluate((image) => image.dispatchEvent(new Event("error")));
+    await expect(thumbnail).toHaveAttribute("src", fallbackUrl);
+    await expect(thumbnail).toHaveAttribute("crossorigin", "anonymous");
+});
+
+test("does not downgrade credentialed thumbnails to a no-CORS request", async ({page}) => {
+    const thumbnailUrl = "https://thumbnail.example.test/protected-thumbnail.jpg";
+    let thumbnailRequests = 0;
+
+    await page.route(thumbnailUrl, (route) => {
+        thumbnailRequests += 1;
+        return route.fulfill({status : 404});
+    });
+
+    await page.evaluate((thumbnailUrl) => {
+        const thumbnail = document.createElement("diva-lazy-image");
+        thumbnail.dataset.src = thumbnailUrl;
+        thumbnail.dataset.crossorigin = "use-credentials";
+        document.body.appendChild(thumbnail);
+    }, thumbnailUrl);
+
+    await expect.poll(() => thumbnailRequests).toBe(1);
+    await expect(page.locator("diva-lazy-image").last().locator(".diva-thumbs-image--unavailable")).toBeVisible();
+});
+
 test("defaults to thumbnails and selects the configured contents panel", async ({page}) => {
     const name = "sidebar-panels";
     await page.route(`${origin}/api/${name}/manifest`, (route) => route.fulfill({json : {

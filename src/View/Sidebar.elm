@@ -786,6 +786,7 @@ viewThumbnail auth viewMode shiftByOne selectedIndex index page =
                     Html.node "diva-lazy-image"
                         [ HA.class "diva-thumbs-lazy-image"
                         , attribute "data-src" page.thumbUrl
+                        , attribute "data-fallback-src" page.fallbackThumbUrl
                         , attribute "data-alt" ("Page " ++ String.fromInt (index + 1))
                         , attribute "data-crossorigin" crossOrigin
                         ]

@@ -18,10 +18,11 @@ let lazyImageObserver: IntersectionObserver|null = null;
 class DivaLazyImage extends HTMLElement
 {
     private image: HTMLImageElement|null = null;
+    private unavailable: HTMLDivElement|null = null;
 
     static get observedAttributes(): string[]
     {
-        return [ "data-src", "data-alt", "data-crossorigin" ];
+        return [ "data-src", "data-fallback-src", "data-alt", "data-crossorigin" ];
     }
 
     connectedCallback(): void
@@ -36,11 +37,7 @@ class DivaLazyImage extends HTMLElement
 
     attributeChangedCallback(): void
     {
-        if (this.image)
-        {
-            this.image.remove();
-            this.image = null;
-        }
+        this.reset();
         if (this.isConnected)
         {
             this.observe();
@@ -63,13 +60,55 @@ class DivaLazyImage extends HTMLElement
         image.className = "diva-thumbs-image";
         image.alt = this.dataset.alt ?? "";
         const crossOrigin = this.dataset.crossorigin;
+        this.image = image;
+        this.appendChild(image);
+        this.loadImage(image, url, crossOrigin, crossOrigin === "anonymous", false);
+    }
+
+    private loadImage(image: HTMLImageElement, url: string, crossOrigin: string|undefined, canRetryWithoutCors: boolean, usedFallback: boolean): void
+    {
+        image.removeAttribute("crossorigin");
         if (crossOrigin)
         {
             image.crossOrigin = crossOrigin;
         }
-        this.image = image;
-        this.appendChild(image);
+        image.onerror = () => {
+            if (canRetryWithoutCors)
+            {
+                this.loadImage(image, url, undefined, false, usedFallback);
+                return;
+            }
+
+            const fallbackUrl = this.dataset.fallbackSrc;
+            if (!usedFallback && fallbackUrl && fallbackUrl !== url)
+            {
+                this.loadImage(image, fallbackUrl, "anonymous", false, true);
+                return;
+            }
+
+            this.showUnavailable();
+        };
+        image.removeAttribute("src");
         image.src = url;
+    }
+
+    private reset(): void
+    {
+        this.image?.remove();
+        this.image = null;
+        this.unavailable?.remove();
+        this.unavailable = null;
+    }
+
+    private showUnavailable(): void
+    {
+        this.image?.remove();
+        this.image = null;
+        const unavailable = document.createElement("div");
+        unavailable.className = "diva-thumbs-image diva-thumbs-image--unavailable";
+        unavailable.setAttribute("aria-label", "Thumbnail unavailable");
+        this.unavailable = unavailable;
+        this.appendChild(unavailable);
     }
 
     private observe(): void

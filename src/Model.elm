@@ -81,6 +81,7 @@ type alias Page =
     , aspect : Float
     , label : String
     , thumbUrl : String
+    , fallbackThumbUrl : String
     , images : List PageImage
     }
 
@@ -216,6 +217,13 @@ canvasToPage language canvas =
         let
             thumbUrl =
                 canvasThumbnailUrl images canvas
+
+            fallbackThumbUrl =
+                images
+                    |> List.filter .isPrimary
+                    |> List.head
+                    |> Maybe.map .thumbUrl
+                    |> Maybe.withDefault ""
         in
         Just
             { canvasId = canvas.id
@@ -224,6 +232,7 @@ canvasToPage language canvas =
             , aspect = canvasAspect canvas
             , label = canvasLabel canvas
             , thumbUrl = thumbUrl
+            , fallbackThumbUrl = fallbackThumbUrl
             , images = images
             }
 
