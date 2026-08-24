@@ -347,13 +347,12 @@ test("uses the same width breakpoint for sidebar state and CSS layout", async ({
     await expect(page.locator(".diva-sidebar-resizer")).toBeHidden();
 });
 
-test("retries anonymous thumbnails without CORS before using their fallback", async ({page}) => {
+test("loads anonymous thumbnails without CORS", async ({page}) => {
     const thumbnailUrl = "https://thumbnail.example.test/manifest-thumbnail.jpg";
     const fallbackUrl = `${origin}/api/first/image/1/full/180,/0/default.jpg`;
 
     await page.route(thumbnailUrl, (route) => route.fulfill({
         contentType : "image/png",
-        headers : {"access-control-allow-origin" : "*"},
         body : png
     }));
 
@@ -366,18 +365,16 @@ test("retries anonymous thumbnails without CORS before using their fallback", as
     }, {thumbnailUrl, fallbackUrl});
 
     const thumbnail = page.locator("diva-lazy-image").last().locator("img");
-    await thumbnail.evaluate((image) => image.dispatchEvent(new Event("error")));
     await expect(thumbnail).toHaveAttribute("src", thumbnailUrl);
     await expect(thumbnail).not.toHaveAttribute("crossorigin");
 });
 
-test("uses the IIIF thumbnail when both manifest-thumbnail attempts fail", async ({page}) => {
+test("uses the IIIF thumbnail when an anonymous manifest thumbnail fails", async ({page}) => {
     const thumbnailUrl = "https://thumbnail.example.test/unavailable-thumbnail.jpg";
     const fallbackUrl = `${origin}/api/first/image/1/full/180,/0/default.jpg`;
 
     await page.route(thumbnailUrl, (route) => route.fulfill({
         contentType : "image/png",
-        headers : {"access-control-allow-origin" : "*"},
         body : png
     }));
 
@@ -391,9 +388,8 @@ test("uses the IIIF thumbnail when both manifest-thumbnail attempts fail", async
 
     const thumbnail = page.locator("diva-lazy-image").last().locator("img");
     await thumbnail.evaluate((image) => image.dispatchEvent(new Event("error")));
-    await thumbnail.evaluate((image) => image.dispatchEvent(new Event("error")));
     await expect(thumbnail).toHaveAttribute("src", fallbackUrl);
-    await expect(thumbnail).toHaveAttribute("crossorigin", "anonymous");
+    await expect(thumbnail).not.toHaveAttribute("crossorigin");
 });
 
 test("does not downgrade credentialed thumbnails to a no-CORS request", async ({page}) => {

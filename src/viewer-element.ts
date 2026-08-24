@@ -60,12 +60,13 @@ class DivaLazyImage extends HTMLElement
         image.className = "diva-thumbs-image";
         image.alt = this.dataset.alt ?? "";
         const crossOrigin = this.dataset.crossorigin;
+        const isAnonymous = crossOrigin === "anonymous";
         this.image = image;
         this.appendChild(image);
-        this.loadImage(image, url, crossOrigin, crossOrigin === "anonymous", false);
+        this.loadImage(image, url, isAnonymous ? undefined : crossOrigin, isAnonymous, false);
     }
 
-    private loadImage(image: HTMLImageElement, url: string, crossOrigin: string|undefined, canRetryWithoutCors: boolean, usedFallback: boolean): void
+    private loadImage(image: HTMLImageElement, url: string, crossOrigin: string|undefined, canUseFallback: boolean, usedFallback: boolean): void
     {
         image.removeAttribute("crossorigin");
         if (crossOrigin)
@@ -73,16 +74,10 @@ class DivaLazyImage extends HTMLElement
             image.crossOrigin = crossOrigin;
         }
         image.onerror = () => {
-            if (canRetryWithoutCors)
-            {
-                this.loadImage(image, url, undefined, false, usedFallback);
-                return;
-            }
-
             const fallbackUrl = this.dataset.fallbackSrc;
-            if (!usedFallback && fallbackUrl && fallbackUrl !== url)
+            if (canUseFallback && !usedFallback && fallbackUrl && fallbackUrl !== url)
             {
-                this.loadImage(image, fallbackUrl, "anonymous", false, true);
+                this.loadImage(image, fallbackUrl, undefined, true, true);
                 return;
             }
 
