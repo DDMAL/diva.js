@@ -553,8 +553,8 @@ logoutEvent change =
         )
 
 
-mobileShortSideBreakpoint : Int
-mobileShortSideBreakpoint =
+mobileWidthBreakpoint : Int
+mobileWidthBreakpoint =
     720
 
 
@@ -1715,13 +1715,10 @@ update msg model =
         ViewerLoadingChanged isLoading ->
             ( { model | isViewerLoading = isLoading }, Cmd.none )
 
-        ViewportChanged width height ->
+        ViewportChanged width _ ->
             let
-                shortSide =
-                    min width height
-
                 nextIsMobile =
-                    shortSide <= mobileShortSideBreakpoint
+                    width <= mobileWidthBreakpoint
 
                 nextModel =
                     if nextIsMobile then

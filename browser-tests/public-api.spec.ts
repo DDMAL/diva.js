@@ -332,6 +332,21 @@ test("configures the initial sidebar width and retains the default", async ({pag
     await expect(sidebar).toHaveCSS("width", "412px");
 });
 
+test("uses the same width breakpoint for sidebar state and CSS layout", async ({page}) => {
+    const sidebar = page.locator(".diva-sidebar-panel");
+
+    await page.setViewportSize({width : 800, height : 650});
+    await page.getByRole("button", {name : "Show Sidebar"}).click();
+    await expect(sidebar).not.toHaveClass(/is-overlay/);
+    await expect(sidebar).toHaveCSS("width", "320px");
+
+    await page.setViewportSize({width : 720, height : 800});
+    await expect(sidebar).toHaveClass(/is-mobile-hidden/);
+    await page.getByRole("button", {name : "Show Sidebar"}).click();
+    await expect(sidebar).toHaveClass(/is-overlay/);
+    await expect(page.locator(".diva-sidebar-resizer")).toBeHidden();
+});
+
 test("defaults to thumbnails and selects the configured contents panel", async ({page}) => {
     const name = "sidebar-panels";
     await page.route(`${origin}/api/${name}/manifest`, (route) => route.fulfill({json : {
