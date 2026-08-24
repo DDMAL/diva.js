@@ -189,10 +189,17 @@
   line-height: 1;
   color: var(--diva-white);
   background-color: var(--diva-text-muted);
-  cursor: ew-resize;
+  cursor: col-resize;
   user-select: none;
   touch-action: none;
   align-self: stretch;
+}
+
+.diva-sidebar-resizer:hover,
+.diva-sidebar-resizer:active,
+.diva-collection-resizer:hover,
+.diva-collection-resizer:active {
+  cursor: col-resize;
 }
 
 .diva-sidebar-resizer.is-hidden,
