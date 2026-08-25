@@ -1,7 +1,7 @@
 import type * as OpenSeadragonType from "openseadragon";
 
 import type {ResolvedTileSource, TileSourceDescriptor} from "./auth";
-import type {DivaRegion, ZoomToRegionOptions} from "./public-api";
+import type {DivaRegion, DivaStaticImageCorsPolicy, ZoomToRegionOptions} from "./public-api";
 
 declare const OpenSeadragon: typeof OpenSeadragonType;
 
@@ -147,8 +147,9 @@ class OsdViewer extends HTMLElement
     private loadingIndexes: Set<number> = new Set();
     private unavailableIndexes: Map<number, string> = new Map();
     private loadControllers: Map<number, AbortController> = new Map();
+    private staticImageCorsPolicy: DivaStaticImageCorsPolicy = "required";
     private tileSourceResolver: TileSourceResolver = async (source) =>
-        source.isStatic ? {type : "image", url: source.url, crossOriginPolicy: "Anonymous"} : source.url;
+        source.isStatic ? this.staticTileSource(source.url) : source.url;
     private loadedItems: Map<number, any> = new Map();
     private pageWaiters: Map<number, Array<{resolve : (item: any) => void; reject : (error: Error) => void}>> = new Map();
     private pageOverlayElements: Map<number, HTMLDivElement> = new Map();
@@ -265,6 +266,7 @@ class OsdViewer extends HTMLElement
                 defaultZoomLevel : 0,
                 sequenceMode : false,
                 zoomPerScroll : 1,
+                ...(this.staticImageCorsPolicy === "required" ? {} : {drawer : ["canvas", "html"]}),
                 crossOriginPolicy : "Anonymous",
                 loadTilesWithAjax : true,
                 ajaxWithCredentials : false,
@@ -327,6 +329,33 @@ class OsdViewer extends HTMLElement
     public setTileSourceResolver(resolver: TileSourceResolver): void
     {
         this.tileSourceResolver = resolver;
+    }
+
+    public setStaticImageCorsPolicy(policy: DivaStaticImageCorsPolicy): void
+    {
+        const nextPolicy = policy === "fallback" || policy === "none" ? policy : "required";
+        if (nextPolicy === this.staticImageCorsPolicy)
+        {
+            return;
+        }
+        this.staticImageCorsPolicy = nextPolicy;
+        if (!this.viewer)
+        {
+            return;
+        }
+
+        // WebGL cannot upload images loaded without CORS. The custom element is
+        // connected before Diva applies its options, so recreate it with the
+        // Canvas/HTML drawer path when a non-CORS policy is selected.
+        this.clearPageOverlays();
+        this.viewer.destroy();
+        this.viewer = null;
+        this.scrollPlaneItem = null;
+        this.syncViewer();
+        if (this.viewer && this.tileSources.length > 0)
+        {
+            this.resetTileSources(this.tileSources.slice(), this.lastReportedIndex ?? this.initialPageIndex);
+        }
     }
 
     public invalidateTileSources(sourceIds: string[]): void
@@ -492,7 +521,7 @@ class OsdViewer extends HTMLElement
         void this.loadTile(index);
     }
 
-    private async loadTile(index: number): Promise<void>
+    private async loadTile(index: number, nonCorsFallback = false, resolvedTileSource?: ResolvedTileSource): Promise<void>
     {
         if (!this.viewer)
         {
@@ -511,7 +540,7 @@ class OsdViewer extends HTMLElement
         let tileSource: ResolvedTileSource;
         try
         {
-            tileSource = await this.tileSourceResolver(descriptor, controller.signal);
+            tileSource = resolvedTileSource ?? await this.tileSourceResolver(descriptor, controller.signal);
         }
         catch (error)
         {
@@ -524,6 +553,10 @@ class OsdViewer extends HTMLElement
         {
             this.finishLoad(index, controller);
             return;
+        }
+        if (nonCorsFallback)
+        {
+            tileSource = this.asNonCorsStaticSource(tileSource);
         }
 
         const yOffset = this.pageOffsets[index] || 0;
@@ -580,6 +613,13 @@ class OsdViewer extends HTMLElement
                     this.flushInitialZoomChange();
                 }
                 this.emitCustomEvent("diva-page-loaded", {index, resourceId : this.resourceId});
+                // A failed ImageTileSource can leave OSD 6's initial WebGL frame
+                // blank even after its non-CORS replacement has loaded. Request a
+                // new frame so the fallback becomes visible without interaction.
+                if (nonCorsFallback)
+                {
+                    requestAnimationFrame(() => this.viewer?.forceRedraw());
+                }
                 if (this.targetIndex === index)
                 {
                     this.targetIndex = null;
@@ -591,14 +631,21 @@ class OsdViewer extends HTMLElement
                 {
                     return;
                 }
-                this.markUnavailable(index, event?.message || "This image could not be loaded. Static images must allow CORS.");
+                if (this.shouldRetryWithoutCors(descriptor, tileSource, nonCorsFallback))
+                {
+                    this.finishLoad(index, controller);
+                    this.emitCustomEvent("diva-static-image-cors-fallback", {sourceId : descriptor.sourceId});
+                    void this.loadTile(index, true, tileSource);
+                    return;
+                }
+                this.markUnavailable(index, event?.message || "This image could not be loaded.");
                 this.finishLoad(index, controller);
                 this.maybeLoadMore();
             }
         } as any);
     }
 
-    private tileRequestOptions(tileSource: ResolvedTileSource): {ajaxWithCredentials?: boolean; crossOriginPolicy?: string | boolean}
+    private tileRequestOptions(tileSource: ResolvedTileSource): {ajaxWithCredentials?: boolean; crossOriginPolicy?: string | boolean; loadTilesWithAjax?: boolean}
     {
         if (!tileSource || typeof tileSource !== "object")
         {
@@ -606,7 +653,7 @@ class OsdViewer extends HTMLElement
         }
 
         const source = tileSource as Record<string, unknown>;
-        const options: {ajaxWithCredentials?: boolean; crossOriginPolicy?: string | boolean} = {};
+        const options: {ajaxWithCredentials?: boolean; crossOriginPolicy?: string | boolean; loadTilesWithAjax?: boolean} = {};
         if (typeof source.ajaxWithCredentials === "boolean")
         {
             options.ajaxWithCredentials = source.ajaxWithCredentials;
@@ -615,7 +662,53 @@ class OsdViewer extends HTMLElement
         {
             options.crossOriginPolicy = source.crossOriginPolicy;
         }
+        if (typeof source.loadTilesWithAjax === "boolean")
+        {
+            options.loadTilesWithAjax = source.loadTilesWithAjax;
+        }
         return options;
+    }
+
+    private staticTileSource(url: string): ResolvedTileSource
+    {
+        const useNonCors = this.staticImageCorsPolicy === "none";
+        return {
+            type : "image",
+            url,
+            crossOriginPolicy : useNonCors ? false : "Anonymous",
+            ajaxWithCredentials : false,
+            loadTilesWithAjax : !useNonCors,
+            buildPyramid : !useNonCors,
+            useCanvas : !useNonCors
+        };
+    }
+
+    private asNonCorsStaticSource(tileSource: ResolvedTileSource): ResolvedTileSource
+    {
+        const source = typeof tileSource === "object" && tileSource !== null ? tileSource : {type : "image", url : tileSource};
+        return {
+            ...source,
+            type : "image",
+            crossOriginPolicy : false,
+            ajaxWithCredentials : false,
+            loadTilesWithAjax : false,
+            buildPyramid : false,
+            useCanvas : false
+        };
+    }
+
+    private shouldRetryWithoutCors(descriptor: ViewerTileSource, tileSource: ResolvedTileSource, alreadyRetried: boolean): boolean
+    {
+        if (this.staticImageCorsPolicy !== "fallback" || !descriptor.isStatic || alreadyRetried)
+        {
+            return false;
+        }
+
+        // Static sources authenticated through IIIF use OSD's credentialed
+        // policy and must never be retried as an unauthenticated request.
+        return !(typeof tileSource === "object" && tileSource !== null &&
+                 typeof tileSource.crossOriginPolicy === "string" &&
+                 tileSource.crossOriginPolicy.toLowerCase() === "use-credentials");
     }
 
     private finishLoad(index: number, controller: AbortController): void

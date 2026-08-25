@@ -19,6 +19,7 @@ import type {DivaEventMap,
              DivaPageTarget,
              DivaRegion,
              DivaSidebarPanel,
+             DivaStaticImageCorsPolicy,
              DivaState,
              DivaViewingDirection,
              ZoomToRegionOptions} from "./public-api";
@@ -32,6 +33,7 @@ export type {DivaEventMap,
              DivaPageTarget,
              DivaRegion,
              DivaSidebarPanel,
+             DivaStaticImageCorsPolicy,
              DivaState,
              DivaViewingDirection,
              ZoomToRegionOptions} from "./public-api";
@@ -257,6 +259,7 @@ export class Diva extends EventTarget
     private readonly rootId: string;
     private readonly root: HTMLElement;
     private readonly auth: AuthBrowser;
+    private readonly staticImageCorsPolicy: DivaStaticImageCorsPolicy;
     private app: ElmApp;
     private mainViewer: any = null;
     private readonly tileSourceResolver!: TileSourceResolver;
@@ -267,6 +270,7 @@ export class Diva extends EventTarget
     private filterViewerElement: HTMLElement|null = null;
     private filterOptions: FilterSettings|null = null;
     private filterViewerFlipped = false;
+    private filterAccessBlocked = false;
     private currentFilterSourceKey: string|null = null;
     private pendingFilterPreview: FilterPreviewPayload|null = null;
     private filterPreviewVersion = 0;
@@ -278,6 +282,7 @@ export class Diva extends EventTarget
     private readonly handlePageLoadedBound: (event: Event) => void;
     private readonly handleZoomChangeBound: (event: Event) => void;
     private readonly handleLoadingChangeBound: (event: Event) => void;
+    private readonly handleStaticImageCorsFallbackBound: (event: Event) => void;
     private readonly handlePageLoadErrorBound: (event: Event) => void;
     private readonly handleFullscreenChangeBound: () => void;
     private readonly handleRootClickBound: (event: Event) => void;
@@ -350,6 +355,9 @@ export class Diva extends EventTarget
         this.rootId = rootId;
         this.root = root;
         this.isDestroyed = false;
+        this.staticImageCorsPolicy = flags.staticImageCorsPolicy === "fallback" || flags.staticImageCorsPolicy === "none"
+                                           ? flags.staticImageCorsPolicy
+                                           : "required";
         this.state = {
             resourceUrl : flags.objectData,
             ready : false,
@@ -373,6 +381,7 @@ export class Diva extends EventTarget
         this.handlePageLoadedBound = this.handlePageLoaded.bind(this);
         this.handleZoomChangeBound = this.handleZoomChange.bind(this);
         this.handleLoadingChangeBound = this.handleLoadingChange.bind(this);
+        this.handleStaticImageCorsFallbackBound = this.handleStaticImageCorsFallback.bind(this);
         this.handlePageLoadErrorBound = this.handlePageLoadError.bind(this);
         this.handleFullscreenChangeBound = this.handleFullscreenChange.bind(this);
         this.handleRootClickBound = this.handleRootClick.bind(this);
@@ -401,19 +410,21 @@ export class Diva extends EventTarget
             }
         });
         this.root = this.getConnectedRoot();
-        this.auth = new AuthBrowser(this.app.ports, this.root);
+        this.auth = new AuthBrowser(this.app.ports, this.root, this.staticImageCorsPolicy);
         this.tileSourceResolver = (source: TileSourceDescriptor, signal: AbortSignal) => this.auth.resolve(source, signal);
         const connectedRootAny = this.root as DivaRoot;
         connectedRootAny.__divaInstance = this;
 
         this.bindPorts();
         this.callViewerMethodWhenReady("setTileSourceResolver", this.tileSourceResolver);
+        this.callViewerMethodWhenReady("setStaticImageCorsPolicy", this.staticImageCorsPolicy);
         this.bindRootClick();
         this.bindPageChange();
         this.bindViewerEvent("diva-page-loaded", this.handlePageLoadedBound as EventListener);
         this.bindFullscreenChange();
         this.bindZoomChange();
         this.bindLoadingChange();
+        this.bindViewerEvent("diva-static-image-cors-fallback", this.handleStaticImageCorsFallbackBound as EventListener);
         this.bindViewerEvent("diva-page-load-error", this.handlePageLoadErrorBound as EventListener);
     }
 
@@ -796,6 +807,7 @@ export class Diva extends EventTarget
                 {
                     return;
                 }
+                this.setFilterAccessBlocked(this.isNonCorsStaticSource(tileSource));
                 this.currentFilterSourceKey = sourceKey;
                 this.filterViewer.open(tileSource);
             }
@@ -1274,6 +1286,7 @@ export class Diva extends EventTarget
         this.removeViewerEvent("diva-page-loaded", this.handlePageLoadedBound as EventListener);
         this.removeViewerEvent("diva-zoom-change", this.handleZoomChangeBound as EventListener);
         this.removeViewerEvent("diva-loading-change", this.handleLoadingChangeBound as EventListener);
+        this.removeViewerEvent("diva-static-image-cors-fallback", this.handleStaticImageCorsFallbackBound as EventListener);
         this.removeViewerEvent("diva-page-load-error", this.handlePageLoadErrorBound as EventListener);
         root.removeEventListener("click", this.handleRootClickBound, true);
         document.removeEventListener("fullscreenchange", this.handleFullscreenChangeBound);
@@ -1311,6 +1324,7 @@ export class Diva extends EventTarget
         this.currentFilterSourceKey = null;
         this.pendingFilterPreview = null;
         this.filterOptions = null;
+        this.setFilterAccessBlocked(false);
         this.filterPreviewRetries = 0;
     }
 
@@ -1440,6 +1454,15 @@ export class Diva extends EventTarget
         this.refreshLoadingState();
     }
 
+    private handleStaticImageCorsFallback(event: Event): void
+    {
+        const sourceId = (event as CustomEvent).detail?.sourceId;
+        if (typeof sourceId === "string")
+        {
+            this.auth.useNonCorsStaticSource(sourceId);
+        }
+    }
+
     private handlePageLoadError(event: Event): void
     {
         const detail = (event as CustomEvent).detail;
@@ -1542,6 +1565,11 @@ export class Diva extends EventTarget
         {
             return;
         }
+        if (this.filterAccessBlocked)
+        {
+            setFilterOptions(this.filterViewer, {filters : []});
+            return;
+        }
         const options = buildFilterOptions(this.filterOptions);
         setFilterOptions(this.filterViewer, options);
 
@@ -1570,7 +1598,7 @@ export class Diva extends EventTarget
 
     private saveFilteredImage(): void
     {
-        if (!this.filterViewer)
+        if (!this.filterViewer || this.filterAccessBlocked)
         {
             return;
         }
@@ -1593,6 +1621,61 @@ export class Diva extends EventTarget
         catch (error)
         {
             console.error("Failed to save filtered image", error);
+        }
+    }
+
+    private isNonCorsStaticSource(tileSource: ResolvedTileSource): boolean
+    {
+        return typeof tileSource === "object" && tileSource !== null &&
+               tileSource.type === "image" && tileSource.crossOriginPolicy === false;
+    }
+
+    private setFilterAccessBlocked(blocked: boolean): void
+    {
+        this.filterAccessBlocked = blocked;
+        const sidebar = this.root.querySelector<HTMLElement>(".diva-modal-sidebar");
+        if (!sidebar)
+        {
+            return;
+        }
+        const controls = Array.from(sidebar.querySelectorAll<HTMLButtonElement|HTMLInputElement|HTMLSelectElement|HTMLTextAreaElement>("button, input, select, textarea"));
+        controls.forEach((control) => {
+            if (blocked)
+            {
+                control.dataset.divaFilterWasDisabled = control.disabled ? "true" : "false";
+                control.disabled = true;
+            }
+            else if (control.dataset.divaFilterWasDisabled !== undefined)
+            {
+                control.disabled = control.dataset.divaFilterWasDisabled === "true";
+                delete control.dataset.divaFilterWasDisabled;
+            }
+        });
+        const saveButton = this.root.querySelector<HTMLButtonElement>('button[aria-label="Save view"]');
+        if (saveButton)
+        {
+            if (blocked)
+            {
+                saveButton.dataset.divaFilterWasDisabled = saveButton.disabled ? "true" : "false";
+                saveButton.disabled = true;
+            }
+            else if (saveButton.dataset.divaFilterWasDisabled !== undefined)
+            {
+                saveButton.disabled = saveButton.dataset.divaFilterWasDisabled === "true";
+                delete saveButton.dataset.divaFilterWasDisabled;
+            }
+        }
+        let warning = sidebar.querySelector<HTMLElement>(".diva-filter-access-warning");
+        if (blocked && !warning)
+        {
+            warning = document.createElement("p");
+            warning.className = "diva-filter-access-warning";
+            warning.textContent = "Image filters and Save view require CORS-enabled image access.";
+            sidebar.prepend(warning);
+        }
+        if (!blocked)
+        {
+            warning?.remove();
         }
     }
 

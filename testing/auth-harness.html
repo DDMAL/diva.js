@@ -25,7 +25,8 @@
       const initialPageParam = harnessParams.get("initialPage");
       window.diva = new Diva("diva-wrapper", {
         objectData: harnessParams.get("manifest"),
-        initialPage: initialPageParam === null ? undefined : Number(initialPageParam)
+        initialPage: initialPageParam === null ? undefined : Number(initialPageParam),
+        staticImageCorsPolicy: harnessParams.get("staticImageCorsPolicy") || undefined
       });
     </script>
   </body>

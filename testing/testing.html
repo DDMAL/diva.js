@@ -87,6 +87,12 @@
           <option value="de">de</option>
           <option value="zh">zh</option>
         </select>
+        <label for="cors-policy-select">Static-image CORS</label>
+        <select id="cors-policy-select">
+          <option value="required">Required (default)</option>
+          <option value="fallback">Fallback to non-CORS</option>
+          <option value="none">Non-CORS only</option>
+        </select>
       </div>
       <div class="controls-row" id="list-row">
         <label for="manifest-select">Manifest</label>
@@ -141,12 +147,14 @@
         { label: "U of T Manifest", url: "https://iiif.library.utoronto.ca/presentation/v2/fisherbooks:F10083/manifest" },
         { label: "BSB Manifest", url: "https://api.digitale-sammlungen.de/iiif/presentation/v2/bsb00087481/manifest" },
         { label: "Static Image Manifest Test", url: "/testing/local/static-canvas.json" },
+        { label: "Non-Cors Static Image Test", url: "/testing/non-cors-static-image-manifest.json" },
       ];
 
       const selectEl = document.getElementById("manifest-select");
       const urlInput = document.getElementById("manifest-url");
       const versionSelect = document.getElementById("version-select");
       const languageSelect = document.getElementById("language-select");
+      const corsPolicySelect = document.getElementById("cors-policy-select");
       const listRow = document.getElementById("list-row");
       const urlRow = document.getElementById("url-row");
       const goButton = document.getElementById("manifest-go");
@@ -208,6 +216,7 @@
         const config = {
           objectData: url,
           acceptHeaders: buildAcceptHeaders(),
+          staticImageCorsPolicy: corsPolicySelect.value,
         };
         if (languageSelect.value !== "auto") {
           config.setLanguage = languageSelect.value;

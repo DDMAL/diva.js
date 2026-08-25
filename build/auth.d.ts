@@ -1,3 +1,4 @@
+import type { DivaStaticImageCorsPolicy } from "./public-api";
 export type TileSourceDescriptor = {
     sourceId: string;
     url: string;
@@ -98,10 +99,12 @@ export declare class AuthBrowser {
     private nextConsumer;
     private destroyed;
     private readonly clickHandler;
-    constructor(ports: BrowserPorts, root: HTMLElement);
+    private readonly staticImageCorsPolicy;
+    constructor(ports: BrowserPorts, root: HTMLElement, staticImageCorsPolicy?: DivaStaticImageCorsPolicy);
     resolve(source: TileSourceDescriptor, signal: AbortSignal): Promise<ResolvedTileSource>;
     registerSources(_sources: TileSourceDescriptor[]): void;
     invalidateSources(sourceIds: string[]): void;
+    useNonCorsStaticSource(sourceId: string): void;
     destroy(): void;
     private succeed;
     private fail;

@@ -1,3 +1,5 @@
+import type {DivaStaticImageCorsPolicy} from "./public-api";
+
 export type TileSourceDescriptor = {
     sourceId: string; url : string; isStatic : boolean
 };
@@ -102,11 +104,13 @@ export class AuthBrowser
     private nextConsumer = 0;
     private destroyed = false;
     private readonly clickHandler: (event: Event) => void;
+    private readonly staticImageCorsPolicy: DivaStaticImageCorsPolicy;
 
-    constructor(ports: BrowserPorts, root: HTMLElement)
+    constructor(ports: BrowserPorts, root: HTMLElement, staticImageCorsPolicy: DivaStaticImageCorsPolicy = "required")
     {
         this.ports = ports;
         this.root = root;
+        this.staticImageCorsPolicy = staticImageCorsPolicy;
         this.clickHandler = this.handleClick.bind(this);
         root.addEventListener("click", this.clickHandler, true);
 
@@ -179,6 +183,25 @@ export class AuthBrowser
         sourceIds.forEach((sourceId) => this.invalidateSource(sourceId));
     }
 
+    useNonCorsStaticSource(sourceId: string): void
+    {
+        const cached = this.resolutionCache.get(sourceId);
+        const source = cached?.resolutions.get("anonymous");
+        if (!cached || !source || typeof source !== "object" || source.type !== "image")
+        {
+            return;
+        }
+        cached.resolutions.set("anonymous", {
+            ...source,
+            crossOriginPolicy : false,
+            ajaxWithCredentials : false,
+            loadTilesWithAjax : false,
+            buildPyramid : false,
+            useCanvas : false
+        });
+        cached.activeState = "anonymous";
+    }
+
     destroy(): void
     {
         if (this.destroyed)
@@ -232,7 +255,16 @@ export class AuthBrowser
         }
         else if (result.isStatic)
         {
-            tileSource = {type : "image", url : result.url, crossOriginPolicy : credentials, ajaxWithCredentials : result.credentialed};
+            const useNonCors = !result.credentialed && this.staticImageCorsPolicy === "none";
+            tileSource = {
+                type : "image",
+                url : result.url,
+                crossOriginPolicy : useNonCors ? false : credentials,
+                ajaxWithCredentials : result.credentialed,
+                loadTilesWithAjax : !useNonCors,
+                buildPyramid : !useNonCors,
+                useCanvas : !useNonCors
+            };
         }
         else if (result.credentialed)
         {

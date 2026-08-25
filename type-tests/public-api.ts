@@ -1,4 +1,4 @@
-import Diva, {type DivaLayoutMode, type DivaPage, type DivaPageSelector, type DivaPageTarget, type DivaRegion, type DivaSidebarPanel} from "diva.js";
+import Diva, {type DivaLayoutMode, type DivaPage, type DivaPageSelector, type DivaPageTarget, type DivaRegion, type DivaSidebarPanel, type DivaStaticImageCorsPolicy} from "diva.js";
 
 const viewer = new Diva("viewer", {objectData : "https://example.org/manifest"});
 const initialSelector: DivaPageSelector = {
@@ -7,11 +7,13 @@ const initialSelector: DivaPageSelector = {
 };
 const initialTarget: DivaPageTarget = initialSelector;
 const initialPanel: DivaSidebarPanel = "contents";
+const staticImageCorsPolicy: DivaStaticImageCorsPolicy = "fallback";
 const wideViewer = new Diva("wide-viewer", {
     objectData : "https://example.org/manifest",
     sidebarPanel : initialPanel,
     sidebarWidth : 420,
-    initialPage : initialTarget
+    initialPage : initialTarget,
+    staticImageCorsPolicy
 });
 const layout: DivaLayoutMode = viewer.getLayoutMode();
 const pages: readonly DivaPage[] = viewer.getPages();

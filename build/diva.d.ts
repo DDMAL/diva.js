@@ -1,6 +1,6 @@
 import "./viewer-element";
 import type { DivaEventMap, DivaLayoutMode, DivaOptions, DivaPage, DivaPageSelector, DivaRegion, DivaState, ZoomToRegionOptions } from "./public-api";
-export type { DivaEventMap, DivaImage, DivaLayoutMode, DivaOptions, DivaPage, DivaPageSelector, DivaPageTarget, DivaRegion, DivaSidebarPanel, DivaState, DivaViewingDirection, ZoomToRegionOptions } from "./public-api";
+export type { DivaEventMap, DivaImage, DivaLayoutMode, DivaOptions, DivaPage, DivaPageSelector, DivaPageTarget, DivaRegion, DivaSidebarPanel, DivaStaticImageCorsPolicy, DivaState, DivaViewingDirection, ZoomToRegionOptions } from "./public-api";
 /**
  * A browser viewer for IIIF Presentation manifests and collections.
  *
@@ -34,6 +34,7 @@ export declare class Diva extends EventTarget {
     private readonly rootId;
     private readonly root;
     private readonly auth;
+    private readonly staticImageCorsPolicy;
     private app;
     private mainViewer;
     private readonly tileSourceResolver;
@@ -44,6 +45,7 @@ export declare class Diva extends EventTarget {
     private filterViewerElement;
     private filterOptions;
     private filterViewerFlipped;
+    private filterAccessBlocked;
     private currentFilterSourceKey;
     private pendingFilterPreview;
     private filterPreviewVersion;
@@ -55,6 +57,7 @@ export declare class Diva extends EventTarget {
     private readonly handlePageLoadedBound;
     private readonly handleZoomChangeBound;
     private readonly handleLoadingChangeBound;
+    private readonly handleStaticImageCorsFallbackBound;
     private readonly handlePageLoadErrorBound;
     private readonly handleFullscreenChangeBound;
     private readonly handleRootClickBound;
@@ -373,12 +376,15 @@ export declare class Diva extends EventTarget {
     private handlePageLoaded;
     private handleZoomChange;
     private handleLoadingChange;
+    private handleStaticImageCorsFallback;
     private handlePageLoadError;
     private handleFullscreenChange;
     private ensureFilterViewer;
     private ensureFilterViewerElement;
     private applyFilterOptions;
     private saveFilteredImage;
+    private isNonCorsStaticSource;
+    private setFilterAccessBlocked;
     private getPort;
     private callViewerMethod;
     private callViewerMethodAsync;

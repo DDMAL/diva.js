@@ -1,0 +1,49 @@
+{
+  "@context": "http://iiif.io/api/presentation/3/context.json",
+  "id": "https://example.org/diva/non-cors-static-image-manifest.json",
+  "type": "Manifest",
+  "label": {
+    "en": [
+      "Non-CORS static-image test"
+    ]
+  },
+  "summary": {
+    "en": [
+      "Uses Cleveland Museum of Art's Open Access CDN image from diva.js issue #564. The image currently omits CORS response headers. Set staticImageCorsPolicy to fallback or none to load it."
+    ]
+  },
+  "items": [
+    {
+      "id": "https://example.org/diva/non-cors-static-image/canvas/1",
+      "type": "Canvas",
+      "label": {
+        "en": [
+          "Static image"
+        ]
+      },
+      "width": 900,
+      "height": 541,
+      "items": [
+        {
+          "id": "https://example.org/diva/non-cors-static-image/page/1",
+          "type": "AnnotationPage",
+          "items": [
+            {
+              "id": "https://example.org/diva/non-cors-static-image/annotation/1",
+              "type": "Annotation",
+              "motivation": "painting",
+              "target": "https://example.org/diva/non-cors-static-image/canvas/1",
+              "body": {
+                "id": "https://openaccess-cdn.clevelandart.org/2022.346/2022.346_web.jpg",
+                "type": "Image",
+                "format": "image/jpeg",
+                "width": 900,
+                "height": 541
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

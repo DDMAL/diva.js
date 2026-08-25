@@ -369,6 +369,51 @@ test("loads anonymous thumbnails without CORS", async ({page}) => {
     await expect(thumbnail).not.toHaveAttribute("crossorigin");
 });
 
+test("supports opt-in non-CORS loading for static images", async ({page}, testInfo) => {
+    const name = "static-cors";
+    const imageUrl = "http://localhost:4173/testing/local/page1-full.png";
+    const staticManifest = manifest(name, 1);
+    const body = staticManifest.items[0].items[0].items[0].body as any;
+    body.id = imageUrl;
+    delete body.service;
+    const requests: Array<{origin?: string}> = [];
+
+    await page.route(`${origin}/api/${name}/manifest`, (route) => route.fulfill({json : staticManifest}));
+    page.on("request", (request) => {
+        if (request.url() === imageUrl)
+        {
+            requests.push({origin : request.headers().origin});
+        }
+    });
+
+    const open = async(policy: "required"|"fallback"|"none") => {
+        requests.length = 0;
+        const osd = (testInfo.project.metadata.osdVersion as string).startsWith("5") ? "5" : "6";
+        await page.goto(`/testing/auth-harness.html?manifest=${encodeURIComponent(`${origin}/api/${name}/manifest`)}&osd=${osd}&staticImageCorsPolicy=${policy}`);
+    };
+
+    await open("required");
+    await expect(page.locator(".diva-image-unavailable")).toHaveCount(1);
+
+    await open("fallback");
+    await expect.poll(() => page.evaluate(() => (document.getElementById("main-viewer") as any).loadedIndexes.has(0))).toBe(true);
+    await expect.poll(() => page.evaluate(() => (document.getElementById("main-viewer") as any).viewer.drawer.getType())).toBe("canvas");
+    const fallbackRequests = requests.slice();
+    expect(fallbackRequests.some((request) => request.origin === origin)).toBe(true);
+    expect(fallbackRequests.some((request) => request.origin === undefined)).toBe(true);
+    expect(fallbackRequests.length).toBeLessThan(10);
+    await page.waitForTimeout(500);
+    expect(requests.length).toBe(fallbackRequests.length);
+
+    await page.getByRole("button", {name : "Page View"}).click();
+    await expect(page.locator(".diva-filter-access-warning")).toBeVisible();
+    await expect(page.getByRole("button", {name : "Save view"})).toBeDisabled();
+
+    await open("none");
+    await expect.poll(() => page.evaluate(() => (document.getElementById("main-viewer") as any).loadedIndexes.has(0))).toBe(true);
+    expect(requests.every((request) => request.origin === undefined)).toBe(true);
+});
+
 test("uses the IIIF thumbnail when an anonymous manifest thumbnail fails", async ({page}) => {
     const thumbnailUrl = "https://thumbnail.example.test/unavailable-thumbnail.jpg";
     const fallbackUrl = `${origin}/api/first/image/1/full/180,/0/default.jpg`;

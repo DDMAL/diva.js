@@ -57,7 +57,24 @@ ensureAnchorDefaults attrs =
 
 isAllowedTag : String -> Bool
 isAllowedTag tag =
-    List.member tag [ "div", "p", "br", "em", "i", "strong", "b", "a", "ul", "ol", "li", "dl", "dt", "dd", "span", "img" ]
+    List.member tag
+        [ "div"
+        , "p"
+        , "br"
+        , "em"
+        , "i"
+        , "strong"
+        , "b"
+        , "a"
+        , "ul"
+        , "ol"
+        , "li"
+        , "dl"
+        , "dt"
+        , "dd"
+        , "span"
+        , "img"
+        ]
 
 
 normalizeHtml : String -> String

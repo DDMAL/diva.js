@@ -102,12 +102,14 @@
           // objectData: "https://iiif.bodleian.ox.ac.uk/iiif/collection/top",
           // objectData: "https://iiif.bodleian.ox.ac.uk/iiif/collection/all-souls",
           // objectData: "https://iiif.io/api/cookbook/recipe/0033-choice/manifest.json",
-          objectData: "https://gallica.bnf.fr/iiif/ark:/12148/btv1b550082258/manifest.json",
+          // objectData: "https://gallica.bnf.fr/iiif/ark:/12148/btv1b550082258/manifest.json",
+          objectData: "/testing/non-cors-static-image-manifest.json",
           // objectData: "./diamm-manifest.json",
           // acceptHeaders: ["application/ld+json;profile=http://iiif.io/api/presentation/3/context.json"],
         initialPage,
         sidebarPanel: "contents",
-        sidebarWidth: 520
+        sidebarWidth: 520,
+        staticImageCorsPolicy: "fallback"
       });
     </script>
   </body>

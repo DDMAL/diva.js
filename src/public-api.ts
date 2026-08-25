@@ -62,6 +62,17 @@ export type DivaPageTarget = number|DivaPageSelector;
 export type DivaSidebarPanel = "thumbnails"|"contents"|"metadata";
 
 /**
+ * Controls how Diva loads static image bodies that do not use the IIIF Image API.
+ *
+ * @remarks
+ * `required` preserves Diva's canvas-safe CORS behavior. `fallback` retries a
+ * failed anonymous-CORS static image once without CORS, while `none` uses that
+ * non-CORS path immediately. Images loaded without CORS can be viewed but cannot
+ * use Page View pixel filters or be saved from the filter view.
+ */
+export type DivaStaticImageCorsPolicy = "required"|"fallback"|"none";
+
+/**
  * A painted image described by a IIIF canvas.
  */
 export interface DivaImage {
@@ -322,6 +333,18 @@ export interface DivaOptions {
      * Preferred HTTP Accept values for IIIF resource requests.
      */
     acceptHeaders?: string[];
+    /**
+     * CORS policy for static image bodies without an IIIF Image API service.
+     *
+     * @remarks
+     * `fallback` attempts anonymous CORS first and makes one non-CORS retry when
+     * that load fails. `none` loads static images without CORS immediately.
+     * Non-CORS images remain viewable, but Page View pixel filters and saving are
+     * unavailable because the browser taints their canvas.
+     *
+     * @defaultValue `"required"`
+     */
+    staticImageCorsPolicy?: DivaStaticImageCorsPolicy;
     /**
      * Show the navigation sidebar.
      *
