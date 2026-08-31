@@ -26,6 +26,7 @@
       window.diva = new Diva("diva-wrapper", {
         objectData: harnessParams.get("manifest"),
         initialPage: initialPageParam === null ? undefined : Number(initialPageParam),
+        showSidebar: false,
         staticImageCorsPolicy: harnessParams.get("staticImageCorsPolicy") || undefined
       });
     </script>

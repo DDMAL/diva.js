@@ -461,7 +461,7 @@ test("falls back from silent external auth and deduplicates active login", async
     await expect(page.locator(".diva-modal.is-page-view")).toBeVisible();
     await expect.poll(() => infoRequests.get(`${origin}/mock/image-1/info.json`) || 0).toBe(1);
     await expect.poll(() => infoRequests.get(`${origin}/mock/image-2/info.json`) || 0).toBe(1);
-    await expect(page.locator("img.diva-thumbs-image").first()).toHaveAttribute("crossorigin", "use-credentials");
+    await expect(page.locator("diva-lazy-image").first()).toHaveAttribute("data-crossorigin", "use-credentials");
 
     await page.evaluate(async ({sourceId, url}) => {
         const instance = (window as any).diva;

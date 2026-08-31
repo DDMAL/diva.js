@@ -361,7 +361,7 @@ test("configures the initial sidebar width and retains the default", async ({pag
     await expect(sidebar).toHaveCSS("width", "320px");
 
     await page.evaluate(async (objectData) => {
-        (window as any).diva = new (window as any).Diva("diva-wrapper", {objectData, sidebarWidth : 411.6});
+        (window as any).diva = new (window as any).Diva("diva-wrapper", {objectData, sidebarWidth : 411.6, showSidebar : false});
         await (window as any).diva.ready;
     }, `${origin}/api/first/manifest`);
     await page.getByRole("button", {name : "Show Sidebar"}).evaluate((button: HTMLButtonElement) => button.click());
@@ -406,6 +406,8 @@ test("loads anonymous thumbnails without CORS", async ({page}) => {
 });
 
 test("supports opt-in non-CORS loading for static images", async ({page}, testInfo) => {
+    testInfo.project.name === "osd-5.0.1" && test.skip(true, "OpenSeadragon 5 sends an Origin header for cross-origin static images even when non-CORS loading is requested (upstream limitation).");
+
     const name = "static-cors";
     const imageUrl = "http://localhost:4173/testing/local/page1-full.png";
     const staticManifest = manifest(name, 1);
