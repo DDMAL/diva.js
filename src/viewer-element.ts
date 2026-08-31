@@ -1,38 +1,40 @@
 import type * as OpenSeadragonType from "openseadragon";
 
-import {iiifImageRegionUrl,
-        nonCorsStaticTileSource,
-        type ResolvedTileSource,
-        staticImageTileSource,
-        type TileSourceDescriptor} from "./image-utils";
-import type {DivaRegion, DivaStaticImageCorsPolicy, ZoomToRegionOptions} from "./public-api";
+import {
+    iiifImageRegionUrl,
+    nonCorsStaticTileSource,
+    type ResolvedTileSource,
+    staticImageTileSource,
+    type TileSourceDescriptor,
+} from "./image-utils";
+import type { DivaRegion, DivaStaticImageCorsPolicy, ZoomToRegionOptions } from "./public-api";
 
 declare const OpenSeadragon: typeof OpenSeadragonType;
 
 type ViewerAnnotation = {
     id: string;
-    text : string;
+    text: string;
     html?: string;
-    imageService : string | null;
-    shape : {kind : "rect" | "svg"; x?: number; y?: number; width?: number; height?: number; value?: string}
+    imageService: string | null;
+    shape: { kind: "rect" | "svg"; x?: number; y?: number; width?: number; height?: number; value?: string };
 };
 type TileSourceResolver = (source: TileSourceDescriptor, signal: AbortSignal) => Promise<ResolvedTileSource>;
 
-const ZOOM_IN_FACTOR = 1.6
-const ZOOM_OUT_FACTOR = 1 / ZOOM_IN_FACTOR
+const ZOOM_IN_FACTOR = 1.6;
+const ZOOM_OUT_FACTOR = 1 / ZOOM_IN_FACTOR;
 const PAGE_LABEL_TOP_PADDING_PX = 28;
 const PAGE_GAP_VIEWPORT_UNITS = 0.06;
 
-let lazyImageObserver: IntersectionObserver|null = null;
+let lazyImageObserver: IntersectionObserver | null = null;
 
 class DivaLazyImage extends HTMLElement
 {
-    private image: HTMLImageElement|null = null;
-    private unavailable: HTMLDivElement|null = null;
+    private image: HTMLImageElement | null = null;
+    private unavailable: HTMLDivElement | null = null;
 
     static get observedAttributes(): string[]
     {
-        return [ "data-src", "data-fallback-src", "data-alt", "data-crossorigin" ];
+        return ["data-src", "data-fallback-src", "data-alt", "data-crossorigin"];
     }
 
     connectedCallback(): void
@@ -76,7 +78,13 @@ class DivaLazyImage extends HTMLElement
         this.loadImage(image, url, isAnonymous ? undefined : crossOrigin, isAnonymous, false);
     }
 
-    private loadImage(image: HTMLImageElement, url: string, crossOrigin: string|undefined, canUseFallback: boolean, usedFallback: boolean): void
+    private loadImage(
+        image: HTMLImageElement,
+        url: string,
+        crossOrigin: string | undefined,
+        canUseFallback: boolean,
+        usedFallback: boolean,
+    ): void
     {
         image.removeAttribute("crossorigin");
         if (crossOrigin)
@@ -132,7 +140,7 @@ class DivaLazyImage extends HTMLElement
                         (entry.target as DivaLazyImage).load();
                     }
                 });
-            }, {rootMargin : "300px 0px"});
+            }, { rootMargin: "300px 0px" });
         }
         lazyImageObserver.observe(this);
     }
@@ -140,8 +148,8 @@ class DivaLazyImage extends HTMLElement
 
 class OsdViewer extends HTMLElement
 {
-    private container: HTMLDivElement|null = null;
-    private viewer: OpenSeadragonType.Viewer|null = null;
+    private container: HTMLDivElement | null = null;
+    private viewer: OpenSeadragonType.Viewer | null = null;
     private loadToken = 0;
     private tileSources: TileSourceDescriptor[] = [];
     private pageLabels: string[] = [];
@@ -150,8 +158,8 @@ class OsdViewer extends HTMLElement
     private pageHeights: number[] = [];
     private pageRowHeights: number[] = [];
     private pageXOffsets: number[] = [];
-    private layoutMode: "single"|"spread"|"spread-shift" = "single";
-    private viewingDirection: "ltr"|"rtl" = "ltr";
+    private layoutMode: "single" | "spread" | "spread-shift" = "single";
+    private viewingDirection: "ltr" | "rtl" = "ltr";
     private hasFitFirstPage = false;
     private loadedIndexes: Set<number> = new Set();
     private loadingIndexes: Set<number> = new Set();
@@ -161,21 +169,22 @@ class OsdViewer extends HTMLElement
     private tileSourceResolver: TileSourceResolver = async (source) =>
         source.isStatic ? staticImageTileSource(source.url, false, this.staticImageCorsPolicy === "none") : source.url;
     private loadedItems: Map<number, any> = new Map();
-    private pageWaiters: Map<number, Array<{resolve : (item: any) => void; reject : (error: Error) => void}>> = new Map();
+    private pageWaiters: Map<number, Array<{ resolve: (item: any) => void; reject: (error: Error) => void }>> =
+        new Map();
     private pageOverlayElements: Map<number, HTMLDivElement> = new Map();
     private annotationData: Map<string, ViewerAnnotation[]> = new Map();
     private annotationOverlayElements: Map<number, HTMLDivElement> = new Map();
     private annotationsVisible = true;
-    private annotationPanel: HTMLElement|null = null;
+    private annotationPanel: HTMLElement | null = null;
     private annotationPanelIgnoreCloseUntil = 0;
-    private targetIndex: number|null = null;
+    private targetIndex: number | null = null;
     private initialPageIndex = 0;
     private resourceId = "initial";
     private scrollPlaneItem: any = null;
     private isViewportInitialized = false;
-    private lastReportedIndex: number|null = null;
-    private lastReportedZoom: number|null = null;
-    private loadingTimer: number|null = null;
+    private lastReportedIndex: number | null = null;
+    private lastReportedZoom: number | null = null;
+    private loadingTimer: number | null = null;
     private isLoading = false;
     private isClamping = false;
     private suppressPageChange = true;
@@ -184,11 +193,11 @@ class OsdViewer extends HTMLElement
     private readonly handleDoubleClickBound: (event: MouseEvent) => void;
     private readonly handleViewportChangeBound: () => void;
     private readonly handleAnimationFinishBound: () => void;
-    private scrollbarTrack: HTMLDivElement|null = null;
-    private scrollbarThumb: HTMLDivElement|null = null;
+    private scrollbarTrack: HTMLDivElement | null = null;
+    private scrollbarThumb: HTMLDivElement | null = null;
     private isScrollbarDragging = false;
-    private scrollbarMouseMove: ((e: MouseEvent) => void)|null = null;
-    private scrollbarMouseUp: (() => void)|null = null;
+    private scrollbarMouseMove: ((e: MouseEvent) => void) | null = null;
+    private scrollbarMouseUp: (() => void) | null = null;
 
     constructor()
     {
@@ -209,7 +218,7 @@ class OsdViewer extends HTMLElement
             this.container.className = "osd-container";
             this.container.style.width = "100%";
             this.container.style.height = "100%";
-            this.container.addEventListener("wheel", this.handleWheelBound, {passive : false, capture : true});
+            this.container.addEventListener("wheel", this.handleWheelBound, { passive: false, capture: true });
             this.container.addEventListener("dblclick", this.handleDoubleClickBound);
             this.container.addEventListener("click", (event) => {
                 // OpenSeadragon may dispatch a click from its event catcher after
@@ -226,7 +235,9 @@ class OsdViewer extends HTMLElement
             });
             this.container.addEventListener("keydown", (event) => {
                 if (event.key === "Escape")
+                {
                     this.closeAnnotationPanel();
+                }
             });
             this.appendChild(this.container);
         }
@@ -288,30 +299,38 @@ class OsdViewer extends HTMLElement
         if (!this.viewer)
         {
             const options = {
-                element : this.container,
-                animationTime : 0.8,
-                showNavigationControl : false,
-                preserveViewport : true,
-                maxImageCacheCount : 512,
-                tileRetryMax : 2,
-                tileRetryDelay : 500,
-                visibilityRatio : 0,
-                constrainDuringPan : false,
-                minZoomLevel : 0.1,
-                minZoomImageRatio : 0.1,
-                maxZoomPixelRatio : 2,
-                defaultZoomLevel : 0,
-                sequenceMode : false,
-                zoomPerScroll : 1,
-                ...(this.staticImageCorsPolicy === "required" ? {} : {drawer : [ "canvas", "html" ]}),
-                crossOriginPolicy : "Anonymous",
-                loadTilesWithAjax : true,
-                ajaxWithCredentials : false,
-                gestureSettingsTrackpad :
-                    {pinchToZoom : true, scrollToZoom : false, flickEnabled : true, dragToPan : true},
-                gestureSettingsMouse :
-                    {scrollToZoom : false, clickToZoom : false, dblClickToZoom : false, dragToPan : true},
-                gestureSettingsTouch : {pinchToZoom : false, dragToPan : true}
+                element: this.container,
+                animationTime: 0.8,
+                showNavigationControl: false,
+                preserveViewport: true,
+                maxImageCacheCount: 512,
+                tileRetryMax: 2,
+                tileRetryDelay: 500,
+                visibilityRatio: 0,
+                constrainDuringPan: false,
+                minZoomLevel: 0.1,
+                minZoomImageRatio: 0.1,
+                maxZoomPixelRatio: 2,
+                defaultZoomLevel: 0,
+                sequenceMode: false,
+                zoomPerScroll: 1,
+                ...(this.staticImageCorsPolicy === "required" ? {} : { drawer: ["canvas", "html"] }),
+                crossOriginPolicy: "Anonymous",
+                loadTilesWithAjax: true,
+                ajaxWithCredentials: false,
+                gestureSettingsTrackpad: {
+                    pinchToZoom: true,
+                    scrollToZoom: false,
+                    flickEnabled: true,
+                    dragToPan: true,
+                },
+                gestureSettingsMouse: {
+                    scrollToZoom: false,
+                    clickToZoom: false,
+                    dblClickToZoom: false,
+                    dragToPan: true,
+                },
+                gestureSettingsTouch: { pinchToZoom: false, dragToPan: true },
             } as any;
             this.viewer = OpenSeadragon(options);
             const viewer = this.viewer;
@@ -327,20 +346,20 @@ class OsdViewer extends HTMLElement
     public setLayoutMode(mode: string): void
     {
         const nextMode = mode === "spread" || mode === "spread-shift" ? mode : "single";
-        this.applyLayoutChange({mode : nextMode});
+        this.applyLayoutChange({ mode: nextMode });
     }
 
     public setViewingDirection(direction: string): void
     {
         const nextDirection = direction === "rtl" ? "rtl" : "ltr";
-        this.applyLayoutChange({direction : nextDirection});
+        this.applyLayoutChange({ direction: nextDirection });
     }
 
     public setLayoutConfig(mode: string, direction: string): void
     {
         const nextMode = mode === "spread" || mode === "spread-shift" ? mode : "single";
         const nextDirection = direction === "rtl" ? "rtl" : "ltr";
-        this.applyLayoutChange({mode : nextMode, direction : nextDirection});
+        this.applyLayoutChange({ mode: nextMode, direction: nextDirection });
     }
 
     public setTileSources(tileSources: TileSourceDescriptor[], initialPageIndex = 0, resourceId = "internal"): void
@@ -353,9 +372,10 @@ class OsdViewer extends HTMLElement
         this.annotationData.clear();
         this.tileSources = tileSources.slice();
         this.resourceId = resourceId;
-        this.initialPageIndex = Number.isInteger(initialPageIndex) && initialPageIndex >= 0 && initialPageIndex < tileSources.length
-                                    ? initialPageIndex
-                                    : 0;
+        this.initialPageIndex =
+            Number.isInteger(initialPageIndex) && initialPageIndex >= 0 && initialPageIndex < tileSources.length
+                ? initialPageIndex
+                : 0;
         this.syncViewer();
         if (!this.viewer)
         {
@@ -395,17 +415,21 @@ class OsdViewer extends HTMLElement
         }
     }
 
-    public getImageRegionForAnnotation(annotationId: string): string|null
+    public getImageRegionForAnnotation(annotationId: string): string | null
     {
         for (const [canvasId, annotations] of this.annotationData)
         {
             const annotation = annotations.find((candidate) => candidate.id === annotationId);
             if (!annotation)
+            {
                 continue;
+            }
             const index = this.tileSources.findIndex((source) => (source as any).canvasId === canvasId);
             const group = index >= 0
-                              ? this.annotationOverlayElements.get(index)?.querySelector<SVGGElement>(`g[data-annotation-id="${CSS.escape(annotationId)}"]`) ?? undefined
-                              : undefined;
+                ? this.annotationOverlayElements.get(index)?.querySelector<SVGGElement>(
+                    `g[data-annotation-id="${CSS.escape(annotationId)}"]`,
+                ) ?? undefined
+                : undefined;
             return this.annotationExtractUrl(annotation, group);
         }
         return null;
@@ -486,9 +510,10 @@ class OsdViewer extends HTMLElement
         }
         this.cancelLoads();
         this.tileSources = tileSources;
-        this.initialPageIndex = Number.isInteger(initialPageIndex) && initialPageIndex >= 0 && initialPageIndex < tileSources.length
-                                    ? initialPageIndex
-                                    : 0;
+        this.initialPageIndex =
+            Number.isInteger(initialPageIndex) && initialPageIndex >= 0 && initialPageIndex < tileSources.length
+                ? initialPageIndex
+                : 0;
         this.hasFitFirstPage = false;
         this.isViewportInitialized = false;
         this.loadedIndexes.clear();
@@ -550,7 +575,10 @@ class OsdViewer extends HTMLElement
                 this.ensurePageLoaded(this.targetIndex);
                 const targetTop = this.pageOffsets[this.targetIndex] || 0;
                 const targetHeight = this.pageRowHeights[this.targetIndex] || this.pageHeights[this.targetIndex] || 1;
-                const range = this.indicesForRange(Math.max(0, targetTop - (targetHeight * 1.5)), targetTop + (targetHeight * 2.5));
+                const range = this.indicesForRange(
+                    Math.max(0, targetTop - (targetHeight * 1.5)),
+                    targetTop + (targetHeight * 2.5),
+                );
                 if (range)
                 {
                     for (let index = range[0]; index <= range[1]; index += 1)
@@ -609,7 +637,11 @@ class OsdViewer extends HTMLElement
         void this.loadTile(index);
     }
 
-    private async loadTile(index: number, nonCorsFallback = false, resolvedTileSource?: ResolvedTileSource): Promise<void>
+    private async loadTile(
+        index: number,
+        nonCorsFallback = false,
+        resolvedTileSource?: ResolvedTileSource,
+    ): Promise<void>
     {
         if (!this.viewer)
         {
@@ -633,7 +665,9 @@ class OsdViewer extends HTMLElement
         catch (error)
         {
             if (token === this.loadToken && !controller.signal.aborted)
+            {
                 this.markUnavailable(index, error instanceof Error ? error.message : "This image is unavailable.");
+            }
             this.finishLoad(index, controller);
             return;
         }
@@ -653,10 +687,10 @@ class OsdViewer extends HTMLElement
         this.viewer.addTiledImage({
             tileSource,
             ...this.tileRequestOptions(tileSource),
-            x : xOffset,
-            y : yOffset,
-            width : 1,
-            success : (event: any) => {
+            x: xOffset,
+            y: yOffset,
+            width: 1,
+            success: (event: any) => {
                 if (token !== this.loadToken)
                 {
                     return;
@@ -686,8 +720,8 @@ class OsdViewer extends HTMLElement
                     }
                     const isSingleCanvas = this.isSingleCanvasLayout();
                     const bounds = isSingleCanvas
-                                       ? item.getBounds()
-                                       : (this.isSpreadMode() ? this.getRowBounds(index) : item.getBounds());
+                        ? item.getBounds()
+                        : (this.isSpreadMode() ? this.getRowBounds(index) : item.getBounds());
                     viewer.viewport.fitBounds(bounds, true);
                     if (!isSingleCanvas)
                     {
@@ -701,7 +735,7 @@ class OsdViewer extends HTMLElement
                     this.flushInitialPageChange();
                     this.flushInitialZoomChange();
                 }
-                this.emitCustomEvent("diva-page-loaded", {index, resourceId : this.resourceId});
+                this.emitCustomEvent("diva-page-loaded", { index, resourceId: this.resourceId });
                 // A failed ImageTileSource can leave OSD 6's initial WebGL frame
                 // blank even after its non-CORS replacement has loaded. Request a
                 // new frame so the fallback becomes visible without interaction.
@@ -715,7 +749,7 @@ class OsdViewer extends HTMLElement
                 }
                 this.maybeLoadMore();
             },
-            error : (event: any) => {
+            error: (event: any) => {
                 if (token !== this.loadToken)
                 {
                     return;
@@ -723,18 +757,20 @@ class OsdViewer extends HTMLElement
                 if (this.shouldRetryWithoutCors(descriptor, tileSource, nonCorsFallback))
                 {
                     this.finishLoad(index, controller);
-                    this.emitCustomEvent("diva-static-image-cors-fallback", {sourceId : descriptor.sourceId});
+                    this.emitCustomEvent("diva-static-image-cors-fallback", { sourceId: descriptor.sourceId });
                     void this.loadTile(index, true, tileSource);
                     return;
                 }
                 this.markUnavailable(index, event?.message || "This image could not be loaded.");
                 this.finishLoad(index, controller);
                 this.maybeLoadMore();
-            }
+            },
         } as any);
     }
 
-    private tileRequestOptions(tileSource: ResolvedTileSource): {ajaxWithCredentials?: boolean; crossOriginPolicy?: string | boolean; loadTilesWithAjax?: boolean}
+    private tileRequestOptions(
+        tileSource: ResolvedTileSource,
+    ): { ajaxWithCredentials?: boolean; crossOriginPolicy?: string | boolean; loadTilesWithAjax?: boolean }
     {
         if (!tileSource || typeof tileSource !== "object")
         {
@@ -742,7 +778,11 @@ class OsdViewer extends HTMLElement
         }
 
         const source = tileSource as Record<string, unknown>;
-        const options: {ajaxWithCredentials?: boolean; crossOriginPolicy?: string | boolean; loadTilesWithAjax?: boolean} = {};
+        const options: {
+            ajaxWithCredentials?: boolean;
+            crossOriginPolicy?: string | boolean;
+            loadTilesWithAjax?: boolean;
+        } = {};
         if (typeof source.ajaxWithCredentials === "boolean")
         {
             options.ajaxWithCredentials = source.ajaxWithCredentials;
@@ -758,7 +798,11 @@ class OsdViewer extends HTMLElement
         return options;
     }
 
-    private shouldRetryWithoutCors(descriptor: TileSourceDescriptor, tileSource: ResolvedTileSource, alreadyRetried: boolean): boolean
+    private shouldRetryWithoutCors(
+        descriptor: TileSourceDescriptor,
+        tileSource: ResolvedTileSource,
+        alreadyRetried: boolean,
+    ): boolean
     {
         if (this.staticImageCorsPolicy !== "fallback" || !descriptor.isStatic || alreadyRetried)
         {
@@ -767,9 +811,9 @@ class OsdViewer extends HTMLElement
 
         // Static sources authenticated through IIIF use OSD's credentialed
         // policy and must never be retried as an unauthenticated request.
-        return !(typeof tileSource === "object" && tileSource !== null &&
-                 typeof tileSource.crossOriginPolicy === "string" &&
-                 tileSource.crossOriginPolicy.toLowerCase() === "use-credentials");
+        return !(typeof tileSource === "object" && tileSource !== null
+            && typeof tileSource.crossOriginPolicy === "string"
+            && tileSource.crossOriginPolicy.toLowerCase() === "use-credentials");
     }
 
     private finishLoad(index: number, controller: AbortController): void
@@ -797,7 +841,7 @@ class OsdViewer extends HTMLElement
     {
         this.unavailableIndexes.set(index, message);
         this.rejectPageWaiters(new Error(message), index);
-        this.emitCustomEvent("diva-page-load-error", {index, message, resourceId : this.resourceId});
+        this.emitCustomEvent("diva-page-load-error", { index, message, resourceId: this.resourceId });
         this.addUnavailableOverlay(index, message);
     }
 
@@ -815,7 +859,7 @@ class OsdViewer extends HTMLElement
         }
         return new Promise((resolve, reject) => {
             const waiters = this.pageWaiters.get(index) ?? [];
-            waiters.push({resolve, reject});
+            waiters.push({ resolve, reject });
             this.pageWaiters.set(index, waiters);
             this.ensurePageLoaded(index);
         });
@@ -830,7 +874,7 @@ class OsdViewer extends HTMLElement
 
     private rejectPageWaiters(error: Error, index?: number): void
     {
-        const indexes = index === undefined ? Array.from(this.pageWaiters.keys()) : [ index ];
+        const indexes = index === undefined ? Array.from(this.pageWaiters.keys()) : [index];
         indexes.forEach((waiterIndex) => {
             const waiters = this.pageWaiters.get(waiterIndex) ?? [];
             this.pageWaiters.delete(waiterIndex);
@@ -841,7 +885,9 @@ class OsdViewer extends HTMLElement
     private addUnavailableOverlay(index: number, message: string): void
     {
         if (!this.viewer)
+        {
             return;
+        }
         this.removeUnavailableOverlay(index);
         const element = document.createElement("div");
         element.className = "diva-image-unavailable";
@@ -859,7 +905,12 @@ class OsdViewer extends HTMLElement
         element.append(text, retry);
         this.viewer.addOverlay({
             element,
-            location : new OpenSeadragon.Rect(this.pageXOffsets[index] || 0, this.pageOffsets[index] || 0, 1, this.pageHeights[index] || 1)
+            location: new OpenSeadragon.Rect(
+                this.pageXOffsets[index] || 0,
+                this.pageOffsets[index] || 0,
+                1,
+                this.pageHeights[index] || 1,
+            ),
         });
     }
 
@@ -867,7 +918,9 @@ class OsdViewer extends HTMLElement
     {
         const element = this.querySelector(`.diva-image-unavailable[data-index="${index}"]`);
         if (element)
+        {
             this.removeOverlay(element as HTMLElement);
+        }
         element?.remove();
     }
 
@@ -1024,12 +1077,15 @@ class OsdViewer extends HTMLElement
         this.removeOverlay(element);
         this.viewer.addOverlay({
             element,
-            location : new OpenSeadragon.Point(xOffset, yOffset),
-            placement : isRightAligned ? OpenSeadragon.Placement.BOTTOM_RIGHT : OpenSeadragon.Placement.BOTTOM_LEFT
+            location: new OpenSeadragon.Point(xOffset, yOffset),
+            placement: isRightAligned ? OpenSeadragon.Placement.BOTTOM_RIGHT : OpenSeadragon.Placement.BOTTOM_LEFT,
         });
     }
 
-    private clearPageOverlays(): void { this.clearOverlays(this.pageOverlayElements); }
+    private clearPageOverlays(): void
+    {
+        this.clearOverlays(this.pageOverlayElements);
+    }
 
     private addOrUpdateAnnotationOverlay(index: number): void
     {
@@ -1083,9 +1139,13 @@ class OsdViewer extends HTMLElement
                 };
                 group.addEventListener("mouseenter", showTooltip);
                 group.addEventListener("mousemove", showTooltip);
-                group.addEventListener("mouseleave", () => { tooltip.hidden = true; });
+                group.addEventListener("mouseleave", () => {
+                    tooltip.hidden = true;
+                });
                 group.addEventListener("focus", () => showTooltip());
-                group.addEventListener("blur", () => { tooltip.hidden = true; });
+                group.addEventListener("blur", () => {
+                    tooltip.hidden = true;
+                });
             }
             group.addEventListener("click", (event) => {
                 event.stopPropagation();
@@ -1123,7 +1183,12 @@ class OsdViewer extends HTMLElement
         this.removeOverlay(element);
         this.viewer.addOverlay({
             element,
-            location : new OpenSeadragon.Rect(this.pageXOffsets[index] || 0, this.pageOffsets[index] || 0, 1, this.pageHeights[index] || 1)
+            location: new OpenSeadragon.Rect(
+                this.pageXOffsets[index] || 0,
+                this.pageOffsets[index] || 0,
+                1,
+                this.pageHeights[index] || 1,
+            ),
         });
     }
 
@@ -1143,26 +1208,65 @@ class OsdViewer extends HTMLElement
     {
         const parsed = new DOMParser().parseFromString(markup, "image/svg+xml");
         const source = parsed.documentElement;
-        const allowed = new Set([ "svg", "g", "path", "rect", "circle", "ellipse", "polygon", "polyline", "line" ]);
-        const attributes = new Set([ "d", "points", "x", "y", "x1", "x2", "y1", "y2", "cx", "cy", "rx", "ry", "r", "width", "height", "fill", "fill-opacity", "fill-rule", "stroke", "stroke-width", "stroke-opacity", "stroke-linecap", "stroke-linejoin", "stroke-dasharray", "transform", "viewBox" ]);
+        const allowed = new Set(["svg", "g", "path", "rect", "circle", "ellipse", "polygon", "polyline", "line"]);
+        const attributes = new Set([
+            "d",
+            "points",
+            "x",
+            "y",
+            "x1",
+            "x2",
+            "y1",
+            "y2",
+            "cx",
+            "cy",
+            "rx",
+            "ry",
+            "r",
+            "width",
+            "height",
+            "fill",
+            "fill-opacity",
+            "fill-rule",
+            "stroke",
+            "stroke-width",
+            "stroke-opacity",
+            "stroke-linecap",
+            "stroke-linejoin",
+            "stroke-dasharray",
+            "transform",
+            "viewBox",
+        ]);
         const copy = (node: Element, parent: Element): void => {
             const name = node.localName.toLowerCase();
             if (!allowed.has(name))
+            {
                 return;
+            }
             const child = document.createElementNS("http://www.w3.org/2000/svg", name);
             if (name !== "svg" && name !== "g")
             {
                 child.classList.add("diva-annotation-svg-shape");
             }
-            Array.from(node.attributes).forEach((attribute) => { if (attributes.has(attribute.name)) child.setAttribute(attribute.name, attribute.value); });
+            Array.from(node.attributes).forEach((attribute) => {
+                if (attributes.has(attribute.name))
+                {
+                    child.setAttribute(attribute.name, attribute.value);
+                }
+            });
             parent.appendChild(child);
             Array.from(node.children).forEach((next) => copy(next, child));
         };
         if (source.localName.toLowerCase() === "svg")
+        {
             Array.from(source.children).forEach((child) => copy(child, target));
+        }
     }
 
-    private clearAnnotationOverlays(): void { this.clearOverlays(this.annotationOverlayElements); }
+    private clearAnnotationOverlays(): void
+    {
+        this.clearOverlays(this.annotationOverlayElements);
+    }
 
     private removeOverlay(element: HTMLElement): void
     {
@@ -1171,7 +1275,8 @@ class OsdViewer extends HTMLElement
             this.viewer?.removeOverlay(element);
         }
         catch (_error)
-        { /* already removed */
+        {
+            /* already removed */
         }
     }
 
@@ -1184,7 +1289,7 @@ class OsdViewer extends HTMLElement
         overlays.clear();
     }
 
-    private handleAnnotationCanvasClick(event: {position?: {x: number; y : number}; quick?: boolean}): void
+    private handleAnnotationCanvasClick(event: { position?: { x: number; y: number }; quick?: boolean }): void
     {
         if (!this.annotationsVisible || !event.quick || !event.position || !this.container)
         {
@@ -1251,15 +1356,31 @@ class OsdViewer extends HTMLElement
         const content = document.createElement("div");
         content.className = "diva-annotation-panel-content";
         const extractUrl = this.annotationExtractUrl(annotation, annotationGroup);
-        let imageLink: HTMLAnchorElement|null = null;
+        let imageLink: HTMLAnchorElement | null = null;
         if (extractUrl)
         {
             const previewControls = document.createElement("div");
-            Object.assign(previewControls.style, {display : "flex", justifyContent : "flex-end", gap : "4px", margin : "0 0 4px"});
+            Object.assign(previewControls.style, {
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "4px",
+                margin: "0 0 4px",
+            });
             const previewFrame = document.createElement("div");
-            Object.assign(previewFrame.style, {position : "relative", maxWidth : "100%", margin : "0 auto 10px", border : "1px solid rgba(255, 255, 255, 0.2)"});
+            Object.assign(previewFrame.style, {
+                position: "relative",
+                maxWidth: "100%",
+                margin: "0 auto 10px",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+            });
             const preview = document.createElement("img");
-            Object.assign(preview.style, {position : "absolute", top : "50%", left : "50%", maxWidth : "none", transition : "transform 120ms ease-out"});
+            Object.assign(preview.style, {
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                maxWidth: "none",
+                transition: "transform 120ms ease-out",
+            });
             preview.src = extractUrl;
             preview.alt = annotation.text ? `Image extract: ${annotation.text}` : "Annotation image extract";
             // A service can be temporarily unavailable or reject a browser image
@@ -1321,19 +1442,22 @@ class OsdViewer extends HTMLElement
         close.focus();
     }
 
-    private annotationExtractUrl(annotation: ViewerAnnotation, annotationGroup?: SVGGElement): string|null
+    private annotationExtractUrl(annotation: ViewerAnnotation, annotationGroup?: SVGGElement): string | null
     {
         if (!annotation.imageService)
         {
             return null;
         }
-        let region: {x: number; y : number; width : number; height : number}|null = null;
+        let region: { x: number; y: number; width: number; height: number } | null = null;
         if (annotation.shape.kind === "rect")
         {
-            const {x, y, width, height} = annotation.shape;
-            if ([ x, y, width, height ].every((value) => typeof value === "number" && Number.isFinite(value)) && width! > 0 && height! > 0)
+            const { x, y, width, height } = annotation.shape;
+            if (
+                [x, y, width, height].every((value) => typeof value === "number" && Number.isFinite(value))
+                && width! > 0 && height! > 0
+            )
             {
-                region = {x : x!, y : y!, width : width!, height : height!};
+                region = { x: x!, y: y!, width: width!, height: height! };
             }
         }
         else if (annotation.shape.kind === "svg" && annotationGroup)
@@ -1345,13 +1469,16 @@ class OsdViewer extends HTMLElement
                 const shapeBounds = annotationGroup.getBoundingClientRect();
                 const svgBounds = svg.getBoundingClientRect();
                 const viewBox = svg.viewBox.baseVal;
-                if (shapeBounds.width > 0 && shapeBounds.height > 0 && svgBounds.width > 0 && svgBounds.height > 0 && viewBox.width > 0 && viewBox.height > 0)
+                if (
+                    shapeBounds.width > 0 && shapeBounds.height > 0 && svgBounds.width > 0 && svgBounds.height > 0
+                    && viewBox.width > 0 && viewBox.height > 0
+                )
                 {
                     region = {
-                        x : viewBox.x + ((shapeBounds.left - svgBounds.left) / svgBounds.width) * viewBox.width,
-                        y : viewBox.y + ((shapeBounds.top - svgBounds.top) / svgBounds.height) * viewBox.height,
-                        width : (shapeBounds.width / svgBounds.width) * viewBox.width,
-                        height : (shapeBounds.height / svgBounds.height) * viewBox.height
+                        x: viewBox.x + ((shapeBounds.left - svgBounds.left) / svgBounds.width) * viewBox.width,
+                        y: viewBox.y + ((shapeBounds.top - svgBounds.top) / svgBounds.height) * viewBox.height,
+                        width: (shapeBounds.width / svgBounds.width) * viewBox.width,
+                        height: (shapeBounds.height / svgBounds.height) * viewBox.height,
                     };
                 }
             }
@@ -1371,7 +1498,7 @@ class OsdViewer extends HTMLElement
         return iiifImageRegionUrl(annotation.imageService, region);
     }
 
-    private svgBoundingRegion(markup: string): {x: number; y : number; width : number; height : number}|null
+    private svgBoundingRegion(markup: string): { x: number; y: number; width: number; height: number } | null
     {
         if (!document.body)
         {
@@ -1387,8 +1514,8 @@ class OsdViewer extends HTMLElement
         {
             const bounds = group.getBBox();
             return bounds.width > 0 && bounds.height > 0
-                       ? {x : bounds.x, y : bounds.y, width : bounds.width, height : bounds.height}
-                       : null;
+                ? { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height }
+                : null;
         }
         catch (_error)
         {
@@ -1412,7 +1539,24 @@ class OsdViewer extends HTMLElement
     {
         const template = document.createElement("template");
         template.innerHTML = markup;
-        const allowedTags = new Set([ "div", "p", "br", "em", "i", "strong", "b", "a", "ul", "ol", "li", "dl", "dt", "dd", "span", "img" ]);
+        const allowedTags = new Set([
+            "div",
+            "p",
+            "br",
+            "em",
+            "i",
+            "strong",
+            "b",
+            "a",
+            "ul",
+            "ol",
+            "li",
+            "dl",
+            "dt",
+            "dd",
+            "span",
+            "img",
+        ]);
         const safeUrl = (value: string): boolean => {
             const normalized = value.trim().toLowerCase();
             return /^(https?:|mailto:|tel:|\/|\.\/|\.\.\/|#|\?)/.test(normalized) || !normalized.includes(":");
@@ -1424,7 +1568,9 @@ class OsdViewer extends HTMLElement
                 return;
             }
             if (!(node instanceof Element))
+            {
                 return;
+            }
             const tag = node.localName.toLowerCase();
             if (!allowedTags.has(tag))
             {
@@ -1436,7 +1582,9 @@ class OsdViewer extends HTMLElement
             {
                 const href = node.getAttribute("href");
                 if (href && safeUrl(href))
+                {
                     element.setAttribute("href", href);
+                }
                 element.setAttribute("target", "_blank");
                 element.setAttribute("rel", "noopener noreferrer");
             }
@@ -1444,10 +1592,14 @@ class OsdViewer extends HTMLElement
             {
                 const src = node.getAttribute("src");
                 if (src && safeUrl(src))
+                {
                     element.setAttribute("src", src);
+                }
                 const alt = node.getAttribute("alt");
                 if (alt)
+                {
                     element.setAttribute("alt", alt);
+                }
             }
             parent.appendChild(element);
             Array.from(node.childNodes).forEach((child) => copy(child, element));
@@ -1478,18 +1630,18 @@ class OsdViewer extends HTMLElement
             `<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="100%" height="100%" fill="transparent"/></svg>`;
         const url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
         this.viewer.addTiledImage({
-            tileSource : {type : "image", url},
-            x : 0,
-            y : 0,
-            width : layoutWidth,
-            success : (event: any) => {
+            tileSource: { type: "image", url },
+            x: 0,
+            y: 0,
+            width: layoutWidth,
+            success: (event: any) => {
                 const item = event.item;
                 item.setOpacity(0);
                 item.setPosition(new OpenSeadragon.Point(0, 0), true);
                 item.setWidth(layoutWidth, true);
                 item.setHeight(totalHeight, true);
                 this.scrollPlaneItem = item;
-            }
+            },
         });
     }
 
@@ -1504,7 +1656,7 @@ class OsdViewer extends HTMLElement
         this.scrollPlaneItem = null;
     }
 
-    private indicesForRange(start: number, end: number): [ number, number ]|null
+    private indicesForRange(start: number, end: number): [number, number] | null
     {
         if (this.pageOffsets.length === 0)
         {
@@ -1513,7 +1665,7 @@ class OsdViewer extends HTMLElement
 
         const startIndex = this.findIndexForOffset(start);
         const endIndex = this.getRowEndIndex(this.findIndexForOffset(end));
-        return [ startIndex, endIndex ];
+        return [startIndex, endIndex];
     }
 
     private findIndexForOffset(offset: number): number
@@ -1591,7 +1743,7 @@ class OsdViewer extends HTMLElement
         this.targetIndex = index;
         this.ensurePageLoaded(index);
         this.lastReportedIndex = index;
-        this.emitCustomEvent("diva-page-change", {index});
+        this.emitCustomEvent("diva-page-change", { index });
     }
 
     public getVisiblePageIndexes(): number[]
@@ -1603,7 +1755,7 @@ class OsdViewer extends HTMLElement
         const index = this.lastReportedIndex ?? 0;
         const start = this.getRowStartIndex(index);
         const end = this.getRowEndIndex(start);
-        return Array.from({length : end - start + 1}, (_value, offset) => start + offset);
+        return Array.from({ length: end - start + 1 }, (_value, offset) => start + offset);
     }
 
     public isPageLoaded(index: number, sourceId: string): boolean
@@ -1649,10 +1801,10 @@ class OsdViewer extends HTMLElement
         const item = await this.waitForPage(index);
         const padding = options.padding ?? 0.05;
         const padded = {
-            x : region.x - (region.width * padding),
-            y : region.y - (region.height * padding),
-            width : region.width * (1 + (padding * 2)),
-            height : region.height * (1 + (padding * 2))
+            x: region.x - (region.width * padding),
+            y: region.y - (region.height * padding),
+            width: region.width * (1 + (padding * 2)),
+            height: region.height * (1 + (padding * 2)),
         };
         const bounds = item.imageToViewportRectangle(padded.x, padded.y, padded.width, padded.height);
         this.viewer?.viewport.fitBounds(bounds, options.immediately === true);
@@ -1880,7 +2032,7 @@ class OsdViewer extends HTMLElement
         }
 
         this.lastReportedIndex = index;
-        this.emitCustomEvent("diva-page-change", {index});
+        this.emitCustomEvent("diva-page-change", { index });
     }
 
     private emitPageChangeInstant(): void
@@ -1899,7 +2051,7 @@ class OsdViewer extends HTMLElement
         const center = viewport.getCenter(true);
         const index = this.findIndexForOffset(center.y);
         this.lastReportedIndex = index;
-        this.emitCustomEvent("diva-page-change", {index, instant : true});
+        this.emitCustomEvent("diva-page-change", { index, instant: true });
     }
 
     private flushInitialPageChange(): void
@@ -1919,7 +2071,7 @@ class OsdViewer extends HTMLElement
         const index = this.findIndexForOffset(center.y);
         this.lastReportedIndex = index;
         this.suppressPageChange = false;
-        this.emitCustomEvent("diva-page-change", {index});
+        this.emitCustomEvent("diva-page-change", { index });
     }
 
     private maybeEmitZoomChange(viewport?: OpenSeadragonType.Viewport): void
@@ -1941,7 +2093,7 @@ class OsdViewer extends HTMLElement
         }
 
         this.lastReportedZoom = zoom;
-        this.emitCustomEvent("diva-zoom-change", {zoom});
+        this.emitCustomEvent("diva-zoom-change", { zoom });
     }
 
     private flushInitialZoomChange(): void
@@ -1955,7 +2107,7 @@ class OsdViewer extends HTMLElement
         const zoom = viewport.getZoom(true);
         this.lastReportedZoom = zoom;
         this.suppressZoomChange = false;
-        this.emitCustomEvent("diva-zoom-change", {zoom});
+        this.emitCustomEvent("diva-zoom-change", { zoom });
     }
 
     private alignTopAfterFit(index: number): void
@@ -1998,7 +2150,7 @@ class OsdViewer extends HTMLElement
             this.loadingTimer = null;
         }
         this.isLoading = false;
-        this.emitCustomEvent("diva-loading-change", {loading : false});
+        this.emitCustomEvent("diva-loading-change", { loading: false });
     }
 
     private updateLoadingState(): void
@@ -2016,7 +2168,7 @@ class OsdViewer extends HTMLElement
                 if (this.loadingIndexes.size > 0 && !this.isLoading)
                 {
                     this.isLoading = true;
-                    this.emitCustomEvent("diva-loading-change", {loading : true});
+                    this.emitCustomEvent("diva-loading-change", { loading: true });
                 }
             }, 300);
             return;
@@ -2031,11 +2183,11 @@ class OsdViewer extends HTMLElement
         if (this.isLoading)
         {
             this.isLoading = false;
-            this.emitCustomEvent("diva-loading-change", {loading : false});
+            this.emitCustomEvent("diva-loading-change", { loading: false });
         }
     }
 
-    private applyLayoutChange(next: {mode?: "single"|"spread"|"spread-shift"; direction?: "ltr" | "rtl"}): void
+    private applyLayoutChange(next: { mode?: "single" | "spread" | "spread-shift"; direction?: "ltr" | "rtl" }): void
     {
         const nextMode = next.mode ?? this.layoutMode;
         const nextDirection = next.direction ?? this.viewingDirection;
@@ -2044,7 +2196,7 @@ class OsdViewer extends HTMLElement
             return;
         }
 
-        let anchorIndex: number|null = null;
+        let anchorIndex: number | null = null;
         const viewport = this.viewer?.viewport;
         if (viewport && this.pageOffsets.length > 0)
         {
@@ -2079,10 +2231,13 @@ class OsdViewer extends HTMLElement
 
     private emitCustomEvent(name: string, detail: Record<string, any>): void
     {
-        this.dispatchEvent(new CustomEvent(name, {detail}));
+        this.dispatchEvent(new CustomEvent(name, { detail }));
     }
 
-    private getCenterX(): number { return this.isSpreadMode() ? 1 : 0.5; }
+    private getCenterX(): number
+    {
+        return this.isSpreadMode() ? 1 : 0.5;
+    }
 
     private isSingleCanvasLayout(): boolean
     {
@@ -2103,7 +2258,10 @@ class OsdViewer extends HTMLElement
         return new OpenSeadragon.Rect(0, yOffset, width, rowHeight);
     }
 
-    private isSpreadMode(): boolean { return this.layoutMode !== "single"; }
+    private isSpreadMode(): boolean
+    {
+        return this.layoutMode !== "single";
+    }
 
     private getRowStartIndex(index: number): number
     {

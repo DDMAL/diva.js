@@ -1,7 +1,0 @@
-BasedOnStyle: LLVM
-Language: JavaScript
-IndentWidth: 4
-TabWidth: 4
-UseTab: Never
-ColumnLimit: 0
-BreakBeforeBraces: Allman

@@ -3,16 +3,14 @@ import "./viewer-element";
 // @ts-ignore
 import divaCss from "../cache/diva.css";
 // @ts-ignore
-import {Elm} from "../cache/elm-esm.js";
+import { Elm } from "../cache/elm-esm.js";
 
-import {AuthBrowser,
-        type ResolvedTileSource,
-        type TileSourceDescriptor} from "./auth";
-import {Filters,
-        setFilterOptions} from "./filters";
-import {iiifImageRegionUrl} from "./image-utils";
+import { AuthBrowser, type ResolvedTileSource, type TileSourceDescriptor } from "./auth";
+import { Filters, setFilterOptions } from "./filters";
+import { iiifImageRegionUrl } from "./image-utils";
 import type {
-    DivaAnnotation, DivaEventMap,
+    DivaAnnotation,
+    DivaEventMap,
     DivaImage,
     DivaLayoutMode,
     DivaOptions,
@@ -24,7 +22,8 @@ import type {
     DivaState,
     DivaStaticImageCorsPolicy,
     DivaViewingDirection,
-    ZoomToRegionOptions} from "./public-api";
+    ZoomToRegionOptions,
+} from "./public-api";
 
 export type {
     DivaAnnotation,
@@ -40,7 +39,7 @@ export type {
     DivaState,
     DivaStaticImageCorsPolicy,
     DivaViewingDirection,
-    ZoomToRegionOptions
+    ZoomToRegionOptions,
 } from "./public-api";
 
 declare const OpenSeadragon: any;
@@ -152,87 +151,112 @@ type FilterSettings = {
 };
 
 type FilterPreviewPayload = {
-    sourceId: string; tileSource : string; isStatic : boolean;
-    aspect : number;
+    sourceId: string;
+    tileSource: string;
+    isStatic: boolean;
+    aspect: number;
     filters?: FilterSettings;
 };
 
 type TileSourceEntry = {
-    sourceId: string; url : string; isStatic : boolean;
-    canvasId?: string
+    sourceId: string;
+    url: string;
+    isStatic: boolean;
+    canvasId?: string;
 };
 
 type ViewerAnnotation = {
     id: string;
-    text : string;
+    text: string;
     html?: string;
-    imageService : string | null;
-    shape : {kind : "rect" | "svg"; x?: number; y?: number; width?: number; height?: number; value?: string};
+    imageService: string | null;
+    shape: { kind: "rect" | "svg"; x?: number; y?: number; width?: number; height?: number; value?: string };
 };
 type AnnotationPayload = {
-    canvasId: string; annotations : ViewerAnnotation[]
+    canvasId: string;
+    annotations: ViewerAnnotation[];
 };
 type StoredAnnotation = {
-    canvasId: string; publicAnnotation : DivaAnnotation; viewerAnnotation : ViewerAnnotation
+    canvasId: string;
+    publicAnnotation: DivaAnnotation;
+    viewerAnnotation: ViewerAnnotation;
 };
 
 type PublicPageEntry = {
     index: number;
-    canvasId : string;
-    label : string;
-    width : number | null;
-    height : number | null;
-    primaryImage : DivaImage;
-    images : DivaImage[];
+    canvasId: string;
+    label: string;
+    width: number | null;
+    height: number | null;
+    primaryImage: DivaImage;
+    images: DivaImage[];
 };
 
-const copyAnnotation = (annotation: DivaAnnotation): DivaAnnotation => JSON.parse(JSON.stringify(annotation)) as DivaAnnotation;
+const copyAnnotation = (annotation: DivaAnnotation): DivaAnnotation =>
+    JSON.parse(JSON.stringify(annotation)) as DivaAnnotation;
 
 const annotationBodyText = (body: unknown): string => {
     if (typeof body === "string")
+    {
         return body;
+    }
     if (Array.isArray(body))
+    {
         return body.length > 0 ? annotationBodyText(body[0]) : "";
+    }
     if (body && typeof body === "object")
     {
         const value = body as Record<string, unknown>;
-        return typeof value.value === "string" ? value.value : typeof value.chars === "string" ? value.chars
-                                                                                               : "";
+        return typeof value.value === "string" ? value.value : typeof value.chars === "string"
+            ? value.chars
+            : "";
     }
     return "";
 };
 
 const plainAnnotationText = (html: string): string => html.replace(/<[^>]*>/g, "");
 
-const selectorShape = (selector: unknown): ViewerAnnotation["shape"]|undefined => {
+const selectorShape = (selector: unknown): ViewerAnnotation["shape"] | undefined => {
     if (!selector || typeof selector !== "object")
+    {
         return undefined;
+    }
     const value = selector as Record<string, unknown>;
-    const type = typeof value.type === "string" ? value.type.toLowerCase() : typeof value["@type"] === "string" ? value["@type"].toLowerCase()
-                                                                                                                : "";
+    const type = typeof value.type === "string" ? value.type.toLowerCase() : typeof value["@type"] === "string"
+        ? value["@type"].toLowerCase()
+        : "";
     if (type.includes("svgselector") && typeof value.value === "string")
-        return {kind : "svg", value : value.value};
+    {
+        return { kind: "svg", value: value.value };
+    }
     if (typeof value.value === "string")
+    {
         return xywhShape(value.value);
+    }
     return selectorShape(value.default) ?? selectorShape(value.item);
 };
 
-const xywhShape = (value: string): ViewerAnnotation["shape"]|undefined => {
+const xywhShape = (value: string): ViewerAnnotation["shape"] | undefined => {
     const coordinates = value.startsWith("xywh=") ? value.slice(5) : value;
     const parts = coordinates.split(",").map(Number);
     return parts.length === 4 && parts.every(Number.isFinite) && parts[2] > 0 && parts[3] > 0
-               ? {kind : "rect", x : parts[0], y : parts[1], width : parts[2], height : parts[3]}
-               : undefined;
+        ? { kind: "rect", x: parts[0], y: parts[1], width: parts[2], height: parts[3] }
+        : undefined;
 };
 
-const normalizePublicAnnotation = (annotation: DivaAnnotation, imageService: string|null = null): StoredAnnotation => {
-    if (!annotation || typeof annotation !== "object" || typeof annotation.id !== "string" || annotation.id.length === 0)
+const normalizePublicAnnotation = (
+    annotation: DivaAnnotation,
+    imageService: string | null = null,
+): StoredAnnotation => {
+    if (
+        !annotation || typeof annotation !== "object" || typeof annotation.id !== "string" || annotation.id.length === 0
+    )
     {
         throw new TypeError("An annotation must be an object with a non-empty string id.");
     }
     const target = annotation.target ?? annotation.on;
-    let canvasId: string|undefined;
-    let shape: ViewerAnnotation["shape"]|undefined;
+    let canvasId: string | undefined;
+    let shape: ViewerAnnotation["shape"] | undefined;
     if (typeof target === "string")
     {
         const match = target.match(/^(.*)#xywh=(.+)$/);
@@ -252,77 +276,102 @@ const normalizePublicAnnotation = (annotation: DivaAnnotation, imageService: str
     const body = annotationBodyText(annotation.body ?? (annotation as Record<string, unknown>).resource);
     return {
         canvasId,
-        publicAnnotation : copyAnnotation(annotation),
-        viewerAnnotation : {id : annotation.id, text : plainAnnotationText(body), html : body, imageService, shape}
+        publicAnnotation: copyAnnotation(annotation),
+        viewerAnnotation: { id: annotation.id, text: plainAnnotationText(body), html: body, imageService, shape },
     };
 };
 
 const publicAnnotationFromViewer = (canvasId: string, annotation: ViewerAnnotation): DivaAnnotation => ({
-    id : annotation.id,
-    type : "Annotation",
-    body : {type : "TextualBody", value : annotation.html ?? annotation.text},
-    target : annotation.shape.kind === "rect"
-                 ? {type : "SpecificResource", source : canvasId, selector : {type : "FragmentSelector", value : `xywh=${annotation.shape.x},${annotation.shape.y},${annotation.shape.width},${annotation.shape.height}`}}
-                 : {type : "SpecificResource", source : canvasId, selector : {type : "SvgSelector", value : annotation.shape.value ?? ""}}
+    id: annotation.id,
+    type: "Annotation",
+    body: { type: "TextualBody", value: annotation.html ?? annotation.text },
+    target: annotation.shape.kind === "rect"
+        ? {
+            type: "SpecificResource",
+            source: canvasId,
+            selector: {
+                type: "FragmentSelector",
+                value:
+                    `xywh=${annotation.shape.x},${annotation.shape.y},${annotation.shape.width},${annotation.shape.height}`,
+            },
+        }
+        : {
+            type: "SpecificResource",
+            source: canvasId,
+            selector: { type: "SvgSelector", value: annotation.shape.value ?? "" },
+        },
 });
 
 type TileSourceResolver = (source: TileSourceDescriptor, signal: AbortSignal) => Promise<ResolvedTileSource>;
 
 type ElmPorts = {
-    tileSourcesUpdated: {subscribe: (callback: (update: {resourceId: string; tileSources : TileSourceEntry[]; initialPageIndex : number}) => void) => void};
-    annotationsUpdated : {subscribe : (callback: (value: AnnotationPayload) => void) => void};
-    annotationsVisibilityUpdated : {subscribe : (callback: (visible: boolean) => void) => void};
-    viewerPageLoaded : {send : (index: number) => void};
-    pageAspectsUpdated : {subscribe : (callback: (aspects: number[]) => void) => void};
-    pageLabelsUpdated : {subscribe : (callback: (labels: string[]) => void) => void};
-    pagesUpdated : {subscribe : (callback: (pages: PublicPageEntry[]) => void) => void};
-    zoomLevelUpdated : {subscribe : (callback: (zoom: number) => void) => void};
-    zoomBy : {subscribe : (callback: (factor: number) => void) => void};
-    scrollToIndex : {subscribe : (callback: (index: number) => void) => void};
-    filterPreviewUpdated : {subscribe : (callback: (payload: FilterPreviewPayload|null) => void) => void};
-    setFullscreen : {subscribe : (callback: (enabled: boolean) => void) => void};
-    saveFilteredImage : {subscribe : (callback: () => void) => void};
-    layoutModeUpdated : {subscribe : (callback: (mode: string) => void) => void};
-    layoutModeRequested : {send : (mode: string) => void};
-    layoutConfigUpdated : {subscribe : (callback: (config: {mode: string; direction : string}) => void) => void};
-    pageIndexChanged : {send : (index: number) => void};
-    pageIndexChangedInstant : {send : (index: number) => void};
-    fullscreenChanged : {send : (enabled: boolean) => void};
-    zoomChanged : {send : (zoom: number) => void};
-    viewerLoadingChanged : {send : (loading: boolean) => void};
-    copyToClipboard : {subscribe : (callback: (text: string) => void) => void};
-    resolveTileSourceRequested : {send : (value: {requestId: string; sourceId : string}) => void};
-    resolveTileSourceCancelled : {send : (requestId: string) => void};
-    tileSourceResolutionSucceeded : {subscribe : (callback: (value: any) => void) => void};
-    tileSourceResolutionFailed : {subscribe : (callback: (value: any) => void) => void};
-    authHttpRequested : {subscribe : (callback: (value: any) => void) => void};
-    authHttpCancelled : {subscribe : (callback: (value: string) => void) => void};
-    authHttpResponded : {send : (value: any) => void};
-    authHttpFailed : {send : (value: any) => void};
-    authStorageRequested : {subscribe : (callback: (value: any) => void) => void};
-    authStorageResponded : {send : (value: any) => void};
-    authTokenFrameRequested : {subscribe : (callback: (value: any) => void) => void};
-    authTokenFrameCancelled : {subscribe : (callback: (value: string) => void) => void};
-    authTokenMessage : {send : (value: any) => void};
-    authTokenFailed : {send : (value: any) => void};
-    authPopupChanged : {send : (value: any) => void};
-    authLogoutChanged : {send : (value: any) => void};
-    authSourcesInvalidated : {subscribe : (callback: (value: string[]) => void) => void};
-    authDestroyed : {send : (value: null) => void};
-    resourceRequested : {send : (value: {requestId: string; url : string}) => void};
-    resourceLoadSucceeded : {subscribe : (callback: (value: {requestId: string; url : string; hasPages : boolean; pageIndex : number}) => void) => void};
-    resourceLoadFailed : {subscribe : (callback: (value: {requestId: string; url : string; message : string}) => void) => void};
+    tileSourcesUpdated: {
+        subscribe: (
+            callback: (
+                update: { resourceId: string; tileSources: TileSourceEntry[]; initialPageIndex: number },
+            ) => void,
+        ) => void;
+    };
+    annotationsUpdated: { subscribe: (callback: (value: AnnotationPayload) => void) => void };
+    annotationsVisibilityUpdated: { subscribe: (callback: (visible: boolean) => void) => void };
+    viewerPageLoaded: { send: (index: number) => void };
+    pageAspectsUpdated: { subscribe: (callback: (aspects: number[]) => void) => void };
+    pageLabelsUpdated: { subscribe: (callback: (labels: string[]) => void) => void };
+    pagesUpdated: { subscribe: (callback: (pages: PublicPageEntry[]) => void) => void };
+    zoomLevelUpdated: { subscribe: (callback: (zoom: number) => void) => void };
+    zoomBy: { subscribe: (callback: (factor: number) => void) => void };
+    scrollToIndex: { subscribe: (callback: (index: number) => void) => void };
+    filterPreviewUpdated: { subscribe: (callback: (payload: FilterPreviewPayload | null) => void) => void };
+    setFullscreen: { subscribe: (callback: (enabled: boolean) => void) => void };
+    saveFilteredImage: { subscribe: (callback: () => void) => void };
+    layoutModeUpdated: { subscribe: (callback: (mode: string) => void) => void };
+    layoutModeRequested: { send: (mode: string) => void };
+    layoutConfigUpdated: { subscribe: (callback: (config: { mode: string; direction: string }) => void) => void };
+    pageIndexChanged: { send: (index: number) => void };
+    pageIndexChangedInstant: { send: (index: number) => void };
+    fullscreenChanged: { send: (enabled: boolean) => void };
+    zoomChanged: { send: (zoom: number) => void };
+    viewerLoadingChanged: { send: (loading: boolean) => void };
+    copyToClipboard: { subscribe: (callback: (text: string) => void) => void };
+    resolveTileSourceRequested: { send: (value: { requestId: string; sourceId: string }) => void };
+    resolveTileSourceCancelled: { send: (requestId: string) => void };
+    tileSourceResolutionSucceeded: { subscribe: (callback: (value: any) => void) => void };
+    tileSourceResolutionFailed: { subscribe: (callback: (value: any) => void) => void };
+    authHttpRequested: { subscribe: (callback: (value: any) => void) => void };
+    authHttpCancelled: { subscribe: (callback: (value: string) => void) => void };
+    authHttpResponded: { send: (value: any) => void };
+    authHttpFailed: { send: (value: any) => void };
+    authStorageRequested: { subscribe: (callback: (value: any) => void) => void };
+    authStorageResponded: { send: (value: any) => void };
+    authTokenFrameRequested: { subscribe: (callback: (value: any) => void) => void };
+    authTokenFrameCancelled: { subscribe: (callback: (value: string) => void) => void };
+    authTokenMessage: { send: (value: any) => void };
+    authTokenFailed: { send: (value: any) => void };
+    authPopupChanged: { send: (value: any) => void };
+    authLogoutChanged: { send: (value: any) => void };
+    authSourcesInvalidated: { subscribe: (callback: (value: string[]) => void) => void };
+    authDestroyed: { send: (value: null) => void };
+    resourceRequested: { send: (value: { requestId: string; url: string }) => void };
+    resourceLoadSucceeded: {
+        subscribe: (
+            callback: (value: { requestId: string; url: string; hasPages: boolean; pageIndex: number }) => void,
+        ) => void;
+    };
+    resourceLoadFailed: {
+        subscribe: (callback: (value: { requestId: string; url: string; message: string }) => void) => void;
+    };
 };
 
 type ElmApp = {
     ports: ElmPorts;
 };
 
-type DivaRoot = HTMLElement&
-{
-    elmTree?: unknown;
-    __divaInstance?: Diva;
-};
+type DivaRoot =
+    & HTMLElement
+    & {
+        elmTree?: unknown;
+        __divaInstance?: Diva;
+    };
 
 const DEFAULT_SIDEBAR_WIDTH = 320;
 const MIN_SIDEBAR_WIDTH = 220;
@@ -367,19 +416,19 @@ export class Diva extends EventTarget
     private mainViewer: any = null;
     private readonly tileSourceResolver!: TileSourceResolver;
     private readonly pendingViewerMethods: Map<string, any[]> = new Map();
-    private viewerMethodRafId: number|null = null;
+    private viewerMethodRafId: number | null = null;
     private viewerMethodAttempts = 0;
     private filterViewer: any = null;
-    private filterViewerElement: HTMLElement|null = null;
-    private filterOptions: FilterSettings|null = null;
+    private filterViewerElement: HTMLElement | null = null;
+    private filterOptions: FilterSettings | null = null;
     private filterViewerFlipped = false;
     private filterAccessBlocked = false;
-    private currentFilterSourceKey: string|null = null;
-    private pendingFilterPreview: FilterPreviewPayload|null = null;
+    private currentFilterSourceKey: string | null = null;
+    private pendingFilterPreview: FilterPreviewPayload | null = null;
     private filterPreviewVersion = 0;
     private filterPreviewRetries = 0;
-    private filterPreviewRafId: number|null = null;
-    private filterPreviewController: AbortController|null = null;
+    private filterPreviewRafId: number | null = null;
+    private filterPreviewController: AbortController | null = null;
     private isDestroyed = false;
     private readonly handlePageChangeBound: (event: Event) => void;
     private readonly handlePageLoadedBound: (event: Event) => void;
@@ -395,7 +444,7 @@ export class Diva extends EventTarget
     private readonly manifestAnnotationsByCanvas: Map<string, StoredAnnotation[]> = new Map();
     private readonly apiAnnotationsByCanvas: Map<string, StoredAnnotation[]> = new Map();
     private readonly clearedAnnotationCanvases: Set<string> = new Set();
-    private readonly annotationImageServicesByCanvas: Map<string, string|null> = new Map();
+    private readonly annotationImageServicesByCanvas: Map<string, string | null> = new Map();
     private annotationResourceId = "";
     private state: DivaState;
     private readyResolve!: () => void;
@@ -405,12 +454,14 @@ export class Diva extends EventTarget
     private resourceSequence = 0;
     private pendingResource: {
         id: string;
-        promise : Promise<void>;
-        resolve : () => void;
-        reject : (error: Error) => void;
-        previousReady : boolean;
-    }|null = null;
-    private awaitingViewerResource: {id: string; url : string; pageIndex : number; resourceChangeEmitted : boolean}|null = null;
+        promise: Promise<void>;
+        resolve: () => void;
+        reject: (error: Error) => void;
+        previousReady: boolean;
+    } | null = null;
+    private awaitingViewerResource:
+        | { id: string; url: string; pageIndex: number; resourceChangeEmitted: boolean }
+        | null = null;
     private resourceLoading = true;
     private viewerLoading = false;
     /**
@@ -463,21 +514,22 @@ export class Diva extends EventTarget
         this.rootId = rootId;
         this.root = root;
         this.isDestroyed = false;
-        this.staticImageCorsPolicy = flags.staticImageCorsPolicy === "fallback" || flags.staticImageCorsPolicy === "none"
-                                         ? flags.staticImageCorsPolicy
-                                         : "required";
+        this.staticImageCorsPolicy =
+            flags.staticImageCorsPolicy === "fallback" || flags.staticImageCorsPolicy === "none"
+                ? flags.staticImageCorsPolicy
+                : "required";
         this.state = {
-            resourceUrl : flags.objectData,
-            ready : false,
-            loading : true,
-            pageCount : 0,
-            currentPageIndex : null,
-            visiblePageIndexes : [],
-            layoutMode : "single",
-            viewingDirection : "ltr",
-            zoom : null,
-            fullscreen : false,
-            destroyed : false
+            resourceUrl: flags.objectData,
+            ready: false,
+            loading: true,
+            pageCount: 0,
+            currentPageIndex: null,
+            visiblePageIndexes: [],
+            layoutMode: "single",
+            viewingDirection: "ltr",
+            zoom: null,
+            fullscreen: false,
+            destroyed: false,
         };
         this.ready = new Promise<void>((resolve, reject) => {
             this.readyResolve = resolve;
@@ -497,31 +549,32 @@ export class Diva extends EventTarget
         let langCode = this.detectLanguage();
         const requestedSidebarWidth = flags.sidebarWidth;
         const sidebarWidth = typeof requestedSidebarWidth === "number" && Number.isFinite(requestedSidebarWidth)
-                                 ? Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, Math.round(requestedSidebarWidth)))
-                                 : DEFAULT_SIDEBAR_WIDTH;
+            ? Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, Math.round(requestedSidebarWidth)))
+            : DEFAULT_SIDEBAR_WIDTH;
         const sidebarPanel: DivaSidebarPanel = flags.sidebarPanel === "contents" || flags.sidebarPanel === "metadata"
-                                                   ? flags.sidebarPanel
-                                                   : "thumbnails";
+            ? flags.sidebarPanel
+            : "thumbnails";
 
         this.app = Elm.Main.init({
-            node : root,
-            flags : {
-                rootElementId : rootId,
-                objectData : flags.objectData,
-                initialPage : this.initialPageFlag(flags.initialPage),
-                acceptHeaders : flags.acceptHeaders || [],
-                showSidebar : flags.showSidebar !== false,
+            node: root,
+            flags: {
+                rootElementId: rootId,
+                objectData: flags.objectData,
+                initialPage: this.initialPageFlag(flags.initialPage),
+                acceptHeaders: flags.acceptHeaders || [],
+                showSidebar: flags.showSidebar !== false,
                 sidebarWidth,
                 sidebarPanel,
-                showTitle : flags.showTitle !== false,
-                userLanguage : flags.setLanguage || langCode,
-                enableAnnotations : flags.enableAnnotations === true,
-                annotationServer : flags.annotationServer || null
-            }
+                showTitle: flags.showTitle !== false,
+                userLanguage: flags.setLanguage || langCode,
+                enableAnnotations: flags.enableAnnotations === true,
+                annotationServer: flags.annotationServer || null,
+            },
         });
         this.root = this.getConnectedRoot();
         this.auth = new AuthBrowser(this.app.ports, this.root, this.staticImageCorsPolicy);
-        this.tileSourceResolver = (source: TileSourceDescriptor, signal: AbortSignal) => this.auth.resolve(source, signal);
+        this.tileSourceResolver = (source: TileSourceDescriptor, signal: AbortSignal) =>
+            this.auth.resolve(source, signal);
         const connectedRootAny = this.root as DivaRoot;
         connectedRootAny.__divaInstance = this;
 
@@ -534,7 +587,10 @@ export class Diva extends EventTarget
         this.bindFullscreenChange();
         this.bindZoomChange();
         this.bindLoadingChange();
-        this.bindViewerEvent("diva-static-image-cors-fallback", this.handleStaticImageCorsFallbackBound as EventListener);
+        this.bindViewerEvent(
+            "diva-static-image-cors-fallback",
+            this.handleStaticImageCorsFallbackBound as EventListener,
+        );
         this.bindViewerEvent("diva-page-load-error", this.handlePageLoadErrorBound as EventListener);
     }
 
@@ -544,18 +600,23 @@ export class Diva extends EventTarget
      *
      * @returns {string}
      */
-    private detectLanguage(): string { return navigator.language.split("-")[0]; }
+    private detectLanguage(): string
+    {
+        return navigator.language.split("-")[0];
+    }
 
-    private initialPageFlag(target: DivaPageTarget|undefined): unknown
+    private initialPageFlag(target: DivaPageTarget | undefined): unknown
     {
         if (typeof target === "number")
         {
             return Number.isInteger(target) && target >= 0 ? target : null;
         }
-        if (target && typeof target === "object" &&
-            (target.by === "canvasId" || target.by === "label") && typeof target.value === "string")
+        if (
+            target && typeof target === "object"
+            && (target.by === "canvasId" || target.by === "label") && typeof target.value === "string"
+        )
         {
-            return {by : target.by, value : target.value};
+            return { by: target.by, value: target.value };
         }
         return null;
     }
@@ -574,7 +635,7 @@ export class Diva extends EventTarget
     private bindPorts(): void
     {
         this.getPort("tileSourcesUpdated")
-            .subscribe((update: {resourceId: string; tileSources : TileSourceEntry[]; initialPageIndex : number}) => {
+            .subscribe((update: { resourceId: string; tileSources: TileSourceEntry[]; initialPageIndex: number }) => {
                 if (this.annotationResourceId !== update.resourceId)
                 {
                     this.annotationResourceId = update.resourceId;
@@ -591,15 +652,23 @@ export class Diva extends EventTarget
                 });
                 this.auth.registerSources(update.tileSources);
                 this.callViewerMethodWhenReady("setTileSourceResolver", this.tileSourceResolver);
-                this.callViewerMethodWhenReady("setTileSources", update.tileSources, update.initialPageIndex, update.resourceId);
+                this.callViewerMethodWhenReady(
+                    "setTileSources",
+                    update.tileSources,
+                    update.initialPageIndex,
+                    update.resourceId,
+                );
             });
 
         this.getPort("annotationsUpdated").subscribe((value: AnnotationPayload) => {
-            this.manifestAnnotationsByCanvas.set(value.canvasId, value.annotations.map((annotation) => ({
-                                                                                           canvasId : value.canvasId,
-                                                                                           publicAnnotation : publicAnnotationFromViewer(value.canvasId, annotation),
-                                                                                           viewerAnnotation : {...annotation, imageService : annotation.imageService ?? null}
-                                                                                       })));
+            this.manifestAnnotationsByCanvas.set(
+                value.canvasId,
+                value.annotations.map((annotation) => ({
+                    canvasId: value.canvasId,
+                    publicAnnotation: publicAnnotationFromViewer(value.canvasId, annotation),
+                    viewerAnnotation: { ...annotation, imageService: annotation.imageService ?? null },
+                })),
+            );
             this.applyAnnotationsForCanvas(value.canvasId);
         });
 
@@ -608,24 +677,34 @@ export class Diva extends EventTarget
         });
 
         this.getPort("pageAspectsUpdated")
-            .subscribe((aspects: number[]) => { this.callViewerMethodWhenReady("setPageAspects", aspects); });
+            .subscribe((aspects: number[]) => {
+                this.callViewerMethodWhenReady("setPageAspects", aspects);
+            });
 
         this.getPort("pageLabelsUpdated")
-            .subscribe((labels: string[]) => { this.callViewerMethodWhenReady("setPageLabels", labels); });
+            .subscribe((labels: string[]) => {
+                this.callViewerMethodWhenReady("setPageLabels", labels);
+            });
 
         this.getPort("pagesUpdated").subscribe((pages: PublicPageEntry[]) => {
             this.pages = pages.map((page) => this.copyPage(page));
             this.rebuildPageIndexes();
-            this.updateState({pageCount : this.pages.length, currentPageIndex : null, visiblePageIndexes : []});
+            this.updateState({ pageCount: this.pages.length, currentPageIndex: null, visiblePageIndexes: [] });
         });
 
-        this.getPort("zoomLevelUpdated").subscribe((zoom: number) => { this.callViewerMethodWhenReady("setZoomLevel", zoom); });
+        this.getPort("zoomLevelUpdated").subscribe((zoom: number) => {
+            this.callViewerMethodWhenReady("setZoomLevel", zoom);
+        });
 
-        this.getPort("zoomBy").subscribe((factor: number) => { this.callViewerMethod("zoomBy", factor); });
+        this.getPort("zoomBy").subscribe((factor: number) => {
+            this.callViewerMethod("zoomBy", factor);
+        });
 
-        this.getPort("scrollToIndex").subscribe((index: number) => { this.callViewerMethod("scrollToIndex", index); });
+        this.getPort("scrollToIndex").subscribe((index: number) => {
+            this.callViewerMethod("scrollToIndex", index);
+        });
 
-        this.getPort("filterPreviewUpdated").subscribe((payload: FilterPreviewPayload|null) => {
+        this.getPort("filterPreviewUpdated").subscribe((payload: FilterPreviewPayload | null) => {
             if (!payload)
             {
                 this.closeFilterPreview();
@@ -638,11 +717,15 @@ export class Diva extends EventTarget
             void this.applyFilterPreview();
         });
 
-        this.getPort("setFullscreen").subscribe((enabled: boolean) => { this.setFullscreen(enabled); });
+        this.getPort("setFullscreen").subscribe((enabled: boolean) => {
+            this.setFullscreen(enabled);
+        });
 
-        this.getPort("saveFilteredImage").subscribe(() => { this.saveFilteredImage(); });
+        this.getPort("saveFilteredImage").subscribe(() => {
+            this.saveFilteredImage();
+        });
 
-        this.getPort("layoutConfigUpdated").subscribe((config: {mode: string; direction : string}) => {
+        this.getPort("layoutConfigUpdated").subscribe((config: { mode: string; direction: string }) => {
             if (this.callViewerMethod("setLayoutConfig", config.mode, config.direction))
             {
                 this.updateLayoutState(config.mode, config.direction);
@@ -658,15 +741,19 @@ export class Diva extends EventTarget
                 this.updateLayoutState(mode, this.state.viewingDirection);
             });
 
-        this.getPort("resourceLoadSucceeded").subscribe((value: {requestId: string; url : string; hasPages : boolean; pageIndex : number}) => {
-            this.handleResourceSucceeded(value.requestId, value.url, value.hasPages, value.pageIndex);
-        });
+        this.getPort("resourceLoadSucceeded").subscribe(
+            (value: { requestId: string; url: string; hasPages: boolean; pageIndex: number }) => {
+                this.handleResourceSucceeded(value.requestId, value.url, value.hasPages, value.pageIndex);
+            },
+        );
 
-        this.getPort("resourceLoadFailed").subscribe((value: {requestId: string; url : string; message : string}) => {
+        this.getPort("resourceLoadFailed").subscribe((value: { requestId: string; url: string; message: string }) => {
             this.handleResourceFailed(value.requestId, value.message);
         });
 
-        this.getPort("copyToClipboard").subscribe((text: string) => { this.copyToClipboard(text); });
+        this.getPort("copyToClipboard").subscribe((text: string) => {
+            this.copyToClipboard(text);
+        });
 
         this.getPort("authSourcesInvalidated")
             .subscribe((sourceIds: string[]) => {
@@ -685,18 +772,19 @@ export class Diva extends EventTarget
         return this.mainViewer;
     }
 
-    private copyPage(page: DivaPage|PublicPageEntry): DivaPage
+    private copyPage(page: DivaPage | PublicPageEntry): DivaPage
     {
-        const images = page.images.map((image) => ({...image}));
-        const primary = images.find((image) => image.id === page.primaryImage.id && image.isPrimary) ?? {...page.primaryImage};
+        const images = page.images.map((image) => ({ ...image }));
+        const primary = images.find((image) => image.id === page.primaryImage.id && image.isPrimary)
+            ?? { ...page.primaryImage };
         return {
-            index : page.index,
-            canvasId : page.canvasId,
-            label : page.label,
-            ...(page.width === null || page.width === undefined ? {} : {width : page.width}),
-            ...(page.height === null || page.height === undefined ? {} : {height : page.height}),
-            primaryImage : {...primary},
-            images
+            index: page.index,
+            canvasId: page.canvasId,
+            label: page.label,
+            ...(page.width === null || page.width === undefined ? {} : { width: page.width }),
+            ...(page.height === null || page.height === undefined ? {} : { height: page.height }),
+            primaryImage: { ...primary },
+            images,
         };
     }
 
@@ -707,8 +795,12 @@ export class Diva extends EventTarget
             return [];
         }
         const merged = new Map<string, StoredAnnotation>();
-        (this.manifestAnnotationsByCanvas.get(canvasId) ?? []).forEach((annotation) => merged.set(annotation.viewerAnnotation.id, annotation));
-        (this.apiAnnotationsByCanvas.get(canvasId) ?? []).forEach((annotation) => merged.set(annotation.viewerAnnotation.id, annotation));
+        (this.manifestAnnotationsByCanvas.get(canvasId) ?? []).forEach((annotation) =>
+            merged.set(annotation.viewerAnnotation.id, annotation)
+        );
+        (this.apiAnnotationsByCanvas.get(canvasId) ?? []).forEach((annotation) =>
+            merged.set(annotation.viewerAnnotation.id, annotation)
+        );
         return Array.from(merged.values());
     }
 
@@ -717,16 +809,26 @@ export class Diva extends EventTarget
         this.callViewerMethodWhenReady(
             "setAnnotations",
             canvasId,
-            this.effectiveAnnotationsForCanvas(canvasId).map((annotation) => annotation.viewerAnnotation));
+            this.effectiveAnnotationsForCanvas(canvasId).map((annotation) => annotation.viewerAnnotation),
+        );
     }
 
-    private findStoredAnnotation(annotationId: string): StoredAnnotation|undefined
+    private findStoredAnnotation(annotationId: string): StoredAnnotation | undefined
     {
-        for (const canvasId of new Set([...this.manifestAnnotationsByCanvas.keys(), ...this.apiAnnotationsByCanvas.keys() ]))
+        for (
+            const canvasId of new Set([
+                ...this.manifestAnnotationsByCanvas.keys(),
+                ...this.apiAnnotationsByCanvas.keys(),
+            ])
+        )
         {
-            const annotation = this.effectiveAnnotationsForCanvas(canvasId).find((candidate) => candidate.viewerAnnotation.id === annotationId);
+            const annotation = this.effectiveAnnotationsForCanvas(canvasId).find((candidate) =>
+                candidate.viewerAnnotation.id === annotationId
+            );
             if (annotation)
+            {
                 return annotation;
+            }
         }
         return undefined;
     }
@@ -748,31 +850,33 @@ export class Diva extends EventTarget
         });
     }
 
-    private pageForSelector(selector: DivaPageSelector): DivaPage|undefined
+    private pageForSelector(selector: DivaPageSelector): DivaPage | undefined
     {
-        if (!selector || typeof selector !== "object" ||
-            (selector.by !== "canvasId" && selector.by !== "label") || typeof selector.value !== "string")
+        if (
+            !selector || typeof selector !== "object"
+            || (selector.by !== "canvasId" && selector.by !== "label") || typeof selector.value !== "string"
+        )
         {
             throw new TypeError("A page selector must contain a supported 'by' value and a string 'value'.");
         }
         return selector.by === "canvasId"
-                   ? this.pagesByCanvasId.get(selector.value)
-                   : this.pagesByLabel.get(selector.value.toLowerCase());
+            ? this.pagesByCanvasId.get(selector.value)
+            : this.pagesByLabel.get(selector.value.toLowerCase());
     }
 
     private copyState(): Readonly<DivaState>
     {
-        return {...this.state, visiblePageIndexes : this.state.visiblePageIndexes.slice()};
+        return { ...this.state, visiblePageIndexes: this.state.visiblePageIndexes.slice() };
     }
 
     private updateState(next: Partial<DivaState>): void
     {
-        this.state = {...this.state, ...next};
+        this.state = { ...this.state, ...next };
     }
 
     private emit(type: keyof DivaEventMap, detail: any): void
     {
-        this.dispatchEvent(new CustomEvent(type, {detail}));
+        this.dispatchEvent(new CustomEvent(type, { detail }));
     }
 
     private updateLayoutState(mode: string, direction: string): void
@@ -781,13 +885,13 @@ export class Diva extends EventTarget
         const viewingDirection: DivaViewingDirection = direction === "rtl" ? "rtl" : "ltr";
         const viewer = this.ensureMainViewer();
         const visible = viewer && typeof viewer.getVisiblePageIndexes === "function"
-                            ? viewer.getVisiblePageIndexes()
-                            : this.state.visiblePageIndexes;
+            ? viewer.getVisiblePageIndexes()
+            : this.state.visiblePageIndexes;
         const changed = layoutMode !== this.state.layoutMode || viewingDirection !== this.state.viewingDirection;
-        this.updateState({layoutMode, viewingDirection, visiblePageIndexes : visible});
+        this.updateState({ layoutMode, viewingDirection, visiblePageIndexes: visible });
         if (changed)
         {
-            this.emit("layoutchange", {layoutMode, viewingDirection});
+            this.emit("layoutchange", { layoutMode, viewingDirection });
         }
     }
 
@@ -800,15 +904,23 @@ export class Diva extends EventTarget
         const replacementCommitted = requestId !== "initial";
         if (replacementCommitted)
         {
-            this.updateState({resourceUrl : url});
-            this.emit("resourcechange", {resourceUrl : url, state : this.copyState()});
+            this.updateState({ resourceUrl: url });
+            this.emit("resourcechange", { resourceUrl: url, state: this.copyState() });
         }
         if (hasPages)
         {
-            this.awaitingViewerResource = {id : requestId, url, pageIndex, resourceChangeEmitted : replacementCommitted};
+            this.awaitingViewerResource = {
+                id: requestId,
+                url,
+                pageIndex,
+                resourceChangeEmitted: replacementCommitted,
+            };
             const viewer = this.ensureMainViewer();
             const sourceId = this.pages[pageIndex]?.primaryImage.id;
-            if (sourceId && viewer && typeof viewer.isPageLoaded === "function" && viewer.isPageLoaded(pageIndex, sourceId))
+            if (
+                sourceId && viewer && typeof viewer.isPageLoaded === "function"
+                && viewer.isPageLoaded(pageIndex, sourceId)
+            )
             {
                 this.completeResource(requestId, url, !replacementCommitted);
             }
@@ -824,7 +936,7 @@ export class Diva extends EventTarget
             return;
         }
         this.awaitingViewerResource = null;
-        this.updateState({resourceUrl : url, ready : true});
+        this.updateState({ resourceUrl: url, ready: true });
         this.resourceLoading = false;
         this.refreshLoadingState();
         if (!this.readySettled)
@@ -840,7 +952,7 @@ export class Diva extends EventTarget
         }
         if (emitResourceChange)
         {
-            this.emit("resourcechange", {resourceUrl : url, state : this.copyState()});
+            this.emit("resourcechange", { resourceUrl: url, state: this.copyState() });
         }
     }
 
@@ -853,7 +965,7 @@ export class Diva extends EventTarget
         const error = new Error(message);
         const previousReady = this.pendingResource?.id === requestId ? this.pendingResource.previousReady : false;
         this.awaitingViewerResource = null;
-        this.updateState({ready : previousReady});
+        this.updateState({ ready: previousReady });
         this.resourceLoading = false;
         this.refreshLoadingState();
         if (!this.readySettled)
@@ -866,7 +978,7 @@ export class Diva extends EventTarget
             this.pendingResource.reject(error);
             this.pendingResource = null;
         }
-        this.emit("error", {error, operation : "setResource", recoverable : requestId !== "initial"});
+        this.emit("error", { error, operation: "setResource", recoverable: requestId !== "initial" });
     }
 
     private assertAlive(): void
@@ -892,8 +1004,8 @@ export class Diva extends EventTarget
         {
             return;
         }
-        this.updateState({loading});
-        this.emit("loadingchange", {loading});
+        this.updateState({ loading });
+        this.emit("loadingchange", { loading });
     }
 
     private async waitForResource(): Promise<void>
@@ -945,7 +1057,7 @@ export class Diva extends EventTarget
         this.ensureFilterViewer();
         if (this.filterViewer)
         {
-            const sourceKey = JSON.stringify([ payload.sourceId, payload.tileSource, payload.isStatic ]);
+            const sourceKey = JSON.stringify([payload.sourceId, payload.tileSource, payload.isStatic]);
             const tileSourceChanged = this.currentFilterSourceKey !== sourceKey;
             if (tileSourceChanged)
             {
@@ -954,7 +1066,11 @@ export class Diva extends EventTarget
                 this.filterPreviewController = controller;
                 try
                 {
-                    tileSource = await this.auth.resolve({sourceId : payload.sourceId, url : payload.tileSource, isStatic : payload.isStatic}, controller.signal);
+                    tileSource = await this.auth.resolve({
+                        sourceId: payload.sourceId,
+                        url: payload.tileSource,
+                        isStatic: payload.isStatic,
+                    }, controller.signal);
                 }
                 catch (error)
                 {
@@ -1028,11 +1144,20 @@ export class Diva extends EventTarget
      * @param options - Standard DOM listener options.
      */
     public addEventListener<K extends keyof DivaEventMap>(
-        type: K, listener: (this: Diva, event: DivaEventMap[K]) => any, options?: boolean|AddEventListenerOptions): void;
-    public addEventListener(type: string, listener: EventListenerOrEventListenerObject|null,
-                            options?: boolean|AddEventListenerOptions): void;
-    public addEventListener(type: string, listener: EventListenerOrEventListenerObject|null,
-                            options?: boolean|AddEventListenerOptions): void
+        type: K,
+        listener: (this: Diva, event: DivaEventMap[K]) => any,
+        options?: boolean | AddEventListenerOptions,
+    ): void;
+    public addEventListener(
+        type: string,
+        listener: EventListenerOrEventListenerObject | null,
+        options?: boolean | AddEventListenerOptions,
+    ): void;
+    public addEventListener(
+        type: string,
+        listener: EventListenerOrEventListenerObject | null,
+        options?: boolean | AddEventListenerOptions,
+    ): void
     {
         super.addEventListener(type, listener, options);
     }
@@ -1045,11 +1170,20 @@ export class Diva extends EventTarget
      * @param options - Standard DOM listener options used for matching.
      */
     public removeEventListener<K extends keyof DivaEventMap>(
-        type: K, listener: (this: Diva, event: DivaEventMap[K]) => any, options?: boolean|EventListenerOptions): void;
-    public removeEventListener(type: string, listener: EventListenerOrEventListenerObject|null,
-                               options?: boolean|EventListenerOptions): void;
-    public removeEventListener(type: string, listener: EventListenerOrEventListenerObject|null,
-                               options?: boolean|EventListenerOptions): void
+        type: K,
+        listener: (this: Diva, event: DivaEventMap[K]) => any,
+        options?: boolean | EventListenerOptions,
+    ): void;
+    public removeEventListener(
+        type: string,
+        listener: EventListenerOrEventListenerObject | null,
+        options?: boolean | EventListenerOptions,
+    ): void;
+    public removeEventListener(
+        type: string,
+        listener: EventListenerOrEventListenerObject | null,
+        options?: boolean | EventListenerOptions,
+    ): void
     {
         super.removeEventListener(type, listener, options);
     }
@@ -1059,14 +1193,20 @@ export class Diva extends EventTarget
      *
      * @returns State that callers may retain without observing later mutations.
      */
-    public getState(): Readonly<DivaState> { return this.copyState(); }
+    public getState(): Readonly<DivaState>
+    {
+        return this.copyState();
+    }
 
     /**
      * Return defensive metadata snapshots for every displayed page.
      *
      * @returns Pages in zero-based display order. Auth tokens and resolved loading URLs are never included.
      */
-    public getPages(): readonly DivaPage[] { return this.pages.map((page) => this.copyPage(page)); }
+    public getPages(): readonly DivaPage[]
+    {
+        return this.pages.map((page) => this.copyPage(page));
+    }
 
     /**
      * Add or replace one API-supplied Web Annotation on a loaded Canvas.
@@ -1081,7 +1221,9 @@ export class Diva extends EventTarget
         }
         stored.viewerAnnotation.imageService = this.annotationImageServicesByCanvas.get(stored.canvasId) ?? null;
         this.apiAnnotationsByCanvas.forEach((annotations, canvasId) => {
-            const retained = annotations.filter((candidate) => candidate.viewerAnnotation.id !== stored.viewerAnnotation.id);
+            const retained = annotations.filter((candidate) =>
+                candidate.viewerAnnotation.id !== stored.viewerAnnotation.id
+            );
             if (retained.length !== annotations.length)
             {
                 this.apiAnnotationsByCanvas.set(canvasId, retained);
@@ -1089,7 +1231,7 @@ export class Diva extends EventTarget
             }
         });
         const annotations = this.apiAnnotationsByCanvas.get(stored.canvasId) ?? [];
-        this.apiAnnotationsByCanvas.set(stored.canvasId, [...annotations, stored ]);
+        this.apiAnnotationsByCanvas.set(stored.canvasId, [...annotations, stored]);
         this.clearedAnnotationCanvases.delete(stored.canvasId);
         this.applyAnnotationsForCanvas(stored.canvasId);
     }
@@ -1101,7 +1243,9 @@ export class Diva extends EventTarget
     {
         this.assertAlive();
         if (!Array.isArray(annotations))
+        {
             throw new TypeError("Annotations must be an array.");
+        }
         const next = new Map<string, StoredAnnotation[]>();
         annotations.forEach((annotation) => {
             const stored = normalizePublicAnnotation(annotation);
@@ -1111,9 +1255,14 @@ export class Diva extends EventTarget
             }
             stored.viewerAnnotation.imageService = this.annotationImageServicesByCanvas.get(stored.canvasId) ?? null;
             const canvasAnnotations = next.get(stored.canvasId) ?? [];
-            next.set(stored.canvasId, [...canvasAnnotations.filter((candidate) => candidate.viewerAnnotation.id !== stored.viewerAnnotation.id), stored ]);
+            next.set(stored.canvasId, [
+                ...canvasAnnotations.filter((candidate) =>
+                    candidate.viewerAnnotation.id !== stored.viewerAnnotation.id
+                ),
+                stored,
+            ]);
         });
-        const affected = new Set([...this.apiAnnotationsByCanvas.keys(), ...next.keys() ]);
+        const affected = new Set([...this.apiAnnotationsByCanvas.keys(), ...next.keys()]);
         this.apiAnnotationsByCanvas.clear();
         next.forEach((canvasAnnotations, canvasId) => {
             this.apiAnnotationsByCanvas.set(canvasId, canvasAnnotations);
@@ -1169,33 +1318,43 @@ export class Diva extends EventTarget
      *
      * @returns The extract URL, or `null` when the annotation is unknown or has no usable image region.
      */
-    public getImageRegionForAnnotation(annotationId: string): string|null
+    public getImageRegionForAnnotation(annotationId: string): string | null
     {
         this.assertAlive();
         if (typeof annotationId !== "string")
+        {
             throw new TypeError("Annotation id must be a string.");
+        }
         const annotation = this.findStoredAnnotation(annotationId);
         const renderedUrl = this.mainViewer?.getImageRegionForAnnotation?.(annotationId);
         if (typeof renderedUrl === "string")
+        {
             return renderedUrl;
+        }
         if (!annotation || annotation.viewerAnnotation.shape.kind === "svg")
+        {
             return null;
-        const {x, y, width, height} = annotation.viewerAnnotation.shape;
+        }
+        const { x, y, width, height } = annotation.viewerAnnotation.shape;
         return typeof x === "number" && typeof y === "number" && typeof width === "number" && typeof height === "number"
-                   ? iiifImageRegionUrl(annotation.viewerAnnotation.imageService, {x, y, width, height})
-                   : null;
+            ? iiifImageRegionUrl(annotation.viewerAnnotation.imageService, { x, y, width, height })
+            : null;
     }
 
     /**
      * Return an annotation body's textual or HTML value, if present.
      */
-    public getAnnotationBody(annotationId: string): string|undefined
+    public getAnnotationBody(annotationId: string): string | undefined
     {
         this.assertAlive();
         if (typeof annotationId !== "string")
+        {
             throw new TypeError("Annotation id must be a string.");
+        }
         const annotation = this.findStoredAnnotation(annotationId);
-        return annotation ? annotationBodyText(annotation.publicAnnotation.body ?? annotation.publicAnnotation.resource) : undefined;
+        return annotation
+            ? annotationBodyText(annotation.publicAnnotation.body ?? annotation.publicAnnotation.resource)
+            : undefined;
     }
 
     /**
@@ -1212,7 +1371,7 @@ export class Diva extends EventTarget
      * trimmed, whitespace-normalized, or substring-matched. Duplicate labels
      * return the first page in manifest order.
      */
-    public findPage(selector: DivaPageSelector): DivaPage|undefined
+    public findPage(selector: DivaPageSelector): DivaPage | undefined
     {
         const page = this.pageForSelector(selector);
         return page ? this.copyPage(page) : undefined;
@@ -1223,7 +1382,7 @@ export class Diva extends EventTarget
      *
      * @returns The active page, or `undefined` before page initialization and for collections without an active manifest.
      */
-    public getCurrentPage(): DivaPage|undefined
+    public getCurrentPage(): DivaPage | undefined
     {
         const index = this.state.currentPageIndex;
         return index === null || !this.pages[index] ? undefined : this.copyPage(this.pages[index]);
@@ -1236,7 +1395,9 @@ export class Diva extends EventTarget
      */
     public getVisiblePages(): readonly DivaPage[]
     {
-        return this.state.visiblePageIndexes.map((index) => this.pages[index]).filter(Boolean).map((page) => this.copyPage(page));
+        return this.state.visiblePageIndexes.map((index) => this.pages[index]).filter(Boolean).map((page) =>
+            this.copyPage(page)
+        );
     }
 
     /**
@@ -1244,7 +1405,10 @@ export class Diva extends EventTarget
      *
      * @returns The active {@link DivaLayoutMode}.
      */
-    public getLayoutMode(): DivaLayoutMode { return this.state.layoutMode; }
+    public getLayoutMode(): DivaLayoutMode
+    {
+        return this.state.layoutMode;
+    }
 
     /**
      * Replace the current IIIF manifest or collection without replacing this instance.
@@ -1294,12 +1458,12 @@ export class Diva extends EventTarget
             reject = rej;
         });
         void promise.catch(() => {});
-        this.pendingResource = {id, promise, resolve, reject, previousReady};
+        this.pendingResource = { id, promise, resolve, reject, previousReady };
         this.activeResourceRequestId = id;
-        this.updateState({ready : false});
+        this.updateState({ ready: false });
         this.resourceLoading = true;
         this.refreshLoadingState();
-        this.getPort("resourceRequested").send({requestId : id, url});
+        this.getPort("resourceRequested").send({ requestId: id, url });
         return promise;
     }
 
@@ -1326,7 +1490,7 @@ export class Diva extends EventTarget
      * Rejected when a runtime selector object is malformed.
      */
     public goToPage(selector: DivaPageSelector): Promise<boolean>;
-    public async goToPage(target: number|DivaPageSelector): Promise<void|boolean>
+    public async goToPage(target: number | DivaPageSelector): Promise<void | boolean>
     {
         await this.waitForResource();
         if (typeof target !== "number")
@@ -1412,13 +1576,19 @@ export class Diva extends EventTarget
      *
      * @returns A promise that resolves after multiplying the zoom by 1.6.
      */
-    public zoomIn(): Promise<void> { return this.zoomBy(1.6); }
+    public zoomIn(): Promise<void>
+    {
+        return this.zoomBy(1.6);
+    }
     /**
      * Zoom out by Diva's standard zoom factor.
      *
      * @returns A promise that resolves after dividing the zoom by 1.6.
      */
-    public zoomOut(): Promise<void> { return this.zoomBy(1 / 1.6); }
+    public zoomOut(): Promise<void>
+    {
+        return this.zoomBy(1 / 1.6);
+    }
 
     /**
      * Fit a page, or the current page when omitted, into the viewport.
@@ -1469,7 +1639,10 @@ export class Diva extends EventTarget
     {
         await this.waitForResource();
         this.assertPageIndex(pageIndex);
-        if (![region.x, region.y, region.width, region.height].every(Number.isFinite) || region.x < 0 || region.y < 0 || region.width <= 0 || region.height <= 0)
+        if (
+            ![region.x, region.y, region.width, region.height].every(Number.isFinite) || region.x < 0 || region.y < 0
+            || region.width <= 0 || region.height <= 0
+        )
         {
             throw new RangeError("Region coordinates must be finite, non-negative, and have positive dimensions.");
         }
@@ -1570,7 +1743,7 @@ export class Diva extends EventTarget
         this.pendingResource?.reject(destroyed);
         this.pendingResource = null;
         this.awaitingViewerResource = null;
-        this.updateState({destroyed : true, loading : false});
+        this.updateState({ destroyed: true, loading: false });
         this.closeFilterPreview();
         this.auth.destroy();
         if (this.viewerMethodRafId !== null)
@@ -1584,7 +1757,10 @@ export class Diva extends EventTarget
         this.removeViewerEvent("diva-page-loaded", this.handlePageLoadedBound as EventListener);
         this.removeViewerEvent("diva-zoom-change", this.handleZoomChangeBound as EventListener);
         this.removeViewerEvent("diva-loading-change", this.handleLoadingChangeBound as EventListener);
-        this.removeViewerEvent("diva-static-image-cors-fallback", this.handleStaticImageCorsFallbackBound as EventListener);
+        this.removeViewerEvent(
+            "diva-static-image-cors-fallback",
+            this.handleStaticImageCorsFallbackBound as EventListener,
+        );
         this.removeViewerEvent("diva-page-load-error", this.handlePageLoadErrorBound as EventListener);
         root.removeEventListener("click", this.handleRootClickBound, true);
         document.removeEventListener("fullscreenchange", this.handleFullscreenChangeBound);
@@ -1700,16 +1876,16 @@ export class Diva extends EventTarget
         }
         const viewer = this.ensureMainViewer();
         const visible = viewer && typeof viewer.getVisiblePageIndexes === "function"
-                            ? viewer.getVisiblePageIndexes()
-                            : [ detail.index ];
-        this.updateState({currentPageIndex : detail.index, visiblePageIndexes : visible});
+            ? viewer.getVisiblePageIndexes()
+            : [detail.index];
+        this.updateState({ currentPageIndex: detail.index, visiblePageIndexes: visible });
         const page = this.pages[detail.index];
         if (page)
         {
             this.emit("pagechange", {
-                pageIndex : detail.index,
-                page : this.copyPage(page),
-                visiblePages : this.getVisiblePages()
+                pageIndex: detail.index,
+                page: this.copyPage(page),
+                visiblePages: this.getVisiblePages(),
             });
         }
     }
@@ -1737,8 +1913,8 @@ export class Diva extends EventTarget
             return;
         }
         this.getPort("zoomChanged").send(detail.zoom);
-        this.updateState({zoom : detail.zoom});
-        this.emit("zoomchange", {zoom : detail.zoom});
+        this.updateState({ zoom: detail.zoom });
+        this.emit("zoomchange", { zoom: detail.zoom });
     }
 
     private handleLoadingChange(event: Event): void
@@ -1769,7 +1945,7 @@ export class Diva extends EventTarget
         const awaiting = this.awaitingViewerResource;
         if (awaiting && detail?.resourceId === awaiting.id && detail?.index === awaiting.pageIndex)
         {
-            this.updateState({ready : false});
+            this.updateState({ ready: false });
             this.resourceLoading = false;
             this.refreshLoadingState();
             if (!this.readySettled)
@@ -1782,18 +1958,18 @@ export class Diva extends EventTarget
                 this.pendingResource.reject(error);
                 this.pendingResource = null;
             }
-            this.emit("error", {error, operation : "loadPage", recoverable : true});
+            this.emit("error", { error, operation: "loadPage", recoverable: true });
             return;
         }
-        this.emit("error", {error, operation : "loadPage", recoverable : true});
+        this.emit("error", { error, operation: "loadPage", recoverable: true });
     }
 
     private handleFullscreenChange(): void
     {
         const isFullscreen = Boolean(document.fullscreenElement);
         this.getPort("fullscreenChanged").send(isFullscreen);
-        this.updateState({fullscreen : isFullscreen});
-        this.emit("fullscreenchange", {fullscreen : isFullscreen});
+        this.updateState({ fullscreen: isFullscreen });
+        this.emit("fullscreenchange", { fullscreen: isFullscreen });
     }
 
     private ensureFilterViewer(): void
@@ -1804,14 +1980,14 @@ export class Diva extends EventTarget
         }
 
         this.filterViewer = OpenSeadragon({
-            element : this.filterViewerElement,
-            showNavigationControl : false,
-            preserveViewport : true,
-            visibilityRatio : 0,
-            drawer : "canvas",
-            crossOriginPolicy : "Anonymous",
-            loadTilesWithAjax : true,
-            ajaxWithCredentials : false
+            element: this.filterViewerElement,
+            showNavigationControl: false,
+            preserveViewport: true,
+            visibilityRatio: 0,
+            drawer: "canvas",
+            crossOriginPolicy: "Anonymous",
+            loadTilesWithAjax: true,
+            ajaxWithCredentials: false,
         });
 
         this.filterViewer.addHandler("open", () => {
@@ -1819,7 +1995,7 @@ export class Diva extends EventTarget
             const canvas = drawer && drawer.canvas ? drawer.canvas : null;
             if (canvas && typeof canvas.getContext === "function")
             {
-                const context = canvas.getContext("2d", {willReadFrequently : true});
+                const context = canvas.getContext("2d", { willReadFrequently: true });
                 if (context)
                 {
                     drawer.context = context;
@@ -1834,7 +2010,7 @@ export class Diva extends EventTarget
         });
     }
 
-    private ensureFilterViewerElement(): HTMLElement|null
+    private ensureFilterViewerElement(): HTMLElement | null
     {
         const element = document.getElementById("filter-viewer");
         if (!element)
@@ -1866,7 +2042,7 @@ export class Diva extends EventTarget
         }
         if (this.filterAccessBlocked)
         {
-            setFilterOptions(this.filterViewer, {filters : []});
+            setFilterOptions(this.filterViewer, { filters: [] });
             return;
         }
         const options = buildFilterOptions(this.filterOptions);
@@ -1925,8 +2101,8 @@ export class Diva extends EventTarget
 
     private isNonCorsStaticSource(tileSource: ResolvedTileSource): boolean
     {
-        return typeof tileSource === "object" && tileSource !== null &&
-               tileSource.type === "image" && tileSource.crossOriginPolicy === false;
+        return typeof tileSource === "object" && tileSource !== null
+            && tileSource.type === "image" && tileSource.crossOriginPolicy === false;
     }
 
     private setFilterAccessBlocked(blocked: boolean): void
@@ -1937,7 +2113,11 @@ export class Diva extends EventTarget
         {
             return;
         }
-        const controls = Array.from(sidebar.querySelectorAll<HTMLButtonElement|HTMLInputElement|HTMLSelectElement|HTMLTextAreaElement>("button, input, select, textarea"));
+        const controls = Array.from(
+            sidebar.querySelectorAll<HTMLButtonElement | HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
+                "button, input, select, textarea",
+            ),
+        );
         controls.forEach((control) => {
             if (blocked)
             {
@@ -1950,7 +2130,7 @@ export class Diva extends EventTarget
                 delete control.dataset.divaFilterWasDisabled;
             }
         });
-        const saveButton = this.root.querySelector<HTMLButtonElement>('button[aria-label="Save view"]');
+        const saveButton = this.root.querySelector<HTMLButtonElement>("button[aria-label=\"Save view\"]");
         if (saveButton)
         {
             if (blocked)
@@ -1980,7 +2160,7 @@ export class Diva extends EventTarget
 
     private getPort<Name extends keyof ElmPorts>(name: Name): ElmPorts[Name]
     {
-        const ports = this.app.ports as Partial<ElmPorts>| undefined;
+        const ports = this.app.ports as Partial<ElmPorts> | undefined;
         const port = ports ? ports[name] : undefined;
         if (!port)
         {
@@ -2057,7 +2237,7 @@ export class Diva extends EventTarget
 
         const pending = Array.from(this.pendingViewerMethods.entries());
         this.pendingViewerMethods.clear();
-        pending.forEach(([ name, args ]) => {
+        pending.forEach(([name, args]) => {
             if (!this.callViewerMethod(name, ...args))
             {
                 this.pendingViewerMethods.set(name, args);
@@ -2099,92 +2279,93 @@ export class Diva extends EventTarget
 }
 
 type FilterMapping = {
-    enabled: keyof FilterSettings; filter : keyof typeof filterFunctions;
+    enabled: keyof FilterSettings;
+    filter: keyof typeof filterFunctions;
     args?: (keyof FilterSettings)[];
     defaults?: number[];
 };
 
 const filterFunctions = {
-    THRESHOLDING : Filters.THRESHOLDING,
-    BRIGHTNESS : Filters.BRIGHTNESS,
-    SATURATION : Filters.SATURATION,
-    VIBRANCE : Filters.VIBRANCE,
-    HUE : Filters.HUE,
-    CC_RED : Filters.CC_RED,
-    CC_GREEN : Filters.CC_GREEN,
-    CC_BLUE : Filters.CC_BLUE,
-    CONTRAST : Filters.CONTRAST,
-    GAMMA : Filters.GAMMA,
-    GREYSCALE : Filters.GREYSCALE,
-    INVERT : Filters.INVERT,
-    BACKGROUND_NORMALIZE : Filters.BACKGROUND_NORMALIZE,
-    UNSHARP_MASK : Filters.UNSHARP_MASK,
-    ALT_RED_GAMMA : Filters.ALT_RED_GAMMA,
-    ALT_GREEN_GAMMA : Filters.ALT_GREEN_GAMMA,
-    ALT_BLUE_GAMMA : Filters.ALT_BLUE_GAMMA,
-    ALT_RED_SIGMOID : Filters.ALT_RED_SIGMOID,
-    ALT_GREEN_SIGMOID : Filters.ALT_GREEN_SIGMOID,
-    ALT_BLUE_SIGMOID : Filters.ALT_BLUE_SIGMOID,
-    ALT_RED_HUE : Filters.ALT_RED_HUE,
-    ALT_GREEN_HUE : Filters.ALT_GREEN_HUE,
-    ALT_BLUE_HUE : Filters.ALT_BLUE_HUE,
-    ALT_RED_VIBRANCE : Filters.ALT_RED_VIBRANCE,
-    ALT_GREEN_VIBRANCE : Filters.ALT_GREEN_VIBRANCE,
-    ALT_BLUE_VIBRANCE : Filters.ALT_BLUE_VIBRANCE,
-    GLOBAL_PCA_COLOR : Filters.GLOBAL_PCA_COLOR,
-    ADAPTIVE_THRESHOLD : Filters.ADAPTIVE_THRESHOLD
+    THRESHOLDING: Filters.THRESHOLDING,
+    BRIGHTNESS: Filters.BRIGHTNESS,
+    SATURATION: Filters.SATURATION,
+    VIBRANCE: Filters.VIBRANCE,
+    HUE: Filters.HUE,
+    CC_RED: Filters.CC_RED,
+    CC_GREEN: Filters.CC_GREEN,
+    CC_BLUE: Filters.CC_BLUE,
+    CONTRAST: Filters.CONTRAST,
+    GAMMA: Filters.GAMMA,
+    GREYSCALE: Filters.GREYSCALE,
+    INVERT: Filters.INVERT,
+    BACKGROUND_NORMALIZE: Filters.BACKGROUND_NORMALIZE,
+    UNSHARP_MASK: Filters.UNSHARP_MASK,
+    ALT_RED_GAMMA: Filters.ALT_RED_GAMMA,
+    ALT_GREEN_GAMMA: Filters.ALT_GREEN_GAMMA,
+    ALT_BLUE_GAMMA: Filters.ALT_BLUE_GAMMA,
+    ALT_RED_SIGMOID: Filters.ALT_RED_SIGMOID,
+    ALT_GREEN_SIGMOID: Filters.ALT_GREEN_SIGMOID,
+    ALT_BLUE_SIGMOID: Filters.ALT_BLUE_SIGMOID,
+    ALT_RED_HUE: Filters.ALT_RED_HUE,
+    ALT_GREEN_HUE: Filters.ALT_GREEN_HUE,
+    ALT_BLUE_HUE: Filters.ALT_BLUE_HUE,
+    ALT_RED_VIBRANCE: Filters.ALT_RED_VIBRANCE,
+    ALT_GREEN_VIBRANCE: Filters.ALT_GREEN_VIBRANCE,
+    ALT_BLUE_VIBRANCE: Filters.ALT_BLUE_VIBRANCE,
+    GLOBAL_PCA_COLOR: Filters.GLOBAL_PCA_COLOR,
+    ADAPTIVE_THRESHOLD: Filters.ADAPTIVE_THRESHOLD,
 };
 
 const simpleFilterMappings: FilterMapping[] = [
-    {enabled : "thresholdEnabled", filter : "THRESHOLDING", args : [ "threshold" ]},
-    {enabled : "brightnessEnabled", filter : "BRIGHTNESS", args : [ "brightness" ]},
-    {enabled : "saturationEnabled", filter : "SATURATION", args : [ "saturation" ]},
-    {enabled : "vibranceEnabled", filter : "VIBRANCE", args : [ "vibrance" ]},
-    {enabled : "hueEnabled", filter : "HUE", args : [ "hue" ]},
-    {enabled : "ccRedEnabled", filter : "CC_RED", args : [ "ccRed" ]},
-    {enabled : "ccGreenEnabled", filter : "CC_GREEN", args : [ "ccGreen" ]},
-    {enabled : "ccBlueEnabled", filter : "CC_BLUE", args : [ "ccBlue" ]},
-    {enabled : "contrastEnabled", filter : "CONTRAST", args : [ "contrast" ]},
-    {enabled : "gammaEnabled", filter : "GAMMA", args : [ "gamma" ]},
-    {enabled : "grayscale", filter : "GREYSCALE"},
-    {enabled : "invert", filter : "INVERT"},
-    {enabled : "normalizeEnabled", filter : "BACKGROUND_NORMALIZE", args : [ "normalizeStrength" ]},
-    {enabled : "unsharpEnabled", filter : "UNSHARP_MASK", args : [ "unsharpAmount" ]},
+    { enabled: "thresholdEnabled", filter: "THRESHOLDING", args: ["threshold"] },
+    { enabled: "brightnessEnabled", filter: "BRIGHTNESS", args: ["brightness"] },
+    { enabled: "saturationEnabled", filter: "SATURATION", args: ["saturation"] },
+    { enabled: "vibranceEnabled", filter: "VIBRANCE", args: ["vibrance"] },
+    { enabled: "hueEnabled", filter: "HUE", args: ["hue"] },
+    { enabled: "ccRedEnabled", filter: "CC_RED", args: ["ccRed"] },
+    { enabled: "ccGreenEnabled", filter: "CC_GREEN", args: ["ccGreen"] },
+    { enabled: "ccBlueEnabled", filter: "CC_BLUE", args: ["ccBlue"] },
+    { enabled: "contrastEnabled", filter: "CONTRAST", args: ["contrast"] },
+    { enabled: "gammaEnabled", filter: "GAMMA", args: ["gamma"] },
+    { enabled: "grayscale", filter: "GREYSCALE" },
+    { enabled: "invert", filter: "INVERT" },
+    { enabled: "normalizeEnabled", filter: "BACKGROUND_NORMALIZE", args: ["normalizeStrength"] },
+    { enabled: "unsharpEnabled", filter: "UNSHARP_MASK", args: ["unsharpAmount"] },
 ];
 
 const altFilterMappings: FilterMapping[] = [
-    {enabled : "altRedGammaEnabled", filter : "ALT_RED_GAMMA", args : [ "altRedGamma" ]},
-    {enabled : "altGreenGammaEnabled", filter : "ALT_GREEN_GAMMA", args : [ "altGreenGamma" ]},
-    {enabled : "altBlueGammaEnabled", filter : "ALT_BLUE_GAMMA", args : [ "altBlueGamma" ]},
-    {enabled : "altRedSigmoidEnabled", filter : "ALT_RED_SIGMOID", args : [ "altRedSigmoid" ]},
-    {enabled : "altGreenSigmoidEnabled", filter : "ALT_GREEN_SIGMOID", args : [ "altGreenSigmoid" ]},
-    {enabled : "altBlueSigmoidEnabled", filter : "ALT_BLUE_SIGMOID", args : [ "altBlueSigmoid" ]},
+    { enabled: "altRedGammaEnabled", filter: "ALT_RED_GAMMA", args: ["altRedGamma"] },
+    { enabled: "altGreenGammaEnabled", filter: "ALT_GREEN_GAMMA", args: ["altGreenGamma"] },
+    { enabled: "altBlueGammaEnabled", filter: "ALT_BLUE_GAMMA", args: ["altBlueGamma"] },
+    { enabled: "altRedSigmoidEnabled", filter: "ALT_RED_SIGMOID", args: ["altRedSigmoid"] },
+    { enabled: "altGreenSigmoidEnabled", filter: "ALT_GREEN_SIGMOID", args: ["altGreenSigmoid"] },
+    { enabled: "altBlueSigmoidEnabled", filter: "ALT_BLUE_SIGMOID", args: ["altBlueSigmoid"] },
     {
-        enabled : "altRedHueEnabled",
-        filter : "ALT_RED_HUE",
-        args : [ "altRedHue", "altRedHueWindow" ],
-        defaults : [ 0, 8 ]
+        enabled: "altRedHueEnabled",
+        filter: "ALT_RED_HUE",
+        args: ["altRedHue", "altRedHueWindow"],
+        defaults: [0, 8],
     },
     {
-        enabled : "altGreenHueEnabled",
-        filter : "ALT_GREEN_HUE",
-        args : [ "altGreenHue", "altGreenHueWindow" ],
-        defaults : [ 0, 8 ]
+        enabled: "altGreenHueEnabled",
+        filter: "ALT_GREEN_HUE",
+        args: ["altGreenHue", "altGreenHueWindow"],
+        defaults: [0, 8],
     },
     {
-        enabled : "altBlueHueEnabled",
-        filter : "ALT_BLUE_HUE",
-        args : [ "altBlueHue", "altBlueHueWindow" ],
-        defaults : [ 0, 8 ]
+        enabled: "altBlueHueEnabled",
+        filter: "ALT_BLUE_HUE",
+        args: ["altBlueHue", "altBlueHueWindow"],
+        defaults: [0, 8],
     },
-    {enabled : "altRedVibranceEnabled", filter : "ALT_RED_VIBRANCE", args : [ "altRedVibrance" ]},
-    {enabled : "altGreenVibranceEnabled", filter : "ALT_GREEN_VIBRANCE", args : [ "altGreenVibrance" ]},
-    {enabled : "altBlueVibranceEnabled", filter : "ALT_BLUE_VIBRANCE", args : [ "altBlueVibrance" ]},
+    { enabled: "altRedVibranceEnabled", filter: "ALT_RED_VIBRANCE", args: ["altRedVibrance"] },
+    { enabled: "altGreenVibranceEnabled", filter: "ALT_GREEN_VIBRANCE", args: ["altGreenVibrance"] },
+    { enabled: "altBlueVibranceEnabled", filter: "ALT_BLUE_VIBRANCE", args: ["altBlueVibrance"] },
     {
-        enabled : "adaptiveEnabled",
-        filter : "ADAPTIVE_THRESHOLD",
-        args : [ "adaptiveWindow", "adaptiveOffset" ],
-        defaults : [ 15, 10 ]
+        enabled: "adaptiveEnabled",
+        filter: "ADAPTIVE_THRESHOLD",
+        args: ["adaptiveWindow", "adaptiveOffset"],
+        defaults: [15, 10],
     },
 ];
 
@@ -2200,10 +2381,10 @@ const appendMappedProcessors = (processors: any[], filters: FilterSettings, mapp
     }
 };
 
-const buildFilterOptions = (filters: FilterSettings|null): any => {
+const buildFilterOptions = (filters: FilterSettings | null): any => {
     if (!filters)
     {
-        return {filters : [], loadMode : "sync"};
+        return { filters: [], loadMode: "sync" };
     }
 
     const processors: any[] = [];
@@ -2237,8 +2418,14 @@ const buildFilterOptions = (filters: FilterSettings|null): any => {
 
     if (filters.pseudoColourEnabled)
     {
-        processors.push(Filters.PSEUDOCOLOR(filters.pseudoColourMode || "", filters.pseudoColourRed ?? 1,
-                                            filters.pseudoColourGreen ?? 1, filters.pseudoColourBlue ?? 1));
+        processors.push(
+            Filters.PSEUDOCOLOR(
+                filters.pseudoColourMode || "",
+                filters.pseudoColourRed ?? 1,
+                filters.pseudoColourGreen ?? 1,
+                filters.pseudoColourBlue ?? 1,
+            ),
+        );
     }
 
     if (filters.globalPcaEnabled)
@@ -2248,20 +2435,25 @@ const buildFilterOptions = (filters: FilterSettings|null): any => {
 
     if (filters.colourReplaceEnabled)
     {
-        processors.push(Filters.COLOR_REPLACE(filters.colourReplaceSource || "#ffffff",
-                                              filters.colourReplaceTarget || "#ffffff",
-                                              filters.colourReplaceTolerance ?? 24, filters.colourReplaceBlend ?? 1,
-                                              filters.colourReplacePreserveLum ?? false));
+        processors.push(
+            Filters.COLOR_REPLACE(
+                filters.colourReplaceSource || "#ffffff",
+                filters.colourReplaceTarget || "#ffffff",
+                filters.colourReplaceTolerance ?? 24,
+                filters.colourReplaceBlend ?? 1,
+                filters.colourReplacePreserveLum ?? false,
+            ),
+        );
     }
 
     appendMappedProcessors(processors, filters, altFilterMappings);
 
     if (processors.length === 0)
     {
-        return {filters : [], loadMode : "sync"};
+        return { filters: [], loadMode: "sync" };
     }
 
-    return {filters : {processors}, loadMode : "sync"};
+    return { filters: { processors }, loadMode: "sync" };
 };
 
 declare global

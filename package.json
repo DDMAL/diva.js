@@ -28,18 +28,20 @@
   "scripts": {
     "docs": "typedoc --options config/typedoc.json",
     "docs:check": "typedoc --options config/typedoc.json --emit none",
-    "format": "find src -name \"*.ts\" -print0 | xargs -0 clang-format -i",
+    "format": "dprint fmt src",
     "develop": "chokidar \"src/**/*\" \"scripts/elm-esm.sh\" \"Makefile\" -c \"make build-dev\"",
     "test": "elm-test-rs && yarn docs:check",
     "test:browser": "playwright test",
     "test:types": "tsc -p type-tests/tsconfig.json"
   },
   "devDependencies": {
+    "@dprint/typescript": "^0.96.1",
     "@playwright/test": "^1.61.1",
     "@swc/cli": "^0.7.8",
     "@swc/core": "^1.15.8",
     "@types/openseadragon": "^5.0.2",
     "chokidar-cli": "^3.0.0",
+    "dprint": "^0.57.0",
     "elm-test-rs": "^3.0.2-0",
     "esbuild": "^0.28.1",
     "lightningcss": "^1.31.1",

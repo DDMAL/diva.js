@@ -19,18 +19,17 @@
  *  Additional filters and modifications to the processing methods are from
  * CamanJS:
  *      https://github.com/meltingice/CamanJS/blob/master/src/lib/filters.coffee
- *
- *
  */
 
 export type FilterProcessor = (context: CanvasRenderingContext2D, callback: () => void) => void;
 type PixelTransformInPlace = (r: number, g: number, b: number, a: number, out: number[]) => void;
 type ResettableItem = {
-    reset: () => void
+    reset: () => void;
 };
 
 export type FilterDefinition = {
-    items?: ResettableItem|ResettableItem[]; processors : FilterProcessor | FilterProcessor[];
+    items?: ResettableItem | ResettableItem[];
+    processors: FilterProcessor | FilterProcessor[];
 };
 
 export type FilterOptions = {
@@ -39,7 +38,9 @@ export type FilterOptions = {
 };
 
 type FilterPluginInstance = {
-    viewer: any; filters : FilterDefinition[]; filterIncrement : number;
+    viewer: any;
+    filters: FilterDefinition[];
+    filterIncrement: number;
 };
 
 export function setFilterOptions(viewer: any, options: FilterOptions): void
@@ -70,7 +71,7 @@ function readImageDataFromContext(context: CanvasRenderingContext2D): ImageData
 
 function createFilterPlugin(viewer: any, options: FilterOptions): FilterPluginInstance
 {
-    const instance: FilterPluginInstance = {viewer, filters : [], filterIncrement : 0};
+    const instance: FilterPluginInstance = { viewer, filters: [], filterIncrement: 0 };
 
     const self = instance;
     self.viewer.addHandler("tile-loaded", tileLoadedHandler);
@@ -92,7 +93,7 @@ function createFilterPlugin(viewer: any, options: FilterOptions): FilterPluginIn
             const canvas = window.document.createElement("canvas");
             canvas.width = image.width;
             canvas.height = image.height;
-            const context = canvas.getContext("2d", {willReadFrequently : true}) as CanvasRenderingContext2D;
+            const context = canvas.getContext("2d", { willReadFrequently: true }) as CanvasRenderingContext2D;
             context.drawImage(image, 0, 0);
             tile._renderedContext = context;
             const callback = event.getCompletionCallback();
@@ -101,8 +102,11 @@ function createFilterPlugin(viewer: any, options: FilterOptions): FilterPluginIn
         }
     }
 
-    function applyFilters(context: CanvasRenderingContext2D, filtersProcessors: FilterProcessor[],
-                          callback?: () => void): void
+    function applyFilters(
+        context: CanvasRenderingContext2D,
+        filtersProcessors: FilterProcessor[],
+        callback?: () => void,
+    ): void
     {
         if (callback)
         {
@@ -189,8 +193,9 @@ function createFilterPlugin(viewer: any, options: FilterOptions): FilterPluginIn
 function setOptions(instance: FilterPluginInstance, options: FilterOptions): void
 {
     const filters = options.filters;
-    instance.filters = !filters ? [] : Array.isArray(filters) ? filters
-                                                              : [ filters ];
+    instance.filters = !filters ? [] : Array.isArray(filters)
+        ? filters
+        : [filters];
     for (let i = 0; i < instance.filters.length; i += 1)
     {
         const filter = instance.filters[i];
@@ -198,7 +203,7 @@ function setOptions(instance: FilterPluginInstance, options: FilterOptions): voi
         {
             throw new Error("Filter processors must be specified.");
         }
-        filter.processors = Array.isArray(filter.processors) ? filter.processors : [ filter.processors ];
+        filter.processors = Array.isArray(filter.processors) ? filter.processors : [filter.processors];
     }
     instance.filterIncrement += 1;
 
@@ -262,7 +267,7 @@ function getFiltersProcessors(instance: any, item: any): FilterProcessor[]
         return [];
     }
 
-    let globalProcessors: FilterProcessor[]|null = null;
+    let globalProcessors: FilterProcessor[] | null = null;
     for (let i = 0; i < instance.filters.length; i += 1)
     {
         const filter = instance.filters[i];
@@ -278,7 +283,7 @@ function getFiltersProcessors(instance: any, item: any): FilterProcessor[]
     return globalProcessors ? globalProcessors : [];
 }
 
-const sampleStops = (stops: Array<{stop : number; color : number[]}>, t: number): number[] => {
+const sampleStops = (stops: Array<{ stop: number; color: number[] }>, t: number): number[] => {
     let lower = stops[0];
     let upper = stops[stops.length - 1];
     for (let i = 0; i < stops.length; i += 1)
@@ -298,10 +303,10 @@ const sampleStops = (stops: Array<{stop : number; color : number[]}>, t: number)
     const r = Math.round(lower.color[0] + (upper.color[0] - lower.color[0]) * localT);
     const g = Math.round(lower.color[1] + (upper.color[1] - lower.color[1]) * localT);
     const b = Math.round(lower.color[2] + (upper.color[2] - lower.color[2]) * localT);
-    return [ r, g, b ];
+    return [r, g, b];
 };
 
-const buildColormap = (stops: Array<{stop : number; color : number[]}>): number[][] => {
+const buildColormap = (stops: Array<{ stop: number; color: number[] }>): number[][] => {
     const map: number[][] = [];
     for (let i = 0; i < 256; i += 1)
     {
@@ -313,33 +318,36 @@ const buildColormap = (stops: Array<{stop : number; color : number[]}>): number[
 
 const colormapCache = new Map<string, number[][]>();
 
-const getColormap = (preset: string): number[][]|null => {
+const getColormap = (preset: string): number[][] | null => {
     const cached = colormapCache.get(preset);
     if (cached)
     {
         return cached;
     }
-    let result: number[][]|null = null;
+    let result: number[][] | null = null;
     switch (preset)
     {
-    case "hot":
-        result = buildColormap([
-            {stop : 0, color : [ 0, 0, 0 ]}, {stop : 0.4, color : [ 255, 0, 0 ]}, {stop : 0.7, color : [ 255, 255, 0 ]},
-            {stop : 1, color : [ 255, 255, 255 ]}
-        ]);
-        break;
-    case "cool":
-        result = buildColormap([
-            {stop : 0, color : [ 0, 0, 0 ]}, {stop : 0.5, color : [ 0, 128, 255 ]},
-            {stop : 1, color : [ 255, 255, 255 ]}
-        ]);
-        break;
-    case "gray":
-    case "":
-        result = buildColormap([ {stop : 0, color : [ 0, 0, 0 ]}, {stop : 1, color : [ 255, 255, 255 ]} ]);
-        break;
-    default:
-        return null;
+        case "hot":
+            result = buildColormap([
+                { stop: 0, color: [0, 0, 0] },
+                { stop: 0.4, color: [255, 0, 0] },
+                { stop: 0.7, color: [255, 255, 0] },
+                { stop: 1, color: [255, 255, 255] },
+            ]);
+            break;
+        case "cool":
+            result = buildColormap([
+                { stop: 0, color: [0, 0, 0] },
+                { stop: 0.5, color: [0, 128, 255] },
+                { stop: 1, color: [255, 255, 255] },
+            ]);
+            break;
+        case "gray":
+        case "":
+            result = buildColormap([{ stop: 0, color: [0, 0, 0] }, { stop: 1, color: [255, 255, 255] }]);
+            break;
+        default:
+            return null;
     }
     colormapCache.set(preset, result);
     return result;
@@ -369,7 +377,7 @@ const clamp01 = (value: number): number => {
     return value;
 };
 
-const hexToRgb = (hex: string): [ number, number, number ]|null => {
+const hexToRgb = (hex: string): [number, number, number] | null => {
     if (!hex)
     {
         return null;
@@ -392,11 +400,16 @@ const hexToRgb = (hex: string): [ number, number, number ]|null => {
     {
         return null;
     }
-    return [ (value >> 16) & 0xff, (value >> 8) & 0xff, value & 0xff ];
+    return [(value >> 16) & 0xff, (value >> 8) & 0xff, value & 0xff];
 };
 
-const boxBlur = (input: Uint8ClampedArray, width: number, height: number, radius: number,
-                 grayscale?: boolean): Uint8ClampedArray => {
+const boxBlur = (
+    input: Uint8ClampedArray,
+    width: number,
+    height: number,
+    radius: number,
+    grayscale?: boolean,
+): Uint8ClampedArray => {
     const size = width * height;
     const output = new Uint8ClampedArray(input.length);
     if (!radius)
@@ -507,7 +520,8 @@ const boxBlur = (input: Uint8ClampedArray, width: number, height: number, radius
 
 function applyPixelTransformInPlace(transform: PixelTransformInPlace): FilterProcessor
 {
-    return function(context: CanvasRenderingContext2D, callback: () => void): void {
+    return function(context: CanvasRenderingContext2D, callback: () => void): void
+    {
         Filters._applyPixelTransformInPlace(context, transform);
         callback();
     };
@@ -541,8 +555,15 @@ function withImageData(context: CanvasRenderingContext2D, handler: (imgData: Ima
     }
 }
 
-function convolvePixels(originalPixels: Uint8ClampedArray, outputPixels: Uint8ClampedArray, width: number,
-                        height: number, kernel: number[], kernelSize: number, kernelHalfSize: number): void
+function convolvePixels(
+    originalPixels: Uint8ClampedArray,
+    outputPixels: Uint8ClampedArray,
+    width: number,
+    height: number,
+    kernel: number[],
+    kernelSize: number,
+    kernelHalfSize: number,
+): void
 {
     const rowStride = width * 4;
 
@@ -623,8 +644,15 @@ function convolvePixels(originalPixels: Uint8ClampedArray, outputPixels: Uint8Cl
     }
 }
 
-function morphPixels(originalPixels: Uint8ClampedArray, outputPixels: Uint8ClampedArray, width: number, height: number,
-                     kernelSize: number, kernelHalfSize: number, comparator: (a: number, b: number) => number): void
+function morphPixels(
+    originalPixels: Uint8ClampedArray,
+    outputPixels: Uint8ClampedArray,
+    width: number,
+    height: number,
+    kernelSize: number,
+    kernelHalfSize: number,
+    comparator: (a: number, b: number) => number,
+): void
 {
     const rowStride = width * 4;
 
@@ -703,69 +731,75 @@ function morphPixels(originalPixels: Uint8ClampedArray, outputPixels: Uint8Clamp
     }
 }
 
-function dot3(a: number[], b: number[]): number { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+function dot3(a: number[], b: number[]): number
+{
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
 
 function normalize3(v: number[]): number[]
 {
     const len = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]) || 1;
-    return [ v[0] / len, v[1] / len, v[2] / len ];
+    return [v[0] / len, v[1] / len, v[2] / len];
 }
 
 function scaleMat3(m: number[][], s: number): number[][]
 {
     return [
-        [ m[0][0] * s, m[0][1] * s, m[0][2] * s ], [ m[1][0] * s, m[1][1] * s, m[1][2] * s ],
-        [ m[2][0] * s, m[2][1] * s, m[2][2] * s ]
+        [m[0][0] * s, m[0][1] * s, m[0][2] * s],
+        [m[1][0] * s, m[1][1] * s, m[1][2] * s],
+        [m[2][0] * s, m[2][1] * s, m[2][2] * s],
     ];
 }
 
 function outer3(v: number[]): number[][]
 {
     return [
-        [ v[0] * v[0], v[0] * v[1], v[0] * v[2] ], [ v[1] * v[0], v[1] * v[1], v[1] * v[2] ],
-        [ v[2] * v[0], v[2] * v[1], v[2] * v[2] ]
+        [v[0] * v[0], v[0] * v[1], v[0] * v[2]],
+        [v[1] * v[0], v[1] * v[1], v[1] * v[2]],
+        [v[2] * v[0], v[2] * v[1], v[2] * v[2]],
     ];
 }
 
 function matVec3(m: number[][], v: number[]): number[]
 {
     return [
-        m[0][0] * v[0] + m[0][1] * v[1] + m[0][2] * v[2], m[1][0] * v[0] + m[1][1] * v[1] + m[1][2] * v[2],
-        m[2][0] * v[0] + m[2][1] * v[1] + m[2][2] * v[2]
+        m[0][0] * v[0] + m[0][1] * v[1] + m[0][2] * v[2],
+        m[1][0] * v[0] + m[1][1] * v[1] + m[1][2] * v[2],
+        m[2][0] * v[0] + m[2][1] * v[1] + m[2][2] * v[2],
     ];
 }
 
 function matSub(a: number[][], b: number[][]): number[][]
 {
     return [
-        [ a[0][0] - b[0][0], a[0][1] - b[0][1], a[0][2] - b[0][2] ],
-        [ a[1][0] - b[1][0], a[1][1] - b[1][1], a[1][2] - b[1][2] ],
-        [ a[2][0] - b[2][0], a[2][1] - b[2][1], a[2][2] - b[2][2] ]
+        [a[0][0] - b[0][0], a[0][1] - b[0][1], a[0][2] - b[0][2]],
+        [a[1][0] - b[1][0], a[1][1] - b[1][1], a[1][2] - b[1][2]],
+        [a[2][0] - b[2][0], a[2][1] - b[2][1], a[2][2] - b[2][2]],
     ];
 }
 
-function powerIterEigen(m: number[][], iterations: number): {vector: number[]; value : number}
+function powerIterEigen(m: number[][], iterations: number): { vector: number[]; value: number }
 {
-    let v = normalize3([ 1, 1, 1 ]);
+    let v = normalize3([1, 1, 1]);
     for (let i = 0; i < iterations; i += 1)
     {
         v = normalize3(matVec3(m, v));
     }
     const mv = matVec3(m, v);
     const value = dot3(v, mv);
-    return {vector : v, value};
+    return { vector: v, value };
 }
 
 type PcaBasis = {
     mean: number[];
-    vectors : number[][];
-    values : number[];
+    vectors: number[][];
+    values: number[];
 };
 
 type RunningPcaStats = {
     count: number;
-    mean : number[];
-    m2 : number[][];
+    mean: number[];
+    m2: number[][];
 };
 
 function computePcaBasisFromCov(mean: number[], cov: number[][]): PcaBasis
@@ -776,14 +810,14 @@ function computePcaBasisFromCov(mean: number[], cov: number[][]): PcaBasis
     const eig3 = normalize3([
         eig1.vector[1] * eig2.vector[2] - eig1.vector[2] * eig2.vector[1],
         eig1.vector[2] * eig2.vector[0] - eig1.vector[0] * eig2.vector[2],
-        eig1.vector[0] * eig2.vector[1] - eig1.vector[1] * eig2.vector[0]
+        eig1.vector[0] * eig2.vector[1] - eig1.vector[1] * eig2.vector[0],
     ]);
     const eig3Value = dot3(eig3, matVec3(cov, eig3));
 
     return {
         mean,
-        vectors : [ eig1.vector, eig2.vector, eig3 ],
-        values : [ Math.max(0, eig1.value), Math.max(0, eig2.value), Math.max(0, eig3Value) ]
+        vectors: [eig1.vector, eig2.vector, eig3],
+        values: [Math.max(0, eig1.value), Math.max(0, eig2.value), Math.max(0, eig3Value)],
     };
 }
 
@@ -820,10 +854,12 @@ function computePcaVectors(data: Uint8ClampedArray): PcaBasis
     }
     const inv = 1 / Math.max(1, count - 1);
     const cov = [
-        [ c00 * inv, c01 * inv, c02 * inv ], [ c01 * inv, c11 * inv, c12 * inv ], [ c02 * inv, c12 * inv, c22 * inv ]
+        [c00 * inv, c01 * inv, c02 * inv],
+        [c01 * inv, c11 * inv, c12 * inv],
+        [c02 * inv, c12 * inv, c22 * inv],
     ];
 
-    return computePcaBasisFromCov([ meanR, meanG, meanB ], cov);
+    return computePcaBasisFromCov([meanR, meanG, meanB], cov);
 }
 
 function applyPcaColor(imgData: ImageData, mode: string, hueDegrees: number = 0): void
@@ -848,17 +884,29 @@ function applyPcaColor(imgData: ImageData, mode: string, hueDegrees: number = 0)
         const c2 = r * v2[0] + g * v2[1] + b * v2[2];
         const c3 = r * v3[0] + g * v3[1] + b * v3[2];
         if (c1 < min1)
+        {
             min1 = c1;
+        }
         if (c1 > max1)
+        {
             max1 = c1;
+        }
         if (c2 < min2)
+        {
             min2 = c2;
+        }
         if (c2 > max2)
+        {
             max2 = c2;
+        }
         if (c3 < min3)
+        {
             min3 = c3;
+        }
         if (c3 > max3)
+        {
             max3 = c3;
+        }
     }
 
     const range1 = max1 - min1 || 1;
@@ -909,13 +957,15 @@ function applyPcaColor(imgData: ImageData, mode: string, hueDegrees: number = 0)
 }
 
 type HueRotationMatrix = {
-    m00: number; m01 : number; m02 : number;
-    m10 : number;
-    m11 : number;
-    m12 : number;
-    m20 : number;
-    m21 : number;
-    m22 : number;
+    m00: number;
+    m01: number;
+    m02: number;
+    m10: number;
+    m11: number;
+    m12: number;
+    m20: number;
+    m21: number;
+    m22: number;
 };
 
 function buildHueRotationMatrix(degrees: number): HueRotationMatrix
@@ -927,15 +977,15 @@ function buildHueRotationMatrix(degrees: number): HueRotationMatrix
     const sqrt1_3 = Math.sqrt(oneThird);
 
     return {
-        m00 : cosA + (1 - cosA) * oneThird,
-        m01 : oneThird * (1 - cosA) - sqrt1_3 * sinA,
-        m02 : oneThird * (1 - cosA) + sqrt1_3 * sinA,
-        m10 : oneThird * (1 - cosA) + sqrt1_3 * sinA,
-        m11 : cosA + (1 - cosA) * oneThird,
-        m12 : oneThird * (1 - cosA) - sqrt1_3 * sinA,
-        m20 : oneThird * (1 - cosA) - sqrt1_3 * sinA,
-        m21 : oneThird * (1 - cosA) + sqrt1_3 * sinA,
-        m22 : cosA + (1 - cosA) * oneThird
+        m00: cosA + (1 - cosA) * oneThird,
+        m01: oneThird * (1 - cosA) - sqrt1_3 * sinA,
+        m02: oneThird * (1 - cosA) + sqrt1_3 * sinA,
+        m10: oneThird * (1 - cosA) + sqrt1_3 * sinA,
+        m11: cosA + (1 - cosA) * oneThird,
+        m12: oneThird * (1 - cosA) - sqrt1_3 * sinA,
+        m20: oneThird * (1 - cosA) - sqrt1_3 * sinA,
+        m21: oneThird * (1 - cosA) + sqrt1_3 * sinA,
+        m22: cosA + (1 - cosA) * oneThird,
     };
 }
 
@@ -961,13 +1011,13 @@ function applyHueRotationInPlace(data: Uint8ClampedArray, degrees: number): void
 function createRunningPcaStats(): RunningPcaStats
 {
     return {
-        count : 0,
-        mean : [ 0, 0, 0 ],
-        m2 : [
-            [ 0, 0, 0 ],
-            [ 0, 0, 0 ],
-            [ 0, 0, 0 ]
-        ]
+        count: 0,
+        mean: [0, 0, 0],
+        m2: [
+            [0, 0, 0],
+            [0, 0, 0],
+            [0, 0, 0],
+        ],
     };
 }
 
@@ -976,22 +1026,22 @@ function updateRunningPcaStats(stats: RunningPcaStats, data: Uint8ClampedArray):
     const sampleStride = 16;
     for (let i = 0; i < data.length; i += 4 * sampleStride)
     {
-        const sample = [ data[i], data[i + 1], data[i + 2] ];
+        const sample = [data[i], data[i + 1], data[i + 2]];
         const nextCount = stats.count + 1;
         const delta = [
             sample[0] - stats.mean[0],
             sample[1] - stats.mean[1],
-            sample[2] - stats.mean[2]
+            sample[2] - stats.mean[2],
         ];
         const nextMean = [
             stats.mean[0] + delta[0] / nextCount,
             stats.mean[1] + delta[1] / nextCount,
-            stats.mean[2] + delta[2] / nextCount
+            stats.mean[2] + delta[2] / nextCount,
         ];
         const delta2 = [
             sample[0] - nextMean[0],
             sample[1] - nextMean[1],
-            sample[2] - nextMean[2]
+            sample[2] - nextMean[2],
         ];
 
         stats.m2[0][0] += delta[0] * delta2[0];
@@ -1009,7 +1059,7 @@ function updateRunningPcaStats(stats: RunningPcaStats, data: Uint8ClampedArray):
     }
 }
 
-function basisFromRunningStats(stats: RunningPcaStats): PcaBasis|null
+function basisFromRunningStats(stats: RunningPcaStats): PcaBasis | null
 {
     if (stats.count < 2)
     {
@@ -1017,9 +1067,9 @@ function basisFromRunningStats(stats: RunningPcaStats): PcaBasis|null
     }
     const inv = 1 / (stats.count - 1);
     const cov = [
-        [ stats.m2[0][0] * inv, stats.m2[0][1] * inv, stats.m2[0][2] * inv ],
-        [ stats.m2[1][0] * inv, stats.m2[1][1] * inv, stats.m2[1][2] * inv ],
-        [ stats.m2[2][0] * inv, stats.m2[2][1] * inv, stats.m2[2][2] * inv ]
+        [stats.m2[0][0] * inv, stats.m2[0][1] * inv, stats.m2[0][2] * inv],
+        [stats.m2[1][0] * inv, stats.m2[1][1] * inv, stats.m2[1][2] * inv],
+        [stats.m2[2][0] * inv, stats.m2[2][1] * inv, stats.m2[2][2] * inv],
     ];
     return computePcaBasisFromCov(stats.mean, cov);
 }
@@ -1079,9 +1129,11 @@ function applyPcaColorWithBasis(imgData: ImageData, mode: string, basis: PcaBasi
     applyHueRotationInPlace(data, hueDegrees);
 }
 
-const noopFilter: FilterProcessor = (_context, callback) => { callback(); };
+const noopFilter: FilterProcessor = (_context, callback) => {
+    callback();
+};
 
-function rgbToHSV(r: number, g: number, b: number): {h: number; s : number; v : number}
+function rgbToHSV(r: number, g: number, b: number): { h: number; s: number; v: number }
 {
     const rr = r / 255;
     const gg = g / 255;
@@ -1097,21 +1149,21 @@ function rgbToHSV(r: number, g: number, b: number): {h: number; s : number; v : 
     {
         switch (maxValue)
         {
-        case rr:
-            h = (gg - bb) / d + (gg < bb ? 6 : 0);
-            break;
-        case gg:
-            h = (bb - rr) / d + 2;
-            break;
-        default:
-            h = (rr - gg) / d + 4;
+            case rr:
+                h = (gg - bb) / d + (gg < bb ? 6 : 0);
+                break;
+            case gg:
+                h = (bb - rr) / d + 2;
+                break;
+            default:
+                h = (rr - gg) / d + 4;
         }
         h /= 6;
     }
-    return {h, s, v};
+    return { h, s, v };
 }
 
-function hsvToRGB(h: number, s: number, v: number): {r: number; g : number; b : number}
+function hsvToRGB(h: number, s: number, v: number): { r: number; g: number; b: number }
 {
     let r: number;
     let g: number;
@@ -1124,38 +1176,38 @@ function hsvToRGB(h: number, s: number, v: number): {r: number; g : number; b : 
 
     switch (i % 6)
     {
-    case 0:
-        r = v;
-        g = t;
-        b = p;
-        break;
-    case 1:
-        r = q;
-        g = v;
-        b = p;
-        break;
-    case 2:
-        r = p;
-        g = v;
-        b = t;
-        break;
-    case 3:
-        r = p;
-        g = q;
-        b = v;
-        break;
-    case 4:
-        r = t;
-        g = p;
-        b = v;
-        break;
-    default:
-        r = v;
-        g = p;
-        b = q;
+        case 0:
+            r = v;
+            g = t;
+            b = p;
+            break;
+        case 1:
+            r = q;
+            g = v;
+            b = p;
+            break;
+        case 2:
+            r = p;
+            g = v;
+            b = t;
+            break;
+        case 3:
+            r = p;
+            g = q;
+            b = v;
+            break;
+        case 4:
+            r = t;
+            g = p;
+            b = v;
+            break;
+        default:
+            r = v;
+            g = p;
+            b = q;
     }
 
-    return {r : Math.floor(r * 255), g : Math.floor(g * 255), b : Math.floor(b * 255)};
+    return { r: Math.floor(r * 255), g: Math.floor(g * 255), b: Math.floor(b * 255) };
 }
 
 function applyChannelLUT(channel: number, lut: number[]): FilterProcessor
@@ -1300,10 +1352,11 @@ function altChannelVibrance(channel: number, amount: number): FilterProcessor
 }
 
 export const Filters = {
-    _scratch : null as Uint8ClampedArray | null,
-    _scratchCanvas : null as HTMLCanvasElement | null,
-    _scratchContext : null as CanvasRenderingContext2D | null,
-    _ensureScratch : function(length: number) : Uint8ClampedArray {
+    _scratch: null as Uint8ClampedArray | null,
+    _scratchCanvas: null as HTMLCanvasElement | null,
+    _scratchContext: null as CanvasRenderingContext2D | null,
+    _ensureScratch: function(length: number): Uint8ClampedArray
+    {
         // Returns a shared mutable buffer. Callers should consume/copy the
         // contents before the next _ensureScratch call, which may overwrite it.
         if (!this._scratch || this._scratch.length < length)
@@ -1312,15 +1365,17 @@ export const Filters = {
         }
         return this._scratch;
     },
-    _ensureScratchContext : function(width: number, height: number) : CanvasRenderingContext2D {
+    _ensureScratchContext: function(width: number, height: number): CanvasRenderingContext2D
+    {
         if (!this._scratchCanvas)
         {
             this._scratchCanvas = window.document.createElement("canvas");
         }
         if (!this._scratchContext)
         {
-            this._scratchContext =
-                this._scratchCanvas.getContext("2d", {willReadFrequently : true}) as CanvasRenderingContext2D;
+            this._scratchContext = this._scratchCanvas.getContext("2d", {
+                willReadFrequently: true,
+            }) as CanvasRenderingContext2D;
         }
         if (this._scratchCanvas.width !== width)
         {
@@ -1332,7 +1387,8 @@ export const Filters = {
         }
         return this._scratchContext;
     },
-    _applyPixelTransformInPlace : function(context: CanvasRenderingContext2D, transform: PixelTransformInPlace) : void {
+    _applyPixelTransformInPlace: function(context: CanvasRenderingContext2D, transform: PixelTransformInPlace): void
+    {
         const width = context.canvas.width;
         const height = context.canvas.height;
         const scratchContext = this._ensureScratchContext(width, height);
@@ -1340,7 +1396,7 @@ export const Filters = {
         scratchContext.drawImage(context.canvas, 0, 0);
         const imgData = scratchContext.getImageData(0, 0, width, height);
         const pixels = imgData.data;
-        const out = [ 0, 0, 0, 0 ];
+        const out = [0, 0, 0, 0];
         for (let i = 0, pxl = pixels.length; i < pxl; i += 4)
         {
             transform(pixels[i], pixels[i + 1], pixels[i + 2], pixels[i + 3], out);
@@ -1353,7 +1409,8 @@ export const Filters = {
         context.clearRect(0, 0, width, height);
         context.drawImage(this._scratchCanvas as HTMLCanvasElement, 0, 0);
     },
-    THRESHOLDING : function(threshold: number) : FilterProcessor {
+    THRESHOLDING: function(threshold: number): FilterProcessor
+    {
         if (threshold < 0 || threshold > 255)
         {
             throw new Error("Threshold must be between 0 and 255.");
@@ -1366,7 +1423,8 @@ export const Filters = {
             out[3] = 255;
         });
     },
-    SATURATION : function(adjustment: number) : FilterProcessor {
+    SATURATION: function(adjustment: number): FilterProcessor
+    {
         const adj = adjustment * -0.01;
         return applyPixelTransformInPlace((r: number, g: number, b: number, a: number, out: number[]) => {
             const maxValue = Math.max(r, g, b);
@@ -1376,7 +1434,8 @@ export const Filters = {
             out[3] = a;
         });
     },
-    VIBRANCE : function(adjustment: number) : FilterProcessor {
+    VIBRANCE: function(adjustment: number): FilterProcessor
+    {
         const adj = adjustment * -1;
         return applyPixelTransformInPlace((r: number, g: number, b: number, a: number, out: number[]) => {
             const maxValue = Math.max(r, g, b);
@@ -1388,7 +1447,8 @@ export const Filters = {
             out[3] = a;
         });
     },
-    HUE : function(adjustment: number) : FilterProcessor {
+    HUE: function(adjustment: number): FilterProcessor
+    {
         // Use direct hue rotation matrix instead of RGB→HSV→RGB conversion
         // Hue rotation is a rotation around the (1,1,1) axis in RGB space
         const degrees = (Math.abs(adjustment) / 100) * 360;
@@ -1401,7 +1461,8 @@ export const Filters = {
             out[3] = a;
         });
     },
-    BRIGHTNESS : function(adjustment: number) : FilterProcessor {
+    BRIGHTNESS: function(adjustment: number): FilterProcessor
+    {
         if (adjustment < -255 || adjustment > 255)
         {
             throw new Error("Brightness adjustment must be between -255 and 255.");
@@ -1418,10 +1479,20 @@ export const Filters = {
             out[3] = a;
         });
     },
-    CC_RED : function(adjustment: number) : FilterProcessor { return ccChannel(0, adjustment);},
-    CC_GREEN : function(adjustment: number) : FilterProcessor { return ccChannel(1, adjustment);},
-    CC_BLUE : function(adjustment: number) : FilterProcessor { return ccChannel(2, adjustment);},
-    CONTRAST : function(adjustment: number) : FilterProcessor {
+    CC_RED: function(adjustment: number): FilterProcessor
+    {
+        return ccChannel(0, adjustment);
+    },
+    CC_GREEN: function(adjustment: number): FilterProcessor
+    {
+        return ccChannel(1, adjustment);
+    },
+    CC_BLUE: function(adjustment: number): FilterProcessor
+    {
+        return ccChannel(2, adjustment);
+    },
+    CONTRAST: function(adjustment: number): FilterProcessor
+    {
         if (adjustment < 0)
         {
             throw new Error("Contrast adjustment must be positive.");
@@ -1438,7 +1509,8 @@ export const Filters = {
             out[3] = a;
         });
     },
-    GAMMA : function(adjustment: number) : FilterProcessor {
+    GAMMA: function(adjustment: number): FilterProcessor
+    {
         if (adjustment < 0)
         {
             throw new Error("Gamma adjustment must be positive.");
@@ -1455,7 +1527,8 @@ export const Filters = {
             out[3] = a;
         });
     },
-    GREYSCALE : function() : FilterProcessor {
+    GREYSCALE: function(): FilterProcessor
+    {
         return applyPixelTransformInPlace((r: number, g: number, b: number, _a: number, out: number[]) => {
             const val = (77 * r + 150 * g + 29 * b) >> 8;
             out[0] = val;
@@ -1464,7 +1537,8 @@ export const Filters = {
             out[3] = 255;
         });
     },
-    INVERT : function() : FilterProcessor {
+    INVERT: function(): FilterProcessor
+    {
         const precomputedInvert: number[] = [];
         for (let i = 0; i < 256; i += 1)
         {
@@ -1477,32 +1551,34 @@ export const Filters = {
             out[3] = a;
         });
     },
-    MORPHOLOGICAL_OPERATION : function(kernelSize: number, comparator: (a: number, b: number) => number) :
-        FilterProcessor {
-            if (kernelSize % 2 === 0)
-            {
-                throw new Error("The kernel size must be an odd number.");
-            }
-            const kernelHalfSize = Math.floor(kernelSize / 2);
+    MORPHOLOGICAL_OPERATION: function(kernelSize: number, comparator: (a: number, b: number) => number): FilterProcessor
+    {
+        if (kernelSize % 2 === 0)
+        {
+            throw new Error("The kernel size must be an odd number.");
+        }
+        const kernelHalfSize = Math.floor(kernelSize / 2);
 
-            if (!comparator)
-            {
-                throw new Error("A comparator must be defined.");
-            }
+        if (!comparator)
+        {
+            throw new Error("A comparator must be defined.");
+        }
 
-            return function(context: CanvasRenderingContext2D, callback: () => void): void {
-                withImageData(context, (imgData) => {
-                    const width = imgData.width;
-                    const height = imgData.height;
-                    const originalPixels = Filters._ensureScratch(imgData.data.length);
-                    originalPixels.set(imgData.data);
-                    morphPixels(originalPixels, imgData.data, width, height, kernelSize, kernelHalfSize, comparator);
-                    return true;
-                });
-                callback();
-            };
-        },
-    CONVOLUTION : function(kernel: number[]) : FilterProcessor {
+        return function(context: CanvasRenderingContext2D, callback: () => void): void
+        {
+            withImageData(context, (imgData) => {
+                const width = imgData.width;
+                const height = imgData.height;
+                const originalPixels = Filters._ensureScratch(imgData.data.length);
+                originalPixels.set(imgData.data);
+                morphPixels(originalPixels, imgData.data, width, height, kernelSize, kernelHalfSize, comparator);
+                return true;
+            });
+            callback();
+        };
+    },
+    CONVOLUTION: function(kernel: number[]): FilterProcessor
+    {
         if (!Array.isArray(kernel))
         {
             throw new Error("The kernel must be an array.");
@@ -1514,7 +1590,8 @@ export const Filters = {
         }
         const kernelHalfSize = (kernelSize - 1) / 2;
 
-        return function(context: CanvasRenderingContext2D, callback: () => void): void {
+        return function(context: CanvasRenderingContext2D, callback: () => void): void
+        {
             withImageData(context, (imgData) => {
                 const width = imgData.width;
                 const height = imgData.height;
@@ -1526,7 +1603,8 @@ export const Filters = {
             callback();
         };
     },
-    COLORMAP : function(cmap: number[][], ctr: number) : FilterProcessor {
+    COLORMAP: function(cmap: number[][], ctr: number): FilterProcessor
+    {
         const resampledCmap = cmap.slice(0);
         const diff = 255 - ctr;
         for (let i = 0; i < 256; i += 1)
@@ -1551,25 +1629,31 @@ export const Filters = {
             out[3] = 255;
         });
     },
-    COLORMAP_PRESET : function(preset: string) : number[][] | null { return getColormap(preset || "");},
-    CONVOLUTION_PRESET : function(preset: string) : number[] |
-                             null {
-                                 const normalized = (preset || "").toLowerCase();
-                                 switch (normalized)
-                                 {
-                                 case "sharpen":
-                                     return [ 0, -1, 0, -1, 5, -1, 0, -1, 0 ];
-                                 case "blur":
-                                     return [ 1 / 9, 1 / 9, 1 / 9, 1 / 9, 1 / 9, 1 / 9, 1 / 9, 1 / 9, 1 / 9 ];
-                                 case "edge":
-                                     return [ -1, -1, -1, -1, 8, -1, -1, -1, -1 ];
-                                 case "emboss":
-                                     return [ -2, -1, 0, -1, 1, 1, 0, 1, 2 ];
-                                 default:
-                                     return null;
-                                 }
-                             },
-    PSEUDOCOLOR : function(mode: string, red?: number, green?: number, blue?: number) : FilterProcessor {
+    COLORMAP_PRESET: function(preset: string): number[][] | null
+    {
+        return getColormap(preset || "");
+    },
+    CONVOLUTION_PRESET: function(preset: string):
+        | number[]
+        | null
+    {
+        const normalized = (preset || "").toLowerCase();
+        switch (normalized)
+        {
+            case "sharpen":
+                return [0, -1, 0, -1, 5, -1, 0, -1, 0];
+            case "blur":
+                return [1 / 9, 1 / 9, 1 / 9, 1 / 9, 1 / 9, 1 / 9, 1 / 9, 1 / 9, 1 / 9];
+            case "edge":
+                return [-1, -1, -1, -1, 8, -1, -1, -1, -1];
+            case "emboss":
+                return [-2, -1, 0, -1, 1, 1, 0, 1, 2];
+            default:
+                return null;
+        }
+    },
+    PSEUDOCOLOR: function(mode: string, red?: number, green?: number, blue?: number): FilterProcessor
+    {
         const normalized = (mode || "").toLowerCase();
         const rWeight = red === undefined ? 1 : red;
         const gWeight = green === undefined ? 1 : green;
@@ -1583,81 +1667,90 @@ export const Filters = {
             const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
             switch (normalized)
             {
-            case "rg":
-            {
-                const v = clampByte(128 + (r - g));
-                applyWeightsInPlace(v, 255 - v, (r + g) / 2, out);
-                out[3] = a;
-                return;
-            }
-            case "gb":
-            {
-                const v = clampByte(128 + (g - b));
-                applyWeightsInPlace((g + b) / 2, v, 255 - v, out);
-                out[3] = a;
-                return;
-            }
-            case "rb":
-            {
-                const v = clampByte(128 + (r - b));
-                applyWeightsInPlace(v, (r + b) / 2, 255 - v, out);
-                out[3] = a;
-                return;
-            }
-            case "luma":
-            {
-                const v = clampByte(luma);
-                applyWeightsInPlace(v, 255 - v, v, out);
-                out[3] = a;
-                return;
-            }
-            case "cmy":
-            {
-                applyWeightsInPlace(255 - r, 255 - g, 255 - b, out);
-                out[3] = a;
-                return;
-            }
-            case "heat":
-            {
-                const v = clampByte(luma);
-                const t = v / 255;
-                applyWeightsInPlace(clampByte(255 * Math.min(1, t * 3)),
-                                    clampByte(255 * Math.min(1, Math.max(0, (t - 0.33) * 3))),
-                                    clampByte(255 * Math.min(1, Math.max(0, (t - 0.66) * 3))), out);
-                out[3] = a;
-                return;
-            }
-            case "pca1":
-            {
-                const v = clampByte(0.6 * r + 0.3 * g + 0.1 * b);
-                applyWeightsInPlace(v, 255 - v, v, out);
-                out[3] = a;
-                return;
-            }
-            case "pca2":
-            {
-                const v = clampByte(0.5 * r - 0.2 * g - 0.3 * b + 128);
-                applyWeightsInPlace(v, 255 - v, 255 - v, out);
-                out[3] = a;
-                return;
-            }
-            case "pca3":
-            {
-                const v = clampByte(0.2 * r + 0.6 * g - 0.8 * b + 128);
-                applyWeightsInPlace(255 - v, v, 255 - v, out);
-                out[3] = a;
-                return;
-            }
-            default:
-            {
-                applyWeightsInPlace(r, g, b, out);
-                out[3] = a;
-            }
+                case "rg":
+                {
+                    const v = clampByte(128 + (r - g));
+                    applyWeightsInPlace(v, 255 - v, (r + g) / 2, out);
+                    out[3] = a;
+                    return;
+                }
+                case "gb":
+                {
+                    const v = clampByte(128 + (g - b));
+                    applyWeightsInPlace((g + b) / 2, v, 255 - v, out);
+                    out[3] = a;
+                    return;
+                }
+                case "rb":
+                {
+                    const v = clampByte(128 + (r - b));
+                    applyWeightsInPlace(v, (r + b) / 2, 255 - v, out);
+                    out[3] = a;
+                    return;
+                }
+                case "luma":
+                {
+                    const v = clampByte(luma);
+                    applyWeightsInPlace(v, 255 - v, v, out);
+                    out[3] = a;
+                    return;
+                }
+                case "cmy":
+                {
+                    applyWeightsInPlace(255 - r, 255 - g, 255 - b, out);
+                    out[3] = a;
+                    return;
+                }
+                case "heat":
+                {
+                    const v = clampByte(luma);
+                    const t = v / 255;
+                    applyWeightsInPlace(
+                        clampByte(255 * Math.min(1, t * 3)),
+                        clampByte(255 * Math.min(1, Math.max(0, (t - 0.33) * 3))),
+                        clampByte(255 * Math.min(1, Math.max(0, (t - 0.66) * 3))),
+                        out,
+                    );
+                    out[3] = a;
+                    return;
+                }
+                case "pca1":
+                {
+                    const v = clampByte(0.6 * r + 0.3 * g + 0.1 * b);
+                    applyWeightsInPlace(v, 255 - v, v, out);
+                    out[3] = a;
+                    return;
+                }
+                case "pca2":
+                {
+                    const v = clampByte(0.5 * r - 0.2 * g - 0.3 * b + 128);
+                    applyWeightsInPlace(v, 255 - v, 255 - v, out);
+                    out[3] = a;
+                    return;
+                }
+                case "pca3":
+                {
+                    const v = clampByte(0.2 * r + 0.6 * g - 0.8 * b + 128);
+                    applyWeightsInPlace(255 - v, v, 255 - v, out);
+                    out[3] = a;
+                    return;
+                }
+                default:
+                {
+                    applyWeightsInPlace(r, g, b, out);
+                    out[3] = a;
+                }
             }
         });
     },
-    COLOR_REPLACE : function(source: string, target: string, tolerance?: number, blend?: number,
-                             preserveLum?: boolean) : FilterProcessor {
+    COLOR_REPLACE: function(
+        source: string,
+        target: string,
+        tolerance?: number,
+        blend?: number,
+        preserveLum?: boolean,
+    ): FilterProcessor
+    {
         const src = hexToRgb(source);
         const dst = hexToRgb(target);
         if (!src || !dst)
@@ -1707,22 +1800,56 @@ export const Filters = {
             out[3] = a;
         });
     },
-    ALT_RED_GAMMA : function(amount: number) : FilterProcessor { return altChannelGamma(0, amount);},
-    ALT_GREEN_GAMMA : function(amount: number) : FilterProcessor { return altChannelGamma(1, amount);},
-    ALT_BLUE_GAMMA : function(amount: number) : FilterProcessor { return altChannelGamma(2, amount);},
-    ALT_RED_SIGMOID : function(amount: number) : FilterProcessor { return altChannelSigmoid(0, amount);},
-    ALT_GREEN_SIGMOID : function(amount: number) : FilterProcessor { return altChannelSigmoid(1, amount);},
-    ALT_BLUE_SIGMOID : function(amount: number) : FilterProcessor { return altChannelSigmoid(2, amount);},
-    ALT_RED_HUE : function(amount: number, window?: number) :
-        FilterProcessor { return altChannelHue(0, amount, window);},
-    ALT_GREEN_HUE : function(amount: number, window?: number) :
-        FilterProcessor { return altChannelHue(1 / 3, amount, window);},
-    ALT_BLUE_HUE : function(amount: number, window?: number) :
-        FilterProcessor { return altChannelHue(2 / 3, amount, window);},
-    ALT_RED_VIBRANCE : function(amount: number) : FilterProcessor { return altChannelVibrance(0, amount);},
-    ALT_GREEN_VIBRANCE : function(amount: number) : FilterProcessor { return altChannelVibrance(1, amount);},
-    ALT_BLUE_VIBRANCE : function(amount: number) : FilterProcessor { return altChannelVibrance(2, amount);},
-    GLOBAL_PCA_COLOR : function(mode: string, hueDegrees?: number) : FilterProcessor {
+    ALT_RED_GAMMA: function(amount: number): FilterProcessor
+    {
+        return altChannelGamma(0, amount);
+    },
+    ALT_GREEN_GAMMA: function(amount: number): FilterProcessor
+    {
+        return altChannelGamma(1, amount);
+    },
+    ALT_BLUE_GAMMA: function(amount: number): FilterProcessor
+    {
+        return altChannelGamma(2, amount);
+    },
+    ALT_RED_SIGMOID: function(amount: number): FilterProcessor
+    {
+        return altChannelSigmoid(0, amount);
+    },
+    ALT_GREEN_SIGMOID: function(amount: number): FilterProcessor
+    {
+        return altChannelSigmoid(1, amount);
+    },
+    ALT_BLUE_SIGMOID: function(amount: number): FilterProcessor
+    {
+        return altChannelSigmoid(2, amount);
+    },
+    ALT_RED_HUE: function(amount: number, window?: number): FilterProcessor
+    {
+        return altChannelHue(0, amount, window);
+    },
+    ALT_GREEN_HUE: function(amount: number, window?: number): FilterProcessor
+    {
+        return altChannelHue(1 / 3, amount, window);
+    },
+    ALT_BLUE_HUE: function(amount: number, window?: number): FilterProcessor
+    {
+        return altChannelHue(2 / 3, amount, window);
+    },
+    ALT_RED_VIBRANCE: function(amount: number): FilterProcessor
+    {
+        return altChannelVibrance(0, amount);
+    },
+    ALT_GREEN_VIBRANCE: function(amount: number): FilterProcessor
+    {
+        return altChannelVibrance(1, amount);
+    },
+    ALT_BLUE_VIBRANCE: function(amount: number): FilterProcessor
+    {
+        return altChannelVibrance(2, amount);
+    },
+    GLOBAL_PCA_COLOR: function(mode: string, hueDegrees?: number): FilterProcessor
+    {
         const normalized = (mode || "").toLowerCase();
         const hue = Math.max(-180, Math.min(180, hueDegrees ?? 0));
         const runningStats = createRunningPcaStats();
@@ -1730,10 +1857,11 @@ export const Filters = {
         // Caller assumption: filter rebuilds (new processor instance) occur
         // when switching images/tile sources or changing filter settings.
         // If that lifecycle changes, this basis should be explicitly reset.
-        let globalBasis: PcaBasis|null = null;
+        let globalBasis: PcaBasis | null = null;
         const minSamples = 2000;
 
-        return function(context: CanvasRenderingContext2D, callback: () => void): void {
+        return function(context: CanvasRenderingContext2D, callback: () => void): void
+        {
             withImageData(context, (imgData) => {
                 const data = imgData.data;
                 if (!globalBasis)
@@ -1758,9 +1886,11 @@ export const Filters = {
             callback();
         };
     },
-    BACKGROUND_NORMALIZE : function(strength?: number) : FilterProcessor {
+    BACKGROUND_NORMALIZE: function(strength?: number): FilterProcessor
+    {
         const amount = Math.max(0, Math.min(2, strength || 0));
-        return function(context: CanvasRenderingContext2D, callback: () => void): void {
+        return function(context: CanvasRenderingContext2D, callback: () => void): void
+        {
             if (amount === 0)
             {
                 callback();
@@ -1788,9 +1918,11 @@ export const Filters = {
             callback();
         };
     },
-    UNSHARP_MASK : function(amount?: number) : FilterProcessor {
+    UNSHARP_MASK: function(amount?: number): FilterProcessor
+    {
         const strength = Math.max(0, Math.min(3, amount || 0));
-        return function(context: CanvasRenderingContext2D, callback: () => void): void {
+        return function(context: CanvasRenderingContext2D, callback: () => void): void
+        {
             if (strength === 0)
             {
                 callback();
@@ -1816,7 +1948,8 @@ export const Filters = {
             callback();
         };
     },
-    ADAPTIVE_THRESHOLD : function(windowSize?: number, offset?: number) : FilterProcessor {
+    ADAPTIVE_THRESHOLD: function(windowSize?: number, offset?: number): FilterProcessor
+    {
         let size = windowSize || 15;
         if (size % 2 === 0)
         {
@@ -1824,7 +1957,8 @@ export const Filters = {
         }
         size = Math.max(3, Math.min(51, size));
         const bias = Math.max(-50, Math.min(50, offset || 0));
-        return function(context: CanvasRenderingContext2D, callback: () => void): void {
+        return function(context: CanvasRenderingContext2D, callback: () => void): void
+        {
             withImageData(context, (imgData) => {
                 const width = imgData.width;
                 const height = imgData.height;
@@ -1846,5 +1980,5 @@ export const Filters = {
             });
             callback();
         };
-    }
+    },
 };

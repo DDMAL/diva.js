@@ -1,0 +1,16 @@
+{
+    "lineWidth": 120,
+    "indentWidth": 4,
+    "useTabs": false,
+    "typescript": {
+        "bracePosition": "nextLine",
+        "arrowFunction.bracePosition": "sameLine",
+        "nextControlFlowPosition": "nextLine",
+        "ifStatement.useBraces": "always",
+        "forStatement.useBraces": "always",
+        "whileStatement.useBraces": "always"
+    },
+    "plugins": [
+        "node_modules/@dprint/typescript/plugin.wasm"
+    ]
+}

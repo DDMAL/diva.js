@@ -1,85 +1,102 @@
-import {nonCorsStaticTileSource,
-        type ResolvedTileSource,
-        staticImageTileSource,
-        type TileSourceDescriptor} from "./image-utils";
-import type {DivaStaticImageCorsPolicy} from "./public-api";
+import {
+    nonCorsStaticTileSource,
+    type ResolvedTileSource,
+    staticImageTileSource,
+    type TileSourceDescriptor,
+} from "./image-utils";
+import type { DivaStaticImageCorsPolicy } from "./public-api";
 
-export type {ResolvedTileSource,
-             TileSourceDescriptor} from "./image-utils";
+export type { ResolvedTileSource, TileSourceDescriptor } from "./image-utils";
 
 type SendPort<T> = {
-    send: (value: T) => void
+    send: (value: T) => void;
 };
 type SubscribePort<T> = {
-    subscribe: (callback: (value: T) => void) => void
+    subscribe: (callback: (value: T) => void) => void;
 };
 type BrowserPorts = {
-    resolveTileSourceRequested: SendPort<{requestId : string; sourceId : string}>;
-    resolveTileSourceCancelled : SendPort<string>;
-    tileSourceResolutionSucceeded : SubscribePort<Resolution>;
-    tileSourceResolutionFailed : SubscribePort<{requestId : string; message : string}>;
-    authHttpRequested : SubscribePort<HttpRequest>;
-    authHttpCancelled : SubscribePort<string>;
-    authHttpResponded : SendPort<{id : string; status : number; body : string}>;
-    authHttpFailed : SendPort<{id : string; message : string}>;
-    authStorageRequested : SubscribePort<StorageRequest>;
-    authStorageResponded : SendPort<{flowId : string; now : number; value : unknown}>;
-    authTokenFrameRequested : SubscribePort<TokenFrameRequest>;
-    authTokenFrameCancelled : SubscribePort<string>;
-    authTokenMessage : SendPort<{flowId : string; now : number; value : unknown}>;
-    authTokenFailed : SendPort<{flowId : string; message : string}>;
-    authPopupChanged : SendPort<{flowId : string; status : string}>;
-    authLogoutChanged : SendPort<{sessionId : string; status : string}>;
-    authDestroyed : SendPort<null>;
+    resolveTileSourceRequested: SendPort<{ requestId: string; sourceId: string }>;
+    resolveTileSourceCancelled: SendPort<string>;
+    tileSourceResolutionSucceeded: SubscribePort<Resolution>;
+    tileSourceResolutionFailed: SubscribePort<{ requestId: string; message: string }>;
+    authHttpRequested: SubscribePort<HttpRequest>;
+    authHttpCancelled: SubscribePort<string>;
+    authHttpResponded: SendPort<{ id: string; status: number; body: string }>;
+    authHttpFailed: SendPort<{ id: string; message: string }>;
+    authStorageRequested: SubscribePort<StorageRequest>;
+    authStorageResponded: SendPort<{ flowId: string; now: number; value: unknown }>;
+    authTokenFrameRequested: SubscribePort<TokenFrameRequest>;
+    authTokenFrameCancelled: SubscribePort<string>;
+    authTokenMessage: SendPort<{ flowId: string; now: number; value: unknown }>;
+    authTokenFailed: SendPort<{ flowId: string; message: string }>;
+    authPopupChanged: SendPort<{ flowId: string; status: string }>;
+    authLogoutChanged: SendPort<{ sessionId: string; status: string }>;
+    authDestroyed: SendPort<null>;
 };
 type Resolution = {
-    requestId: string; url : string; isStatic : boolean; credentialed : boolean;
+    requestId: string;
+    url: string;
+    isStatic: boolean;
+    credentialed: boolean;
     infoJson?: unknown;
 };
 type HttpRequest = {
-    id: string; url : string;
+    id: string;
+    url: string;
     bearer?: string | null;
     withCredentials?: boolean;
 };
 type StorageRequest = {
-    action: "read"|"write"|"remove"; flowId : string; key : string;
+    action: "read" | "write" | "remove";
+    flowId: string;
+    key: string;
     accessToken?: string;
     expiresAt?: number;
 };
 type TokenFrameRequest = {
-    flowId: string; url : string; messageId : string
+    flowId: string;
+    url: string;
+    messageId: string;
 };
 type Pending = {
-    sourceId: string; descriptorKey : string;
-    resolve : (source: ResolvedTileSource) => void;
-    reject : (error: Error) => void;
+    sourceId: string;
+    descriptorKey: string;
+    resolve: (source: ResolvedTileSource) => void;
+    reject: (error: Error) => void;
 };
 type Inflight = {
-    requestId: string; descriptorKey : string; promise : Promise<ResolvedTileSource>;
-    consumers : Set<number>;
+    requestId: string;
+    descriptorKey: string;
+    promise: Promise<ResolvedTileSource>;
+    consumers: Set<number>;
 };
 type SourceResolutionCache = {
-    descriptorKey: string; activeState : "anonymous" | "credentialed";
-    resolutions : Map<"anonymous"|"credentialed", ResolvedTileSource>;
+    descriptorKey: string;
+    activeState: "anonymous" | "credentialed";
+    resolutions: Map<"anonymous" | "credentialed", ResolvedTileSource>;
 };
 type Frame = {
-    element: HTMLIFrameElement; timeout : number; receive : (event: MessageEvent) => void
+    element: HTMLIFrameElement;
+    timeout: number;
+    receive: (event: MessageEvent) => void;
 };
 type Popup = {
-    window: Window; timer : number
+    window: Window;
+    timer: number;
 };
 
 const STORAGE_PREFIX = "diva:iiif-auth2:";
-const errorMessage = (error: unknown): string => error instanceof Error ? error.message : "Authorization request failed.";
+const errorMessage = (error: unknown): string =>
+    error instanceof Error ? error.message : "Authorization request failed.";
 const infoJsonSuffix = /\/info\.json(?:[?#].*)?$/;
-const descriptorKey = (source: TileSourceDescriptor): string => JSON.stringify([ source.url, source.isStatic ]);
+const descriptorKey = (source: TileSourceDescriptor): string => JSON.stringify([source.url, source.isStatic]);
 const cancelled = (): DOMException => new DOMException("The operation was cancelled.", "AbortError");
 
 const cloneResolvedTileSource = (source: ResolvedTileSource): ResolvedTileSource =>
-    typeof source === "string" ? source : {...source};
+    typeof source === "string" ? source : { ...source };
 
 const normalizeInfoJsonServiceIds = (infoJson: Record<string, unknown>): Record<string, unknown> => {
-    const normalized = {...infoJson};
+    const normalized = { ...infoJson };
     for (const key of ["id", "@id"])
     {
         const value = normalized[key];
@@ -238,8 +255,8 @@ export class AuthBrowser
         {
             tileSource = {
                 ...normalizeInfoJsonServiceIds(result.infoJson as Record<string, unknown>),
-                crossOriginPolicy : credentials,
-                ajaxWithCredentials : result.credentialed
+                crossOriginPolicy: credentials,
+                ajaxWithCredentials: result.credentialed,
             };
         }
         else if (result.isStatic)
@@ -249,7 +266,7 @@ export class AuthBrowser
         }
         else if (result.credentialed)
         {
-            tileSource = {url : result.url, crossOriginPolicy : credentials, ajaxWithCredentials : true};
+            tileSource = { url: result.url, crossOriginPolicy: credentials, ajaxWithCredentials: true };
         }
         else
         {
@@ -259,7 +276,11 @@ export class AuthBrowser
         const cached = this.resolutionCache.get(pending.sourceId);
         const resolutions = cached?.descriptorKey === pending.descriptorKey ? cached.resolutions : new Map();
         resolutions.set(state, tileSource);
-        this.resolutionCache.set(pending.sourceId, {descriptorKey : pending.descriptorKey, activeState : state, resolutions});
+        this.resolutionCache.set(pending.sourceId, {
+            descriptorKey: pending.descriptorKey,
+            activeState: state,
+            resolutions,
+        });
         pending.resolve(tileSource);
     }
 
@@ -288,10 +309,15 @@ export class AuthBrowser
             resolveShared = resolve;
             rejectShared = reject;
         });
-        const active = {requestId, descriptorKey : key, promise, consumers : new Set<number>()};
-        this.pending.set(requestId, {sourceId : source.sourceId, descriptorKey : key, resolve : resolveShared, reject : rejectShared});
+        const active = { requestId, descriptorKey: key, promise, consumers: new Set<number>() };
+        this.pending.set(requestId, {
+            sourceId: source.sourceId,
+            descriptorKey: key,
+            resolve: resolveShared,
+            reject: rejectShared,
+        });
         this.inflight.set(source.sourceId, active);
-        this.ports.resolveTileSourceRequested.send({requestId, sourceId : source.sourceId});
+        this.ports.resolveTileSourceRequested.send({ requestId, sourceId: source.sourceId });
         return active;
     }
 
@@ -318,7 +344,7 @@ export class AuthBrowser
                     this.cancelResolution(active);
                 }
             };
-            signal.addEventListener("abort", abort, {once : true});
+            signal.addEventListener("abort", abort, { once: true });
             active.promise.then(
                 (source) => {
                     if (!settled)
@@ -335,7 +361,8 @@ export class AuthBrowser
                         finish();
                         reject(error);
                     }
-                });
+                },
+            );
         });
     }
 
@@ -372,22 +399,22 @@ export class AuthBrowser
         try
         {
             const response = await fetch(request.url, {
-                mode : "cors",
-                credentials : request.withCredentials ? "include" : "omit",
-                signal : controller.signal,
-                headers : request.bearer ? {Authorization : `Bearer ${request.bearer}`} : undefined
+                mode: "cors",
+                credentials: request.withCredentials ? "include" : "omit",
+                signal: controller.signal,
+                headers: request.bearer ? { Authorization: `Bearer ${request.bearer}` } : undefined,
             });
             const body = await response.text();
             if (!this.destroyed)
             {
-                this.ports.authHttpResponded.send({id : request.id, status : response.status, body});
+                this.ports.authHttpResponded.send({ id: request.id, status: response.status, body });
             }
         }
         catch (error)
         {
             if (!controller.signal.aborted && !this.destroyed)
             {
-                this.ports.authHttpFailed.send({id : request.id, message : errorMessage(error)});
+                this.ports.authHttpFailed.send({ id: request.id, message: errorMessage(error) });
             }
         }
         finally
@@ -409,7 +436,10 @@ export class AuthBrowser
         {
             if (request.action === "write")
             {
-                sessionStorage.setItem(key, JSON.stringify({accessToken : request.accessToken, expiresAt : request.expiresAt}));
+                sessionStorage.setItem(
+                    key,
+                    JSON.stringify({ accessToken: request.accessToken, expiresAt: request.expiresAt }),
+                );
                 return;
             }
             if (request.action === "remove")
@@ -418,13 +448,17 @@ export class AuthBrowser
                 return;
             }
             const raw = sessionStorage.getItem(key);
-            this.ports.authStorageResponded.send({flowId : request.flowId, now : Date.now(), value : raw ? JSON.parse(raw) : null});
+            this.ports.authStorageResponded.send({
+                flowId: request.flowId,
+                now: Date.now(),
+                value: raw ? JSON.parse(raw) : null,
+            });
         }
         catch (_)
         {
             if (request.action === "read")
             {
-                this.ports.authStorageResponded.send({flowId : request.flowId, now : Date.now(), value : null});
+                this.ports.authStorageResponded.send({ flowId: request.flowId, now: Date.now(), value: null });
             }
         }
     }
@@ -457,27 +491,27 @@ export class AuthBrowser
         const popup = window.open(url.href, "_blank");
         if (!popup)
         {
-            this.ports.authPopupChanged.send({flowId, status : "blocked"});
+            this.ports.authPopupChanged.send({ flowId, status: "blocked" });
             return;
         }
-        this.ports.authPopupChanged.send({flowId, status : "opened"});
+        this.ports.authPopupChanged.send({ flowId, status: "opened" });
         const started = Date.now();
         const timer = window.setInterval(() => {
             if (popup.closed)
             {
                 clearInterval(timer);
                 this.popups.delete(flowId);
-                this.ports.authPopupChanged.send({flowId, status : "closed"});
+                this.ports.authPopupChanged.send({ flowId, status: "closed" });
             }
             else if (Date.now() - started > 10 * 60 * 1000)
             {
                 popup.close();
                 clearInterval(timer);
                 this.popups.delete(flowId);
-                this.ports.authTokenFailed.send({flowId, message : "Sign-in timed out."});
+                this.ports.authTokenFailed.send({ flowId, message: "Sign-in timed out." });
             }
         }, 250);
-        this.popups.set(flowId, {window : popup, timer});
+        this.popups.set(flowId, { window: popup, timer });
     }
 
     private startLogout(button: HTMLElement): void
@@ -487,10 +521,10 @@ export class AuthBrowser
         const popup = window.open(url.href, "_blank");
         if (!popup)
         {
-            this.ports.authLogoutChanged.send({sessionId, status : "blocked"});
+            this.ports.authLogoutChanged.send({ sessionId, status: "blocked" });
             return;
         }
-        this.ports.authLogoutChanged.send({sessionId, status : "opened"});
+        this.ports.authLogoutChanged.send({ sessionId, status: "opened" });
         const timer = window.setInterval(() => {
             if (!popup.closed)
             {
@@ -498,9 +532,9 @@ export class AuthBrowser
             }
             clearInterval(timer);
             this.logoutPopups.delete(sessionId);
-            this.ports.authLogoutChanged.send({sessionId, status : "closed"});
+            this.ports.authLogoutChanged.send({ sessionId, status: "closed" });
         }, 250);
-        this.logoutPopups.set(sessionId, {window : popup, timer});
+        this.logoutPopups.set(sessionId, { window: popup, timer });
     }
 
     private startFrame(request: TokenFrameRequest): void
@@ -513,7 +547,10 @@ export class AuthBrowser
         iframe.hidden = true;
         iframe.src = url.href;
         const receive = (event: MessageEvent) => {
-            if (event.source !== iframe.contentWindow || event.origin !== url.origin || !event.data || typeof event.data !== "object")
+            if (
+                event.source !== iframe.contentWindow || event.origin !== url.origin || !event.data
+                || typeof event.data !== "object"
+            )
             {
                 return;
             }
@@ -521,14 +558,14 @@ export class AuthBrowser
             {
                 return;
             }
-            this.ports.authTokenMessage.send({flowId : request.flowId, now : Date.now(), value : event.data});
+            this.ports.authTokenMessage.send({ flowId: request.flowId, now: Date.now(), value: event.data });
         };
         window.addEventListener("message", receive);
         const timeout = window.setTimeout(() => {
             this.cancelFrame(request.flowId);
-            this.ports.authTokenFailed.send({flowId : request.flowId, message : "The token service did not respond."});
+            this.ports.authTokenFailed.send({ flowId: request.flowId, message: "The token service did not respond." });
         }, 30000);
-        this.frames.set(request.flowId, {element : iframe, timeout, receive});
+        this.frames.set(request.flowId, { element: iframe, timeout, receive });
         document.body.append(iframe);
     }
 

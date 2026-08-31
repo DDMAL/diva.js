@@ -5,14 +5,14 @@
  * `single` displays one page per row. `spread` pairs pages starting at index 0.
  * `spread-shift` displays index 0 alone and pairs the remaining pages as openings.
  */
-export type DivaLayoutMode = "single"|"spread"|"spread-shift";
+export type DivaLayoutMode = "single" | "spread" | "spread-shift";
 /**
  * The direction in which pages are arranged within a spread.
  *
  * @remarks
  * This controls visual placement, not the zero-based order returned by {@link DivaPage.index}.
  */
-export type DivaViewingDirection = "ltr"|"rtl";
+export type DivaViewingDirection = "ltr" | "rtl";
 
 /**
  * A manifest-derived page lookup selector.
@@ -24,28 +24,26 @@ export type DivaViewingDirection = "ltr"|"rtl";
  * in manifest order.
  */
 export type DivaPageSelector =
-    |
-{
-    /**
-     * Select by exact IIIF Canvas identifier.
-     */
-    by: "canvasId";
-    /**
-     * Canvas identifier to match.
-     */
-    value: string;
-}
-|
-{
-    /**
-     * Select by complete, case-insensitive localized display label.
-     */
-    by: "label";
-    /**
-     * Display label to match.
-     */
-    value: string;
-};
+    | {
+        /**
+         * Select by exact IIIF Canvas identifier.
+         */
+        by: "canvasId";
+        /**
+         * Canvas identifier to match.
+         */
+        value: string;
+    }
+    | {
+        /**
+         * Select by complete, case-insensitive localized display label.
+         */
+        by: "label";
+        /**
+         * Display label to match.
+         */
+        value: string;
+    };
 
 /**
  * A page target accepted during initial viewer construction.
@@ -54,12 +52,12 @@ export type DivaPageSelector =
  * Numeric targets are zero-based, like all numeric Diva page APIs. This differs
  * from one-based page numbers an application may choose to expose in its URLs.
  */
-export type DivaPageTarget = number|DivaPageSelector;
+export type DivaPageTarget = number | DivaPageSelector;
 
 /**
  * The panel selected when the navigation sidebar is first opened.
  */
-export type DivaSidebarPanel = "thumbnails"|"contents"|"metadata";
+export type DivaSidebarPanel = "thumbnails" | "contents" | "metadata";
 
 /**
  * Controls how Diva loads static image bodies that do not use the IIIF Image API.
@@ -70,12 +68,13 @@ export type DivaSidebarPanel = "thumbnails"|"contents"|"metadata";
  * non-CORS path immediately. Images loaded without CORS can be viewed but cannot
  * use Page View pixel filters or be saved from the filter view.
  */
-export type DivaStaticImageCorsPolicy = "required"|"fallback"|"none";
+export type DivaStaticImageCorsPolicy = "required" | "fallback" | "none";
 
 /**
  * A painted image described by a IIIF canvas.
  */
-export interface DivaImage {
+export interface DivaImage
+{
     /**
      * Manifest-derived identifier for the painted image.
      */
@@ -93,7 +92,8 @@ export interface DivaImage {
 /**
  * Stable, manifest-derived metadata for one displayed canvas.
  */
-export interface DivaPage {
+export interface DivaPage
+{
     /**
      * Zero-based index in Diva's displayed page sequence.
      */
@@ -127,7 +127,8 @@ export interface DivaPage {
 /**
  * A rectangle in full-resolution image pixels, measured from the upper-left corner.
  */
-export interface DivaRegion {
+export interface DivaRegion
+{
     /**
      * Horizontal offset from the image's left edge, in full-resolution pixels.
      */
@@ -152,7 +153,8 @@ export interface DivaRegion {
  * `target` (or the IIIF Presentation 2 `on` alias) must identify a loaded
  * Canvas and use either an `xywh` fragment/selector or an inline SVG selector.
  */
-export interface DivaAnnotation {
+export interface DivaAnnotation
+{
     /**
      * Stable Web Annotation identifier. Required when setting annotations.
      */
@@ -179,7 +181,8 @@ export interface DivaAnnotation {
 /**
  * Options controlling how an image region is framed.
  */
-export interface ZoomToRegionOptions {
+export interface ZoomToRegionOptions
+{
     /**
      * Fractional padding added to every side of the region.
      *
@@ -197,7 +200,8 @@ export interface ZoomToRegionOptions {
 /**
  * A point-in-time snapshot of public viewer state.
  */
-export interface DivaState {
+export interface DivaState
+{
     /**
      * URL of the successfully loaded IIIF manifest or collection.
      */
@@ -217,7 +221,7 @@ export interface DivaState {
     /**
      * Zero-based active page index, or `null` when no page is active.
      */
-    currentPageIndex: number|null;
+    currentPageIndex: number | null;
     /**
      * Zero-based indexes in the active row or opening.
      */
@@ -233,7 +237,7 @@ export interface DivaState {
     /**
      * Current OpenSeadragon viewport zoom, or `null` before initialization.
      */
-    zoom: number|null;
+    zoom: number | null;
     /**
      * Whether a document element is currently fullscreen.
      */
@@ -247,7 +251,8 @@ export interface DivaState {
 /**
  * Typed details for events dispatched by a Diva instance.
  */
-export interface DivaEventMap {
+export interface DivaEventMap
+{
     /**
      * Fired once after the initial resource and selected initial page are ready.
      */
@@ -259,11 +264,11 @@ export interface DivaEventMap {
         /**
            URL of the newly active resource.
          */
-        resourceUrl : string;
+        resourceUrl: string;
         /**
            State snapshot taken before the event is dispatched.
          */
-        state : Readonly<DivaState>;
+        state: Readonly<DivaState>;
     }>;
     /**
      * Fired when the active page changes.
@@ -272,15 +277,15 @@ export interface DivaEventMap {
         /**
            Zero-based active page index.
          */
-        pageIndex : number;
+        pageIndex: number;
         /**
            Metadata for the active page.
          */
-        page : DivaPage;
+        page: DivaPage;
         /**
            Pages in the active row or opening.
          */
-        visiblePages : readonly DivaPage[];
+        visiblePages: readonly DivaPage[];
     }>;
     /**
      * Fired when the single-page or spread arrangement changes.
@@ -289,11 +294,11 @@ export interface DivaEventMap {
         /**
            New layout mode.
          */
-        layoutMode : DivaLayoutMode;
+        layoutMode: DivaLayoutMode;
         /**
            Direction used to place pages within an opening.
          */
-        viewingDirection : DivaViewingDirection;
+        viewingDirection: DivaViewingDirection;
     }>;
     /**
      * Fired when the OpenSeadragon viewport zoom changes.
@@ -302,7 +307,7 @@ export interface DivaEventMap {
         /**
            New viewport zoom value.
          */
-        zoom : number;
+        zoom: number;
     }>;
     /**
      * Fired when combined resource/image loading state changes.
@@ -311,7 +316,7 @@ export interface DivaEventMap {
         /**
            New loading state.
          */
-        loading : boolean;
+        loading: boolean;
     }>;
     /**
      * Fired when browser fullscreen state changes.
@@ -320,7 +325,7 @@ export interface DivaEventMap {
         /**
            New fullscreen state.
          */
-        fullscreen : boolean;
+        fullscreen: boolean;
     }>;
     /**
      * Fired for resource or image failures that clients may want to report.
@@ -329,22 +334,23 @@ export interface DivaEventMap {
         /**
            Error associated with the failed operation.
          */
-        error : Error;
+        error: Error;
         /**
            Stable operation name, such as `setResource` or `loadPage`.
          */
-        operation : string;
+        operation: string;
         /**
            Whether the Diva instance remains usable after the failure.
          */
-        recoverable : boolean;
+        recoverable: boolean;
     }>;
 }
 
 /**
  * Constructor options for a Diva viewer.
  */
-export interface DivaOptions {
+export interface DivaOptions
+{
     /**
      * URL of the initial IIIF manifest or collection.
      */
