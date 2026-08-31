@@ -1,6 +1,6 @@
 import "./viewer-element";
-import type { DivaEventMap, DivaAnnotation, DivaLayoutMode, DivaOptions, DivaPage, DivaPageSelector, DivaRegion, DivaState, ZoomToRegionOptions } from "./public-api";
-export type { DivaEventMap, DivaAnnotation, DivaImage, DivaLayoutMode, DivaOptions, DivaPage, DivaPageSelector, DivaPageTarget, DivaRegion, DivaSidebarPanel, DivaStaticImageCorsPolicy, DivaState, DivaViewingDirection, ZoomToRegionOptions } from "./public-api";
+import type { DivaAnnotation, DivaEventMap, DivaLayoutMode, DivaOptions, DivaPage, DivaPageSelector, DivaRegion, DivaState, ZoomToRegionOptions } from "./public-api";
+export type { DivaAnnotation, DivaEventMap, DivaImage, DivaLayoutMode, DivaOptions, DivaPage, DivaPageSelector, DivaPageTarget, DivaRegion, DivaSidebarPanel, DivaState, DivaStaticImageCorsPolicy, DivaViewingDirection, ZoomToRegionOptions } from "./public-api";
 /**
  * A browser viewer for IIIF Presentation manifests and collections.
  *
@@ -168,17 +168,29 @@ export declare class Diva extends EventTarget {
      * @returns Pages in zero-based display order. Auth tokens and resolved loading URLs are never included.
      */
     getPages(): readonly DivaPage[];
-    /** Add or replace one API-supplied Web Annotation on a loaded Canvas. */
+    /**
+     * Add or replace one API-supplied Web Annotation on a loaded Canvas.
+     */
     setAnnotation(annotation: DivaAnnotation): void;
-    /** Replace the API-supplied annotation set for the loaded manifest. */
+    /**
+     * Replace the API-supplied annotation set for the loaded manifest.
+     */
     setAnnotations(annotations: readonly DivaAnnotation[]): void;
-    /** Return defensive Web Annotation snapshots for one Canvas. */
+    /**
+     * Return defensive Web Annotation snapshots for one Canvas.
+     */
     getAnnotationsForCanvas(uri: string): readonly DivaAnnotation[];
-    /** Return defensive Web Annotation snapshots for the loaded manifest. */
+    /**
+     * Return defensive Web Annotation snapshots for the loaded manifest.
+     */
     getAllAnnotations(): readonly DivaAnnotation[];
-    /** Clear both manifest and API-supplied annotations for one Canvas. */
+    /**
+     * Clear both manifest and API-supplied annotations for one Canvas.
+     */
     clearAnnotationsForCanvas(uri: string): void;
-    /** Clear both manifest and API-supplied annotations for every Canvas. */
+    /**
+     * Clear both manifest and API-supplied annotations for every Canvas.
+     */
     clearAllAnnotations(): void;
     /**
      * Return the IIIF Image API extract URL for an annotation, when available.
@@ -186,7 +198,9 @@ export declare class Diva extends EventTarget {
      * @returns The extract URL, or `null` when the annotation is unknown or has no usable image region.
      */
     getImageRegionForAnnotation(annotationId: string): string | null;
-    /** Return an annotation body's textual or HTML value, if present. */
+    /**
+     * Return an annotation body's textual or HTML value, if present.
+     */
     getAnnotationBody(annotationId: string): string | undefined;
     /**
      * Find a displayed page by Canvas identifier or localized display label.

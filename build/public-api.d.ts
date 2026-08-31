@@ -141,15 +141,25 @@ export interface DivaRegion {
  * Canvas and use either an `xywh` fragment/selector or an inline SVG selector.
  */
 export interface DivaAnnotation {
-    /** Stable Web Annotation identifier. Required when setting annotations. */
+    /**
+     * Stable Web Annotation identifier. Required when setting annotations.
+     */
     id: string;
-    /** Usually `"Annotation"`; retained without interpretation. */
+    /**
+     * Usually `"Annotation"`; retained without interpretation.
+     */
     type?: string;
-    /** Web Annotation body, commonly a TextualBody or string. */
+    /**
+     * Web Annotation body, commonly a TextualBody or string.
+     */
     body?: unknown;
-    /** Web Annotation target. */
+    /**
+     * Web Annotation target.
+     */
     target?: unknown;
-    /** IIIF Presentation 2 alias for `target`. */
+    /**
+     * IIIF Presentation 2 alias for `target`.
+     */
     on?: unknown;
     [key: string]: unknown;
 }
@@ -337,9 +347,13 @@ export interface DivaOptions {
      * Preferred HTTP Accept values for IIIF resource requests.
      */
     acceptHeaders?: string[];
-    /** Enable manifest-driven IIIF annotation overlays. @defaultValue `false` */
+    /**
+     * Enable manifest-driven IIIF annotation overlays. @defaultValue `false`
+     */
     enableAnnotations?: boolean;
-    /** Optional GET endpoint used when a canvas declares no annotation resources. */
+    /**
+     * Optional GET endpoint used when a canvas declares no annotation resources.
+     */
     annotationServer?: string;
     /**
      * CORS policy for static image bodies without an IIIF Image API service.
