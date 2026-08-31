@@ -72,6 +72,7 @@ tokenParser : Parser Token
 tokenParser =
     Parser.oneOf
         [ Parser.backtrackable commentParser
+        , Parser.symbol "-->" |> Parser.map (\_ -> TextToken "")
         , Parser.backtrackable tagParser
         , textParser
         , Parser.symbol "<" |> Parser.map (\_ -> TextToken "<")
