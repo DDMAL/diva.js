@@ -39,7 +39,7 @@ define print_bundle_size
 	printf "%-18s %10s (%7s)\n" "Gzipped size:" "$$GZIPPED_SIZE bytes" "$$GZIPPED_HR";
 endef
 
-.PHONY: all build build-dev clean clean-cache docs docs-check release report-build-sizes test
+.PHONY: all build build-dev clean clean-cache docs docs-check release report-build-sizes review test
 
 all: build
 
@@ -53,6 +53,12 @@ build-dev:
 
 test:
 	yarn test
+
+test-browser:
+	yarn test:browser
+
+format:
+	yarn format
 
 docs:
 	yarn docs
@@ -117,3 +123,6 @@ release: clean build build-dev
 
 publish: clean build
 	npm publish
+
+review:
+	elm-review --elmjson elm.json --config review

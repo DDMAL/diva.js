@@ -1,16 +1,16 @@
 export type ImageRegion = {
     x: number;
-    y: number;
-    width: number;
-    height: number;
+    y : number;
+    width : number;
+    height : number;
 };
 
 export type ResolvedTileSource = string|Record<string, unknown>;
 
 export type TileSourceDescriptor = {
     sourceId: string;
-    url: string;
-    isStatic: boolean;
+    url : string;
+    isStatic : boolean;
 };
 
 export const iiifImageRegionUrl = (imageService: string|null, region: ImageRegion): string|null => {

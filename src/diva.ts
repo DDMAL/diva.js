@@ -8,38 +8,40 @@ import {Elm} from "../cache/elm-esm.js";
 import {AuthBrowser,
         type ResolvedTileSource,
         type TileSourceDescriptor} from "./auth";
-import {iiifImageRegionUrl} from "./image-utils";
 import {Filters,
         setFilterOptions} from "./filters";
-import type {DivaEventMap,
-             DivaAnnotation,
-             DivaImage,
-             DivaLayoutMode,
-             DivaOptions,
-             DivaPage,
-             DivaPageSelector,
-             DivaPageTarget,
-             DivaRegion,
-             DivaSidebarPanel,
-             DivaStaticImageCorsPolicy,
-             DivaState,
-             DivaViewingDirection,
-             ZoomToRegionOptions} from "./public-api";
+import {iiifImageRegionUrl} from "./image-utils";
+import type {
+    DivaAnnotation, DivaEventMap,
+    DivaImage,
+    DivaLayoutMode,
+    DivaOptions,
+    DivaPage,
+    DivaPageSelector,
+    DivaPageTarget,
+    DivaRegion,
+    DivaSidebarPanel,
+    DivaState,
+    DivaStaticImageCorsPolicy,
+    DivaViewingDirection,
+    ZoomToRegionOptions} from "./public-api";
 
-export type {DivaEventMap,
-             DivaAnnotation,
-             DivaImage,
-             DivaLayoutMode,
-             DivaOptions,
-             DivaPage,
-             DivaPageSelector,
-             DivaPageTarget,
-             DivaRegion,
-             DivaSidebarPanel,
-             DivaStaticImageCorsPolicy,
-             DivaState,
-             DivaViewingDirection,
-             ZoomToRegionOptions} from "./public-api";
+export type {
+    DivaAnnotation,
+    DivaEventMap,
+    DivaImage,
+    DivaLayoutMode,
+    DivaOptions,
+    DivaPage,
+    DivaPageSelector,
+    DivaPageTarget,
+    DivaRegion,
+    DivaSidebarPanel,
+    DivaState,
+    DivaStaticImageCorsPolicy,
+    DivaViewingDirection,
+    ZoomToRegionOptions
+} from "./public-api";
 
 declare const OpenSeadragon: any;
 
@@ -156,18 +158,23 @@ type FilterPreviewPayload = {
 };
 
 type TileSourceEntry = {
-    sourceId: string; url : string; isStatic : boolean; canvasId?: string
+    sourceId: string; url : string; isStatic : boolean;
+    canvasId?: string
 };
 
 type ViewerAnnotation = {
     id: string;
-    text: string;
+    text : string;
     html?: string;
-    imageService: string|null;
-    shape: {kind: "rect"|"svg"; x?: number; y?: number; width?: number; height?: number; value?: string};
+    imageService : string | null;
+    shape : {kind : "rect" | "svg"; x?: number; y?: number; width?: number; height?: number; value?: string};
 };
-type AnnotationPayload = {canvasId: string; annotations: ViewerAnnotation[]};
-type StoredAnnotation = {canvasId: string; publicAnnotation: DivaAnnotation; viewerAnnotation: ViewerAnnotation};
+type AnnotationPayload = {
+    canvasId: string; annotations : ViewerAnnotation[]
+};
+type StoredAnnotation = {
+    canvasId: string; publicAnnotation : DivaAnnotation; viewerAnnotation : ViewerAnnotation
+};
 
 type PublicPageEntry = {
     index: number;
@@ -182,12 +189,15 @@ type PublicPageEntry = {
 const copyAnnotation = (annotation: DivaAnnotation): DivaAnnotation => JSON.parse(JSON.stringify(annotation)) as DivaAnnotation;
 
 const annotationBodyText = (body: unknown): string => {
-    if (typeof body === "string") return body;
-    if (Array.isArray(body)) return body.length > 0 ? annotationBodyText(body[0]) : "";
+    if (typeof body === "string")
+        return body;
+    if (Array.isArray(body))
+        return body.length > 0 ? annotationBodyText(body[0]) : "";
     if (body && typeof body === "object")
     {
         const value = body as Record<string, unknown>;
-        return typeof value.value === "string" ? value.value : typeof value.chars === "string" ? value.chars : "";
+        return typeof value.value === "string" ? value.value : typeof value.chars === "string" ? value.chars
+                                                                                               : "";
     }
     return "";
 };
@@ -195,11 +205,15 @@ const annotationBodyText = (body: unknown): string => {
 const plainAnnotationText = (html: string): string => html.replace(/<[^>]*>/g, "");
 
 const selectorShape = (selector: unknown): ViewerAnnotation["shape"]|undefined => {
-    if (!selector || typeof selector !== "object") return undefined;
+    if (!selector || typeof selector !== "object")
+        return undefined;
     const value = selector as Record<string, unknown>;
-    const type = typeof value.type === "string" ? value.type.toLowerCase() : typeof value["@type"] === "string" ? value["@type"].toLowerCase() : "";
-    if (type.includes("svgselector") && typeof value.value === "string") return {kind : "svg", value : value.value};
-    if (typeof value.value === "string") return xywhShape(value.value);
+    const type = typeof value.type === "string" ? value.type.toLowerCase() : typeof value["@type"] === "string" ? value["@type"].toLowerCase()
+                                                                                                                : "";
+    if (type.includes("svgselector") && typeof value.value === "string")
+        return {kind : "svg", value : value.value};
+    if (typeof value.value === "string")
+        return xywhShape(value.value);
     return selectorShape(value.default) ?? selectorShape(value.item);
 };
 
@@ -256,9 +270,9 @@ type TileSourceResolver = (source: TileSourceDescriptor, signal: AbortSignal) =>
 
 type ElmPorts = {
     tileSourcesUpdated: {subscribe: (callback: (update: {resourceId: string; tileSources : TileSourceEntry[]; initialPageIndex : number}) => void) => void};
-    annotationsUpdated: {subscribe: (callback: (value: AnnotationPayload) => void) => void};
-    annotationsVisibilityUpdated: {subscribe: (callback: (visible: boolean) => void) => void};
-    viewerPageLoaded: {send: (index: number) => void};
+    annotationsUpdated : {subscribe : (callback: (value: AnnotationPayload) => void) => void};
+    annotationsVisibilityUpdated : {subscribe : (callback: (visible: boolean) => void) => void};
+    viewerPageLoaded : {send : (index: number) => void};
     pageAspectsUpdated : {subscribe : (callback: (aspects: number[]) => void) => void};
     pageLabelsUpdated : {subscribe : (callback: (labels: string[]) => void) => void};
     pagesUpdated : {subscribe : (callback: (pages: PublicPageEntry[]) => void) => void};
@@ -450,8 +464,8 @@ export class Diva extends EventTarget
         this.root = root;
         this.isDestroyed = false;
         this.staticImageCorsPolicy = flags.staticImageCorsPolicy === "fallback" || flags.staticImageCorsPolicy === "none"
-                                           ? flags.staticImageCorsPolicy
-                                           : "required";
+                                         ? flags.staticImageCorsPolicy
+                                         : "required";
         this.state = {
             resourceUrl : flags.objectData,
             ready : false,
@@ -582,10 +596,10 @@ export class Diva extends EventTarget
 
         this.getPort("annotationsUpdated").subscribe((value: AnnotationPayload) => {
             this.manifestAnnotationsByCanvas.set(value.canvasId, value.annotations.map((annotation) => ({
-                canvasId : value.canvasId,
-                publicAnnotation : publicAnnotationFromViewer(value.canvasId, annotation),
-                viewerAnnotation : {...annotation, imageService : annotation.imageService ?? null}
-            })));
+                                                                                           canvasId : value.canvasId,
+                                                                                           publicAnnotation : publicAnnotationFromViewer(value.canvasId, annotation),
+                                                                                           viewerAnnotation : {...annotation, imageService : annotation.imageService ?? null}
+                                                                                       })));
             this.applyAnnotationsForCanvas(value.canvasId);
         });
 
@@ -703,16 +717,16 @@ export class Diva extends EventTarget
         this.callViewerMethodWhenReady(
             "setAnnotations",
             canvasId,
-            this.effectiveAnnotationsForCanvas(canvasId).map((annotation) => annotation.viewerAnnotation)
-        );
+            this.effectiveAnnotationsForCanvas(canvasId).map((annotation) => annotation.viewerAnnotation));
     }
 
     private findStoredAnnotation(annotationId: string): StoredAnnotation|undefined
     {
-        for (const canvasId of new Set([...this.manifestAnnotationsByCanvas.keys(), ...this.apiAnnotationsByCanvas.keys()]))
+        for (const canvasId of new Set([...this.manifestAnnotationsByCanvas.keys(), ...this.apiAnnotationsByCanvas.keys() ]))
         {
             const annotation = this.effectiveAnnotationsForCanvas(canvasId).find((candidate) => candidate.viewerAnnotation.id === annotationId);
-            if (annotation) return annotation;
+            if (annotation)
+                return annotation;
         }
         return undefined;
     }
@@ -1054,7 +1068,9 @@ export class Diva extends EventTarget
      */
     public getPages(): readonly DivaPage[] { return this.pages.map((page) => this.copyPage(page)); }
 
-    /** Add or replace one API-supplied Web Annotation on a loaded Canvas. */
+    /**
+     * Add or replace one API-supplied Web Annotation on a loaded Canvas.
+     */
     public setAnnotation(annotation: DivaAnnotation): void
     {
         this.assertAlive();
@@ -1073,16 +1089,19 @@ export class Diva extends EventTarget
             }
         });
         const annotations = this.apiAnnotationsByCanvas.get(stored.canvasId) ?? [];
-        this.apiAnnotationsByCanvas.set(stored.canvasId, [...annotations, stored]);
+        this.apiAnnotationsByCanvas.set(stored.canvasId, [...annotations, stored ]);
         this.clearedAnnotationCanvases.delete(stored.canvasId);
         this.applyAnnotationsForCanvas(stored.canvasId);
     }
 
-    /** Replace the API-supplied annotation set for the loaded manifest. */
+    /**
+     * Replace the API-supplied annotation set for the loaded manifest.
+     */
     public setAnnotations(annotations: readonly DivaAnnotation[]): void
     {
         this.assertAlive();
-        if (!Array.isArray(annotations)) throw new TypeError("Annotations must be an array.");
+        if (!Array.isArray(annotations))
+            throw new TypeError("Annotations must be an array.");
         const next = new Map<string, StoredAnnotation[]>();
         annotations.forEach((annotation) => {
             const stored = normalizePublicAnnotation(annotation);
@@ -1092,9 +1111,9 @@ export class Diva extends EventTarget
             }
             stored.viewerAnnotation.imageService = this.annotationImageServicesByCanvas.get(stored.canvasId) ?? null;
             const canvasAnnotations = next.get(stored.canvasId) ?? [];
-            next.set(stored.canvasId, [...canvasAnnotations.filter((candidate) => candidate.viewerAnnotation.id !== stored.viewerAnnotation.id), stored]);
+            next.set(stored.canvasId, [...canvasAnnotations.filter((candidate) => candidate.viewerAnnotation.id !== stored.viewerAnnotation.id), stored ]);
         });
-        const affected = new Set([...this.apiAnnotationsByCanvas.keys(), ...next.keys()]);
+        const affected = new Set([...this.apiAnnotationsByCanvas.keys(), ...next.keys() ]);
         this.apiAnnotationsByCanvas.clear();
         next.forEach((canvasAnnotations, canvasId) => {
             this.apiAnnotationsByCanvas.set(canvasId, canvasAnnotations);
@@ -1103,21 +1122,27 @@ export class Diva extends EventTarget
         affected.forEach((canvasId) => this.applyAnnotationsForCanvas(canvasId));
     }
 
-    /** Return defensive Web Annotation snapshots for one Canvas. */
+    /**
+     * Return defensive Web Annotation snapshots for one Canvas.
+     */
     public getAnnotationsForCanvas(uri: string): readonly DivaAnnotation[]
     {
         this.assertAlive();
         return this.effectiveAnnotationsForCanvas(uri).map((annotation) => copyAnnotation(annotation.publicAnnotation));
     }
 
-    /** Return defensive Web Annotation snapshots for the loaded manifest. */
+    /**
+     * Return defensive Web Annotation snapshots for the loaded manifest.
+     */
     public getAllAnnotations(): readonly DivaAnnotation[]
     {
         this.assertAlive();
         return this.pages.flatMap((page) => this.getAnnotationsForCanvas(page.canvasId));
     }
 
-    /** Clear both manifest and API-supplied annotations for one Canvas. */
+    /**
+     * Clear both manifest and API-supplied annotations for one Canvas.
+     */
     public clearAnnotationsForCanvas(uri: string): void
     {
         this.assertAlive();
@@ -1126,7 +1151,9 @@ export class Diva extends EventTarget
         this.applyAnnotationsForCanvas(uri);
     }
 
-    /** Clear both manifest and API-supplied annotations for every Canvas. */
+    /**
+     * Clear both manifest and API-supplied annotations for every Canvas.
+     */
     public clearAllAnnotations(): void
     {
         this.assertAlive();
@@ -1145,22 +1172,28 @@ export class Diva extends EventTarget
     public getImageRegionForAnnotation(annotationId: string): string|null
     {
         this.assertAlive();
-        if (typeof annotationId !== "string") throw new TypeError("Annotation id must be a string.");
+        if (typeof annotationId !== "string")
+            throw new TypeError("Annotation id must be a string.");
         const annotation = this.findStoredAnnotation(annotationId);
         const renderedUrl = this.mainViewer?.getImageRegionForAnnotation?.(annotationId);
-        if (typeof renderedUrl === "string") return renderedUrl;
-        if (!annotation || annotation.viewerAnnotation.shape.kind === "svg") return null;
+        if (typeof renderedUrl === "string")
+            return renderedUrl;
+        if (!annotation || annotation.viewerAnnotation.shape.kind === "svg")
+            return null;
         const {x, y, width, height} = annotation.viewerAnnotation.shape;
         return typeof x === "number" && typeof y === "number" && typeof width === "number" && typeof height === "number"
                    ? iiifImageRegionUrl(annotation.viewerAnnotation.imageService, {x, y, width, height})
                    : null;
     }
 
-    /** Return an annotation body's textual or HTML value, if present. */
+    /**
+     * Return an annotation body's textual or HTML value, if present.
+     */
     public getAnnotationBody(annotationId: string): string|undefined
     {
         this.assertAlive();
-        if (typeof annotationId !== "string") throw new TypeError("Annotation id must be a string.");
+        if (typeof annotationId !== "string")
+            throw new TypeError("Annotation id must be a string.");
         const annotation = this.findStoredAnnotation(annotationId);
         return annotation ? annotationBodyText(annotation.publicAnnotation.body ?? annotation.publicAnnotation.resource) : undefined;
     }

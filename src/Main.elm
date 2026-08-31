@@ -24,6 +24,12 @@ import Url.Builder
 import View
 
 
+port annotationsUpdated : { canvasId : String, annotations : List Encode.Value } -> Cmd msg
+
+
+port annotationsVisibilityUpdated : Bool -> Cmd msg
+
+
 port authDestroyed : (() -> msg) -> Sub msg
 
 
@@ -153,6 +159,9 @@ port tileSourcesUpdated : { resourceId : String, tileSources : List { sourceId :
 port viewerLoadingChanged : (Bool -> msg) -> Sub msg
 
 
+port viewerPageLoaded : (Int -> msg) -> Sub msg
+
+
 port zoomBy : Float -> Cmd msg
 
 
@@ -160,15 +169,6 @@ port zoomChanged : (Float -> msg) -> Sub msg
 
 
 port zoomLevelUpdated : Float -> Cmd msg
-
-
-port annotationsUpdated : { canvasId : String, annotations : List Encode.Value } -> Cmd msg
-
-
-port annotationsVisibilityUpdated : Bool -> Cmd msg
-
-
-port viewerPageLoaded : (Int -> msg) -> Sub msg
 
 
 type alias Flags =
@@ -196,6 +196,45 @@ main =
         }
 
 
+annotationImageServiceForCanvas : String -> Model -> Maybe String
+annotationImageServiceForCanvas canvasId model =
+    model.pages
+        |> List.filter (\page -> page.canvasId == canvasId)
+        |> List.head
+        |> Maybe.andThen primaryImage
+        |> Maybe.andThen
+            (\image ->
+                if image.isStatic || Auth.requiresAuthorization image.auth then
+                    Nothing
+
+                else
+                    Just image.tileSource
+            )
+
+
+annotationServerUrl : String -> String -> String -> String
+annotationServerUrl server canvasId version =
+    let
+        query =
+            Url.Builder.toQuery
+                [ Url.Builder.string "canvasURI" canvasId
+                , Url.Builder.string "iiifVersion" version
+                ]
+    in
+    if String.contains "?" server then
+        server ++ "&" ++ String.dropLeft 1 query
+
+    else
+        server ++ query
+
+
+annotationSourcesForManifest : IIIFManifest -> Dict String (List AnnotationSource)
+annotationSourcesForManifest manifest =
+    toCanvases manifest
+        |> List.map (\canvas -> ( canvas.id, canvas.annotationSources ))
+        |> Dict.fromList
+
+
 buildRangeIndexMap : Dict String Int -> List Range -> Dict String (Maybe Int)
 buildRangeIndexMap canvasIndex ranges =
     List.foldl
@@ -216,118 +255,6 @@ clearViewer resourceId =
         , filterPreviewUpdated Nothing
         , annotationsUpdated { canvasId = "", annotations = [] }
         ]
-
-
-annotationSourcesForManifest : IIIFManifest -> Dict String (List AnnotationSource)
-annotationSourcesForManifest manifest =
-    toCanvases manifest
-        |> List.map (\canvas -> ( canvas.id, canvas.annotationSources ))
-        |> Dict.fromList
-
-
-annotationServerUrl : String -> String -> String -> String
-annotationServerUrl server canvasId version =
-    let
-        query =
-            Url.Builder.toQuery
-                [ Url.Builder.string "canvasURI" canvasId
-                , Url.Builder.string "iiifVersion" version
-                ]
-    in
-    if String.contains "?" server then
-        server ++ "&" ++ String.dropLeft 1 query
-
-    else
-        server ++ query
-
-
-requestAnnotations : String -> Model -> ( Model, Cmd Msg )
-requestAnnotations canvasId model =
-    if not model.enableAnnotations || Set.member canvasId model.annotationLoading || Dict.member canvasId model.annotationsByCanvas then
-        ( model, Cmd.none )
-
-    else
-        let
-            sources =
-                Dict.get canvasId model.annotationSources
-                    |> Maybe.withDefault []
-
-            request url =
-                Http.get
-                    { url = url
-                    , expect = Http.expectJson (ServerRespondedWithAnnotations canvasId) IIIFAnnotation.decodePage
-                    }
-
-            inlineAnnotations =
-                sources
-                    |> List.filterMap
-                        (\source ->
-                            case source of
-                                InlineAnnotationPage value ->
-                                    Decode.decodeValue IIIFAnnotation.decodePage value |> Result.toMaybe
-
-                                AnnotationSourceUrl _ ->
-                                    Nothing
-                        )
-                    |> List.concat
-
-            urls =
-                sources
-                    |> List.filterMap
-                        (\source ->
-                            case source of
-                                AnnotationSourceUrl url ->
-                                    Just url
-
-                                InlineAnnotationPage _ ->
-                                    Nothing
-                        )
-
-            fallback =
-                case ( List.isEmpty sources, model.annotationServer, currentManifest model ) of
-                    ( True, Just server, Just (IIIFManifest version _) ) ->
-                        [ annotationServerUrl server
-                            canvasId
-                            (if version == IIIF.Version.IIIFV2 then
-                                "2"
-
-                             else
-                                "3"
-                            )
-                        ]
-
-                    _ ->
-                        []
-
-            nextModel =
-                if List.isEmpty inlineAnnotations then
-                    model
-
-                else
-                    { model | annotationsByCanvas = Dict.insert canvasId inlineAnnotations model.annotationsByCanvas }
-        in
-        ( { nextModel | annotationLoading = Set.insert canvasId nextModel.annotationLoading }
-        , Cmd.batch
-            (List.map request (urls ++ fallback)
-                ++ [ annotationsUpdated { canvasId = canvasId, annotations = List.map (Annotation.encode (annotationImageServiceForCanvas canvasId model)) inlineAnnotations } ]
-            )
-        )
-
-
-annotationImageServiceForCanvas : String -> Model -> Maybe String
-annotationImageServiceForCanvas canvasId model =
-    model.pages
-        |> List.filter (\page -> page.canvasId == canvasId)
-        |> List.head
-        |> Maybe.andThen primaryImage
-        |> Maybe.andThen
-            (\image ->
-                if image.isStatic || Auth.requiresAuthorization image.auth then
-                    Nothing
-
-                else
-                    Just image.tileSource
-            )
 
 
 findCollectionById : String -> Collection -> Maybe Collection
@@ -881,6 +808,79 @@ replaceCollectionById collectionId replacement collection =
         []
 
 
+requestAnnotations : String -> Model -> ( Model, Cmd Msg )
+requestAnnotations canvasId model =
+    if not model.enableAnnotations || Set.member canvasId model.annotationLoading || Dict.member canvasId model.annotationsByCanvas then
+        ( model, Cmd.none )
+
+    else
+        let
+            sources =
+                Dict.get canvasId model.annotationSources
+                    |> Maybe.withDefault []
+
+            request url =
+                Http.get
+                    { url = url
+                    , expect = Http.expectJson (ServerRespondedWithAnnotations canvasId) IIIFAnnotation.decodePage
+                    }
+
+            inlineAnnotations =
+                sources
+                    |> List.filterMap
+                        (\source ->
+                            case source of
+                                AnnotationSourceUrl _ ->
+                                    Nothing
+
+                                InlineAnnotationPage value ->
+                                    Decode.decodeValue IIIFAnnotation.decodePage value |> Result.toMaybe
+                        )
+                    |> List.concat
+
+            urls =
+                sources
+                    |> List.filterMap
+                        (\source ->
+                            case source of
+                                AnnotationSourceUrl url ->
+                                    Just url
+
+                                InlineAnnotationPage _ ->
+                                    Nothing
+                        )
+
+            fallback =
+                case ( List.isEmpty sources, model.annotationServer, currentManifest model ) of
+                    ( True, Just server, Just (IIIFManifest version _) ) ->
+                        [ annotationServerUrl server
+                            canvasId
+                            (if version == IIIF.Version.IIIFV2 then
+                                "2"
+
+                             else
+                                "3"
+                            )
+                        ]
+
+                    _ ->
+                        []
+
+            nextModel =
+                if List.isEmpty inlineAnnotations then
+                    model
+
+                else
+                    { model | annotationsByCanvas = Dict.insert canvasId inlineAnnotations model.annotationsByCanvas }
+        in
+        ( { nextModel | annotationLoading = Set.insert canvasId nextModel.annotationLoading }
+        , Cmd.batch
+            (List.map request (urls ++ fallback)
+                ++ [ annotationsUpdated { canvasId = canvasId, annotations = List.map (Annotation.encode (annotationImageServiceForCanvas canvasId model)) inlineAnnotations } ]
+            )
+        )
+
+
 resolveInitialPageIndex : Maybe Decode.Value -> List Model.Page -> Int
 resolveInitialPageIndex encoded pages =
     let
@@ -1182,39 +1182,6 @@ update msg model =
 
         ClientNotifiedPageChangedInstant index ->
             handlePageChanged True index model
-
-        ViewerLoadedPage index ->
-            case getPageAt index model.pages of
-                Just page ->
-                    requestAnnotations page.canvasId model
-
-                Nothing ->
-                    ( model, Cmd.none )
-
-        ServerRespondedWithAnnotations canvasId result ->
-            let
-                nextModel =
-                    { model | annotationLoading = Set.remove canvasId model.annotationLoading }
-            in
-            case result of
-                Ok annotations ->
-                    let
-                        merged =
-                            Dict.get canvasId nextModel.annotationsByCanvas
-                                |> Maybe.withDefault []
-                                |> (++) annotations
-                    in
-                    ( { nextModel | annotationsByCanvas = Dict.insert canvasId merged nextModel.annotationsByCanvas }
-                    , annotationsUpdated { canvasId = canvasId, annotations = List.map (Annotation.encode (annotationImageServiceForCanvas canvasId nextModel)) merged }
-                    )
-
-                Err _ ->
-                    ( nextModel, Cmd.none )
-
-        UserToggledAnnotations ->
-            ( { model | annotationsVisible = not model.annotationsVisible }
-            , annotationsVisibilityUpdated (not model.annotationsVisible)
-            )
 
         ClientNotifiedScrollThumbs ->
             ( { model | thumbsInstantScroll = False }, Cmd.none )
@@ -1916,6 +1883,39 @@ update msg model =
                         }
             in
             ( nextModel, Cmd.none )
+
+        ViewerLoadedPage index ->
+            case getPageAt index model.pages of
+                Just page ->
+                    requestAnnotations page.canvasId model
+
+                Nothing ->
+                    ( model, Cmd.none )
+
+        ServerRespondedWithAnnotations canvasId result ->
+            let
+                nextModel =
+                    { model | annotationLoading = Set.remove canvasId model.annotationLoading }
+            in
+            case result of
+                Ok annotations ->
+                    let
+                        merged =
+                            Dict.get canvasId nextModel.annotationsByCanvas
+                                |> Maybe.withDefault []
+                                |> (\existing -> annotations ++ existing)
+                    in
+                    ( { nextModel | annotationsByCanvas = Dict.insert canvasId merged nextModel.annotationsByCanvas }
+                    , annotationsUpdated { canvasId = canvasId, annotations = List.map (Annotation.encode (annotationImageServiceForCanvas canvasId nextModel)) merged }
+                    )
+
+                Err _ ->
+                    ( nextModel, Cmd.none )
+
+        UserToggledAnnotations ->
+            ( { model | annotationsVisible = not model.annotationsVisible }
+            , annotationsVisibilityUpdated (not model.annotationsVisible)
+            )
 
 
 updateZoom : Model -> Float -> ( Model, Cmd Msg )

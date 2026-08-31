@@ -28,6 +28,8 @@ Install JavaScript dependencies with `yarn install`. The project uses Elm
 0.19.1, TypeScript, esbuild, SWC, and locally installed OpenSeadragon 5.0.1
 and 6.0.2.
 
+There is a Makefile in this project that handles most building, testing, and packaging tasks.
+
 Build optimized distributable bundles, declarations, and report their sizes:
 
 ```sh
@@ -65,10 +67,19 @@ Validate generated API documentation without writing it:
 make docs-check
 ```
 
+Run the configured Elm review rules against the application source:
+
+```sh
+make review
+```
+
+The review configuration lives in `review/`; use `elm-review --fix` only after
+reviewing the proposed changes, since it can rewrite Elm source files.
+
 Run browser regressions against both supported OpenSeadragon versions:
 
 ```sh
-yarn test:browser
+make test-browser
 ```
 
 The Playwright configuration starts a local HTTP server on port 4173. If a

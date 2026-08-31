@@ -221,6 +221,16 @@ registerSources sources model =
     }
 
 
+requiresAuthorization : SourceAuth -> Bool
+requiresAuthorization sourceAuth =
+    case sourceAuth of
+        Discovered discovery ->
+            not (List.isEmpty discovery.probes)
+
+        _ ->
+            False
+
+
 sourceIsAuthorized : String -> Model -> Bool
 sourceIsAuthorized sourceId model =
     Dict.get sourceId model.sources
@@ -1044,16 +1054,6 @@ releaseInteractive flowId model =
 
     else
         withoutPrompt
-
-
-requiresAuthorization : SourceAuth -> Bool
-requiresAuthorization sourceAuth =
-    case sourceAuth of
-        Discovered discovery ->
-            not (List.isEmpty discovery.probes)
-
-        _ ->
-            False
 
 
 resolve : String -> String -> Model -> ( Model, List Effect )

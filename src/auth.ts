@@ -1,10 +1,11 @@
-import type {DivaStaticImageCorsPolicy} from "./public-api";
 import {nonCorsStaticTileSource,
-        staticImageTileSource,
         type ResolvedTileSource,
+        staticImageTileSource,
         type TileSourceDescriptor} from "./image-utils";
+import type {DivaStaticImageCorsPolicy} from "./public-api";
 
-export type {ResolvedTileSource, TileSourceDescriptor} from "./image-utils";
+export type {ResolvedTileSource,
+             TileSourceDescriptor} from "./image-utils";
 
 type SendPort<T> = {
     send: (value: T) => void

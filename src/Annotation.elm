@@ -38,9 +38,6 @@ stripTags value =
 stripTagsHelp : Bool -> String -> String -> String
 stripTagsHelp inTag remaining result =
     case String.uncons remaining of
-        Nothing ->
-            result
-
         Just ( character, rest ) ->
             if character == '<' then
                 stripTagsHelp True rest result
@@ -53,3 +50,6 @@ stripTagsHelp inTag remaining result =
 
             else
                 stripTagsHelp False rest (result ++ String.fromChar character)
+
+        Nothing ->
+            result

@@ -2,8 +2,8 @@ import type * as OpenSeadragonType from "openseadragon";
 
 import {iiifImageRegionUrl,
         nonCorsStaticTileSource,
-        staticImageTileSource,
         type ResolvedTileSource,
+        staticImageTileSource,
         type TileSourceDescriptor} from "./image-utils";
 import type {DivaRegion, DivaStaticImageCorsPolicy, ZoomToRegionOptions} from "./public-api";
 
@@ -11,10 +11,10 @@ declare const OpenSeadragon: typeof OpenSeadragonType;
 
 type ViewerAnnotation = {
     id: string;
-    text: string;
+    text : string;
     html?: string;
-    imageService: string|null;
-    shape: {kind: "rect"|"svg"; x?: number; y?: number; width?: number; height?: number; value?: string}
+    imageService : string | null;
+    shape : {kind : "rect" | "svg"; x?: number; y?: number; width?: number; height?: number; value?: string}
 };
 type TileSourceResolver = (source: TileSourceDescriptor, signal: AbortSignal) => Promise<ResolvedTileSource>;
 
@@ -225,7 +225,8 @@ class OsdViewer extends HTMLElement
                 this.closeAnnotationPanel();
             });
             this.container.addEventListener("keydown", (event) => {
-                if (event.key === "Escape") this.closeAnnotationPanel();
+                if (event.key === "Escape")
+                    this.closeAnnotationPanel();
             });
             this.appendChild(this.container);
         }
@@ -302,7 +303,7 @@ class OsdViewer extends HTMLElement
                 defaultZoomLevel : 0,
                 sequenceMode : false,
                 zoomPerScroll : 1,
-                ...(this.staticImageCorsPolicy === "required" ? {} : {drawer : ["canvas", "html"]}),
+                ...(this.staticImageCorsPolicy === "required" ? {} : {drawer : [ "canvas", "html" ]}),
                 crossOriginPolicy : "Anonymous",
                 loadTilesWithAjax : true,
                 ajaxWithCredentials : false,
@@ -399,11 +400,12 @@ class OsdViewer extends HTMLElement
         for (const [canvasId, annotations] of this.annotationData)
         {
             const annotation = annotations.find((candidate) => candidate.id === annotationId);
-            if (!annotation) continue;
+            if (!annotation)
+                continue;
             const index = this.tileSources.findIndex((source) => (source as any).canvasId === canvasId);
             const group = index >= 0
-                            ? this.annotationOverlayElements.get(index)?.querySelector<SVGGElement>(`g[data-annotation-id="${CSS.escape(annotationId)}"]`) ?? undefined
-                            : undefined;
+                              ? this.annotationOverlayElements.get(index)?.querySelector<SVGGElement>(`g[data-annotation-id="${CSS.escape(annotationId)}"]`) ?? undefined
+                              : undefined;
             return this.annotationExtractUrl(annotation, group);
         }
         return null;
@@ -1141,11 +1143,12 @@ class OsdViewer extends HTMLElement
     {
         const parsed = new DOMParser().parseFromString(markup, "image/svg+xml");
         const source = parsed.documentElement;
-        const allowed = new Set(["svg", "g", "path", "rect", "circle", "ellipse", "polygon", "polyline", "line"]);
-        const attributes = new Set(["d", "points", "x", "y", "x1", "x2", "y1", "y2", "cx", "cy", "rx", "ry", "r", "width", "height", "fill", "fill-opacity", "fill-rule", "stroke", "stroke-width", "stroke-opacity", "stroke-linecap", "stroke-linejoin", "stroke-dasharray", "transform", "viewBox"]);
+        const allowed = new Set([ "svg", "g", "path", "rect", "circle", "ellipse", "polygon", "polyline", "line" ]);
+        const attributes = new Set([ "d", "points", "x", "y", "x1", "x2", "y1", "y2", "cx", "cy", "rx", "ry", "r", "width", "height", "fill", "fill-opacity", "fill-rule", "stroke", "stroke-width", "stroke-opacity", "stroke-linecap", "stroke-linejoin", "stroke-dasharray", "transform", "viewBox" ]);
         const copy = (node: Element, parent: Element): void => {
             const name = node.localName.toLowerCase();
-            if (!allowed.has(name)) return;
+            if (!allowed.has(name))
+                return;
             const child = document.createElementNS("http://www.w3.org/2000/svg", name);
             if (name !== "svg" && name !== "g")
             {
@@ -1155,14 +1158,21 @@ class OsdViewer extends HTMLElement
             parent.appendChild(child);
             Array.from(node.children).forEach((next) => copy(next, child));
         };
-        if (source.localName.toLowerCase() === "svg") Array.from(source.children).forEach((child) => copy(child, target));
+        if (source.localName.toLowerCase() === "svg")
+            Array.from(source.children).forEach((child) => copy(child, target));
     }
 
     private clearAnnotationOverlays(): void { this.clearOverlays(this.annotationOverlayElements); }
 
     private removeOverlay(element: HTMLElement): void
     {
-        try { this.viewer?.removeOverlay(element); } catch (_error) { /* already removed */ }
+        try
+        {
+            this.viewer?.removeOverlay(element);
+        }
+        catch (_error)
+        { /* already removed */
+        }
     }
 
     private clearOverlays<T extends HTMLElement>(overlays: Map<number, T>): void
@@ -1174,7 +1184,7 @@ class OsdViewer extends HTMLElement
         overlays.clear();
     }
 
-    private handleAnnotationCanvasClick(event: {position?: {x: number; y: number}; quick?: boolean}): void
+    private handleAnnotationCanvasClick(event: {position?: {x: number; y : number}; quick?: boolean}): void
     {
         if (!this.annotationsVisible || !event.quick || !event.position || !this.container)
         {
@@ -1317,13 +1327,13 @@ class OsdViewer extends HTMLElement
         {
             return null;
         }
-        let region: {x: number; y: number; width: number; height: number}|null = null;
+        let region: {x: number; y : number; width : number; height : number}|null = null;
         if (annotation.shape.kind === "rect")
         {
             const {x, y, width, height} = annotation.shape;
-            if ([x, y, width, height].every((value) => typeof value === "number" && Number.isFinite(value)) && width! > 0 && height! > 0)
+            if ([ x, y, width, height ].every((value) => typeof value === "number" && Number.isFinite(value)) && width! > 0 && height! > 0)
             {
-                region = {x: x!, y: y!, width: width!, height: height!};
+                region = {x : x!, y : y!, width : width!, height : height!};
             }
         }
         else if (annotation.shape.kind === "svg" && annotationGroup)
@@ -1338,10 +1348,10 @@ class OsdViewer extends HTMLElement
                 if (shapeBounds.width > 0 && shapeBounds.height > 0 && svgBounds.width > 0 && svgBounds.height > 0 && viewBox.width > 0 && viewBox.height > 0)
                 {
                     region = {
-                        x: viewBox.x + ((shapeBounds.left - svgBounds.left) / svgBounds.width) * viewBox.width,
-                        y: viewBox.y + ((shapeBounds.top - svgBounds.top) / svgBounds.height) * viewBox.height,
-                        width: (shapeBounds.width / svgBounds.width) * viewBox.width,
-                        height: (shapeBounds.height / svgBounds.height) * viewBox.height
+                        x : viewBox.x + ((shapeBounds.left - svgBounds.left) / svgBounds.width) * viewBox.width,
+                        y : viewBox.y + ((shapeBounds.top - svgBounds.top) / svgBounds.height) * viewBox.height,
+                        width : (shapeBounds.width / svgBounds.width) * viewBox.width,
+                        height : (shapeBounds.height / svgBounds.height) * viewBox.height
                     };
                 }
             }
@@ -1361,7 +1371,7 @@ class OsdViewer extends HTMLElement
         return iiifImageRegionUrl(annotation.imageService, region);
     }
 
-    private svgBoundingRegion(markup: string): {x: number; y: number; width: number; height: number}|null
+    private svgBoundingRegion(markup: string): {x: number; y : number; width : number; height : number}|null
     {
         if (!document.body)
         {
@@ -1402,7 +1412,7 @@ class OsdViewer extends HTMLElement
     {
         const template = document.createElement("template");
         template.innerHTML = markup;
-        const allowedTags = new Set(["div", "p", "br", "em", "i", "strong", "b", "a", "ul", "ol", "li", "dl", "dt", "dd", "span", "img"]);
+        const allowedTags = new Set([ "div", "p", "br", "em", "i", "strong", "b", "a", "ul", "ol", "li", "dl", "dt", "dd", "span", "img" ]);
         const safeUrl = (value: string): boolean => {
             const normalized = value.trim().toLowerCase();
             return /^(https?:|mailto:|tel:|\/|\.\/|\.\.\/|#|\?)/.test(normalized) || !normalized.includes(":");
@@ -1413,7 +1423,8 @@ class OsdViewer extends HTMLElement
                 parent.appendChild(document.createTextNode(node.textContent || ""));
                 return;
             }
-            if (!(node instanceof Element)) return;
+            if (!(node instanceof Element))
+                return;
             const tag = node.localName.toLowerCase();
             if (!allowedTags.has(tag))
             {
@@ -1424,16 +1435,19 @@ class OsdViewer extends HTMLElement
             if (tag === "a")
             {
                 const href = node.getAttribute("href");
-                if (href && safeUrl(href)) element.setAttribute("href", href);
+                if (href && safeUrl(href))
+                    element.setAttribute("href", href);
                 element.setAttribute("target", "_blank");
                 element.setAttribute("rel", "noopener noreferrer");
             }
             if (tag === "img")
             {
                 const src = node.getAttribute("src");
-                if (src && safeUrl(src)) element.setAttribute("src", src);
+                if (src && safeUrl(src))
+                    element.setAttribute("src", src);
                 const alt = node.getAttribute("alt");
-                if (alt) element.setAttribute("alt", alt);
+                if (alt)
+                    element.setAttribute("alt", alt);
             }
             parent.appendChild(element);
             Array.from(node.childNodes).forEach((child) => copy(child, element));

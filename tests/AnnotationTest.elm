@@ -23,11 +23,11 @@ tests =
                 case Decode.decodeString decodePage svgAnnotationList of
                     Ok [ annotation ] ->
                         case annotation.target.selector of
-                            Svg value ->
-                                Expect.equal True (String.contains "path" value)
-
                             Rectangle _ _ _ _ ->
                                 Expect.fail "Expected an SVG annotation"
+
+                            Svg value ->
+                                Expect.equal True (String.contains "path" value)
 
                     _ ->
                         Expect.fail "Expected one SVG annotation"
@@ -52,14 +52,14 @@ tests =
         ]
 
 
-v2AnnotationList : String
-v2AnnotationList =
-    """{"resources":[{"@id":"a1","on":"https://example.test/canvas#xywh=10,20,30,40","resource":{"chars":"<p>hello</p>"}}]}"""
-
-
 svgAnnotationList : String
 svgAnnotationList =
     """{"resources":[{"@id":"a2","on":{"selector":{"@type":"oa:Choice","item":{"@type":"oa:SvgSelector","value":"<svg><path d='M0 0 L20 20'/></svg>"}}}}]}"""
+
+
+v2AnnotationList : String
+v2AnnotationList =
+    """{"resources":[{"@id":"a1","on":"https://example.test/canvas#xywh=10,20,30,40","resource":{"chars":"<p>hello</p>"}}]}"""
 
 
 v3AnnotationPage : String
