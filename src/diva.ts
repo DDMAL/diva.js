@@ -8,9 +8,11 @@ import {Elm} from "../cache/elm-esm.js";
 import {AuthBrowser,
         type ResolvedTileSource,
         type TileSourceDescriptor} from "./auth";
+import {iiifImageRegionUrl} from "./image-utils";
 import {Filters,
         setFilterOptions} from "./filters";
 import type {DivaEventMap,
+             DivaAnnotation,
              DivaImage,
              DivaLayoutMode,
              DivaOptions,
@@ -25,6 +27,7 @@ import type {DivaEventMap,
              ZoomToRegionOptions} from "./public-api";
 
 export type {DivaEventMap,
+             DivaAnnotation,
              DivaImage,
              DivaLayoutMode,
              DivaOptions,
@@ -153,8 +156,18 @@ type FilterPreviewPayload = {
 };
 
 type TileSourceEntry = {
-    sourceId: string; url : string; isStatic : boolean
+    sourceId: string; url : string; isStatic : boolean; canvasId?: string
 };
+
+type ViewerAnnotation = {
+    id: string;
+    text: string;
+    html?: string;
+    imageService: string|null;
+    shape: {kind: "rect"|"svg"; x?: number; y?: number; width?: number; height?: number; value?: string};
+};
+type AnnotationPayload = {canvasId: string; annotations: ViewerAnnotation[]};
+type StoredAnnotation = {canvasId: string; publicAnnotation: DivaAnnotation; viewerAnnotation: ViewerAnnotation};
 
 type PublicPageEntry = {
     index: number;
@@ -166,10 +179,86 @@ type PublicPageEntry = {
     images : DivaImage[];
 };
 
+const copyAnnotation = (annotation: DivaAnnotation): DivaAnnotation => JSON.parse(JSON.stringify(annotation)) as DivaAnnotation;
+
+const annotationBodyText = (body: unknown): string => {
+    if (typeof body === "string") return body;
+    if (Array.isArray(body)) return body.length > 0 ? annotationBodyText(body[0]) : "";
+    if (body && typeof body === "object")
+    {
+        const value = body as Record<string, unknown>;
+        return typeof value.value === "string" ? value.value : typeof value.chars === "string" ? value.chars : "";
+    }
+    return "";
+};
+
+const plainAnnotationText = (html: string): string => html.replace(/<[^>]*>/g, "");
+
+const selectorShape = (selector: unknown): ViewerAnnotation["shape"]|undefined => {
+    if (!selector || typeof selector !== "object") return undefined;
+    const value = selector as Record<string, unknown>;
+    const type = typeof value.type === "string" ? value.type.toLowerCase() : typeof value["@type"] === "string" ? value["@type"].toLowerCase() : "";
+    if (type.includes("svgselector") && typeof value.value === "string") return {kind : "svg", value : value.value};
+    if (typeof value.value === "string") return xywhShape(value.value);
+    return selectorShape(value.default) ?? selectorShape(value.item);
+};
+
+const xywhShape = (value: string): ViewerAnnotation["shape"]|undefined => {
+    const coordinates = value.startsWith("xywh=") ? value.slice(5) : value;
+    const parts = coordinates.split(",").map(Number);
+    return parts.length === 4 && parts.every(Number.isFinite) && parts[2] > 0 && parts[3] > 0
+               ? {kind : "rect", x : parts[0], y : parts[1], width : parts[2], height : parts[3]}
+               : undefined;
+};
+
+const normalizePublicAnnotation = (annotation: DivaAnnotation, imageService: string|null = null): StoredAnnotation => {
+    if (!annotation || typeof annotation !== "object" || typeof annotation.id !== "string" || annotation.id.length === 0)
+    {
+        throw new TypeError("An annotation must be an object with a non-empty string id.");
+    }
+    const target = annotation.target ?? annotation.on;
+    let canvasId: string|undefined;
+    let shape: ViewerAnnotation["shape"]|undefined;
+    if (typeof target === "string")
+    {
+        const match = target.match(/^(.*)#xywh=(.+)$/);
+        canvasId = match?.[1];
+        shape = match ? xywhShape(match[2]) : undefined;
+    }
+    else if (target && typeof target === "object")
+    {
+        const targetObject = target as Record<string, unknown>;
+        canvasId = typeof targetObject.source === "string" ? targetObject.source : undefined;
+        shape = selectorShape(targetObject.selector);
+    }
+    if (!canvasId || !shape)
+    {
+        throw new TypeError("An annotation target must identify a Canvas and use a supported xywh or SVG selector.");
+    }
+    const body = annotationBodyText(annotation.body ?? (annotation as Record<string, unknown>).resource);
+    return {
+        canvasId,
+        publicAnnotation : copyAnnotation(annotation),
+        viewerAnnotation : {id : annotation.id, text : plainAnnotationText(body), html : body, imageService, shape}
+    };
+};
+
+const publicAnnotationFromViewer = (canvasId: string, annotation: ViewerAnnotation): DivaAnnotation => ({
+    id : annotation.id,
+    type : "Annotation",
+    body : {type : "TextualBody", value : annotation.html ?? annotation.text},
+    target : annotation.shape.kind === "rect"
+                 ? {type : "SpecificResource", source : canvasId, selector : {type : "FragmentSelector", value : `xywh=${annotation.shape.x},${annotation.shape.y},${annotation.shape.width},${annotation.shape.height}`}}
+                 : {type : "SpecificResource", source : canvasId, selector : {type : "SvgSelector", value : annotation.shape.value ?? ""}}
+});
+
 type TileSourceResolver = (source: TileSourceDescriptor, signal: AbortSignal) => Promise<ResolvedTileSource>;
 
 type ElmPorts = {
     tileSourcesUpdated: {subscribe: (callback: (update: {resourceId: string; tileSources : TileSourceEntry[]; initialPageIndex : number}) => void) => void};
+    annotationsUpdated: {subscribe: (callback: (value: AnnotationPayload) => void) => void};
+    annotationsVisibilityUpdated: {subscribe: (callback: (visible: boolean) => void) => void};
+    viewerPageLoaded: {send: (index: number) => void};
     pageAspectsUpdated : {subscribe : (callback: (aspects: number[]) => void) => void};
     pageLabelsUpdated : {subscribe : (callback: (labels: string[]) => void) => void};
     pagesUpdated : {subscribe : (callback: (pages: PublicPageEntry[]) => void) => void};
@@ -289,6 +378,11 @@ export class Diva extends EventTarget
     private pages: DivaPage[] = [];
     private readonly pagesByCanvasId: Map<string, DivaPage> = new Map();
     private readonly pagesByLabel: Map<string, DivaPage> = new Map();
+    private readonly manifestAnnotationsByCanvas: Map<string, StoredAnnotation[]> = new Map();
+    private readonly apiAnnotationsByCanvas: Map<string, StoredAnnotation[]> = new Map();
+    private readonly clearedAnnotationCanvases: Set<string> = new Set();
+    private readonly annotationImageServicesByCanvas: Map<string, string|null> = new Map();
+    private annotationResourceId = "";
     private state: DivaState;
     private readyResolve!: () => void;
     private readyReject!: (error: Error) => void;
@@ -406,7 +500,9 @@ export class Diva extends EventTarget
                 sidebarWidth,
                 sidebarPanel,
                 showTitle : flags.showTitle !== false,
-                userLanguage : flags.setLanguage || langCode
+                userLanguage : flags.setLanguage || langCode,
+                enableAnnotations : flags.enableAnnotations === true,
+                annotationServer : flags.annotationServer || null
             }
         });
         this.root = this.getConnectedRoot();
@@ -465,10 +561,37 @@ export class Diva extends EventTarget
     {
         this.getPort("tileSourcesUpdated")
             .subscribe((update: {resourceId: string; tileSources : TileSourceEntry[]; initialPageIndex : number}) => {
+                if (this.annotationResourceId !== update.resourceId)
+                {
+                    this.annotationResourceId = update.resourceId;
+                    this.manifestAnnotationsByCanvas.clear();
+                    this.apiAnnotationsByCanvas.clear();
+                    this.clearedAnnotationCanvases.clear();
+                    this.annotationImageServicesByCanvas.clear();
+                }
+                update.tileSources.forEach((source) => {
+                    if (source.canvasId)
+                    {
+                        this.annotationImageServicesByCanvas.set(source.canvasId, source.isStatic ? null : source.url);
+                    }
+                });
                 this.auth.registerSources(update.tileSources);
                 this.callViewerMethodWhenReady("setTileSourceResolver", this.tileSourceResolver);
                 this.callViewerMethodWhenReady("setTileSources", update.tileSources, update.initialPageIndex, update.resourceId);
             });
+
+        this.getPort("annotationsUpdated").subscribe((value: AnnotationPayload) => {
+            this.manifestAnnotationsByCanvas.set(value.canvasId, value.annotations.map((annotation) => ({
+                canvasId : value.canvasId,
+                publicAnnotation : publicAnnotationFromViewer(value.canvasId, annotation),
+                viewerAnnotation : {...annotation, imageService : annotation.imageService ?? null}
+            })));
+            this.applyAnnotationsForCanvas(value.canvasId);
+        });
+
+        this.getPort("annotationsVisibilityUpdated").subscribe((visible: boolean) => {
+            this.callViewerMethodWhenReady("setAnnotationsVisible", visible);
+        });
 
         this.getPort("pageAspectsUpdated")
             .subscribe((aspects: number[]) => { this.callViewerMethodWhenReady("setPageAspects", aspects); });
@@ -561,6 +684,37 @@ export class Diva extends EventTarget
             primaryImage : {...primary},
             images
         };
+    }
+
+    private effectiveAnnotationsForCanvas(canvasId: string): StoredAnnotation[]
+    {
+        if (this.clearedAnnotationCanvases.has(canvasId))
+        {
+            return [];
+        }
+        const merged = new Map<string, StoredAnnotation>();
+        (this.manifestAnnotationsByCanvas.get(canvasId) ?? []).forEach((annotation) => merged.set(annotation.viewerAnnotation.id, annotation));
+        (this.apiAnnotationsByCanvas.get(canvasId) ?? []).forEach((annotation) => merged.set(annotation.viewerAnnotation.id, annotation));
+        return Array.from(merged.values());
+    }
+
+    private applyAnnotationsForCanvas(canvasId: string): void
+    {
+        this.callViewerMethodWhenReady(
+            "setAnnotations",
+            canvasId,
+            this.effectiveAnnotationsForCanvas(canvasId).map((annotation) => annotation.viewerAnnotation)
+        );
+    }
+
+    private findStoredAnnotation(annotationId: string): StoredAnnotation|undefined
+    {
+        for (const canvasId of new Set([...this.manifestAnnotationsByCanvas.keys(), ...this.apiAnnotationsByCanvas.keys()]))
+        {
+            const annotation = this.effectiveAnnotationsForCanvas(canvasId).find((candidate) => candidate.viewerAnnotation.id === annotationId);
+            if (annotation) return annotation;
+        }
+        return undefined;
     }
 
     private rebuildPageIndexes(): void
@@ -899,6 +1053,117 @@ export class Diva extends EventTarget
      * @returns Pages in zero-based display order. Auth tokens and resolved loading URLs are never included.
      */
     public getPages(): readonly DivaPage[] { return this.pages.map((page) => this.copyPage(page)); }
+
+    /** Add or replace one API-supplied Web Annotation on a loaded Canvas. */
+    public setAnnotation(annotation: DivaAnnotation): void
+    {
+        this.assertAlive();
+        const stored = normalizePublicAnnotation(annotation);
+        if (!this.pagesByCanvasId.has(stored.canvasId))
+        {
+            throw new RangeError(`Annotation Canvas ${stored.canvasId} is not part of the loaded manifest.`);
+        }
+        stored.viewerAnnotation.imageService = this.annotationImageServicesByCanvas.get(stored.canvasId) ?? null;
+        this.apiAnnotationsByCanvas.forEach((annotations, canvasId) => {
+            const retained = annotations.filter((candidate) => candidate.viewerAnnotation.id !== stored.viewerAnnotation.id);
+            if (retained.length !== annotations.length)
+            {
+                this.apiAnnotationsByCanvas.set(canvasId, retained);
+                this.applyAnnotationsForCanvas(canvasId);
+            }
+        });
+        const annotations = this.apiAnnotationsByCanvas.get(stored.canvasId) ?? [];
+        this.apiAnnotationsByCanvas.set(stored.canvasId, [...annotations, stored]);
+        this.clearedAnnotationCanvases.delete(stored.canvasId);
+        this.applyAnnotationsForCanvas(stored.canvasId);
+    }
+
+    /** Replace the API-supplied annotation set for the loaded manifest. */
+    public setAnnotations(annotations: readonly DivaAnnotation[]): void
+    {
+        this.assertAlive();
+        if (!Array.isArray(annotations)) throw new TypeError("Annotations must be an array.");
+        const next = new Map<string, StoredAnnotation[]>();
+        annotations.forEach((annotation) => {
+            const stored = normalizePublicAnnotation(annotation);
+            if (!this.pagesByCanvasId.has(stored.canvasId))
+            {
+                throw new RangeError(`Annotation Canvas ${stored.canvasId} is not part of the loaded manifest.`);
+            }
+            stored.viewerAnnotation.imageService = this.annotationImageServicesByCanvas.get(stored.canvasId) ?? null;
+            const canvasAnnotations = next.get(stored.canvasId) ?? [];
+            next.set(stored.canvasId, [...canvasAnnotations.filter((candidate) => candidate.viewerAnnotation.id !== stored.viewerAnnotation.id), stored]);
+        });
+        const affected = new Set([...this.apiAnnotationsByCanvas.keys(), ...next.keys()]);
+        this.apiAnnotationsByCanvas.clear();
+        next.forEach((canvasAnnotations, canvasId) => {
+            this.apiAnnotationsByCanvas.set(canvasId, canvasAnnotations);
+            this.clearedAnnotationCanvases.delete(canvasId);
+        });
+        affected.forEach((canvasId) => this.applyAnnotationsForCanvas(canvasId));
+    }
+
+    /** Return defensive Web Annotation snapshots for one Canvas. */
+    public getAnnotationsForCanvas(uri: string): readonly DivaAnnotation[]
+    {
+        this.assertAlive();
+        return this.effectiveAnnotationsForCanvas(uri).map((annotation) => copyAnnotation(annotation.publicAnnotation));
+    }
+
+    /** Return defensive Web Annotation snapshots for the loaded manifest. */
+    public getAllAnnotations(): readonly DivaAnnotation[]
+    {
+        this.assertAlive();
+        return this.pages.flatMap((page) => this.getAnnotationsForCanvas(page.canvasId));
+    }
+
+    /** Clear both manifest and API-supplied annotations for one Canvas. */
+    public clearAnnotationsForCanvas(uri: string): void
+    {
+        this.assertAlive();
+        this.clearedAnnotationCanvases.add(uri);
+        this.apiAnnotationsByCanvas.delete(uri);
+        this.applyAnnotationsForCanvas(uri);
+    }
+
+    /** Clear both manifest and API-supplied annotations for every Canvas. */
+    public clearAllAnnotations(): void
+    {
+        this.assertAlive();
+        this.apiAnnotationsByCanvas.clear();
+        this.pages.forEach((page) => {
+            this.clearedAnnotationCanvases.add(page.canvasId);
+            this.applyAnnotationsForCanvas(page.canvasId);
+        });
+    }
+
+    /**
+     * Return the IIIF Image API extract URL for an annotation, when available.
+     *
+     * @returns The extract URL, or `null` when the annotation is unknown or has no usable image region.
+     */
+    public getImageRegionForAnnotation(annotationId: string): string|null
+    {
+        this.assertAlive();
+        if (typeof annotationId !== "string") throw new TypeError("Annotation id must be a string.");
+        const annotation = this.findStoredAnnotation(annotationId);
+        const renderedUrl = this.mainViewer?.getImageRegionForAnnotation?.(annotationId);
+        if (typeof renderedUrl === "string") return renderedUrl;
+        if (!annotation || annotation.viewerAnnotation.shape.kind === "svg") return null;
+        const {x, y, width, height} = annotation.viewerAnnotation.shape;
+        return typeof x === "number" && typeof y === "number" && typeof width === "number" && typeof height === "number"
+                   ? iiifImageRegionUrl(annotation.viewerAnnotation.imageService, {x, y, width, height})
+                   : null;
+    }
+
+    /** Return an annotation body's textual or HTML value, if present. */
+    public getAnnotationBody(annotationId: string): string|undefined
+    {
+        this.assertAlive();
+        if (typeof annotationId !== "string") throw new TypeError("Annotation id must be a string.");
+        const annotation = this.findStoredAnnotation(annotationId);
+        return annotation ? annotationBodyText(annotation.publicAnnotation.body ?? annotation.publicAnnotation.resource) : undefined;
+    }
 
     /**
      * Find a displayed page by Canvas identifier or localized display label.
@@ -1423,6 +1688,7 @@ export class Diva extends EventTarget
         {
             return;
         }
+        this.getPort("viewerPageLoaded").send(detail.index);
         const awaiting = this.awaitingViewerResource;
         if (awaiting && detail.resourceId === awaiting.id && detail.index === awaiting.pageIndex)
         {

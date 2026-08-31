@@ -118,6 +118,7 @@ baseManifest thumbnail images =
               , images = images
               , thumbnail = thumbnail
               , viewingLayout = Nothing
+              , annotationSources = []
               }
             ]
         , ranges = Nothing

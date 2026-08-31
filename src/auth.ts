@@ -1,9 +1,10 @@
 import type {DivaStaticImageCorsPolicy} from "./public-api";
+import {nonCorsStaticTileSource,
+        staticImageTileSource,
+        type ResolvedTileSource,
+        type TileSourceDescriptor} from "./image-utils";
 
-export type TileSourceDescriptor = {
-    sourceId: string; url : string; isStatic : boolean
-};
-export type ResolvedTileSource = string|Record<string, unknown>;
+export type {ResolvedTileSource, TileSourceDescriptor} from "./image-utils";
 
 type SendPort<T> = {
     send: (value: T) => void
@@ -163,19 +164,7 @@ export class AuthBrowser
     {
         Array.from(this.inflight.values()).forEach((active) => this.cancelResolution(active));
         this.resolutionCache.clear();
-        this.requests.forEach((controller) => controller.abort());
-        this.requests.clear();
-        Array.from(this.frames.keys()).forEach((flowId) => this.cancelFrame(flowId));
-        this.popups.forEach((popup) => {
-            clearInterval(popup.timer);
-            popup.window.close();
-        });
-        this.popups.clear();
-        this.logoutPopups.forEach((popup) => {
-            clearInterval(popup.timer);
-            popup.window.close();
-        });
-        this.logoutPopups.clear();
+        this.cancelBrowserWork();
     }
 
     invalidateSources(sourceIds: string[]): void
@@ -191,14 +180,7 @@ export class AuthBrowser
         {
             return;
         }
-        cached.resolutions.set("anonymous", {
-            ...source,
-            crossOriginPolicy : false,
-            ajaxWithCredentials : false,
-            loadTilesWithAjax : false,
-            buildPyramid : false,
-            useCanvas : false
-        });
+        cached.resolutions.set("anonymous", nonCorsStaticTileSource(source));
         cached.activeState = "anonymous";
     }
 
@@ -211,23 +193,29 @@ export class AuthBrowser
         this.destroyed = true;
         this.root.removeEventListener("click", this.clickHandler, true);
         this.ports.authDestroyed.send(null);
-        this.requests.forEach((controller) => controller.abort());
-        this.requests.clear();
-        this.frames.forEach((_frame, flowId) => this.cancelFrame(flowId));
-        this.popups.forEach((popup) => {
-            clearInterval(popup.timer);
-            popup.window.close();
-        });
-        this.popups.clear();
-        this.logoutPopups.forEach((popup) => {
-            clearInterval(popup.timer);
-            popup.window.close();
-        });
-        this.logoutPopups.clear();
+        this.cancelBrowserWork();
         this.pending.forEach((pending) => pending.reject(new DOMException("The viewer was destroyed.", "AbortError")));
         this.pending.clear();
         this.inflight.clear();
         this.resolutionCache.clear();
+    }
+
+    private cancelBrowserWork(): void
+    {
+        this.requests.forEach((controller) => controller.abort());
+        this.requests.clear();
+        Array.from(this.frames.keys()).forEach((flowId) => this.cancelFrame(flowId));
+        this.closePopups(this.popups);
+        this.closePopups(this.logoutPopups);
+    }
+
+    private closePopups(popups: Map<string, Popup>): void
+    {
+        popups.forEach((popup) => {
+            clearInterval(popup.timer);
+            popup.window.close();
+        });
+        popups.clear();
     }
 
     private succeed(result: Resolution): void
@@ -256,15 +244,7 @@ export class AuthBrowser
         else if (result.isStatic)
         {
             const useNonCors = !result.credentialed && this.staticImageCorsPolicy === "none";
-            tileSource = {
-                type : "image",
-                url : result.url,
-                crossOriginPolicy : useNonCors ? false : credentials,
-                ajaxWithCredentials : result.credentialed,
-                loadTilesWithAjax : !useNonCors,
-                buildPyramid : !useNonCors,
-                useCanvas : !useNonCors
-            };
+            tileSource = staticImageTileSource(result.url, result.credentialed, useNonCors);
         }
         else if (result.credentialed)
         {

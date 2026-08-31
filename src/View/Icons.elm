@@ -1,8 +1,24 @@
-module View.Icons exposing (close, downloadSelection, fromFullscreen, hideSidebar, info, nextPage, openingPageView, pageViewOpen, prevPage, reset, scrollingPageView, shiftLeft, shiftRight, showCollection, showSidebar, toFullscreen, zoomIn, zoomOut)
+module View.Icons exposing (close, downloadSelection, fromFullscreen, hideAnnotations, hideSidebar, info, nextPage, openingPageView, pageViewOpen, prevPage, reset, scrollingPageView, shiftLeft, shiftRight, showAnnotations, showCollection, showSidebar, toFullscreen, zoomIn, zoomOut)
 
 import Html exposing (Html)
 import Svg exposing (svg)
 import Svg.Attributes exposing (d, fill, height, viewBox, width)
+
+
+showAnnotations : Html msg
+showAnnotations =
+    makeSvgIcon
+        { viewBox = "0 0 512 512"
+        , path = "M112.7 358.8l-10.8 28.9-7 18.5 57.6-17.3 13.9-4.2 13.9 4.2c23.3 7.1 48.8 11 75.7 11c124.7 0 208-80.5 208-160s-83.3-160-208-160S48 160.5 48 240c0 35.1 15 68.9 42.9 96.9l21.8 21.9zm-39 103.9L16 480l21.2-56.5 19.8-52.7C21.3 335.1 0 289.6 0 240C0 125.1 114.6 32 256 32s256 93.1 256 208s-114.6 208-256 208c-31.5 0-61.7-4.6-89.6-13.1L73.8 462.7zM144 160a32 32 0 1 1 64 0 32 32 0 1 1 -64 0zM400 304v16H272 192 144V304l64-80 22 27.4L296 160 400 304z"
+        }
+
+
+hideAnnotations : Html msg
+hideAnnotations =
+    makeSvgIcon
+        { viewBox = "0 0 640 512"
+        , path = "M48.4 14.8L29.4 .1 0 38 19 52.7 591.5 497.2l19 14.7L639.9 474l-19-14.7L513.7 376c38.8-36.5 62.3-84 62.3-136C576 125.1 461.4 32 320 32c-68.2 0-130.2 21.7-176 57L48.4 14.8zm135 104.8C218.6 95.5 265.3 80 320 80c124.7 0 208 80.5 208 160c0 38.1-19.2 76.5-52.9 106.1L183.4 119.6zM424.1 430.1l-46-36.3c-18.1 4-37.5 6.2-58 6.2c-26.8 0-52.3-3.9-75.7-11l-13.9-4.2-13.9 4.2-57.6 17.3 7-18.5 10.8-28.9-21.8-21.9c-28-28-42.9-61.8-42.9-96.9c0-16.2 3.4-32.4 10-47.9l-39-30.8C70.7 185.6 64 212.2 64 240c0 49.6 21.3 95.1 56.9 130.8l-19.8 52.7L80 480l57.8-17.3 92.6-27.8c27.9 8.5 58.1 13.1 89.6 13.1c37 0 72.3-6.4 104.1-17.9z"
+        }
 
 
 close : Html msg
@@ -32,8 +48,8 @@ fromFullscreen =
 hideSidebar : Html msg
 hideSidebar =
     makeSvgIcon
-        { viewBox = "0 0 640 512"
-        , path = "M24 64c13.3 0 24 10.7 24 24l0 336c0 13.3-10.7 24-24 24s-24-10.7-24-24L0 88C0 74.7 10.7 64 24 64zm217 71c9.4 9.4 9.4 24.6 0 33.9l-63 63 284.1 0-63-63c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0L537 239c9.4 9.4 9.4 24.6 0 33.9L433 377c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l63-63-284.1 0 63 63c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0L103 273c-9.4-9.4-9.4-24.6 0-33.9L207 135c9.4-9.4 24.6-9.4 33.9 0zM640 88V424c0 13.3-10.7 24-24 24s-24-10.7-24-24V88c0-13.3 10.7-24 24-24s24 10.7 24 24z"
+        { viewBox = "0 0 512 512"
+        , path = "M168 80l24 0 0-48-24 0L24 32 0 32 0 56 0 456l0 24 24 0 144 0 24 0 0-48-24 0L48 432 48 80l120 0zM493.8 273l17-17-17-17-128-128-17-17L314.9 128l17 17 87 87L184 232l-24 0 0 48 24 0 234.9 0-87 87-17 17 33.9 33.9 17-17 128-128z"
         }
 
 
@@ -113,7 +129,7 @@ showCollection : Html msg
 showCollection =
     makeSvgIcon
         { viewBox = "0 0 512 512"
-        , path = "M217 401L345 273c9.4-9.4 9.4-24.6 0-33.9L217 111c-9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l87 87L24 232c-13.3 0-24 10.7-24 24s10.7 24 24 24l246.1 0-87 87c-9.4 9.4-9.4 24.6 0 33.9s24.6 9.4 33.9 0zM344 80l80 0c22.1 0 40 17.9 40 40l0 272c0 22.1-17.9 40-40 40l-80 0c-13.3 0-24 10.7-24 24s10.7 24 24 24l80 0c48.6 0 88-39.4 88-88l0-272c0-48.6-39.4-88-88-88l-80 0c-13.3 0-24 10.7-24 24s10.7 24 24 24z"
+        , path = "M224 80V432H464V80H224zM0 32H48 464h48V80 432v48H464 48 0V432 80 32zM64 96v48h96V96H64zm96 96H64v48h96V192zM64 288v48h96V288H64z"
         }
 
 
@@ -121,7 +137,7 @@ showSidebar : Html msg
 showSidebar =
     makeSvgIcon
         { viewBox = "0 0 512 512"
-        , path = "M295 401L167 273c-9.4-9.4-9.4-24.6 0-33.9L295 111c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-87 87L488 232c13.3 0 24 10.7 24 24s-10.7 24-24 24l-246.1 0 87 87c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0zM168 80L88 80c-22.1 0-40 17.9-40 40l0 272c0 22.1 17.9 40 40 40l80 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-80 0c-48.6 0-88-39.4-88-88L0 120C0 71.4 39.4 32 88 32l80 0c13.3 0 24 10.7 24 24s-10.7 24-24 24z"
+        , path = "M288 80V432H48V80H288zM512 32H464 48 0V80 432v48H48 464h48V432 80 32zM448 96v48H352V96h96zm-96 96h96v48H352V192zm96 96v48H352V288h96z"
         }
 
 

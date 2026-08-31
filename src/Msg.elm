@@ -3,6 +3,7 @@ module Msg exposing (Msg(..))
 import Auth
 import Filters exposing (FilterFloatValue, FilterIntValue, FilterStringValue, FilterToggle)
 import Http
+import IIIF.Annotation exposing (Annotation)
 import IIIF.Presentation exposing (IIIFManifest, IIIFResource)
 
 
@@ -63,4 +64,7 @@ type Msg
     | UserUpdatedFilterJsonInput String
     | UserUpdatedFilterString FilterStringValue String
     | ViewerLoadingChanged Bool
-    | ViewportChanged Int Int
+    | ViewportChanged Int
+    | ViewerLoadedPage Int
+    | ServerRespondedWithAnnotations String (Result Http.Error (List Annotation))
+    | UserToggledAnnotations

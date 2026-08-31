@@ -42,6 +42,28 @@ viewToolbar model =
                 [ Lazy.lazy2 viewCurrentLabel model.fullscreen currentLabelText
                 , div [ HA.class "diva-canvas-toolbar-section is-right" ]
                     (viewLogoutActions model
+                        ++ (if model.enableAnnotations then
+                                [ viewButton
+                                    { label =
+                                        if model.annotationsVisible then
+                                            "Hide Annotations"
+
+                                        else
+                                            "Show Annotations"
+                                    , icon =
+                                        if model.annotationsVisible then
+                                            Icons.hideAnnotations
+
+                                        else
+                                            Icons.showAnnotations
+                                    , onClickMsg = Just UserToggledAnnotations
+                                    , isFullscreen = model.fullscreen
+                                    }
+                                ]
+
+                            else
+                                []
+                           )
                         ++ [ viewButton
                                 { label = "Page View"
                                 , icon = Icons.pageViewOpen

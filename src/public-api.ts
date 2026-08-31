@@ -147,6 +147,26 @@ export interface DivaRegion {
 }
 
 /**
+ * A JSON Web Annotation accepted and returned by Diva's annotation API.
+ *
+ * `target` (or the IIIF Presentation 2 `on` alias) must identify a loaded
+ * Canvas and use either an `xywh` fragment/selector or an inline SVG selector.
+ */
+export interface DivaAnnotation {
+    /** Stable Web Annotation identifier. Required when setting annotations. */
+    id: string;
+    /** Usually `"Annotation"`; retained without interpretation. */
+    type?: string;
+    /** Web Annotation body, commonly a TextualBody or string. */
+    body?: unknown;
+    /** Web Annotation target. */
+    target?: unknown;
+    /** IIIF Presentation 2 alias for `target`. */
+    on?: unknown;
+    [key: string]: unknown;
+}
+
+/**
  * Options controlling how an image region is framed.
  */
 export interface ZoomToRegionOptions {
@@ -333,6 +353,10 @@ export interface DivaOptions {
      * Preferred HTTP Accept values for IIIF resource requests.
      */
     acceptHeaders?: string[];
+    /** Enable manifest-driven IIIF annotation overlays. @defaultValue `false` */
+    enableAnnotations?: boolean;
+    /** Optional GET endpoint used when a canvas declares no annotation resources. */
+    annotationServer?: string;
     /**
      * CORS policy for static image bodies without an IIIF Image API service.
      *

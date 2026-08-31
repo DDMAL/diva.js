@@ -18,6 +18,7 @@ module Auth exposing
     , logoutActions
     , prompt
     , registerSources
+    , requiresAuthorization
     , sourceIsAuthorized
     , thumbnailCrossOrigin
     , update

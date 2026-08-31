@@ -3,6 +3,12 @@
 :root {
   --diva-accent: rgba(90, 107, 255, 1);
   --diva-accent-light: rgba(154, 164, 255, 1);
+  --diva-annotation-fill: rgba(0, 191, 255, 0.12);
+  --diva-annotation-fill-hover: rgba(48, 48, 48, 0.48);
+  --diva-annotation-stroke: #00bfff;
+  --diva-annotation-stroke-hover: #d83a3a;
+  --diva-annotation-stroke-width: 2;
+  --diva-background-color: rgba(255, 255, 255, 1);
   --diva-border: rgba(217, 212, 206, 1);
   --diva-danger: rgba(211, 47, 47, 1);
   --diva-dark-bg: rgba(28, 29, 34, 1);

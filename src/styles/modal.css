@@ -384,7 +384,7 @@
   padding: 1.25rem;
   border: 1px solid var(--diva-border, #aaa);
   border-radius: 0;
-  background: var(--diva-background, #fff);
+  background: var(--diva-background-color, #fff);
   color: var(--diva-text-primary, #222);
 }
 

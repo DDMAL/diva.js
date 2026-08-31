@@ -6,6 +6,7 @@ TS_ESM_SRC := src/diva-esm.ts
 TS_VE_SRC := src/viewer-element.ts
 TS_FT_SRC := src/filters.ts
 TS_AUTH_SRC := src/auth.ts
+TS_UTILS_SRC := src/image-utils.ts
 CSS_SRC := $(wildcard src/styles/*.css)
 DIVA_CSS := cache/diva.css
 ELM_OUT := cache/elm.js
@@ -69,14 +70,14 @@ $(ELM_ESM): $(ELM_OUT) $(ELM_ESM_SCRIPT)
 $(DIVA_CSS): $(CSS_SRC) scripts/minify-css.mjs
 	node ./scripts/minify-css.mjs
 
-$(DIVA_DEBUG): $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(TS_AUTH_SRC) $(DIVA_CSS) $(ELM_ESM)
+$(DIVA_DEBUG): $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(TS_AUTH_SRC) $(TS_UTILS_SRC) $(DIVA_CSS) $(ELM_ESM)
 	mkdir -p public
 	$(ESBUILD) $(TS_SRC) $(ESBUILD_COMMON_FLAGS) --format=iife --outfile=$(DIVA_DEBUG)
 
-$(DIVA_IIFE_BUNDLE): $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(TS_AUTH_SRC) $(DIVA_CSS) $(ELM_ESM)
+$(DIVA_IIFE_BUNDLE): $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(TS_AUTH_SRC) $(TS_UTILS_SRC) $(DIVA_CSS) $(ELM_ESM)
 	@$(ESBUILD) $(TS_SRC) $(ESBUILD_COMMON_FLAGS) --format=iife --outfile=$(DIVA_IIFE_BUNDLE)
 
-$(DIVA_ESM_BUNDLE): $(TS_ESM_SRC) $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(TS_AUTH_SRC) $(DIVA_CSS) $(ELM_ESM)
+$(DIVA_ESM_BUNDLE): $(TS_ESM_SRC) $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(TS_AUTH_SRC) $(TS_UTILS_SRC) $(DIVA_CSS) $(ELM_ESM)
 	@$(ESBUILD) $(TS_ESM_SRC) $(ESBUILD_COMMON_FLAGS) --format=esm --outfile=$(DIVA_ESM_BUNDLE)
 
 $(DIVA_JS): $(DIVA_IIFE_BUNDLE) .swcrc
@@ -87,7 +88,7 @@ $(DIVA_ESM): $(DIVA_ESM_BUNDLE) .swcrc
 	@mkdir -p build
 	@$(SWC) $(DIVA_ESM_BUNDLE) --out-file $(DIVA_ESM)
 
-$(DIVA_TYPES): $(TS_ESM_SRC) $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(TS_AUTH_SRC) src/public-api.ts tsconfig.json
+$(DIVA_TYPES): $(TS_ESM_SRC) $(TS_SRC) $(TS_VE_SRC) $(TS_FT_SRC) $(TS_AUTH_SRC) $(TS_UTILS_SRC) src/public-api.ts tsconfig.json
 	@mkdir -p build
 	@yarn -s tsc -p tsconfig.json --declaration --emitDeclarationOnly --outDir build
 

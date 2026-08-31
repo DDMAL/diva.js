@@ -3,10 +3,11 @@ module Model exposing (CollectionState, ContentsView(..), Model, Page, PageImage
 import Auth
 import Dict exposing (Dict)
 import Filters exposing (Filters)
+import IIIF.Annotation as IIIFAnnotation
 import IIIF.Auth as IIIFAuth
 import IIIF.Image exposing (createImageAddress, thumbnailUrlFromInfo)
 import IIIF.Language exposing (Language, extractLabelFromLanguageMap)
-import IIIF.Presentation exposing (Canvas, IIIFCollection, IIIFManifest, Image, ImageType(..), canvasAspect, canvasLabel, toCanvases)
+import IIIF.Presentation exposing (AnnotationSource, Canvas, IIIFCollection, IIIFManifest, Image, ImageType(..), canvasAspect, canvasLabel, toCanvases)
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Set exposing (Set)
@@ -71,6 +72,12 @@ type alias Model =
     , filterGroupExpanded : Set String
     , contentsView : ContentsView
     , detectedLanguage : Language
+    , enableAnnotations : Bool
+    , annotationServer : Maybe String
+    , annotationsVisible : Bool
+    , annotationSources : Dict String (List AnnotationSource)
+    , annotationLoading : Set String
+    , annotationsByCanvas : Dict String (List IIIFAnnotation.Annotation)
     }
 
 

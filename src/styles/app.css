@@ -42,6 +42,112 @@
   outline-offset: 2px;
 }
 
+.diva-annotation-overlay {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  position: relative;
+}
+
+.diva-annotation-overlay.is-hidden {
+  visibility: hidden !important;
+}
+
+.diva-annotation-overlay svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.diva-annotation-overlay g {
+  pointer-events: all;
+  cursor: help;
+}
+
+.diva-annotation-tooltip {
+  position: absolute;
+  z-index: 101;
+  max-width: min(18rem, 75%);
+  padding: 6px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(28, 29, 34, 0.94);
+  color: #fff;
+  font-size: var(--diva-font-sm);
+  line-height: 1.35;
+  pointer-events: none;
+  transform: translate(10px, calc(-100% - 10px));
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.28);
+}
+
+.diva-annotation-panel {
+  position: absolute;
+  z-index: 1000;
+  left: 14px;
+  bottom: 14px;
+  width: min(24rem, calc(100% - 28px));
+  max-height: min(50%, 24rem);
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(28, 29, 34, 0.97);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+.osd-container {
+  position: relative;
+}
+
+.diva-annotation-panel-close {
+  float: right;
+  margin: 0 0 8px 12px;
+  cursor: pointer;
+}
+
+.diva-annotation-panel-content a { color: #9aa4ff; }
+.diva-annotation-panel-content img { max-width: 100%; height: auto; }
+
+.diva-annotation-panel-rotate {
+  min-width: 28px;
+  min-height: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.diva-annotation-panel-rotate:hover,
+.diva-annotation-panel-rotate:focus-visible {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.diva-annotation-panel-image-link {
+  display: block;
+  margin: 0 0 10px;
+  color: #9aa4ff;
+  font-size: var(--diva-font-sm);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.diva-annotation-rect,
+.diva-annotation-svg-shape {
+  fill: var(--diva-annotation-fill, rgba(0, 191, 255, 0.12));
+  fill-opacity: 1;
+  stroke: var(--diva-annotation-stroke, #00bfff);
+  stroke-width: var(--diva-annotation-stroke-width, 2);
+  vector-effect: non-scaling-stroke;
+  transition: fill 120ms ease-out, stroke 120ms ease-out;
+}
+
+.diva-annotation-overlay g[data-annotation-id]:hover .diva-annotation-rect,
+.diva-annotation-overlay g[data-annotation-id]:hover .diva-annotation-svg-shape,
+.diva-annotation-overlay g[data-annotation-id]:focus .diva-annotation-rect,
+.diva-annotation-overlay g[data-annotation-id]:focus .diva-annotation-svg-shape {
+  fill: var(--diva-annotation-fill-hover, rgba(48, 48, 48, 0.48));
+  stroke: var(--diva-annotation-stroke-hover, #d83a3a);
+}
+
 .diva-thumbs-image,
 .diva-page-view-choice-thumb {
   display: block;

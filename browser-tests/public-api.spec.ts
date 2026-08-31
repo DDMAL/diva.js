@@ -122,6 +122,42 @@ test("exposes immutable IIIF page metadata and state", async ({page}) => {
     expect(result.state).toMatchObject({ready : true, pageCount : 4, resourceUrl : `${origin}/api/first/manifest`});
 });
 
+test("returns the IIIF Image API region for an API-supplied rectangle annotation", async ({page}) => {
+    const result = await page.evaluate((canvasId) => {
+        const diva = (window as any).diva;
+        diva.setAnnotation({
+            id : "api-region",
+            type : "Annotation",
+            body : {type : "TextualBody", value : "Region"},
+            target : {
+                type : "SpecificResource",
+                source : canvasId,
+                selector : {type : "FragmentSelector", value : "xywh=10.2,20.8,30.1,40.1"}
+            }
+        });
+        return diva.getImageRegionForAnnotation("api-region");
+    }, `${origin}/api/first/canvas/1`);
+
+    expect(result).toBe(`${origin}/api/first/image/1/10,20,31,41/!320,320/0/default.jpg`);
+});
+
+test("returns null when an annotation has no IIIF Image API region", async ({page}) => {
+    const result = await page.evaluate(() => (window as any).diva.getImageRegionForAnnotation("missing"));
+    expect(result).toBeNull();
+});
+
+test("recreates scrollbar references after its viewer element is reattached", async ({page}) => {
+    const attached = await page.evaluate(() => {
+        const viewer = document.querySelector("osd-viewer") as HTMLElement & {scrollbarTrack?: HTMLElement|null};
+        const parent = viewer.parentElement!;
+        viewer.remove();
+        parent.appendChild(viewer);
+        return Boolean(viewer.scrollbarTrack);
+    });
+
+    expect(attached).toBe(true);
+});
+
 test("labels modal close buttons", async ({page}) => {
     for (const opener of [ "Manifest Info", "Page View" ])
     {

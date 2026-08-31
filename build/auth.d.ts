@@ -1,10 +1,6 @@
 import type { DivaStaticImageCorsPolicy } from "./public-api";
-export type TileSourceDescriptor = {
-    sourceId: string;
-    url: string;
-    isStatic: boolean;
-};
-export type ResolvedTileSource = string | Record<string, unknown>;
+import { type ResolvedTileSource, type TileSourceDescriptor } from "./image-utils";
+export type { ResolvedTileSource, TileSourceDescriptor } from "./image-utils";
 type SendPort<T> = {
     send: (value: T) => void;
 };
@@ -106,6 +102,8 @@ export declare class AuthBrowser {
     invalidateSources(sourceIds: string[]): void;
     useNonCorsStaticSource(sourceId: string): void;
     destroy(): void;
+    private cancelBrowserWork;
+    private closePopups;
     private succeed;
     private fail;
     private startResolution;
@@ -120,4 +118,3 @@ export declare class AuthBrowser {
     private startFrame;
     private cancelFrame;
 }
-export {};

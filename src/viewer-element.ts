@@ -1,11 +1,21 @@
 import type * as OpenSeadragonType from "openseadragon";
 
-import type {ResolvedTileSource, TileSourceDescriptor} from "./auth";
+import {iiifImageRegionUrl,
+        nonCorsStaticTileSource,
+        staticImageTileSource,
+        type ResolvedTileSource,
+        type TileSourceDescriptor} from "./image-utils";
 import type {DivaRegion, DivaStaticImageCorsPolicy, ZoomToRegionOptions} from "./public-api";
 
 declare const OpenSeadragon: typeof OpenSeadragonType;
 
-type ViewerTileSource = TileSourceDescriptor;
+type ViewerAnnotation = {
+    id: string;
+    text: string;
+    html?: string;
+    imageService: string|null;
+    shape: {kind: "rect"|"svg"; x?: number; y?: number; width?: number; height?: number; value?: string}
+};
 type TileSourceResolver = (source: TileSourceDescriptor, signal: AbortSignal) => Promise<ResolvedTileSource>;
 
 const ZOOM_IN_FACTOR = 1.6
@@ -133,7 +143,7 @@ class OsdViewer extends HTMLElement
     private container: HTMLDivElement|null = null;
     private viewer: OpenSeadragonType.Viewer|null = null;
     private loadToken = 0;
-    private tileSources: ViewerTileSource[] = [];
+    private tileSources: TileSourceDescriptor[] = [];
     private pageLabels: string[] = [];
     private pageAspects: number[] = [];
     private pageOffsets: number[] = [];
@@ -149,10 +159,15 @@ class OsdViewer extends HTMLElement
     private loadControllers: Map<number, AbortController> = new Map();
     private staticImageCorsPolicy: DivaStaticImageCorsPolicy = "required";
     private tileSourceResolver: TileSourceResolver = async (source) =>
-        source.isStatic ? this.staticTileSource(source.url) : source.url;
+        source.isStatic ? staticImageTileSource(source.url, false, this.staticImageCorsPolicy === "none") : source.url;
     private loadedItems: Map<number, any> = new Map();
     private pageWaiters: Map<number, Array<{resolve : (item: any) => void; reject : (error: Error) => void}>> = new Map();
     private pageOverlayElements: Map<number, HTMLDivElement> = new Map();
+    private annotationData: Map<string, ViewerAnnotation[]> = new Map();
+    private annotationOverlayElements: Map<number, HTMLDivElement> = new Map();
+    private annotationsVisible = true;
+    private annotationPanel: HTMLElement|null = null;
+    private annotationPanelIgnoreCloseUntil = 0;
     private targetIndex: number|null = null;
     private initialPageIndex = 0;
     private resourceId = "initial";
@@ -187,6 +202,7 @@ class OsdViewer extends HTMLElement
     connectedCallback(): void
     {
         this.style.display = "block";
+        this.style.position = "relative";
         if (!this.container)
         {
             this.container = document.createElement("div");
@@ -195,8 +211,26 @@ class OsdViewer extends HTMLElement
             this.container.style.height = "100%";
             this.container.addEventListener("wheel", this.handleWheelBound, {passive : false, capture : true});
             this.container.addEventListener("dblclick", this.handleDoubleClickBound);
+            this.container.addEventListener("click", (event) => {
+                // OpenSeadragon may dispatch a click from its event catcher after
+                // the annotation's pointer handler has opened the panel.
+                if (performance.now() < this.annotationPanelIgnoreCloseUntil)
+                {
+                    return;
+                }
+                if (event.target instanceof Element && event.target.closest(".diva-annotation-overlay"))
+                {
+                    return;
+                }
+                this.closeAnnotationPanel();
+            });
+            this.container.addEventListener("keydown", (event) => {
+                if (event.key === "Escape") this.closeAnnotationPanel();
+            });
             this.appendChild(this.container);
-
+        }
+        if (!this.scrollbarTrack)
+        {
             this.createScrollbar();
         }
         const hadViewer = Boolean(this.viewer);
@@ -233,9 +267,11 @@ class OsdViewer extends HTMLElement
         if (this.viewer)
         {
             this.clearPageOverlays();
+            this.clearAnnotationOverlays();
             this.viewer.destroy();
             this.viewer = null;
         }
+        this.scrollbarTrack?.remove();
         this.scrollbarTrack = null;
         this.scrollbarThumb = null;
     }
@@ -280,6 +316,7 @@ class OsdViewer extends HTMLElement
             const viewer = this.viewer;
             viewer.addHandler("pan", this.handleViewportChangeBound);
             viewer.addHandler("zoom", this.handleViewportChangeBound);
+            viewer.addHandler("canvas-click", (event: any) => this.handleAnnotationCanvasClick(event));
             viewer.addHandler("pan", () => this.updateScrollbar());
             viewer.addHandler("zoom", () => this.updateScrollbar());
             viewer.addHandler("animation-finish", this.handleAnimationFinishBound);
@@ -305,13 +342,14 @@ class OsdViewer extends HTMLElement
         this.applyLayoutChange({mode : nextMode, direction : nextDirection});
     }
 
-    public setTileSources(tileSources: ViewerTileSource[], initialPageIndex = 0, resourceId = "internal"): void
+    public setTileSources(tileSources: TileSourceDescriptor[], initialPageIndex = 0, resourceId = "internal"): void
     {
         if (!Array.isArray(tileSources))
         {
             return;
         }
 
+        this.annotationData.clear();
         this.tileSources = tileSources.slice();
         this.resourceId = resourceId;
         this.initialPageIndex = Number.isInteger(initialPageIndex) && initialPageIndex >= 0 && initialPageIndex < tileSources.length
@@ -324,6 +362,51 @@ class OsdViewer extends HTMLElement
             return;
         }
         this.resetTileSources(this.tileSources.slice(), this.initialPageIndex);
+    }
+
+    public setAnnotations(canvasId: string, annotations: ViewerAnnotation[]): void
+    {
+        if (!canvasId || !Array.isArray(annotations))
+        {
+            return;
+        }
+        this.annotationData.set(canvasId, annotations);
+        this.tileSources.forEach((source, index) => {
+            if ((source as any).canvasId === canvasId)
+            {
+                this.addOrUpdateAnnotationOverlay(index);
+            }
+        });
+    }
+
+    public setAnnotationsVisible(visible: boolean): void
+    {
+        this.annotationsVisible = visible;
+        this.annotationOverlayElements.forEach((element) => {
+            // OpenSeadragon owns the overlay wrapper's layout and can rewrite
+            // inline display styles while redrawing. A class is stable across
+            // those redraws, and hides both rectangle and SVG descendants.
+            element.classList.toggle("is-hidden", !visible);
+        });
+        if (!visible)
+        {
+            this.closeAnnotationPanel();
+        }
+    }
+
+    public getImageRegionForAnnotation(annotationId: string): string|null
+    {
+        for (const [canvasId, annotations] of this.annotationData)
+        {
+            const annotation = annotations.find((candidate) => candidate.id === annotationId);
+            if (!annotation) continue;
+            const index = this.tileSources.findIndex((source) => (source as any).canvasId === canvasId);
+            const group = index >= 0
+                            ? this.annotationOverlayElements.get(index)?.querySelector<SVGGElement>(`g[data-annotation-id="${CSS.escape(annotationId)}"]`) ?? undefined
+                            : undefined;
+            return this.annotationExtractUrl(annotation, group);
+        }
+        return null;
     }
 
     public setTileSourceResolver(resolver: TileSourceResolver): void
@@ -348,6 +431,8 @@ class OsdViewer extends HTMLElement
         // connected before Diva applies its options, so recreate it with the
         // Canvas/HTML drawer path when a non-CORS policy is selected.
         this.clearPageOverlays();
+        this.clearAnnotationOverlays();
+        this.closeAnnotationPanel();
         this.viewer.destroy();
         this.viewer = null;
         this.scrollPlaneItem = null;
@@ -381,7 +466,7 @@ class OsdViewer extends HTMLElement
         });
     }
 
-    private resetTileSources(tileSources: ViewerTileSource[], initialPageIndex = 0): void
+    private resetTileSources(tileSources: TileSourceDescriptor[], initialPageIndex = 0): void
     {
         if (!this.viewer)
         {
@@ -409,6 +494,7 @@ class OsdViewer extends HTMLElement
         this.unavailableIndexes.clear();
         this.loadedItems.clear();
         this.clearPageOverlays();
+        this.clearAnnotationOverlays();
         this.targetIndex = tileSources.length > 0 ? this.initialPageIndex : null;
         this.lastReportedIndex = this.targetIndex;
         this.clearScrollPlane();
@@ -556,7 +642,7 @@ class OsdViewer extends HTMLElement
         }
         if (nonCorsFallback)
         {
-            tileSource = this.asNonCorsStaticSource(tileSource);
+            tileSource = nonCorsStaticTileSource(tileSource);
         }
 
         const yOffset = this.pageOffsets[index] || 0;
@@ -584,6 +670,7 @@ class OsdViewer extends HTMLElement
                 this.loadedItems.set(index, item);
                 this.resolvePageWaiters(index, item);
                 this.addOrUpdatePageOverlay(index);
+                this.addOrUpdateAnnotationOverlay(index);
                 this.loadingIndexes.delete(index);
                 this.loadControllers.delete(index);
                 this.updateLoadingState();
@@ -669,35 +756,7 @@ class OsdViewer extends HTMLElement
         return options;
     }
 
-    private staticTileSource(url: string): ResolvedTileSource
-    {
-        const useNonCors = this.staticImageCorsPolicy === "none";
-        return {
-            type : "image",
-            url,
-            crossOriginPolicy : useNonCors ? false : "Anonymous",
-            ajaxWithCredentials : false,
-            loadTilesWithAjax : !useNonCors,
-            buildPyramid : !useNonCors,
-            useCanvas : !useNonCors
-        };
-    }
-
-    private asNonCorsStaticSource(tileSource: ResolvedTileSource): ResolvedTileSource
-    {
-        const source = typeof tileSource === "object" && tileSource !== null ? tileSource : {type : "image", url : tileSource};
-        return {
-            ...source,
-            type : "image",
-            crossOriginPolicy : false,
-            ajaxWithCredentials : false,
-            loadTilesWithAjax : false,
-            buildPyramid : false,
-            useCanvas : false
-        };
-    }
-
-    private shouldRetryWithoutCors(descriptor: ViewerTileSource, tileSource: ResolvedTileSource, alreadyRetried: boolean): boolean
+    private shouldRetryWithoutCors(descriptor: TileSourceDescriptor, tileSource: ResolvedTileSource, alreadyRetried: boolean): boolean
     {
         if (this.staticImageCorsPolicy !== "fallback" || !descriptor.isStatic || alreadyRetried)
         {
@@ -805,8 +864,8 @@ class OsdViewer extends HTMLElement
     private removeUnavailableOverlay(index: number): void
     {
         const element = this.querySelector(`.diva-image-unavailable[data-index="${index}"]`);
-        if (element && this.viewer)
-            this.viewer.removeOverlay(element as HTMLElement);
+        if (element)
+            this.removeOverlay(element as HTMLElement);
         element?.remove();
     }
 
@@ -960,14 +1019,7 @@ class OsdViewer extends HTMLElement
 
         const xOffset = (this.pageXOffsets[index] || 0) + (isRightAligned ? 1 : 0);
         const yOffset = this.pageOffsets[index] || 0;
-        try
-        {
-            this.viewer.removeOverlay(element);
-        }
-        catch (_error)
-        {
-            // overlay may not yet exist in viewer; safe to ignore.
-        }
+        this.removeOverlay(element);
         this.viewer.addOverlay({
             element,
             location : new OpenSeadragon.Point(xOffset, yOffset),
@@ -975,23 +1027,420 @@ class OsdViewer extends HTMLElement
         });
     }
 
-    private clearPageOverlays(): void
+    private clearPageOverlays(): void { this.clearOverlays(this.pageOverlayElements); }
+
+    private addOrUpdateAnnotationOverlay(index: number): void
     {
-        if (this.viewer)
+        if (!this.viewer || !this.loadedItems.has(index))
         {
-            this.pageOverlayElements.forEach((element) => {
-                try
-                {
-                    this.viewer?.removeOverlay(element);
-                }
-                catch (_error)
-                {
-                    // ignore missing overlay errors during teardown/reset.
-                }
-                element.remove();
-            });
+            return;
         }
-        this.pageOverlayElements.clear();
+        const canvasId = (this.tileSources[index] as any)?.canvasId;
+        const annotations = typeof canvasId === "string" ? this.annotationData.get(canvasId) : undefined;
+        let element = this.annotationOverlayElements.get(index);
+        if (!annotations || annotations.length === 0)
+        {
+            if (element)
+            {
+                this.removeOverlay(element);
+                element.remove();
+                this.annotationOverlayElements.delete(index);
+            }
+            return;
+        }
+        if (!element)
+        {
+            element = document.createElement("div");
+            element.className = "diva-annotation-overlay";
+            this.annotationOverlayElements.set(index, element);
+        }
+        element.classList.toggle("is-hidden", !this.annotationsVisible);
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("viewBox", `0 0 ${this.pageWidth(index)} ${this.pageHeightPixels(index)}`);
+        svg.setAttribute("preserveAspectRatio", "none");
+        svg.setAttribute("width", "100%");
+        svg.setAttribute("height", "100%");
+        const tooltip = document.createElement("div");
+        tooltip.className = "diva-annotation-tooltip";
+        tooltip.setAttribute("role", "tooltip");
+        annotations.forEach((annotation) => {
+            const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            group.setAttribute("data-annotation-id", annotation.id);
+            group.setAttribute("tabindex", "0");
+            if (annotation.text)
+            {
+                group.setAttribute("aria-label", annotation.text);
+                const showTooltip = (event?: MouseEvent): void => {
+                    const bounds = element!.getBoundingClientRect();
+                    const x = event ? event.clientX - bounds.left : bounds.width / 2;
+                    const y = event ? event.clientY - bounds.top : bounds.height / 2;
+                    tooltip.textContent = annotation.text;
+                    tooltip.style.left = `${x}px`;
+                    tooltip.style.top = `${y}px`;
+                    tooltip.hidden = false;
+                };
+                group.addEventListener("mouseenter", showTooltip);
+                group.addEventListener("mousemove", showTooltip);
+                group.addEventListener("mouseleave", () => { tooltip.hidden = true; });
+                group.addEventListener("focus", () => showTooltip());
+                group.addEventListener("blur", () => { tooltip.hidden = true; });
+            }
+            group.addEventListener("click", (event) => {
+                event.stopPropagation();
+                this.openAnnotationPanel(annotation, group);
+            });
+            group.addEventListener("pointerup", (event) => {
+                event.stopPropagation();
+                this.openAnnotationPanel(annotation, group);
+            });
+            group.addEventListener("keydown", (event: KeyboardEvent) => {
+                if (event.key === "Enter" || event.key === " ")
+                {
+                    event.preventDefault();
+                    this.openAnnotationPanel(annotation, group);
+                }
+            });
+            if (annotation.shape.kind === "rect")
+            {
+                const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                rect.setAttribute("x", String(annotation.shape.x));
+                rect.setAttribute("y", String(annotation.shape.y));
+                rect.setAttribute("width", String(annotation.shape.width));
+                rect.setAttribute("height", String(annotation.shape.height));
+                rect.setAttribute("class", "diva-annotation-rect");
+                group.appendChild(rect);
+            }
+            else if (annotation.shape.kind === "svg" && annotation.shape.value)
+            {
+                this.appendSanitizedSvg(group, annotation.shape.value);
+            }
+            svg.appendChild(group);
+        });
+        tooltip.hidden = true;
+        element.replaceChildren(svg, tooltip);
+        this.removeOverlay(element);
+        this.viewer.addOverlay({
+            element,
+            location : new OpenSeadragon.Rect(this.pageXOffsets[index] || 0, this.pageOffsets[index] || 0, 1, this.pageHeights[index] || 1)
+        });
+    }
+
+    private pageWidth(index: number): number
+    {
+        const item = this.loadedItems.get(index);
+        return item?.source?.dimensions?.x || 1;
+    }
+
+    private pageHeightPixels(index: number): number
+    {
+        const item = this.loadedItems.get(index);
+        return item?.source?.dimensions?.y || 1;
+    }
+
+    private appendSanitizedSvg(target: SVGElement, markup: string): void
+    {
+        const parsed = new DOMParser().parseFromString(markup, "image/svg+xml");
+        const source = parsed.documentElement;
+        const allowed = new Set(["svg", "g", "path", "rect", "circle", "ellipse", "polygon", "polyline", "line"]);
+        const attributes = new Set(["d", "points", "x", "y", "x1", "x2", "y1", "y2", "cx", "cy", "rx", "ry", "r", "width", "height", "fill", "fill-opacity", "fill-rule", "stroke", "stroke-width", "stroke-opacity", "stroke-linecap", "stroke-linejoin", "stroke-dasharray", "transform", "viewBox"]);
+        const copy = (node: Element, parent: Element): void => {
+            const name = node.localName.toLowerCase();
+            if (!allowed.has(name)) return;
+            const child = document.createElementNS("http://www.w3.org/2000/svg", name);
+            if (name !== "svg" && name !== "g")
+            {
+                child.classList.add("diva-annotation-svg-shape");
+            }
+            Array.from(node.attributes).forEach((attribute) => { if (attributes.has(attribute.name)) child.setAttribute(attribute.name, attribute.value); });
+            parent.appendChild(child);
+            Array.from(node.children).forEach((next) => copy(next, child));
+        };
+        if (source.localName.toLowerCase() === "svg") Array.from(source.children).forEach((child) => copy(child, target));
+    }
+
+    private clearAnnotationOverlays(): void { this.clearOverlays(this.annotationOverlayElements); }
+
+    private removeOverlay(element: HTMLElement): void
+    {
+        try { this.viewer?.removeOverlay(element); } catch (_error) { /* already removed */ }
+    }
+
+    private clearOverlays<T extends HTMLElement>(overlays: Map<number, T>): void
+    {
+        overlays.forEach((element) => {
+            this.removeOverlay(element);
+            element.remove();
+        });
+        overlays.clear();
+    }
+
+    private handleAnnotationCanvasClick(event: {position?: {x: number; y: number}; quick?: boolean}): void
+    {
+        if (!this.annotationsVisible || !event.quick || !event.position || !this.container)
+        {
+            return;
+        }
+        const viewerBounds = this.container.getBoundingClientRect();
+        const clientX = viewerBounds.left + event.position.x;
+        const clientY = viewerBounds.top + event.position.y;
+
+        // OpenSeadragon's event-catcher is above HTML overlays, so SVG element
+        // click listeners are not reliable. Its canvas-click event is the
+        // authoritative interaction point; hit-test the rendered annotation
+        // groups at that point instead.
+        for (const [index, element] of Array.from(this.annotationOverlayElements.entries()).reverse())
+        {
+            const canvasId = (this.tileSources[index] as any)?.canvasId;
+            const annotations = typeof canvasId === "string" ? this.annotationData.get(canvasId) : undefined;
+            if (!annotations)
+            {
+                continue;
+            }
+            const groups = Array.from(element.querySelectorAll<SVGGElement>("g[data-annotation-id]")).reverse();
+            for (const group of groups)
+            {
+                const bounds = group.getBoundingClientRect();
+                if (clientX < bounds.left || clientX > bounds.right || clientY < bounds.top || clientY > bounds.bottom)
+                {
+                    continue;
+                }
+                const annotation = annotations.find((candidate) => candidate.id === group.dataset.annotationId);
+                if (annotation)
+                {
+                    this.openAnnotationPanel(annotation, group);
+                    return;
+                }
+            }
+        }
+    }
+
+    private openAnnotationPanel(annotation: ViewerAnnotation, annotationGroup?: SVGGElement): void
+    {
+        if (!this.container)
+        {
+            return;
+        }
+        if (!this.annotationPanel)
+        {
+            const panel = document.createElement("aside");
+            panel.className = "diva-annotation-panel";
+            panel.setAttribute("aria-label", "Annotation details");
+            panel.addEventListener("click", (event) => event.stopPropagation());
+            this.appendChild(panel);
+            this.annotationPanel = panel;
+        }
+        this.annotationPanelIgnoreCloseUntil = performance.now() + 500;
+        const close = document.createElement("button");
+        close.type = "button";
+        close.className = "diva-annotation-panel-close";
+        close.textContent = "Close";
+        close.addEventListener("click", (event) => {
+            event.stopPropagation();
+            this.closeAnnotationPanel();
+        });
+        const content = document.createElement("div");
+        content.className = "diva-annotation-panel-content";
+        const extractUrl = this.annotationExtractUrl(annotation, annotationGroup);
+        let imageLink: HTMLAnchorElement|null = null;
+        if (extractUrl)
+        {
+            const previewControls = document.createElement("div");
+            Object.assign(previewControls.style, {display : "flex", justifyContent : "flex-end", gap : "4px", margin : "0 0 4px"});
+            const previewFrame = document.createElement("div");
+            Object.assign(previewFrame.style, {position : "relative", maxWidth : "100%", margin : "0 auto 10px", border : "1px solid rgba(255, 255, 255, 0.2)"});
+            const preview = document.createElement("img");
+            Object.assign(preview.style, {position : "absolute", top : "50%", left : "50%", maxWidth : "none", transition : "transform 120ms ease-out"});
+            preview.src = extractUrl;
+            preview.alt = annotation.text ? `Image extract: ${annotation.text}` : "Annotation image extract";
+            // A service can be temporarily unavailable or reject a browser image
+            // request. In either case retain the annotation panel without an error.
+            preview.addEventListener("error", () => {
+                previewControls.remove();
+                previewFrame.remove();
+            });
+            let rotation = 0;
+            const updatePreviewLayout = (): void => {
+                if (preview.naturalWidth <= 0 || preview.naturalHeight <= 0)
+                {
+                    return;
+                }
+                const largestSide = Math.min(content.clientWidth || 320, 320);
+                const aspect = preview.naturalWidth / preview.naturalHeight;
+                const baseWidth = aspect >= 1 ? largestSide : largestSide * aspect;
+                const baseHeight = aspect >= 1 ? largestSide / aspect : largestSide;
+                const isQuarterTurn = Math.abs(Math.round(rotation / 90)) % 2 === 1;
+                previewFrame.style.width = `${isQuarterTurn ? baseHeight : baseWidth}px`;
+                previewFrame.style.height = `${isQuarterTurn ? baseWidth : baseHeight}px`;
+                preview.style.width = `${baseWidth}px`;
+                preview.style.height = `${baseHeight}px`;
+                preview.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
+            };
+            const rotate = (degrees: number): void => {
+                // Keep the signed angle rather than normalizing it into
+                // 0–359: 270deg would animate clockwise from 0deg.
+                rotation += degrees;
+                updatePreviewLayout();
+            };
+            preview.addEventListener("load", updatePreviewLayout);
+            const rotateCounterClockwise = document.createElement("button");
+            rotateCounterClockwise.type = "button";
+            rotateCounterClockwise.className = "diva-annotation-panel-rotate";
+            rotateCounterClockwise.textContent = "↺";
+            rotateCounterClockwise.setAttribute("aria-label", "Rotate image counter-clockwise 90 degrees");
+            rotateCounterClockwise.addEventListener("click", () => rotate(-90));
+            previewControls.appendChild(rotateCounterClockwise);
+            previewFrame.appendChild(preview);
+            imageLink = document.createElement("a");
+            imageLink.className = "diva-annotation-panel-image-link";
+            imageLink.href = extractUrl;
+            imageLink.target = "_blank";
+            imageLink.rel = "noopener noreferrer";
+            imageLink.textContent = extractUrl;
+            imageLink.setAttribute("aria-label", "Open the IIIF Image API extract");
+            content.append(previewControls, previewFrame);
+            window.requestAnimationFrame(updatePreviewLayout);
+        }
+        content.appendChild(this.sanitizeAnnotationHtml(annotation.html || annotation.text));
+        if (imageLink)
+        {
+            content.appendChild(imageLink);
+        }
+        const panel = this.annotationPanel;
+        panel.replaceChildren(close, content);
+        panel.hidden = false;
+        close.focus();
+    }
+
+    private annotationExtractUrl(annotation: ViewerAnnotation, annotationGroup?: SVGGElement): string|null
+    {
+        if (!annotation.imageService)
+        {
+            return null;
+        }
+        let region: {x: number; y: number; width: number; height: number}|null = null;
+        if (annotation.shape.kind === "rect")
+        {
+            const {x, y, width, height} = annotation.shape;
+            if ([x, y, width, height].every((value) => typeof value === "number" && Number.isFinite(value)) && width! > 0 && height! > 0)
+            {
+                region = {x: x!, y: y!, width: width!, height: height!};
+            }
+        }
+        else if (annotation.shape.kind === "svg" && annotationGroup)
+        {
+            const overlay = annotationGroup.closest(".diva-annotation-overlay");
+            const svg = overlay?.querySelector("svg");
+            if (svg)
+            {
+                const shapeBounds = annotationGroup.getBoundingClientRect();
+                const svgBounds = svg.getBoundingClientRect();
+                const viewBox = svg.viewBox.baseVal;
+                if (shapeBounds.width > 0 && shapeBounds.height > 0 && svgBounds.width > 0 && svgBounds.height > 0 && viewBox.width > 0 && viewBox.height > 0)
+                {
+                    region = {
+                        x: viewBox.x + ((shapeBounds.left - svgBounds.left) / svgBounds.width) * viewBox.width,
+                        y: viewBox.y + ((shapeBounds.top - svgBounds.top) / svgBounds.height) * viewBox.height,
+                        width: (shapeBounds.width / svgBounds.width) * viewBox.width,
+                        height: (shapeBounds.height / svgBounds.height) * viewBox.height
+                    };
+                }
+            }
+        }
+        else if (annotation.shape.kind === "svg" && annotation.shape.value)
+        {
+            region = this.svgBoundingRegion(annotation.shape.value);
+        }
+        if (!region && annotation.shape.kind === "svg" && annotation.shape.value)
+        {
+            region = this.svgBoundingRegion(annotation.shape.value);
+        }
+        if (!region)
+        {
+            return null;
+        }
+        return iiifImageRegionUrl(annotation.imageService, region);
+    }
+
+    private svgBoundingRegion(markup: string): {x: number; y: number; width: number; height: number}|null
+    {
+        if (!document.body)
+        {
+            return null;
+        }
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        svg.style.cssText = "position:absolute;visibility:hidden;pointer-events:none;left:-10000px;top:-10000px;";
+        svg.appendChild(group);
+        this.appendSanitizedSvg(group, markup);
+        document.body.appendChild(svg);
+        try
+        {
+            const bounds = group.getBBox();
+            return bounds.width > 0 && bounds.height > 0
+                       ? {x : bounds.x, y : bounds.y, width : bounds.width, height : bounds.height}
+                       : null;
+        }
+        catch (_error)
+        {
+            return null;
+        }
+        finally
+        {
+            svg.remove();
+        }
+    }
+
+    private closeAnnotationPanel(): void
+    {
+        if (this.annotationPanel)
+        {
+            this.annotationPanel.hidden = true;
+        }
+    }
+
+    private sanitizeAnnotationHtml(markup: string): DocumentFragment
+    {
+        const template = document.createElement("template");
+        template.innerHTML = markup;
+        const allowedTags = new Set(["div", "p", "br", "em", "i", "strong", "b", "a", "ul", "ol", "li", "dl", "dt", "dd", "span", "img"]);
+        const safeUrl = (value: string): boolean => {
+            const normalized = value.trim().toLowerCase();
+            return /^(https?:|mailto:|tel:|\/|\.\/|\.\.\/|#|\?)/.test(normalized) || !normalized.includes(":");
+        };
+        const copy = (node: Node, parent: Node): void => {
+            if (node.nodeType === Node.TEXT_NODE)
+            {
+                parent.appendChild(document.createTextNode(node.textContent || ""));
+                return;
+            }
+            if (!(node instanceof Element)) return;
+            const tag = node.localName.toLowerCase();
+            if (!allowedTags.has(tag))
+            {
+                Array.from(node.childNodes).forEach((child) => copy(child, parent));
+                return;
+            }
+            const element = document.createElement(tag);
+            if (tag === "a")
+            {
+                const href = node.getAttribute("href");
+                if (href && safeUrl(href)) element.setAttribute("href", href);
+                element.setAttribute("target", "_blank");
+                element.setAttribute("rel", "noopener noreferrer");
+            }
+            if (tag === "img")
+            {
+                const src = node.getAttribute("src");
+                if (src && safeUrl(src)) element.setAttribute("src", src);
+                const alt = node.getAttribute("alt");
+                if (alt) element.setAttribute("alt", alt);
+            }
+            parent.appendChild(element);
+            Array.from(node.childNodes).forEach((child) => copy(child, element));
+        };
+        const result = document.createDocumentFragment();
+        Array.from(template.content.childNodes).forEach((node) => copy(node, result));
+        return result;
     }
 
     private ensureScrollPlane(): void
