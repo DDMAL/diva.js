@@ -81,6 +81,9 @@
         enableAnnotations: true
       });
 
+      // ---------------------------------------------------------------------
+      // Random fixture generation (only needed to populate this demo).
+      // ---------------------------------------------------------------------
       const lorem = [
         "Lorem ipsum dolor sit amet.",
         "Consectetur adipiscing elit.",
@@ -139,6 +142,29 @@
         return { id, type: "Annotation", motivation: "commenting", body, target: { type: "SpecificResource", source: page.canvasId, selector } };
       }
 
+      // ---------------------------------------------------------------------
+      // Public annotation API examples.
+      // These are the calls an application would retain; the generator above
+      // can be replaced with annotations loaded or authored elsewhere.
+      // ---------------------------------------------------------------------
+      function applyAnnotations(annotations) {
+        window.diva.setAnnotations(annotations);
+      }
+
+      function clearAnnotationsOnVisibleCanvases() {
+        const ids = new Set(visiblePages().map((page) => page.canvasId));
+        ids.forEach((id) => window.diva.clearAnnotationsForCanvas(id));
+        return ids;
+      }
+
+      function clearAllAnnotations() {
+        window.diva.clearAllAnnotations();
+      }
+
+      function selectAnnotation(annotationId) {
+        window.diva.selectAnnotation(annotationId);
+      }
+
       function refreshList() {
         list.replaceChildren(...generated.map((annotation, index) => {
           const option = document.createElement("option");
@@ -167,21 +193,20 @@
           const annotation = makeAnnotation(pagesWithDimensions[i % pagesWithDimensions.length], document.querySelector("#annotation-type").value);
           if (annotation) generated.push(annotation);
         }
-        window.diva.setAnnotations(generated);
+        applyAnnotations(generated);
         refreshList();
         status.textContent = `Applied ${generated.length} annotations to ${pagesWithDimensions.length} visible canvas(es).`;
       });
 
       document.querySelector("#clear-visible").addEventListener("click", () => {
-        const ids = new Set(visiblePages().map((page) => page.canvasId));
-        ids.forEach((id) => window.diva.clearAnnotationsForCanvas(id));
+        const ids = clearAnnotationsOnVisibleCanvases();
         generated = generated.filter((annotation) => !ids.has(annotation.target.source));
         refreshList();
         status.textContent = `Cleared annotations on ${ids.size} visible canvas(es).`;
       });
 
       document.querySelector("#clear-all").addEventListener("click", () => {
-        window.diva.clearAllAnnotations();
+        clearAllAnnotations();
         generated = [];
         refreshList();
         status.textContent = "Cleared all annotations.";
@@ -190,7 +215,7 @@
       list.addEventListener("change", () => {
         showSelected();
         const annotation = generated[Number(list.value)];
-        if (annotation) window.diva.selectAnnotation(annotation.id);
+        if (annotation) selectAnnotation(annotation.id);
       });
       window.diva.addEventListener("annotationselect", (event) => {
         const index = generated.findIndex((annotation) => annotation.id === event.detail.annotationId);
