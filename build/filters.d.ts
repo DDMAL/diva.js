@@ -7,8 +7,6 @@
  *  Additional filters and modifications to the processing methods are from
  * CamanJS:
  *      https://github.com/meltingice/CamanJS/blob/master/src/lib/filters.coffee
- *
- *
  */
 export type FilterProcessor = (context: CanvasRenderingContext2D, callback: () => void) => void;
 type PixelTransformInPlace = (r: number, g: number, b: number, a: number, out: number[]) => void;

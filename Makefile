@@ -39,7 +39,7 @@ define print_bundle_size
 	printf "%-18s %10s (%7s)\n" "Gzipped size:" "$$GZIPPED_SIZE bytes" "$$GZIPPED_HR";
 endef
 
-.PHONY: all build build-dev clean clean-cache docs docs-check release report-build-sizes review test
+.PHONY: all build build-dev clean clean-cache docs docs-check release report-build-sizes review serve test
 
 all: build
 
@@ -56,6 +56,9 @@ test:
 
 test-browser:
 	yarn test:browser
+
+serve:
+	python3 -m http.server 8003
 
 format:
 	yarn format

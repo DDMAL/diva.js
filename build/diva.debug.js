@@ -172,6 +172,7 @@
       this.annotationData = /* @__PURE__ */ new Map();
       this.annotationOverlayElements = /* @__PURE__ */ new Map();
       this.annotationsVisible = true;
+      this.selectedAnnotationId = null;
       this.annotationPanel = null;
       this.annotationPanelIgnoreCloseUntil = 0;
       this.targetIndex = null;
@@ -216,8 +217,9 @@
           this.closeAnnotationPanel();
         });
         this.container.addEventListener("keydown", (event) => {
-          if (event.key === "Escape")
+          if (event.key === "Escape") {
             this.closeAnnotationPanel();
+          }
         });
         this.appendChild(this.container);
       }
@@ -285,8 +287,18 @@
           crossOriginPolicy: "Anonymous",
           loadTilesWithAjax: true,
           ajaxWithCredentials: false,
-          gestureSettingsTrackpad: { pinchToZoom: true, scrollToZoom: false, flickEnabled: true, dragToPan: true },
-          gestureSettingsMouse: { scrollToZoom: false, clickToZoom: false, dblClickToZoom: false, dragToPan: true },
+          gestureSettingsTrackpad: {
+            pinchToZoom: true,
+            scrollToZoom: false,
+            flickEnabled: true,
+            dragToPan: true
+          },
+          gestureSettingsMouse: {
+            scrollToZoom: false,
+            clickToZoom: false,
+            dblClickToZoom: false,
+            dragToPan: true
+          },
           gestureSettingsTouch: { pinchToZoom: false, dragToPan: true }
         };
         this.viewer = OpenSeadragon(options);
@@ -347,14 +359,33 @@
         this.closeAnnotationPanel();
       }
     }
+    selectAnnotation(annotationId) {
+      this.selectedAnnotationId = annotationId;
+      this.annotationOverlayElements.forEach((element) => {
+        element.querySelectorAll("g[data-annotation-id]").forEach((group) => {
+          group.classList.toggle("is-selected", group.dataset.annotationId === annotationId);
+        });
+      });
+      for (const annotations of this.annotationData.values()) {
+        const annotation = annotations.find((candidate) => candidate.id === annotationId);
+        if (annotation) {
+          const group = Array.from(this.annotationOverlayElements.values()).map((element) => element.querySelector(`g[data-annotation-id="${CSS.escape(annotationId)}"]`)).find((candidate) => candidate !== null);
+          this.openAnnotationPanel(annotation, group);
+          return;
+        }
+      }
+    }
     getImageRegionForAnnotation(annotationId) {
       var _a, _b;
       for (const [canvasId, annotations] of this.annotationData) {
         const annotation = annotations.find((candidate) => candidate.id === annotationId);
-        if (!annotation)
+        if (!annotation) {
           continue;
+        }
         const index = this.tileSources.findIndex((source) => source.canvasId === canvasId);
-        const group = index >= 0 ? (_b = (_a = this.annotationOverlayElements.get(index)) == null ? void 0 : _a.querySelector(`g[data-annotation-id="${CSS.escape(annotationId)}"]`)) != null ? _b : void 0 : void 0;
+        const group = index >= 0 ? (_b = (_a = this.annotationOverlayElements.get(index)) == null ? void 0 : _a.querySelector(
+          `g[data-annotation-id="${CSS.escape(annotationId)}"]`
+        )) != null ? _b : void 0 : void 0;
         return this.annotationExtractUrl(annotation, group);
       }
       return null;
@@ -461,7 +492,10 @@
           this.ensurePageLoaded(this.targetIndex);
           const targetTop = this.pageOffsets[this.targetIndex] || 0;
           const targetHeight = this.pageRowHeights[this.targetIndex] || this.pageHeights[this.targetIndex] || 1;
-          const range2 = this.indicesForRange(Math.max(0, targetTop - targetHeight * 1.5), targetTop + targetHeight * 2.5);
+          const range2 = this.indicesForRange(
+            Math.max(0, targetTop - targetHeight * 1.5),
+            targetTop + targetHeight * 2.5
+          );
           if (range2) {
             for (let index2 = range2[0]; index2 <= range2[1]; index2 += 1) {
               this.ensurePageLoaded(index2);
@@ -518,8 +552,9 @@
       try {
         tileSource = resolvedTileSource != null ? resolvedTileSource : await this.tileSourceResolver(descriptor, controller.signal);
       } catch (error) {
-        if (token === this.loadToken && !controller.signal.aborted)
+        if (token === this.loadToken && !controller.signal.aborted) {
           this.markUnavailable(index, error instanceof Error ? error.message : "This image is unavailable.");
+        }
         this.finishLoad(index, controller);
         return;
       }
@@ -683,8 +718,9 @@
       });
     }
     addUnavailableOverlay(index, message) {
-      if (!this.viewer)
+      if (!this.viewer) {
         return;
+      }
       this.removeUnavailableOverlay(index);
       const element = document.createElement("div");
       element.className = "diva-image-unavailable";
@@ -702,13 +738,19 @@
       element.append(text, retry);
       this.viewer.addOverlay({
         element,
-        location: new OpenSeadragon.Rect(this.pageXOffsets[index] || 0, this.pageOffsets[index] || 0, 1, this.pageHeights[index] || 1)
+        location: new OpenSeadragon.Rect(
+          this.pageXOffsets[index] || 0,
+          this.pageOffsets[index] || 0,
+          1,
+          this.pageHeights[index] || 1
+        )
       });
     }
     removeUnavailableOverlay(index) {
       const element = this.querySelector(`.diva-image-unavailable[data-index="${index}"]`);
-      if (element)
+      if (element) {
         this.removeOverlay(element);
+      }
       element == null ? void 0 : element.remove();
     }
     setPageAspects(aspects) {
@@ -870,6 +912,7 @@
         const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
         group.setAttribute("data-annotation-id", annotation.id);
         group.setAttribute("tabindex", "0");
+        group.classList.toggle("is-selected", annotation.id === this.selectedAnnotationId);
         if (annotation.text) {
           group.setAttribute("aria-label", annotation.text);
           const showTooltip = (event) => {
@@ -923,7 +966,12 @@
       this.removeOverlay(element);
       this.viewer.addOverlay({
         element,
-        location: new OpenSeadragon.Rect(this.pageXOffsets[index] || 0, this.pageOffsets[index] || 0, 1, this.pageHeights[index] || 1)
+        location: new OpenSeadragon.Rect(
+          this.pageXOffsets[index] || 0,
+          this.pageOffsets[index] || 0,
+          1,
+          this.pageHeights[index] || 1
+        )
       });
     }
     pageWidth(index) {
@@ -940,23 +988,54 @@
       const parsed = new DOMParser().parseFromString(markup, "image/svg+xml");
       const source = parsed.documentElement;
       const allowed = /* @__PURE__ */ new Set(["svg", "g", "path", "rect", "circle", "ellipse", "polygon", "polyline", "line"]);
-      const attributes = /* @__PURE__ */ new Set(["d", "points", "x", "y", "x1", "x2", "y1", "y2", "cx", "cy", "rx", "ry", "r", "width", "height", "fill", "fill-opacity", "fill-rule", "stroke", "stroke-width", "stroke-opacity", "stroke-linecap", "stroke-linejoin", "stroke-dasharray", "transform", "viewBox"]);
+      const attributes = /* @__PURE__ */ new Set([
+        "d",
+        "points",
+        "x",
+        "y",
+        "x1",
+        "x2",
+        "y1",
+        "y2",
+        "cx",
+        "cy",
+        "rx",
+        "ry",
+        "r",
+        "width",
+        "height",
+        "fill",
+        "fill-opacity",
+        "fill-rule",
+        "stroke",
+        "stroke-width",
+        "stroke-opacity",
+        "stroke-linecap",
+        "stroke-linejoin",
+        "stroke-dasharray",
+        "transform",
+        "viewBox"
+      ]);
       const copy = (node, parent) => {
         const name = node.localName.toLowerCase();
-        if (!allowed.has(name))
+        if (!allowed.has(name)) {
           return;
+        }
         const child = document.createElementNS("http://www.w3.org/2000/svg", name);
         if (name !== "svg" && name !== "g") {
           child.classList.add("diva-annotation-svg-shape");
         }
         Array.from(node.attributes).forEach((attribute) => {
-          if (attributes.has(attribute.name)) child.setAttribute(attribute.name, attribute.value);
+          if (attributes.has(attribute.name)) {
+            child.setAttribute(attribute.name, attribute.value);
+          }
         });
         parent.appendChild(child);
         Array.from(node.children).forEach((next) => copy(next, child));
       };
-      if (source.localName.toLowerCase() === "svg")
+      if (source.localName.toLowerCase() === "svg") {
         Array.from(source.children).forEach((child) => copy(child, target));
+      }
     }
     clearAnnotationOverlays() {
       this.clearOverlays(this.annotationOverlayElements);
@@ -1007,6 +1086,13 @@
       if (!this.container) {
         return;
       }
+      this.selectedAnnotationId = annotation.id;
+      this.annotationOverlayElements.forEach((element) => {
+        element.querySelectorAll("g[data-annotation-id]").forEach((group) => {
+          group.classList.toggle("is-selected", group.dataset.annotationId === annotation.id);
+        });
+      });
+      this.emitCustomEvent("diva-annotation-select", { annotationId: annotation.id });
       if (!this.annotationPanel) {
         const panel2 = document.createElement("aside");
         panel2.className = "diva-annotation-panel";
@@ -1019,7 +1105,15 @@
       const close = document.createElement("button");
       close.type = "button";
       close.className = "diva-annotation-panel-close";
-      close.textContent = "Close";
+      close.setAttribute("aria-label", "Close annotation details");
+      close.title = "Close";
+      const closeIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      closeIcon.setAttribute("viewBox", "0 0 512 512");
+      closeIcon.setAttribute("aria-hidden", "true");
+      const closePath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      closePath.setAttribute("d", "M64 80c-8.8 0-16 7.2-16 16V416c0 8.8 7.2 16 16 16H448c8.8 0 16-7.2 16-16V96c0-8.8-7.2-16-16-16H64zM0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zm175 79c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z");
+      closeIcon.appendChild(closePath);
+      close.appendChild(closeIcon);
       close.addEventListener("click", (event) => {
         event.stopPropagation();
         this.closeAnnotationPanel();
@@ -1030,11 +1124,28 @@
       let imageLink = null;
       if (extractUrl) {
         const previewControls = document.createElement("div");
-        Object.assign(previewControls.style, { display: "flex", justifyContent: "flex-end", gap: "4px", margin: "0 0 4px" });
+        previewControls.className = "diva-annotation-panel-preview-controls";
+        Object.assign(previewControls.style, {
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: "4px",
+          margin: "0 0 4px"
+        });
         const previewFrame = document.createElement("div");
-        Object.assign(previewFrame.style, { position: "relative", maxWidth: "100%", margin: "0 auto 10px", border: "1px solid rgba(255, 255, 255, 0.2)" });
+        Object.assign(previewFrame.style, {
+          position: "relative",
+          maxWidth: "100%",
+          margin: "0 auto 10px",
+          border: "1px solid rgba(255, 255, 255, 0.2)"
+        });
         const preview = document.createElement("img");
-        Object.assign(preview.style, { position: "absolute", top: "50%", left: "50%", maxWidth: "none", transition: "transform 120ms ease-out" });
+        Object.assign(preview.style, {
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          maxWidth: "none",
+          transition: "transform 120ms ease-out"
+        });
         preview.src = extractUrl;
         preview.alt = annotation.text ? `Image extract: ${annotation.text}` : "Annotation image extract";
         preview.addEventListener("error", () => {
@@ -1153,7 +1264,24 @@
     sanitizeAnnotationHtml(markup) {
       const template = document.createElement("template");
       template.innerHTML = markup;
-      const allowedTags = /* @__PURE__ */ new Set(["div", "p", "br", "em", "i", "strong", "b", "a", "ul", "ol", "li", "dl", "dt", "dd", "span", "img"]);
+      const allowedTags = /* @__PURE__ */ new Set([
+        "div",
+        "p",
+        "br",
+        "em",
+        "i",
+        "strong",
+        "b",
+        "a",
+        "ul",
+        "ol",
+        "li",
+        "dl",
+        "dt",
+        "dd",
+        "span",
+        "img"
+      ]);
       const safeUrl = (value) => {
         const normalized = value.trim().toLowerCase();
         return /^(https?:|mailto:|tel:|\/|\.\/|\.\.\/|#|\?)/.test(normalized) || !normalized.includes(":");
@@ -1163,8 +1291,9 @@
           parent.appendChild(document.createTextNode(node.textContent || ""));
           return;
         }
-        if (!(node instanceof Element))
+        if (!(node instanceof Element)) {
           return;
+        }
         const tag = node.localName.toLowerCase();
         if (!allowedTags.has(tag)) {
           Array.from(node.childNodes).forEach((child) => copy(child, parent));
@@ -1173,18 +1302,21 @@
         const element = document.createElement(tag);
         if (tag === "a") {
           const href = node.getAttribute("href");
-          if (href && safeUrl(href))
+          if (href && safeUrl(href)) {
             element.setAttribute("href", href);
+          }
           element.setAttribute("target", "_blank");
           element.setAttribute("rel", "noopener noreferrer");
         }
         if (tag === "img") {
           const src = node.getAttribute("src");
-          if (src && safeUrl(src))
+          if (src && safeUrl(src)) {
             element.setAttribute("src", src);
+          }
           const alt = node.getAttribute("alt");
-          if (alt)
+          if (alt) {
             element.setAttribute("alt", alt);
+          }
         }
         parent.appendChild(element);
         Array.from(node.childNodes).forEach((child) => copy(child, element));
@@ -1798,7 +1930,7 @@
   customElements.define("osd-viewer", OsdViewer);
 
   // cache/diva.css
-  var diva_default = ":root{--diva-accent:#5a6bff;--diva-accent-light:#9aa4ff;--diva-annotation-fill:#00bfff1f;--diva-annotation-fill-hover:#3030307a;--diva-annotation-stroke:#00bfff;--diva-annotation-stroke-hover:#d83a3a;--diva-annotation-stroke-width:2;--diva-background-color:#fff;--diva-border:#d9d4ce;--diva-danger:#d32f2f;--diva-dark-bg:#1c1d22;--diva-dark-border:#2c2d33;--diva-overlay-bg:#10111499;--diva-page-bg:#f7f5f1;--diva-shadow-dark:#00000026;--diva-shadow-focus:#9aa4ff59;--diva-shadow-modal:#00000040;--diva-surface:#e6e1dc;--diva-text-muted:#5c5a55;--diva-text-muted-on-dark:#ffffffb3;--diva-text-primary:#1b1b1b;--diva-toolbar-button-icon:#2c2d33;--diva-white:#fff;--diva-font-lg:16px;--diva-font-md:13px;--diva-font-sm:11px;--diva-font-xs:10px;--diva-font-xl:20px}.diva-app,.diva-app *{box-sizing:border-box}.diva-list-reset{margin:0;padding:0;list-style:none}.diva-ui-button{text-align:left;cursor:pointer;color:var(--diva-text-primary);font-size:var(--diva-font-lg);background-color:#0000;border:none;padding:0}.diva-ui-button:hover{background-color:var(--diva-surface)}.diva-ui-card{cursor:pointer;border-radius:0;width:100%;padding:6px}.diva-ui-card--dark{background-color:var(--diva-dark-bg)}.diva-thumbs-item:focus-visible,.diva-page-view-choice:focus-visible,.diva-canvas-toolbar-button:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.diva-annotation-overlay{pointer-events:none;width:100%;height:100%;position:relative}.diva-annotation-overlay.is-hidden{visibility:hidden!important}.diva-annotation-overlay svg{width:100%;height:100%;overflow:visible}.diva-annotation-overlay g{pointer-events:all;cursor:help}.diva-annotation-tooltip{z-index:101;color:#fff;max-width:min(18rem,75%);font-size:var(--diva-font-sm);pointer-events:none;background:#1c1d22f0;border:1px solid #ffffff2e;padding:6px 8px;line-height:1.35;position:absolute;transform:translate(10px,calc(-100% - 10px));box-shadow:0 4px 10px #00000047}.diva-annotation-panel{z-index:1000;color:#fff;background:#1c1d22f7;border:1px solid #fff3;width:min(24rem,100% - 28px);max-height:min(50%,24rem);padding:12px;position:absolute;bottom:14px;left:14px;overflow:auto;box-shadow:0 8px 20px #00000059}.osd-container{position:relative}.diva-annotation-panel-close{float:right;cursor:pointer;margin:0 0 8px 12px}.diva-annotation-panel-content a{color:#9aa4ff}.diva-annotation-panel-content img{max-width:100%;height:auto}.diva-annotation-panel-rotate{min-width:28px;min-height:24px;color:inherit;cursor:pointer;background:0 0;border:1px solid #ffffff40}.diva-annotation-panel-rotate:hover,.diva-annotation-panel-rotate:focus-visible{background:#ffffff1f}.diva-annotation-panel-image-link{color:#9aa4ff;font-size:var(--diva-font-sm);overflow-wrap:anywhere;margin:0 0 10px;line-height:1.3;display:block}.diva-annotation-rect,.diva-annotation-svg-shape{fill:var(--diva-annotation-fill,#00bfff1f);fill-opacity:1;stroke:var(--diva-annotation-stroke,#00bfff);stroke-width:var(--diva-annotation-stroke-width,2);vector-effect:non-scaling-stroke;transition:fill .12s ease-out,stroke .12s ease-out}.diva-annotation-overlay g[data-annotation-id]:hover .diva-annotation-rect,.diva-annotation-overlay g[data-annotation-id]:hover .diva-annotation-svg-shape,.diva-annotation-overlay g[data-annotation-id]:focus .diva-annotation-rect,.diva-annotation-overlay g[data-annotation-id]:focus .diva-annotation-svg-shape{fill:var(--diva-annotation-fill-hover,#3030307a);stroke:var(--diva-annotation-stroke-hover,#d83a3a)}.diva-thumbs-image,.diva-page-view-choice-thumb{border-radius:0;width:100%;height:auto;display:block}.diva-metadata-panel,.diva-contents-panel{height:100%;padding:12px;overflow:auto}.diva-app{color-scheme:light;flex-direction:column;flex:1;height:100%;min-height:0;padding:12px 24px;display:flex}.diva-app.is-fullscreen{height:100vh;min-height:100vh;padding:0}.diva-app-header{font-size:var(--diva-font-lg);align-items:center;gap:12px;margin-bottom:8px;font-weight:600;display:flex}.diva-app-title{font-size:var(--diva-font-xl);text-align:left;color:var(--diva-text-primary);margin-bottom:6px;font-weight:600}.diva-app-title.is-fullscreen{color:var(--diva-white)}.diva-app-body{flex:1;align-items:stretch;gap:0;height:100%;min-height:0;display:flex;position:relative}.diva-canvas-column{flex-direction:column;flex:1;gap:24px;min-width:0;min-height:0;display:flex}.diva-canvas-column.is-fullscreen{height:100%}.diva-canvas-wrapper{flex:1;min-height:0;position:relative}.diva-canvas{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);border-radius:0;width:100%;height:100%;overflow:hidden}.diva-canvas.is-fullscreen{flex:1}.diva-metadata-body{flex-direction:column;gap:10px;display:flex}.diva-metadata-item{flex-direction:column;gap:0;display:flex}.diva-metadata-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);letter-spacing:.05em;font-weight:600;line-height:1.3}.diva-metadata-value{font-size:var(--diva-font-lg);color:var(--diva-text-muted);padding-left:12px;line-height:1.3}.diva-metadata-value>:first-child{margin-top:0}.diva-metadata-value>:last-child{margin-bottom:0}.diva-contents-empty{font-size:var(--diva-font-lg);color:var(--diva-text-muted);padding-left:12px}.diva-sidebar-resizer,.diva-collection-resizer{width:12px;font-size:var(--diva-font-xl);color:var(--diva-white);background-color:var(--diva-text-muted);cursor:col-resize;user-select:none;touch-action:none;flex:0 0 12px;justify-content:center;align-self:stretch;align-items:center;line-height:1;display:flex}.diva-sidebar-resizer:hover,.diva-sidebar-resizer:active,.diva-collection-resizer:hover,.diva-collection-resizer:active{cursor:col-resize}.diva-sidebar-resizer.is-hidden,.diva-collection-resizer.is-hidden{display:none}.diva-sidebar-panel.is-hidden,.diva-collection-panel.is-hidden{opacity:0;pointer-events:none;border-width:0;padding:0;overflow:hidden}.diva-required-statement-dock{justify-content:flex-end;width:100%;margin-top:12px;padding-right:8px;display:flex}.diva-required-statement{font-size:var(--diva-font-md);color:var(--diva-text-muted);text-align:right;min-width:250px;max-width:20vw;line-height:1.4}.diva-scrollbar-track{background:var(--diva-surface);border:1px solid var(--diva-border);z-index:100;border-radius:0;width:12px;position:absolute;top:4px;bottom:4px;right:4px}.diva-scrollbar-thumb{background:var(--diva-text-muted);cursor:pointer;border-radius:0;min-height:30px;position:absolute;left:1px;right:1px}.diva-scrollbar-thumb:hover{background:var(--diva-text-primary)}.diva-scrollbar-thumb:active{background:var(--diva-dark-border)}.diva-throbber-overlay{pointer-events:none;justify-content:center;align-items:center;display:flex;position:absolute;inset:0}.diva-viewer-zoom-indicator{z-index:30;pointer-events:none;font-size:var(--diva-font-sm);color:var(--diva-white);background-color:#0000008c;border-radius:0;padding:4px 8px;font-weight:600;position:absolute;bottom:12px;left:12px}.diva-throbber{background-color:var(--diva-white);width:64px;height:64px;box-shadow:0 8px 16px var(--diva-shadow-dark);border-radius:0;flex-wrap:wrap;padding:8px;display:flex}.diva-throbber-cube{background-color:var(--diva-accent);width:16px;height:16px;animation-name:diva-cube-grid;animation-duration:1.3s;animation-timing-function:ease-in-out;animation-iteration-count:infinite}@keyframes diva-cube-grid{0%{transform:scale(1)}35%{transform:scale(0)}70%{transform:scale(1)}to{transform:scale(1)}}@media (width<=720px){.diva-app{padding:12px}.diva-app-body{flex-direction:column;gap:12px}.diva-sidebar-resizer,.diva-collection-resizer{display:none}}.diva-image-unavailable{background:color-mix(in srgb, var(--diva-background-color,#fff) 92%, transparent);box-sizing:border-box;text-align:center;border:1px solid #999;flex-direction:column;justify-content:center;align-items:center;padding:1rem;display:flex}.diva-image-unavailable button{cursor:pointer}.diva-sidebar-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0;flex-direction:column;flex:none;width:320px;height:100%;min-height:0;display:flex;overflow:hidden}.diva-sidebar-tabs{border:1px solid var(--diva-surface);background-color:var(--diva-surface);border-radius:0;display:flex}.diva-sidebar-tab-button{font-size:var(--diva-font-md);text-transform:uppercase;cursor:pointer;color:var(--diva-text-muted);background-color:#0000;border:none;flex:1;padding:10px 12px}.diva-sidebar-tab-button.is-active{background-color:var(--diva-white);font-weight:600}.diva-sidebar-content{background-color:var(--diva-page-bg);flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}.diva-sidebar-pane{flex:1;width:100%;min-height:0}.diva-sidebar-pane.is-hidden{display:none}.diva-thumbs{scroll-behavior:smooth;background-color:var(--diva-dark-bg);flex:1;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:10px;width:100%;height:100%;min-height:0;padding:12px;display:grid;overflow-y:auto}.diva-thumbs-item{border:1px solid var(--diva-dark-border);text-align:left;flex-direction:column;justify-content:flex-start;align-items:stretch;max-width:none;display:flex}.diva-thumbs-item.is-active{border-color:var(--diva-accent-light);box-shadow:0 0 0 var(--diva-shadow-focus);background-color:var(--diva-dark-bg);outline:2px solid var(--diva-accent-light);outline-offset:2px}.diva-thumbs-lazy-image{background:var(--diva-dark-bg);width:100%;min-height:96px;display:block}.diva-thumbs-image--protected,.diva-thumbs-image--unavailable{background:var(--diva-dark-bg);min-height:96px}.diva-thumbs-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted-on-dark);margin-top:6px;line-height:1.3}.diva-thumbs-label.is-active{color:var(--diva-white)}.diva-contents-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:10px;font-weight:600}.diva-contents-view-tabs{gap:8px;margin-bottom:12px;display:flex}.diva-contents-view-button{background-color:var(--diva-surface);border:1px solid var(--diva-border);font-size:var(--diva-font-sm);color:var(--diva-text-muted);cursor:pointer;border-radius:0;padding:4px 10px}.diva-contents-view-button.is-active{background-color:var(--diva-white);border-color:var(--diva-accent);color:var(--diva-text-primary)}.diva-contents-list-nested{border-left:1px solid var(--diva-border);margin-top:6px;margin-left:6px;padding-left:13px}.diva-contents-item{margin-bottom:6px}.diva-contents-heading{align-items:baseline;display:flex}.diva-contents-disclosure{color:var(--diva-text-muted);cursor:pointer;text-align:center;flex:0 0 1.25rem}.diva-contents-disclosure:hover{color:var(--diva-accent)}.diva-contents-meta{border:1px solid var(--diva-dark-border);flex-direction:column;gap:10px;margin-top:6px;padding:8px;display:flex}.diva-contents-meta dl>div+div{border-top:1px solid var(--diva-dark-border);margin-top:.75rem;padding-top:.75rem}.diva-contents-meta dt{font-weight:600}.diva-contents-meta dd{margin:0 0 .5rem 1rem}.diva-contents-meta dd:last-child{margin-bottom:0}.diva-contents-button:hover{color:var(--diva-accent)}.diva-contents-button.is-current{font-weight:600}@media (width<=720px){.diva-sidebar-panel{height:auto;width:100%!important}.diva-sidebar-panel.is-overlay{z-index:100;width:100%;height:100%;box-shadow:0 12px 24px var(--diva-shadow-dark);border-radius:0;position:absolute;inset:0}.diva-sidebar-panel.is-mobile-hidden{display:none}.diva-thumbs{height:auto;overflow:auto hidden}.diva-thumbs-item{min-width:120px}}.diva-canvas-toolbar-stack{flex-direction:column;gap:4px;width:100%;min-width:0;display:flex}.diva-canvas-toolbar{align-items:center;width:100%;margin-bottom:0;display:flex}.diva-canvas-toolbar-section{flex:none;align-items:center;gap:5px;min-width:0;display:flex}.diva-canvas-toolbar-section.is-right{flex:none;margin-left:auto}.diva-canvas-toolbar-end{align-items:center;gap:8px;min-width:0;margin-left:auto;display:flex}.diva-canvas-toolbar-end .diva-canvas-toolbar-section.is-right{margin-left:0}.diva-canvas-toolbar-item{flex:none;justify-content:center;align-items:center;width:34px;height:34px;display:flex;position:relative}.diva-canvas-toolbar-button{width:30px;height:30px;color:var(--diva-toolbar-button-icon);box-shadow:none;cursor:pointer;background-color:#e2e2e2f0;border:1px solid #2c2d3373;border-radius:0;justify-content:center;align-items:center;padding:6px;display:flex}.diva-canvas-toolbar-button svg{flex:none;width:16px;height:16px}.diva-canvas-toolbar-button:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.diva-canvas-toolbar-button:hover{border-color:var(--diva-toolbar-button-icon);background-color:#d6d6d6fa}.diva-canvas-toolbar-button.is-fullscreen{color:var(--diva-white);background-color:#52586294;border-color:#ffffff85}.diva-canvas-toolbar-button.is-fullscreen:hover{border-color:var(--diva-white);background-color:#606874b8}.diva-canvas-toolbar-button.is-disabled{opacity:.4;cursor:not-allowed}.diva-canvas-toolbar-button.is-disabled:hover{background-color:#e2e2e2f0;border-color:#2c2d3373}.diva-canvas-toolbar-button.is-fullscreen.is-disabled:hover{background-color:#52586294;border-color:#ffffff85}.diva-canvas-toolbar-item:after{z-index:80;max-width:160px;color:var(--diva-white);content:attr(data-tooltip);font-size:var(--diva-font-xs);letter-spacing:.02em;opacity:0;pointer-events:none;text-align:center;visibility:hidden;white-space:normal;word-break:normal;background-color:#1c1d22f2;border:1px solid #ffffff2e;border-radius:0;width:max-content;padding:5px 7px;font-weight:600;line-height:1.2;transition:opacity .12s,transform .12s;position:absolute;top:calc(100% + 7px);left:50%;transform:translate(-50%,-3px);box-shadow:0 4px 10px #0003}.diva-canvas-toolbar-item:hover:after,.diva-canvas-toolbar-item:has(.diva-canvas-toolbar-button:focus-visible):after{opacity:1;visibility:visible;transform:translate(-50%)}.diva-canvas-toolbar-section.is-right .diva-canvas-toolbar-item:last-child:after{left:auto;right:0;transform:translateY(-3px)}.diva-canvas-toolbar-section.is-right .diva-canvas-toolbar-item:last-child:hover:after,.diva-canvas-toolbar-section.is-right .diva-canvas-toolbar-item:last-child:has(.diva-canvas-toolbar-button:focus-visible):after{transform:translate(0)}.diva-canvas-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-align:left;white-space:normal;overflow-wrap:anywhere;word-break:break-word;width:100%}.diva-canvas-toolbar-end .diva-canvas-label{overflow-wrap:normal;text-align:right;white-space:nowrap;word-break:normal;flex:auto;width:auto;min-width:0;max-width:min(42vw,42rem);overflow:hidden}.diva-canvas-label.is-fullscreen{color:var(--diva-white)}.diva-status{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:0}.diva-status.is-error{color:var(--diva-danger)}@media (width<=720px){.diva-canvas-toolbar{flex-wrap:wrap;gap:5px}.diva-canvas-toolbar-end{justify-content:flex-end;width:100%;margin-left:0}.diva-canvas-toolbar-item{width:32px;height:32px}.diva-canvas-toolbar-button{width:28px;height:28px;padding:6px}.diva-canvas-toolbar-button svg{width:15px;height:15px}.diva-canvas-label,.diva-status{display:none}}.diva-modal-overlay{background-color:var(--diva-overlay-bg);z-index:100;justify-content:center;align-items:center;padding:24px;display:flex;position:fixed;inset:0}.diva-viewer-status-overlay{background-color:var(--diva-overlay-bg);z-index:40;justify-content:center;align-items:center;padding:24px;display:flex;position:absolute;inset:0}.diva-modal-overlay.is-fullscreen{padding:0}.diva-modal{background-color:var(--diva-page-bg);color:var(--diva-text-primary);width:min(1440px,96vw);max-height:90vh;box-shadow:0 20px 40px var(--diva-shadow-modal);border-radius:0;flex-direction:column;display:flex}.diva-modal.is-narrow{width:min(960px,94vw)}.diva-modal.is-page-view{height:80vh;max-height:80vh}.diva-modal.is-fullscreen{border-radius:0;width:100vw;height:100vh;max-height:100vh}.diva-modal-header{justify-content:space-between;align-items:center;padding:16px 20px 0;display:flex}.diva-modal-actions{gap:8px;display:flex}.diva-modal-close-action .diva-canvas-toolbar-button{color:var(--diva-danger);box-shadow:none;-webkit-backdrop-filter:none;background-color:#0000;border:none;width:auto;height:auto;padding:2px}.diva-modal-close-action .diva-canvas-toolbar-button:hover{background-color:#d32f2f1f;border-color:#0000}.diva-modal-close-action .diva-canvas-toolbar-item{width:32px}.diva-modal-title-stack{flex-direction:column;gap:4px;display:flex}.diva-modal-title{font-size:var(--diva-font-lg);font-weight:600}.diva-modal-subtitle{font-size:var(--diva-font-lg);color:var(--diva-text-primary)}.diva-modal-subtitle.is-muted{font-size:var(--diva-font-md)}.diva-modal-body{flex:1;grid-template-columns:minmax(0,1fr) 240px;gap:16px;min-height:0;padding:16px 20px 20px;display:grid}.diva-modal-body.is-no-gap{gap:0}.diva-modal-body.is-two-column{grid-template-columns:minmax(0,1fr) 200px;align-items:start}.diva-modal-body.is-no-sidebar{grid-template-columns:minmax(0,1fr)}.diva-modal-body.is-with-choices{grid-template-columns:120px minmax(0,1fr) 240px}.diva-modal-body.is-with-choices-no-sidebar{grid-template-columns:120px minmax(0,1fr)}.diva-modal-viewer{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);height:100%;overflow:hidden}.diva-modal-canvas{width:100%;height:100%;display:block}.diva-modal-sidebar{background-color:var(--diva-white);border-top:1px solid var(--diva-border);border-right:1px solid var(--diva-border);border-bottom:1px solid var(--diva-border);border-radius:0;padding:16px;overflow:auto}.diva-filter-access-warning{color:var(--diva-danger);background-color:var(--diva-surface);border:1px solid var(--diva-border);font-size:var(--diva-font-sm);margin:0 0 12px;padding:8px;line-height:1.4}.diva-manifest-info-logo-wrap{text-align:center;flex-direction:column;align-items:center;gap:8px;display:flex}.diva-manifest-info-logo{width:100%;max-width:180px;height:auto}.diva-page-view-choices{background-color:var(--diva-dark-bg);border-radius:0;flex-direction:column;gap:8px;padding:8px;display:flex;overflow:auto}.diva-page-view-choice{border:2px solid #0000;flex-direction:column;gap:4px;display:flex}.diva-page-view-choice:hover{background-color:var(--diva-dark-bg)}.diva-page-view-choice.is-active{border-color:var(--diva-accent-light);background-color:var(--diva-dark-bg)}.diva-page-view-choice-thumb--protected{background:var(--diva-dark-bg);min-height:72px}.diva-page-view-choice-label{font-size:var(--diva-font-xs);color:var(--diva-text-muted);text-overflow:ellipsis;white-space:nowrap;line-height:1.2;overflow:hidden}.diva-filter-group{border-bottom:1px solid var(--diva-border);margin-bottom:12px;padding-bottom:12px}.diva-filter-title-button{text-align:left;cursor:pointer;width:100%;font-size:var(--diva-font-sm);text-transform:uppercase;letter-spacing:.08em;color:var(--diva-text-muted);background-color:#0000;border:none;align-items:center;gap:8px;margin-bottom:8px;padding:0;font-weight:600;display:flex}.diva-filter-title-button.is-collapsed{margin-bottom:0}.diva-filter-title-icon{border-top:4px solid #0000;border-bottom:4px solid #0000;border-left:6px solid var(--diva-text-muted);width:0;height:0;transition:transform .15s;display:inline-block}.diva-filter-title-icon.is-expanded{transform:rotate(90deg)}.diva-filter-row{flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;display:flex}.diva-filter-toggle{font-size:var(--diva-font-md);align-items:center;gap:8px;margin-bottom:8px;display:flex}.diva-filter-toggle.is-inline{margin-bottom:0}.diva-filter-range-group{flex-direction:column;gap:6px;margin-bottom:10px;display:flex}.diva-filter-range-header{justify-content:space-between;align-items:center;gap:8px;display:flex}.diva-filter-range-header-right{align-items:center;gap:8px;display:flex}.diva-filter-range-input{width:100%}.diva-filter-value{font-size:var(--diva-font-sm);color:var(--diva-text-muted);text-align:right;width:40px}.diva-filter-reset{font-size:var(--diva-font-xs);background-color:var(--diva-surface);border:1px solid var(--diva-border);cursor:pointer;color:var(--diva-text-muted);border-radius:0;padding:2px 6px}.diva-filter-reset:hover{background-color:var(--diva-border)}.diva-filter-json{width:100%;min-height:120px;font-size:var(--diva-font-sm);border:1px solid var(--diva-border);background-color:var(--diva-white);resize:vertical;border-radius:0;padding:6px 8px;font-family:Menlo,Monaco,Consolas,Liberation Mono,monospace}.diva-filter-json-error{font-size:var(--diva-font-sm);color:var(--diva-danger);margin-top:4px}.diva-filter-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted)}.diva-filter-select{border:1px solid var(--diva-border);background-color:var(--diva-white);font-size:var(--diva-font-sm);border-radius:0;padding:4px 6px}.diva-filter-color-input{border:1px solid var(--diva-border);background-color:var(--diva-white);border-radius:0;width:42px;height:28px;padding:0}.diva-auth-overlay{z-index:10000;background:#0000008c;place-items:center;display:grid;position:fixed;inset:0}.diva-auth-dialog{box-sizing:border-box;border:1px solid var(--diva-border,#aaa);background:var(--diva-background-color,#fff);width:min(30rem,100vw - 2rem);color:var(--diva-text-primary,#222);border-radius:0;padding:1.25rem}.diva-auth-dialog button{min-height:2.25rem;color:inherit;cursor:pointer;background:0 0;border:1px solid;border-radius:0;padding:.35rem .8rem}.diva-auth-dialog button:focus-visible{outline:2px solid var(--diva-accent,#1769aa);outline-offset:2px}.diva-collection-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0;flex-direction:column;height:100%;min-height:0;display:flex;overflow:hidden}.diva-collection-header{background-color:var(--diva-surface);border-bottom:1px solid var(--diva-border);border-radius:0;padding:12px}.diva-collection-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:4px;font-weight:600}.diva-collection-summary{font-size:var(--diva-font-md);color:var(--diva-text-muted);line-height:1.4}.diva-collection-tree-item{padding-left:12px}.diva-collection-node-button{align-items:center;gap:6px;width:100%;padding:6px 8px;display:flex}.diva-collection-expand-icon{flex-shrink:0;justify-content:center;align-items:center;width:16px;height:16px;display:flex}.diva-manifest-tree-item{padding:6px 8px 6px 30px}.diva-manifest-tree-item.is-active{background-color:var(--diva-border);font-weight:600}.diva-sidebar-pane.is-scroll{overflow-y:auto}@media (width<=720px){.diva-collection-panel{width:100%;height:auto}}";
+  var diva_default = ":root{--diva-accent:#5a6bff;--diva-accent-light:#9aa4ff;--diva-annotation-fill:#00bfff1f;--diva-annotation-fill-hover:#3030307a;--diva-annotation-stroke:#00bfff;--diva-annotation-stroke-hover:#d83a3a;--diva-annotation-stroke-width:2;--diva-background-color:#fff;--diva-border:#d9d4ce;--diva-danger:#d32f2f;--diva-dark-bg:#1c1d22;--diva-dark-border:#2c2d33;--diva-overlay-bg:#10111499;--diva-page-bg:#f7f5f1;--diva-shadow-dark:#00000026;--diva-shadow-focus:#9aa4ff59;--diva-shadow-modal:#00000040;--diva-surface:#e6e1dc;--diva-text-muted:#5c5a55;--diva-text-muted-on-dark:#ffffffb3;--diva-text-primary:#1b1b1b;--diva-toolbar-button-icon:#2c2d33;--diva-white:#fff;--diva-font-lg:16px;--diva-font-md:13px;--diva-font-sm:11px;--diva-font-xs:10px;--diva-font-xl:20px}.diva-app,.diva-app *{box-sizing:border-box}.diva-list-reset{margin:0;padding:0;list-style:none}.diva-ui-button{text-align:left;cursor:pointer;color:var(--diva-text-primary);font-size:var(--diva-font-lg);background-color:#0000;border:none;padding:0}.diva-ui-button:hover{background-color:var(--diva-surface)}.diva-ui-card{cursor:pointer;border-radius:0;width:100%;padding:6px}.diva-ui-card--dark{background-color:var(--diva-dark-bg)}.diva-thumbs-item:focus-visible,.diva-page-view-choice:focus-visible,.diva-canvas-toolbar-button:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.diva-annotation-overlay{pointer-events:none;width:100%;height:100%;position:relative}.diva-annotation-overlay.is-hidden{visibility:hidden!important}.diva-annotation-overlay svg{width:100%;height:100%;overflow:visible}.diva-annotation-overlay g{pointer-events:all;cursor:help}.diva-annotation-tooltip{z-index:101;color:#fff;max-width:min(18rem,75%);font-size:var(--diva-font-sm);pointer-events:none;background:#1c1d22f0;border:1px solid #ffffff2e;padding:6px 8px;line-height:1.35;position:absolute;transform:translate(10px,calc(-100% - 10px));box-shadow:0 4px 10px #00000047}.diva-annotation-panel{z-index:1000;color:#fff;background:#1c1d22f7;border:1px solid #fff3;width:min(24rem,100% - 28px);max-height:min(50%,24rem);padding:12px;position:absolute;bottom:14px;left:14px;overflow:auto;box-shadow:0 8px 20px #00000059}.osd-container{position:relative}.diva-annotation-panel-close{color:#fff;cursor:pointer;background-color:#000;border:1px solid #fff;border-radius:0;justify-content:center;align-items:center;height:30px;margin:0;padding:6px;display:inline-flex;position:absolute;top:12px;right:12px;width:30px!important}.diva-annotation-panel-close svg{fill:currentColor;flex:none;width:16px;height:16px}.diva-annotation-panel-close:hover,.diva-annotation-panel-close:focus-visible{background-color:#222}.diva-annotation-panel-content{padding-top:36px}.diva-annotation-panel-preview-controls{position:absolute;top:12px;right:50px}.diva-annotation-panel-content a{color:#9aa4ff}.diva-annotation-panel-content img{max-width:100%;height:auto}.diva-annotation-panel-rotate{color:#fff;cursor:pointer;background-color:#000;border:1px solid #fff;border-radius:0;justify-content:center;align-items:center;height:30px;padding:6px;font-size:18px;line-height:1;display:inline-flex;width:30px!important;margin:0!important}.diva-annotation-panel-rotate:hover,.diva-annotation-panel-rotate:focus-visible{background-color:#222}.diva-annotation-panel-image-link{color:#9aa4ff;font-size:var(--diva-font-sm);overflow-wrap:anywhere;margin:0 0 10px;line-height:1.3;display:block}.diva-annotation-rect,.diva-annotation-svg-shape{fill:var(--diva-annotation-fill,#00bfff1f);fill-opacity:1;stroke:var(--diva-annotation-stroke,#00bfff);stroke-width:var(--diva-annotation-stroke-width,2);vector-effect:non-scaling-stroke;transition:fill .12s ease-out,stroke .12s ease-out}.diva-annotation-overlay g[data-annotation-id]:hover .diva-annotation-rect,.diva-annotation-overlay g[data-annotation-id]:hover .diva-annotation-svg-shape,.diva-annotation-overlay g[data-annotation-id]:focus .diva-annotation-rect,.diva-annotation-overlay g[data-annotation-id]:focus .diva-annotation-svg-shape,.diva-annotation-overlay g[data-annotation-id].is-selected .diva-annotation-rect,.diva-annotation-overlay g[data-annotation-id].is-selected .diva-annotation-svg-shape{fill:var(--diva-annotation-fill-hover,#3030307a);stroke:var(--diva-annotation-stroke-hover,#d83a3a)}.diva-thumbs-image,.diva-page-view-choice-thumb{border-radius:0;width:100%;height:auto;display:block}.diva-metadata-panel,.diva-contents-panel{height:100%;padding:12px;overflow:auto}.diva-app{color-scheme:light;flex-direction:column;flex:1;height:100%;min-height:0;padding:12px 24px;display:flex}.diva-app.is-fullscreen{height:100vh;min-height:100vh;padding:0}.diva-app-header{font-size:var(--diva-font-lg);align-items:center;gap:12px;margin-bottom:8px;font-weight:600;display:flex}.diva-app-title{font-size:var(--diva-font-xl);text-align:left;color:var(--diva-text-primary);margin-bottom:6px;font-weight:600}.diva-app-title.is-fullscreen{color:var(--diva-white)}.diva-app-body{flex:1;align-items:stretch;gap:0;height:100%;min-height:0;display:flex;position:relative}.diva-canvas-column{flex-direction:column;flex:1;gap:24px;min-width:0;min-height:0;display:flex}.diva-canvas-column.is-fullscreen{height:100%}.diva-canvas-wrapper{flex:1;min-height:0;position:relative}.diva-canvas{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);border-radius:0;width:100%;height:100%;overflow:hidden}.diva-canvas.is-fullscreen{flex:1}.diva-metadata-body{flex-direction:column;gap:10px;display:flex}.diva-metadata-item{flex-direction:column;gap:0;display:flex}.diva-metadata-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);letter-spacing:.05em;font-weight:600;line-height:1.3}.diva-metadata-value{font-size:var(--diva-font-lg);color:var(--diva-text-muted);padding-left:12px;line-height:1.3}.diva-metadata-value>:first-child{margin-top:0}.diva-metadata-value>:last-child{margin-bottom:0}.diva-contents-empty{font-size:var(--diva-font-lg);color:var(--diva-text-muted);padding-left:12px}.diva-sidebar-resizer,.diva-collection-resizer{width:12px;font-size:var(--diva-font-xl);color:var(--diva-white);background-color:var(--diva-text-muted);cursor:col-resize;user-select:none;touch-action:none;flex:0 0 12px;justify-content:center;align-self:stretch;align-items:center;line-height:1;display:flex}.diva-sidebar-resizer:hover,.diva-sidebar-resizer:active,.diva-collection-resizer:hover,.diva-collection-resizer:active{cursor:col-resize}.diva-sidebar-resizer.is-hidden,.diva-collection-resizer.is-hidden{display:none}.diva-sidebar-panel.is-hidden,.diva-collection-panel.is-hidden{opacity:0;pointer-events:none;border-width:0;padding:0;overflow:hidden}.diva-required-statement-dock{justify-content:flex-end;width:100%;margin-top:12px;padding-right:8px;display:flex}.diva-required-statement{font-size:var(--diva-font-md);color:var(--diva-text-muted);text-align:right;min-width:250px;max-width:20vw;line-height:1.4}.diva-scrollbar-track{background:var(--diva-surface);border:1px solid var(--diva-border);z-index:100;border-radius:0;width:12px;position:absolute;top:4px;bottom:4px;right:4px}.diva-scrollbar-thumb{background:var(--diva-text-muted);cursor:pointer;border-radius:0;min-height:30px;position:absolute;left:1px;right:1px}.diva-scrollbar-thumb:hover{background:var(--diva-text-primary)}.diva-scrollbar-thumb:active{background:var(--diva-dark-border)}.diva-throbber-overlay{pointer-events:none;justify-content:center;align-items:center;display:flex;position:absolute;inset:0}.diva-viewer-zoom-indicator{z-index:30;pointer-events:none;font-size:var(--diva-font-sm);color:var(--diva-white);background-color:#0000008c;border-radius:0;padding:4px 8px;font-weight:600;position:absolute;bottom:12px;left:12px}.diva-throbber{background-color:var(--diva-white);width:64px;height:64px;box-shadow:0 8px 16px var(--diva-shadow-dark);border-radius:0;flex-wrap:wrap;padding:8px;display:flex}.diva-throbber-cube{background-color:var(--diva-accent);width:16px;height:16px;animation-name:diva-cube-grid;animation-duration:1.3s;animation-timing-function:ease-in-out;animation-iteration-count:infinite}@keyframes diva-cube-grid{0%{transform:scale(1)}35%{transform:scale(0)}70%{transform:scale(1)}to{transform:scale(1)}}@media (width<=720px){.diva-app{padding:12px}.diva-app-body{flex-direction:column;gap:12px}.diva-sidebar-resizer,.diva-collection-resizer{display:none}}.diva-image-unavailable{background:color-mix(in srgb, var(--diva-background-color,#fff) 92%, transparent);box-sizing:border-box;text-align:center;border:1px solid #999;flex-direction:column;justify-content:center;align-items:center;padding:1rem;display:flex}.diva-image-unavailable button{cursor:pointer}.diva-sidebar-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0;flex-direction:column;flex:none;width:320px;height:100%;min-height:0;display:flex;overflow:hidden}.diva-sidebar-tabs{border:1px solid var(--diva-surface);background-color:var(--diva-surface);border-radius:0;display:flex}.diva-sidebar-tab-button{font-size:var(--diva-font-md);text-transform:uppercase;cursor:pointer;color:var(--diva-text-muted);background-color:#0000;border:none;flex:1;padding:10px 12px}.diva-sidebar-tab-button.is-active{background-color:var(--diva-white);font-weight:600}.diva-sidebar-content{background-color:var(--diva-page-bg);flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}.diva-sidebar-pane{flex:1;width:100%;min-height:0}.diva-sidebar-pane.is-hidden{display:none}.diva-thumbs{scroll-behavior:smooth;background-color:var(--diva-dark-bg);flex:1;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:10px;width:100%;height:100%;min-height:0;padding:12px;display:grid;overflow-y:auto}.diva-thumbs-item{border:1px solid var(--diva-dark-border);text-align:left;flex-direction:column;justify-content:flex-start;align-items:stretch;max-width:none;display:flex}.diva-thumbs-item.is-active{border-color:var(--diva-accent-light);box-shadow:0 0 0 var(--diva-shadow-focus);background-color:var(--diva-dark-bg);outline:2px solid var(--diva-accent-light);outline-offset:2px}.diva-thumbs-lazy-image{background:var(--diva-dark-bg);width:100%;min-height:96px;display:block}.diva-thumbs-image--protected,.diva-thumbs-image--unavailable{background:var(--diva-dark-bg);min-height:96px}.diva-thumbs-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted-on-dark);margin-top:6px;line-height:1.3}.diva-thumbs-label.is-active{color:var(--diva-white)}.diva-contents-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:10px;font-weight:600}.diva-contents-view-tabs{gap:8px;margin-bottom:12px;display:flex}.diva-contents-view-button{background-color:var(--diva-surface);border:1px solid var(--diva-border);font-size:var(--diva-font-sm);color:var(--diva-text-muted);cursor:pointer;border-radius:0;padding:4px 10px}.diva-contents-view-button.is-active{background-color:var(--diva-white);border-color:var(--diva-accent);color:var(--diva-text-primary)}.diva-contents-list-nested{border-left:1px solid var(--diva-border);margin-top:6px;margin-left:6px;padding-left:13px}.diva-contents-item{margin-bottom:6px}.diva-contents-heading{align-items:baseline;display:flex}.diva-contents-disclosure{color:var(--diva-text-muted);cursor:pointer;text-align:center;flex:0 0 1.25rem}.diva-contents-disclosure:hover{color:var(--diva-accent)}.diva-contents-meta{border:1px solid var(--diva-dark-border);flex-direction:column;gap:10px;margin-top:6px;padding:8px;display:flex}.diva-contents-meta dl>div+div{border-top:1px solid var(--diva-dark-border);margin-top:.75rem;padding-top:.75rem}.diva-contents-meta dt{font-weight:600}.diva-contents-meta dd{margin:0 0 .5rem 1rem}.diva-contents-meta dd:last-child{margin-bottom:0}.diva-contents-button:hover{color:var(--diva-accent)}.diva-contents-button.is-current{font-weight:600}@media (width<=720px){.diva-sidebar-panel{height:auto;width:100%!important}.diva-sidebar-panel.is-overlay{z-index:100;width:100%;height:100%;box-shadow:0 12px 24px var(--diva-shadow-dark);border-radius:0;position:absolute;inset:0}.diva-sidebar-panel.is-mobile-hidden{display:none}.diva-thumbs{height:auto;overflow:auto hidden}.diva-thumbs-item{min-width:120px}}.diva-canvas-toolbar-stack{flex-direction:column;gap:4px;width:100%;min-width:0;display:flex}.diva-canvas-toolbar{align-items:center;width:100%;margin-bottom:0;display:flex}.diva-canvas-toolbar-section{flex:none;align-items:center;gap:5px;min-width:0;display:flex}.diva-canvas-toolbar-section.is-right{flex:none;margin-left:auto}.diva-canvas-toolbar-end{align-items:center;gap:8px;min-width:0;margin-left:auto;display:flex}.diva-canvas-toolbar-end .diva-canvas-toolbar-section.is-right{margin-left:0}.diva-canvas-toolbar-item{flex:none;justify-content:center;align-items:center;width:34px;height:34px;display:flex;position:relative}.diva-canvas-toolbar-button{width:30px;height:30px;color:var(--diva-toolbar-button-icon);box-shadow:none;cursor:pointer;background-color:#e2e2e2f0;border:1px solid #2c2d3373;border-radius:0;justify-content:center;align-items:center;padding:6px;display:flex}.diva-canvas-toolbar-button svg{flex:none;width:16px;height:16px}.diva-canvas-toolbar-button:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.diva-canvas-toolbar-button:hover{border-color:var(--diva-toolbar-button-icon);background-color:#d6d6d6fa}.diva-canvas-toolbar-button.is-fullscreen{color:var(--diva-white);background-color:#52586294;border-color:#ffffff85}.diva-canvas-toolbar-button.is-fullscreen:hover{border-color:var(--diva-white);background-color:#606874b8}.diva-canvas-toolbar-button.is-disabled{opacity:.4;cursor:not-allowed}.diva-canvas-toolbar-button.is-disabled:hover{background-color:#e2e2e2f0;border-color:#2c2d3373}.diva-canvas-toolbar-button.is-fullscreen.is-disabled:hover{background-color:#52586294;border-color:#ffffff85}.diva-canvas-toolbar-item:after{z-index:80;max-width:160px;color:var(--diva-white);content:attr(data-tooltip);font-size:var(--diva-font-xs);letter-spacing:.02em;opacity:0;pointer-events:none;text-align:center;visibility:hidden;white-space:normal;word-break:normal;background-color:#1c1d22f2;border:1px solid #ffffff2e;border-radius:0;width:max-content;padding:5px 7px;font-weight:600;line-height:1.2;transition:opacity .12s,transform .12s;position:absolute;top:calc(100% + 7px);left:50%;transform:translate(-50%,-3px);box-shadow:0 4px 10px #0003}.diva-canvas-toolbar-item:hover:after,.diva-canvas-toolbar-item:has(.diva-canvas-toolbar-button:focus-visible):after{opacity:1;visibility:visible;transform:translate(-50%)}.diva-canvas-toolbar-section.is-right .diva-canvas-toolbar-item:last-child:after{left:auto;right:0;transform:translateY(-3px)}.diva-canvas-toolbar-section.is-right .diva-canvas-toolbar-item:last-child:hover:after,.diva-canvas-toolbar-section.is-right .diva-canvas-toolbar-item:last-child:has(.diva-canvas-toolbar-button:focus-visible):after{transform:translate(0)}.diva-canvas-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-align:left;white-space:normal;overflow-wrap:anywhere;word-break:break-word;width:100%}.diva-canvas-toolbar-end .diva-canvas-label{overflow-wrap:normal;text-align:right;white-space:nowrap;word-break:normal;flex:auto;width:auto;min-width:0;max-width:min(42vw,42rem);overflow:hidden}.diva-canvas-label.is-fullscreen{color:var(--diva-white)}.diva-status{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:0}.diva-status.is-error{color:var(--diva-danger)}@media (width<=720px){.diva-canvas-toolbar{flex-wrap:wrap;gap:5px}.diva-canvas-toolbar-end{justify-content:flex-end;width:100%;margin-left:0}.diva-canvas-toolbar-item{width:32px;height:32px}.diva-canvas-toolbar-button{width:28px;height:28px;padding:6px}.diva-canvas-toolbar-button svg{width:15px;height:15px}.diva-canvas-label,.diva-status{display:none}}.diva-modal-overlay{background-color:var(--diva-overlay-bg);z-index:100;justify-content:center;align-items:center;padding:24px;display:flex;position:fixed;inset:0}.diva-viewer-status-overlay{background-color:var(--diva-overlay-bg);z-index:40;justify-content:center;align-items:center;padding:24px;display:flex;position:absolute;inset:0}.diva-modal-overlay.is-fullscreen{padding:0}.diva-modal{background-color:var(--diva-page-bg);color:var(--diva-text-primary);width:min(1440px,96vw);max-height:90vh;box-shadow:0 20px 40px var(--diva-shadow-modal);border-radius:0;flex-direction:column;display:flex}.diva-modal.is-narrow{width:min(960px,94vw)}.diva-modal.is-page-view{height:80vh;max-height:80vh}.diva-modal.is-fullscreen{border-radius:0;width:100vw;height:100vh;max-height:100vh}.diva-modal-header{justify-content:space-between;align-items:center;padding:16px 20px 0;display:flex}.diva-modal-actions{gap:8px;display:flex}.diva-modal-close-action .diva-canvas-toolbar-button{color:var(--diva-danger);box-shadow:none;-webkit-backdrop-filter:none;background-color:#0000;border:none;width:auto;height:auto;padding:2px}.diva-modal-close-action .diva-canvas-toolbar-button:hover{background-color:#d32f2f1f;border-color:#0000}.diva-modal-close-action .diva-canvas-toolbar-item{width:32px}.diva-modal-title-stack{flex-direction:column;gap:4px;display:flex}.diva-modal-title{font-size:var(--diva-font-lg);font-weight:600}.diva-modal-subtitle{font-size:var(--diva-font-lg);color:var(--diva-text-primary)}.diva-modal-subtitle.is-muted{font-size:var(--diva-font-md)}.diva-modal-body{flex:1;grid-template-columns:minmax(0,1fr) 240px;gap:16px;min-height:0;padding:16px 20px 20px;display:grid}.diva-modal-body.is-no-gap{gap:0}.diva-modal-body.is-two-column{grid-template-columns:minmax(0,1fr) 200px;align-items:start}.diva-modal-body.is-no-sidebar{grid-template-columns:minmax(0,1fr)}.diva-modal-body.is-with-choices{grid-template-columns:120px minmax(0,1fr) 240px}.diva-modal-body.is-with-choices-no-sidebar{grid-template-columns:120px minmax(0,1fr)}.diva-modal-viewer{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);height:100%;overflow:hidden}.diva-modal-canvas{width:100%;height:100%;display:block}.diva-modal-sidebar{background-color:var(--diva-white);border-top:1px solid var(--diva-border);border-right:1px solid var(--diva-border);border-bottom:1px solid var(--diva-border);border-radius:0;padding:16px;overflow:auto}.diva-filter-access-warning{color:var(--diva-danger);background-color:var(--diva-surface);border:1px solid var(--diva-border);font-size:var(--diva-font-sm);margin:0 0 12px;padding:8px;line-height:1.4}.diva-manifest-info-logo-wrap{text-align:center;flex-direction:column;align-items:center;gap:8px;display:flex}.diva-manifest-info-logo{width:100%;max-width:180px;height:auto}.diva-page-view-choices{background-color:var(--diva-dark-bg);border-radius:0;flex-direction:column;gap:8px;padding:8px;display:flex;overflow:auto}.diva-page-view-choice{border:2px solid #0000;flex-direction:column;gap:4px;display:flex}.diva-page-view-choice:hover{background-color:var(--diva-dark-bg)}.diva-page-view-choice.is-active{border-color:var(--diva-accent-light);background-color:var(--diva-dark-bg)}.diva-page-view-choice-thumb--protected{background:var(--diva-dark-bg);min-height:72px}.diva-page-view-choice-label{font-size:var(--diva-font-xs);color:var(--diva-text-muted);text-overflow:ellipsis;white-space:nowrap;line-height:1.2;overflow:hidden}.diva-filter-group{border-bottom:1px solid var(--diva-border);margin-bottom:12px;padding-bottom:12px}.diva-filter-title-button{text-align:left;cursor:pointer;width:100%;font-size:var(--diva-font-sm);text-transform:uppercase;letter-spacing:.08em;color:var(--diva-text-muted);background-color:#0000;border:none;align-items:center;gap:8px;margin-bottom:8px;padding:0;font-weight:600;display:flex}.diva-filter-title-button.is-collapsed{margin-bottom:0}.diva-filter-title-icon{border-top:4px solid #0000;border-bottom:4px solid #0000;border-left:6px solid var(--diva-text-muted);width:0;height:0;transition:transform .15s;display:inline-block}.diva-filter-title-icon.is-expanded{transform:rotate(90deg)}.diva-filter-row{flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;display:flex}.diva-filter-toggle{font-size:var(--diva-font-md);align-items:center;gap:8px;margin-bottom:8px;display:flex}.diva-filter-toggle.is-inline{margin-bottom:0}.diva-filter-range-group{flex-direction:column;gap:6px;margin-bottom:10px;display:flex}.diva-filter-range-header{justify-content:space-between;align-items:center;gap:8px;display:flex}.diva-filter-range-header-right{align-items:center;gap:8px;display:flex}.diva-filter-range-input{width:100%}.diva-filter-value{font-size:var(--diva-font-sm);color:var(--diva-text-muted);text-align:right;width:40px}.diva-filter-reset{font-size:var(--diva-font-xs);background-color:var(--diva-surface);border:1px solid var(--diva-border);cursor:pointer;color:var(--diva-text-muted);border-radius:0;padding:2px 6px}.diva-filter-reset:hover{background-color:var(--diva-border)}.diva-filter-json{width:100%;min-height:120px;font-size:var(--diva-font-sm);border:1px solid var(--diva-border);background-color:var(--diva-white);resize:vertical;border-radius:0;padding:6px 8px;font-family:Menlo,Monaco,Consolas,Liberation Mono,monospace}.diva-filter-json-error{font-size:var(--diva-font-sm);color:var(--diva-danger);margin-top:4px}.diva-filter-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted)}.diva-filter-select{border:1px solid var(--diva-border);background-color:var(--diva-white);font-size:var(--diva-font-sm);border-radius:0;padding:4px 6px}.diva-filter-color-input{border:1px solid var(--diva-border);background-color:var(--diva-white);border-radius:0;width:42px;height:28px;padding:0}.diva-auth-overlay{z-index:10000;background:#0000008c;place-items:center;display:grid;position:fixed;inset:0}.diva-auth-dialog{box-sizing:border-box;border:1px solid var(--diva-border,#aaa);background:var(--diva-background-color,#fff);width:min(30rem,100vw - 2rem);color:var(--diva-text-primary,#222);border-radius:0;padding:1.25rem}.diva-auth-dialog button{min-height:2.25rem;color:inherit;cursor:pointer;background:0 0;border:1px solid;border-radius:0;padding:.35rem .8rem}.diva-auth-dialog button:focus-visible{outline:2px solid var(--diva-accent,#1769aa);outline-offset:2px}.diva-collection-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0;flex-direction:column;height:100%;min-height:0;display:flex;overflow:hidden}.diva-collection-header{background-color:var(--diva-surface);border-bottom:1px solid var(--diva-border);border-radius:0;padding:12px}.diva-collection-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:4px;font-weight:600}.diva-collection-summary{font-size:var(--diva-font-md);color:var(--diva-text-muted);line-height:1.4}.diva-collection-tree-item{padding-left:12px}.diva-collection-node-button{align-items:center;gap:6px;width:100%;padding:6px 8px;display:flex}.diva-collection-expand-icon{flex-shrink:0;justify-content:center;align-items:center;width:16px;height:16px;display:flex}.diva-manifest-tree-item{padding:6px 8px 6px 30px}.diva-manifest-tree-item.is-active{background-color:var(--diva-border);font-weight:600}.diva-sidebar-pane.is-scroll{overflow-y:auto}@media (width<=720px){.diva-collection-panel{width:100%;height:auto}}";
 
   // cache/elm-esm.js
   function F(arity, fun, wrapper) {
@@ -31192,7 +31324,11 @@
       const cached = this.resolutionCache.get(pending.sourceId);
       const resolutions = (cached == null ? void 0 : cached.descriptorKey) === pending.descriptorKey ? cached.resolutions : /* @__PURE__ */ new Map();
       resolutions.set(state, tileSource);
-      this.resolutionCache.set(pending.sourceId, { descriptorKey: pending.descriptorKey, activeState: state, resolutions });
+      this.resolutionCache.set(pending.sourceId, {
+        descriptorKey: pending.descriptorKey,
+        activeState: state,
+        resolutions
+      });
       pending.resolve(tileSource);
     }
     fail(requestId, message) {
@@ -31216,7 +31352,12 @@
         rejectShared = reject;
       });
       const active = { requestId, descriptorKey: key, promise, consumers: /* @__PURE__ */ new Set() };
-      this.pending.set(requestId, { sourceId: source.sourceId, descriptorKey: key, resolve: resolveShared, reject: rejectShared });
+      this.pending.set(requestId, {
+        sourceId: source.sourceId,
+        descriptorKey: key,
+        resolve: resolveShared,
+        reject: rejectShared
+      });
       this.inflight.set(source.sourceId, active);
       this.ports.resolveTileSourceRequested.send({ requestId, sourceId: source.sourceId });
       return active;
@@ -31311,7 +31452,10 @@
       const key = STORAGE_PREFIX + encodeURIComponent(request.key);
       try {
         if (request.action === "write") {
-          sessionStorage.setItem(key, JSON.stringify({ accessToken: request.accessToken, expiresAt: request.expiresAt }));
+          sessionStorage.setItem(
+            key,
+            JSON.stringify({ accessToken: request.accessToken, expiresAt: request.expiresAt })
+          );
           return;
         }
         if (request.action === "remove") {
@@ -31319,7 +31463,11 @@
           return;
         }
         const raw = sessionStorage.getItem(key);
-        this.ports.authStorageResponded.send({ flowId: request.flowId, now: Date.now(), value: raw ? JSON.parse(raw) : null });
+        this.ports.authStorageResponded.send({
+          flowId: request.flowId,
+          now: Date.now(),
+          value: raw ? JSON.parse(raw) : null
+        });
       } catch (_) {
         if (request.action === "read") {
           this.ports.authStorageResponded.send({ flowId: request.flowId, now: Date.now(), value: null });
@@ -32047,18 +32195,24 @@
       const c1 = r * v1[0] + g * v1[1] + b * v1[2];
       const c2 = r * v2[0] + g * v2[1] + b * v2[2];
       const c3 = r * v3[0] + g * v3[1] + b * v3[2];
-      if (c1 < min1)
+      if (c1 < min1) {
         min1 = c1;
-      if (c1 > max1)
+      }
+      if (c1 > max1) {
         max1 = c1;
-      if (c2 < min2)
+      }
+      if (c2 < min2) {
         min2 = c2;
-      if (c2 > max2)
+      }
+      if (c2 > max2) {
         max2 = c2;
-      if (c3 < min3)
+      }
+      if (c3 < min3) {
         min3 = c3;
-      if (c3 > max3)
+      }
+      if (c3 > max3) {
         max3 = c3;
+      }
     }
     const range1 = max1 - min1 || 1;
     const range2 = max2 - min2 || 1;
@@ -32425,7 +32579,9 @@
         this._scratchCanvas = window.document.createElement("canvas");
       }
       if (!this._scratchContext) {
-        this._scratchContext = this._scratchCanvas.getContext("2d", { willReadFrequently: true });
+        this._scratchContext = this._scratchCanvas.getContext("2d", {
+          willReadFrequently: true
+        });
       }
       if (this._scratchCanvas.width !== width) {
         this._scratchCanvas.width = width;
@@ -32938,10 +33094,12 @@
   injectStyles(diva_default);
   var copyAnnotation = (annotation) => JSON.parse(JSON.stringify(annotation));
   var annotationBodyText = (body) => {
-    if (typeof body === "string")
+    if (typeof body === "string") {
       return body;
-    if (Array.isArray(body))
+    }
+    if (Array.isArray(body)) {
       return body.length > 0 ? annotationBodyText(body[0]) : "";
+    }
     if (body && typeof body === "object") {
       const value = body;
       return typeof value.value === "string" ? value.value : typeof value.chars === "string" ? value.chars : "";
@@ -32951,14 +33109,17 @@
   var plainAnnotationText = (html) => html.replace(/<[^>]*>/g, "");
   var selectorShape = (selector) => {
     var _a;
-    if (!selector || typeof selector !== "object")
+    if (!selector || typeof selector !== "object") {
       return void 0;
+    }
     const value = selector;
     const type = typeof value.type === "string" ? value.type.toLowerCase() : typeof value["@type"] === "string" ? value["@type"].toLowerCase() : "";
-    if (type.includes("svgselector") && typeof value.value === "string")
+    if (type.includes("svgselector") && typeof value.value === "string") {
       return { kind: "svg", value: value.value };
-    if (typeof value.value === "string")
+    }
+    if (typeof value.value === "string") {
       return xywhShape(value.value);
+    }
     return (_a = selectorShape(value.default)) != null ? _a : selectorShape(value.item);
   };
   var xywhShape = (value) => {
@@ -32999,7 +33160,18 @@
       id: annotation.id,
       type: "Annotation",
       body: { type: "TextualBody", value: (_a = annotation.html) != null ? _a : annotation.text },
-      target: annotation.shape.kind === "rect" ? { type: "SpecificResource", source: canvasId, selector: { type: "FragmentSelector", value: `xywh=${annotation.shape.x},${annotation.shape.y},${annotation.shape.width},${annotation.shape.height}` } } : { type: "SpecificResource", source: canvasId, selector: { type: "SvgSelector", value: (_b = annotation.shape.value) != null ? _b : "" } }
+      target: annotation.shape.kind === "rect" ? {
+        type: "SpecificResource",
+        source: canvasId,
+        selector: {
+          type: "FragmentSelector",
+          value: `xywh=${annotation.shape.x},${annotation.shape.y},${annotation.shape.width},${annotation.shape.height}`
+        }
+      } : {
+        type: "SpecificResource",
+        source: canvasId,
+        selector: { type: "SvgSelector", value: (_b = annotation.shape.value) != null ? _b : "" }
+      }
     };
   };
   var DEFAULT_SIDEBAR_WIDTH = 320;
@@ -33088,6 +33260,7 @@
       void this.ready.catch(() => {
       });
       this.handlePageChangeBound = this.handlePageChange.bind(this);
+      this.handleAnnotationSelectBound = this.handleAnnotationSelect.bind(this);
       this.handlePageLoadedBound = this.handlePageLoaded.bind(this);
       this.handleZoomChangeBound = this.handleZoomChange.bind(this);
       this.handleLoadingChangeBound = this.handleLoadingChange.bind(this);
@@ -33125,11 +33298,15 @@
       this.callViewerMethodWhenReady("setStaticImageCorsPolicy", this.staticImageCorsPolicy);
       this.bindRootClick();
       this.bindPageChange();
+      this.bindViewerEvent("diva-annotation-select", this.handleAnnotationSelectBound);
       this.bindViewerEvent("diva-page-loaded", this.handlePageLoadedBound);
       this.bindFullscreenChange();
       this.bindZoomChange();
       this.bindLoadingChange();
-      this.bindViewerEvent("diva-static-image-cors-fallback", this.handleStaticImageCorsFallbackBound);
+      this.bindViewerEvent(
+        "diva-static-image-cors-fallback",
+        this.handleStaticImageCorsFallbackBound
+      );
       this.bindViewerEvent("diva-page-load-error", this.handlePageLoadErrorBound);
     }
     /**
@@ -33173,17 +33350,25 @@
         });
         this.auth.registerSources(update.tileSources);
         this.callViewerMethodWhenReady("setTileSourceResolver", this.tileSourceResolver);
-        this.callViewerMethodWhenReady("setTileSources", update.tileSources, update.initialPageIndex, update.resourceId);
+        this.callViewerMethodWhenReady(
+          "setTileSources",
+          update.tileSources,
+          update.initialPageIndex,
+          update.resourceId
+        );
       });
       this.getPort("annotationsUpdated").subscribe((value) => {
-        this.manifestAnnotationsByCanvas.set(value.canvasId, value.annotations.map((annotation) => {
-          var _a;
-          return {
-            canvasId: value.canvasId,
-            publicAnnotation: publicAnnotationFromViewer(value.canvasId, annotation),
-            viewerAnnotation: { ...annotation, imageService: (_a = annotation.imageService) != null ? _a : null }
-          };
-        }));
+        this.manifestAnnotationsByCanvas.set(
+          value.canvasId,
+          value.annotations.map((annotation) => {
+            var _a;
+            return {
+              canvasId: value.canvasId,
+              publicAnnotation: publicAnnotationFromViewer(value.canvasId, annotation),
+              viewerAnnotation: { ...annotation, imageService: (_a = annotation.imageService) != null ? _a : null }
+            };
+          })
+        );
         this.applyAnnotationsForCanvas(value.canvasId);
       });
       this.getPort("annotationsVisibilityUpdated").subscribe((visible) => {
@@ -33239,9 +33424,11 @@
         this.callViewerMethod("setLayoutMode", mode);
         this.updateLayoutState(mode, this.state.viewingDirection);
       });
-      this.getPort("resourceLoadSucceeded").subscribe((value) => {
-        this.handleResourceSucceeded(value.requestId, value.url, value.hasPages, value.pageIndex);
-      });
+      this.getPort("resourceLoadSucceeded").subscribe(
+        (value) => {
+          this.handleResourceSucceeded(value.requestId, value.url, value.hasPages, value.pageIndex);
+        }
+      );
       this.getPort("resourceLoadFailed").subscribe((value) => {
         this.handleResourceFailed(value.requestId, value.message);
       });
@@ -33280,8 +33467,12 @@
         return [];
       }
       const merged = /* @__PURE__ */ new Map();
-      ((_a = this.manifestAnnotationsByCanvas.get(canvasId)) != null ? _a : []).forEach((annotation) => merged.set(annotation.viewerAnnotation.id, annotation));
-      ((_b = this.apiAnnotationsByCanvas.get(canvasId)) != null ? _b : []).forEach((annotation) => merged.set(annotation.viewerAnnotation.id, annotation));
+      ((_a = this.manifestAnnotationsByCanvas.get(canvasId)) != null ? _a : []).forEach(
+        (annotation) => merged.set(annotation.viewerAnnotation.id, annotation)
+      );
+      ((_b = this.apiAnnotationsByCanvas.get(canvasId)) != null ? _b : []).forEach(
+        (annotation) => merged.set(annotation.viewerAnnotation.id, annotation)
+      );
       return Array.from(merged.values());
     }
     applyAnnotationsForCanvas(canvasId) {
@@ -33292,10 +33483,16 @@
       );
     }
     findStoredAnnotation(annotationId) {
-      for (const canvasId of /* @__PURE__ */ new Set([...this.manifestAnnotationsByCanvas.keys(), ...this.apiAnnotationsByCanvas.keys()])) {
-        const annotation = this.effectiveAnnotationsForCanvas(canvasId).find((candidate) => candidate.viewerAnnotation.id === annotationId);
-        if (annotation)
+      for (const canvasId of /* @__PURE__ */ new Set([
+        ...this.manifestAnnotationsByCanvas.keys(),
+        ...this.apiAnnotationsByCanvas.keys()
+      ])) {
+        const annotation = this.effectiveAnnotationsForCanvas(canvasId).find(
+          (candidate) => candidate.viewerAnnotation.id === annotationId
+        );
+        if (annotation) {
           return annotation;
+        }
       }
       return void 0;
     }
@@ -33349,7 +33546,12 @@
         this.emit("resourcechange", { resourceUrl: url, state: this.copyState() });
       }
       if (hasPages) {
-        this.awaitingViewerResource = { id: requestId, url, pageIndex, resourceChangeEmitted: replacementCommitted };
+        this.awaitingViewerResource = {
+          id: requestId,
+          url,
+          pageIndex,
+          resourceChangeEmitted: replacementCommitted
+        };
         const viewer = this.ensureMainViewer();
         const sourceId = (_a = this.pages[pageIndex]) == null ? void 0 : _a.primaryImage.id;
         if (sourceId && viewer && typeof viewer.isPageLoaded === "function" && viewer.isPageLoaded(pageIndex, sourceId)) {
@@ -33462,7 +33664,11 @@
           const controller = new AbortController();
           this.filterPreviewController = controller;
           try {
-            tileSource = await this.auth.resolve({ sourceId: payload.sourceId, url: payload.tileSource, isStatic: payload.isStatic }, controller.signal);
+            tileSource = await this.auth.resolve({
+              sourceId: payload.sourceId,
+              url: payload.tileSource,
+              isStatic: payload.isStatic
+            }, controller.signal);
           } catch (error) {
             if (!controller.signal.aborted && !this.isDestroyed && version === this.filterPreviewVersion) {
               console.error("Unable to authorize filter preview source", error);
@@ -33540,7 +33746,9 @@
       }
       stored.viewerAnnotation.imageService = (_a = this.annotationImageServicesByCanvas.get(stored.canvasId)) != null ? _a : null;
       this.apiAnnotationsByCanvas.forEach((annotations2, canvasId) => {
-        const retained = annotations2.filter((candidate) => candidate.viewerAnnotation.id !== stored.viewerAnnotation.id);
+        const retained = annotations2.filter(
+          (candidate) => candidate.viewerAnnotation.id !== stored.viewerAnnotation.id
+        );
         if (retained.length !== annotations2.length) {
           this.apiAnnotationsByCanvas.set(canvasId, retained);
           this.applyAnnotationsForCanvas(canvasId);
@@ -33556,8 +33764,9 @@
      */
     setAnnotations(annotations) {
       this.assertAlive();
-      if (!Array.isArray(annotations))
+      if (!Array.isArray(annotations)) {
         throw new TypeError("Annotations must be an array.");
+      }
       const next = /* @__PURE__ */ new Map();
       annotations.forEach((annotation) => {
         var _a, _b;
@@ -33567,7 +33776,12 @@
         }
         stored.viewerAnnotation.imageService = (_a = this.annotationImageServicesByCanvas.get(stored.canvasId)) != null ? _a : null;
         const canvasAnnotations = (_b = next.get(stored.canvasId)) != null ? _b : [];
-        next.set(stored.canvasId, [...canvasAnnotations.filter((candidate) => candidate.viewerAnnotation.id !== stored.viewerAnnotation.id), stored]);
+        next.set(stored.canvasId, [
+          ...canvasAnnotations.filter(
+            (candidate) => candidate.viewerAnnotation.id !== stored.viewerAnnotation.id
+          ),
+          stored
+        ]);
       });
       const affected = /* @__PURE__ */ new Set([...this.apiAnnotationsByCanvas.keys(), ...next.keys()]);
       this.apiAnnotationsByCanvas.clear();
@@ -33612,6 +33826,19 @@
       });
     }
     /**
+     * Select an annotation and open its details panel.
+     */
+    selectAnnotation(annotationId) {
+      this.assertAlive();
+      if (typeof annotationId !== "string") {
+        throw new TypeError("Annotation id must be a string.");
+      }
+      if (!this.findStoredAnnotation(annotationId)) {
+        throw new RangeError(`Unknown annotation: ${annotationId}`);
+      }
+      this.callViewerMethodWhenReady("selectAnnotation", annotationId);
+    }
+    /**
      * Return the IIIF Image API extract URL for an annotation, when available.
      *
      * @returns The extract URL, or `null` when the annotation is unknown or has no usable image region.
@@ -33619,14 +33846,17 @@
     getImageRegionForAnnotation(annotationId) {
       var _a, _b;
       this.assertAlive();
-      if (typeof annotationId !== "string")
+      if (typeof annotationId !== "string") {
         throw new TypeError("Annotation id must be a string.");
+      }
       const annotation = this.findStoredAnnotation(annotationId);
       const renderedUrl = (_b = (_a = this.mainViewer) == null ? void 0 : _a.getImageRegionForAnnotation) == null ? void 0 : _b.call(_a, annotationId);
-      if (typeof renderedUrl === "string")
+      if (typeof renderedUrl === "string") {
         return renderedUrl;
-      if (!annotation || annotation.viewerAnnotation.shape.kind === "svg")
+      }
+      if (!annotation || annotation.viewerAnnotation.shape.kind === "svg") {
         return null;
+      }
       const { x, y, width, height } = annotation.viewerAnnotation.shape;
       return typeof x === "number" && typeof y === "number" && typeof width === "number" && typeof height === "number" ? iiifImageRegionUrl(annotation.viewerAnnotation.imageService, { x, y, width, height }) : null;
     }
@@ -33636,8 +33866,9 @@
     getAnnotationBody(annotationId) {
       var _a;
       this.assertAlive();
-      if (typeof annotationId !== "string")
+      if (typeof annotationId !== "string") {
         throw new TypeError("Annotation id must be a string.");
+      }
       const annotation = this.findStoredAnnotation(annotationId);
       return annotation ? annotationBodyText((_a = annotation.publicAnnotation.body) != null ? _a : annotation.publicAnnotation.resource) : void 0;
     }
@@ -33674,7 +33905,9 @@
      * @returns One page in `single` mode, or the pages belonging to the current logical opening in a spread mode.
      */
     getVisiblePages() {
-      return this.state.visiblePageIndexes.map((index) => this.pages[index]).filter(Boolean).map((page) => this.copyPage(page));
+      return this.state.visiblePageIndexes.map((index) => this.pages[index]).filter(Boolean).map(
+        (page) => this.copyPage(page)
+      );
     }
     /**
      * Return the current single-page or spread layout mode.
@@ -33965,7 +34198,10 @@
       this.removeViewerEvent("diva-page-loaded", this.handlePageLoadedBound);
       this.removeViewerEvent("diva-zoom-change", this.handleZoomChangeBound);
       this.removeViewerEvent("diva-loading-change", this.handleLoadingChangeBound);
-      this.removeViewerEvent("diva-static-image-cors-fallback", this.handleStaticImageCorsFallbackBound);
+      this.removeViewerEvent(
+        "diva-static-image-cors-fallback",
+        this.handleStaticImageCorsFallbackBound
+      );
       this.removeViewerEvent("diva-page-load-error", this.handlePageLoadErrorBound);
       root.removeEventListener("click", this.handleRootClickBound, true);
       document.removeEventListener("fullscreenchange", this.handleFullscreenChangeBound);
@@ -34062,6 +34298,13 @@
           page: this.copyPage(page),
           visiblePages: this.getVisiblePages()
         });
+      }
+    }
+    handleAnnotationSelect(event) {
+      var _a;
+      const annotationId = (_a = event.detail) == null ? void 0 : _a.annotationId;
+      if (typeof annotationId === "string") {
+        this.emit("annotationselect", { annotationId });
       }
     }
     handlePageLoaded(event) {
@@ -34234,7 +34477,11 @@
       if (!sidebar) {
         return;
       }
-      const controls = Array.from(sidebar.querySelectorAll("button, input, select, textarea"));
+      const controls = Array.from(
+        sidebar.querySelectorAll(
+          "button, input, select, textarea"
+        )
+      );
       controls.forEach((control) => {
         if (blocked) {
           control.dataset.divaFilterWasDisabled = control.disabled ? "true" : "false";
@@ -34471,24 +34718,28 @@
       }
     }
     if (filters.pseudoColourEnabled) {
-      processors.push(Filters.PSEUDOCOLOR(
-        filters.pseudoColourMode || "",
-        (_c = filters.pseudoColourRed) != null ? _c : 1,
-        (_d = filters.pseudoColourGreen) != null ? _d : 1,
-        (_e = filters.pseudoColourBlue) != null ? _e : 1
-      ));
+      processors.push(
+        Filters.PSEUDOCOLOR(
+          filters.pseudoColourMode || "",
+          (_c = filters.pseudoColourRed) != null ? _c : 1,
+          (_d = filters.pseudoColourGreen) != null ? _d : 1,
+          (_e = filters.pseudoColourBlue) != null ? _e : 1
+        )
+      );
     }
     if (filters.globalPcaEnabled) {
       processors.push(Filters.GLOBAL_PCA_COLOR(filters.pcaMode || "", (_f = filters.pcaHue) != null ? _f : 0));
     }
     if (filters.colourReplaceEnabled) {
-      processors.push(Filters.COLOR_REPLACE(
-        filters.colourReplaceSource || "#ffffff",
-        filters.colourReplaceTarget || "#ffffff",
-        (_g = filters.colourReplaceTolerance) != null ? _g : 24,
-        (_h = filters.colourReplaceBlend) != null ? _h : 1,
-        (_i = filters.colourReplacePreserveLum) != null ? _i : false
-      ));
+      processors.push(
+        Filters.COLOR_REPLACE(
+          filters.colourReplaceSource || "#ffffff",
+          filters.colourReplaceTarget || "#ffffff",
+          (_g = filters.colourReplaceTolerance) != null ? _g : 24,
+          (_h = filters.colourReplaceBlend) != null ? _h : 1,
+          (_i = filters.colourReplacePreserveLum) != null ? _i : false
+        )
+      );
     }
     appendMappedProcessors(processors, filters, altFilterMappings);
     if (processors.length === 0) {

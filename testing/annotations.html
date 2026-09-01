@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Diva.js Annotation API Test</title>
+    <style>
+      html, body { min-height: 100%; }
+      body { margin: 0; font-family: system-ui, sans-serif; }
+      #diva-wrapper { height: 72vh; min-height: 480px; }
+      #controls { width: min(1100px, calc(100% - 24px)); margin: 16px auto 24px; padding: 12px; box-sizing: border-box; background: #fff; border: 1px solid #aaa; border-radius: 4px; }
+      #settings { display: grid; grid-template-columns: minmax(170px, 1fr) 120px minmax(180px, 2fr); gap: 10px; align-items: end; }
+      #actions { display: flex; gap: 8px; }
+      #actions button { flex: 1; }
+      #inspection { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(420px, 2fr); gap: 12px; margin-top: 12px; }
+      #inspection > div { min-width: 0; }
+      #controls label { display: block; margin: 7px 0 3px; font-weight: 600; }
+      #controls select, #controls input, #controls button { width: 100%; box-sizing: border-box; padding: 6px; font: inherit; }
+      #controls button { margin-top: 7px; cursor: pointer; }
+      #status { margin: 10px 0; font-size: .9em; }
+      #annotation-list { max-height: 150px; overflow: auto; border: 1px solid #ccc; padding: 4px; }
+      #annotation-json { width: 100%; min-height: 220px; box-sizing: border-box; font: 12px monospace; white-space: pre; }
+      @media (max-width: 700px) {
+        #settings, #inspection { grid-template-columns: 1fr; }
+        #actions { flex-wrap: wrap; }
+        #actions button { min-width: 140px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="diva-wrapper"></div>
+    <aside id="controls">
+      <div id="settings">
+        <div>
+          <label for="annotation-type">Annotation type</label>
+          <select id="annotation-type">
+            <option value="xywh">XYWH rectangles</option>
+            <option value="svg">SVG polygons</option>
+            <option value="mixed" selected>Mixed</option>
+          </select>
+        </div>
+        <div>
+          <label for="annotation-count">Count (10–100)</label>
+          <input id="annotation-count" type="number" min="10" max="100" value="30" />
+        </div>
+        <div id="actions">
+          <button id="apply">Apply</button>
+          <button id="clear-visible">Clear visible</button>
+          <button id="clear-all">Clear all</button>
+        </div>
+      </div>
+      <div id="status">Waiting for Diva to load…</div>
+      <div id="inspection">
+        <div>
+          <label for="annotation-list">Generated annotations</label>
+          <select id="annotation-list" size="8"></select>
+        </div>
+        <div>
+          <label for="annotation-json">Selected annotation JSON</label>
+          <textarea id="annotation-json" readonly aria-label="Selected annotation JSON"></textarea>
+        </div>
+      </div>
+    </aside>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/6.1.0/openseadragon.min.js"></script>
+    <script src="../build/diva.debug.js"></script>
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const objectData = params.get("manifest") ||
+        "https://www.e-codices.unifr.ch/metadata/iiif/sbb-cant/manifest.json";
+      const status = document.querySelector("#status");
+      const list = document.querySelector("#annotation-list");
+      const json = document.querySelector("#annotation-json");
+      let generated = [];
+      let serial = 0;
+
+      window.diva = new Diva("diva-wrapper", {
+        objectData,
+        sidebarPanel: "contents",
+        sidebarWidth: 520,
+        staticImageCorsPolicy: "fallback",
+        enableAnnotations: true
+      });
+
+      const lorem = [
+        "Lorem ipsum dolor sit amet.",
+        "Consectetur adipiscing elit.",
+        "Sed do eiusmod tempor incididunt ut labore.",
+        "Ut enim ad minim veniam, quis nostrud exercitation.",
+        "Duis aute irure dolor in reprehenderit."
+      ];
+
+      function randomBetween(min, max) { return min + Math.random() * (max - min); }
+
+      function polygonPoints(x, y, width, height) {
+        const inset = 0.08;
+        const left = x + width * inset;
+        const top = y + height * inset;
+        const innerWidth = width * (1 - inset * 2);
+        const innerHeight = height * (1 - inset * 2);
+        const shape = Math.floor(Math.random() * 4);
+        let points;
+        if (shape === 0) {
+          points = [[0.5, 0], [1, 1], [0, 1]];
+        } else if (shape === 1) {
+          points = [[0.5, 0], [1, 0.5], [0.5, 1], [0, 0.5]];
+        } else if (shape === 2) {
+          points = Array.from({ length: 12 }, (_, index) => {
+            const angle = -Math.PI / 2 + index * Math.PI / 6;
+            return [0.5 + Math.cos(angle) * 0.5, 0.5 + Math.sin(angle) * 0.5];
+          });
+        } else {
+          points = Array.from({ length: 10 }, (_, index) => {
+            const angle = -Math.PI / 2 + index * Math.PI / 5;
+            const radius = index % 2 === 0 ? 0.5 : 0.22;
+            return [0.5 + Math.cos(angle) * radius, 0.5 + Math.sin(angle) * radius];
+          });
+        }
+        return points.map(([pointX, pointY]) => `${left + innerWidth * pointX},${top + innerHeight * pointY}`).join(" ");
+      }
+
+      function makeAnnotation(page, mode) {
+        const width = page.width;
+        const height = page.height;
+        if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return null;
+        let w = randomBetween(width * 0.05, width * 0.3);
+        let h = randomBetween(height * 0.05, height * 0.3);
+        const maxArea = width * height / 8;
+        if (w * h > maxArea) h = maxArea / w;
+        h = Math.max(height * 0.05, h);
+        if (w * h > maxArea) { w = maxArea / h; }
+        const x = randomBetween(0, width - w);
+        const y = randomBetween(0, height - h);
+        const kind = mode === "mixed" ? (Math.random() < 0.5 ? "xywh" : "svg") : mode;
+        const id = `https://example.org/diva-test/annotation/${Date.now()}-${serial++}`;
+        const body = { type: "TextualBody", format: "text/plain", value: lorem[Math.floor(Math.random() * lorem.length)] };
+        const selector = kind === "xywh"
+          ? { type: "FragmentSelector", conformsTo: "http://www.w3.org/TR/media-frags/", value: `xywh=${x},${y},${w},${h}` }
+          : { type: "SvgSelector", value: `<svg><polygon points="${polygonPoints(x, y, w, h)}" /></svg>` };
+        return { id, type: "Annotation", motivation: "commenting", body, target: { type: "SpecificResource", source: page.canvasId, selector } };
+      }
+
+      function refreshList() {
+        list.replaceChildren(...generated.map((annotation, index) => {
+          const option = document.createElement("option");
+          option.value = String(index);
+          option.textContent = `${index + 1}. ${annotation.id}`;
+          return option;
+        }));
+        if (generated.length) { list.selectedIndex = 0; showSelected(); }
+        else { json.value = ""; }
+      }
+
+      function showSelected() {
+        const annotation = generated[Number(list.value)];
+        json.value = annotation ? JSON.stringify(annotation, null, 2) : "";
+      }
+
+      function visiblePages() { return window.diva.getVisiblePages(); }
+
+      document.querySelector("#apply").addEventListener("click", () => {
+        const pages = visiblePages();
+        const count = Math.max(10, Math.min(100, Number(document.querySelector("#annotation-count").value) || 30));
+        document.querySelector("#annotation-count").value = count;
+        const pagesWithDimensions = pages.filter((page) => Number.isFinite(page.width) && Number.isFinite(page.height));
+        generated = [];
+        for (let i = 0; i < count && pagesWithDimensions.length; i++) {
+          const annotation = makeAnnotation(pagesWithDimensions[i % pagesWithDimensions.length], document.querySelector("#annotation-type").value);
+          if (annotation) generated.push(annotation);
+        }
+        window.diva.setAnnotations(generated);
+        refreshList();
+        status.textContent = `Applied ${generated.length} annotations to ${pagesWithDimensions.length} visible canvas(es).`;
+      });
+
+      document.querySelector("#clear-visible").addEventListener("click", () => {
+        const ids = new Set(visiblePages().map((page) => page.canvasId));
+        ids.forEach((id) => window.diva.clearAnnotationsForCanvas(id));
+        generated = generated.filter((annotation) => !ids.has(annotation.target.source));
+        refreshList();
+        status.textContent = `Cleared annotations on ${ids.size} visible canvas(es).`;
+      });
+
+      document.querySelector("#clear-all").addEventListener("click", () => {
+        window.diva.clearAllAnnotations();
+        generated = [];
+        refreshList();
+        status.textContent = "Cleared all annotations.";
+      });
+
+      list.addEventListener("change", () => {
+        showSelected();
+        const annotation = generated[Number(list.value)];
+        if (annotation) window.diva.selectAnnotation(annotation.id);
+      });
+      window.diva.addEventListener("annotationselect", (event) => {
+        const index = generated.findIndex((annotation) => annotation.id === event.detail.annotationId);
+        if (index >= 0) {
+          list.value = String(index);
+          showSelected();
+        }
+      });
+      window.diva.addEventListener("pagechange", (event) => {
+        status.textContent = `${generated.length} generated annotation(s); ${event.detail.visiblePages.length} canvas(es) visible.`;
+      });
+    </script>
+  </body>
+</html>

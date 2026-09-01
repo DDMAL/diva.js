@@ -431,6 +431,7 @@ export class Diva extends EventTarget
     private filterPreviewController: AbortController | null = null;
     private isDestroyed = false;
     private readonly handlePageChangeBound: (event: Event) => void;
+    private readonly handleAnnotationSelectBound: (event: Event) => void;
     private readonly handlePageLoadedBound: (event: Event) => void;
     private readonly handleZoomChangeBound: (event: Event) => void;
     private readonly handleLoadingChangeBound: (event: Event) => void;
@@ -538,6 +539,7 @@ export class Diva extends EventTarget
         void this.ready.catch(() => {});
 
         this.handlePageChangeBound = this.handlePageChange.bind(this);
+        this.handleAnnotationSelectBound = this.handleAnnotationSelect.bind(this);
         this.handlePageLoadedBound = this.handlePageLoaded.bind(this);
         this.handleZoomChangeBound = this.handleZoomChange.bind(this);
         this.handleLoadingChangeBound = this.handleLoadingChange.bind(this);
@@ -583,6 +585,7 @@ export class Diva extends EventTarget
         this.callViewerMethodWhenReady("setStaticImageCorsPolicy", this.staticImageCorsPolicy);
         this.bindRootClick();
         this.bindPageChange();
+        this.bindViewerEvent("diva-annotation-select", this.handleAnnotationSelectBound as EventListener);
         this.bindViewerEvent("diva-page-loaded", this.handlePageLoadedBound as EventListener);
         this.bindFullscreenChange();
         this.bindZoomChange();
@@ -1314,6 +1317,23 @@ export class Diva extends EventTarget
     }
 
     /**
+     * Select an annotation and open its details panel.
+     */
+    public selectAnnotation(annotationId: string): void
+    {
+        this.assertAlive();
+        if (typeof annotationId !== "string")
+        {
+            throw new TypeError("Annotation id must be a string.");
+        }
+        if (!this.findStoredAnnotation(annotationId))
+        {
+            throw new RangeError(`Unknown annotation: ${annotationId}`);
+        }
+        this.callViewerMethodWhenReady("selectAnnotation", annotationId);
+    }
+
+    /**
      * Return the IIIF Image API extract URL for an annotation, when available.
      *
      * @returns The extract URL, or `null` when the annotation is unknown or has no usable image region.
@@ -1887,6 +1907,15 @@ export class Diva extends EventTarget
                 page: this.copyPage(page),
                 visiblePages: this.getVisiblePages(),
             });
+        }
+    }
+
+    private handleAnnotationSelect(event: Event): void
+    {
+        const annotationId = (event as CustomEvent).detail?.annotationId;
+        if (typeof annotationId === "string")
+        {
+            this.emit("annotationselect", { annotationId });
         }
     }
 

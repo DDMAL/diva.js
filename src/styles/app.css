@@ -99,26 +99,68 @@
 }
 
 .diva-annotation-panel-close {
-  float: right;
-  margin: 0 0 8px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 30px !important;
+  height: 30px;
+  padding: 6px;
+  border: 1px solid #fff;
+  border-radius: 0;
+  background-color: #000;
+  color: #fff;
+  margin: 0;
   cursor: pointer;
+}
+
+.diva-annotation-panel-close svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  fill: currentColor;
+}
+
+.diva-annotation-panel-close:hover,
+.diva-annotation-panel-close:focus-visible {
+  background-color: #222;
+}
+
+.diva-annotation-panel-content {
+  padding-top: 36px;
+}
+
+.diva-annotation-panel-preview-controls {
+  position: absolute;
+  top: 12px;
+  right: 50px;
 }
 
 .diva-annotation-panel-content a { color: #9aa4ff; }
 .diva-annotation-panel-content img { max-width: 100%; height: auto; }
 
 .diva-annotation-panel-rotate {
-  min-width: 28px;
-  min-height: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: transparent;
-  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px !important;
+  height: 30px;
+  padding: 6px;
+  border: 1px solid #fff;
+  border-radius: 0;
+  background-color: #000;
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+  margin: 0 !important;
   cursor: pointer;
 }
 
 .diva-annotation-panel-rotate:hover,
 .diva-annotation-panel-rotate:focus-visible {
-  background: rgba(255, 255, 255, 0.12);
+  background-color: #222;
 }
 
 .diva-annotation-panel-image-link {
@@ -144,6 +186,12 @@
 .diva-annotation-overlay g[data-annotation-id]:hover .diva-annotation-svg-shape,
 .diva-annotation-overlay g[data-annotation-id]:focus .diva-annotation-rect,
 .diva-annotation-overlay g[data-annotation-id]:focus .diva-annotation-svg-shape {
+  fill: var(--diva-annotation-fill-hover, rgba(48, 48, 48, 0.48));
+  stroke: var(--diva-annotation-stroke-hover, #d83a3a);
+}
+
+.diva-annotation-overlay g[data-annotation-id].is-selected .diva-annotation-rect,
+.diva-annotation-overlay g[data-annotation-id].is-selected .diva-annotation-svg-shape {
   fill: var(--diva-annotation-fill-hover, rgba(48, 48, 48, 0.48));
   stroke: var(--diva-annotation-stroke-hover, #d83a3a);
 }

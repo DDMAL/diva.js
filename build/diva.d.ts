@@ -1,6 +1,6 @@
 import "./viewer-element";
 import type { DivaAnnotation, DivaEventMap, DivaLayoutMode, DivaOptions, DivaPage, DivaPageSelector, DivaRegion, DivaState, ZoomToRegionOptions } from "./public-api";
-export type { DivaAnnotation, DivaEventMap, DivaImage, DivaLayoutMode, DivaOptions, DivaPage, DivaPageSelector, DivaPageTarget, DivaRegion, DivaSidebarPanel, DivaState, DivaStaticImageCorsPolicy, DivaViewingDirection, ZoomToRegionOptions } from "./public-api";
+export type { DivaAnnotation, DivaEventMap, DivaImage, DivaLayoutMode, DivaOptions, DivaPage, DivaPageSelector, DivaPageTarget, DivaRegion, DivaSidebarPanel, DivaState, DivaStaticImageCorsPolicy, DivaViewingDirection, ZoomToRegionOptions, } from "./public-api";
 /**
  * A browser viewer for IIIF Presentation manifests and collections.
  *
@@ -54,6 +54,7 @@ export declare class Diva extends EventTarget {
     private filterPreviewController;
     private isDestroyed;
     private readonly handlePageChangeBound;
+    private readonly handleAnnotationSelectBound;
     private readonly handlePageLoadedBound;
     private readonly handleZoomChangeBound;
     private readonly handleLoadingChangeBound;
@@ -192,6 +193,10 @@ export declare class Diva extends EventTarget {
      * Clear both manifest and API-supplied annotations for every Canvas.
      */
     clearAllAnnotations(): void;
+    /**
+     * Select an annotation and open its details panel.
+     */
+    selectAnnotation(annotationId: string): void;
     /**
      * Return the IIIF Image API extract URL for an annotation, when available.
      *
@@ -415,6 +420,7 @@ export declare class Diva extends EventTarget {
     private handleRootClick;
     private toggleFullscreenFromUserActivation;
     private handlePageChange;
+    private handleAnnotationSelect;
     private handlePageLoaded;
     private handleZoomChange;
     private handleLoadingChange;

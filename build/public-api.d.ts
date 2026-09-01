@@ -234,6 +234,13 @@ export interface DivaState {
  */
 export interface DivaEventMap {
     /**
+     * Fired when an annotation is activated in the viewer.
+     */
+    annotationselect: CustomEvent<{
+        /** Stable identifier of the selected annotation. */
+        annotationId: string;
+    }>;
+    /**
      * Fired once after the initial resource and selected initial page are ready.
      */
     ready: CustomEvent<Readonly<DivaState>>;
