@@ -14,7 +14,7 @@
             "elm/parser": "1.1.0",
             "elm/svg": "1.0.1",
             "elm/url": "1.0.0",
-            "rism-digital/elm-iiif": "6.0.0"
+            "rism-digital/elm-iiif": "6.1.0"
         },
         "indirect": {
             "elm/bytes": "1.0.8",

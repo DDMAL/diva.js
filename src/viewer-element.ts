@@ -454,7 +454,9 @@ class OsdViewer extends HTMLElement
             if (annotation)
             {
                 const group = Array.from(this.annotationOverlayElements.values())
-                    .map((element) => element.querySelector<SVGGElement>(`g[data-annotation-id="${CSS.escape(annotationId)}"]`))
+                    .map((element) =>
+                        element.querySelector<SVGGElement>(`g[data-annotation-id="${CSS.escape(annotationId)}"]`)
+                    )
                     .find((candidate): candidate is SVGGElement => candidate !== null);
                 this.openAnnotationPanel(annotation, group);
                 return;
@@ -1171,10 +1173,10 @@ class OsdViewer extends HTMLElement
         annotations.forEach((annotation) => {
             const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
             group.setAttribute("data-annotation-id", annotation.id);
-                group.setAttribute("tabindex", "0");
-                group.classList.toggle("is-selected", annotation.id === this.selectedAnnotationId);
-                if (annotation.text)
-                {
+            group.setAttribute("tabindex", "0");
+            group.classList.toggle("is-selected", annotation.id === this.selectedAnnotationId);
+            if (annotation.text)
+            {
                 group.setAttribute("aria-label", annotation.text);
                 const showTooltip = (event?: MouseEvent): void => {
                     const bounds = element!.getBoundingClientRect();
@@ -1356,7 +1358,10 @@ class OsdViewer extends HTMLElement
 
     private handleAnnotationCanvasClick(event: { position?: { x: number; y: number }; quick?: boolean }): void
     {
-        if (!this.annotationSelectionEnabled || !this.annotationsVisible || !event.quick || !event.position || !this.container)
+        if (
+            !this.annotationSelectionEnabled || !this.annotationsVisible || !event.quick || !event.position
+            || !this.container
+        )
         {
             return;
         }
@@ -1426,7 +1431,10 @@ class OsdViewer extends HTMLElement
         closeIcon.setAttribute("viewBox", "0 0 512 512");
         closeIcon.setAttribute("aria-hidden", "true");
         const closePath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        closePath.setAttribute("d", "M64 80c-8.8 0-16 7.2-16 16V416c0 8.8 7.2 16 16 16H448c8.8 0 16-7.2 16-16V96c0-8.8-7.2-16-16-16H64zM0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zm175 79c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z");
+        closePath.setAttribute(
+            "d",
+            "M64 80c-8.8 0-16 7.2-16 16V416c0 8.8 7.2 16 16 16H448c8.8 0 16-7.2 16-16V96c0-8.8-7.2-16-16-16H64zM0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zm175 79c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z",
+        );
         closeIcon.appendChild(closePath);
         close.appendChild(closeIcon);
         close.addEventListener("click", (event) => {

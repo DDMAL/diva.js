@@ -178,7 +178,6 @@ export interface DivaAnnotation
     [key: string]: unknown;
 }
 
-
 /**
  * Options controlling how an image region is framed.
  */
