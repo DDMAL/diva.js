@@ -822,10 +822,10 @@ requestAnnotations canvasId model =
                     |> Maybe.withDefault []
 
             request url =
-                Http.get
-                    { url = url
-                    , expect = Http.expectJson (ServerRespondedWithAnnotations canvasId) IIIFAnnotation.decodePage
-                    }
+                IIIF.requestAnnotationPage
+                    (ServerRespondedWithAnnotations canvasId)
+                    model.acceptHeaders
+                    url
 
             inlineAnnotations =
                 sources

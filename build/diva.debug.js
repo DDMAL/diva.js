@@ -20493,6 +20493,19 @@
             )
           )
         ),
+        A2(
+          $elm$json$Json$Decode$map,
+          $elm$core$Maybe$Just,
+          A2(
+            $elm$json$Json$Decode$field,
+            "full",
+            $elm$json$Json$Decode$oneOf(
+              _List_fromArray(
+                [$elm$json$Json$Decode$string, $rism_digital$elm_iiif$IIIF$Annotation$sourceObjectDecoder]
+              )
+            )
+          )
+        ),
         $elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing)
       ]
     )
@@ -20517,23 +20530,53 @@
       return $elm$json$Json$Decode$fail("Annotation target has no xywh selector");
     }
   };
-  var $rism_digital$elm_iiif$IIIF$Annotation$annotationTargetDecoder = $elm$json$Json$Decode$oneOf(
-    _List_fromArray(
-      [
-        A2($elm$json$Json$Decode$andThen, $rism_digital$elm_iiif$IIIF$Annotation$targetFromString, $elm$json$Json$Decode$string),
-        A3(
-          $elm$json$Json$Decode$map2,
-          F2(
-            function(source, selector) {
-              return { selector, source };
-            }
+  function $rism_digital$elm_iiif$IIIF$Annotation$cyclic$annotationTargetDecoder() {
+    return $elm$json$Json$Decode$oneOf(
+      _List_fromArray(
+        [
+          A2(
+            $elm$json$Json$Decode$andThen,
+            function(targets) {
+              var _v1 = $elm$core$List$head(targets);
+              if (_v1.$ === "Just") {
+                var target = _v1.a;
+                return $elm$json$Json$Decode$succeed(target);
+              } else {
+                return $elm$json$Json$Decode$fail("Annotation target list is empty");
+              }
+            },
+            $elm$json$Json$Decode$list(
+              $elm$json$Json$Decode$lazy(
+                function(_v0) {
+                  return $rism_digital$elm_iiif$IIIF$Annotation$cyclic$annotationTargetDecoder();
+                }
+              )
+            )
           ),
-          $rism_digital$elm_iiif$IIIF$Annotation$sourceDecoder,
-          A2($elm$json$Json$Decode$field, "selector", $rism_digital$elm_iiif$IIIF$Annotation$selectorDecoder)
-        )
-      ]
-    )
-  );
+          A2($elm$json$Json$Decode$andThen, $rism_digital$elm_iiif$IIIF$Annotation$targetFromString, $elm$json$Json$Decode$string),
+          A3(
+            $elm$json$Json$Decode$map2,
+            F2(
+              function(source, selector) {
+                return { selector, source };
+              }
+            ),
+            $rism_digital$elm_iiif$IIIF$Annotation$sourceDecoder,
+            A2($elm$json$Json$Decode$field, "selector", $rism_digital$elm_iiif$IIIF$Annotation$selectorDecoder)
+          )
+        ]
+      )
+    );
+  }
+  try {
+    $rism_digital$elm_iiif$IIIF$Annotation$annotationTargetDecoder = $rism_digital$elm_iiif$IIIF$Annotation$cyclic$annotationTargetDecoder();
+    $rism_digital$elm_iiif$IIIF$Annotation$cyclic$annotationTargetDecoder = function() {
+      return $rism_digital$elm_iiif$IIIF$Annotation$annotationTargetDecoder;
+    };
+  } catch ($) {
+    throw "Some top-level definitions from `IIIF.Annotation` are causing infinite recursion:\n\n  \u250C\u2500\u2500\u2500\u2500\u2500\u2510\n  \u2502    annotationTargetDecoder\n  \u2514\u2500\u2500\u2500\u2500\u2500\u2518\n\nThese errors are very tricky, so read https://elm-lang.org/0.19.1/bad-recursion to learn how to fix it!";
+  }
+  var $rism_digital$elm_iiif$IIIF$Annotation$annotationTargetDecoder;
   var $rism_digital$elm_iiif$IIIF$Annotation$idDecoder = $elm$json$Json$Decode$oneOf(
     _List_fromArray(
       [
@@ -20582,11 +20625,16 @@
       ]
     )
   );
-  var $elm$http$Http$get = function(r) {
-    return $elm$http$Http$request(
-      { body: $elm$http$Http$emptyBody, expect: r.expect, headers: _List_Nil, method: "GET", timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url }
-    );
-  };
+  var $rism_digital$elm_iiif$IIIF$requestAnnotationPage = F3(
+    function(responseMsg, acceptHeaders, url) {
+      return A3(
+        $rism_digital$elm_iiif$IIIF$Internal$Request$request,
+        acceptHeaders,
+        A2($elm$http$Http$expectJson, responseMsg, $rism_digital$elm_iiif$IIIF$Annotation$decodePage),
+        url
+      );
+    }
+  );
   var $author$project$Main$requestAnnotations = F2(
     function(canvasId, model) {
       if (!model.enableAnnotations || (A2($elm$core$Set$member, canvasId, model.annotationLoading) || A2($elm$core$Dict$member, canvasId, model.annotationsByCanvas))) {
@@ -20610,15 +20658,11 @@
           sources
         );
         var request = function(url) {
-          return $elm$http$Http$get(
-            {
-              expect: A2(
-                $elm$http$Http$expectJson,
-                $author$project$Msg$ServerRespondedWithAnnotations(canvasId),
-                $rism_digital$elm_iiif$IIIF$Annotation$decodePage
-              ),
-              url
-            }
+          return A3(
+            $rism_digital$elm_iiif$IIIF$requestAnnotationPage,
+            $author$project$Msg$ServerRespondedWithAnnotations(canvasId),
+            model.acceptHeaders,
+            url
           );
         };
         var inlineAnnotations = $elm$core$List$concat(
