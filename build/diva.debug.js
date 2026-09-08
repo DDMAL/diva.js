@@ -358,6 +358,11 @@
       });
       if (!visible) {
         this.closeAnnotationPanel();
+        this.annotationOverlayElements.forEach((element) => {
+          element.querySelectorAll(".diva-annotation-tooltip").forEach((tooltip) => {
+            tooltip.hidden = true;
+          });
+        });
       }
     }
     getAnnotationSelectionEnabled() {
@@ -365,6 +370,13 @@
     }
     setAnnotationSelectionEnabled(enabled) {
       this.annotationSelectionEnabled = enabled;
+      if (!enabled) {
+        this.annotationOverlayElements.forEach((element) => {
+          element.querySelectorAll(".diva-annotation-tooltip").forEach((tooltip) => {
+            tooltip.hidden = true;
+          });
+        });
+      }
     }
     selectAnnotation(annotationId) {
       this.selectedAnnotationId = annotationId;
@@ -924,6 +936,10 @@
           group.setAttribute("aria-label", annotation.text);
           const showTooltip = (event) => {
             const bounds = element.getBoundingClientRect();
+            if (!this.annotationsVisible || !this.annotationSelectionEnabled) {
+              tooltip.hidden = true;
+              return;
+            }
             const x = event ? event.clientX - bounds.left : bounds.width / 2;
             const y = event ? event.clientY - bounds.top : bounds.height / 2;
             tooltip.textContent = annotation.text;

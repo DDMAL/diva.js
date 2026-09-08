@@ -414,6 +414,11 @@ class OsdViewer extends HTMLElement
         if (!visible)
         {
             this.closeAnnotationPanel();
+            this.annotationOverlayElements.forEach((element) => {
+                element.querySelectorAll<HTMLElement>(".diva-annotation-tooltip").forEach((tooltip) => {
+                    tooltip.hidden = true;
+                });
+            });
         }
     }
 
@@ -425,6 +430,14 @@ class OsdViewer extends HTMLElement
     public setAnnotationSelectionEnabled(enabled: boolean): void
     {
         this.annotationSelectionEnabled = enabled;
+        if (!enabled)
+        {
+            this.annotationOverlayElements.forEach((element) => {
+                element.querySelectorAll<HTMLElement>(".diva-annotation-tooltip").forEach((tooltip) => {
+                    tooltip.hidden = true;
+                });
+            });
+        }
     }
 
     public selectAnnotation(annotationId: string): void
@@ -1158,13 +1171,18 @@ class OsdViewer extends HTMLElement
         annotations.forEach((annotation) => {
             const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
             group.setAttribute("data-annotation-id", annotation.id);
-            group.setAttribute("tabindex", "0");
-            group.classList.toggle("is-selected", annotation.id === this.selectedAnnotationId);
-            if (annotation.text)
-            {
+                group.setAttribute("tabindex", "0");
+                group.classList.toggle("is-selected", annotation.id === this.selectedAnnotationId);
+                if (annotation.text)
+                {
                 group.setAttribute("aria-label", annotation.text);
                 const showTooltip = (event?: MouseEvent): void => {
                     const bounds = element!.getBoundingClientRect();
+                    if (!this.annotationsVisible || !this.annotationSelectionEnabled)
+                    {
+                        tooltip.hidden = true;
+                        return;
+                    }
                     const x = event ? event.clientX - bounds.left : bounds.width / 2;
                     const y = event ? event.clientY - bounds.top : bounds.height / 2;
                     tooltip.textContent = annotation.text;
