@@ -20445,7 +20445,7 @@
           ),
           A2(
             $elm$json$Json$Decode$field,
-            "default",
+            "item",
             $elm$json$Json$Decode$lazy(
               function(_v0) {
                 return $rism_digital$elm_iiif$IIIF$Annotation$cyclic$selectorDecoder();
@@ -20454,7 +20454,7 @@
           ),
           A2(
             $elm$json$Json$Decode$field,
-            "item",
+            "default",
             $elm$json$Json$Decode$lazy(
               function(_v1) {
                 return $rism_digital$elm_iiif$IIIF$Annotation$cyclic$selectorDecoder();
