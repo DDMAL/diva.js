@@ -18,7 +18,6 @@ import NoExposingEverything
 import NoImportingEverything
 import NoInconsistentAliases
 import NoMissingTypeAnnotation
-import NoMissingTypeAnnotationInLetIn
 import NoMissingTypeExpose
 import NoModuleOnExposedNames
 import NoPrematureLetComputation
@@ -27,7 +26,6 @@ import NoSinglePatternCase
 import NoUnoptimizedRecursion
 import NoUnsortedCases
 import NoUnsortedLetDeclarations
-import NoUnsortedRecords
 import NoUnsortedTopLevelDeclarations
 import NoUnused.CustomTypeConstructorArgs
 import NoUnused.CustomTypeConstructors
@@ -61,8 +59,6 @@ config =
     , NoUnused.Variables.rule
     , Simplify.rule Simplify.defaults
     , NoSinglePatternCase.rule NoSinglePatternCase.fixInArgument
-
-    --, NoUnsortedRecords.rule NoUnsortedRecords.defaults
     , NoUnsortedLetDeclarations.rule
         (NoUnsortedLetDeclarations.sortLetDeclarations
             |> NoUnsortedLetDeclarations.usedInExpressionLast
