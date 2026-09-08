@@ -446,6 +446,7 @@ export class Diva extends EventTarget
     private readonly apiAnnotationsByCanvas: Map<string, StoredAnnotation[]> = new Map();
     private readonly clearedAnnotationCanvases: Set<string> = new Set();
     private readonly annotationImageServicesByCanvas: Map<string, string | null> = new Map();
+    private annotationSelectionEnabled = true;
     private annotationResourceId = "";
     private state: DivaState;
     private readyResolve!: () => void;
@@ -519,6 +520,7 @@ export class Diva extends EventTarget
             flags.staticImageCorsPolicy === "fallback" || flags.staticImageCorsPolicy === "none"
                 ? flags.staticImageCorsPolicy
                 : "required";
+        this.annotationSelectionEnabled = flags.enableAnnotationSelection !== false;
         this.state = {
             resourceUrl: flags.objectData,
             ready: false,
@@ -570,6 +572,7 @@ export class Diva extends EventTarget
                 showTitle: flags.showTitle !== false,
                 userLanguage: flags.setLanguage || langCode,
                 enableAnnotations: flags.enableAnnotations === true,
+                enableAnnotationSelection: flags.enableAnnotationSelection !== false,
                 annotationServer: flags.annotationServer || null,
             },
         });
@@ -583,6 +586,7 @@ export class Diva extends EventTarget
         this.bindPorts();
         this.callViewerMethodWhenReady("setTileSourceResolver", this.tileSourceResolver);
         this.callViewerMethodWhenReady("setStaticImageCorsPolicy", this.staticImageCorsPolicy);
+        this.callViewerMethodWhenReady("setAnnotationSelectionEnabled", flags.enableAnnotationSelection !== false);
         this.bindRootClick();
         this.bindPageChange();
         this.bindViewerEvent("diva-annotation-select", this.handleAnnotationSelectBound as EventListener);
@@ -1331,6 +1335,37 @@ export class Diva extends EventTarget
             throw new RangeError(`Unknown annotation: ${annotationId}`);
         }
         this.callViewerMethodWhenReady("selectAnnotation", annotationId);
+    }
+
+    /**
+     * Return whether user annotation selection is enabled.
+     */
+    public getAnnotationSelectionEnabled(): boolean
+    {
+        this.assertAlive();
+        const viewer = this.ensureMainViewer();
+        return viewer && typeof viewer.getAnnotationSelectionEnabled === "function"
+            ? viewer.getAnnotationSelectionEnabled()
+            : this.annotationSelectionEnabled;
+    }
+
+    /**
+     * Enable or disable user annotation selection.
+     */
+    public setAnnotationSelectionEnabled(enabled: boolean): void
+    {
+        this.assertAlive();
+        this.annotationSelectionEnabled = enabled;
+        this.callViewerMethodWhenReady("setAnnotationSelectionEnabled", enabled);
+    }
+
+    /**
+     * Toggle user annotation selection and return the new state.
+     */
+    public toggleAnnotationSelectionEnabled(): boolean
+    {
+        this.setAnnotationSelectionEnabled(!this.getAnnotationSelectionEnabled());
+        return this.annotationSelectionEnabled;
     }
 
     /**

@@ -69,6 +69,7 @@ export declare class Diva extends EventTarget {
     private readonly apiAnnotationsByCanvas;
     private readonly clearedAnnotationCanvases;
     private readonly annotationImageServicesByCanvas;
+    private annotationSelectionEnabled;
     private annotationResourceId;
     private state;
     private readyResolve;
@@ -197,6 +198,18 @@ export declare class Diva extends EventTarget {
      * Select an annotation and open its details panel.
      */
     selectAnnotation(annotationId: string): void;
+    /**
+     * Return whether user annotation selection is enabled.
+     */
+    getAnnotationSelectionEnabled(): boolean;
+    /**
+     * Enable or disable user annotation selection.
+     */
+    setAnnotationSelectionEnabled(enabled: boolean): void;
+    /**
+     * Toggle user annotation selection and return the new state.
+     */
+    toggleAnnotationSelectionEnabled(): boolean;
     /**
      * Return the IIIF Image API extract URL for an annotation, when available.
      *

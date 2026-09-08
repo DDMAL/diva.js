@@ -175,6 +175,7 @@ class OsdViewer extends HTMLElement
     private annotationData: Map<string, ViewerAnnotation[]> = new Map();
     private annotationOverlayElements: Map<number, HTMLDivElement> = new Map();
     private annotationsVisible = true;
+    private annotationSelectionEnabled = true;
     private selectedAnnotationId: string | null = null;
     private annotationPanel: HTMLElement | null = null;
     private annotationPanelIgnoreCloseUntil = 0;
@@ -414,6 +415,16 @@ class OsdViewer extends HTMLElement
         {
             this.closeAnnotationPanel();
         }
+    }
+
+    public getAnnotationSelectionEnabled(): boolean
+    {
+        return this.annotationSelectionEnabled;
+    }
+
+    public setAnnotationSelectionEnabled(enabled: boolean): void
+    {
+        this.annotationSelectionEnabled = enabled;
     }
 
     public selectAnnotation(annotationId: string): void
@@ -1172,14 +1183,26 @@ class OsdViewer extends HTMLElement
                 });
             }
             group.addEventListener("click", (event) => {
+                if (!this.annotationSelectionEnabled)
+                {
+                    return;
+                }
                 event.stopPropagation();
                 this.openAnnotationPanel(annotation, group);
             });
             group.addEventListener("pointerup", (event) => {
+                if (!this.annotationSelectionEnabled)
+                {
+                    return;
+                }
                 event.stopPropagation();
                 this.openAnnotationPanel(annotation, group);
             });
             group.addEventListener("keydown", (event: KeyboardEvent) => {
+                if (!this.annotationSelectionEnabled)
+                {
+                    return;
+                }
                 if (event.key === "Enter" || event.key === " ")
                 {
                     event.preventDefault();
@@ -1315,7 +1338,7 @@ class OsdViewer extends HTMLElement
 
     private handleAnnotationCanvasClick(event: { position?: { x: number; y: number }; quick?: boolean }): void
     {
-        if (!this.annotationsVisible || !event.quick || !event.position || !this.container)
+        if (!this.annotationSelectionEnabled || !this.annotationsVisible || !event.quick || !event.position || !this.container)
         {
             return;
         }

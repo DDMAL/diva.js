@@ -359,6 +359,10 @@ export interface DivaOptions {
      */
     enableAnnotations?: boolean;
     /**
+     * Enable selecting annotations by clicking or keyboard activation. @defaultValue `true`
+     */
+    enableAnnotationSelection?: boolean;
+    /**
      * Optional GET endpoint used when a canvas declares no annotation resources.
      */
     annotationServer?: string;

@@ -172,6 +172,7 @@
       this.annotationData = /* @__PURE__ */ new Map();
       this.annotationOverlayElements = /* @__PURE__ */ new Map();
       this.annotationsVisible = true;
+      this.annotationSelectionEnabled = true;
       this.selectedAnnotationId = null;
       this.annotationPanel = null;
       this.annotationPanelIgnoreCloseUntil = 0;
@@ -358,6 +359,12 @@
       if (!visible) {
         this.closeAnnotationPanel();
       }
+    }
+    getAnnotationSelectionEnabled() {
+      return this.annotationSelectionEnabled;
+    }
+    setAnnotationSelectionEnabled(enabled) {
+      this.annotationSelectionEnabled = enabled;
     }
     selectAnnotation(annotationId) {
       this.selectedAnnotationId = annotationId;
@@ -935,14 +942,23 @@
           });
         }
         group.addEventListener("click", (event) => {
+          if (!this.annotationSelectionEnabled) {
+            return;
+          }
           event.stopPropagation();
           this.openAnnotationPanel(annotation, group);
         });
         group.addEventListener("pointerup", (event) => {
+          if (!this.annotationSelectionEnabled) {
+            return;
+          }
           event.stopPropagation();
           this.openAnnotationPanel(annotation, group);
         });
         group.addEventListener("keydown", (event) => {
+          if (!this.annotationSelectionEnabled) {
+            return;
+          }
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
             this.openAnnotationPanel(annotation, group);
@@ -1056,7 +1072,7 @@
     }
     handleAnnotationCanvasClick(event) {
       var _a;
-      if (!this.annotationsVisible || !event.quick || !event.position || !this.container) {
+      if (!this.annotationSelectionEnabled || !this.annotationsVisible || !event.quick || !event.position || !this.container) {
         return;
       }
       const viewerBounds = this.container.getBoundingClientRect();
@@ -14815,6 +14831,7 @@
         contentsView: $author$project$Model$ContentsIndex,
         currentZoom: $elm$core$Maybe$Nothing,
         detectedLanguage: userLanguage,
+        enableAnnotationSelection: flags.enableAnnotationSelection,
         enableAnnotations: flags.enableAnnotations,
         filterGroupExpanded: $elm$core$Set$empty,
         filters: $author$project$Filters$resetFilters,
@@ -31127,33 +31144,39 @@
                                       function(enableAnnotations) {
                                         return A2(
                                           $elm$json$Json$Decode$andThen,
-                                          function(annotationServer) {
+                                          function(enableAnnotationSelection) {
                                             return A2(
                                               $elm$json$Json$Decode$andThen,
-                                              function(acceptHeaders) {
-                                                return $elm$json$Json$Decode$succeed(
-                                                  { acceptHeaders, annotationServer, enableAnnotations, initialPage, objectData, rootElementId, showSidebar, showTitle, sidebarPanel, sidebarWidth, userLanguage }
+                                              function(annotationServer) {
+                                                return A2(
+                                                  $elm$json$Json$Decode$andThen,
+                                                  function(acceptHeaders) {
+                                                    return $elm$json$Json$Decode$succeed(
+                                                      { acceptHeaders, annotationServer, enableAnnotationSelection, enableAnnotations, initialPage, objectData, rootElementId, showSidebar, showTitle, sidebarPanel, sidebarWidth, userLanguage }
+                                                    );
+                                                  },
+                                                  A2(
+                                                    $elm$json$Json$Decode$field,
+                                                    "acceptHeaders",
+                                                    $elm$json$Json$Decode$list($elm$json$Json$Decode$string)
+                                                  )
                                                 );
                                               },
                                               A2(
                                                 $elm$json$Json$Decode$field,
-                                                "acceptHeaders",
-                                                $elm$json$Json$Decode$list($elm$json$Json$Decode$string)
+                                                "annotationServer",
+                                                $elm$json$Json$Decode$oneOf(
+                                                  _List_fromArray(
+                                                    [
+                                                      $elm$json$Json$Decode$null($elm$core$Maybe$Nothing),
+                                                      A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, $elm$json$Json$Decode$string)
+                                                    ]
+                                                  )
+                                                )
                                               )
                                             );
                                           },
-                                          A2(
-                                            $elm$json$Json$Decode$field,
-                                            "annotationServer",
-                                            $elm$json$Json$Decode$oneOf(
-                                              _List_fromArray(
-                                                [
-                                                  $elm$json$Json$Decode$null($elm$core$Maybe$Nothing),
-                                                  A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, $elm$json$Json$Decode$string)
-                                                ]
-                                              )
-                                            )
-                                          )
+                                          A2($elm$json$Json$Decode$field, "enableAnnotationSelection", $elm$json$Json$Decode$bool)
                                         );
                                       },
                                       A2($elm$json$Json$Decode$field, "enableAnnotations", $elm$json$Json$Decode$bool)
@@ -33216,6 +33239,7 @@
       this.apiAnnotationsByCanvas = /* @__PURE__ */ new Map();
       this.clearedAnnotationCanvases = /* @__PURE__ */ new Set();
       this.annotationImageServicesByCanvas = /* @__PURE__ */ new Map();
+      this.annotationSelectionEnabled = true;
       this.annotationResourceId = "";
       this.readySettled = false;
       this.activeResourceRequestId = "initial";
@@ -33240,6 +33264,7 @@
       this.root = root;
       this.isDestroyed = false;
       this.staticImageCorsPolicy = flags.staticImageCorsPolicy === "fallback" || flags.staticImageCorsPolicy === "none" ? flags.staticImageCorsPolicy : "required";
+      this.annotationSelectionEnabled = flags.enableAnnotationSelection !== false;
       this.state = {
         resourceUrl: flags.objectData,
         ready: false,
@@ -33285,6 +33310,7 @@
           showTitle: flags.showTitle !== false,
           userLanguage: flags.setLanguage || langCode,
           enableAnnotations: flags.enableAnnotations === true,
+          enableAnnotationSelection: flags.enableAnnotationSelection !== false,
           annotationServer: flags.annotationServer || null
         }
       });
@@ -33296,6 +33322,7 @@
       this.bindPorts();
       this.callViewerMethodWhenReady("setTileSourceResolver", this.tileSourceResolver);
       this.callViewerMethodWhenReady("setStaticImageCorsPolicy", this.staticImageCorsPolicy);
+      this.callViewerMethodWhenReady("setAnnotationSelectionEnabled", flags.enableAnnotationSelection !== false);
       this.bindRootClick();
       this.bindPageChange();
       this.bindViewerEvent("diva-annotation-select", this.handleAnnotationSelectBound);
@@ -33837,6 +33864,29 @@
         throw new RangeError(`Unknown annotation: ${annotationId}`);
       }
       this.callViewerMethodWhenReady("selectAnnotation", annotationId);
+    }
+    /**
+     * Return whether user annotation selection is enabled.
+     */
+    getAnnotationSelectionEnabled() {
+      this.assertAlive();
+      const viewer = this.ensureMainViewer();
+      return viewer && typeof viewer.getAnnotationSelectionEnabled === "function" ? viewer.getAnnotationSelectionEnabled() : this.annotationSelectionEnabled;
+    }
+    /**
+     * Enable or disable user annotation selection.
+     */
+    setAnnotationSelectionEnabled(enabled) {
+      this.assertAlive();
+      this.annotationSelectionEnabled = enabled;
+      this.callViewerMethodWhenReady("setAnnotationSelectionEnabled", enabled);
+    }
+    /**
+     * Toggle user annotation selection and return the new state.
+     */
+    toggleAnnotationSelectionEnabled() {
+      this.setAnnotationSelectionEnabled(!this.getAnnotationSelectionEnabled());
+      return this.annotationSelectionEnabled;
     }
     /**
      * Return the IIIF Image API extract URL for an annotation, when available.

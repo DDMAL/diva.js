@@ -182,6 +182,7 @@ type alias Flags =
     , showTitle : Bool
     , userLanguage : String
     , enableAnnotations : Bool
+    , enableAnnotationSelection : Bool
     , annotationServer : Maybe String
     }
 
@@ -524,6 +525,7 @@ init flags =
       , currentZoom = Nothing
       , detectedLanguage = userLanguage
       , enableAnnotations = flags.enableAnnotations
+      , enableAnnotationSelection = flags.enableAnnotationSelection
       , annotationServer = flags.annotationServer
       , annotationsVisible = flags.enableAnnotations
       , annotationSources = Dict.empty

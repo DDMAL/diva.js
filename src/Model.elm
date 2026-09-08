@@ -73,6 +73,7 @@ type alias Model =
     , contentsView : ContentsView
     , detectedLanguage : Language
     , enableAnnotations : Bool
+    , enableAnnotationSelection : Bool
     , annotationServer : Maybe String
     , annotationsVisible : Bool
     , annotationSources : Dict String (List AnnotationSource)
