@@ -557,6 +557,56 @@ test("navigates by openings and frames an image region", async ({page}) => {
     await expect.poll(() => page.evaluate(() => (window as any).diva.getState().zoom)).not.toBeNull();
 });
 
+test("keeps the zoom and horizontal position while scrolling", async ({page}) => {
+    const states = await page.evaluate(async () => {
+        const viewer = (document.getElementById("main-viewer") as any).viewer;
+        const viewport = viewer.viewport;
+        const Point = (window as any).OpenSeadragon.Point;
+        const state = () => ({...viewport.getCenter(true), zoom : viewport.getZoom(true)});
+        const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+        const wheel = (deltaY: number) =>
+            viewer.canvas.dispatchEvent(new WheelEvent("wheel", {deltaY, bubbles : true, cancelable : true}));
+
+        const zoomed = new Promise((resolve) => viewer.addOnceHandler("animation-finish", resolve));
+        viewport.zoomTo(1.5, null, true);
+        await zoomed;
+        viewport.panBy(new Point(0.1, 0), true);
+        const panned = state();
+
+        wheel(120);
+        const wheeled = state();
+
+        const thumb = document.querySelector(".diva-scrollbar-thumb")!;
+        const thumbY = thumb.getBoundingClientRect().top;
+        thumb.dispatchEvent(new MouseEvent("mousedown", {clientY : thumbY}));
+        document.dispatchEvent(new MouseEvent("mousemove", {clientY : thumbY + 40}));
+        document.dispatchEvent(new MouseEvent("mouseup"));
+        const thumbDragged = state();
+
+        wheel(-100000);
+        const top = state();
+        viewport.panBy(new Point(0.05, -0.05), false);
+        await nextFrame();
+        await nextFrame();
+        viewport.panBy(new Point(0.05, -0.05), false);
+        while (!viewport.getCenter(true).equals(viewport.getCenter(false)))
+        {
+            await nextFrame();
+        }
+        const dragged = state();
+
+        return {panned, wheeled, thumbDragged, top, dragged};
+    });
+
+    expect(states.wheeled.y).toBeGreaterThan(states.panned.y);
+    expect(states.wheeled.x).toBeCloseTo(states.panned.x, 6);
+    expect(states.thumbDragged.y).toBeGreaterThan(states.wheeled.y);
+    expect(states.thumbDragged.x).toBeCloseTo(states.panned.x, 6);
+    expect(states.thumbDragged.zoom).toBeCloseTo(states.panned.zoom, 6);
+    expect(states.dragged.y).toBeCloseTo(states.top.y, 6);
+    expect(states.dragged.x).toBeCloseTo(states.panned.x + 0.1, 6);
+});
+
 test("bolds ranges containing the current page in the contents index", async ({page}) => {
     const name = "ranged";
     await page.route(`${origin}/api/${name}/manifest`, (route) => route.fulfill({json : {
