@@ -1497,9 +1497,9 @@ picomatch@^4.0.4:
   integrity sha512-RvwwcruNjI1ncT5xRakeyS9Lf8lcItv34KD+aif+VH9kduAyfYBipGh12274xtenIPZ119/R9BdTBa8gAwSh0A==
 
 piscina@^4.3.1:
-  version "4.9.3"
-  resolved "https://registry.yarnpkg.com/piscina/-/piscina-4.9.3.tgz#a8df8f699f1f3721c01720d0e7dcc49e7de1fea8"
-  integrity sha512-3e3ka9QCE8RJ5I9uszdAADZnkcYi21cqmF3gxox3u884N72qpFHCsIVhHt8cEQ9t3Auq/NqoiCEuhxlxxQuDWA==
+  version "4.9.4"
+  resolved "https://registry.yarnpkg.com/piscina/-/piscina-4.9.4.tgz#1fe911df1ffe920325c24822e5d7b596833a0df7"
+  integrity sha512-RyBDr2VheQ8ZfH3N8SzQZHztqVyOtadTwLnUYof6gdj5161/eu2wNhCbGl5GHnNKDpnkicJYpKtL2J+y/gk6XA==
   optionalDependencies:
     "@napi-rs/nice" "^1.0.1"
 
