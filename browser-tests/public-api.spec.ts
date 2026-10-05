@@ -146,6 +146,134 @@ test("returns null when an annotation has no IIIF Image API region", async ({pag
     expect(result).toBeNull();
 });
 
+for (const direction of [ "left-to-right", "right-to-left" ])
+{
+    test(`keeps annotations aligned after layout changes (${direction})`, async ({page}, testInfo) => {
+        const name = "annotation-layout";
+        const annotatedManifest = {
+            ...manifest(name, 4),
+            viewingDirection : direction,
+            items : manifest(name, 4).items.map((canvas, index) => ({
+                ...canvas,
+                annotations : [ {
+                    id : `${canvas.id}/annotations`,
+                    type : "AnnotationPage",
+                    items : [ {
+                        id : `manifest-rect-${index}`,
+                        type : "Annotation",
+                        motivation : "commenting",
+                        body : {type : "TextualBody", format : "text/html", value : "<p>Rectangle</p>"},
+                        target : `${canvas.id}#xywh=100,200,300,400`
+                    } ]
+                } ]
+            }))
+        };
+        await page.route(`${origin}/api/${name}/manifest`, (route) => route.fulfill({json : annotatedManifest}));
+        const osd = (testInfo.project.metadata.osdVersion as string).startsWith("5") ? "5" : "6";
+        await page.goto(`/testing/auth-harness.html?manifest=${encodeURIComponent(`${origin}/api/${name}/manifest`)}&osd=${osd}&bundle=production`);
+        await page.evaluate(async (objectData) => {
+            (window as any).diva.destroy();
+            const diva = new (window as any).Diva("diva-wrapper", {objectData, enableAnnotations : true, showSidebar : false});
+            (window as any).diva = diva;
+            await diva.ready;
+            diva.setAnnotations(diva.getPages().map((canvas: any, index: number) => ({
+                id : `api-svg-${index}`,
+                type : "Annotation",
+                body : {type : "TextualBody", value : "SVG"},
+                target : {
+                    type : "SpecificResource",
+                    source : canvas.canvasId,
+                    selector : {
+                        type : "SvgSelector",
+                        value : '<svg xmlns="http://www.w3.org/2000/svg"><polygon points="100,200 400,200 400,600 100,600"/></svg>'
+                    }
+                }
+            })));
+            await diva.setLayoutMode("spread");
+        }, `${origin}/api/${name}/manifest`);
+
+        const expectAligned = async (): Promise<void> => {
+            // Compare rendered selector bounds to image coordinates converted
+            // through OSD, so stale overlay positions cannot pass this check.
+            await expect.poll(() => page.evaluate(() => {
+                const element = document.getElementById("main-viewer") as any;
+                const viewport = element.viewer.viewport;
+                const container = element.viewer.container.getBoundingClientRect();
+                let maxError = 0;
+                for (const index of [ 0, 1 ])
+                {
+                    const item = element.loadedItems.get(index);
+                    if (!item)
+                    {
+                        return Infinity;
+                    }
+                    const topLeft = viewport.pixelFromPoint(item.imageToViewportCoordinates(100, 200), true);
+                    const bottomRight = viewport.pixelFromPoint(item.imageToViewportCoordinates(400, 600), true);
+                    for (const id of [ `manifest-rect-${index}`, `api-svg-${index}` ])
+                    {
+                        const shape = element.querySelector(`g[data-annotation-id="${id}"] > :first-child`);
+                        if (!shape)
+                        {
+                            return Infinity;
+                        }
+                        const bounds = shape.getBoundingClientRect();
+                        maxError = Math.max(maxError,
+                            Math.abs(bounds.left - container.left - topLeft.x),
+                            Math.abs(bounds.top - container.top - topLeft.y),
+                            Math.abs(bounds.right - container.left - bottomRight.x),
+                            Math.abs(bounds.bottom - container.top - bottomRight.y));
+                    }
+                }
+                return maxError;
+            })).toBeLessThan(2);
+            for (const index of [ 0, 1 ])
+            {
+                await expect(page.locator(`g[data-annotation-id="manifest-rect-${index}"]`)).toHaveCount(1);
+                await expect(page.locator(`g[data-annotation-id="api-svg-${index}"]`)).toHaveCount(1);
+            }
+        };
+
+        await expectAligned();
+        await page.evaluate(() => (window as any).diva.selectAnnotation("api-svg-0"));
+        for (const mode of [ "single", "spread-shift", "spread", "single", "spread" ])
+        {
+            await page.evaluate((mode) => (window as any).diva.setLayoutMode(mode), mode);
+            await expectAligned();
+            await expect(page.locator('g[data-annotation-id="api-svg-0"]')).toHaveClass(/is-selected/);
+            const regions = await page.evaluate(() => [
+                (window as any).diva.getImageRegionForAnnotation("manifest-rect-0"),
+                (window as any).diva.getImageRegionForAnnotation("api-svg-0")
+            ]);
+            expect(regions[0]).toBe(`${origin}/api/${name}/image/1/100,200,300,400/!320,320/0/default.jpg`);
+            expect(regions[1]).toMatch(new RegExp(`/api/${name}/image/1/\\d+,\\d+,\\d+,\\d+/!320,320/0/default\\.jpg$`));
+            // SVG extracts round rendered bounds outward to whole image pixels.
+            const [ x, y, width, height ] = new URL(regions[1]).pathname.split("/").slice(-4)[0].split(",").map(Number);
+            expect(x).toBeGreaterThanOrEqual(99);
+            expect(x).toBeLessThanOrEqual(100);
+            expect(y).toBeGreaterThanOrEqual(199);
+            expect(y).toBeLessThanOrEqual(200);
+            expect(x + width).toBeGreaterThanOrEqual(400);
+            expect(x + width).toBeLessThanOrEqual(401);
+            expect(y + height).toBeGreaterThanOrEqual(600);
+            expect(y + height).toBeLessThanOrEqual(601);
+        }
+        await page.evaluate((direction) => {
+            const viewer = document.getElementById("main-viewer") as any;
+            viewer.setAnnotationsVisible(false);
+            viewer.setViewingDirection(direction === "left-to-right" ? "rtl" : "ltr");
+        }, direction);
+        await expectAligned();
+        await expect(page.locator('.diva-annotation-overlay:not(.is-hidden)')).toHaveCount(0);
+        await page.evaluate(() => (document.getElementById("main-viewer") as any).setAnnotationsVisible(true));
+        await expectAligned();
+        await page.locator('g[data-annotation-id="api-svg-0"]').evaluate((group) => {
+            group.dispatchEvent(new KeyboardEvent("keydown", {key : "Enter", bubbles : true}));
+        });
+        await expect(page.locator(".diva-annotation-panel")).toBeVisible();
+        await expect(page.locator(".diva-annotation-panel-content")).toContainText("SVG");
+    });
+}
+
 test("recreates scrollbar references after its viewer element is reattached", async ({page}) => {
     const attached = await page.evaluate(() => {
         const viewer = document.querySelector("osd-viewer") as HTMLElement & {scrollbarTrack?: HTMLElement|null};

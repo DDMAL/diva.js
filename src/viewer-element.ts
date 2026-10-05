@@ -1089,6 +1089,7 @@ class OsdViewer extends HTMLElement
             item.setWidth(1, true);
             item.setHeight(height, true);
             this.addOrUpdatePageOverlay(index);
+            this.addOrUpdateAnnotationOverlay(index);
         });
     }
 
