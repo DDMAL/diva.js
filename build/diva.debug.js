@@ -861,6 +861,7 @@
         item.setWidth(1, true);
         item.setHeight(height, true);
         this.addOrUpdatePageOverlay(index);
+        this.addOrUpdateAnnotationOverlay(index);
       });
     }
     addOrUpdatePageOverlay(index) {
@@ -1566,9 +1567,8 @@
       const speed = 0.75;
       const panY = rect.height > 0 ? deltaY / rect.height * speed : 0;
       const center = viewport.getCenter(true);
-      const nextCenter = new OpenSeadragon.Point(this.getCenterX(), center.y + panY);
+      const nextCenter = new OpenSeadragon.Point(center.x, center.y + panY);
       viewport.panTo(nextCenter, true);
-      this.recenterBoundsX();
       this.clampTop();
       this.clampBottom();
       this.maybeEmitPageChange();
@@ -1630,7 +1630,7 @@
       }
       const clampedCenterY = bounds.height / 2 + minTop;
       this.isClamping = true;
-      vp.panTo(new OpenSeadragon.Point(this.getCenterX(), clampedCenterY), true);
+      vp.panTo(new OpenSeadragon.Point(vp.getCenter(false).x, clampedCenterY), true);
       vp.applyConstraints();
       this.isClamping = false;
     }
@@ -1654,7 +1654,7 @@
       }
       const clampedCenterY = maxBottom - bounds.height / 2;
       this.isClamping = true;
-      vp.panTo(new OpenSeadragon.Point(this.getCenterX(), clampedCenterY), true);
+      vp.panTo(new OpenSeadragon.Point(vp.getCenter(false).x, clampedCenterY), true);
       vp.applyConstraints();
       this.isClamping = false;
     }
@@ -1924,7 +1924,8 @@
         const viewportHeight = this.viewer.viewport.getBounds(true).height;
         const maxScroll = totalHeight - viewportHeight;
         const newScrollY = scrollProgress * maxScroll;
-        this.scrollToOffset(newScrollY);
+        const center = this.viewer.viewport.getCenter(true);
+        this.viewer.viewport.panTo(new OpenSeadragon.Point(center.x, newScrollY + viewportHeight / 2), true);
       };
       const onMouseUp = () => {
         if (isDragging) {
@@ -1959,7 +1960,8 @@
         const viewportHeight = this.viewer.viewport.getBounds(true).height;
         const maxScroll = totalHeight - viewportHeight;
         const newScrollY = scrollProgress * maxScroll;
-        this.scrollToOffset(newScrollY);
+        const center = this.viewer.viewport.getCenter(true);
+        this.viewer.viewport.panTo(new OpenSeadragon.Point(center.x, newScrollY + viewportHeight / 2), true);
       });
     }
   };
