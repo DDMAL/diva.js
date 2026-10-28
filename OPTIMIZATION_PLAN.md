@@ -1,0 +1,391 @@
+# Optimization plan
+
+## Objective and scope
+
+Implement the opportunities identified in the source review as small,
+independently testable changes. Preserve the public API, rendering behavior,
+authentication behavior, and both IIFE and ESM distributions.
+
+The findings are based on source inspection, not profiling. Establish a baseline
+before claiming performance improvements. The page-retention proposal is
+investigation-only until measurements justify a behavior change.
+
+Do not combine adjacent steps merely because they touch the same files. Finish
+the tests and measurements for one step before beginning the next. Existing
+unrelated working-tree changes must remain untouched.
+
+## Suggested order
+
+| Step | Group | Change | Risk | Dependency |
+| --- | --- | --- | --- | --- |
+| 0 | Baseline | Add representative fixtures and record current behavior/costs | Low | None |
+| 1 | Contained improvements | Separate pixel-filter invalidation from rotation/flip | Medium | 0 |
+| 2 | Contained improvements | Reuse primary-image selection | Low | 0 |
+| 3 | Annotation scaling | Make batch annotation construction linear | Low–medium | 0 |
+| 4 | Annotation scaling | Index annotation and canvas lookups; coalesce updates | Medium | 3 |
+| 5 | Annotation scaling | Separate overlay content from positioning | Medium | 4 |
+| 6 | Elm rendering | Narrow thumbnail lazy-view arguments | Low–medium | 2 |
+| 7 | Elm rendering | Index range membership and narrow range lazy-view arguments | Medium | 6 |
+| 8 | Filter pipeline | Consolidate pixel-buffer processing scaffolding | Medium | 1 |
+| 9 | Filter pipeline | Batch compatible filters into one canvas round-trip | High | 8 |
+| 10 | Optional cleanup | Share PCA projection/output machinery | Medium | 9 |
+| 11 | Conditional investigation | Profile retained pages and consider bounded retention | High if implemented | 0; preferably after 5 |
+
+This order starts with contained changes, then addresses large annotation sets
+and manifests, and leaves the more behavior-sensitive pixel pipeline until
+regression coverage is established. Steps within a group should still be
+separate commits or review units. Independent groups can be deferred without
+blocking the others.
+
+## Validation rules for every implementation step
+
+1. Add or extend focused regression tests before changing the relevant behavior.
+2. Run focused tests while iterating, using both configured OSD versions for
+   browser-dependent changes.
+3. Before accepting a step, run the applicable checks below. Run the complete
+   browser suite at the end of each group and before merging the overall work.
+4. Run `make build` and record both minified and gzip sizes for both production
+   bundles. Regenerate package artifacts when required by source changes.
+5. Record before/after results, review the diff, and run `git diff --check`.
+6. Keep the change only if it demonstrates a performance improvement or a clear
+   maintenance benefit. Bundle growth needs an explicit justification.
+
+```sh
+make test
+yarn -s tsc --noEmit --noUnusedLocals --noUnusedParameters --pretty false
+yarn test:types
+make review
+make build-dev
+make test-browser
+make build
+git diff --check
+```
+
+`make test` includes the API documentation check. Use `make build-dev` before
+browser testing so tests exercise current sources. Do not run debug and
+production builds concurrently: both regenerate `cache/`. Performance comparisons
+should use the same optimized build configuration on both sides, not debug versus
+production builds.
+
+If Chromium cannot launch because of macOS sandbox permissions, record that as
+an environment limitation and rerun in an approved environment; do not count it
+as either a passing test or a product failure.
+
+## Step 0 — Establish baselines and regression fixtures
+
+- Use deterministic, local fixtures where possible to avoid network timing noise.
+- Include a small manifest, a large manifest, deeply nested ranges, many
+  annotations on one canvas, and annotations spread across many canvases.
+- Include rectangle and SVG selectors, HTML and plain-text bodies, manifest and
+  API annotations, and canvases with and without image services.
+- Exercise filter combinations on deterministic images with transparency and
+  values near rounding/clamping boundaries.
+- Record production bundle sizes and representative timings for page selection,
+  annotation replacement, layout changes, and filter updates.
+- Where useful, temporarily count thumbnail renders, overlay rebuilds, filter
+  generations, and canvas read/write operations. Avoid shipping diagnostic
+  instrumentation in production bundles.
+- For browser timing measurements, warm up first, repeat runs, and report the
+  browser, OSD version, fixture size, and build configuration. Prefer operation
+  counts over brittle wall-clock assertions in automated tests.
+
+**Done when:** There is a repeatable comparison procedure and baseline behavior
+is covered sufficiently to distinguish optimizations from rendering changes.
+
+## Group A — Contained improvements
+
+### Step 1 — Avoid unnecessary pixel-filter invalidation
+
+**Locations:** `src/diva.ts` (`applyFilterOptions`, `buildFilterOptions`),
+`src/filters.ts` (`setOptions`, `GLOBAL_PCA_COLOR`).
+
+- Separate rotation/flip updates from settings that affect pixel processors.
+- Compare effective active pixel settings, not merely the complete settings
+  object. Editing a disabled filter should not invalidate rendered pixels.
+- Preserve processor instances when effective pixel settings are unchanged.
+- Explicitly reset invalidation bookkeeping on image/source replacement, viewer
+  recreation, authorization changes, and teardown.
+- Preserve PCA state only when its source and upstream pixel inputs remain valid.
+
+**Tests:** Rotation-only and flip-only changes with expensive filters enabled;
+actual pixel-setting changes; disabled-setting changes; toggling all filters off;
+switching sources; credentialed/static-image CORS paths; closing and reopening
+Page View. Check rendered pixels and processor invalidation counts.
+
+**Done when:** Orientation-only changes do not rebuild pixel processors, while
+all changes that require fresh pixel processing still do so.
+
+### Step 2 — Centralize primary-image selection
+
+**Locations:** `src/Model.elm` (`primaryImage`, `canvasThumbnailUrl`),
+`src/View/Sidebar.elm` (`viewThumbnail`).
+
+- Reuse the existing primary-image helper where a `Page` is available.
+- Extract a list-level helper only if needed to share the same rule elsewhere.
+- Replace the sidebar's fabricated empty image with explicit `Maybe` handling.
+- Preserve first-primary selection and fallback to the first image.
+
+**Tests:** No images, one image, no explicitly primary image, multiple primary
+images, and protected-image thumbnail presentation. Extend `tests/ModelTest.elm`
+and relevant browser coverage.
+
+**Done when:** Equivalent selection paths use one rule without changing
+thumbnail URLs, fallback behavior, or authorization presentation.
+
+## Group B — Annotation scaling
+
+### Step 3 — Remove quadratic batch construction
+
+**Location:** `src/diva.ts` (`setAnnotations`).
+
+- Build per-canvas annotation collections with ID-keyed maps instead of filtering
+  and copying an expanding array on every insertion.
+- Convert to the existing storage representation once per canvas, if still needed.
+- Preserve duplicate replacement and ordering behavior, including the current
+  behavior for duplicate IDs across different canvases; characterize it first
+  rather than silently standardizing it.
+- Preserve all-or-nothing validation before mutating live annotation storage.
+
+**Tests:** Unique and duplicate IDs, duplicate ordering, invalid canvas midway
+through a batch, empty replacement, manifest/API precedence, and cleared canvases.
+Measure large batches concentrated on one canvas and spread over many canvases.
+
+**Done when:** Batch accumulation is linear in annotation count, apart from
+normalization costs, and public results remain unchanged.
+
+### Step 4 — Index lookups and apply each affected canvas once
+
+**Locations:** `src/diva.ts` (`setAnnotation`, `findStoredAnnotation`,
+`applyAnnotationsForCanvas`), `src/viewer-element.ts` (`setAnnotations`,
+`selectAnnotation`, `getImageRegionForAnnotation`).
+
+- Add narrowly scoped indexes for annotation IDs and canvas/page relationships.
+- Keep indexes derived from the authoritative annotation/page collections; do not
+  introduce a competing owner of viewer state.
+- Use canvas-to-page-index collections if one canvas can address multiple entries.
+- Coalesce removal and insertion so an existing annotation on the same canvas
+  triggers one final update instead of an intermediate removal and re-addition.
+- Maintain precedence, duplicate lookup behavior, and index invalidation on clear,
+  manifest arrival, resource replacement, and destroy.
+
+**Tests:** Replace an ID on the same canvas; move it between canvases; clear and
+re-add; replace the manifest; select and retrieve bodies/extract URLs before and
+after updates. Assert only the affected canvases are applied, once each.
+
+**Done when:** Relevant operations avoid full-manifest scans without stale
+indexes or changes to annotation visibility and precedence.
+
+### Step 5 — Reposition overlays without rebuilding their content
+
+**Locations:** `src/viewer-element.ts` (`updateLoadedItemPositions`,
+`addOrUpdateAnnotationOverlay`).
+
+- Separate SVG/content construction from OSD overlay placement and dimensions.
+- Rebuild only when annotation content or necessary content geometry changes.
+- Reuse content and event handlers for layout-only changes.
+- Ensure selected annotations, tooltips, open panels, and removed annotations do
+  not retain stale DOM references.
+
+**Tests:** Rectangle/SVG alignment in single, spread, shifted-spread, LTR, and RTL
+layouts; visibility toggles; keyboard/pointer selection; HTML/plain-text panels;
+extract URLs; missing-service `null`; data replacement and teardown. Extend
+`browser-tests/public-api.spec.ts` and count content rebuilds during layout changes.
+
+**Done when:** Layout changes preserve overlay content nodes where appropriate,
+with unchanged alignment and interaction behavior on OSD 5 and 6.
+
+## Group C — Elm rendering and range traversal
+
+### Step 6 — Make thumbnail lazy boundaries effective
+
+**Location:** `src/View/Sidebar.elm` (`viewThumbnails`, `viewThumbnail`).
+
+- Resolve per-thumbnail active state and auth presentation before the lazy view.
+- Pass stable, narrow arguments instead of global `selectedIndex` and `Auth.Model`.
+- Preserve lazy image loading, RTL ordering, scroll-to-selection, and image-choice
+  indicators. Do not combine this step with DOM windowing.
+
+**Tests:** Navigate through a large manifest in single and spread modes, including
+shifted spreads and RTL. Verify auth changes affect the correct thumbnails,
+fallback loading still works, and selection/scroll behavior is unchanged.
+
+**Done when:** Selection changes rebuild only thumbnails whose effective inputs
+changed, while accepting that the outer list still requires traversal.
+
+### Step 7 — Precompute range relationships and narrow lazy arguments
+
+**Locations:** `src/Main.elm` (manifest initialization and range indexing),
+`src/Model.elm`, `src/View/Sidebar.elm` (range views and membership traversal).
+
+- Build canvas-to-range membership and required range summaries once per manifest.
+- Preserve parent-before-child ordering, nested membership, missing-canvas behavior,
+  labels, and the existing first-page navigation rules.
+- Compute visible canvas information once per relevant view update.
+- Stop passing the complete model into every lazy range node. Use stable inputs
+  and per-node current/expanded state where practical.
+- Invalidate indexes on resource replacement, not on page selection.
+- Keep index construction efficient too; avoid repeatedly copying entire descendant
+  lists while walking deeply nested ranges.
+
+**Tests:** Deep and broad trees, repeated canvas references, missing canvases,
+empty ranges, expanded metadata, page navigation, manifest replacement, and spread
+selection. Check both Contents views against their previous ordering and output.
+
+**Done when:** Page changes use indexed membership rather than repeated subtree
+searches, and unrelated model changes do not reconstruct every range view.
+
+## Group D — Filter pipeline consolidation and batching
+
+### Step 8 — Consolidate processing scaffolding without batching yet
+
+**Locations:** `src/filters.ts` (`readImageDataFromContext`, `withImageData`,
+`_applyPixelTransformInPlace`, LUT-based filters).
+
+- Introduce a shared pixel-buffer processing boundary, preserving the existing
+  callback contract and synchronous processing behavior.
+- Consolidate repeated canvas access and RGB LUT application where beneficial.
+- Preserve alpha, canvas clearing/compositing, intermediate byte conversion, and
+  scratch-buffer ownership. Keep neighborhood filters' source copies distinct
+  from their writable output.
+- Leave the number and order of filter stages unchanged in this step.
+
+**Tests:** Deterministic pixel comparisons for individual filters and combinations,
+transparent pixels, varying tile dimensions, filter removal/reapplication, and
+multiple viewer instances. Exercise Page View, saving filtered images, anonymous
+and credentialed images, and non-CORS filter-access blocking.
+
+**Done when:** The shared infrastructure produces equivalent output and creates
+a clear extension point for batching, without a material performance regression.
+
+### Step 9 — Batch compatible filter stages
+
+**Locations:** `src/filters.ts` (processor pipeline), `src/diva.ts`
+(`buildFilterOptions`).
+
+- Start with adjacent pointwise filters; retain fallback boundaries for processors
+  that cannot safely participate in a batch.
+- Read once and write once per compatible batch. Initially, retaining separate
+  in-memory pixel passes is acceptable and easier to verify than loop fusion.
+- Preserve stage order, intermediate `Uint8ClampedArray` rounding/clamping, alpha
+  handling, and relevant canvas premultiplication/compositing behavior.
+- Do not assume eliminating canvas boundaries is pixel-equivalent for transparency;
+  prove equivalence or retain boundaries where required.
+- Consider LUT composition or single-pass transform fusion only as a separate
+  follow-up after this batching change is validated.
+
+**Tests:** Compare batched and baseline output for representative combinations,
+clipping/rounding cases, transparency, pointwise filters separated by convolution
+or morphology, PCA, and source/settings changes during tile loading.
+
+**Done when:** Compatible chains use fewer canvas round-trips and show a measured
+benefit, without unapproved visual differences or lifecycle regressions.
+
+### Step 10 — Optional PCA duplication cleanup
+
+**Location:** `src/filters.ts` (`applyPcaColor`, `applyPcaColorWithBasis`).
+
+- Share projection/output machinery only where it simplifies maintenance without
+  adding expensive callbacks or allocations inside pixel loops.
+- Preserve the intentional difference between local min/max normalization and
+  global variance-based normalization, including the existing basis lifecycle.
+- Do not treat statistical accumulation algorithms as interchangeable just because
+  both produce a covariance matrix.
+
+**Tests:** All PCA modes, hue changes, uniform/near-uniform images, transition from
+local fallback to global basis, settings changes, and source replacement.
+
+**Done when:** Duplication is reduced with equivalent output and no material
+throughput or bundle-size regression. Skip if the abstraction is not worthwhile.
+
+## Group E — Conditional page-retention investigation
+
+### Step 11 — Measure before introducing eviction
+
+**Location:** `src/viewer-element.ts` (page loading, loaded-item maps, overlays,
+waiters, and teardown).
+
+- Scroll through a large manifest and measure OSD world item count, overlay DOM
+  count, retained memory, and frame/update costs after visiting many pages.
+- Separate OSD-managed tile-cache behavior from retained page objects and DOM.
+- If retention is material, propose a bounded working set around visible pages
+  and explicit navigation targets. Review that design before implementation.
+- Account for pending page waiters, in-flight loads, auth resolution, annotation
+  selection, resource tokens, revisits, and teardown before removing items.
+- Treat thumbnail DOM windowing as another separately justified proposal, not
+  an implicit part of page eviction or step 6.
+
+**Tests if implemented:** Forward/backward browsing, distant jumps, rapid scrolling,
+spread layouts, evicted-page revisits, pending navigation, protected/static images,
+cancellation, resource replacement, and destroy on both OSD versions.
+
+**Done when:** Either measurements justify keeping current behavior, or a
+separately reviewed eviction change demonstrably bounds retention without breaking
+navigation and loading contracts. This is not a confirmed memory leak.
+
+## Per-step completion record
+
+### Step 0 — Complete (2026-10-28)
+
+- Added `browser-tests/optimization-baseline.spec.ts`, deterministic local fixture
+  builders, and shared golden filter pixels. Application sources are unchanged.
+- Reproduction commands, workload definitions, measurement limitations, initial
+  timings, and bundle sizes are in `browser-tests/OPTIMIZATION_BASELINE.md`.
+- The 12 baseline browser cases pass across OSD 5.0.1 and 6.0.2. The complete
+  browser suite passes: 105 passed, one existing OSD-5-specific skip.
+- `make test` passes (37 Elm tests and TypeDoc); strict application TypeScript,
+  public type tests, and `make review` pass. Production and debug builds succeed.
+- No production bundle size changes: IIFE 287,285 bytes / 84,415 gzip bytes;
+  ESM 287,312 bytes / 84,437 gzip bytes.
+- Rotation and mirror each currently cause one pixel-filter invalidation. The
+  four-stage tone chain currently performs four canvas reads. These are measured
+  costs, not regression assertions that would prevent improving them.
+- No browser sandbox limitation encountered. Wall-clock measurements remain
+  diagnostic and should be repeated under matched conditions before comparison.
+- Decision: keep the baseline; proceed next to Step 1, with focused additional
+  coverage for source replacement, disabled settings, and filter lifecycle resets.
+
+### Step 1 — Complete (2026-10-28)
+
+- `src/diva.ts` now describes active pixel processors and their effective arguments
+  before constructing them. A stable serialized key avoids rebuilding processors
+  or advancing the filter generation for rotation, mirror, identical settings,
+  and disabled-setting edits. Processing order and defaults are unchanged.
+- Processor instances, including a learned PCA basis, are preserved only while
+  active pixel inputs and the source lifecycle remain valid. Opening an image,
+  recreating/closing Page View, replacing a resource, authorization invalidation,
+  and filter-access transitions reset the relevant bookkeeping.
+- Removed the redundant filter-function forwarding table as part of using the
+  same filter descriptions for comparison and construction.
+- Added `browser-tests/filter-invalidation.spec.ts`: seven cases per OSD version,
+  including an enabled/disabled/change matrix across 45 parameter inputs,
+  grayscale/invert removal, pixel equivalence across transforms, PCA preservation
+  and rebuilding, real disabled-slider input, source/resource replacement,
+  credentialed re-resolution, non-CORS blocking/restoration, and teardown.
+- New unchanged-setting tests failed against the original implementation before
+  the optimization. After implementation, the full browser suite passes:
+  119 passed, one existing OSD-5-specific skip. `make test` (37 Elm tests and
+  TypeDoc), strict application TypeScript, public type tests, Elm review, and
+  the source formatting check pass. Debug and production artifacts regenerated.
+- Baseline measurements on both OSD versions: rotation invalidations **1 → 0**;
+  mirror invalidations **1 → 0**. Existing exact filter-pixel fixtures still pass.
+- IIFE minified/gzip: **287,285 / 84,415 → 287,121 / 84,385 bytes**.
+  ESM minified/gzip: **287,312 / 84,437 → 287,148 / 84,408 bytes**.
+- No browser environment limitations encountered. The credentialed re-resolution
+  regression wraps the real resolver's result to change credential flags; the
+  existing auth suite separately covers actual login/logout and cancellation.
+- Decision: keep. Next is Step 2, primary-image selection reuse; no later
+  optimization steps are implemented here.
+
+Append a short entry when each step is implemented:
+
+```text
+Step:
+Commit/review reference:
+Behavior preserved and relevant edge cases:
+Focused tests and broader checks run:
+Before/after operation counts or timings:
+IIFE minified/gzip sizes before and after:
+ESM minified/gzip sizes before and after:
+Environment limitations:
+Decision: keep / revise / defer
+```

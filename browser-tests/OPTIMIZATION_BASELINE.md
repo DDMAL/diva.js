@@ -1,0 +1,141 @@
+# Optimization baseline
+
+This is Step 0 of `OPTIMIZATION_PLAN.md`. No production implementation changes
+are part of this step.
+
+## Repeatable run
+
+Install dependencies as usual, then run:
+
+```sh
+make build
+PLAYWRIGHT_JSON_OUTPUT_NAME=test-results/optimization-baseline.json yarn -s playwright test browser-tests/optimization-baseline.spec.ts --workers=1 --reporter=list,json
+```
+
+The suite always loads the **optimized production IIFE**, regardless of whether a
+debug bundle exists. The isolated filter test bundles the actual `src/filters.ts`
+module using esbuild; its timings are for that test bundle, not the production
+IIFE. Compare like-for-like configurations. Run each revision several times on
+the same machine/browser, without other CPU-intensive checks running concurrently.
+
+The JSON report includes base64-encoded JSON attachments on each test result:
+
+- `navigation-baseline.json`: timed navigation and a subsequent animation frame,
+  after one warmup, plus browser/OSD identification.
+- `annotation-baseline.json`: three synchronous batch samples after warmup,
+  layout API completion plus a frame, overlay update calls, and retained pages.
+- `distributed-baseline.json`: three synchronous distributed batch samples after
+  warmup, plus the resulting annotation count.
+- `filter-generation-baseline.json`: generation changes after real Page View
+  brightness, rotation, and mirror interactions.
+- `filter-baseline.json`: canvas reads for each correctness chain and five warmed
+  throughput samples of a four-filter chain on a 256 × 256 image.
+
+Attachments are measurements, not timing thresholds. Counts of unnecessary work
+are deliberately not asserted, so improving them will not fail the baseline.
+Keep reports outside source control; `test-results/` is ignored and may be
+replaced by subsequent Playwright runs. Copy a report elsewhere before another
+run if it is needed for a comparison.
+
+The suite wraps an overlay method and the canvas read method only within its own
+page, restoring them in `finally` blocks. No production instrumentation is added.
+Overlay counts include asynchronous page-loading effects and are diagnostic, not
+an invariant or a measurement of a memory leak. Navigation measurements include
+local route handling, page loading, and frame scheduling, not just Elm rendering.
+Synchronous annotation timings include API normalization and DOM work performed
+before return, but do not measure completion of all deferred painting.
+
+## Fixture corpus and behavior checks
+
+`helpers/optimization-fixtures.ts` creates deterministic local routes with no
+remote manifest, image, or annotation requests:
+
+| Fixture | Purpose |
+| --- | --- |
+| `small` | Four canvases; embedded annotations; a final static image without an Image API service |
+| `large` | 1,000 canvases, thumbnail DOM, distant navigation, and distributed annotations |
+| `nested` | 64 canvases, a 64-level range chain, and 16 sibling ranges |
+| Concentrated annotations | 300 annotations on one canvas, alternating rectangle/plain-text and SVG/HTML |
+| Distributed annotations | 1,000 annotations across 100 canvases |
+| Pixel corpus | 8 × 4 pixels, channel boundary values and alpha 0/1/127/255 |
+
+Regression assertions cover annotation ordering/replacement, atomic rejection of
+an invalid batch, manifest/API merging, clear/re-add behavior, duplicate IDs
+across canvases, missing-service `null`, page/range navigation, overlay presence,
+and Page View rotation/mirror/reopen behavior.
+
+`fixtures/optimization-filter-pixels.json` records exact pre-optimization Chromium
+output, shared by both OSD projects. It covers tone filters, grayscale/threshold,
+convolution/unsharp, and the PCA local fallback. Review any proposed golden
+changes as behavior changes, not as routine snapshot updates. The tiny pixel
+corpus is a correctness test, not a throughput benchmark. Global PCA convergence,
+additional filters, and lifecycle edge cases need focused coverage when those
+implementation steps begin.
+
+Existing `public-api.spec.ts`, `auth.spec.ts`, and Elm tests remain complementary
+coverage for annotation alignment/interactions, auth/CORS, HTML parsing, and model
+behavior. This baseline does not replace the focused regression tests required by
+each later optimization step.
+
+## Initial baseline — 2026-10-28
+
+Environment: macOS, headless Chromium 149.0.7827.55, one Playwright worker, OSD
+5.0.1 and 6.0.2. Production bundles were generated with `make build` from unchanged
+application sources. These are illustrative local measurements, not performance
+targets; repeat the procedure before making comparisons.
+
+| Production artifact | Minified bytes | Gzip bytes |
+| --- | ---: | ---: |
+| `build/diva.js` | 287,285 | 84,415 |
+| `build/diva.esm.js` | 287,312 | 84,437 |
+
+The first passing measurement run confirmed the same behavior in both projects:
+
+- Rotation alone increments the pixel-filter generation once.
+- Mirror alone increments the pixel-filter generation once.
+- The four-stage tone chain performs four canvas pixel reads; the two-stage
+  threshold chain performs two; the three-stage neighborhood chain performs three.
+- Exact filter pixel outputs match across both OSD projects.
+
+Representative samples from that run (other checks were running concurrently, so
+these are smoke measurements only):
+
+| Workload | OSD 5.0.1 | OSD 6.0.2 |
+| --- | --- | --- |
+| 1,000-page navigation, three samples | 6.0 / 7.7 / 8.7 ms | 7.8 / 9.4 / 7.3 ms |
+| 300-annotation replacement, three samples | 4.5 / 7.5 / 4.8 ms | 4.6 / 5.4 / 5.2 ms |
+| 256 × 256 tone chain, five samples | 2.3 / 2.0 / 2.1 / 2.3 / 2.4 ms | 2.1 / 2.0 / 2.1 / 2.0 / 2.1 ms |
+
+No before/after speedup is claimed: implementation has not been optimized yet.
+
+## Step 1 comparison — 2026-10-28
+
+After implementing pixel-filter invalidation caching, the existing Page View
+measurement reports the following on both OSD 5.0.1 and 6.0.2:
+
+| Operation | Initial baseline | After Step 1 |
+| --- | ---: | ---: |
+| Rotation-only pixel-filter invalidations | 1 | 0 |
+| Mirror-only pixel-filter invalidations | 1 | 0 |
+
+The generation remains at 2 across brightness enablement followed by rotation
+and mirror, instead of advancing from 2 to 3 to 4. These measurements were
+captured with the production IIFE and one worker, using:
+
+```sh
+PLAYWRIGHT_JSON_OUTPUT_NAME=test-results/filter-invalidation-baseline.json yarn -s playwright test browser-tests/optimization-baseline.spec.ts --grep "rotation and mirror" --workers=1 --reporter=list,json
+```
+
+`filter-invalidation.spec.ts` additionally asserts processor identity and unchanged
+pixel output across transforms, tests active/disabled inputs across all filter
+families, and checks reset paths. A global PCA basis survives transforms but is
+discarded when its active upstream inputs or image source change. Pixel fixtures
+are unchanged. This comparison claims avoided work, not a measured wall-clock
+speedup.
+
+| Production artifact | Minified bytes before → after | Gzip bytes before → after |
+| --- | ---: | ---: |
+| `build/diva.js` | 287,285 → 287,121 | 84,415 → 84,385 |
+| `build/diva.esm.js` | 287,312 → 287,148 | 84,437 → 84,408 |
+
+Full browser validation after Step 1: 119 passed, one existing OSD-5-specific skip.

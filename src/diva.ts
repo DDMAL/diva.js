@@ -6,7 +6,7 @@ import divaCss from "../cache/diva.css";
 import { Elm } from "../cache/elm-esm.js";
 
 import { AuthBrowser, type ResolvedTileSource, type TileSourceDescriptor } from "./auth";
-import { Filters, setFilterOptions } from "./filters";
+import { type FilterOptions, type FilterProcessor, Filters, setFilterOptions } from "./filters";
 import { iiifImageRegionUrl } from "./image-utils";
 import type {
     DivaAnnotation,
@@ -421,6 +421,7 @@ export class Diva extends EventTarget
     private filterViewer: any = null;
     private filterViewerElement: HTMLElement | null = null;
     private filterOptions: FilterSettings | null = null;
+    private appliedPixelFilterKey: string | null = null;
     private filterViewerFlipped = false;
     private filterAccessBlocked = false;
     private currentFilterSourceKey: string | null = null;
@@ -763,10 +764,19 @@ export class Diva extends EventTarget
         });
 
         this.getPort("authSourcesInvalidated")
-            .subscribe((sourceIds: string[]) => {
-                this.auth.invalidateSources(sourceIds);
-                this.callViewerMethodWhenReady("invalidateTileSources", sourceIds);
-            });
+            .subscribe((sourceIds: string[]) => this.invalidateSources(sourceIds));
+    }
+
+    private invalidateSources(sourceIds: string[]): void
+    {
+        this.auth.invalidateSources(sourceIds);
+        this.callViewerMethodWhenReady("invalidateTileSources", sourceIds);
+        if (this.currentFilterSourceKey && sourceIds.includes(JSON.parse(this.currentFilterSourceKey)[0]))
+        {
+            // The same URL may resolve to different pixels/credentials after auth.
+            this.currentFilterSourceKey = null;
+            this.appliedPixelFilterKey = null;
+        }
     }
 
     private ensureMainViewer(): any
@@ -1853,6 +1863,7 @@ export class Diva extends EventTarget
         this.currentFilterSourceKey = null;
         this.pendingFilterPreview = null;
         this.filterOptions = null;
+        this.appliedPixelFilterKey = null;
         this.setFilterAccessBlocked(false);
         this.filterPreviewRetries = 0;
     }
@@ -2070,6 +2081,8 @@ export class Diva extends EventTarget
                 this.filterViewer.viewport.fitBounds(this.filterViewer.world.getHomeBounds(), true);
             }
             this.filterViewerFlipped = false;
+            // Every open, including reopening the same URL, starts a fresh PCA basis.
+            this.appliedPixelFilterKey = null;
             this.applyFilterOptions();
         });
     }
@@ -2091,6 +2104,7 @@ export class Diva extends EventTarget
             }
             this.filterViewer = null;
             this.currentFilterSourceKey = null;
+            this.appliedPixelFilterKey = null;
             this.filterViewerFlipped = false;
             this.filterViewerElement = element;
         }
@@ -2104,15 +2118,17 @@ export class Diva extends EventTarget
         {
             return;
         }
-        if (this.filterAccessBlocked)
+        const update = buildFilterOptions(
+            this.filterAccessBlocked ? null : this.filterOptions,
+            this.appliedPixelFilterKey,
+        );
+        if (update)
         {
-            setFilterOptions(this.filterViewer, { filters: [] });
-            return;
+            setFilterOptions(this.filterViewer, update.options);
+            this.appliedPixelFilterKey = update.key;
         }
-        const options = buildFilterOptions(this.filterOptions);
-        setFilterOptions(this.filterViewer, options);
 
-        if (this.filterViewer.viewport)
+        if (!this.filterAccessBlocked && this.filterViewer.viewport)
         {
             const rotation = this.filterOptions?.rotation || 0;
             this.filterViewer.viewport.setRotation(rotation);
@@ -2171,6 +2187,10 @@ export class Diva extends EventTarget
 
     private setFilterAccessBlocked(blocked: boolean): void
     {
+        if (this.filterAccessBlocked !== blocked)
+        {
+            this.appliedPixelFilterKey = null;
+        }
         this.filterAccessBlocked = blocked;
         const sidebar = this.root.querySelector<HTMLElement>(".diva-modal-sidebar");
         if (!sidebar)
@@ -2344,41 +2364,14 @@ export class Diva extends EventTarget
 
 type FilterMapping = {
     enabled: keyof FilterSettings;
-    filter: keyof typeof filterFunctions;
+    filter: keyof typeof Filters;
     args?: (keyof FilterSettings)[];
     defaults?: number[];
 };
 
-const filterFunctions = {
-    THRESHOLDING: Filters.THRESHOLDING,
-    BRIGHTNESS: Filters.BRIGHTNESS,
-    SATURATION: Filters.SATURATION,
-    VIBRANCE: Filters.VIBRANCE,
-    HUE: Filters.HUE,
-    CC_RED: Filters.CC_RED,
-    CC_GREEN: Filters.CC_GREEN,
-    CC_BLUE: Filters.CC_BLUE,
-    CONTRAST: Filters.CONTRAST,
-    GAMMA: Filters.GAMMA,
-    GREYSCALE: Filters.GREYSCALE,
-    INVERT: Filters.INVERT,
-    BACKGROUND_NORMALIZE: Filters.BACKGROUND_NORMALIZE,
-    UNSHARP_MASK: Filters.UNSHARP_MASK,
-    ALT_RED_GAMMA: Filters.ALT_RED_GAMMA,
-    ALT_GREEN_GAMMA: Filters.ALT_GREEN_GAMMA,
-    ALT_BLUE_GAMMA: Filters.ALT_BLUE_GAMMA,
-    ALT_RED_SIGMOID: Filters.ALT_RED_SIGMOID,
-    ALT_GREEN_SIGMOID: Filters.ALT_GREEN_SIGMOID,
-    ALT_BLUE_SIGMOID: Filters.ALT_BLUE_SIGMOID,
-    ALT_RED_HUE: Filters.ALT_RED_HUE,
-    ALT_GREEN_HUE: Filters.ALT_GREEN_HUE,
-    ALT_BLUE_HUE: Filters.ALT_BLUE_HUE,
-    ALT_RED_VIBRANCE: Filters.ALT_RED_VIBRANCE,
-    ALT_GREEN_VIBRANCE: Filters.ALT_GREEN_VIBRANCE,
-    ALT_BLUE_VIBRANCE: Filters.ALT_BLUE_VIBRANCE,
-    GLOBAL_PCA_COLOR: Filters.GLOBAL_PCA_COLOR,
-    ADAPTIVE_THRESHOLD: Filters.ADAPTIVE_THRESHOLD,
-};
+// Serializable effective inputs, in processing order. Viewport transforms and
+// disabled settings never enter this list; factories run only after comparison.
+type FilterStep = [keyof typeof Filters, any[]];
 
 const simpleFilterMappings: FilterMapping[] = [
     { enabled: "thresholdEnabled", filter: "THRESHOLDING", args: ["threshold"] },
@@ -2433,33 +2426,33 @@ const altFilterMappings: FilterMapping[] = [
     },
 ];
 
-const appendMappedProcessors = (processors: any[], filters: FilterSettings, mappings: FilterMapping[]): void => {
+const appendMappedFilters = (steps: FilterStep[], filters: FilterSettings, mappings: FilterMapping[]): void => {
     for (const mapping of mappings)
     {
         if (filters[mapping.enabled])
         {
             const filterArgs = mapping.args?.map((key, i) => filters[key] ?? (mapping.defaults?.[i] ?? 0)) ?? [];
-            const filterFn = filterFunctions[mapping.filter] as (...args: any[]) => any;
-            processors.push(filterFn(...(filterArgs as any[])));
+            steps.push([mapping.filter, filterArgs]);
         }
     }
 };
 
-const buildFilterOptions = (filters: FilterSettings | null): any => {
-    if (!filters)
-    {
-        return { filters: [], loadMode: "sync" };
-    }
-
-    const processors: any[] = [];
+const buildFilterOptions = (
+    filters: FilterSettings | null,
+    previousKey: string | null,
+): { key: string; options: FilterOptions } | null => {
+    filters = filters || {};
+    const steps: FilterStep[] = [];
 
     // Keep this order stable: simple -> special-case -> alt mappings.
-    appendMappedProcessors(processors, filters, simpleFilterMappings);
+    appendMappedFilters(steps, filters, simpleFilterMappings);
 
     if (filters.morphEnabled)
     {
-        const comparator = filters.morphOperation === "dilate" ? Math.max : Math.min;
-        processors.push(Filters.MORPHOLOGICAL_OPERATION(filters.morphKernel ?? 3, comparator));
+        steps.push(["MORPHOLOGICAL_OPERATION", [
+            filters.morphKernel ?? 3,
+            filters.morphOperation === "dilate" ? "dilate" : "erode",
+        ]]);
     }
 
     if (filters.convolutionEnabled)
@@ -2467,7 +2460,7 @@ const buildFilterOptions = (filters: FilterSettings | null): any => {
         const kernel = Filters.CONVOLUTION_PRESET(filters.convolutionPreset || "");
         if (kernel)
         {
-            processors.push(Filters.CONVOLUTION(kernel));
+            steps.push(["CONVOLUTION", [filters.convolutionPreset || ""]]);
         }
     }
 
@@ -2476,48 +2469,64 @@ const buildFilterOptions = (filters: FilterSettings | null): any => {
         const colourmap = Filters.COLORMAP_PRESET(filters.colourmapPreset || "");
         if (colourmap)
         {
-            processors.push(Filters.COLORMAP(colourmap, filters.colourmapCenter ?? 128));
+            steps.push(["COLORMAP", [filters.colourmapPreset || "", filters.colourmapCenter ?? 128]]);
         }
     }
 
     if (filters.pseudoColourEnabled)
     {
-        processors.push(
-            Filters.PSEUDOCOLOR(
+        steps.push(
+            ["PSEUDOCOLOR", [
                 filters.pseudoColourMode || "",
                 filters.pseudoColourRed ?? 1,
                 filters.pseudoColourGreen ?? 1,
                 filters.pseudoColourBlue ?? 1,
-            ),
+            ]],
         );
     }
 
     if (filters.globalPcaEnabled)
     {
-        processors.push(Filters.GLOBAL_PCA_COLOR(filters.pcaMode || "", filters.pcaHue ?? 0));
+        steps.push(["GLOBAL_PCA_COLOR", [filters.pcaMode || "", filters.pcaHue ?? 0]]);
     }
 
     if (filters.colourReplaceEnabled)
     {
-        processors.push(
-            Filters.COLOR_REPLACE(
+        steps.push(
+            ["COLOR_REPLACE", [
                 filters.colourReplaceSource || "#ffffff",
                 filters.colourReplaceTarget || "#ffffff",
                 filters.colourReplaceTolerance ?? 24,
                 filters.colourReplaceBlend ?? 1,
                 filters.colourReplacePreserveLum ?? false,
-            ),
+            ]],
         );
     }
 
-    appendMappedProcessors(processors, filters, altFilterMappings);
+    appendMappedFilters(steps, filters, altFilterMappings);
 
-    if (processors.length === 0)
+    const key = JSON.stringify(steps);
+    if (key === previousKey)
     {
-        return { filters: [], loadMode: "sync" };
+        return null;
     }
 
-    return { filters: { processors }, loadMode: "sync" };
+    const processors = steps.map(([name, args]) => {
+        if (name === "MORPHOLOGICAL_OPERATION")
+        {
+            args = [args[0], args[1] === "dilate" ? Math.max : Math.min];
+        }
+        else if (name === "CONVOLUTION")
+        {
+            args = [Filters.CONVOLUTION_PRESET(args[0])];
+        }
+        else if (name === "COLORMAP")
+        {
+            args = [Filters.COLORMAP_PRESET(args[0]), args[1]];
+        }
+        return (Filters[name] as (...values: any[]) => FilterProcessor)(...args);
+    });
+    return { key, options: { filters: processors.length ? { processors } : [], loadMode: "sync" } };
 };
 
 declare global

@@ -44,6 +44,7 @@ export declare class Diva extends EventTarget {
     private filterViewer;
     private filterViewerElement;
     private filterOptions;
+    private appliedPixelFilterKey;
     private filterViewerFlipped;
     private filterAccessBlocked;
     private currentFilterSourceKey;
@@ -115,6 +116,7 @@ export declare class Diva extends EventTarget {
     private initialPageFlag;
     private getConnectedRoot;
     private bindPorts;
+    private invalidateSources;
     private ensureMainViewer;
     private copyPage;
     private effectiveAnnotationsForCanvas;

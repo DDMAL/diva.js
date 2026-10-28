@@ -33290,6 +33290,7 @@
       this.filterViewer = null;
       this.filterViewerElement = null;
       this.filterOptions = null;
+      this.appliedPixelFilterKey = null;
       this.filterViewerFlipped = false;
       this.filterAccessBlocked = false;
       this.currentFilterSourceKey = null;
@@ -33529,10 +33530,15 @@
       this.getPort("copyToClipboard").subscribe((text) => {
         this.copyToClipboard(text);
       });
-      this.getPort("authSourcesInvalidated").subscribe((sourceIds) => {
-        this.auth.invalidateSources(sourceIds);
-        this.callViewerMethodWhenReady("invalidateTileSources", sourceIds);
-      });
+      this.getPort("authSourcesInvalidated").subscribe((sourceIds) => this.invalidateSources(sourceIds));
+    }
+    invalidateSources(sourceIds) {
+      this.auth.invalidateSources(sourceIds);
+      this.callViewerMethodWhenReady("invalidateTileSources", sourceIds);
+      if (this.currentFilterSourceKey && sourceIds.includes(JSON.parse(this.currentFilterSourceKey)[0])) {
+        this.currentFilterSourceKey = null;
+        this.appliedPixelFilterKey = null;
+      }
     }
     ensureMainViewer() {
       const current = document.getElementById("main-viewer");
@@ -34350,6 +34356,7 @@
       this.currentFilterSourceKey = null;
       this.pendingFilterPreview = null;
       this.filterOptions = null;
+      this.appliedPixelFilterKey = null;
       this.setFilterAccessBlocked(false);
       this.filterPreviewRetries = 0;
     }
@@ -34516,6 +34523,7 @@
           this.filterViewer.viewport.fitBounds(this.filterViewer.world.getHomeBounds(), true);
         }
         this.filterViewerFlipped = false;
+        this.appliedPixelFilterKey = null;
         this.applyFilterOptions();
       });
     }
@@ -34531,6 +34539,7 @@
         }
         this.filterViewer = null;
         this.currentFilterSourceKey = null;
+        this.appliedPixelFilterKey = null;
         this.filterViewerFlipped = false;
         this.filterViewerElement = element;
       }
@@ -34541,13 +34550,15 @@
       if (!this.filterViewer) {
         return;
       }
-      if (this.filterAccessBlocked) {
-        setFilterOptions(this.filterViewer, { filters: [] });
-        return;
+      const update = buildFilterOptions(
+        this.filterAccessBlocked ? null : this.filterOptions,
+        this.appliedPixelFilterKey
+      );
+      if (update) {
+        setFilterOptions(this.filterViewer, update.options);
+        this.appliedPixelFilterKey = update.key;
       }
-      const options = buildFilterOptions(this.filterOptions);
-      setFilterOptions(this.filterViewer, options);
-      if (this.filterViewer.viewport) {
+      if (!this.filterAccessBlocked && this.filterViewer.viewport) {
         const rotation = ((_a = this.filterOptions) == null ? void 0 : _a.rotation) || 0;
         this.filterViewer.viewport.setRotation(rotation);
         const shouldFlip = Boolean((_b = this.filterOptions) == null ? void 0 : _b.flip);
@@ -34589,6 +34600,9 @@
       return typeof tileSource === "object" && tileSource !== null && tileSource.type === "image" && tileSource.crossOriginPolicy === false;
     }
     setFilterAccessBlocked(blocked) {
+      if (this.filterAccessBlocked !== blocked) {
+        this.appliedPixelFilterKey = null;
+      }
       this.filterAccessBlocked = blocked;
       const sidebar = this.root.querySelector(".diva-modal-sidebar");
       if (!sidebar) {
@@ -34717,36 +34731,6 @@
       viewer.removeEventListener(name, handler);
     }
   };
-  var filterFunctions = {
-    THRESHOLDING: Filters.THRESHOLDING,
-    BRIGHTNESS: Filters.BRIGHTNESS,
-    SATURATION: Filters.SATURATION,
-    VIBRANCE: Filters.VIBRANCE,
-    HUE: Filters.HUE,
-    CC_RED: Filters.CC_RED,
-    CC_GREEN: Filters.CC_GREEN,
-    CC_BLUE: Filters.CC_BLUE,
-    CONTRAST: Filters.CONTRAST,
-    GAMMA: Filters.GAMMA,
-    GREYSCALE: Filters.GREYSCALE,
-    INVERT: Filters.INVERT,
-    BACKGROUND_NORMALIZE: Filters.BACKGROUND_NORMALIZE,
-    UNSHARP_MASK: Filters.UNSHARP_MASK,
-    ALT_RED_GAMMA: Filters.ALT_RED_GAMMA,
-    ALT_GREEN_GAMMA: Filters.ALT_GREEN_GAMMA,
-    ALT_BLUE_GAMMA: Filters.ALT_BLUE_GAMMA,
-    ALT_RED_SIGMOID: Filters.ALT_RED_SIGMOID,
-    ALT_GREEN_SIGMOID: Filters.ALT_GREEN_SIGMOID,
-    ALT_BLUE_SIGMOID: Filters.ALT_BLUE_SIGMOID,
-    ALT_RED_HUE: Filters.ALT_RED_HUE,
-    ALT_GREEN_HUE: Filters.ALT_GREEN_HUE,
-    ALT_BLUE_HUE: Filters.ALT_BLUE_HUE,
-    ALT_RED_VIBRANCE: Filters.ALT_RED_VIBRANCE,
-    ALT_GREEN_VIBRANCE: Filters.ALT_GREEN_VIBRANCE,
-    ALT_BLUE_VIBRANCE: Filters.ALT_BLUE_VIBRANCE,
-    GLOBAL_PCA_COLOR: Filters.GLOBAL_PCA_COLOR,
-    ADAPTIVE_THRESHOLD: Filters.ADAPTIVE_THRESHOLD
-  };
   var simpleFilterMappings = [
     { enabled: "thresholdEnabled", filter: "THRESHOLDING", args: ["threshold"] },
     { enabled: "brightnessEnabled", filter: "BRIGHTNESS", args: ["brightness"] },
@@ -34798,7 +34782,7 @@
       defaults: [15, 10]
     }
   ];
-  var appendMappedProcessors = (processors, filters, mappings) => {
+  var appendMappedFilters = (steps, filters, mappings) => {
     var _a, _b;
     for (const mapping of mappings) {
       if (filters[mapping.enabled]) {
@@ -34806,63 +34790,73 @@
           var _a2, _b2, _c;
           return (_c = filters[key]) != null ? _c : (_b2 = (_a2 = mapping.defaults) == null ? void 0 : _a2[i]) != null ? _b2 : 0;
         })) != null ? _b : [];
-        const filterFn = filterFunctions[mapping.filter];
-        processors.push(filterFn(...filterArgs));
+        steps.push([mapping.filter, filterArgs]);
       }
     }
   };
-  var buildFilterOptions = (filters) => {
+  var buildFilterOptions = (filters, previousKey) => {
     var _a, _b, _c, _d, _e, _f, _g, _h, _i;
-    if (!filters) {
-      return { filters: [], loadMode: "sync" };
-    }
-    const processors = [];
-    appendMappedProcessors(processors, filters, simpleFilterMappings);
+    filters = filters || {};
+    const steps = [];
+    appendMappedFilters(steps, filters, simpleFilterMappings);
     if (filters.morphEnabled) {
-      const comparator = filters.morphOperation === "dilate" ? Math.max : Math.min;
-      processors.push(Filters.MORPHOLOGICAL_OPERATION((_a = filters.morphKernel) != null ? _a : 3, comparator));
+      steps.push(["MORPHOLOGICAL_OPERATION", [
+        (_a = filters.morphKernel) != null ? _a : 3,
+        filters.morphOperation === "dilate" ? "dilate" : "erode"
+      ]]);
     }
     if (filters.convolutionEnabled) {
       const kernel = Filters.CONVOLUTION_PRESET(filters.convolutionPreset || "");
       if (kernel) {
-        processors.push(Filters.CONVOLUTION(kernel));
+        steps.push(["CONVOLUTION", [filters.convolutionPreset || ""]]);
       }
     }
     if (filters.colourmapEnabled) {
       const colourmap = Filters.COLORMAP_PRESET(filters.colourmapPreset || "");
       if (colourmap) {
-        processors.push(Filters.COLORMAP(colourmap, (_b = filters.colourmapCenter) != null ? _b : 128));
+        steps.push(["COLORMAP", [filters.colourmapPreset || "", (_b = filters.colourmapCenter) != null ? _b : 128]]);
       }
     }
     if (filters.pseudoColourEnabled) {
-      processors.push(
-        Filters.PSEUDOCOLOR(
+      steps.push(
+        ["PSEUDOCOLOR", [
           filters.pseudoColourMode || "",
           (_c = filters.pseudoColourRed) != null ? _c : 1,
           (_d = filters.pseudoColourGreen) != null ? _d : 1,
           (_e = filters.pseudoColourBlue) != null ? _e : 1
-        )
+        ]]
       );
     }
     if (filters.globalPcaEnabled) {
-      processors.push(Filters.GLOBAL_PCA_COLOR(filters.pcaMode || "", (_f = filters.pcaHue) != null ? _f : 0));
+      steps.push(["GLOBAL_PCA_COLOR", [filters.pcaMode || "", (_f = filters.pcaHue) != null ? _f : 0]]);
     }
     if (filters.colourReplaceEnabled) {
-      processors.push(
-        Filters.COLOR_REPLACE(
+      steps.push(
+        ["COLOR_REPLACE", [
           filters.colourReplaceSource || "#ffffff",
           filters.colourReplaceTarget || "#ffffff",
           (_g = filters.colourReplaceTolerance) != null ? _g : 24,
           (_h = filters.colourReplaceBlend) != null ? _h : 1,
           (_i = filters.colourReplacePreserveLum) != null ? _i : false
-        )
+        ]]
       );
     }
-    appendMappedProcessors(processors, filters, altFilterMappings);
-    if (processors.length === 0) {
-      return { filters: [], loadMode: "sync" };
+    appendMappedFilters(steps, filters, altFilterMappings);
+    const key = JSON.stringify(steps);
+    if (key === previousKey) {
+      return null;
     }
-    return { filters: { processors }, loadMode: "sync" };
+    const processors = steps.map(([name, args]) => {
+      if (name === "MORPHOLOGICAL_OPERATION") {
+        args = [args[0], args[1] === "dilate" ? Math.max : Math.min];
+      } else if (name === "CONVOLUTION") {
+        args = [Filters.CONVOLUTION_PRESET(args[0])];
+      } else if (name === "COLORMAP") {
+        args = [Filters.COLORMAP_PRESET(args[0]), args[1]];
+      }
+      return Filters[name](...args);
+    });
+    return { key, options: { filters: processors.length ? { processors } : [], loadMode: "sync" } };
   };
   window.Diva = Diva;
 })();
