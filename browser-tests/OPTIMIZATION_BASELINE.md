@@ -139,3 +139,21 @@ speedup.
 | `build/diva.esm.js` | 287,312 → 287,148 | 84,437 → 84,408 |
 
 Full browser validation after Step 1: 119 passed, one existing OSD-5-specific skip.
+
+## Step 2 comparison — 2026-10-28
+
+Primary-image selection, model thumbnail fallbacks, and thumbnail authorization
+now share one selection rule. The change removes filtered-list construction and
+the sidebar's dummy image record without changing the recorded behavior.
+
+| Production artifact | Minified bytes before → after | Gzip bytes before → after |
+| --- | ---: | ---: |
+| `build/diva.js` | 287,121 → 286,941 | 84,385 → 84,334 |
+| `build/diva.esm.js` | 287,148 → 286,968 | 84,408 → 84,356 |
+
+This is a maintenance/duplication improvement with a smaller bundle, not a claimed
+wall-clock speedup. Added model tests cover empty and ambiguous image lists;
+`primary-image.spec.ts` verifies thumbnail fallback and protected-primary behavior
+on both OSD versions. The complete suite passes: 121 browser cases, one existing
+skip, and 46 Elm tests. Test-only synchronization fixes also harden the Step 1
+filter regressions against pending Elm renders and asynchronous image reloads.

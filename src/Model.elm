@@ -184,12 +184,7 @@ pageViewStartIndex viewMode shiftByOne index =
 
 primaryImage : Page -> Maybe PageImage
 primaryImage page =
-    case find .isPrimary page.images of
-        Just image ->
-            Just image
-
-        Nothing ->
-            List.head page.images
+    primaryImageFromList page.images
 
 
 canvasThumbnailUrl : List PageImage -> Canvas -> String
@@ -199,17 +194,9 @@ canvasThumbnailUrl images canvas =
             thumbnailUrlForImage thumbnail
 
         Nothing ->
-            case List.filter .isPrimary images |> List.head of
-                Just image ->
-                    image.thumbUrl
-
-                Nothing ->
-                    case List.head images of
-                        Just image ->
-                            image.thumbUrl
-
-                        Nothing ->
-                            ""
+            primaryImageFromList images
+                |> Maybe.map .thumbUrl
+                |> Maybe.withDefault ""
 
 
 canvasToPage : Language -> Canvas -> Maybe Page
@@ -228,8 +215,7 @@ canvasToPage language canvas =
 
             fallbackThumbUrl =
                 images
-                    |> List.filter .isPrimary
-                    |> List.head
+                    |> primaryImageFromList
                     |> Maybe.map .thumbUrl
                     |> Maybe.withDefault ""
         in
@@ -286,6 +272,16 @@ iiifImageToPageImage language allImages image =
             Err error ->
                 Auth.Invalid (Decode.errorToString error)
     }
+
+
+primaryImageFromList : List PageImage -> Maybe PageImage
+primaryImageFromList images =
+    case find .isPrimary images of
+        Just image ->
+            Just image
+
+        Nothing ->
+            List.head images
 
 
 thumbnailUrlForImage : Image -> String

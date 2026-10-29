@@ -376,6 +376,38 @@ navigation and loading contracts. This is not a confirmed memory leak.
 - Decision: keep. Next is Step 2, primary-image selection reuse; no later
   optimization steps are implemented here.
 
+### Step 2 — Complete (2026-10-28)
+
+- `src/Model.elm` now delegates page selection and both thumbnail fallback paths
+  to one private list-level helper: first explicitly primary image, otherwise the
+  first image, otherwise `Nothing`. The helper short-circuits rather than building
+  a filtered list of every primary image.
+- `src/View/Sidebar.elm` uses `Model.primaryImage` and resolves authorization
+  through `Maybe.andThen`, removing the fabricated empty image record. Canvas
+  thumbnail precedence, fallback URLs, choice indicators, and protected-image
+  presentation are unchanged. No public API or dependency changes.
+- Added nine Elm regression cases for empty/single/no-primary/later-primary/
+  multiple-primary selection, omitted empty canvases, promoted first choices,
+  and thumbnail fallback consistency. Existing thumbnail tests also check fallback
+  URLs for canvas thumbnails and static images.
+- Added `browser-tests/primary-image.spec.ts` for anonymous canvas-thumbnail
+  failure/fallback and a protected primary with a public alternative. These
+  characterization tests passed against the original implementation too.
+- The full browser run exposed two pre-existing timing assumptions in Step 1's
+  tests. Test-only fixes wait for initial neighboring loads and Elm's normalized
+  JSON render, and inspect auth invalidation synchronously before reload events
+  can restore the source key. Both affected cases passed five repetitions on each
+  OSD version (20 focused passes), followed by the complete suite.
+- Validation: **121 browser tests passed, one existing OSD-5-specific skip**;
+  `make test` passes with **46 Elm tests** and TypeDoc; strict application
+  TypeScript, public type tests, and `make review` pass. Debug and production
+  bundles regenerated; no browser environment limitations encountered.
+- IIFE minified/gzip: **287,121 / 84,385 → 286,941 / 84,334 bytes**.
+  ESM minified/gzip: **287,148 / 84,408 → 286,968 / 84,356 bytes**.
+- Decision: keep for centralized behavior, reduced duplication, and smaller
+  bundles. No wall-clock speedup claimed. Next is Step 3, linear annotation-batch
+  construction; later annotation/rendering work is not included here.
+
 Append a short entry when each step is implemented:
 
 ```text

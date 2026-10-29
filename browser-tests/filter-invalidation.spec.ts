@@ -12,6 +12,9 @@ const applyJson = async (page: Page, settings: Record<string, unknown>): Promise
     await input.fill(JSON.stringify(settings));
     await page.getByRole("button", {name : "Apply", exact : true}).click();
     await expect.poll(() => page.evaluate(() => (window as any).diva.filterPreviewVersion)).toBeGreaterThan(version);
+    // The port fires before Elm renders its normalized JSON back into the
+    // controlled textarea. Finish that render before a subsequent fill.
+    await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())));
 };
 
 const rememberProcessors = (page: Page) => page.evaluate(() => {
@@ -31,6 +34,10 @@ const processorState = (page: Page) => page.evaluate(() => {
 test.beforeEach(async ({page}, testInfo) => {
     await installOptimizationRoutes(page);
     await openOptimizationHarness(page, testInfo);
+    await expect.poll(() => page.evaluate(() => {
+        const viewer = document.getElementById("main-viewer") as any;
+        return viewer.loadingIndexes.size === 0;
+    })).toBe(true);
     await page.getByRole("button", {name : "Page View", exact : true}).click();
     await expect.poll(() => page.evaluate(() => (window as any).diva.filterViewer?.world.getItemCount())).toBe(1);
 });
@@ -196,7 +203,7 @@ test("resets the same-source filter cache after authorization invalidation", asy
         diva.applyFilterOptions();
     });
     expect(await processorState(page)).toEqual({generation, count : 1, reused : true});
-    await page.evaluate(() => {
+    const invalidated = await page.evaluate(() => {
         const diva = (window as any).diva;
         const resolve = diva.auth.resolve.bind(diva.auth);
         // Keep the real resolver/cache/cancellation path; change only the resolved
@@ -208,8 +215,11 @@ test("resets the same-source filter cache after authorization invalidation", asy
         };
         const sourceId = JSON.parse(diva.currentFilterSourceKey)[0];
         diva.invalidateSources([sourceId]);
+        // Observe the reset synchronously; the main viewer may trigger a new
+        // preview resolution before the next browser evaluation runs.
+        return {source : diva.currentFilterSourceKey, pixels : diva.appliedPixelFilterKey};
     });
-    expect(await page.evaluate(() => (window as any).diva.currentFilterSourceKey)).toBeNull();
+    expect(invalidated).toEqual({source : null, pixels : null});
     await applyJson(page, {pcaMode : "pca-rgb"});
     await expect.poll(async () => (await processorState(page)).generation).toBeGreaterThan(generation);
     expect((await processorState(page)).reused).toBe(false);

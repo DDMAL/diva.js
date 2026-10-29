@@ -15634,20 +15634,23 @@
         }
     }
   );
-  var $author$project$Model$primaryImage = function(page) {
+  var $author$project$Model$primaryImageFromList = function(images) {
     var _v0 = A2(
       $author$project$Utilities$find,
       function($) {
         return $.isPrimary;
       },
-      page.images
+      images
     );
     if (_v0.$ === "Just") {
       var image = _v0.a;
       return $elm$core$Maybe$Just(image);
     } else {
-      return $elm$core$List$head(page.images);
+      return $elm$core$List$head(images);
     }
+  };
+  var $author$project$Model$primaryImage = function(page) {
+    return $author$project$Model$primaryImageFromList(page.images);
   };
   var $author$project$Auth$requiresAuthorization = function(sourceAuth) {
     if (sourceAuth.$ === "Discovered") {
@@ -19014,27 +19017,17 @@
         var thumbnail = _v0.a;
         return $author$project$Model$thumbnailUrlForImage(thumbnail);
       } else {
-        var _v1 = $elm$core$List$head(
+        return A2(
+          $elm$core$Maybe$withDefault,
+          "",
           A2(
-            $elm$core$List$filter,
+            $elm$core$Maybe$map,
             function($) {
-              return $.isPrimary;
+              return $.thumbUrl;
             },
-            images
+            $author$project$Model$primaryImageFromList(images)
           )
         );
-        if (_v1.$ === "Just") {
-          var image = _v1.a;
-          return image.thumbUrl;
-        } else {
-          var _v2 = $elm$core$List$head(images);
-          if (_v2.$ === "Just") {
-            var image = _v2.a;
-            return image.thumbUrl;
-          } else {
-            return "";
-          }
-        }
       }
     }
   );
@@ -19521,15 +19514,7 @@
             function($) {
               return $.thumbUrl;
             },
-            $elm$core$List$head(
-              A2(
-                $elm$core$List$filter,
-                function($) {
-                  return $.isPrimary;
-                },
-                images
-              )
-            )
+            $author$project$Model$primaryImageFromList(images)
           )
         );
         return $elm$core$Maybe$Just(
@@ -30266,7 +30251,6 @@
       );
     }
   );
-  var $author$project$Auth$Unknown = { $: "Unknown" };
   var $author$project$Msg$UserClickedThumbnail = function(a) {
     return { $: "UserClickedThumbnail", a };
   };
@@ -30283,28 +30267,16 @@
     function(auth, viewMode, shiftByOne, selectedIndex, index, page) {
       var isActive = A4($author$project$View$Sidebar$isThumbnailActive, viewMode, shiftByOne, selectedIndex, index);
       var hasChoices = $elm$core$List$length(page.images) > 1;
-      var fallbackImage = { auth: $author$project$Auth$Unknown, id: "", isPrimary: false, isStatic: true, label: "", sourceId: "", thumbUrl: "", tileSource: "" };
-      var primary = A2(
-        $elm$core$Maybe$withDefault,
-        A2(
-          $elm$core$Maybe$withDefault,
-          fallbackImage,
-          $elm$core$List$head(page.images)
-        ),
-        $elm$core$List$head(
-          A2(
-            $elm$core$List$filter,
-            function($) {
-              return $.isPrimary;
-            },
-            page.images
-          )
-        )
+      var crossOrigin = A2(
+        $elm$core$Maybe$andThen,
+        function(image) {
+          return A2($author$project$Auth$thumbnailCrossOrigin, image.sourceId, auth);
+        },
+        $author$project$Model$primaryImage(page)
       );
       var thumbnail = (function() {
-        var _v0 = A2($author$project$Auth$thumbnailCrossOrigin, primary.sourceId, auth);
-        if (_v0.$ === "Just") {
-          var crossOrigin = _v0.a;
+        if (crossOrigin.$ === "Just") {
+          var policy = crossOrigin.a;
           return A3(
             $elm$html$Html$node,
             "diva-lazy-image",
@@ -30318,7 +30290,7 @@
                   "data-alt",
                   "Page " + $elm$core$String$fromInt(index + 1)
                 ),
-                A2($elm$html$Html$Attributes$attribute, "data-crossorigin", crossOrigin)
+                A2($elm$html$Html$Attributes$attribute, "data-crossorigin", policy)
               ]
             ),
             _List_Nil

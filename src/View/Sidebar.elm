@@ -9,7 +9,7 @@ import Html.Lazy as Lazy
 import IIIF.Language exposing (LabelValue, Language, extractLabelFromLanguageMap)
 import IIIF.Presentation exposing (IIIFManifest, MediaFormats, Range, RangeItem(..), ResourceTypes, ViewingDirection(..), canvasLabel, toCanvases, toHomepage, toMetadata, toRanges, toViewingDirection)
 import Json.Decode as Decode
-import Model exposing (ContentsView(..), Model, Page, ResourceResponse(..), Response(..), SidebarState(..), ViewMode(..), currentManifest, getPageAt, pageViewStartIndex)
+import Model exposing (ContentsView(..), Model, Page, ResourceResponse(..), Response(..), SidebarState(..), ViewMode(..), currentManifest, getPageAt, pageViewStartIndex, primaryImage)
 import Msg exposing (Msg(..))
 import View.Helpers exposing (emptyHtml, viewMaybe)
 import View.HtmlRenderer exposing (renderHtml)
@@ -763,32 +763,19 @@ viewThumbnail auth viewMode shiftByOne selectedIndex index page =
         hasChoices =
             List.length page.images > 1
 
-        fallbackImage =
-            { id = ""
-            , sourceId = ""
-            , tileSource = ""
-            , thumbUrl = ""
-            , label = ""
-            , isPrimary = False
-            , isStatic = True
-            , auth = Auth.Unknown
-            }
-
-        primary =
-            page.images
-                |> List.filter .isPrimary
-                |> List.head
-                |> Maybe.withDefault (List.head page.images |> Maybe.withDefault fallbackImage)
+        crossOrigin =
+            primaryImage page
+                |> Maybe.andThen (\image -> Auth.thumbnailCrossOrigin image.sourceId auth)
 
         thumbnail =
-            case Auth.thumbnailCrossOrigin primary.sourceId auth of
-                Just crossOrigin ->
+            case crossOrigin of
+                Just policy ->
                     Html.node "diva-lazy-image"
                         [ HA.class "diva-thumbs-lazy-image"
                         , attribute "data-src" page.thumbUrl
                         , attribute "data-fallback-src" page.fallbackThumbUrl
                         , attribute "data-alt" ("Page " ++ String.fromInt (index + 1))
-                        , attribute "data-crossorigin" crossOrigin
+                        , attribute "data-crossorigin" policy
                         ]
                         []
 
