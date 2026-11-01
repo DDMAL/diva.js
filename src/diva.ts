@@ -1263,7 +1263,7 @@ export class Diva extends EventTarget
         {
             throw new TypeError("Annotations must be an array.");
         }
-        const next = new Map<string, StoredAnnotation[]>();
+        const next = new Map<string, Map<string, StoredAnnotation>>();
         annotations.forEach((annotation) => {
             const stored = normalizePublicAnnotation(annotation);
             if (!this.pagesByCanvasId.has(stored.canvasId))
@@ -1271,18 +1271,20 @@ export class Diva extends EventTarget
                 throw new RangeError(`Annotation Canvas ${stored.canvasId} is not part of the loaded manifest.`);
             }
             stored.viewerAnnotation.imageService = this.annotationImageServicesByCanvas.get(stored.canvasId) ?? null;
-            const canvasAnnotations = next.get(stored.canvasId) ?? [];
-            next.set(stored.canvasId, [
-                ...canvasAnnotations.filter((candidate) =>
-                    candidate.viewerAnnotation.id !== stored.viewerAnnotation.id
-                ),
-                stored,
-            ]);
+            let canvasAnnotations = next.get(stored.canvasId);
+            if (!canvasAnnotations)
+            {
+                canvasAnnotations = new Map();
+                next.set(stored.canvasId, canvasAnnotations);
+            }
+            // Replacement moves an ID to the end, independently per Canvas.
+            canvasAnnotations.delete(stored.viewerAnnotation.id);
+            canvasAnnotations.set(stored.viewerAnnotation.id, stored);
         });
         const affected = new Set([...this.apiAnnotationsByCanvas.keys(), ...next.keys()]);
         this.apiAnnotationsByCanvas.clear();
         next.forEach((canvasAnnotations, canvasId) => {
-            this.apiAnnotationsByCanvas.set(canvasId, canvasAnnotations);
+            this.apiAnnotationsByCanvas.set(canvasId, Array.from(canvasAnnotations.values()));
             this.clearedAnnotationCanvases.delete(canvasId);
         });
         affected.forEach((canvasId) => this.applyAnnotationsForCanvas(canvasId));

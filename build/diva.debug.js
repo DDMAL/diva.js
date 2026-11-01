@@ -33841,24 +33841,24 @@
       }
       const next = /* @__PURE__ */ new Map();
       annotations.forEach((annotation) => {
-        var _a, _b;
+        var _a;
         const stored = normalizePublicAnnotation(annotation);
         if (!this.pagesByCanvasId.has(stored.canvasId)) {
           throw new RangeError(`Annotation Canvas ${stored.canvasId} is not part of the loaded manifest.`);
         }
         stored.viewerAnnotation.imageService = (_a = this.annotationImageServicesByCanvas.get(stored.canvasId)) != null ? _a : null;
-        const canvasAnnotations = (_b = next.get(stored.canvasId)) != null ? _b : [];
-        next.set(stored.canvasId, [
-          ...canvasAnnotations.filter(
-            (candidate) => candidate.viewerAnnotation.id !== stored.viewerAnnotation.id
-          ),
-          stored
-        ]);
+        let canvasAnnotations = next.get(stored.canvasId);
+        if (!canvasAnnotations) {
+          canvasAnnotations = /* @__PURE__ */ new Map();
+          next.set(stored.canvasId, canvasAnnotations);
+        }
+        canvasAnnotations.delete(stored.viewerAnnotation.id);
+        canvasAnnotations.set(stored.viewerAnnotation.id, stored);
       });
       const affected = /* @__PURE__ */ new Set([...this.apiAnnotationsByCanvas.keys(), ...next.keys()]);
       this.apiAnnotationsByCanvas.clear();
       next.forEach((canvasAnnotations, canvasId) => {
-        this.apiAnnotationsByCanvas.set(canvasId, canvasAnnotations);
+        this.apiAnnotationsByCanvas.set(canvasId, Array.from(canvasAnnotations.values()));
         this.clearedAnnotationCanvases.delete(canvasId);
       });
       affected.forEach((canvasId) => this.applyAnnotationsForCanvas(canvasId));

@@ -157,3 +157,45 @@ wall-clock speedup. Added model tests cover empty and ambiguous image lists;
 on both OSD versions. The complete suite passes: 121 browser cases, one existing
 skip, and 46 Elm tests. Test-only synchronization fixes also harden the Step 1
 filter regressions against pending Elm renders and asynchronous image reloads.
+
+## Step 3 comparison — 2026-11-01
+
+`setAnnotations` now uses per-canvas ID-keyed maps instead of filtering and copying
+an expanding array at every insertion. Duplicate replacement deletes before
+reinsertion to retain move-to-end ordering. Cross-canvas duplicates remain distinct.
+
+Reproduce with the production IIFE, one worker:
+
+```sh
+yarn -s playwright test browser-tests/annotation-batch.spec.ts --workers=1
+```
+
+The benchmark warms up once, then captures five synchronous samples per workload.
+Only `applyAnnotationsForCanvas` is temporarily replaced with a no-op (restored in
+`finally`), isolating normalization, accumulation and storage from DOM/OSD rendering
+and the canvas/page scans deferred to later steps. Inputs are unique rectangle
+annotations. Retained counts are asserted; timings are measurements, not CI limits.
+The separate behavior test and existing baseline exercise real overlay application.
+
+Median milliseconds from focused runs before/after this change on the same local
+Chromium environment (subject to timing/GC variation):
+
+| Canvases | Annotations | OSD 5.0.1 before → after | OSD 6.0.2 before → after |
+| ---: | ---: | ---: | ---: |
+| 1 | 2,000 | 17.4 → 1.7 | 17.2 → 1.2 |
+| 1 | 8,000 | 138.0 → 5.4 | 140.3 → 5.6 |
+| 100 | 2,000 | 1.4 → 1.4 | 1.7 → 1.8 |
+| 100 | 8,000 | 7.9 → 5.3 | 7.7 → 5.6 |
+
+These demonstrate the concentrated-batch improvement, not an end-to-end viewer
+speedup. Accumulation now performs constant expected-time map operations per input,
+then one array conversion per canvas, apart from annotation normalization costs.
+
+| Production artifact | Minified bytes before → after | Gzip bytes before → after |
+| --- | ---: | ---: |
+| `build/diva.js` | 286,941 → 286,959 | 84,334 → 84,336 |
+| `build/diva.esm.js` | 286,968 → 286,986 | 84,356 → 84,359 |
+
+The small bundle increase is accepted for the batch-scaling improvement. Complete
+validation: 125 browser tests passed, one existing skip; 46 Elm tests and the
+TypeDoc, TypeScript, public-type and Elm review checks passed.

@@ -408,6 +408,33 @@ navigation and loading contracts. This is not a confirmed memory leak.
   bundles. No wall-clock speedup claimed. Next is Step 3, linear annotation-batch
   construction; later annotation/rendering work is not included here.
 
+### Step 3 — Complete (2026-11-01)
+
+- `setAnnotations` now accumulates normalized annotations in per-canvas ID-keyed
+  maps and converts to stored arrays once per canvas. Delete-before-set preserves
+  move-to-end replacement ordering; duplicate IDs across canvases still coexist.
+  All normalization and canvas validation finish before live storage is changed.
+- Added `browser-tests/annotation-batch.spec.ts`: characterization passed before
+  and after the refactor for duplicate ordering/content, manifest/API precedence,
+  invalid canvas and malformed annotation midway through a batch, empty replacement,
+  cleared canvases, restoration, and removal of stale overlays. Existing annotation
+  coverage still checks rectangle/SVG bodies, visibility, selection, extract URLs,
+  and missing services. No public API or dependency changes.
+- Added isolated 2,000/8,000-annotation measurements on one and 100 canvases. With
+  overlay application disabled only during this benchmark, median concentrated
+  8,000-entry batch time fell from **138.0 → 5.4 ms** (OSD 5) and
+  **140.3 → 5.6 ms** (OSD 6). Distributed medians: **7.9 → 5.3 ms** and
+  **7.7 → 5.6 ms**. These measure normalization/accumulation/storage, not rendering;
+  reproduction and the complete comparison table are in the baseline document.
+- Validation: **125 browser tests passed, one existing OSD-5-specific skip**;
+  **46 Elm tests**, TypeDoc, strict application TypeScript, public type tests,
+  and `make review` pass. Production and debug bundles regenerated.
+- IIFE minified/gzip: **286,941 / 84,334 → 286,959 / 84,336 bytes**.
+  ESM minified/gzip: **286,968 / 84,356 → 286,986 / 84,359 bytes**.
+- Decision: keep. The 18-byte minified increase is justified by removing quadratic
+  batch accumulation. No environment limitations. Step 4 indexing/coalescing and
+  Step 5 overlay reuse remain separate work; `testing/index.html` is untouched.
+
 Append a short entry when each step is implemented:
 
 ```text
