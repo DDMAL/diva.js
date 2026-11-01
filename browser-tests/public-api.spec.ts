@@ -235,10 +235,45 @@ for (const direction of [ "left-to-right", "right-to-left" ])
 
         await expectAligned();
         await page.evaluate(() => (window as any).diva.selectAnnotation("api-svg-0"));
+        await page.evaluate(() => {
+            const viewer = document.getElementById("main-viewer") as any;
+            const overlays = [0, 1].map((index) => viewer.annotationOverlayElements.get(index) as HTMLElement);
+            const state = {
+                overlays,
+                nodes : overlays.map((overlay) => Array.from(overlay.querySelectorAll("*"))),
+                panel : viewer.querySelector(".diva-annotation-panel-content"),
+                builds : 0,
+                original : viewer.buildAnnotationOverlayContent
+            };
+            (window as any).__annotationReuse = state;
+            viewer.buildAnnotationOverlayContent = function(element: HTMLElement, ...args: any[]) {
+                if (overlays.includes(element)) state.builds += 1;
+                return state.original.call(this, element, ...args);
+            };
+            (viewer.querySelector('g[data-annotation-id="api-svg-0"]') as SVGGElement).focus();
+        });
+        const expectReused = async (interaction = true): Promise<void> => {
+            expect(await page.evaluate(() => {
+                const viewer = document.getElementById("main-viewer") as any;
+                const state = (window as any).__annotationReuse;
+                return {
+                    builds : state.builds,
+                    nodes : state.overlays.every((overlay: HTMLElement, index: number) => {
+                        const current = Array.from(overlay.querySelectorAll("*"));
+                        return overlay === viewer.annotationOverlayElements.get(index) && overlay.isConnected
+                            && current.length === state.nodes[index].length
+                            && current.every((node, offset) => node === state.nodes[index][offset]);
+                    }),
+                    panel : state.panel === viewer.querySelector(".diva-annotation-panel-content"),
+                    focus : document.activeElement === viewer.querySelector('g[data-annotation-id="api-svg-0"]')
+                };
+            })).toEqual({builds : 0, nodes : true, panel : interaction, focus : interaction});
+        };
         for (const mode of [ "single", "spread-shift", "spread", "single", "spread" ])
         {
             await page.evaluate((mode) => (window as any).diva.setLayoutMode(mode), mode);
             await expectAligned();
+            await expectReused();
             await expect(page.locator('g[data-annotation-id="api-svg-0"]')).toHaveClass(/is-selected/);
             const regions = await page.evaluate(() => [
                 (window as any).diva.getImageRegionForAnnotation("manifest-rect-0"),
@@ -257,20 +292,43 @@ for (const direction of [ "left-to-right", "right-to-left" ])
             expect(y + height).toBeGreaterThanOrEqual(600);
             expect(y + height).toBeLessThanOrEqual(601);
         }
+        await page.locator('g[data-annotation-id="api-svg-0"]').evaluate((group) => {
+            const bounds = group.getBoundingClientRect();
+            group.dispatchEvent(new MouseEvent("mouseenter", {clientX : bounds.left + bounds.width / 2,
+                clientY : bounds.top + bounds.height / 2}));
+        });
+        const tooltip = page.locator('.diva-annotation-overlay:has(g[data-annotation-id="api-svg-0"]) .diva-annotation-tooltip');
+        await expect(tooltip).toBeVisible();
+        await expect(tooltip).toHaveText("SVG");
+        await page.locator('g[data-annotation-id="api-svg-0"]').dispatchEvent("mouseleave");
+        await expect(tooltip).toBeHidden();
         await page.evaluate((direction) => {
             const viewer = document.getElementById("main-viewer") as any;
             viewer.setAnnotationsVisible(false);
             viewer.setViewingDirection(direction === "left-to-right" ? "rtl" : "ltr");
         }, direction);
         await expectAligned();
+        await expectReused(false);
         await expect(page.locator('.diva-annotation-overlay:not(.is-hidden)')).toHaveCount(0);
         await page.evaluate(() => (document.getElementById("main-viewer") as any).setAnnotationsVisible(true));
         await expectAligned();
+        await expectReused(false);
         await page.locator('g[data-annotation-id="api-svg-0"]').evaluate((group) => {
             group.dispatchEvent(new KeyboardEvent("keydown", {key : "Enter", bubbles : true}));
         });
         await expect(page.locator(".diva-annotation-panel")).toBeVisible();
         await expect(page.locator(".diva-annotation-panel-content")).toContainText("SVG");
+        // The same retained group must also remain usable by the OSD pointer
+        // hit-test path after repeated layout and direction changes.
+        await page.getByRole("button", {name : "Close annotation details"}).click();
+        const target = await page.locator('g[data-annotation-id="api-svg-0"]').boundingBox();
+        expect(target).not.toBeNull();
+        await page.mouse.click(target!.x + target!.width / 2, target!.y + target!.height / 2);
+        await expect(page.locator(".diva-annotation-panel")).toBeVisible();
+        await page.evaluate(() => {
+            const viewer = document.getElementById("main-viewer") as any;
+            viewer.buildAnnotationOverlayContent = (window as any).__annotationReuse.original;
+        });
     });
 }
 

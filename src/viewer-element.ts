@@ -181,6 +181,7 @@ class OsdViewer extends HTMLElement
     private annotationSelectionEnabled = true;
     private selectedAnnotationId: string | null = null;
     private annotationPanel: HTMLElement | null = null;
+    private panelAnnotation: ViewerAnnotation | null = null;
     private annotationPanelIgnoreCloseUntil = 0;
     private targetIndex: number | null = null;
     private initialPageIndex = 0;
@@ -404,6 +405,24 @@ class OsdViewer extends HTMLElement
         if (!canvasId || !Array.isArray(annotations))
         {
             return;
+        }
+        const previous = this.annotationData.get(canvasId);
+        if (
+            previous?.length === annotations.length && annotations.every((annotation, index) => {
+                const old = previous[index];
+                return old.id === annotation.id && old.text === annotation.text && old.html === annotation.html
+                    && old.imageService === annotation.imageService && old.shape.kind === annotation.shape.kind
+                    && old.shape.x === annotation.shape.x && old.shape.y === annotation.shape.y
+                    && old.shape.width === annotation.shape.width && old.shape.height === annotation.shape.height
+                    && old.shape.value === annotation.shape.value;
+            })
+        )
+        {
+            return;
+        }
+        if (this.panelAnnotation && previous?.includes(this.panelAnnotation))
+        {
+            this.closeAnnotationPanel();
         }
         this.annotationData.set(canvasId, annotations);
         this.annotationIndex.set(canvasId, annotations, (annotation) => annotation.id);
@@ -1124,7 +1143,7 @@ class OsdViewer extends HTMLElement
             item.setWidth(1, true);
             item.setHeight(height, true);
             this.addOrUpdatePageOverlay(index);
-            this.addOrUpdateAnnotationOverlay(index);
+            this.positionAnnotationOverlay(index);
         });
     }
 
@@ -1181,6 +1200,7 @@ class OsdViewer extends HTMLElement
         const canvasId = (this.tileSources[index] as any)?.canvasId;
         const annotations = typeof canvasId === "string" ? this.annotationData.get(canvasId) : undefined;
         let element = this.annotationOverlayElements.get(index);
+        const isNew = !element;
         if (!annotations || annotations.length === 0)
         {
             if (element)
@@ -1198,8 +1218,13 @@ class OsdViewer extends HTMLElement
             this.annotationOverlayElements.set(index, element);
         }
         element.classList.toggle("is-hidden", !this.annotationsVisible);
+        this.buildAnnotationOverlayContent(element, annotations);
+        this.positionAnnotationOverlay(index, isNew);
+    }
+
+    private buildAnnotationOverlayContent(element: HTMLElement, annotations: ViewerAnnotation[]): void
+    {
         const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        svg.setAttribute("viewBox", `0 0 ${this.pageWidth(index)} ${this.pageHeightPixels(index)}`);
         svg.setAttribute("preserveAspectRatio", "none");
         svg.setAttribute("width", "100%");
         svg.setAttribute("height", "100%");
@@ -1215,7 +1240,7 @@ class OsdViewer extends HTMLElement
             {
                 group.setAttribute("aria-label", annotation.text);
                 const showTooltip = (event?: MouseEvent): void => {
-                    const bounds = element!.getBoundingClientRect();
+                    const bounds = element.getBoundingClientRect();
                     if (!this.annotationsVisible || !this.annotationSelectionEnabled)
                     {
                         tooltip.hidden = true;
@@ -1283,16 +1308,40 @@ class OsdViewer extends HTMLElement
         });
         tooltip.hidden = true;
         element.replaceChildren(svg, tooltip);
-        this.removeOverlay(element);
-        this.viewer.addOverlay({
-            element,
-            location: new OpenSeadragon.Rect(
-                this.pageXOffsets[index] || 0,
-                this.pageOffsets[index] || 0,
-                1,
-                this.pageHeights[index] || 1,
-            ),
-        });
+    }
+
+    private positionAnnotationOverlay(index: number, add = false): void
+    {
+        const element = this.annotationOverlayElements.get(index);
+        if (!this.viewer || !element)
+        {
+            return;
+        }
+        // Image dimensions can become available after initial layout. Updating
+        // the coordinate system does not require rebuilding selector content.
+        element.querySelector("svg")?.setAttribute(
+            "viewBox",
+            `0 0 ${this.pageWidth(index)} ${this.pageHeightPixels(index)}`,
+        );
+        const tooltip = element.querySelector<HTMLElement>(".diva-annotation-tooltip");
+        if (tooltip)
+        {
+            tooltip.hidden = true;
+        }
+        const location = new OpenSeadragon.Rect(
+            this.pageXOffsets[index] || 0,
+            this.pageOffsets[index] || 0,
+            1,
+            this.pageHeights[index] || 1,
+        );
+        if (add)
+        {
+            this.viewer.addOverlay({ element, location });
+        }
+        else
+        {
+            this.viewer.updateOverlay(element, location);
+        }
     }
 
     private pageWidth(index: number): number
@@ -1368,6 +1417,7 @@ class OsdViewer extends HTMLElement
 
     private clearAnnotationOverlays(): void
     {
+        this.closeAnnotationPanel();
         this.clearOverlays(this.annotationOverlayElements);
     }
 
@@ -1441,6 +1491,7 @@ class OsdViewer extends HTMLElement
         {
             return;
         }
+        this.panelAnnotation = annotation;
         this.selectedAnnotationId = annotation.id;
         this.annotationOverlayElements.forEach((element) => {
             element.querySelectorAll<SVGGElement>("g[data-annotation-id]").forEach((group) => {
@@ -1654,9 +1705,11 @@ class OsdViewer extends HTMLElement
 
     private closeAnnotationPanel(): void
     {
+        this.panelAnnotation = null;
         if (this.annotationPanel)
         {
             this.annotationPanel.hidden = true;
+            this.annotationPanel.replaceChildren();
         }
     }
 

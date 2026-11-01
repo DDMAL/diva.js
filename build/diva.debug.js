@@ -236,6 +236,7 @@
       this.annotationSelectionEnabled = true;
       this.selectedAnnotationId = null;
       this.annotationPanel = null;
+      this.panelAnnotation = null;
       this.annotationPanelIgnoreCloseUntil = 0;
       this.targetIndex = null;
       this.initialPageIndex = 0;
@@ -414,6 +415,16 @@
       var _a;
       if (!canvasId || !Array.isArray(annotations)) {
         return;
+      }
+      const previous = this.annotationData.get(canvasId);
+      if ((previous == null ? void 0 : previous.length) === annotations.length && annotations.every((annotation, index) => {
+        const old = previous[index];
+        return old.id === annotation.id && old.text === annotation.text && old.html === annotation.html && old.imageService === annotation.imageService && old.shape.kind === annotation.shape.kind && old.shape.x === annotation.shape.x && old.shape.y === annotation.shape.y && old.shape.width === annotation.shape.width && old.shape.height === annotation.shape.height && old.shape.value === annotation.shape.value;
+      })) {
+        return;
+      }
+      if (this.panelAnnotation && (previous == null ? void 0 : previous.includes(this.panelAnnotation))) {
+        this.closeAnnotationPanel();
       }
       this.annotationData.set(canvasId, annotations);
       this.annotationIndex.set(canvasId, annotations, (annotation) => annotation.id);
@@ -952,7 +963,7 @@
         item.setWidth(1, true);
         item.setHeight(height, true);
         this.addOrUpdatePageOverlay(index);
-        this.addOrUpdateAnnotationOverlay(index);
+        this.positionAnnotationOverlay(index);
       });
     }
     addOrUpdatePageOverlay(index) {
@@ -999,6 +1010,7 @@
       const canvasId = (_a = this.tileSources[index]) == null ? void 0 : _a.canvasId;
       const annotations = typeof canvasId === "string" ? this.annotationData.get(canvasId) : void 0;
       let element = this.annotationOverlayElements.get(index);
+      const isNew = !element;
       if (!annotations || annotations.length === 0) {
         if (element) {
           this.removeOverlay(element);
@@ -1013,8 +1025,11 @@
         this.annotationOverlayElements.set(index, element);
       }
       element.classList.toggle("is-hidden", !this.annotationsVisible);
+      this.buildAnnotationOverlayContent(element, annotations);
+      this.positionAnnotationOverlay(index, isNew);
+    }
+    buildAnnotationOverlayContent(element, annotations) {
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      svg.setAttribute("viewBox", `0 0 ${this.pageWidth(index)} ${this.pageHeightPixels(index)}`);
       svg.setAttribute("preserveAspectRatio", "none");
       svg.setAttribute("width", "100%");
       svg.setAttribute("height", "100%");
@@ -1089,16 +1104,32 @@
       });
       tooltip.hidden = true;
       element.replaceChildren(svg, tooltip);
-      this.removeOverlay(element);
-      this.viewer.addOverlay({
-        element,
-        location: new OpenSeadragon.Rect(
-          this.pageXOffsets[index] || 0,
-          this.pageOffsets[index] || 0,
-          1,
-          this.pageHeights[index] || 1
-        )
-      });
+    }
+    positionAnnotationOverlay(index, add = false) {
+      var _a;
+      const element = this.annotationOverlayElements.get(index);
+      if (!this.viewer || !element) {
+        return;
+      }
+      (_a = element.querySelector("svg")) == null ? void 0 : _a.setAttribute(
+        "viewBox",
+        `0 0 ${this.pageWidth(index)} ${this.pageHeightPixels(index)}`
+      );
+      const tooltip = element.querySelector(".diva-annotation-tooltip");
+      if (tooltip) {
+        tooltip.hidden = true;
+      }
+      const location2 = new OpenSeadragon.Rect(
+        this.pageXOffsets[index] || 0,
+        this.pageOffsets[index] || 0,
+        1,
+        this.pageHeights[index] || 1
+      );
+      if (add) {
+        this.viewer.addOverlay({ element, location: location2 });
+      } else {
+        this.viewer.updateOverlay(element, location2);
+      }
     }
     pageWidth(index) {
       var _a, _b;
@@ -1164,6 +1195,7 @@
       }
     }
     clearAnnotationOverlays() {
+      this.closeAnnotationPanel();
       this.clearOverlays(this.annotationOverlayElements);
     }
     removeOverlay(element) {
@@ -1212,6 +1244,7 @@
       if (!this.container) {
         return;
       }
+      this.panelAnnotation = annotation;
       this.selectedAnnotationId = annotation.id;
       this.annotationOverlayElements.forEach((element) => {
         element.querySelectorAll("g[data-annotation-id]").forEach((group) => {
@@ -1386,8 +1419,10 @@
       }
     }
     closeAnnotationPanel() {
+      this.panelAnnotation = null;
       if (this.annotationPanel) {
         this.annotationPanel.hidden = true;
+        this.annotationPanel.replaceChildren();
       }
     }
     sanitizeAnnotationHtml(markup) {

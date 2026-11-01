@@ -474,6 +474,46 @@ navigation and loading contracts. This is not a confirmed memory leak.
   redundant canvas applications. Overlay content rebuilding remains Step 5.
   The user's `testing/index.html` changes are excluded.
 
+### Step 5 — Complete (2026-11-01)
+
+- Split annotation content construction from placement in `src/viewer-element.ts`.
+  Layout/aspect changes now update the existing OSD overlay rectangle and SVG
+  coordinate system without replacing selector nodes, tooltip nodes, or handlers.
+  OSD `updateOverlay` avoids the previous remove/add cycle and preserves focus.
+- Equivalent annotation updates are compared by ordered body/selector/service
+  values and leave existing content, indexes, and panel references intact. Actual
+  content updates still rebuild the affected canvas. No content fingerprint cache
+  or duplicated authoritative annotation state was introduced.
+- Layout-only changes preserve selection and open panel content. Position changes
+  hide potentially stale tooltip coordinates; retained hover/focus handlers still
+  work. Replacing/removing a selected canvas's content closes its panel; closing
+  clears panel children and the selected data reference. Overlay reset, resource
+  replacement, and teardown also close panels, avoiding stale content/handlers.
+- Extended the LTR/RTL public API alignment tests with selector/SVG/tooltip node
+  identity, zero tracked content builds, retained focus/panel content, hover,
+  keyboard and OSD pointer selection, visibility, and image extract checks across
+  single/spread/shifted layouts and direction changes.
+- Added two cases per OSD version in `annotation-overlay.spec.ts` for equivalent
+  data reuse, changed body/geometry invalidation, removed DOM, unrelated-canvas
+  clears, selection policy, missing-service `null`, resource replacement, teardown,
+  and image-coordinate changes without replacing selectors.
+- The 300-annotation baseline now counts actual content replacements on its
+  existing first-canvas overlay. Before/after for spread, shifted-spread, single:
+  **5 → 0 content rebuilds on both OSD versions** (extra pre-change rebuilds also
+  came from layout/aspect updates). Repeated equivalent-batch median time in the
+  focused runs: **5.3 → 0.4 ms** (OSD 5), **4.8 → 0.5 ms** (OSD 6). Timings are
+  smoke measurements; avoided construction is the primary result.
+- Validation: **137 browser tests passed, one existing OSD-5-specific skip**;
+  **46 Elm tests**, TypeDoc, strict application TypeScript, public type tests,
+  Elm review, formatting, and diff checks pass. Production/debug bundles rebuilt.
+- IIFE minified/gzip: **289,612 / 84,954 → 290,567 / 85,192 bytes**.
+  ESM minified/gzip: **289,639 / 84,974 → 290,594 / 85,212 bytes**.
+- Decision: keep. The 955-byte minified/238-byte gzip increase per bundle is
+  justified by avoiding selector parsing/DOM/handler reconstruction and fixing
+  stale panel cleanup. No environment limitations; no public API/dependency
+  changes. Step 6 (thumbnail lazy boundaries) remains separate. The user's
+  `testing/index.html` changes are untouched.
+
 Append a short entry when each step is implemented:
 
 ```text

@@ -248,3 +248,53 @@ TypeDoc, strict TypeScript, public types, Elm review, formatting, and diff check
 passed. An initial command timeout left an unresponsive orphaned test server;
 after restarting it, the two initially timed-out cases passed five repetitions
 per OSD version and complete-suite reruns passed with a longer command limit.
+
+## Step 5 comparison — 2026-11-01
+
+Annotation content construction and overlay placement are now separate. Layout and
+aspect changes update the OSD rectangle and SVG `viewBox` without replacing content
+or detaching the overlay. Equivalent ordered annotation inputs also retain their
+nodes and handlers; comparisons include bodies, selector geometry and image service
+because event handlers depend on all three. Changed inputs rebuild only the
+affected canvas. No additional content cache is needed.
+
+The baseline instruments `replaceChildren` on the already-loaded first-canvas
+annotation overlay, restoring the method after three layout changes. This directly
+counts content replacement rather than equating every overlay-method call with a
+rebuild. It works against both the Step 4 and Step 5 production bundles.
+
+```sh
+yarn -s playwright test browser-tests/optimization-baseline.spec.ts --grep "annotation batches" --workers=1
+yarn -s playwright test browser-tests/public-api.spec.ts --grep "keeps annotations aligned" --workers=1
+yarn -s playwright test browser-tests/annotation-overlay.spec.ts --workers=1
+```
+
+| Work on an existing 300-annotation canvas | OSD 5.0.1 before → after | OSD 6.0.2 before → after |
+| --- | ---: | ---: |
+| Content rebuilds during spread / shifted-spread / single | 5 → 0 | 5 → 0 |
+| Equivalent-batch median, three focused samples | 5.3 → 0.4 ms | 4.8 → 0.5 ms |
+
+The pre-change layout count includes aspect/layout work beyond the three explicit
+layout commands. Newly loaded canvases may still build their initial content, so
+the existing global `overlayUpdates` counter can vary independently. The retained
+canvas's zero replacements and the identity assertions are the stable evidence;
+timings are smoke measurements, not a general end-to-end speedup or CI threshold.
+Bridge normalization/index maintenance still runs for repeated public batches.
+
+Regression tests preserve rectangle/SVG alignment, selected state, focus, open
+panel content, hover and keyboard/pointer handlers across LTR/RTL layouts. Position
+changes hide tooltips with obsolete coordinates; annotation visibility toggles
+still close panels. Changed or removed selected content now closes and empties the
+panel rather than retaining obsolete details and event handlers. Resource reset
+and teardown do the same. Missing image services still return `null`.
+
+| Production artifact | Minified bytes before → after | Gzip bytes before → after |
+| --- | ---: | ---: |
+| `build/diva.js` | 289,612 → 290,567 | 84,954 → 85,192 |
+| `build/diva.esm.js` | 289,639 → 290,594 | 84,974 → 85,212 |
+
+The 238-byte gzip increase per bundle is accepted for avoiding repeated selector
+parsing, DOM construction and handler registration, and releasing stale panel
+content. Full validation: 137 browser tests passed with one existing skip; 46 Elm
+tests, TypeDoc, strict TypeScript, public types, Elm review, formatting, and diff
+checks passed. No browser environment limitations encountered.

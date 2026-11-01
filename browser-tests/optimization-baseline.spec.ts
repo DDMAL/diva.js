@@ -102,6 +102,13 @@ test("baseline: annotation batches and overlay layout costs", async ({page}, tes
         }
         const original = viewer.addOrUpdateAnnotationOverlay;
         let overlayUpdates = 0;
+        const overlay = viewer.annotationOverlayElements.get(0) as HTMLElement;
+        const replaceChildren = overlay.replaceChildren;
+        let annotationContentRebuilds = 0;
+        overlay.replaceChildren = function(...nodes: (Node|string)[]) {
+            annotationContentRebuilds += 1;
+            return replaceChildren.apply(this, nodes);
+        };
         viewer.addOrUpdateAnnotationOverlay = function(...args: any[]) {
             overlayUpdates += 1;
             return original.apply(this, args);
@@ -117,12 +124,16 @@ test("baseline: annotation batches and overlay layout costs", async ({page}, tes
                 layouts.push({mode, milliseconds : performance.now() - start});
             }
         }
-        finally { viewer.addOrUpdateAnnotationOverlay = original; }
-        return {batchCount : annotations.length, batchMilliseconds : samples, layouts, overlayUpdates,
+        finally {
+            viewer.addOrUpdateAnnotationOverlay = original;
+            overlay.replaceChildren = replaceChildren;
+        }
+        return {batchCount : annotations.length, batchMilliseconds : samples, layouts, overlayUpdates, annotationContentRebuilds,
                 retainedPages : viewer.loadedItems.size, osd : (window as any).__divaOsdVersion};
     }, concentrated);
     await expect(page.locator('g[data-annotation-id^="bulk-"]')).toHaveCount(300);
     expect(result.batchMilliseconds).toHaveLength(3);
+    console.log("[annotation-layout]", JSON.stringify(result));
     await testInfo.attach("annotation-baseline.json", {body : JSON.stringify(result, null, 2), contentType : "application/json"});
 
     // A separate distributed workload exercises many canvas collections without
