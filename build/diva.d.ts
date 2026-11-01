@@ -68,6 +68,8 @@ export declare class Diva extends EventTarget {
     private readonly pagesByLabel;
     private readonly manifestAnnotationsByCanvas;
     private readonly apiAnnotationsByCanvas;
+    private readonly manifestAnnotationIndex;
+    private readonly apiAnnotationIndex;
     private readonly clearedAnnotationCanvases;
     private readonly annotationImageServicesByCanvas;
     private annotationSelectionEnabled;

@@ -5,6 +5,7 @@ import divaCss from "../cache/diva.css";
 // @ts-ignore
 import { Elm } from "../cache/elm-esm.js";
 
+import { AnnotationIndex } from "./annotation-index";
 import { AuthBrowser, type ResolvedTileSource, type TileSourceDescriptor } from "./auth";
 import { type FilterOptions, type FilterProcessor, Filters, setFilterOptions } from "./filters";
 import { iiifImageRegionUrl } from "./image-utils";
@@ -445,6 +446,8 @@ export class Diva extends EventTarget
     private readonly pagesByLabel: Map<string, DivaPage> = new Map();
     private readonly manifestAnnotationsByCanvas: Map<string, StoredAnnotation[]> = new Map();
     private readonly apiAnnotationsByCanvas: Map<string, StoredAnnotation[]> = new Map();
+    private readonly manifestAnnotationIndex = new AnnotationIndex<StoredAnnotation>();
+    private readonly apiAnnotationIndex = new AnnotationIndex<StoredAnnotation>();
     private readonly clearedAnnotationCanvases: Set<string> = new Set();
     private readonly annotationImageServicesByCanvas: Map<string, string | null> = new Map();
     private annotationSelectionEnabled = true;
@@ -649,6 +652,8 @@ export class Diva extends EventTarget
                     this.annotationResourceId = update.resourceId;
                     this.manifestAnnotationsByCanvas.clear();
                     this.apiAnnotationsByCanvas.clear();
+                    this.manifestAnnotationIndex.clear();
+                    this.apiAnnotationIndex.clear();
                     this.clearedAnnotationCanvases.clear();
                     this.annotationImageServicesByCanvas.clear();
                 }
@@ -676,6 +681,12 @@ export class Diva extends EventTarget
                     publicAnnotation: publicAnnotationFromViewer(value.canvasId, annotation),
                     viewerAnnotation: { ...annotation, imageService: annotation.imageService ?? null },
                 })),
+            );
+            this.manifestAnnotationIndex.set(
+                value.canvasId,
+                this.manifestAnnotationsByCanvas.get(value.canvasId)!,
+                (annotation) => annotation.viewerAnnotation.id,
+                true,
             );
             this.applyAnnotationsForCanvas(value.canvasId);
         });
@@ -832,22 +843,29 @@ export class Diva extends EventTarget
 
     private findStoredAnnotation(annotationId: string): StoredAnnotation | undefined
     {
-        for (
-            const canvasId of new Set([
-                ...this.manifestAnnotationsByCanvas.keys(),
-                ...this.apiAnnotationsByCanvas.keys(),
-            ])
-        )
+        const manifest = this.manifestAnnotationIndex.entries(annotationId);
+        const api = this.apiAnnotationIndex.entries(annotationId);
+        let found: StoredAnnotation | undefined;
+        let firstManifest = Infinity;
+        let firstApi = Infinity;
+        // Only canvases containing this ID compete. Manifest canvas insertion
+        // order precedes API-only canvases, even for API-only IDs on that canvas.
+        for (const canvasId of new Set([...(manifest?.keys() ?? []), ...(api?.keys() ?? [])]))
         {
-            const annotation = this.effectiveAnnotationsForCanvas(canvasId).find((candidate) =>
-                candidate.viewerAnnotation.id === annotationId
-            );
-            if (annotation)
+            if (this.clearedAnnotationCanvases.has(canvasId))
             {
-                return annotation;
+                continue;
+            }
+            const manifestRank = this.manifestAnnotationIndex.rank(canvasId);
+            const apiRank = manifestRank === Infinity ? this.apiAnnotationIndex.rank(canvasId) : -1;
+            if (manifestRank < firstManifest || (manifestRank === firstManifest && apiRank < firstApi))
+            {
+                found = api?.get(canvasId) ?? manifest?.get(canvasId);
+                firstManifest = manifestRank;
+                firstApi = apiRank;
             }
         }
-        return undefined;
+        return found;
     }
 
     private rebuildPageIndexes(): void
@@ -1237,20 +1255,27 @@ export class Diva extends EventTarget
             throw new RangeError(`Annotation Canvas ${stored.canvasId} is not part of the loaded manifest.`);
         }
         stored.viewerAnnotation.imageService = this.annotationImageServicesByCanvas.get(stored.canvasId) ?? null;
-        this.apiAnnotationsByCanvas.forEach((annotations, canvasId) => {
-            const retained = annotations.filter((candidate) =>
+        const affected = new Set(
+            Array.from(this.apiAnnotationIndex.entries(stored.viewerAnnotation.id)?.keys() ?? [])
+                .sort((left, right) => this.apiAnnotationIndex.rank(left) - this.apiAnnotationIndex.rank(right)),
+        );
+        affected.forEach((canvasId) => {
+            const retained = this.apiAnnotationsByCanvas.get(canvasId)!.filter((candidate) =>
                 candidate.viewerAnnotation.id !== stored.viewerAnnotation.id
             );
-            if (retained.length !== annotations.length)
-            {
-                this.apiAnnotationsByCanvas.set(canvasId, retained);
-                this.applyAnnotationsForCanvas(canvasId);
-            }
+            this.apiAnnotationsByCanvas.set(canvasId, retained);
+            this.apiAnnotationIndex.set(canvasId, retained, (annotation) => annotation.viewerAnnotation.id);
         });
         const annotations = this.apiAnnotationsByCanvas.get(stored.canvasId) ?? [];
         this.apiAnnotationsByCanvas.set(stored.canvasId, [...annotations, stored]);
+        this.apiAnnotationIndex.set(
+            stored.canvasId,
+            this.apiAnnotationsByCanvas.get(stored.canvasId)!,
+            (annotation) => annotation.viewerAnnotation.id,
+        );
         this.clearedAnnotationCanvases.delete(stored.canvasId);
-        this.applyAnnotationsForCanvas(stored.canvasId);
+        affected.add(stored.canvasId);
+        affected.forEach((canvasId) => this.applyAnnotationsForCanvas(canvasId));
     }
 
     /**
@@ -1283,8 +1308,11 @@ export class Diva extends EventTarget
         });
         const affected = new Set([...this.apiAnnotationsByCanvas.keys(), ...next.keys()]);
         this.apiAnnotationsByCanvas.clear();
+        this.apiAnnotationIndex.clear();
         next.forEach((canvasAnnotations, canvasId) => {
-            this.apiAnnotationsByCanvas.set(canvasId, Array.from(canvasAnnotations.values()));
+            const stored = Array.from(canvasAnnotations.values());
+            this.apiAnnotationsByCanvas.set(canvasId, stored);
+            this.apiAnnotationIndex.set(canvasId, stored, (annotation) => annotation.viewerAnnotation.id);
             this.clearedAnnotationCanvases.delete(canvasId);
         });
         affected.forEach((canvasId) => this.applyAnnotationsForCanvas(canvasId));
@@ -1316,6 +1344,7 @@ export class Diva extends EventTarget
         this.assertAlive();
         this.clearedAnnotationCanvases.add(uri);
         this.apiAnnotationsByCanvas.delete(uri);
+        this.apiAnnotationIndex.delete(uri);
         this.applyAnnotationsForCanvas(uri);
     }
 
@@ -1326,6 +1355,7 @@ export class Diva extends EventTarget
     {
         this.assertAlive();
         this.apiAnnotationsByCanvas.clear();
+        this.apiAnnotationIndex.clear();
         this.pages.forEach((page) => {
             this.clearedAnnotationCanvases.add(page.canvasId);
             this.applyAnnotationsForCanvas(page.canvasId);
@@ -1813,6 +1843,8 @@ export class Diva extends EventTarget
         this.updateState({ destroyed: true, loading: false });
         this.closeFilterPreview();
         this.auth.destroy();
+        this.manifestAnnotationIndex.clear();
+        this.apiAnnotationIndex.clear();
         if (this.viewerMethodRafId !== null)
         {
             cancelAnimationFrame(this.viewerMethodRafId);

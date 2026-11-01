@@ -1,4 +1,5 @@
 import type * as OpenSeadragonType from "openseadragon";
+import { AnnotationIndex } from "./annotation-index";
 
 import {
     iiifImageRegionUrl,
@@ -173,6 +174,8 @@ class OsdViewer extends HTMLElement
         new Map();
     private pageOverlayElements: Map<number, HTMLDivElement> = new Map();
     private annotationData: Map<string, ViewerAnnotation[]> = new Map();
+    private readonly annotationIndex = new AnnotationIndex<ViewerAnnotation>();
+    private readonly pageIndexesByCanvas = new Map<string, number[]>();
     private annotationOverlayElements: Map<number, HTMLDivElement> = new Map();
     private annotationsVisible = true;
     private annotationSelectionEnabled = true;
@@ -212,6 +215,11 @@ class OsdViewer extends HTMLElement
 
     connectedCallback(): void
     {
+        this.rebuildCanvasPageIndexes();
+        this.annotationIndex.clear();
+        this.annotationData.forEach((annotations, canvasId) =>
+            this.annotationIndex.set(canvasId, annotations, (annotation) => annotation.id)
+        );
         this.style.display = "block";
         this.style.position = "relative";
         if (!this.container)
@@ -257,6 +265,8 @@ class OsdViewer extends HTMLElement
 
     disconnectedCallback(): void
     {
+        this.annotationIndex.clear();
+        this.pageIndexesByCanvas.clear();
         this.cancelLoads();
         if (this.loadingTimer !== null)
         {
@@ -372,7 +382,9 @@ class OsdViewer extends HTMLElement
         }
 
         this.annotationData.clear();
+        this.annotationIndex.clear();
         this.tileSources = tileSources.slice();
+        this.rebuildCanvasPageIndexes();
         this.resourceId = resourceId;
         this.initialPageIndex =
             Number.isInteger(initialPageIndex) && initialPageIndex >= 0 && initialPageIndex < tileSources.length
@@ -394,12 +406,8 @@ class OsdViewer extends HTMLElement
             return;
         }
         this.annotationData.set(canvasId, annotations);
-        this.tileSources.forEach((source, index) => {
-            if ((source as any).canvasId === canvasId)
-            {
-                this.addOrUpdateAnnotationOverlay(index);
-            }
-        });
+        this.annotationIndex.set(canvasId, annotations, (annotation) => annotation.id);
+        this.pageIndexesByCanvas.get(canvasId)?.forEach((index) => this.addOrUpdateAnnotationOverlay(index));
     }
 
     public setAnnotationsVisible(visible: boolean): void
@@ -448,40 +456,66 @@ class OsdViewer extends HTMLElement
                 group.classList.toggle("is-selected", group.dataset.annotationId === annotationId);
             });
         });
-        for (const annotations of this.annotationData.values())
+        const found = this.findAnnotation(annotationId);
+        if (found)
         {
-            const annotation = annotations.find((candidate) => candidate.id === annotationId);
-            if (annotation)
-            {
-                const group = Array.from(this.annotationOverlayElements.values())
-                    .map((element) =>
-                        element.querySelector<SVGGElement>(`g[data-annotation-id="${CSS.escape(annotationId)}"]`)
-                    )
-                    .find((candidate): candidate is SVGGElement => candidate !== null);
-                this.openAnnotationPanel(annotation, group);
-                return;
-            }
+            const group = Array.from(this.annotationOverlayElements.values())
+                .map((element) =>
+                    element.querySelector<SVGGElement>(`g[data-annotation-id="${CSS.escape(annotationId)}"]`)
+                )
+                .find((candidate): candidate is SVGGElement => candidate !== null);
+            this.openAnnotationPanel(found.annotation, group);
         }
     }
 
     public getImageRegionForAnnotation(annotationId: string): string | null
     {
-        for (const [canvasId, annotations] of this.annotationData)
+        const found = this.findAnnotation(annotationId);
+        if (found)
         {
-            const annotation = annotations.find((candidate) => candidate.id === annotationId);
-            if (!annotation)
-            {
-                continue;
-            }
-            const index = this.tileSources.findIndex((source) => (source as any).canvasId === canvasId);
-            const group = index >= 0
+            const index = this.pageIndexesByCanvas.get(found.canvasId)?.[0];
+            const group = index !== undefined
                 ? this.annotationOverlayElements.get(index)?.querySelector<SVGGElement>(
                     `g[data-annotation-id="${CSS.escape(annotationId)}"]`,
                 ) ?? undefined
                 : undefined;
-            return this.annotationExtractUrl(annotation, group);
+            return this.annotationExtractUrl(found.annotation, group);
         }
         return null;
+    }
+
+    private findAnnotation(annotationId: string): { canvasId: string; annotation: ViewerAnnotation } | undefined
+    {
+        let found: { canvasId: string; annotation: ViewerAnnotation } | undefined;
+        let rank = Infinity;
+        this.annotationIndex.entries(annotationId)?.forEach((annotation, canvasId) => {
+            const candidateRank = this.annotationIndex.rank(canvasId);
+            if (candidateRank < rank)
+            {
+                rank = candidateRank;
+                found = { canvasId, annotation };
+            }
+        });
+        return found;
+    }
+
+    private rebuildCanvasPageIndexes(): void
+    {
+        this.pageIndexesByCanvas.clear();
+        this.tileSources.forEach((source, index) => {
+            const canvasId = (source as TileSourceDescriptor & { canvasId?: string }).canvasId;
+            if (typeof canvasId !== "string")
+            {
+                return;
+            }
+            let indexes = this.pageIndexesByCanvas.get(canvasId);
+            if (!indexes)
+            {
+                indexes = [];
+                this.pageIndexesByCanvas.set(canvasId, indexes);
+            }
+            indexes.push(index);
+        });
     }
 
     public setTileSourceResolver(resolver: TileSourceResolver): void
@@ -559,6 +593,7 @@ class OsdViewer extends HTMLElement
         }
         this.cancelLoads();
         this.tileSources = tileSources;
+        this.rebuildCanvasPageIndexes();
         this.initialPageIndex =
             Number.isInteger(initialPageIndex) && initialPageIndex >= 0 && initialPageIndex < tileSources.length
                 ? initialPageIndex

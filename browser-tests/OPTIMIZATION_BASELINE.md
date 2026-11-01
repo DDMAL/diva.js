@@ -199,3 +199,52 @@ then one array conversion per canvas, apart from annotation normalization costs.
 The small bundle increase is accepted for the batch-scaling improvement. Complete
 validation: 125 browser tests passed, one existing skip; 46 Elm tests and the
 TypeDoc, TypeScript, public-type and Elm review checks passed.
+
+## Step 4 comparison — 2026-11-01
+
+Annotation ID indexes now restrict lookups and single-annotation replacement to
+canvases containing that ID. Stable insertion ranks preserve the bridge's and
+viewer's distinct duplicate-selection rules. Canvas-to-page-index collections
+replace viewer tile-source scans and handle multiple entries for one canvas.
+Same-canvas replacement applies the final annotations once, rather than applying
+an intermediate removal followed by insertion. Moving an ID applies each affected
+canvas once, in the original source-canvas order.
+
+Reproduce the correctness, operation-count, and lookup measurements with:
+
+```sh
+yarn -s playwright test browser-tests/annotation-index.spec.ts --workers=1
+```
+
+The lookup benchmark stores 8,000 unique rectangle annotations across 100 canvases,
+then performs 1,000 lookups alternating a final-canvas ID and a missing ID. It runs
+the former full-scan algorithm and the new indexed algorithm in the same browser,
+with one warmup and three timed samples each. Batch setup temporarily disables
+overlay application; lookup timings exclude rendering and public snapshot copying.
+There are no timing-based CI assertions. The original algorithm is also used as a
+correctness oracle throughout single/batch replacement and clear operations.
+
+| Lookup work for 1,000 queries | Former algorithm | Indexed algorithm |
+| --- | ---: | ---: |
+| Candidate work | 100,000 canvas collection visits | 500 matching ID candidates |
+| OSD 5.0.1 median, final full run | 125.3 ms | 0.1 ms |
+| OSD 6.0.2 median, final full run | 129.3 ms | 0.1 ms |
+
+Sub-millisecond results are near browser timer resolution; the avoided collection
+visits are the stronger evidence. No end-to-end speedup is claimed. Lookups still
+consider all canvases sharing an ID; single updates still filter/reindex affected
+canvas collections and sort duplicate source canvases by insertion rank. Index
+maintenance adds linear storage and some batch setup cost, while Step 3's batch
+accumulation remains linear. Overlay rebuilding is deferred to Step 5.
+
+| Production artifact | Minified bytes before → after | Gzip bytes before → after |
+| --- | ---: | ---: |
+| `build/diva.js` | 286,959 → 289,612 | 84,336 → 84,954 |
+| `build/diva.esm.js` | 286,986 → 289,639 | 84,359 → 84,974 |
+
+The bundle increase is accepted for indexed lookups and coalesced applications.
+Final validation: 133 browser tests passed, one existing skip; 46 Elm tests,
+TypeDoc, strict TypeScript, public types, Elm review, formatting, and diff checks
+passed. An initial command timeout left an unresponsive orphaned test server;
+after restarting it, the two initially timed-out cases passed five repetitions
+per OSD version and complete-suite reruns passed with a longer command limit.

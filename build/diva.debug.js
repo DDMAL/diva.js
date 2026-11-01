@@ -1,5 +1,64 @@
 "use strict";
 (() => {
+  // src/annotation-index.ts
+  var AnnotationIndex = class {
+    constructor() {
+      this.canvases = /* @__PURE__ */ new Map();
+      this.annotations = /* @__PURE__ */ new Map();
+      this.order = /* @__PURE__ */ new Map();
+      this.nextOrder = 0;
+    }
+    set(canvasId, annotations, idFor, lastWins = false) {
+      this.removeEntries(canvasId);
+      if (!this.order.has(canvasId)) {
+        this.order.set(canvasId, this.nextOrder++);
+      }
+      const ids = /* @__PURE__ */ new Set();
+      for (const annotation of annotations) {
+        const id = idFor(annotation);
+        if (!lastWins && ids.has(id)) {
+          continue;
+        }
+        ids.add(id);
+        let entries = this.annotations.get(id);
+        if (!entries) {
+          entries = /* @__PURE__ */ new Map();
+          this.annotations.set(id, entries);
+        }
+        entries.set(canvasId, annotation);
+      }
+      this.canvases.set(canvasId, ids);
+    }
+    entries(id) {
+      return this.annotations.get(id);
+    }
+    rank(canvasId) {
+      var _a;
+      return (_a = this.order.get(canvasId)) != null ? _a : Infinity;
+    }
+    delete(canvasId) {
+      this.removeEntries(canvasId);
+      this.order.delete(canvasId);
+    }
+    clear() {
+      this.canvases.clear();
+      this.annotations.clear();
+      this.order.clear();
+      this.nextOrder = 0;
+    }
+    removeEntries(canvasId) {
+      var _a;
+      (_a = this.canvases.get(canvasId)) == null ? void 0 : _a.forEach((id) => {
+        const entries = this.annotations.get(id);
+        entries.delete(canvasId);
+        if (entries.size === 0) {
+          this.annotations.delete(id);
+        }
+      });
+      this.canvases.delete(canvasId);
+    }
+  };
+
   // src/image-utils.ts
   var iiifImageRegionUrl = (imageService, region) => {
     const { x, y, width, height } = region;
@@ -170,6 +229,8 @@
       this.pageWaiters = /* @__PURE__ */ new Map();
       this.pageOverlayElements = /* @__PURE__ */ new Map();
       this.annotationData = /* @__PURE__ */ new Map();
+      this.annotationIndex = new AnnotationIndex();
+      this.pageIndexesByCanvas = /* @__PURE__ */ new Map();
       this.annotationOverlayElements = /* @__PURE__ */ new Map();
       this.annotationsVisible = true;
       this.annotationSelectionEnabled = true;
@@ -199,6 +260,11 @@
       this.handleAnimationFinishBound = this.handleAnimationFinish.bind(this);
     }
     connectedCallback() {
+      this.rebuildCanvasPageIndexes();
+      this.annotationIndex.clear();
+      this.annotationData.forEach(
+        (annotations, canvasId) => this.annotationIndex.set(canvasId, annotations, (annotation) => annotation.id)
+      );
       this.style.display = "block";
       this.style.position = "relative";
       if (!this.container) {
@@ -235,6 +301,8 @@
     }
     disconnectedCallback() {
       var _a;
+      this.annotationIndex.clear();
+      this.pageIndexesByCanvas.clear();
       this.cancelLoads();
       if (this.loadingTimer !== null) {
         window.clearTimeout(this.loadingTimer);
@@ -330,7 +398,9 @@
         return;
       }
       this.annotationData.clear();
+      this.annotationIndex.clear();
       this.tileSources = tileSources.slice();
+      this.rebuildCanvasPageIndexes();
       this.resourceId = resourceId;
       this.initialPageIndex = Number.isInteger(initialPageIndex) && initialPageIndex >= 0 && initialPageIndex < tileSources.length ? initialPageIndex : 0;
       this.syncViewer();
@@ -341,15 +411,13 @@
       this.resetTileSources(this.tileSources.slice(), this.initialPageIndex);
     }
     setAnnotations(canvasId, annotations) {
+      var _a;
       if (!canvasId || !Array.isArray(annotations)) {
         return;
       }
       this.annotationData.set(canvasId, annotations);
-      this.tileSources.forEach((source, index) => {
-        if (source.canvasId === canvasId) {
-          this.addOrUpdateAnnotationOverlay(index);
-        }
-      });
+      this.annotationIndex.set(canvasId, annotations, (annotation) => annotation.id);
+      (_a = this.pageIndexesByCanvas.get(canvasId)) == null ? void 0 : _a.forEach((index) => this.addOrUpdateAnnotationOverlay(index));
     }
     setAnnotationsVisible(visible) {
       this.annotationsVisible = visible;
@@ -385,31 +453,53 @@
           group.classList.toggle("is-selected", group.dataset.annotationId === annotationId);
         });
       });
-      for (const annotations of this.annotationData.values()) {
-        const annotation = annotations.find((candidate) => candidate.id === annotationId);
-        if (annotation) {
-          const group = Array.from(this.annotationOverlayElements.values()).map(
-            (element) => element.querySelector(`g[data-annotation-id="${CSS.escape(annotationId)}"]`)
-          ).find((candidate) => candidate !== null);
-          this.openAnnotationPanel(annotation, group);
-          return;
-        }
+      const found = this.findAnnotation(annotationId);
+      if (found) {
+        const group = Array.from(this.annotationOverlayElements.values()).map(
+          (element) => element.querySelector(`g[data-annotation-id="${CSS.escape(annotationId)}"]`)
+        ).find((candidate) => candidate !== null);
+        this.openAnnotationPanel(found.annotation, group);
       }
     }
     getImageRegionForAnnotation(annotationId) {
-      var _a, _b;
-      for (const [canvasId, annotations] of this.annotationData) {
-        const annotation = annotations.find((candidate) => candidate.id === annotationId);
-        if (!annotation) {
-          continue;
-        }
-        const index = this.tileSources.findIndex((source) => source.canvasId === canvasId);
-        const group = index >= 0 ? (_b = (_a = this.annotationOverlayElements.get(index)) == null ? void 0 : _a.querySelector(
+      var _a, _b, _c;
+      const found = this.findAnnotation(annotationId);
+      if (found) {
+        const index = (_a = this.pageIndexesByCanvas.get(found.canvasId)) == null ? void 0 : _a[0];
+        const group = index !== void 0 ? (_c = (_b = this.annotationOverlayElements.get(index)) == null ? void 0 : _b.querySelector(
           `g[data-annotation-id="${CSS.escape(annotationId)}"]`
-        )) != null ? _b : void 0 : void 0;
-        return this.annotationExtractUrl(annotation, group);
+        )) != null ? _c : void 0 : void 0;
+        return this.annotationExtractUrl(found.annotation, group);
       }
       return null;
+    }
+    findAnnotation(annotationId) {
+      var _a;
+      let found;
+      let rank = Infinity;
+      (_a = this.annotationIndex.entries(annotationId)) == null ? void 0 : _a.forEach((annotation, canvasId) => {
+        const candidateRank = this.annotationIndex.rank(canvasId);
+        if (candidateRank < rank) {
+          rank = candidateRank;
+          found = { canvasId, annotation };
+        }
+      });
+      return found;
+    }
+    rebuildCanvasPageIndexes() {
+      this.pageIndexesByCanvas.clear();
+      this.tileSources.forEach((source, index) => {
+        const canvasId = source.canvasId;
+        if (typeof canvasId !== "string") {
+          return;
+        }
+        let indexes = this.pageIndexesByCanvas.get(canvasId);
+        if (!indexes) {
+          indexes = [];
+          this.pageIndexesByCanvas.set(canvasId, indexes);
+        }
+        indexes.push(index);
+      });
     }
     setTileSourceResolver(resolver) {
       this.tileSourceResolver = resolver;
@@ -463,6 +553,7 @@
       }
       this.cancelLoads();
       this.tileSources = tileSources;
+      this.rebuildCanvasPageIndexes();
       this.initialPageIndex = Number.isInteger(initialPageIndex) && initialPageIndex >= 0 && initialPageIndex < tileSources.length ? initialPageIndex : 0;
       this.hasFitFirstPage = false;
       this.isViewportInitialized = false;
@@ -33277,6 +33368,8 @@
       this.pagesByLabel = /* @__PURE__ */ new Map();
       this.manifestAnnotationsByCanvas = /* @__PURE__ */ new Map();
       this.apiAnnotationsByCanvas = /* @__PURE__ */ new Map();
+      this.manifestAnnotationIndex = new AnnotationIndex();
+      this.apiAnnotationIndex = new AnnotationIndex();
       this.clearedAnnotationCanvases = /* @__PURE__ */ new Set();
       this.annotationImageServicesByCanvas = /* @__PURE__ */ new Map();
       this.annotationSelectionEnabled = true;
@@ -33407,6 +33500,8 @@
           this.annotationResourceId = update.resourceId;
           this.manifestAnnotationsByCanvas.clear();
           this.apiAnnotationsByCanvas.clear();
+          this.manifestAnnotationIndex.clear();
+          this.apiAnnotationIndex.clear();
           this.clearedAnnotationCanvases.clear();
           this.annotationImageServicesByCanvas.clear();
         }
@@ -33435,6 +33530,12 @@
               viewerAnnotation: { ...annotation, imageService: (_a = annotation.imageService) != null ? _a : null }
             };
           })
+        );
+        this.manifestAnnotationIndex.set(
+          value.canvasId,
+          this.manifestAnnotationsByCanvas.get(value.canvasId),
+          (annotation) => annotation.viewerAnnotation.id,
+          true
         );
         this.applyAnnotationsForCanvas(value.canvasId);
       });
@@ -33555,18 +33656,25 @@
       );
     }
     findStoredAnnotation(annotationId) {
-      for (const canvasId of /* @__PURE__ */ new Set([
-        ...this.manifestAnnotationsByCanvas.keys(),
-        ...this.apiAnnotationsByCanvas.keys()
-      ])) {
-        const annotation = this.effectiveAnnotationsForCanvas(canvasId).find(
-          (candidate) => candidate.viewerAnnotation.id === annotationId
-        );
-        if (annotation) {
-          return annotation;
+      var _a, _b, _c;
+      const manifest = this.manifestAnnotationIndex.entries(annotationId);
+      const api = this.apiAnnotationIndex.entries(annotationId);
+      let found;
+      let firstManifest = Infinity;
+      let firstApi = Infinity;
+      for (const canvasId of /* @__PURE__ */ new Set([...(_a = manifest == null ? void 0 : manifest.keys()) != null ? _a : [], ...(_b = api == null ? void 0 : api.keys()) != null ? _b : []])) {
+        if (this.clearedAnnotationCanvases.has(canvasId)) {
+          continue;
+        }
+        const manifestRank = this.manifestAnnotationIndex.rank(canvasId);
+        const apiRank = manifestRank === Infinity ? this.apiAnnotationIndex.rank(canvasId) : -1;
+        if (manifestRank < firstManifest || manifestRank === firstManifest && apiRank < firstApi) {
+          found = (_c = api == null ? void 0 : api.get(canvasId)) != null ? _c : manifest == null ? void 0 : manifest.get(canvasId);
+          firstManifest = manifestRank;
+          firstApi = apiRank;
         }
       }
-      return void 0;
+      return found;
     }
     rebuildPageIndexes() {
       this.pagesByCanvasId.clear();
@@ -33810,26 +33918,33 @@
      * Add or replace one API-supplied Web Annotation on a loaded Canvas.
      */
     setAnnotation(annotation) {
-      var _a, _b;
+      var _a, _b, _c, _d;
       this.assertAlive();
       const stored = normalizePublicAnnotation(annotation);
       if (!this.pagesByCanvasId.has(stored.canvasId)) {
         throw new RangeError(`Annotation Canvas ${stored.canvasId} is not part of the loaded manifest.`);
       }
       stored.viewerAnnotation.imageService = (_a = this.annotationImageServicesByCanvas.get(stored.canvasId)) != null ? _a : null;
-      this.apiAnnotationsByCanvas.forEach((annotations2, canvasId) => {
-        const retained = annotations2.filter(
+      const affected = new Set(
+        Array.from((_c = (_b = this.apiAnnotationIndex.entries(stored.viewerAnnotation.id)) == null ? void 0 : _b.keys()) != null ? _c : []).sort((left, right) => this.apiAnnotationIndex.rank(left) - this.apiAnnotationIndex.rank(right))
+      );
+      affected.forEach((canvasId) => {
+        const retained = this.apiAnnotationsByCanvas.get(canvasId).filter(
           (candidate) => candidate.viewerAnnotation.id !== stored.viewerAnnotation.id
         );
-        if (retained.length !== annotations2.length) {
-          this.apiAnnotationsByCanvas.set(canvasId, retained);
-          this.applyAnnotationsForCanvas(canvasId);
-        }
+        this.apiAnnotationsByCanvas.set(canvasId, retained);
+        this.apiAnnotationIndex.set(canvasId, retained, (annotation2) => annotation2.viewerAnnotation.id);
       });
-      const annotations = (_b = this.apiAnnotationsByCanvas.get(stored.canvasId)) != null ? _b : [];
+      const annotations = (_d = this.apiAnnotationsByCanvas.get(stored.canvasId)) != null ? _d : [];
       this.apiAnnotationsByCanvas.set(stored.canvasId, [...annotations, stored]);
+      this.apiAnnotationIndex.set(
+        stored.canvasId,
+        this.apiAnnotationsByCanvas.get(stored.canvasId),
+        (annotation2) => annotation2.viewerAnnotation.id
+      );
       this.clearedAnnotationCanvases.delete(stored.canvasId);
-      this.applyAnnotationsForCanvas(stored.canvasId);
+      affected.add(stored.canvasId);
+      affected.forEach((canvasId) => this.applyAnnotationsForCanvas(canvasId));
     }
     /**
      * Replace the API-supplied annotation set for the loaded manifest.
@@ -33857,8 +33972,11 @@
       });
       const affected = /* @__PURE__ */ new Set([...this.apiAnnotationsByCanvas.keys(), ...next.keys()]);
       this.apiAnnotationsByCanvas.clear();
+      this.apiAnnotationIndex.clear();
       next.forEach((canvasAnnotations, canvasId) => {
-        this.apiAnnotationsByCanvas.set(canvasId, Array.from(canvasAnnotations.values()));
+        const stored = Array.from(canvasAnnotations.values());
+        this.apiAnnotationsByCanvas.set(canvasId, stored);
+        this.apiAnnotationIndex.set(canvasId, stored, (annotation) => annotation.viewerAnnotation.id);
         this.clearedAnnotationCanvases.delete(canvasId);
       });
       affected.forEach((canvasId) => this.applyAnnotationsForCanvas(canvasId));
@@ -33884,6 +34002,7 @@
       this.assertAlive();
       this.clearedAnnotationCanvases.add(uri);
       this.apiAnnotationsByCanvas.delete(uri);
+      this.apiAnnotationIndex.delete(uri);
       this.applyAnnotationsForCanvas(uri);
     }
     /**
@@ -33892,6 +34011,7 @@
     clearAllAnnotations() {
       this.assertAlive();
       this.apiAnnotationsByCanvas.clear();
+      this.apiAnnotationIndex.clear();
       this.pages.forEach((page) => {
         this.clearedAnnotationCanvases.add(page.canvasId);
         this.applyAnnotationsForCanvas(page.canvasId);
@@ -34283,6 +34403,8 @@
       this.updateState({ destroyed: true, loading: false });
       this.closeFilterPreview();
       this.auth.destroy();
+      this.manifestAnnotationIndex.clear();
+      this.apiAnnotationIndex.clear();
       if (this.viewerMethodRafId !== null) {
         cancelAnimationFrame(this.viewerMethodRafId);
         this.viewerMethodRafId = null;

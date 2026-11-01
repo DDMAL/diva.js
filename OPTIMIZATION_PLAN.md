@@ -435,6 +435,45 @@ navigation and loading contracts. This is not a confirmed memory leak.
   batch accumulation. No environment limitations. Step 4 indexing/coalescing and
   Step 5 overlay reuse remain separate work; `testing/index.html` is untouched.
 
+### Step 4 — Complete (2026-11-01)
+
+- Added a shared, derived `AnnotationIndex` for ID-to-canvas lookups and stable
+  canvas insertion ranks. The existing manifest/API/viewer collections remain
+  authoritative. Bridge lookups retain manifest-canvas-first ordering and
+  per-canvas API precedence; viewer lookups retain their own first-match rule.
+- `setAnnotation` visits only API canvases containing the replaced ID, then applies
+  each affected canvas once after storage is final. Same-canvas replacement drops
+  from two applications to one. Source-canvas application order is preserved even
+  after index refreshes. Per-canvas filtering/reindexing remains intentional.
+- Viewer annotation application uses canvas-to-page-index collections, including
+  repeated entries for one canvas. Selection and extract lookup no longer scan all
+  annotation collections; extract lookup no longer scans tile sources.
+- Index updates cover manifest arrival, single/batch replacement, clear/re-add,
+  resource replacement, disconnect/reconnect, and teardown. No public entry-point
+  API or dependency changes; bundles and declarations regenerated.
+- Added four browser cases per OSD version in `annotation-index.spec.ts`, covering
+  update counts/order, comparison with the previous lookup algorithm, duplicate
+  semantics, selection/bodies/extract URLs, repeated canvases, late manifest
+  arrival, clear/reset, reconnection, and teardown.
+- The isolated 8,000-annotation/100-canvas lookup comparison performs 1,000 queries
+  (half missing): **100,000 canvas collection visits versus 500 indexed candidates**.
+  Final full-run median times for the former algorithm versus indexed lookup:
+  **125.3 versus 0.1 ms** (OSD 5), **129.3 versus 0.1 ms** (OSD 6). This compares
+  lookup algorithms in the same browser, not end-to-end viewer performance.
+- Validation: **133 browser tests passed, one existing OSD-5-specific skip**;
+  **46 Elm tests**, TypeDoc, strict application TypeScript, public type tests,
+  Elm review, formatting, and diff checks pass.
+- The initial full run had two timeouts and exceeded the shell command limit;
+  its orphaned server then returned empty responses. After restarting that server,
+  both affected tests passed five repetitions per OSD version (20 passes), and
+  complete runs passed with an increased command timeout. No tests were weakened.
+- IIFE minified/gzip: **286,959 / 84,336 → 289,612 / 84,954 bytes**.
+  ESM minified/gzip: **286,986 / 84,359 → 289,639 / 84,974 bytes**.
+- Decision: keep. The 2,653-byte minified increase (618/615 bytes gzip) and linear
+  derived-index storage are justified by avoiding full-collection lookups and
+  redundant canvas applications. Overlay content rebuilding remains Step 5.
+  The user's `testing/index.html` changes are excluded.
+
 Append a short entry when each step is implemented:
 
 ```text
