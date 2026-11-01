@@ -741,12 +741,9 @@ viewSidebarTab current target label msg =
         [ text label ]
 
 
-viewThumbnail : Auth.Model -> ViewMode -> Bool -> Maybe Int -> Int -> Page -> Html Msg
-viewThumbnail auth viewMode shiftByOne selectedIndex index page =
+viewThumbnail : Bool -> Maybe String -> Int -> Page -> Html Msg
+viewThumbnail isActive crossOrigin index page =
     let
-        isActive =
-            isThumbnailActive viewMode shiftByOne selectedIndex index
-
         attrs =
             [ classList
                 [ ( "diva-thumbs-item", True )
@@ -762,10 +759,6 @@ viewThumbnail auth viewMode shiftByOne selectedIndex index page =
 
         hasChoices =
             List.length page.images > 1
-
-        crossOrigin =
-            primaryImage page
-                |> Maybe.andThen (\image -> Auth.thumbnailCrossOrigin image.sourceId auth)
 
         thumbnail =
             case crossOrigin of
@@ -821,12 +814,25 @@ viewThumbnails { fullscreen, auth, selectedIndex, shiftByOne, thumbsInstantScrol
         indexedPages =
             List.indexedMap Tuple.pair pages
 
+        thumbnailInputs =
+            indexedPages
+                |> List.map
+                    (\( index, page ) ->
+                        { isActive = isThumbnailActive viewMode shiftByOne selectedIndex index
+                        , crossOrigin =
+                            primaryImage page
+                                |> Maybe.andThen (\image -> Auth.thumbnailCrossOrigin image.sourceId auth)
+                        , index = index
+                        , page = page
+                        }
+                    )
+
         orderedPages =
             if viewingDirection == RightToLeft then
-                reverseInRows 3 indexedPages
+                reverseInRows 3 thumbnailInputs
 
             else
-                indexedPages
+                thumbnailInputs
     in
     div
         [ classList
@@ -843,7 +849,9 @@ viewThumbnails { fullscreen, auth, selectedIndex, shiftByOne, thumbsInstantScrol
             )
         ]
         (orderedPages
-            |> List.map (\( index, page ) -> Lazy.lazy6 viewThumbnail auth viewMode shiftByOne selectedIndex index page)
+            |> List.map (\{ isActive, crossOrigin, index, page } ->
+                Lazy.lazy4 viewThumbnail isActive crossOrigin index page
+            )
         )
 
 

@@ -350,7 +350,7 @@ test("falls back from silent external auth and deduplicates active login", async
                 } ]
             } ]
         });
-        const canvas = (index: number) => ({
+        const canvas = (index: number, protectedImage = true) => ({
             id : `${origin}/canvas/${index}`,
             type : "Canvas",
             width : 100,
@@ -360,7 +360,13 @@ test("falls back from silent external auth and deduplicates active login", async
                                                                                     type : "Annotation",
                                                                                     motivation : "painting",
                                                                                     target : `${origin}/canvas/${index}`,
-                                                                                    body : {id : `${origin}/mock/image-${index}/full/full/0/default.jpg`, type : "Image", service : service(`image-${index}`)}
+                                                                                    body : {
+                                                                                        id : `${origin}/mock/image-${index}/full/full/0/default.jpg`,
+                                                                                        type : "Image",
+                                                                                        service : protectedImage
+                                                                                            ? service(`image-${index}`)
+                                                                                            : [{id : `${origin}/mock/image-${index}`, type : "ImageService3", profile : "level0"}]
+                                                                                    }
                                                                                 } ]} ]
         });
         await route.fulfill({json : {
@@ -368,7 +374,7 @@ test("falls back from silent external auth and deduplicates active login", async
             id : `${origin}/mock/manifest`,
             type : "Manifest",
             label : {en : [ "Auth" ]},
-            items : [ canvas(1), canvas(2) ]
+            items : [ canvas(1), canvas(2), canvas(3, false) ]
         }});
     });
 
@@ -457,6 +463,13 @@ test("falls back from silent external auth and deduplicates active login", async
     await page.locator("button[data-diva-auth-flow]").click();
     await expect(page.locator(".diva-auth-dialog")).toBeHidden({timeout : 10000});
     await expect.poll(() => probeRequests.filter((request) => request.authorization === "Bearer token-1").length).toBe(1);
+    const publicThumbnail = page.locator("#thumb-2 diva-lazy-image");
+    await expect(publicThumbnail).toHaveAttribute("data-crossorigin", "anonymous");
+    await publicThumbnail.evaluate((node) => { (window as any).__publicThumbnail = node; });
+    await expect(page.locator("#thumb-0 diva-lazy-image")).toHaveAttribute("data-crossorigin", "use-credentials");
+    await expect(page.locator("#thumb-1 diva-lazy-image")).toHaveAttribute("data-crossorigin", "use-credentials");
+    await expect(publicThumbnail).toHaveAttribute("data-crossorigin", "anonymous");
+    expect(await publicThumbnail.evaluate((node) => node === (window as any).__publicThumbnail)).toBe(true);
     await page.getByRole("button", {name : "Page View"}).click();
     await expect(page.locator(".diva-modal.is-page-view")).toBeVisible();
     await expect.poll(() => infoRequests.get(`${origin}/mock/image-1/info.json`) || 0).toBe(1);
