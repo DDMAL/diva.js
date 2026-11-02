@@ -1,16 +1,16 @@
 module View.Sidebar exposing (viewSidebarPanel, viewSidebarResizer)
 
 import Auth
-import Dict exposing (Dict)
 import Html exposing (Html, a, button, div, li, text, ul)
 import Html.Attributes as HA exposing (attribute, classList, id, type_)
 import Html.Events as Events
 import Html.Lazy as Lazy
 import IIIF.Language exposing (LabelValue, Language, extractLabelFromLanguageMap)
-import IIIF.Presentation exposing (IIIFManifest, MediaFormats, Range, RangeItem(..), ResourceTypes, ViewingDirection(..), canvasLabel, toCanvases, toHomepage, toMetadata, toRanges, toViewingDirection)
+import IIIF.Presentation exposing (IIIFManifest, MediaFormats, Range, RangeItem(..), ResourceTypes, ViewingDirection(..), toHomepage, toMetadata, toRanges, toViewingDirection)
 import Json.Decode as Decode
 import Model exposing (ContentsView(..), Model, Page, ResourceResponse(..), Response(..), SidebarState(..), ViewMode(..), currentManifest, getPageAt, pageViewStartIndex, primaryImage)
 import Msg exposing (Msg(..))
+import RangeIndex
 import View.Helpers exposing (emptyHtml, viewMaybe)
 import View.HtmlRenderer exposing (renderHtml)
 
@@ -152,12 +152,6 @@ isThumbnailActive viewMode shiftByOne selectedIndex index =
     List.member index (visiblePageIndexes viewMode shiftByOne selectedIndex)
 
 
-lookupRangeIndex : Dict String (Maybe Int) -> String -> Maybe Int
-lookupRangeIndex rangeIndexMap rangeId =
-    Dict.get rangeId rangeIndexMap
-        |> Maybe.withDefault Nothing
-
-
 metadataEntries : Language -> IIIFManifest -> List (Html Msg)
 metadataEntries language manifest =
     toMetadata manifest
@@ -175,76 +169,6 @@ metadataEntry language entry =
             [ HA.class "diva-metadata-value" ]
             (extractLabelFromLanguageMap language entry.value |> renderHtml)
         ]
-
-
-rangeCanvasIds : List RangeItem -> List String
-rangeCanvasIds items =
-    let
-        step pending acc =
-            case pending of
-                [] ->
-                    List.reverse acc
-
-                [] :: restStacks ->
-                    step restStacks acc
-
-                (item :: rest) :: restStacks ->
-                    case item of
-                        RangeCanvas idValue ->
-                            step (rest :: restStacks) (idValue :: acc)
-
-                        RangeRange range ->
-                            step (range.items :: rest :: restStacks) acc
-    in
-    step [ items ] []
-
-
-rangeCanvasLabels : Dict String String -> Range -> List String
-rangeCanvasLabels canvasLabelMap range =
-    rangeCanvasIds range.items
-        |> List.filterMap (\idValue -> Dict.get idValue canvasLabelMap)
-
-
-rangeContainsCanvas : String -> Range -> Bool
-rangeContainsCanvas canvasId range =
-    List.any (rangeItemContainsCanvas canvasId) range.items
-
-
-rangeItemContainsCanvas : String -> RangeItem -> Bool
-rangeItemContainsCanvas canvasId item =
-    case item of
-        RangeCanvas idValue ->
-            idValue == canvasId
-
-        RangeRange range ->
-            rangeContainsCanvas canvasId range
-
-
-rangesForCanvas : String -> List Range -> List Range
-rangesForCanvas canvasId ranges =
-    List.concatMap (rangesForCanvasInRange canvasId) ranges
-
-
-rangesForCanvasInRange : String -> Range -> List Range
-rangesForCanvasInRange canvasId range =
-    let
-        nested =
-            List.concatMap
-                (\item ->
-                    case item of
-                        RangeCanvas _ ->
-                            []
-
-                        RangeRange child ->
-                            rangesForCanvasInRange canvasId child
-                )
-                range.items
-    in
-    if rangeContainsCanvas canvasId range then
-        range :: nested
-
-    else
-        nested
 
 
 reverseInRows : Int -> List a -> List a
@@ -275,14 +199,14 @@ viewContentsContent model =
 
         body =
             case ( model.contentsView, maybeManifest ) of
-                ( ContentsIndex, Just manifest ) ->
-                    viewContentsIndexBody model manifest
+                ( ContentsIndex, Just _ ) ->
+                    viewContentsIndexBody model
 
                 ( ContentsIndex, Nothing ) ->
                     viewContentsEmptyBody
 
-                ( ContentsPages, Just manifest ) ->
-                    viewOnThisPageBody model manifest
+                ( ContentsPages, Just _ ) ->
+                    viewOnThisPageBody model
 
                 ( ContentsPages, Nothing ) ->
                     viewOnThisPageEmptyBody
@@ -307,18 +231,21 @@ viewContentsEmptyBody =
     viewContentsEmpty "No contents available."
 
 
-viewContentsIndexBody : Model -> IIIFManifest -> Html Msg
-viewContentsIndexBody model manifest =
-    case toRanges manifest of
-        Just list ->
-            if List.isEmpty list then
-                viewContentsEmptyBody
+viewContentsIndexBody : Model -> Html Msg
+viewContentsIndexBody model =
+    let
+        ranges =
+            RangeIndex.topLevelRanges model.rangeIndexes
+    in
+    if List.isEmpty ranges then
+        viewContentsEmptyBody
 
-            else
-                viewRangeList model model.rangeIndexMap list
-
-        Nothing ->
-            viewContentsEmptyBody
+    else
+        let
+            currentCanvasIds =
+                visibleCanvasIds model
+        in
+        viewRangeList model.detectedLanguage model.selectedRangeId currentCanvasIds model.rangeIndexes ranges
 
 
 viewContentsToggle : ViewMode -> ContentsView -> Html Msg
@@ -375,32 +302,21 @@ viewMetadataContent model =
         )
 
 
-viewOnThisPageBody : Model -> IIIFManifest -> Html Msg
-viewOnThisPageBody model manifest =
+viewOnThisPageBody : Model -> Html Msg
+viewOnThisPageBody model =
     case currentCanvasId model of
         Just canvasId ->
-            case toRanges manifest of
-                Just list ->
-                    let
-                        matches =
-                            rangesForCanvas canvasId list
-                    in
-                    if List.isEmpty matches then
-                        viewOnThisPageEmptyBody
+            let
+                matches =
+                    RangeIndex.rangesForCanvas canvasId model.rangeIndexes
+            in
+            if List.isEmpty matches then
+                viewOnThisPageEmptyBody
 
-                    else
-                        let
-                            canvasLabelMap =
-                                toCanvases manifest
-                                    |> List.map (\canvas -> ( canvas.id, canvasLabel canvas ))
-                                    |> Dict.fromList
-                        in
-                        ul
-                            [ HA.class "diva-contents-list diva-list-reset" ]
-                            (List.map (viewOtpRangeItem model canvasLabelMap) matches)
-
-                Nothing ->
-                    viewOnThisPageEmptyBody
+            else
+                ul
+                    [ HA.class "diva-contents-list diva-list-reset" ]
+                    (List.map (viewOtpRangeItem model.detectedLanguage model.rangeIndexes) matches)
 
         Nothing ->
             viewOnThisPageEmptyBody
@@ -411,23 +327,17 @@ viewOnThisPageEmptyBody =
     viewContentsEmpty "No ranges for this page."
 
 
-viewOtpRangeItem : Model -> Dict String String -> Range -> Html Msg
-viewOtpRangeItem model canvasLabelMap range =
+viewOtpRangeItem : Language -> RangeIndex.Indexes -> Range -> Html Msg
+viewOtpRangeItem language rangeIndexes range =
     let
-        canvasLabels =
-            rangeCanvasLabels canvasLabelMap range
-
         maybeIndex =
-            lookupRangeIndex model.rangeIndexMap range.id
+            RangeIndex.firstPageIndex range.id rangeIndexes
 
         labelText =
-            extractLabelFromLanguageMap model.detectedLanguage range.label
+            extractLabelFromLanguageMap language range.label
 
-        firstLabel =
-            List.head canvasLabels
-
-        lastLabel =
-            List.reverse canvasLabels |> List.head
+        { firstLabel, lastLabel } =
+            RangeIndex.labelBounds range.id rangeIndexes
 
         rangePrefix =
             case ( firstLabel, lastLabel ) of
@@ -458,7 +368,7 @@ viewOtpRangeItem model canvasLabelMap range =
             viewRangeButton False maybeIndex resolvedLabel
 
         metadataBlock =
-            viewRangeMetadata model.detectedLanguage range.metadata
+            viewRangeMetadata language range.metadata
     in
     li
         [ HA.class "diva-contents-item" ]
@@ -519,8 +429,8 @@ viewRangeDisclosure isExpanded rangeId labelText =
         ]
 
 
-viewRangeItems : Model -> Dict String (Maybe Int) -> List RangeItem -> List (Html Msg)
-viewRangeItems model rangeIndexMap items =
+viewRangeItems : Language -> Maybe String -> List String -> RangeIndex.Indexes -> List RangeItem -> List (Html Msg)
+viewRangeItems language selectedRangeId currentCanvasIds rangeIndexes items =
     let
         rendered =
             List.filterMap
@@ -530,7 +440,7 @@ viewRangeItems model rangeIndexMap items =
                             Nothing
 
                         RangeRange range ->
-                            Just (Lazy.lazy3 viewRangeNode model rangeIndexMap range)
+                            Just (Lazy.lazy5 viewRangeNode language selectedRangeId currentCanvasIds rangeIndexes range)
                 )
                 items
     in
@@ -541,11 +451,11 @@ viewRangeItems model rangeIndexMap items =
         [ ul [ HA.class "diva-contents-list-nested diva-list-reset" ] rendered ]
 
 
-viewRangeList : Model -> Dict String (Maybe Int) -> List Range -> Html Msg
-viewRangeList model rangeIndexMap ranges =
+viewRangeList : Language -> Maybe String -> List String -> RangeIndex.Indexes -> List Range -> Html Msg
+viewRangeList language selectedRangeId currentCanvasIds rangeIndexes ranges =
     ul
         [ HA.class "diva-contents-list diva-list-reset" ]
-        (List.map (Lazy.lazy3 viewRangeNode model rangeIndexMap) ranges)
+        (List.map (Lazy.lazy5 viewRangeNode language selectedRangeId currentCanvasIds rangeIndexes) ranges)
 
 
 viewRangeMetadata : Language -> List LabelValue -> List (Html Msg)
@@ -560,14 +470,14 @@ viewRangeMetadata language metadata =
         ]
 
 
-viewRangeNode : Model -> Dict String (Maybe Int) -> Range -> Html Msg
-viewRangeNode model rangeIndexMap range =
+viewRangeNode : Language -> Maybe String -> List String -> RangeIndex.Indexes -> Range -> Html Msg
+viewRangeNode language selectedRangeId currentCanvasIds rangeIndexes range =
     let
         isExpanded =
-            model.selectedRangeId == Just range.id
+            selectedRangeId == Just range.id
 
         labelText =
-            extractLabelFromLanguageMap model.detectedLanguage range.label
+            extractLabelFromLanguageMap language range.label
 
         resolvedLabel =
             if String.isEmpty labelText then
@@ -577,14 +487,13 @@ viewRangeNode model rangeIndexMap range =
                 labelText
 
         children =
-            viewRangeItems model rangeIndexMap range.items
+            viewRangeItems language selectedRangeId currentCanvasIds rangeIndexes range.items
 
         isCurrent =
-            visibleCanvasIds model
-                |> List.any (\canvasId -> rangeContainsCanvas canvasId range)
+            RangeIndex.containsAnyCanvas range.id currentCanvasIds rangeIndexes
 
         maybeIndex =
-            lookupRangeIndex rangeIndexMap range.id
+            RangeIndex.firstPageIndex range.id rangeIndexes
 
         labelNode =
             viewRangeButton isCurrent maybeIndex resolvedLabel
@@ -603,7 +512,7 @@ viewRangeNode model rangeIndexMap range =
 
         metadataBlock =
             if isExpanded then
-                viewRangeMetadata model.detectedLanguage range.metadata
+                viewRangeMetadata language range.metadata
 
             else
                 []

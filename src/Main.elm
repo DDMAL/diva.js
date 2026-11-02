@@ -11,13 +11,14 @@ import Http
 import IIIF
 import IIIF.Annotation as IIIFAnnotation
 import IIIF.Language exposing (Language(..))
-import IIIF.Presentation exposing (AnnotationSource(..), Collection, CollectionItem(..), IIIFCollection(..), IIIFManifest(..), IIIFResource(..), Range, RangeItem(..), ViewingDirection(..), isPagedLayout, manifestViewingLayout, toCanvases, toHomepage, toMetadata, toRanges, toViewingDirection)
+import IIIF.Presentation exposing (AnnotationSource(..), Canvas, Collection, CollectionItem(..), IIIFCollection(..), IIIFManifest(..), IIIFResource(..), ViewingDirection(..), canvasLabel, isPagedLayout, manifestViewingLayout, toCanvases, toHomepage, toMetadata, toRanges, toViewingDirection)
 import IIIF.Version
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Model exposing (ContentsView(..), Model, ResourceResponse(..), Response(..), SidebarState(..), ViewMode(..), currentManifest, getPageAt, manifestToPages, primaryImage)
 import Msg exposing (Msg(..))
 import Process
+import RangeIndex
 import Set
 import Task
 import Url.Builder
@@ -229,21 +230,11 @@ annotationServerUrl server canvasId version =
         server ++ query
 
 
-annotationSourcesForManifest : IIIFManifest -> Dict String (List AnnotationSource)
-annotationSourcesForManifest manifest =
-    toCanvases manifest
+annotationSourcesForCanvases : List Canvas -> Dict String (List AnnotationSource)
+annotationSourcesForCanvases canvases =
+    canvases
         |> List.map (\canvas -> ( canvas.id, canvas.annotationSources ))
         |> Dict.fromList
-
-
-buildRangeIndexMap : Dict String Int -> List Range -> Dict String (Maybe Int)
-buildRangeIndexMap canvasIndex ranges =
-    List.foldl
-        (\range acc ->
-            Dict.union (rangeIndexMapForRange canvasIndex range) acc
-        )
-        Dict.empty
-        ranges
 
 
 clearViewer : String -> Cmd msg
@@ -381,19 +372,27 @@ handleManifestLoaded resourceId initialPage model manifest =
         direction =
             viewingDirectionToString viewingDirection
 
-        canvasIndexMap =
+        canvases =
             toCanvases manifest
+
+        canvasIndexMap =
+            canvases
                 |> List.indexedMap (\index canvas -> ( canvas.id, index ))
                 |> Dict.fromList
 
-        rangeIndexMap =
+        canvasLabelMap =
+            canvases
+                |> List.map (\canvas -> ( canvas.id, canvasLabel canvas ))
+                |> Dict.fromList
+
+        rangeIndexes =
             toRanges manifest
-                |> Maybe.map (buildRangeIndexMap canvasIndexMap)
-                |> Maybe.withDefault Dict.empty
+                |> Maybe.withDefault []
+                |> RangeIndex.build canvasIndexMap canvasLabelMap
     in
     ( { model
         | currentZoom = Nothing
-        , annotationSources = annotationSourcesForManifest manifest
+        , annotationSources = annotationSourcesForCanvases canvases
         , annotationLoading = Set.empty
         , annotationsByCanvas = Dict.empty
         , auth = Auth.registerSources authSources Auth.init
@@ -403,7 +402,7 @@ handleManifestLoaded resourceId initialPage model manifest =
         , isViewerLoading = False
         , pageViewOpen = False
         , pages = pages
-        , rangeIndexMap = rangeIndexMap
+        , rangeIndexes = rangeIndexes
         , response = Loaded manifest
         , sidebarPanel = availableSidebarPanel
         , sidebarState = nextSidebarState
@@ -552,7 +551,7 @@ init flags =
       , pages = []
       , pendingThumbScroll = Nothing
       , pendingPublicResource = Nothing
-      , rangeIndexMap = Dict.empty
+      , rangeIndexes = RangeIndex.empty
       , resourceResponse = ResourceLoading
       , response = Loading
       , rootElementId = flags.rootElementId
@@ -682,58 +681,6 @@ publicPages pages =
                         )
             )
         |> List.filterMap identity
-
-
-rangeIndexMapForRange :
-    Dict String Int
-    -> Range
-    -> Dict String (Maybe Int)
-rangeIndexMapForRange canvasIndex range =
-    let
-        ( firstIndex, childMap ) =
-            rangeItemsIndexMap canvasIndex range.items
-    in
-    Dict.insert range.id firstIndex childMap
-
-
-rangeItemsIndexMap :
-    Dict String Int
-    -> List RangeItem
-    -> ( Maybe Int, Dict String (Maybe Int) )
-rangeItemsIndexMap canvasIndex items =
-    List.foldl
-        (\item ( maybeFirst, acc ) ->
-            case item of
-                RangeCanvas canvasId ->
-                    let
-                        nextFirst =
-                            case maybeFirst of
-                                Just _ ->
-                                    maybeFirst
-
-                                Nothing ->
-                                    Dict.get canvasId canvasIndex
-                    in
-                    ( nextFirst, acc )
-
-                RangeRange range ->
-                    let
-                        rangeMap =
-                            rangeIndexMapForRange canvasIndex range
-
-                        nextFirst =
-                            case maybeFirst of
-                                Just _ ->
-                                    maybeFirst
-
-                                Nothing ->
-                                    Dict.get range.id rangeMap
-                                        |> Maybe.withDefault Nothing
-                    in
-                    ( nextFirst, Dict.union rangeMap acc )
-        )
-        ( Nothing, Dict.empty )
-        items
 
 
 replaceCollectionById : String -> Collection -> Collection -> Collection

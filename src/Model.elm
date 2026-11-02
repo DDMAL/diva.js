@@ -10,6 +10,7 @@ import IIIF.Language exposing (Language, extractLabelFromLanguageMap)
 import IIIF.Presentation exposing (AnnotationSource, Canvas, IIIFCollection, IIIFManifest, Image, ImageType(..), canvasAspect, canvasLabel, toCanvases)
 import Json.Decode as Decode
 import Json.Encode as Encode
+import RangeIndex exposing (Indexes)
 import Set exposing (Set)
 import Utilities exposing (find, isNothing)
 
@@ -40,7 +41,7 @@ type alias Model =
     , pages : List Page
     , selectedIndex : Maybe Int
     , selectedRangeId : Maybe String
-    , rangeIndexMap : Dict String (Maybe Int)
+    , rangeIndexes : Indexes
     , thumbsInstantScroll : Bool
     , pendingThumbScroll : Maybe Int
     , pendingPublicResource : Maybe String
