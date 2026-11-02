@@ -22,6 +22,7 @@ export type FilterOptions = {
     filters?: FilterDefinition | FilterDefinition[];
 };
 export declare function setFilterOptions(viewer: any, options: FilterOptions): void;
+export declare function batchFilterProcessors(processors: FilterProcessor[]): FilterProcessor[];
 export declare const Filters: {
     _scratch: Uint8ClampedArray | null;
     _scratchCanvas: HTMLCanvasElement | null;

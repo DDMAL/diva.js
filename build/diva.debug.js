@@ -31783,6 +31783,7 @@
   };
 
   // src/filters.ts
+  var pointwiseTransforms = /* @__PURE__ */ new WeakMap();
   function setFilterOptions(viewer, options) {
     if (!viewer) {
       throw new Error("A viewer must be specified.");
@@ -31792,6 +31793,63 @@
     } else {
       setOptions(viewer.filterPluginInstance, options || {});
     }
+  }
+  function batchFilterProcessors(processors) {
+    const result = [];
+    for (let start = 0; start < processors.length; ) {
+      let end = start;
+      while (end < processors.length && pointwiseTransforms.has(processors[end])) {
+        end += 1;
+      }
+      if (end - start < 2) {
+        result.push(processors[start]);
+        start += 1;
+      } else {
+        result.push(batchPointwiseProcessors(processors.slice(start, end)));
+        start = end;
+      }
+    }
+    return result;
+  }
+  function batchPointwiseProcessors(processors) {
+    const transforms = processors.map((processor) => pointwiseTransforms.get(processor));
+    return (context, callback) => {
+      let batched = false;
+      let first = 0;
+      if (context.globalAlpha === 1 && context.globalCompositeOperation === "source-over" && context.getTransform().isIdentity && (!context.filter || context.filter === "none") && context.shadowColor === "rgba(0, 0, 0, 0)") {
+        withImageData(context, (image) => {
+          batched = true;
+          for (let i = 3; i < image.data.length; i += 4) {
+            if (image.data[i] !== 255) {
+              batched = false;
+              break;
+            }
+          }
+          for (let i = 0; i < (batched ? transforms.length : 1); i += 1) {
+            transforms[i](image);
+          }
+          return true;
+        });
+        first = 1;
+      }
+      if (!batched) {
+        for (let i = first; i < processors.length; i += 1) {
+          processors[i](context, () => {
+          });
+        }
+      }
+      callback();
+    };
+  }
+  function pointwiseProcessor(transform, batchable = true) {
+    const processor = (context, callback) => {
+      withImageData(context, transform);
+      callback();
+    };
+    if (batchable) {
+      pointwiseTransforms.set(processor, transform);
+    }
+    return processor;
   }
   function readImageDataFromContext(context) {
     const width = context.canvas.width;
@@ -32143,11 +32201,20 @@
     }
     return output;
   };
-  function applyPixelTransformInPlace(transform) {
-    return function(context, callback) {
-      Filters._applyPixelTransformInPlace(context, transform);
-      callback();
-    };
+  function applyPixelTransformInPlace(transform, batchable = true) {
+    return pointwiseProcessor((image) => transformPixelBuffer(image, transform), batchable);
+  }
+  function transformPixelBuffer(image, transform) {
+    const pixels = image.data;
+    const out = [0, 0, 0, 0];
+    for (let i = 0; i < pixels.length; i += 4) {
+      transform(pixels[i], pixels[i + 1], pixels[i + 2], pixels[i + 3], out);
+      pixels[i] = out[0];
+      pixels[i + 1] = out[1];
+      pixels[i + 2] = out[2];
+      pixels[i + 3] = out[3];
+    }
+    return true;
   }
   function buildLuminance(data, width, height) {
     const length = width * height;
@@ -32663,10 +32730,7 @@
       }
       return true;
     };
-    return (context, callback) => {
-      withImageData(context, transform);
-      callback();
-    };
+    return pointwiseProcessor(transform);
   }
   function applyChannelLUT(channel, lut) {
     const offset = channel === 0 ? 0 : channel === 1 ? 1 : 2;
@@ -32677,10 +32741,7 @@
       }
       return true;
     };
-    return (context, callback) => {
-      withImageData(context, transform);
-      callback();
-    };
+    return pointwiseProcessor(transform);
   }
   function ccChannel(channel, adjustment) {
     const adj = adjustment / 100;
@@ -32803,18 +32864,7 @@
       return this._scratchContext;
     },
     _applyPixelTransformInPlace: function(context, transform) {
-      withImageData(context, (imgData) => {
-        const pixels = imgData.data;
-        const out = [0, 0, 0, 0];
-        for (let i = 0, pxl = pixels.length; i < pxl; i += 4) {
-          transform(pixels[i], pixels[i + 1], pixels[i + 2], pixels[i + 3], out);
-          pixels[i] = out[0];
-          pixels[i + 1] = out[1];
-          pixels[i + 2] = out[2];
-          pixels[i + 3] = out[3];
-        }
-        return true;
-      });
+      withImageData(context, (image) => transformPixelBuffer(image, transform));
     },
     THRESHOLDING: function(threshold) {
       if (threshold < 0 || threshold > 255) {
@@ -32975,7 +33025,7 @@
         out[1] = c[1];
         out[2] = c[2];
         out[3] = 255;
-      });
+      }, false);
     },
     COLORMAP_PRESET: function(preset) {
       return getColormap(preset || "");
@@ -34972,7 +35022,7 @@
     if (key === previousKey) {
       return null;
     }
-    const processors = steps.map(([name, args]) => {
+    const processors = batchFilterProcessors(steps.map(([name, args]) => {
       if (name === "MORPHOLOGICAL_OPERATION") {
         args = [args[0], args[1] === "dilate" ? Math.max : Math.min];
       } else if (name === "CONVOLUTION") {
@@ -34981,7 +35031,7 @@
         args = [Filters.COLORMAP_PRESET(args[0]), args[1]];
       }
       return Filters[name](...args);
-    });
+    }));
     return { key, options: { filters: processors.length ? { processors } : [], loadMode: "sync" } };
   };
   window.Diva = Diva;

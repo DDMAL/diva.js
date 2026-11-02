@@ -603,6 +603,47 @@ navigation and loading contracts. This is not a confirmed memory leak.
   Step 9 (compatible-stage batching) is not implemented. Existing unrelated
   working-tree changes, including `testing/index.html`, remain untouched.
 
+### Step 9 — Complete (2026-11-02)
+
+- Added internal pointwise-transform metadata and adjacent-stage batching in
+  `src/filters.ts`; `buildFilterOptions` applies it only after effective-settings
+  comparison. Existing public API, processor reuse, ordering, defaults, and PCA
+  instance/basis lifecycle are unchanged. Individual processors remain callable
+  with their original canvas/callback contract.
+- Fully opaque tiles in normal, unclipped tile contexts use one canvas read/write
+  per compatible run, retaining separate typed-buffer passes and intermediate
+  byte conversion. Transparent tiles retain the original boundaries, reusing the
+  initial read for their first stage. Non-default drawing state also falls back.
+  There is no LUT composition or cross-stage loop fusion.
+- PCA, neighborhood filters, colormaps, no-ops, and unknown/custom processors keep
+  their own boundaries. Colormaps remain separate even when opaque to preserve
+  partial-stage behavior for invalid caller-supplied tables. Asynchronous custom
+  processors still use the existing generation-checked callback pipeline.
+- Added `browser-tests/filter-batching.spec.ts` for exact staged/batched pixel
+  comparisons, clipping/rounding/alpha edge cases, operation counts, custom drawing
+  state, read/table errors, PCA fallback/learned basis streams, and superseded
+  tile callbacks. Extended Page View tests to assert batching and retain the
+  unchanged transparent golden output; two-viewer tests now mix opaque and
+  transparent batched chains, removal/reapplication, and changing dimensions.
+- Four-stage tone chain read/write pairs: **4 → 1 on opaque tiles**, **4 → 4 on
+  transparent tiles**. Matched optimized-module medians: opaque 256×256
+  **0.85–0.9 → 0.6 ms**, opaque 512×512 **3.3 → 2.2 ms**. Transparent fallback
+  provides no speedup; scanning a nearly opaque tile can add a small cost.
+  See `browser-tests/OPTIMIZATION_BASELINE.md` for workloads and raw-sample access.
+- IIFE minified/gzip: **290,222 / 85,322 → 290,829 / 85,612 bytes**.
+  ESM minified/gzip: **290,249 / 85,343 → 290,856 / 85,632 bytes**.
+- Validation: **165 browser tests passed, one existing OSD-5-specific skip**;
+  **50 Elm tests**, TypeDoc, strict TypeScript, public type tests, Elm review,
+  source formatting, and diff checks passed. Production/debug bundles and internal
+  declarations rebuilt. The first full run hit the known nearby-thumbnail
+  request-count transient on OSD 5; six focused repetitions and the full rerun
+  passed. No browser environment limitations encountered.
+- Decision: keep. The 607-byte minified / 289–290-byte gzip increase is justified
+  by fewer canvas round-trips and measured opaque-chain throughput, with exact
+  tested pixels and conservative fallback. Step 10 (optional PCA cleanup) and
+  Step 11 (retention investigation) remain separate. Existing unrelated changes,
+  including `testing/index.html`, are untouched.
+
 Append a short entry when each step is implemented:
 
 ```text

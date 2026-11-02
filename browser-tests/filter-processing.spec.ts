@@ -160,7 +160,9 @@ test("isolates scratch work and original pixels across two viewers and tile size
     const osd = (testInfo.project.metadata.osdVersion as string).startsWith("5") ? "openseadragon5" : "openseadragon";
     await page.addScriptTag({url : `/node_modules/${osd}/build/openseadragon/openseadragon.min.js`});
     const result = await page.evaluate(() => {
-        const {Filters, setFilterOptions} = (window as any).ProcessingFilters;
+        const {Filters, setFilterOptions, batchFilterProcessors} = (window as any).ProcessingFilters;
+        // Historical DIVA_FILTER_SOURCE snapshots predate the batching helper.
+        const optimize = batchFilterProcessors || ((processors: any[]) => processors);
         const createViewer = () => {
             const element = document.createElement("div");
             element.style.cssText = "width:200px;height:200px";
@@ -168,16 +170,16 @@ test("isolates scratch work and original pixels across two viewers and tile size
             return (window as any).OpenSeadragon({element, drawer : "canvas", showNavigationControl : false});
         };
         const viewers = [createViewer(), createViewer()];
-        const chain = () => [Filters.BRIGHTNESS(0.5), Filters.MORPHOLOGICAL_OPERATION(3, Math.max),
-                             Filters.CONVOLUTION([0, -1, 0, -1, 5, -1, 0, -1, 0]), Filters.INVERT()];
-        const contexts = [[3, 7], [19, 2], [1, 1], [2, 31]].map(([width, height]) => {
+        const chain = () => [Filters.BRIGHTNESS(0.5), Filters.GAMMA(0.8), Filters.MORPHOLOGICAL_OPERATION(3, Math.max),
+                             Filters.CONVOLUTION([0, -1, 0, -1, 5, -1, 0, -1, 0]), Filters.CONTRAST(1.3), Filters.INVERT()];
+        const contexts = [[3, 7], [19, 2], [1, 1], [2, 31]].map(([width, height], tileIndex) => {
             const canvas = document.createElement("canvas");
             canvas.width = width;
             canvas.height = height;
             const context = canvas.getContext("2d", {willReadFrequently : true})!;
             const image = context.createImageData(width, height);
             for (let p = 0; p < width * height; p += 1)
-                image.data.set([p % 256, (p * 17) % 256, (p * 31) % 256, [0, 1, 127, 255][p % 4]], p * 4);
+                image.data.set([p % 256, (p * 17) % 256, (p * 31) % 256, tileIndex % 2 ? 255 : [0, 1, 127, 255][p % 4]], p * 4);
             context.putImageData(image, 0, 0);
             return context;
         });
@@ -195,13 +197,13 @@ test("isolates scratch work and original pixels across two viewers and tile size
             return pixels(work);
         });
         const draw = (index: number) => viewers[index % 2].raiseEvent("tile-drawing", {tile : {}, rendered : contexts[index]});
-        for (const viewer of viewers) setFilterOptions(viewer, {filters : {processors : chain()}});
+        for (const viewer of viewers) setFilterOptions(viewer, {filters : {processors : optimize(chain())}});
         for (let i = 0; i < contexts.length; i += 1) draw(i);
         const filtered = contexts.map(pixels);
         for (const viewer of viewers) setFilterOptions(viewer, {filters : []});
         for (let i = contexts.length - 1; i >= 0; i -= 1) draw(i);
         const restored = contexts.map(pixels);
-        for (const viewer of viewers) setFilterOptions(viewer, {filters : {processors : chain()}});
+        for (const viewer of viewers) setFilterOptions(viewer, {filters : {processors : optimize(chain())}});
         for (let i = contexts.length - 1; i >= 0; i -= 1) draw(i);
         const reapplied = contexts.map(pixels);
         const alpha = [Filters.GREYSCALE(), Filters.THRESHOLDING(128), Filters.COLORMAP(Array.from({length : 256}, (_, i) => [i, i, i]), 128)]

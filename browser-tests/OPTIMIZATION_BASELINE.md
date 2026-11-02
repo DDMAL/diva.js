@@ -375,3 +375,89 @@ Full validation: **151 browser tests passed, one existing OSD-5-specific skip**;
 formatting, and diff checks passed. Production/debug bundles were rebuilt. No
 browser environment limitations encountered. Decision: keep; Step 9 remains
 separate.
+
+## Step 9 comparison — 2026-11-02
+
+`buildFilterOptions` now groups adjacent known pointwise processors after its
+existing effective-settings comparison. A private `WeakMap` associates built-in
+processors with their buffer transforms; unknown processors are never assumed
+synchronous or batchable. PCA, neighborhood filters, colormaps, and no-ops remain
+separate. Individual processors still use the original canvas/callback interface.
+
+For fully opaque tiles in normal tile-context drawing state, each compatible run
+reads and writes once. Separate buffer passes preserve order and every intermediate
+`Uint8ClampedArray` conversion. If any pixel has alpha below 255, all stage
+boundaries in that run are retained; the opacity-check read is reused for its
+first stage, so fallback does not add a canvas read. Non-default global alpha,
+compositing, transform, filter, or shadow state also takes the original path.
+This internal optimization assumes the unclipped contexts used for Page View
+tile imagery; it is not a general canvas-state optimizer. There is no LUT
+composition or cross-stage loop fusion.
+
+### Correctness and operation counts
+
+`filter-batching.spec.ts` compares batched and directly invoked stages for RGB
+LUTs, channel LUTs, arithmetic/colour pointwise transforms, alpha-forcing filters,
+and chains separated by convolution, morphology, colormaps, or PCA. It covers
+half-values/clipping, alpha 0/1/2/63/127/128/254/255, changing dimensions, and a
+single non-opaque final pixel (the worst-case opacity scan). Additional tests
+cover custom processors/drawing state, exceptions and partial-stage output,
+PCA fallback/learned basis streams, and generation cancellation while an
+asynchronous custom stage holds a tile callback. Two actual OSD viewers exercise
+interleaved opaque/transparent chains, original restoration, and reapplication.
+
+The four-stage brightness → contrast → gamma → invert chain performs:
+
+| Input | Reads before → after | Writes before → after |
+| --- | ---: | ---: |
+| Fully opaque tile | 4 → 1 | 4 → 1 |
+| Tile containing transparency | 4 → 4 | 4 → 4 |
+
+Page View integration asserts these counts using its real configured processors
+and compares transparent output to the unchanged Step 0 golden fixture.
+Processor-count expectations were adjusted only where adjacent stages now share
+a wrapper; orientation changes still reuse wrappers and PCA instances.
+
+### Matched measurements
+
+HeadlessChrome **149.0.7827.55**, macOS, one worker; real filter module bundled by
+esbuild with minification, IIFE, ES2019. Each chain gets **10 warmups and 20
+recorded samples**. Within each run, staged and batched order alternates on the
+same deterministic canvas/seed. Standalone processing uses no OSD APIs; the two
+configured projects repeat the same workload. Medians in milliseconds:
+
+| Tone-chain input | OSD-5 project staged → batch | OSD-6 project staged → batch |
+| --- | ---: | ---: |
+| 256×256 opaque | 0.90 → 0.60 | 0.85 → 0.60 |
+| 512×512 opaque | 3.30 → 2.20 | 3.30 → 2.20 |
+| 256×256 mixed alpha | 0.80 → 0.90 | 0.80 → 0.80 |
+| 512×512 mixed alpha | 3.20 → 3.30 | 3.30 → 3.30 |
+| 256×256 non-opaque final pixel | 0.80 → 0.80 | 0.80 → 0.80 |
+| 512×512 non-opaque final pixel | 3.25 → 3.40 | 3.30 → 3.40 |
+
+Only opaque runs show a benefit. Transparent fallback can cost a little more,
+particularly when the scan reaches the final pixel (about 3–5% at 512×512 in this
+sample); the 0.1 ms timer resolution also makes tiny differences noisy. No
+end-to-end Page View speedup is claimed, and no wall-clock threshold is asserted.
+The test attaches raw samples and browser information for repeat comparisons:
+
+```sh
+yarn -s playwright test browser-tests/filter-batching.spec.ts --workers=1
+yarn -s playwright test browser-tests/filter-invalidation.spec.ts browser-tests/filter-processing.spec.ts --workers=1
+```
+
+| Production artifact | Minified bytes before → after | Gzip bytes before → after |
+| --- | ---: | ---: |
+| `build/diva.js` | 290,222 → 290,829 | 85,322 → 85,612 |
+| `build/diva.esm.js` | 290,249 → 290,856 | 85,343 → 85,632 |
+
+The 607-byte minified / 289–290-byte gzip increase buys reduced canvas traffic
+and measured opaque-chain throughput. Production/debug artifacts and internal
+declarations were regenerated.
+
+Full validation: **165 browser tests passed, one existing OSD-5-specific skip**;
+50 Elm tests, TypeDoc, strict TypeScript, public type tests, Elm review, source
+formatting, and diff checks passed. The first full run hit the previously seen
+nearby-thumbnail request-count transient on OSD 5; six focused repetitions and
+the full rerun passed. No browser environment limitations encountered. Decision:
+keep; optional PCA cleanup and page-retention investigation remain separate.

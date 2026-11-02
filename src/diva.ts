@@ -7,7 +7,7 @@ import { Elm } from "../cache/elm-esm.js";
 
 import { AnnotationIndex } from "./annotation-index";
 import { AuthBrowser, type ResolvedTileSource, type TileSourceDescriptor } from "./auth";
-import { type FilterOptions, type FilterProcessor, Filters, setFilterOptions } from "./filters";
+import { batchFilterProcessors, type FilterOptions, type FilterProcessor, Filters, setFilterOptions } from "./filters";
 import { iiifImageRegionUrl } from "./image-utils";
 import type {
     DivaAnnotation,
@@ -2545,7 +2545,7 @@ const buildFilterOptions = (
         return null;
     }
 
-    const processors = steps.map(([name, args]) => {
+    const processors = batchFilterProcessors(steps.map(([name, args]) => {
         if (name === "MORPHOLOGICAL_OPERATION")
         {
             args = [args[0], args[1] === "dilate" ? Math.max : Math.min];
@@ -2559,7 +2559,7 @@ const buildFilterOptions = (
             args = [Filters.COLORMAP_PRESET(args[0]), args[1]];
         }
         return (Filters[name] as (...values: any[]) => FilterProcessor)(...args);
-    });
+    }));
     return { key, options: { filters: processors.length ? { processors } : [], loadMode: "sync" } };
 };
 

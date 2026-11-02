@@ -23,6 +23,8 @@
 
 export type FilterProcessor = (context: CanvasRenderingContext2D, callback: () => void) => void;
 type PixelTransformInPlace = (r: number, g: number, b: number, a: number, out: number[]) => void;
+type PixelBufferTransform = (image: ImageData) => boolean;
+const pointwiseTransforms = new WeakMap<FilterProcessor, PixelBufferTransform>();
 type ResettableItem = {
     reset: () => void;
 };
@@ -57,6 +59,90 @@ export function setFilterOptions(viewer: any, options: FilterOptions): void
     {
         setOptions(viewer.filterPluginInstance, options || {});
     }
+}
+
+// Internal Page View optimization. Tile contexts have no clipping region.
+// Unknown/custom processors remain independent, including asynchronous ones.
+export function batchFilterProcessors(processors: FilterProcessor[]): FilterProcessor[]
+{
+    const result: FilterProcessor[] = [];
+    for (let start = 0; start < processors.length;)
+    {
+        let end = start;
+        while (end < processors.length && pointwiseTransforms.has(processors[end]))
+        {
+            end += 1;
+        }
+        if (end - start < 2)
+        {
+            result.push(processors[start]);
+            start += 1;
+        }
+        else
+        {
+            result.push(batchPointwiseProcessors(processors.slice(start, end)));
+            start = end;
+        }
+    }
+    return result;
+}
+
+function batchPointwiseProcessors(processors: FilterProcessor[]): FilterProcessor
+{
+    const transforms = processors.map(processor => pointwiseTransforms.get(processor) as PixelBufferTransform);
+    return (context, callback) => {
+        let batched = false;
+        let first = 0;
+        // Non-default drawing state can change even opaque pixels at every
+        // canvas boundary. Only the normal tile-context state can be batched.
+        if (
+            context.globalAlpha === 1 && context.globalCompositeOperation === "source-over"
+            && context.getTransform().isIdentity && (!context.filter || context.filter === "none")
+            && context.shadowColor === "rgba(0, 0, 0, 0)"
+        )
+        {
+            withImageData(context, (image) => {
+                batched = true;
+                for (let i = 3; i < image.data.length; i += 4)
+                {
+                    if (image.data[i] !== 255)
+                    {
+                        batched = false;
+                        break;
+                    }
+                }
+                // Transparent tiles keep the original premultiplication and
+                // canvas round-trips. Reuse this read for their first stage.
+                for (let i = 0; i < (batched ? transforms.length : 1); i += 1)
+                {
+                    transforms[i](image);
+                }
+                return true;
+            });
+            first = 1;
+        }
+        if (!batched)
+        {
+            for (let i = first; i < processors.length; i += 1)
+            {
+                processors[i](context, () => {});
+            }
+        }
+        callback();
+    };
+}
+
+function pointwiseProcessor(transform: PixelBufferTransform, batchable = true): FilterProcessor
+{
+    const processor: FilterProcessor = (context, callback) => {
+        withImageData(context, transform);
+        callback();
+    };
+    if (batchable)
+    {
+        pointwiseTransforms.set(processor, transform);
+    }
+    return processor;
 }
 
 function readImageDataFromContext(context: CanvasRenderingContext2D): ImageData
@@ -518,13 +604,24 @@ const boxBlur = (
     return output;
 };
 
-function applyPixelTransformInPlace(transform: PixelTransformInPlace): FilterProcessor
+function applyPixelTransformInPlace(transform: PixelTransformInPlace, batchable = true): FilterProcessor
 {
-    return function(context: CanvasRenderingContext2D, callback: () => void): void
+    return pointwiseProcessor(image => transformPixelBuffer(image, transform), batchable);
+}
+
+function transformPixelBuffer(image: ImageData, transform: PixelTransformInPlace): boolean
+{
+    const pixels = image.data;
+    const out = [0, 0, 0, 0];
+    for (let i = 0; i < pixels.length; i += 4)
     {
-        Filters._applyPixelTransformInPlace(context, transform);
-        callback();
-    };
+        transform(pixels[i], pixels[i + 1], pixels[i + 2], pixels[i + 3], out);
+        pixels[i] = out[0];
+        pixels[i + 1] = out[1];
+        pixels[i + 2] = out[2];
+        pixels[i + 3] = out[3];
+    }
+    return true;
 }
 
 function buildLuminance(data: Uint8ClampedArray, width: number, height: number): Uint8ClampedArray
@@ -1220,10 +1317,7 @@ function applyRgbLUT(lut: number[]): FilterProcessor
         }
         return true;
     };
-    return (context, callback) => {
-        withImageData(context, transform);
-        callback();
-    };
+    return pointwiseProcessor(transform);
 }
 
 function applyChannelLUT(channel: number, lut: number[]): FilterProcessor
@@ -1237,10 +1331,7 @@ function applyChannelLUT(channel: number, lut: number[]): FilterProcessor
         }
         return true;
     };
-    return (context, callback) => {
-        withImageData(context, transform);
-        callback();
-    };
+    return pointwiseProcessor(transform);
 }
 
 function ccChannel(channel: number, adjustment: number): FilterProcessor
@@ -1394,19 +1485,7 @@ export const Filters = {
     },
     _applyPixelTransformInPlace: function(context: CanvasRenderingContext2D, transform: PixelTransformInPlace): void
     {
-        withImageData(context, (imgData) => {
-            const pixels = imgData.data;
-            const out = [0, 0, 0, 0];
-            for (let i = 0, pxl = pixels.length; i < pxl; i += 4)
-            {
-                transform(pixels[i], pixels[i + 1], pixels[i + 2], pixels[i + 3], out);
-                pixels[i] = out[0];
-                pixels[i + 1] = out[1];
-                pixels[i + 2] = out[2];
-                pixels[i + 3] = out[3];
-            }
-            return true;
-        });
+        withImageData(context, image => transformPixelBuffer(image, transform));
     },
     THRESHOLDING: function(threshold: number): FilterProcessor
     {
@@ -1599,6 +1678,7 @@ export const Filters = {
             }
             resampledCmap[i] = cmap[position];
         }
+        // Caller-supplied tables can throw; retain their original stage boundary.
         return applyPixelTransformInPlace((r: number, g: number, b: number, _a: number, out: number[]) => {
             const v = (r + g + b) / 3 | 0;
             const c = resampledCmap[v];
@@ -1606,7 +1686,7 @@ export const Filters = {
             out[1] = c[1];
             out[2] = c[2];
             out[3] = 255;
-        });
+        }, false);
     },
     COLORMAP_PRESET: function(preset: string): number[][] | null
     {

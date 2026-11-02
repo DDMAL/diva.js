@@ -1,5 +1,6 @@
 import {expect, test} from "@playwright/test";
 import type {Page} from "@playwright/test";
+import filterPixels from "./fixtures/optimization-filter-pixels.json";
 import {installOptimizationRoutes, openOptimizationHarness, optimizationOrigin} from "./helpers/optimization-fixtures";
 
 const applyJson = async (page: Page, settings: Record<string, unknown>): Promise<void> => {
@@ -40,6 +41,36 @@ test.beforeEach(async ({page}, testInfo) => {
     })).toBe(true);
     await page.getByRole("button", {name : "Page View", exact : true}).click();
     await expect.poll(() => page.evaluate(() => (window as any).diva.filterViewer?.world.getItemCount())).toBe(1);
+});
+
+test("batches Page View tone filters and retains the transparent golden output", async ({page}) => {
+    await applyJson(page, {brightness : 17, contrast : 1.3, gamma : 0.8, invert : true});
+    const results = await page.evaluate(() => {
+        const processors = (window as any).diva.filterViewer.filterPluginInstance.filters.flatMap((filter: any) => filter.processors);
+        return [true, false].map(opaque => {
+            const canvas = document.createElement("canvas");
+            canvas.width = 8;
+            canvas.height = 4;
+            const context = canvas.getContext("2d", {willReadFrequently : true})!;
+            const seed = context.createImageData(8, 4);
+            const values = [0, 1, 2, 63, 127, 128, 254, 255];
+            for (let p = 0; p < 32; p += 1)
+                seed.data.set([values[p % 8], values[(p * 3 + 1) % 8], values[(p * 5 + 2) % 8],
+                               opaque ? 255 : [0, 1, 127, 255][Math.floor(p / 8)]], p * 4);
+            context.putImageData(seed, 0, 0);
+            const prototype = CanvasRenderingContext2D.prototype;
+            const get = prototype.getImageData;
+            let reads = 0;
+            prototype.getImageData = function(...args: Parameters<typeof get>) { reads += 1; return get.apply(this, args); };
+            try { for (const processor of processors) processor(context, () => {}); }
+            finally { prototype.getImageData = get; }
+            const bytes = context.getImageData(0, 0, 8, 4).data;
+            return {processors : processors.length, reads,
+                    pixels : Array.from({length : 32}, (_, p) => Array.from(bytes.slice(p * 4, p * 4 + 4)))};
+        });
+    });
+    expect(results[0]).toMatchObject({processors : 1, reads : 1});
+    expect(results[1]).toEqual({processors : 1, reads : 4, pixels : filterPixels.find(chain => chain.name === "tone")!.pixels});
 });
 
 test("saves the filtered Page View as PNG", async ({page}) => {
@@ -99,14 +130,14 @@ test("preserves pixel processors and PCA state for rotation, mirror and identica
     for (const transform of [{rotation : 30}, {rotation : 30, flip : true}, {rotation : 30, flip : true}])
     {
         await applyJson(page, {...settings, ...transform});
-        expect(await processorState(page)).toEqual({generation, count : 3, reused : true});
+        expect(await processorState(page)).toEqual({generation, count : 2, reused : true});
         expect(await pixels()).toEqual(before);
     }
     expect(await page.evaluate(() => ({rotation : (window as any).diva.filterViewer.viewport.getRotation(),
                                       flip : (window as any).diva.filterViewer.viewport.getFlip()})))
         .toEqual({rotation : 30, flip : true});
     await applyJson(page, {...settings, brightness : 24});
-    expect(await processorState(page)).toEqual({generation : generation + 1, count : 3, reused : false});
+    expect(await processorState(page)).toEqual({generation : generation + 1, count : 2, reused : false});
 });
 
 test("invalidates only enabled pixel inputs across all filter families", async ({page}) => {
