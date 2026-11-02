@@ -298,3 +298,80 @@ parsing, DOM construction and handler registration, and releasing stale panel
 content. Full validation: 137 browser tests passed with one existing skip; 46 Elm
 tests, TypeDoc, strict TypeScript, public types, Elm review, formatting, and diff
 checks passed. No browser environment limitations encountered.
+
+## Step 8 comparison — 2026-11-02
+
+Reused the existing canvas transaction rather than introducing a new pipeline:
+`withImageData` calls the shared snapshot reader, and the generic pixel transform
+uses `withImageData`. RGB and single-channel LUT processors now write directly to
+the pixel buffer without a per-pixel transform callback/output array. Tables stay
+as `number[]`; conversion still happens on assignment to `Uint8ClampedArray`.
+Canvas boundaries, stage ordering, alpha policies, PCA state, and callbacks remain
+unchanged. There is no batching or LUT composition in this change.
+
+### Correctness and operation counts
+
+The new `filter-processing.spec.ts` compares individual LUTs and chains with an
+independent pre-Step-8 canvas/transform reference, including fractional/clipped
+values, alpha 0/1/127/255, and dimensions 1×1, 3×7, 19×2, 256×4, and 2×1.
+Each active LUT stage still performs **one read, one put, two clears, and two
+draws**, and completes synchronously after writeback. No-op filters avoid reads;
+read exceptions propagate without completion. Two actual canvas-drawer OSD
+viewers are exercised with interleaved tile-drawing events and varying dimensions,
+including convolution/morphology, source restoration, and reapplication. The new
+spec passes against the unchanged pre-Step-8 source as well as the optimized one.
+
+Existing deterministic golden pixels were not changed. Existing filter lifecycle
+and auth suites cover source/settings replacement, PCA, credentials, and non-CORS
+blocking. A new Page View export smoke test checks that the save action exports
+the live drawer's PNG and expected filename; exact filter output is checked
+separately rather than relying on tile-load/animation timing in that smoke test.
+
+### Matched measurements
+
+Browser: HeadlessChrome **149.0.7827.55**, macOS; one worker. Both source versions
+were bundled directly with esbuild, minification enabled, IIFE, target ES2019.
+The workload is a deterministic **256×256** RGBA canvas, **10 warmups and 15
+recorded samples** per chain; numbers below are medians in milliseconds. Standalone
+processing uses no OSD APIs; the project columns are repeated runs under the two
+configured projects, not a comparison of OSD processing implementations.
+
+| Chain | OSD-5 project before → after | OSD-6 project before → after |
+| --- | ---: | ---: |
+| Brightness → contrast → gamma → invert | 2.1 → 0.8 | 2.2 → 0.8 |
+| Red gamma → green sigmoid → blue vibrance | 1.6 → 0.4 | 1.6 → 0.4 |
+| Brightness → saturation → invert | 1.8 → 0.6 | 1.8 → 0.7 |
+| Brightness → convolution → unsharp mask | 2.9 → 2.6 | 2.8 → 2.5 |
+
+Boundary consolidation was measured independently before LUT specialization
+(three warmups, ten samples): median RGB time 2.1 → 2.0–2.05 ms, channel 1.5 →
+1.5 ms, mixed 1.7 → 1.7 ms, neighborhood 2.9–3.15 → 2.9–3.5 ms. That short
+diagnostic run was noisy, especially during neighborhood-filter JIT warmup; no
+boundary-only speedup is claimed. The longer final matched runs above support
+keeping the combined change. These microbenchmarks do not establish an
+end-to-end Page View speedup and have no wall-clock test assertions.
+
+Reproduce from a source snapshot without replacing working-tree files:
+
+```sh
+# Choose an approved temporary path outside the repository.
+git show 3fa1e9a:src/filters.ts > "$BASELINE_FILTER_SOURCE"
+DIVA_FILTER_SOURCE="$BASELINE_FILTER_SOURCE" yarn -s playwright test browser-tests/filter-processing.spec.ts --workers=1
+yarn -s playwright test browser-tests/filter-processing.spec.ts --workers=1
+yarn -s playwright test browser-tests/filter-invalidation.spec.ts browser-tests/optimization-baseline.spec.ts --workers=1
+```
+
+The focused spec attaches raw timing samples and browser information to the
+Playwright results. Run baseline and current builds sequentially with identical
+settings, and repeat if host load changes substantially.
+
+| Production artifact | Minified bytes before → after | Gzip bytes before → after |
+| --- | ---: | ---: |
+| `build/diva.js` | 290,628 → 290,222 | 85,324 → 85,322 |
+| `build/diva.esm.js` | 290,655 → 290,249 | 85,344 → 85,343 |
+
+Full validation: **151 browser tests passed, one existing OSD-5-specific skip**;
+50 Elm tests, TypeDoc, strict TypeScript, public type tests, Elm review, source
+formatting, and diff checks passed. Production/debug bundles were rebuilt. No
+browser environment limitations encountered. Decision: keep; Step 9 remains
+separate.

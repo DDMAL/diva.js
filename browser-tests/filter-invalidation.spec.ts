@@ -42,6 +42,27 @@ test.beforeEach(async ({page}, testInfo) => {
     await expect.poll(() => page.evaluate(() => (window as any).diva.filterViewer?.world.getItemCount())).toBe(1);
 });
 
+test("saves the filtered Page View as PNG", async ({page}) => {
+    await applyJson(page, {brightness : 23, contrast : 1.3});
+    // Export smoke test: exact pixel processing is covered independently by the
+    // deterministic corpus; here the saved bytes must match the live drawer.
+    await page.evaluate(() => {
+        HTMLAnchorElement.prototype.click = function() {
+            const canvas = (window as any).diva.filterViewer.drawer.canvas as HTMLCanvasElement;
+            (window as any).savedFilteredView = {href : this.href, filename : this.download, expected : canvas.toDataURL("image/png")};
+        };
+    });
+    await page.getByRole("button", {name : "Save view", exact : true}).click();
+    await expect.poll(() => page.evaluate(() => Boolean((window as any).savedFilteredView))).toBe(true);
+    const saved = await page.evaluate(() => {
+        const {href, filename, expected} = (window as any).savedFilteredView;
+        return {matches : href === expected, png : href.startsWith("data:image/png;base64,"), filename};
+    });
+    expect(saved.matches).toBe(true);
+    expect(saved.png).toBe(true);
+    expect(saved.filename).toMatch(/^diva-filtered-\d+\.png$/);
+});
+
 test("preserves pixel processors and PCA state for rotation, mirror and identical settings", async ({page}) => {
     const settings = {brightness : 23, contrast : 1.3, pcaMode : "pca-rgb"};
     await applyJson(page, settings);

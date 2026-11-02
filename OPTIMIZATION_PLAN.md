@@ -236,26 +236,83 @@ searches, and unrelated model changes do not reconstruct every range view.
 
 ## Group D — Filter pipeline consolidation and batching
 
-### Step 8 — Consolidate processing scaffolding without batching yet
+### Step 8 — Reuse the canvas boundary and specialize LUT loops (no batching)
 
 **Locations:** `src/filters.ts` (`readImageDataFromContext`, `withImageData`,
-`_applyPixelTransformInPlace`, LUT-based filters).
+`_applyPixelTransformInPlace`, `applyChannelLUT`, brightness/contrast/gamma/invert).
 
-- Introduce a shared pixel-buffer processing boundary, preserving the existing
-  callback contract and synchronous processing behavior.
-- Consolidate repeated canvas access and RGB LUT application where beneficial.
-- Preserve alpha, canvas clearing/compositing, intermediate byte conversion, and
-  scratch-buffer ownership. Keep neighborhood filters' source copies distinct
-  from their writable output.
-- Leave the number and order of filter stages unchanged in this step.
+**Review update (2026-11-02):** A processing boundary already exists in
+`withImageData`. The useful change is to reuse it and remove duplicate canvas
+plumbing, not introduce a generic pipeline framework. LUT filters currently pay
+for a transform callback and four output-array assignments per pixel despite
+needing only direct indexed RGB writes. Specializing those loops is a separate,
+measurable opportunity within this step; it does not require batching.
 
-**Tests:** Deterministic pixel comparisons for individual filters and combinations,
-transparent pixels, varying tile dimensions, filter removal/reapplication, and
-multiple viewer instances. Exercise Page View, saving filtered images, anonymous
-and credentialed images, and non-CORS filter-access blocking.
+1. **Lock down existing behavior before refactoring.** Extend the deterministic
+   filter corpus against the unchanged implementation. Record per-stage canvas
+   operations and warmed-up throughput for RGB LUTs, single-channel LUTs, a mixed
+   pointwise chain, and a representative neighborhood chain. Keep correctness
+   assertions separate from diagnostic timing samples.
+2. **Reuse the existing transaction boundary.** Factor the repeated scratch-canvas
+   copy/read sequence through `readImageDataFromContext` where it simplifies the
+   code; route `_applyPixelTransformInPlace` through `withImageData`. Keep read-only
+   snapshot callers read-only, and preserve `withImageData`'s conditional writeback.
+   Keep buffer transforms independent of canvas access, with at most a per-stage
+   adapter call rather than a new per-pixel abstraction. Do not require every
+   processor factory to migrate merely for uniformity.
+3. **Specialize existing LUT application.** Add small direct buffer loops for a
+   common RGB LUT and a single-channel LUT. Reuse the RGB loop for brightness,
+   contrast, gamma, and invert; reuse the channel loop for existing channel LUT
+   factories. Select the channel outside the hot loop where practical. Preserve
+   existing LUT generation, validation, parameter handling, and no-op shortcuts.
+   Do not convert unrelated arithmetic filters to LUTs or compose tables here.
+4. **Measure the two changes separately.** Compare boundary consolidation first,
+   then the LUT specialization, using matched optimized builds and repeated,
+   warmed-up samples. Keep the specialization only if it improves throughput or
+   provides a clear maintenance benefit without a material regression. Record
+   minified/gzip sizes for both distributions; do not claim fewer canvas trips.
 
-**Done when:** The shared infrastructure produces equivalent output and creates
-a clear extension point for batching, without a material performance regression.
+**Behavioral constraints:**
+
+- Keep `FilterProcessor`'s signature and synchronous callback timing: one completion
+  callback after successful processing/writeback, including existing no-op paths.
+  Preserve exception propagation; do not add unconditional completion in `finally`.
+- Preserve every filter's alpha policy, not blanket alpha preservation:
+  greyscale, thresholding, and colormap currently force alpha to 255, while LUT
+  filters leave it unchanged. Preserve intermediate `Uint8ClampedArray` conversion
+  (including half-value rounding/clamping); do not substitute `Math.round`,
+  `clampByte`, or a differently typed LUT without proving equivalence.
+- Retain each stage's scratch clear/draw/read and put/target-clear/draw behavior.
+  Replacing scratch copies with direct target `getImageData`/`putImageData` is not
+  part of this change: transparency and compositing must remain equivalent.
+- Keep the existing synchronous scratch ownership model. Do not retain borrowed
+  scratch buffers across stages/callbacks or add per-viewer pools. Neighborhood
+  filters must keep source copies distinct from writable output. Test sequential
+  interleaving across viewers and changing dimensions; asynchronous/reentrant
+  scratch support is not a new requirement.
+- Leave stage count/order, canvas round-trips, PCA statistics/basis lifecycle, and
+  public API unchanged. No batching metadata, LUT composition, or loop fusion
+  across stages; those decisions belong to Step 9 or a separately measured follow-up.
+
+**Tests:** Extend `browser-tests/optimization-baseline.spec.ts` and its golden
+pixels, or add a focused filter-processing spec that bundles the real module using
+the existing test-only approach. Cover individual RGB and channel LUTs, half-value
+and clipping cases, alpha 0/1/127/255, alpha-forcing filters, and mixed chains with
+convolution/morphology. Add varying dimensions (including 1×1 and non-square tiles),
+sequentially interleaved canvases/processors, callback timing/counts, existing
+no-ops, and unchanged canvas operation counts. Capture expected output before
+the refactor; never regenerate goldens just to match changed output.
+
+Reuse the existing filter-invalidation and auth suites for removal/reapplication,
+PCA/source lifecycle, Page View, anonymous/credentialed images, and non-CORS
+blocking. Add focused coverage only where missing, including saving filtered
+images and two simultaneous viewer instances. Run browser checks on both OSD
+versions and the standard checks/builds before acceptance.
+
+**Done when:** Duplicate canvas plumbing and LUT application are reduced, exact
+pixel output and callback/lifecycle behavior are preserved, operation counts are
+unchanged, and matched measurements show no material performance regression.
+Step 9 can then consider batching without requiring a speculative framework here.
 
 ### Step 9 — Batch compatible filter stages
 
@@ -513,6 +570,38 @@ navigation and loading contracts. This is not a confirmed memory leak.
   stale panel cleanup. No environment limitations; no public API/dependency
   changes. Step 6 (thumbnail lazy boundaries) remains separate. The user's
   `testing/index.html` changes are untouched.
+
+### Step 8 — Complete (2026-11-02)
+
+- Reused `readImageDataFromContext` inside `withImageData`, and routed the generic
+  pixel-transform loop through that existing read/conditional-write boundary.
+  Read-only snapshots remain read-only; stage order/count and canvas operations
+  are unchanged. No new processing framework or batching metadata was introduced.
+- Added direct RGB and channel LUT loops. Brightness, contrast, gamma, and invert
+  share RGB application; existing alternate channel LUT filters use a stride-only
+  channel loop. LUT generation, parameter validation, byte conversion, alpha
+  behavior, no-op paths, callback timing, and PCA lifecycle are unchanged.
+- Added `browser-tests/filter-processing.spec.ts`: independent pre-Step-8 LUT
+  reference, half-value/clipping/transparency comparisons, operation counts,
+  synchronous callbacks/exception propagation, no-op read avoidance, changing tile
+  sizes, and interleaved filtering/removal/reapplication on two actual OSD viewers.
+  The focused spec also passes against the unchanged `3fa1e9a` source snapshot.
+  Added a Page View PNG-export smoke test; existing goldens were not changed.
+- Measured boundary consolidation separately before applying the LUT change.
+  Final matched minified-module samples (256×256 pixels, 10 warmups, 15 samples,
+  HeadlessChrome 149) showed median RGB-chain time **2.1–2.2 → 0.8 ms**, channel
+  chain **1.6 → 0.4 ms**, mixed pointwise chain **1.8 → 0.6–0.7 ms**, and
+  neighborhood chain **2.8–2.9 → 2.5–2.6 ms** across the two configured projects.
+  These are diagnostic kernel/canvas measurements, not end-to-end viewer timings.
+- Validation: **151 browser tests passed, one existing OSD-5-specific skip**;
+  **50 Elm tests**, TypeDoc, strict TypeScript, public type tests, Elm review,
+  source formatting, and diff checks passed. Production/debug bundles rebuilt.
+- IIFE minified/gzip: **290,628 / 85,324 → 290,222 / 85,322 bytes**.
+  ESM minified/gzip: **290,655 / 85,344 → 290,249 / 85,343 bytes**.
+- Decision: keep. Less duplicated canvas plumbing and faster LUT application,
+  with exact tested pixels, unchanged canvas round-trips, and smaller bundles.
+  Step 9 (compatible-stage batching) is not implemented. Existing unrelated
+  working-tree changes, including `testing/index.html`, remain untouched.
 
 Append a short entry when each step is implemented:
 

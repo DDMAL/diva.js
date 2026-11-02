@@ -11703,6 +11703,12 @@
       return _Utils_cmp(number, low) < 0 ? low : _Utils_cmp(number, high) > 0 ? high : number;
     }
   );
+  var $author$project$RangeIndex$Indexes = function(a) {
+    return { $: "Indexes", a };
+  };
+  var $author$project$RangeIndex$empty = $author$project$RangeIndex$Indexes(
+    { canvasIdsByRange: $elm$core$Dict$empty, firstPageIndexes: $elm$core$Dict$empty, labelBoundsByRange: $elm$core$Dict$empty, rangesByCanvas: $elm$core$Dict$empty, topLevelRanges: _List_Nil }
+  );
   var $elm$core$Set$empty = $elm$core$Set$Set_elm_builtin($elm$core$Dict$empty);
   var $elm$browser$Browser$Dom$getViewport = _Browser_withWindow(_Browser_getViewport);
   var $author$project$Auth$init = { activeInteractive: $elm$core$Maybe$Nothing, activePrompt: $elm$core$Maybe$Nothing, destroyed: false, familyStates: $elm$core$Dict$empty, flows: $elm$core$Dict$empty, nextOperation: 0, operations: $elm$core$Dict$empty, pending: $elm$core$Dict$empty, promptQueue: _List_Nil, sessions: $elm$core$Dict$empty, sources: $elm$core$Dict$empty };
@@ -15003,7 +15009,7 @@
         pages: _List_Nil,
         pendingPublicResource: $elm$core$Maybe$Nothing,
         pendingThumbScroll: $elm$core$Maybe$Nothing,
-        rangeIndexMap: $elm$core$Dict$empty,
+        rangeIndexes: $author$project$RangeIndex$empty,
         resourceResponse: $author$project$Model$ResourceLoading,
         response: $author$project$Model$Loading,
         rootElementId: flags.rootElementId,
@@ -18630,154 +18636,174 @@
   var $author$project$Model$Loaded = function(a) {
     return { $: "Loaded", a };
   };
-  var $rism_digital$elm_iiif$IIIF$Presentation$toManifest = function(_v0) {
-    var iiifManifest = _v0.b;
-    return iiifManifest;
-  };
-  var $rism_digital$elm_iiif$IIIF$Presentation$withManifest = F2(
-    function(accessor, manifest) {
-      return accessor(
-        $rism_digital$elm_iiif$IIIF$Presentation$toManifest(manifest)
-      );
-    }
-  );
-  var $rism_digital$elm_iiif$IIIF$Presentation$toCanvases = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
-    function($) {
-      return $.canvases;
-    }
-  );
-  var $author$project$Main$annotationSourcesForManifest = function(manifest) {
+  var $author$project$Main$annotationSourcesForCanvases = function(canvases) {
     return $elm$core$Dict$fromList(
       A2(
         $elm$core$List$map,
         function(canvas) {
           return _Utils_Tuple2(canvas.id, canvas.annotationSources);
         },
-        $rism_digital$elm_iiif$IIIF$Presentation$toCanvases(manifest)
+        canvases
       )
     );
   };
-  var $author$project$Main$rangeIndexMapForRange = F2(
-    function(canvasIndex, range) {
-      var _v4 = A2($author$project$Main$rangeItemsIndexMap, canvasIndex, range.items);
-      var firstIndex = _v4.a;
-      var childMap = _v4.b;
-      return A3($elm$core$Dict$insert, range.id, firstIndex, childMap);
-    }
-  );
-  var $author$project$Main$rangeItemsIndexMap = F2(
-    function(canvasIndex, items) {
+  var $author$project$RangeIndex$addCanvasMembership = F3(
+    function(canvasId, pathRev, state) {
       return A3(
-        $elm$core$List$foldl,
+        $elm$core$List$foldr,
         F2(
-          function(item, _v0) {
-            var maybeFirst = _v0.a;
-            var acc = _v0.b;
-            if (item.$ === "RangeCanvas") {
-              var canvasId = item.a;
-              var nextFirst = (function() {
-                if (maybeFirst.$ === "Just") {
-                  return maybeFirst;
-                } else {
-                  return A2($elm$core$Dict$get, canvasId, canvasIndex);
-                }
-              })();
-              return _Utils_Tuple2(nextFirst, acc);
-            } else {
-              var range = item.a;
-              var rangeMap = A2($author$project$Main$rangeIndexMapForRange, canvasIndex, range);
-              var nextFirst = (function() {
-                if (maybeFirst.$ === "Just") {
-                  return maybeFirst;
-                } else {
-                  return A2(
-                    $elm$core$Maybe$withDefault,
-                    $elm$core$Maybe$Nothing,
-                    A2($elm$core$Dict$get, range.id, rangeMap)
-                  );
-                }
-              })();
-              return _Utils_Tuple2(
-                nextFirst,
-                A2($elm$core$Dict$union, rangeMap, acc)
-              );
-            }
-          }
-        ),
-        _Utils_Tuple2($elm$core$Maybe$Nothing, $elm$core$Dict$empty),
-        items
-      );
-    }
-  );
-  var $author$project$Main$buildRangeIndexMap = F2(
-    function(canvasIndex, ranges) {
-      return A3(
-        $elm$core$List$foldl,
-        F2(
-          function(range, acc) {
-            return A2(
-              $elm$core$Dict$union,
-              A2($author$project$Main$rangeIndexMapForRange, canvasIndex, range),
-              acc
+          function(range, currentState) {
+            var seenIds = A2(
+              $elm$core$Maybe$withDefault,
+              $elm$core$Set$empty,
+              A2($elm$core$Dict$get, canvasId, currentState.rangeIdsByCanvas)
+            );
+            return A2($elm$core$Set$member, range.id, seenIds) ? currentState : _Utils_update(
+              currentState,
+              {
+                canvasIdsByRange: A3(
+                  $elm$core$Dict$update,
+                  range.id,
+                  function(maybeCanvasIds) {
+                    return $elm$core$Maybe$Just(
+                      A2(
+                        $elm$core$Set$insert,
+                        canvasId,
+                        A2($elm$core$Maybe$withDefault, $elm$core$Set$empty, maybeCanvasIds)
+                      )
+                    );
+                  },
+                  currentState.canvasIdsByRange
+                ),
+                rangeIdsByCanvas: A3(
+                  $elm$core$Dict$insert,
+                  canvasId,
+                  A2($elm$core$Set$insert, range.id, seenIds),
+                  currentState.rangeIdsByCanvas
+                ),
+                reversedRangesByCanvas: A3(
+                  $elm$core$Dict$update,
+                  canvasId,
+                  function(maybeRanges) {
+                    return $elm$core$Maybe$Just(
+                      A2(
+                        $elm$core$List$cons,
+                        range,
+                        A2($elm$core$Maybe$withDefault, _List_Nil, maybeRanges)
+                      )
+                    );
+                  },
+                  currentState.reversedRangesByCanvas
+                )
+              }
             );
           }
         ),
-        $elm$core$Dict$empty,
+        state,
+        pathRev
+      );
+    }
+  );
+  var $author$project$RangeIndex$firstJust = F2(
+    function(first, second) {
+      if (first.$ === "Just") {
+        return first;
+      } else {
+        return second;
+      }
+    }
+  );
+  var $author$project$RangeIndex$combine = F2(
+    function(earlier, later) {
+      return {
+        firstLabel: A2($author$project$RangeIndex$firstJust, earlier.firstLabel, later.firstLabel),
+        firstPageIndex: A2($author$project$RangeIndex$firstJust, earlier.firstPageIndex, later.firstPageIndex),
+        lastLabel: A2($author$project$RangeIndex$firstJust, later.lastLabel, earlier.lastLabel)
+      };
+    }
+  );
+  var $author$project$RangeIndex$emptySummary = { firstLabel: $elm$core$Maybe$Nothing, firstPageIndex: $elm$core$Maybe$Nothing, lastLabel: $elm$core$Maybe$Nothing };
+  var $author$project$RangeIndex$indexItem = F5(
+    function(canvasIndexes, canvasLabels, pathRev, item, _v1) {
+      var accumulated = _v1.a;
+      var state = _v1.b;
+      if (item.$ === "RangeCanvas") {
+        var canvasId = item.a;
+        var nextState = A3($author$project$RangeIndex$addCanvasMembership, canvasId, pathRev, state);
+        var canvasSummary = {
+          firstLabel: A2($elm$core$Dict$get, canvasId, canvasLabels),
+          firstPageIndex: A2($elm$core$Dict$get, canvasId, canvasIndexes),
+          lastLabel: A2($elm$core$Dict$get, canvasId, canvasLabels)
+        };
+        return _Utils_Tuple2(
+          A2($author$project$RangeIndex$combine, accumulated, canvasSummary),
+          nextState
+        );
+      } else {
+        var nestedRange = item.a;
+        var _v3 = A5($author$project$RangeIndex$walkRange, canvasIndexes, canvasLabels, pathRev, nestedRange, state);
+        var nestedSummary = _v3.a;
+        var nextState = _v3.b;
+        return _Utils_Tuple2(
+          A2($author$project$RangeIndex$combine, accumulated, nestedSummary),
+          nextState
+        );
+      }
+    }
+  );
+  var $author$project$RangeIndex$walkRange = F5(
+    function(canvasIndexes, canvasLabels, parentPathRev, range, state) {
+      var pathRev = A2($elm$core$List$cons, range, parentPathRev);
+      var _v0 = A3(
+        $elm$core$List$foldl,
+        A3($author$project$RangeIndex$indexItem, canvasIndexes, canvasLabels, pathRev),
+        _Utils_Tuple2($author$project$RangeIndex$emptySummary, state),
+        range.items
+      );
+      var summary = _v0.a;
+      var nextState = _v0.b;
+      var indexedState = _Utils_update(
+        nextState,
+        {
+          firstPageIndexes: A3($elm$core$Dict$insert, range.id, summary.firstPageIndex, nextState.firstPageIndexes),
+          labelBoundsByRange: A3(
+            $elm$core$Dict$insert,
+            range.id,
+            { firstLabel: summary.firstLabel, lastLabel: summary.lastLabel },
+            nextState.labelBoundsByRange
+          )
+        }
+      );
+      return _Utils_Tuple2(summary, indexedState);
+    }
+  );
+  var $author$project$RangeIndex$build = F3(
+    function(canvasIndexes, canvasLabels, ranges) {
+      var initialState = { canvasIdsByRange: $elm$core$Dict$empty, firstPageIndexes: $elm$core$Dict$empty, labelBoundsByRange: $elm$core$Dict$empty, rangeIdsByCanvas: $elm$core$Dict$empty, reversedRangesByCanvas: $elm$core$Dict$empty };
+      var finalState = A3(
+        $elm$core$List$foldl,
+        F2(
+          function(range, state) {
+            return A5($author$project$RangeIndex$walkRange, canvasIndexes, canvasLabels, _List_Nil, range, state).b;
+          }
+        ),
+        initialState,
         ranges
       );
-    }
-  );
-  var $rism_digital$elm_iiif$IIIF$Presentation$isPagedLayout = function(layout) {
-    if (layout.$ === "LayoutV2") {
-      var hint = layout.a;
-      if (hint.$ === "PagedHint") {
-        return true;
-      } else {
-        return false;
-      }
-    } else {
-      var behaviour = layout.a;
-      return A2($elm$core$List$member, $rism_digital$elm_iiif$IIIF$Presentation$PagedBehavior, behaviour);
-    }
-  };
-  var $author$project$Main$layoutConfigUpdated = _Platform_outgoingPort(
-    "layoutConfigUpdated",
-    function($) {
-      return $elm$json$Json$Encode$object(
-        _List_fromArray(
-          [
-            _Utils_Tuple2(
-              "direction",
-              $elm$json$Json$Encode$string($.direction)
-            ),
-            _Utils_Tuple2(
-              "mode",
-              $elm$json$Json$Encode$string($.mode)
-            )
-          ]
-        )
+      var rangesByCanvas = A2(
+        $elm$core$Dict$map,
+        F2(
+          function(_v0, reversed) {
+            return $elm$core$List$reverse(reversed);
+          }
+        ),
+        finalState.reversedRangesByCanvas
+      );
+      return $author$project$RangeIndex$Indexes(
+        { canvasIdsByRange: finalState.canvasIdsByRange, firstPageIndexes: finalState.firstPageIndexes, labelBoundsByRange: finalState.labelBoundsByRange, rangesByCanvas, topLevelRanges: ranges }
       );
     }
   );
-  var $author$project$Main$layoutModeToString = F2(
-    function(viewMode, shiftByOne) {
-      if (viewMode.$ === "OneUp") {
-        return "single";
-      } else {
-        return shiftByOne ? "spread-shift" : "spread";
-      }
-    }
-  );
-  var $rism_digital$elm_iiif$IIIF$Presentation$canvasAspect = function(canvas) {
-    var _v0 = _Utils_Tuple2(canvas.width, canvas.height);
-    if (_v0.a.$ === "Just" && _v0.b.$ === "Just") {
-      var w = _v0.a.a;
-      var h = _v0.b.a;
-      return w > 0 ? h / w : 1;
-    } else {
-      return 1;
-    }
-  };
   var $rism_digital$elm_iiif$IIIF$Language$extractTextFromLanguageMap = F2(
     function(lang, langMap) {
       return A2(
@@ -18861,6 +18887,57 @@
       return A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, $rism_digital$elm_iiif$IIIF$Language$Default, langMap);
     } else {
       return "Untitled";
+    }
+  };
+  var $rism_digital$elm_iiif$IIIF$Presentation$isPagedLayout = function(layout) {
+    if (layout.$ === "LayoutV2") {
+      var hint = layout.a;
+      if (hint.$ === "PagedHint") {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      var behaviour = layout.a;
+      return A2($elm$core$List$member, $rism_digital$elm_iiif$IIIF$Presentation$PagedBehavior, behaviour);
+    }
+  };
+  var $author$project$Main$layoutConfigUpdated = _Platform_outgoingPort(
+    "layoutConfigUpdated",
+    function($) {
+      return $elm$json$Json$Encode$object(
+        _List_fromArray(
+          [
+            _Utils_Tuple2(
+              "direction",
+              $elm$json$Json$Encode$string($.direction)
+            ),
+            _Utils_Tuple2(
+              "mode",
+              $elm$json$Json$Encode$string($.mode)
+            )
+          ]
+        )
+      );
+    }
+  );
+  var $author$project$Main$layoutModeToString = F2(
+    function(viewMode, shiftByOne) {
+      if (viewMode.$ === "OneUp") {
+        return "single";
+      } else {
+        return shiftByOne ? "spread-shift" : "spread";
+      }
+    }
+  );
+  var $rism_digital$elm_iiif$IIIF$Presentation$canvasAspect = function(canvas) {
+    var _v0 = _Utils_Tuple2(canvas.width, canvas.height);
+    if (_v0.a.$ === "Just" && _v0.b.$ === "Just") {
+      var w = _v0.a.a;
+      var h = _v0.b.a;
+      return w > 0 ? h / w : 1;
+    } else {
+      return 1;
     }
   };
   var $rism_digital$elm_iiif$IIIF$Image$createFormatComponent = function(fmt) {
@@ -19658,6 +19735,22 @@
       }
     }
   );
+  var $rism_digital$elm_iiif$IIIF$Presentation$toManifest = function(_v0) {
+    var iiifManifest = _v0.b;
+    return iiifManifest;
+  };
+  var $rism_digital$elm_iiif$IIIF$Presentation$withManifest = F2(
+    function(accessor, manifest) {
+      return accessor(
+        $rism_digital$elm_iiif$IIIF$Presentation$toManifest(manifest)
+      );
+    }
+  );
+  var $rism_digital$elm_iiif$IIIF$Presentation$toCanvases = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
+    function($) {
+      return $.canvases;
+    }
+  );
   var $author$project$Model$manifestToPages = F2(
     function(language, iiifManifest) {
       return A2(
@@ -19938,6 +20031,19 @@
       var layoutMode = A2($author$project$Main$layoutModeToString, viewMode, shiftByOne);
       var initialPageIndex = A2($author$project$Main$resolveInitialPageIndex, initialPage, pages);
       var direction = $author$project$Main$viewingDirectionToString(viewingDirection);
+      var canvases = $rism_digital$elm_iiif$IIIF$Presentation$toCanvases(manifest);
+      var canvasLabelMap = $elm$core$Dict$fromList(
+        A2(
+          $elm$core$List$map,
+          function(canvas) {
+            return _Utils_Tuple2(
+              canvas.id,
+              $rism_digital$elm_iiif$IIIF$Presentation$canvasLabel(canvas)
+            );
+          },
+          canvases
+        )
+      );
       var canvasIndexMap = $elm$core$Dict$fromList(
         A2(
           $elm$core$List$indexedMap,
@@ -19946,15 +20052,16 @@
               return _Utils_Tuple2(canvas.id, index);
             }
           ),
-          $rism_digital$elm_iiif$IIIF$Presentation$toCanvases(manifest)
+          canvases
         )
       );
-      var rangeIndexMap = A2(
-        $elm$core$Maybe$withDefault,
-        $elm$core$Dict$empty,
+      var rangeIndexes = A3(
+        $author$project$RangeIndex$build,
+        canvasIndexMap,
+        canvasLabelMap,
         A2(
-          $elm$core$Maybe$map,
-          $author$project$Main$buildRangeIndexMap(canvasIndexMap),
+          $elm$core$Maybe$withDefault,
+          _List_Nil,
           $rism_digital$elm_iiif$IIIF$Presentation$toRanges(manifest)
         )
       );
@@ -19978,7 +20085,7 @@
           model,
           {
             annotationLoading: $elm$core$Set$empty,
-            annotationSources: $author$project$Main$annotationSourcesForManifest(manifest),
+            annotationSources: $author$project$Main$annotationSourcesForCanvases(canvases),
             annotationsByCanvas: $elm$core$Dict$empty,
             auth: A2($author$project$Auth$registerSources, authSources, $author$project$Auth$init),
             currentZoom: $elm$core$Maybe$Nothing,
@@ -19988,7 +20095,7 @@
             isViewerLoading: false,
             pageViewOpen: false,
             pages,
-            rangeIndexMap,
+            rangeIndexes,
             response: $author$project$Model$Loaded(manifest),
             selectedIndex: $elm$core$List$isEmpty(pages) ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(initialPageIndex),
             shiftByOne,
@@ -29356,33 +29463,38 @@
     );
   };
   var $author$project$View$Sidebar$viewContentsEmptyBody = $author$project$View$Sidebar$viewContentsEmpty("No contents available.");
-  var $author$project$View$Sidebar$lookupRangeIndex = F2(
-    function(rangeIndexMap, rangeId) {
+  var $author$project$RangeIndex$topLevelRanges = function(_v0) {
+    var indexes = _v0.a;
+    return indexes.topLevelRanges;
+  };
+  var $author$project$RangeIndex$containsAnyCanvas = F3(
+    function(rangeId, canvasIds, _v0) {
+      var indexes = _v0.a;
+      return (function(rangeCanvasIds) {
+        return A2(
+          $elm$core$List$any,
+          function(canvasId) {
+            return A2($elm$core$Set$member, canvasId, rangeCanvasIds);
+          },
+          canvasIds
+        );
+      })(
+        A2(
+          $elm$core$Maybe$withDefault,
+          $elm$core$Set$empty,
+          A2($elm$core$Dict$get, rangeId, indexes.canvasIdsByRange)
+        )
+      );
+    }
+  );
+  var $author$project$RangeIndex$firstPageIndex = F2(
+    function(rangeId, _v0) {
+      var indexes = _v0.a;
       return A2(
         $elm$core$Maybe$withDefault,
         $elm$core$Maybe$Nothing,
-        A2($elm$core$Dict$get, rangeId, rangeIndexMap)
+        A2($elm$core$Dict$get, rangeId, indexes.firstPageIndexes)
       );
-    }
-  );
-  var $author$project$View$Sidebar$rangeContainsCanvas = F2(
-    function(canvasId, range) {
-      return A2(
-        $elm$core$List$any,
-        $author$project$View$Sidebar$rangeItemContainsCanvas(canvasId),
-        range.items
-      );
-    }
-  );
-  var $author$project$View$Sidebar$rangeItemContainsCanvas = F2(
-    function(canvasId, item) {
-      if (item.$ === "RangeCanvas") {
-        var idValue = item.a;
-        return _Utils_eq(idValue, canvasId);
-      } else {
-        var range = item.a;
-        return A2($author$project$View$Sidebar$rangeContainsCanvas, canvasId, range);
-      }
     }
   );
   var $author$project$Msg$UserClickedRange = function(a) {
@@ -29526,6 +29638,100 @@
       );
     }
   );
+  var $author$project$View$Sidebar$viewRangeItems = F5(
+    function(language, selectedRangeId, currentCanvasIds, rangeIndexes, items) {
+      var rendered = A2(
+        $elm$core$List$filterMap,
+        function(item) {
+          if (item.$ === "RangeCanvas") {
+            return $elm$core$Maybe$Nothing;
+          } else {
+            var range = item.a;
+            return $elm$core$Maybe$Just(
+              A6($elm$html$Html$Lazy$lazy5, $author$project$View$Sidebar$viewRangeNode, language, selectedRangeId, currentCanvasIds, rangeIndexes, range)
+            );
+          }
+        },
+        items
+      );
+      return $elm$core$List$isEmpty(rendered) ? _List_Nil : _List_fromArray(
+        [
+          A2(
+            $elm$html$Html$ul,
+            _List_fromArray(
+              [
+                $elm$html$Html$Attributes$class("diva-contents-list-nested diva-list-reset")
+              ]
+            ),
+            rendered
+          )
+        ]
+      );
+    }
+  );
+  var $author$project$View$Sidebar$viewRangeNode = F5(
+    function(language, selectedRangeId, currentCanvasIds, rangeIndexes, range) {
+      var maybeIndex = A2($author$project$RangeIndex$firstPageIndex, range.id, rangeIndexes);
+      var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, language, range.label);
+      var resolvedLabel = $elm$core$String$isEmpty(labelText) ? "[Untitled range]" : labelText;
+      var isExpanded = _Utils_eq(
+        selectedRangeId,
+        $elm$core$Maybe$Just(range.id)
+      );
+      var metadataBlock = isExpanded ? A2($author$project$View$Sidebar$viewRangeMetadata, language, range.metadata) : _List_Nil;
+      var isCurrent = A3($author$project$RangeIndex$containsAnyCanvas, range.id, currentCanvasIds, rangeIndexes);
+      var labelNode = A3($author$project$View$Sidebar$viewRangeButton, isCurrent, maybeIndex, resolvedLabel);
+      var headingNode = A2(
+        $elm$html$Html$div,
+        _List_fromArray(
+          [
+            $elm$html$Html$Attributes$class("diva-contents-heading")
+          ]
+        ),
+        _Utils_ap(
+          $elm$core$List$isEmpty(range.metadata) ? _List_Nil : _List_fromArray(
+            [
+              A3($author$project$View$Sidebar$viewRangeDisclosure, isExpanded, range.id, resolvedLabel)
+            ]
+          ),
+          _List_fromArray(
+            [labelNode]
+          )
+        )
+      );
+      var children = A5($author$project$View$Sidebar$viewRangeItems, language, selectedRangeId, currentCanvasIds, rangeIndexes, range.items);
+      return A2(
+        $elm$html$Html$li,
+        _List_fromArray(
+          [
+            $elm$html$Html$Attributes$class("diva-contents-item")
+          ]
+        ),
+        A2(
+          $elm$core$List$cons,
+          headingNode,
+          _Utils_ap(metadataBlock, children)
+        )
+      );
+    }
+  );
+  var $author$project$View$Sidebar$viewRangeList = F5(
+    function(language, selectedRangeId, currentCanvasIds, rangeIndexes, ranges) {
+      return A2(
+        $elm$html$Html$ul,
+        _List_fromArray(
+          [
+            $elm$html$Html$Attributes$class("diva-contents-list diva-list-reset")
+          ]
+        ),
+        A2(
+          $elm$core$List$map,
+          A5($elm$html$Html$Lazy$lazy5, $author$project$View$Sidebar$viewRangeNode, language, selectedRangeId, currentCanvasIds, rangeIndexes),
+          ranges
+        )
+      );
+    }
+  );
   var $author$project$Model$pageViewStartIndex = F3(
     function(viewMode, shiftByOne, index) {
       if (viewMode.$ === "OneUp") {
@@ -29575,117 +29781,15 @@
       )
     );
   };
-  var $author$project$View$Sidebar$viewRangeItems = F3(
-    function(model, rangeIndexMap, items) {
-      var rendered = A2(
-        $elm$core$List$filterMap,
-        function(item) {
-          if (item.$ === "RangeCanvas") {
-            return $elm$core$Maybe$Nothing;
-          } else {
-            var range = item.a;
-            return $elm$core$Maybe$Just(
-              A4($elm$html$Html$Lazy$lazy3, $author$project$View$Sidebar$viewRangeNode, model, rangeIndexMap, range)
-            );
-          }
-        },
-        items
-      );
-      return $elm$core$List$isEmpty(rendered) ? _List_Nil : _List_fromArray(
-        [
-          A2(
-            $elm$html$Html$ul,
-            _List_fromArray(
-              [
-                $elm$html$Html$Attributes$class("diva-contents-list-nested diva-list-reset")
-              ]
-            ),
-            rendered
-          )
-        ]
-      );
+  var $author$project$View$Sidebar$viewContentsIndexBody = function(model) {
+    var ranges = $author$project$RangeIndex$topLevelRanges(model.rangeIndexes);
+    if ($elm$core$List$isEmpty(ranges)) {
+      return $author$project$View$Sidebar$viewContentsEmptyBody;
+    } else {
+      var currentCanvasIds = $author$project$View$Sidebar$visibleCanvasIds(model);
+      return A5($author$project$View$Sidebar$viewRangeList, model.detectedLanguage, model.selectedRangeId, currentCanvasIds, model.rangeIndexes, ranges);
     }
-  );
-  var $author$project$View$Sidebar$viewRangeNode = F3(
-    function(model, rangeIndexMap, range) {
-      var maybeIndex = A2($author$project$View$Sidebar$lookupRangeIndex, rangeIndexMap, range.id);
-      var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, range.label);
-      var resolvedLabel = $elm$core$String$isEmpty(labelText) ? "[Untitled range]" : labelText;
-      var isExpanded = _Utils_eq(
-        model.selectedRangeId,
-        $elm$core$Maybe$Just(range.id)
-      );
-      var metadataBlock = isExpanded ? A2($author$project$View$Sidebar$viewRangeMetadata, model.detectedLanguage, range.metadata) : _List_Nil;
-      var isCurrent = A2(
-        $elm$core$List$any,
-        function(canvasId) {
-          return A2($author$project$View$Sidebar$rangeContainsCanvas, canvasId, range);
-        },
-        $author$project$View$Sidebar$visibleCanvasIds(model)
-      );
-      var labelNode = A3($author$project$View$Sidebar$viewRangeButton, isCurrent, maybeIndex, resolvedLabel);
-      var headingNode = A2(
-        $elm$html$Html$div,
-        _List_fromArray(
-          [
-            $elm$html$Html$Attributes$class("diva-contents-heading")
-          ]
-        ),
-        _Utils_ap(
-          $elm$core$List$isEmpty(range.metadata) ? _List_Nil : _List_fromArray(
-            [
-              A3($author$project$View$Sidebar$viewRangeDisclosure, isExpanded, range.id, resolvedLabel)
-            ]
-          ),
-          _List_fromArray(
-            [labelNode]
-          )
-        )
-      );
-      var children = A3($author$project$View$Sidebar$viewRangeItems, model, rangeIndexMap, range.items);
-      return A2(
-        $elm$html$Html$li,
-        _List_fromArray(
-          [
-            $elm$html$Html$Attributes$class("diva-contents-item")
-          ]
-        ),
-        A2(
-          $elm$core$List$cons,
-          headingNode,
-          _Utils_ap(metadataBlock, children)
-        )
-      );
-    }
-  );
-  var $author$project$View$Sidebar$viewRangeList = F3(
-    function(model, rangeIndexMap, ranges) {
-      return A2(
-        $elm$html$Html$ul,
-        _List_fromArray(
-          [
-            $elm$html$Html$Attributes$class("diva-contents-list diva-list-reset")
-          ]
-        ),
-        A2(
-          $elm$core$List$map,
-          A3($elm$html$Html$Lazy$lazy3, $author$project$View$Sidebar$viewRangeNode, model, rangeIndexMap),
-          ranges
-        )
-      );
-    }
-  );
-  var $author$project$View$Sidebar$viewContentsIndexBody = F2(
-    function(model, manifest) {
-      var _v0 = $rism_digital$elm_iiif$IIIF$Presentation$toRanges(manifest);
-      if (_v0.$ === "Just") {
-        var list = _v0.a;
-        return $elm$core$List$isEmpty(list) ? $author$project$View$Sidebar$viewContentsEmptyBody : A3($author$project$View$Sidebar$viewRangeList, model, model.rangeIndexMap, list);
-      } else {
-        return $author$project$View$Sidebar$viewContentsEmptyBody;
-      }
-    }
-  );
+  };
   var $author$project$Msg$UserSelectedContentsIndex = { $: "UserSelectedContentsIndex" };
   var $author$project$Msg$UserSelectedContentsPages = { $: "UserSelectedContentsPages" };
   var $author$project$View$Sidebar$viewContentsToggle = F2(
@@ -29777,119 +29881,51 @@
       )
     );
   };
-  var $author$project$View$Sidebar$rangesForCanvasInRange = F2(
-    function(canvasId, range) {
-      var nested = A2(
-        $elm$core$List$concatMap,
-        function(item) {
-          if (item.$ === "RangeCanvas") {
-            return _List_Nil;
-          } else {
-            var child = item.a;
-            return A2($author$project$View$Sidebar$rangesForCanvasInRange, canvasId, child);
-          }
-        },
-        range.items
-      );
-      return A2($author$project$View$Sidebar$rangeContainsCanvas, canvasId, range) ? A2($elm$core$List$cons, range, nested) : nested;
-    }
-  );
-  var $author$project$View$Sidebar$rangesForCanvas = F2(
-    function(canvasId, ranges) {
+  var $author$project$RangeIndex$rangesForCanvas = F2(
+    function(canvasId, _v0) {
+      var indexes = _v0.a;
       return A2(
-        $elm$core$List$concatMap,
-        $author$project$View$Sidebar$rangesForCanvasInRange(canvasId),
-        ranges
+        $elm$core$Maybe$withDefault,
+        _List_Nil,
+        A2($elm$core$Dict$get, canvasId, indexes.rangesByCanvas)
       );
     }
   );
   var $author$project$View$Sidebar$viewOnThisPageEmptyBody = $author$project$View$Sidebar$viewContentsEmpty("No ranges for this page.");
-  var $author$project$View$Sidebar$rangeCanvasIds = function(items) {
-    var step = F2(
-      function(pending, acc) {
-        step:
-          while (true) {
-            if (!pending.b) {
-              return $elm$core$List$reverse(acc);
-            } else {
-              if (!pending.a.b) {
-                var restStacks = pending.b;
-                var $temp$pending = restStacks, $temp$acc = acc;
-                pending = $temp$pending;
-                acc = $temp$acc;
-                continue step;
-              } else {
-                var _v1 = pending.a;
-                var item = _v1.a;
-                var rest = _v1.b;
-                var restStacks = pending.b;
-                if (item.$ === "RangeCanvas") {
-                  var idValue = item.a;
-                  var $temp$pending = A2($elm$core$List$cons, rest, restStacks), $temp$acc = A2($elm$core$List$cons, idValue, acc);
-                  pending = $temp$pending;
-                  acc = $temp$acc;
-                  continue step;
-                } else {
-                  var range = item.a;
-                  var $temp$pending = A2(
-                    $elm$core$List$cons,
-                    range.items,
-                    A2($elm$core$List$cons, rest, restStacks)
-                  ), $temp$acc = acc;
-                  pending = $temp$pending;
-                  acc = $temp$acc;
-                  continue step;
-                }
-              }
-            }
-          }
-      }
-    );
-    return A2(
-      step,
-      _List_fromArray(
-        [items]
-      ),
-      _List_Nil
-    );
-  };
-  var $author$project$View$Sidebar$rangeCanvasLabels = F2(
-    function(canvasLabelMap, range) {
+  var $author$project$RangeIndex$labelBounds = F2(
+    function(rangeId, _v0) {
+      var indexes = _v0.a;
       return A2(
-        $elm$core$List$filterMap,
-        function(idValue) {
-          return A2($elm$core$Dict$get, idValue, canvasLabelMap);
-        },
-        $author$project$View$Sidebar$rangeCanvasIds(range.items)
+        $elm$core$Maybe$withDefault,
+        { firstLabel: $elm$core$Maybe$Nothing, lastLabel: $elm$core$Maybe$Nothing },
+        A2($elm$core$Dict$get, rangeId, indexes.labelBoundsByRange)
       );
     }
   );
   var $author$project$View$Sidebar$viewOtpRangeItem = F3(
-    function(model, canvasLabelMap, range) {
-      var metadataBlock = A2($author$project$View$Sidebar$viewRangeMetadata, model.detectedLanguage, range.metadata);
-      var maybeIndex = A2($author$project$View$Sidebar$lookupRangeIndex, model.rangeIndexMap, range.id);
-      var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, model.detectedLanguage, range.label);
-      var canvasLabels = A2($author$project$View$Sidebar$rangeCanvasLabels, canvasLabelMap, range);
-      var firstLabel = $elm$core$List$head(canvasLabels);
-      var lastLabel = $elm$core$List$head(
-        $elm$core$List$reverse(canvasLabels)
-      );
+    function(language, rangeIndexes, range) {
+      var metadataBlock = A2($author$project$View$Sidebar$viewRangeMetadata, language, range.metadata);
+      var maybeIndex = A2($author$project$RangeIndex$firstPageIndex, range.id, rangeIndexes);
+      var labelText = A2($rism_digital$elm_iiif$IIIF$Language$extractLabelFromLanguageMap, language, range.label);
+      var _v0 = A2($author$project$RangeIndex$labelBounds, range.id, rangeIndexes);
+      var firstLabel = _v0.firstLabel;
+      var lastLabel = _v0.lastLabel;
       var rangePrefix = (function() {
-        var _v0 = _Utils_Tuple2(firstLabel, lastLabel);
-        if (_v0.a.$ === "Just") {
-          if (_v0.b.$ === "Just") {
-            var first = _v0.a.a;
-            var last = _v0.b.a;
+        var _v1 = _Utils_Tuple2(firstLabel, lastLabel);
+        if (_v1.a.$ === "Just") {
+          if (_v1.b.$ === "Just") {
+            var first = _v1.a.a;
+            var last = _v1.b.a;
             return _Utils_eq(first, last) ? "[" + (first + "] ") : "[" + (first + ("-" + (last + "] ")));
           } else {
-            var first = _v0.a.a;
-            var _v1 = _v0.b;
+            var first = _v1.a.a;
+            var _v2 = _v1.b;
             return "[" + (first + "] ");
           }
         } else {
-          if (_v0.b.$ === "Just") {
-            var _v2 = _v0.a;
-            var last = _v0.b.a;
+          if (_v1.b.$ === "Just") {
+            var _v3 = _v1.a;
+            var last = _v1.b.a;
             return "[" + (last + "] ");
           } else {
             return "";
@@ -29909,52 +29945,28 @@
       );
     }
   );
-  var $author$project$View$Sidebar$viewOnThisPageBody = F2(
-    function(model, manifest) {
-      var _v0 = $author$project$View$Sidebar$currentCanvasId(model);
-      if (_v0.$ === "Just") {
-        var canvasId = _v0.a;
-        var _v1 = $rism_digital$elm_iiif$IIIF$Presentation$toRanges(manifest);
-        if (_v1.$ === "Just") {
-          var list = _v1.a;
-          var matches = A2($author$project$View$Sidebar$rangesForCanvas, canvasId, list);
-          if ($elm$core$List$isEmpty(matches)) {
-            return $author$project$View$Sidebar$viewOnThisPageEmptyBody;
-          } else {
-            var canvasLabelMap = $elm$core$Dict$fromList(
-              A2(
-                $elm$core$List$map,
-                function(canvas) {
-                  return _Utils_Tuple2(
-                    canvas.id,
-                    $rism_digital$elm_iiif$IIIF$Presentation$canvasLabel(canvas)
-                  );
-                },
-                $rism_digital$elm_iiif$IIIF$Presentation$toCanvases(manifest)
-              )
-            );
-            return A2(
-              $elm$html$Html$ul,
-              _List_fromArray(
-                [
-                  $elm$html$Html$Attributes$class("diva-contents-list diva-list-reset")
-                ]
-              ),
-              A2(
-                $elm$core$List$map,
-                A2($author$project$View$Sidebar$viewOtpRangeItem, model, canvasLabelMap),
-                matches
-              )
-            );
-          }
-        } else {
-          return $author$project$View$Sidebar$viewOnThisPageEmptyBody;
-        }
-      } else {
-        return $author$project$View$Sidebar$viewOnThisPageEmptyBody;
-      }
+  var $author$project$View$Sidebar$viewOnThisPageBody = function(model) {
+    var _v0 = $author$project$View$Sidebar$currentCanvasId(model);
+    if (_v0.$ === "Just") {
+      var canvasId = _v0.a;
+      var matches = A2($author$project$RangeIndex$rangesForCanvas, canvasId, model.rangeIndexes);
+      return $elm$core$List$isEmpty(matches) ? $author$project$View$Sidebar$viewOnThisPageEmptyBody : A2(
+        $elm$html$Html$ul,
+        _List_fromArray(
+          [
+            $elm$html$Html$Attributes$class("diva-contents-list diva-list-reset")
+          ]
+        ),
+        A2(
+          $elm$core$List$map,
+          A2($author$project$View$Sidebar$viewOtpRangeItem, model.detectedLanguage, model.rangeIndexes),
+          matches
+        )
+      );
+    } else {
+      return $author$project$View$Sidebar$viewOnThisPageEmptyBody;
     }
-  );
+  };
   var $author$project$View$Sidebar$viewContentsContent = function(model) {
     var maybeManifest = $author$project$Model$currentManifest(model);
     var body = (function() {
@@ -29962,8 +29974,7 @@
       if (_v0.a.$ === "ContentsIndex") {
         if (_v0.b.$ === "Just") {
           var _v1 = _v0.a;
-          var manifest = _v0.b.a;
-          return A2($author$project$View$Sidebar$viewContentsIndexBody, model, manifest);
+          return $author$project$View$Sidebar$viewContentsIndexBody(model);
         } else {
           var _v2 = _v0.a;
           var _v3 = _v0.b;
@@ -29972,8 +29983,7 @@
       } else {
         if (_v0.b.$ === "Just") {
           var _v4 = _v0.a;
-          var manifest = _v0.b.a;
-          return A2($author$project$View$Sidebar$viewOnThisPageBody, model, manifest);
+          return $author$project$View$Sidebar$viewOnThisPageBody(model);
         } else {
           var _v5 = _v0.a;
           var _v6 = _v0.b;
@@ -30203,8 +30213,15 @@
       );
     }
   );
-  var $elm$virtual_dom$VirtualDom$lazy6 = _VirtualDom_lazy6;
-  var $elm$html$Html$Lazy$lazy6 = $elm$virtual_dom$VirtualDom$lazy6;
+  var $author$project$View$Sidebar$isThumbnailActive = F4(
+    function(viewMode, shiftByOne, selectedIndex, index) {
+      return A2(
+        $elm$core$List$member,
+        index,
+        A3($author$project$View$Sidebar$visiblePageIndexes, viewMode, shiftByOne, selectedIndex)
+      );
+    }
+  );
   var $elm$core$List$takeReverse = F3(
     function(n, list, kept) {
       takeReverse:
@@ -30380,26 +30397,8 @@
   var $author$project$Msg$UserClickedThumbnail = function(a) {
     return { $: "UserClickedThumbnail", a };
   };
-  var $author$project$View$Sidebar$isThumbnailActive = F4(
-    function(viewMode, shiftByOne, selectedIndex, index) {
-      return A2(
-        $elm$core$List$member,
-        index,
-        A3($author$project$View$Sidebar$visiblePageIndexes, viewMode, shiftByOne, selectedIndex)
-      );
-    }
-  );
-  var $author$project$View$Sidebar$viewThumbnail = F6(
-    function(auth, viewMode, shiftByOne, selectedIndex, index, page) {
-      var isActive = A4($author$project$View$Sidebar$isThumbnailActive, viewMode, shiftByOne, selectedIndex, index);
-      var hasChoices = $elm$core$List$length(page.images) > 1;
-      var crossOrigin = A2(
-        $elm$core$Maybe$andThen,
-        function(image) {
-          return A2($author$project$Auth$thumbnailCrossOrigin, image.sourceId, auth);
-        },
-        $author$project$Model$primaryImage(page)
-      );
+  var $author$project$View$Sidebar$viewThumbnail = F4(
+    function(isActive, crossOrigin, index, page) {
       var thumbnail = (function() {
         if (crossOrigin.$ === "Just") {
           var policy = crossOrigin.a;
@@ -30434,6 +30433,7 @@
           );
         }
       })();
+      var hasChoices = $elm$core$List$length(page.images) > 1;
       var attrs = _List_fromArray(
         [
           $elm$html$Html$Attributes$classList(
@@ -30503,7 +30503,27 @@
       var viewMode = _v0.viewMode;
       var viewingDirection = _v0.viewingDirection;
       var indexedPages = A2($elm$core$List$indexedMap, $elm$core$Tuple$pair, pages);
-      var orderedPages = _Utils_eq(viewingDirection, $rism_digital$elm_iiif$IIIF$Presentation$RightToLeft) ? A2($author$project$View$Sidebar$reverseInRows, 3, indexedPages) : indexedPages;
+      var thumbnailInputs = A2(
+        $elm$core$List$map,
+        function(_v2) {
+          var index = _v2.a;
+          var page = _v2.b;
+          return {
+            crossOrigin: A2(
+              $elm$core$Maybe$andThen,
+              function(image) {
+                return A2($author$project$Auth$thumbnailCrossOrigin, image.sourceId, auth);
+              },
+              $author$project$Model$primaryImage(page)
+            ),
+            index,
+            isActive: A4($author$project$View$Sidebar$isThumbnailActive, viewMode, shiftByOne, selectedIndex, index),
+            page
+          };
+        },
+        indexedPages
+      );
+      var orderedPages = _Utils_eq(viewingDirection, $rism_digital$elm_iiif$IIIF$Presentation$RightToLeft) ? A2($author$project$View$Sidebar$reverseInRows, 3, thumbnailInputs) : thumbnailInputs;
       return A2(
         $elm$html$Html$div,
         _List_fromArray(
@@ -30527,9 +30547,11 @@
         A2(
           $elm$core$List$map,
           function(_v1) {
-            var index = _v1.a;
-            var page = _v1.b;
-            return A7($elm$html$Html$Lazy$lazy6, $author$project$View$Sidebar$viewThumbnail, auth, viewMode, shiftByOne, selectedIndex, index, page);
+            var isActive = _v1.isActive;
+            var crossOrigin = _v1.crossOrigin;
+            var index = _v1.index;
+            var page = _v1.page;
+            return A5($elm$html$Html$Lazy$lazy4, $author$project$View$Sidebar$viewThumbnail, isActive, crossOrigin, index, page);
           },
           orderedPages
         )
@@ -32136,16 +32158,12 @@
     return lum;
   }
   function withImageData(context, handler) {
-    const width = context.canvas.width;
-    const height = context.canvas.height;
-    const scratchContext = Filters._ensureScratchContext(width, height);
-    scratchContext.clearRect(0, 0, width, height);
-    scratchContext.drawImage(context.canvas, 0, 0);
-    const imgData = scratchContext.getImageData(0, 0, width, height);
+    const imgData = readImageDataFromContext(context);
+    const scratchContext = Filters._scratchContext;
     const didChange = handler(imgData);
     if (didChange) {
       scratchContext.putImageData(imgData, 0, 0);
-      context.clearRect(0, 0, width, height);
+      context.clearRect(0, 0, imgData.width, imgData.height);
       context.drawImage(Filters._scratchCanvas, 0, 0);
     }
   }
@@ -32635,29 +32653,34 @@
     }
     return { r: Math.floor(r * 255), g: Math.floor(g * 255), b: Math.floor(b * 255) };
   }
+  function applyRgbLUT(lut) {
+    const transform = (imgData) => {
+      const pixels = imgData.data;
+      for (let i = 0; i < pixels.length; i += 4) {
+        pixels[i] = lut[pixels[i]];
+        pixels[i + 1] = lut[pixels[i + 1]];
+        pixels[i + 2] = lut[pixels[i + 2]];
+      }
+      return true;
+    };
+    return (context, callback) => {
+      withImageData(context, transform);
+      callback();
+    };
+  }
   function applyChannelLUT(channel, lut) {
-    if (channel === 0) {
-      return applyPixelTransformInPlace((r, g, b, a, out) => {
-        out[0] = lut[r];
-        out[1] = g;
-        out[2] = b;
-        out[3] = a;
-      });
-    }
-    if (channel === 1) {
-      return applyPixelTransformInPlace((r, g, b, a, out) => {
-        out[0] = r;
-        out[1] = lut[g];
-        out[2] = b;
-        out[3] = a;
-      });
-    }
-    return applyPixelTransformInPlace((r, g, b, a, out) => {
-      out[0] = r;
-      out[1] = g;
-      out[2] = lut[b];
-      out[3] = a;
-    });
+    const offset = channel === 0 ? 0 : channel === 1 ? 1 : 2;
+    const transform = (imgData) => {
+      const pixels = imgData.data;
+      for (let i = offset; i < pixels.length; i += 4) {
+        pixels[i] = lut[pixels[i]];
+      }
+      return true;
+    };
+    return (context, callback) => {
+      withImageData(context, transform);
+      callback();
+    };
   }
   function ccChannel(channel, adjustment) {
     const adj = adjustment / 100;
@@ -32780,24 +32803,18 @@
       return this._scratchContext;
     },
     _applyPixelTransformInPlace: function(context, transform) {
-      const width = context.canvas.width;
-      const height = context.canvas.height;
-      const scratchContext = this._ensureScratchContext(width, height);
-      scratchContext.clearRect(0, 0, width, height);
-      scratchContext.drawImage(context.canvas, 0, 0);
-      const imgData = scratchContext.getImageData(0, 0, width, height);
-      const pixels = imgData.data;
-      const out = [0, 0, 0, 0];
-      for (let i = 0, pxl = pixels.length; i < pxl; i += 4) {
-        transform(pixels[i], pixels[i + 1], pixels[i + 2], pixels[i + 3], out);
-        pixels[i] = out[0];
-        pixels[i + 1] = out[1];
-        pixels[i + 2] = out[2];
-        pixels[i + 3] = out[3];
-      }
-      scratchContext.putImageData(imgData, 0, 0);
-      context.clearRect(0, 0, width, height);
-      context.drawImage(this._scratchCanvas, 0, 0);
+      withImageData(context, (imgData) => {
+        const pixels = imgData.data;
+        const out = [0, 0, 0, 0];
+        for (let i = 0, pxl = pixels.length; i < pxl; i += 4) {
+          transform(pixels[i], pixels[i + 1], pixels[i + 2], pixels[i + 3], out);
+          pixels[i] = out[0];
+          pixels[i + 1] = out[1];
+          pixels[i + 2] = out[2];
+          pixels[i + 3] = out[3];
+        }
+        return true;
+      });
     },
     THRESHOLDING: function(threshold) {
       if (threshold < 0 || threshold > 255) {
@@ -32851,12 +32868,7 @@
       for (let i = 0; i < 256; i += 1) {
         precomputedBrightness[i] = i + adjustment;
       }
-      return applyPixelTransformInPlace((r, g, b, a, out) => {
-        out[0] = precomputedBrightness[r];
-        out[1] = precomputedBrightness[g];
-        out[2] = precomputedBrightness[b];
-        out[3] = a;
-      });
+      return applyRgbLUT(precomputedBrightness);
     },
     CC_RED: function(adjustment) {
       return ccChannel(0, adjustment);
@@ -32875,12 +32887,7 @@
       for (let i = 0; i < 256; i += 1) {
         precomputedContrast[i] = i * adjustment;
       }
-      return applyPixelTransformInPlace((r, g, b, a, out) => {
-        out[0] = precomputedContrast[r];
-        out[1] = precomputedContrast[g];
-        out[2] = precomputedContrast[b];
-        out[3] = a;
-      });
+      return applyRgbLUT(precomputedContrast);
     },
     GAMMA: function(adjustment) {
       if (adjustment < 0) {
@@ -32890,12 +32897,7 @@
       for (let i = 0; i < 256; i += 1) {
         precomputedGamma[i] = Math.pow(i / 255, adjustment) * 255;
       }
-      return applyPixelTransformInPlace((r, g, b, a, out) => {
-        out[0] = precomputedGamma[r];
-        out[1] = precomputedGamma[g];
-        out[2] = precomputedGamma[b];
-        out[3] = a;
-      });
+      return applyRgbLUT(precomputedGamma);
     },
     GREYSCALE: function() {
       return applyPixelTransformInPlace((r, g, b, _a, out) => {
@@ -32911,12 +32913,7 @@
       for (let i = 0; i < 256; i += 1) {
         precomputedInvert[i] = 255 - i;
       }
-      return applyPixelTransformInPlace((r, g, b, a, out) => {
-        out[0] = precomputedInvert[r];
-        out[1] = precomputedInvert[g];
-        out[2] = precomputedInvert[b];
-        out[3] = a;
-      });
+      return applyRgbLUT(precomputedInvert);
     },
     MORPHOLOGICAL_OPERATION: function(kernelSize, comparator) {
       if (kernelSize % 2 === 0) {

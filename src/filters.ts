@@ -540,17 +540,13 @@ function buildLuminance(data: Uint8ClampedArray, width: number, height: number):
 
 function withImageData(context: CanvasRenderingContext2D, handler: (imgData: ImageData) => boolean): void
 {
-    const width = context.canvas.width;
-    const height = context.canvas.height;
-    const scratchContext = Filters._ensureScratchContext(width, height);
-    scratchContext.clearRect(0, 0, width, height);
-    scratchContext.drawImage(context.canvas, 0, 0);
-    const imgData = scratchContext.getImageData(0, 0, width, height);
+    const imgData = readImageDataFromContext(context);
+    const scratchContext = Filters._scratchContext as CanvasRenderingContext2D;
     const didChange = handler(imgData);
     if (didChange)
     {
         scratchContext.putImageData(imgData, 0, 0);
-        context.clearRect(0, 0, width, height);
+        context.clearRect(0, 0, imgData.width, imgData.height);
         context.drawImage(Filters._scratchCanvas as HTMLCanvasElement, 0, 0);
     }
 }
@@ -1210,32 +1206,41 @@ function hsvToRGB(h: number, s: number, v: number): { r: number; g: number; b: n
     return { r: Math.floor(r * 255), g: Math.floor(g * 255), b: Math.floor(b * 255) };
 }
 
+function applyRgbLUT(lut: number[]): FilterProcessor
+{
+    const transform = (imgData: ImageData): boolean => {
+        const pixels = imgData.data;
+        // Assign directly to the clamped output, preserving its byte conversion
+        // rather than rounding or clamping the number[] LUT in advance.
+        for (let i = 0; i < pixels.length; i += 4)
+        {
+            pixels[i] = lut[pixels[i]];
+            pixels[i + 1] = lut[pixels[i + 1]];
+            pixels[i + 2] = lut[pixels[i + 2]];
+        }
+        return true;
+    };
+    return (context, callback) => {
+        withImageData(context, transform);
+        callback();
+    };
+}
+
 function applyChannelLUT(channel: number, lut: number[]): FilterProcessor
 {
-    if (channel === 0)
-    {
-        return applyPixelTransformInPlace((r: number, g: number, b: number, a: number, out: number[]) => {
-            out[0] = lut[r];
-            out[1] = g;
-            out[2] = b;
-            out[3] = a;
-        });
-    }
-    if (channel === 1)
-    {
-        return applyPixelTransformInPlace((r: number, g: number, b: number, a: number, out: number[]) => {
-            out[0] = r;
-            out[1] = lut[g];
-            out[2] = b;
-            out[3] = a;
-        });
-    }
-    return applyPixelTransformInPlace((r: number, g: number, b: number, a: number, out: number[]) => {
-        out[0] = r;
-        out[1] = g;
-        out[2] = lut[b];
-        out[3] = a;
-    });
+    const offset = channel === 0 ? 0 : channel === 1 ? 1 : 2;
+    const transform = (imgData: ImageData): boolean => {
+        const pixels = imgData.data;
+        for (let i = offset; i < pixels.length; i += 4)
+        {
+            pixels[i] = lut[pixels[i]];
+        }
+        return true;
+    };
+    return (context, callback) => {
+        withImageData(context, transform);
+        callback();
+    };
 }
 
 function ccChannel(channel: number, adjustment: number): FilterProcessor
@@ -1389,25 +1394,19 @@ export const Filters = {
     },
     _applyPixelTransformInPlace: function(context: CanvasRenderingContext2D, transform: PixelTransformInPlace): void
     {
-        const width = context.canvas.width;
-        const height = context.canvas.height;
-        const scratchContext = this._ensureScratchContext(width, height);
-        scratchContext.clearRect(0, 0, width, height);
-        scratchContext.drawImage(context.canvas, 0, 0);
-        const imgData = scratchContext.getImageData(0, 0, width, height);
-        const pixels = imgData.data;
-        const out = [0, 0, 0, 0];
-        for (let i = 0, pxl = pixels.length; i < pxl; i += 4)
-        {
-            transform(pixels[i], pixels[i + 1], pixels[i + 2], pixels[i + 3], out);
-            pixels[i] = out[0];
-            pixels[i + 1] = out[1];
-            pixels[i + 2] = out[2];
-            pixels[i + 3] = out[3];
-        }
-        scratchContext.putImageData(imgData, 0, 0);
-        context.clearRect(0, 0, width, height);
-        context.drawImage(this._scratchCanvas as HTMLCanvasElement, 0, 0);
+        withImageData(context, (imgData) => {
+            const pixels = imgData.data;
+            const out = [0, 0, 0, 0];
+            for (let i = 0, pxl = pixels.length; i < pxl; i += 4)
+            {
+                transform(pixels[i], pixels[i + 1], pixels[i + 2], pixels[i + 3], out);
+                pixels[i] = out[0];
+                pixels[i + 1] = out[1];
+                pixels[i + 2] = out[2];
+                pixels[i + 3] = out[3];
+            }
+            return true;
+        });
     },
     THRESHOLDING: function(threshold: number): FilterProcessor
     {
@@ -1472,12 +1471,7 @@ export const Filters = {
         {
             precomputedBrightness[i] = i + adjustment;
         }
-        return applyPixelTransformInPlace((r: number, g: number, b: number, a: number, out: number[]) => {
-            out[0] = precomputedBrightness[r];
-            out[1] = precomputedBrightness[g];
-            out[2] = precomputedBrightness[b];
-            out[3] = a;
-        });
+        return applyRgbLUT(precomputedBrightness);
     },
     CC_RED: function(adjustment: number): FilterProcessor
     {
@@ -1502,12 +1496,7 @@ export const Filters = {
         {
             precomputedContrast[i] = i * adjustment;
         }
-        return applyPixelTransformInPlace((r: number, g: number, b: number, a: number, out: number[]) => {
-            out[0] = precomputedContrast[r];
-            out[1] = precomputedContrast[g];
-            out[2] = precomputedContrast[b];
-            out[3] = a;
-        });
+        return applyRgbLUT(precomputedContrast);
     },
     GAMMA: function(adjustment: number): FilterProcessor
     {
@@ -1520,12 +1509,7 @@ export const Filters = {
         {
             precomputedGamma[i] = Math.pow(i / 255, adjustment) * 255;
         }
-        return applyPixelTransformInPlace((r: number, g: number, b: number, a: number, out: number[]) => {
-            out[0] = precomputedGamma[r];
-            out[1] = precomputedGamma[g];
-            out[2] = precomputedGamma[b];
-            out[3] = a;
-        });
+        return applyRgbLUT(precomputedGamma);
     },
     GREYSCALE: function(): FilterProcessor
     {
@@ -1544,12 +1528,7 @@ export const Filters = {
         {
             precomputedInvert[i] = 255 - i;
         }
-        return applyPixelTransformInPlace((r: number, g: number, b: number, a: number, out: number[]) => {
-            out[0] = precomputedInvert[r];
-            out[1] = precomputedInvert[g];
-            out[2] = precomputedInvert[b];
-            out[3] = a;
-        });
+        return applyRgbLUT(precomputedInvert);
     },
     MORPHOLOGICAL_OPERATION: function(kernelSize: number, comparator: (a: number, b: number) => number): FilterProcessor
     {
