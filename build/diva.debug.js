@@ -32490,33 +32490,41 @@
     const range1 = max1 - min1 || 1;
     const range2 = max2 - min2 || 1;
     const range3 = max3 - min3 || 1;
-    const toByte = (v, min, range) => clampByte((v - min) / range * 255);
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i] - mean[0];
-      const g = data[i + 1] - mean[1];
-      const b = data[i + 2] - mean[2];
-      const c1 = r * v1[0] + g * v1[1] + b * v1[2];
-      const c2 = r * v2[0] + g * v2[1] + b * v2[2];
-      const c3 = r * v3[0] + g * v3[1] + b * v3[2];
-      if (mode === "pca1") {
-        const v = toByte(c1, min1, range1);
+    applyPcaProjection(data, mode, pca, [min1, min2, min3], [range1, range2, range3], 0, 255, hueDegrees);
+  }
+  function applyPcaProjection(data, mode, basis, minima, divisors, offset, scale, hueDegrees) {
+    const mean = basis.mean;
+    const component = mode === "pca1" ? 0 : mode === "pca2" ? 1 : mode === "pca3" ? 2 : -1;
+    if (component >= 0) {
+      const vector = basis.vectors[component];
+      const min = minima[component];
+      const divisor = divisors[component];
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i] - mean[0];
+        const g = data[i + 1] - mean[1];
+        const b = data[i + 2] - mean[2];
+        const projection = r * vector[0] + g * vector[1] + b * vector[2];
+        const v = clampByte(offset + (projection - min) / divisor * scale);
         data[i] = v;
         data[i + 1] = v;
         data[i + 2] = v;
-      } else if (mode === "pca2") {
-        const v = toByte(c2, min2, range2);
-        data[i] = v;
-        data[i + 1] = v;
-        data[i + 2] = v;
-      } else if (mode === "pca3") {
-        const v = toByte(c3, min3, range3);
-        data[i] = v;
-        data[i + 1] = v;
-        data[i + 2] = v;
-      } else {
-        data[i] = toByte(c1, min1, range1);
-        data[i + 1] = toByte(c2, min2, range2);
-        data[i + 2] = toByte(c3, min3, range3);
+      }
+    } else {
+      const v1 = basis.vectors[0];
+      const v2 = basis.vectors[1];
+      const v3 = basis.vectors[2];
+      const min1 = minima[0], min2 = minima[1], min3 = minima[2];
+      const divisor1 = divisors[0], divisor2 = divisors[1], divisor3 = divisors[2];
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i] - mean[0];
+        const g = data[i + 1] - mean[1];
+        const b = data[i + 2] - mean[2];
+        const c1 = r * v1[0] + g * v1[1] + b * v1[2];
+        const c2 = r * v2[0] + g * v2[1] + b * v2[2];
+        const c3 = r * v3[0] + g * v3[1] + b * v3[2];
+        data[i] = clampByte(offset + (c1 - min1) / divisor1 * scale);
+        data[i + 1] = clampByte(offset + (c2 - min2) / divisor2 * scale);
+        data[i + 2] = clampByte(offset + (c3 - min3) / divisor3 * scale);
       }
     }
     applyHueRotationInPlace(data, hueDegrees);
@@ -32610,45 +32618,20 @@
     return computePcaBasisFromCov(stats.mean, cov);
   }
   function applyPcaColorWithBasis(imgData, mode, basis, hueDegrees) {
-    const data = imgData.data;
-    const mean = basis.mean;
-    const v1 = basis.vectors[0];
-    const v2 = basis.vectors[1];
-    const v3 = basis.vectors[2];
     const sigma1 = Math.sqrt(Math.max(1e-6, basis.values[0]));
     const sigma2 = Math.sqrt(Math.max(1e-6, basis.values[1]));
     const sigma3 = Math.sqrt(Math.max(1e-6, basis.values[2]));
     const scale = 3;
-    const toByte = (component, sigma) => clampByte(128 + component / (scale * sigma) * 127);
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i] - mean[0];
-      const g = data[i + 1] - mean[1];
-      const b = data[i + 2] - mean[2];
-      const c1 = r * v1[0] + g * v1[1] + b * v1[2];
-      const c2 = r * v2[0] + g * v2[1] + b * v2[2];
-      const c3 = r * v3[0] + g * v3[1] + b * v3[2];
-      if (mode === "pca1") {
-        const v = toByte(c1, sigma1);
-        data[i] = v;
-        data[i + 1] = v;
-        data[i + 2] = v;
-      } else if (mode === "pca2") {
-        const v = toByte(c2, sigma2);
-        data[i] = v;
-        data[i + 1] = v;
-        data[i + 2] = v;
-      } else if (mode === "pca3") {
-        const v = toByte(c3, sigma3);
-        data[i] = v;
-        data[i + 1] = v;
-        data[i + 2] = v;
-      } else {
-        data[i] = toByte(c1, sigma1);
-        data[i + 1] = toByte(c2, sigma2);
-        data[i + 2] = toByte(c3, sigma3);
-      }
-    }
-    applyHueRotationInPlace(data, hueDegrees);
+    applyPcaProjection(
+      imgData.data,
+      mode,
+      basis,
+      [0, 0, 0],
+      [scale * sigma1, scale * sigma2, scale * sigma3],
+      128,
+      127,
+      hueDegrees
+    );
   }
   var noopFilter = (_context, callback) => {
     callback();

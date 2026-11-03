@@ -644,6 +644,47 @@ navigation and loading contracts. This is not a confirmed memory leak.
   Step 11 (retention investigation) remain separate. Existing unrelated changes,
   including `testing/index.html`, are untouched.
 
+### Step 10 — Complete (2026-11-03)
+
+- Added a shared `applyPcaProjection` output helper in `src/filters.ts`. Local
+  min/max bounds and global three-sigma variance normalization remain separate
+  callers; full-image covariance, sampled running statistics, eigenvectors,
+  sample stride/threshold, and processor-scoped basis lifecycle are unchanged.
+- Selects grayscale versus RGB output once per tile; single-component modes
+  calculate only their selected projection in the output pass. Local bound
+  discovery still examines all three components. There are no per-pixel
+  normalization callbacks or allocations; alpha and the separate byte-quantized
+  hue-rotation pass are preserved. PCA remains a boundary in the filter pipeline.
+- Added `browser-tests/pca-processing.spec.ts` and frozen pre-refactor SHA-256
+  pixel fingerprints for four modes × five hue settings × 12 tile outputs.
+  Inputs cover uniform/near-uniform, transparent, and varied tiles; the continuous
+  stream reaches 1,990, then 1,999, then exactly 2,000 sampled pixels before basis
+  reuse and a fresh-processor reset. Expected hashes were recorded from `896e9c2`
+  before source changes, not regenerated to match the refactor.
+- Corrected the existing batching/PCA stream test to use a 192×192 learning tile:
+  64×64 had only 256 samples with stride 16 and never reached the global path.
+  Existing Page View regressions continue to cover settings/source replacement,
+  basis reuse, authorization invalidation, and teardown.
+- Matched optimized-module benchmark supports an optional historical baseline
+  source, alternating invocation order, all four modes, local and learned paths,
+  and grouped timing samples. Local RGB medians **0.21–0.22 → 0.20 ms**;
+  learned RGB **0.55 → 0.46 ms**; learned component modes **0.34–0.48 →
+  0.33–0.34 ms**. No measured mode regressed; these are diagnostic per-tile
+  processing measurements, not end-to-end Page View timings.
+- IIFE minified/gzip: **290,829 / 85,612 → 290,620 / 85,644 bytes**.
+  ESM minified/gzip: **290,856 / 85,632 → 290,647 / 85,663 bytes**.
+  Both minified bundles shrink by 209 bytes; gzip increases by 31–32 bytes.
+- Validation: **169 browser tests passed, one existing OSD-5-specific skip**;
+  **50 Elm tests**, TypeDoc, strict TypeScript, public type tests, Elm review,
+  source formatting, and diff checks passed. Production/debug bundles rebuilt.
+  The frozen PCA fingerprints also pass against the unchanged historical source.
+  No browser environment limitations encountered.
+- Decision: keep. Shared output machinery, fewer repeated mode/projection
+  operations, exact tested pixels, and unchanged/improved throughput justify
+  the negligible gzip increase while minified bundles shrink. Step 11 (retention
+  investigation) is not implemented. Existing unrelated working-tree changes,
+  including `testing/index.html`, remain untouched.
+
 Append a short entry when each step is implemented:
 
 ```text

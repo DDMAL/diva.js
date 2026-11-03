@@ -178,7 +178,7 @@ test("preserves PCA fallback and learned-basis streams across batch boundaries",
             if (batched[1] !== stages[2] || batched.length !== 3) failures.push("PCA grouping");
             // The first tile uses local PCA, the next crosses the global-basis
             // threshold, and subsequent uniform/near-uniform tiles reuse it.
-            for (const [size, kind] of [[8, "varied"], [64, "varied"], [3, "uniform"], [7, "near-uniform"]] as const)
+            for (const [size, kind] of [[8, "varied"], [192, "varied"], [3, "uniform"], [7, "near-uniform"]] as const)
             {
                 const contexts = [0, 1].map(() => {
                     const canvas = document.createElement("canvas");

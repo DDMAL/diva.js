@@ -1,0 +1,22 @@
+[
+  {"mode":"pca-rgb","hue":-180,"sha256":"8549be639a2473a8ad3f52e580be2af0d666da4bca62c3c0aa42491d18f34bc9"},
+  {"mode":"pca-rgb","hue":-37,"sha256":"24dff3731f38c6173dbbc0fc989f16f07e1f2f743a5dc296b6c8e3ba680e7981"},
+  {"mode":"pca-rgb","hue":0,"sha256":"e3ede4b764c9665503822baa236373d5b87e407c33bd353c5e68f3b5513c1221"},
+  {"mode":"pca-rgb","hue":37,"sha256":"48ef02378cb2fad298ed363a63bba525682eb590705beb66ce58e7e8a73f6a90"},
+  {"mode":"pca-rgb","hue":180,"sha256":"8549be639a2473a8ad3f52e580be2af0d666da4bca62c3c0aa42491d18f34bc9"},
+  {"mode":"pca1","hue":-180,"sha256":"c2546ad0b67e8f0c9cb0aac19c516fb2b17fd009a311762ce303dd79eb9789b2"},
+  {"mode":"pca1","hue":-37,"sha256":"c2546ad0b67e8f0c9cb0aac19c516fb2b17fd009a311762ce303dd79eb9789b2"},
+  {"mode":"pca1","hue":0,"sha256":"c2546ad0b67e8f0c9cb0aac19c516fb2b17fd009a311762ce303dd79eb9789b2"},
+  {"mode":"pca1","hue":37,"sha256":"c2546ad0b67e8f0c9cb0aac19c516fb2b17fd009a311762ce303dd79eb9789b2"},
+  {"mode":"pca1","hue":180,"sha256":"c2546ad0b67e8f0c9cb0aac19c516fb2b17fd009a311762ce303dd79eb9789b2"},
+  {"mode":"pca2","hue":-180,"sha256":"966fc08e6e9f0a1da5dc9d1d83efc65a3239d6d90e0bff1412f5f034a2e67cd8"},
+  {"mode":"pca2","hue":-37,"sha256":"966fc08e6e9f0a1da5dc9d1d83efc65a3239d6d90e0bff1412f5f034a2e67cd8"},
+  {"mode":"pca2","hue":0,"sha256":"966fc08e6e9f0a1da5dc9d1d83efc65a3239d6d90e0bff1412f5f034a2e67cd8"},
+  {"mode":"pca2","hue":37,"sha256":"966fc08e6e9f0a1da5dc9d1d83efc65a3239d6d90e0bff1412f5f034a2e67cd8"},
+  {"mode":"pca2","hue":180,"sha256":"966fc08e6e9f0a1da5dc9d1d83efc65a3239d6d90e0bff1412f5f034a2e67cd8"},
+  {"mode":"pca3","hue":-180,"sha256":"58683b52164a73644571b07734f284a2ba40d8f9153e4c79326c7657adc02c9f"},
+  {"mode":"pca3","hue":-37,"sha256":"58683b52164a73644571b07734f284a2ba40d8f9153e4c79326c7657adc02c9f"},
+  {"mode":"pca3","hue":0,"sha256":"58683b52164a73644571b07734f284a2ba40d8f9153e4c79326c7657adc02c9f"},
+  {"mode":"pca3","hue":37,"sha256":"58683b52164a73644571b07734f284a2ba40d8f9153e4c79326c7657adc02c9f"},
+  {"mode":"pca3","hue":180,"sha256":"58683b52164a73644571b07734f284a2ba40d8f9153e4c79326c7657adc02c9f"}
+]

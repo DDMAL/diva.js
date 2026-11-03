@@ -461,3 +461,90 @@ formatting, and diff checks passed. The first full run hit the previously seen
 nearby-thumbnail request-count transient on OSD 5; six focused repetitions and
 the full rerun passed. No browser environment limitations encountered. Decision:
 keep; optional PCA cleanup and page-retention investigation remain separate.
+
+## Step 10 comparison — 2026-11-03
+
+The local and learned PCA paths now share `applyPcaProjection`. The callers still
+choose different normalization parameters: local `(component - min) / range ×
+255`, versus global `128 + component / (3 × sigma) × 127`. The helper preserves
+that operation order, byte conversion, alpha, and a separate hue pass. Grayscale
+versus RGB mode is selected once per tile, with only the selected projection
+computed during grayscale output. Local min/max discovery still projects all
+three components. Statistics, sampling, basis learning/reuse, and canvas stage
+boundaries are unchanged. No per-pixel callbacks or allocations were introduced.
+
+### Correctness
+
+`pca-processing.spec.ts` checks frozen pixel fingerprints from the unchanged
+`896e9c2` source, covering all bytes of 240 tile outputs: four PCA modes × five
+hue angles (−180, −37, 0, 37, 180) × 12 outputs. The corpus includes transparent,
+uniform, near-uniform, varied, and single-pixel tiles. Each continuous stream
+accumulates exactly 1,990 samples, nine more, then one more to test the true
+2,000-sample transition, followed by learned-basis reuse and a fresh-processor
+reset. Callbacks still complete synchronously once per tile. Existing goldens
+are unchanged, and existing Page View tests cover settings/source replacement,
+orientation-only reuse, authorization invalidation, and teardown.
+
+The earlier batching/PCA stream test used a 64×64 learning tile, which supplied
+only 256 samples at stride 16 and therefore did not exercise its claimed global
+path. Its learning tile is now 192×192 (2,304 samples), and the new exact-threshold
+corpus independently guards the transition.
+
+### Matched measurement procedure
+
+The focused spec bundles the real module with esbuild minification, IIFE, ES2019.
+Set `PCA_BASELINE_SOURCE` to an unchanged historical source snapshot to compare
+both modules in the same browser page. Invocation order alternates each round.
+Local timing uses fresh processors on 128×128 tiles (1,024 samples, below the
+threshold); learned timing reuses processors on 256×256 tiles after warmup. Inputs
+are deterministic xorshift RGB pixels with opaque alpha, avoiding periodic input
+aliasing with the PCA sample stride. Hue is 37 degrees; all four modes are tested.
+
+There are 15 warmup rounds and 20 recorded rounds, each containing ten tile
+processings to reduce timer-resolution noise. Recorded values are milliseconds
+per tile including input reset via `putImageData`, but excluding factory creation.
+Raw samples and browser identification are attached to the Playwright results.
+The two configured projects repeat this standalone workload; no OSD processing
+API is involved in these measurements. Without a baseline source, the benchmark
+records current-only samples. There are no wall-clock assertions.
+
+```sh
+# Choose an approved temporary path outside the repository.
+git show 896e9c2:src/filters.ts > "$PCA_BASELINE_SOURCE"
+PCA_BASELINE_SOURCE="$PCA_BASELINE_SOURCE" yarn -s playwright test browser-tests/pca-processing.spec.ts --workers=1
+# The frozen fingerprint test can also be verified against the original module:
+DIVA_FILTER_SOURCE="$PCA_BASELINE_SOURCE" yarn -s playwright test browser-tests/pca-processing.spec.ts --grep "preserves exact" --workers=1
+```
+
+Matched results on HeadlessChrome **149.0.7827.55**, macOS, one worker; medians
+in milliseconds per tile (input reset included):
+
+| Mode / path | OSD-5 project before → after | OSD-6 project before → after |
+| --- | ---: | ---: |
+| RGB / local 128×128 | 0.22 → 0.20 | 0.21 → 0.20 |
+| RGB / learned 256×256 | 0.55 → 0.46 | 0.55 → 0.46 |
+| Component 1 / local 128×128 | 0.19 → 0.16 | 0.19 → 0.16 |
+| Component 1 / learned 256×256 | 0.46 → 0.33 | 0.47 → 0.33 |
+| Component 2 / local 128×128 | 0.19 → 0.16 | 0.19 → 0.16 |
+| Component 2 / learned 256×256 | 0.48 → 0.33 | 0.47 → 0.34 |
+| Component 3 / local 128×128 | 0.16 → 0.16 | 0.17 → 0.16 |
+| Component 3 / learned 256×256 | 0.35 → 0.33 | 0.34 → 0.33 |
+
+These samples show unchanged/improved processing throughput, not an end-to-end
+viewer speedup. Timings remain diagnostic. Mode selection was hoisted out of
+the shared pixel loop to avoid unnecessary component projections and repeated
+string comparisons; the statistical algorithms were not changed.
+
+| Production artifact | Minified bytes before → after | Gzip bytes before → after |
+| --- | ---: | ---: |
+| `build/diva.js` | 290,829 → 290,620 | 85,612 → 85,644 |
+| `build/diva.esm.js` | 290,856 → 290,647 | 85,632 → 85,663 |
+
+The common output machinery reduces duplication and removes 209 minified bytes
+per bundle; gzip grows by 31–32 bytes. Production and debug artifacts regenerated.
+
+Full validation: **169 browser tests passed, one existing OSD-5-specific skip**;
+50 Elm tests, TypeDoc, strict TypeScript, public type tests, Elm review, source
+formatting, and diff checks passed. Fingerprints also pass against the unchanged
+historical module. No browser environment limitations encountered. Decision:
+keep; Step 11 remains a separate, measurement-only page-retention investigation.
