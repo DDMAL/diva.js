@@ -5,6 +5,7 @@ import divaCss from "../cache/diva.css";
 // @ts-ignore
 import { Elm } from "../cache/elm-esm.js";
 
+import { annotationBodies, type AnnotationBody, isPlainTextBody } from "./annotation-bodies";
 import { AnnotationIndex } from "./annotation-index";
 import { AuthBrowser, type ResolvedTileSource, type TileSourceDescriptor } from "./auth";
 import { batchFilterProcessors, type FilterOptions, type FilterProcessor, Filters, setFilterOptions } from "./filters";
@@ -170,6 +171,7 @@ type ViewerAnnotation = {
     id: string;
     text: string;
     html?: string;
+    bodies?: AnnotationBody[];
     imageService: string | null;
     shape: { kind: "rect" | "svg"; x?: number; y?: number; width?: number; height?: number; value?: string };
 };
@@ -196,24 +198,7 @@ type PublicPageEntry = {
 const copyAnnotation = (annotation: DivaAnnotation): DivaAnnotation =>
     JSON.parse(JSON.stringify(annotation)) as DivaAnnotation;
 
-const annotationBodyText = (body: unknown): string => {
-    if (typeof body === "string")
-    {
-        return body;
-    }
-    if (Array.isArray(body))
-    {
-        return body.length > 0 ? annotationBodyText(body[0]) : "";
-    }
-    if (body && typeof body === "object")
-    {
-        const value = body as Record<string, unknown>;
-        return typeof value.value === "string" ? value.value : typeof value.chars === "string"
-            ? value.chars
-            : "";
-    }
-    return "";
-};
+const annotationBodyText = (body: unknown): string => annotationBodies(body).map(entry => entry.value).join("\n\n");
 
 const plainAnnotationText = (html: string): string => html.replace(/<[^>]*>/g, "");
 
@@ -274,18 +259,32 @@ const normalizePublicAnnotation = (
     {
         throw new TypeError("An annotation target must identify a Canvas and use a supported xywh or SVG selector.");
     }
-    const body = annotationBodyText(annotation.body ?? (annotation as Record<string, unknown>).resource);
+    const bodies = annotationBodies(annotation.body ?? (annotation as Record<string, unknown>).resource);
+    const body = bodies.map(entry => entry.value).join("\n\n");
     return {
         canvasId,
         publicAnnotation: copyAnnotation(annotation),
-        viewerAnnotation: { id: annotation.id, text: plainAnnotationText(body), html: body, imageService, shape },
+        viewerAnnotation: {
+            id: annotation.id,
+            text: bodies.map(entry => isPlainTextBody(entry) ? entry.value : plainAnnotationText(entry.value)).join(
+                "\n\n",
+            ),
+            html: body,
+            bodies,
+            imageService,
+            shape,
+        },
     };
 };
 
 const publicAnnotationFromViewer = (canvasId: string, annotation: ViewerAnnotation): DivaAnnotation => ({
     id: annotation.id,
     type: "Annotation",
-    body: { type: "TextualBody", value: annotation.html ?? annotation.text },
+    body: annotation.bodies
+        ? annotation.bodies.length === 1
+            ? { type: "TextualBody", ...annotation.bodies[0] }
+            : annotation.bodies.map(body => ({ type: "TextualBody", ...body }))
+        : { type: "TextualBody", value: annotation.html ?? annotation.text },
     target: annotation.shape.kind === "rect"
         ? {
             type: "SpecificResource",
@@ -1440,6 +1439,8 @@ export class Diva extends EventTarget
 
     /**
      * Return an annotation body's textual or HTML value, if present.
+     * Multiple textual bodies are returned in source order, separated by blank
+     * lines. This returns source content, not sanitized inspector markup.
      */
     public getAnnotationBody(annotationId: string): string | undefined
     {

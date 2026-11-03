@@ -1,9 +1,9 @@
 module Msg exposing (Msg(..))
 
+import Annotation
 import Auth
 import Filters exposing (FilterFloatValue, FilterIntValue, FilterStringValue, FilterToggle)
 import Http
-import IIIF.Annotation exposing (Annotation)
 import IIIF.Presentation exposing (IIIFManifest, IIIFResource)
 
 
@@ -66,5 +66,5 @@ type Msg
     | ViewerLoadingChanged Bool
     | ViewportChanged Int
     | ViewerLoadedPage Int
-    | ServerRespondedWithAnnotations String (Result Http.Error (List Annotation))
+    | ServerRespondedWithAnnotations String (Result Http.Error (List Annotation.WithBodies))
     | UserToggledAnnotations

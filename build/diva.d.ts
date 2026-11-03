@@ -222,6 +222,8 @@ export declare class Diva extends EventTarget {
     getImageRegionForAnnotation(annotationId: string): string | null;
     /**
      * Return an annotation body's textual or HTML value, if present.
+     * Multiple textual bodies are returned in source order, separated by blank
+     * lines. This returns source content, not sanitized inspector markup.
      */
     getAnnotationBody(annotationId: string): string | undefined;
     /**

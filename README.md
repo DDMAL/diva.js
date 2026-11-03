@@ -77,6 +77,19 @@ viewer.addEventListener("pagechange", (event) => {
 });
 ```
 
+### Annotation details
+
+Set `enableAnnotations: true` to load manifest annotations. User selection is
+enabled by default; `enableAnnotationSelection: false` disables opening details
+by clicking or keyboard activation.
+
+The inspector displays all textual bodies from IIIF v2 `resource` and v3 `body`
+arrays in source order. HTML fragments are sanitized separately, explicit
+`text/plain` bodies remain literal text, and language/direction metadata is
+preserved. Hover tooltips show a concise preview with paragraph and line breaks;
+select the annotation to read the complete body. `getAnnotationBody(id)` returns
+their source values joined by blank lines, not sanitized inspector HTML.
+
 ### URL deep links
 
 Diva leaves browser URL and history ownership to the host application: it does not read or write

@@ -1,4 +1,11 @@
 import type * as OpenSeadragonType from "openseadragon";
+import {
+    annotationBodiesEqual,
+    type AnnotationBody,
+    annotationTooltipPreview,
+    annotationTooltipText,
+    isPlainTextBody,
+} from "./annotation-bodies";
 import { AnnotationIndex } from "./annotation-index";
 
 import {
@@ -16,6 +23,7 @@ type ViewerAnnotation = {
     id: string;
     text: string;
     html?: string;
+    bodies?: AnnotationBody[];
     imageService: string | null;
     shape: { kind: "rect" | "svg"; x?: number; y?: number; width?: number; height?: number; value?: string };
 };
@@ -411,6 +419,7 @@ class OsdViewer extends HTMLElement
             previous?.length === annotations.length && annotations.every((annotation, index) => {
                 const old = previous[index];
                 return old.id === annotation.id && old.text === annotation.text && old.html === annotation.html
+                    && annotationBodiesEqual(old.bodies, annotation.bodies)
                     && old.imageService === annotation.imageService && old.shape.kind === annotation.shape.kind
                     && old.shape.x === annotation.shape.x && old.shape.y === annotation.shape.y
                     && old.shape.width === annotation.shape.width && old.shape.height === annotation.shape.height
@@ -1231,6 +1240,7 @@ class OsdViewer extends HTMLElement
         const tooltip = document.createElement("div");
         tooltip.className = "diva-annotation-tooltip";
         tooltip.setAttribute("role", "tooltip");
+        tooltip.dir = "auto";
         annotations.forEach((annotation) => {
             const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
             group.setAttribute("data-annotation-id", annotation.id);
@@ -1239,6 +1249,8 @@ class OsdViewer extends HTMLElement
             if (annotation.text)
             {
                 group.setAttribute("aria-label", annotation.text);
+                let text: string | undefined;
+                let preview: string | undefined;
                 const showTooltip = (event?: MouseEvent): void => {
                     const bounds = element.getBoundingClientRect();
                     if (!this.annotationsVisible || !this.annotationSelectionEnabled)
@@ -1246,12 +1258,46 @@ class OsdViewer extends HTMLElement
                         tooltip.hidden = true;
                         return;
                     }
+                    // Resolve once, on first interaction, rather than parsing
+                    // every annotation body during overlay/layout construction.
+                    text ??= annotationTooltipText(
+                        annotation.bodies ?? [{ value: annotation.html || annotation.text }],
+                        html => this.sanitizeAnnotationHtml(html),
+                    );
+                    preview ??= annotationTooltipPreview(text);
+                    group.setAttribute("aria-label", text || "Annotation");
+                    if (!preview)
+                    {
+                        tooltip.hidden = true;
+                        return;
+                    }
                     const x = event ? event.clientX - bounds.left : bounds.width / 2;
                     const y = event ? event.clientY - bounds.top : bounds.height / 2;
-                    tooltip.textContent = annotation.text;
+                    const viewport = this.getBoundingClientRect();
+                    tooltip.textContent = preview;
+                    tooltip.style.maxWidth = `min(24rem, ${Math.max(0, viewport.width - 16)}px)`;
                     tooltip.style.left = `${x}px`;
                     tooltip.style.top = `${y}px`;
                     tooltip.hidden = false;
+                    // A multi-line preview above a pointer near the top edge
+                    // must not disappear outside the visible viewer.
+                    const previewBounds = tooltip.getBoundingClientRect();
+                    const dx = Math.max(
+                        viewport.left + 8 - previewBounds.left,
+                        Math.min(0, viewport.right - 8 - previewBounds.right),
+                    );
+                    const dy = Math.max(
+                        viewport.top + 8 - previewBounds.top,
+                        Math.min(0, viewport.bottom - 8 - previewBounds.bottom),
+                    );
+                    if (dx !== 0)
+                    {
+                        tooltip.style.left = `${x + dx}px`;
+                    }
+                    if (dy !== 0)
+                    {
+                        tooltip.style.top = `${y + dy}px`;
+                    }
                 };
                 group.addEventListener("mouseenter", showTooltip);
                 group.addEventListener("mousemove", showTooltip);
@@ -1607,7 +1653,28 @@ class OsdViewer extends HTMLElement
             content.append(previewControls, previewFrame);
             window.requestAnimationFrame(updatePreviewLayout);
         }
-        content.appendChild(this.sanitizeAnnotationHtml(annotation.html || annotation.text));
+        // Parse each body in isolation: malformed markup in one fragment must
+        // not consume later bodies. Explicit plain text is never parsed as HTML.
+        for (const body of annotation.bodies ?? [{ value: annotation.html || annotation.text }])
+        {
+            const section = document.createElement("div");
+            section.className = "diva-annotation-body";
+            section.dir = "auto";
+            if (body.language)
+            {
+                section.lang = body.language;
+            }
+            if (isPlainTextBody(body))
+            {
+                section.style.whiteSpace = "pre-wrap";
+                section.textContent = body.value;
+            }
+            else
+            {
+                section.appendChild(this.sanitizeAnnotationHtml(body.value));
+            }
+            content.appendChild(section);
+        }
         if (imageLink)
         {
             content.appendChild(imageLink);
@@ -1756,6 +1823,16 @@ class OsdViewer extends HTMLElement
                 return;
             }
             const element = document.createElement(tag);
+            const direction = node.getAttribute("dir")?.toLowerCase();
+            if (direction === "ltr" || direction === "rtl" || direction === "auto")
+            {
+                element.setAttribute("dir", direction);
+            }
+            const language = node.getAttribute("lang");
+            if (language)
+            {
+                element.setAttribute("lang", language);
+            }
             if (tag === "a")
             {
                 const href = node.getAttribute("href");

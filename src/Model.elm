@@ -1,9 +1,9 @@
 module Model exposing (CollectionState, ContentsView(..), Model, Page, PageImage, ResourceResponse(..), Response(..), SidebarState(..), ViewMode(..), currentManifest, getPageAt, manifestToPages, pageViewStartIndex, primaryImage)
 
+import Annotation
 import Auth
 import Dict exposing (Dict)
 import Filters exposing (Filters)
-import IIIF.Annotation as IIIFAnnotation
 import IIIF.Auth as IIIFAuth
 import IIIF.Image exposing (createImageAddress, thumbnailUrlFromInfo)
 import IIIF.Language exposing (Language, extractLabelFromLanguageMap)
@@ -79,7 +79,7 @@ type alias Model =
     , annotationsVisible : Bool
     , annotationSources : Dict String (List AnnotationSource)
     , annotationLoading : Set String
-    , annotationsByCanvas : Dict String (List IIIFAnnotation.Annotation)
+    , annotationsByCanvas : Dict String (List Annotation.WithBodies)
     }
 
 

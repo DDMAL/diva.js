@@ -9,7 +9,6 @@ import Dict exposing (Dict)
 import Filters exposing (Filters, applyFilterToggle, applyFloatFilter, applyIntFilter, applyStringFilter, decodeFilterJson, encodeActiveFilters, resetAltColourAdjust, resetFilters, updateFilters)
 import Http
 import IIIF
-import IIIF.Annotation as IIIFAnnotation
 import IIIF.Language exposing (Language(..))
 import IIIF.Presentation exposing (AnnotationSource(..), Canvas, Collection, CollectionItem(..), IIIFCollection(..), IIIFManifest(..), IIIFResource(..), ViewingDirection(..), canvasLabel, isPagedLayout, manifestViewingLayout, toCanvases, toHomepage, toMetadata, toRanges, toViewingDirection)
 import IIIF.Version
@@ -769,7 +768,7 @@ requestAnnotations canvasId model =
                     |> Maybe.withDefault []
 
             request url =
-                IIIF.requestAnnotationPage
+                Annotation.requestPage
                     (ServerRespondedWithAnnotations canvasId)
                     model.acceptHeaders
                     url
@@ -783,7 +782,7 @@ requestAnnotations canvasId model =
                                     Nothing
 
                                 InlineAnnotationPage value ->
-                                    Decode.decodeValue IIIFAnnotation.decodePage value |> Result.toMaybe
+                                    Decode.decodeValue Annotation.decodePage value |> Result.toMaybe
                         )
                     |> List.concat
 
@@ -825,7 +824,7 @@ requestAnnotations canvasId model =
         ( { nextModel | annotationLoading = Set.insert canvasId nextModel.annotationLoading }
         , Cmd.batch
             (List.map request (urls ++ fallback)
-                ++ [ annotationsUpdated { canvasId = canvasId, annotations = List.map (Annotation.encode (annotationImageServiceForCanvas canvasId model)) inlineAnnotations } ]
+                ++ [ annotationsUpdated { canvasId = canvasId, annotations = List.map (Annotation.encodeWithBodies (annotationImageServiceForCanvas canvasId model)) inlineAnnotations } ]
             )
         )
 
@@ -1855,7 +1854,7 @@ update msg model =
                                 |> (\existing -> annotations ++ existing)
                     in
                     ( { nextModel | annotationsByCanvas = Dict.insert canvasId merged nextModel.annotationsByCanvas }
-                    , annotationsUpdated { canvasId = canvasId, annotations = List.map (Annotation.encode (annotationImageServiceForCanvas canvasId nextModel)) merged }
+                    , annotationsUpdated { canvasId = canvasId, annotations = List.map (Annotation.encodeWithBodies (annotationImageServiceForCanvas canvasId nextModel)) merged }
                     )
 
                 Err _ ->

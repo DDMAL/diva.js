@@ -49,7 +49,49 @@ tests =
                     }
                     |> Decode.decodeValue (Decode.field "imageService" Decode.string)
                     |> Expect.equal (Ok "https://images.example/iiif/book-1/info.json")
+        , test "preserves all bodies and metadata through the manifest adapter" <|
+            \_ ->
+                Decode.decodeString Annotation.decodePage multiBodyPage
+                    |> Result.map (List.concatMap .bodies)
+                    |> Expect.equal
+                        (Ok
+                            [ { value = "<p dir=\"ltr>ltr</p>", format = Just "text/html", language = Just "en" }
+                            , { value = "Literal <tag>", format = Just "text/plain", language = Nothing }
+                            , { value = "<p>Actual transcription</p>", format = Just "text/html", language = Just "ar" }
+                            ]
+                        )
+        , test "encodes bodies separately instead of concatenating markup for rendering" <|
+            \_ ->
+                case Decode.decodeString Annotation.decodePage multiBodyPage of
+                    Ok [ entry ] ->
+                        Annotation.encodeWithBodies Nothing entry
+                            |> Decode.decodeValue
+                                (Decode.map2 Tuple.pair
+                                    (Decode.field "bodies" (Decode.list (Decode.field "value" Decode.string)))
+                                    (Decode.field "text" Decode.string)
+                                )
+                            |> Expect.equal
+                                (Ok
+                                    ( [ "<p dir=\"ltr>ltr</p>", "Literal <tag>", "<p>Actual transcription</p>" ]
+                                    , "ltr\n\nLiteral <tag>\n\nActual transcription"
+                                    )
+                                )
+
+                    _ ->
+                        Expect.fail "Expected one annotation"
+        , test "keeps body metadata aligned when an alternate page field cannot decode" <|
+            \_ ->
+                Decode.decodeString Annotation.decodePage
+                    """{"resources":[{"id":"bad","on":"no-selector","resource":"wrong"}],"items":[{"id":"good","target":"canvas#xywh=1,2,3,4","body":[{"value":"correct"}]}]}"""
+                    |> Result.map (List.concatMap .bodies)
+                    |> Result.map (List.map .value)
+                    |> Expect.equal (Ok [ "correct" ])
         ]
+
+
+multiBodyPage : String
+multiBodyPage =
+    """{"resources":[{"@id":"multi","on":"canvas#xywh=1,2,3,4","resource":[{"chars":"<p dir=\\"ltr>ltr</p>","format":"text/html","language":"en"},null,{"id":"image","type":"Image"},[{"value":"Literal <tag>","format":"text/plain"},{"chars":"<p>Actual transcription</p>","format":"text/html","language":"ar"}]]}]}"""
 
 
 svgAnnotationList : String

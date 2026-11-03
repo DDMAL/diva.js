@@ -67,13 +67,17 @@
 .diva-annotation-tooltip {
   position: absolute;
   z-index: 101;
-  max-width: min(18rem, 75%);
+  width: max-content;
+  max-width: min(24rem, calc(100vw - 16px));
   padding: 6px 8px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   background: rgba(28, 29, 34, 0.94);
   color: #fff;
   font-size: var(--diva-font-sm);
   line-height: 1.35;
+  white-space: pre-line;
+  unicode-bidi: plaintext;
+  overflow-wrap: anywhere;
   pointer-events: none;
   transform: translate(10px, calc(-100% - 10px));
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.28);
