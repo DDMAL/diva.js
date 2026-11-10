@@ -47,6 +47,6 @@
     "openseadragon": "^6.1.1",
     "openseadragon5": "npm:openseadragon@5.0.1",
     "typedoc": "^0.28.20",
-    "typescript": "^7.0.2"
+    "typescript": "~6.0.3"
   }
 }
