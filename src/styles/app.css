@@ -68,12 +68,12 @@
   position: absolute;
   z-index: 101;
   width: max-content;
-  max-width: min(24rem, calc(100vw - 16px));
-  padding: 6px 8px;
+  max-width: min(36rem, calc(100vw - 16px));
+  padding: 9px 12px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   background: rgba(28, 29, 34, 0.94);
   color: #fff;
-  font-size: var(--diva-font-sm);
+  font-size: calc(var(--diva-font-sm) * 1.5);
   line-height: 1.35;
   white-space: pre-line;
   unicode-bidi: plaintext;

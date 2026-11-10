@@ -184,6 +184,7 @@ class OsdViewer extends HTMLElement
     private pageOverlayElements: Map<number, HTMLDivElement> = new Map();
     private previewLayer: HTMLDivElement | null = null;
     private pagePreviews: Map<number, HTMLImageElement> = new Map();
+    private previewAnnotationIndexes: Set<number> = new Set();
     private annotationData: Map<string, ViewerAnnotation[]> = new Map();
     private readonly annotationIndex = new AnnotationIndex<ViewerAnnotation>();
     private readonly pageIndexesByCanvas = new Map<string, number[]>();
@@ -779,6 +780,7 @@ class OsdViewer extends HTMLElement
     private clearPagePreviews(): void
     {
         this.pagePreviews.forEach((_image, index) => this.removePagePreview(index));
+        this.previewAnnotationIndexes.clear();
     }
 
     private updatePagePreviews(): void
@@ -801,6 +803,7 @@ class OsdViewer extends HTMLElement
         {
             return;
         }
+        const annotationIndexes: number[] = [];
         for (let index = range[0]; index <= range[1]; index += 1)
         {
             const source = this.tileSources[index];
@@ -814,6 +817,11 @@ class OsdViewer extends HTMLElement
                 continue;
             }
             let image = this.pagePreviews.get(index);
+            if (!this.previewAnnotationIndexes.has(index))
+            {
+                this.previewAnnotationIndexes.add(index);
+                annotationIndexes.push(index);
+            }
             const item = this.loadedItems.get(index);
             // A page already rendered at the current viewport needs no new
             // thumbnail request. Retain nearby images for subsequent zooms.
@@ -873,6 +881,13 @@ class OsdViewer extends HTMLElement
             // After drawing completes, hide the underlay so genuinely
             // transparent image regions do not reveal the thumbnail.
             image.hidden = image.dataset.failed === "true" || Boolean(item?.getFullyLoaded() && !item.needsDraw());
+        }
+        if (annotationIndexes.length > 0)
+        {
+            this.emitCustomEvent("diva-preview-annotations-requested", {
+                indexes: annotationIndexes,
+                resourceId: this.resourceId,
+            });
         }
     }
 
@@ -1432,7 +1447,7 @@ class OsdViewer extends HTMLElement
                     const y = event ? event.clientY - bounds.top : bounds.height / 2;
                     const viewport = this.getBoundingClientRect();
                     tooltip.textContent = preview;
-                    tooltip.style.maxWidth = `min(24rem, ${Math.max(0, viewport.width - 16)}px)`;
+                    tooltip.style.maxWidth = `min(36rem, ${Math.max(0, viewport.width - 16)}px)`;
                     tooltip.style.left = `${x}px`;
                     tooltip.style.top = `${y}px`;
                     tooltip.hidden = false;
@@ -2170,9 +2185,10 @@ class OsdViewer extends HTMLElement
         return Array.from({ length: end - start + 1 }, (_value, offset) => start + offset);
     }
 
-    public isPageLoaded(index: number, sourceId: string): boolean
+    public isPageLoaded(index: number, sourceId: string, resourceId: string): boolean
     {
-        return this.tileSources[index]?.sourceId === sourceId && this.loadedIndexes.has(index);
+        return this.resourceId === resourceId && this.tileSources[index]?.sourceId === sourceId
+            && this.loadedIndexes.has(index);
     }
 
     public next(): void

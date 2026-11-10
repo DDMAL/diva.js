@@ -4,10 +4,11 @@ import type {Page,
              TestInfo} from "@playwright/test";
 
 const context = "http://iiif.io/api/auth/2/context.json";
-const openHarness = async(page: Page, manifest: string, testInfo: TestInfo): Promise<void> => {
+const openHarness = async(page: Page, manifest: string, testInfo: TestInfo, showLogoutButton?: boolean): Promise<void> => {
     const expectedVersion = testInfo.project.metadata.osdVersion as string;
     const osd = expectedVersion.startsWith("5") ? "5" : "6";
-    await page.goto(`/testing/auth-harness.html?manifest=${encodeURIComponent(manifest)}&osd=${osd}`);
+    const logoutOption = showLogoutButton === undefined ? "" : `&showLogoutButton=${showLogoutButton}`;
+    await page.goto(`/testing/auth-harness.html?manifest=${encodeURIComponent(manifest)}&osd=${osd}${logoutOption}`);
     await expect.poll(() => page.evaluate(() => (window as any).__divaOsdVersion)).toBe(expectedVersion);
 };
 
@@ -252,7 +253,8 @@ test("loads only nearby sidebar thumbnails", async ({page}, testInfo) => {
     await expect.poll(() => thumbnailRequests.size).toBeGreaterThan(initiallyLoaded);
 });
 
-test("uses an existing session in the external token frame without prompting", async ({context : browserContext, page}, testInfo) => {
+for (const showLogoutButton of [undefined, true, false])
+test(`uses an existing session in the external token frame without prompting (logout button ${showLogoutButton ?? "default"})`, async ({context : browserContext, page}, testInfo) => {
     const origin = "http://127.0.0.1:4173";
     const authOrigin = `https://${testInfo.project.name}.external.example.test`;
     const probeRequests: Array<{authorization?: string; cookie?: string}> = [];
@@ -316,7 +318,7 @@ test("uses an existing session in the external token frame without prompting", a
         }});
     });
 
-    await openHarness(page, `${origin}/external/manifest`, testInfo);
+    await openHarness(page, `${origin}/external/manifest`, testInfo, showLogoutButton);
     await expect.poll(() => protectedInfoRequests).toBe(1);
     await expect(page.locator(".diva-auth-dialog")).toHaveCount(0);
     expect(probeRequests).toEqual([
@@ -324,6 +326,7 @@ test("uses an existing session in the external token frame without prompting", a
         {authorization : "Bearer external-token", cookie : undefined}
     ]);
     expect(tokenCookies).toEqual([ "diamm-session=authenticated" ]);
+    await expect(page.locator("button[data-diva-auth-logout]")).toHaveCount(showLogoutButton === false ? 0 : 1);
 });
 
 test("falls back from silent external auth and deduplicates active login", async ({context : browserContext, page}, testInfo) => {

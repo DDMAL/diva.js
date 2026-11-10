@@ -96,13 +96,17 @@ test("keeps hover previews concise without truncating the inspector body", async
         body : {type : "TextualBody", format : "text/plain", value}
     });
     const group = page.locator('g[data-annotation-id="long"]');
-    await group.focus();
+    await group.hover();
     const tooltip = page.locator('.diva-annotation-overlay:has(g[data-annotation-id="long"]) .diva-annotation-tooltip');
     await expect(tooltip).toBeVisible();
     const preview = await tooltip.textContent();
     expect(preview!.length).toBeLessThan(280);
-    expect(preview).toContain("Click for details");
+    expect(preview).toContain("Click annotation for full text");
     expect(preview).not.toContain("END OF COMPLETE BODY");
+    await group.click();
+    await expect(page.locator(".diva-annotation-panel-content")).toContainText("END OF COMPLETE BODY");
+    await page.getByRole("button", {name : "Close annotation details", exact : true}).click();
+    await group.focus();
     await group.press("Enter");
     await expect(page.locator(".diva-annotation-panel-content")).toContainText("END OF COMPLETE BODY");
     expect(await page.evaluate(() => (window as any).diva.getAnnotationBody("long"))).toBe(value);
@@ -112,7 +116,7 @@ test("keeps hover previews concise without truncating the inspector body", async
     });
     await page.locator('g[data-annotation-id="lines"]').focus();
     const lines = page.locator('.diva-annotation-overlay:has(g[data-annotation-id="lines"]) .diva-annotation-tooltip');
-    expect(await lines.textContent()).toBe("English\nThe book\n\nArabic\nكتاب غرايب الفنون وملح العيون\n… Click for details");
+    expect(await lines.textContent()).toBe("English\nThe book\n\nArabic\nكتاب غرايب الفنون وملح العيون\n… Click annotation for full text");
 });
 
 test("prepares readable hover text lazily and reuses it during pointer movement", async ({page}, testInfo) => {

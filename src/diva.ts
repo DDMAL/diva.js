@@ -316,6 +316,7 @@ type ElmPorts = {
     annotationsUpdated: { subscribe: (callback: (value: AnnotationPayload) => void) => void };
     annotationsVisibilityUpdated: { subscribe: (callback: (visible: boolean) => void) => void };
     viewerPageLoaded: { send: (index: number) => void };
+    viewerAnnotationPagesRequested: { send: (indexes: number[]) => void };
     pageAspectsUpdated: { subscribe: (callback: (aspects: number[]) => void) => void };
     pageLabelsUpdated: { subscribe: (callback: (labels: string[]) => void) => void };
     pagePreviewPoliciesUpdated: {
@@ -438,6 +439,7 @@ export class Diva extends EventTarget
     private readonly handlePageChangeBound: (event: Event) => void;
     private readonly handleAnnotationSelectBound: (event: Event) => void;
     private readonly handlePageLoadedBound: (event: Event) => void;
+    private readonly handlePreviewAnnotationsBound: (event: Event) => void;
     private readonly handleZoomChangeBound: (event: Event) => void;
     private readonly handleLoadingChangeBound: (event: Event) => void;
     private readonly handleStaticImageCorsFallbackBound: (event: Event) => void;
@@ -550,6 +552,7 @@ export class Diva extends EventTarget
         this.handlePageChangeBound = this.handlePageChange.bind(this);
         this.handleAnnotationSelectBound = this.handleAnnotationSelect.bind(this);
         this.handlePageLoadedBound = this.handlePageLoaded.bind(this);
+        this.handlePreviewAnnotationsBound = this.handlePreviewAnnotations.bind(this);
         this.handleZoomChangeBound = this.handleZoomChange.bind(this);
         this.handleLoadingChangeBound = this.handleLoadingChange.bind(this);
         this.handleStaticImageCorsFallbackBound = this.handleStaticImageCorsFallback.bind(this);
@@ -599,6 +602,7 @@ export class Diva extends EventTarget
         this.bindPageChange();
         this.bindViewerEvent("diva-annotation-select", this.handleAnnotationSelectBound as EventListener);
         this.bindViewerEvent("diva-page-loaded", this.handlePageLoadedBound as EventListener);
+        this.bindViewerEvent("diva-preview-annotations-requested", this.handlePreviewAnnotationsBound as EventListener);
         this.bindFullscreenChange();
         this.bindZoomChange();
         this.bindLoadingChange();
@@ -961,7 +965,7 @@ export class Diva extends EventTarget
             const sourceId = this.pages[pageIndex]?.primaryImage.id;
             if (
                 sourceId && viewer && typeof viewer.isPageLoaded === "function"
-                && viewer.isPageLoaded(pageIndex, sourceId)
+                && viewer.isPageLoaded(pageIndex, sourceId, requestId)
             )
             {
                 this.completeResource(requestId, url, !replacementCommitted);
@@ -1863,6 +1867,10 @@ export class Diva extends EventTarget
         const root = this.getConnectedRoot();
         this.removeViewerEvent("diva-page-change", this.handlePageChangeBound as EventListener);
         this.removeViewerEvent("diva-page-loaded", this.handlePageLoadedBound as EventListener);
+        this.removeViewerEvent(
+            "diva-preview-annotations-requested",
+            this.handlePreviewAnnotationsBound as EventListener,
+        );
         this.removeViewerEvent("diva-zoom-change", this.handleZoomChangeBound as EventListener);
         this.removeViewerEvent("diva-loading-change", this.handleLoadingChangeBound as EventListener);
         this.removeViewerEvent(
@@ -2005,6 +2013,15 @@ export class Diva extends EventTarget
         if (typeof annotationId === "string")
         {
             this.emit("annotationselect", { annotationId });
+        }
+    }
+
+    private handlePreviewAnnotations(event: Event): void
+    {
+        const detail = (event as CustomEvent).detail;
+        if (detail?.resourceId === this.annotationResourceId && Array.isArray(detail.indexes))
+        {
+            this.getPort("viewerAnnotationPagesRequested").send(detail.indexes);
         }
     }
 

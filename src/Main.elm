@@ -159,6 +159,9 @@ port tileSourceResolutionSucceeded : Encode.Value -> Cmd msg
 port tileSourcesUpdated : { resourceId : String, tileSources : List { sourceId : String, url : String, isStatic : Bool, canvasId : String, preview : { url : String, fallbackUrl : String, crossOrigin : Maybe String } }, initialPageIndex : Int } -> Cmd msg
 
 
+port viewerAnnotationPagesRequested : (List Int -> msg) -> Sub msg
+
+
 port viewerLoadingChanged : (Bool -> msg) -> Sub msg
 
 
@@ -405,6 +408,7 @@ handleManifestLoaded resourceId initialPage model manifest =
         | currentZoom = Nothing
         , annotationSources = annotationSourcesForCanvases canvases
         , annotationLoading = Set.empty
+        , annotationGeneration = model.annotationGeneration + 1
         , annotationsByCanvas = Dict.empty
         , auth = initialAuth
         , filters = resetFilters
@@ -540,6 +544,7 @@ init flags =
       , annotationsVisible = flags.enableAnnotations
       , annotationSources = Dict.empty
       , annotationLoading = Set.empty
+      , annotationGeneration = 0
       , annotationsByCanvas = Dict.empty
       , filterGroupExpanded = Set.empty
       , filters = resetFilters
@@ -782,7 +787,7 @@ requestAnnotations canvasId model =
 
             request url =
                 Annotation.requestPage
-                    (ServerRespondedWithAnnotations canvasId)
+                    (ServerRespondedWithAnnotations model.annotationGeneration canvasId)
                     model.acceptHeaders
                     url
 
@@ -1075,6 +1080,7 @@ subscriptions model =
         , zoomChanged UserChangedZoomLevel
         , viewerLoadingChanged ViewerLoadingChanged
         , viewerPageLoaded ViewerLoadedPage
+        , viewerAnnotationPagesRequested ViewerRequestedAnnotationPages
         , Browser.Events.onResize (\width _ -> ViewportChanged width)
         , case model.sidebarDrag of
             Just _ ->
@@ -1878,25 +1884,47 @@ update msg model =
                 Nothing ->
                     ( model, Cmd.none )
 
-        ServerRespondedWithAnnotations canvasId result ->
-            let
-                nextModel =
-                    { model | annotationLoading = Set.remove canvasId model.annotationLoading }
-            in
-            case result of
-                Ok annotations ->
-                    let
-                        merged =
-                            Dict.get canvasId nextModel.annotationsByCanvas
-                                |> Maybe.withDefault []
-                                |> (\existing -> annotations ++ existing)
-                    in
-                    ( { nextModel | annotationsByCanvas = Dict.insert canvasId merged nextModel.annotationsByCanvas }
-                    , annotationsUpdated { canvasId = canvasId, annotations = List.map (Annotation.encodeWithBodies (annotationImageServiceForCanvas canvasId nextModel)) merged }
-                    )
+        ViewerRequestedAnnotationPages indexes ->
+            List.foldl
+                (\index ( currentModel, commands ) ->
+                    case getPageAt index currentModel.pages of
+                        Just page ->
+                            let
+                                ( nextModel, command ) =
+                                    requestAnnotations page.canvasId currentModel
+                            in
+                            ( nextModel, command :: commands )
 
-                Err _ ->
-                    ( nextModel, Cmd.none )
+                        Nothing ->
+                            ( currentModel, commands )
+                )
+                ( model, [] )
+                indexes
+                |> Tuple.mapSecond Cmd.batch
+
+        ServerRespondedWithAnnotations generation canvasId result ->
+            if generation /= model.annotationGeneration then
+                ( model, Cmd.none )
+
+            else
+                let
+                    nextModel =
+                        { model | annotationLoading = Set.remove canvasId model.annotationLoading }
+                in
+                case result of
+                    Ok annotations ->
+                        let
+                            merged =
+                                Dict.get canvasId nextModel.annotationsByCanvas
+                                    |> Maybe.withDefault []
+                                    |> (\existing -> annotations ++ existing)
+                        in
+                        ( { nextModel | annotationsByCanvas = Dict.insert canvasId merged nextModel.annotationsByCanvas }
+                        , annotationsUpdated { canvasId = canvasId, annotations = List.map (Annotation.encodeWithBodies (annotationImageServiceForCanvas canvasId nextModel)) merged }
+                        )
+
+                    Err _ ->
+                        ( nextModel, Cmd.none )
 
         UserToggledAnnotations ->
             ( { model | annotationsVisible = not model.annotationsVisible }

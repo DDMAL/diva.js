@@ -66,5 +66,6 @@ type Msg
     | ViewerLoadingChanged Bool
     | ViewportChanged Int
     | ViewerLoadedPage Int
-    | ServerRespondedWithAnnotations String (Result Http.Error (List Annotation.WithBodies))
+    | ViewerRequestedAnnotationPages (List Int)
+    | ServerRespondedWithAnnotations Int String (Result Http.Error (List Annotation.WithBodies))
     | UserToggledAnnotations

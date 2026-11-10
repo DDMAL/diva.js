@@ -73,5 +73,5 @@ export function annotationTooltipPreview(text: string): string
     {
         preview = preview.replace(/\s+\S*$/u, "").trimEnd() || preview;
     }
-    return preview.length < text.length ? `${preview}\n… Click for details` : preview;
+    return preview.length < text.length ? `${preview}\n… Click annotation for full text` : preview;
 }

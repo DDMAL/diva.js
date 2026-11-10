@@ -80,6 +80,7 @@ type alias Model =
     , annotationsVisible : Bool
     , annotationSources : Dict String (List AnnotationSource)
     , annotationLoading : Set String
+    , annotationGeneration : Int
     , annotationsByCanvas : Dict String (List Annotation.WithBodies)
     }
 
