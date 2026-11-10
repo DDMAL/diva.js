@@ -21585,23 +21585,26 @@
       A2($elm$json$Json$Decode$field, "motivation", $elm$json$Json$Decode$string)
     )
   );
-  var $rism_digital$elm_iiif$IIIF$Annotation$decodePage = $elm$json$Json$Decode$oneOf(
-    _List_fromArray(
-      [
-        A2(
-          $elm$json$Json$Decode$field,
-          "resources",
-          $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Annotation$annotationDecoder)
-        ),
-        A2(
-          $elm$json$Json$Decode$field,
-          "items",
-          $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Annotation$annotationDecoder)
-        ),
-        $elm$json$Json$Decode$list($rism_digital$elm_iiif$IIIF$Annotation$annotationDecoder)
-      ]
-    )
-  );
+  var $rism_digital$elm_iiif$IIIF$Annotation$pageDecoder = function(decoder) {
+    return $elm$json$Json$Decode$oneOf(
+      _List_fromArray(
+        [
+          A2(
+            $elm$json$Json$Decode$field,
+            "resources",
+            $elm$json$Json$Decode$list(decoder)
+          ),
+          A2(
+            $elm$json$Json$Decode$field,
+            "items",
+            $elm$json$Json$Decode$list(decoder)
+          ),
+          $elm$json$Json$Decode$list(decoder)
+        ]
+      )
+    );
+  };
+  var $rism_digital$elm_iiif$IIIF$Annotation$decodePage = $rism_digital$elm_iiif$IIIF$Annotation$pageDecoder($rism_digital$elm_iiif$IIIF$Annotation$annotationDecoder);
   var $author$project$Annotation$annotationDecoder = A3(
     $elm$json$Json$Decode$map2,
     $author$project$Annotation$WithBodies,

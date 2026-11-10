@@ -1,4 +1,4 @@
-import type * as OpenSeadragonType from "openseadragon";
+import type OpenSeadragonType from "openseadragon";
 import {
     annotationBodiesEqual,
     type AnnotationBody,
