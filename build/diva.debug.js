@@ -58,7 +58,7 @@
       preview = preview.replace(/\s+\S*$/u, "").trimEnd() || preview;
     }
     return preview.length < text.length ? `${preview}
-\u2026 Click for details` : preview;
+\u2026 Click annotation for full text` : preview;
   }
 
   // src/annotation-index.ts
@@ -173,6 +173,7 @@
   var ZOOM_OUT_FACTOR = 1 / ZOOM_IN_FACTOR;
   var PAGE_LABEL_TOP_PADDING_PX = 28;
   var PAGE_GAP_VIEWPORT_UNITS = 0.06;
+  var PAGE_PREVIEW_BUFFER_VIEWPORTS = 2.5;
   var lazyImageObserver = null;
   var DivaLazyImage = class extends HTMLElement {
     constructor() {
@@ -289,6 +290,9 @@
       this.loadedItems = /* @__PURE__ */ new Map();
       this.pageWaiters = /* @__PURE__ */ new Map();
       this.pageOverlayElements = /* @__PURE__ */ new Map();
+      this.previewLayer = null;
+      this.pagePreviews = /* @__PURE__ */ new Map();
+      this.previewAnnotationIndexes = /* @__PURE__ */ new Set();
       this.annotationData = /* @__PURE__ */ new Map();
       this.annotationIndex = new AnnotationIndex();
       this.pageIndexesByCanvas = /* @__PURE__ */ new Map();
@@ -362,7 +366,10 @@
       }
     }
     disconnectedCallback() {
-      var _a;
+      var _a, _b;
+      this.clearPagePreviews();
+      (_a = this.previewLayer) == null ? void 0 : _a.remove();
+      this.previewLayer = null;
       this.annotationIndex.clear();
       this.pageIndexesByCanvas.clear();
       this.cancelLoads();
@@ -388,7 +395,7 @@
         this.viewer.destroy();
         this.viewer = null;
       }
-      (_a = this.scrollbarTrack) == null ? void 0 : _a.remove();
+      (_b = this.scrollbarTrack) == null ? void 0 : _b.remove();
       this.scrollbarTrack = null;
       this.scrollbarThumb = null;
     }
@@ -440,6 +447,13 @@
         viewer.addHandler("pan", () => this.updateScrollbar());
         viewer.addHandler("zoom", () => this.updateScrollbar());
         viewer.addHandler("animation-finish", this.handleAnimationFinishBound);
+        const layer = document.createElement("div");
+        layer.className = "diva-page-previews";
+        layer.setAttribute("aria-hidden", "true");
+        layer.style.cssText = "position:absolute;inset:0;overflow:hidden;pointer-events:none";
+        viewer.canvas.prepend(layer);
+        this.previewLayer = layer;
+        viewer.addHandler("update-viewport", () => this.updatePagePreviews());
       }
     }
     setLayoutMode(mode) {
@@ -633,6 +647,7 @@
       this.loadingIndexes.clear();
       this.unavailableIndexes.clear();
       this.loadedItems.clear();
+      this.clearPagePreviews();
       this.clearPageOverlays();
       this.clearAnnotationOverlays();
       this.targetIndex = tileSources.length > 0 ? this.initialPageIndex : null;
@@ -711,6 +726,110 @@
         this.ensurePageLoaded(this.targetIndex);
       }
     }
+    setPagePreviewPolicies(policies) {
+      const changed = new Map(policies.map((policy) => [policy.sourceId, policy.crossOrigin]));
+      this.tileSources.forEach((source, index) => {
+        if (source.preview && changed.has(source.sourceId)) {
+          source.preview = { ...source.preview, crossOrigin: changed.get(source.sourceId) };
+          this.removePagePreview(index);
+        }
+      });
+      this.updatePagePreviews();
+    }
+    removePagePreview(index) {
+      const image = this.pagePreviews.get(index);
+      if (image) {
+        image.onload = null;
+        image.onerror = null;
+        image.removeAttribute("src");
+        image.remove();
+        this.pagePreviews.delete(index);
+      }
+    }
+    clearPagePreviews() {
+      this.pagePreviews.forEach((_image, index) => this.removePagePreview(index));
+      this.previewAnnotationIndexes.clear();
+    }
+    updatePagePreviews() {
+      var _a;
+      const viewport = (_a = this.viewer) == null ? void 0 : _a.viewport;
+      if (!viewport || !this.previewLayer || !this.isViewportInitialized) {
+        return;
+      }
+      const bounds = viewport.getBounds(true);
+      const buffer = bounds.height * PAGE_PREVIEW_BUFFER_VIEWPORTS;
+      const range = this.indicesForRange(Math.max(0, bounds.y - buffer), bounds.y + bounds.height + buffer);
+      this.pagePreviews.forEach((_image, index) => {
+        if (!range || index < range[0] || index > range[1]) {
+          this.removePagePreview(index);
+        }
+      });
+      if (!range) {
+        return;
+      }
+      const annotationIndexes = [];
+      for (let index = range[0]; index <= range[1]; index += 1) {
+        const source = this.tileSources[index];
+        const preview = source == null ? void 0 : source.preview;
+        if (!(preview == null ? void 0 : preview.url) || !preview.crossOrigin || this.unavailableIndexes.has(index) || source.isStatic && preview.url === source.url) {
+          this.removePagePreview(index);
+          continue;
+        }
+        let image = this.pagePreviews.get(index);
+        if (!this.previewAnnotationIndexes.has(index)) {
+          this.previewAnnotationIndexes.add(index);
+          annotationIndexes.push(index);
+        }
+        const item = this.loadedItems.get(index);
+        if (!image && (item == null ? void 0 : item.getFullyLoaded())) {
+          continue;
+        }
+        if (!image) {
+          image = document.createElement("img");
+          image.className = "diva-page-preview";
+          image.dataset.pageIndex = String(index);
+          image.alt = "";
+          image.draggable = false;
+          image.style.cssText = "position:absolute;object-fit:contain;pointer-events:none";
+          if (preview.crossOrigin === "use-credentials") {
+            image.crossOrigin = "use-credentials";
+          }
+          const current = image;
+          let fallback = false;
+          image.onerror = () => {
+            if (this.pagePreviews.get(index) !== current) {
+              return;
+            }
+            if (!fallback && preview.crossOrigin === "anonymous" && preview.fallbackUrl && preview.fallbackUrl !== preview.url && !(source.isStatic && preview.fallbackUrl === source.url)) {
+              fallback = true;
+              current.src = preview.fallbackUrl;
+            } else {
+              current.dataset.failed = "true";
+              current.hidden = true;
+            }
+          };
+          this.pagePreviews.set(index, image);
+          this.previewLayer.appendChild(image);
+          image.src = preview.url;
+        }
+        const position = viewport.pixelFromPoint(
+          new OpenSeadragon.Point(this.pageXOffsets[index] || 0, this.pageOffsets[index] || 0),
+          true
+        );
+        const size = viewport.deltaPixelsFromPoints(new OpenSeadragon.Point(1, this.pageHeights[index] || 1), true);
+        image.style.left = `${position.x}px`;
+        image.style.top = `${position.y}px`;
+        image.style.width = `${size.x}px`;
+        image.style.height = `${size.y}px`;
+        image.hidden = image.dataset.failed === "true" || Boolean((item == null ? void 0 : item.getFullyLoaded()) && !item.needsDraw());
+      }
+      if (annotationIndexes.length > 0) {
+        this.emitCustomEvent("diva-preview-annotations-requested", {
+          indexes: annotationIndexes,
+          resourceId: this.resourceId
+        });
+      }
+    }
     ensurePageLoaded(index) {
       if (index < 0 || index >= this.tileSources.length || index >= this.pageOffsets.length) {
         return;
@@ -770,6 +889,13 @@
           item.setHeight(currentHeight, true);
           this.loadedIndexes.add(index);
           this.loadedItems.set(index, item);
+          item.addHandler("fully-loaded-change", () => {
+            requestAnimationFrame(() => {
+              if (token === this.loadToken && this.loadedItems.get(index) === item) {
+                this.updatePagePreviews();
+              }
+            });
+          });
           this.resolvePageWaiters(index, item);
           this.addOrUpdatePageOverlay(index);
           this.addOrUpdateAnnotationOverlay(index);
@@ -1032,6 +1158,7 @@
         return;
       }
       let element = this.pageOverlayElements.get(index);
+      const isNew = !element;
       const isRightAligned = index % 2 === 0;
       if (!element) {
         element = document.createElement("div");
@@ -1053,12 +1180,13 @@
       element.textContent = this.pageLabels[index] || `Page ${index + 1}`;
       const xOffset = (this.pageXOffsets[index] || 0) + (isRightAligned ? 1 : 0);
       const yOffset = this.pageOffsets[index] || 0;
-      this.removeOverlay(element);
-      this.viewer.addOverlay({
-        element,
-        location: new OpenSeadragon.Point(xOffset, yOffset),
-        placement: isRightAligned ? OpenSeadragon.Placement.BOTTOM_RIGHT : OpenSeadragon.Placement.BOTTOM_LEFT
-      });
+      const location2 = new OpenSeadragon.Point(xOffset, yOffset);
+      const placement = isRightAligned ? OpenSeadragon.Placement.BOTTOM_RIGHT : OpenSeadragon.Placement.BOTTOM_LEFT;
+      if (isNew) {
+        this.viewer.addOverlay({ element, location: location2, placement });
+      } else {
+        this.viewer.updateOverlay(element, location2, placement);
+      }
     }
     clearPageOverlays() {
       this.clearOverlays(this.pageOverlayElements);
@@ -1128,7 +1256,7 @@
             const y = event ? event.clientY - bounds.top : bounds.height / 2;
             const viewport = this.getBoundingClientRect();
             tooltip.textContent = preview;
-            tooltip.style.maxWidth = `min(24rem, ${Math.max(0, viewport.width - 16)}px)`;
+            tooltip.style.maxWidth = `min(36rem, ${Math.max(0, viewport.width - 16)}px)`;
             tooltip.style.left = `${x}px`;
             tooltip.style.top = `${y}px`;
             tooltip.hidden = false;
@@ -1715,9 +1843,9 @@
       const end = this.getRowEndIndex(start);
       return Array.from({ length: end - start + 1 }, (_value, offset) => start + offset);
     }
-    isPageLoaded(index, sourceId) {
+    isPageLoaded(index, sourceId, resourceId) {
       var _a;
-      return ((_a = this.tileSources[index]) == null ? void 0 : _a.sourceId) === sourceId && this.loadedIndexes.has(index);
+      return this.resourceId === resourceId && ((_a = this.tileSources[index]) == null ? void 0 : _a.sourceId) === sourceId && this.loadedIndexes.has(index);
     }
     next() {
       const visible = this.getVisiblePageIndexes();
@@ -2211,7 +2339,7 @@
   customElements.define("osd-viewer", OsdViewer);
 
   // cache/diva.css
-  var diva_default = ":root{--diva-accent:#5a6bff;--diva-accent-light:#9aa4ff;--diva-annotation-fill:#00bfff1f;--diva-annotation-fill-hover:#3030307a;--diva-annotation-stroke:#00bfff;--diva-annotation-stroke-hover:#d83a3a;--diva-annotation-stroke-width:2;--diva-background-color:#fff;--diva-border:#d9d4ce;--diva-danger:#d32f2f;--diva-dark-bg:#1c1d22;--diva-dark-border:#2c2d33;--diva-overlay-bg:#10111499;--diva-page-bg:#f7f5f1;--diva-shadow-dark:#00000026;--diva-shadow-focus:#9aa4ff59;--diva-shadow-modal:#00000040;--diva-surface:#e6e1dc;--diva-text-muted:#5c5a55;--diva-text-muted-on-dark:#ffffffb3;--diva-text-primary:#1b1b1b;--diva-toolbar-button-icon:#2c2d33;--diva-white:#fff;--diva-font-lg:16px;--diva-font-md:13px;--diva-font-sm:11px;--diva-font-xs:10px;--diva-font-xl:20px}.diva-app,.diva-app *{box-sizing:border-box}.diva-list-reset{margin:0;padding:0;list-style:none}.diva-ui-button{text-align:left;cursor:pointer;color:var(--diva-text-primary);font-size:var(--diva-font-lg);background-color:#0000;border:none;padding:0}.diva-ui-button:hover{background-color:var(--diva-surface)}.diva-ui-card{cursor:pointer;border-radius:0;width:100%;padding:6px}.diva-ui-card--dark{background-color:var(--diva-dark-bg)}.diva-thumbs-item:focus-visible,.diva-page-view-choice:focus-visible,.diva-canvas-toolbar-button:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.diva-annotation-overlay{pointer-events:none;width:100%;height:100%;position:relative}.diva-annotation-overlay.is-hidden{visibility:hidden!important}.diva-annotation-overlay svg{width:100%;height:100%;overflow:visible}.diva-annotation-overlay g{pointer-events:all;cursor:help}.diva-annotation-tooltip{z-index:101;color:#fff;width:max-content;max-width:min(24rem,100vw - 16px);font-size:var(--diva-font-sm);white-space:pre-line;overflow-wrap:anywhere;pointer-events:none;unicode-bidi:plaintext;background:#1c1d22f0;border:1px solid #ffffff2e;padding:6px 8px;line-height:1.35;position:absolute;transform:translate(10px,calc(-100% - 10px));box-shadow:0 4px 10px #00000047}.diva-annotation-panel{z-index:1000;color:#fff;background:#1c1d22f7;border:1px solid #fff3;width:min(24rem,100% - 28px);max-height:min(50%,24rem);padding:12px;position:absolute;bottom:14px;left:14px;overflow:auto;box-shadow:0 8px 20px #00000059}.osd-container{position:relative}.diva-annotation-panel-close{color:#fff;cursor:pointer;background-color:#000;border:1px solid #fff;border-radius:0;justify-content:center;align-items:center;height:30px;margin:0;padding:6px;display:inline-flex;position:absolute;top:12px;right:12px;width:30px!important}.diva-annotation-panel-close svg{fill:currentColor;flex:none;width:16px;height:16px}.diva-annotation-panel-close:hover,.diva-annotation-panel-close:focus-visible{background-color:#222}.diva-annotation-panel-content{padding-top:36px}.diva-annotation-panel-preview-controls{position:absolute;top:12px;right:50px}.diva-annotation-panel-content a{color:#9aa4ff}.diva-annotation-panel-content img{max-width:100%;height:auto}.diva-annotation-panel-rotate{color:#fff;cursor:pointer;background-color:#000;border:1px solid #fff;border-radius:0;justify-content:center;align-items:center;height:30px;padding:6px;font-size:18px;line-height:1;display:inline-flex;width:30px!important;margin:0!important}.diva-annotation-panel-rotate:hover,.diva-annotation-panel-rotate:focus-visible{background-color:#222}.diva-annotation-panel-image-link{color:#9aa4ff;font-size:var(--diva-font-sm);overflow-wrap:anywhere;margin:0 0 10px;line-height:1.3;display:block}.diva-annotation-rect,.diva-annotation-svg-shape{fill:var(--diva-annotation-fill,#00bfff1f);fill-opacity:1;stroke:var(--diva-annotation-stroke,#00bfff);stroke-width:var(--diva-annotation-stroke-width,2);vector-effect:non-scaling-stroke;transition:fill .12s ease-out,stroke .12s ease-out}.diva-annotation-overlay g[data-annotation-id]:hover .diva-annotation-rect,.diva-annotation-overlay g[data-annotation-id]:hover .diva-annotation-svg-shape,.diva-annotation-overlay g[data-annotation-id]:focus .diva-annotation-rect,.diva-annotation-overlay g[data-annotation-id]:focus .diva-annotation-svg-shape,.diva-annotation-overlay g[data-annotation-id].is-selected .diva-annotation-rect,.diva-annotation-overlay g[data-annotation-id].is-selected .diva-annotation-svg-shape{fill:var(--diva-annotation-fill-hover,#3030307a);stroke:var(--diva-annotation-stroke-hover,#d83a3a)}.diva-thumbs-image,.diva-page-view-choice-thumb{border-radius:0;width:100%;height:auto;display:block}.diva-metadata-panel,.diva-contents-panel{height:100%;padding:12px;overflow:auto}.diva-app{color-scheme:light;flex-direction:column;flex:1;height:100%;min-height:0;padding:12px 24px;display:flex}.diva-app.is-fullscreen{height:100vh;min-height:100vh;padding:0}.diva-app-header{font-size:var(--diva-font-lg);align-items:center;gap:12px;margin-bottom:8px;font-weight:600;display:flex}.diva-app-title{font-size:var(--diva-font-xl);text-align:left;color:var(--diva-text-primary);margin-bottom:6px;font-weight:600}.diva-app-title.is-fullscreen{color:var(--diva-white)}.diva-app-body{flex:1;align-items:stretch;gap:0;height:100%;min-height:0;display:flex;position:relative}.diva-canvas-column{flex-direction:column;flex:1;gap:24px;min-width:0;min-height:0;display:flex}.diva-canvas-column.is-fullscreen{height:100%}.diva-canvas-wrapper{flex:1;min-height:0;position:relative}.diva-canvas{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);border-radius:0;width:100%;height:100%;overflow:hidden}.diva-canvas.is-fullscreen{flex:1}.diva-metadata-body{flex-direction:column;gap:10px;display:flex}.diva-metadata-item{flex-direction:column;gap:0;display:flex}.diva-metadata-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);letter-spacing:.05em;font-weight:600;line-height:1.3}.diva-metadata-value{font-size:var(--diva-font-lg);color:var(--diva-text-muted);padding-left:12px;line-height:1.3}.diva-metadata-value>:first-child{margin-top:0}.diva-metadata-value>:last-child{margin-bottom:0}.diva-contents-empty{font-size:var(--diva-font-lg);color:var(--diva-text-muted);padding-left:12px}.diva-sidebar-resizer,.diva-collection-resizer{width:12px;font-size:var(--diva-font-xl);color:var(--diva-white);background-color:var(--diva-text-muted);cursor:col-resize;user-select:none;touch-action:none;flex:0 0 12px;justify-content:center;align-self:stretch;align-items:center;line-height:1;display:flex}.diva-sidebar-resizer:hover,.diva-sidebar-resizer:active,.diva-collection-resizer:hover,.diva-collection-resizer:active{cursor:col-resize}.diva-sidebar-resizer.is-hidden,.diva-collection-resizer.is-hidden{display:none}.diva-sidebar-panel.is-hidden,.diva-collection-panel.is-hidden{opacity:0;pointer-events:none;border-width:0;padding:0;overflow:hidden}.diva-required-statement-dock{justify-content:flex-end;width:100%;margin-top:12px;padding-right:8px;display:flex}.diva-required-statement{font-size:var(--diva-font-md);color:var(--diva-text-muted);text-align:right;min-width:250px;max-width:20vw;line-height:1.4}.diva-scrollbar-track{background:var(--diva-surface);border:1px solid var(--diva-border);z-index:100;border-radius:0;width:12px;position:absolute;top:4px;bottom:4px;right:4px}.diva-scrollbar-thumb{background:var(--diva-text-muted);cursor:pointer;border-radius:0;min-height:30px;position:absolute;left:1px;right:1px}.diva-scrollbar-thumb:hover{background:var(--diva-text-primary)}.diva-scrollbar-thumb:active{background:var(--diva-dark-border)}.diva-throbber-overlay{pointer-events:none;justify-content:center;align-items:center;display:flex;position:absolute;inset:0}.diva-viewer-zoom-indicator{z-index:30;pointer-events:none;font-size:var(--diva-font-sm);color:var(--diva-white);background-color:#0000008c;border-radius:0;padding:4px 8px;font-weight:600;position:absolute;bottom:12px;left:12px}.diva-throbber{background-color:var(--diva-white);width:64px;height:64px;box-shadow:0 8px 16px var(--diva-shadow-dark);border-radius:0;flex-wrap:wrap;padding:8px;display:flex}.diva-throbber-cube{background-color:var(--diva-accent);width:16px;height:16px;animation-name:diva-cube-grid;animation-duration:1.3s;animation-timing-function:ease-in-out;animation-iteration-count:infinite}@keyframes diva-cube-grid{0%{transform:scale(1)}35%{transform:scale(0)}70%{transform:scale(1)}to{transform:scale(1)}}@media (width<=720px){.diva-app{padding:12px}.diva-app-body{flex-direction:column;gap:12px}.diva-sidebar-resizer,.diva-collection-resizer{display:none}}.diva-image-unavailable{background:color-mix(in srgb, var(--diva-background-color,#fff) 92%, transparent);box-sizing:border-box;text-align:center;border:1px solid #999;flex-direction:column;justify-content:center;align-items:center;padding:1rem;display:flex}.diva-image-unavailable button{cursor:pointer}.diva-sidebar-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0;flex-direction:column;flex:none;width:320px;height:100%;min-height:0;display:flex;overflow:hidden}.diva-sidebar-tabs{border:1px solid var(--diva-surface);background-color:var(--diva-surface);border-radius:0;display:flex}.diva-sidebar-tab-button{font-size:var(--diva-font-md);text-transform:uppercase;cursor:pointer;color:var(--diva-text-muted);background-color:#0000;border:none;flex:1;padding:10px 12px}.diva-sidebar-tab-button.is-active{background-color:var(--diva-white);font-weight:600}.diva-sidebar-content{background-color:var(--diva-page-bg);flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}.diva-sidebar-pane{flex:1;width:100%;min-height:0}.diva-sidebar-pane.is-hidden{display:none}.diva-thumbs{scroll-behavior:smooth;background-color:var(--diva-dark-bg);flex:1;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:10px;width:100%;height:100%;min-height:0;padding:12px;display:grid;overflow-y:auto}.diva-thumbs-item{border:1px solid var(--diva-dark-border);text-align:left;flex-direction:column;justify-content:flex-start;align-items:stretch;max-width:none;display:flex}.diva-thumbs-item.is-active{border-color:var(--diva-accent-light);box-shadow:0 0 0 var(--diva-shadow-focus);background-color:var(--diva-dark-bg);outline:2px solid var(--diva-accent-light);outline-offset:2px}.diva-thumbs-lazy-image{background:var(--diva-dark-bg);width:100%;min-height:96px;display:block}.diva-thumbs-image--protected,.diva-thumbs-image--unavailable{background:var(--diva-dark-bg);min-height:96px}.diva-thumbs-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted-on-dark);margin-top:6px;line-height:1.3}.diva-thumbs-label.is-active{color:var(--diva-white)}.diva-contents-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:10px;font-weight:600}.diva-contents-view-tabs{gap:8px;margin-bottom:12px;display:flex}.diva-contents-view-button{background-color:var(--diva-surface);border:1px solid var(--diva-border);font-size:var(--diva-font-sm);color:var(--diva-text-muted);cursor:pointer;border-radius:0;padding:4px 10px}.diva-contents-view-button.is-active{background-color:var(--diva-white);border-color:var(--diva-accent);color:var(--diva-text-primary)}.diva-contents-list-nested{border-left:1px solid var(--diva-border);margin-top:6px;margin-left:6px;padding-left:13px}.diva-contents-item{margin-bottom:6px}.diva-contents-heading{align-items:baseline;display:flex}.diva-contents-disclosure{color:var(--diva-text-muted);cursor:pointer;text-align:center;flex:0 0 1.25rem}.diva-contents-disclosure:hover{color:var(--diva-accent)}.diva-contents-meta{border:1px solid var(--diva-dark-border);flex-direction:column;gap:10px;margin-top:6px;padding:8px;display:flex}.diva-contents-meta dl>div+div{border-top:1px solid var(--diva-dark-border);margin-top:.75rem;padding-top:.75rem}.diva-contents-meta dt{font-weight:600}.diva-contents-meta dd{margin:0 0 .5rem 1rem}.diva-contents-meta dd:last-child{margin-bottom:0}.diva-contents-button:hover{color:var(--diva-accent)}.diva-contents-button.is-current{font-weight:600}@media (width<=720px){.diva-sidebar-panel{height:auto;width:100%!important}.diva-sidebar-panel.is-overlay{z-index:100;width:100%;height:100%;box-shadow:0 12px 24px var(--diva-shadow-dark);border-radius:0;position:absolute;inset:0}.diva-sidebar-panel.is-mobile-hidden{display:none}.diva-thumbs{height:auto;overflow:auto hidden}.diva-thumbs-item{min-width:120px}}.diva-canvas-toolbar-stack{flex-direction:column;gap:4px;width:100%;min-width:0;display:flex}.diva-canvas-toolbar{align-items:center;width:100%;margin-bottom:0;display:flex}.diva-canvas-toolbar-section{flex:none;align-items:center;gap:5px;min-width:0;display:flex}.diva-canvas-toolbar-section.is-right{flex:none;margin-left:auto}.diva-canvas-toolbar-end{align-items:center;gap:8px;min-width:0;margin-left:auto;display:flex}.diva-canvas-toolbar-end .diva-canvas-toolbar-section.is-right{margin-left:0}.diva-canvas-toolbar-item{flex:none;justify-content:center;align-items:center;width:34px;height:34px;display:flex;position:relative}.diva-canvas-toolbar-button{width:30px;height:30px;color:var(--diva-toolbar-button-icon);box-shadow:none;cursor:pointer;background-color:#e2e2e2f0;border:1px solid #2c2d3373;border-radius:0;justify-content:center;align-items:center;padding:6px;display:flex}.diva-canvas-toolbar-button svg{flex:none;width:16px;height:16px}.diva-canvas-toolbar-button:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.diva-canvas-toolbar-button:hover{border-color:var(--diva-toolbar-button-icon);background-color:#d6d6d6fa}.diva-canvas-toolbar-button.is-fullscreen{color:var(--diva-white);background-color:#52586294;border-color:#ffffff85}.diva-canvas-toolbar-button.is-fullscreen:hover{border-color:var(--diva-white);background-color:#606874b8}.diva-canvas-toolbar-button.is-disabled{opacity:.4;cursor:not-allowed}.diva-canvas-toolbar-button.is-disabled:hover{background-color:#e2e2e2f0;border-color:#2c2d3373}.diva-canvas-toolbar-button.is-fullscreen.is-disabled:hover{background-color:#52586294;border-color:#ffffff85}.diva-canvas-toolbar-item:after{z-index:80;max-width:160px;color:var(--diva-white);content:attr(data-tooltip);font-size:var(--diva-font-xs);letter-spacing:.02em;opacity:0;pointer-events:none;text-align:center;visibility:hidden;white-space:normal;word-break:normal;background-color:#1c1d22f2;border:1px solid #ffffff2e;border-radius:0;width:max-content;padding:5px 7px;font-weight:600;line-height:1.2;transition:opacity .12s,transform .12s;position:absolute;top:calc(100% + 7px);left:50%;transform:translate(-50%,-3px);box-shadow:0 4px 10px #0003}.diva-canvas-toolbar-item:hover:after,.diva-canvas-toolbar-item:has(.diva-canvas-toolbar-button:focus-visible):after{opacity:1;visibility:visible;transform:translate(-50%)}.diva-canvas-toolbar-section.is-right .diva-canvas-toolbar-item:last-child:after{left:auto;right:0;transform:translateY(-3px)}.diva-canvas-toolbar-section.is-right .diva-canvas-toolbar-item:last-child:hover:after,.diva-canvas-toolbar-section.is-right .diva-canvas-toolbar-item:last-child:has(.diva-canvas-toolbar-button:focus-visible):after{transform:translate(0)}.diva-canvas-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-align:left;white-space:normal;overflow-wrap:anywhere;word-break:break-word;width:100%}.diva-canvas-toolbar-end .diva-canvas-label{overflow-wrap:normal;text-align:right;white-space:nowrap;word-break:normal;flex:auto;width:auto;min-width:0;max-width:min(42vw,42rem);overflow:hidden}.diva-canvas-label.is-fullscreen{color:var(--diva-white)}.diva-status{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:0}.diva-status.is-error{color:var(--diva-danger)}@media (width<=720px){.diva-canvas-toolbar{flex-wrap:wrap;gap:5px}.diva-canvas-toolbar-end{justify-content:flex-end;width:100%;margin-left:0}.diva-canvas-toolbar-item{width:32px;height:32px}.diva-canvas-toolbar-button{width:28px;height:28px;padding:6px}.diva-canvas-toolbar-button svg{width:15px;height:15px}.diva-canvas-label,.diva-status{display:none}}.diva-modal-overlay{background-color:var(--diva-overlay-bg);z-index:100;justify-content:center;align-items:center;padding:24px;display:flex;position:fixed;inset:0}.diva-viewer-status-overlay{background-color:var(--diva-overlay-bg);z-index:40;justify-content:center;align-items:center;padding:24px;display:flex;position:absolute;inset:0}.diva-modal-overlay.is-fullscreen{padding:0}.diva-modal{background-color:var(--diva-page-bg);color:var(--diva-text-primary);width:min(1440px,96vw);max-height:90vh;box-shadow:0 20px 40px var(--diva-shadow-modal);border-radius:0;flex-direction:column;display:flex}.diva-modal.is-narrow{width:min(960px,94vw)}.diva-modal.is-page-view{height:80vh;max-height:80vh}.diva-modal.is-fullscreen{border-radius:0;width:100vw;height:100vh;max-height:100vh}.diva-modal-header{justify-content:space-between;align-items:center;padding:16px 20px 0;display:flex}.diva-modal-actions{gap:8px;display:flex}.diva-modal-close-action .diva-canvas-toolbar-button{color:var(--diva-danger);box-shadow:none;-webkit-backdrop-filter:none;background-color:#0000;border:none;width:auto;height:auto;padding:2px}.diva-modal-close-action .diva-canvas-toolbar-button:hover{background-color:#d32f2f1f;border-color:#0000}.diva-modal-close-action .diva-canvas-toolbar-item{width:32px}.diva-modal-title-stack{flex-direction:column;gap:4px;display:flex}.diva-modal-title{font-size:var(--diva-font-lg);font-weight:600}.diva-modal-subtitle{font-size:var(--diva-font-lg);color:var(--diva-text-primary)}.diva-modal-subtitle.is-muted{font-size:var(--diva-font-md)}.diva-modal-body{flex:1;grid-template-columns:minmax(0,1fr) 240px;gap:16px;min-height:0;padding:16px 20px 20px;display:grid}.diva-modal-body.is-no-gap{gap:0}.diva-modal-body.is-two-column{grid-template-columns:minmax(0,1fr) 200px;align-items:start}.diva-modal-body.is-no-sidebar{grid-template-columns:minmax(0,1fr)}.diva-modal-body.is-with-choices{grid-template-columns:120px minmax(0,1fr) 240px}.diva-modal-body.is-with-choices-no-sidebar{grid-template-columns:120px minmax(0,1fr)}.diva-modal-viewer{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);height:100%;overflow:hidden}.diva-modal-canvas{width:100%;height:100%;display:block}.diva-modal-sidebar{background-color:var(--diva-white);border-top:1px solid var(--diva-border);border-right:1px solid var(--diva-border);border-bottom:1px solid var(--diva-border);border-radius:0;padding:16px;overflow:auto}.diva-filter-access-warning{color:var(--diva-danger);background-color:var(--diva-surface);border:1px solid var(--diva-border);font-size:var(--diva-font-sm);margin:0 0 12px;padding:8px;line-height:1.4}.diva-manifest-info-logo-wrap{text-align:center;flex-direction:column;align-items:center;gap:8px;display:flex}.diva-manifest-info-logo{width:100%;max-width:180px;height:auto}.diva-page-view-choices{background-color:var(--diva-dark-bg);border-radius:0;flex-direction:column;gap:8px;padding:8px;display:flex;overflow:auto}.diva-page-view-choice{border:2px solid #0000;flex-direction:column;gap:4px;display:flex}.diva-page-view-choice:hover{background-color:var(--diva-dark-bg)}.diva-page-view-choice.is-active{border-color:var(--diva-accent-light);background-color:var(--diva-dark-bg)}.diva-page-view-choice-thumb--protected{background:var(--diva-dark-bg);min-height:72px}.diva-page-view-choice-label{font-size:var(--diva-font-xs);color:var(--diva-text-muted);text-overflow:ellipsis;white-space:nowrap;line-height:1.2;overflow:hidden}.diva-filter-group{border-bottom:1px solid var(--diva-border);margin-bottom:12px;padding-bottom:12px}.diva-filter-title-button{text-align:left;cursor:pointer;width:100%;font-size:var(--diva-font-sm);text-transform:uppercase;letter-spacing:.08em;color:var(--diva-text-muted);background-color:#0000;border:none;align-items:center;gap:8px;margin-bottom:8px;padding:0;font-weight:600;display:flex}.diva-filter-title-button.is-collapsed{margin-bottom:0}.diva-filter-title-icon{border-top:4px solid #0000;border-bottom:4px solid #0000;border-left:6px solid var(--diva-text-muted);width:0;height:0;transition:transform .15s;display:inline-block}.diva-filter-title-icon.is-expanded{transform:rotate(90deg)}.diva-filter-row{flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;display:flex}.diva-filter-toggle{font-size:var(--diva-font-md);align-items:center;gap:8px;margin-bottom:8px;display:flex}.diva-filter-toggle.is-inline{margin-bottom:0}.diva-filter-range-group{flex-direction:column;gap:6px;margin-bottom:10px;display:flex}.diva-filter-range-header{justify-content:space-between;align-items:center;gap:8px;display:flex}.diva-filter-range-header-right{align-items:center;gap:8px;display:flex}.diva-filter-range-input{width:100%}.diva-filter-value{font-size:var(--diva-font-sm);color:var(--diva-text-muted);text-align:right;width:40px}.diva-filter-reset{font-size:var(--diva-font-xs);background-color:var(--diva-surface);border:1px solid var(--diva-border);cursor:pointer;color:var(--diva-text-muted);border-radius:0;padding:2px 6px}.diva-filter-reset:hover{background-color:var(--diva-border)}.diva-filter-json{width:100%;min-height:120px;font-size:var(--diva-font-sm);border:1px solid var(--diva-border);background-color:var(--diva-white);resize:vertical;border-radius:0;padding:6px 8px;font-family:Menlo,Monaco,Consolas,Liberation Mono,monospace}.diva-filter-json-error{font-size:var(--diva-font-sm);color:var(--diva-danger);margin-top:4px}.diva-filter-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted)}.diva-filter-select{border:1px solid var(--diva-border);background-color:var(--diva-white);font-size:var(--diva-font-sm);border-radius:0;padding:4px 6px}.diva-filter-color-input{border:1px solid var(--diva-border);background-color:var(--diva-white);border-radius:0;width:42px;height:28px;padding:0}.diva-auth-overlay{z-index:10000;background:#0000008c;place-items:center;display:grid;position:fixed;inset:0}.diva-auth-dialog{box-sizing:border-box;border:1px solid var(--diva-border,#aaa);background:var(--diva-background-color,#fff);width:min(30rem,100vw - 2rem);color:var(--diva-text-primary,#222);border-radius:0;padding:1.25rem}.diva-auth-dialog button{min-height:2.25rem;color:inherit;cursor:pointer;background:0 0;border:1px solid;border-radius:0;padding:.35rem .8rem}.diva-auth-dialog button:focus-visible{outline:2px solid var(--diva-accent,#1769aa);outline-offset:2px}.diva-collection-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0;flex-direction:column;height:100%;min-height:0;display:flex;overflow:hidden}.diva-collection-header{background-color:var(--diva-surface);border-bottom:1px solid var(--diva-border);border-radius:0;padding:12px}.diva-collection-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:4px;font-weight:600}.diva-collection-summary{font-size:var(--diva-font-md);color:var(--diva-text-muted);line-height:1.4}.diva-collection-tree-item{padding-left:12px}.diva-collection-node-button{align-items:center;gap:6px;width:100%;padding:6px 8px;display:flex}.diva-collection-expand-icon{flex-shrink:0;justify-content:center;align-items:center;width:16px;height:16px;display:flex}.diva-manifest-tree-item{padding:6px 8px 6px 30px}.diva-manifest-tree-item.is-active{background-color:var(--diva-border);font-weight:600}.diva-sidebar-pane.is-scroll{overflow-y:auto}@media (width<=720px){.diva-collection-panel{width:100%;height:auto}}";
+  var diva_default = ":root{--diva-accent:#5a6bff;--diva-accent-light:#9aa4ff;--diva-annotation-fill:#00bfff1f;--diva-annotation-fill-hover:#3030307a;--diva-annotation-stroke:#00bfff;--diva-annotation-stroke-hover:#d83a3a;--diva-annotation-stroke-width:2;--diva-background-color:#fff;--diva-border:#d9d4ce;--diva-danger:#d32f2f;--diva-dark-bg:#1c1d22;--diva-dark-border:#2c2d33;--diva-overlay-bg:#10111499;--diva-page-bg:#f7f5f1;--diva-shadow-dark:#00000026;--diva-shadow-focus:#9aa4ff59;--diva-shadow-modal:#00000040;--diva-surface:#e6e1dc;--diva-text-muted:#5c5a55;--diva-text-muted-on-dark:#ffffffb3;--diva-text-primary:#1b1b1b;--diva-toolbar-button-icon:#2c2d33;--diva-white:#fff;--diva-font-lg:16px;--diva-font-md:13px;--diva-font-sm:11px;--diva-font-xs:10px;--diva-font-xl:20px}.diva-app,.diva-app *{box-sizing:border-box}.diva-list-reset{margin:0;padding:0;list-style:none}.diva-ui-button{text-align:left;cursor:pointer;color:var(--diva-text-primary);font-size:var(--diva-font-lg);background-color:#0000;border:none;padding:0}.diva-ui-button:hover{background-color:var(--diva-surface)}.diva-ui-card{cursor:pointer;border-radius:0;width:100%;padding:6px}.diva-ui-card--dark{background-color:var(--diva-dark-bg)}.diva-thumbs-item:focus-visible,.diva-page-view-choice:focus-visible,.diva-canvas-toolbar-button:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.diva-annotation-overlay{pointer-events:none;width:100%;height:100%;position:relative}.diva-annotation-overlay.is-hidden{visibility:hidden!important}.diva-annotation-overlay svg{width:100%;height:100%;overflow:visible}.diva-annotation-overlay g{pointer-events:all;cursor:help}.diva-annotation-tooltip{z-index:101;color:#fff;width:max-content;max-width:min(36rem,100vw - 16px);font-size:calc(var(--diva-font-sm) * 1.5);white-space:pre-line;overflow-wrap:anywhere;pointer-events:none;unicode-bidi:plaintext;background:#1c1d22f0;border:1px solid #ffffff2e;padding:9px 12px;line-height:1.35;position:absolute;transform:translate(10px,calc(-100% - 10px));box-shadow:0 4px 10px #00000047}.diva-annotation-panel{z-index:1000;color:#fff;background:#1c1d22f7;border:1px solid #fff3;width:min(24rem,100% - 28px);max-height:min(50%,24rem);padding:12px;position:absolute;bottom:14px;left:14px;overflow:auto;box-shadow:0 8px 20px #00000059}.osd-container{position:relative}.diva-annotation-panel-close{color:#fff;cursor:pointer;background-color:#000;border:1px solid #fff;border-radius:0;justify-content:center;align-items:center;height:30px;margin:0;padding:6px;display:inline-flex;position:absolute;top:12px;right:12px;width:30px!important}.diva-annotation-panel-close svg{fill:currentColor;flex:none;width:16px;height:16px}.diva-annotation-panel-close:hover,.diva-annotation-panel-close:focus-visible{background-color:#222}.diva-annotation-panel-content{padding-top:36px}.diva-annotation-panel-preview-controls{position:absolute;top:12px;right:50px}.diva-annotation-panel-content a{color:#9aa4ff}.diva-annotation-panel-content img{max-width:100%;height:auto}.diva-annotation-panel-rotate{color:#fff;cursor:pointer;background-color:#000;border:1px solid #fff;border-radius:0;justify-content:center;align-items:center;height:30px;padding:6px;font-size:18px;line-height:1;display:inline-flex;width:30px!important;margin:0!important}.diva-annotation-panel-rotate:hover,.diva-annotation-panel-rotate:focus-visible{background-color:#222}.diva-annotation-panel-image-link{color:#9aa4ff;font-size:var(--diva-font-sm);overflow-wrap:anywhere;margin:0 0 10px;line-height:1.3;display:block}.diva-annotation-rect,.diva-annotation-svg-shape{fill:var(--diva-annotation-fill,#00bfff1f);fill-opacity:1;stroke:var(--diva-annotation-stroke,#00bfff);stroke-width:var(--diva-annotation-stroke-width,2);vector-effect:non-scaling-stroke;transition:fill .12s ease-out,stroke .12s ease-out}.diva-annotation-overlay g[data-annotation-id]:hover .diva-annotation-rect,.diva-annotation-overlay g[data-annotation-id]:hover .diva-annotation-svg-shape,.diva-annotation-overlay g[data-annotation-id]:focus .diva-annotation-rect,.diva-annotation-overlay g[data-annotation-id]:focus .diva-annotation-svg-shape,.diva-annotation-overlay g[data-annotation-id].is-selected .diva-annotation-rect,.diva-annotation-overlay g[data-annotation-id].is-selected .diva-annotation-svg-shape{fill:var(--diva-annotation-fill-hover,#3030307a);stroke:var(--diva-annotation-stroke-hover,#d83a3a)}.diva-thumbs-image,.diva-page-view-choice-thumb{border-radius:0;width:100%;height:auto;display:block}.diva-metadata-panel,.diva-contents-panel{height:100%;padding:12px;overflow:auto}.diva-app{color-scheme:light;flex-direction:column;flex:1;height:100%;min-height:0;padding:12px 24px;display:flex}.diva-app.is-fullscreen{height:100vh;min-height:100vh;padding:0}.diva-app-header{font-size:var(--diva-font-lg);align-items:center;gap:12px;margin-bottom:8px;font-weight:600;display:flex}.diva-app-title{font-size:var(--diva-font-xl);text-align:left;color:var(--diva-text-primary);margin-bottom:6px;font-weight:600}.diva-app-title.is-fullscreen{color:var(--diva-white)}.diva-app-body{flex:1;align-items:stretch;gap:0;height:100%;min-height:0;display:flex;position:relative}.diva-canvas-column{flex-direction:column;flex:1;gap:24px;min-width:0;min-height:0;display:flex}.diva-canvas-column.is-fullscreen{height:100%}.diva-canvas-wrapper{flex:1;min-height:0;position:relative}.diva-canvas{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);border-radius:0;width:100%;height:100%;overflow:hidden}.diva-canvas.is-fullscreen{flex:1}.diva-metadata-body{flex-direction:column;gap:10px;display:flex}.diva-metadata-item{flex-direction:column;gap:0;display:flex}.diva-metadata-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);letter-spacing:.05em;font-weight:600;line-height:1.3}.diva-metadata-value{font-size:var(--diva-font-lg);color:var(--diva-text-muted);padding-left:12px;line-height:1.3}.diva-metadata-value>:first-child{margin-top:0}.diva-metadata-value>:last-child{margin-bottom:0}.diva-contents-empty{font-size:var(--diva-font-lg);color:var(--diva-text-muted);padding-left:12px}.diva-sidebar-resizer,.diva-collection-resizer{width:12px;font-size:var(--diva-font-xl);color:var(--diva-white);background-color:var(--diva-text-muted);cursor:col-resize;user-select:none;touch-action:none;flex:0 0 12px;justify-content:center;align-self:stretch;align-items:center;line-height:1;display:flex}.diva-sidebar-resizer:hover,.diva-sidebar-resizer:active,.diva-collection-resizer:hover,.diva-collection-resizer:active{cursor:col-resize}.diva-sidebar-resizer.is-hidden,.diva-collection-resizer.is-hidden{display:none}.diva-sidebar-panel.is-hidden,.diva-collection-panel.is-hidden{opacity:0;pointer-events:none;border-width:0;padding:0;overflow:hidden}.diva-required-statement-dock{justify-content:flex-end;width:100%;margin-top:12px;padding-right:8px;display:flex}.diva-required-statement{font-size:var(--diva-font-md);color:var(--diva-text-muted);text-align:right;min-width:250px;max-width:20vw;line-height:1.4}.diva-scrollbar-track{background:var(--diva-surface);border:1px solid var(--diva-border);z-index:100;border-radius:0;width:12px;position:absolute;top:4px;bottom:4px;right:4px}.diva-scrollbar-thumb{background:var(--diva-text-muted);cursor:pointer;border-radius:0;min-height:30px;position:absolute;left:1px;right:1px}.diva-scrollbar-thumb:hover{background:var(--diva-text-primary)}.diva-scrollbar-thumb:active{background:var(--diva-dark-border)}.diva-throbber-overlay{pointer-events:none;justify-content:center;align-items:center;display:flex;position:absolute;inset:0}.diva-viewer-zoom-indicator{z-index:30;pointer-events:none;font-size:var(--diva-font-sm);color:var(--diva-white);background-color:#0000008c;border-radius:0;padding:4px 8px;font-weight:600;position:absolute;bottom:12px;left:12px}.diva-throbber{background-color:var(--diva-white);width:64px;height:64px;box-shadow:0 8px 16px var(--diva-shadow-dark);border-radius:0;flex-wrap:wrap;padding:8px;display:flex}.diva-throbber-cube{background-color:var(--diva-accent);width:16px;height:16px;animation-name:diva-cube-grid;animation-duration:1.3s;animation-timing-function:ease-in-out;animation-iteration-count:infinite}@keyframes diva-cube-grid{0%{transform:scale(1)}35%{transform:scale(0)}70%{transform:scale(1)}to{transform:scale(1)}}@media (width<=720px){.diva-app{padding:12px}.diva-app-body{flex-direction:column;gap:12px}.diva-sidebar-resizer,.diva-collection-resizer{display:none}}.diva-image-unavailable{background:color-mix(in srgb, var(--diva-background-color,#fff) 92%, transparent);box-sizing:border-box;text-align:center;border:1px solid #999;flex-direction:column;justify-content:center;align-items:center;padding:1rem;display:flex}.diva-image-unavailable button{cursor:pointer}.diva-sidebar-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0;flex-direction:column;flex:none;width:320px;height:100%;min-height:0;display:flex;overflow:hidden}.diva-sidebar-tabs{border:1px solid var(--diva-surface);background-color:var(--diva-surface);border-radius:0;display:flex}.diva-sidebar-tab-button{font-size:var(--diva-font-md);text-transform:uppercase;cursor:pointer;color:var(--diva-text-muted);background-color:#0000;border:none;flex:1;padding:10px 12px}.diva-sidebar-tab-button.is-active{background-color:var(--diva-white);font-weight:600}.diva-sidebar-content{background-color:var(--diva-page-bg);flex-direction:column;flex:1;min-height:0;display:flex;position:relative;overflow:hidden}.diva-sidebar-pane{flex:1;width:100%;min-height:0}.diva-sidebar-pane.is-hidden{display:none}.diva-thumbs{scroll-behavior:smooth;background-color:var(--diva-dark-bg);flex:1;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:10px;width:100%;height:100%;min-height:0;padding:12px;display:grid;overflow-y:auto}.diva-thumbs-item{border:1px solid var(--diva-dark-border);text-align:left;flex-direction:column;justify-content:flex-start;align-items:stretch;max-width:none;display:flex}.diva-thumbs-item.is-active{border-color:var(--diva-accent-light);box-shadow:0 0 0 var(--diva-shadow-focus);background-color:var(--diva-dark-bg);outline:2px solid var(--diva-accent-light);outline-offset:2px}.diva-thumbs-lazy-image{background:var(--diva-dark-bg);width:100%;min-height:96px;display:block}.diva-thumbs-image--protected,.diva-thumbs-image--unavailable{background:var(--diva-dark-bg);min-height:96px}.diva-thumbs-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted-on-dark);margin-top:6px;line-height:1.3}.diva-thumbs-label.is-active{color:var(--diva-white)}.diva-contents-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:10px;font-weight:600}.diva-contents-view-tabs{gap:8px;margin-bottom:12px;display:flex}.diva-contents-view-button{background-color:var(--diva-surface);border:1px solid var(--diva-border);font-size:var(--diva-font-sm);color:var(--diva-text-muted);cursor:pointer;border-radius:0;padding:4px 10px}.diva-contents-view-button.is-active{background-color:var(--diva-white);border-color:var(--diva-accent);color:var(--diva-text-primary)}.diva-contents-list-nested{border-left:1px solid var(--diva-border);margin-top:6px;margin-left:6px;padding-left:13px}.diva-contents-item{margin-bottom:6px}.diva-contents-heading{align-items:baseline;display:flex}.diva-contents-disclosure{color:var(--diva-text-muted);cursor:pointer;text-align:center;flex:0 0 1.25rem}.diva-contents-disclosure:hover{color:var(--diva-accent)}.diva-contents-meta{border:1px solid var(--diva-dark-border);flex-direction:column;gap:10px;margin-top:6px;padding:8px;display:flex}.diva-contents-meta dl>div+div{border-top:1px solid var(--diva-dark-border);margin-top:.75rem;padding-top:.75rem}.diva-contents-meta dt{font-weight:600}.diva-contents-meta dd{margin:0 0 .5rem 1rem}.diva-contents-meta dd:last-child{margin-bottom:0}.diva-contents-button:hover{color:var(--diva-accent)}.diva-contents-button.is-current{font-weight:600}@media (width<=720px){.diva-sidebar-panel{height:auto;width:100%!important}.diva-sidebar-panel.is-overlay{z-index:100;width:100%;height:100%;box-shadow:0 12px 24px var(--diva-shadow-dark);border-radius:0;position:absolute;inset:0}.diva-sidebar-panel.is-mobile-hidden{display:none}.diva-thumbs{height:auto;overflow:auto hidden}.diva-thumbs-item{min-width:120px}}.diva-canvas-toolbar-stack{flex-direction:column;gap:4px;width:100%;min-width:0;display:flex}.diva-canvas-toolbar{align-items:center;width:100%;margin-bottom:0;display:flex}.diva-canvas-toolbar-section{flex:none;align-items:center;gap:5px;min-width:0;display:flex}.diva-canvas-toolbar-section.is-right{flex:none;margin-left:auto}.diva-canvas-toolbar-end{align-items:center;gap:8px;min-width:0;margin-left:auto;display:flex}.diva-canvas-toolbar-end .diva-canvas-toolbar-section.is-right{margin-left:0}.diva-canvas-toolbar-item{flex:none;justify-content:center;align-items:center;width:34px;height:34px;display:flex;position:relative}.diva-canvas-toolbar-button{width:30px;height:30px;color:var(--diva-toolbar-button-icon);box-shadow:none;cursor:pointer;background-color:#e2e2e2f0;border:1px solid #2c2d3373;border-radius:0;justify-content:center;align-items:center;padding:6px;display:flex}.diva-canvas-toolbar-button svg{flex:none;width:16px;height:16px}.diva-canvas-toolbar-button:focus-visible{outline:2px solid var(--diva-accent);outline-offset:2px}.diva-canvas-toolbar-button:hover{border-color:var(--diva-toolbar-button-icon);background-color:#d6d6d6fa}.diva-canvas-toolbar-button.is-fullscreen{color:var(--diva-white);background-color:#52586294;border-color:#ffffff85}.diva-canvas-toolbar-button.is-fullscreen:hover{border-color:var(--diva-white);background-color:#606874b8}.diva-canvas-toolbar-button.is-disabled{opacity:.4;cursor:not-allowed}.diva-canvas-toolbar-button.is-disabled:hover{background-color:#e2e2e2f0;border-color:#2c2d3373}.diva-canvas-toolbar-button.is-fullscreen.is-disabled:hover{background-color:#52586294;border-color:#ffffff85}.diva-canvas-toolbar-item:after{z-index:80;max-width:160px;color:var(--diva-white);content:attr(data-tooltip);font-size:var(--diva-font-xs);letter-spacing:.02em;opacity:0;pointer-events:none;text-align:center;visibility:hidden;white-space:normal;word-break:normal;background-color:#1c1d22f2;border:1px solid #ffffff2e;border-radius:0;width:max-content;padding:5px 7px;font-weight:600;line-height:1.2;transition:opacity .12s,transform .12s;position:absolute;top:calc(100% + 7px);left:50%;transform:translate(-50%,-3px);box-shadow:0 4px 10px #0003}.diva-canvas-toolbar-item:hover:after,.diva-canvas-toolbar-item:has(.diva-canvas-toolbar-button:focus-visible):after{opacity:1;visibility:visible;transform:translate(-50%)}.diva-canvas-toolbar-section.is-right .diva-canvas-toolbar-item:last-child:after{left:auto;right:0;transform:translateY(-3px)}.diva-canvas-toolbar-section.is-right .diva-canvas-toolbar-item:last-child:hover:after,.diva-canvas-toolbar-section.is-right .diva-canvas-toolbar-item:last-child:has(.diva-canvas-toolbar-button:focus-visible):after{transform:translate(0)}.diva-canvas-label{font-size:var(--diva-font-lg);color:var(--diva-text-muted);text-align:left;white-space:normal;overflow-wrap:anywhere;word-break:break-word;width:100%}.diva-canvas-toolbar-end .diva-canvas-label{overflow-wrap:normal;text-align:right;white-space:nowrap;word-break:normal;flex:auto;width:auto;min-width:0;max-width:min(42vw,42rem);overflow:hidden}.diva-canvas-label.is-fullscreen{color:var(--diva-white)}.diva-status{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:0}.diva-status.is-error{color:var(--diva-danger)}@media (width<=720px){.diva-canvas-toolbar{flex-wrap:wrap;gap:5px}.diva-canvas-toolbar-end{justify-content:flex-end;width:100%;margin-left:0}.diva-canvas-toolbar-item{width:32px;height:32px}.diva-canvas-toolbar-button{width:28px;height:28px;padding:6px}.diva-canvas-toolbar-button svg{width:15px;height:15px}.diva-canvas-label,.diva-status{display:none}}.diva-modal-overlay{background-color:var(--diva-overlay-bg);z-index:100;justify-content:center;align-items:center;padding:24px;display:flex;position:fixed;inset:0}.diva-viewer-status-overlay{background-color:var(--diva-overlay-bg);z-index:40;justify-content:center;align-items:center;padding:24px;display:flex;position:absolute;inset:0}.diva-modal-overlay.is-fullscreen{padding:0}.diva-modal{background-color:var(--diva-page-bg);color:var(--diva-text-primary);width:min(1440px,96vw);max-height:90vh;box-shadow:0 20px 40px var(--diva-shadow-modal);border-radius:0;flex-direction:column;display:flex}.diva-modal.is-narrow{width:min(960px,94vw)}.diva-modal.is-page-view{height:80vh;max-height:80vh}.diva-modal.is-fullscreen{border-radius:0;width:100vw;height:100vh;max-height:100vh}.diva-modal-header{justify-content:space-between;align-items:center;padding:16px 20px 0;display:flex}.diva-modal-actions{gap:8px;display:flex}.diva-modal-close-action .diva-canvas-toolbar-button{color:var(--diva-danger);box-shadow:none;-webkit-backdrop-filter:none;background-color:#0000;border:none;width:auto;height:auto;padding:2px}.diva-modal-close-action .diva-canvas-toolbar-button:hover{background-color:#d32f2f1f;border-color:#0000}.diva-modal-close-action .diva-canvas-toolbar-item{width:32px}.diva-modal-title-stack{flex-direction:column;gap:4px;display:flex}.diva-modal-title{font-size:var(--diva-font-lg);font-weight:600}.diva-modal-subtitle{font-size:var(--diva-font-lg);color:var(--diva-text-primary)}.diva-modal-subtitle.is-muted{font-size:var(--diva-font-md)}.diva-modal-body{flex:1;grid-template-columns:minmax(0,1fr) 240px;gap:16px;min-height:0;padding:16px 20px 20px;display:grid}.diva-modal-body.is-no-gap{gap:0}.diva-modal-body.is-two-column{grid-template-columns:minmax(0,1fr) 200px;align-items:start}.diva-modal-body.is-no-sidebar{grid-template-columns:minmax(0,1fr)}.diva-modal-body.is-with-choices{grid-template-columns:120px minmax(0,1fr) 240px}.diva-modal-body.is-with-choices-no-sidebar{grid-template-columns:120px minmax(0,1fr)}.diva-modal-viewer{background-color:var(--diva-dark-bg);border:1px solid var(--diva-dark-border);height:100%;overflow:hidden}.diva-modal-canvas{width:100%;height:100%;display:block}.diva-modal-sidebar{background-color:var(--diva-white);border-top:1px solid var(--diva-border);border-right:1px solid var(--diva-border);border-bottom:1px solid var(--diva-border);border-radius:0;padding:16px;overflow:auto}.diva-filter-access-warning{color:var(--diva-danger);background-color:var(--diva-surface);border:1px solid var(--diva-border);font-size:var(--diva-font-sm);margin:0 0 12px;padding:8px;line-height:1.4}.diva-manifest-info-logo-wrap{text-align:center;flex-direction:column;align-items:center;gap:8px;display:flex}.diva-manifest-info-logo{width:100%;max-width:180px;height:auto}.diva-page-view-choices{background-color:var(--diva-dark-bg);border-radius:0;flex-direction:column;gap:8px;padding:8px;display:flex;overflow:auto}.diva-page-view-choice{border:2px solid #0000;flex-direction:column;gap:4px;display:flex}.diva-page-view-choice:hover{background-color:var(--diva-dark-bg)}.diva-page-view-choice.is-active{border-color:var(--diva-accent-light);background-color:var(--diva-dark-bg)}.diva-page-view-choice-thumb--protected{background:var(--diva-dark-bg);min-height:72px}.diva-page-view-choice-label{font-size:var(--diva-font-xs);color:var(--diva-text-muted);text-overflow:ellipsis;white-space:nowrap;line-height:1.2;overflow:hidden}.diva-filter-group{border-bottom:1px solid var(--diva-border);margin-bottom:12px;padding-bottom:12px}.diva-filter-title-button{text-align:left;cursor:pointer;width:100%;font-size:var(--diva-font-sm);text-transform:uppercase;letter-spacing:.08em;color:var(--diva-text-muted);background-color:#0000;border:none;align-items:center;gap:8px;margin-bottom:8px;padding:0;font-weight:600;display:flex}.diva-filter-title-button.is-collapsed{margin-bottom:0}.diva-filter-title-icon{border-top:4px solid #0000;border-bottom:4px solid #0000;border-left:6px solid var(--diva-text-muted);width:0;height:0;transition:transform .15s;display:inline-block}.diva-filter-title-icon.is-expanded{transform:rotate(90deg)}.diva-filter-row{flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;display:flex}.diva-filter-toggle{font-size:var(--diva-font-md);align-items:center;gap:8px;margin-bottom:8px;display:flex}.diva-filter-toggle.is-inline{margin-bottom:0}.diva-filter-range-group{flex-direction:column;gap:6px;margin-bottom:10px;display:flex}.diva-filter-range-header{justify-content:space-between;align-items:center;gap:8px;display:flex}.diva-filter-range-header-right{align-items:center;gap:8px;display:flex}.diva-filter-range-input{width:100%}.diva-filter-value{font-size:var(--diva-font-sm);color:var(--diva-text-muted);text-align:right;width:40px}.diva-filter-reset{font-size:var(--diva-font-xs);background-color:var(--diva-surface);border:1px solid var(--diva-border);cursor:pointer;color:var(--diva-text-muted);border-radius:0;padding:2px 6px}.diva-filter-reset:hover{background-color:var(--diva-border)}.diva-filter-json{width:100%;min-height:120px;font-size:var(--diva-font-sm);border:1px solid var(--diva-border);background-color:var(--diva-white);resize:vertical;border-radius:0;padding:6px 8px;font-family:Menlo,Monaco,Consolas,Liberation Mono,monospace}.diva-filter-json-error{font-size:var(--diva-font-sm);color:var(--diva-danger);margin-top:4px}.diva-filter-label{font-size:var(--diva-font-sm);color:var(--diva-text-muted)}.diva-filter-select{border:1px solid var(--diva-border);background-color:var(--diva-white);font-size:var(--diva-font-sm);border-radius:0;padding:4px 6px}.diva-filter-color-input{border:1px solid var(--diva-border);background-color:var(--diva-white);border-radius:0;width:42px;height:28px;padding:0}.diva-auth-overlay{z-index:10000;background:#0000008c;place-items:center;display:grid;position:fixed;inset:0}.diva-auth-dialog{box-sizing:border-box;border:1px solid var(--diva-border,#aaa);background:var(--diva-background-color,#fff);width:min(30rem,100vw - 2rem);color:var(--diva-text-primary,#222);border-radius:0;padding:1.25rem}.diva-auth-dialog button{min-height:2.25rem;color:inherit;cursor:pointer;background:0 0;border:1px solid;border-radius:0;padding:.35rem .8rem}.diva-auth-dialog button:focus-visible{outline:2px solid var(--diva-accent,#1769aa);outline-offset:2px}.diva-collection-panel{border:1px solid var(--diva-dark-border);background-color:var(--diva-page-bg);border-radius:0;flex-direction:column;height:100%;min-height:0;display:flex;overflow:hidden}.diva-collection-header{background-color:var(--diva-surface);border-bottom:1px solid var(--diva-border);border-radius:0;padding:12px}.diva-collection-title{font-size:var(--diva-font-lg);color:var(--diva-text-muted);margin-bottom:4px;font-weight:600}.diva-collection-summary{font-size:var(--diva-font-md);color:var(--diva-text-muted);line-height:1.4}.diva-collection-tree-item{padding-left:12px}.diva-collection-node-button{align-items:center;gap:6px;width:100%;padding:6px 8px;display:flex}.diva-collection-expand-icon{flex-shrink:0;justify-content:center;align-items:center;width:16px;height:16px;display:flex}.diva-manifest-tree-item{padding:6px 8px 6px 30px}.diva-manifest-tree-item.is-active{background-color:var(--diva-border);font-weight:600}.diva-sidebar-pane.is-scroll{overflow-y:auto}@media (width<=720px){.diva-collection-panel{width:100%;height:auto}}";
 
   // cache/elm-esm.js
   function F(arity, fun, wrapper) {
@@ -15090,6 +15218,7 @@
     return _Utils_Tuple2(
       {
         acceptHeaders: flags.acceptHeaders,
+        annotationGeneration: 0,
         annotationLoading: $elm$core$Set$empty,
         annotationServer: flags.annotationServer,
         annotationSources: $elm$core$Dict$empty,
@@ -15132,6 +15261,7 @@
         selectedIndex: $elm$core$Maybe$Nothing,
         selectedRangeId: $elm$core$Maybe$Nothing,
         shiftByOne: false,
+        showLogoutButton: flags.showLogoutButton,
         showTitle: flags.showTitle,
         sidebarDrag: $elm$core$Maybe$Nothing,
         sidebarPanel,
@@ -15229,6 +15359,9 @@
   };
   var $author$project$Msg$ViewerLoadingChanged = function(a) {
     return { $: "ViewerLoadingChanged", a };
+  };
+  var $author$project$Msg$ViewerRequestedAnnotationPages = function(a) {
+    return { $: "ViewerRequestedAnnotationPages", a };
   };
   var $author$project$Main$authDestroyed = _Platform_incomingPort(
     "authDestroyed",
@@ -15703,6 +15836,10 @@
       A2($elm$json$Json$Decode$field, "url", $elm$json$Json$Decode$string)
     )
   );
+  var $author$project$Main$viewerAnnotationPagesRequested = _Platform_incomingPort(
+    "viewerAnnotationPagesRequested",
+    $elm$json$Json$Decode$list($elm$json$Json$Decode$int)
+  );
   var $author$project$Main$viewerLoadingChanged = _Platform_incomingPort("viewerLoadingChanged", $elm$json$Json$Decode$bool);
   var $author$project$Main$viewerPageLoaded = _Platform_incomingPort("viewerPageLoaded", $elm$json$Json$Decode$int);
   var $author$project$Main$zoomChanged = _Platform_incomingPort("zoomChanged", $elm$json$Json$Decode$float);
@@ -15774,6 +15911,7 @@
           $author$project$Main$zoomChanged($author$project$Msg$UserChangedZoomLevel),
           $author$project$Main$viewerLoadingChanged($author$project$Msg$ViewerLoadingChanged),
           $author$project$Main$viewerPageLoaded($author$project$Msg$ViewerLoadedPage),
+          $author$project$Main$viewerAnnotationPagesRequested($author$project$Msg$ViewerRequestedAnnotationPages),
           $elm$browser$Browser$Events$onResize(
             F2(
               function(width, _v1) {
@@ -17473,6 +17611,31 @@
                         _Utils_Tuple2(
                           "isStatic",
                           $elm$json$Json$Encode$bool($2.isStatic)
+                        ),
+                        _Utils_Tuple2(
+                          "preview",
+                          (function($3) {
+                            return $elm$json$Json$Encode$object(
+                              _List_fromArray(
+                                [
+                                  _Utils_Tuple2(
+                                    "crossOrigin",
+                                    (function($4) {
+                                      return A3($elm$core$Maybe$destruct, $elm$json$Json$Encode$null, $elm$json$Json$Encode$string, $4);
+                                    })($3.crossOrigin)
+                                  ),
+                                  _Utils_Tuple2(
+                                    "fallbackUrl",
+                                    $elm$json$Json$Encode$string($3.fallbackUrl)
+                                  ),
+                                  _Utils_Tuple2(
+                                    "url",
+                                    $elm$json$Json$Encode$string($3.url)
+                                  )
+                                ]
+                              )
+                            );
+                          })($2.preview)
                         ),
                         _Utils_Tuple2(
                           "sourceId",
@@ -20174,6 +20337,275 @@
       }
     }
   );
+  var $elm$url$Url$addPort = F2(
+    function(maybePort, starter) {
+      if (maybePort.$ === "Nothing") {
+        return starter;
+      } else {
+        var port_ = maybePort.a;
+        return starter + (":" + $elm$core$String$fromInt(port_));
+      }
+    }
+  );
+  var $elm$url$Url$addPrefixed = F3(
+    function(prefix, maybeSegment, starter) {
+      if (maybeSegment.$ === "Nothing") {
+        return starter;
+      } else {
+        var segment = maybeSegment.a;
+        return _Utils_ap(
+          starter,
+          _Utils_ap(prefix, segment)
+        );
+      }
+    }
+  );
+  var $elm$url$Url$toString = function(url) {
+    var http = (function() {
+      var _v0 = url.protocol;
+      if (_v0.$ === "Http") {
+        return "http://";
+      } else {
+        return "https://";
+      }
+    })();
+    return A3(
+      $elm$url$Url$addPrefixed,
+      "#",
+      url.fragment,
+      A3(
+        $elm$url$Url$addPrefixed,
+        "?",
+        url.query,
+        _Utils_ap(
+          A2(
+            $elm$url$Url$addPort,
+            url.port_,
+            _Utils_ap(http, url.host)
+          ),
+          url.path
+        )
+      )
+    );
+  };
+  var $author$project$Auth$normalizedProbeUrl = function(probeUrl) {
+    return A2(
+      $elm$core$Maybe$withDefault,
+      probeUrl,
+      A2(
+        $elm$core$Maybe$map,
+        function(parsed) {
+          return $elm$url$Url$toString(
+            _Utils_update(
+              parsed,
+              { fragment: $elm$core$Maybe$Nothing, query: $elm$core$Maybe$Nothing }
+            )
+          );
+        },
+        $elm$url$Url$fromString(probeUrl)
+      )
+    );
+  };
+  var $author$project$Auth$associationsFromProbe = function(probe) {
+    var supportedAccesses = _Utils_ap(
+      A2(
+        $elm$core$List$filter,
+        function(access) {
+          return _Utils_eq(access.profile, $rism_digital$elm_iiif$IIIF$Auth$External);
+        },
+        probe.services
+      ),
+      A2(
+        $elm$core$List$filter,
+        function(access) {
+          return _Utils_eq(access.profile, $rism_digital$elm_iiif$IIIF$Auth$Active);
+        },
+        probe.services
+      )
+    );
+    var candidateSignature = function(access) {
+      return $elm$core$List$head(
+        A2(
+          $elm$core$List$filterMap,
+          function(service) {
+            if (service.$ === "RelatedTokenService") {
+              var token = service.a;
+              return $elm$core$Maybe$Just(
+                A2($elm$core$Maybe$withDefault, "", access.id) + ("|" + token.id)
+              );
+            } else {
+              return $elm$core$Maybe$Nothing;
+            }
+          },
+          access.services
+        )
+      );
+    };
+    var familyKey = $author$project$Auth$normalizedProbeUrl(probe.id) + ("|" + A2(
+      $elm$core$String$join,
+      "|",
+      A2($elm$core$List$filterMap, candidateSignature, supportedAccesses)
+    ));
+    var association = function(access) {
+      return A2(
+        $elm$core$Maybe$map,
+        function(token) {
+          return {
+            access,
+            key: familyKey,
+            logout: $elm$core$List$head(
+              A2(
+                $elm$core$List$filterMap,
+                function(service) {
+                  if (service.$ === "RelatedTokenService") {
+                    return $elm$core$Maybe$Nothing;
+                  } else {
+                    var logout = service.a;
+                    return $elm$core$Maybe$Just(logout);
+                  }
+                },
+                access.services
+              )
+            ),
+            probe,
+            token
+          };
+        },
+        $elm$core$List$head(
+          A2(
+            $elm$core$List$filterMap,
+            function(service) {
+              if (service.$ === "RelatedTokenService") {
+                var token = service.a;
+                return $elm$core$Maybe$Just(token);
+              } else {
+                return $elm$core$Maybe$Nothing;
+              }
+            },
+            access.services
+          )
+        )
+      );
+    };
+    return A2($elm$core$List$filterMap, association, supportedAccesses);
+  };
+  var $author$project$Auth$unsupportedMessage = function(serviceTypes) {
+    return "Unsupported authorization service: " + (A2($elm$core$String$join, ", ", serviceTypes) + ".");
+  };
+  var $author$project$Auth$unsupportedPolicyError = function(probes) {
+    var accesses = A2(
+      $elm$core$List$concatMap,
+      function($) {
+        return $.services;
+      },
+      probes
+    );
+    var _v0 = $elm$core$List$head(
+      A2(
+        $elm$core$List$filter,
+        function(access2) {
+          return _Utils_eq(access2.profile, $rism_digital$elm_iiif$IIIF$Auth$Kiosk);
+        },
+        accesses
+      )
+    );
+    if (_v0.$ === "Just") {
+      var access = _v0.a;
+      return $elm$core$Maybe$Just(
+        "IIIF Auth 2 '" + ((function() {
+          var _v1 = access.profile;
+          switch (_v1.$) {
+            case "Active":
+              return "active";
+            case "Kiosk":
+              return "kiosk";
+            default:
+              return "external";
+          }
+        })() + "' access is not supported; supported profiles are 'external' and 'active'.")
+      );
+    } else {
+      return $elm$core$Maybe$Nothing;
+    }
+  };
+  var $author$project$Auth$supportedAssociations = function(discovery) {
+    if (!$elm$core$List$isEmpty(discovery.unsupportedServiceTypes)) {
+      return $elm$core$Result$Err(
+        $author$project$Auth$unsupportedMessage(discovery.unsupportedServiceTypes)
+      );
+    } else {
+      var associations = A2(
+        $elm$core$Maybe$withDefault,
+        _List_Nil,
+        $elm$core$List$head(
+          A2(
+            $elm$core$List$filter,
+            A2($elm$core$Basics$composeL, $elm$core$Basics$not, $elm$core$List$isEmpty),
+            A2($elm$core$List$map, $author$project$Auth$associationsFromProbe, discovery.probes)
+          )
+        )
+      );
+      if ($elm$core$List$isEmpty(associations)) {
+        var _v0 = $author$project$Auth$unsupportedPolicyError(discovery.probes);
+        if (_v0.$ === "Just") {
+          var message = _v0.a;
+          return $elm$core$Result$Err(message);
+        } else {
+          return $elm$core$Result$Err("No supported Auth 2 external or active access service was provided.");
+        }
+      } else {
+        return $elm$core$Result$Ok(associations);
+      }
+    }
+  };
+  var $author$project$Auth$sourceFamilyKey = function(source) {
+    var _v0 = source.auth;
+    if (_v0.$ === "Discovered") {
+      var discovery = _v0.a;
+      return A2(
+        $elm$core$Maybe$map,
+        function($) {
+          return $.key;
+        },
+        A2(
+          $elm$core$Maybe$andThen,
+          $elm$core$List$head,
+          $elm$core$Result$toMaybe(
+            $author$project$Auth$supportedAssociations(discovery)
+          )
+        )
+      );
+    } else {
+      return $elm$core$Maybe$Nothing;
+    }
+  };
+  var $author$project$Auth$thumbnailCrossOrigin = F2(
+    function(sourceId, model) {
+      var _v0 = A2($elm$core$Dict$get, sourceId, model.sources);
+      if (_v0.$ === "Just") {
+        var source = _v0.a;
+        return $author$project$Auth$requiresAuthorization(source.auth) ? A2(
+          $elm$core$Maybe$map,
+          function(state) {
+            if (state.$ === "AnonymousFamily") {
+              return "anonymous";
+            } else {
+              return "use-credentials";
+            }
+          },
+          A2(
+            $elm$core$Maybe$andThen,
+            function(key) {
+              return A2($elm$core$Dict$get, key, model.familyStates);
+            },
+            $author$project$Auth$sourceFamilyKey(source)
+          )
+        ) : $elm$core$Maybe$Just("anonymous");
+      } else {
+        return $elm$core$Maybe$Nothing;
+      }
+    }
+  );
   var $rism_digital$elm_iiif$IIIF$Presentation$toViewingDirection = $rism_digital$elm_iiif$IIIF$Presentation$withManifest(
     function($) {
       return $.viewingDirection;
@@ -20196,19 +20628,6 @@
     function(resourceId, initialPage, model, manifest) {
       var viewingDirection = $rism_digital$elm_iiif$IIIF$Presentation$toViewingDirection(manifest);
       var pages = A2($author$project$Model$manifestToPages, model.detectedLanguage, manifest);
-      var tileSources = A2(
-        $elm$core$List$filterMap,
-        function(page) {
-          return A2(
-            $elm$core$Maybe$map,
-            function(image) {
-              return { canvasId: page.canvasId, isStatic: image.isStatic, sourceId: image.sourceId, url: image.tileSource };
-            },
-            $author$project$Model$primaryImage(page)
-          );
-        },
-        pages
-      );
       var pagedLayout = $rism_digital$elm_iiif$IIIF$Presentation$isPagedLayout(
         $rism_digital$elm_iiif$IIIF$Presentation$manifestViewingLayout(manifest)
       );
@@ -20274,14 +20693,39 @@
           pages
         )
       );
+      var initialAuth = A2($author$project$Auth$registerSources, authSources, $author$project$Auth$init);
+      var tileSources = A2(
+        $elm$core$List$filterMap,
+        function(page) {
+          return A2(
+            $elm$core$Maybe$map,
+            function(image) {
+              return {
+                canvasId: page.canvasId,
+                isStatic: image.isStatic,
+                preview: {
+                  crossOrigin: A2($author$project$Auth$thumbnailCrossOrigin, image.sourceId, initialAuth),
+                  fallbackUrl: page.fallbackThumbUrl,
+                  url: page.thumbUrl
+                },
+                sourceId: image.sourceId,
+                url: image.tileSource
+              };
+            },
+            $author$project$Model$primaryImage(page)
+          );
+        },
+        pages
+      );
       return _Utils_Tuple2(
         _Utils_update(
           model,
           {
+            annotationGeneration: model.annotationGeneration + 1,
             annotationLoading: $elm$core$Set$empty,
             annotationSources: $author$project$Main$annotationSourcesForCanvases(canvases),
             annotationsByCanvas: $elm$core$Dict$empty,
-            auth: A2($author$project$Auth$registerSources, authSources, $author$project$Auth$init),
+            auth: initialAuth,
             currentZoom: $elm$core$Maybe$Nothing,
             filters: $author$project$Filters$resetFilters,
             hasTileSources: !$elm$core$List$isEmpty(tileSources),
@@ -20544,7 +20988,40 @@
     }
   };
   var $author$project$Main$layoutModeUpdated = _Platform_outgoingPort("layoutModeUpdated", $elm$json$Json$Encode$string);
+  var $elm$core$Tuple$mapSecond = F2(
+    function(func, _v0) {
+      var x = _v0.a;
+      var y = _v0.b;
+      return _Utils_Tuple2(
+        x,
+        func(y)
+      );
+    }
+  );
   var $author$project$Main$mobileWidthBreakpoint = 720;
+  var $author$project$Main$pagePreviewPoliciesUpdated = _Platform_outgoingPort(
+    "pagePreviewPoliciesUpdated",
+    $elm$json$Json$Encode$list(
+      function($) {
+        return $elm$json$Json$Encode$object(
+          _List_fromArray(
+            [
+              _Utils_Tuple2(
+                "crossOrigin",
+                (function($2) {
+                  return A3($elm$core$Maybe$destruct, $elm$json$Json$Encode$null, $elm$json$Json$Encode$string, $2);
+                })($.crossOrigin)
+              ),
+              _Utils_Tuple2(
+                "sourceId",
+                $elm$json$Json$Encode$string($.sourceId)
+              )
+            ]
+          )
+        );
+      }
+    )
+  );
   var $author$project$Main$replaceCollectionById = F3(
     function(collectionId, replacement, collection) {
       var rebuildUp = F2(
@@ -20658,9 +21135,9 @@
       );
     }
   );
-  var $author$project$Msg$ServerRespondedWithAnnotations = F2(
-    function(a, b) {
-      return { $: "ServerRespondedWithAnnotations", a, b };
+  var $author$project$Msg$ServerRespondedWithAnnotations = F3(
+    function(a, b, c) {
+      return { $: "ServerRespondedWithAnnotations", a, b, c };
     }
   );
   var $elm$url$Url$Builder$QueryParameter = F2(
@@ -21222,7 +21699,7 @@
         var request = function(url) {
           return A3(
             $author$project$Annotation$requestPage,
-            $author$project$Msg$ServerRespondedWithAnnotations(canvasId),
+            A2($author$project$Msg$ServerRespondedWithAnnotations, model.annotationGeneration, canvasId),
             model.acceptHeaders,
             url
           );
@@ -22287,227 +22764,6 @@
       }
     }
   );
-  var $elm$url$Url$addPort = F2(
-    function(maybePort, starter) {
-      if (maybePort.$ === "Nothing") {
-        return starter;
-      } else {
-        var port_ = maybePort.a;
-        return starter + (":" + $elm$core$String$fromInt(port_));
-      }
-    }
-  );
-  var $elm$url$Url$addPrefixed = F3(
-    function(prefix, maybeSegment, starter) {
-      if (maybeSegment.$ === "Nothing") {
-        return starter;
-      } else {
-        var segment = maybeSegment.a;
-        return _Utils_ap(
-          starter,
-          _Utils_ap(prefix, segment)
-        );
-      }
-    }
-  );
-  var $elm$url$Url$toString = function(url) {
-    var http = (function() {
-      var _v0 = url.protocol;
-      if (_v0.$ === "Http") {
-        return "http://";
-      } else {
-        return "https://";
-      }
-    })();
-    return A3(
-      $elm$url$Url$addPrefixed,
-      "#",
-      url.fragment,
-      A3(
-        $elm$url$Url$addPrefixed,
-        "?",
-        url.query,
-        _Utils_ap(
-          A2(
-            $elm$url$Url$addPort,
-            url.port_,
-            _Utils_ap(http, url.host)
-          ),
-          url.path
-        )
-      )
-    );
-  };
-  var $author$project$Auth$normalizedProbeUrl = function(probeUrl) {
-    return A2(
-      $elm$core$Maybe$withDefault,
-      probeUrl,
-      A2(
-        $elm$core$Maybe$map,
-        function(parsed) {
-          return $elm$url$Url$toString(
-            _Utils_update(
-              parsed,
-              { fragment: $elm$core$Maybe$Nothing, query: $elm$core$Maybe$Nothing }
-            )
-          );
-        },
-        $elm$url$Url$fromString(probeUrl)
-      )
-    );
-  };
-  var $author$project$Auth$associationsFromProbe = function(probe) {
-    var supportedAccesses = _Utils_ap(
-      A2(
-        $elm$core$List$filter,
-        function(access) {
-          return _Utils_eq(access.profile, $rism_digital$elm_iiif$IIIF$Auth$External);
-        },
-        probe.services
-      ),
-      A2(
-        $elm$core$List$filter,
-        function(access) {
-          return _Utils_eq(access.profile, $rism_digital$elm_iiif$IIIF$Auth$Active);
-        },
-        probe.services
-      )
-    );
-    var candidateSignature = function(access) {
-      return $elm$core$List$head(
-        A2(
-          $elm$core$List$filterMap,
-          function(service) {
-            if (service.$ === "RelatedTokenService") {
-              var token = service.a;
-              return $elm$core$Maybe$Just(
-                A2($elm$core$Maybe$withDefault, "", access.id) + ("|" + token.id)
-              );
-            } else {
-              return $elm$core$Maybe$Nothing;
-            }
-          },
-          access.services
-        )
-      );
-    };
-    var familyKey = $author$project$Auth$normalizedProbeUrl(probe.id) + ("|" + A2(
-      $elm$core$String$join,
-      "|",
-      A2($elm$core$List$filterMap, candidateSignature, supportedAccesses)
-    ));
-    var association = function(access) {
-      return A2(
-        $elm$core$Maybe$map,
-        function(token) {
-          return {
-            access,
-            key: familyKey,
-            logout: $elm$core$List$head(
-              A2(
-                $elm$core$List$filterMap,
-                function(service) {
-                  if (service.$ === "RelatedTokenService") {
-                    return $elm$core$Maybe$Nothing;
-                  } else {
-                    var logout = service.a;
-                    return $elm$core$Maybe$Just(logout);
-                  }
-                },
-                access.services
-              )
-            ),
-            probe,
-            token
-          };
-        },
-        $elm$core$List$head(
-          A2(
-            $elm$core$List$filterMap,
-            function(service) {
-              if (service.$ === "RelatedTokenService") {
-                var token = service.a;
-                return $elm$core$Maybe$Just(token);
-              } else {
-                return $elm$core$Maybe$Nothing;
-              }
-            },
-            access.services
-          )
-        )
-      );
-    };
-    return A2($elm$core$List$filterMap, association, supportedAccesses);
-  };
-  var $author$project$Auth$unsupportedMessage = function(serviceTypes) {
-    return "Unsupported authorization service: " + (A2($elm$core$String$join, ", ", serviceTypes) + ".");
-  };
-  var $author$project$Auth$unsupportedPolicyError = function(probes) {
-    var accesses = A2(
-      $elm$core$List$concatMap,
-      function($) {
-        return $.services;
-      },
-      probes
-    );
-    var _v0 = $elm$core$List$head(
-      A2(
-        $elm$core$List$filter,
-        function(access2) {
-          return _Utils_eq(access2.profile, $rism_digital$elm_iiif$IIIF$Auth$Kiosk);
-        },
-        accesses
-      )
-    );
-    if (_v0.$ === "Just") {
-      var access = _v0.a;
-      return $elm$core$Maybe$Just(
-        "IIIF Auth 2 '" + ((function() {
-          var _v1 = access.profile;
-          switch (_v1.$) {
-            case "Active":
-              return "active";
-            case "Kiosk":
-              return "kiosk";
-            default:
-              return "external";
-          }
-        })() + "' access is not supported; supported profiles are 'external' and 'active'.")
-      );
-    } else {
-      return $elm$core$Maybe$Nothing;
-    }
-  };
-  var $author$project$Auth$supportedAssociations = function(discovery) {
-    if (!$elm$core$List$isEmpty(discovery.unsupportedServiceTypes)) {
-      return $elm$core$Result$Err(
-        $author$project$Auth$unsupportedMessage(discovery.unsupportedServiceTypes)
-      );
-    } else {
-      var associations = A2(
-        $elm$core$Maybe$withDefault,
-        _List_Nil,
-        $elm$core$List$head(
-          A2(
-            $elm$core$List$filter,
-            A2($elm$core$Basics$composeL, $elm$core$Basics$not, $elm$core$List$isEmpty),
-            A2($elm$core$List$map, $author$project$Auth$associationsFromProbe, discovery.probes)
-          )
-        )
-      );
-      if ($elm$core$List$isEmpty(associations)) {
-        var _v0 = $author$project$Auth$unsupportedPolicyError(discovery.probes);
-        if (_v0.$ === "Just") {
-          var message = _v0.a;
-          return $elm$core$Result$Err(message);
-        } else {
-          return $elm$core$Result$Err("No supported Auth 2 external or active access service was provided.");
-        }
-      } else {
-        return $elm$core$Result$Ok(associations);
-      }
-    }
-  };
   var $author$project$Auth$beginAuthorization = F4(
     function(requestId, discovery, infoJson, model) {
       var withInfo = _Utils_update(
@@ -23151,27 +23407,6 @@
       );
     }
   );
-  var $author$project$Auth$sourceFamilyKey = function(source) {
-    var _v0 = source.auth;
-    if (_v0.$ === "Discovered") {
-      var discovery = _v0.a;
-      return A2(
-        $elm$core$Maybe$map,
-        function($) {
-          return $.key;
-        },
-        A2(
-          $elm$core$Maybe$andThen,
-          $elm$core$List$head,
-          $elm$core$Result$toMaybe(
-            $author$project$Auth$supportedAssociations(discovery)
-          )
-        )
-      );
-    } else {
-      return $elm$core$Maybe$Nothing;
-    }
-  };
   var $author$project$Auth$sourceIdsForFamilyKeys = F2(
     function(familyKeys, sources) {
       return $elm$core$Set$fromList(
@@ -23867,12 +24102,32 @@
           var _v1 = A2($author$project$Auth$update, event, model.auth);
           var nextAuth = _v1.a;
           var effects = _v1.b;
+          var changedPolicies = A2(
+            $elm$core$List$filterMap,
+            function(image) {
+              var policy = A2($author$project$Auth$thumbnailCrossOrigin, image.sourceId, nextAuth);
+              return !_Utils_eq(
+                policy,
+                A2($author$project$Auth$thumbnailCrossOrigin, image.sourceId, model.auth)
+              ) ? $elm$core$Maybe$Just(
+                { crossOrigin: policy, sourceId: image.sourceId }
+              ) : $elm$core$Maybe$Nothing;
+            },
+            A2($elm$core$List$filterMap, $author$project$Model$primaryImage, model.pages)
+          );
           return _Utils_Tuple2(
             _Utils_update(
               model,
               { auth: nextAuth }
             ),
-            $author$project$Main$runAuthEffects(effects)
+            $elm$core$Platform$Cmd$batch(
+              _List_fromArray(
+                [
+                  $author$project$Main$runAuthEffects(effects),
+                  $elm$core$List$isEmpty(changedPolicies) ? $elm$core$Platform$Cmd$none : $author$project$Main$pagePreviewPoliciesUpdated(changedPolicies)
+                ]
+              )
+            )
           );
         case "ClientRequestedLayoutMode":
           var requestedMode = msg.a;
@@ -24888,48 +25143,83 @@
           } else {
             return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
           }
-        case "ServerRespondedWithAnnotations":
-          var canvasId = msg.a;
-          var result = msg.b;
-          var nextModel = _Utils_update(
-            model,
-            {
-              annotationLoading: A2($elm$core$Set$remove, canvasId, model.annotationLoading)
-            }
-          );
-          if (result.$ === "Ok") {
-            var annotations = result.a;
-            var merged = (function(existing) {
-              return _Utils_ap(annotations, existing);
-            })(
-              A2(
-                $elm$core$Maybe$withDefault,
-                _List_Nil,
-                A2($elm$core$Dict$get, canvasId, nextModel.annotationsByCanvas)
-              )
-            );
-            return _Utils_Tuple2(
-              _Utils_update(
-                nextModel,
-                {
-                  annotationsByCanvas: A3($elm$core$Dict$insert, canvasId, merged, nextModel.annotationsByCanvas)
+        case "ViewerRequestedAnnotationPages":
+          var indexes = msg.a;
+          return A2(
+            $elm$core$Tuple$mapSecond,
+            $elm$core$Platform$Cmd$batch,
+            A3(
+              $elm$core$List$foldl,
+              F2(
+                function(index2, _v35) {
+                  var currentModel = _v35.a;
+                  var commands = _v35.b;
+                  var _v36 = A2($author$project$Model$getPageAt, index2, currentModel.pages);
+                  if (_v36.$ === "Just") {
+                    var page2 = _v36.a;
+                    var _v37 = A2($author$project$Main$requestAnnotations, page2.canvasId, currentModel);
+                    var nextModel2 = _v37.a;
+                    var command = _v37.b;
+                    return _Utils_Tuple2(
+                      nextModel2,
+                      A2($elm$core$List$cons, command, commands)
+                    );
+                  } else {
+                    return _Utils_Tuple2(currentModel, commands);
+                  }
                 }
               ),
-              $author$project$Main$annotationsUpdated(
-                {
-                  annotations: A2(
-                    $elm$core$List$map,
-                    $author$project$Annotation$encodeWithBodies(
-                      A2($author$project$Main$annotationImageServiceForCanvas, canvasId, nextModel)
-                    ),
-                    merged
-                  ),
-                  canvasId
-                }
-              )
-            );
+              _Utils_Tuple2(model, _List_Nil),
+              indexes
+            )
+          );
+        case "ServerRespondedWithAnnotations":
+          var generation = msg.a;
+          var canvasId = msg.b;
+          var result = msg.c;
+          if (!_Utils_eq(generation, model.annotationGeneration)) {
+            return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
           } else {
-            return _Utils_Tuple2(nextModel, $elm$core$Platform$Cmd$none);
+            var nextModel = _Utils_update(
+              model,
+              {
+                annotationLoading: A2($elm$core$Set$remove, canvasId, model.annotationLoading)
+              }
+            );
+            if (result.$ === "Ok") {
+              var annotations = result.a;
+              var merged = (function(existing) {
+                return _Utils_ap(annotations, existing);
+              })(
+                A2(
+                  $elm$core$Maybe$withDefault,
+                  _List_Nil,
+                  A2($elm$core$Dict$get, canvasId, nextModel.annotationsByCanvas)
+                )
+              );
+              return _Utils_Tuple2(
+                _Utils_update(
+                  nextModel,
+                  {
+                    annotationsByCanvas: A3($elm$core$Dict$insert, canvasId, merged, nextModel.annotationsByCanvas)
+                  }
+                ),
+                $author$project$Main$annotationsUpdated(
+                  {
+                    annotations: A2(
+                      $elm$core$List$map,
+                      $author$project$Annotation$encodeWithBodies(
+                        A2($author$project$Main$annotationImageServiceForCanvas, canvasId, nextModel)
+                      ),
+                      merged
+                    ),
+                    canvasId
+                  }
+                )
+              );
+            } else {
+              return _Utils_Tuple2(nextModel, $elm$core$Platform$Cmd$none);
+            }
           }
         default:
           return _Utils_Tuple2(
@@ -27631,33 +27921,6 @@
   var $author$project$Msg$UserClickedPageViewImageChoice = function(a) {
     return { $: "UserClickedPageViewImageChoice", a };
   };
-  var $author$project$Auth$thumbnailCrossOrigin = F2(
-    function(sourceId, model) {
-      var _v0 = A2($elm$core$Dict$get, sourceId, model.sources);
-      if (_v0.$ === "Just") {
-        var source = _v0.a;
-        return $author$project$Auth$requiresAuthorization(source.auth) ? A2(
-          $elm$core$Maybe$map,
-          function(state) {
-            if (state.$ === "AnonymousFamily") {
-              return "anonymous";
-            } else {
-              return "use-credentials";
-            }
-          },
-          A2(
-            $elm$core$Maybe$andThen,
-            function(key) {
-              return A2($elm$core$Dict$get, key, model.familyStates);
-            },
-            $author$project$Auth$sourceFamilyKey(source)
-          )
-        ) : $elm$core$Maybe$Just("anonymous");
-      } else {
-        return $elm$core$Maybe$Nothing;
-      }
-    }
-  );
   var $author$project$View$PageViewModal$viewImageChoiceItem = F4(
     function(auth, selectedIndex, index, image) {
       var isActive = _Utils_eq(index, selectedIndex);
@@ -31228,6 +31491,9 @@
       );
     }
   );
+  var $author$project$View$Icons$logout = $author$project$View$Icons$makeSvgIcon(
+    { path: "M336 352c97.2 0 176-78.8 176-176S433.2 0 336 0S160 78.8 160 176c0 18.7 2.9 36.8 8.3 53.7L7 391c-4.5 4.5-7 10.6-7 17v80c0 13.3 10.7 24 24 24h80c13.3 0 24-10.7 24-24V448h40c13.3 0 24-10.7 24-24V384h40c6.4 0 12.5-2.5 17-7l33.3-33.3c16.9 5.4 35 8.3 53.7 8.3zM376 96a40 40 0 1 1 0 80 40 40 0 1 1 0-80z", viewBox: "0 0 512 512" }
+  );
   var $author$project$Auth$logoutActions = function(model) {
     return A2(
       $elm$core$List$map,
@@ -31280,14 +31546,14 @@
                   ]
                 ),
                 _List_fromArray(
-                  [$author$project$View$Icons$shiftRight]
+                  [$author$project$View$Icons$logout]
                 )
               )
             ]
           )
         );
       },
-      $author$project$Auth$logoutActions(model.auth)
+      model.showLogoutButton ? $author$project$Auth$logoutActions(model.auth) : _List_Nil
     );
   };
   var $author$project$View$Icons$zoomIn = $author$project$View$Icons$makeSvgIcon(
@@ -31655,63 +31921,69 @@
                       function(showSidebar) {
                         return A2(
                           $elm$json$Json$Decode$andThen,
-                          function(rootElementId) {
+                          function(showLogoutButton) {
                             return A2(
                               $elm$json$Json$Decode$andThen,
-                              function(objectData) {
+                              function(rootElementId) {
                                 return A2(
                                   $elm$json$Json$Decode$andThen,
-                                  function(initialPage) {
+                                  function(objectData) {
                                     return A2(
                                       $elm$json$Json$Decode$andThen,
-                                      function(enableAnnotations) {
+                                      function(initialPage) {
                                         return A2(
                                           $elm$json$Json$Decode$andThen,
-                                          function(enableAnnotationSelection) {
+                                          function(enableAnnotations) {
                                             return A2(
                                               $elm$json$Json$Decode$andThen,
-                                              function(annotationServer) {
+                                              function(enableAnnotationSelection) {
                                                 return A2(
                                                   $elm$json$Json$Decode$andThen,
-                                                  function(acceptHeaders) {
-                                                    return $elm$json$Json$Decode$succeed(
-                                                      { acceptHeaders, annotationServer, enableAnnotationSelection, enableAnnotations, initialPage, objectData, rootElementId, showSidebar, showTitle, sidebarPanel, sidebarWidth, userLanguage }
+                                                  function(annotationServer) {
+                                                    return A2(
+                                                      $elm$json$Json$Decode$andThen,
+                                                      function(acceptHeaders) {
+                                                        return $elm$json$Json$Decode$succeed(
+                                                          { acceptHeaders, annotationServer, enableAnnotationSelection, enableAnnotations, initialPage, objectData, rootElementId, showLogoutButton, showSidebar, showTitle, sidebarPanel, sidebarWidth, userLanguage }
+                                                        );
+                                                      },
+                                                      A2(
+                                                        $elm$json$Json$Decode$field,
+                                                        "acceptHeaders",
+                                                        $elm$json$Json$Decode$list($elm$json$Json$Decode$string)
+                                                      )
                                                     );
                                                   },
                                                   A2(
                                                     $elm$json$Json$Decode$field,
-                                                    "acceptHeaders",
-                                                    $elm$json$Json$Decode$list($elm$json$Json$Decode$string)
+                                                    "annotationServer",
+                                                    $elm$json$Json$Decode$oneOf(
+                                                      _List_fromArray(
+                                                        [
+                                                          $elm$json$Json$Decode$null($elm$core$Maybe$Nothing),
+                                                          A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, $elm$json$Json$Decode$string)
+                                                        ]
+                                                      )
+                                                    )
                                                   )
                                                 );
                                               },
-                                              A2(
-                                                $elm$json$Json$Decode$field,
-                                                "annotationServer",
-                                                $elm$json$Json$Decode$oneOf(
-                                                  _List_fromArray(
-                                                    [
-                                                      $elm$json$Json$Decode$null($elm$core$Maybe$Nothing),
-                                                      A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, $elm$json$Json$Decode$string)
-                                                    ]
-                                                  )
-                                                )
-                                              )
+                                              A2($elm$json$Json$Decode$field, "enableAnnotationSelection", $elm$json$Json$Decode$bool)
                                             );
                                           },
-                                          A2($elm$json$Json$Decode$field, "enableAnnotationSelection", $elm$json$Json$Decode$bool)
+                                          A2($elm$json$Json$Decode$field, "enableAnnotations", $elm$json$Json$Decode$bool)
                                         );
                                       },
-                                      A2($elm$json$Json$Decode$field, "enableAnnotations", $elm$json$Json$Decode$bool)
+                                      A2($elm$json$Json$Decode$field, "initialPage", $elm$json$Json$Decode$value)
                                     );
                                   },
-                                  A2($elm$json$Json$Decode$field, "initialPage", $elm$json$Json$Decode$value)
+                                  A2($elm$json$Json$Decode$field, "objectData", $elm$json$Json$Decode$string)
                                 );
                               },
-                              A2($elm$json$Json$Decode$field, "objectData", $elm$json$Json$Decode$string)
+                              A2($elm$json$Json$Decode$field, "rootElementId", $elm$json$Json$Decode$string)
                             );
                           },
-                          A2($elm$json$Json$Decode$field, "rootElementId", $elm$json$Json$Decode$string)
+                          A2($elm$json$Json$Decode$field, "showLogoutButton", $elm$json$Json$Decode$bool)
                         );
                       },
                       A2($elm$json$Json$Decode$field, "showSidebar", $elm$json$Json$Decode$bool)
@@ -31728,7 +32000,7 @@
       },
       A2($elm$json$Json$Decode$field, "userLanguage", $elm$json$Json$Decode$string)
     )
-  )({ "versions": { "elm": "0.19.1" }, "types": { "message": "Msg.Msg", "aliases": { "IIIF.Annotation.Annotation": { "args": [], "type": "{ id : String.String, target : IIIF.Annotation.AnnotationTarget, body : IIIF.Annotation.AnnotationBody, motivation : Maybe.Maybe String.String }" }, "IIIF.Annotation.AnnotationBody": { "args": [], "type": "{ value : String.String, format : Maybe.Maybe String.String, language : Maybe.Maybe String.String }" }, "IIIF.Annotation.AnnotationTarget": { "args": [], "type": "{ source : Maybe.Maybe String.String, selector : IIIF.Annotation.AnnotationSelector }" }, "Annotation.WithBodies": { "args": [], "type": "{ annotation : IIIF.Annotation.Annotation, bodies : List.List IIIF.Annotation.AnnotationBody }" }, "IIIF.Presentation.Canvas": { "args": [], "type": "{ id : String.String, label : Maybe.Maybe IIIF.Language.LanguageMap, width : Maybe.Maybe Basics.Int, height : Maybe.Maybe Basics.Int, images : List.List IIIF.Presentation.Image, thumbnail : Maybe.Maybe IIIF.Presentation.Image, viewingLayout : Maybe.Maybe IIIF.Presentation.ViewingLayout, annotationSources : List.List IIIF.Presentation.AnnotationSource }" }, "IIIF.Presentation.HomePage": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.Image": { "args": [], "type": "{ id : IIIF.Image.ImageUri, label : Maybe.Maybe IIIF.Language.LanguageMap, imageType : IIIF.Presentation.ImageType, service : List.List IIIF.Presentation.ServiceTypes, serviceObjects : List.List Json.Decode.Value }" }, "IIIF.Language.LabelValue": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Language.LanguageMap": { "args": [], "type": "List.List IIIF.Language.LanguageValues" }, "IIIF.Presentation.Logo": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes, width : Basics.Int, height : Basics.Int, service : Maybe.Maybe (List.List IIIF.Presentation.ServiceObject) }" }, "IIIF.Presentation.Manifest": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, metadata : List.List IIIF.Language.LabelValue, viewingDirection : IIIF.Presentation.ViewingDirection, summary : Maybe.Maybe IIIF.Language.LanguageMap, viewingLayout : IIIF.Presentation.ViewingLayout, canvases : List.List IIIF.Presentation.Canvas, ranges : Maybe.Maybe (List.List IIIF.Presentation.Range), homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe IIIF.Presentation.Image, provider : Maybe.Maybe (List.List IIIF.Presentation.Provider), thumbnail : Maybe.Maybe IIIF.Presentation.Image, requiredStatement : Maybe.Maybe IIIF.Presentation.RequiredStatement }" }, "IIIF.Presentation.Provider": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, type_ : IIIF.Presentation.ResourceTypes, homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe (List.List IIIF.Presentation.Logo), seeAlso : Maybe.Maybe (List.List IIIF.Presentation.SeeAlso) }" }, "IIIF.Presentation.Range": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.RangeItem, metadata : List.List IIIF.Language.LabelValue }" }, "IIIF.Presentation.RequiredStatement": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Presentation.SeeAlso": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.ServiceObject": { "args": [], "type": "{ id : String.String, serviceType : IIIF.Presentation.ServiceTypes }" }, "Json.Decode.Value": { "args": [], "type": "Json.Encode.Value" }, "IIIF.Presentation.Collection": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, summary : Maybe.Maybe IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.CollectionItem }" }, "IIIF.Image.ImageRequestParameters": { "args": [], "type": "{ host : String.String, prefix : String.String, region : IIIF.Image.ImageRegion, size : IIIF.Image.ImageSize, rotation : IIIF.Image.ImageRotation, quality : IIIF.Image.ImageQuality, format : IIIF.Image.ImageFormat }" }, "IIIF.Image.ImageServerParameters": { "args": [], "type": "{ host : String.String, prefix : String.String }" } }, "unions": { "Msg.Msg": { "args": [], "tags": { "AuthEvent": ["Auth.Event"], "ClientRequestedLayoutMode": ["String.String"], "ClientRequestedResource": ["String.String", "String.String"], "ClientNotifiedFullscreenChanged": ["Basics.Bool"], "ClientNotifiedPageChanged": ["Basics.Int"], "ClientNotifiedPageChangedInstant": ["Basics.Int"], "ClientNotifiedScrollThumbs": [], "ServerRespondedWithCollectionItem": ["String.String", "Result.Result Http.Error IIIF.Presentation.IIIFResource"], "ServerRespondedWithManifestFromCollection": ["String.String", "Result.Result Http.Error IIIF.Presentation.IIIFManifest"], "ServerRespondedWithResource": ["Result.Result Http.Error IIIF.Presentation.IIIFResource"], "ServerRespondedWithRequestedResource": ["String.String", "String.String", "Result.Result Http.Error IIIF.Presentation.IIIFResource"], "UserAppliedFilterJson": [], "UserChangedZoomLevel": ["Basics.Float"], "UserClickedCloseManifestInfo": [], "UserClickedClosePageView": [], "UserClickedCollectionItem": ["String.String"], "UserClickedManifestItem": ["String.String", "String.String"], "UserClickedOpenManifestInfo": [], "UserClickedOpenPageView": [], "UserClickedPageViewImageChoice": ["Basics.Int"], "UserClickedPageViewNext": [], "UserClickedPageViewPrev": [], "UserClickedRange": ["Maybe.Maybe Basics.Int"], "UserClickedSaveFilteredImage": [], "UserClickedThumbnail": ["Basics.Int"], "UserClickedZoomIn": [], "UserClickedZoomOut": [], "UserCopiedFilterJson": [], "UserDraggedCollectionSidebarResize": ["Basics.Int"], "UserDraggedSidebarResize": ["Basics.Int"], "UserEndedCollectionSidebarResize": [], "UserEndedSidebarResize": [], "UserResetAllFilters": [], "UserResetAltColourAdjust": [], "UserSelectedContentsIndex": [], "UserSelectedContentsPages": [], "UserStartedCollectionSidebarResize": ["Basics.Int"], "UserStartedSidebarResize": ["Basics.Int"], "UserToggledContents": [], "UserToggledCollectionSidebar": [], "UserToggledFilter": ["Filters.FilterToggle", "Basics.Bool"], "UserToggledFilterGroup": ["String.String"], "UserToggledFullscreen": [], "UserToggledMetadata": [], "UserToggledPageViewFullscreen": [], "UserToggledPageViewSidebar": [], "UserToggledRangeMetadata": ["String.String"], "UserToggledShiftByOne": [], "UserToggledSidebar": [], "UserToggledThumbnails": [], "UserToggledTwoUp": [], "UserUpdatedFilterFloat": ["Filters.FilterFloatValue", "String.String"], "UserUpdatedFilterInt": ["Filters.FilterIntValue", "String.String"], "UserUpdatedFilterJsonInput": ["String.String"], "UserUpdatedFilterString": ["Filters.FilterStringValue", "String.String"], "ViewerLoadingChanged": ["Basics.Bool"], "ViewportChanged": ["Basics.Int"], "ViewerLoadedPage": ["Basics.Int"], "ServerRespondedWithAnnotations": ["String.String", "Result.Result Http.Error (List.List Annotation.WithBodies)"], "UserToggledAnnotations": [] } }, "IIIF.Annotation.AnnotationSelector": { "args": [], "tags": { "Rectangle": ["Basics.Float", "Basics.Float", "Basics.Float", "Basics.Float"], "Svg": ["String.String"] } }, "Basics.Bool": { "args": [], "tags": { "True": [], "False": [] } }, "Http.Error": { "args": [], "tags": { "BadUrl": ["String.String"], "Timeout": [], "NetworkError": [], "BadStatus": ["Basics.Int"], "BadBody": ["String.String"] } }, "Auth.Event": { "args": [], "tags": { "Resolve": ["String.String", "String.String"], "Cancel": ["String.String"], "HttpSucceeded": ["String.String", "Basics.Int", "String.String"], "HttpFailed": ["String.String", "String.String"], "StorageRead": ["String.String", "Basics.Float", "Maybe.Maybe Json.Decode.Value"], "PopupOpened": ["String.String"], "PopupBlocked": ["String.String"], "PopupClosed": ["String.String"], "TokenMessage": ["String.String", "Basics.Float", "Json.Decode.Value"], "TokenFailed": ["String.String", "String.String"], "LogoutOpened": ["String.String"], "LogoutBlocked": ["String.String"], "LogoutClosed": [], "UserCancelled": [], "Destroyed": [] } }, "Filters.FilterFloatValue": { "args": [], "tags": { "FloatColourReplaceBlend": [], "FloatContrast": [], "FloatGamma": [], "FloatNormalizeStrength": [], "FloatPseudoColourBlue": [], "FloatPseudoColourGreen": [], "FloatPseudoColourRed": [], "FloatUnsharpAmount": [] } }, "Filters.FilterIntValue": { "args": [], "tags": { "IntAdaptiveOffset": [], "IntAdaptiveWindow": [], "IntAltRedGamma": [], "IntAltRedSigmoid": [], "IntAltRedVibrance": [], "IntAltRedHue": [], "IntAltRedHueWindow": [], "IntAltGreenGamma": [], "IntAltGreenSigmoid": [], "IntAltGreenHue": [], "IntAltGreenHueWindow": [], "IntAltGreenVibrance": [], "IntAltBlueGamma": [], "IntAltBlueSigmoid": [], "IntAltBlueHue": [], "IntAltBlueHueWindow": [], "IntAltBlueVibrance": [], "IntBrightness": [], "IntCcBlue": [], "IntCcGreen": [], "IntCcRed": [], "IntColourmapCenter": [], "IntColourReplaceTolerance": [], "IntPcaHue": [], "IntHue": [], "IntMorphKernel": [], "IntRotation": [], "IntSaturation": [], "IntThreshold": [], "IntVibrance": [] } }, "Filters.FilterStringValue": { "args": [], "tags": { "StringColourmapPreset": [], "StringColourReplaceSource": [], "StringColourReplaceTarget": [], "StringConvolutionPreset": [], "StringPcaMode": [], "StringMorphOperation": [], "StringPseudoColourMode": [] } }, "Filters.FilterToggle": { "args": [], "tags": { "ToggleAdaptive": [], "ToggleAltBlueGamma": [], "ToggleAltBlueHue": [], "ToggleAltBlueSigmoid": [], "ToggleAltBlueVibrance": [], "ToggleAltGreenGamma": [], "ToggleAltGreenHue": [], "ToggleAltGreenSigmoid": [], "ToggleAltGreenVibrance": [], "ToggleAltRedGamma": [], "ToggleAltRedHue": [], "ToggleAltRedSigmoid": [], "ToggleAltRedVibrance": [], "ToggleBrightness": [], "ToggleCcBlue": [], "ToggleCcGreen": [], "ToggleCcRed": [], "ToggleColourmap": [], "ToggleColourReplace": [], "ToggleColourReplacePreserveLum": [], "ToggleContrast": [], "ToggleConvolution": [], "ToggleFlip": [], "ToggleGamma": [], "ToggleGlobalPca": [], "ToggleGrayscale": [], "ToggleHue": [], "ToggleInvert": [], "ToggleMorph": [], "ToggleNormalize": [], "TogglePseudoColour": [], "ToggleSaturation": [], "ToggleThreshold": [], "ToggleUnsharp": [], "ToggleVibrance": [] } }, "Basics.Float": { "args": [], "tags": { "Float": [] } }, "IIIF.Presentation.IIIFManifest": { "args": [], "tags": { "IIIFManifest": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Manifest"] } }, "IIIF.Presentation.IIIFResource": { "args": [], "tags": { "ResourceManifest": ["IIIF.Presentation.IIIFManifest"], "ResourceCollection": ["IIIF.Presentation.IIIFCollection"], "ResourceCanvas": ["IIIF.Presentation.IIIFCanvas"], "ResourceRange": ["IIIF.Presentation.IIIFRange"] } }, "Basics.Int": { "args": [], "tags": { "Int": [] } }, "List.List": { "args": ["a"], "tags": {} }, "Maybe.Maybe": { "args": ["a"], "tags": { "Just": ["a"], "Nothing": [] } }, "Result.Result": { "args": ["error", "value"], "tags": { "Ok": ["value"], "Err": ["error"] } }, "String.String": { "args": [], "tags": { "String": [] } }, "IIIF.Presentation.AnnotationSource": { "args": [], "tags": { "AnnotationSourceUrl": ["String.String"], "InlineAnnotationPage": ["Json.Decode.Value"] } }, "IIIF.Presentation.IIIFCanvas": { "args": [], "tags": { "IIIFCanvas": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Canvas"] } }, "IIIF.Presentation.IIIFCollection": { "args": [], "tags": { "IIIFCollection": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Collection"] } }, "IIIF.Presentation.IIIFRange": { "args": [], "tags": { "IIIFRange": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Range"] } }, "IIIF.Version.IIIFVersion": { "args": [], "tags": { "IIIFV1": [], "IIIFV2": [], "IIIFV3": [] } }, "IIIF.Presentation.ImageType": { "args": [], "tags": { "PrimaryImage": [], "ChoiceImage": [] } }, "IIIF.Image.ImageUri": { "args": [], "tags": { "InfoUri": ["IIIF.Image.ImageServerParameters"], "ImageUri": ["IIIF.Image.ImageRequestParameters"], "StaticImageUri": ["IIIF.Image.ImageServerParameters"] } }, "IIIF.Language.LanguageValues": { "args": [], "tags": { "LanguageValues": ["IIIF.Language.Language", "List.List String.String"] } }, "IIIF.Presentation.MediaFormats": { "args": [], "tags": { "ImageJpeg": [], "OtherFormat": ["String.String"] } }, "IIIF.Presentation.RangeItem": { "args": [], "tags": { "RangeCanvas": ["String.String"], "RangeRange": ["IIIF.Presentation.Range"] } }, "IIIF.Presentation.ResourceTypes": { "args": [], "tags": { "Video": [], "OtherResource": ["String.String"] } }, "IIIF.Presentation.ServiceTypes": { "args": [], "tags": { "ImageService1": [], "ImageService2": [], "ImageService3": [], "SearchService1": [], "AutoCompleteService1": [], "AuthTokenService1": [], "AuthLogoutService1": [], "UnknownService": [] } }, "Json.Encode.Value": { "args": [], "tags": { "Value": [] } }, "IIIF.Presentation.ViewingDirection": { "args": [], "tags": { "LeftToRight": [], "RightToLeft": [], "TopToBottom": [], "BottomToTop": [] } }, "IIIF.Presentation.ViewingLayout": { "args": [], "tags": { "LayoutV2": ["IIIF.Presentation.ViewingHint"], "LayoutV3": ["List.List IIIF.Presentation.Behavior"] } }, "IIIF.Presentation.Behavior": { "args": [], "tags": { "AutoAdvanceBehavior": [], "NoAutoAdvanceBehavior": [], "RepeatBehavior": [], "NoRepeatBehavior": [], "UnorderedBehavior": [], "IndividualsBehavior": [], "ContinuousBehavior": [], "PagedBehavior": [], "FacingPagesBehavior": [], "NonPagedBehavior": [], "MultiPartBehavior": [], "TogetherBehavior": [], "SequenceBehavior": [], "ThumbnailNavBehavior": [], "NoNavBehavior": [], "HiddenBehavior": [] } }, "IIIF.Presentation.CollectionItem": { "args": [], "tags": { "NestedCollection": ["IIIF.Presentation.Collection"], "ManifestItem": ["IIIF.Presentation.Manifest"] } }, "IIIF.Image.ImageFormat": { "args": [], "tags": { "JpegFormat": [], "TiffFormat": [], "PngFormat": [], "Jp2Format": [], "GifFormat": [], "PdfFormat": [], "WebpFormat": [] } }, "IIIF.Image.ImageQuality": { "args": [], "tags": { "ColorQuality": [], "GrayQuality": [], "BiTonalQuality": [], "DefaultQuality": [], "NativeQuality": [] } }, "IIIF.Image.ImageRegion": { "args": [], "tags": { "FullRegion": [], "SquareRegion": [], "SizeRegion": ["{ x : Basics.Int, y : Basics.Int, w : Basics.Int, h : Basics.Int }"], "PctSizeRegion": ["{ x : Basics.Float, y : Basics.Float, w : Basics.Float, h : Basics.Float }"] } }, "IIIF.Image.ImageRotation": { "args": [], "tags": { "NormalRotation": ["Basics.Float"], "MirroredRotation": ["Basics.Float"] } }, "IIIF.Image.ImageSize": { "args": [], "tags": { "MaxSize": [], "ExactMaxSize": [], "WidthOnlySize": ["Basics.Int"], "ExactWidthOnlySize": ["Basics.Int"], "HeightOnlySize": ["Basics.Int"], "ExactHeightOnlySize": ["Basics.Int"], "PercentSize": ["Basics.Float"], "ExactPercentSize": ["Basics.Float"], "WidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"] } }, "IIIF.Language.Language": { "args": [], "tags": { "LanguageCode": ["String.String"], "None": [], "Default": [] } }, "IIIF.Presentation.ViewingHint": { "args": [], "tags": { "PagedHint": [], "IndividualsHint": [], "ContinuousHint": [], "MultiPartHint": [], "NonPagedHint": [], "TopHint": [], "FacingPagesHint": [] } } } } }) } };
+  )({ "versions": { "elm": "0.19.1" }, "types": { "message": "Msg.Msg", "aliases": { "IIIF.Annotation.Annotation": { "args": [], "type": "{ id : String.String, target : IIIF.Annotation.AnnotationTarget, body : IIIF.Annotation.AnnotationBody, motivation : Maybe.Maybe String.String }" }, "IIIF.Annotation.AnnotationBody": { "args": [], "type": "{ value : String.String, format : Maybe.Maybe String.String, language : Maybe.Maybe String.String }" }, "IIIF.Annotation.AnnotationTarget": { "args": [], "type": "{ source : Maybe.Maybe String.String, selector : IIIF.Annotation.AnnotationSelector }" }, "Annotation.WithBodies": { "args": [], "type": "{ annotation : IIIF.Annotation.Annotation, bodies : List.List IIIF.Annotation.AnnotationBody }" }, "IIIF.Presentation.Canvas": { "args": [], "type": "{ id : String.String, label : Maybe.Maybe IIIF.Language.LanguageMap, width : Maybe.Maybe Basics.Int, height : Maybe.Maybe Basics.Int, images : List.List IIIF.Presentation.Image, thumbnail : Maybe.Maybe IIIF.Presentation.Image, viewingLayout : Maybe.Maybe IIIF.Presentation.ViewingLayout, annotationSources : List.List IIIF.Presentation.AnnotationSource }" }, "IIIF.Presentation.HomePage": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.Image": { "args": [], "type": "{ id : IIIF.Image.ImageUri, label : Maybe.Maybe IIIF.Language.LanguageMap, imageType : IIIF.Presentation.ImageType, service : List.List IIIF.Presentation.ServiceTypes, serviceObjects : List.List Json.Decode.Value }" }, "IIIF.Language.LabelValue": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Language.LanguageMap": { "args": [], "type": "List.List IIIF.Language.LanguageValues" }, "IIIF.Presentation.Logo": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes, width : Basics.Int, height : Basics.Int, service : Maybe.Maybe (List.List IIIF.Presentation.ServiceObject) }" }, "IIIF.Presentation.Manifest": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, metadata : List.List IIIF.Language.LabelValue, viewingDirection : IIIF.Presentation.ViewingDirection, summary : Maybe.Maybe IIIF.Language.LanguageMap, viewingLayout : IIIF.Presentation.ViewingLayout, canvases : List.List IIIF.Presentation.Canvas, ranges : Maybe.Maybe (List.List IIIF.Presentation.Range), homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe IIIF.Presentation.Image, provider : Maybe.Maybe (List.List IIIF.Presentation.Provider), thumbnail : Maybe.Maybe IIIF.Presentation.Image, requiredStatement : Maybe.Maybe IIIF.Presentation.RequiredStatement }" }, "IIIF.Presentation.Provider": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, type_ : IIIF.Presentation.ResourceTypes, homepage : Maybe.Maybe (List.List IIIF.Presentation.HomePage), logo : Maybe.Maybe (List.List IIIF.Presentation.Logo), seeAlso : Maybe.Maybe (List.List IIIF.Presentation.SeeAlso) }" }, "IIIF.Presentation.Range": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.RangeItem, metadata : List.List IIIF.Language.LabelValue }" }, "IIIF.Presentation.RequiredStatement": { "args": [], "type": "{ label : IIIF.Language.LanguageMap, value : IIIF.Language.LanguageMap }" }, "IIIF.Presentation.SeeAlso": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, format : IIIF.Presentation.MediaFormats, type_ : IIIF.Presentation.ResourceTypes }" }, "IIIF.Presentation.ServiceObject": { "args": [], "type": "{ id : String.String, serviceType : IIIF.Presentation.ServiceTypes }" }, "Json.Decode.Value": { "args": [], "type": "Json.Encode.Value" }, "IIIF.Presentation.Collection": { "args": [], "type": "{ id : String.String, label : IIIF.Language.LanguageMap, summary : Maybe.Maybe IIIF.Language.LanguageMap, items : List.List IIIF.Presentation.CollectionItem }" }, "IIIF.Image.ImageRequestParameters": { "args": [], "type": "{ host : String.String, prefix : String.String, region : IIIF.Image.ImageRegion, size : IIIF.Image.ImageSize, rotation : IIIF.Image.ImageRotation, quality : IIIF.Image.ImageQuality, format : IIIF.Image.ImageFormat }" }, "IIIF.Image.ImageServerParameters": { "args": [], "type": "{ host : String.String, prefix : String.String }" } }, "unions": { "Msg.Msg": { "args": [], "tags": { "AuthEvent": ["Auth.Event"], "ClientRequestedLayoutMode": ["String.String"], "ClientRequestedResource": ["String.String", "String.String"], "ClientNotifiedFullscreenChanged": ["Basics.Bool"], "ClientNotifiedPageChanged": ["Basics.Int"], "ClientNotifiedPageChangedInstant": ["Basics.Int"], "ClientNotifiedScrollThumbs": [], "ServerRespondedWithCollectionItem": ["String.String", "Result.Result Http.Error IIIF.Presentation.IIIFResource"], "ServerRespondedWithManifestFromCollection": ["String.String", "Result.Result Http.Error IIIF.Presentation.IIIFManifest"], "ServerRespondedWithResource": ["Result.Result Http.Error IIIF.Presentation.IIIFResource"], "ServerRespondedWithRequestedResource": ["String.String", "String.String", "Result.Result Http.Error IIIF.Presentation.IIIFResource"], "UserAppliedFilterJson": [], "UserChangedZoomLevel": ["Basics.Float"], "UserClickedCloseManifestInfo": [], "UserClickedClosePageView": [], "UserClickedCollectionItem": ["String.String"], "UserClickedManifestItem": ["String.String", "String.String"], "UserClickedOpenManifestInfo": [], "UserClickedOpenPageView": [], "UserClickedPageViewImageChoice": ["Basics.Int"], "UserClickedPageViewNext": [], "UserClickedPageViewPrev": [], "UserClickedRange": ["Maybe.Maybe Basics.Int"], "UserClickedSaveFilteredImage": [], "UserClickedThumbnail": ["Basics.Int"], "UserClickedZoomIn": [], "UserClickedZoomOut": [], "UserCopiedFilterJson": [], "UserDraggedCollectionSidebarResize": ["Basics.Int"], "UserDraggedSidebarResize": ["Basics.Int"], "UserEndedCollectionSidebarResize": [], "UserEndedSidebarResize": [], "UserResetAllFilters": [], "UserResetAltColourAdjust": [], "UserSelectedContentsIndex": [], "UserSelectedContentsPages": [], "UserStartedCollectionSidebarResize": ["Basics.Int"], "UserStartedSidebarResize": ["Basics.Int"], "UserToggledContents": [], "UserToggledCollectionSidebar": [], "UserToggledFilter": ["Filters.FilterToggle", "Basics.Bool"], "UserToggledFilterGroup": ["String.String"], "UserToggledFullscreen": [], "UserToggledMetadata": [], "UserToggledPageViewFullscreen": [], "UserToggledPageViewSidebar": [], "UserToggledRangeMetadata": ["String.String"], "UserToggledShiftByOne": [], "UserToggledSidebar": [], "UserToggledThumbnails": [], "UserToggledTwoUp": [], "UserUpdatedFilterFloat": ["Filters.FilterFloatValue", "String.String"], "UserUpdatedFilterInt": ["Filters.FilterIntValue", "String.String"], "UserUpdatedFilterJsonInput": ["String.String"], "UserUpdatedFilterString": ["Filters.FilterStringValue", "String.String"], "ViewerLoadingChanged": ["Basics.Bool"], "ViewportChanged": ["Basics.Int"], "ViewerLoadedPage": ["Basics.Int"], "ViewerRequestedAnnotationPages": ["List.List Basics.Int"], "ServerRespondedWithAnnotations": ["Basics.Int", "String.String", "Result.Result Http.Error (List.List Annotation.WithBodies)"], "UserToggledAnnotations": [] } }, "IIIF.Annotation.AnnotationSelector": { "args": [], "tags": { "Rectangle": ["Basics.Float", "Basics.Float", "Basics.Float", "Basics.Float"], "Svg": ["String.String"] } }, "Basics.Bool": { "args": [], "tags": { "True": [], "False": [] } }, "Http.Error": { "args": [], "tags": { "BadUrl": ["String.String"], "Timeout": [], "NetworkError": [], "BadStatus": ["Basics.Int"], "BadBody": ["String.String"] } }, "Auth.Event": { "args": [], "tags": { "Resolve": ["String.String", "String.String"], "Cancel": ["String.String"], "HttpSucceeded": ["String.String", "Basics.Int", "String.String"], "HttpFailed": ["String.String", "String.String"], "StorageRead": ["String.String", "Basics.Float", "Maybe.Maybe Json.Decode.Value"], "PopupOpened": ["String.String"], "PopupBlocked": ["String.String"], "PopupClosed": ["String.String"], "TokenMessage": ["String.String", "Basics.Float", "Json.Decode.Value"], "TokenFailed": ["String.String", "String.String"], "LogoutOpened": ["String.String"], "LogoutBlocked": ["String.String"], "LogoutClosed": [], "UserCancelled": [], "Destroyed": [] } }, "Filters.FilterFloatValue": { "args": [], "tags": { "FloatColourReplaceBlend": [], "FloatContrast": [], "FloatGamma": [], "FloatNormalizeStrength": [], "FloatPseudoColourBlue": [], "FloatPseudoColourGreen": [], "FloatPseudoColourRed": [], "FloatUnsharpAmount": [] } }, "Filters.FilterIntValue": { "args": [], "tags": { "IntAdaptiveOffset": [], "IntAdaptiveWindow": [], "IntAltRedGamma": [], "IntAltRedSigmoid": [], "IntAltRedVibrance": [], "IntAltRedHue": [], "IntAltRedHueWindow": [], "IntAltGreenGamma": [], "IntAltGreenSigmoid": [], "IntAltGreenHue": [], "IntAltGreenHueWindow": [], "IntAltGreenVibrance": [], "IntAltBlueGamma": [], "IntAltBlueSigmoid": [], "IntAltBlueHue": [], "IntAltBlueHueWindow": [], "IntAltBlueVibrance": [], "IntBrightness": [], "IntCcBlue": [], "IntCcGreen": [], "IntCcRed": [], "IntColourmapCenter": [], "IntColourReplaceTolerance": [], "IntPcaHue": [], "IntHue": [], "IntMorphKernel": [], "IntRotation": [], "IntSaturation": [], "IntThreshold": [], "IntVibrance": [] } }, "Filters.FilterStringValue": { "args": [], "tags": { "StringColourmapPreset": [], "StringColourReplaceSource": [], "StringColourReplaceTarget": [], "StringConvolutionPreset": [], "StringPcaMode": [], "StringMorphOperation": [], "StringPseudoColourMode": [] } }, "Filters.FilterToggle": { "args": [], "tags": { "ToggleAdaptive": [], "ToggleAltBlueGamma": [], "ToggleAltBlueHue": [], "ToggleAltBlueSigmoid": [], "ToggleAltBlueVibrance": [], "ToggleAltGreenGamma": [], "ToggleAltGreenHue": [], "ToggleAltGreenSigmoid": [], "ToggleAltGreenVibrance": [], "ToggleAltRedGamma": [], "ToggleAltRedHue": [], "ToggleAltRedSigmoid": [], "ToggleAltRedVibrance": [], "ToggleBrightness": [], "ToggleCcBlue": [], "ToggleCcGreen": [], "ToggleCcRed": [], "ToggleColourmap": [], "ToggleColourReplace": [], "ToggleColourReplacePreserveLum": [], "ToggleContrast": [], "ToggleConvolution": [], "ToggleFlip": [], "ToggleGamma": [], "ToggleGlobalPca": [], "ToggleGrayscale": [], "ToggleHue": [], "ToggleInvert": [], "ToggleMorph": [], "ToggleNormalize": [], "TogglePseudoColour": [], "ToggleSaturation": [], "ToggleThreshold": [], "ToggleUnsharp": [], "ToggleVibrance": [] } }, "Basics.Float": { "args": [], "tags": { "Float": [] } }, "IIIF.Presentation.IIIFManifest": { "args": [], "tags": { "IIIFManifest": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Manifest"] } }, "IIIF.Presentation.IIIFResource": { "args": [], "tags": { "ResourceManifest": ["IIIF.Presentation.IIIFManifest"], "ResourceCollection": ["IIIF.Presentation.IIIFCollection"], "ResourceCanvas": ["IIIF.Presentation.IIIFCanvas"], "ResourceRange": ["IIIF.Presentation.IIIFRange"] } }, "Basics.Int": { "args": [], "tags": { "Int": [] } }, "List.List": { "args": ["a"], "tags": {} }, "Maybe.Maybe": { "args": ["a"], "tags": { "Just": ["a"], "Nothing": [] } }, "Result.Result": { "args": ["error", "value"], "tags": { "Ok": ["value"], "Err": ["error"] } }, "String.String": { "args": [], "tags": { "String": [] } }, "IIIF.Presentation.AnnotationSource": { "args": [], "tags": { "AnnotationSourceUrl": ["String.String"], "InlineAnnotationPage": ["Json.Decode.Value"] } }, "IIIF.Presentation.IIIFCanvas": { "args": [], "tags": { "IIIFCanvas": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Canvas"] } }, "IIIF.Presentation.IIIFCollection": { "args": [], "tags": { "IIIFCollection": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Collection"] } }, "IIIF.Presentation.IIIFRange": { "args": [], "tags": { "IIIFRange": ["IIIF.Version.IIIFVersion", "IIIF.Presentation.Range"] } }, "IIIF.Version.IIIFVersion": { "args": [], "tags": { "IIIFV1": [], "IIIFV2": [], "IIIFV3": [] } }, "IIIF.Presentation.ImageType": { "args": [], "tags": { "PrimaryImage": [], "ChoiceImage": [] } }, "IIIF.Image.ImageUri": { "args": [], "tags": { "InfoUri": ["IIIF.Image.ImageServerParameters"], "ImageUri": ["IIIF.Image.ImageRequestParameters"], "StaticImageUri": ["IIIF.Image.ImageServerParameters"] } }, "IIIF.Language.LanguageValues": { "args": [], "tags": { "LanguageValues": ["IIIF.Language.Language", "List.List String.String"] } }, "IIIF.Presentation.MediaFormats": { "args": [], "tags": { "ImageJpeg": [], "OtherFormat": ["String.String"] } }, "IIIF.Presentation.RangeItem": { "args": [], "tags": { "RangeCanvas": ["String.String"], "RangeRange": ["IIIF.Presentation.Range"] } }, "IIIF.Presentation.ResourceTypes": { "args": [], "tags": { "Video": [], "OtherResource": ["String.String"] } }, "IIIF.Presentation.ServiceTypes": { "args": [], "tags": { "ImageService1": [], "ImageService2": [], "ImageService3": [], "SearchService1": [], "AutoCompleteService1": [], "AuthTokenService1": [], "AuthLogoutService1": [], "UnknownService": [] } }, "Json.Encode.Value": { "args": [], "tags": { "Value": [] } }, "IIIF.Presentation.ViewingDirection": { "args": [], "tags": { "LeftToRight": [], "RightToLeft": [], "TopToBottom": [], "BottomToTop": [] } }, "IIIF.Presentation.ViewingLayout": { "args": [], "tags": { "LayoutV2": ["IIIF.Presentation.ViewingHint"], "LayoutV3": ["List.List IIIF.Presentation.Behavior"] } }, "IIIF.Presentation.Behavior": { "args": [], "tags": { "AutoAdvanceBehavior": [], "NoAutoAdvanceBehavior": [], "RepeatBehavior": [], "NoRepeatBehavior": [], "UnorderedBehavior": [], "IndividualsBehavior": [], "ContinuousBehavior": [], "PagedBehavior": [], "FacingPagesBehavior": [], "NonPagedBehavior": [], "MultiPartBehavior": [], "TogetherBehavior": [], "SequenceBehavior": [], "ThumbnailNavBehavior": [], "NoNavBehavior": [], "HiddenBehavior": [] } }, "IIIF.Presentation.CollectionItem": { "args": [], "tags": { "NestedCollection": ["IIIF.Presentation.Collection"], "ManifestItem": ["IIIF.Presentation.Manifest"] } }, "IIIF.Image.ImageFormat": { "args": [], "tags": { "JpegFormat": [], "TiffFormat": [], "PngFormat": [], "Jp2Format": [], "GifFormat": [], "PdfFormat": [], "WebpFormat": [] } }, "IIIF.Image.ImageQuality": { "args": [], "tags": { "ColorQuality": [], "GrayQuality": [], "BiTonalQuality": [], "DefaultQuality": [], "NativeQuality": [] } }, "IIIF.Image.ImageRegion": { "args": [], "tags": { "FullRegion": [], "SquareRegion": [], "SizeRegion": ["{ x : Basics.Int, y : Basics.Int, w : Basics.Int, h : Basics.Int }"], "PctSizeRegion": ["{ x : Basics.Float, y : Basics.Float, w : Basics.Float, h : Basics.Float }"] } }, "IIIF.Image.ImageRotation": { "args": [], "tags": { "NormalRotation": ["Basics.Float"], "MirroredRotation": ["Basics.Float"] } }, "IIIF.Image.ImageSize": { "args": [], "tags": { "MaxSize": [], "ExactMaxSize": [], "WidthOnlySize": ["Basics.Int"], "ExactWidthOnlySize": ["Basics.Int"], "HeightOnlySize": ["Basics.Int"], "ExactHeightOnlySize": ["Basics.Int"], "PercentSize": ["Basics.Float"], "ExactPercentSize": ["Basics.Float"], "WidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"], "ExactScaledWidthAndHeightSize": ["( Basics.Int, Basics.Int )"] } }, "IIIF.Language.Language": { "args": [], "tags": { "LanguageCode": ["String.String"], "None": [], "Default": [] } }, "IIIF.Presentation.ViewingHint": { "args": [], "tags": { "PagedHint": [], "IndividualsHint": [], "ContinuousHint": [], "MultiPartHint": [], "NonPagedHint": [], "TopHint": [], "FacingPagesHint": [] } } } } }) } };
 
   // src/auth.ts
   var STORAGE_PREFIX = "diva:iiif-auth2:";
@@ -33819,6 +34091,7 @@
       this.handlePageChangeBound = this.handlePageChange.bind(this);
       this.handleAnnotationSelectBound = this.handleAnnotationSelect.bind(this);
       this.handlePageLoadedBound = this.handlePageLoaded.bind(this);
+      this.handlePreviewAnnotationsBound = this.handlePreviewAnnotations.bind(this);
       this.handleZoomChangeBound = this.handleZoomChange.bind(this);
       this.handleLoadingChangeBound = this.handleLoadingChange.bind(this);
       this.handleStaticImageCorsFallbackBound = this.handleStaticImageCorsFallback.bind(this);
@@ -33840,6 +34113,7 @@
           sidebarWidth,
           sidebarPanel,
           showTitle: flags.showTitle !== false,
+          showLogoutButton: flags.showLogoutButton !== false,
           userLanguage: flags.setLanguage || langCode,
           enableAnnotations: flags.enableAnnotations === true,
           enableAnnotationSelection: flags.enableAnnotationSelection !== false,
@@ -33859,6 +34133,7 @@
       this.bindPageChange();
       this.bindViewerEvent("diva-annotation-select", this.handleAnnotationSelectBound);
       this.bindViewerEvent("diva-page-loaded", this.handlePageLoadedBound);
+      this.bindViewerEvent("diva-preview-annotations-requested", this.handlePreviewAnnotationsBound);
       this.bindFullscreenChange();
       this.bindZoomChange();
       this.bindLoadingChange();
@@ -33894,6 +34169,9 @@
       return this.root;
     }
     bindPorts() {
+      this.getPort("pagePreviewPoliciesUpdated").subscribe((policies) => {
+        this.callViewerMethodWhenReady("setPagePreviewPolicies", policies);
+      });
       this.getPort("tileSourcesUpdated").subscribe((update) => {
         if (this.annotationResourceId !== update.resourceId) {
           this.annotationResourceId = update.resourceId;
@@ -34133,7 +34411,7 @@
         };
         const viewer = this.ensureMainViewer();
         const sourceId = (_a = this.pages[pageIndex]) == null ? void 0 : _a.primaryImage.id;
-        if (sourceId && viewer && typeof viewer.isPageLoaded === "function" && viewer.isPageLoaded(pageIndex, sourceId)) {
+        if (sourceId && viewer && typeof viewer.isPageLoaded === "function" && viewer.isPageLoaded(pageIndex, sourceId, requestId)) {
           this.completeResource(requestId, url, !replacementCommitted);
         }
         return;
@@ -34814,6 +35092,10 @@
       const root = this.getConnectedRoot();
       this.removeViewerEvent("diva-page-change", this.handlePageChangeBound);
       this.removeViewerEvent("diva-page-loaded", this.handlePageLoadedBound);
+      this.removeViewerEvent(
+        "diva-preview-annotations-requested",
+        this.handlePreviewAnnotationsBound
+      );
       this.removeViewerEvent("diva-zoom-change", this.handleZoomChangeBound);
       this.removeViewerEvent("diva-loading-change", this.handleLoadingChangeBound);
       this.removeViewerEvent(
@@ -34924,6 +35206,12 @@
       const annotationId = (_a = event.detail) == null ? void 0 : _a.annotationId;
       if (typeof annotationId === "string") {
         this.emit("annotationselect", { annotationId });
+      }
+    }
+    handlePreviewAnnotations(event) {
+      const detail = event.detail;
+      if ((detail == null ? void 0 : detail.resourceId) === this.annotationResourceId && Array.isArray(detail.indexes)) {
+        this.getPort("viewerAnnotationPagesRequested").send(detail.indexes);
       }
     }
     handlePageLoaded(event) {

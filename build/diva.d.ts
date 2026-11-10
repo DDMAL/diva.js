@@ -57,6 +57,7 @@ export declare class Diva extends EventTarget {
     private readonly handlePageChangeBound;
     private readonly handleAnnotationSelectBound;
     private readonly handlePageLoadedBound;
+    private readonly handlePreviewAnnotationsBound;
     private readonly handleZoomChangeBound;
     private readonly handleLoadingChangeBound;
     private readonly handleStaticImageCorsFallbackBound;
@@ -440,6 +441,7 @@ export declare class Diva extends EventTarget {
     private toggleFullscreenFromUserActivation;
     private handlePageChange;
     private handleAnnotationSelect;
+    private handlePreviewAnnotations;
     private handlePageLoaded;
     private handleZoomChange;
     private handleLoadingChange;
