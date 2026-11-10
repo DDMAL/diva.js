@@ -1164,6 +1164,7 @@ class OsdViewer extends HTMLElement
         }
 
         let element = this.pageOverlayElements.get(index);
+        const isNew = !element;
         const isRightAligned = index % 2 === 0;
         if (!element)
         {
@@ -1187,12 +1188,16 @@ class OsdViewer extends HTMLElement
 
         const xOffset = (this.pageXOffsets[index] || 0) + (isRightAligned ? 1 : 0);
         const yOffset = this.pageOffsets[index] || 0;
-        this.removeOverlay(element);
-        this.viewer.addOverlay({
-            element,
-            location: new OpenSeadragon.Point(xOffset, yOffset),
-            placement: isRightAligned ? OpenSeadragon.Placement.BOTTOM_RIGHT : OpenSeadragon.Placement.BOTTOM_LEFT,
-        });
+        const location = new OpenSeadragon.Point(xOffset, yOffset);
+        const placement = isRightAligned ? OpenSeadragon.Placement.BOTTOM_RIGHT : OpenSeadragon.Placement.BOTTOM_LEFT;
+        if (isNew)
+        {
+            this.viewer.addOverlay({ element, location, placement });
+        }
+        else
+        {
+            this.viewer.updateOverlay(element, location, placement);
+        }
     }
 
     private clearPageOverlays(): void
