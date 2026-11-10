@@ -1,4 +1,4 @@
-module View.Icons exposing (close, downloadSelection, fromFullscreen, hideAnnotations, hideSidebar, info, nextPage, openingPageView, pageViewOpen, prevPage, reset, scrollingPageView, shiftLeft, shiftRight, showAnnotations, showCollection, showSidebar, toFullscreen, zoomIn, zoomOut)
+module View.Icons exposing (close, downloadSelection, fromFullscreen, hideAnnotations, hideSidebar, info, logout, nextPage, openingPageView, pageViewOpen, prevPage, reset, scrollingPageView, shiftLeft, shiftRight, showAnnotations, showCollection, showSidebar, toFullscreen, zoomIn, zoomOut)
 
 import Html exposing (Html)
 import Svg exposing (svg)
