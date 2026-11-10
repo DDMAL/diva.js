@@ -577,6 +577,7 @@ export class Diva extends EventTarget
                 sidebarWidth,
                 sidebarPanel,
                 showTitle: flags.showTitle !== false,
+                showLogoutButton: flags.showLogoutButton !== false,
                 userLanguage: flags.setLanguage || langCode,
                 enableAnnotations: flags.enableAnnotations === true,
                 enableAnnotationSelection: flags.enableAnnotationSelection !== false,

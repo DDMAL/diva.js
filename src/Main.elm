@@ -183,6 +183,7 @@ type alias Flags =
     , sidebarWidth : Int
     , sidebarPanel : String
     , showTitle : Bool
+    , showLogoutButton : Bool
     , userLanguage : String
     , enableAnnotations : Bool
     , enableAnnotationSelection : Bool
@@ -569,6 +570,7 @@ init flags =
       , selectedRangeId = Nothing
       , shiftByOne = False
       , showTitle = flags.showTitle
+      , showLogoutButton = flags.showLogoutButton
       , sidebarDrag = Nothing
       , sidebarPanel = sidebarPanel
       , sidebarState = sidebarState

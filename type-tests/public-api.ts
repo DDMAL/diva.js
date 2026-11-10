@@ -20,6 +20,7 @@ const wideViewer = new Diva("wide-viewer", {
     objectData: "https://example.org/manifest",
     sidebarPanel: initialPanel,
     sidebarWidth: 420,
+    showLogoutButton: false,
     initialPage: initialTarget,
     staticImageCorsPolicy,
 });

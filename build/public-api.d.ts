@@ -412,6 +412,17 @@ export interface DivaOptions {
      */
     showTitle?: boolean;
     /**
+     * Show logout controls for authenticated IIIF image services.
+     *
+     * @remarks
+     * Set to `false` when the host application provides its own logout control.
+     * This only hides the viewer's logout buttons; it does not disable image
+     * authentication or change the host application's session.
+     *
+     * @defaultValue `true`
+     */
+    showLogoutButton?: boolean;
+    /**
      * Preferred interface language; otherwise the browser language is used.
      */
     setLanguage?: string;

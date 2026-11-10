@@ -246,7 +246,12 @@ viewCurrentLabel fullscreen labelText =
 
 viewLogoutActions : Model -> List (Html Msg)
 viewLogoutActions model =
-    Auth.logoutActions model.auth
+    (if model.showLogoutButton then
+        Auth.logoutActions model.auth
+
+     else
+        []
+    )
         |> List.map
             (\action ->
                 let
@@ -274,6 +279,6 @@ viewLogoutActions model =
                         , HA.attribute "data-diva-auth-logout" action.sessionId
                         , HA.attribute "data-diva-auth-url" action.url
                         ]
-                        [ Icons.shiftRight ]
+                        [ Icons.logout ]
                     ]
             )

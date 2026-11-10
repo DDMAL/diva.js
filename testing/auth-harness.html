@@ -24,6 +24,7 @@
       window.__divaOsdVersion = OpenSeadragon.version.versionStr;
       const initialPageParam = harnessParams.get("initialPage");
       window.diva = new Diva("diva-wrapper", {
+        ...(harnessParams.has("showLogoutButton") ? {showLogoutButton: harnessParams.get("showLogoutButton") !== "false"} : {}),
         objectData: harnessParams.get("manifest"),
         initialPage: initialPageParam === null ? undefined : Number(initialPageParam),
         showSidebar: false,

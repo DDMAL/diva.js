@@ -62,6 +62,7 @@ type alias Model =
     , mobileSidebarOpen : Bool
     , isMobile : Bool
     , showTitle : Bool
+    , showLogoutButton : Bool
     , isViewerLoading : Bool
     , response : Response
     , sidebarWidth : Int
