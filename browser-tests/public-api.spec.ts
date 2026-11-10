@@ -962,6 +962,83 @@ test("indents nested ranges in the contents index", async ({page}) => {
     await expect(page.locator(".diva-contents-list-nested").first()).toHaveCSS("border-left-width", "1px");
 });
 
+test("uses manifest range indexes for deep, broad, repeated, missing, and empty ranges", async ({page}) => {
+    const name = "range-index";
+    const canvas = (index: number) => ({id : `${origin}/api/${name}/canvas/${index}`, type : "Canvas"});
+    const range = (id: string, label: string, items: any[], metadata: any[] = []) => ({
+        id : `${origin}/api/${name}/range/${id}`,
+        type : "Range",
+        label : {en : [ label ]},
+        items,
+        metadata
+    });
+    const child = range("child", "Child", [ canvas(99), canvas(2), canvas(2) ], [ {
+        label : {en : [ "Composer" ]}, value : {en : [ "Anonymous" ]}
+    } ]);
+    const parent = range("parent", "Parent", [ canvas(1), child, range("empty-child", "Empty child", []) ]);
+    const broad = range("broad", "Broad", [ canvas(1), canvas(2), canvas(3) ]);
+    const empty = range("empty", "Empty", []);
+    const missing = range("missing", "Missing", [ canvas(99) ]);
+    let deep = range("deep-39", "Deep 39", [ canvas(2) ]);
+    for (let depth = 38; depth >= 0; depth -= 1)
+    {
+        deep = range(`deep-${depth}`, `Deep ${depth}`, [ deep ]);
+    }
+    const rangeManifest = {
+        ...manifest(name, 3),
+        structures : [ parent, broad, deep, empty, missing ]
+    };
+    await page.route(`${origin}/api/${name}/manifest`, (route) => route.fulfill({json : rangeManifest}));
+    await page.evaluate(async (url) => (window as any).diva.setResource(url), `${origin}/api/${name}/manifest`);
+    await page.getByRole("button", {name : "Contents", exact : true}).evaluate((button: HTMLButtonElement) => button.click());
+
+    const currentPage = () => page.evaluate(() => (window as any).diva.getState().currentPageIndex);
+    const rangeButton = (label: string) => page.locator(".diva-contents-button").filter({hasText : new RegExp(`^${label}$`)});
+    await expect.poll(currentPage).toBe(0);
+    await expect(rangeButton("Parent")).toHaveClass(/is-current/);
+    await expect(rangeButton("Broad")).toHaveClass(/is-current/);
+    await expect(rangeButton("Deep 0")).not.toHaveClass(/is-current/);
+
+    await page.getByRole("button", {name : "Empty", exact : true}).click();
+    await expect.poll(currentPage).toBe(0);
+    await expect(page.getByRole("button", {name : "Missing", exact : true})).toBeVisible();
+    await page.evaluate(() => (window as any).diva.goToPage(1));
+    await expect(rangeButton("Parent")).toHaveClass(/is-current/);
+    await expect(rangeButton("Child")).toHaveClass(/is-current/);
+    await expect(rangeButton("Deep 0")).toHaveClass(/is-current/);
+
+    await page.getByRole("button", {name : "On this page", exact : true}).evaluate((button: HTMLButtonElement) => button.click());
+    await expect(page.getByRole("button", {name : "On this page", exact : true})).toHaveClass(/is-active/);
+    const onThisPageLabels = await page.locator(".diva-contents-list > .diva-contents-item > .diva-contents-button").allTextContents();
+    expect(onThisPageLabels).toEqual([
+        "[Folio 1-Folio 2] Parent",
+        "[Folio 2] Child",
+        "[Folio 1-Folio 3] Broad",
+        ...Array.from({length : 40}, (_value, depth) => `[Folio 2] Deep ${depth}`)
+    ]);
+
+    await page.getByRole("button", {name : "[Folio 1-Folio 2] Parent", exact : true}).click();
+    await expect.poll(currentPage).toBe(0);
+    await page.getByRole("button", {name : "Index", exact : true}).click();
+    await page.getByRole("button", {name : "Show information for Child", exact : true}).click();
+    await expect(page.getByText("Anonymous", {exact : true})).toBeVisible();
+
+    const replacementName = "range-index-replacement";
+    const replacementManifest = {
+        ...manifest(replacementName, 1),
+        structures : [ {
+            id : `${origin}/api/${replacementName}/range/replacement`,
+            type : "Range",
+            label : {en : [ "Replacement range" ]},
+            items : [ {id : `${origin}/api/${replacementName}/canvas/1`, type : "Canvas"} ]
+        } ]
+    };
+    await page.route(`${origin}/api/${replacementName}/manifest`, (route) => route.fulfill({json : replacementManifest}));
+    await page.evaluate(async (url) => (window as any).diva.setResource(url), `${origin}/api/${replacementName}/manifest`);
+    await expect(page.getByRole("button", {name : "Replacement range", exact : true})).toBeVisible();
+    await expect(page.getByRole("button", {name : "Child", exact : true})).toHaveCount(0);
+});
+
 test("keeps the previous resource when a replacement request fails", async ({page}) => {
     const result = await page.evaluate(async ({second, failure}) => {
         const diva = (window as any).diva;

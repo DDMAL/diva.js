@@ -17,6 +17,7 @@ test("loads the first tile without duplicate resolution requests", async ({page}
     let firstTileAt = 0;
     let infoRequests = 0;
     const tileRequests: string[] = [];
+    const thumbnailRequests: string[] = [];
     const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64");
 
     await page.route(`${origin}/metric/manifest`, async (route) => {
@@ -60,6 +61,12 @@ test("loads the first tile without duplicate resolution requests", async ({page}
             await route.fallback();
             return;
         }
+        if (route.request().url().includes("/full/180,/0/default.jpg"))
+        {
+            thumbnailRequests.push(route.request().url());
+            await route.fulfill({contentType : "image/png", body : png});
+            return;
+        }
         if (!firstTileAt)
         {
             firstTileAt = performance.now();
@@ -76,7 +83,8 @@ test("loads the first tile without duplicate resolution requests", async ({page}
         firstTileMs : Math.round(firstTileAt - manifestReadyAt),
         infoRequests,
         osdVersion : testInfo.project.metadata.osdVersion,
-        tileRequests : tileRequests.length
+        tileRequests : tileRequests.length,
+        thumbnailRequests : thumbnailRequests.length
     };
     console.info(`[load-metrics] ${JSON.stringify(metrics)}`);
     await testInfo.attach("load-metrics", {body : Buffer.from(JSON.stringify(metrics, null, 2)), contentType : "application/json"});
@@ -223,9 +231,19 @@ test("loads only nearby sidebar thumbnails", async ({page}, testInfo) => {
 
     await openHarness(page, `${origin}/lazy/manifest`, testInfo);
     await expect(page.locator("diva-lazy-image")).toHaveCount(pageCount);
-    expect(thumbnailRequests.size).toBe(0);
+    // Main-viewer previews can request nearby thumbnails with the sidebar
+    // closed, but must not cause hidden sidebar images to load eagerly.
+    await expect(page.locator("diva-lazy-image img")).toHaveCount(0);
+    const nearbyPreviewUrls = await page.evaluate(() => {
+        const element = document.getElementById("main-viewer") as any;
+        const bounds = element.viewer.viewport.getBounds(true);
+        const range = element.indicesForRange(Math.max(0, bounds.y - bounds.height * 2.5), bounds.y + bounds.height * 3.5);
+        return element.tileSources.slice(range[0], range[1] + 1).map((source: any) => source.preview.url);
+    });
+    expect([...thumbnailRequests].every(url => nearbyPreviewUrls.includes(url))).toBe(true);
 
     await page.getByRole("button", {name : "Show Sidebar"}).click();
+    await expect.poll(() => page.locator("diva-lazy-image img").count()).toBeGreaterThan(0);
     await expect.poll(() => thumbnailRequests.size).toBeGreaterThan(0);
     const initiallyLoaded = thumbnailRequests.size;
     expect(initiallyLoaded).toBeLessThan(pageCount);
