@@ -87,7 +87,8 @@ The inspector displays all textual bodies from IIIF v2 `resource` and v3 `body`
 arrays in source order. HTML fragments are sanitized separately, explicit
 `text/plain` bodies remain literal text, and language/direction metadata is
 preserved. Hover tooltips show a concise preview with paragraph and line breaks;
-select the annotation to read the complete body. `getAnnotationBody(id)` returns
+click the annotation outline (not the moving hover preview), or focus it and
+press Enter, to read the complete body. `getAnnotationBody(id)` returns
 their source values joined by blank lines, not sanitized inspector HTML.
 
 ### URL deep links
@@ -183,7 +184,26 @@ Diva is tested against OpenSeadragon 5.0.1 and 6.0.2. The browser regression
 suite runs the same authorization, loading, and lifecycle scenarios against
 both versions using local npm packages.
 
+### Loading previews
+
+The main viewer can display a nearby page's thumbnail beneath arriving image
+tiles, then hide it when the visible image has loaded. This reuses thumbnail
+authorization policies and does not change OSD's full-resolution tile requests.
+When annotations are enabled, their data is requested in the same preview band;
+outlines appear once the page's image coordinates are available.
+Pages without a usable thumbnail continue loading normally. A full-size static
+image is not fetched solely to provide a preview.
+
+This preview implementation is awaiting manual acceptance before any separate
+direction-aware prefetch work; see
+[`browser-tests/PAGE_PREVIEW_ACCEPTANCE.md`](browser-tests/PAGE_PREVIEW_ACCEPTANCE.md).
+
 ## Image access and CORS
+
+Set `showLogoutButton: false` in the Diva constructor options to hide the viewer's
+IIIF image-service logout controls when the host site provides its own logout
+interface. The default is `true`; hiding the button does not disable authentication
+or log the user out.
 
 Diva supports the IIIF Authorization Flow API 2.0 `external` and `active` access profiles, including optional logout services. When both profiles are available, Diva first attempts the silent `external` flow and falls back to the interactive `active` flow when external authorization does not provide a usable token. Logging out clears the associated local access tokens and re-resolves affected images anonymously. The `kiosk` profile, redirects, substitutes, and tiered access are intentionally unsupported.
 
