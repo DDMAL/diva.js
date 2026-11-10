@@ -110,6 +110,9 @@ port pageIndexChangedInstant : (Int -> msg) -> Sub msg
 port pageLabelsUpdated : List String -> Cmd msg
 
 
+port pagePreviewPoliciesUpdated : List { sourceId : String, crossOrigin : Maybe String } -> Cmd msg
+
+
 port pagesUpdated :
     List
         { index : Int
@@ -153,7 +156,7 @@ port tileSourceResolutionFailed : { requestId : String, message : String } -> Cm
 port tileSourceResolutionSucceeded : Encode.Value -> Cmd msg
 
 
-port tileSourcesUpdated : { resourceId : String, tileSources : List { sourceId : String, url : String, isStatic : Bool, canvasId : String }, initialPageIndex : Int } -> Cmd msg
+port tileSourcesUpdated : { resourceId : String, tileSources : List { sourceId : String, url : String, isStatic : Bool, canvasId : String, preview : { url : String, fallbackUrl : String, crossOrigin : Maybe String } }, initialPageIndex : Int } -> Cmd msg
 
 
 port viewerLoadingChanged : (Bool -> msg) -> Sub msg
@@ -328,22 +331,15 @@ handleManifestLoaded resourceId initialPage model manifest =
                                 , url = image.tileSource
                                 , isStatic = image.isStatic
                                 , canvasId = page.canvasId
+                                , preview =
+                                    { url = page.thumbUrl
+                                    , fallbackUrl = page.fallbackThumbUrl
+                                    , crossOrigin = Auth.thumbnailCrossOrigin image.sourceId initialAuth
+                                    }
                                 }
                             )
                 )
                 pages
-
-        authSources =
-            pages
-                |> List.concatMap .images
-                |> List.map
-                    (\image ->
-                        { id = image.sourceId
-                        , url = image.tileSource
-                        , isStatic = image.isStatic
-                        , auth = image.auth
-                        }
-                    )
 
         pageAspects =
             List.map .aspect pages
@@ -374,6 +370,21 @@ handleManifestLoaded resourceId initialPage model manifest =
         canvases =
             toCanvases manifest
 
+        authSources =
+            pages
+                |> List.concatMap .images
+                |> List.map
+                    (\image ->
+                        { id = image.sourceId
+                        , url = image.tileSource
+                        , isStatic = image.isStatic
+                        , auth = image.auth
+                        }
+                    )
+
+        initialAuth =
+            Auth.registerSources authSources Auth.init
+
         canvasIndexMap =
             canvases
                 |> List.indexedMap (\index canvas -> ( canvas.id, index ))
@@ -394,7 +405,7 @@ handleManifestLoaded resourceId initialPage model manifest =
         , annotationSources = annotationSourcesForCanvases canvases
         , annotationLoading = Set.empty
         , annotationsByCanvas = Dict.empty
-        , auth = Auth.registerSources authSources Auth.init
+        , auth = initialAuth
         , filters = resetFilters
         , hasTileSources = not (List.isEmpty tileSources)
         , initialZoom = Nothing
@@ -1093,8 +1104,33 @@ update msg model =
             let
                 ( nextAuth, effects ) =
                     Auth.update event model.auth
+
+                changedPolicies =
+                    model.pages
+                        |> List.filterMap primaryImage
+                        |> List.filterMap
+                            (\image ->
+                                let
+                                    policy =
+                                        Auth.thumbnailCrossOrigin image.sourceId nextAuth
+                                in
+                                if policy /= Auth.thumbnailCrossOrigin image.sourceId model.auth then
+                                    Just { sourceId = image.sourceId, crossOrigin = policy }
+
+                                else
+                                    Nothing
+                            )
             in
-            ( { model | auth = nextAuth }, runAuthEffects effects )
+            ( { model | auth = nextAuth }
+            , Cmd.batch
+                [ runAuthEffects effects
+                , if List.isEmpty changedPolicies then
+                    Cmd.none
+
+                  else
+                    pagePreviewPoliciesUpdated changedPolicies
+                ]
+            )
 
         ClientRequestedLayoutMode requestedMode ->
             let

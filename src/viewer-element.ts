@@ -33,6 +33,7 @@ const ZOOM_IN_FACTOR = 1.6;
 const ZOOM_OUT_FACTOR = 1 / ZOOM_IN_FACTOR;
 const PAGE_LABEL_TOP_PADDING_PX = 28;
 const PAGE_GAP_VIEWPORT_UNITS = 0.06;
+const PAGE_PREVIEW_BUFFER_VIEWPORTS = 2.5;
 
 let lazyImageObserver: IntersectionObserver | null = null;
 
@@ -181,6 +182,8 @@ class OsdViewer extends HTMLElement
     private pageWaiters: Map<number, Array<{ resolve: (item: any) => void; reject: (error: Error) => void }>> =
         new Map();
     private pageOverlayElements: Map<number, HTMLDivElement> = new Map();
+    private previewLayer: HTMLDivElement | null = null;
+    private pagePreviews: Map<number, HTMLImageElement> = new Map();
     private annotationData: Map<string, ViewerAnnotation[]> = new Map();
     private readonly annotationIndex = new AnnotationIndex<ViewerAnnotation>();
     private readonly pageIndexesByCanvas = new Map<string, number[]>();
@@ -274,6 +277,9 @@ class OsdViewer extends HTMLElement
 
     disconnectedCallback(): void
     {
+        this.clearPagePreviews();
+        this.previewLayer?.remove();
+        this.previewLayer = null;
         this.annotationIndex.clear();
         this.pageIndexesByCanvas.clear();
         this.cancelLoads();
@@ -361,6 +367,15 @@ class OsdViewer extends HTMLElement
             viewer.addHandler("pan", () => this.updateScrollbar());
             viewer.addHandler("zoom", () => this.updateScrollbar());
             viewer.addHandler("animation-finish", this.handleAnimationFinishBound);
+            const layer = document.createElement("div");
+            layer.className = "diva-page-previews";
+            layer.setAttribute("aria-hidden", "true");
+            layer.style.cssText = "position:absolute;inset:0;overflow:hidden;pointer-events:none";
+            // Under the drawer, not an OSD overlay: real tiles progressively
+            // cover the thumbnail without obscuring pixels or pointer events.
+            viewer.canvas.prepend(layer);
+            this.previewLayer = layer;
+            viewer.addHandler("update-viewport", () => this.updatePagePreviews());
         }
     }
 
@@ -632,6 +647,7 @@ class OsdViewer extends HTMLElement
         this.loadingIndexes.clear();
         this.unavailableIndexes.clear();
         this.loadedItems.clear();
+        this.clearPagePreviews();
         this.clearPageOverlays();
         this.clearAnnotationOverlays();
         this.targetIndex = tileSources.length > 0 ? this.initialPageIndex : null;
@@ -734,6 +750,132 @@ class OsdViewer extends HTMLElement
         }
     }
 
+    public setPagePreviewPolicies(policies: Array<{ sourceId: string; crossOrigin: string | null }>): void
+    {
+        const changed = new Map(policies.map(policy => [policy.sourceId, policy.crossOrigin]));
+        this.tileSources.forEach((source, index) => {
+            if (source.preview && changed.has(source.sourceId))
+            {
+                source.preview = { ...source.preview, crossOrigin: changed.get(source.sourceId)! };
+                this.removePagePreview(index);
+            }
+        });
+        this.updatePagePreviews();
+    }
+
+    private removePagePreview(index: number): void
+    {
+        const image = this.pagePreviews.get(index);
+        if (image)
+        {
+            image.onload = null;
+            image.onerror = null;
+            image.removeAttribute("src");
+            image.remove();
+            this.pagePreviews.delete(index);
+        }
+    }
+
+    private clearPagePreviews(): void
+    {
+        this.pagePreviews.forEach((_image, index) => this.removePagePreview(index));
+    }
+
+    private updatePagePreviews(): void
+    {
+        const viewport = this.viewer?.viewport;
+        if (!viewport || !this.previewLayer || !this.isViewportInitialized)
+        {
+            return;
+        }
+        const bounds = viewport.getBounds(true);
+        const buffer = bounds.height * PAGE_PREVIEW_BUFFER_VIEWPORTS;
+        const range = this.indicesForRange(Math.max(0, bounds.y - buffer), bounds.y + bounds.height + buffer);
+        this.pagePreviews.forEach((_image, index) => {
+            if (!range || index < range[0] || index > range[1])
+            {
+                this.removePagePreview(index);
+            }
+        });
+        if (!range)
+        {
+            return;
+        }
+        for (let index = range[0]; index <= range[1]; index += 1)
+        {
+            const source = this.tileSources[index];
+            const preview = source?.preview;
+            if (
+                !preview?.url || !preview.crossOrigin || this.unavailableIndexes.has(index)
+                || (source.isStatic && preview.url === source.url)
+            )
+            {
+                this.removePagePreview(index);
+                continue;
+            }
+            let image = this.pagePreviews.get(index);
+            const item = this.loadedItems.get(index);
+            // A page already rendered at the current viewport needs no new
+            // thumbnail request. Retain nearby images for subsequent zooms.
+            if (!image && item?.getFullyLoaded())
+            {
+                continue;
+            }
+            if (!image)
+            {
+                image = document.createElement("img");
+                image.className = "diva-page-preview";
+                image.dataset.pageIndex = String(index);
+                image.alt = "";
+                image.draggable = false;
+                image.style.cssText = "position:absolute;object-fit:contain;pointer-events:none";
+                // Match the sidebar: anonymous thumbnails use normal <img>
+                // loading; credentialed previews must not downgrade on error.
+                if (preview.crossOrigin === "use-credentials")
+                {
+                    image.crossOrigin = "use-credentials";
+                }
+                const current = image;
+                let fallback = false;
+                image.onerror = () => {
+                    if (this.pagePreviews.get(index) !== current)
+                    {
+                        return;
+                    }
+                    if (
+                        !fallback && preview.crossOrigin === "anonymous" && preview.fallbackUrl
+                        && preview.fallbackUrl !== preview.url
+                        && !(source.isStatic && preview.fallbackUrl === source.url)
+                    )
+                    {
+                        fallback = true;
+                        current.src = preview.fallbackUrl;
+                    }
+                    else
+                    {
+                        current.dataset.failed = "true";
+                        current.hidden = true;
+                    }
+                };
+                this.pagePreviews.set(index, image);
+                this.previewLayer.appendChild(image);
+                image.src = preview.url;
+            }
+            const position = viewport.pixelFromPoint(
+                new OpenSeadragon.Point(this.pageXOffsets[index] || 0, this.pageOffsets[index] || 0),
+                true,
+            );
+            const size = viewport.deltaPixelsFromPoints(new OpenSeadragon.Point(1, this.pageHeights[index] || 1), true);
+            image.style.left = `${position.x}px`;
+            image.style.top = `${position.y}px`;
+            image.style.width = `${size.x}px`;
+            image.style.height = `${size.y}px`;
+            // After drawing completes, hide the underlay so genuinely
+            // transparent image regions do not reveal the thumbnail.
+            image.hidden = image.dataset.failed === "true" || Boolean(item?.getFullyLoaded() && !item.needsDraw());
+        }
+    }
+
     private ensurePageLoaded(index: number): void
     {
         if (index < 0 || index >= this.tileSources.length || index >= this.pageOffsets.length)
@@ -816,6 +958,16 @@ class OsdViewer extends HTMLElement
                 item.setHeight(currentHeight, true);
                 this.loadedIndexes.add(index);
                 this.loadedItems.set(index, item);
+                item.addHandler("fully-loaded-change", () => {
+                    // OSD can change this flag on its final update without
+                    // drawing another frame. Recheck after the current draw.
+                    requestAnimationFrame(() => {
+                        if (token === this.loadToken && this.loadedItems.get(index) === item)
+                        {
+                            this.updatePagePreviews();
+                        }
+                    });
+                });
                 this.resolvePageWaiters(index, item);
                 this.addOrUpdatePageOverlay(index);
                 this.addOrUpdateAnnotationOverlay(index);

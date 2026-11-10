@@ -9,6 +9,11 @@ export type TileSourceDescriptor = {
     sourceId: string;
     url: string;
     isStatic: boolean;
+    preview?: {
+        url: string;
+        fallbackUrl: string;
+        crossOrigin: string | null;
+    };
 };
 export declare const iiifImageRegionUrl: (imageService: string | null, region: ImageRegion) => string | null;
 export declare const staticImageTileSource: (url: string, credentialed?: boolean, useNonCors?: boolean) => ResolvedTileSource;

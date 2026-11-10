@@ -165,6 +165,7 @@ type TileSourceEntry = {
     url: string;
     isStatic: boolean;
     canvasId?: string;
+    preview?: { url: string; fallbackUrl: string; crossOrigin: string | null };
 };
 
 type ViewerAnnotation = {
@@ -317,6 +318,9 @@ type ElmPorts = {
     viewerPageLoaded: { send: (index: number) => void };
     pageAspectsUpdated: { subscribe: (callback: (aspects: number[]) => void) => void };
     pageLabelsUpdated: { subscribe: (callback: (labels: string[]) => void) => void };
+    pagePreviewPoliciesUpdated: {
+        subscribe: (callback: (policies: Array<{ sourceId: string; crossOrigin: string | null }>) => void) => void;
+    };
     pagesUpdated: { subscribe: (callback: (pages: PublicPageEntry[]) => void) => void };
     zoomLevelUpdated: { subscribe: (callback: (zoom: number) => void) => void };
     zoomBy: { subscribe: (callback: (factor: number) => void) => void };
@@ -644,6 +648,9 @@ export class Diva extends EventTarget
 
     private bindPorts(): void
     {
+        this.getPort("pagePreviewPoliciesUpdated").subscribe((policies) => {
+            this.callViewerMethodWhenReady("setPagePreviewPolicies", policies);
+        });
         this.getPort("tileSourcesUpdated")
             .subscribe((update: { resourceId: string; tileSources: TileSourceEntry[]; initialPageIndex: number }) => {
                 if (this.annotationResourceId !== update.resourceId)
