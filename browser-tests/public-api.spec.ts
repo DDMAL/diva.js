@@ -743,6 +743,64 @@ test("navigates by openings and frames an image region", async ({page}) => {
     await expect.poll(() => page.evaluate(() => (window as any).diva.getState().zoom)).not.toBeNull();
 });
 
+test.describe("region framing", () => {
+    test.use({viewport : {width : 600, height : 760}});
+
+    for (const immediately of [ true, false ])
+    {
+        for (const y of [ 200, 1600, 3000 ])
+        {
+            test(`centers the first region fit at y=${y} (immediately=${immediately})`, async ({page}) => {
+                const resource = manifest("region-fit", 1);
+                const canvas = resource.items[0];
+                canvas.width = 800;
+                canvas.height = 4000;
+                // A single static image keeps the test independent of IIIF tile loading.
+                Object.assign(canvas.items[0].items[0], {body : {
+                    id : `${origin}/region-fit.svg`, type : "Image", format : "image/svg+xml",
+                    width : 800, height : 4000
+                }});
+                await page.route(`${origin}/api/region-fit/manifest`, (route) => route.fulfill({json : resource}));
+                await page.route(`${origin}/region-fit.svg`, (route) => route.fulfill({
+                    contentType : "image/svg+xml",
+                    body : '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="4000"><rect width="800" height="4000" fill="white"/></svg>'
+                }));
+                await page.evaluate(async ({url, canvasId, y}) => {
+                    const diva = (window as any).diva;
+                    await diva.setResource(url);
+                    diva.setAnnotations([ {
+                        id : "region-target", type : "Annotation",
+                        body : {type : "TextualBody", value : "Region center"},
+                        target : `${canvasId}#xywh=300,${y + 300},200,200`
+                    } ]);
+                    // Let the manifest's queued layout render before setting the old scale.
+                    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+                    await diva.fitToPage(0);
+                }, {url : `${origin}/api/region-fit/manifest`, canvasId : canvas.id, y});
+                // Establish the old scale from rendered geometry, rather than catching
+                // an animation-finish event left over from initial resource positioning.
+                await expect.poll(() => page.evaluate(() => {
+                    const view = document.querySelector("osd-viewer")!.getBoundingClientRect();
+                    const image = document.querySelector(".diva-annotation-overlay svg")!.getBoundingClientRect();
+                    return Math.abs(image.height - view.height);
+                })).toBeLessThan(3);
+                await page.evaluate(({y, immediately}) => (window as any).diva.zoomToRegion(
+                    0, {x : 0, y, width : 800, height : 800}, {padding : 0, immediately}
+                ), {y, immediately});
+
+                // Assert rendered geometry after the FIRST call, not just non-null zoom.
+                // Polling also lets the animated variant settle without a fixed sleep.
+                await expect.poll(() => page.evaluate(() => {
+                    const view = document.querySelector("osd-viewer")!.getBoundingClientRect();
+                    const target = document.querySelector('[data-annotation-id="region-target"] rect')!.getBoundingClientRect();
+                    return Math.max(Math.abs(target.x + target.width / 2 - view.x - view.width / 2),
+                                    Math.abs(target.y + target.height / 2 - view.y - view.height / 2));
+                })).toBeLessThan(2);
+            });
+        }
+    }
+});
+
 test("keeps the zoom and horizontal position while scrolling", async ({page}) => {
     const states = await page.evaluate(async () => {
         const viewer = (document.getElementById("main-viewer") as any).viewer;

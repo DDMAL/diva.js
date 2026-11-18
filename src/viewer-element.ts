@@ -2235,7 +2235,22 @@ class OsdViewer extends HTMLElement
             height: region.height * (1 + (padding * 2)),
         };
         const bounds = item.imageToViewportRectangle(padded.x, padded.y, padded.width, padded.height);
-        this.viewer?.viewport.fitBounds(bounds, options.immediately === true);
+        // OSD's immediate fit emits pan before zoom. Clamping that intermediate
+        // pan uses the old scale and can move the requested region offscreen.
+        const wasClamping = this.isClamping;
+        if (options.immediately === true)
+        {
+            this.isClamping = true;
+        }
+        try
+        {
+            this.viewer?.viewport.fitBounds(bounds, options.immediately === true);
+        }
+        finally
+        {
+            this.isClamping = wasClamping;
+        }
+        this.handleViewportChange();
         this.viewer?.viewport.applyConstraints();
     }
 
