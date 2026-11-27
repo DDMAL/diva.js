@@ -8,7 +8,7 @@ import Html.Lazy as Lazy
 import IIIF.Language exposing (LabelValue, Language, extractLabelFromLanguageMap)
 import IIIF.Presentation exposing (IIIFManifest, MediaFormats, Range, RangeItem(..), ResourceTypes, ViewingDirection(..), toHomepage, toMetadata, toRanges, toViewingDirection)
 import Json.Decode as Decode
-import Model exposing (ContentsView(..), Model, Page, ResourceResponse(..), Response(..), SidebarState(..), ViewMode(..), currentManifest, getPageAt, pageViewStartIndex, primaryImage)
+import Model exposing (ContentsView(..), Model, Page, SidebarState(..), ViewMode(..), currentManifest, getPageAt, pageViewStartIndex, primaryImage)
 import Msg exposing (Msg(..))
 import RangeIndex
 import View.Helpers exposing (emptyHtml, viewMaybe)
@@ -17,18 +17,13 @@ import View.HtmlRenderer exposing (renderHtml)
 
 viewSidebarPanel : Model -> Html Msg
 viewSidebarPanel model =
-    case model.resourceResponse of
-        ResourceLoadedCollection _ ->
-            viewSidebarPanelWithMaybeManifest model (currentManifest model)
-
-        _ ->
-            currentManifest model
-                |> viewMaybe (viewSidebarPanelWithManifest model)
+    currentManifest model
+        |> viewMaybe (viewSidebarPanelWithManifest model)
 
 
 viewSidebarResizer : Model -> Html Msg
 viewSidebarResizer model =
-    if shouldRenderSidebarShell model then
+    if currentManifest model /= Nothing then
         div
             [ classList
                 [ ( "diva-sidebar-resizer", True )
@@ -181,35 +176,16 @@ reverseInRows rowSize items =
             |> List.concatMap List.reverse
 
 
-shouldRenderSidebarShell : Model -> Bool
-shouldRenderSidebarShell model =
-    case model.resourceResponse of
-        ResourceLoadedCollection _ ->
-            True
-
-        _ ->
-            currentManifest model /= Nothing
-
-
 viewContentsContent : Model -> Html Msg
 viewContentsContent model =
     let
-        maybeManifest =
-            currentManifest model
-
         body =
-            case ( model.contentsView, maybeManifest ) of
-                ( ContentsIndex, Just _ ) ->
+            case model.contentsView of
+                ContentsIndex ->
                     viewContentsIndexBody model
 
-                ( ContentsIndex, Nothing ) ->
-                    viewContentsEmptyBody
-
-                ( ContentsPages, Just _ ) ->
+                ContentsPages ->
                     viewOnThisPageBody model
-
-                ( ContentsPages, Nothing ) ->
-                    viewOnThisPageEmptyBody
     in
     div
         [ HA.class "diva-contents-panel" ]
@@ -281,25 +257,14 @@ viewContentsToggle viewMode contentsView =
         ]
 
 
-viewMetadataContent : Model -> Html Msg
-viewMetadataContent model =
+viewMetadataContent : Language -> IIIFManifest -> Html Msg
+viewMetadataContent language manifest =
     div
         [ HA.class "diva-metadata-panel" ]
-        (case currentManifest model of
-            Just manifest ->
-                [ div
-                    [ HA.class "diva-metadata-body" ]
-                    (metadataEntries model.detectedLanguage manifest
-                        ++ homepageEntries model.detectedLanguage manifest
-                    )
-                ]
-
-            Nothing ->
-                [ div
-                    [ HA.class "diva-metadata-body" ]
-                    [ text "No metadata available." ]
-                ]
-        )
+        [ div
+            [ HA.class "diva-metadata-body" ]
+            (metadataEntries language manifest ++ homepageEntries language manifest)
+        ]
 
 
 viewOnThisPageBody : Model -> Html Msg
@@ -535,34 +500,14 @@ viewSidebarPane current target content =
 
 viewSidebarPanelWithManifest : Model -> IIIFManifest -> Html Msg
 viewSidebarPanelWithManifest model manifest =
-    viewSidebarPanelWithMaybeManifest model (Just manifest)
-
-
-viewSidebarPanelWithMaybeManifest : Model -> Maybe IIIFManifest -> Html Msg
-viewSidebarPanelWithMaybeManifest model maybeManifest =
     let
         hasContents =
-            maybeManifest
-                |> Maybe.andThen toRanges
+            toRanges manifest
                 |> Maybe.map (List.isEmpty >> not)
                 |> Maybe.withDefault False
 
         hasMetadata =
-            maybeManifest
-                |> Maybe.map hasManifestMetadata
-                |> Maybe.withDefault False
-
-        viewingDirection =
-            maybeManifest
-                |> Maybe.map toViewingDirection
-                |> Maybe.withDefault LeftToRight
-
-        thumbnailPages =
-            if model.resourceResponse == ResourceLoading || model.response == Loading then
-                []
-
-            else
-                model.pages
+            hasManifestMetadata manifest
 
         panelClasses =
             [ ( "diva-sidebar-panel", True )
@@ -595,7 +540,7 @@ viewSidebarPanelWithMaybeManifest model maybeManifest =
 
         metadataPane =
             if hasMetadata then
-                [ viewSidebarPane model.sidebarState SidebarMetadata (viewMetadataContent model) ]
+                [ viewSidebarPane model.sidebarState SidebarMetadata (viewMetadataContent model.detectedLanguage manifest) ]
 
             else
                 []
@@ -627,9 +572,9 @@ viewSidebarPanelWithMaybeManifest model maybeManifest =
                     , shiftByOne = model.shiftByOne
                     , thumbsInstantScroll = model.thumbsInstantScroll
                     , viewMode = model.viewMode
-                    , viewingDirection = viewingDirection
+                    , viewingDirection = toViewingDirection manifest
                     }
-                    thumbnailPages
+                    model.pages
                 )
                 :: metadataPane
                 ++ contentsPane
