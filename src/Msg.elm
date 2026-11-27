@@ -59,6 +59,7 @@ type Msg
     | UserToggledSidebar
     | UserToggledThumbnails
     | UserToggledTwoUp
+    | UserUpdatedCollectionFilter String
     | UserUpdatedFilterFloat FilterFloatValue String
     | UserUpdatedFilterInt FilterIntValue String
     | UserUpdatedFilterJsonInput String

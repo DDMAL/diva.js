@@ -31,6 +31,17 @@
   line-height: 1.4;
 }
 
+.diva-collection-filter {
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--diva-dark-border);
+  background: var(--diva-page-bg);
+  color: var(--diva-text-primary);
+  font: inherit;
+}
+
 .diva-collection-tree-item {
   padding-left: 12px;
 }

@@ -541,6 +541,97 @@ test("positions a distant initial image with final page geometry", async ({page}
     expect(result.itemHeight).toBeCloseTo(result.expectedHeight, 6);
 });
 
+for (const loadMethod of [ "initial resource", "setResource" ])
+{
+    test(`hides the manifest sidebar when opening a collection via ${loadMethod}`, async ({page}) => {
+        const collectionUrl = `${origin}/api/collection`;
+        const manifestUrl = `${origin}/api/first/manifest`;
+        await page.route(collectionUrl, (route) => route.fulfill({json : {
+            "@context" : "http://iiif.io/api/presentation/3/context.json",
+            id : collectionUrl,
+            type : "Collection",
+            label : {en : [ "Test Collection" ]},
+            items : [ {id : manifestUrl, type : "Manifest", label : {en : [ "First Manifest" ]}} ]
+        }}));
+
+        const sidebar = page.locator(".diva-sidebar-panel");
+        const resizer = page.locator(".diva-sidebar-resizer");
+        if (loadMethod === "initial resource")
+        {
+            await page.evaluate(async (objectData) => {
+                (window as any).diva = new (window as any).Diva("diva-wrapper", {objectData, showSidebar : true});
+                await (window as any).diva.ready;
+            }, collectionUrl);
+        }
+        else
+        {
+            await page.getByRole("button", {name : "Show Sidebar"}).evaluate((button: HTMLButtonElement) => button.click());
+            await expect(sidebar).toBeVisible();
+            await page.evaluate((url) => (window as any).diva.setResource(url), collectionUrl);
+        }
+
+        const collectionPanel = page.locator(".diva-collection-panel");
+        await expect(collectionPanel).toBeVisible();
+        await expect(sidebar).toBeHidden();
+        await expect(resizer).toBeHidden();
+
+        await collectionPanel.getByRole("button", {name : "First Manifest"}).click();
+        await expect(sidebar.getByRole("button", {name : "Thumbnails"})).toBeVisible();
+        await expect(resizer).toBeVisible();
+    });
+}
+
+test("filters the collection tree by a case-insensitive label substring", async ({page}) => {
+    const collectionUrl = `${origin}/api/collection-filter`;
+    await page.route(collectionUrl, (route) => route.fulfill({json : {
+        "@context" : "http://iiif.io/api/presentation/3/context.json",
+        id : collectionUrl,
+        type : "Collection",
+        label : {en : [ "Test Collection" ]},
+        items : [
+            {id : `${origin}/api/first/manifest`, type : "Manifest", label : {en : [ "Foo ABC Bar" ]}},
+            {id : `${origin}/api/second/manifest`, type : "Manifest", label : {en : [ "Unrelated Manifest" ]}},
+            {
+                id : `${collectionUrl}/nested`,
+                type : "Collection",
+                label : {en : [ "Nested Collection" ]},
+                items : [
+                    {id : `${origin}/api/nested/manifest`, type : "Manifest", label : {en : [ "Other ABC Item" ]}},
+                    {id : `${origin}/api/hidden/manifest`, type : "Manifest", label : {en : [ "Hidden Item" ]}}
+                ]
+            }
+        ]
+    }}));
+    await page.evaluate((url) => (window as any).diva.setResource(url), collectionUrl);
+
+    const panel = page.locator(".diva-collection-panel");
+    const filter = panel.getByRole("searchbox", {name : "Filter collection"});
+    const directMatch = panel.getByRole("button", {name : "Foo ABC Bar"});
+    const unrelated = panel.getByRole("button", {name : "Unrelated Manifest"});
+    const nested = panel.getByRole("button", {name : /Nested Collection/});
+    const nestedMatch = panel.getByRole("button", {name : "Other ABC Item"});
+    const nestedSibling = panel.getByRole("button", {name : "Hidden Item"});
+
+    await filter.fill(" abc ");
+    await expect(directMatch).toBeVisible();
+    await expect(unrelated).toBeHidden();
+    await nested.click();
+    await expect(nestedMatch).toBeVisible();
+    await expect(nestedSibling).toBeHidden();
+
+    await filter.fill("nested");
+    await expect(directMatch).toBeHidden();
+    await expect(nestedSibling).toBeVisible();
+
+    await filter.fill("no matches");
+    await expect(panel.getByRole("status")).toHaveText("No matching items.");
+
+    await filter.clear();
+    await expect(directMatch).toBeVisible();
+    await expect(unrelated).toBeVisible();
+    await expect(nestedSibling).toBeVisible();
+});
+
 test("configures the initial sidebar width and retains the default", async ({page}) => {
     const sidebar = page.locator(".diva-sidebar-panel");
     await page.getByRole("button", {name : "Show Sidebar"}).evaluate((button: HTMLButtonElement) => button.click());

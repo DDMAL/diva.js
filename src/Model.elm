@@ -18,6 +18,7 @@ import Utilities exposing (find, isNothing)
 type alias CollectionState =
     { collection : IIIFCollection
     , expandedIds : Set String
+    , filterQuery : String
     , selectedManifestId : Maybe String
     , loadingCollectionIds : Set String
     , loadedCollectionIds : Set String

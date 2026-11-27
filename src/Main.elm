@@ -1288,6 +1288,7 @@ update msg model =
                                         ResourceLoadedCollection
                                             { collection = IIIFCollection version collection
                                             , expandedIds = Set.empty
+                                            , filterQuery = ""
                                             , loadedCollectionIds = Set.empty
                                             , loadingCollectionIds = Set.empty
                                             , selectedManifestId = Nothing
@@ -1364,6 +1365,7 @@ update msg model =
                                         ResourceLoadedCollection
                                             { collection = IIIFCollection version collection
                                             , expandedIds = Set.empty
+                                            , filterQuery = ""
                                             , loadedCollectionIds = Set.empty
                                             , loadingCollectionIds = Set.empty
                                             , selectedManifestId = Nothing
@@ -1444,6 +1446,14 @@ update msg model =
                     }
             in
             ( nextModel, filterPreviewUpdated Nothing )
+
+        UserUpdatedCollectionFilter query ->
+            case model.resourceResponse of
+                ResourceLoadedCollection collectionState ->
+                    ( { model | resourceResponse = ResourceLoadedCollection { collectionState | filterQuery = query } }, Cmd.none )
+
+                _ ->
+                    ( model, Cmd.none )
 
         UserClickedCollectionItem collectionId ->
             case model.resourceResponse of

@@ -1,10 +1,10 @@
 module View.CollectionExplorer exposing (viewCollectionResizer, viewCollectionSidebar)
 
-import Html exposing (Html, button, div, li, text, ul)
+import Html exposing (Html, button, div, input, li, text, ul)
 import Html.Attributes as HA exposing (classList, type_)
 import Html.Events as Events
 import Html.Lazy as Lazy
-import IIIF.Language exposing (Language, extractLabelFromLanguageMap)
+import IIIF.Language exposing (Language, LanguageMap, extractLabelFromLanguageMap)
 import IIIF.Presentation exposing (Collection, CollectionItem(..), IIIFCollection(..), Manifest)
 import Json.Decode as Decode
 import Model exposing (CollectionState, Model, ResourceResponse(..))
@@ -41,6 +41,33 @@ viewCollectionSidebar model =
 
         _ ->
             emptyHtml
+
+
+filterItems : (LanguageMap -> Bool) -> List CollectionItem -> List CollectionItem
+filterItems matches =
+    List.filterMap
+        (\item ->
+            case item of
+                ManifestItem manifest ->
+                    if matches manifest.label then
+                        Just item
+
+                    else
+                        Nothing
+
+                NestedCollection collection ->
+                    -- Keep matching collections browsable and retain paths to matching descendants.
+                    if matches collection.label then
+                        Just item
+
+                    else
+                        case filterItems matches collection.items of
+                            [] ->
+                                Nothing
+
+                            children ->
+                                Just (NestedCollection { collection | items = children })
+        )
 
 
 viewCollectionItem : Language -> CollectionState -> CollectionItem -> Html Msg
@@ -84,14 +111,41 @@ viewCollectionPanel model collectionState =
                     div [ HA.class "diva-collection-summary" ] [ text (extractLabelFromLanguageMap model.detectedLanguage summary) ]
                 )
                 collection.summary
+            , input
+                [ HA.class "diva-collection-filter"
+                , type_ "search"
+                , HA.attribute "aria-label" "Filter collection"
+                , HA.placeholder "Filter collection…"
+                , HA.value collectionState.filterQuery
+                , Events.onInput UserUpdatedCollectionFilter
+                ]
+                []
             ]
         , div
             [ HA.class "diva-sidebar-content" ]
             [ div
                 [ HA.class "diva-sidebar-pane is-scroll" ]
-                [ viewCollectionTree model.detectedLanguage collectionState collection.items ]
+                [ Lazy.lazy3 viewFilteredCollectionTree model.detectedLanguage collectionState collection.items ]
             ]
         ]
+
+
+viewFilteredCollectionTree : Language -> CollectionState -> List CollectionItem -> Html Msg
+viewFilteredCollectionTree language collectionState items =
+    let
+        query =
+            collectionState.filterQuery |> String.trim |> String.toLower
+    in
+    if String.isEmpty query then
+        viewCollectionTree language collectionState items
+
+    else
+        case filterItems (extractLabelFromLanguageMap language >> String.toLower >> String.contains query) items of
+            [] ->
+                div [ HA.class "diva-contents-empty", HA.attribute "role" "status" ] [ text "No matching items." ]
+
+            matches ->
+                viewCollectionTree language collectionState matches
 
 
 viewCollectionTree : Language -> CollectionState -> List CollectionItem -> Html Msg
